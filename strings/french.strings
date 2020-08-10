@@ -19,7 +19,7 @@
 "Not on Group Income yet?" = "Pas encore sur Group Income ?";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
-"Re-sync failed. {reportError}" = "La synchronisation a échoué. {reportError}";
+"Re-sync failed. {reportError}" = "L'actualisation a échoué. {reportError}";
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "You will receive {amount}." = "Vous recevrez {amount}.";
@@ -76,7 +76,7 @@
 "Group members and their pledges" = "Les membres du groupe et leurs contributions";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"Are you sure you want to re-sync your app data? This might take a few minutes." = "Êtes-vous sûr(e) de vouloir resynchroniser les données de l'application ? Cela peut durer quelques minutes.";
+"Are you sure you want to re-sync your app data? This might take a few minutes." = "Êtes-vous sûr(e) de vouloir actualiser les données de l'application ? Cela peut durer quelques minutes.";
 
 /* views/components/group-creation-steps/GroupMincome.vue */
 "What is the minimum each member should receive monthly?" = "Quel est le montant minimum que chaque membre devrait recevoir mensuellement ?";
@@ -88,7 +88,7 @@
 "Oops, you entered a negative number" = "Oups, vous avez entré un nombre négatif";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
-"Re-sync" = "Resynchronisation";
+"Re-sync" = "Actualiser";
 
 /* views/pages/Payments.vue */
 "{total} in total, to {count} members" = "{total} au total, à {count} membres";
@@ -418,7 +418,7 @@
 "Your income must be lower than the group mincome" = "Votre revenu doit être inférieur au mincome du groupe";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"Please use the re-sync option below to restore functionality." = "Veuillez utiliser l'option re-sync ci-dessous pour restaurer les fonctionnalités.";
+"Please use the re-sync option below to restore functionality." = "Veuillez utiliser l'option d'actualisation ci-dessous pour restaurer les fonctionnalités.";
 
 /* views/containers/proposals/ProposalBox.vue */
 "{username} proposed:" = "{username} a proposé :";
@@ -784,7 +784,7 @@
 "This field is required" = "Ce champ est requis";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"Re-sync and rebuild data" = "Synchroniser et reconstruire les données";
+"Re-sync and rebuild data" = "Actualiser et reconstruire les données";
 
 /* views/components/GroupWelcome.vue */
 "Welcome to {groupName}!" = "Bienvenue chez {groupName}!";
@@ -1174,7 +1174,7 @@
 "Sorry, we couldn't find anyone called \"{searchTerm}\"" = "Désolé, nous n'avons trouvé personne dont le nom soit \"{searchTerm}\"";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information." = "Toutes vos données sont stockées localement, sur votre appareil personnel, et cryptées lors de tout envoi {via le réseau, à d'autres membres du groupe}. La synchronisation téléchargera la plus récente version des informations relatives au groupe.";
+"All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information." = "Toutes vos données sont stockées localement, sur votre appareil personnel, et cryptées lors de tout envoi {via le réseau, à d'autres membres du groupe}. L'actualisation téléchargera la plus récente version des informations relatives au groupe.";
 
 /* views/containers/payments/PaymentRowReceived.vue */
 "Already marked as not received!" = "Déjà marqué en tant que non reçu !";
