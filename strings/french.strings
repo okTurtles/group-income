@@ -10,7 +10,7 @@
 "Failed to save avatar. {reportError}" = "L'enregistrement de l'avatar a échoué. {reportError}";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
-"Are you sure you want to cancel this proposal?" = "Êtes-vous sûr(e) de vouloir annuler cette offre ?";
+"Are you sure you want to cancel this proposal?" = "Êtes-vous sûr(e) de vouloir annuler cette proposition ?";
 
 /* views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
 "Your changes were saved!" = "Vos modifications ont été enregistrées !";
@@ -190,7 +190,7 @@
 "Next" = "Suivant";
 
 /* views/containers/user-settings/Appearence.vue */
-"When enabled the amount of animations you see around are reduced." = "Réduit le nombre d'animations affichées.";
+"When enabled the amount of animations you see around are reduced." = "Ceci réduit le nombre d'animations affichées.";
 
 /* MISSING TRANSLATION - views/containers/proposals/RuleRemoveMember.vue */
 "I step to change rule of remove member it's on the way" = "I step to change rule of remove member it's on the way";
@@ -199,7 +199,7 @@
 "{b1}Make a pledge{b2} to start contributing to other members." = "{b1}Make a pledge{b2} to start contributing to other members.";
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
-"{firstMember} and {othersMembersCount} others will ensure you meet the mincome" = "{firstMember} and {othersMembersCount} others will ensure you meet the mincome";
+"{firstMember} and {othersMembersCount} others will ensure you meet the mincome" = "{firstMember} et {othersMembersCount} autres vous garantiront le revenu minimum";
 
 /* MISSING TRANSLATION - views/containers/proposals/RuleAddMember.vue */
 "Change Rule to Add Member" = "Change Rule to Add Member";
@@ -232,7 +232,7 @@
 "Show info" = "Afficher les informations";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalVoteOptions.vue */
-"Are you sure you want to vote yes?" = "Êtes-vous certain de vouloir voter oui ?";
+"Are you sure you want to vote yes?" = "Êtes-vous sûr(e) de vouloir voter oui ?";
 
 /* MISSING TRANSLATION - views/containers/proposals/ChangeVotingProposal.vue */
 "Change voting [xxxx]" = "Changer le vote [xxxx]";
@@ -292,7 +292,7 @@
 "Sent to {name}" = "Envoyé à {name}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersAllModal.vue */
-"Showing {searchCount} {strong_}results{_strong} for \"{searchTerm}\"" = "Showing {searchCount} {strong_}results{_strong} for \"{searchTerm}\"";
+"Showing {searchCount} {strong_}results{_strong} for \"{searchTerm}\"" = "Affichage de {searchCount} {strong_}résultats{_strong} pour \"{searchTerm}\"";
 
 /* MISSING TRANSLATION - views/containers/payments/RecordPayment.vue */
 "Toggle comment box" = "Montrer/cacher les commentaires";
@@ -367,7 +367,7 @@
 "Corrupted" = "Corrompu";
 
 /* views/containers/proposals/RemoveMember.vue */
-"Are you sure you want to remove {name} from the group?" = "Êtes-vous sûr(e) de vouloir ôter {name} de votre groupe ?";
+"Are you sure you want to remove {name} from the group?" = "Êtes-vous sûr(e) de vouloir renvoyer {name} de votre groupe ?";
 
 /* views/containers/group-settings/GroupVotingSystem.vue */
 "Percentage of members that need to agree:" = "Pourcentage des membres dont l'accord est requis :";
@@ -400,7 +400,7 @@
 "Members" = "Membres";
 
 /* views/containers/payments/MonthOverview.vue */
-"Payments completed" = "Payements complétés";
+"Payments completed" = "Paiements complétés";
 
 /* views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
 "Please enter a valid email." = "Veuillez entrer une adresse email valide.";
@@ -430,7 +430,7 @@
 "Active links" = "Liens actifs";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
-"created for" = "created for";
+"created for" = "créée pour";
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
 "A username cannot contain spaces." = "Un nom d'utilisateur ne peut pas contenir d'espaces.";
@@ -610,7 +610,7 @@
 "What's your monthly income?" = "Quel est votre revenu mensuel ?";
 
 /* views/components/VotingSystemInput.vue, views/components/group-creation-steps/GroupRules.vue */
-"Maximum number of \"no\" votes" = "Nombre maaximal de votes \"non\"";
+"Maximum number of \"no\" votes" = "Nombre maximal de votes \"non\"";
 
 /* views/pages/Contributions.vue */
 "No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like." = "Personne n'a besoin de contribution financière pour le moment. Vous pouvez toujours ajouter des contributions non monétaires si vous le souhaitez.";
@@ -724,7 +724,7 @@
 "Back" = "Précédent";
 
 /* views/containers/contributions/ContributionsWidget.vue, views/containers/navigation/Navigation.vue, views/pages/Payments.vue */
-"Payments" = "Payements";
+"Payments" = "Paiements";
 
 /* views/containers/payments/PaymentDetail.vue */
 "Cancel payment" = "Annuler le paiement";
@@ -832,7 +832,7 @@
 "{partial_amount} out of {partial_total}" = "{partial_amount} sur {partial_total}";
 
 /* MISSING TRANSLATION - views/containers/access/LoginForm.vue */
-"Forgot your password?" = "Forgot your password?";
+"Forgot your password?" = "Mot de passe oublié ?";
 
 /* views/pages/Home.vue */
 "Signup" = "Créer un compte";
@@ -988,7 +988,7 @@
 "Failed to upload avatar. {reportError}" = "L'upload de l'avatar a échoué. {reportError}";
 
 /* views/containers/payments/PaymentsSummary.vue */
-"Payments Received" = "Payements Reçus";
+"Payments Received" = "Paiements Reçus";
 
 /* views/pages/Payments.vue */
 "Search for a payment" = "Rechercher un paiement";
@@ -1210,7 +1210,7 @@
 "Hide" = "Cacher";
 
 /* views/containers/contributions/ContributionsWidget.vue, views/containers/payments/MonthOverview.vue */
-"Payments received" = "Payements reçus";
+"Payments received" = "Paiements reçus";
 
 /* MISSING TRANSLATION - views/containers/contributions/GroupPledgesGraph.vue */
 "Total Pledged" = "Total Contribué";
@@ -1270,10 +1270,10 @@
 "Add" = "Ajouter";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue */
-"This action {strong_}cannot be undone{_strong}." = "This action {strong_}cannot be undone{_strong}.";
+"This action {strong_}cannot be undone{_strong}." = "Cette action {strong_}est irréversible{_strong}.";
 
 /* views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue */
-"Does not match" = "Ne correspond pad";
+"Does not match" = "Ne correspond pas";
 
 /* views/containers/user-settings/Troubleshooting.vue */
 "Total space used" = "Espace total utilisé";
@@ -1399,7 +1399,7 @@
 "Send payments" = "Envoyer des paiements";
 
 /* MISSING TRANSLATION - views/containers/payments/PaymentsSummary.vue */
-"Payments Sent" = "Payements Envoyés";
+"Payments Sent" = "Paiements Envoyés";
 
 /* MISSING TRANSLATION - views/containers/contributions/GroupPledgesGraph.vue */
 "Needed Pledges" = "Contributions Nécessaires";
@@ -1450,7 +1450,7 @@
 "Failed to propose to remove {member}: {reportError}" = "Il n'a pas été possible de proposer de renvoyer {member}: {reportError}";
 
 /* MISSING TRANSLATION - views/containers/contributions/Contribution.vue */
-"Free cinema tickets" = "Free cinema tickets";
+"Free cinema tickets" = "Places de cinéma gratuites";
 
 /* views/components/group-creation-steps/GroupMincome.vue, views/pages/Payments.vue */
 "Amount" = "Montant";
@@ -1465,16 +1465,16 @@
 "{groupMembersCount} members" = "{groupMembersCount} membres";
 
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
-"Add income details" = "Ajouter vos détails de revenu";
+"Add income details" = "Indiquer vos revenus";
 
 /* MISSING TRANSLATION - views/pages/Payments.vue */
-"Due in" = "Due in";
+"Due in" = "Échéance dans";
 
 /* views/containers/user-settings/Troubleshooting.vue */
 "Last touches..." = "Dernières touches...";
 
 /* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowRecord.vue, views/containers/payments/PaymentRowSent.vue, views/containers/payments/PaymentRowTodo.vue */
-"Due {date}" = "Due {date}";
+"Due {date}" = "Échéance le {date}";
 
 /* views/pages/Payments.vue */
 "There are no pending payments." = "Pas de paiements en cours.";
