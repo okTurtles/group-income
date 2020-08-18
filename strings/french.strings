@@ -19,7 +19,7 @@
 "Not on Group Income yet?" = "Pas encore sur Group Income ?";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
-"Re-sync failed. {reportError}" = "L'actualisation a échoué. {reportError}";
+"Re-sync failed. {reportError}" = "La connexion a échoué. {reportError}";
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "You will receive {amount}." = "Vous recevrez {amount}.";
@@ -52,7 +52,7 @@
 "Your invite" = "Votre invitation";
 
 /* views/containers/group-settings/GroupCreationModal.vue, views/pages/Home.vue */
-"Create Group" = "Créer un Groupe";
+"Create Group" = "Créer un groupe";
 
 /* views/containers/navigation/Navigation.vue */
 "Help &amp; Feedback" = "Aide &amp; Retours";
@@ -79,10 +79,10 @@
 "Are you sure you want to re-sync your app data? This might take a few minutes." = "Êtes-vous sûr(e) de vouloir actualiser les données de l'application ? Cela peut durer quelques minutes.";
 
 /* views/components/group-creation-steps/GroupMincome.vue */
-"What is the minimum each member should receive monthly?" = "Quel est le montant minimum que chaque membre devrait recevoir mensuellement ?";
+"What is the minimum each member should receive monthly?" = "Quel est le montant mensuel minimum pour chaque membre ?";
 
 /* views/containers/contributions/GroupPledgesGraph.vue */
-"{span_}Group{_span} goal" = "Objectif de {span_}groupe{_span}";
+"{span_}Group{_span} goal" = "Objectif du {span_}groupe{_span}";
 
 /* views/containers/contributions/IncomeDetails.vue */
 "Oops, you entered a negative number" = "Oups, vous avez entré un nombre négatif";
@@ -103,7 +103,7 @@
 "Failed to Send Message" = "L'envoi du message a échoué";
 
 /* views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
-"Leave Group" = "Quitter le Groupe";
+"Leave Group" = "Quitter le groupe";
 
 /* views/pages/Contributions.vue */
 "Add members to group" = "Ajouter des membres au groupe";
@@ -121,7 +121,7 @@
 "Payment method {paymentMethod}" = "Méthode de paiement {paymentMethod}";
 
 /* views/containers/design-system/DSModalNested.vue */
-"Modal example" = "Example de dialogue modal";
+"Modal example" = "Example de fenêtre";
 
 /* views/containers/proposals/ProposalItem.vue */
 "{count} out of {total} members voted." = "{count} membres sur {total} ont voté.";
@@ -201,14 +201,14 @@
 /* views/containers/contributions/IncomeDetails.vue */
 "{firstMember} and {othersMembersCount} others will ensure you meet the mincome" = "{firstMember} et {othersMembersCount} autres vous garantiront le revenu minimum";
 
-/* MISSING TRANSLATION - views/containers/proposals/RuleAddMember.vue */
-"Change Rule to Add Member" = "Change Rule to Add Member";
+/* views/containers/proposals/RuleAddMember.vue */
+"Change Rule to Add Member" = "Changer la règle d'ajout d'un membre";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembers.vue */
 "See all {groupMembersCount} members" = "See all {groupMembersCount} members";
 
 /* MISSING TRANSLATION - views/components/GroupWelcome.vue */
-"{groupName}'s avatar" = "avatar des {groupName}";
+"{groupName}'s avatar" = "Avatar des {groupName}";
 
 /* views/containers/contributions/PaymentMethods.vue */
 "Other group members will be able to use this information to send you monthly contributions." = "Les autres membres du groupe pourront utiliser ces informations afin de vous envoyer des aides mensuelles.";
@@ -223,7 +223,7 @@
 "Clear search" = "Effacer la recherche";
 
 /* MISSING TRANSLATION - views/pages/Contributions.vue */
-"Giving" = "Donnant";
+"Giving" = "Donner";
 
 /* views/containers/payments/PaymentsHistoryModal.vue */
 "Payments History" = "Historique des Paiements";
@@ -238,19 +238,19 @@
 "Change voting [xxxx]" = "Changer le vote [xxxx]";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
-"After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "Une fois la période d'initiation terminée, pour tout ajout ultérieur d'un nouveau membre il sera demandé à chaque membre actuel de voter. Mais pour l'heure, profitez de 60 pass gratuits !";
+"After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "Pour ajouter un nouveam membre après la période d'initiation, un vote sera requis par l'ensemble des membres du groupe. Mais pour l'heure, vous pouvez enregistrer jusqu'à 60 membres sans vote !";
 
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
-"If you encounter problems, please download the logs and {a_}send them to us{_a}." = "En cas de problème, veuillez télécharger le fichier journal et {a_}nous l'envoyer{_a}.";
+"If you encounter problems, please download the logs and {a_}send them to us{_a}." = "En cas de problème, veuillez télécharger le liste des événements et {a_}nous l'envoyer{_a}.";
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/user-settings/UserProfile.vue */
 "Password" = "Mot de passe";
 
 /* MISSING TRANSLATION - views/pages/DesignSystem.vue */
-"NB: at the moment we don't have sub sub modal, there for the implementation is flexible to allow an inifinty of modal but the animation is not implemented" = "NB: pour le moment nous n'avons pas encore de dialogues sub-sub-modaux, et donc l'implémentation est suffisamment flexible pour permettre une infinité de dialogues modaux mais l'animation n'est pas implémentée";
+"NB: at the moment we don't have sub sub modal, there for the implementation is flexible to allow an inifinty of modal but the animation is not implemented" = "NB: at the moment we don't have sub sub modal, there for the implementation is flexible to allow an inifinty of modal but the animation is not implemented"
 
 /* views/containers/contributions/PaymentMethods.vue */
-"Payment value" = "Valeur du paiement";
+"Payment value" = "Montant du paiement";
 
 /* views/containers/payments/PaymentRowTodo.vue */
 "Cannot dismiss a payment that hasn't been sent yet." = "Il n'est pas possible de décliner un paiement qui n'a pas encore été envoyé.";
@@ -271,7 +271,7 @@
 "According to your voting rules, 8 out of 10 members will have to agree with this." = "Selon vos règles de vote, l'approbation de huit membres sur dix sera nécessaire.";
 
 /* views/containers/proposals/ChangeVotingProposal.vue */
-"Future proposals would be accepted if {nr} or fewer members disagree." = "Les futures propositions seront acceptées si le nombre de membres qui les désapprouvent ne dépasse pas {nr}.";
+"Future proposals would be accepted if {nr} or fewer members disagree." = "Pour que les futures propositions soient acceptées, le nombre de votes négatifs ne doit pas excéder {nr}.";
 
 /* views/containers/contributions/ContributionItem.vue */
 "{amount} to {who}" = "{amount} à {who}";
@@ -292,10 +292,10 @@
 "Sent to {name}" = "Envoyé à {name}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersAllModal.vue */
-"Showing {searchCount} {strong_}results{_strong} for \"{searchTerm}\"" = "Affichage de {searchCount} {strong_}résultats{_strong} pour \"{searchTerm}\"";
+"Showing {searchCount} {strong_}results{_strong} for \"{searchTerm}\"" = "{searchCount} {strong_}résultats{_strong} correspondant à la recherche \"{searchTerm}\"";
 
 /* MISSING TRANSLATION - views/containers/payments/RecordPayment.vue */
-"Toggle comment box" = "Montrer/cacher les commentaires";
+"Toggle comment box" = "Ajouter un commentaire";
 
 /* views/containers/group-settings/GroupVotingSystem.vue */
 "Active" = "Actif";
@@ -307,37 +307,37 @@
 "Search for a person" = "Rechercher une personne";
 
 /* views/containers/access/PasswordModal.vue */
-"Change password" = "Changer de mot de passe";
+"Change password" = "Changer le mot de passe";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "See original proposal" = "Afficher la proposition initiale";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalBox.vue */
-"{strong_}You{_strong} proposed:" = "{strong_}Vous{_strong} proposiez:";
+"{strong_}You{_strong} proposed:" = "{strong_}Vous{_strong} avez proposé :";
 
 /* MISSING TRANSLATION - views/pages/Contributions.vue */
 "Add a non-monetary pledge" = "Ajouter une contribution non-monétaire";
 
 /* views/containers/payments/RecordPayment.vue */
-"Please support the development of Group Income by {r1}sending a donation{r2}!" = "Soutenez le développement de Group Income en {r1}faisant un don{r2} !";
+"Please support the development of Group Income by {r1}sending a donation{r2}!" = "Soutenez le développement de Group Income grâce à {r1}vos dons{r2} !";
 
 /* views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowSent.vue, views/containers/payments/PaymentRowTodo.vue */
 "Show payment menu" = "Afficher le menu de paiement";
 
 /* views/containers/contributions/PaymentMethods.vue, views/containers/proposals/AddMembers.vue */
-"Add more" = "Ajouter plus";
+"Add more" = "Ajouter";
 
 /* views/containers/navigation/Navigation.vue, views/pages/GroupChat.vue */
 "Chat" = "Conversation";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
-"Revoke Link" = "Révoquer le Lien";
+"Revoke Link" = "Supprimer le lien";
 
 /* views/containers/group-settings/InvitationsTable.vue */
-"This invite link is only available during the onboarding period." = "Ce lien d'invitation est seulement disponible pendant la période d'initiation.";
+"This invite link is only available during the onboarding period." = "Cette invitation reste valide jusqu'à la fin de la période d'initiation.";
 
 /* views/containers/dashboard/GroupMincome.vue */
-"Change Mincome" = "Modifier le Revenu Minimum";
+"Change Mincome" = "Modifier le revenu minimum";
 
 /* views/components/modal/ModalClose.vue */
 "ESC" = "Échappe";
@@ -346,10 +346,10 @@
 "Notes" = "Notes";
 
 /* views/pages/GroupChat.vue */
-"Group Chat" = "Conversation de Groupe";
+"Group Chat" = "Conversation du groupe";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
-"Share this link to grant access to your group." = "Partagez ce lien pour donner accès à votre groupe.";
+"Share this link to grant access to your group." = "Partagez ce lien pour donner accès aux membres du groupe.";
 
 /* views/pages/Payments.vue */
 "You are currently {strong_}receiving{_strong} mincome." = "Vous {strong_}recevez{_strong} actuellement un revenu minimum.";
@@ -370,19 +370,19 @@
 "Are you sure you want to remove {name} from the group?" = "Êtes-vous sûr(e) de vouloir renvoyer {name} de votre groupe ?";
 
 /* views/containers/group-settings/GroupVotingSystem.vue */
-"Percentage of members that need to agree:" = "Pourcentage des membres dont l'accord est requis :";
+"Percentage of members that need to agree:" = "Pourcentage nécessaire de votes positifs :";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
 "Not used" = "Inutilisée";
 
 /* views/pages/Home.vue */
-"Join a Group" = "Rejoindre un Groupe";
+"Join a Group" = "Rejoindre un groupe";
 
 /* views/containers/contributions/PaymentMethods.vue */
 "Payment info" = "Informations de paiement";
 
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
-"This will allow you to start receiving or giving mincome." = "Ceci vous permettra de commencer à bénéficier d'un revenu minimum, ou de contribuer au revenu minimum de votre groupe.";
+"This will allow you to start receiving or giving mincome." = "Ceci vous permettra de bénéficier ou de contribuer au revenu minimum du groupe.";
 
 /* views/components/GroupWelcome.vue, views/containers/group-settings/InvitationLinkModal.vue, views/containers/proposals/ProposalTemplate.vue */
 "Awesome" = "Formidable";
@@ -394,7 +394,7 @@
 "{month} overview" = "résumé : {month}";
 
 /* views/containers/dashboard/GroupMembersAllModal.vue */
-"Showing {strong_}1 result{_strong} for \"{searchTerm}\"" = "Affiche {strong_}1 résultat{_strong} pour \"{searchTerm}\"";
+"Showing {strong_}1 result{_strong} for \"{searchTerm}\"" = "{strong_}1 résultat{_strong} correspond à la recherche \"{searchTerm}\"";
 
 /* views/containers/dashboard/GroupMembers.vue */
 "Members" = "Membres";
@@ -418,7 +418,7 @@
 "Your income must be lower than the group mincome" = "Votre revenu doit être inférieur au revenu minimum du groupe";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"Please use the re-sync option below to restore functionality." = "Veuillez utiliser l'option d'actualisation ci-dessous pour restaurer les fonctionnalités.";
+"Please use the re-sync option below to restore functionality." = "Afin de restaurer les fonctionnalités, utilisez l'option suivante :";
 
 /* views/containers/proposals/ProposalBox.vue */
 "{username} proposed:" = "{username} a proposé :";
@@ -433,7 +433,7 @@
 "created for" = "créée pour";
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
-"A username cannot contain spaces." = "Un nom d'utilisateur ne peut pas contenir d'espaces.";
+"A username cannot contain spaces." = "Les espaces ne sont pas autorisés.";
 
 /* views/containers/access/PasswordModal.vue */
 "Invalid password" = "Mot de passe invalide";
@@ -442,13 +442,13 @@
 "Sent to" = "Envoyé à";
 
 /* views/containers/chatroom/ChatNav.vue */
-"Mute chat" = "Mettre la conversation en sourdine";
+"Mute chat" = "Suspendre les notifications";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
-"No members in the group are pledging yet! 😔" = "Pour le moment aucun membre n'a promis de contribuer ! 😔";
+"No members in the group are pledging yet! 😔" = "Aucun membre ne contribue pour l'instant ! 😔";
 
 /* views/containers/group-settings/GroupVotingSystem.vue */
-"Proposals are accepted when the required percentage of members agree to the proposal." = "Une proposition est acceptée lorsque le pourcentage requis des membres l'acceptent.";
+"Proposals are accepted when the required percentage of members agree to the proposal." = "La proposition sera acceptée lorsque le pourcentage des votes en sa faveur sera suffisant.";
 
 /* views/containers/access/PasswordModal.vue */
 "Confirm new Password" = "Confirmer le nouveau mot de passe";
@@ -478,7 +478,7 @@
 "Create a new group" = "Créer un nouveau groupe";
 
 /* views/containers/contributions/IncomeDetails.vue */
-"This is the minimum income in your group" = "Ceci est le revenu minimum dans votre groupe";
+"This is the minimum income in your group" = "Ceci est le revenu minimum du groupe";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
 "You are pledging {br_}{amount}" = "Vous contribuez à hauteur de {br_}{amount}";
@@ -487,19 +487,19 @@
 "2. Wait for the group vote" = "2. Attendez le vote du groupe";
 
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupPurpose.vue */
-"2. Group Purpose" = "2. Description du Groupe";
+"2. Group Purpose" = "2. Description du groupe";
 
 /* views/containers/contributions/ContributionsWidget.vue */
-"At the moment, no one is in need of contributions." = "Pour le moment, personne n'a besoin de contributions.";
+"At the moment, no one is in need of contributions." = "Personne n'a besoin d'aide financière pour le moment.";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Vote no" = "Voter non";
 
 /* views/containers/group-settings/InvitationLinkModal.vue, views/containers/proposals/AddMembers.vue */
-"Add new members" = "Ajouter de nouveaux membres";
+"Add new members" = "Ajouter un nouveau membre";
 
 /* views/pages/Payments.vue */
-"You can change this at any time by updating your {r1}income details{r2}." = "Vous pouvez modifiez ceci à tout moment en mettant à jour les {r1}détails de vos revenus{r2}.";
+"You can change this at any time by updating your {r1}income details{r2}." = "Vous pouvez modifiez ce paramètre plus tard avec la {r1}mise à jour de vos revenus{r2}.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "{days}d {hours}h {minutes}m left" = "{days}j {hours}h {minutes}min restantes";
@@ -508,7 +508,7 @@
 "Welcome, {username}!" = "Bienvenue, {username} !";
 
 /* views/pages/Join.vue */
-"You should ask for a new one. Sorry about that!" = "Vous devriez en demander un nouveau. Nous sommes désolés !";
+"You should ask for a new one. Sorry about that!" = "Merci de bien vouloir refaire votre demande.";
 
 /* views/containers/navigation/GroupsList.vue, views/containers/navigation/Navigation.vue, views/pages/Home.vue */
 "Add a group" = "Ajouter un groupe";
@@ -580,7 +580,7 @@
 "Mailbox" = "Boîte de réception";
 
 /* views/containers/payments/PaymentDetail.vue */
-"Mincome at the time" = "Revenu minimum actuel";
+"Mincome at the time" = "Revenu minimum pendant cette période";
 
 /* views/components/group-creation-steps/GroupRules.vue */
 "Define the number of people required to block a proposal." = "Définir le nombre de personnes requis pour bloquer une proposition.";
@@ -598,7 +598,7 @@
 "Total needed" = "Total requis";
 
 /* MISSING TRANSLATION - views/containers/design-system/DSModalNested.vue, views/containers/design-system/DSModalSimple.vue */
-"Toggle background" = "Montrer/cacher l'arrière-plan";
+"Toggle background" = "Afficher l'arrière-plan";
 
 /* MISSING TRANSLATION - views/containers/payments/MonthOverview.vue */
 "{value} of {max}" = "{value} sur {max}";
@@ -610,13 +610,13 @@
 "What's your monthly income?" = "Quel est votre revenu mensuel ?";
 
 /* views/components/VotingSystemInput.vue, views/components/group-creation-steps/GroupRules.vue */
-"Maximum number of \"no\" votes" = "Nombre maximal de votes \"non\"";
+"Maximum number of \"no\" votes" = "Nombre maximal de votes négatifs";
 
 /* views/pages/Contributions.vue */
 "No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like." = "Personne n'a besoin de contribution financière pour le moment. Vous pouvez toujours ajouter des contributions non monétaires si vous le souhaitez.";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"See application logs" = "Voir le fichier journal";
+"See application logs" = "Voir l'historique des transactions";
 
 /* views/pages/GroupSettings.vue */
 "Voting System" = "Système de Vote";
@@ -628,7 +628,7 @@
 "{numberOfResponses}/{quantity} used" = "{numberOfResponses}/{quantity} utilisées";
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
-"Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given." = "Indiquez le montant maximal que vous souhaitez contribuer chaque mois. Seulement le minimum nécessaire sera utilisé.";
+"Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given." = "Indiquez le montant maximal que vous souhaitez contribuer mensuellement. Seulement le minimum nécessaire sera utilisé.";
 
 /* views/containers/contributions/IncomeDetails.vue */
 "The method name for \"{methodValue}\" is missing." = "Le nom de la méthode \"{methodValue}\" n'a pas été trouvé.";
@@ -643,13 +643,13 @@
 "4. Voting System" = "4. Système de Vote";
 
 /* views/components/group-creation-steps/GroupName.vue */
-"The group picture must be a valid url" = "La photo du groupe doit être une URL valide";
+"The group picture must be a valid url" = "La photo du groupe doit être une adresse valide";
 
 /* views/pages/Join.vue */
 "Oh no! {br_}Your link has expired." = "Oh non ! {br_}Votre lien a expiré.";
 
 /* views/containers/proposals/ProposalItem.vue */
-"Proposal accepted!" = "Proposition acceptéz !";
+"Proposal accepted!" = "Proposition acceptée !";
 
 /* views/components/banners/BannerScoped.vue */
 "Dismiss message" = "Ignorer le message";
@@ -676,7 +676,7 @@
 "invite link" = "lien d'invitation";
 
 /* views/containers/contributions/GroupPledgesGraph.vue */
-"Based on other members pledges, the group is not able to provide a full mincome yet." = "Sur base des contributions actuelles de ses membres, le groupe n'est pas encore en mesure de garantir entièrement le revenu minimum défini.";
+"Based on other members pledges, the group is not able to provide a full mincome yet." = "Le groupe n'est pas encore en mesure de garantir entièrement le revenu minimum défini à partir des contributions actuelles.";
 
 /* views/containers/user-settings/UserProfile.vue */
 "Failed to update profile. {reportError}" = "La mise à jour du profil a échoué. {reportError}";
@@ -772,7 +772,7 @@
 "{who} invited you to join their group!" = "{who} vous a invité(e) à rejoindre son groupe !";
 
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
-"Debug" = "Déboguer";
+"Debug" = "Debug";
 
 /* views/containers/payments/PaymentDetail.vue, views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowSent.vue */
 "Payment details" = "Détails de paiement";
@@ -874,7 +874,7 @@
 "Sent by" = "Envoyé par";
 
 /* views/containers/design-system/DSModalNested.vue */
-"Open SubModal" = "Ouvrir un SubModal";
+"Open SubModal" = "Ouvrir la sous-fenêtre";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionItem.vue */
 "A total of {amount} to {listName}" = "Un total de {amount} à {listName}";
@@ -964,7 +964,7 @@
 "Recent error: \"{errorMsg}\". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot." = "Erreur récente : \"{errorMsg}\". Veuillez télécharger le fichier journal et {a_}nous l'envoyer{_a}, afin que nous puissions examiner le problème.";
 
 /* views/containers/proposals/RuleRemoveMember.vue */
-"Change Rule to Remove Member" = "Changer la Règle pour Renvoyer un Membre";
+"Change Rule to Remove Member" = "Changer la règle d'exclusion d'un membre";
 
 /* views/containers/access/PasswordModal.vue */
 "New Password" = "Nouveau Mot de Passe";
@@ -1111,7 +1111,7 @@
 "DELETE {GROUP_NAME}" = "SUPPRIMER {GROUP_NAME}";
 
 /* views/components/group-creation-steps/GroupRules.vue */
-"You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value." = "Vous devrez utiliser ce système pour voter des propositions. Vous pouvez par example proposer d'ajouter ou de renvoyer des membres, ou de modifier le revenu minimum de votre groupe.";
+"You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value." = "Vous devrez utiliser ce système pour voter vos propositions. Vous pouvez par example proposer d'ajouter ou d'exclure un membre, ou de modifier le revenu minimum du groupe.";
 
 /* views/containers/group-settings/GroupLeaveModal.vue */
 "If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}." = "Si vous quittez, vous n'aurez plus accès aux {strong_}conversations du groupe{_strong} ni aux {strong_}contributions{_strong}. Réintégrer le groupe plus tard est possible, mais requiert un {strong_}vote favorable{_strong} des autres membres.";
@@ -1447,7 +1447,7 @@
 "Save changes" = "Enregistrer les changements";
 
 /* views/containers/proposals/RemoveMember.vue */
-"Failed to propose to remove {member}: {reportError}" = "Il n'a pas été possible de proposer de renvoyer {member}: {reportError}";
+"Failed to propose to remove {member}: {reportError}" = "La proposition d'exclusion de {member} n'a pas été retenue : {reportError}";
 
 /* MISSING TRANSLATION - views/containers/contributions/Contribution.vue */
 "Free cinema tickets" = "Places de cinéma gratuites";
