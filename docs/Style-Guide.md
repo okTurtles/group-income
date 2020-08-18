@@ -20,6 +20,12 @@ If you notice any file not properly linted by `standard`, this means there's a b
 
 _It is still on you to ensure your code conforms to the `standard` spec, whether or not the linter catches everything._
 
+#### A Note On Classes: Avoid Them
+
+For this project we've made the very conscious decision to avoid Object Oriented Programming (OOP) as much as possible. Instead, we use [Selector-based Programming (SBP)](#sbp) instead. What this means in practice is that where you'd normally see classes being used, we ask that you use SBP namespaces instead.
+
+You may of course use any necessary classes that others have created if it is unavoidable (for example, some of the built-in Node.js classes). However, avoid creating your own class definitions. In the entire project there is only a single class that we have declared that acts as an exception to this rule, and that is `GIMessage`.
+
 ## Vue.js Style Guide
 
 Since this is a Vue.js project, any pull request **must** follow the *Priority A* rules mentioned in the [Vue.js Style Guide](https://vuejs.org/v2/style-guide/), and *should* follow the *Priority B* rules. Please take the time to read at least those two sections.
