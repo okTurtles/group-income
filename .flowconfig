@@ -22,6 +22,7 @@
 
 [libs]
 shared/declarations.js
+shared/libdefs
 
 [options]
 module.ignore_non_literal_requires=true
