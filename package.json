@@ -14,6 +14,8 @@
     "eslintfix": "eslint \"**/*.{js,vue}\" --fix",
     "i18n": "node scripts/i18n.js",
     "flow": "flow",
+    "flow-typed:install": "flow-typed install --ignoreDeps bundled peer --libdefDir ./shared/libdefs",
+    "flow-typed:update": "flow-typed update --ignoreDeps bundled peer --libdefDir ./shared/libdefs",
     "double": "PORT_SHIFT=1 grunt dev",
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh"
@@ -152,6 +154,7 @@
     "eslint-plugin-vue": "6.2.2",
     "flow-bin": "0.123.0",
     "flow-remove-types": "2.123.0",
+    "flow-typed": "3.2.1",
     "grunt": "1.1.0",
     "grunt-check-dependencies": "1.0.0",
     "grunt-contrib-clean": "2.0.0",
