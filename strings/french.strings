@@ -256,7 +256,7 @@
 "Cannot dismiss a payment that hasn't been sent yet." = "Il n'est pas possible de décliner un paiement qui n'a pas encore été envoyé.";
 
 /* views/containers/proposals/ProposalItem.vue */
-"Remove {user} from the group." = "Renvoyer {user} du groupe.";
+"Remove {user} from the group." = "Exclure {user} du groupe.";
 
 /* views/containers/proposals/Mincome.vue */
 "Failed to change mincome: {reportError}" = "La modification du revenu minimum a échoué: {reportError}";
@@ -367,7 +367,7 @@
 "Corrupted" = "Corrompu";
 
 /* views/containers/proposals/RemoveMember.vue */
-"Are you sure you want to remove {name} from the group?" = "Êtes-vous sûr(e) de vouloir renvoyer {name} de votre groupe ?";
+"Are you sure you want to remove {name} from the group?" = "Êtes-vous sûr(e) de vouloir exclure {name} de votre groupe ?";
 
 /* views/containers/group-settings/GroupVotingSystem.vue */
 "Percentage of members that need to agree:" = "Pourcentage nécessaire de votes positifs :";
@@ -409,7 +409,7 @@
 "Previous page" = "Page précédente";
 
 /* views/containers/proposals/RemoveMember.vue */
-"Remove {name} from the group" = "Renvoyer {name} du groupe";
+"Remove {name} from the group" = "Exclure {name} du groupe";
 
 /* views/pages/Messages.vue */
 "Messages" = "Messages";
@@ -562,7 +562,7 @@
 "Change vote." = "Changer le vote.";
 
 /* views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
-"In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others." = "Sur Group Income, chaque membre du groupe peut voter lors des décisions importantes, comme par exemple l'ajout ou le renvoi d'un membre, ou la modification du revenu mimimum.";
+"In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others." = "Sur Group Income, chaque membre du groupe peut voter lors des décisions importantes, comme par exemple l'ajout ou l'exclusion d'un membre, ou la modification du revenu mimimum.";
 
 /* views/containers/contributions/IncomeDetails.vue */
 "Failed to update income details. {reportError}" = "La mise à jour des détails de revenu a échoué. {reportError}";
@@ -1183,7 +1183,7 @@
 "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy} (you)." = "Ce membre n'a pas encore utilisé son lien d'invitation pour rejoindre le groupe. Ce lien devrait lui être communiqué par {invitedBy} (vous).";
 
 /* views/containers/proposals/ProposalItem.vue */
-"Remove {user} (you) from the group." = "Renvoyer {user} (vous) du groupe.";
+"Remove {user} (you) from the group." = "Exclure {user} (vous) du groupe.";
 
 /* views/containers/dashboard/StartInvitingWidget.vue */
 "Start sharing your resources with the ones who matter to you!" = "Commencez à partage vos ressources avec ceux qui comptent pour vous !";
@@ -1243,7 +1243,7 @@
 "This is optional." = "Ceci est optionnel.";
 
 /* views/containers/proposals/ProposalTemplate.vue, views/containers/proposals/RemoveMember.vue */
-"Remove Member" = "Renvoyer un Membre";
+"Remove Member" = "Exclure un Membre";
 
 /* views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "{name} (you)" = "{name} (vous)";
@@ -1318,7 +1318,7 @@
 "Log in" = "Se connecter";
 
 /* views/containers/proposals/AddMembers.vue */
-"Remove invitee" = "Renvoyer l'invité(e)";
+"Remove invitee" = "Exclure l'invité(e)";
 
 /* views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
 "An email is required." = "Une adresse email est requise.";
