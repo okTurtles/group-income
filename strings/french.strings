@@ -370,7 +370,7 @@
 "Are you sure you want to remove {name} from the group?" = "Êtes-vous sûr(e) de vouloir exclure {name} de votre groupe ?";
 
 /* views/containers/group-settings/GroupVotingSystem.vue */
-"Percentage of members that need to agree:" = "Pourcentage nécessaire de votes positifs :";
+"Percentage of members that need to agree:" = "Pourcentage de votes positifs requis :";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
 "Not used" = "Inutilisée";
@@ -490,13 +490,13 @@
 "2. Group Purpose" = "2. Description du groupe";
 
 /* views/containers/contributions/ContributionsWidget.vue */
-"At the moment, no one is in need of contributions." = "Personne n'a besoin d'aide financière pour le moment.";
+"At the moment, no one is in need of contributions." = "Personne n'a besoin de soutien financier pour le moment.";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Vote no" = "Voter non";
 
 /* views/containers/group-settings/InvitationLinkModal.vue, views/containers/proposals/AddMembers.vue */
-"Add new members" = "Ajouter un nouveau membre";
+"Add new members" = "Ajouter un membre";
 
 /* views/pages/Payments.vue */
 "You can change this at any time by updating your {r1}income details{r2}." = "Vous pouvez modifiez ce paramètre plus tard avec la {r1}mise à jour de vos revenus{r2}.";
@@ -700,7 +700,7 @@
 "Let’s get this party started" = "Que la fête commence";
 
 /* views/components/VotingSystemInput.vue */
-"What percentage of members need to agree?" = "Quel pourcentage des membres doivent approuver ?";
+"What percentage of members need to agree?" = "Quel est le pourcentage de votes positifs nécessaire ?";
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "{amount} will be used." = "{amount} seront utilisés.";
@@ -778,7 +778,7 @@
 "Payment details" = "Détails de paiement";
 
 /* views/components/VotingSystemInput.vue */
-"The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}." = "Le pourcentage que vous choisissez est vraisemblablement trop bas pour une décision qui peut potentiellement avoir un impact significatif sur la qualité de vie d'une personne. Veuillez considérer l'usage d'un {a_}seuil de supermajorité{_a}.";
+"The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}." = "Le pourcentage que vous choisissez est vraisemblablement trop bas pour une décision aussi importante. Avez-vous considéré l'usage d'un {a_}seuil de supermajorité{_a} ?";
 
 /* views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
 "This field is required" = "Ce champ est requis";
@@ -811,7 +811,7 @@
 "There are no non-monetary contributions." = "Il n'y a pas de contributions non-monétaires.";
 
 /* views/containers/group-settings/GroupVotingSystem.vue */
-"Maximum number of \"no\" votes:" = "Nombre maximal de votes \"non\" :";
+"Maximum number of \"no\" votes:" = "Nombre maximal de votes négatifs :";
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "Non-monetary" = "Non-monétaire";
@@ -820,7 +820,7 @@
 "Share" = "Partager";
 
 /* views/pages/GroupChat.vue */
-"Channels" = "Canaux";
+"Channels" = "Canaux de discussion";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "new" = "nouveau";
@@ -868,7 +868,7 @@
 "Menu" = "Menu";
 
 /* views/pages/GroupChat.vue */
-"Search for a channel" = "Rechercher un canal";
+"Search for a channel" = "Rechercher un groupe de discussion";
 
 /* views/pages/Payments.vue */
 "Sent by" = "Envoyé par";
