@@ -391,7 +391,7 @@
 "Loading" = "Chargement";
 
 /* views/containers/payments/MonthOverview.vue */
-"{month} overview" = "résumé : {month}";
+"{month} overview" = "{month} en résumé";
 
 /* views/containers/dashboard/GroupMembersAllModal.vue */
 "Showing {strong_}1 result{_strong} for \"{searchTerm}\"" = "{strong_}1 résultat{_strong} correspond à la recherche \"{searchTerm}\"";
@@ -622,7 +622,7 @@
 "Voting System" = "Système de Vote";
 
 /* views/components/group-creation-steps/GroupMincome.vue */
-"Currency" = "Unité monétaire";
+"Currency" = "Devise";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "{numberOfResponses}/{quantity} used" = "{numberOfResponses}/{quantity} utilisées";
@@ -1186,10 +1186,10 @@
 "Remove {user} (you) from the group." = "Exclure {user} (vous) du groupe.";
 
 /* views/containers/dashboard/StartInvitingWidget.vue */
-"Start sharing your resources with the ones who matter to you!" = "Commencez à partage vos ressources avec ceux qui comptent pour vous !";
+"Start sharing your resources with the ones who matter to you!" = "Commencez à partager vos ressources avec ceux qui comptent pour vous !";
 
 /* views/pages/GroupSettings.vue */
-"This is the currency that will be displayed for every member of the group, across the platform." = "Ceci est la monnaie qui sera affichée pour chaque membre du group, sur toute la plate-forme.";
+"This is the currency that will be displayed for every member of the group, across the platform." = "Ceci est la devise qui sera affichée pour chaque membre du groupe, sur toute la plate-forme.";
 
 /* views/pages/Join.vue */
 "Something went wrong. Please, try again." = "Une erreur s'est produite. Veuillez réessayer.";
@@ -1237,7 +1237,7 @@
 "Failed to cancel proposal. {reportError}" = "L'annulation de la proposition a échoué. {reportError}";
 
 /* MISSING TRANSLATION - views/pages/Contributions.vue */
-"No one is pledging money at the moment." = "Personne ne contribue de l'argent pour le moment.";
+"No one is pledging money at the moment." = "Personne ne contribue financièrement pour le moment.";
 
 /* views/containers/proposals/ProposalTemplate.vue */
 "This is optional." = "Ceci est optionnel.";
@@ -1258,7 +1258,7 @@
 "Current Password" = "Mot de Passe actuel";
 
 /* views/pages/GroupSettings.vue */
-"Default currency" = "Unité monétaire par défaut";
+"Default currency" = "Devise par défaut";
 
 /* views/components/group-creation-steps/GroupRules.vue */
 "You can change this later in your Group Settings." = "Vous pouvez changer cela plus tard dans les Paramètres de Groupe.";
@@ -1333,7 +1333,7 @@
 "Received" = "Reçu";
 
 /* views/components/group-creation-steps/GroupMincome.vue */
-"This value can be adjusted in the future." = "Cette valeur peut être ajustée dans le futur.";
+"This value can be adjusted in the future." = "Cette valeur peut être ajustée ultérieurement.";
 
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
 "Add your income details" = "Indiquer vos détails de revenu";
@@ -1342,7 +1342,7 @@
 "Go to step {num}" = "Aller à l'étape {num}";
 
 /* views/containers/group-settings/GroupCreationModal.vue */
-"Step {current} of {max}" = "Étape {current} de {max}";
+"Step {current} of {max}" = "Étape {current} sur {max}";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Invite links" = "Liens d'invitation";
@@ -1372,7 +1372,7 @@
 "Compose:" = "Composer :";
 
 /* views/containers/group-settings/InvitationsTable.vue */
-"To generate a new link, you need to {r1}propose adding a new member{r2} to your group." = "Pour générer un nouveau lien, vous devez {r1}proposer d'ajouter un nouveau membre {r2} à votre groupe.";
+"To generate a new link, you need to {r1}propose adding a new member{r2} to your group." = "Pour générer un nouveau lien, vous devez {r1}proposer l'ajout d'un nouveau membre {r2} à votre groupe.";
 
 /* views/containers/payments/PaymentsPagination.vue */
 "Show:" = "Afficher :";
@@ -1393,7 +1393,7 @@
 "Total covered" = "Total couvert";
 
 /* views/containers/contributions/Contribution.vue */
-"Remove" = "Enlever";
+"Remove" = "Supprimer";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
 "Send payments" = "Envoyer des paiements";
