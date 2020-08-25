@@ -16,5 +16,8 @@
     },
     "validateDivTags": true,
     "validateIndentation": 2,
-    "validateSelfClosingTags": true
+    "validateSelfClosingTags": true,
+    
+    "validateI18n": true,
+    "additionalRules": ["pug-lint-rules/*.js"]
 }
