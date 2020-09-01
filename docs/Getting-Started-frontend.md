@@ -195,7 +195,7 @@ The JavaScript language is always evolving. Oftentimes new features will be "sol
 
 ###### __[Vue.js](http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/)__ - _Modern Frontend Component Framework_
 
-A frontend web framework that takes some inspiration from React, but is simply better in many ways (TLDR: just as powerful and *far* simpler):
+A frontend web framework that takes some inspiration from React, but is simpler and follows traditional HTML standards more closely:
 
 - [http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/](http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/)
 - [https://vuejs.org/guide/comparison.html](https://vuejs.org/guide/comparison.html)
