@@ -60,6 +60,8 @@ async function startApp () {
     strategy: ['disconnect', 'online', 'timeout']
   })
 
+  await sbp('translations/init', navigator.language)
+
   const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
   if (username) {
     const identityContractID = await sbp('namespace/lookup', username)
