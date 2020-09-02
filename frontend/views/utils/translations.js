@@ -1,10 +1,57 @@
 'use strict'
 
 import Vue from 'vue'
+import sbp from '~/shared/sbp.js'
 import template from '~/frontend/utils/stringTemplate.js'
 
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags
+
+const defaultLanguage = 'en-US'
+const defaultLanguageCode = 'en'
+const defaultTranslationTable: { [string]: string }  = {}
+
+let currentLanguage = defaultLanguage
+let currentTranslationTable = defaultTranslationTable
+
+/**
+ * Loads the translation file corresponding to a given language.
+ *
+ * @param language - A BPC-47 language tag like the value
+ * of `navigator.language`.
+ *
+ * Language tags must be compared in a case-insensitive way (§2.1.1.).
+ *
+ * @see https://tools.ietf.org/rfc/bcp/bcp47.txt
+ */
+sbp('sbp/selectors/register', {
+  'translations/init': async function init(language: string): Promise<void> {
+    // A language code is usually the first part of a language tag.
+    const [languageCode] = language.toLowerCase().split('-')
+
+    // No need to do anything if the requested language is already in use.
+    if (language.toLowerCase() === currentLanguage.toLowerCase()) return
+
+    // We can also return early if only the language codes match,
+    //   since we don't have culture-specific translations yet.
+    if (languageCode === currentLanguageCode) return
+
+    // Avoid fetching any ressource if the requested language is the default one.
+    if (languageCode === defaultLanguageCode) {
+      currentLanguage === defaultLanguage
+      translationTable = defaultTranslationTable
+      return
+    }
+    try {
+      currentTranslationTable = await sbp('backend/translations/get', language)
+
+      // Only set `currentLanguage` if there was no error fetching the ressource.
+      currentLanguage = language
+    } catch (error) {
+      console.log(error)
+    }
+  }
+})
 
 /*
 Examples:
@@ -59,10 +106,9 @@ export function LTags (...tags) {
 
 export default function L (
   key: string,
-  args: Array<*> | Object | void,
-  options: ?Object
+  args: Array<*> | Object | void
 ) {
-  return template(key, args)
+  return template(currentTranslationTable[key] || key, args)
 }
 
 export function LError (error) {
@@ -87,7 +133,7 @@ Vue.component('i18n', {
   },
   render: function (h, context) {
     const text = context.children[0].text
-    const translation = L(text, context.props.args || {}, { defaultValue: text })
+    const translation = L(text, context.props.args || {})
     if (!translation) {
       console.warn('The following i18n text was not translated correctly:', text)
       return h(context.props.tag, context.data, text)
