@@ -11,6 +11,9 @@
 /groupincome.db
 /test.db
 
+# Flow-typed libdefs
+/shared/libdefs
+
 # Logs
 *.log
 
