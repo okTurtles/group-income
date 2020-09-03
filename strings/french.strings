@@ -340,7 +340,7 @@
 "Change Mincome" = "Modifier le revenu minimum";
 
 /* views/components/modal/ModalClose.vue */
-"ESC" = "Échappe";
+"ESC" = "ESC";
 
 /* views/containers/payments/PaymentDetail.vue */
 "Notes" = "Notes";
@@ -1264,7 +1264,7 @@
 "You can change this later in your Group Settings." = "Vous pouvez changer cela plus tard dans les Paramètres de Groupe.";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
-"Are you sure you want to vote no?" = "Êtes-vous sûr de vouloir voter non ?";
+"Are you sure you want to vote no?" = "Êtes-vous sûr(e) de vouloir voter non ?";
 
 /* views/containers/contributions/Contribution.vue, views/containers/dashboard/GroupMembers.vue */
 "Add" = "Ajouter";

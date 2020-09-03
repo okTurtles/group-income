@@ -8,6 +8,7 @@ import { blake32Hash } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import chalk from 'chalk'
 import './database.js'
+import './translations.js'
 
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
@@ -161,6 +162,15 @@ route.POST('/file', {
 route.GET('/file/{hash}', {}, function (request, h) {
   try {
     return sbp('backend/db/readFile', request.params.hash)
+  } catch (err) {
+    logger(err)
+    return Boom.notFound()
+  }
+})
+
+route.GET('/translations/get/{language}', {}, async function (request, h) {
+  try {
+    return await sbp('backend/translations/get', request.params.language)
   } catch (err) {
     logger(err)
     return Boom.notFound()

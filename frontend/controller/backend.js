@@ -144,5 +144,9 @@ sbp('sbp/selectors/register', {
   'backend/latestHash': (contractID: string) => {
     return fetch(`${process.env.API_URL}/latestHash/${contractID}`)
       .then(handleFetchResult('text'))
+  },
+  'backend/translations/get': (language: string) => {
+    return fetch(`${process.env.API_URL}/translations/get/${language}`)
+      .then(handleFetchResult('json'))
   }
 })
