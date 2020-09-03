@@ -29,7 +29,9 @@ export default sbp('sbp/selectors/register', {
     try {
       return await readFileAsync(filePath)
     } catch (error) {
-      throw new Error(`No translation file was found for ${language}.`)
+      throw new Error(
+        `Could not read translation file for language '${language}': ${error.message}`
+      )
     }
   }
 })

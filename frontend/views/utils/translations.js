@@ -51,7 +51,7 @@ sbp('sbp/selectors/register', {
       currentLanguage = language
       currentLanguageCode = languageCode
     } catch (error) {
-      console.log(error)
+      console.error(error)
     }
   }
 })

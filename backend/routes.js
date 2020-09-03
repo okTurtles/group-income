@@ -168,9 +168,9 @@ route.GET('/file/{hash}', {}, function (request, h) {
   }
 })
 
-route.GET('/translations/get/{language}', {}, function (request, h) {
+route.GET('/translations/get/{language}', {}, async function (request, h) {
   try {
-    return sbp('backend/translations/get', request.params.language)
+    return await sbp('backend/translations/get', request.params.language)
   } catch (err) {
     logger(err)
     return Boom.notFound()
