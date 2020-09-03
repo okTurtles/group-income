@@ -9,9 +9,10 @@ Vue.prototype.LTags = LTags
 
 const defaultLanguage = 'en-US'
 const defaultLanguageCode = 'en'
-const defaultTranslationTable: { [string]: string }  = {}
+const defaultTranslationTable: { [string]: string } = {}
 
 let currentLanguage = defaultLanguage
+let currentLanguageCode = defaultLanguage.split('-')[0]
 let currentTranslationTable = defaultTranslationTable
 
 /**
@@ -25,7 +26,7 @@ let currentTranslationTable = defaultTranslationTable
  * @see https://tools.ietf.org/rfc/bcp/bcp47.txt
  */
 sbp('sbp/selectors/register', {
-  'translations/init': async function init(language: string): Promise<void> {
+  'translations/init': async function init (language: string): Promise<void> {
     // A language code is usually the first part of a language tag.
     const [languageCode] = language.toLowerCase().split('-')
 
@@ -38,8 +39,9 @@ sbp('sbp/selectors/register', {
 
     // Avoid fetching any ressource if the requested language is the default one.
     if (languageCode === defaultLanguageCode) {
-      currentLanguage === defaultLanguage
-      translationTable = defaultTranslationTable
+      currentLanguage = defaultLanguage
+      currentLanguageCode = defaultLanguageCode
+      currentTranslationTable = defaultTranslationTable
       return
     }
     try {
@@ -47,6 +49,7 @@ sbp('sbp/selectors/register', {
 
       // Only set `currentLanguage` if there was no error fetching the ressource.
       currentLanguage = language
+      currentLanguageCode = languageCode
     } catch (error) {
       console.log(error)
     }

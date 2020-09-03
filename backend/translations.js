@@ -29,7 +29,7 @@ export default sbp('sbp/selectors/register', {
     try {
       return await readFileAsync(filePath)
     } catch (error) {
-      throw new Error(`No translation file was found for language ${language}.`)
+      throw new Error(`No translation file was found for ${language}.`)
     }
   }
 })
