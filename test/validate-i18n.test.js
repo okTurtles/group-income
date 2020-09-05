@@ -8,7 +8,7 @@ const linter = new PugLinter()
 
 linter.configure(
   {
-    additionalRules: ['pug-lint-rules/*.js'],
+    additionalRules: ['scripts/validate-i18n.js'],
     validateI18n: true
   }
 )

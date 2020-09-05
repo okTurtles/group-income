@@ -19,5 +19,5 @@
     "validateSelfClosingTags": true,
     
     "validateI18n": true,
-    "additionalRules": ["pug-lint-rules/*.js"]
+    "additionalRules": ["scripts/validate-i18n.js"]
 }
