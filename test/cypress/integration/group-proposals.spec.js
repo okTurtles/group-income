@@ -273,7 +273,7 @@ describe('Proposals - Add members', () => {
     cy.visit(invitationLinks.user6) // already used on the previous test
     cy.getByDT('pageTitle')
       .invoke('text')
-      .should('contain', 'Oh no! Your link has expired.')
+      .should('contain', 'Oh no! This invite is not valid')
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
     cy.get('button').click()
     cy.url().should('eq', 'http://localhost:8000/app/')
@@ -284,7 +284,7 @@ describe('Proposals - Add members', () => {
     cy.visit('http://localhost:8000/app/join?groupId=321&secret=123')
     cy.getByDT('pageTitle')
       .invoke('text')
-      .should('contain', 'Oh no! Something went wrong.')
+      .should('contain', 'Oh no! This invite is not valid')
     cy.getByDT('helperText').should('contain', 'Something went wrong. Please, try again. 404: Not Found')
     cy.get('button').click()
     cy.url().should('eq', 'http://localhost:8000/app/')
