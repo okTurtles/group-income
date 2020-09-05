@@ -50,7 +50,7 @@ export function createInvite (
     invitee,
     status: INVITE_STATUS.VALID,
     responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: 1638588240000 // 04 december 2021.
+    expires: 1638588240000 // 04 december 2021. // TODO this
   }
 }
 
@@ -603,7 +603,6 @@ DefineContract({
         }
       },
       process ({ data, meta }, { state, getters }) {
-        console.debug('inviteRevoke:', data, state.invites)
         const invite = state.invites[data.inviteSecret]
         Vue.set(invite, 'status', INVITE_STATUS.REVOKED)
       }

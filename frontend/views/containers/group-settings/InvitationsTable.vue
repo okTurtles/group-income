@@ -211,7 +211,7 @@ export default {
       if (days) return L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
       if (hours) return L('{hours}h {minutes}m left', { hours, minutes })
       if (minutes) return L('{minutes}m left', { minutes })
-      return L('Not used')
+      return L('Expired')
     },
     mapInvite ({
       creator,
