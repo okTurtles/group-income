@@ -215,7 +215,7 @@ function parseExpression (source) {
   let node
 
   try {
-    node = acorn.parseExpressionAt(source, 0)
+    node = acorn.parseExpressionAt(source, 0, { ecmaVersion: 2020 })
 
     // This should never happen unless Acorn behaves in an unexpected way.
     if (!node) {
