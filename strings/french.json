@@ -1,4 +1,4 @@
-{,
+{
   "Failed to create payment. {reportError}": "Failed to create payment. {reportError}",
   "Failed to create the group: {reportError}": "Failed to create the group: {reportError}",
   "Failed to join the group: {codeError}": "Failed to join the group: {codeError}",
@@ -517,7 +517,7 @@
   "Voting System": "Système de Vote",
   "Enter an existing group using your username.": "Rejoindre un groupe existant via votre nom d'utilisateur.",
   "Join": "Rejoindre",
-  "Let’s get this party started": "Que la fête commence"
+  "Let’s get this party started": "Que la fête commence",
   "Logout": "Déconnexion",
   "Signup": "Créer un compte",
   "Welcome to GroupIncome": "Bienvenue sur GroupIncome",
