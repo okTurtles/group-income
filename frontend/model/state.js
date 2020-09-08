@@ -38,14 +38,20 @@ var dropAllMessagesUntilRefresh = false
 var attemptToReprocessMessageID
 const contractIsSyncing: {[string]: boolean} = {}
 
+let defaultTheme = THEME_LIGHT
+if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  defaultTheme = THEME_DARK
+}
+
 const initialState = {
   currentGroupId: null,
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: THEME_LIGHT,
+  theme: defaultTheme,
   reducedMotion: false,
-  fontSize: 1,
+  increasedContrast: false,
+  fontSize: 16,
   appLogsFilter: process.env.NODE_ENV === 'development'
     ? ['error', 'warn', 'debug', 'log']
     : ['error', 'warn']
@@ -193,6 +199,9 @@ const mutations = {
   },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
+  },
+  setIncreasedContrast (state, isChecked) {
+    state.increasedContrast = isChecked
   },
   setFontSize (state, fontSize) {
     state.fontSize = fontSize
@@ -612,6 +621,9 @@ const getters = {
 
   colors (state) {
     return Colors[state.theme]
+  },
+  fontSize (state) {
+    return state.fontSize
   },
   isDarkTheme (state) {
     return Colors[state.theme].theme === THEME_DARK

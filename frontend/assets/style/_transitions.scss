@@ -16,7 +16,7 @@
   transition: max-height 0.3s ease;
 
   /* Todo: move that to dynmaic js, so it's mnore generic */
-  max-height: 150px;
+  max-height: 10rem;
   overflow: hidden;
 }
 
@@ -31,7 +31,7 @@
   opacity: 1;
 
   /* Todo: move that to dynamic js, so it's mnore generic */
-  max-height: 150px;
+  max-height: 10rem;
   overflow: hidden;
 }
 
@@ -51,8 +51,6 @@
 .slide-prev-enter-active,
 .slide-prev-leave-active {
   @include tablet {
-    position: absolute;
-    width: 100%;
     transition: transform 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86), opacity 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86) 0.1s;
   }
 }

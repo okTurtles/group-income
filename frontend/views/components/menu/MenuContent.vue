@@ -44,7 +44,7 @@ export default {
   z-index: 2;
   border-radius: $radius;
   background-color: $background;
-  box-shadow: 0px 8px 20px rgba(54, 54, 54, 0.3);
+  box-shadow: 0px 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
   max-height: 0;
   opacity: 0;
   overflow: hidden;

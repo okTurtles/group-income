@@ -78,8 +78,8 @@ export default {
 
   @include desktop {
     position: relative;
-    border-radius: 6px;
-    max-width: 640px;
+    border-radius: 0.375rem;
+    max-width: 40rem;
     height: auto;
     margin: auto;
     transition: none !important;
@@ -109,10 +109,10 @@ export default {
   max-width: calc(100% - 2rem);
 
   @include tablet {
-    max-width: 534px;
+    max-width: 33.375rem;
   }
   @include desktop {
-    max-width: 400px;
+    max-width: 25rem;
   }
 }
 
@@ -141,8 +141,8 @@ export default {
     }
   }
 
-  @media screen and (max-height: 500px) {
-    min-height: 50px;
+  @media screen and (max-height: 31rem) {
+    min-height: 5.125rem;
   }
 }
 
