@@ -33,7 +33,7 @@ export default sbp('sbp/selectors/register', {
       try {
         finalPicture = await imageUpload(picture)
       } catch (e) {
-        console.error('actions/group.js to upload the group picture', e)
+        console.error('actions/group.js failed to upload the group picture', e)
         throw new GIErrorUIRuntimeError(L('Failed to upload the group picture. {codeError}', { codeError: e.message }))
       }
     }

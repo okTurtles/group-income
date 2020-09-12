@@ -2,7 +2,7 @@ import { blake32Hash } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 
 // Copied from https://stackoverflow.com/a/27980815/4737729
-export function b64toBlob (dataURI) {
+export function imageDataURItoBlob (dataURI) {
   var byteString = atob(dataURI.split(',')[1])
   var ab = new ArrayBuffer(byteString.length)
   var ia = new Uint8Array(ab)
@@ -10,6 +10,8 @@ export function b64toBlob (dataURI) {
   for (var i = 0; i < byteString.length; i++) {
     ia[i] = byteString.charCodeAt(i)
   }
+  // Accepts only JPEGs and assumes dataURI begins with: "data:image/jpeg;base64,"
+  // TODO support images in PNG, GIF, etc...
   return new Blob([ab], { type: 'image/jpeg' })
 }
 

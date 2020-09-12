@@ -50,7 +50,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { b64toBlob } from '@utils/image.js'
+import { imageDataURItoBlob } from '@utils/image.js'
 
 export default {
   name: 'SignupForm',
@@ -89,7 +89,7 @@ export default {
           username: this.form.username,
           email: this.form.email,
           password: this.form.password,
-          picture: this.form.pictureBase64 ? b64toBlob(this.form.pictureBase64) : ''
+          picture: this.form.pictureBase64 ? imageDataURItoBlob(this.form.pictureBase64) : ''
         })
         this.$emit('submitSucceeded')
       } catch (e) {

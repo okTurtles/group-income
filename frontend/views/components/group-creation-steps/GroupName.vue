@@ -38,7 +38,7 @@
 
 <script>
 import Avatar from '@components/Avatar.vue'
-import { b64toBlob } from '@utils/image.js'
+import { imageDataURItoBlob } from '@utils/image.js'
 
 export default {
   name: 'GroupName',
@@ -72,7 +72,7 @@ export default {
     if (!this.$assistant.ephemeral.groupPictureFile) {
       const pictureBase64 = this.$refs.pictureCanvas.toDataURL('image/png')
       this.$v.form.groupPicture.$touch()
-      this.$assistant.ephemeral.groupPictureFile = b64toBlob(pictureBase64)
+      this.$assistant.ephemeral.groupPictureFile = imageDataURItoBlob(pictureBase64)
       this.$assistant.ephemeral.groupPictureType = 'canvas'
     }
   },
