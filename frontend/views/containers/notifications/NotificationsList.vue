@@ -171,7 +171,11 @@ export default {
 
 .c-title {
   display: block;
-  padding: 0 0 0.5rem 0.5rem;
+  padding: 0 0 0.5rem;
+
+  @include tablet {
+    padding-left: 0.5rem;
+  }
 
   .compact & {
     padding-left: 1rem;

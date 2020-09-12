@@ -82,7 +82,7 @@ export default {
   .c-btnSettings {
     position: absolute;
     left: 1rem;
-    margin-top: 4rem;
+    margin-top: 8rem;
   }
 
   .c-card {
