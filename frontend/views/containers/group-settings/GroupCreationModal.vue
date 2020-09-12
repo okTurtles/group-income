@@ -55,8 +55,8 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
 import proposals from '@model/contracts/voting/proposals.js'
 import { PROPOSAL_GENERIC } from '@model/contracts/voting/constants.js'
+import currencies, { mincomePositive, saferFloat } from '@view-utils/currencies.js'
 import L from '@view-utils/translations.js'
-import { decimals } from '@view-utils/validators.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
@@ -113,7 +113,7 @@ export default {
           name: this.form.groupName,
           picture: this.ephemeral.groupPictureFile,
           sharedValues: this.form.sharedValues,
-          mincomeAmount: this.form.mincomeAmount,
+          mincomeAmount: saferFloat(this.form.mincomeAmount),
           mincomeCurrency: this.form.mincomeCurrency,
           ruleName: this.form.ruleName,
           ruleThreshold: this.form.ruleThreshold[this.form.ruleName]
@@ -165,9 +165,11 @@ export default {
       groupPicture: { },
       sharedValues: { },
       mincomeAmount: {
-        required,
-        minValue: (val) => val > 0,
-        decimals: decimals(2)
+        [L('This field is required')]: required,
+        [L('Oops, you entered 0 or a negative number')]: mincomePositive,
+        [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
+          return currencies[this.form.mincomeCurrency].validate(value)
+        }
       },
       mincomeCurrency: {
         required

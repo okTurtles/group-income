@@ -64,7 +64,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
 
     group-pledges-graph.c-graph(
       :type='form.incomeDetailsType'
-      :amount='form.amount === "" ? undefined : +form.amount'
+      :amount='form.amount === "" ? undefined : saferFloat(form.amount)'
     )
 </template>
 
@@ -72,7 +72,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
 import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import { decimals } from '@view-utils/validators.js'
+import currencies, { mincomePositive, saferFloat } from '@view-utils/currencies.js'
 import sbp from '~/shared/sbp.js'
 import PaymentMethods from './PaymentMethods.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
@@ -150,6 +150,7 @@ export default {
     }
   },
   methods: {
+    saferFloat,
     resetAmount () {
       this.form.amount = this.form.incomeDetailsType === this.ourGroupProfile.incomeDetailsType ? this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType] : ''
       this.$v.form.$reset()
@@ -192,7 +193,7 @@ export default {
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
           {
             incomeDetailsType,
-            [incomeDetailsType]: +this.form.amount,
+            [incomeDetailsType]: saferFloat(this.form.amount),
             paymentMethods
           },
           this.$store.state.currentGroupId
@@ -211,11 +212,13 @@ export default {
         [L('This field is required')]: required
       },
       amount: {
-        [L('Oops, you entered a negative number')]: v => v >= 0,
-        [L('The amount cannot have more than 2 decimals')]: decimals(2),
         [L('This field is required')]: required,
+        [L('Oops, you entered 0 or a negative number')]: mincomePositive,
+        [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
+          return currencies[this.groupSettings.mincomeCurrency].validate(value)
+        },
         [L('Your income must be lower than the group mincome')]: function (value) {
-          return !this.needsIncome || value < this.groupSettings.mincomeAmount
+          return !this.needsIncome || saferFloat(value) < this.groupSettings.mincomeAmount
         }
       }
     }
