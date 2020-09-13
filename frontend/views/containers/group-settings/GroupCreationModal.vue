@@ -146,7 +146,8 @@ export default {
         rulesOrder: Math.round(Math.random()) ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE]
       },
       ephemeral: {
-        groupPictureFile: '' // passed by GroupName.vue
+        groupPictureFile: '', // passed by GroupName.vue
+        groupPictureType: null // 'canvas' || 'image'
       },
       config: {
         steps: [
