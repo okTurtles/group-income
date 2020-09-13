@@ -11,14 +11,14 @@ proposal-template(
     p.has-text-1.c-desc(v-if='changeSystem' v-html='changeSystem' data-test='changeSystem')
 
     voting-rules-input.c-input(
-      v-if='rule'
-      :rule='rule'
+      v-if='config.rule'
+      :rule='config.rule'
       :value='form.threshold'
       @update='setThreshold'
     )
 
     // REVIEW - Why disagreement has an explanation but percentage doesn't?
-    template(v-if='rule === RULE_DISAGREEMENT')
+    template(v-if='config.rule === RULE_DISAGREEMENT')
       i18n.has-text-1(v-if='form.threshold > 1' :args='{nr: form.threshold}') Future proposals would be accepted if {nr} or fewer members disagree.
       i18n.has-text-1(v-else :args='LTags("b")') Future proposals would be accepted if {b_}no one{_b} disagrees.
 
@@ -28,7 +28,7 @@ proposal-template(
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapGetters, mapState } from 'vuex'
-import { CLOSE_MODAL } from '@utils/events.js'
+import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import L, { LTags } from '@view-utils/translations.js'
 import { proposalDefaults } from '@model/contracts/voting/proposals.js'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
@@ -44,18 +44,12 @@ export default {
     ProposalTemplate,
     VotingRulesInput
   },
-  props: {
-    rule: {
-      type: String,
-      validator: (value) => [RULE_DISAGREEMENT, RULE_PERCENTAGE].includes(value)
-      // default: RULE_DISAGREEMENT // TODO this. Related to #935
-    }
-  },
   data () {
     return {
       RULE_DISAGREEMENT,
       config: {
-        steps: ['VotingSystem']
+        steps: ['VotingSystem'],
+        rule: null
       },
       form: {
         threshold: null,
@@ -68,12 +62,17 @@ export default {
     }
   },
   created () {
-    if (!this.rule) {
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
-    } else {
-      this.form.threshold = this.rule === this.proposalSettings.rule
+    const rule = this.$route.query.rule
+
+    if (rule) {
+      sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'ChangeVotingRules', { rule })
+      this.config.rule = rule
+      this.form.threshold = rule === this.proposalSettings.rule
         ? this.currentThreshold
-        : proposalDefaults.ruleSettings[this.rule].threshold
+        : proposalDefaults.ruleSettings[rule].threshold
+    } else {
+      console.warn('RemoveMember: Missing valid query "rule".')
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },
   watch: {
@@ -98,16 +97,16 @@ export default {
     },
     currentThreshold () {
       // Only check currentThreshold if the system is the same.
-      return this.changeSystem ? null : this.proposalSettings.ruleSettings[this.rule].threshold
+      return this.changeSystem ? null : this.proposalSettings.ruleSettings[this.config.rule].threshold
     },
     title () {
-      if (this.proposalSettings.rule === this.rule) {
+      if (this.proposalSettings.rule === this.config.rule) {
         return L('Change voting rules')
       }
       return L('Change voting system')
     },
     changeSystem () {
-      if (this.proposalSettings.rule === this.rule) {
+      if (this.proposalSettings.rule === this.config.rule) {
         return ''
       }
 
@@ -119,7 +118,7 @@ export default {
       return L('Change from a {b_}{oldSystem}{_b} voting system to a {b_}{newSystem}{_b} voting system.', {
         ...LTags('b'),
         oldSystem: nameMap[this.proposalSettings.rule],
-        newSystem: nameMap[this.rule]
+        newSystem: nameMap[this.config.rule]
       })
     }
   },
@@ -151,7 +150,7 @@ export default {
                   ruleName: this.proposalSettings.rule,
                   ruleThreshold: this.currentThreshold
                 },
-                ruleName: this.rule,
+                ruleName: this.config.rule,
                 ruleThreshold: +this.form.threshold,
                 reason: this.form.reason
               },
@@ -170,7 +169,7 @@ export default {
       } else {
         try {
           await sbp('gi.actions/group/updateAllVotingRules', {
-            ruleName: this.rule,
+            ruleName: this.config.rule,
             ruleThreshold: +this.form.threshold
           }, this.currentGroupId)
 

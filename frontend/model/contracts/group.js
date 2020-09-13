@@ -468,7 +468,7 @@ DefineContract({
         if (!state.profiles[memberToRemove]) {
           throw new TypeError(L('Not part of the group.'))
         }
-        if (membersCount === 1) {
+        if (membersCount === 1 || memberToRemove === meta.username) {
           throw new TypeError(L('Cannot remove yourself.'))
         }
 
