@@ -12,7 +12,7 @@
           tag='button'
           item-id='message'
           icon='info'
-          @click='openModal("PaymentDetail", { payment, needsIncome })'
+          @click='openModal("PaymentDetail", { id: payment.hash })'
         )
           i18n Payment details
 
@@ -57,9 +57,6 @@ export default {
       'ourGroupProfile',
       'withGroupCurrency'
     ]),
-    needsIncome () {
-      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    },
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
     }

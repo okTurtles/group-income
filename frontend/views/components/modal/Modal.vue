@@ -1,19 +1,21 @@
 <template lang='pug'>
   div
-    component(:is='content' ref='content' v-bind='contentProps')
-    component(:is='subcontent[subcontent.length-1]' v-bind='subContentProps')
+    component(:is='content' ref='content')
+    component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
 import sbp from '~/shared/sbp.js'
-import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
+
 export default {
   name: 'Modal',
   data () {
     return {
       content: null, // Main modal
-      contentProps: {}, // Custom props passed down to the main modal
       subcontent: [], // Collection of modal on top of modals
-      subContentProps: {}, // Custom props passed down to the sub modal
+      queries: { // Queries to be used by modals
+        // [modalName]: { queryKey: queryValue }
+      },
       replacement: null, // Replace the modal once the first one is close without updating the url
       lastFocus: null // Record element that open the modal
     }
@@ -22,13 +24,13 @@ export default {
     sbp('okTurtles.events/on', OPEN_MODAL, this.openModal)
     sbp('okTurtles.events/on', CLOSE_MODAL, this.unloadModal)
     sbp('okTurtles.events/on', REPLACE_MODAL, this.replaceModal)
+    sbp('okTurtles.events/on', SET_MODAL_QUERIES, this.setModalQueries)
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
   },
   mounted () {
-    const modal = this.$route.query.modal
+    const { modal, subcontent } = this.$route.query
     if (modal) this.openModal(modal)
-    const subcontent = this.$route.query.subcontent
     if (subcontent) this.openModal(subcontent)
   },
   beforeDestroy () {
@@ -64,7 +66,6 @@ export default {
   },
   methods: {
     handleKeyUp (e) {
-      // Only if there an active modal
       if (this.content && e.key === 'Escape') {
         e.preventDefault()
         this.unloadModal()
@@ -75,32 +76,43 @@ export default {
     },
     updateUrl () {
       if (this.content) {
+        const contentQueries = this.queries[this.content] || {}
+        const subContentQueries = this.queries[this.subcontent[this.subcontent.length - 1]] || {}
         this.$router.push({
           query: {
             ...this.$route.query,
             modal: this.content,
-            subcontent: this.subcontent.length ? this.subcontent.join('+') : undefined
+            ...contentQueries,
+            subcontent: this.subcontent.length ? this.subcontent.join('+') : undefined,
+            ...subContentQueries
           }
         }).catch(console.error)
       } else if (this.$route.query.modal) {
-        const query = { ...this.$route.query }
-        delete query['modal']
-        delete query['subcontent']
-        this.$router.push({ query }).catch(console.error)
+        const rQueries = { ...this.$route.query }
+        const queriesToDelete = {
+          modal: true,
+          subcontent: true,
+          ...this.queries[rQueries.modal]
+        }
+
+        for (const mQuery in queriesToDelete) {
+          delete rQueries[mQuery]
+        }
+
+        this.$router.push({ rQueries }).catch(console.error)
       }
     },
-    openModal (componentName, componentProps = {}) {
+    openModal (componentName, queries = {}) {
       // Don't open the same kind of modal twice.
       if (this.content === componentName) return
-      // Record active element
+
       this.lastFocus = document.activeElement
       if (this.content) {
         this.subcontent.push(componentName)
-        this.subContentProps = componentProps
       } else {
         this.content = componentName
-        this.contentProps = componentProps
       }
+      this.queries[componentName] = queries
       this.updateUrl()
     },
     unloadModal () {
@@ -108,7 +120,6 @@ export default {
         this.subcontent.pop()
       } else {
         this.content = null
-        this.contentProps = {}
         // Refocus on button that open the modal
         this.lastFocus.focus()
       }
@@ -124,6 +135,9 @@ export default {
       // At the moment you can only replace a modal if it's the main one by design
       // Use direct children instead of sbp to wait for animation out
       this.$refs['content'].$children[0].close()
+    },
+    setModalQueries (componentName, queries) {
+      this.queries[componentName] = queries
     }
   }
 }

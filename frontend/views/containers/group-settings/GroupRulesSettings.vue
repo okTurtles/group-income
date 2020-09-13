@@ -84,6 +84,7 @@ export default {
   },
   methods: {
     openVotingProposal (rule) {
+      console.log('rule', rule)
       sbp('okTurtles.events/emit', OPEN_MODAL, 'ChangeVotingRules', { rule })
     },
     isRuleActive (rule) {
@@ -192,5 +193,4 @@ export default {
     right: 1.5rem;
   }
 }
-
 </style>

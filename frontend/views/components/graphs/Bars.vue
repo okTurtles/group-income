@@ -272,20 +272,20 @@ export default {
 .c-tag {
   position: absolute;
   right: 0;
-  font-size: 12px;
-  min-width: 30px;
+  font-size: $size_5;
+  min-width: 1.875rem;
   background-color: $background_0;
-  color: var(--text_1);
+  color: $text_1;
   text-align: right;
-  padding-left: 2px;
+  padding-left: 0.125rem;
 }
 
 .c-tag-user {
-  width: 60px;
+  width: 3.75rem;
   position: absolute;
   z-index: 2;
-  top: -24px;
-  left: -30px;
+  top: -1.5rem;
+  left: -1.875rem;
   pointer-events: none;
   border-radius: 3px;
   text-align: center;
@@ -297,14 +297,14 @@ export default {
 
   .c-tag-amount {
     color: $warning_0;
-    margin-bottom: 6px;
+    margin-bottom: 0.375rem;
   }
 
   .c-tag-amount,
   .c-tag-total {
     border-radius: 3px;
     background: rgba(256, 256,256,.4);
-    padding: 0 2px;
+    padding: 0 0.125rem;
   }
 
   &.positive {
@@ -317,11 +317,11 @@ export default {
 
     .c-tag-total {
       color: $success_0;
-      margin-bottom: 6px;
+      margin-bottom: 0.375rem;
     }
 
     .c-tag-total:last-child {
-      margin-top: 26px;
+      margin-top: 1.625rem;
     }
   }
 }

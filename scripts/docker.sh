@@ -13,14 +13,23 @@ if ! docker images -a | egrep -q "\b$PROJECT_NAME\b"; then
   docker build -t "$PROJECT_NAME" --build-arg TIMEZONE="$TZ" .
 fi
 
+# TODO: sync/configure the ports below if they're changed
+# https://github.com/okTurtles/group-income-simple/issues/71
+PORT_SHIFT=${PORT_SHIFT:-0}
+FRONTEND_PORT=$(( 8000 + $PORT_SHIFT ))
+BACKEND_PORT=$(( 3000 + $PORT_SHIFT ))
+REFRESH_PORT=$(( 35729 + $PORT_SHIFT ))
+
 # TODO: take advantage of XQuartz X11 on macOS as described here:
 #       https://www.cypress.io/blog/2019/05/02/run-cypress-with-a-single-docker-command/
 docker run \
   -it --rm \
   -e TZ="$TZ" \
   -e PORT_SHIFT="$PORT_SHIFT" \
+  -p 127.0.0.1:${FRONTEND_PORT}:${FRONTEND_PORT} \
+  -p 127.0.0.1:${BACKEND_PORT}:${BACKEND_PORT} \
+  -p 127.0.0.1:${REFRESH_PORT}:${REFRESH_PORT} \
   -v "`pwd`:/opt" \
-  --ipc=host \
   "$PROJECT_NAME" $@
 
 status=$?

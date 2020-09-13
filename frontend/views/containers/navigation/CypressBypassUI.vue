@@ -3,7 +3,7 @@
     to='#'
     data-test='cy_bypassUI'
     @click='handleBypass'
-  ) BypassUI ({{humanDate(Date.now())}})
+  ) BypassUI
 </template>
 
 <script>

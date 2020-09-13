@@ -25,6 +25,7 @@ v-style.
     --general_1: {{colors.general_1}};
     --general_2: {{colors.general_2}};
     --background_0: {{colors.background_0}};
+    --text-size: {{fontSize}}px;
   }
 </template>
 
@@ -36,6 +37,7 @@ import colorsMixins from '@view-utils/colorsManipulation.js'
 // being placed in dist/assets/css/main.css, which is included
 // by index.html
 import '@assets/style/main.scss'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'AppStyles',
@@ -43,9 +45,10 @@ export default {
   mixins: [colorsMixins],
 
   computed: {
-    colors () {
-      return this.$store.getters.colors
-    },
+    ...mapGetters([
+      'fontSize',
+      'colors'
+    ]),
     softTone () {
       return this.colors.theme === 'dark' ? 0.1 : -0.1
     }

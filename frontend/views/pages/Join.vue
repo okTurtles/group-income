@@ -33,20 +33,9 @@ div
 
     group-welcome.c-welcome(v-else-if='isStatus("WELCOME")')
 
-    .c-broken(v-else-if='isStatus("INVALID") || isStatus("EXPIRED")')
+    .c-broken(v-else-if='isStatus("INVALID")')
       svg-broken-link.c-svg
-      i18n.is-title-1(
-        v-if='isStatus("INVALID")'
-        tag='h1'
-        data-test='pageTitle'
-        :args='LTags()'
-      ) Oh no! {br_}Something went wrong.
-      i18n.is-title-1(
-        v-else
-        tag='h1'
-        data-test='pageTitle'
-        :args='LTags()'
-      ) Oh no! {br_}Your link has expired.
+      i18n.is-title-1(tag='h1' data-test='pageTitle' :args='LTags()') Oh no! {br_}This invite is not valid
       p.has-text-1(data-test='helperText') {{ ephemeral.errorMsg }}
       i18n.c-goHome(tag='button' @click='goHome') Take me home
 </template>
@@ -86,7 +75,7 @@ export default {
     pageStatus: {
       get () { return this.ephemeral.pageStatus },
       set (status) {
-        const posibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'EXPIRED', 'INVALID']
+        const posibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'INVALID']
         if (!posibleStatus.includes(status)) {
           throw new Error(`Bad status: ${status}. Use one of the following: ${posibleStatus.join(', ')}`)
         }
@@ -107,37 +96,35 @@ export default {
       }
       const state = await sbp('state/latestContractState', this.$route.query.groupId)
       const invite = state.invites[this.$route.query.secret]
-      if (!invite) {
-        this.ephemeral.errorMsg = L('This invite is not valid.')
-        this.pageStatus = 'INVALID'
-      } else if (invite && invite.status !== INVITE_STATUS.VALID) {
+      if (!invite || invite.status !== INVITE_STATUS.VALID) {
+        console.error('Join.vue error: Link is not valid.')
         this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
-        this.pageStatus = 'EXPIRED'
-      } else {
-        let creator = null
-        let creatorPicture = null
-        let message = null
-
-        if (invite.creator === INVITE_INITIAL_CREATOR) {
-          message = L('You were invited to join')
-        } else {
-          const identityContractID = await sbp('namespace/lookup', invite.creator)
-          const userState = await sbp('state/latestContractState', identityContractID)
-          const userDisplayName = userState.attributes.displayName || userState.attributes.username
-          message = L('{who} invited you to join their group!', { who: userDisplayName })
-          creator = userDisplayName
-          creatorPicture = userState.attributes.picture
-        }
-
-        this.ephemeral.invitation = {
-          groupName: state.settings.groupName,
-          groupPicture: state.settings.groupPicture,
-          creator,
-          creatorPicture,
-          message
-        }
-        this.pageStatus = 'SIGNING'
+        this.pageStatus = 'INVALID'
+        return
       }
+      let creator = null
+      let creatorPicture = null
+      let message = null
+
+      if (invite.creator === INVITE_INITIAL_CREATOR) {
+        message = L('You were invited to join')
+      } else {
+        const identityContractID = await sbp('namespace/lookup', invite.creator)
+        const userState = await sbp('state/latestContractState', identityContractID)
+        const userDisplayName = userState.attributes.displayName || userState.attributes.username
+        message = L('{who} invited you to join their group!', { who: userDisplayName })
+        creator = userDisplayName
+        creatorPicture = userState.attributes.picture
+      }
+
+      this.ephemeral.invitation = {
+        groupName: state.settings.groupName,
+        groupPicture: state.settings.groupPicture,
+        creator,
+        creatorPicture,
+        message
+      }
+      this.pageStatus = 'SIGNING'
     } catch (e) {
       console.error(e)
       this.ephemeral.errorMsg = `${L('Something went wrong. Please, try again.')} ${e.message}`

@@ -38,3 +38,5 @@
 
 # Translation
 strings.exe
+/strings.mac
+/strings.linux

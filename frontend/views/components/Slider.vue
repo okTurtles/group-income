@@ -15,7 +15,7 @@
       v-for='(r, index) in range'
       :key='index'
     )
-      span.slide-bar-separate-text {{ r.label }}
+      span.slide-bar-separate-text(:class='{isActive: index===currentValue}') {{ r.label }}
 </template>
 <script>
 export default {
@@ -29,7 +29,7 @@ export default {
       currentSlider: 0,
       isComponentExists: true,
       interval: 1,
-      lazy: false,
+      lazy: true,
       realTime: false
     }
   },
@@ -310,32 +310,31 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-$barColor: #c4c4c4;
+@import "@assets/style/_variables.scss";
 
 .slide-bar-component {
   position: relative;
-  padding-top: 6px;
-  width: 450px;
-  min-height: 70px;
+  padding-top: 3rem;
+  padding-bottom: 1rem;
+  width: 100%;
   user-select: none;
-  max-width: calc(100% - 45px);
 }
 
 .slide-bar {
   position: relative;
   display: block;
-  height: 4px;
-  border-radius: 15px;
-  background-color: $barColor;
+  height: 0.25rem;
+  border-radius: 1rem;
+  background-color: $general_0;
   cursor: pointer;
 
   &::before {
     content: "";
     position: absolute;
-    right: -4px;
+    right: -0.25rem;
     height: 100%;
-    width: 5px;
-    background-color: $barColor;
+    width: 0.3125rem;
+    background-color: $general_0;
     border-radius: 100%;
   }
 
@@ -357,8 +356,8 @@ $barColor: #c4c4c4;
   left: 0;
   width: 0;
   height: 100%;
-  background-color: var(--main-color);
-  border-radius: 15px;
+  background-color: $primary_0;
+  border-radius: 1rem;
   transition: all 0s;
   will-change: width;
 
@@ -366,9 +365,9 @@ $barColor: #c4c4c4;
     content: "";
     position: absolute;
     height: 100%;
-    width: 5px;
-    left: -4px;
-    background-color: var(--main-color);
+    width: 0.3125rem;
+    left: -0.25rem;
+    background-color: $primary_0;
     border-radius: 100%;
   }
 }
@@ -376,8 +375,10 @@ $barColor: #c4c4c4;
 .slide-bar-tooltip-container {
   position: absolute;
   z-index: 3;
-  left: 0;
-  top: -16px;
+  left: 0.15rem;
+  width: 2rem;
+  height: 5rem;
+  top: -3rem;
   transition: all 0s;
   will-change: transform;
   cursor: pointer;
@@ -391,32 +392,32 @@ $barColor: #c4c4c4;
 }
 
 .slide-bar-tooltip-top {
-  top: -12px;
-  left: 40%;
+  top: 6.3rem;
+  left: 73%;
   transform: translate(-50%, -100%);
 }
 
 .slide-bar-tooltip {
   display: block;
   position: relative;
-  top: 22px;
-  height: 16px;
-  width: 16px;
+  top: 1.3rem;
+  height: 1rem;
+  width: 1rem;
   white-space: nowrap;
   text-align: center;
   color: transparent;
-  background: var(--main-color);
+  background: $primary_0;
   border-radius: 50%;
   overflow: hidden;
 
   &::before {
     content: "";
     position: absolute;
-    bottom: -10px;
+    bottom: -0.625rem;
     left: 50%;
     width: 0;
     height: 0;
-    border: 5px solid transparent;
+    border: 0.3125rem solid transparent;
     border-top-color: inherit;
     transform: translate(-50%, 0);
   }
@@ -424,62 +425,56 @@ $barColor: #c4c4c4;
 
 .slide-bar-range {
   display: flex;
-  padding: 5px 0;
+  padding: 0.3125rem 0;
   justify-content: space-between;
+  margin-top: 0.05rem;
 }
 
 .slide-bar-separate-text {
   position: absolute;
-  top: 33px;
+  bottom: 2rem;
   text-align: center;
   white-space: nowrap;
   transform: translate(-50%, 0);
+  color: $text_1;
 }
 
 .slide-bar-separate {
   position: relative;
-  top: -15px;
-  height: 16px;
-  width: 2px;
-  background-color: $barColor;
+  top: -1rem;
+  height: 1rem;
+  width: 0.125rem;
+  background-color: $general_0;
   cursor: pointer;
+
+  .isActive {
+    color: $primary_0;
+  }
 
   &:nth-child(1) {
     .slide-bar-separate-text {
-      left: 5px;
-      font-size: 11px;
+      left: 0.3125rem;
+      font-size: 12px;
     }
   }
 
   &:nth-child(2) {
-    display: none;
+    .slide-bar-separate-text {
+      left: 0.125rem;
+      font-size: 14px;
+    }
   }
 
   &:nth-child(3) {
     .slide-bar-separate-text {
-      left: 2px;
-      font-size: 13px;
+      left: 0.3125rem;
+      font-size: 16px;
     }
   }
 
   &:nth-child(4) {
-    display: none;
-  }
-
-  &:nth-child(5) {
     .slide-bar-separate-text {
-      left: 5px;
-      font-size: 15px;
-    }
-  }
-
-  &:nth-child(6) {
-    display: none;
-  }
-
-  &:nth-child(7) {
-    .slide-bar-separate-text {
-      font-size: 16px;
+      font-size: 18px;
     }
   }
 }

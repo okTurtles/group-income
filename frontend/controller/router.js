@@ -39,6 +39,7 @@ const homeGuard = {
 }
 const loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
+  // TODO/BUG "next" does not work.
   redirect: (to, from) => ({ path: '/', query: { next: to.path } })
 }
 
