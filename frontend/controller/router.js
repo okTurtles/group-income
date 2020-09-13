@@ -8,25 +8,10 @@ import store from '@model/state.js'
 import DesignSystem from '@pages/DesignSystem.vue'
 import BypassUI from '@pages/BypassUI.vue'
 
-import LoadingPage from '@views/containers/loading-error/LoadingPage.vue'
-// TODO: once the 404 and 500 error message is design, replace the loading page with this one
-import ErrorPage from '@views/containers/loading-error/ErrorPage.vue'
-
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import L from '@view-utils/translations.js'
-
-const lazyLoadView = ({ component, loading = LoadingPage, error = ErrorPage }) => {
-  const AsyncHandler = () => ({ component, loading, error })
-
-  return () =>
-    Promise.resolve({
-      functional: true,
-      render (h, { data, children }) {
-        return h(AsyncHandler, data, children)
-      }
-    })
-}
+import lazyLoadView from '@utils/lazyLoadedView.js'
 
 /*
   Lazy load all the pages that are not necessary at initial loading off the app
