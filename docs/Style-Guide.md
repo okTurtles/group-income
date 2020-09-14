@@ -308,7 +308,17 @@ okTurtlesDataSet({ login: true })
 okTurtlesEventsEmit('CLOSE_MODAL')
 ```
 
-More details about SBP will be written in a blog post soon. In the meantime, you are encouraged to adopt this paradigm wherever possible in your own code.
+More details about SBP will be written in a blog post soon. In the meantime, you are encouraged to adopt this paradigm wherever possible in your own code. In the meantime, here are some benefits of using SBP:
+
+- SBP helps you organize code
+- SBP helps you create code by thinking in terms of namespaces and APIs
+- SBP will make it trivial to secure your code
+- SBP makes code inter-operable with other languages, more future-proof, and more portable
+- SBP replaces the need for OOP
+- SBP is based on message-passing (an idea from Smalltalk) and comes with all of the benefits that message-passing architectures afford
+- SBP embraces the LISP idea that `code = data` and gives you all of the benefits and possibilities that affords
+- SBP makes it easier to debug and understand your code
+- SBP makes it possible to create architectures that are remarkably flexible, clean, and safe; this comes from the benefits described above
 
 Search the project for `sbp(` for examples, and talk with @taoeffect about it before diving in (at least until the docs for SBP are still waiting to be written).
 
