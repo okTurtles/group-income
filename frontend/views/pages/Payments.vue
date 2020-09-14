@@ -335,7 +335,6 @@ export default {
     },
     handleTabClick (url) {
       this.ephemeral.activeTab = url
-      this.form.search = ''
     },
     handleIncomeClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
