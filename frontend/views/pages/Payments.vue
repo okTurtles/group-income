@@ -8,7 +8,7 @@ page(
 )
   template(#title='') {{ L('Payments') }}
 
-  template(#sidebar='' v-if='hasIncomeDetails')
+  template(#sidebar='' v-if='tabItems.length > 0 || paymentsListData.length > 0')
     month-overview
 
   add-income-details-widget(v-if='!hasIncomeDetails')
@@ -25,14 +25,14 @@ page(
         }'
       ) You can change this at any time by updating your {r1}income details{r2}.
 
-    section(v-if='needsIncome && !hasPayments')
+    section(v-if='tabItems.length === 0 && paymentsListData.length === 0')
       .c-container-empty
         svg-contributions.c-svg
         i18n.c-description(tag='p') You haven’t received any payments yet
 
     section.card(v-else)
       nav.tabs(
-        v-if='!needsIncome'
+        v-if='tabItems.length > 0'
         :aria-label='L("Payments type")'
         data-test='payNav'
       )
@@ -42,32 +42,31 @@ page(
           :class='{ "is-active": ephemeral.activeTab === link.url}'
           :data-test='`link-${link.url}`'
           :aria-expanded='ephemeral.activeTab === link.url'
-          @click='ephemeral.activeTab = link.url'
+          @click='handleTabClick(link.url)'
         )
           | {{ link.title }}
           span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-      // Remove condition -> the search should be available for every tab if more than x result
       search(
-        v-if='needsIncome || ephemeral.activeTab !== "PaymentRowTodo"'
+        v-if='paymentsListData.length && ephemeral.activeTab !== "PaymentRowTodo"'
         :placeholder='L("Search payments...")'
         :label='L("Search for a payment")'
-        v-model='ephemeral.searchText'
+        v-model='form.search'
       )
 
       .tab-section
-        .c-container(v-if='hasPayments')
+        .c-container(v-if='paymentsFiltered.length')
           payments-list(
             :titles='tableTitles'
-            :paymentsList='paymentsListData'
+            :paymentsList='paginateList(paymentsFiltered)'
             :paymentsType='ephemeral.activeTab'
           )
           .c-footer
-            .c-payment-record(v-if='!needsIncome && ephemeral.activeTab === "PaymentRowTodo"')
+            .c-payment-record(v-if='ephemeral.activeTab === "PaymentRowTodo"')
               i18n.c-payment-info(
                 tag='b'
                 data-test='paymentInfo'
-                :args='tableFooterStatus'
+                :args='footerTodoStatus'
               ) {amount} in total, to {count} members
 
               i18n.button(
@@ -75,11 +74,19 @@ page(
                 data-test='recordPayment'
                 @click='openModal("RecordPayment")'
               ) Record payments
-            payments-pagination(v-else)
-
-        .c-container-empty(v-else)
+            payments-pagination(
+              v-else
+              :count='paymentsFiltered.length'
+              :rowsPerPage='ephemeral.rowsPerPage'
+              :page.sync='ephemeral.currentPage'
+              @changePage='handlePageChange'
+              @changeRowsPerPage='handleRowsPerPageChange'
+            )
+        .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
+          i18n(tag='p' :args='{query: form.search }') No results for "{query}".
+        .c-container-empty(v-else data-test='noPayments')
           svg-contributions.c-svg
-          i18n.c-description(tag='p') There are no pending payments.
+          i18n.c-description(tag='p') There are no payments.
 </template>
 
 <script>
@@ -111,14 +118,23 @@ export default {
   },
   data () {
     return {
+      form: {
+        search: ''
+      },
       ephemeral: {
-        activeTab: 'PaymentRowReceived',
-        searchText: ''
+        activeTab: '',
+        rowsPerPage: 10,
+        currentPage: 0
       }
     }
   },
   created () {
-    if (!this.needsIncome) this.ephemeral.activeTab = 'PaymentRowTodo'
+    this.setInitialActiveTab()
+  },
+  watch: {
+    needsIncome () {
+      this.setInitialActiveTab()
+    }
   },
   computed: {
     ...mapGetters([
@@ -141,22 +157,38 @@ export default {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     },
     tabItems () {
-      const items = [{
-        title: L('Todo'),
-        url: 'PaymentRowTodo',
-        notification: this.paymentsTodo.length
-      }, {
-        title: L('Sent'),
-        url: 'PaymentRowSent',
-        notification: this.paymentsSent.length
-      }]
-      if (this.paymentsReceived.length > 0) {
+      const items = []
+
+      if (!this.needsIncome) {
         items.push({
-          title: L('Received'),
-          url: 'PaymentRowReceived',
-          notification: this.paymentsReceived.length
+          title: L('Todo'),
+          url: 'PaymentRowTodo',
+          notification: this.paymentsTodo.length
+        })
+
+        items.push({
+          title: L('Sent'),
+          url: 'PaymentRowSent'
         })
       }
+
+      const doesNotNeedIncomeAndDidReceiveBefore = !this.needsIncome && this.paymentsReceived.length
+      const doesNeedIncomeAndDidSentBefore = this.needsIncome && this.paymentsSent.length
+
+      if (doesNotNeedIncomeAndDidReceiveBefore || doesNeedIncomeAndDidSentBefore) {
+        items.push({
+          title: L('Received'),
+          url: 'PaymentRowReceived'
+        })
+      }
+
+      if (doesNeedIncomeAndDidSentBefore) {
+        items.push({
+          title: L('Sent'),
+          url: 'PaymentRowSent'
+        })
+      }
+
       return items
     },
     tableTitles () {
@@ -215,7 +247,7 @@ export default {
 
       for (const payment of this.ourPayments.sent) {
         const { hash, data, meta } = payment
-        const p = {
+        payments.push({
           hash,
           data,
           meta,
@@ -224,12 +256,22 @@ export default {
           date: meta.createdDate,
           monthstamp: ISOStringToMonthstamp(meta.createdDate),
           amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate,
-        }
+        })
+      }
 
-        if (this.filterPayment(p)) {
-          payments.push(p)
+      // DELETE THIS BEFORE MERGE!!!
+      // Create a bunch of copies of the first payment. For pagination tests only
+      /*
+      const copies = 50
+      if (payments[0]) {
+        for (let index = 0; index < copies; index++) {
+          payments.push({
+            ...payments[0],
+            displayName: payments[0].displayName + '_copy_' + (index + 1)
+          })
         }
       }
+      */
 
       // TODO: implement better / more correct sorting
       return payments.sort((a, b) => a.date < b.date)
@@ -240,7 +282,7 @@ export default {
       for (const payment of this.ourPayments.received) {
         const { hash, data, meta } = payment
         const fromUser = meta.username
-        const p = {
+        payments.push({
           hash,
           data,
           meta,
@@ -248,10 +290,7 @@ export default {
           displayName: this.userDisplayName(fromUser),
           date: meta.createdDate,
           amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate
-        }
-        if (this.filterPayment(p)) {
-          payments.push(p)
-        }
+        })
       }
       // TODO: implement better / more correct sorting
       return payments.sort((a, b) => a.date < b.date)
@@ -266,10 +305,10 @@ export default {
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
     },
-    hasPayments () {
-      return this.paymentsListData.length > 0 || this.ephemeral.searchText !== ''
+    paymentsFiltered () {
+      return this.paymentsListData.filter(this.filterPayment)
     },
-    tableFooterStatus () {
+    footerTodoStatus () {
       const amount = this.paymentsTodo.reduce((total, p) => total + p.amount, 0)
       return {
         amount: this.currency.displayWithCurrency(amount),
@@ -279,18 +318,37 @@ export default {
   },
   methods: {
     humanDate,
+    setInitialActiveTab () {
+      this.ephemeral.activeTab = this.needsIncome ? 'PaymentRowReceived' : 'PaymentRowTodo'
+    },
     openModal (name, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },
     filterPayment (payment) {
-      const query = this.ephemeral.searchText
+      const query = this.form.search
       const { amount, username, displayName } = payment
       return query === '' || `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(query.toUpperCase()) !== -1
+    },
+    paginateList (list) {
+      const start = this.ephemeral.rowsPerPage * this.ephemeral.currentPage
+      return list.slice(start, start + this.ephemeral.rowsPerPage)
+    },
+    handleTabClick (url) {
+      this.ephemeral.activeTab = url
+      this.form.search = ''
     },
     handleIncomeClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
       }
+    },
+    handlePageChange (type) {
+      const current = this.ephemeral.currentPage
+      this.ephemeral.currentPage = type === 'next' ? current + 1 : current - 1
+    },
+    handleRowsPerPageChange (value) {
+      this.ephemeral.rowsPerPage = value
+      this.ephemeral.currentPage = 0 // go back to first page.
     }
   }
 }
@@ -315,7 +373,6 @@ export default {
   margin-top: 1.5rem;
 }
 
-// Empty
 .c-container-empty {
   max-width: 25rem;
   margin: 0 auto;
@@ -338,6 +395,10 @@ export default {
     margin-left: -0.5rem;
     filter: contrast(0%) brightness(172%);
   }
+}
+
+.c-container-noresults {
+  padding-top: 1.5rem;
 }
 
 .card .c-container-empty {
