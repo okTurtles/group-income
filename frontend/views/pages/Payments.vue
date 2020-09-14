@@ -165,11 +165,6 @@ export default {
           url: 'PaymentRowTodo',
           notification: this.paymentsTodo.length
         })
-
-        items.push({
-          title: L('Sent'),
-          url: 'PaymentRowSent'
-        })
       }
 
       const doesNotNeedIncomeAndDidReceiveBefore = !this.needsIncome && this.paymentsReceived.length
@@ -182,7 +177,7 @@ export default {
         })
       }
 
-      if (doesNeedIncomeAndDidSentBefore) {
+      if (!this.needsIncome || this.paymentsSent.length) {
         items.push({
           title: L('Sent'),
           url: 'PaymentRowSent'
