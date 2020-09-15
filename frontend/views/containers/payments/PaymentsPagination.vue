@@ -20,12 +20,14 @@
     ) per page
 
   .c-pagination-controls
-    p.has-text-1(data-test='paginationInfo')
-      span.has-text-0 {{paginationInfo.begin}} - {{paginationInfo.end}}
-      | &nbsp;
-      i18n out of
-      | &nbsp;
-      span.has-text-0 {{paginationInfo.count}}
+    i18n.has-text-1(
+      tag='p'
+      data-test='paginationInfo'
+      :args='{ \
+        range: `<span class="has-text-0">${paginationInfo.begin} - ${paginationInfo.end}</span>`, \
+        count: `<span class="has-text-0">${paginationInfo.count}</span>` \
+      }'
+    ) {range} out of {count}
 
     .c-previous-next
       button.is-icon-small.c-btn(
