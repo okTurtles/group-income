@@ -26,7 +26,7 @@ function validateMincome (value, currency) {
   return isNumeric(nr) && isInDecimalsLimit(nr, currency)
 }
 
-function decimalsOrInt (num: number, currency: string): string {
+function decimalsOrInt (num: number, currency: string): string | number {
   const fixed = parseFloat(num.toFixed(currencies[currency].decimalsMax))
   const integerPart = /^(.+)\.0+$/.exec(fixed)
   return integerPart ? integerPart[1] : fixed
