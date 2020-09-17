@@ -35,7 +35,7 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
-import { dateFromMonthstamp, humanDate } from '@utils/time.js'
+import { ISOStringToMonthstamp, dateFromMonthstamp, humanDate } from '@utils/time.js'
 
 export default {
   name: 'PaymentDetail',
@@ -51,6 +51,7 @@ export default {
     }
     if (payment) {
       this.payment = payment
+      this.payment.monthstamp = ISOStringToMonthstamp(this.payment.meta.createdDate)
     } else {
       console.warn('PaymentDetail: Missing valid query "id"')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
