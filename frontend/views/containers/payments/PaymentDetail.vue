@@ -51,6 +51,7 @@ export default {
     }
     if (payment) {
       this.payment = payment
+      // TODO: the payment augmentation duplication in Payment and PaymentRecord, and between todo/sent/received, needs to be resolved more thoroughly
       this.payment.monthstamp = ISOStringToMonthstamp(this.payment.meta.createdDate)
     } else {
       console.warn('PaymentDetail: Missing valid query "id"')
