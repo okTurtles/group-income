@@ -27,9 +27,7 @@ function validateMincome (value, currency) {
 }
 
 function decimalsOrInt (num: number, currency: string): string {
-  const fixed = parseFloat(num.toFixed(currencies[currency].decimalsMax))
-  const integerPart = /^(.+)\.0+$/.exec(fixed)
-  return integerPart ? integerPart[1] : fixed
+  return num.toFixed(currencies[currency].decimalsMax).replace(/\.0+$/, '')
 }
 
 export function saferFloat (value): number {
