@@ -26,30 +26,8 @@ function validateMincome (value, currency) {
   return isNumeric(nr) && isInDecimalsLimit(nr, currency)
 }
 
-const reasonablePrecisionBlacklist = ['BTC']
-
-function withReasonableDecimals (num: string, currency: string): string {
-  // Skip BTC
-  if (reasonablePrecisionBlacklist.includes(currency)) return num
-
-  // Leave '250' as '250'
-  if (!num.includes('.')) return num
-
-  // Expand 12.5 to 21.50
-  const places = currencies[currency].decimalsMax
-  const match = num.match((/\.(\d+)/))
-  if (match && match[1].length < places) {
-    const integerPart = match.index
-    const decimalPoint = 1
-    num = num.padEnd(integerPart + decimalPoint + places, '0')
-  }
-  return num
-}
-
-function decimalsOrInt (num: number, currency: string): string | number {
-  const fixed = parseFloat(num.toFixed(currencies[currency].decimalsMax))
-  const integerPart = /^(.+)\.0+$/.exec(fixed)
-  return withReasonableDecimals(integerPart ? integerPart[1] : fixed.toString(), currency)
+function decimalsOrInt (num: number, currency: string): string {
+  return num.toFixed(currencies[currency].decimalsMax).replace(/\.0+$/, '')
 }
 
 export function saferFloat (value): number {
