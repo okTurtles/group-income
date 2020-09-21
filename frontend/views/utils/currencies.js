@@ -48,9 +48,9 @@ function makeCurrency (options) {
     symbol,
     symbolWithCode,
     decimalsMax,
-    displayWithCurrency: (n) => formatCurrency(decimalsOrInt(n, decimalsMax)),
-    displayWithoutCurrency: (n) => decimalsOrInt(n, decimalsMax),
-    validate: (n) => validateMincome(n, decimalsMax),
+    displayWithCurrency: (n: number) => formatCurrency(decimalsOrInt(n, decimalsMax)),
+    displayWithoutCurrency: (n: number) => decimalsOrInt(n, decimalsMax),
+    validate: (n: string) => validateMincome(n, decimalsMax),
   }
 }
 
