@@ -17,7 +17,7 @@ function isNumeric (nr: string): boolean {
 }
 
 function isInDecimalsLimit (nr: string, decimalsMax: number) {
-  const decimals = nr.toString().split('.')[1]
+  const decimals = nr.split('.')[1]
   return !decimals || decimals.length <= decimalsMax
 }
 
