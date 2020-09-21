@@ -34,8 +34,8 @@ function assertNavTabs (tabs) {
 function assertMonthOverview (items) {
   cy.log('MonthOverview values are correct')
   cy.getByDT('monthOverview').within(() => {
-    items.forEach((text, i) => {
-      cy.get(`ul > li:nth-child(${i + 1})`).should('contain', text)
+    items.forEach((texts, i) => {
+      cy.get(`ul > li:nth-child(${i + 1})`).should('contain', texts.join(''))
     })
   })
 }
@@ -78,8 +78,8 @@ describe('Group Payments', () => {
 
     assertNavTabs(['Todo2', 'Sent'])
     assertMonthOverview([
-      'Payments sent0 out of 2',
-      'Amount sent$0 out of $250'
+      ['Payments sent', '0 out of 2'],
+      ['Amount sent', '$0 out of $250']
     ])
 
     cy.getByDT('recordPayment').click()
@@ -94,8 +94,8 @@ describe('Group Payments', () => {
     })
 
     assertMonthOverview([
-      'Payments sent1 out of 2',
-      'Amount sent$71.43 out of $250'
+      ['Payments sent', '1 out of 2'],
+      ['Amount sent', '$71.43 out of $250']
     ])
 
     cy.log('assert payments table is correct')
@@ -135,8 +135,8 @@ describe('Group Payments', () => {
     })
 
     assertMonthOverview([
-      'Payments received1 out of 2',
-      'Amount received$71.43 out of $100'
+      ['Payments received', '1 out of 2'],
+      ['Amount received', '$71.43 out of $100']
     ])
   })
 
@@ -158,8 +158,8 @@ describe('Group Payments', () => {
     assertNavTabs(['Todo1', 'Sent'])
 
     assertMonthOverview([
-      'Payments sent1 out of 2',
-      'Amount sent$171.43 out of $250'
+      ['Payments sent', '1 out of 2'],
+      ['Amount sent', '$171.43 out of $250']
     ])
 
     cy.getByDT('payList').within(() => {
@@ -200,8 +200,8 @@ describe('Group Payments', () => {
     cy.getByDT('payList').find('tbody').children().should('have.length', 2)
 
     assertMonthOverview([
-      'Payments received0 out of 1',
-      'Amount received$0 out of $12.50'
+      ['Payments received', '0 out of 1'],
+      ['Amount received', '$0 out of $12.50']
     ])
   })
 
@@ -222,8 +222,8 @@ describe('Group Payments', () => {
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(timeStart + timeOneMonth))
 
     assertMonthOverview([
-      'Payments sent0 out of 2',
-      'Amount sent$0 out of $250'
+      ['Payments sent', '0 out of 2'],
+      ['Amount sent', '$0 out of $250']
     ])
 
     // BUG - The payments are incorrect. The getter ourPayments.late logic is wrong.

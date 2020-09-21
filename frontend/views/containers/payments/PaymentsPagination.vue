@@ -23,8 +23,11 @@
     i18n.has-text-1(
       tag='p'
       data-test='paginationInfo'
-      :args='paginationInfo'
-    ) {currentPage} out of {count}
+      :args='{ \
+        range: `<span class="has-text-0">${paginationInfo.begin} - ${paginationInfo.end}</span>`, \
+        count: `<span class="has-text-0">${paginationInfo.count}</span>` \
+      }'
+    ) {range} out of {count}
 
     .c-previous-next
       button.is-icon-small.c-btn(
@@ -62,12 +65,11 @@ export default {
       return Math.ceil(this.count / this.rowsPerPage)
     },
     paginationInfo () {
-      const style = text => `<span class="has-text-0">${text}</span>`
       const start = this.rowsPerPage * this.page
-      const currentRows = `${start + 1} - ${Math.min(start + this.rowsPerPage, this.count)}`
       return {
-        currentPage: style(currentRows),
-        count: style(this.count)
+        begin: start + 1,
+        end: Math.min(start + this.rowsPerPage, this.count),
+        count: this.count
       }
     }
   },

@@ -51,7 +51,7 @@ page(
         v-if='paymentsListData.length && ephemeral.activeTab !== "PaymentRowTodo"'
         :placeholder='L("Search payments...")'
         :label='L("Search for a payment")'
-        v-model='form.search'
+        v-model='form.searchText'
       )
 
       .tab-section
@@ -83,7 +83,7 @@ page(
               @changeRowsPerPage='handleRowsPerPageChange'
             )
         .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
-          i18n(tag='p' :args='{query: form.search }') No results for "{query}".
+          i18n(tag='p' :args='{query: form.searchText }') No results for "{query}".
         .c-container-empty(v-else data-test='noPayments')
           svg-contributions.c-svg
           i18n.c-description(tag='p') There are no payments.
@@ -119,7 +119,7 @@ export default {
   data () {
     return {
       form: {
-        search: ''
+        searchText: ''
       },
       ephemeral: {
         activeTab: '',
@@ -165,11 +165,6 @@ export default {
           url: 'PaymentRowTodo',
           notification: this.paymentsTodo.length
         })
-
-        items.push({
-          title: L('Sent'),
-          url: 'PaymentRowSent'
-        })
       }
 
       const doesNotNeedIncomeAndDidReceiveBefore = !this.needsIncome && this.paymentsReceived.length
@@ -182,7 +177,7 @@ export default {
         })
       }
 
-      if (doesNeedIncomeAndDidSentBefore) {
+      if (!this.needsIncome || this.paymentsSent.length) {
         items.push({
           title: L('Sent'),
           url: 'PaymentRowSent'
@@ -325,7 +320,7 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },
     filterPayment (payment) {
-      const query = this.form.search
+      const query = this.form.searchText
       const { amount, username, displayName } = payment
       return query === '' || `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(query.toUpperCase()) !== -1
     },
@@ -335,7 +330,6 @@ export default {
     },
     handleTabClick (url) {
       this.ephemeral.activeTab = url
-      this.form.search = ''
     },
     handleIncomeClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
