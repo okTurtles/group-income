@@ -7,9 +7,9 @@
 // this value, switch to a different currency base, e.g. from BTC to mBTC.
 export const DECIMALS_MAX = 8
 
-function commaToDots (value: string | number): string {
+function commaToDots (value: string | number | null): string {
   // ex: "1,55" -> "1.55"
-  return typeof value === 'string' ? value.replace(/,/, '.') : value.toString()
+  return typeof value === 'string' ? value.replace(/,/, '.') : String(value)
 }
 
 function isNumeric (nr: string): boolean {
