@@ -64,7 +64,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
 
     group-pledges-graph.c-graph(
       :type='form.incomeDetailsType'
-      :amount='form.amount === "" ? undefined : saferFloat(form.amount)'
+      :amount='form.amount === "" ? undefined : normalizeCurrency(form.amount)'
     )
 </template>
 
@@ -72,7 +72,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
 import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import currencies, { mincomePositive, saferFloat } from '@view-utils/currencies.js'
+import currencies, { mincomePositive, normalizeCurrency } from '@view-utils/currencies.js'
 import sbp from '~/shared/sbp.js'
 import PaymentMethods from './PaymentMethods.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
@@ -151,7 +151,7 @@ export default {
     }
   },
   methods: {
-    saferFloat,
+    normalizeCurrency,
     resetAmount () {
       this.form.amount = this.form.incomeDetailsType === this.ourGroupProfile.incomeDetailsType ? this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType] : ''
       this.$v.form.$reset()
@@ -194,7 +194,7 @@ export default {
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
           {
             incomeDetailsType,
-            [incomeDetailsType]: saferFloat(this.form.amount),
+            [incomeDetailsType]: normalizeCurrency(this.form.amount),
             paymentMethods
           },
           this.$store.state.currentGroupId
@@ -219,7 +219,7 @@ export default {
           return currencies[this.groupSettings.mincomeCurrency].validate(value)
         },
         [L('Your income must be lower than the group mincome')]: function (value) {
-          return !this.needsIncome || saferFloat(value) < this.groupSettings.mincomeAmount
+          return !this.needsIncome || normalizeCurrency(value) < this.groupSettings.mincomeAmount
         }
       }
     }

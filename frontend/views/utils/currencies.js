@@ -21,7 +21,7 @@ function isInDecimalsLimit (nr: string, decimalsMax: number) {
   return !decimals || decimals.length <= decimalsMax
 }
 
-// NOTE: Unsure whether this is *only* ever string; it comes from 'validate' function below
+// NOTE: Unsure whether this is *always* string; it comes from 'validators' in other files
 function validateMincome (value: string, decimalsMax: number) {
   const nr = commaToDots(value)
   return isNumeric(nr) && isInDecimalsLimit(nr, decimalsMax)
@@ -32,9 +32,14 @@ function decimalsOrInt (num: number, decimalsMax: number): string {
   return num.toFixed(decimalsMax).replace(/\.0+$/, '')
 }
 
-export function saferFloat (value: string | number): number {
+export function saferFloat (value: number): number {
+  // ex: 1.333333333333333333 -> 1.33333333
+  return parseFloat(value.toFixed(DECIMALS_MAX))
+}
+
+export function normalizeCurrency (value: string): number {
   // ex: "1,333333333333333333" -> 1.33333333
-  return parseFloat(parseFloat(commaToDots(value)).toFixed(DECIMALS_MAX))
+  return saferFloat(parseFloat(commaToDots(value)))
 }
 
 // NOTE: Unsure whether this is *always* string; it comes from 'validators' in other files
