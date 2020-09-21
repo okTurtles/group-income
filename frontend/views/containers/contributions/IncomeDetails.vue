@@ -64,7 +64,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
 
     group-pledges-graph.c-graph(
       :type='form.incomeDetailsType'
-      :amount='(form.amount === "" || form.amount === null) ? undefined : saferFloat(form.amount)'
+      :amount='form.amount === "" ? undefined : saferFloat(form.amount)'
     )
 </template>
 
@@ -144,6 +144,7 @@ export default {
   },
   created () {
     const incomeDetailsType = this.ourGroupProfile.incomeDetailsType
+    this.form.amount = ''
     if (incomeDetailsType) {
       this.form.incomeDetailsType = incomeDetailsType
       this.form.amount = this.ourGroupProfile[incomeDetailsType]
