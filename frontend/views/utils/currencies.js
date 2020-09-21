@@ -7,36 +7,56 @@
 // this value, switch to a different currency base, e.g. from BTC to mBTC.
 export const DECIMALS_MAX = 8
 
-function commaToDots (value) {
+function commaToDots (value: string | number): string {
   // ex: "1,55" -> "1.55"
-  return typeof value === 'string' ? value.replace(/,/, '.') : value
+  return typeof value === 'string' ? value.replace(/,/, '.') : value.toString()
 }
 
-function isNumeric (nr) {
-  return !isNaN(nr - parseFloat(nr))
+function isNumeric (nr: string): boolean {
+  return !isNaN((nr: any) - parseFloat(nr))
 }
 
-function isInDecimalsLimit (nr, currency) {
-  const decimals = nr.toString().split('.')[1]
-  return !decimals || decimals.length <= currencies[currency].decimalsMax
+function isInDecimalsLimit (nr: string, decimalsMax: number) {
+  const decimals = nr.split('.')[1]
+  return !decimals || decimals.length <= decimalsMax
 }
 
-function validateMincome (value, currency) {
+// NOTE: Unsure whether this is *always* string; it comes from 'validators' in other files
+function validateMincome (value: string, decimalsMax: number) {
   const nr = commaToDots(value)
-  return isNumeric(nr) && isInDecimalsLimit(nr, currency)
+  return isNumeric(nr) && isInDecimalsLimit(nr, decimalsMax)
 }
 
-function decimalsOrInt (num: number, currency: string): string {
-  return num.toFixed(currencies[currency].decimalsMax).replace(/\.0+$/, '')
+function decimalsOrInt (num: number, decimalsMax: number): string {
+  // ex: 12.5 -> "12.50", but 250 -> "250"
+  return num.toFixed(decimalsMax).replace(/\.0+$/, '')
 }
 
-export function saferFloat (value): number {
+export function saferFloat (value: number): number {
+  // ex: 1.333333333333333333 -> 1.33333333
+  return parseFloat(value.toFixed(DECIMALS_MAX))
+}
+
+export function normalizeCurrency (value: string): number {
   // ex: "1,333333333333333333" -> 1.33333333
-  return parseFloat(parseFloat(commaToDots(value)).toFixed(DECIMALS_MAX))
+  return saferFloat(parseFloat(commaToDots(value)))
 }
 
-export function mincomePositive (value): boolean {
+// NOTE: Unsure whether this is *always* string; it comes from 'validators' in other files
+export function mincomePositive (value: string): boolean {
   return parseFloat(commaToDots(value)) > 0
+}
+
+function makeCurrency (options) {
+  const { symbol, symbolWithCode, decimalsMax, formatCurrency } = options
+  return {
+    symbol,
+    symbolWithCode,
+    decimalsMax,
+    displayWithCurrency: (n: number) => formatCurrency(decimalsOrInt(n, decimalsMax)),
+    displayWithoutCurrency: (n: number) => decimalsOrInt(n, decimalsMax),
+    validate: (n: string) => validateMincome(n, decimalsMax)
+  }
 }
 
 // NOTE: if we needed for some reason, this could also be defined in
@@ -44,30 +64,24 @@ export function mincomePositive (value): boolean {
 //       example, that would allow the addition of currencies without
 //       having to "recompile" a new version of the app.
 const currencies = {
-  USD: {
+  USD: makeCurrency({
     symbol: '$',
     symbolWithCode: '$ USD',
     decimalsMax: 2,
-    displayWithCurrency: n => '$' + decimalsOrInt(n, 'USD'),
-    displayWithoutCurrency: n => decimalsOrInt(n, 'USD'),
-    validate: n => validateMincome(n, 'USD')
-  },
-  EUR: {
+    formatCurrency: amount => '$' + amount
+  }),
+  EUR: makeCurrency({
     symbol: '€',
     symbolWithCode: '€ EUR',
     decimalsMax: 2,
-    displayWithCurrency: n => '€' + decimalsOrInt(n, 'EUR'),
-    displayWithoutCurrency: n => decimalsOrInt(n, 'EUR'),
-    validate: n => validateMincome(n, 'EUR')
-  },
-  BTC: {
+    formatCurrency: amount => '€' + amount
+  }),
+  BTC: makeCurrency({
     symbol: 'Ƀ',
     symbolWithCode: 'Ƀ BTC',
     decimalsMax: DECIMALS_MAX,
-    displayWithCurrency: n => decimalsOrInt(n, 'BTC') + 'Ƀ',
-    displayWithoutCurrency: n => decimalsOrInt(n, 'BTC'),
-    validate: n => validateMincome(n, 'BTC')
-  }
+    formatCurrency: amount => amount + 'Ƀ'
+  })
 }
 
 export default currencies
