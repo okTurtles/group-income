@@ -7,35 +7,40 @@
 // this value, switch to a different currency base, e.g. from BTC to mBTC.
 export const DECIMALS_MAX = 8
 
-function commaToDots (value) {
+function commaToDots (value: string | number): string {
   // ex: "1,55" -> "1.55"
-  return typeof value === 'string' ? value.replace(/,/, '.') : value
+  return typeof value === 'string' ? value.replace(/,/, '.') : value.toString()
 }
 
-function isNumeric (nr) {
-  return !isNaN(nr - parseFloat(nr))
+function isNumeric (nr: string): boolean {
+  return !isNaN((nr: any) - parseFloat(nr))
 }
 
-function isInDecimalsLimit (nr, currency) {
+// NOTE: $Keys<typeof currencies> will not work unless `currencies` is above it,
+//       but then it uses functions that aren't defined yet (but are hoisted)
+function isInDecimalsLimit (nr: string, currency: $Keys<typeof currencies>) {
   const decimals = nr.toString().split('.')[1]
   return !decimals || decimals.length <= currencies[currency].decimalsMax
 }
 
-function validateMincome (value, currency) {
+// NOTE: Unsure whether this is *only* ever string; it comes from 'validate' function below
+function validateMincome (value: string, currency: $Keys<typeof currencies>) {
   const nr = commaToDots(value)
   return isNumeric(nr) && isInDecimalsLimit(nr, currency)
 }
 
-function decimalsOrInt (num: number, currency: string): string {
+function decimalsOrInt (num: number, currency: $Keys<typeof currencies>): string {
+  // ex: 12.5 -> "12.50", but 250 -> "250"
   return num.toFixed(currencies[currency].decimalsMax).replace(/\.0+$/, '')
 }
 
-export function saferFloat (value): number {
+export function saferFloat (value: string | number): number {
   // ex: "1,333333333333333333" -> 1.33333333
   return parseFloat(parseFloat(commaToDots(value)).toFixed(DECIMALS_MAX))
 }
 
-export function mincomePositive (value): boolean {
+// NOTE: Unsure whether this is *always* string; it comes from 'validators' in other files
+export function mincomePositive (value: string): boolean {
   return parseFloat(commaToDots(value)) > 0
 }
 
