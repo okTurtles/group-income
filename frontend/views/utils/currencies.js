@@ -16,22 +16,20 @@ function isNumeric (nr: string): boolean {
   return !isNaN((nr: any) - parseFloat(nr))
 }
 
-// NOTE: $Keys<typeof currencies> will not work unless `currencies` is above it,
-//       but then it uses functions that aren't defined yet (but are hoisted)
-function isInDecimalsLimit (nr: string, currency: $Keys<typeof currencies>) {
+function isInDecimalsLimit (nr: string, decimalsMax: number) {
   const decimals = nr.toString().split('.')[1]
-  return !decimals || decimals.length <= currencies[currency].decimalsMax
+  return !decimals || decimals.length <= decimalsMax
 }
 
 // NOTE: Unsure whether this is *only* ever string; it comes from 'validate' function below
-function validateMincome (value: string, currency: $Keys<typeof currencies>) {
+function validateMincome (value: string, decimalsMax: number) {
   const nr = commaToDots(value)
-  return isNumeric(nr) && isInDecimalsLimit(nr, currency)
+  return isNumeric(nr) && isInDecimalsLimit(nr, decimalsMax)
 }
 
-function decimalsOrInt (num: number, currency: $Keys<typeof currencies>): string {
+function decimalsOrInt (num: number, decimalsMax: number): string {
   // ex: 12.5 -> "12.50", but 250 -> "250"
-  return num.toFixed(currencies[currency].decimalsMax).replace(/\.0+$/, '')
+  return num.toFixed(decimalsMax).replace(/\.0+$/, '')
 }
 
 export function saferFloat (value: string | number): number {
@@ -44,35 +42,41 @@ export function mincomePositive (value: string): boolean {
   return parseFloat(commaToDots(value)) > 0
 }
 
+function makeCurrency (options) {
+  const { symbol, symbolWithCode, decimalsMax, formatCurrency } = options
+  return {
+    symbol,
+    symbolWithCode,
+    decimalsMax,
+    displayWithCurrency: (n) => formatCurrency(decimalsOrInt(n, decimalsMax)),
+    displayWithoutCurrency: (n) => decimalsOrInt(n, decimalsMax),
+    validate: (n) => validateMincome(n, decimalsMax),
+  }
+}
+
 // NOTE: if we needed for some reason, this could also be defined in
 //       a json file that's read in and generates this object. For
 //       example, that would allow the addition of currencies without
 //       having to "recompile" a new version of the app.
 const currencies = {
-  USD: {
+  USD: makeCurrency({
     symbol: '$',
     symbolWithCode: '$ USD',
     decimalsMax: 2,
-    displayWithCurrency: n => '$' + decimalsOrInt(n, 'USD'),
-    displayWithoutCurrency: n => decimalsOrInt(n, 'USD'),
-    validate: n => validateMincome(n, 'USD')
-  },
-  EUR: {
+    formatCurrency: amount => '$' + amount,
+  }),
+  EUR: makeCurrency({
     symbol: '€',
     symbolWithCode: '€ EUR',
     decimalsMax: 2,
-    displayWithCurrency: n => '€' + decimalsOrInt(n, 'EUR'),
-    displayWithoutCurrency: n => decimalsOrInt(n, 'EUR'),
-    validate: n => validateMincome(n, 'EUR')
-  },
-  BTC: {
+    formatCurrency: amount => '€' + amount,
+  }),
+  BTC: makeCurrency({
     symbol: 'Ƀ',
     symbolWithCode: 'Ƀ BTC',
     decimalsMax: DECIMALS_MAX,
-    displayWithCurrency: n => decimalsOrInt(n, 'BTC') + 'Ƀ',
-    displayWithoutCurrency: n => decimalsOrInt(n, 'BTC'),
-    validate: n => validateMincome(n, 'BTC')
-  }
+    formatCurrency: amount => amount + 'Ƀ',
+  })
 }
 
 export default currencies
