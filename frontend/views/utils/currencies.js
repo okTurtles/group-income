@@ -50,7 +50,7 @@ function makeCurrency (options) {
     decimalsMax,
     displayWithCurrency: (n: number) => formatCurrency(decimalsOrInt(n, decimalsMax)),
     displayWithoutCurrency: (n: number) => decimalsOrInt(n, decimalsMax),
-    validate: (n: string) => validateMincome(n, decimalsMax),
+    validate: (n: string) => validateMincome(n, decimalsMax)
   }
 }
 
@@ -63,19 +63,19 @@ const currencies = {
     symbol: '$',
     symbolWithCode: '$ USD',
     decimalsMax: 2,
-    formatCurrency: amount => '$' + amount,
+    formatCurrency: amount => '$' + amount
   }),
   EUR: makeCurrency({
     symbol: '€',
     symbolWithCode: '€ EUR',
     decimalsMax: 2,
-    formatCurrency: amount => '€' + amount,
+    formatCurrency: amount => '€' + amount
   }),
   BTC: makeCurrency({
     symbol: 'Ƀ',
     symbolWithCode: 'Ƀ BTC',
     decimalsMax: DECIMALS_MAX,
-    formatCurrency: amount => amount + 'Ƀ',
+    formatCurrency: amount => amount + 'Ƀ'
   })
 }
 
