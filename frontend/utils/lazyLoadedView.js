@@ -11,8 +11,8 @@ with lazy-loaded routes:
 https://github.com/vuejs/vue-router/pull/2140/files#diff-7d999265ce5b22152fdffee108ca6385
 
 WARNING: Components loaded with this strategy will **not** have access to in-component guards,
-such as `beforeRouteEnter`, `beforeRouteUpdate`, and `beforeRouteLeave`. If you need to use 
-these, you must either use route-level guards instead or lazy-load the component directly, without 
+such as `beforeRouteEnter`, `beforeRouteUpdate`, and `beforeRouteLeave`. If you need to use
+these, you must either use route-level guards instead or lazy-load the component directly, without
 handling loading state.
 */
 
