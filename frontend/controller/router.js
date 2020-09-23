@@ -146,20 +146,20 @@ const router = new Router({
       component: GroupChat,
       name: 'GroupChat',
       meta: { title: L('Group Chat') },
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/group-settings',
       component: GroupSettings,
       name: 'GroupSettings',
       meta: { title: L('Group Settings') },
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/group-chat/:chatName',
       component: GroupChat,
       name: 'GroupChatConversation',
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/join',

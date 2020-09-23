@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-summary
+.c-summary(data-test='monthOverview')
   i18n.c-summary-title.is-title-4(
     tag='h4'
     data-test='thisMonth'
@@ -84,14 +84,14 @@ export default {
           value: amountDone,
           max: amountTotal,
           hasMarks: false,
-          label: L('{value} of {max}', {
+          label: L('{value} out of {max}', {
             value: this.currency(amountDone),
             max: this.currency(amountTotal)
           })
         })
       } else {
         pS.push({
-          title: L('Amout sent'),
+          title: L('Amount sent'),
           value: amountDone,
           max: amountTotal,
           hasMarks: false,

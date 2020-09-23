@@ -3,11 +3,11 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
   template(slot='title')
     i18n Payment details
 
-  .is-title-2.c-title {{ withCurrency(payment.data.amount) }}
-  .c-subtitle.has-text-1 {{ subtitleCopy }}
+  .is-title-2.c-title(data-test='amount') {{ withCurrency(payment.data.amount) }}
+  .c-subtitle.has-text-1(data-test='subtitle') {{ subtitleCopy }}
 
   //- TODO This should be a table...
-  ul.c-payment-list
+  ul.c-payment-list(data-test='details')
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Date & Time
       strong {{ humanDate(payment.meta.createdDate, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
@@ -35,7 +35,7 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
-import { dateFromMonthstamp, humanDate } from '@utils/time.js'
+import { ISOStringToMonthstamp, dateFromMonthstamp, humanDate } from '@utils/time.js'
 
 export default {
   name: 'PaymentDetail',
@@ -51,6 +51,8 @@ export default {
     }
     if (payment) {
       this.payment = payment
+      // TODO: the payment augmentation duplication in Payment and PaymentRecord, and between todo/sent/received, needs to be resolved more thoroughly
+      this.payment.monthstamp = ISOStringToMonthstamp(this.payment.meta.createdDate)
     } else {
       console.warn('PaymentDetail: Missing valid query "id"')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
