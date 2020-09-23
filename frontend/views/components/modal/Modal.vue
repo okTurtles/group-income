@@ -37,6 +37,7 @@ export default {
     sbp('okTurtles.events/off', OPEN_MODAL)
     sbp('okTurtles.events/off', CLOSE_MODAL)
     sbp('okTurtles.events/off', REPLACE_MODAL)
+    sbp('okTurtles.events/off', SET_MODAL_QUERIES)
     window.removeEventListener('keyup', this.handleKeyUp)
   },
   watch: {

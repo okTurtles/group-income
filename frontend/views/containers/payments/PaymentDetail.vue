@@ -64,13 +64,9 @@ export default {
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'ourGroupProfile',
       'ourUsername',
       'userDisplayName'
     ]),
-    needsIncome () {
-      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    },
     withCurrency () {
       return currencies[this.payment.data.currencyFromTo[0]].displayWithCurrency
     },
