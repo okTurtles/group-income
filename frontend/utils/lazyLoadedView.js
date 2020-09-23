@@ -5,6 +5,17 @@ import LoadingModal from '@views/containers/loading-error/LoadingModal.vue'
 import ErrorModal from '@views/containers/loading-error/ErrorModal.vue'
 import LoadingModalFullScreen from '@views/containers/loading-error/LoadingBaseModal.vue'
 
+/*
+This method of loading components is documented here and is used to ensure compatibility
+with lazy-loaded routes:
+https://github.com/vuejs/vue-router/pull/2140/files#diff-7d999265ce5b22152fdffee108ca6385
+
+WARNING: Components loaded with this strategy will **not** have access to in-component guards,
+such as `beforeRouteEnter`, `beforeRouteUpdate`, and `beforeRouteLeave`. If you need to use 
+these, you must either use route-level guards instead or lazy-load the component directly, without 
+handling loading state.
+*/
+
 const lazyLoadView = ({ component, loading = LoadingPage, error = ErrorPage }) => {
   const AsyncHandler = () => ({ component, loading, error })
 
