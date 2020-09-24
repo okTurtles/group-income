@@ -31,7 +31,7 @@ Vue.use(Router)
 /*
   The following are reusable guard for routes
   the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
-  when a route is blocked
+  when a route is blocked.
  */
 const homeGuard = {
   guard: (to, from) => !!store.state.currentGroupId,
