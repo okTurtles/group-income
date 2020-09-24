@@ -18,13 +18,13 @@ import lazyLoadView from '@utils/lazyLoadedView.js'
   lazyLoadView function by default use the generic LoadingPage, but can be
   over written to show specific loading layout (same for the error page not yet implented)
 */
-const GroupDashboard = lazyLoadView({ component: import('@pages/GroupDashboard.vue') })
-const Messages = lazyLoadView({ component: import('@pages/Messages.vue') })
-const Contributions = lazyLoadView({ component: import('@pages/Contributions.vue') })
-const Payments = lazyLoadView({ component: import('@pages/Payments.vue') })
-const GroupChat = lazyLoadView({ component: import('@pages/GroupChat.vue') })
-const Mailbox = lazyLoadView({ component: import('@pages/Mailbox.vue') })
-const GroupSettings = lazyLoadView({ component: import('@pages/GroupSettings.vue') })
+const GroupDashboard = () => lazyLoadView({ component: import('@pages/GroupDashboard.vue') })
+const Messages = () => lazyLoadView({ component: import('@pages/Messages.vue') })
+const Contributions = () => lazyLoadView({ component: import('@pages/Contributions.vue') })
+const Payments = () => lazyLoadView({ component: import('@pages/Payments.vue') })
+const GroupChat = () => lazyLoadView({ component: import('@pages/GroupChat.vue') })
+const Mailbox = () => lazyLoadView({ component: import('@pages/Mailbox.vue') })
+const GroupSettings = () => lazyLoadView({ component: import('@pages/GroupSettings.vue') })
 
 Vue.use(Router)
 
