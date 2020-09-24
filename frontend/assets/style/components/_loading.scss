@@ -5,7 +5,7 @@
   border-radius: 0.625rem; // 10px
   margin-bottom: 1rem;
   min-height: 12.5rem;
-  background: linear-gradient(to right, var(--general_1) 8%, #f3f2f2 18%, var(--general_1) 100%);
+  background: linear-gradient(to right, var(--general_1) 8%, var(--general_2) 18%, var(--general_1) 100%);
   background-size: 100vw 10vw;
   animation: 6s linear forwards infinite placeload;
 
