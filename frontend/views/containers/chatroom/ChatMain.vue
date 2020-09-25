@@ -1,36 +1,5 @@
 <template lang='pug'>
 .c-chat-main(v-if='summary.title')
-  main-header(:description='summary.description' :router-back='summary.routerBack')
-
-    template(slot='title')
-      avatar.c-header-avatar(:src='summary.picture' alt='' size='sm')
-        i.c-header-private(
-          v-if='summary.private !== undefined'
-          :class='{"icon-globe": summary.private === false, "icon-lock": summary.private === true}'
-        )
-        | {{summary.title}}
-
-    template(slot='actions')
-      button.is-icon
-        i.icon-user-plus
-      button.is-icon
-        // TODO later - show a tooltip on notifications snooze
-        i.icon-bell
-
-      menu-parent
-        menu-trigger.is-icon
-          i.icon-ellipsis-v
-
-        // TODO later - be a drawer on mobile
-        menu-content.c-actions-content
-          ul
-            menu-item(tag='button' itemid='hash-1' icon='heart')
-              i18n Option 1
-            menu-item(tag='button' itemid='hash-2' icon='heart')
-              i18n Option 2
-            menu-item(tag='button' itemid='hash-3' icon='heart')
-              i18n Option 3
-
   .c-body(:style='bodyStyles')
     .c-body-loading(v-if='details.isLoading')
       loading
@@ -40,30 +9,26 @@
 
     .c-body-conversation(ref='conversation' v-else='')
       conversation-greetings
+
       template(v-for='(message, index) in details.conversation')
+        .c-divider(
+          v-if='changeDay(index)'
+          :key='`date-${index}`'
+        )
+          span {{proximityDate(message.time)}}
+
         i18n.is-subtitle.c-divider(
           v-if='startedUnreadIndex === index'
           :key='`subtitle-${index}`'
-        ) New messages
+        ) New
 
-        message-notification(
-          v-if='message.from === messageTypes.NOTIFICATION'
-          :key='`notification-${index}`'
-        ) {{message.text}}
-
-        message-interactive(
-          v-else-if='message.from === messageTypes.INTERACTIVE'
-          :key='`interactive-${index}`'
-          :text='message.text'
-        )
-
-        // cf: https://github.com/vuejs/eslint-plugin-vue/issues/462
-        // eslint-disable-next-line vue/require-component-is
-        message(
-          v-else=''
-          :key='`message-${index}`'
+        component(
+          :key='messageKey(message, index)'
+          :id='message.id'
+          :is='messageType(message)'
           :text='message.text'
           :who='who(isCurrentUser(message.from), message.from)'
+          :time='message.time'
           :avatar='avatar(isCurrentUser, message.from)'
           :variant='variant(isCurrentUser(message.from))'
           :hideWho='shouldHideWho(index)'
@@ -82,27 +47,21 @@
 </template>
 
 <script>
-import MainHeader from './MainHeader.vue'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
 import { currentUserId, messageTypes } from '@containers/chatroom/fakeStore.js'
+import { proximityDate } from '@utils/time.js'
 
 export default {
   name: 'ChatMain',
   components: {
-    MainHeader,
     Avatar,
     Loading,
-    MenuParent,
-    MenuTrigger,
-    MenuContent,
-    MenuItem,
     Message,
     MessageInteractive,
     MessageNotification,
@@ -177,6 +136,33 @@ export default {
     }
   },
   methods: {
+    proximityDate,
+    messageKey (message, index) {
+      let mt = `message-${index}`
+      switch (message.from) {
+        case messageTypes.NOTIFICATION:
+          mt = `notification-${index}`
+          break
+
+        case messageTypes.INTERACTIVE:
+          mt = `interactive-${index}`
+          break
+      }
+      return mt
+    },
+    messageType (message) {
+      let mt = 'message'
+      switch (message.from) {
+        case messageTypes.NOTIFICATION:
+          mt += '-notification'
+          break
+
+        case messageTypes.INTERACTIVE:
+          mt += '-interactive'
+          break
+      }
+      return mt
+    },
     isCurrentUser (fromId) {
       return this.currentUserAttr.id === fromId
     },
@@ -189,8 +175,9 @@ export default {
     },
     who (isCurrentUser, fromId) {
       const user = isCurrentUser ? this.currentUserAttr : this.details.participants[fromId]
-
-      return user.displayName || user.username
+      if (user) {
+        return user.displayName || user.username
+      }
     },
     variant (isCurrentUser) {
       return isCurrentUser ? this.messageVariants.SENT : this.messageVariants.RECEIVED
@@ -229,6 +216,14 @@ export default {
         console.log('TODO $store send message')
         this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
       }, 2000)
+    },
+    changeDay (index) {
+      const conv = this.details.conversation
+      if (index > 0 && index <= conv.length) {
+        const prev = new Date(conv[index - 1].time)
+        const current = new Date(conv[index].time)
+        return prev.getDay() !== current.getDay()
+      } else return false
     }
   }
 }
@@ -243,24 +238,6 @@ export default {
   flex-direction: column;
 }
 
-.c-header-top .c-actions-content {
-  top: 2rem;
-  right: 0;
-  left: auto;
-  width: 10rem;
-}
-
-.c-header-private {
-  margin-right: 0.25rem;
-}
-
-.c-header-private,
-.c-header-avatar {
-  @include tablet {
-    display: none;
-  }
-}
-
 .c-body {
   display: flex;
   flex-grow: 1;
@@ -269,36 +246,34 @@ export default {
 }
 
 .c-body-conversation {
-  padding: 1rem 0;
+  padding: 2rem 0;
 }
 
 .c-divider {
-  display: flex;
-  align-items: center;
   text-align: center;
+  position: relative;
   margin: 1rem 0;
 
-  &::before,
-  &::after {
-    content: "";
-    flex-grow: 1;
-    border-bottom: 1px solid $warning_0;
+  span {
+    background: $background_0;
+    position: relative;
+    padding: .5rem;
+    color: $text_1;
+    font-size: $size_5;
   }
 
-  &::before {
-    margin-right: 0.5rem;
-  }
-
-  &::after {
-    margin-left: 0.5rem;
+  &:before {
+    content: '';
+    height: 1px;
+    width: 100%;
+    background-color: $general_0;
+    position: absolute;
+    left: 0;
+    top: 50%;
   }
 }
 
 @include tablet {
-  .c-header {
-    padding: 1rem;
-  }
-
   .c-body {
     overflow: auto;
   }

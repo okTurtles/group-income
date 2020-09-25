@@ -1,13 +1,8 @@
 <template lang='pug'>
 .c-greetings
-  avatar(
-    v-for='(user, index) in founders'
-    :key='`user-${index}`'
-    :src='user.picture'
-    :alt='user.displayName || user.username'
-    size='sm'
-  )
+  i18n.is-title-4(tag='h3') Welcome!
   message-notification {{text}}
+
 </template>
 
 <script>

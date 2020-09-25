@@ -1,6 +1,14 @@
 <template lang='pug'>
 .c-conversation-list
-  i18n.label(tag='label') {{title}}
+  .c-group-members-header
+    i18n.is-title-4(tag='h3') {{title}}
+
+    button.button.is-small.is-outlined(
+      data-test='inviteButton'
+      @click='openModal("CreateNewChannel")'
+    )
+      i.icon-plus.is-prefix
+      i18n New
 
   ul
     list-item(
@@ -22,6 +30,8 @@
 </template>
 
 <script>
+import { OPEN_MODAL } from '@utils/events.js'
+import sbp from '~/shared/sbp.js'
 import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
 
@@ -42,14 +52,10 @@ export default {
     routeName: String,
     type: String
   },
-  data () {
-    return {}
-  },
-  computed: {},
   methods: {
     getIcon (id) {
       const isPrivate = this.list.conversations[id].private
-      return isPrivate === undefined ? '' : (isPrivate ? 'lock' : 'globe')
+      return isPrivate === undefined ? '' : (isPrivate ? 'lock' : 'hashtag')
     },
     buildUrl (id) {
       const { list, routeName, type } = this
@@ -67,6 +73,9 @@ export default {
 
       // ... once $store is implement, we can just pass the following:
       // return { path: `${routePath}${name}` }
+    },
+    openModal (modal, queries) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     }
   }
 }
@@ -74,4 +83,11 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-group-members-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
 </style>

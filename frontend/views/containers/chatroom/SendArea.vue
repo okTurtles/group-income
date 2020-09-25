@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-send
+.c-send.inputgroup
   textarea.textarea.c-send-textarea(
     ref='textarea'
     :disabled='loading'
@@ -12,7 +12,12 @@
   )
 
   .c-send-actions(ref='actions')
-    i18n.button.c-send-btn(
+    .addons
+      button.is-icon(aria-label='Copy text')
+        i.icon-poll
+      button.is-icon(aria-label='Create pool')
+        i.icon-grin-beam
+    i18n.sr-only(
       tag='button'
       :class='{ isActive }'
       @click='sendMessage'
@@ -184,5 +189,9 @@ $initialHeight: 43px;
       color: $text_1;
     }
   }
+}
+
+.icon-grin-beam::before {
+  font-weight: 400;
 }
 </style>

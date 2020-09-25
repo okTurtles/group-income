@@ -1,13 +1,15 @@
 <template lang='pug'>
 .c-notification
-  p.c-notification-bubble
-    // TODO: #502 - Chat: Add support to markdown formatted text
-    slot
+  // TODO: #502 - Chat: Add support to markdown formatted text
+  p.c-text(v-if='text') {{text}}
 </template>
 
 <script>
 export default {
-  name: 'MessageNotification'
+  name: 'MessageNotification',
+  props: {
+    text: String
+  }
 }
 </script>
 
@@ -16,19 +18,28 @@ export default {
 
 .c-notification {
   text-align: center;
+  position: relative;
 
-  &-bubble {
-    display: inline-block;
-    margin: 1rem 1rem 0;
-    padding: 0.25rem 0.5rem;
-    text-align: center;
-    max-width: 32rem;
-    background-color: $general_2;
-    border-radius: $radius-large;
-
-    @include tablet {
-      margin: 1rem 1rem 0;
-    }
+  p {
+    background: $background_0;
+    position: relative;
+    padding: .5rem;
   }
+
+  &:before {
+    content: '';
+    height: 1px;
+    width: 100%;
+    background-color: $general_0;
+    position: absolute;
+    left: 0;
+    top: 50%;
+  }
+}
+
+.c-text {
+  display: inline-block;
+  background-color: $background_0;
+  margin: 0 auto;
 }
 </style>

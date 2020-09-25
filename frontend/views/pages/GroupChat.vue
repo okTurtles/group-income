@@ -1,10 +1,16 @@
 <template lang='pug'>
 page(pageTestName='dashboard' pageTestHeaderName='groupName')
-  template(#title='') {{ L('Group Chat') }}
+  template(#title='')
+    .c-header
+      i(
+        v-if='summary.private !== undefined'
+        :class='`icon-${ summary.private ? "lock" : "hashtag" }`'
+      )
+      | {{summary.title}}
+  template(#description='') {{ members.size + ' ' + L('members') }} ∙ {{ summary.description }}
   template(#sidebar='')
     chat-nav(
       :title='L("Chat")'
-      :search-placeholder='L("Search for a channel")'
     )
       conversations-list(
         :title='L("Channels")'
@@ -14,9 +20,9 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         :type='type.groups'
       )
 
-      group-members
+      group-members(:title='L("Direct Messages")' action='chat')
 
-  .card
+  .card.c-card
     chat-main(
       :summary='summary'
       :details='details'
@@ -58,7 +64,8 @@ export default {
     members () {
       return {
         order: groupA.members,
-        conversations: users
+        conversations: users,
+        size: groupA.members.length
       }
     },
     type () {
@@ -74,4 +81,15 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-card {
+  margin-top: 1.5rem;
+  padding: 0 2.5rem 1.5rem 2.5rem;
+}
+
+.c-header {
+  i {
+    margin-right: 0.5rem;
+    color: $text_1;
+  }
+}
 </style>

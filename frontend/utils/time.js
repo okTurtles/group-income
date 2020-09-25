@@ -1,4 +1,5 @@
 'use strict'
+import L from '@view-utils/translations.js'
 
 export const MINS_MILLIS = 60000
 export const HOURS_MILLIS = 60 * MINS_MILLIS
@@ -60,4 +61,28 @@ export function humanDate (
     return ''
   }
   return new Date(datems).toLocaleDateString(locale, opts)
+}
+
+export function proximityDate (date: Date): Date {
+  date = new Date(date)
+  const today = new Date()
+  const yesterday = (d => new Date(d.setDate(d.getDate() - 1)))(new Date())
+  const lastWeek = (d => new Date(d.setDate(d.getDate() - 7)))(new Date())
+
+  for (const toReset of [date, today, yesterday, lastWeek]) {
+    toReset.setHours(0)
+    toReset.setMinutes(0)
+    toReset.setSeconds(0, 0)
+  }
+
+  let pd = date > lastWeek ? humanDate(date, { month: 'short', day: 'numeric', year: 'numeric' }) : humanDate(date)
+  if (date.getTime() === yesterday.getTime()) pd = L('Yesterday')
+  if (date.getTime() === today.getTime()) pd = L('Today')
+
+  return pd
+}
+
+export function getTime (date) {
+  const t = new Date(date)
+  return `${t.getHours()}:${t.getMinutes()}`
 }

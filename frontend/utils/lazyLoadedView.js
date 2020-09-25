@@ -23,6 +23,17 @@ Vue.component('IncomeDetails', () => import('../views/containers/contributions/I
 Vue.component('PaymentDetail', () => import('../views/containers/payments/PaymentDetail.vue'))
 Vue.component('RecordPayment', () => import('../views/containers/payments/RecordPayment.vue'))
 
+Vue.component('UserProfile', () => import('../views/containers/user-settings/UserProfile.vue'))
+Vue.component('Placeholder', () => import('../views/containers/user-settings/Placeholder.vue'))
+Vue.component('Appearence', () => import('../views/containers/user-settings/Appearence.vue'))
+Vue.component('AppLogs', () => import('../views/containers/user-settings/AppLogs.vue'))
+Vue.component('Troubleshooting', () => import('../views/containers/user-settings/Troubleshooting.vue'))
+Vue.component('GroupMembersDirectMessages', () => import('../views/containers/chatroom/GroupMembersDirectMessages.vue'))
+Vue.component('CreateNewChannelModal', () => import('../views/containers/chatroom/CreateNewChannelModal.vue'))
+Vue.component('EditChannelNameModal', () => import('../views/containers/chatroom/EditChannelNameModal.vue'))
+Vue.component('EditChannelDescriptionModal', () => import('../views/containers/chatroom/EditChannelDescriptionModal.vue'))
+Vue.component('DeleteChannelModal', () => import('../views/containers/chatroom/DeleteChannelModal.vue'))
+
 // TODO Remove after design test period
 Vue.component('DSModalSimple', () => import('../views/containers/design-system/DSModalSimple.vue'))
 Vue.component('DSModalNested', () => import('../views/containers/design-system/DSModalNested.vue'))

@@ -204,7 +204,7 @@ page(
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
               i.icon-share-atl share-atl
-              i.icon-search search
+              i.icon-search icon-search
               i.icon-sort-down sort-down
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
@@ -214,6 +214,8 @@ page(
               i.icon-user-minus icon-user-minus
               i.icon-vote-yea icon-vote-yea
               i.icon-wifi icon-wifi
+              i.icon-hashtag icon-hashtag
+              i.icon-grin-beam icon-grin-beam
         tr
           td
             pre

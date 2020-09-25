@@ -1,18 +1,21 @@
 <template lang='pug'>
 .c-message(:class='[variant, isSameSender && "sameSender"]')
-  avatar.c-avatar(:src='avatar' :class='{ alignToText: !hasWhoInvisible }' aria-hidden='true' size='sm')
+  avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
   .c-body
-    span.has-text-1.c-who(:class='{ "gi-sr-only": hasWhoInvisible }')
-      | {{who}}
+    .c-who(:class='{ "gi-sr-only": hasWhoInvisible }')
+      span.is-title-4 {{who}}
+      span.has-text-1 {{getTime(time)}}
+
     // TODO: #502 - Chat: Add support to markdown formatted text
     p.c-text(v-if='text') {{text}}
-    slot(v-else='')
+
   button.is-icon.has-text-danger.c-retry(:class='{ alignToText: !hasWhoInvisible }' v-if='variant === "failed"' @click='$emit("retry")')
     i.icon-undo
 </template>
 
 <script>
 import Avatar from '@components/Avatar.vue'
+import { getTime } from '@utils/time.js'
 
 const variants = {
   SENT: 'sent',
@@ -29,6 +32,7 @@ export default {
     text: String,
     who: String,
     avatar: String,
+    time: Date,
     variant: {
       type: String,
       validator (value) {
@@ -45,6 +49,9 @@ export default {
     hasWhoInvisible () {
       return this.hideWho || this.isSameSender
     }
+  },
+  methods: {
+    getTime
   }
 }
 </script>
@@ -56,13 +63,6 @@ export default {
   display: flex;
   margin: 1rem 0 0;
   align-items: flex-start;
-
-  &.sent,
-  &.failed {
-    margin-left: 4rem;
-    flex-direction: row-reverse;
-    text-align: right;
-  }
 
   &.sameSender {
     margin-top: 0.25rem;
@@ -90,15 +90,6 @@ export default {
 }
 
 .c-avatar {
-  .sent &,
-  .failed & {
-    margin: 0 0 0 0.5rem;
-
-    &.alignToText {
-      margin-top: 1.3rem; // visually center align to bubble text
-    }
-  }
-
   .isHidden &,
   .sameSender & {
     visibility: hidden;
@@ -113,9 +104,8 @@ export default {
 .c-who {
   display: block;
 
-  .sent &,
-  .failed & {
-    margin-right: 0.25rem;
+  span {
+    padding-right: 0.25rem;
   }
 }
 
@@ -124,21 +114,6 @@ export default {
   word-wrap: break-word; // too much long words will break
   white-space: pre-line; // break \n to a new line
   margin: 0;
-
-  .sent & {
-    background-color: $primary_0;
-    color: $background;
-    border: 1px solid;
-    border-radius: $radius-large;
-    padding: 0.25rem 0.5rem;
-  }
-
-  .failed & {
-    color: $text_1;
-    border: 1px dashed $danger_0;
-    border-radius: $radius-large;
-    padding: 0.25rem 0.5rem;
-  }
 
   // When .c-shot is the only element (when .c-who isn't rendered)
   &:first-child:last-child {
