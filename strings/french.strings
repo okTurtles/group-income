@@ -73,7 +73,7 @@
 "Only the group creator can remove members." = "Seul le fondateur du groupe peut exclure des membres.";
 
 /* MISSING TRANSLATION - model/contracts/group.js */
-"There is an identical open proposal." = "Une proposition ouverte identique existe déjà.";
+"There is an identical open proposal." = "Une proposition identique a déjà été créée.";
 
 /* MISSING TRANSLATION - model/state.js */
 "Automated ban because they're sending malformed messages resulting in: {error}" = "Bannissement automatique pour envoi de messages malformés causant l'erreur : {error}";
@@ -142,7 +142,7 @@
 "{service} from {who}" = "{service} de la part de {who}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembers.vue */
-"See all {groupMembersCount} members" = "Afficher tous les {groupMembersCount} membres";
+"See all {groupMembersCount} members" = "Afficher les {groupMembersCount} membres";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupPurpose.vue */
 "Add description" = "Ajouter une description";
@@ -232,10 +232,10 @@
 "Change disagreement number from {X} to {N}." = "Faire passer le seuil de rejet de {X} à {N}.";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
-"Change from a disagreement based voting system to a percentage based one, with minimum agreement of {percent}." = "Passer d'un système basé sur le nombre de votes "non" à un système basé sur les pourcentages, avec un seuil minimum d'approbation de {percent}.";
+"Change from a disagreement based voting system to a percentage based one, with minimum agreement of {percent}." = "Passer d'un système basé sur le nombre de votes négatifs à un système basé sur les pourcentages, avec un seuil minimum d'approbation de {percent}.";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
-"Change from a percentage based voting system to a disagreement based one, with a maximum of {N} “no” votes." = "Passer d'un système basé sur les pourcentages à un système basé sur le nombre de votes "non", avec un maximum de {N}.";
+"Change from a percentage based voting system to a disagreement based one, with a maximum of {N} “no” votes." = "Passer d'un système basé sur les pourcentages à un système basé sur le nombre de votes négatifs, avec un maximum de {N}.";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "Change percentage based from {X} to {N}." = "Change percentage based from {X} to {N}.";
