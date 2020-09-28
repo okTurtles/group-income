@@ -1,5 +1,5 @@
 <template lang='pug'>
-  modal-base-template(class='has-background' ref='modal' :a11yTitle='L("Loading")')
+  modal-base-template(class='has-background' ref='modal' :a11yTitle='L("Loading")' :loading='true')
     .wrapper-container
       .container
         i18n(tag='h2' class='is-title-2 c-title') Loading...

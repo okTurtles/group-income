@@ -41,7 +41,7 @@ const modaMixins = {
       this.modalIsActive = false
     },
     unload () {
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
+      if (!this.loading) sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   }
 }
