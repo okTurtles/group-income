@@ -27,7 +27,7 @@ const modaMixins = {
     document.addEventListener('keydown', this.trapFocus)
   },
   beforeDestroy () {
-    if (this.loading === 'Loading') this.setTemporaryReducedMotion()
+    if (this.loading) this.setTemporaryReducedMotion()
     document.removeEventListener('keydown', this.trapFocus)
   },
   components: {
