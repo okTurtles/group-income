@@ -200,6 +200,13 @@ const mutations = {
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
   },
+  setTemporaryReducedMotion (state, isChecked) {
+    const tempSettings = state.reducedMotion
+    state.reducedMotion = false
+    setTimeout(() => {
+      state.reducedMotion = tempSettings
+    }, 300)
+  },
   setIncreasedContrast (state, isChecked) {
     state.increasedContrast = isChecked
   },
