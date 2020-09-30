@@ -44,7 +44,7 @@ Vue.component('PaymentsHistoryModal', () => import('../views/containers/payments
 Vue.component('RemoveMember', () => import('../views/containers/proposals/RemoveMember.vue'))
 Vue.component('ChangeVotingRules', () => import('../views/containers/proposals/ChangeVotingRules.vue'))
 
-Vue.component('IncomeDetails', () => import('../views/containers/contributions/IncomeDetails.vue'))
+Vue.component('IncomeDetails', () => lazyLoadView({ component: import('../views/containers/contributions/IncomeDetails.vue'), loading: LoadingModalFullScreen, error: ErrorModal }))
 
 Vue.component('PaymentDetail', () => import('../views/containers/payments/PaymentDetail.vue'))
 Vue.component('RecordPayment', () => import('../views/containers/payments/RecordPayment.vue'))
