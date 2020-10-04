@@ -18,7 +18,7 @@
     content: "";
     position: absolute;
     z-index: -3;
-    height: 2px;
+    height: 0.125rem;
     width: 100%;
     background-color: $primary_0;
     top: 50%;
@@ -28,7 +28,7 @@
   &::after {
     background-color: $background_0;
     z-index: 3;
-    width: 4px;
+    width: 0.25rem;
     right: 0;
   }
 
@@ -36,9 +36,9 @@
     position: relative;
     width: 1.5rem;
     height: 1.5rem;
-    font-size: 12px;
+    font-size: $size_5;
     transition: background-color 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-    min-height: 20px;
+    min-height: 0.8rem;
     padding: 0;
 
     &::before {

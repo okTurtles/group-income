@@ -13,10 +13,11 @@ form.c-search-form(
         data-test='search'
         :placeholder='placeholder'
         :value='value'
+        @keyup.esc='$emit("input", "")'
         @input='$emit("input", $event.target.value)'
       )
       .addons
-        button.is-icon-small(
+        button.c-clear.is-icon-small(
           v-if='value !== ""'
           :aria-label='L("Clear search")'
           @click='$emit("input", "")'
@@ -63,6 +64,27 @@ export default {
     display: flex;
     align-items: center;
     margin-right: 0.5rem;
+  }
+
+  // hide close by default...
+  .input + .addons button {
+    opacity: 0;
+  }
+
+  // visible when interacted
+  .input:focus + .addons .c-clear,
+  .c-clear:hover,
+  .c-clear:focus {
+    opacity: 1;
+  }
+
+  .c-clear {
+    background-color: $general_2;
+
+    &:hover,
+    &:focus {
+      background-color: $general_1;
+    }
   }
 }
 </style>

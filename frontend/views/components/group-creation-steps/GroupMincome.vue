@@ -3,9 +3,12 @@
   i18n.is-title-4.steps-title(tag='h4') 3. Minimum Income
 
   .card
-    fieldset
+    fieldset.field
       i18n.label What is the minimum each member should receive monthly?
-      .selectgroup
+      .selectgroup(
+        :class='{ error: $v.form.mincomeAmount.$error }'
+        v-error:mincomeAmount=''
+      )
         input.input(
           ref='mincome'
           inputmode='decimal'
@@ -16,7 +19,6 @@
           step='1'
           min='0'
           required=''
-          :class='{ error: $v.form.mincomeAmount.$error }'
           :value='group.mincomeAmount'
           @input='update'
           @keyup.enter='next'
@@ -34,7 +36,7 @@
             :key='code'
           ) {{ currency.symbolWithCode }}
 
-    i18n.has-text-1 This value can be adjusted in the future.
+      i18n.helper This value can be adjusted in the future.
 
     slot
 </template>

@@ -47,7 +47,7 @@ export const users = {
     id: '111',
     name: 'johnn',
     displayName: 'John Mars',
-    picture: '/assets/images/default-avatar.png',
+    picture: '/assets/images/user-avatar-default.png',
     unreadCount: 0,
     description: 'You and John are both part of Dreamers group'
   },
@@ -55,7 +55,7 @@ export const users = {
     id: '222',
     name: 'hlenon',
     displayName: 'Hugo Lenon',
-    picture: '/assets/images/default-avatar.png',
+    picture: '/assets/images/user-avatar-default.png',
     unreadCount: 0,
     description: null
   },
@@ -63,7 +63,7 @@ export const users = {
     id: '333',
     name: 'liliabt',
     displayName: 'Lilia Bouvet',
-    picture: '/assets/images/default-avatar.png',
+    picture: '/assets/images/user-avatar-default.png',
     unreadCount: 0,
     description: null
   },
@@ -71,7 +71,7 @@ export const users = {
     id: '444',
     name: 'rickyricky',
     displayName: 'Rick Eggs',
-    picture: '/assets/images/default-avatar.png',
+    picture: '/assets/images/user-avatar-default.png',
     unreadCount: 0,
     description: null
   },
@@ -79,7 +79,7 @@ export const users = {
     id: '555',
     name: 'ericrock',
     displayName: 'Eric Rock',
-    picture: '/assets/images/default-avatar.png',
+    picture: '/assets/images/user-avatar-default.png',
     unreadCount: 1,
     description: 'You and Eric are both part of Dreamers group'
   }

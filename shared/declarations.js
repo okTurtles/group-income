@@ -167,7 +167,7 @@ declare module './GroupPrivacy.vue' { declare module.exports: Object }
 declare module './GroupPurpose.vue' { declare module.exports: Object }
 declare module './GroupRules.vue' { declare module.exports: Object }
 declare module './interface.js' { declare module.exports: any }
-declare module './lazyLoadedView.js' { declare module.exports: any }
+declare module './lazyLoadedView.js' { declare module.exports: Function }
 declare module './Masker.vue' { declare module.exports: Object }
 declare module './MaskToModal.vue' { declare module.exports: Object }
 declare module './MenuContent.vue' { declare module.exports: Object }

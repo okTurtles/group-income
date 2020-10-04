@@ -1,0 +1,24 @@
+.loading-box {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  border-radius: 0.625rem; // 10px
+  margin-bottom: 1rem;
+  min-height: 12.5rem;
+  background: linear-gradient(to right, var(--general_1) 8%, var(--general_2) 18%, var(--general_1) 100%);
+  background-size: 100vw 10vw;
+  animation: 6s linear forwards infinite placeload;
+
+  @for $i from 1 through 5 {
+    &:nth-child(#{$i}) {
+      animation-delay: 200ms * $i;
+    }
+  }
+}
+
+@keyframes placeload {
+  0% { background-position: -100% 0; }
+  25% { background-position: 100% 0; }
+  50% { background-position: 100% 0; }
+  100% { background-position: 100% 0; }
+}

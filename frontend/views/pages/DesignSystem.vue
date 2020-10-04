@@ -1095,33 +1095,11 @@ page(
                     icon='comment'
                   ) Send message
 
-  article#modal
+  article#modals
     section.card
-      h2.is-title-2.card-header Modal
-      table
-        thead
-          th code
-          th demo
-        tr
-          td
-            code
-              | sbp('okTurtles.events/emit',
-              br
-              |   OPEN_MODAL, 'DSModalSimple'
-              br
-              | )
-          td
-            button(@click='openModal("DSModalSimple")')
-              i18n Open Modal
-
-  article#modalBase
-    section.card
-      h2.is-title-2.card-header Modal Base
-      i18n(tag='p') The modal base as very basic functionality. Compare to normal modal it has very basic style and let us add any kind of content.
-      i18n(tag='p') It only contain opening and closing mechanism (shared with the modal in modal mixin).
-      i18n(tag='p') The main use at the moment is to be used on a fullscreen master modal that can contains other small sub modals (ex: income details)
-      br
-      i18n(tag='p') NB: at the moment we don't have sub sub modal, there for the implementation is flexible to allow an inifinty of modal but the animation is not implemented
+      h2.is-title-2.card-header Modals
+      h3.is-title-3 Modal standard
+      p See the modal demo to know what things can be customized. A modal can also be opened on top of another modal.
       br
       table
         thead
@@ -1136,8 +1114,52 @@ page(
               br
               | )
           td
-            button(@click='openModal("DSModalNested")')
+            button.is-outlined(@click='openModal("DSModalNested")')
               i18n Open Modal
+
+      h3.is-title-3 Modal fullscreen
+      p This modal only contain opening and closing mechanism (shared with the modal in modal mixin).
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            p A fullscreen modal.
+            code
+              | sbp('okTurtles.events/emit',
+              br
+              |   OPEN_MODAL, 'DSModalFullscreen'
+              br
+              | )
+          td
+            button.is-outlined(@click='openModal("DSModalFullscreen")')
+              i18n Open Modal
+
+      h3.is-title-3 Modal with Query
+      p Some modals need "context" to be displayed. We pass that data through URL queries.
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            code
+              | sbp('okTurtles.events/emit',
+              br
+              |  OPEN_MODAL, 'DSModalQuery', { name: "John"}
+              br
+              | )
+          td
+            .buttons
+              button.is-outlined(@click='openModal("DSModalQuery", { name: "John"})')
+                i18n Open Modal "John"
+
+              button.is-outlined(@click='openModal("DSModalQuery", { name: "Kate"})')
+                i18n Open Modal "Kate"
+
   article#Illustrations
     section.card
       h2.is-title-2.card-header Illustrations (SVGs)
@@ -1361,8 +1383,8 @@ export default {
     login () {
       console.error('unimplemented, try using the actual Login.vue modal')
     },
-    openModal (mode) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
+    openModal (name, queries) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, name, queries)
     },
     handleScroll (e) {
       const top = e.target.scrollTop

@@ -19,7 +19,7 @@
       :key='username'
     )
       profile-card(:username='username')
-        avatar(v-if='invitedBy' size='sm' data-test='openMembersProfileCard')
+        avatar(v-if='invitedBy' src='/assets/images/avatar-pending.png' size='sm' data-test='openMembersProfileCard')
         avatar-user(v-else :username='username' size='sm' data-test='openMemberProfileCard')
 
         button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
@@ -145,7 +145,7 @@ export default {
 }
 
 .c-name {
-  margin-right: auto;
+  margin-right: 0.5rem;
   margin-left: 0.5rem;
   font-family: inherit;
   border-bottom: 1px solid transparent;

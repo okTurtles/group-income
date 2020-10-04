@@ -7,14 +7,14 @@
     label.selectsolo.c-select
       i18n.sr-only Show per page
       select.select(
-        ref='select'
+        :value='rowsPerPage'
         @change='updatePagination'
       )
         option(
-          v-for='numberPerPage in [10, 20, 30]'
-          :index='numberPerPage'
-          :value='numberPerPage'
-        ) {{ `${numberPerPage} ${L('results')}` }}
+          v-for='count in config.options'
+          :index='count'
+          :value='count'
+        ) {{ `${count} ${L('results')}` }}
     i18n.has-text-1(
       tag='span' aria-hidden='true'
     ) per page
@@ -23,17 +23,22 @@
     i18n.has-text-1(
       tag='p'
       data-test='paginationInfo'
-      :args='{ currentPage: `<span class="has-text-0">1 — 5</span>`, maxPages: `<span class="has-text-0">5</span>`}'
-    ) {currentPage} out of {maxPages}
+      :args='{ \
+        range: `<span class="has-text-0">${paginationInfo.begin} - ${paginationInfo.end}</span>`, \
+        count: `<span class="has-text-0">${paginationInfo.count}</span>` \
+      }'
+    ) {range} out of {count}
 
     .c-previous-next
-      button.c-control.is-unstyled(
+      button.is-icon-small.c-btn(
+        :disabled='page === 0'
         @click='previousPage'
         :aria-label='L("Previous page")'
       )
         i.icon-chevron-left
 
-      button.c-control.is-unstyled(
+      button.is-icon-small.c-btn(
+        :disabled='page + 1 >= maxPages'
         @click='nextPage'
         :aria-label='L("Next page")'
       )
@@ -43,15 +48,40 @@
 <script>
 export default {
   name: 'PaymentsPagination',
+  props: {
+    count: Number,
+    page: Number,
+    rowsPerPage: Number
+    // @changePage('next'|'prev')
+    // @changeRowsPerPage(String) // Page Number
+  },
+  data: () => ({
+    config: {
+      options: [10, 20, 30]
+    }
+  }),
+  computed: {
+    maxPages () {
+      return Math.ceil(this.count / this.rowsPerPage)
+    },
+    paginationInfo () {
+      const start = this.rowsPerPage * this.page
+      return {
+        begin: start + 1,
+        end: Math.min(start + this.rowsPerPage, this.count),
+        count: this.count
+      }
+    }
+  },
   methods: {
-    updatePagination () {
-      console.log('Todo: implement update pagination settings')
+    updatePagination (e) {
+      this.$emit('changeRowsPerPage', +e.target.value)
     },
     previousPage () {
-      console.log('Todo: implement previous page functionality')
+      this.$emit('changePage', 'prev')
     },
     nextPage () {
-      console.log('Todo: implement next page functionality')
+      this.$emit('changePage', 'next')
     }
   }
 }
@@ -71,13 +101,19 @@ export default {
   margin: 0 0.5rem;
 }
 
-.c-control {
-  width: 1.7rem;
-  height: 1.7rem;
-  border-radius: 50%;
-  color: $general_0;
+.c-btn {
   background-color: $general_2;
   margin: 0 0.25rem;
+
+  &[disabled] {
+    background-color: $general_2;
+    color: $general_0;
+  }
+
+  &:hover,
+  &:focus {
+    background-color: $general_0;
+  }
 
   &:first-child i {
     margin-left: -1px;
@@ -85,11 +121,6 @@ export default {
 
   &:last-child i {
     margin-right: -1px;
-  }
-
-  &::hover {
-    color: $text_0;
-    background-color: $general_0;
   }
 }
 </style>

@@ -20,6 +20,12 @@ If you notice any file not properly linted by `standard`, this means there's a b
 
 _It is still on you to ensure your code conforms to the `standard` spec, whether or not the linter catches everything._
 
+### A Note On Classes: Avoid Them
+
+For this project we've made the very conscious decision to avoid Object Oriented Programming (OOP) as much as possible. Instead, we use [Selector-based Programming (SBP)](#sbp). What this means in practice is that where you'd normally see classes being used, we ask that you use SBP namespaces instead. We do this to avoid many of the pitfalls of OOB, and as a result our code ends up much simpler and more flexible than it otherwise would be.
+
+You may of course use any necessary classes that others have created if it is unavoidable (for example, some of the built-in Node.js classes). However, avoid creating your own class definitions. In the entire project there is only a single class that we have declared that acts as an exception to this rule, and that is `GIMessage`. If there is no way to avoid creating a class definition, it may be permitted, but a strong case must be made first that there is no other way to do it.
+
 ## Vue.js Style Guide
 
 Since this is a Vue.js project, any pull request **must** follow the *Priority A* rules mentioned in the [Vue.js Style Guide](https://vuejs.org/v2/style-guide/), and *should* follow the *Priority B* rules. Please take the time to read at least those two sections.
@@ -302,7 +308,17 @@ okTurtlesDataSet({ login: true })
 okTurtlesEventsEmit('CLOSE_MODAL')
 ```
 
-More details about SBP will be written in a blog post soon. In the meantime, you are encouraged to adopt this paradigm wherever possible in your own code.
+More details about SBP will be written in a blog post soon. In the meantime, you are encouraged to adopt this paradigm wherever possible in your own code. In the meantime, here are some benefits of using SBP:
+
+- SBP helps you organize code
+- SBP helps you create code by thinking in terms of namespaces and APIs
+- SBP will make it trivial to secure your code
+- SBP makes code inter-operable with other languages, more future-proof, and more portable
+- SBP replaces the need for OOP
+- SBP is based on message-passing (an idea from Smalltalk) and comes with all of the benefits that message-passing architectures afford
+- SBP embraces the LISP idea that `code = data` and gives you all of the benefits and possibilities that affords
+- SBP makes it easier to debug and understand your code
+- SBP makes it possible to create architectures that are remarkably flexible, clean, and safe; this comes from the benefits described above
 
 Search the project for `sbp(` for examples, and talk with @taoeffect about it before diving in (at least until the docs for SBP are still waiting to be written).
 

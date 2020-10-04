@@ -26,15 +26,19 @@
             i.icon-chevron-right
 
     section.tab-section
-      slot
+      tab-item
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
+import TabItem from '@components/tabs/TabItems.vue'
 
 export default {
   name: 'TabWrapper',
+  components: {
+    TabItem
+  },
   props: {
     tabNav: Array,
     defaultTab: String // initial tab name
@@ -42,9 +46,10 @@ export default {
   data () {
     return {
       activeTab: 0,
-      tabItems: [],
-      open: true,
-      title: this.tabNav[0].links[0].title || ''
+      activeComponent: null,
+      title: '',
+      transitionName: '',
+      open: true
     }
   },
   computed: {
@@ -53,20 +58,6 @@ export default {
     ])
   },
   watch: {
-    /**
-     * When v-model is changed set the new active tab.
-     */
-    value (value) {
-      this.changeTab(value)
-    },
-    /**
-     * When tab-items are updated, set active one.
-     */
-    tabItems () {
-      if (this.tabItems.length) {
-        this.tabItems[this.activeTab].isActive = true
-      }
-    },
     '$route' (to, from) {
       const section = to.query.section
       if (!section) return
@@ -82,23 +73,21 @@ export default {
   },
   methods: {
     /**
-     * Change the active tab and emit change event.
+     * Change the active tab.
      */
     changeTab (newIndex) {
       if (this.activeTab === newIndex) return
-      const transition = this.activeTab < newIndex
+      this.transitionName = this.activeTab < newIndex
         ? 'slide-next'
         : 'slide-prev'
-      this.tabItems[this.activeTab].changeTab(false, transition)
-      this.tabItems[newIndex].changeTab(true, transition)
       this.activeTab = newIndex
-      this.$emit('change', newIndex)
     },
     /**
      * Tab click listener change active tab.
      */
     tabClick (tabItem) {
       this.title = tabItem.title
+      this.activeComponent = tabItem.component
       if (tabItem.index !== undefined) {
         const query = {
           ...this.$route.query,
@@ -120,14 +109,14 @@ export default {
           if (defaultTab === link.url) {
             this.activeTab = link.index
             this.title = link.title
+            this.activeComponent = link.component
           }
         })
       })
     }
-
-    if (this.tabItems.length) {
-      this.tabItems[this.activeTab].isActive = true
-    }
+  },
+  beforeDestroy () {
+    this.$router.push(this.$route.query)
   }
 }
 </script>
@@ -191,7 +180,7 @@ export default {
 
 .tab-legend {
   color: $text_1;
-  font-size: 12px;
+  font-size: $size_5;
   text-transform: uppercase;
   margin-bottom: 0.5rem;
 

@@ -9,22 +9,29 @@ import DesignSystem from '@pages/DesignSystem.vue'
 import BypassUI from '@pages/BypassUI.vue'
 
 import Home from '@pages/Home.vue'
-import Messages from '@pages/Messages.vue'
-import GroupDashboard from '@pages/GroupDashboard.vue'
-import Contributions from '@pages/Contributions.vue'
-import Payments from '@pages/Payments.vue'
-import GroupChat from '@pages/GroupChat.vue'
 import Join from '@pages/Join.vue'
-import Mailbox from '@pages/Mailbox.vue'
-import GroupSettings from '@pages/GroupSettings.vue'
 import L from '@view-utils/translations.js'
+import lazyLoadView from '@utils/lazyLoadedView.js'
+
+/*
+  Lazy load all the pages that are not necessary at initial loading off the app
+  lazyLoadView function by default use the generic LoadingPage, but can be
+  over written to show specific loading layout (same for the error page not yet implented)
+*/
+const GroupDashboard = lazyLoadView({ component: import('@pages/GroupDashboard.vue') })
+const Messages = lazyLoadView({ component: import('@pages/Messages.vue') })
+const Contributions = lazyLoadView({ component: import('@pages/Contributions.vue') })
+const Payments = lazyLoadView({ component: import('@pages/Payments.vue') })
+const GroupChat = lazyLoadView({ component: import('@pages/GroupChat.vue') })
+const Mailbox = lazyLoadView({ component: import('@pages/Mailbox.vue') })
+const GroupSettings = lazyLoadView({ component: import('@pages/GroupSettings.vue') })
 
 Vue.use(Router)
 
 /*
- The following are reusable guard for routes
- the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
- when a route is blocked
+  The following are reusable guard for routes
+  the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
+  when a route is blocked.
  */
 const homeGuard = {
   guard: (to, from) => !!store.state.currentGroupId,
@@ -32,6 +39,7 @@ const homeGuard = {
 }
 const loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
+  // TODO/BUG "next" does not work.
   redirect: (to, from) => ({ path: '/', query: { next: to.path } })
 }
 
@@ -79,8 +87,8 @@ const router = new Router({
     },
     {
       path: '/design-system',
-      component: DesignSystem,
-      name: DesignSystem.name,
+      component: () => DesignSystem,
+      name: 'DesignSystem',
       meta: { title: L('Design System') }
       // beforeEnter: createEnterGuards(designGuard)
     },
@@ -92,42 +100,44 @@ const router = new Router({
     },
     {
       path: '/dashboard',
-      component: GroupDashboard,
-      name: GroupDashboard.name,
+      component: () => GroupDashboard,
+      name: 'GroupDashboard',
       meta: { title: L('Group Dashboard') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/contributions',
-      component: Contributions,
+      component: () => Contributions,
+      name: 'Contributions',
       meta: { title: L('Contributions') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/payments',
-      component: Payments,
+      component: () => Payments,
+      name: 'Payments',
       meta: { title: L('Payments') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     /* Guards need to be created for any route that should not be directly accessed by url */
     {
       path: '/mailbox',
-      name: Mailbox.name,
-      component: Mailbox,
+      component: () => Mailbox,
+      name: 'Mailbox',
       meta: { title: L('Mailbox') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/messages',
+      component: () => Messages,
       name: 'Messages',
-      component: Messages,
       meta: { title: L('Messages') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/messages/:chatName',
+      component: () => Messages,
       name: 'MessagesConversation',
-      component: Messages,
       beforeEnter: createEnterGuards(loginGuard)
       // BUG/REVIEW "CANNOT GET /:username" when username has "." in it
       // ex: messages/joe.kim doesnt work but messages/joekim works fine.
@@ -135,23 +145,23 @@ const router = new Router({
     },
     {
       path: '/group-chat',
-      component: GroupChat,
+      component: () => GroupChat,
       name: 'GroupChat',
       meta: { title: L('Group Chat') },
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/group-settings',
-      component: GroupSettings,
+      component: () => GroupSettings,
       name: 'GroupSettings',
       meta: { title: L('Group Settings') },
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/group-chat/:chatName',
-      component: GroupChat,
+      component: () => GroupChat,
       name: 'GroupChatConversation',
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/join',
