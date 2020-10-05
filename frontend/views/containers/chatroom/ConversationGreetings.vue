@@ -1,14 +1,15 @@
 <template lang='pug'>
 .c-greetings
   i18n.is-title-4(tag='h3') Welcome!
-  message-notification {{text}}
+  p {{text}}
 
 </template>
 
 <script>
-import { chatTypes, users, groupA } from './fakeStore.js'
+import { chatTypes } from './fakeStore.js'
 import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'ConversationGreetings',
@@ -16,41 +17,22 @@ export default {
     MessageNotification,
     Avatar
   },
+  props: {
+    type: {
+      type: String
+    },
+    name: {
+      type: String
+    }
+  },
   computed: {
-    greetingMap () {
-      return {
-        GIBot: 'I’m here to keep you update while you are away.',
-        [chatTypes.INDIVIDUAL]: 'You and {name} can chat in private here.',
-        [chatTypes.GROUP]: 'This is the very beginning of {name} channel.'
-      }
-    },
-    founders () {
-      const foundersMap = {
-        [chatTypes.INDIVIDUAL]: [
-          this.$store.getters.ourUserIdentityContract.attributes,
-          users[this.$route.params.currentConversation.id]
-        ],
-        [chatTypes.GROUP]: [
-          ...groupA.founders.map(founder => users[founder])
-        ]
-      }
-
-      return foundersMap[this.type]
-    },
     text () {
-      if (this.$route.params.currentConversation.id === 'GIBot') {
-        return this.L(this.greetingMap.GIBot)
-      }
-
-      const conversationSummaryMap = {
-        [chatTypes.INDIVIDUAL]: users[this.$route.params.currentConversation.id],
-        [chatTypes.GROUP]: groupA.channels[this.$route.params.currentConversation.id]
-      }
-
-      return this.L(this.greetingMap[this.type], { name: conversationSummaryMap[this.type].displayName })
-    },
-    type () {
-      return this.$route.params.currentConversation.type
+      console.log(this.type, chatTypes.GROUP)
+      return {
+        GIBot: L('I’m here to keep you update while you are away.'),
+        [chatTypes.INDIVIDUAL]: L('You and {name} can chat in private here.', { name: this.name }),
+        [chatTypes.GROUP]: L('This is the beginning of {name}.', { name: this.name })
+      }[this.type]
     }
   }
 }
@@ -61,11 +43,5 @@ export default {
 
 .c-greetings {
   margin-bottom: 2rem;
-  display: flex;
-  align-items: flex-end;
-}
-
-.c-avatar {
-  margin-right: 0.5rem;
 }
 </style>

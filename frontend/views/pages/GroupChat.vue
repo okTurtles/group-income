@@ -26,6 +26,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
     chat-main(
       :summary='summary'
       :details='details'
+      :type='type.groups'
     )
 </template>
 

@@ -257,6 +257,7 @@ export const groupA = {
       displayName: 'lounge',
       unreadCount: 0,
       private: false,
+      type: chatTypes.GROUP,
       description: 'A place for everyone at {channel} to chat'
     },
     c1: {
@@ -300,12 +301,14 @@ export const groupA = {
       {
         time: new Date(2020, 7, 31, 14, 28, 42),
         from: '000',
-        text: 'There’s no problem to me'
+        text: 'There’s no problem to me',
+        unread: true
       },
       {
         time: new Date(2020, 7, 31, 17, 32, 42),
         from: messageTypes.INTERACTIVE,
-        id: 'inviteKattyId'
+        id: 'inviteKattyId',
+        unread: true
       }
     ],
     c1: [

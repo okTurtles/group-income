@@ -8,19 +8,16 @@
           - this should be done only after knowing exactly how server gets each conversation data
 
     .c-body-conversation(ref='conversation' v-else='')
-      conversation-greetings
+      conversation-greetings(:type='type' :name='summary.title')
 
       template(v-for='(message, index) in details.conversation')
         .c-divider(
-          v-if='changeDay(index)'
+          v-if='changeDay(index) || isNew(index)'
+          :class='{"is-new": isNew(index)}'
           :key='`date-${index}`'
         )
-          span {{proximityDate(message.time)}}
-
-        i18n.is-subtitle.c-divider(
-          v-if='startedUnreadIndex === index'
-          :key='`subtitle-${index}`'
-        ) New
+          span(v-if='changeDay(index)') {{proximityDate(message.time)}}
+          i18n.c-new(v-if='isNew(index)' :class='{"is-new-date": changeDay(index)}') New
 
         component(
           :key='messageKey(message, index)'
@@ -76,6 +73,9 @@ export default {
     details: {
       type: Object, // { isLoading: Bool, conversation: Array, participants: Object }
       default () { return {} }
+    },
+    type: {
+      type: String
     }
   },
   data () {
@@ -224,6 +224,9 @@ export default {
         const current = new Date(conv[index].time)
         return prev.getDay() !== current.getDay()
       } else return false
+    },
+    isNew (index) {
+      return this.startedUnreadIndex === index
     }
   }
 }
@@ -243,10 +246,15 @@ export default {
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
+  height: calc(100vh - 14rem);
 }
 
 .c-body-conversation {
   padding: 2rem 0;
+
+  div:nth-child(n+5) {
+    display: none;
+  }
 }
 
 .c-divider {
@@ -260,6 +268,12 @@ export default {
     padding: .5rem;
     color: $text_1;
     font-size: $size_5;
+
+    + .c-new {
+      position: absolute;
+      right: 0;
+      top: -0.3rem;
+    }
   }
 
   &:before {
@@ -270,6 +284,20 @@ export default {
     position: absolute;
     left: 0;
     top: 50%;
+  }
+
+  &.is-new {
+    span {
+      color: $primary_0;
+    }
+
+    &:before {
+      background-color: $primary_0;
+    }
+  }
+
+  .c-new {
+    font-weight: bold;
   }
 }
 
