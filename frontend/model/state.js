@@ -289,7 +289,7 @@ const getters = {
     }
 
     const doWeNeedIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    const distribution = getters.groupIncomeDistribution
+    const distribution = getters.groupAdjustedIncomeDistribution
 
     const nonMonetaryContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
     const getDisplayName = (username) => getters.globalProfile(username).displayName || username
@@ -354,6 +354,9 @@ const getters = {
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
     return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp() })
+  },
+  groupAdjustedIncomeDistribution (state, getters) {
+    return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp(), adjusted: true })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
