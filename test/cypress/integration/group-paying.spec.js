@@ -269,6 +269,8 @@ describe('Group Payments', () => {
 
   // https://github.com/okTurtles/group-income-simple/issues/763#issuecomment-656250338
   it('scenario 1', () => {
+    const userId = Math.floor(Math.random() * 10000)
+
     cy.visit('/')
 
     // Create a group with $1000 mincome and 3 members:
@@ -317,6 +319,63 @@ describe('Group Payments', () => {
 
       // The sidebar should say "Amount sent $75 of $100"
       cy.get('ul > :nth-child(2) > p > .has-text-1').should('contain.text', '$75 out of $100')
+
+      cy.giLogout()
+    })
+  })
+
+  // https://github.com/okTurtles/group-income-simple/issues/763#issuecomment-656250338
+  it('scenario 2', () => {
+    const userId = Math.floor(Math.random() * 10000)
+
+    cy.visit('/')
+
+    // Create a group with $1000 mincome and 3 members:
+    cy.giSignup(`u1-${userId}`, { bypassUI: true })
+    cy.giCreateGroup('Scenario-1 Group', { mincome: 1000, bypassUI: true })
+
+    // We can't use async/await here: https://docs.cypress.io/guides/core-concepts/introduction-to-cypress.html#Commands-Are-Asynchronous
+    cy.giGetInvitationAnyone().then(invitationLink => {
+      // u1: pledge 100$
+      setIncomeDetails(true, 100)
+      cy.giLogout()
+
+      // u2: Income 900$ (a.k.a needs $100)
+      cy.giAcceptGroupInvite(invitationLink, { username: `u2-${userId}`, bypassUI: true, shouldLogoutAfter: false })
+      setIncomeDetails(false, 900)
+      cy.giLogout()
+
+      // u3: no income details added.
+      cy.giAcceptGroupInvite(invitationLink, { username: `u3-${userId}`, bypassUI: true, shouldLogoutAfter: false })
+
+      // Login u1 and send $100 to u2. - The payment goes as expected.
+      cy.giSwitchUser(`u1-${userId}`, { bypassUI: true })
+      cy.getByDT('paymentsLink').click()
+      cy.getByDT('recordPayment').click()
+      cy.getByDT('modal').within(() => {
+        cy.getByDT('payRow').eq(0).find('label[data-test="check"]').click()
+
+        cy.get('button[type="submit"]').click()
+        cy.getByDT('successClose').click()
+        cy.getByDT('closeModal').should('not.exist')
+      })
+
+      // Switch to u3 and add income details: Income 950$ (a.k.a needs $50)
+      cy.giSwitchUser(`u3-${userId}`, { bypassUI: true })
+      setIncomeDetails(false, 950)
+
+      // Expected: Should not receive anything from u1 because u1 already pledge all their money to u2.
+      cy.get('.c-contribution-list').should('not.exist')
+
+      // // Switch to u1 and go to the payments page.
+      cy.giSwitchUser(`u1-${userId}`, { bypassUI: true })
+      cy.getByDT('paymentsLink').click()
+
+      // Expected: Don't show any "todo" payments.
+      cy.get('.c-description').should('contain.text', 'There are no payments')
+
+      // The sidebar should say "Amount sent $100 of $100"
+      cy.get(':nth-child(2) > .has-text-success > .has-text-1').should('contain.text', '$100 out of $100')
 
       cy.giLogout()
     })
