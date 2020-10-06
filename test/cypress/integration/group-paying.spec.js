@@ -266,4 +266,59 @@ describe('Group Payments', () => {
 
     cy.giLogout()
   })
+
+  // https://github.com/okTurtles/group-income-simple/issues/763#issuecomment-656250338
+  it('scenario 1', () => {
+    cy.visit('/')
+
+    // Create a group with $1000 mincome and 3 members:
+    cy.giSignup(`u1-${userId}`, { bypassUI: true })
+    cy.giCreateGroup('Scenario-1 Group', { mincome: 1000, bypassUI: true })
+
+    // We can't use async/await here: https://docs.cypress.io/guides/core-concepts/introduction-to-cypress.html#Commands-Are-Asynchronous
+    cy.giGetInvitationAnyone().then(invitationLink => {
+      // u1: pledge 100$
+      setIncomeDetails(true, 100)
+      cy.giLogout()
+
+      // u2: Income 925$ (a.k.a needs $75)
+      cy.giAcceptGroupInvite(invitationLink, { username: `u2-${userId}`, bypassUI: true, shouldLogoutAfter: false })
+      setIncomeDetails(false, 925)
+      cy.giLogout()
+
+      // u3: no income details added.
+      cy.giAcceptGroupInvite(invitationLink, { username: `u3-${userId}`, bypassUI: true, shouldLogoutAfter: false })
+
+      // Login u1 and send $75 to u2. - The payment goes as expected.
+      cy.giSwitchUser(`u1-${userId}`, { bypassUI: true })
+      cy.getByDT('paymentsLink').click()
+      cy.getByDT('recordPayment').click()
+      cy.getByDT('modal').within(() => {
+        cy.getByDT('payRow').eq(0).find('label[data-test="check"]').click()
+
+        cy.get('button[type="submit"]').click()
+        cy.getByDT('successClose').click()
+        cy.getByDT('closeModal').should('not.exist')
+      })
+
+      // Switch to u3 and add income details: Income 950$ (a.k.a needs $50)
+      cy.giSwitchUser(`u3-${userId}`, { bypassUI: true })
+      setIncomeDetails(false, 950)
+
+      // Expected: Should receive only $25 from u1 (100 - 75)
+      cy.get('.c-contribution-list').should('contain.text', `$25 from u1-${userId}`)
+
+      // Switch to u1 and go to the payments page.
+      cy.giSwitchUser(`u1-${userId}`, { bypassUI: true })
+      cy.getByDT('paymentsLink').click()
+
+      // It should show 1 payment to u3 of $25.
+      cy.get('.c-partial').should('contain.text', '$25 out of $40')
+
+      // The sidebar should say "Amount sent $75 of $100"
+      cy.get('ul > :nth-child(2) > p > .has-text-1').should('contain.text', '$75 out of $100')
+
+      cy.giLogout()
+    })
+  })
 })
