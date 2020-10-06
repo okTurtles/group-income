@@ -380,4 +380,62 @@ describe('Group Payments', () => {
       cy.giLogout()
     })
   })
+
+  // https://github.com/okTurtles/group-income-simple/issues/763#issuecomment-656250338
+  it('scenario 3', () => {
+    const userId = Math.floor(Math.random() * 10000)
+
+    cy.visit('/')
+
+    // Create a group with $1000 mincome and 3 members:
+    cy.giSignup(`u1-${userId}`, { bypassUI: true })
+    cy.giCreateGroup('Scenario-1 Group', { mincome: 1000, bypassUI: true })
+
+    // We can't use async/await here: https://docs.cypress.io/guides/core-concepts/introduction-to-cypress.html#Commands-Are-Asynchronous
+    cy.giGetInvitationAnyone().then(invitationLink => {
+      // u1: pledge 100$
+      setIncomeDetails(true, 100)
+      cy.giLogout()
+
+      // u2: Income 900$ (a.k.a needs $100)
+      cy.giAcceptGroupInvite(invitationLink, { username: `u2-${userId}`, bypassUI: true, shouldLogoutAfter: false })
+      setIncomeDetails(false, 900)
+      cy.giLogout()
+
+      // u3: no income details added.
+      cy.giAcceptGroupInvite(invitationLink, { username: `u3-${userId}`, bypassUI: true, shouldLogoutAfter: false })
+
+      // Login u1 and send $25 to u2 (a partial payment). - The payment goes as expected.
+      cy.giSwitchUser(`u1-${userId}`, { bypassUI: true })
+      cy.getByDT('paymentsLink').click()
+      cy.getByDT('recordPayment').click()
+      cy.getByDT('modal').within(() => {
+        cy.getByDT('payRow').eq(0).find('label[data-test="check"]').click()
+        cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').clear({ force: true }).type('25')
+        cy.get('button[type="submit"]').click()
+        cy.getByDT('successClose').click()
+        cy.getByDT('closeModal').should('not.exist')
+      })
+
+      // Switch to u3 and add income details: Income 700$ (a.k.a needs $300)
+      cy.giSwitchUser(`u3-${userId}`, { bypassUI: true })
+      setIncomeDetails(false, 700)
+
+      // Result: It shows "You'll receive $85.71" in the graphic summary.
+      // Expected: It shows "You'll receive $75" in the graphic summary. Why? It's the result of 85.71 - (25 - 14.29). The u2 now should only receive $14.29 instead of the needed $50. But u1 already sent $25, so the difference should be discounted from $85.71.
+      cy.get('.c-contribution-list').should('contain.text', `$75 from u1-${userId}`)
+
+      // Switch to u1 and go to the payments page.
+      cy.giSwitchUser(`u1-${userId}`, { bypassUI: true })
+      cy.getByDT('paymentsLink').click()
+
+      // It should show 1 payment to u3 of $75.
+      cy.get('.c-td-amount').should('contain.text', '$75')
+
+      // The sidebar should say "Amount sent $25 of $100"
+      cy.get('ul > :nth-child(2) > p > .has-text-1').should('contain.text', '$25 out of $100')
+
+      cy.giLogout()
+    })
+  })
 })
