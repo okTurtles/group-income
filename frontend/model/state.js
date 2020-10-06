@@ -289,7 +289,7 @@ const getters = {
     }
 
     const doWeNeedIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    const distribution = getters.groupIncomeDistribution
+    const distribution = getters.groupAdjustedIncomeDistribution
 
     const nonMonetaryContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
     const getDisplayName = (username) => getters.globalProfile(username).displayName || username
@@ -354,6 +354,9 @@ const getters = {
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
     return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp() })
+  },
+  groupAdjustedIncomeDistribution (state, getters) {
+    return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp(), adjusted: true })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
@@ -551,7 +554,7 @@ const getters = {
         received: received.map(p => p.meta.username)
       }
       return {
-        paymentsDone: getUniqPCount(pByUser.received) - pPartials,
+        paymentsDone: getUniqPCount(pByUser.received),
         hasPartials: pPartials > 0,
         paymentsTotal: getUniqPCount([...pByUser.toBeReceived, ...pByUser.received]),
         amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
@@ -565,7 +568,7 @@ const getters = {
         sent: sent.map(p => p.data.toUser)
       }
       return {
-        paymentsDone: getUniqPCount(pByUser.sent) - pPartials,
+        paymentsDone: getUniqPCount(pByUser.sent),
         hasPartials: pPartials > 0,
         paymentsTotal: getUniqPCount([...pByUser.todo, ...pByUser.sent]),
         amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),

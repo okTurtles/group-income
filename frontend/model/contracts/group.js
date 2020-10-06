@@ -14,11 +14,12 @@ import {
 } from './voting/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
-import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
+import { mapValues, merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
 import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
-import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
+import currencies from '~/frontend/views/utils/currencies.js'
+import paymentTotalFromUserToUser from '~/frontend/model/contracts/payments/totals.js'
 import L from '~/frontend/views/utils/translations.js'
 import {
   INVITE_INITIAL_CREATOR,
@@ -164,29 +165,21 @@ DefineContract({
     },
     paymentTotalFromUserToUser (state, getters) {
       return (fromUser, toUser, paymentMonthstamp) => {
-        const payments = getters.currentGroupState.payments
-        const monthlyPayments = getters.groupMonthlyPayments
-        const { paymentsFrom, mincomeExchangeRate } = monthlyPayments[paymentMonthstamp] || {}
-        // NOTE: @babel/plugin-proposal-optional-chaining would come in super-handy
-        //       here, but I couldn't get it to work with our linter. :(
-        //       https://github.com/babel/babel-eslint/issues/511
-        const total = (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
-          const payment = payments[hash]
-          var { amount, exchangeRate, status } = payment.data
-          if (status !== PAYMENT_COMPLETED) {
-            return a
-          }
-          const paymentCreatedMonthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
-          // if this payment is from a previous month, then make sure to take into account
-          // any proposals that passed in between the payment creation and the payment
-          // completion that modified the group currency by multiplying both month's
-          // exchange rates
-          if (paymentMonthstamp !== paymentCreatedMonthstamp) {
-            exchangeRate *= monthlyPayments[paymentCreatedMonthstamp].mincomeExchangeRate
-          }
-          return a + (amount * exchangeRate * mincomeExchangeRate)
-        }, 0)
-        return saferFloat(total)
+        return paymentTotalFromUserToUser({
+          fromUser,
+          toUser,
+          paymentMonthstamp,
+          payments: mapValues(getters.currentGroupState.payments, (payment) => ({
+            amount: payment.data.amount,
+            exchangeRate: payment.data.exchangeRate,
+            status: payment.data.status,
+            createdDate: payment.meta.createdDate
+          })),
+          monthlyPayments: mapValues(getters.currentGroupState.paymentsByMonth, (payments) => ({
+            mincomeExchangeRate: payments.mincomeExchangeRate,
+            paymentsFrom: payments.paymentsFrom
+          }))
+        })
       }
     },
 
