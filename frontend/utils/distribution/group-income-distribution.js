@@ -29,7 +29,7 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
     // month, we need to take that into account and adjust the distribution.
     // this will be used by the Payments page to tell how much still
     // needs to be paid (if it was a partial payment).
-    // const carried = Object.create(null)
+    const carried = Object.create(null)
     for (const p of dist) {
       const alreadyPaid = getters.paymentTotalFromUserToUser(p.from, p.to, monthstamp)
       const carryAmount = p.amount - alreadyPaid
@@ -38,16 +38,16 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
       // if we "overpaid" because we sent late payments, remove us from consideration
       p.amount = saferFloat(Math.max(0, carryAmount))
       // calculate our carried adjustment (used when distribution changes due to new users)
-      // if (!carried[p.from]) carried[p.from] = { carry: 0, total: 0 }
-      // carried[p.from].total += p.amount
-      // if (carryAmount < 0) carried[p.from].carry += -carryAmount
+      if (!carried[p.from]) carried[p.from] = { carry: 0, total: 0 }
+      carried[p.from].total += p.amount
+      if (carryAmount < 0) carried[p.from].carry += -carryAmount
     }
     // we loop through and proportionally subtract the amount that we've already paid
     dist = dist.filter(p => p.amount > 0)
-    // for (const p of dist) {
-    //   const c = carried[p.from]
-    //   p.amount = saferFloat(p.amount - (c.carry * p.amount / c.total))
-    // }
+    for (const p of dist) {
+      const c = carried[p.from]
+      p.amount = saferFloat(p.amount - (c.carry * p.amount / c.total))
+    }
     // console.debug('adjustedDist', adjustedDist, 'carried', carried)
   }
   return dist
