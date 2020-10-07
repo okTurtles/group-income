@@ -266,7 +266,9 @@ describe('Group Payments', () => {
 
     cy.giLogout()
   })
+})
 
+describe('Update income after payment', () => {
   // https://github.com/okTurtles/group-income-simple/issues/763#issuecomment-656250338
   it('scenario 1', () => {
     const userId = Math.floor(Math.random() * 10000)
@@ -489,7 +491,9 @@ describe('Group Payments', () => {
       cy.giLogout()
     })
   })
+})
 
+describe('Add member after payment', () => {
   // https://github.com/okTurtles/group-income-simple/issues/763#issuecomment-656250338
   it('scenario 4.1', () => {
     const userId = Math.floor(Math.random() * 10000)
