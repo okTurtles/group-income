@@ -12,7 +12,7 @@ import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import L from '@view-utils/translations.js'
 import lazyLoadView from '@utils/lazyLoadedView.js'
-
+console.log(DesignSystem)
 /*
   Lazy load all the pages that are not necessary at initial loading off the app
   lazyLoadView function by default use the generic LoadingPage, but can be
@@ -87,7 +87,7 @@ const router = new Router({
     },
     {
       path: '/design-system',
-      component: () => DesignSystem,
+      component: DesignSystem,
       name: 'DesignSystem',
       meta: { title: L('Design System') }
       // beforeEnter: createEnterGuards(designGuard)

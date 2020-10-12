@@ -239,6 +239,7 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .c-body {
@@ -247,6 +248,17 @@ export default {
   flex-direction: column;
   justify-content: flex-end;
   height: calc(100vh - 14rem);
+  width: calc(100% + 2rem);
+  position: relative;
+
+  &:before {
+    content: '';
+    width: 100%;
+    height: 2.5rem;
+    position: absolute;
+    top: 0;
+    background: linear-gradient(180deg, $background_0 0%, $background_0_no_opacity 100%);
+  }
 }
 
 .c-body-conversation {
@@ -303,7 +315,8 @@ export default {
 
 @include tablet {
   .c-body {
-    overflow: auto;
+    overflow-y: scroll;
+    overflow-x: hidden;
   }
 
   .c-body-conversation {

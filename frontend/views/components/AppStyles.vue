@@ -25,6 +25,7 @@ v-style.
     --general_1: {{colors.general_1}};
     --general_2: {{colors.general_2}};
     --background_0: {{colors.background_0}};
+    --background_0_no_opacity: {{hexToRgbA(colors.background_0, 0)}};
     --text-size: {{fontSize}}px;
   }
 </template>
