@@ -165,20 +165,17 @@ DefineContract({
     },
     paymentTotalFromUserToUser (state, getters) {
       return (fromUser, toUser, paymentMonthstamp) => {
-        const payments = getters.currentGroupState.payments
-        const monthlyPayments = getters.currentGroupState.paymentsByMonth
-
         return paymentTotalFromUserToUser({
           fromUser,
           toUser,
           paymentMonthstamp,
-          payments: Object.fromEntries(Object.entries(payments).map(([id, payment]) => [id, {
+          payments: Object.fromEntries(Object.entries(getters.currentGroupState.payments).map(([id, payment]) => [id, {
             amount: payment.data.amount,
             exchangeRate: payment.data.exchangeRate,
             status: payment.data.status,
             createdDate: payment.meta.createdDate
           }])),
-          monthlyPayments: Object.fromEntries(Object.entries(monthlyPayments).map(([key, payments]) => [key, {
+          monthlyPayments: Object.fromEntries(Object.entries(getters.currentGroupState.paymentsByMonth).map(([key, payments]) => [key, {
             mincomeExchangeRate: payments.mincomeExchangeRate,
             paymentsFrom: payments.paymentsFrom
           }]))
