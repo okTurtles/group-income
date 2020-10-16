@@ -65,4 +65,64 @@ describe('group income distribution logic', function () {
     })
     should(adjustedDist).eql([])
   })
+
+  it('[scenario 4] ignores users who updated income after paying and can no longer pay', function () {
+    const dist = groupIncomeDistributionBaseLogic({
+      mincomeAmount: 1000,
+      groupProfiles: {
+        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 50 },
+        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 950 },
+        "u3": { incomeDetailsType: "incomeAmount", incomeAmount: 900 }
+      },
+    })
+    const adjustedDist = groupIncomeDistributionAdjustmentLogic(dist, {
+      monthstamp: "2020-10",
+      payments: {
+        "payment1": { amount: 50, exchangeRate: 1, status: "completed", creationMonthstamp: "2020-10" }
+      },
+      monthlyPayments: {
+        "2020-10": {
+          mincomeExchangeRate: 1,
+          paymentsFrom: {
+            "u1": {
+              "u3": ["payment1"]
+            }
+          }
+        }
+      }
+    })
+    should(adjustedDist).eql([{ amount: 0, from: 'u1', to: 'u2' }])
+  })
+
+  it('[scenario 4.1] can distribute money from new members', function () {
+    const dist = groupIncomeDistributionBaseLogic({
+      mincomeAmount: 1000,
+      groupProfiles: {
+        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 50 },
+        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 950 },
+        "u3": { incomeDetailsType: "incomeAmount", incomeAmount: 900 },
+        "u4": { incomeDetailsType: "pledgeAmount", pledgeAmount: 150 }
+      },
+    })
+    const adjustedDist = groupIncomeDistributionAdjustmentLogic(dist, {
+      monthstamp: "2020-10",
+      payments: {
+        "payment1": { amount: 50, exchangeRate: 1, status: "completed", creationMonthstamp: "2020-10" }
+      },
+      monthlyPayments: {
+        "2020-10": {
+          mincomeExchangeRate: 1,
+          paymentsFrom: {
+            "u1": {
+              "u3": ["payment1"]
+            }
+          }
+        }
+      }
+    })
+    should(adjustedDist).eql([
+      { amount: 50, from: 'u4', to: 'u2' },
+      { amount: 50, from: 'u4', to: 'u3' }
+    ])
+  })
 })
