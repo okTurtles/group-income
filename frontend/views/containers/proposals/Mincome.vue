@@ -10,7 +10,10 @@
 
     label.field(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label New minimum income
-      .inputgroup(:class='{ error: $v.form.mincomeAmount.$error }')
+      .inputgroup(
+        :class='{ error: $v.form.mincomeAmount.$error }'
+        v-error:mincomeAmount=''
+      )
         input.input(
           v-model='$v.form.mincomeAmount.$model'
           name='mincomeAmount'
@@ -28,7 +31,7 @@ import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
-import { decimals } from '@view-utils/validators.js'
+import currencies, { mincomePositive, normalizeCurrency } from '@view-utils/currencies.js'
 import L, { LError } from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -59,12 +62,21 @@ export default {
       }
     }
   },
+  watch: {
+    'ephemeral.currentStep': function (step) {
+      if (step === 1) {
+        this.validateMincome()
+      }
+    }
+  },
   validations: {
     form: {
       mincomeAmount: {
-        required,
-        minValue: value => value > 0,
-        decimals: decimals(2)
+        [L('This field is required')]: required,
+        [L('Oops, you entered 0 or a negative number')]: mincomePositive,
+        [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
+          return currencies[this.groupSettings.mincomeCurrency].validate(value)
+        }
       }
     },
     // validation groups by route name for steps
@@ -87,9 +99,22 @@ export default {
     ])
   },
   methods: {
-    async submit (form) {
-      const mincomeAmount = parseInt(this.form.mincomeAmount, 10)
+    validateMincome () {
+      const mincomeAmount = normalizeCurrency(this.form.mincomeAmount)
+      if (mincomeAmount === this.groupSettings.mincomeAmount) {
+        this.$refs.formMsg.danger(L('The new mincome should be different than the current one.'))
+        this.ephemeral.currentStep = 0
+        return false
+      }
       this.$refs.formMsg.clean()
+      return true
+    },
+    async submit (form) {
+      if (!this.validateMincome()) {
+        return
+      }
+
+      const mincomeAmount = normalizeCurrency(this.form.mincomeAmount)
 
       if (this.groupShouldPropose) {
         try {

@@ -1,7 +1,21 @@
 import { blake32Hash } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 
-const imageUpload = async (imageFile) => {
+// Copied from https://stackoverflow.com/a/27980815/4737729
+export function imageDataURItoBlob (dataURI) {
+  var byteString = atob(dataURI.split(',')[1])
+  var ab = new ArrayBuffer(byteString.length)
+  var ia = new Uint8Array(ab)
+
+  for (var i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i)
+  }
+  // Accepts only JPEGs and assumes dataURI begins with: "data:image/jpeg;base64,"
+  // TODO support images in PNG, GIF, etc...
+  return new Blob([ab], { type: 'image/jpeg' })
+}
+
+export const imageUpload = async (imageFile) => {
   const file = imageFile
   console.debug('will upload a picture of type:', file.type)
   // https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Asynchronously_handling_the_file_upload_process
@@ -25,5 +39,3 @@ const imageUpload = async (imageFile) => {
 
   return reply + '?type=' + encodeURIComponent(file.type)
 }
-
-export default imageUpload

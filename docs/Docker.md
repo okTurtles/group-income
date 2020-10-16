@@ -35,7 +35,7 @@ npm run docker
 
 Which defaults to the same thing (`grunt dev`).
 
-Note that the entire project directory is mounted as a volume within the container. This makes it possible to edit files on the host machine, save them, and still features like browser livereload, etc.
+Note that the entire project directory is mounted as a volume within the container. This makes it possible to edit files on the host machine, save them, and still have features like browser live reloading, etc.
 
 ### Updating dependencies
 

@@ -3,12 +3,10 @@
   i18n.is-title-4.steps-title(tag='h4') 1. Create a new group
 
   label.avatar(for='groupPicture')
-    avatar(ref='picture' size='xl' src='/assets/images/default-group-avatar.png')
-    //- we don't need to add any code to trigger the hidden file input field
-    //- because we use this label(for='elem') trick:
-    //- https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Using_a_label_element_to_trigger_a_hidden_file_input_element
-    i18n.link Upload an image
+    canvas.c-pictureCanvas(ref='pictureCanvas' :class='{isHidden: $assistant.ephemeral.groupPictureType === "image" }')
+    avatar.c-pictureAvatar(ref='pictureAvatar' size='xl' src='/assets/images/group-avatar-default.png' :alt='L("Group avatar")')
 
+    i18n.link Upload an image
     input.groupPictureInput#groupPicture(
       type='file'
       name='groupPicture'
@@ -22,24 +20,25 @@
   i18n.error(v-if='$v.form.groupPicture.$error' tag='p') The group picture must be a valid url
 
   .card
-    i18n.label(tag='label') What is the name of your group?
-
-    input.input.is-large.is-primary(
-      ref='name'
-      type='text'
-      name='groupName'
-      :class='{ error: $v.form.groupName.$error }'
-      :value='group.groupName'
-      @input='update'
-      @keyup.enter='next'
-      data-test='groupName'
-    )
+    label.field
+      i18n.label What is the name of your group?
+      input.input.is-large.is-primary(
+        ref='name'
+        type='text'
+        name='groupName'
+        :class='{ error: $v.form.groupName.$error }'
+        :value='group.groupName'
+        @input='updateName'
+        @keyup.enter='next'
+        data-test='groupName'
+      )
 
     slot
 </template>
 
 <script>
 import Avatar from '@components/Avatar.vue'
+import { imageDataURItoBlob } from '@utils/image.js'
 
 export default {
   name: 'GroupName',
@@ -51,11 +50,51 @@ export default {
   components: {
     Avatar
   },
+  watch: {
+    'groupInitials': function (initials) {
+      this.updatePictureCanvas(initials)
+    }
+  },
   mounted () {
     this.$refs.name.focus()
+    const c = this.$refs.pictureCanvas
+    c.width = 256
+    c.height = 256
+
+    // Recover the saved picture, in case user is coming back to this step.
+    if (this.$assistant.ephemeral.groupPictureType === 'image') {
+      this.$refs.pictureAvatar.setFromBlob(this.$assistant.ephemeral.groupPictureFile)
+    } else {
+      this.updatePictureCanvas(this.groupInitials)
+    }
+  },
+  beforeDestroy () {
+    if (!this.$assistant.ephemeral.groupPictureFile) {
+      const pictureBase64 = this.$refs.pictureCanvas.toDataURL('image/png')
+      this.$v.form.groupPicture.$touch()
+      this.$assistant.ephemeral.groupPictureFile = imageDataURItoBlob(pictureBase64)
+      this.$assistant.ephemeral.groupPictureType = 'canvas'
+    }
+  },
+  computed: {
+    groupInitials () {
+      return this.group.groupName ? this.group.groupName.match(/\b(\w)/g).join('').slice(0, 2).toUpperCase() : ''
+    }
   },
   methods: {
-    update (e) {
+    updatePictureCanvas (initials) {
+      const c = this.$refs.pictureCanvas
+      const ctx = c.getContext('2d')
+      ctx.rect(0, 0, 256, 256)
+      ctx.fillStyle = '#7a7a7a'
+      ctx.fill()
+
+      ctx.font = '140px Lato'
+      ctx.fillStyle = 'white'
+      ctx.textAlign = 'center'
+      ctx.fillText(initials, 256 / 2, 180)
+    },
+    updateName (e) {
       this.$v.form.groupName.$touch()
       this.$emit('input', {
         data: {
@@ -73,7 +112,8 @@ export default {
       if (!files.length) return
       this.$v.form.groupPicture.$touch()
       this.$assistant.ephemeral.groupPictureFile = files[0]
-      this.$refs.picture.setFromBlob(files[0])
+      this.$refs.pictureAvatar.setFromBlob(files[0])
+      this.$assistant.ephemeral.groupPictureType = 'image'
     }
   }
 }
@@ -107,7 +147,21 @@ export default {
   }
 }
 
+.c-pictureCanvas {
+  position: absolute;
+  background: $text_1;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 50%;
+
+  &.isHidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
 .groupPictureInput {
-  display: none;
+  position: absolute;
+  opacity: 0;
 }
 </style>

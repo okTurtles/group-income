@@ -38,14 +38,20 @@ var dropAllMessagesUntilRefresh = false
 var attemptToReprocessMessageID
 const contractIsSyncing: {[string]: boolean} = {}
 
+let defaultTheme = THEME_LIGHT
+if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  defaultTheme = THEME_DARK
+}
+
 const initialState = {
   currentGroupId: null,
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: THEME_LIGHT,
+  theme: defaultTheme,
   reducedMotion: false,
-  fontSize: 1,
+  increasedContrast: false,
+  fontSize: 16,
   appLogsFilter: process.env.NODE_ENV === 'development'
     ? ['error', 'warn', 'debug', 'log']
     : ['error', 'warn']
@@ -193,6 +199,16 @@ const mutations = {
   },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
+  },
+  setTemporaryReducedMotion (state) {
+    const tempSettings = state.reducedMotion
+    state.reducedMotion = true
+    setTimeout(() => {
+      state.reducedMotion = tempSettings
+    }, 300)
+  },
+  setIncreasedContrast (state, isChecked) {
+    state.increasedContrast = isChecked
   },
   setFontSize (state, fontSize) {
     state.fontSize = fontSize
@@ -347,6 +363,7 @@ const getters = {
     return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
   },
   ourPayments (state, getters) {
+    // Payments relative to the current month only
     const currency = currencies[getters.groupSettings.mincomeCurrency]
     const ourUsername = getters.ourUsername
     const cMonthstamp = currentMonthstamp()
@@ -354,26 +371,23 @@ const getters = {
     const dueIn = lastDayOfMonth(pDate)
     const monthlyPayments = getters.groupMonthlyPayments
     const allPayments = getters.currentGroupState.payments
+    const thisMonthPayments = monthlyPayments[cMonthstamp]
+    const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
 
     const sent = (() => {
       const payments = []
-      for (const monthstamp of Object.keys(monthlyPayments).sort()) {
-        const { paymentsFrom } = monthlyPayments[monthstamp]
 
-        if (paymentsFrom) {
-          for (const toUser in paymentsFrom[getters.ourUsername]) {
-            for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
-              const { data, meta } = allPayments[paymentHash]
-              payments.push({ hash: paymentHash, data, meta })
-            }
+      if (paymentsFrom) {
+        for (const toUser in paymentsFrom[getters.ourUsername]) {
+          for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
+            const { data, meta } = allPayments[paymentHash]
+            payments.push({ hash: paymentHash, data, meta })
           }
         }
       }
       return payments
     })()
     const received = (() => {
-      const thisMonthPayments = monthlyPayments[cMonthstamp]
-      const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
       const payments = []
 
       if (paymentsFrom) {
@@ -612,6 +626,9 @@ const getters = {
 
   colors (state) {
     return Colors[state.theme]
+  },
+  fontSize (state) {
+    return state.fontSize
   },
   isDarkTheme (state) {
     return Colors[state.theme].theme === THEME_DARK

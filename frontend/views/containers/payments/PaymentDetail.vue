@@ -3,14 +3,14 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
   template(slot='title')
     i18n Payment details
 
-  .is-title-2.c-title {{ withCurrency(payment.data.amount) }}
-  .c-subtitle.has-text-1 {{ subtitleCopy }}
+  .is-title-2.c-title(data-test='amount') {{ withCurrency(payment.data.amount) }}
+  .c-subtitle.has-text-1(data-test='subtitle') {{ subtitleCopy }}
 
   //- TODO This should be a table...
-  ul.c-payment-list
+  ul.c-payment-list(data-test='details')
     li.c-payment-list-item
-      i18n.has-text-1 Date & Time
-      strong {{ humanDate(this.payment.date, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
+      i18n.has-text-1(tag='label') Date & Time
+      strong {{ humanDate(payment.meta.createdDate, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
     li.c-payment-list-item
       i18n.has-text-1 Relative to
       strong {{ humanDate(dateFromMonthstamp(payment.monthstamp), { month: 'long', year: 'numeric' }) }}
@@ -32,41 +32,49 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
 import sbp from '~/shared/sbp.js'
-import { CLOSE_MODAL } from '@utils/events.js'
+import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
-import { dateFromMonthstamp, humanDate } from '@utils/time.js'
+import { ISOStringToMonthstamp, dateFromMonthstamp, humanDate } from '@utils/time.js'
 
 export default {
   name: 'PaymentDetail',
-  props: {
-    payment: {
-      type: Object
-    }
-  },
   components: {
     ModalTemplate
   },
   created () {
-    if (!this.payment) {
-      console.warn('Missing payment or needsIncome to display PaymentDetail modal')
+    const id = this.$route.query.id
+    const payment = this.currentGroupState.payments[id]
+
+    if (id) {
+      sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'PaymentDetail', { id })
+    }
+    if (payment) {
+      this.payment = payment
+      // TODO: the payment augmentation duplication in Payment and PaymentRecord, and between todo/sent/received, needs to be resolved more thoroughly
+      this.payment.monthstamp = ISOStringToMonthstamp(this.payment.meta.createdDate)
+    } else {
+      console.warn('PaymentDetail: Missing valid query "id"')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },
+  data: () => ({
+    payment: null
+  }),
   computed: {
     ...mapGetters([
-      'groupSettings',
-      'ourGroupProfile'
+      'currentGroupState',
+      'ourUsername',
+      'userDisplayName'
     ]),
-    needsIncome () {
-      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    },
     withCurrency () {
       return currencies[this.payment.data.currencyFromTo[0]].displayWithCurrency
     },
     subtitleCopy () {
-      const args = { name: this.payment.displayName }
-      return this.needsIncome ? L('Sent by {name}', args) : L('Sent to {name}', args)
+      const toUser = this.payment.data.toUser
+      const fromUser = this.payment.meta.username
+      const arg = (username) => ({ name: this.userDisplayName(username) })
+      return toUser === this.ourUsername ? L('Sent by {name}', arg(fromUser)) : L('Sent to {name}', arg(toUser))
     }
   },
   methods: {

@@ -14,7 +14,6 @@ import { createWebSocket } from './controller/backend.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
-import './utils/lazyLoadedView.js'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
@@ -59,6 +58,8 @@ async function startApp () {
     timeout: 3000,
     strategy: ['disconnect', 'online', 'timeout']
   })
+
+  await sbp('translations/init', navigator.language)
 
   const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
   if (username) {

@@ -11,7 +11,7 @@ import {
 } from '@model/contracts/voting/constants.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 
-import imageUpload from '@utils/imageUpload.js'
+import { imageUpload } from '@utils/image.js'
 import { merge } from '@utils/giLodash.js'
 import L, { LError } from '@view-utils/translations.js'
 
@@ -27,13 +27,13 @@ export default sbp('sbp/selectors/register', {
   }, {
     sync = true
   } = {}) {
-    let finalPicture = `${window.location.origin}/assets/images/default-group-avatar.png`
+    let finalPicture = `${window.location.origin}/assets/images/group-avatar-default.png`
 
     if (picture) {
       try {
         finalPicture = await imageUpload(picture)
       } catch (e) {
-        console.error('Failed to upload the group picture', e)
+        console.error('actions/group.js failed to upload the group picture', e)
         throw new GIErrorUIRuntimeError(L('Failed to upload the group picture. {codeError}', { codeError: e.message }))
       }
     }
@@ -163,7 +163,7 @@ export default sbp('sbp/selectors/register', {
       return message
     } catch (e) {
       console.error('gi.actions/group/removeMember failed', e)
-      throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {codeError}', { codeError: e.message, member: params.member }))
+      throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {reportError}', { member: params.member, ...LError(e) }))
     }
   },
   'gi.actions/group/removeOurselves': async function (groupId) {

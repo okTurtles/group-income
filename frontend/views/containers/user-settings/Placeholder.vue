@@ -1,19 +1,12 @@
 <template lang='pug'>
   .settings-container
     .card
-      p
-        | Implement
-        strong "{{name}}"
-        |  settings page
+      p TODO
 </template>
 
 <script>
 export default {
-  name: 'PlaceHolder',
-
-  props: {
-    name: String
-  }
+  name: 'PlaceHolder'
 }
 </script>
 

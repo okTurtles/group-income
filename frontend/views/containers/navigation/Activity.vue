@@ -58,7 +58,7 @@ export default {
 }
 
 .icon-bell {
-  font-size: 0.9rem;
+  font-size: $size_4;
   transform-origin: center 2px;
   margin-top: 2px;
   &.is-active {

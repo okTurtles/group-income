@@ -25,7 +25,7 @@ We use [standard](https://github.com/feross/standard) for the code style and [Gi
 
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
-We are continually improving the user experience for everyone, and applying the relevant accessibility standards. We will be conformant with [WCAG 2.0](https://www.w3.org/WAI/standards-guidelines/wcag/) Level AA and trying or best to reach Level AAA in some areas of the application.
+We are continually improving the user experience for everyone, and applying the relevant accessibility standards. We will be conformant with [WCAG 2.0](https://www.w3.org/WAI/standards-guidelines/wcag/) Level AA and trying our best to reach Level AAA in some areas of the application.
 
 <a href="https://www.w3.org/WAI/WCAG2AA-Conformance"
   title="Explanation of WCAG 2.0 Level Double-A Conformance">
@@ -44,7 +44,7 @@ We are continually improving the user experience for everyone, and applying the 
 
 #### Basic workflow
 
-Group Income is an application based on [Vue.js](https://vuejs.org/). Here's how you can get started the development:
+Group Income is an application based on [Vue.js](https://vuejs.org/). Here's how you can get started with development:
 
 Run all servers + watch files for changes
 
@@ -66,7 +66,7 @@ Clean up files in `dist/`
 grunt clean
 ```
 
-Running tests
+Run tests
 
 ```bash
 # all tests
@@ -89,7 +89,7 @@ grunt test --browser=debug
 
 # Developing at the same time as writing E2E tests
 grunt dev
-# and in other terminal run cypress in "open" mode
+# and in another terminal run Cypress in "open" mode
 npm run cy:open
 ```
 
@@ -117,4 +117,4 @@ If you run into any errors [during the setup](docs/Getting-Started-frontend.md#h
 
 ## License
 
-AGPLv3. See [`LICENSE`](LICENSE) for license details and [`CONTRIBUTING.md`](CONTRIBUTING.md) for contributing policy.
+AGPL-3.0. See [`LICENSE`](LICENSE) for license details and [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contribution policy.
