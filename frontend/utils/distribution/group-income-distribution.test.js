@@ -100,6 +100,12 @@ describe('group income distribution logic', function () {
         "u4": { incomeDetailsType: "pledgeAmount", pledgeAmount: 150 }
       },
     })
+    should(dist).eql([
+      { amount: 12.5, from: 'u1', to: 'u2' },
+      { amount: 25, from: 'u1', to: 'u3' },
+      { amount: 37.5, from: 'u4', to: 'u2' },
+      { amount: 75, from: 'u4', to: 'u3' }
+    ])
     const adjustedDist = groupIncomeDistributionAdjustmentLogic(dist, {
       monthstamp: "2020-10",
       payments: {
@@ -118,5 +124,10 @@ describe('group income distribution logic', function () {
       { amount: 50, from: 'u4', to: 'u2' },
       { amount: 50, from: 'u4', to: 'u3' }
     ])
+    /* Actually getting: [
+        { amount: -12.5, from: 'u1', to: 'u2' },
+        { amount: 37.5, from: 'u4', to: 'u2' },
+        { amount: 75, from: 'u4', to: 'u3' }
+    ] */
   })
 })
