@@ -14,7 +14,7 @@ import {
 } from './voting/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
-import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
+import { remapObject, merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
 import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
@@ -169,16 +169,16 @@ DefineContract({
           fromUser,
           toUser,
           paymentMonthstamp,
-          payments: Object.fromEntries(Object.entries(getters.currentGroupState.payments).map(([id, payment]) => [id, {
+          payments: remapObject(getters.currentGroupState.payments, (payment) => ({
             amount: payment.data.amount,
             exchangeRate: payment.data.exchangeRate,
             status: payment.data.status,
             createdDate: payment.meta.createdDate
-          }])),
-          monthlyPayments: Object.fromEntries(Object.entries(getters.currentGroupState.paymentsByMonth).map(([key, payments]) => [key, {
+          })),
+          monthlyPayments: remapObject(getters.currentGroupState.paymentsByMonth, (payments) => ({
             mincomeExchangeRate: payments.mincomeExchangeRate,
             paymentsFrom: payments.paymentsFrom
-          }]))
+          }))
         })
       }
     },

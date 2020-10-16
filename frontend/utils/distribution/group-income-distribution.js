@@ -1,6 +1,7 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import paymentTotalFromUserToUser from '~/frontend/model/contracts/payments/totals.js'
+import { remapObject } from '~/frontend/utils/giLodash.js'
 
 export function groupIncomeDistributionLogic ({
   monthstamp,
@@ -71,21 +72,21 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
     monthstamp,
     adjusted,
     mincomeAmount: getters.groupMincomeAmount,
-    groupProfiles: Object.fromEntries(Object.entries(getters.groupProfiles).map(([username, profile]) => [username, {
+    groupProfiles: remapObject(getters.groupProfiles, (profile) => ({
       incomeDetailsType: profile.incomeDetailsType,
       pledgeAmount: profile.pledgeAmount,
       incomeAmount: profile.incomeAmount
-    }])),
-    payments: Object.fromEntries(Object.entries(getters.currentGroupState.payments).map(([id, payment]) => [id, {
+    })),
+    payments: remapObject(getters.currentGroupState.payments, (payment) => ({
       amount: payment.data.amount,
       exchangeRate: payment.data.exchangeRate,
       status: payment.data.status,
       createdDate: payment.meta.createdDate
-    }])),
-    monthlyPayments: Object.fromEntries(Object.entries(getters.currentGroupState.paymentsByMonth).map(([key, payments]) => [key, {
+    })),
+    monthlyPayments: remapObject(getters.currentGroupState.paymentsByMonth, (payments) => ({
       mincomeExchangeRate: payments.mincomeExchangeRate,
       paymentsFrom: payments.paymentsFrom
-    }]))
+    }))
   })
 }
 
