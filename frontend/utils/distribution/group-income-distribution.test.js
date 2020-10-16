@@ -14,14 +14,8 @@ describe('group income distribution logic', function () {
       adjusted: false,
       mincomeAmount: 12,
       groupProfiles: {
-        "u1": {
-          incomeDetailsType: "pledgeAmount",
-          pledgeAmount: 10,
-        },
-        "u2": {
-          incomeDetailsType: "incomeAmount",
-          incomeAmount: 10,
-        }
+        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 10 },
+        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 10 }
       },
       payments: {
         "payment1": {
@@ -52,14 +46,8 @@ describe('group income distribution logic', function () {
       adjusted: true,
       mincomeAmount: 12,
       groupProfiles: {
-        "u1": {
-          incomeDetailsType: "pledgeAmount",
-          pledgeAmount: 10,
-        },
-        "u2": {
-          incomeDetailsType: "incomeAmount",
-          incomeAmount: 10,
-        }
+        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 10 },
+        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 10 }
       },
       payments: {
         "payment1": {
