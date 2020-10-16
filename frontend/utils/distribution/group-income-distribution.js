@@ -18,19 +18,17 @@ export function groupIncomeDistributionLogic ({
   // and historical groupProfiles. Since together these change across multiple
   // locations in the code, it involves less 'code smell' to do it this way.
   // see historical/group.js for the ugly way of doing it.
-  const currentIncomeDistribution = []
-  for (const username in groupProfiles) {
-    const profile = groupProfiles[username]
-    const incomeDetailsType = profile && profile.incomeDetailsType
-    if (incomeDetailsType) {
-      const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
-      const amount = adjustment + profile[incomeDetailsType]
-      currentIncomeDistribution.push({
-        name: username,
-        amount: saferFloat(amount)
-      })
-    }
-  }
+
+  const currentIncomeDistribution = (Object.entries(groupProfiles)
+    // filter out users without a profile or without income details
+    .filter(([name, profile]) => profile && profile.incomeDetailsType)
+    .map(([name, profile]) => {
+      const amount = saferFloat(profile.incomeDetailsType === 'incomeAmount'
+        ? profile.incomeAmount
+        : profile.pledgeAmount + mincomeAmount)
+      return { name, amount }
+    }))
+
   var dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
   if (adjusted) {
     // if this user has already made some payments to other users this
