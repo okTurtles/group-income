@@ -1,6 +1,5 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import { PAYMENT_COMPLETED } from './index.js'
-import { ISOStringToMonthstamp } from '~/frontend/utils/time.js'
 
 export default function paymentTotalFromUserToUser ({
   fromUser,
