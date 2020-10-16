@@ -64,6 +64,32 @@ describe('group income distribution logic', function () {
     should(adjustedDist).eql([])
   })
 
+  it('[scenario 2]', function () {
+    const dist = groupIncomeDistributionBaseLogic({
+      mincomeAmount: 1000,
+      groupProfiles: {
+        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 100 },
+        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 900 },
+        "u3": { incomeDetailsType: "incomeAmount", incomeAmount: 950 }
+      },
+    })
+    const adjustedDist = groupIncomeDistributionAdjustmentLogic(dist, {
+      monthstamp: "2020-10",
+      payments: {
+        "payment1": { amount: 100, exchangeRate: 1, status: "completed", creationMonthstamp: "2020-10" }
+      },
+      monthlyPayments: {
+        "2020-10": {
+          mincomeExchangeRate: 1,
+          paymentsFrom: {
+            "u1": { "u2": ["payment1"] }
+          }
+        }
+      }
+    })
+    should(adjustedDist).eql([{ amount: 0, from: 'u1', to: 'u3' }])
+  })
+
   it('[scenario 3]', function () {
     const dist = groupIncomeDistributionBaseLogic({
       mincomeAmount: 1000,
