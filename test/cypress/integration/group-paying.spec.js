@@ -495,7 +495,7 @@ describe('Update income after payment', () => {
 
 describe('Add member after payment', () => {
   // https://github.com/okTurtles/group-income-simple/issues/763#issuecomment-656250338
-  it('scenario 4.1', () => {
+  it.skip('scenario 4.1', () => {
     const userId = Math.floor(Math.random() * 10000)
 
     cy.visit('/')
