@@ -50,12 +50,7 @@ describe('group income distribution logic', function () {
     const adjustedDist = groupIncomeDistributionAdjustmentLogic(dist, {
       monthstamp: "2020-10",
       payments: {
-        "payment1": {
-          amount: 2,
-          exchangeRate: 1,
-          status: "completed",
-          creationMonthstamp: "2020-10"
-        }
+        "payment1": { amount: 2, exchangeRate: 1, status: "completed", creationMonthstamp: "2020-10" }
       },
       monthlyPayments: {
         "2020-10": {
