@@ -8,7 +8,23 @@ import incomeDistribution from './mincome-default.js'
 import { groupIncomeDistributionLogic } from './group-income-distribution.js'
 
 describe('group income distribution logic', function () {
-  it('has a basic test', function () {
+  it('can distribute income evenly with two users', function () {
+    should(groupIncomeDistributionLogic({
+      monthstamp: "2020-10",
+      adjusted: false,
+      mincomeAmount: 12,
+      groupProfiles: {
+        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 10 },
+        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 10 }
+      },
+      payments: {},
+      monthlyPayments: {}
+    })).eql([
+      { amount: 2, from: 'u1', to: 'u2' }
+    ])
+  })
+
+  it('ignores existing payments when not adjusted', function () {
     should(groupIncomeDistributionLogic({
       monthstamp: "2020-10",
       adjusted: false,
