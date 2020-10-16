@@ -45,4 +45,40 @@ describe('group income distribution logic', function () {
       { amount: 2, from: 'u1', to: 'u2' }
     ])
   })
+
+  it('takes into account payments from this month when adjusted', function () {
+    should(groupIncomeDistributionLogic({
+      monthstamp: "2020-10",
+      adjusted: true,
+      mincomeAmount: 12,
+      groupProfiles: {
+        "u1": {
+          incomeDetailsType: "pledgeAmount",
+          pledgeAmount: 10,
+        },
+        "u2": {
+          incomeDetailsType: "incomeAmount",
+          incomeAmount: 10,
+        }
+      },
+      payments: {
+        "payment1": {
+          amount: 2,
+          exchangeRate: 1,
+          status: "completed",
+          createdDate: "2020-10-16T18:58:58.169Z"
+        }
+      },
+      monthlyPayments: {
+        "2020-10": {
+          mincomeExchangeRate: 1,
+          paymentsFrom: {
+            "u1": {
+              "u2": ["payment1"]
+            }
+          }
+        }
+      }
+    })).eql([])
+  })
 })
