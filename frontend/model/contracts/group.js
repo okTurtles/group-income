@@ -173,7 +173,7 @@ DefineContract({
             amount: payment.data.amount,
             exchangeRate: payment.data.exchangeRate,
             status: payment.data.status,
-            createdDate: payment.meta.createdDate
+            creationMonthstamp: ISOStringToMonthstamp(payment.meta.createdDate)
           })),
           monthlyPayments: remapObject(getters.currentGroupState.paymentsByMonth, (payments) => ({
             mincomeExchangeRate: payments.mincomeExchangeRate,

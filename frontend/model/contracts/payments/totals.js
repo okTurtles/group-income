@@ -14,17 +14,16 @@ export default function paymentTotalFromUserToUser ({
   //       here, but I couldn't get it to work with our linter. :(
   //       https://github.com/babel/babel-eslint/issues/511
   const total = (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
-    var { amount, exchangeRate, status, createdDate } = payments[hash]
+    var { amount, exchangeRate, status, creationMonthstamp } = payments[hash]
     if (status !== PAYMENT_COMPLETED) {
       return a
     }
-    const paymentCreatedMonthstamp = ISOStringToMonthstamp(createdDate)
     // if this payment is from a previous month, then make sure to take into account
     // any proposals that passed in between the payment creation and the payment
     // completion that modified the group currency by multiplying both month's
     // exchange rates
-    if (paymentMonthstamp !== paymentCreatedMonthstamp) {
-      exchangeRate *= monthlyPayments[paymentCreatedMonthstamp].mincomeExchangeRate
+    if (paymentMonthstamp !== creationMonthstamp) {
+      exchangeRate *= monthlyPayments[creationMonthstamp].mincomeExchangeRate
     }
     return a + (amount * exchangeRate * mincomeExchangeRate)
   }, 0)

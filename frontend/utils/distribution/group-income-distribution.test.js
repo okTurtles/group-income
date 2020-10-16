@@ -38,7 +38,7 @@ describe('group income distribution logic', function () {
           amount: 2,
           exchangeRate: 1,
           status: "completed",
-          createdDate: "2020-10-16T18:58:58.169Z"
+          creationMonthstamp: "2020-10"
         }
       },
       monthlyPayments: {
@@ -70,7 +70,7 @@ describe('group income distribution logic', function () {
           amount: 2,
           exchangeRate: 1,
           status: "completed",
-          createdDate: "2020-10-16T18:58:58.169Z"
+          creationMonthstamp: "2020-10"
         }
       },
       monthlyPayments: {
