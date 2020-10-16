@@ -22,6 +22,7 @@ export function groupIncomeDistributionLogic ({
   const currentIncomeDistribution = (Object.entries(groupProfiles)
     // filter out users without a profile or without income details
     .filter(([name, profile]) => profile && profile.incomeDetailsType)
+    // get the user's absolute income by adding pledge if needed
     .map(([name, profile]) => {
       const amount = saferFloat(profile.incomeDetailsType === 'incomeAmount'
         ? profile.incomeAmount
