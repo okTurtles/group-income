@@ -56,9 +56,7 @@ describe('group income distribution logic', function () {
         "2020-10": {
           mincomeExchangeRate: 1,
           paymentsFrom: {
-            "u1": {
-              "u2": ["payment1"]
-            }
+            "u1": { "u2": ["payment1"] }
           }
         }
       }
@@ -84,9 +82,7 @@ describe('group income distribution logic', function () {
         "2020-10": {
           mincomeExchangeRate: 1,
           paymentsFrom: {
-            "u1": {
-              "u3": ["payment1"]
-            }
+            "u1": { "u3": ["payment1"] }
           }
         }
       }
@@ -113,9 +109,7 @@ describe('group income distribution logic', function () {
         "2020-10": {
           mincomeExchangeRate: 1,
           paymentsFrom: {
-            "u1": {
-              "u3": ["payment1"]
-            }
+            "u1": { "u3": ["payment1"] }
           }
         }
       }
