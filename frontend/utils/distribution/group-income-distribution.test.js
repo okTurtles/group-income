@@ -40,7 +40,7 @@ describe('group income distribution logic', function () {
       groupProfiles: {
         'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10 },
         'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
-      },
+      }
     })
     should(dist).eql([{ amount: 2, from: 'u1', to: 'u2' }])
   })
