@@ -337,7 +337,7 @@ module.exports = (grunt) => {
           match: /\.scss$/,
           recurse: true
         }),
-        eslint({ throwOnError: true, throwOnWarning: true }),
+        eslint({ throwOnError: false, throwOnWarning: false }),
         svgLoader(),
         transformProxy({
           plugin: VuePlugin({
