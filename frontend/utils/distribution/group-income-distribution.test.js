@@ -146,7 +146,10 @@ describe('group income distribution logic', function () {
         }
       }
     })
-    should(dist).eql([{ amount: 75, from: 'u1', to: 'u3' }])
+    should(dist).eql([
+      { amount: 5.769230769230769, from: 'u1', to: 'u2' },
+      { amount: 69.23076923076924, from: 'u1', to: 'u3' }
+    ])
   })
 
   it('[scenario 4] ignores users who updated income after paying and can no longer pay', function () {
