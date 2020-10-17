@@ -568,7 +568,7 @@ const getters = {
         sent: sent.map(p => p.data.toUser)
       }
       return {
-        paymentsDone: getUniqPCount(pByUser.sent) - pPartials,
+        paymentsDone: getUniqPCount(pByUser.sent),
         hasPartials: pPartials > 0,
         paymentsTotal: getUniqPCount([...pByUser.todo, ...pByUser.sent]),
         amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),
