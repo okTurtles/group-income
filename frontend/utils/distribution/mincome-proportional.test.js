@@ -84,6 +84,6 @@ describe('proportionalMincomeDistributionTest', function () {
       { amount: 5.769230769230769, from: 'u1', to: 'u2' },
       { amount: 69.23076923076924, from: 'u1', to: 'u3' }
     ]
-    should(incomeDistribution(members, 40)).eql(expected)
+    should(incomeDistribution(members, 1000)).eql(expected)
   })
 })
