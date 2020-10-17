@@ -11,8 +11,8 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
       groupProfiles: {
-        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 10 },
-        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 10 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
       }
     })
     should(dist).eql([{ amount: 2, from: 'u1', to: 'u2' }])
@@ -22,11 +22,11 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
       groupProfiles: {
-        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 10 },
-        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 10 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
       },
       adjustWith: {
-        monthstamp: "2020-10",
+        monthstamp: '2020-10',
         payments: {},
         monthlyPayments: {}
       }
@@ -38,8 +38,8 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
       groupProfiles: {
-        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 10 },
-        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 10 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
       },
     })
     should(dist).eql([{ amount: 2, from: 'u1', to: 'u2' }])
@@ -49,19 +49,19 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
       groupProfiles: {
-        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 10 },
-        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 10 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
       },
       adjustWith: {
-        monthstamp: "2020-10",
+        monthstamp: '2020-10',
         payments: {
-          "payment1": { amount: 2, exchangeRate: 1, status: "completed", creationMonthstamp: "2020-10" }
+          'payment1': { amount: 2, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
         },
         monthlyPayments: {
-          "2020-10": {
+          '2020-10': {
             mincomeExchangeRate: 1,
             paymentsFrom: {
-              "u1": { "u2": ["payment1"] }
+              'u1': { 'u2': ['payment1'] }
             }
           }
         }
@@ -74,20 +74,20 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 100 },
-        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 925 },
-        "u3": { incomeDetailsType: "incomeAmount", incomeAmount: 950 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 925 },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 950 }
       },
       adjustWith: {
-        monthstamp: "2020-10",
+        monthstamp: '2020-10',
         payments: {
-          "payment1": { amount: 75, exchangeRate: 1, status: "completed", creationMonthstamp: "2020-10" }
+          'payment1': { amount: 75, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
         },
         monthlyPayments: {
-          "2020-10": {
+          '2020-10': {
             mincomeExchangeRate: 1,
             paymentsFrom: {
-              "u1": { "u2": ["payment1"] }
+              'u1': { 'u2': ['payment1'] }
             }
           }
         }
@@ -100,20 +100,20 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 100 },
-        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 900 },
-        "u3": { incomeDetailsType: "incomeAmount", incomeAmount: 950 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 950 }
       },
       adjustWith: {
-        monthstamp: "2020-10",
+        monthstamp: '2020-10',
         payments: {
-          "payment1": { amount: 100, exchangeRate: 1, status: "completed", creationMonthstamp: "2020-10" }
+          'payment1': { amount: 100, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
         },
         monthlyPayments: {
-          "2020-10": {
+          '2020-10': {
             mincomeExchangeRate: 1,
             paymentsFrom: {
-              "u1": { "u2": ["payment1"] }
+              'u1': { 'u2': ['payment1'] }
             }
           }
         }
@@ -126,20 +126,20 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 100 },
-        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 950 },
-        "u3": { incomeDetailsType: "incomeAmount", incomeAmount: 700 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950 },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 700 }
       },
       adjustWith: {
-        monthstamp: "2020-10",
+        monthstamp: '2020-10',
         payments: {
-          "payment1": { amount: 25, exchangeRate: 1, status: "completed", creationMonthstamp: "2020-10" }
+          'payment1': { amount: 25, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
         },
         monthlyPayments: {
-          "2020-10": {
+          '2020-10': {
             mincomeExchangeRate: 1,
             paymentsFrom: {
-              "u1": { "u2": ["payment1"] }
+              'u1': { 'u2': ['payment1'] }
             }
           }
         }
@@ -155,20 +155,20 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 50 },
-        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 950 },
-        "u3": { incomeDetailsType: "incomeAmount", incomeAmount: 900 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950 },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 }
       },
       adjustWith: {
-        monthstamp: "2020-10",
+        monthstamp: '2020-10',
         payments: {
-          "payment1": { amount: 50, exchangeRate: 1, status: "completed", creationMonthstamp: "2020-10" }
+          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
         },
         monthlyPayments: {
-          "2020-10": {
+          '2020-10': {
             mincomeExchangeRate: 1,
             paymentsFrom: {
-              "u1": { "u3": ["payment1"] }
+              'u1': { 'u3': ['payment1'] }
             }
           }
         }
@@ -181,21 +181,21 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        "u1": { incomeDetailsType: "pledgeAmount", pledgeAmount: 50 },
-        "u2": { incomeDetailsType: "incomeAmount", incomeAmount: 950 },
-        "u3": { incomeDetailsType: "incomeAmount", incomeAmount: 900 },
-        "u4": { incomeDetailsType: "pledgeAmount", pledgeAmount: 150 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950 },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 150 }
       },
       adjustWith: {
-        monthstamp: "2020-10",
+        monthstamp: '2020-10',
         payments: {
-          "payment1": { amount: 50, exchangeRate: 1, status: "completed", creationMonthstamp: "2020-10" }
+          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
         },
         monthlyPayments: {
-          "2020-10": {
+          '2020-10': {
             mincomeExchangeRate: 1,
             paymentsFrom: {
-              "u1": { "u3": ["payment1"] }
+              'u1': { 'u3': ['payment1'] }
             }
           }
         }
