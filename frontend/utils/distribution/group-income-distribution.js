@@ -1,6 +1,5 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
-import paymentTotalFromUserToUser from '~/frontend/model/contracts/payments/totals.js'
 import { remapObject } from '~/frontend/utils/giLodash.js'
 import { ISOStringToMonthstamp } from '~/frontend/utils/time.js'
 
@@ -26,6 +25,7 @@ function adjustedPledge (from, pledge, adjustWith) {
     // TODO: check payment.status maybe? (might not matter)
     // TODO: deal with payment.exchangeRate?
     // TODO: deal with mincomeExchangeRate?
+    // Check paymentTotalFromUserToUser for details
     .map(paymentName => adjustWith.payments[paymentName].amount)
     .reduce((a, b) => a + b, 0))
 
