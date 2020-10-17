@@ -4,7 +4,6 @@
 // ./node_modules/.bin/mocha -w -R min --require Gruntfile.js frontend/utils/distribution/group-income-distribution.test.js
 
 import should from 'should'
-import incomeDistribution from './mincome-default.js'
 import { groupIncomeDistributionLogic } from './group-income-distribution.js'
 
 describe('group income distribution logic', function () {
