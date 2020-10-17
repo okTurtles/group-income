@@ -86,4 +86,18 @@ describe('proportionalMincomeDistributionTest', function () {
     ]
     should(incomeDistribution(members, 1000)).eql(expected)
   })
+
+  // Used to come up with https://github.com/okTurtles/group-income-simple/issues/763#issuecomment-711029706
+  it('splits money evenly', function () {
+    const members = [
+      { name: 'u1', amount: 1009 },
+      { name: 'u2', amount: 920 },
+      { name: 'u3', amount: 960 }
+    ]
+    const expected = [
+      { amount: 6, from: 'u1', to: 'u2' },
+      { amount: 3, from: 'u1', to: 'u3' }
+    ]
+    should(incomeDistribution(members, 1000)).eql(expected)
+  })
 })
