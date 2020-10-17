@@ -120,7 +120,7 @@ describe('group income distribution logic', function () {
         }
       }
     })
-    should(dist).eql([{ amount: 0, from: 'u1', to: 'u3' }])
+    should(dist).eql([])
   })
 
   it('[scenario 3]', function () {
@@ -172,7 +172,7 @@ describe('group income distribution logic', function () {
         }
       }
     })
-    should(dist).eql([{ amount: 0, from: 'u1', to: 'u2' }])
+    should(dist).eql([])
   })
 
   it('[scenario 4.1] can distribute money from new members', function () {
