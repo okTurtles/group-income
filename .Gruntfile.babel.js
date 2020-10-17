@@ -116,7 +116,7 @@ module.exports = (grunt) => {
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
-      eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
+      eslint: 'node ./node_modules/eslint/bin/eslint.js --plugin only-warn "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss,vue}"',
@@ -337,7 +337,7 @@ module.exports = (grunt) => {
           match: /\.scss$/,
           recurse: true
         }),
-        eslint({ throwOnError: true, throwOnWarning: true }),
+        eslint({ throwOnError: false, throwOnWarning: false }),
         svgLoader(),
         transformProxy({
           plugin: VuePlugin({
