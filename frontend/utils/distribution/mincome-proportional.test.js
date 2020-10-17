@@ -74,7 +74,7 @@ describe('proportionalMincomeDistributionTest', function () {
     should(incomeDistribution(members, 40)).eql(expected)
   })
 
-  it('works with that edge case', function () {
+  it('works with very imprecise splits', function () {
     const members = [
       { name: 'u1', amount: 1075 },
       { name: 'u2', amount: 975 },
