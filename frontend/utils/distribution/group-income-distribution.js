@@ -51,6 +51,10 @@ export function dataToEvents (monthstamp, data) {
   }
 }
 
+export function groupIncomeDistributionNewLogic (data) {
+
+}
+
 export function groupIncomeDistributionLogic ({
   mincomeAmount,
   groupProfiles,

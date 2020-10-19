@@ -4,16 +4,19 @@
 // ./node_modules/.bin/mocha -w -R min --require Gruntfile.js frontend/utils/distribution/group-income-distribution.test.js
 
 import should from 'should'
-import { groupIncomeDistributionLogic, dataToEvents } from './group-income-distribution.js'
+import { groupIncomeDistributionLogic, groupIncomeDistributionNewLogic, dataToEvents } from './group-income-distribution.js'
 
 describe('group income distribution logic', function () {
   it('can distribute income evenly with two users', function () {
-    const dist = groupIncomeDistributionLogic({
-      mincomeAmount: 12,
-      groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
-      }
+    const dist = groupIncomeDistributionNewLogic({
+      mincome: 12,
+      haves: [
+        { name: 'u1', have: 10 },
+      ],
+      needs: [
+        { name: 'u2', need: 10 },
+      ],
+      events: []
     })
     should(dist).eql([
       { amount: 2, from: 'u1', to: 'u2' }
