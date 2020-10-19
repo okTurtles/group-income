@@ -300,7 +300,7 @@ describe('group income distribution logic', function () {
   })
 })
 
-describe.only('helper function', function () {
+describe('helper function', function () {
 
   it('can transform payment/join data into events', function () {
     const events = dataToEvents('2020-10', {
@@ -488,6 +488,19 @@ describe.only('helper function', function () {
         payments: {},
         monthlyPayments: {}
       }
+    })
+    should(events).eql({
+      mincome: 1000,
+      haves: [],
+      needs: [],
+      events: []
+    })
+  })
+
+  it('works with no adjustWith arguments', function () {
+    const events = dataToEvents('2020-10', {
+      mincomeAmount: 1000,
+      groupProfiles: {}
     })
     should(events).eql({
       mincome: 1000,
