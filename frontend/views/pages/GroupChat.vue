@@ -84,7 +84,11 @@ export default {
 
 .c-card {
   margin-top: 1.5rem;
-  padding: 0 2.5rem 1.5rem 2.5rem;
+  padding: 0 0 1.5rem 0;
+
+  &:last-child {
+    margin-bottom: 2rem;
+  }
 }
 
 .c-header {

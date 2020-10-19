@@ -23,9 +23,10 @@ v-style.
     --text_1: {{colors.text_1}};
     --general_0: {{colors.general_0}};
     --general_1: {{colors.general_1}};
+    --general_1_opacity_6: {{hexToRgbA(colors.general_1, 0.6)}};
     --general_2: {{colors.general_2}};
     --background_0: {{colors.background_0}};
-    --background_0_no_opacity: {{hexToRgbA(colors.background_0, 0)}};
+    --background_0_opacity_0: {{hexToRgbA(colors.background_0, 0)}};
     --text-size: {{fontSize}}px;
   }
 </template>

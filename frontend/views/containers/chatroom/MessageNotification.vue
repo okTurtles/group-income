@@ -29,10 +29,10 @@ export default {
   &:before {
     content: '';
     height: 1px;
-    width: 100%;
     background-color: $general_0;
     position: absolute;
-    left: 0;
+    left: 2.5rem;
+    right: 2.5rem;
     top: 50%;
   }
 }

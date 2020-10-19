@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-message
+a.c-message(href='https://groupincome.org/todo/')
   .c-icon
     svg-horn
   .c-body
@@ -8,11 +8,7 @@
       span.has-text-1 {{getTime(time)}}
     .c-text
       | {{interactiveMessage.text}}
-      i18n.c-link(
-        tag='a'
-        href='https://groupincome.org/todo/'
-        target='_blank'
-      ) See proposal
+      i18n.c-link See proposal
 
 </template>
 
@@ -172,9 +168,13 @@ export default {
 
 .c-message {
   display: flex;
-  margin: 1rem 0 0;
   align-items: flex-start;
   color: $text_1;
+  padding: 0.5rem 2.5rem;
+
+  &:hover {
+    background-color: $general_2;
+  }
 }
 
 .c-icon {

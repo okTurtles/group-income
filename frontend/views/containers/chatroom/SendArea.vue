@@ -5,7 +5,7 @@
     :disabled='loading'
     :placeholder='customSendPlaceholder'
     :style='textareaStyles'
-    @keydown.enter.exact='sendMessage'
+    @keydown.enter.exact.prevent='sendMessage'
     @keydown.ctrl='isNextLine'
     @keyup='handleKeyup'
     v-bind='$attrs'
@@ -13,10 +13,17 @@
 
   .c-send-actions(ref='actions')
     .addons
-      button.is-icon(aria-label='Copy text')
+      button.is-icon(
+        :aria-label='L("Create pool")'
+        @click='createPool'
+      )
         i.icon-poll
-      button.is-icon(aria-label='Create pool')
-        i.icon-grin-beam
+      button.is-icon(
+        :aria-label='L("Add reaction")'
+        @click='openEmoticon'
+      )
+        i.icon-smile-beam
+
     i18n.sr-only(
       tag='button'
       :class='{ isActive }'
@@ -30,9 +37,10 @@
 </template>
 
 <script>
+import emoticonsMixins from './EmoticonsMixins.js'
 export default {
   name: 'Chatroom',
-  components: {},
+  mixins: [emoticonsMixins],
   props: {
     title: String,
     searchPlaceholder: String,
@@ -85,8 +93,9 @@ export default {
         return this.createNewLine()
       }
     },
-    handleKeyup () {
-      this.updateTextArea()
+    handleKeyup (e) {
+      if (e.keyCode === 13) e.preventDefault()
+      else this.updateTextArea()
     },
     updateTextWithLines () {
       const newValue = this.$refs.textarea.value.replace(/\n/g, '<br>')
@@ -128,8 +137,15 @@ export default {
 
       this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
-
       this.updateTextArea()
+    },
+    createPool () {
+      console.log('TODO')
+    },
+    selectEmoticon (emoticon) {
+      this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
+      this.closeEmoticon()
+      this.updateTextWithLines()
     }
   }
 }
@@ -142,6 +158,7 @@ $initialHeight: 43px;
 
 .c-send {
   position: relative;
+  margin: 0 2.5rem;
 
   &-textarea,
   &-mask {
@@ -191,7 +208,14 @@ $initialHeight: 43px;
   }
 }
 
-.icon-grin-beam::before {
+.icon-smile-beam::before {
   font-weight: 400;
+}
+
+.emoji-mart {
+  position: absolute;
+  right: 0;
+  bottom: 4rem;
+  box-shadow: 0px 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 }
 </style>

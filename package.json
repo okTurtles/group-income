@@ -100,6 +100,7 @@
     "@hapi/joi": "17.1.1",
     "blakejs": "1.1.0",
     "buffer": "5.4.3",
+    "emoji-mart-vue": "2.6.6",
     "form-data": "2.5.1",
     "localforage": "1.7.3",
     "multihashes": "0.4.15",

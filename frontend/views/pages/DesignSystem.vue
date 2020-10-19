@@ -185,8 +185,8 @@ page(
               i.icon-download icon-download
               i.icon-edit icon-edit
               i.icon-ellipsis-v icon-ellipsis-v
+              i.icon-ellipsis-h icon-ellipsis-h
               i.icon-envelope icon-envelope
-              i.icon-exclamation-triangle icon-exclamation-triangle
               i.icon-eye icon-eye
               i.icon-eye-slash icon-eye-slash
               i.icon-globe icon-globe
@@ -216,6 +216,10 @@ page(
               i.icon-wifi icon-wifi
               i.icon-hashtag icon-hashtag
               i.icon-grin-beam icon-grin-beam
+              i.icon-smile-beam icon-smile-beam
+              i.icon-reply icon-reply
+              i.icon-trash-alt icon-trash-alt
+              i.icon-exclamation-triangle icon-exclamation-triangle
         tr
           td
             pre

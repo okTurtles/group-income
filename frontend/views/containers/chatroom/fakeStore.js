@@ -302,7 +302,11 @@ export const groupA = {
         time: new Date(2020, 7, 31, 14, 28, 42),
         from: '000',
         text: 'There’s no problem to me',
-        unread: true
+        unread: true,
+        emoticons: {
+          '💖': ['555'],
+          '👋': ['000']
+        }
       },
       {
         time: new Date(2020, 7, 31, 17, 32, 42),

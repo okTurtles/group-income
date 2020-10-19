@@ -50,6 +50,9 @@ export default {
   methods: {
     addMembers () {
       console.log('TODO')
+    },
+    addDescription () {
+      console.log('TODO')
     }
   }
 }
@@ -59,7 +62,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-greetings {
-  margin-bottom: 2rem;
+  padding: 0 2.5rem 2rem 2.5rem;
 }
 
 .buttons {
