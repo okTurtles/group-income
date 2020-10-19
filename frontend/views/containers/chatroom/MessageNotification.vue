@@ -1,14 +1,83 @@
 <template lang='pug'>
-.c-notification
-  // TODO: #502 - Chat: Add support to markdown formatted text
-  p.c-text(v-if='text') {{text}}
+message-base(v-bind='$props' @addEmoticon='addEmoticon($event)')
+  template(#body='')
+    .c-notification
+      p.c-text(v-if='message') {{message.text}}
 </template>
 
 <script>
+import MessageBase from './MessageBase.vue'
+import { interactionType, fakeEvents, users } from '@containers/chatroom/fakeStore.js'
+import chatroom from '@containers/chatroom/chatroom.js'
+import L from '@view-utils/translations.js'
+
 export default {
   name: 'MessageNotification',
+  components: {
+    MessageBase
+  },
   props: {
-    text: String
+    id: String,
+    text: String,
+    who: String,
+    currentUserId: String,
+    avatar: String,
+    time: {
+      type: Date,
+      required: true
+    },
+    emoticonsList: {
+      type: Object,
+      default: null
+    },
+    isSameSender: Boolean,
+    isCurrentUser: Boolean
+  },
+  computed: {
+    message () {
+      const summary = chatroom.summary
+      let text = ''
+      let variant = 'simple'
+      const event = fakeEvents[this.id]
+
+      switch (event.interactionType) {
+        case interactionType.CHAT_NEW_MEMBER:
+          text = L('Added members to this channel: {displayName}', users[event.to])
+          break
+
+        case interactionType.CHAT_REMOVE_MEMBER:
+          text = L('Left {title}', summary)
+          break
+
+        case interactionType.CHAT_NAME_UPDATE:
+          text = L('Updated the channel name to: {title}', summary)
+          break
+
+        case interactionType.CHAT_DESCRIPTION_UPDATE:
+          text = L('Updated the channel description to: {title}', summary)
+          break
+
+        case interactionType.CHAT_DELETE:
+          text = L('Deleted the channel: {title}', summary)
+          variant = 'tooltip'
+          break
+
+        case interactionType.VOTED:
+          text = L('Voted on “{}”')
+          variant = 'poll'
+          break
+      }
+
+      return {
+        text,
+        variant
+      }
+    }
+  },
+  methods: {
+    addEmoticon (emoticon) {
+      this.$emit('addEmoticon', emoticon)
+    }
   }
 }
 </script>
@@ -17,29 +86,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-notification {
-  text-align: center;
-  position: relative;
-
-  p {
-    background: $background_0;
-    position: relative;
-    padding: .5rem;
-  }
-
-  &:before {
-    content: '';
-    height: 1px;
-    background-color: $general_0;
-    position: absolute;
-    left: 2.5rem;
-    right: 2.5rem;
-    top: 50%;
-  }
-}
-
-.c-text {
-  display: inline-block;
-  background-color: $background_0;
-  margin: 0 auto;
+  color: $text_1;
+  font-style: italic;
 }
 </style>

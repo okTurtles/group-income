@@ -3,7 +3,7 @@ menu-parent
   .c-actions
     button.is-icon-small(
       :aria-label='L("Add reaction")'
-      @click='action("addReaction")'
+      @click='action("openEmoticon", $event)'
     )
       i.icon-smile-beam
     button.is-icon-small(
@@ -62,9 +62,9 @@ export default {
     isCurrentUser: Boolean
   },
   methods: {
-    action (type) {
-      console.log('TODO')
-      this.$emit(type)
+    action (type, e) {
+      // Change to sbp action
+      this.$emit(type, e)
     }
   }
 }

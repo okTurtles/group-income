@@ -28,7 +28,7 @@
           :from='message.from'
           :time='message.time'
           :emoticonsList='message.emoticons'
-          :who='who(isCurrentUser(message.from), message.from)'
+          :who='who(message)'
           :currentUserId='currentUserAttr.id'
           :avatar='avatar(isCurrentUser, message.from)'
           :variant='variant(message)'
@@ -53,7 +53,7 @@ import MessageNotification from './MessageNotification.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
 import Emoticons from './Emoticons.vue'
-import { currentUserId, messageTypes } from '@containers/chatroom/fakeStore.js'
+import { currentUserId, messageTypes, fakeEvents } from '@containers/chatroom/fakeStore.js'
 import { proximityDate } from '@utils/time.js'
 
 export default {
@@ -168,8 +168,9 @@ export default {
     isCurrentUser (fromId) {
       return this.currentUserAttr.id === fromId
     },
-    who (isCurrentUser, fromId) {
-      const user = isCurrentUser ? this.currentUserAttr : this.details.participants[fromId]
+    who (message) {
+      const fromId = message.from === messageTypes.NOTIFICATION ? fakeEvents[message.id].from : message.from
+      const user = this.isCurrentUser(fromId) ? this.currentUserAttr : this.details.participants[fromId]
       if (user) {
         return user.displayName || user.username
       }

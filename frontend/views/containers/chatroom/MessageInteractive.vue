@@ -1,15 +1,16 @@
 <template lang='pug'>
-a.c-message(href='https://groupincome.org/todo/')
-  .c-icon
-    svg-horn
-  .c-body
+message-base(v-bind='$props' @wrapperAction='action')
+  template(#image='')
+    .c-icon
+      svg-horn
+  template(#header='')
     .c-header
       span.c-title.is-title-5(:class='interactiveMessage.proposalSeverity') {{interactiveMessage.proposalStatus}}
       span.has-text-1 {{getTime(time)}}
+  template(#body='')
     .c-text
       | {{interactiveMessage.text}}
       i18n.c-link See proposal
-
 </template>
 
 <script>
@@ -25,7 +26,8 @@ import {
   STATUS_CANCELLED
 } from '@model/contracts/voting/constants.js'
 
-import { interactionType, fakeProposals } from '@containers/chatroom/fakeStore.js'
+import MessageBase from './MessageBase.vue'
+import { fakeProposals } from '@containers/chatroom/fakeStore.js'
 import SvgHorn from '@svgs/horn.svg'
 import L from '@view-utils/translations.js'
 import chatroom from '@containers/chatroom/chatroom.js'
@@ -72,10 +74,14 @@ export default {
     time: Date
   },
   components: {
-    SvgHorn
+    SvgHorn,
+    MessageBase
   },
   methods: {
-    getTime
+    getTime,
+    action () {
+      console.log('TODO')
+    }
   },
   computed: {
     interactiveMessage () {
@@ -121,36 +127,6 @@ export default {
         case PROPOSAL_PROPOSAL_SETTING_CHANGE:
           text = interactiveMessage(interaction)[interaction.proposalType][interaction.proposalData.setting][status]
           break
-
-        case interactionType.CHAT_NEW_MEMBER:
-          text = L('Added members to this channel: {to}', interaction)
-          variant = 'userAction'
-          break
-
-        case interactionType.CHAT_REMOVE_MEMBER:
-          text = L('Left {title}', summary)
-          variant = 'userAction'
-          break
-
-        case interactionType.CHAT_NAME_UPDATE:
-          text = L('Updated the channel name to: {title}', summary)
-          variant = 'userAction'
-          break
-
-        case interactionType.CHAT_DESCRIPTION_UPDATE:
-          text = L('Updated the channel description to: {title}', summary)
-          variant = 'userAction'
-          break
-
-        case interactionType.CHAT_DELETE:
-          text = L('Deleted the channel: {title}', summary)
-          variant = 'tooltip'
-          break
-
-        case interactionType.VOTED:
-          text = L('Voted on “{}”')
-          variant = 'poll'
-          break
       }
       return {
         text,
@@ -165,17 +141,6 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
-
-.c-message {
-  display: flex;
-  align-items: flex-start;
-  color: $text_1;
-  padding: 0.5rem 2.5rem;
-
-  &:hover {
-    background-color: $general_2;
-  }
-}
 
 .c-icon {
   display: flex;

@@ -291,6 +291,7 @@ export const groupA = {
       {
         time: new Date(2020, 7, 23, 12, 45, 42),
         from: messageTypes.NOTIFICATION,
+        id: 'youAddedToDreamersGroup',
         text: 'You are now part of The Dreamers group.'
       },
       {
@@ -328,6 +329,14 @@ export const groupA = {
         unread: true
       }
     ]
+  }
+}
+
+export const fakeEvents = {
+  youAddedToDreamersGroup: {
+    interactionType: interactionType.CHAT_NEW_MEMBER,
+    from: '444',
+    to: '444'
   }
 }
 

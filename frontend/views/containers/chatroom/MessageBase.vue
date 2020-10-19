@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-message(:class='[variant, isSameSender && "sameSender"]')
+.c-message(:class='[variant, isSameSender && "sameSender"]' @click='$emit("wrapperAction")')
   .c-message-wrapper
     slot(name='image')
       avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
@@ -15,13 +15,14 @@
 
   message-reactions(
     :emoticonsList='emoticonsList'
-    @addEmoticon='addEmoticon(index, $event)'
+    @selectEmoticon='selectEmoticon($event)'
+    @openEmoticon='openEmoticon($event)'
   )
 
   message-actions(
     :variant='variant'
     :isCurrentUser='isCurrentUser'
-    @addReaction='addReaction'
+    @openEmoticon='openEmoticon($event)'
     @edit='edit'
     @reply='reply'
     @retry='retry'
@@ -35,16 +36,16 @@
 import Avatar from '@components/Avatar.vue'
 import { getTime } from '@utils/time.js'
 import emoticonsMixins from './EmoticonsMixins.js'
-import MessageActions from './MessageActions.js'
-import Messagereactions from './Messagereactions.js'
+import MessageActions from './MessageActions.vue'
+import MessageReactions from './MessageReactions.vue'
 
 export default {
-  name: 'Message',
+  name: 'MessageBase',
   mixins: [emoticonsMixins],
   components: {
     Avatar,
     MessageActions,
-    Messagereactions
+    MessageReactions
   },
   props: {
     text: String,
@@ -59,25 +60,32 @@ export default {
       type: Object,
       default: null
     },
+    variant: String,
     isSameSender: Boolean,
     isCurrentUser: Boolean
   },
   methods: {
     getTime,
     edit () {
-      console.log('TODO')
+      console.log('TODO EDIT')
     },
     reply () {
-      console.log('TODO')
+      console.log('TODO REPLY')
     },
     moreOptions () {
-      console.log('TODO')
+      console.log('TODO MORE OPTIONS')
     },
     copyToClipBoard () {
       navigator.clipboard.writeText(this.text)
     },
     selectEmoticon (emoticon) {
-      this.$emit('addEmoticon', emoticon.native)
+      this.$emit('addEmoticon', emoticon.native || emoticon)
+    },
+    retry () {
+      this.$emit('retry')
+    },
+    deleteMessage () {
+      this.$emit('deleteMessage')
     }
   }
 }
@@ -111,7 +119,7 @@ export default {
 
   &:hover {
     background-color: $general_2;
-    .c-actions {
+    ::v-deep .c-actions {
       display: flex;
     }
   }

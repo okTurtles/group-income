@@ -4,7 +4,8 @@
     v-for='(list, emoticon, index) in emoticonsList'
     :key='index'
     :class='{"is-user-emoticon": list.includes(currentUserId)}'
-    @click='$emit("addEmoticon", emoticon)'
+    @click='$emit("selectEmoticon", emoticon)'
+    v-if='list.length'
   )
     tooltip.c-tip(
       direction='top'
@@ -16,7 +17,7 @@
   .c-emoticon-wrapper.c-add-icon
     button.is-icon-small(
       :aria-label='L("Add reaction")'
-      @click='openEmoticon'
+      @click='(e) => $emit("openEmoticon", e)'
     )
       i.icon-smile-beam.is-light
       i.icon-plus
@@ -82,6 +83,7 @@ export default {
 
   .c-twrapper{
     display: flex;
+    outline: none;
   }
 
   .icon-smile-beam.is-light::before {
