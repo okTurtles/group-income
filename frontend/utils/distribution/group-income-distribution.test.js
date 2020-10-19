@@ -207,7 +207,30 @@ describe('group income distribution logic', function () {
     ])
   })
 
-  it('works in the failing test case', function () {
+  it('splits money evenly between two pledgers and two needers', function () {
+    const dist = groupIncomeDistributionLogic({
+      mincomeAmount: 1000,
+      groupProfiles: {
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750 },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 }
+      },
+      adjustWith: {
+        monthstamp: '2020-10',
+        payments: {},
+        monthlyPayments: {}
+      }
+    })
+    should(dist).eql([
+      { amount: 71.42857142857143, from: 'u1', to: 'u2' },
+      { amount: 178.57142857142858, from: 'u1', to: 'u3' },
+      { amount: 28.57142857142857, from: 'u4', to: 'u2' },
+      { amount: 71.42857142857143, from: 'u4', to: 'u3' }
+    ])
+  })
+
+  it('stops asking user to pay someone they fully paid their share to', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
@@ -232,10 +255,9 @@ describe('group income distribution logic', function () {
       }
     })
     should(dist).eql([
-      { amount: 18.314049969487044, from: 'u1', to: 'u2' },
-      { amount: 160.25595003051288, from: 'u1', to: 'u3' },
-      { amount: 10.255950030512993, from: 'u4', to: 'u2' },
-      { amount: 89.74404996948701, from: 'u4', to: 'u3' }
+      { amount: 178.57142857142858, from: 'u1', to: 'u3' },
+      { amount: 28.57142857142857, from: 'u4', to: 'u2' },
+      { amount: 71.42857142857143, from: 'u4', to: 'u3' }
     ])
   })
 
