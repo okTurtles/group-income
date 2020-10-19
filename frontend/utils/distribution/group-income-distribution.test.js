@@ -61,7 +61,7 @@ describe('group income distribution logic', function () {
       adjustWith: {
         monthstamp: '2020-10',
         payments: {
-          'payment1': { amount: 2, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
+          'payment1': { amount: 2, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
         },
         monthlyPayments: {
           '2020-10': {
@@ -87,7 +87,7 @@ describe('group income distribution logic', function () {
       adjustWith: {
         monthstamp: '2020-10',
         payments: {
-          'payment1': { amount: 75, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
+          'payment1': { amount: 75, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
         },
         monthlyPayments: {
           '2020-10': {
@@ -115,7 +115,7 @@ describe('group income distribution logic', function () {
       adjustWith: {
         monthstamp: '2020-10',
         payments: {
-          'payment1': { amount: 100, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
+          'payment1': { amount: 100, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
         },
         monthlyPayments: {
           '2020-10': {
@@ -141,7 +141,7 @@ describe('group income distribution logic', function () {
       adjustWith: {
         monthstamp: '2020-10',
         payments: {
-          'payment1': { amount: 25, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
+          'payment1': { amount: 25, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
         },
         monthlyPayments: {
           '2020-10': {
@@ -169,7 +169,7 @@ describe('group income distribution logic', function () {
       adjustWith: {
         monthstamp: '2020-10',
         payments: {
-          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
+          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
         },
         monthlyPayments: {
           '2020-10': {
@@ -196,7 +196,7 @@ describe('group income distribution logic', function () {
       adjustWith: {
         monthstamp: '2020-10',
         payments: {
-          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
+          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
         },
         monthlyPayments: {
           '2020-10': {
@@ -249,7 +249,7 @@ describe('group income distribution logic', function () {
       adjustWith: {
         monthstamp: '2020-10',
         payments: {
-          'payment1': { amount: 71.43, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
+          'payment1': { amount: 71.43, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
         },
         monthlyPayments: {
           '2020-10': {
@@ -280,8 +280,8 @@ describe('group income distribution logic', function () {
       adjustWith: {
         monthstamp: '2020-10',
         payments: {
-          'payment1': { amount: 71.43, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' },
-          'payment2': { amount: 100, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
+          'payment1': { amount: 71.43, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' },
+          'payment2': { amount: 100, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
         },
         monthlyPayments: {
           '2020-10': {

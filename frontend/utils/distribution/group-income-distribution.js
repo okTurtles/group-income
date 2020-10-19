@@ -2,7 +2,6 @@ import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import { remapObject } from '~/frontend/utils/giLodash.js'
 import paymentTotalFromUserToUser from '../../model/contracts/payments/totals.js'
-import { ISOStringToMonthstamp } from '~/frontend/utils/time.js'
 
 export function groupIncomeDistributionLogic ({
   mincomeAmount,
@@ -78,7 +77,7 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
         amount: payment.data.amount,
         exchangeRate: payment.data.exchangeRate,
         status: payment.data.status,
-        creationMonthstamp: ISOStringToMonthstamp(payment.meta.createdDate)
+        createdDate: payment.meta.createdDate
       })),
       monthlyPayments: remapObject(getters.currentGroupState.paymentsByMonth, (payments) => ({
         mincomeExchangeRate: payments.mincomeExchangeRate,

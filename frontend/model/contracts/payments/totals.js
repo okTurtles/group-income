@@ -1,5 +1,6 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import { PAYMENT_COMPLETED } from './index.js'
+import { ISOStringToMonthstamp } from '~/frontend/utils/time.js'
 
 export default function paymentTotalFromUserToUser ({
   fromUser,
@@ -13,7 +14,7 @@ export default function paymentTotalFromUserToUser ({
   //       here, but I couldn't get it to work with our linter. :(
   //       https://github.com/babel/babel-eslint/issues/511
   const total = (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
-    var { amount, exchangeRate, status, creationMonthstamp } = payments[hash]
+    var { amount, exchangeRate, status, createdDate } = payments[hash]
     if (status !== PAYMENT_COMPLETED) {
       return a
     }
@@ -21,6 +22,7 @@ export default function paymentTotalFromUserToUser ({
     // any proposals that passed in between the payment creation and the payment
     // completion that modified the group currency by multiplying both month's
     // exchange rates
+    const creationMonthstamp = ISOStringToMonthstamp(createdDate)
     if (paymentMonthstamp !== creationMonthstamp) {
       exchangeRate *= monthlyPayments[creationMonthstamp].mincomeExchangeRate
     }
