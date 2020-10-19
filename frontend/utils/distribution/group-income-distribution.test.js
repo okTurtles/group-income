@@ -11,8 +11,8 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
       }
     })
     should(dist).eql([
@@ -24,8 +24,8 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
       },
       adjustWith: {
         monthstamp: '2020-10',
@@ -42,8 +42,8 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
       }
     })
     should(dist).eql([
@@ -55,8 +55,8 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
       },
       adjustWith: {
         monthstamp: '2020-10',
@@ -80,9 +80,9 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 925 },
-        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 950 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 925, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' }
       },
       adjustWith: {
         monthstamp: '2020-10',
@@ -108,9 +108,9 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 },
-        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 950 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' }
       },
       adjustWith: {
         monthstamp: '2020-10',
@@ -134,9 +134,9 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950 },
-        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 700 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 700, joinedDate: '2020-09-15T00:00:00.000Z' }
       },
       adjustWith: {
         monthstamp: '2020-10',
@@ -162,9 +162,9 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950 },
-        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' }
       },
       adjustWith: {
         monthstamp: '2020-10',
@@ -188,10 +188,10 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950 },
-        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 },
-        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 150 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 150, joinedDate: '2020-10-15T00:00:00.000Z' }
       },
       adjustWith: {
         monthstamp: '2020-10',
@@ -218,10 +218,10 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 },
-        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750 },
-        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' }
       },
       adjustWith: {
         monthstamp: '2020-10',
@@ -241,10 +241,10 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 },
-        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750 },
-        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' }
       },
       adjustWith: {
         monthstamp: '2020-10',
@@ -272,10 +272,10 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250 },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 },
-        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750 },
-        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 }
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' }
       },
       adjustWith: {
         monthstamp: '2020-10',
