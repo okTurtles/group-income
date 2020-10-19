@@ -4,7 +4,7 @@ import { remapObject } from '~/frontend/utils/giLodash.js'
 import paymentTotalFromUserToUser from '../../model/contracts/payments/totals.js'
 
 export function dataToEvents (monthstamp, data) {
-  const mapUser = withDate => ([name, profile]) => ({
+  const mapUser = ({ withDate }) => ([name, profile]) => ({
     name,
     ...(withDate && { date: profile.joinedDate }),
     ...(profile.incomeDetailsType === 'pledgeAmount'
@@ -31,7 +31,7 @@ export function dataToEvents (monthstamp, data) {
 
   const joinEvents = (Object.entries(data.groupProfiles)
     .filter(([,profile]) => profile.joinedDate.startsWith(monthstamp))
-    .map(mapUser(true))
+    .map(mapUser({ withDate: true }))
     .map(user => { user.type = 'join'; return user }))
 
   const events = (paymentEvents
@@ -41,7 +41,7 @@ export function dataToEvents (monthstamp, data) {
 
   const members = (Object.entries(data.groupProfiles)
     .filter(([,profile]) => profile.joinedDate < monthstamp)
-    .map(mapUser(false)))
+    .map(mapUser({ withDate: false })))
 
   return {
     mincome: data.mincomeAmount,
