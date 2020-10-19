@@ -26,6 +26,7 @@ function adjustedPledge (from, pledge, adjustWith) {
     // TODO: deal with payment.exchangeRate?
     // TODO: deal with mincomeExchangeRate?
     // Check paymentTotalFromUserToUser for details
+    .flatMap(paymentsTo => paymentsTo) // we could use .flat but this is more explicit while type annotations are broken
     .map(paymentName => adjustWith.payments[paymentName].amount)
     .reduce((a, b) => a + b, 0))
 
