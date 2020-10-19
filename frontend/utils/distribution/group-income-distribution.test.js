@@ -130,7 +130,7 @@ describe('group income distribution logic', function () {
     should(dist).eql([])
   })
 
-  it('[scenario 3]', function () {
+  it('[scenario 3] redistributes excess of todo-payments back into other todo-payments', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
@@ -154,8 +154,7 @@ describe('group income distribution logic', function () {
       }
     })
     should(dist).eql([
-      { amount: 5.769230769230769, from: 'u1', to: 'u2' },
-      { amount: 69.23076923076924, from: 'u1', to: 'u3' }
+      { amount: 75, from: 'u1', to: 'u3' }
     ])
   })
 
