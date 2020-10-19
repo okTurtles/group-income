@@ -11,6 +11,7 @@ export function dataToEvents (monthstamp, data) {
       ? { have: profile.pledgeAmount }
       : { need: data.mincomeAmount - profile.incomeAmount })
   })
+
   const paymentEvents = []
   if (data.adjustWith) {
     const thisMonth = data.adjustWith.monthlyPayments[monthstamp]
@@ -27,19 +28,25 @@ export function dataToEvents (monthstamp, data) {
       }
     }
   }
+
   const joinEvents = (Object.entries(data.groupProfiles)
     .filter(([,profile]) => profile.joinedDate.startsWith(monthstamp))
     .map(mapUser(true))
     .map(user => { user.type = 'join'; return user }))
+
   const events = (paymentEvents
     .concat(joinEvents)
     .sort((a, b) => a.date < b.date ? -1 : 1)
     .map(event => { delete event.date; return event }))
+
+  const members = (Object.entries(data.groupProfiles)
+    .filter(([,profile]) => profile.joinedDate < monthstamp)
+    .map(mapUser(false)))
+
   return {
     mincome: data.mincomeAmount,
-    members: (Object.entries(data.groupProfiles)
-      .filter(([,profile]) => profile.joinedDate < monthstamp)
-      .map(mapUser(false))),
+    haves: members.filter(user => user.have !== undefined),
+    needs: members.filter(user => user.need !== undefined),
     events
   }
 }

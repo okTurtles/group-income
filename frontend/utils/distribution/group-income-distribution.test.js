@@ -300,7 +300,7 @@ describe('group income distribution logic', function () {
   })
 })
 
-describe('helper function', function () {
+describe.only('helper function', function () {
 
   it('can transform payment/join data into events', function () {
     const events = dataToEvents('2020-10', {
@@ -328,8 +328,10 @@ describe('helper function', function () {
     })
     should(events).eql({
       mincome: 1000,
-      members: [
+      haves: [
         { name: 'u1', have: 50 },
+      ],
+      needs: [
         { name: 'u2', need: 50 },
         { name: 'u3', need: 100 },
       ],
@@ -367,8 +369,10 @@ describe('helper function', function () {
     })
     should(events).eql({
       mincome: 1000,
-      members: [
+      haves: [
         { name: 'u1', have: 50 },
+      ],
+      needs: [
         { name: 'u2', need: 50 },
         { name: 'u3', need: 100 },
       ],
@@ -396,8 +400,10 @@ describe('helper function', function () {
     })
     should(events).eql({
       mincome: 1000,
-      members: [
+      haves: [
         { name: 'u1', have: 50 },
+      ],
+      needs: [
         { name: 'u2', need: 50 },
         { name: 'u3', need: 100 },
       ],
@@ -430,8 +436,10 @@ describe('helper function', function () {
     })
     should(events).eql({
       mincome: 1000,
-      members: [
+      haves: [
         { name: 'u1', have: 50 },
+      ],
+      needs: [
         { name: 'u2', need: 50 },
         { name: 'u3', need: 100 },
       ],
@@ -458,8 +466,10 @@ describe('helper function', function () {
     })
     should(events).eql({
       mincome: 1000,
-      members: [
+      haves: [
         { name: 'u1', have: 50 },
+      ],
+      needs: [
         { name: 'u2', need: 50 },
         { name: 'u3', need: 100 },
       ],
@@ -481,7 +491,8 @@ describe('helper function', function () {
     })
     should(events).eql({
       mincome: 1000,
-      members: [],
+      haves: [],
+      needs: [],
       events: []
     })
   })
@@ -511,10 +522,11 @@ describe('helper function', function () {
     })
     should(events).eql({
       mincome: 1000,
-      members: [
+      needs: [
         { name: 'u2', need: 50 },
         { name: 'u3', need: 100 },
       ],
+      haves: [],
       events: [
         { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
         { type: 'join', name: 'u4', have: 150 }
