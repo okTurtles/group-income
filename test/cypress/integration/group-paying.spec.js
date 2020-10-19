@@ -147,10 +147,10 @@ describe('Group Payments', () => {
     cy.getByDT('modal').within(() => {
       cy.getByDT('payRecord').find('tbody').children().should('have.length', 2)
       cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').should('have.value', '18.32')
-      cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').clear({ force: true }).type('100')
-      cy.getByDT('payRow').eq(0).find('label[data-test="check"] input').should('be.checked')
+      cy.getByDT('payRow').eq(0).find('label[data-test="check"] input').should('not.be.checked')
       cy.getByDT('payRow').eq(1).find('input[data-test="amount"]').should('have.value', '160.26')
-      cy.getByDT('payRow').eq(1).find('label[data-test="check"] input').should('not.be.checked')
+      cy.getByDT('payRow').eq(1).find('input[data-test="amount"]').clear({ force: true }).type('100')
+      cy.getByDT('payRow').eq(1).find('label[data-test="check"] input').should('be.checked')
 
       cy.get('button[type="submit"]').click()
       cy.getByDT('successClose').click()
@@ -160,7 +160,7 @@ describe('Group Payments', () => {
     assertNavTabs(['Todo2', 'Sent'])
 
     assertMonthOverview([
-      ['Payments sent', '1 out of 2'],
+      ['Payments sent', '2 out of 2'],
       ['Amount sent', '$171.43 out of $250']
     ])
 

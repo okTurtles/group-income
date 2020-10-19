@@ -554,7 +554,7 @@ const getters = {
         received: received.map(p => p.meta.username)
       }
       return {
-        paymentsDone: getUniqPCount(pByUser.received) - pPartials,
+        paymentsDone: getUniqPCount(pByUser.received),
         hasPartials: pPartials > 0,
         paymentsTotal: getUniqPCount([...pByUser.toBeReceived, ...pByUser.received]),
         amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
