@@ -4,7 +4,7 @@
 // ./node_modules/.bin/mocha -w -R min --require Gruntfile.js frontend/utils/distribution/group-income-distribution.test.js
 
 import should from 'should'
-import { groupIncomeDistributionLogic } from './group-income-distribution.js'
+import { groupIncomeDistributionLogic, dataToEvents } from './group-income-distribution.js'
 
 describe('group income distribution logic', function () {
   it('can distribute income evenly with two users', function () {
@@ -298,4 +298,228 @@ describe('group income distribution logic', function () {
       { amount: 71.42857143, from: 'u4', to: 'u3' }
     ])
   })
+})
+
+describe('helper function', function () {
+
+  it('can transform payment/join data into events', function () {
+    const events = dataToEvents('2020-10', {
+      mincomeAmount: 1000,
+      groupProfiles: {
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 150, joinedDate: '2020-10-15T00:00:00.000Z' }
+      },
+      adjustWith: {
+        monthstamp: '2020-10',
+        payments: {
+          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+        },
+        monthlyPayments: {
+          '2020-10': {
+            mincomeExchangeRate: 1,
+            paymentsFrom: {
+              'u1': { 'u3': ['payment1'] }
+            }
+          }
+        }
+      }
+    })
+    should(events).eql({
+      mincome: 1000,
+      members: [
+        { name: 'u1', have: 50 },
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 100 },
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
+        { type: 'join', name: 'u4', have: 150 }
+      ]
+    })
+  })
+
+  it('sorts payments and joins by date', function () {
+    const events = dataToEvents('2020-10', {
+      mincomeAmount: 1000,
+      groupProfiles: {
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 150, joinedDate: '2020-10-15T00:00:00.000Z' }
+      },
+      adjustWith: {
+        monthstamp: '2020-10',
+        payments: {
+          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' },
+          'payment2': { amount: 20, exchangeRate: 1, status: 'completed', createdDate: '2020-10-22T00:00:00.000Z' }
+        },
+        monthlyPayments: {
+          '2020-10': {
+            mincomeExchangeRate: 1,
+            paymentsFrom: {
+              'u1': { 'u3': ['payment1', 'payment2'] }
+            }
+          }
+        }
+      }
+    })
+    should(events).eql({
+      mincome: 1000,
+      members: [
+        { name: 'u1', have: 50 },
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 100 },
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
+        { type: 'join', name: 'u4', have: 150 },
+        { type: 'payment', from: 'u1', to: 'u3', amount: 20 }
+      ]
+    })
+  })
+
+  it('works with no events', function () {
+    const events = dataToEvents('2020-10', {
+      mincomeAmount: 1000,
+      groupProfiles: {
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' }
+      },
+      adjustWith: {
+        monthstamp: '2020-10',
+        payments: {},
+        monthlyPayments: {}
+      }
+    })
+    should(events).eql({
+      mincome: 1000,
+      members: [
+        { name: 'u1', have: 50 },
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 100 },
+      ],
+      events: []
+    })
+  })
+
+  it('works with only payment events', function () {
+    const events = dataToEvents('2020-10', {
+      mincomeAmount: 1000,
+      groupProfiles: {
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' }
+      },
+      adjustWith: {
+        monthstamp: '2020-10',
+        payments: {
+          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+        },
+        monthlyPayments: {
+          '2020-10': {
+            mincomeExchangeRate: 1,
+            paymentsFrom: {
+              'u1': { 'u3': ['payment1'] }
+            }
+          }
+        }
+      }
+    })
+    should(events).eql({
+      mincome: 1000,
+      members: [
+        { name: 'u1', have: 50 },
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 100 },
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u3', amount: 50 }
+      ]
+    })
+  })
+
+  it('works with only join events', function () {
+    const events = dataToEvents('2020-10', {
+      mincomeAmount: 1000,
+      groupProfiles: {
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 150, joinedDate: '2020-10-15T00:00:00.000Z' }
+      },
+      adjustWith: {
+        monthstamp: '2020-10',
+        payments: {},
+        monthlyPayments: {}
+      }
+    })
+    should(events).eql({
+      mincome: 1000,
+      members: [
+        { name: 'u1', have: 50 },
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 100 },
+      ],
+      events: [
+        { type: 'join', name: 'u4', have: 150 }
+      ]
+    })
+  })
+
+  it('works with no members', function () {
+    const events = dataToEvents('2020-10', {
+      mincomeAmount: 1000,
+      groupProfiles: {},
+      adjustWith: {
+        monthstamp: '2020-10',
+        payments: {},
+        monthlyPayments: {}
+      }
+    })
+    should(events).eql({
+      mincome: 1000,
+      members: [],
+      events: []
+    })
+  })
+
+  it('works when members have paid and left', function () {
+    const events = dataToEvents('2020-10', {
+      mincomeAmount: 1000,
+      groupProfiles: {
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 150, joinedDate: '2020-10-15T00:00:00.000Z' }
+      },
+      adjustWith: {
+        monthstamp: '2020-10',
+        payments: {
+          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+        },
+        monthlyPayments: {
+          '2020-10': {
+            mincomeExchangeRate: 1,
+            paymentsFrom: {
+              'u1': { 'u3': ['payment1'] }
+            }
+          }
+        }
+      }
+    })
+    should(events).eql({
+      mincome: 1000,
+      members: [
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 100 },
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
+        { type: 'join', name: 'u4', have: 150 }
+      ]
+    })
+  })
+
 })

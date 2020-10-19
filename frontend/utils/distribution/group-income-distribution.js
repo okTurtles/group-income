@@ -87,6 +87,47 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
   })
 }
 
+export function dataToEvents (monthstamp, data) {
+  const mapUser = withDate => ([name, profile]) => ({
+    name,
+    ...(withDate && { date: profile.joinedDate }),
+    ...(profile.incomeDetailsType === 'pledgeAmount'
+      ? { have: profile.pledgeAmount }
+      : { need: data.mincomeAmount - profile.incomeAmount })
+  })
+  const paymentEvents = []
+  if (data.adjustWith) {
+    const thisMonth = data.adjustWith.monthlyPayments[monthstamp]
+    if (thisMonth) {
+      for (const [from, toPayments] of Object.entries(thisMonth.paymentsFrom)) {
+        for (const [to, payments] of Object.entries(toPayments)) {
+          for (const paymentName of payments) {
+            const payment = data.adjustWith.payments[paymentName]
+            const amount = payment.amount * payment.exchangeRate * thisMonth.mincomeExchangeRate
+            const date = payment.createdDate
+            paymentEvents.push({ type: 'payment', from, to, amount, date })
+          }
+        }
+      }
+    }
+  }
+  const joinEvents = (Object.entries(data.groupProfiles)
+    .filter(([,profile]) => profile.joinedDate.startsWith(monthstamp))
+    .map(mapUser(true))
+    .map(user => { user.type = 'join'; return user }))
+  const events = (paymentEvents
+    .concat(joinEvents)
+    .sort((a, b) => a.date < b.date ? -1 : 1)
+    .map(event => { delete event.date; return event }))
+  return {
+    mincome: data.mincomeAmount,
+    members: (Object.entries(data.groupProfiles)
+      .filter(([,profile]) => profile.joinedDate < monthstamp)
+      .map(mapUser(false))),
+    events
+  }
+}
+
 /*
 
 groupMincomeAmount = 12
