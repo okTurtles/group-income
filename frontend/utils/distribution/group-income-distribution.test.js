@@ -268,7 +268,7 @@ describe('group income distribution logic', function () {
     ])
   })
 
-  it('works in the next failing test case', function () {
+  it.skip('does not ask users who have paid their full share to pay any more', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
@@ -294,10 +294,8 @@ describe('group income distribution logic', function () {
       }
     })
     should(dist).eql([
-      { amount: 12.57067200537605, from: 'u1', to: 'u2' },
-      { amount: 65.99932799462388, from: 'u1', to: 'u3' },
-      { amount: 15.999327994623979, from: 'u4', to: 'u2' },
-      { amount: 84.00067200537602, from: 'u4', to: 'u3' }
+      { amount: 28.57142857, from: 'u4', to: 'u2' },
+      { amount: 71.42857143, from: 'u4', to: 'u3' }
     ])
   })
 })
