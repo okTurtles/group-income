@@ -99,7 +99,7 @@ describe('Group Payments', () => {
     ])
 
     cy.log('assert payments table is correct')
-    assertNavTabs(['Todo1', 'Sent'])
+    assertNavTabs(['Todo2', 'Sent'])
     cy.getByDT('link-PaymentRowSent').click()
     cy.getByDT('payList').find('tbody').children().should('have.length', 1)
     cy.getByDT('payList').within(() => {
@@ -145,17 +145,19 @@ describe('Group Payments', () => {
     cy.getByDT('paymentsLink').click()
     cy.getByDT('recordPayment').click()
     cy.getByDT('modal').within(() => {
-      cy.getByDT('payRecord').find('tbody').children().should('have.length', 1)
-      cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').should('have.value', '178.57')
+      cy.getByDT('payRecord').find('tbody').children().should('have.length', 2)
+      cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').should('have.value', '18.32')
       cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').clear({ force: true }).type('100')
       cy.getByDT('payRow').eq(0).find('label[data-test="check"] input').should('be.checked')
+      cy.getByDT('payRow').eq(1).find('input[data-test="amount"]').should('have.value', '160.26')
+      cy.getByDT('payRow').eq(1).find('label[data-test="check"] input').should('not.be.checked')
 
       cy.get('button[type="submit"]').click()
       cy.getByDT('successClose').click()
       cy.getByDT('closeModal').should('not.exist')
     })
 
-    assertNavTabs(['Todo1', 'Sent'])
+    assertNavTabs(['Todo2', 'Sent'])
 
     assertMonthOverview([
       ['Payments sent', '1 out of 2'],
