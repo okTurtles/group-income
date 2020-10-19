@@ -67,6 +67,7 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
   return groupIncomeDistributionLogic({
     mincomeAmount: getters.groupMincomeAmount,
     groupProfiles: remapObject(getters.groupProfiles, (profile) => ({
+      joinedDate: profile.joinedDate,
       incomeDetailsType: profile.incomeDetailsType,
       pledgeAmount: profile.pledgeAmount,
       incomeAmount: profile.incomeAmount
