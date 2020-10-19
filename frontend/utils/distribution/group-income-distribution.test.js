@@ -534,4 +534,44 @@ describe.only('helper function', function () {
     })
   })
 
+  it('can handle a mix of havers/needers in any order', function () {
+    const events = dataToEvents('2020-10', {
+      mincomeAmount: 1000,
+      groupProfiles: {
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 150, joinedDate: '2020-10-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' }
+      },
+      adjustWith: {
+        monthstamp: '2020-10',
+        payments: {
+          'payment1': { amount: 50, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+        },
+        monthlyPayments: {
+          '2020-10': {
+            mincomeExchangeRate: 1,
+            paymentsFrom: {
+              'u1': { 'u3': ['payment1'] }
+            }
+          }
+        }
+      }
+    })
+    should(events).eql({
+      mincome: 1000,
+      haves: [
+        { name: 'u1', have: 50 },
+      ],
+      needs: [
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 100 },
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
+        { type: 'join', name: 'u4', have: 150 }
+      ]
+    })
+  })
+
 })
