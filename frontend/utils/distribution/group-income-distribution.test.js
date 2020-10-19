@@ -238,4 +238,37 @@ describe('group income distribution logic', function () {
       { amount: 89.74404996948701, from: 'u4', to: 'u3' }
     ])
   })
+
+  it('works in the next failing test case', function () {
+    const dist = groupIncomeDistributionLogic({
+      mincomeAmount: 1000,
+      groupProfiles: {
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250 },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900 },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750 },
+        'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100 }
+      },
+      adjustWith: {
+        monthstamp: '2020-10',
+        payments: {
+          'payment1': { amount: 71.43, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' },
+          'payment2': { amount: 100, exchangeRate: 1, status: 'completed', creationMonthstamp: '2020-10' }
+        },
+        monthlyPayments: {
+          '2020-10': {
+            mincomeExchangeRate: 1,
+            paymentsFrom: {
+              'u1': { 'u2': ['payment1'], 'u3': ['payment2'] }
+            }
+          }
+        }
+      }
+    })
+    should(dist).eql([
+      { amount: 12.57067200537605, from: 'u1', to: 'u2' },
+      { amount: 65.99932799462388, from: 'u1', to: 'u3' },
+      { amount: 15.999327994623979, from: 'u4', to: 'u2' },
+      { amount: 84.00067200537602, from: 'u4', to: 'u3' }
+    ])
+  })
 })
