@@ -15,7 +15,9 @@ describe('group income distribution logic', function () {
         'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
       }
     })
-    should(dist).eql([{ amount: 2, from: 'u1', to: 'u2' }])
+    should(dist).eql([
+      { amount: 2, from: 'u1', to: 'u2' }
+    ])
   })
 
   it('has no effect for adjustment when there are no payments', function () {
@@ -31,7 +33,9 @@ describe('group income distribution logic', function () {
         monthlyPayments: {}
       }
     })
-    should(dist).eql([{ amount: 2, from: 'u1', to: 'u2' }])
+    should(dist).eql([
+      { amount: 2, from: 'u1', to: 'u2' }
+    ])
   })
 
   it('ignores existing payments when not adjusted', function () {
@@ -42,7 +46,9 @@ describe('group income distribution logic', function () {
         'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10 }
       }
     })
-    should(dist).eql([{ amount: 2, from: 'u1', to: 'u2' }])
+    should(dist).eql([
+      { amount: 2, from: 'u1', to: 'u2' }
+    ])
   })
 
   it('takes into account payments from this month when adjusted', function () {
@@ -93,7 +99,9 @@ describe('group income distribution logic', function () {
         }
       }
     })
-    should(dist).eql([{ amount: 25, from: 'u1', to: 'u3' }])
+    should(dist).eql([
+      { amount: 25, from: 'u1', to: 'u3' }
+    ])
   })
 
   it('[scenario 2]', function () {
