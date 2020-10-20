@@ -44,7 +44,7 @@ export function dataToEvents (monthstamp, data) {
     .map(mapUser({ withDate: false })))
 
   return {
-    haves: members.filter(user => user.have !== undefined),
+    haves: members.filter(user => user.have !== undefined && user.have > 0),
     needs: members.filter(user => user.need !== undefined),
     events
   }

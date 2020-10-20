@@ -556,6 +556,25 @@ describe('helper function', function () {
     })
   })
 
+  it('ignores users who have no need or excess', function () {
+    const events = dataToEvents('2020-10', {
+      mincomeAmount: 1000,
+      groupProfiles: {
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 0, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' }
+      }
+    })
+    should(events).eql({
+      haves: [],
+      needs: [
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 100 },
+      ],
+      events: []
+    })
+  })
+
   it('can handle a mix of havers/needers in any order', function () {
     const events = dataToEvents('2020-10', {
       mincomeAmount: 1000,
