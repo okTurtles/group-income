@@ -8,15 +8,12 @@ import { groupIncomeDistributionLogic, groupIncomeDistributionNewLogic, dataToEv
 
 describe('group income distribution logic', function () {
   it('can distribute income evenly with two users', function () {
-    const dist = groupIncomeDistributionNewLogic({
-      mincome: 12,
-      haves: [
-        { name: 'u1', have: 10 },
-      ],
-      needs: [
-        { name: 'u2', need: 2 },
-      ],
-      events: []
+    const dist = groupIncomeDistributionLogic({
+      mincomeAmount: 12,
+      groupProfiles: {
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
+      }
     })
     should(dist).eql([
       { amount: 2, from: 'u1', to: 'u2' }
@@ -300,6 +297,24 @@ describe('group income distribution logic', function () {
       { amount: 28.57142857, from: 'u4', to: 'u2' },
       { amount: 71.42857143, from: 'u4', to: 'u3' }
     ])
+  })
+
+  describe('using new data->events helper function', function () {
+    it('can distribute income evenly with two users', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        mincome: 12,
+        haves: [
+          { name: 'u1', have: 10 },
+        ],
+        needs: [
+          { name: 'u2', need: 2 },
+        ],
+        events: []
+      })
+      should(dist).eql([
+        { amount: 2, from: 'u1', to: 'u2' }
+      ])
+    })
   })
 })
 
