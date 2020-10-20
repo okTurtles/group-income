@@ -302,7 +302,6 @@ describe('group income distribution logic', function () {
   describe('using new data->events helper function', function () {
     it('can distribute income evenly with two users', function () {
       const dist = groupIncomeDistributionNewLogic({
-        mincome: 12,
         haves: [
           { name: 'u1', have: 10 },
         ],
@@ -345,7 +344,6 @@ describe('helper function', function () {
       }
     })
     should(events).eql({
-      mincome: 1000,
       haves: [
         { name: 'u1', have: 50 },
       ],
@@ -386,7 +384,6 @@ describe('helper function', function () {
       }
     })
     should(events).eql({
-      mincome: 1000,
       haves: [
         { name: 'u1', have: 50 },
       ],
@@ -417,7 +414,6 @@ describe('helper function', function () {
       }
     })
     should(events).eql({
-      mincome: 1000,
       haves: [
         { name: 'u1', have: 50 },
       ],
@@ -453,7 +449,6 @@ describe('helper function', function () {
       }
     })
     should(events).eql({
-      mincome: 1000,
       haves: [
         { name: 'u1', have: 50 },
       ],
@@ -483,7 +478,6 @@ describe('helper function', function () {
       }
     })
     should(events).eql({
-      mincome: 1000,
       haves: [
         { name: 'u1', have: 50 },
       ],
@@ -508,7 +502,6 @@ describe('helper function', function () {
       }
     })
     should(events).eql({
-      mincome: 1000,
       haves: [],
       needs: [],
       events: []
@@ -521,7 +514,6 @@ describe('helper function', function () {
       groupProfiles: {}
     })
     should(events).eql({
-      mincome: 1000,
       haves: [],
       needs: [],
       events: []
@@ -552,7 +544,6 @@ describe('helper function', function () {
       }
     })
     should(events).eql({
-      mincome: 1000,
       needs: [
         { name: 'u2', need: 50 },
         { name: 'u3', need: 100 },
@@ -590,7 +581,6 @@ describe('helper function', function () {
       }
     })
     should(events).eql({
-      mincome: 1000,
       haves: [
         { name: 'u1', have: 50 },
       ],
@@ -614,7 +604,6 @@ describe('helper function', function () {
           'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
         }
       })).eql({
-        mincome: 12,
         haves: [
           { name: 'u1', have: 10 },
         ],
@@ -638,7 +627,6 @@ describe('helper function', function () {
           monthlyPayments: {}
         }
       })).eql({
-        mincome: 12,
         haves: [
           { name: 'u1', have: 10 }
         ],
@@ -657,7 +645,6 @@ describe('helper function', function () {
           'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
         }
       })).eql({
-        mincome: 12,
         haves: [
           { name: 'u1', have: 10 }
         ],
@@ -690,7 +677,6 @@ describe('helper function', function () {
           }
         }
       })).eql({
-        mincome: 12,
         haves: [
           { name: 'u1', have: 10 }
         ],
@@ -726,7 +712,6 @@ describe('helper function', function () {
           }
         }
       })).eql({
-        mincome: 1000,
         haves: [
           { name: 'u1', have: 100 }
         ],
@@ -763,7 +748,6 @@ describe('helper function', function () {
           }
         }
       })).eql({
-        mincome: 1000,
         haves: [
           { name: 'u1', have: 100 }
         ],
@@ -800,7 +784,6 @@ describe('helper function', function () {
           }
         }
       })).eql({
-        mincome: 1000,
         haves: [
           { name: 'u1', have: 100 }
         ],
@@ -837,7 +820,6 @@ describe('helper function', function () {
           }
         }
       })).eql({
-        mincome: 1000,
         haves: [
           { name: 'u1', have: 50 }
         ],
@@ -875,7 +857,6 @@ describe('helper function', function () {
           }
         }
       })).eql({
-        mincome: 1000,
         haves: [
           { name: 'u1', have: 50 }
         ],
@@ -905,7 +886,6 @@ describe('helper function', function () {
           monthlyPayments: {}
         }
       })).eql({
-        mincome: 1000,
         haves: [
           { name: 'u1', have: 250 },
           { name: 'u4', have: 100 }
@@ -942,7 +922,6 @@ describe('helper function', function () {
           }
         }
       })).eql({
-        mincome: 1000,
         haves: [
           { name: 'u1', have: 250 },
           { name: 'u4', have: 100 }
@@ -982,7 +961,6 @@ describe('helper function', function () {
           }
         }
       })).eql({
-        mincome: 1000,
         haves: [
           { name: 'u1', have: 250 },
           { name: 'u4', have: 100 }

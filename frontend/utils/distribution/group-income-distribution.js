@@ -44,7 +44,6 @@ export function dataToEvents (monthstamp, data) {
     .map(mapUser({ withDate: false })))
 
   return {
-    mincome: data.mincomeAmount,
     haves: members.filter(user => user.have !== undefined),
     needs: members.filter(user => user.need !== undefined),
     events
