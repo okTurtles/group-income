@@ -14,7 +14,7 @@ describe('group income distribution logic', function () {
         { name: 'u1', have: 10 },
       ],
       needs: [
-        { name: 'u2', need: 10 },
+        { name: 'u2', need: 2 },
       ],
       events: []
     })
@@ -284,7 +284,7 @@ describe('group income distribution logic', function () {
         monthstamp: '2020-10',
         payments: {
           'payment1': { amount: 71.43, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' },
-          'payment2': { amount: 100, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+          'payment2': { amount: 100, exchangeRate: 1, status: 'completed', createdDate: '2020-10-13T00:00:00.000Z' }
         },
         monthlyPayments: {
           '2020-10': {
@@ -590,4 +590,397 @@ describe('helper function', function () {
     })
   })
 
+  describe('transforming the above examples', function () {
+    it('can distribute income evenly with two users', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 12,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
+        }
+      })).eql({
+        mincome: 12,
+        haves: [
+          { name: 'u1', have: 10 },
+        ],
+        needs: [
+          { name: 'u2', need: 2 },
+        ],
+        events: []
+      })
+    })
+
+    it('has no effect for adjustment when there are no payments', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 12,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {},
+          monthlyPayments: {}
+        }
+      })).eql({
+        mincome: 12,
+        haves: [
+          { name: 'u1', have: 10 }
+        ],
+        needs: [
+          { name: 'u2', need: 2 }
+        ],
+        events: []
+      })
+    })
+
+    it('ignores existing payments when not adjusted', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 12,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
+        }
+      })).eql({
+        mincome: 12,
+        haves: [
+          { name: 'u1', have: 10 }
+        ],
+        needs: [
+          { name: 'u2', need: 2 }
+        ],
+        events: []
+      })
+    })
+
+    it('takes into account payments from this month when adjusted', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 12,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {
+            'payment1': { amount: 2, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+          },
+          monthlyPayments: {
+            '2020-10': {
+              mincomeExchangeRate: 1,
+              paymentsFrom: {
+                'u1': { 'u2': ['payment1'] }
+              }
+            }
+          }
+        }
+      })).eql({
+        mincome: 12,
+        haves: [
+          { name: 'u1', have: 10 }
+        ],
+        needs: [
+          { name: 'u2', need: 2 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 2 }
+        ]
+      })
+    })
+
+    it('[scenario 1]', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 1000,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 925, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {
+            'payment1': { amount: 75, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+          },
+          monthlyPayments: {
+            '2020-10': {
+              mincomeExchangeRate: 1,
+              paymentsFrom: {
+                'u1': { 'u2': ['payment1'] }
+              }
+            }
+          }
+        }
+      })).eql({
+        mincome: 1000,
+        haves: [
+          { name: 'u1', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 75 },
+          { name: 'u3', need: 50 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 75 }
+        ]
+      })
+    })
+
+    it('[scenario 2]', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 1000,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {
+            'payment1': { amount: 100, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+          },
+          monthlyPayments: {
+            '2020-10': {
+              mincomeExchangeRate: 1,
+              paymentsFrom: {
+                'u1': { 'u2': ['payment1'] }
+              }
+            }
+          }
+        }
+      })).eql({
+        mincome: 1000,
+        haves: [
+          { name: 'u1', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 100 },
+          { name: 'u3', need: 50 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 100 }
+        ]
+      })
+    })
+
+    it('[scenario 3] redistributes excess of todo-payments back into other todo-payments', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 1000,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 700, joinedDate: '2020-09-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {
+            'payment1': { amount: 25, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+          },
+          monthlyPayments: {
+            '2020-10': {
+              mincomeExchangeRate: 1,
+              paymentsFrom: {
+                'u1': { 'u2': ['payment1'] }
+              }
+            }
+          }
+        }
+      })).eql({
+        mincome: 1000,
+        haves: [
+          { name: 'u1', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 50 },
+          { name: 'u3', need: 300 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 25 }
+        ]
+      })
+    })
+
+    it('[scenario 4] ignores users who updated income after paying and can no longer pay', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 1000,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {
+            'payment1': { amount: 50, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+          },
+          monthlyPayments: {
+            '2020-10': {
+              mincomeExchangeRate: 1,
+              paymentsFrom: {
+                'u1': { 'u3': ['payment1'] }
+              }
+            }
+          }
+        }
+      })).eql({
+        mincome: 1000,
+        haves: [
+          { name: 'u1', have: 50 }
+        ],
+        needs: [
+          { name: 'u2', need: 50 },
+          { name: 'u3', need: 100 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u3', amount: 50 }
+        ]
+      })
+    })
+
+    it('[scenario 4.1] can distribute money from new members', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 1000,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 50, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 150, joinedDate: '2020-10-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {
+            'payment1': { amount: 50, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+          },
+          monthlyPayments: {
+            '2020-10': {
+              mincomeExchangeRate: 1,
+              paymentsFrom: {
+                'u1': { 'u3': ['payment1'] }
+              }
+            }
+          }
+        }
+      })).eql({
+        mincome: 1000,
+        haves: [
+          { name: 'u1', have: 50 }
+        ],
+        needs: [
+          { name: 'u2', need: 50 },
+          { name: 'u3', need: 100 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
+          { name: 'u4', have: 150, type: 'join' }
+        ]
+      })
+    })
+
+    it('splits money evenly between two pledgers and two needers', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 1000,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {},
+          monthlyPayments: {}
+        }
+      })).eql({
+        mincome: 1000,
+        haves: [
+          { name: 'u1', have: 250 },
+          { name: 'u4', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 100 },
+          { name: 'u3', need: 250 }
+        ],
+        events: []
+      })
+    })
+
+    it('stops asking user to pay someone they fully paid their share to', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 1000,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {
+            'payment1': { amount: 71.43, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' }
+          },
+          monthlyPayments: {
+            '2020-10': {
+              mincomeExchangeRate: 1,
+              paymentsFrom: {
+                'u1': { 'u2': ['payment1'] }
+              }
+            }
+          }
+        }
+      })).eql({
+        mincome: 1000,
+        haves: [
+          { name: 'u1', have: 250 },
+          { name: 'u4', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 100 },
+          { name: 'u3', need: 250 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 71.43 }
+        ]
+      })
+    })
+
+    it('does not ask users who have paid their full share to pay any more', function () {
+      should(dataToEvents('2020-10', {
+        mincomeAmount: 1000,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {
+            'payment1': { amount: 71.43, exchangeRate: 1, status: 'completed', createdDate: '2020-10-12T00:00:00.000Z' },
+            'payment2': { amount: 100, exchangeRate: 1, status: 'completed', createdDate: '2020-10-13T00:00:00.000Z' }
+          },
+          monthlyPayments: {
+            '2020-10': {
+              mincomeExchangeRate: 1,
+              paymentsFrom: {
+                'u1': { 'u2': ['payment1'], 'u3': ['payment2'] }
+              }
+            }
+          }
+        }
+      })).eql({
+        mincome: 1000,
+        haves: [
+          { name: 'u1', have: 250 },
+          { name: 'u4', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 100 },
+          { name: 'u3', need: 250 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 71.43 },
+          { type: 'payment', from: 'u1', to: 'u3', amount: 100 }
+        ]
+      })
+    })
+  })
 })
