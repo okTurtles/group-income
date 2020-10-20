@@ -313,6 +313,143 @@ describe('group income distribution logic', function () {
         { amount: 2, from: 'u1', to: 'u2' }
       ])
     })
+
+    it('can distribute income evenly with three users but still have need', function () {
+      should(groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 9 },
+        ],
+        needs: [
+          { name: 'u2', need: 40 },
+          { name: 'u3', need: 80 },
+        ],
+        events: []
+      })).eql([
+        { amount: 3, from: 'u1', to: 'u2' },
+        { amount: 6, from: 'u1', to: 'u3' }
+      ])
+    })
+
+    it('can distribute income evenly with three users and excess', function () {
+      should(groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 21 },
+        ],
+        needs: [
+          { name: 'u2', need: 4 },
+          { name: 'u3', need: 8 },
+        ],
+        events: []
+      })).eql([
+        { amount: 4, from: 'u1', to: 'u2' },
+        { amount: 8, from: 'u1', to: 'u3' }
+      ])
+    })
+
+    it('distribute income above mincome proportionally', function () {
+      should(groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'd', have: 10 },
+          { name: 'e', have: 30 },
+          { name: 'f', have: 60 },
+        ],
+        needs: [
+          { name: 'a', need: 30 },
+          { name: 'b', need: 20 },
+        ],
+        events: []
+      })).eql([
+        { amount: 3, from: 'd', to: 'a' },
+        { amount: 9, from: 'e', to: 'a' },
+        { amount: 18, from: 'f', to: 'a' },
+        { amount: 2, from: 'd', to: 'b' },
+        { amount: 6, from: 'e', to: 'b' },
+        { amount: 12, from: 'f', to: 'b' }
+      ])
+    })
+
+    it('distribute income above mincome proportionally when extra won\'t cover need', function () {
+      should(groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'd', have: 4 },
+          { name: 'e', have: 4 },
+          { name: 'f', have: 10 },
+        ],
+        needs: [
+          { name: 'a', need: 30 },
+          { name: 'b', need: 20 },
+        ],
+        events: []
+      })).eql([
+        { amount: 2.4, from: 'd', to: 'a' },
+        { amount: 2.4, from: 'e', to: 'a' },
+        { amount: 6, from: 'f', to: 'a' },
+        { amount: 1.6, from: 'd', to: 'b' },
+        { amount: 1.6, from: 'e', to: 'b' },
+        { amount: 3.9999999999999996, from: 'f', to: 'b' }
+      ])
+    })
+
+    it('don\'t distribute anything if no one is above mincome', function () {
+      should(groupIncomeDistributionNewLogic({
+        haves: [],
+        needs: [
+          { name: 'a', need: 30 },
+          { name: 'b', need: 20 },
+          { name: 'd', need: 5 },
+          { name: 'e', need: 20 },
+          { name: 'f', need: 30 },
+        ],
+        events: []
+      })).eql([
+      ])
+    })
+
+    it('don\'t distribute anything if everyone is above mincome', function () {
+      should(groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'b', have: 5 },
+          { name: 'd', have: 10 },
+          { name: 'e', have: 60 },
+          { name: 'f', have: 12 },
+        ],
+        needs: [],
+        events: []
+      })).eql([
+      ])
+    })
+
+    it('works with very imprecise splits', function () {
+      should(groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 75 },
+        ],
+        needs: [
+          { name: 'u2', need: 25 },
+          { name: 'u3', need: 300 },
+        ],
+        events: []
+      })).eql([
+        { amount: 5.769230769230769, from: 'u1', to: 'u2' },
+        { amount: 69.23076923076924, from: 'u1', to: 'u3' }
+      ])
+    })
+
+    it('splits money evenly', function () {
+      should(groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 9 },
+        ],
+        needs: [
+          { name: 'u2', need: 80 },
+          { name: 'u3', need: 40 },
+        ],
+        events: []
+      })).eql([
+        { amount: 6, from: 'u1', to: 'u2' },
+        { amount: 3, from: 'u1', to: 'u3' }
+      ])
+    })
   })
 })
 

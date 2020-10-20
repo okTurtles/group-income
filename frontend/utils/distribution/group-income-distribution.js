@@ -50,8 +50,26 @@ export function dataToEvents (monthstamp, data) {
   }
 }
 
-export function groupIncomeDistributionNewLogic (data) {
+/*
+JS is giving us 20 * (10 / 18) * (18 / 50) = 3.9999999999999996 instead of 4
+*/
 
+// Note: this mutates the objects in haves/needs
+export function groupIncomeDistributionNewLogic ({ haves, needs, events }) {
+  const totalHave = haves.reduce((a, b) => a + b.have, 0)
+  const totalNeed = needs.reduce((a, b) => a + b.need, 0)
+  const totalPercent = Math.min(1, totalHave / totalNeed)
+
+  for (const have of haves) have.percent = have.have / totalHave
+
+  const results = []
+  for (const need of needs) {
+    for (const have of haves) {
+      const amount = need.need * have.percent * totalPercent
+      results.push({ amount, from: have.name, to: need.name })
+    }
+  }
+  return results
 }
 
 export function groupIncomeDistributionLogic ({
