@@ -301,7 +301,7 @@ describe('group income distribution logic', function () {
 
   describe('using new data->events helper function', function () {
     it('can distribute income evenly with two users', function () {
-      const dist = groupIncomeDistributionNewLogic({
+      should(groupIncomeDistributionNewLogic({
         haves: [
           { name: 'u1', have: 10 },
         ],
@@ -309,8 +309,7 @@ describe('group income distribution logic', function () {
           { name: 'u2', need: 2 },
         ],
         events: []
-      })
-      should(dist).eql([
+      })).eql([
         { amount: 2, from: 'u1', to: 'u2' }
       ])
     })
