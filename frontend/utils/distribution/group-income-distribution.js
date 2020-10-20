@@ -54,47 +54,74 @@ export function dataToEvents (monthstamp, data) {
 JS is giving us 20 * (10 / 18) * (18 / 50) = 3.9999999999999996 instead of 4
 */
 
-// Note: this mutates the objects in haves/needs
-export function groupIncomeDistributionNewLogic ({ haves, needs, events }) {
+function distibuteFromHavesToNeeds({ haves, needs }) {
   const totalHave = haves.reduce((a, b) => a + b.have, 0)
   const totalNeed = needs.reduce((a, b) => a + b.need, 0)
   const totalPercent = Math.min(1, totalHave / totalNeed)
 
   for (const have of haves) have.percent = have.have / totalHave
 
-  const results = []
+  const payments = []
   for (const need of needs) {
     for (const have of haves) {
       const amount = need.need * have.percent * totalPercent
-      results.push({ amount, from: have.name, to: need.name })
+      need.need -= amount
+      payments.push({ amount, from: have.name, to: need.name })
     }
   }
+  return payments
+}
 
-  for (const event of events) {
-    if (event.type === 'payment') {
-      const { from, to, amount } = event
+function handlePayment({ payment, payments, needs }) {
+  const { from, to, amount } = payment
 
-      for (const result of results) {
-        if (result.from === from && result.to === to) {
-          result.amount -= amount
-          if (result.amount < 0) {
-            const paidExtra = -result.amount
-            result.amount = 0
+  for (const payment of payments) {
+    if (payment.from === from && payment.to === to) {
+      payment.amount -= amount
+      if (payment.amount < 0) {
+        const totalOverPayment = -payment.amount
+        payment.amount = 0
 
-            const otherMyPayments = results.filter(otherResult =>
-              otherResult !== result && otherResult.from === from
-            );
-
-            for (const otherResult of otherMyPayments) {
-              otherResult.amount -= (paidExtra / otherMyPayments.length)
-            }
-          }
+        const myOtherPayments = payments.filter(otherPayment =>
+          otherPayment !== payment && otherPayment.from === from
+        )
+        for (const otherPayment of myOtherPayments) {
+          const overPayment = (totalOverPayment / myOtherPayments.length)
+          const otherTo = needs.find(u => u.name === otherPayment.to)
+          otherPayment.amount -= overPayment
+          otherTo.need += overPayment
         }
       }
     }
   }
+}
 
-  return results.filter(result => Number(result.amount.toFixed(12)) !== 0)
+function handleJoin({ user, needs }) {
+  const { name, have, need } = user
+  if (have !== undefined) {
+    return distibuteFromHavesToNeeds({ needs, haves: [{ name, have }] })
+  }
+  else {
+    // TODO: This scenario doesn't have tests yet
+    // needs.push({ name, need })
+  }
+}
+
+// Note: this mutates the objects in haves/needs
+export function groupIncomeDistributionNewLogic ({ haves, needs, events }) {
+  let payments = distibuteFromHavesToNeeds({ haves, needs })
+
+  for (const event of events) {
+    if (event.type === 'payment') {
+      handlePayment({ payments, needs, payment: event })
+    }
+    else if (event.type === 'join') {
+      const newPayments = handleJoin({ user: event, needs })
+      payments = payments.concat(newPayments)
+    }
+  }
+
+  return payments.filter(payment => Number(payment.amount.toFixed(12)) !== 0)
 }
 
 export function groupIncomeDistributionLogic ({

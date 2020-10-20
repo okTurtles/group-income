@@ -579,7 +579,7 @@ describe('group income distribution logic', function () {
       should(dist).eql([])
     })
 
-    it.skip('[scenario 4.1] can distribute money from new members', function () {
+    it('[scenario 4.1] can distribute money from new members', function () {
       const dist = groupIncomeDistributionNewLogic({
         haves: [
           { name: 'u1', have: 50 }
