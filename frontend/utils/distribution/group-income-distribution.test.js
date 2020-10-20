@@ -529,7 +529,7 @@ describe('group income distribution logic', function () {
       ])
     })
 
-    it.skip('[scenario 2]', function () {
+    it('[scenario 2]', function () {
       const dist = groupIncomeDistributionNewLogic({
         haves: [
           { name: 'u1', have: 100 }
@@ -545,7 +545,7 @@ describe('group income distribution logic', function () {
       should(dist).eql([])
     })
 
-    it.skip('[scenario 3] redistributes excess of todo-payments back into other todo-payments', function () {
+    it('[scenario 3] redistributes excess of todo-payments back into other todo-payments', function () {
       const dist = groupIncomeDistributionNewLogic({
         haves: [
           { name: 'u1', have: 100 }
@@ -563,7 +563,7 @@ describe('group income distribution logic', function () {
       ])
     })
 
-    it.skip('[scenario 4] ignores users who updated income after paying and can no longer pay', function () {
+    it('[scenario 4] ignores users who updated income after paying and can no longer pay', function () {
       const dist = groupIncomeDistributionNewLogic({
         haves: [
           { name: 'u1', have: 50 }

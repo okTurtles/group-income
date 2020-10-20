@@ -94,7 +94,7 @@ export function groupIncomeDistributionNewLogic ({ haves, needs, events }) {
     }
   }
 
-  return results.filter(result => result.amount !== 0)
+  return results.filter(result => Number(result.amount.toFixed(12)) !== 0)
 }
 
 export function groupIncomeDistributionLogic ({
