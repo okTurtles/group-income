@@ -450,6 +450,201 @@ describe('group income distribution logic', function () {
         { amount: 3, from: 'u1', to: 'u3' }
       ])
     })
+
+    it('has no effect for adjustment when there are no payments', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 10 }
+        ],
+        needs: [
+          { name: 'u2', need: 2 }
+        ],
+        events: []
+      })
+      should(dist).eql([
+        { amount: 2, from: 'u1', to: 'u2' }
+      ])
+    })
+
+    it('ignores existing payments when not adjusted', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 10 }
+        ],
+        needs: [
+          { name: 'u2', need: 2 }
+        ],
+        events: []
+      })
+      should(dist).eql([
+        { amount: 2, from: 'u1', to: 'u2' }
+      ])
+    })
+
+    it.skip('takes into account payments from this month when adjusted', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 10 }
+        ],
+        needs: [
+          { name: 'u2', need: 2 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 2 }
+        ]
+      })
+      should(dist).eql([])
+    })
+
+    it.skip('[scenario 1]', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 75 },
+          { name: 'u3', need: 50 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 75 }
+        ]
+      })
+      should(dist).eql([
+        { amount: 25, from: 'u1', to: 'u3' }
+      ])
+    })
+
+    it.skip('[scenario 2]', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 100 },
+          { name: 'u3', need: 50 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 100 }
+        ]
+      })
+      should(dist).eql([])
+    })
+
+    it.skip('[scenario 3] redistributes excess of todo-payments back into other todo-payments', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 50 },
+          { name: 'u3', need: 300 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 25 }
+        ]
+      })
+      should(dist).eql([
+        { amount: 75, from: 'u1', to: 'u3' }
+      ])
+    })
+
+    it.skip('[scenario 4] ignores users who updated income after paying and can no longer pay', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 50 }
+        ],
+        needs: [
+          { name: 'u2', need: 50 },
+          { name: 'u3', need: 100 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u3', amount: 50 }
+        ]
+      })
+      should(dist).eql([])
+    })
+
+    it.skip('[scenario 4.1] can distribute money from new members', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 50 }
+        ],
+        needs: [
+          { name: 'u2', need: 50 },
+          { name: 'u3', need: 100 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
+          { name: 'u4', have: 150, type: 'join' }
+        ]
+      })
+      should(dist).eql([
+        { amount: 50, from: 'u4', to: 'u2' },
+        { amount: 50, from: 'u4', to: 'u3' }
+      ])
+    })
+
+    it.skip('splits money evenly between two pledgers and two needers', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 250 },
+          { name: 'u4', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 100 },
+          { name: 'u3', need: 250 }
+        ],
+        events: []
+      })
+      should(dist).eql([
+        { amount: 71.42857143, from: 'u1', to: 'u2' },
+        { amount: 178.57142857, from: 'u1', to: 'u3' },
+        { amount: 28.57142857, from: 'u4', to: 'u2' },
+        { amount: 71.42857143, from: 'u4', to: 'u3' }
+      ])
+    })
+
+    it.skip('stops asking user to pay someone they fully paid their share to', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 250 },
+          { name: 'u4', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 100 },
+          { name: 'u3', need: 250 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 71.43 }
+        ]
+      })
+      should(dist).eql([
+        { amount: 178.57, from: 'u1', to: 'u3' },
+        { amount: 28.57142857, from: 'u4', to: 'u2' },
+        { amount: 71.42857143, from: 'u4', to: 'u3' }
+      ])
+    })
+
+    it.skip('does not ask users who have paid their full share to pay any more', function () {
+      const dist = groupIncomeDistributionNewLogic({
+        haves: [
+          { name: 'u1', have: 250 },
+          { name: 'u4', have: 100 }
+        ],
+        needs: [
+          { name: 'u2', need: 100 },
+          { name: 'u3', need: 250 }
+        ],
+        events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 71.43 },
+          { type: 'payment', from: 'u1', to: 'u3', amount: 100 },
+        ]
+      })
+      should(dist).eql([
+        { amount: 28.57142857, from: 'u4', to: 'u2' },
+        { amount: 71.42857143, from: 'u4', to: 'u3' }
+      ])
+    })
   })
 })
 
