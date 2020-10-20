@@ -599,7 +599,7 @@ describe('group income distribution logic', function () {
       ])
     })
 
-    it.skip('splits money evenly between two pledgers and two needers', function () {
+    it('splits money evenly between two pledgers and two needers', function () {
       const dist = groupIncomeDistributionNewLogic({
         haves: [
           { name: 'u1', have: 250 },
@@ -612,14 +612,14 @@ describe('group income distribution logic', function () {
         events: []
       })
       should(dist).eql([
-        { amount: 71.42857143, from: 'u1', to: 'u2' },
-        { amount: 178.57142857, from: 'u1', to: 'u3' },
-        { amount: 28.57142857, from: 'u4', to: 'u2' },
-        { amount: 71.42857143, from: 'u4', to: 'u3' }
+        { amount: 71.42857142857143, from: 'u1', to: 'u2' },
+        { amount: 28.57142857142857, from: 'u4', to: 'u2' },
+        { amount: 178.57142857142858, from: 'u1', to: 'u3' },
+        { amount: 71.42857142857143, from: 'u4', to: 'u3' }
       ])
     })
 
-    it.skip('stops asking user to pay someone they fully paid their share to', function () {
+    it('stops asking user to pay someone they fully paid their share to', function () {
       const dist = groupIncomeDistributionNewLogic({
         haves: [
           { name: 'u1', have: 250 },
@@ -634,9 +634,9 @@ describe('group income distribution logic', function () {
         ]
       })
       should(dist).eql([
+        { amount: 28.57142857142857, from: 'u4', to: 'u2' },
         { amount: 178.57, from: 'u1', to: 'u3' },
-        { amount: 28.57142857, from: 'u4', to: 'u2' },
-        { amount: 71.42857143, from: 'u4', to: 'u3' }
+        { amount: 71.42857142857143, from: 'u4', to: 'u3' }
       ])
     })
 
