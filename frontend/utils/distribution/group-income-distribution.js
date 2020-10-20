@@ -76,7 +76,19 @@ export function groupIncomeDistributionNewLogic ({ haves, needs, events }) {
 
       for (const result of results) {
         if (result.from === from && result.to === to) {
-          result.amount = Math.max(0, result.amount - amount)
+          result.amount -= amount
+          if (result.amount < 0) {
+            const paidExtra = -result.amount
+            result.amount = 0
+
+            const otherMyPayments = results.filter(otherResult =>
+              otherResult !== result && otherResult.from === from
+            );
+
+            for (const otherResult of otherMyPayments) {
+              otherResult.amount -= (paidExtra / otherMyPayments.length)
+            }
+          }
         }
       }
     }
