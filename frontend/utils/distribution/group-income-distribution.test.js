@@ -481,7 +481,7 @@ describe('group income distribution logic', function () {
       ])
     })
 
-    it.skip('takes into account payments from this month when adjusted', function () {
+    it('takes into account payments from this month when adjusted', function () {
       const dist = groupIncomeDistributionNewLogic({
         haves: [
           { name: 'u1', have: 10 }

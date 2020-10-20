@@ -69,7 +69,20 @@ export function groupIncomeDistributionNewLogic ({ haves, needs, events }) {
       results.push({ amount, from: have.name, to: need.name })
     }
   }
-  return results
+
+  for (const event of events) {
+    if (event.type === 'payment') {
+      const { from, to, amount } = event
+
+      for (const result of results) {
+        if (result.from === from && result.to === to) {
+          result.amount = Math.max(0, result.amount - amount)
+        }
+      }
+    }
+  }
+
+  return results.filter(result => result.amount !== 0)
 }
 
 export function groupIncomeDistributionLogic ({
