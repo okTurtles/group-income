@@ -1,6 +1,6 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
-import { remapObject } from '~/frontend/utils/giLodash.js'
+import { mapValues } from '~/frontend/utils/giLodash.js'
 import paymentTotalFromUserToUser from '../../model/contracts/payments/totals.js'
 
 export function dataToEvents (monthstamp, data) {
@@ -186,7 +186,7 @@ export function groupIncomeDistributionLogic ({
 export default function groupIncomeDistribution ({ getters, monthstamp, adjusted }) {
   return groupIncomeDistributionLogic({
     mincomeAmount: getters.groupMincomeAmount,
-    groupProfiles: remapObject(getters.groupProfiles, (profile) => ({
+    groupProfiles: mapValues(getters.groupProfiles, (profile) => ({
       joinedDate: profile.joinedDate,
       incomeDetailsType: profile.incomeDetailsType,
       pledgeAmount: profile.pledgeAmount,
@@ -194,13 +194,13 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
     })),
     adjustWith: adjusted && {
       monthstamp,
-      payments: remapObject(getters.currentGroupState.payments, (payment) => ({
+      payments: mapValues(getters.currentGroupState.payments, (payment) => ({
         amount: payment.data.amount,
         exchangeRate: payment.data.exchangeRate,
         status: payment.data.status,
         createdDate: payment.meta.createdDate
       })),
-      monthlyPayments: remapObject(getters.currentGroupState.paymentsByMonth, (payments) => ({
+      monthlyPayments: mapValues(getters.currentGroupState.paymentsByMonth, (payments) => ({
         mincomeExchangeRate: payments.mincomeExchangeRate,
         paymentsFrom: payments.paymentsFrom
       }))

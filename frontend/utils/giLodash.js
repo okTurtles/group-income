@@ -246,7 +246,3 @@ export function deepEqualJSONType (a: any, b: any): boolean {
   }
   return true
 }
-
-export function remapObject (o, f) {
-  return Object.fromEntries(Object.entries(o).map(([k, v]) => [k, f(v)]))
-}
