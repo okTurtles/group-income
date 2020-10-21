@@ -503,28 +503,12 @@ describe('group income distribution logic', function () {
         ],
         needs: [
           { name: 'u2', need: 75 },
-          { name: 'u3', need: 50 }
         ],
         events: [
+          { type: 'payment', from: 'u1', to: 'u2', amount: 75 },
+          { type: 'join', name: 'u3', need: 50 }
         ]
       })).eql([
-        { amount: 60, from: 'u1', to: 'u2' },
-        { amount: 40, from: 'u1', to: 'u3' },
-      ])
-      should(groupIncomeDistributionNewLogic({
-        haves: [
-          { name: 'u1', have: 100 }
-        ],
-        needs: [
-          { name: 'u2', need: 75 },
-          { name: 'u3', need: 50 }
-        ],
-        events: [
-          { type: 'payment', from: 'u1', to: 'u2', amount: 75 }
-        ]
-      })).eql([
-        // { amount: 60, from: 'u1', to: 'u2' },
-        // paid via 75, and 75-60=15, and 40-15=25
         { amount: 25, from: 'u1', to: 'u3' }
       ])
     })

@@ -72,51 +72,29 @@ function distibuteFromHavesToNeeds({ haves, needs }) {
   return payments
 }
 
-function handlePayment({ payment, payments, needs }) {
-  const { from, to, amount } = payment
-
-  for (const payment of payments) {
-    if (payment.from === from && payment.to === to) {
-      payment.amount -= amount
-      if (payment.amount < 0) {
-        const totalOverPayment = -payment.amount
-        payment.amount = 0
-
-        const myOtherPayments = payments.filter(otherPayment =>
-          otherPayment !== payment && otherPayment.from === from
-        )
-        for (const otherPayment of myOtherPayments) {
-          const overPayment = (totalOverPayment / myOtherPayments.length)
-          const otherTo = needs.find(u => u.name === otherPayment.to)
-          otherPayment.amount -= overPayment
-          otherTo.need += overPayment
-        }
-      }
-    }
-  }
-}
-
-function handleJoin({ user, needs }) {
-  const { name, have, need } = user
-  if (have !== undefined) {
-    return distibuteFromHavesToNeeds({ needs, haves: [{ name, have }] })
-  }
-  else {
-    // TODO: This scenario doesn't have tests yet
-    // needs.push({ name, need })
-  }
-}
-
 // Note: this mutates the objects in haves/needs
 export function groupIncomeDistributionNewLogic ({ haves, needs, events }) {
   let payments = distibuteFromHavesToNeeds({ haves, needs })
 
   for (const event of events) {
     if (event.type === 'payment') {
-      handlePayment({ payments, needs, payment: event })
+      const { from, to, amount } = event
+
+      payments.find(p => p.from === from && p.to === to).amount -= amount
+      haves.find(u => u.name === from).have -= amount
     }
     else if (event.type === 'join') {
-      const newPayments = handleJoin({ user: event, needs })
+      const { name, have, need } = event
+      let newPayments
+
+      if (have !== undefined) {
+        newPayments = distibuteFromHavesToNeeds({ needs, haves: [{ name, have }] })
+      }
+      else {
+        needs.push({ name, need })
+        newPayments = distibuteFromHavesToNeeds({ needs, haves })
+      }
+
       payments = payments.concat(newPayments)
     }
   }
