@@ -5,11 +5,14 @@
 
     form(novalidate @submit.prevent='submit')
       label.field
-        i18n.label Description
+        .c-label-group
+          i18n.label Description
+          .limit(v-if='form.description') {{ 280 - form.description.length }}
+
         textarea.textarea(
           name='description'
           :placeholder='L("Description of the channel")'
-          maxlength='500'
+          maxlength='280'
           :class='{ error: $v.form.description.$error }'
           v-model='form.description'
           @input='debounceField("description")'
@@ -21,8 +24,8 @@
       banner-scoped(ref='formMsg')
 
       .buttons
-        i18n.is-outlined(tag='button' @click='close') Cancel
-        i18n.is-danger(
+        i18n.is-outlined(tag='button' @click.prevent='close') Cancel
+        i18n.is-success(
           tag='button'
           @click='submit'
           :disabled='$v.form.$invalid'
@@ -33,7 +36,6 @@
 import { validationMixin } from 'vuelidate'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
-import { required } from 'vuelidate/lib/validators'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
@@ -73,9 +75,8 @@ export default {
   validations: {
     form: {
       description: {
-        [L('This field is required')]: required,
-        [L('Does not match')]: function (value) {
-          return value === this.code
+        [L('The description is limited to 280 characters')]: function (value) {
+          return value ? Number(value.length) <= 280 : false
         }
       }
     }
@@ -88,5 +89,10 @@ export default {
 
 .c-banner {
   margin: 1.5rem 0;
+}
+
+.c-label-group {
+  display: flex;
+  justify-content: space-between;
 }
 </style>

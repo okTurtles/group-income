@@ -5,13 +5,14 @@
   .buttons
     i18n.button.is-outlined.is-small(
       tag='button'
-      @click='addMembers'
+      @click='openModal("GroupMembersAllModal", {addMemberTo: name})'
       data-test='addMembers'
     ) Add members
 
     i18n.button.is-outlined.is-small(
       tag='button'
-      @click='addDescription'
+      v-if='!description'
+      @click.prevent='openModal("EditChannelDescriptionModal")'
       data-test='addDescription'
     ) Add a description
 
@@ -22,6 +23,8 @@ import { chatTypes } from './fakeStore.js'
 import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
 import L from '@view-utils/translations.js'
+import { OPEN_MODAL } from '@utils/events.js'
+import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'ConversationGreetings',
@@ -35,11 +38,13 @@ export default {
     },
     name: {
       type: String
+    },
+    description: {
+      type: String
     }
   },
   computed: {
     text () {
-      console.log(this.type, chatTypes.GROUP)
       return {
         GIBot: L('I’m here to keep you update while you are away.'),
         [chatTypes.INDIVIDUAL]: L('You and {name} can chat in private here.', { name: this.name }),
@@ -48,11 +53,8 @@ export default {
     }
   },
   methods: {
-    addMembers () {
-      console.log('TODO')
-    },
-    addDescription () {
-      console.log('TODO')
+    openModal (modal, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     }
   }
 }

@@ -82,10 +82,10 @@ export default {
         this.$router.push({
           query: {
             ...this.$route.query,
-            modal: this.content,
             ...contentQueries,
-            subcontent: this.subcontent.length ? this.subcontent.join('+') : undefined,
-            ...subContentQueries
+            ...subContentQueries,
+            modal: this.content,
+            subcontent: this.subcontent.length ? this.subcontent.join('+') : undefined
           }
         }).catch(console.error)
       } else if (this.$route.query.modal) {
@@ -122,7 +122,7 @@ export default {
       } else {
         this.content = null
         // Refocus on button that open the modal
-        this.lastFocus.focus()
+        if (this.lastFocus) this.lastFocus.focus()
       }
       if (this.replacement) {
         this.openModal(this.replacement)

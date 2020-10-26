@@ -1,5 +1,9 @@
 <template lang='pug'>
-message-base(v-bind='$props' @addEmoticon='addEmoticon($event)')
+message-base(
+  v-bind='$props'
+  @addEmoticon='addEmoticon($event)'
+  @reply='reply'
+)
 
 </template>
 
@@ -44,10 +48,10 @@ export default {
   }),
   methods: {
     edit () {
-      console.log('TODO EDIT')
+      this.$emit('edit')
     },
     reply () {
-      console.log('TODO REPLY')
+      this.$emit('reply')
     },
     moreOptions () {
       console.log('TODO MORE OPTIONS')

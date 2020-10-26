@@ -1,5 +1,13 @@
 <template lang='pug'>
 .c-send.inputgroup
+  .c-replying(v-if='replyingMessage')
+    i18n Replying to:&nbsp
+    | {{ replyingMessage }}
+    button.c-clear.is-icon-small(
+      :aria-label='L("Stop replying")'
+      @click='$emit("stopReplying")'
+    )
+      i.icon-times
   textarea.textarea.c-send-textarea(
     ref='textarea'
     :disabled='loading'
@@ -47,7 +55,8 @@ export default {
     loading: {
       type: Boolean,
       default: false
-    }
+    },
+    replyingMessage: String
   },
   data () {
     return {
@@ -159,6 +168,7 @@ $initialHeight: 43px;
 .c-send {
   position: relative;
   margin: 0 2.5rem;
+  display: block;
 
   &-textarea,
   &-mask {
@@ -217,5 +227,18 @@ $initialHeight: 43px;
   right: 0;
   bottom: 4rem;
   box-shadow: 0px 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+}
+
+.c-replying {
+  background-color: $general_2;
+  padding: 0.5rem 2rem 0.7rem 0.5rem;
+  border-radius: .3rem .3rem 0 0;
+  margin-bottom: -0.2rem;
+}
+
+.c-clear {
+  position: absolute;
+  right: .2rem;
+  top: .4rem;
 }
 </style>

@@ -70,7 +70,7 @@ export default {
       console.log('TODO EDIT')
     },
     reply () {
-      console.log('TODO REPLY')
+      this.$emit('reply')
     },
     moreOptions () {
       console.log('TODO MORE OPTIONS')

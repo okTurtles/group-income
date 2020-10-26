@@ -9,7 +9,11 @@
           - this should be done only after knowing exactly how server gets each conversation data
 
     .c-body-conversation(ref='conversation' v-else='')
-      conversation-greetings(:type='type' :name='summary.title')
+      conversation-greetings(
+        :type='type'
+        :name='summary.title'
+        :description='summary.description'
+      )
 
       template(v-for='(message, index) in messages')
         .c-divider(
@@ -36,12 +40,20 @@
           :isCurrentUser='isCurrentUser(message.from)'
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
+          @reply='replyMessage(message)'
           @addEmoticon='addEmoticon(index, $event)'
           @deleteMessage='deleteMessage(index)'
         )
 
   .c-footer
-    send-area(:title='summary.title' @send='handleSendMessage' @heightupdate='updateSendAreaHeight' :loading='details.isLoading')
+    send-area(
+      :title='summary.title'
+      @send='handleSendMessage'
+      @heightupdate='updateSendAreaHeight'
+      :loading='details.isLoading'
+      :replyingMessage='ephemeral.replyingMessage'
+      @stopReplying='ephemeral.replyingMessage = null'
+    )
 </template>
 
 <script>
@@ -90,7 +102,8 @@ export default {
       ephemeral: {
         bodyPaddingBottom: '',
         conversationIsLoading: false,
-        pendingMessages: []
+        pendingMessages: [],
+        replyingMessage: ''
       }
     }
   },
@@ -210,6 +223,10 @@ export default {
 
       this.sendMessage(index)
       console.log('TODO $store - retry sending a message')
+    },
+    replyMessage (message) {
+      console.log('TODO reply to a message logic', message)
+      this.ephemeral.replyingMessage = message.text
     },
     sendMessage (index) {
       setTimeout(() => {

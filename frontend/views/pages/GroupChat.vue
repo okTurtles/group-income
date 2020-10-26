@@ -7,7 +7,22 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         :class='`icon-${ summary.private ? "lock" : "hashtag" }`'
       )
       | {{summary.title}}
-  template(#description='') {{ members.size + ' ' + L('members') }} ∙ {{ summary.description }}
+  template(#description='')
+    .c-header-description
+      | {{ members.size + ' ' + L('members') }} ∙
+      .is-unstyled.c-link(
+        tag='button'
+        v-if='summary.description'
+        @click='openModal("EditChannelDescriptionModal")'
+      )
+        | {{ summary.description }}
+        i.icon-pencil-alt
+      i18n.is-unstyled.c-link(
+        tag='button'
+        v-else
+        @click='openModal("EditChannelDescriptionModal")'
+      )
+        | Add description
   template(#sidebar='')
     chat-nav(
       :title='L("Chat")'
@@ -39,6 +54,8 @@ import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'
 import GroupMembers from '@containers/dashboard/GroupMembers.vue'
+import { OPEN_MODAL } from '@utils/events.js'
+import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'GroupChat',
@@ -75,6 +92,11 @@ export default {
         groups: chatTypes.GROUP
       }
     }
+  },
+  methods: {
+    openModal (modal, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    }
   }
 }
 </script>
@@ -95,6 +117,36 @@ export default {
   i {
     margin-right: 0.5rem;
     color: $text_1;
+  }
+}
+
+.c-link {
+  color: $text_0;
+  border-color: $text_0;
+  margin-left: .2rem;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover {
+    text-decoration: underline;
+
+    .icon-pencil-alt{
+      opacity: 1;
+      margin-left: .2rem;
+    }
+  }
+}
+
+.icon-pencil-alt {
+  opacity: 0;
+  margin-left: .2rem;
+  transition: opacity 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.c-header-description {
+  display: none;
+  @include desktop {
+    display: flex;
   }
 }
 </style>
