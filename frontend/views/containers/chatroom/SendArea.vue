@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-send.inputgroup
+.c-send.inputgroup(:class='{"is-editing": isEditing}')
   .c-replying(v-if='replyingMessage')
     i18n Replying to:&nbsp
     | {{ replyingMessage }}
@@ -8,6 +8,7 @@
       @click='$emit("stopReplying")'
     )
       i.icon-times
+
   textarea.textarea.c-send-textarea(
     ref='textarea'
     :disabled='loading'
@@ -20,23 +21,35 @@
   )
 
   .c-send-actions(ref='actions')
-    .addons
-      button.is-icon(
-        :aria-label='L("Create pool")'
-        @click='createPool'
-      )
-        i.icon-poll
-      button.is-icon(
-        :aria-label='L("Add reaction")'
-        @click='openEmoticon'
-      )
-        i.icon-smile-beam
+    .c-edit-actions(v-if='isEditing')
+      i18n.is-small.is-outlined(
+        tag='button'
+        @click='$emit("cancelEdit")'
+      ) Cancel
 
-    i18n.sr-only(
-      tag='button'
-      :class='{ isActive }'
-      @click='sendMessage'
-    ) Send
+      i18n.button.is-small(
+        tag='button'
+        @click='sendMessage'
+      ) Save changes
+
+    div(v-else)
+      .addons
+        button.is-icon(
+          :aria-label='L("Create pool")'
+          @click='createPool'
+        )
+          i.icon-poll
+        button.is-icon(
+          :aria-label='L("Add reaction")'
+          @click='openEmoticon'
+        )
+          i.icon-smile-beam
+
+      i18n.sr-only(
+        tag='button'
+        :class='{ isActive }'
+        @click='sendMessage'
+      ) Send
 
   .textarea.c-send-mask(
     ref='mask'
@@ -56,7 +69,11 @@ export default {
       type: Boolean,
       default: false
     },
-    replyingMessage: String
+    replyingMessage: String,
+    isEditing: {
+      type: Boolean,
+      default: false
+    }
   },
   data () {
     return {
@@ -73,7 +90,7 @@ export default {
   mounted () {
     // Get actionsWidth to add a dynamic padding to textarea,
     // so those actions don't be above the textarea's value
-    this.ephemeral.actionsWidth = this.$refs.actions.offsetWidth
+    this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
   },
   computed: {
@@ -214,6 +231,20 @@ $initialHeight: 43px;
     &:focus {
       box-shadow: none;
       color: $text_1;
+    }
+  }
+
+  &.is-editing {
+    margin: 0;
+
+    .c-send-actions {
+      position: relative;
+      margin-top: .5rem;
+      height: auto;
+    }
+
+    .is-outlined {
+      margin-right: .5rem;
     }
   }
 }

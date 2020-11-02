@@ -6,14 +6,26 @@
 
     .c-body
       slot(name='header')
-        .c-who(:class='{ "sr-only": isSameSender }')
+        .c-who(
+          v-if='!isEditing'
+          :class='{ "sr-only": isSameSender }'
+        )
           span.is-title-4 {{who}}
           span.has-text-1 {{getTime(time)}}
 
       slot(name='body')
-        p.c-text(v-if='text') {{text}}
+        send-area(
+          v-if='isEditing'
+          title=''
+          :isEditing='true'
+          @send='sendEdit'
+          @cancelEdit='cancelEdit'
+        )
+
+        p.c-text(v-else-if='text') {{text}}
 
   message-reactions(
+    v-if='!isEditing'
     :emoticonsList='emoticonsList'
     @selectEmoticon='selectEmoticon($event)'
     @openEmoticon='openEmoticon($event)'
@@ -38,6 +50,7 @@ import { getTime } from '@utils/time.js'
 import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
+import SendArea from './SendArea.vue'
 
 export default {
   name: 'MessageBase',
@@ -45,7 +58,13 @@ export default {
   components: {
     Avatar,
     MessageActions,
-    MessageReactions
+    MessageReactions,
+    SendArea
+  },
+  data () {
+    return {
+      isEditing: false
+    }
   },
   props: {
     text: String,
@@ -67,7 +86,14 @@ export default {
   methods: {
     getTime,
     edit () {
-      console.log('TODO EDIT')
+      this.isEditing = true
+    },
+    sendEdit (newMessage) {
+      this.isEditing = false
+      this.$emit('edit', newMessage)
+    },
+    cancelEdit () {
+      this.isEditing = false
     },
     reply () {
       this.$emit('reply')
@@ -139,7 +165,7 @@ export default {
 }
 
 .c-body {
-  max-width: 100%;
+  width: 100%;
 }
 
 .c-who {
