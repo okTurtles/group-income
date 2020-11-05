@@ -54,7 +54,7 @@ export function dataToEvents (monthstamp, data) {
 JS is giving us 20 * (10 / 18) * (18 / 50) = 3.9999999999999996 instead of 4
 */
 
-function distibuteFromHavesToNeeds({ haves, needs }) {
+function distibuteFromHavesToNeeds ({ haves, needs }) {
   const totalHave = haves.reduce((a, b) => a + b.have, 0)
   const totalNeed = needs.reduce((a, b) => a + b.need, 0)
   const totalPercent = Math.min(1, totalHave / totalNeed)
