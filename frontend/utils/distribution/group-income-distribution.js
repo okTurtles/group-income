@@ -30,7 +30,7 @@ export function dataToEvents (monthstamp, data) {
   }
 
   const joinEvents = (Object.entries(data.groupProfiles)
-    .filter(([,profile]) => profile.joinedDate.startsWith(monthstamp))
+    .filter(([, profile]) => profile.joinedDate.startsWith(monthstamp))
     .map(mapUser({ withDate: true }))
     .map(user => { user.type = 'join'; return user }))
 
@@ -40,7 +40,7 @@ export function dataToEvents (monthstamp, data) {
     .map(event => { delete event.date; return event }))
 
   const members = (Object.entries(data.groupProfiles)
-    .filter(([,profile]) => profile.joinedDate < monthstamp)
+    .filter(([, profile]) => profile.joinedDate < monthstamp)
     .map(mapUser({ withDate: false })))
 
   return {
