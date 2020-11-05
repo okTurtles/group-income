@@ -648,7 +648,6 @@ describe('group income distribution logic', function () {
 })
 
 describe('helper function', function () {
-
   it('can transform payment/join data into events', function () {
     const events = dataToEvents('2020-10', {
       mincomeAmount: 1000,
