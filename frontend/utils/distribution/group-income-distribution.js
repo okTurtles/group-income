@@ -82,15 +82,13 @@ export function groupIncomeDistributionNewLogic ({ haves, needs, events }) {
 
       payments.find(p => p.from === from && p.to === to).amount -= amount
       haves.find(u => u.name === from).have -= amount
-    }
-    else if (event.type === 'join') {
+    } else if (event.type === 'join') {
       const { name, have, need } = event
       let newPayments
 
       if (have !== undefined) {
         newPayments = distibuteFromHavesToNeeds({ needs, haves: [{ name, have }] })
-      }
-      else {
+      } else {
         needs.push({ name, need })
         newPayments = distibuteFromHavesToNeeds({ needs, haves })
       }
