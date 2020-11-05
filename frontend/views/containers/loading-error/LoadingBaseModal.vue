@@ -5,7 +5,6 @@
         i18n(tag='h2' class='is-title-2 c-title') Loading...
 
         .loading-box
-
 </template>
 
 <script>
