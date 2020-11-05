@@ -303,10 +303,10 @@ describe('group income distribution logic', function () {
     it('can distribute income evenly with two users', function () {
       should(groupIncomeDistributionNewLogic({
         haves: [
-          { name: 'u1', have: 10 },
+          { name: 'u1', have: 10 }
         ],
         needs: [
-          { name: 'u2', need: 2 },
+          { name: 'u2', need: 2 }
         ],
         events: []
       })).eql([
@@ -317,11 +317,11 @@ describe('group income distribution logic', function () {
     it('can distribute income evenly with three users but still have need', function () {
       should(groupIncomeDistributionNewLogic({
         haves: [
-          { name: 'u1', have: 9 },
+          { name: 'u1', have: 9 }
         ],
         needs: [
           { name: 'u2', need: 40 },
-          { name: 'u3', need: 80 },
+          { name: 'u3', need: 80 }
         ],
         events: []
       })).eql([
@@ -333,11 +333,11 @@ describe('group income distribution logic', function () {
     it('can distribute income evenly with three users and excess', function () {
       should(groupIncomeDistributionNewLogic({
         haves: [
-          { name: 'u1', have: 21 },
+          { name: 'u1', have: 21 }
         ],
         needs: [
           { name: 'u2', need: 4 },
-          { name: 'u3', need: 8 },
+          { name: 'u3', need: 8 }
         ],
         events: []
       })).eql([
@@ -351,11 +351,11 @@ describe('group income distribution logic', function () {
         haves: [
           { name: 'd', have: 10 },
           { name: 'e', have: 30 },
-          { name: 'f', have: 60 },
+          { name: 'f', have: 60 }
         ],
         needs: [
           { name: 'a', need: 30 },
-          { name: 'b', need: 20 },
+          { name: 'b', need: 20 }
         ],
         events: []
       })).eql([
@@ -373,11 +373,11 @@ describe('group income distribution logic', function () {
         haves: [
           { name: 'd', have: 4 },
           { name: 'e', have: 4 },
-          { name: 'f', have: 10 },
+          { name: 'f', have: 10 }
         ],
         needs: [
           { name: 'a', need: 30 },
-          { name: 'b', need: 20 },
+          { name: 'b', need: 20 }
         ],
         events: []
       })).eql([
@@ -398,7 +398,7 @@ describe('group income distribution logic', function () {
           { name: 'b', need: 20 },
           { name: 'd', need: 5 },
           { name: 'e', need: 20 },
-          { name: 'f', need: 30 },
+          { name: 'f', need: 30 }
         ],
         events: []
       })).eql([
@@ -411,7 +411,7 @@ describe('group income distribution logic', function () {
           { name: 'b', have: 5 },
           { name: 'd', have: 10 },
           { name: 'e', have: 60 },
-          { name: 'f', have: 12 },
+          { name: 'f', have: 12 }
         ],
         needs: [],
         events: []
@@ -422,11 +422,11 @@ describe('group income distribution logic', function () {
     it('works with very imprecise splits', function () {
       should(groupIncomeDistributionNewLogic({
         haves: [
-          { name: 'u1', have: 75 },
+          { name: 'u1', have: 75 }
         ],
         needs: [
           { name: 'u2', need: 25 },
-          { name: 'u3', need: 300 },
+          { name: 'u3', need: 300 }
         ],
         events: []
       })).eql([
@@ -438,11 +438,11 @@ describe('group income distribution logic', function () {
     it('splits money evenly', function () {
       should(groupIncomeDistributionNewLogic({
         haves: [
-          { name: 'u1', have: 9 },
+          { name: 'u1', have: 9 }
         ],
         needs: [
           { name: 'u2', need: 80 },
-          { name: 'u3', need: 40 },
+          { name: 'u3', need: 40 }
         ],
         events: []
       })).eql([
@@ -502,7 +502,7 @@ describe('group income distribution logic', function () {
           { name: 'u1', have: 100 }
         ],
         needs: [
-          { name: 'u2', need: 75 },
+          { name: 'u2', need: 75 }
         ],
         events: [
           { type: 'payment', from: 'u1', to: 'u2', amount: 75 },
@@ -636,7 +636,7 @@ describe('group income distribution logic', function () {
         ],
         events: [
           { type: 'payment', from: 'u1', to: 'u2', amount: 71.43 },
-          { type: 'payment', from: 'u1', to: 'u3', amount: 100 },
+          { type: 'payment', from: 'u1', to: 'u3', amount: 100 }
         ]
       })
       should(dist).eql([
@@ -675,11 +675,11 @@ describe('helper function', function () {
     })
     should(events).eql({
       haves: [
-        { name: 'u1', have: 50 },
+        { name: 'u1', have: 50 }
       ],
       needs: [
         { name: 'u2', need: 50 },
-        { name: 'u3', need: 100 },
+        { name: 'u3', need: 100 }
       ],
       events: [
         { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
@@ -715,11 +715,11 @@ describe('helper function', function () {
     })
     should(events).eql({
       haves: [
-        { name: 'u1', have: 50 },
+        { name: 'u1', have: 50 }
       ],
       needs: [
         { name: 'u2', need: 50 },
-        { name: 'u3', need: 100 },
+        { name: 'u3', need: 100 }
       ],
       events: [
         { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
@@ -745,11 +745,11 @@ describe('helper function', function () {
     })
     should(events).eql({
       haves: [
-        { name: 'u1', have: 50 },
+        { name: 'u1', have: 50 }
       ],
       needs: [
         { name: 'u2', need: 50 },
-        { name: 'u3', need: 100 },
+        { name: 'u3', need: 100 }
       ],
       events: []
     })
@@ -780,11 +780,11 @@ describe('helper function', function () {
     })
     should(events).eql({
       haves: [
-        { name: 'u1', have: 50 },
+        { name: 'u1', have: 50 }
       ],
       needs: [
         { name: 'u2', need: 50 },
-        { name: 'u3', need: 100 },
+        { name: 'u3', need: 100 }
       ],
       events: [
         { type: 'payment', from: 'u1', to: 'u3', amount: 50 }
@@ -809,11 +809,11 @@ describe('helper function', function () {
     })
     should(events).eql({
       haves: [
-        { name: 'u1', have: 50 },
+        { name: 'u1', have: 50 }
       ],
       needs: [
         { name: 'u2', need: 50 },
-        { name: 'u3', need: 100 },
+        { name: 'u3', need: 100 }
       ],
       events: [
         { type: 'join', name: 'u4', have: 150 }
@@ -876,7 +876,7 @@ describe('helper function', function () {
     should(events).eql({
       needs: [
         { name: 'u2', need: 50 },
-        { name: 'u3', need: 100 },
+        { name: 'u3', need: 100 }
       ],
       haves: [],
       events: [
@@ -899,7 +899,7 @@ describe('helper function', function () {
       haves: [],
       needs: [
         { name: 'u2', need: 50 },
-        { name: 'u3', need: 100 },
+        { name: 'u3', need: 100 }
       ],
       events: []
     })
@@ -931,11 +931,11 @@ describe('helper function', function () {
     })
     should(events).eql({
       haves: [
-        { name: 'u1', have: 50 },
+        { name: 'u1', have: 50 }
       ],
       needs: [
         { name: 'u2', need: 50 },
-        { name: 'u3', need: 100 },
+        { name: 'u3', need: 100 }
       ],
       events: [
         { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
@@ -954,10 +954,10 @@ describe('helper function', function () {
         }
       })).eql({
         haves: [
-          { name: 'u1', have: 10 },
+          { name: 'u1', have: 10 }
         ],
         needs: [
-          { name: 'u2', need: 2 },
+          { name: 'u2', need: 2 }
         ],
         events: []
       })
