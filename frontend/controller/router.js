@@ -185,9 +185,6 @@ const router = new Router({
 
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title
-  if (to.name === 'DesignSystem') {
-    console.log('design-system Component: ', DesignSystem)
-  }
   next()
 })
 
