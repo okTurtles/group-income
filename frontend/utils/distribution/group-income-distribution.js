@@ -151,19 +151,18 @@ export function groupIncomeDistributionNewLogic ({ haves, needs, events }) {
   })
 
   // Balance negative and positive payments.
-  const positive = finalDist.filter((payment)=>payment.amount >= 0)
-  const negative = finalDist.filter((payment)=>payment.amount < 0)
+  const positive = finalDist.filter((payment) => payment.amount >= 0)
+  const negative = finalDist.filter((payment) => payment.amount < 0)
 
-  const overPaymentTotal = (negative.length == 0 ? 0 : negative.reduce((totalOverPayments, overPayment)=>totalOverPayments+overPayment.amount, 0));
+  const overPaymentTotal = (negative.length === 0 ? 0 : negative.reduce((totalOverPayments, overPayment) => totalOverPayments + overPayment.amount, 0))
 
   finalDist = positive.map(function (payment) {
     payment.amount += this
     payment.amount = saferFloat(payment.amount)
     return payment
   }.bind(overPaymentTotal))
-  
   // Remove pending payments of zero before returning.
-  return finalDist.filter((payment)=>payment.amount > 0)
+  return finalDist.filter((payment) => payment.amount > 0)
 }
 
 export function groupIncomeDistributionLogic (data) {
