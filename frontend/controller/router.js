@@ -5,9 +5,7 @@ import Router from 'vue-router'
 import sbp from '~/shared/sbp.js'
 import store from '@model/state.js'
 
-import DesignSystem from '@pages/DesignSystem.vue'
 import BypassUI from '@pages/BypassUI.vue'
-
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import L from '@view-utils/translations.js'
@@ -25,6 +23,7 @@ const Payments = lazyLoadView({ component: import('@pages/Payments.vue') })
 const GroupChat = lazyLoadView({ component: import('@pages/GroupChat.vue') })
 const Mailbox = lazyLoadView({ component: import('@pages/Mailbox.vue') })
 const GroupSettings = lazyLoadView({ component: import('@pages/GroupSettings.vue') })
+const DesignSystem = lazyLoadView({ component: import('@pages/DesignSystem.vue') })
 
 Vue.use(Router)
 
