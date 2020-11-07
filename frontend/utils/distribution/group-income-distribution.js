@@ -69,43 +69,6 @@ function distibuteFromHavesToNeeds ({ haves, needs }) {
   }
   return payments
 }
-export function groupIncomeDistributionAdjustFirstLogic ({
-  haves,
-  needs,
-  events
-}) {
-  //  Adjustment-First Approach:
-  //  STEP #1: Pledges and needs should be adjusted (before being done proportionally) every time a any payment is made.
-  //  STEP #2: Get a list of payments for every user who is pledging for the month.
-  //  STEP #3: Clone the haves/needs (pledges/incomes).
-  //  STEP #4: Adjust haves/needs of the clone based on existing payments.
-  //  STEP #5: Pass new haves/needs to distribution logic & this becomes the new TODO list!
-  let payments = distibuteFromHavesToNeeds({ haves, needs })
-
-  for (const event of events) {
-    //  For every payment event, subtract payment amount from haves and add it to needs, proportionally.
-    if (event.type === 'payment') {
-      const { from, to, amount } = event
-
-      payments.find(p => p.from === from && p.to === to).amount -= amount
-      haves.find(u => u.name === from).have -= amount
-    } else if (event.type === 'join') {
-      const { name, have, need } = event
-      let newPayments
-
-      if (have !== undefined) {
-        newPayments = distibuteFromHavesToNeeds({ needs, haves: [{ name, have }] })
-      } else {
-        needs.push({ name, need })
-        newPayments = distibuteFromHavesToNeeds({ needs, haves })
-      }
-
-      payments = payments.concat(newPayments)
-    }
-  }
-
-  return payments.filter(payment => Number(payment.amount.toFixed(12)) !== 0)
-}
 
 export function groupIncomeDistributionAdjustFirstLogic ({
   haves,
