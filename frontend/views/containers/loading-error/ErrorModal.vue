@@ -13,6 +13,7 @@
       i18n.c-text(tag='p') We couldn’t find what you are looking for.
       router-link.button(to='/')
         i18n Take me home
+
 </template>
 
 <script>
