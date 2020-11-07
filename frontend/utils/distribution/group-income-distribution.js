@@ -1,7 +1,5 @@
-import { saferFloat } from '~/frontend/views/utils/currencies.js'
-import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import { mapValues } from '~/frontend/utils/giLodash.js'
-import paymentTotalFromUserToUser from '../../model/contracts/payments/totals.js'
+import { saferFloat } from '~/frontend/views/utils/currencies.js'
 
 export function dataToEvents (monthstamp, data) {
   const mapUser = ({ withDate }) => ([name, profile]) => ({
@@ -30,7 +28,7 @@ export function dataToEvents (monthstamp, data) {
   }
 
   const joinEvents = (Object.entries(data.groupProfiles)
-    .filter(([, profile]) => profile.joinedDate.startsWith(monthstamp))
+    .filter(([, profile]) => monthstamp ? profile.joinedDate.startsWith(monthstamp) : true)
     .map(mapUser({ withDate: true }))
     .map(user => { user.type = 'join'; return user }))
 
@@ -40,7 +38,7 @@ export function dataToEvents (monthstamp, data) {
     .map(event => { delete event.date; return event }))
 
   const members = (Object.entries(data.groupProfiles)
-    .filter(([, profile]) => profile.joinedDate < monthstamp)
+    .filter(([, profile]) => monthstamp ? profile.joinedDate < monthstamp : true)
     .map(mapUser({ withDate: false })))
 
   return {
@@ -70,6 +68,43 @@ function distibuteFromHavesToNeeds ({ haves, needs }) {
     }
   }
   return payments
+}
+export function groupIncomeDistributionAdjustFirstLogic ({
+  haves,
+  needs,
+  events
+}) {
+  //  Adjustment-First Approach:
+  //  STEP #1: Pledges and needs should be adjusted (before being done proportionally) every time a any payment is made.
+  //  STEP #2: Get a list of payments for every user who is pledging for the month.
+  //  STEP #3: Clone the haves/needs (pledges/incomes).
+  //  STEP #4: Adjust haves/needs of the clone based on existing payments.
+  //  STEP #5: Pass new haves/needs to distribution logic & this becomes the new TODO list!
+  let payments = distibuteFromHavesToNeeds({ haves, needs })
+
+  for (const event of events) {
+    //  For every payment event, subtract payment amount from haves and add it to needs, proportionally.
+    if (event.type === 'payment') {
+      const { from, to, amount } = event
+
+      payments.find(p => p.from === from && p.to === to).amount -= amount
+      haves.find(u => u.name === from).have -= amount
+    } else if (event.type === 'join') {
+      const { name, have, need } = event
+      let newPayments
+
+      if (have !== undefined) {
+        newPayments = distibuteFromHavesToNeeds({ needs, haves: [{ name, have }] })
+      } else {
+        needs.push({ name, need })
+        newPayments = distibuteFromHavesToNeeds({ needs, haves })
+      }
+
+      payments = payments.concat(newPayments)
+    }
+  }
+
+  return payments.filter(payment => Number(payment.amount.toFixed(12)) !== 0)
 }
 
 export function groupIncomeDistributionAdjustFirstLogic ({
@@ -166,66 +201,41 @@ export function groupIncomeDistributionNewLogic ({ haves, needs, events }) {
     }
   }
 
-  return payments.filter(payment => Number(payment.amount.toFixed(12)) !== 0)
+  const dist = payments.filter(payment => Number(payment.amount.toFixed(12)) !== 0)
+
+  //  Remove duplicate results...
+
+  var finalDist = []
+  dist.map((payment) => {
+    const paymentStringified = JSON.stringify(payment)
+    var foundPayment = false
+    for (var finalPayment in finalDist) {
+      if (JSON.stringify(finalDist[finalPayment]) === paymentStringified) {
+        foundPayment = true
+      }
+    }
+    if (!foundPayment) {
+      finalDist.push(payment)
+    }
+  })
+
+  // Balance negative and positive payments.
+  const positive = finalDist.filter((payment) => payment.amount >= 0)
+  const negative = finalDist.filter((payment) => payment.amount < 0)
+
+  const overPaymentTotal = (negative.length === 0 ? 0 : negative.reduce((totalOverPayments, overPayment) => totalOverPayments + overPayment.amount, 0))
+
+  finalDist = positive.map(function (payment) {
+    payment.amount += this
+    payment.amount = saferFloat(payment.amount)
+    return payment
+  }.bind(overPaymentTotal))
+  // Remove pending payments of zero before returning.
+  return finalDist.filter((payment) => payment.amount > 0)
 }
 
-export function groupIncomeDistributionLogic ({
-  mincomeAmount,
-  groupProfiles,
-  adjustWith
-}) {
-  const currentIncomeDistribution = (Object.entries(groupProfiles)
-    // filter out users without a profile or without income details
-    .filter(([name, profile]) => profile && profile.incomeDetailsType)
-    // get the user's absolute income by adding pledge if needed
-    .map(([name, profile]) => {
-      const amount = saferFloat(profile.incomeDetailsType === 'incomeAmount'
-        ? profile.incomeAmount
-        : profile.pledgeAmount + mincomeAmount)
-      return { name, amount }
-    }))
-
-  let dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
-
-  if (adjustWith) {
-    const { monthstamp, payments, monthlyPayments } = adjustWith
-
-    // if this user has already made some payments to other users this
-    // month, we need to take that into account and adjust the distribution.
-    // this will be used by the Payments page to tell how much still
-    // needs to be paid (if it was a partial payment).
-    const carried = Object.create(null)
-    for (const p of dist) {
-      const alreadyPaid = paymentTotalFromUserToUser({
-        fromUser: p.from,
-        toUser: p.to,
-        paymentMonthstamp: monthstamp,
-        payments,
-        monthlyPayments
-      })
-
-      const carryAmount = p.amount - alreadyPaid
-      // ex: it wants us to pay $2, but we already paid $3, thus: carryAmount = -$1 (all done paying)
-      // ex: it wants us to pay $3, but we already paid $2, thus: carryAmount = $1 (remaining to pay)
-      // if we "overpaid" because we sent late payments, remove us from consideration
-      p.amount = saferFloat(Math.max(0, carryAmount))
-      // calculate our carried adjustment (used when distribution changes due to new users)
-      if (!carried[p.from]) carried[p.from] = { carry: 0, total: 0 }
-      carried[p.from].total += p.amount
-      if (carryAmount < 0) carried[p.from].carry += -carryAmount
-    }
-    // we loop through and proportionally subtract the amount that we've already paid
-    dist = dist.filter(p => p.amount > 0)
-    for (const p of dist) {
-      const c = carried[p.from]
-      p.amount = saferFloat(p.amount - (c.carry * p.amount / c.total))
-    }
-    // console.debug('adjustedDist', adjustedDist, 'carried', carried)
-  }
-
-  dist = dist.filter(p => p.amount !== 0)
-
-  return dist
+export function groupIncomeDistributionLogic (data) {
+  return groupIncomeDistributionNewLogic(dataToEvents(data.adjustWith ? data.adjustWith.monthstamp : null, data))
 }
 
 export default function groupIncomeDistribution ({ getters, monthstamp, adjusted }) {
