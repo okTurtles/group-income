@@ -70,42 +70,37 @@ function distibuteFromHavesToNeeds ({ haves, needs }) {
   return payments
 }
 
-function calculatePayments ({ haves, needs }) {
+function calculatePayments ({ haves, needs }, totalHave = 0, totalNeed = 0) {
   // for (const have of haves) have.have = have.have / totalHave
   // for (const need of needs) need.need = need.need  * totalPercent
 
+  if(needs.length == 0) return []
+
   const payments = []
+
+
+  if(!totalHave || !totalNeed)
+  {
+    totalHave = haves.reduce((a, b) => a + b.have, 0)//  -(i==h?pledge:0), 0)
+    totalNeed = needs.reduce((a, b) => a + b.need, 0)//   - pledge
+  }
+  const need = needs.shift()
+  let received = 0
 
   for (var h = 0; h < haves.length; h++) {
     const have = haves[h]
-    // let pledge = 0
-    for (var n = 0; n < needs.length; n++) {
-      const need = needs[n]
-      // have.have -= pledge
-      let maxHave = 0
-      let maxNeed = 0
-      haves.map((have, i) => { maxHave = Math.max(maxHave, have.have) })//  -(i==h?pledge:0)) });
-      needs.map((need, i) => { maxNeed = Math.max(maxNeed, need.need) })
-      const totalHave = haves.reduce((a, b, i) => a + b.have, 0)//  -(i==h?pledge:0), 0)
-      const totalNeed = needs.reduce((a, b) => a + b.need, 0)//   - pledge
-      const haveToNeed = have.have / (totalHave)
-      const needToHave = need.need / (totalNeed)
-      const given = have.have * needToHave
-      const taken = need.need * haveToNeed
-      // console.log("GIVEN="+given);
-      // console.log("TAKEN="+taken);
-      // console.log("h2n="+haveToNeed);
-      // console.log("n2h="+needToHave);
-      // console.log("r="+needToHave/haveToNeed);
-      const amount = taken <= given ? taken : given
-      payments.push({ amount, from: have.name, to: need.name })
-      // have.have += pledge
-      // pledge += amount;
-      // need.need -= amount
-    }
-    // have.have -= pledge
+    console.log("HAVE="+JSON.stringify(have));
+    const amount = Math.min(need.need, totalNeed) * Math.min(have.have, totalHave)/totalHave *Math.min(1., totalHave/totalNeed)
+    payments.push({ amount, from: have.name, to: need.name })
+    received += amount;
+    have.have -= amount
   }
-  return payments
+
+  need.need -= received
+
+  console.log("NEED="+JSON.stringify(need));
+
+  return needs.length > 0 ? payments.concat(calculatePayments({ haves, needs }), totalHave, totalNeed) : payments
 }
 
 export function groupIncomeDistributionAdjustFirstLogic ({ haves, needs, events }) {
