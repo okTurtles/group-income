@@ -81,62 +81,45 @@ export function groupIncomeDistributionAdjustFirstLogic ({
   //  STEP #3: Clone the haves/needs (pledges/incomes).
   //  STEP #4: Adjust haves/needs of the clone based on existing payments.
   //  STEP #5: Pass new haves/needs to distribution logic & this becomes the new TODO list!
-  let pledgers = events.filter((e)=>e.type=='payment').map((e)=>e.from)
+  const newHaves = []
+  const newNeeds = []
 
-  let payments = distibuteFromHavesToNeeds({ haves, needs })
+  for (const event of events) {
+    if (event.type === 'join') {
+      const { name, have, need } = event
 
+      if (have !== undefined) {
+        newHaves.push({ name, have })
+      } else {
+        newNeeds.push({ name, need })
+      }
+    }
+  }
+  for (const have in haves) {
+    if (!newHaves.find(u => u.name === haves[have].name)) {
+      newHaves.push(haves[have])
+    } else {
+      // console.log("Duplicate haves!");
+    }
+  }
+  for (const need in needs) {
+    if (!newNeeds.find(u => u.name === needs[need].name)) {
+      newNeeds.push(needs[need])
+    } else {
+      // console.log("Duplicate needs!");
+    }
+  }
   for (const event of events) {
     if (event.type === 'payment') {
       const { from, to, amount } = event
-
-      payments.find(p => p.from === from && p.to === to).amount -= amount
-      haves.find(u => u.name === from).have -= amount
-    } else if (event.type === 'join') {
-      const { name, have, need } = event
-      let newPayments
-
-      if (have !== undefined) {
-        newPayments = distibuteFromHavesToNeeds({ needs, haves: [{ name, have }] })
-      } else {
-        needs.push({ name, need })
-        newPayments = distibuteFromHavesToNeeds({ needs, haves })
-      }
-
-      payments = payments.concat(newPayments)
+      newHaves.find(u => u.name === from).have -= amount
+      newNeeds.find(p => p.name === to).need -= amount
     }
   }
-
-  const dist = payments.filter(payment => Number(payment.amount.toFixed(12)) !== 0)
-
-  //  Remove duplicate results...
-
-  var finalDist = []
-  dist.map((payment) => {
-    const paymentStringified = JSON.stringify(payment)
-    var foundPayment = false
-    for (var finalPayment in finalDist) {
-      if (JSON.stringify(finalDist[finalPayment]) === paymentStringified) {
-        foundPayment = true
-      }
-    }
-    if (!foundPayment) {
-      finalDist.push(payment)
-    }
-  })
-
-  // Balance negative and positive payments.
-  const positive = finalDist.filter((payment) => payment.amount >= 0)
-  const negative = finalDist.filter((payment) => payment.amount < 0)
-
-  const overPaymentTotal = (negative.length === 0 ? 0 : negative.reduce((totalOverPayments, overPayment) => totalOverPayments + overPayment.amount, 0))
-
-  finalDist = positive.map(function (payment) {
-    payment.amount += this
-    payment.amount = saferFloat(payment.amount)
-    return payment
-  }.bind(overPaymentTotal))
-  // Remove pending payments of zero before returning.
-  return finalDist.filter((payment) => payment.amount > 0)
+  haves = newHaves
+  needs = newNeeds
+  const dist = distibuteFromHavesToNeeds({ haves, needs })
+  return dist.filter((payment) => payment.amount > 0)
 }
 
 // Note: this mutates the objects in haves/needs

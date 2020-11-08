@@ -4,9 +4,28 @@
 // ./node_modules/.bin/mocha -w -R min --require Gruntfile.js frontend/utils/distribution/group-income-distribution.test.js
 
 import should from 'should'
-import { groupIncomeDistributionLogic, groupIncomeDistributionNewLogic, dataToEvents } from './group-income-distribution.js'
+import { groupIncomeDistributionLogic, groupIncomeDistributionNewLogic, groupIncomeDistributionAdjustFirstLogic, dataToEvents } from './group-income-distribution.js'
 
 describe('group income distribution logic', function () {
+  describe.only('group income distribution first logic', function () {
+    it('has no effect for adjustment when there are no payments', function () {
+      const dist = groupIncomeDistributionAdjustFirstLogic({
+        mincomeAmount: 12,
+        groupProfiles: {
+          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
+          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
+        },
+        adjustWith: {
+          monthstamp: '2020-10',
+          payments: {},
+          monthlyPayments: {}
+        }
+      })
+      should(dist).eql([
+        { amount: 2, from: 'u1', to: 'u2' }
+      ])
+    })
+  })
   it('can distribute income evenly with two users', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
@@ -19,7 +38,6 @@ describe('group income distribution logic', function () {
       { amount: 2, from: 'u1', to: 'u2' }
     ])
   })
-
   it('has no effect for adjustment when there are no payments', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
@@ -134,8 +152,8 @@ describe('group income distribution logic', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 1000,
       groupProfiles: {
-        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' },
-        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 950, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 75, joinedDate: '2020-09-15T00:00:00.000Z' },
+        'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 975, joinedDate: '2020-09-15T00:00:00.000Z' },
         'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 700, joinedDate: '2020-09-15T00:00:00.000Z' }
       },
       adjustWith: {
