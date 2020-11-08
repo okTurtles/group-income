@@ -70,11 +70,8 @@ function distibuteFromHavesToNeeds ({ haves, needs }) {
   return payments
 }
 
-export function groupIncomeDistributionAdjustFirstLogic ({
-  haves,
-  needs,
-  events
-}) {
+export function groupIncomeDistributionAdjustFirstLogic (data) {
+  const { haves, needs, events } = dataToEvents(data.adjustWith ? data.adjustWith.monthstamp : null, data)
   //  Adjustment-First Approach:
   //  STEP #1: Pledges and needs should be adjusted (before being done proportionally) every time a any payment is made.
   //  STEP #2: Get a list of payments for every user who is pledging for the month.
@@ -116,9 +113,7 @@ export function groupIncomeDistributionAdjustFirstLogic ({
       newNeeds.find(p => p.name === to).need -= amount
     }
   }
-  haves = newHaves
-  needs = newNeeds
-  const dist = distibuteFromHavesToNeeds({ haves, needs })
+  const dist = distibuteFromHavesToNeeds({ newHaves, newNeeds })
   return dist.filter((payment) => payment.amount > 0)
 }
 
