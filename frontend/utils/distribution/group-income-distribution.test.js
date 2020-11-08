@@ -95,10 +95,10 @@ describe('group income distribution first logic', function () {
       events: []
     })).eql([
       { amount: 3, from: 'd', to: 'a' },
-      { amount: 9, from: 'e', to: 'a' },
-      { amount: 18, from: 'f', to: 'a' },
       { amount: 2, from: 'd', to: 'b' },
+      { amount: 9, from: 'e', to: 'a' },
       { amount: 6, from: 'e', to: 'b' },
+      { amount: 18, from: 'f', to: 'a' },
       { amount: 12, from: 'f', to: 'b' }
     ])
   })
@@ -117,10 +117,10 @@ describe('group income distribution first logic', function () {
       events: []
     })).eql([
       { amount: 2.4, from: 'd', to: 'a' },
-      { amount: 2.4, from: 'e', to: 'a' },
-      { amount: 6, from: 'f', to: 'a' },
       { amount: 1.6, from: 'd', to: 'b' },
+      { amount: 2.4, from: 'e', to: 'a' },
       { amount: 1.6, from: 'e', to: 'b' },
+      { amount: 6, from: 'f', to: 'a' },
       { amount: 4, from: 'f', to: 'b' }
     ])
   })
@@ -333,8 +333,8 @@ describe('group income distribution first logic', function () {
     })
     should(dist).eql([
       { amount: 71.42857143, from: 'u1', to: 'u2' },
-      { amount: 28.57142857, from: 'u4', to: 'u2' },
       { amount: 178.57142857, from: 'u1', to: 'u3' },
+      { amount: 28.57142857, from: 'u4', to: 'u2' },
       { amount: 71.42857143, from: 'u4', to: 'u3' }
     ])
   })
@@ -356,8 +356,8 @@ describe('group income distribution first logic', function () {
     should(dist).eql([
       // Currently (validated with https://www.desmos.com/calculator/whgcahsblq) results in:
       { amount: 18.31404997, from: 'u1', to: 'u2' },
-      { amount: 10.25595003, from: 'u4', to: 'u2' },
       { amount: 160.25595003, from: 'u1', to: 'u3' },
+      { amount: 10.25595003, from: 'u4', to: 'u2' },
       { amount: 89.74404997, from: 'u4', to: 'u3' }
       // Old values:
       // { amount: 28.57142857142857, from: 'u4', to: 'u2' },
@@ -384,8 +384,8 @@ describe('group income distribution first logic', function () {
     should(dist).eql([
       // Currently (validated with https://www.desmos.com/calculator/t2ls04dtnd) results in:
       { 'amount': 12.57067201, from: 'u1', to: 'u2' },
-      { 'amount': 15.99932799, from: 'u4', to: 'u2' },
       { 'amount': 65.99932799, from: 'u1', to: 'u3' },
+      { 'amount': 15.99932799, from: 'u4', to: 'u2' },
       { 'amount': 84.00067201, from: 'u4', to: 'u3' }
       // Old values:
       // { amount: 28.57142857, from: 'u4', to: 'u2' },

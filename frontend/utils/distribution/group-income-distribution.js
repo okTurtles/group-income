@@ -70,13 +70,40 @@ function distibuteFromHavesToNeeds ({ haves, needs }) {
   return payments
 }
 
-function distibuteFromHavesToNeedsWithoutModifyingNeeds ({ haves, needs }) {
+function calculatePayments ({ haves, needs }) {
+  // for (const have of haves) have.have = have.have / totalHave
+  // for (const need of needs) need.need = need.need  * totalPercent
+
   const payments = []
-  for (const need of needs) {
-    for (const have of haves) {
-      const amount = need.need * have.have
+
+  for (var h = 0; h < haves.length; h++) {
+    const have = haves[h]
+    // let pledge = 0
+    for (var n = 0; n < needs.length; n++) {
+      const need = needs[n]
+      // have.have -= pledge
+      let maxHave = 0
+      let maxNeed = 0
+      haves.map((have, i) => { maxHave = Math.max(maxHave, have.have) })//  -(i==h?pledge:0)) });
+      needs.map((need, i) => { maxNeed = Math.max(maxNeed, need.need) })
+      const totalHave = haves.reduce((a, b, i) => a + b.have, 0)//  -(i==h?pledge:0), 0)
+      const totalNeed = needs.reduce((a, b) => a + b.need, 0)//   - pledge
+      const haveToNeed = have.have / (totalHave)
+      const needToHave = need.need / (totalNeed)
+      const given = have.have * needToHave
+      const taken = need.need * haveToNeed
+      // console.log("GIVEN="+given);
+      // console.log("TAKEN="+taken);
+      // console.log("h2n="+haveToNeed);
+      // console.log("n2h="+needToHave);
+      // console.log("r="+needToHave/haveToNeed);
+      const amount = taken <= given ? taken : given
       payments.push({ amount, from: have.name, to: need.name })
+      // have.have += pledge
+      // pledge += amount;
+      // need.need -= amount
     }
+    // have.have -= pledge
   }
   return payments
 }
@@ -95,7 +122,6 @@ export function groupIncomeDistributionAdjustFirstLogic ({ haves, needs, events 
   if (event) {
     if (event.type === 'join') {
       const { name, have, need } = event
-
       if (have !== undefined) {
         newHaves.push({ name, have })
       } else {
@@ -134,13 +160,7 @@ export function groupIncomeDistributionAdjustFirstLogic ({ haves, needs, events 
     haves = newHaves
     needs = newNeeds
   }
-  const totalHave = haves.reduce((a, b) => a + b.have, 0)
-  const totalNeed = needs.reduce((a, b) => a + b.need, 0)
-  const totalPercent = Math.min(1, totalHave / totalNeed)
-
-  for (const have of haves) have.have = have.have / totalHave * totalPercent
-
-  const dist = distibuteFromHavesToNeedsWithoutModifyingNeeds({ haves, needs })
+  const dist = calculatePayments({ haves, needs })
   return dist.filter((payment) => payment.amount > 0).map((payment) => {
     payment.amount = saferFloat(payment.amount)
     return payment
