@@ -70,8 +70,19 @@ function distibuteFromHavesToNeeds ({ haves, needs }) {
   return payments
 }
 
-export function groupIncomeDistributionAdjustFirstLogic (data) {
-  const { haves, needs, events } = dataToEvents(data.adjustWith ? data.adjustWith.monthstamp : null, data)
+function distibuteFromHavesToNeedsWithoutModifyingNeeds ({ haves, needs }) {
+  const payments = []
+  for (const need of needs) {
+    for (const have of haves) {
+      const amount = need.need * have.have
+      payments.push({ amount, from: have.name, to: need.name })
+    }
+  }
+  return payments
+}
+
+export function groupIncomeDistributionAdjustFirstLogic ({ haves, needs, events }) {
+  // const { haves, needs, events } = dataToEvents(data.adjustWith ? data.adjustWith.monthstamp : null, data)
   //  Adjustment-First Approach:
   //  STEP #1: Pledges and needs should be adjusted (before being done proportionally) every time a any payment is made.
   //  STEP #2: Get a list of payments for every user who is pledging for the month.
@@ -80,8 +91,8 @@ export function groupIncomeDistributionAdjustFirstLogic (data) {
   //  STEP #5: Pass new haves/needs to distribution logic & this becomes the new TODO list!
   const newHaves = []
   const newNeeds = []
-
-  for (const event of events) {
+  const event = events.length === 0 ? null : events.shift()
+  if (event) {
     if (event.type === 'join') {
       const { name, have, need } = event
 
@@ -90,31 +101,50 @@ export function groupIncomeDistributionAdjustFirstLogic (data) {
       } else {
         newNeeds.push({ name, need })
       }
+
+      haves = newHaves.concat(haves)
+      needs = newNeeds.concat(needs)
+      return groupIncomeDistributionAdjustFirstLogic({ haves, needs, events })
     }
-  }
-  for (const have in haves) {
-    if (!newHaves.find(u => u.name === haves[have].name)) {
-      newHaves.push(haves[have])
-    } else {
-      // console.log("Duplicate haves!");
+
+    for (const have in haves) {
+      if (!newHaves.find(u => u.name === haves[have].name)) {
+        newHaves.push(haves[have])
+      } else {
+        // console.log("Duplicate haves!");
+      }
     }
-  }
-  for (const need in needs) {
-    if (!newNeeds.find(u => u.name === needs[need].name)) {
-      newNeeds.push(needs[need])
-    } else {
-      // console.log("Duplicate needs!");
+    for (const need in needs) {
+      if (!newNeeds.find(u => u.name === needs[need].name)) {
+        newNeeds.push(needs[need])
+      } else {
+        // console.log("Duplicate needs!");
+      }
     }
-  }
-  for (const event of events) {
     if (event.type === 'payment') {
       const { from, to, amount } = event
+
       newHaves.find(u => u.name === from).have -= amount
       newNeeds.find(p => p.name === to).need -= amount
+      haves = newHaves
+      needs = newNeeds
+      return groupIncomeDistributionAdjustFirstLogic({ haves, needs, events })
     }
+
+    haves = newHaves
+    needs = newNeeds
   }
-  const dist = distibuteFromHavesToNeeds({ newHaves, newNeeds })
-  return dist.filter((payment) => payment.amount > 0)
+  const totalHave = haves.reduce((a, b) => a + b.have, 0)
+  const totalNeed = needs.reduce((a, b) => a + b.need, 0)
+  const totalPercent = Math.min(1, totalHave / totalNeed)
+
+  for (const have of haves) have.have = have.have / totalHave * totalPercent
+
+  const dist = distibuteFromHavesToNeedsWithoutModifyingNeeds({ haves, needs })
+  return dist.filter((payment) => payment.amount > 0).map((payment) => {
+    payment.amount = saferFloat(payment.amount)
+    return payment
+  })
 }
 
 // Note: this mutates the objects in haves/needs

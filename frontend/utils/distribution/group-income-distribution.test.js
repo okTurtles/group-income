@@ -6,26 +6,394 @@
 import should from 'should'
 import { groupIncomeDistributionLogic, groupIncomeDistributionNewLogic, groupIncomeDistributionAdjustFirstLogic, dataToEvents } from './group-income-distribution.js'
 
-describe('group income distribution logic', function () {
-  describe.only('group income distribution first logic', function () {
-    it('has no effect for adjustment when there are no payments', function () {
-      const dist = groupIncomeDistributionAdjustFirstLogic({
-        mincomeAmount: 12,
-        groupProfiles: {
-          'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' },
-          'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 10, joinedDate: '2020-09-15T00:00:00.000Z' }
-        },
-        adjustWith: {
-          monthstamp: '2020-10',
-          payments: {},
-          monthlyPayments: {}
-        }
-      })
-      should(dist).eql([
-        { amount: 2, from: 'u1', to: 'u2' }
-      ])
-    })
+describe('group income distribution first logic', function () {
+  // it.only('DELETE ME SOON!', function () {
+  //   const dist = groupIncomeDistributionLogic({
+  //     // haves: [
+  //     //   { name: 'u1', have: 250 },
+  //     //   { name: 'u4', have: 100 }
+  //     // ],
+  //     // needs: [
+  //     //   { name: 'u2', need: 100 },
+  //     //   { name: 'u3', need: 250 }
+  //     // ],
+  //     // events: [
+  //     //   { type: 'payment', from: 'u1', to: 'u2', amount: 71.43 }
+  //     // ]
+  //     mincomeAmount: 1000,
+  //     groupProfiles: {
+  //       'u1': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 250-71.43, joinedDate: '2020-09-15T00:00:00.000Z' },
+  //       'u2': { incomeDetailsType: 'incomeAmount', incomeAmount: 900+71.43, joinedDate: '2020-09-15T00:00:00.000Z' },
+  //       'u3': { incomeDetailsType: 'incomeAmount', incomeAmount: 750, joinedDate: '2020-09-15T00:00:00.000Z' },
+  //       'u4': { incomeDetailsType: 'pledgeAmount', pledgeAmount: 100, joinedDate: '2020-09-15T00:00:00.000Z' }
+  //     },
+  //     adjustWith: {
+  //       monthstamp: '2020-09-15',
+  //       payments: {},
+  //       monthlyPayments: {}
+  //     }
+  //   })
+  //   console.log("here's what it should be:", JSON.stringify(dist))
+  // })//here's what it should be: [{"amount":10.25595003,"from":"u4","to":"u2"},{"amount":89.74404997,"from":"u4","to":"u3"}]
+  it('can distribute income evenly with two users', function () {
+    should(groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 10 }
+      ],
+      needs: [
+        { name: 'u2', need: 2 }
+      ],
+      events: []
+    })).eql([
+      { amount: 2, from: 'u1', to: 'u2' }
+    ])
   })
+
+  it('can distribute income evenly with three users but still have need', function () {
+    should(groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 9 }
+      ],
+      needs: [
+        { name: 'u2', need: 40 },
+        { name: 'u3', need: 80 }
+      ],
+      events: []
+    })).eql([
+      { amount: 3, from: 'u1', to: 'u2' },
+      { amount: 6, from: 'u1', to: 'u3' }
+    ])
+  })
+
+  it('can distribute income evenly with three users and excess', function () {
+    should(groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 21 }
+      ],
+      needs: [
+        { name: 'u2', need: 4 },
+        { name: 'u3', need: 8 }
+      ],
+      events: []
+    })).eql([
+      { amount: 4, from: 'u1', to: 'u2' },
+      { amount: 8, from: 'u1', to: 'u3' }
+    ])
+  })
+
+  it('distribute income above mincome proportionally', function () {
+    should(groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'd', have: 10 },
+        { name: 'e', have: 30 },
+        { name: 'f', have: 60 }
+      ],
+      needs: [
+        { name: 'a', need: 30 },
+        { name: 'b', need: 20 }
+      ],
+      events: []
+    })).eql([
+      { amount: 3, from: 'd', to: 'a' },
+      { amount: 9, from: 'e', to: 'a' },
+      { amount: 18, from: 'f', to: 'a' },
+      { amount: 2, from: 'd', to: 'b' },
+      { amount: 6, from: 'e', to: 'b' },
+      { amount: 12, from: 'f', to: 'b' }
+    ])
+  })
+
+  it('distribute income above mincome proportionally when extra won\'t cover need', function () {
+    should(groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'd', have: 4 },
+        { name: 'e', have: 4 },
+        { name: 'f', have: 10 }
+      ],
+      needs: [
+        { name: 'a', need: 30 },
+        { name: 'b', need: 20 }
+      ],
+      events: []
+    })).eql([
+      { amount: 2.4, from: 'd', to: 'a' },
+      { amount: 2.4, from: 'e', to: 'a' },
+      { amount: 6, from: 'f', to: 'a' },
+      { amount: 1.6, from: 'd', to: 'b' },
+      { amount: 1.6, from: 'e', to: 'b' },
+      { amount: 4, from: 'f', to: 'b' }
+    ])
+  })
+
+  it('don\'t distribute anything if no one is above mincome', function () {
+    should(groupIncomeDistributionAdjustFirstLogic({
+      haves: [],
+      needs: [
+        { name: 'a', need: 30 },
+        { name: 'b', need: 20 },
+        { name: 'd', need: 5 },
+        { name: 'e', need: 20 },
+        { name: 'f', need: 30 }
+      ],
+      events: []
+    })).eql([
+    ])
+  })
+
+  it('don\'t distribute anything if everyone is above mincome', function () {
+    should(groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'b', have: 5 },
+        { name: 'd', have: 10 },
+        { name: 'e', have: 60 },
+        { name: 'f', have: 12 }
+      ],
+      needs: [],
+      events: []
+    })).eql([
+    ])
+  })
+
+  it('works with very imprecise splits', function () {
+    should(groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 75 }
+      ],
+      needs: [
+        { name: 'u2', need: 25 },
+        { name: 'u3', need: 300 }
+      ],
+      events: []
+    })).eql([
+      { amount: 5.76923077, from: 'u1', to: 'u2' },
+      { amount: 69.23076923, from: 'u1', to: 'u3' }
+    ])
+  })
+
+  it('splits money evenly', function () {
+    should(groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 9 }
+      ],
+      needs: [
+        { name: 'u2', need: 80 },
+        { name: 'u3', need: 40 }
+      ],
+      events: []
+    })).eql([
+      { amount: 6, from: 'u1', to: 'u2' },
+      { amount: 3, from: 'u1', to: 'u3' }
+    ])
+  })
+
+  it('has no effect for adjustment when there are no payments', function () {
+    const dist = groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 10 }
+      ],
+      needs: [
+        { name: 'u2', need: 2 }
+      ],
+      events: []
+    })
+    should(dist).eql([
+      { amount: 2, from: 'u1', to: 'u2' }
+    ])
+  })
+
+  it('ignores existing payments when not adjusted', function () {
+    const dist = groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 10 }
+      ],
+      needs: [
+        { name: 'u2', need: 2 }
+      ],
+      events: []
+    })
+    should(dist).eql([
+      { amount: 2, from: 'u1', to: 'u2' }
+    ])
+  })
+
+  it('takes into account payments from this month when adjusted', function () {
+    const dist = groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 10 }
+      ],
+      needs: [
+        { name: 'u2', need: 2 }
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u2', amount: 2 }
+      ]
+    })
+    should(dist).eql([])
+  })
+
+  it('[scenario 1]', function () {
+    should(groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 100 }
+      ],
+      needs: [
+        { name: 'u2', need: 75 }
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u2', amount: 75 },
+        { type: 'join', name: 'u3', need: 50 }
+      ]
+    })).eql([
+      { amount: 25, from: 'u1', to: 'u3' }
+    ])
+  })
+
+  it('[scenario 2]', function () {
+    const dist = groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 100 }
+      ],
+      needs: [
+        { name: 'u2', need: 100 },
+        { name: 'u3', need: 50 }
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u2', amount: 100 }
+      ]
+    })
+    should(dist).eql([])
+  })
+
+  it('[scenario 3] redistributes excess of todo-payments back into other todo-payments', function () {
+    const dist = groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 100 }
+      ],
+      needs: [
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 300 }
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u2', amount: 25 }
+      ]
+    })
+    should(dist).eql([
+      { amount: 5.76923077, from: 'u1', to: 'u2' },
+      { amount: 69.23076923, from: 'u1', to: 'u3' }
+    ])
+  })
+
+  it('[scenario 4] ignores users who updated income after paying and can no longer pay', function () {
+    const dist = groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 50 }
+      ],
+      needs: [
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 100 }
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u3', amount: 50 }
+      ]
+    })
+    should(dist).eql([])
+  })
+
+  it('[scenario 4.1] can distribute money from new members', function () {
+    const dist = groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 50 }
+      ],
+      needs: [
+        { name: 'u2', need: 50 },
+        { name: 'u3', need: 100 }
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u3', amount: 50 },
+        { name: 'u4', have: 150, type: 'join' }
+      ]
+    })
+    should(dist).eql([
+      { amount: 50, from: 'u4', to: 'u2' },
+      { amount: 50, from: 'u4', to: 'u3' }
+    ])
+  })
+
+  it('splits money evenly between two pledgers and two needers', function () {
+    const dist = groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 250 },
+        { name: 'u4', have: 100 }
+      ],
+      needs: [
+        { name: 'u2', need: 100 },
+        { name: 'u3', need: 250 }
+      ],
+      events: []
+    })
+    should(dist).eql([
+      { amount: 71.42857143, from: 'u1', to: 'u2' },
+      { amount: 28.57142857, from: 'u4', to: 'u2' },
+      { amount: 178.57142857, from: 'u1', to: 'u3' },
+      { amount: 71.42857143, from: 'u4', to: 'u3' }
+    ])
+  })
+
+  it('[Scenario 5] stops asking user to pay someone they fully paid their share to', function () {
+    const dist = groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 250 },
+        { name: 'u4', have: 100 }
+      ],
+      needs: [
+        { name: 'u2', need: 100 },
+        { name: 'u3', need: 250 }
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u2', amount: 71.43 }
+      ]
+    })
+    should(dist).eql([
+      // Currently (validated with https://www.desmos.com/calculator/whgcahsblq) results in:
+      { amount: 18.31404997, from: 'u1', to: 'u2' },
+      { amount: 10.25595003, from: 'u4', to: 'u2' },
+      { amount: 160.25595003, from: 'u1', to: 'u3' },
+      { amount: 89.74404997, from: 'u4', to: 'u3' }
+      // Old values:
+      // { amount: 28.57142857142857, from: 'u4', to: 'u2' },
+      // { amount: 178.57, from: 'u1', to: 'u3' },
+      // { amount: 71.42857142857143, from: 'u4', to: 'u3' }
+    ])
+  })
+
+  it('[Scenario 6] does not ask users who have paid their full share to pay any more', function () {
+    const dist = groupIncomeDistributionAdjustFirstLogic({
+      haves: [
+        { name: 'u1', have: 250 },
+        { name: 'u4', have: 100 }
+      ],
+      needs: [
+        { name: 'u2', need: 100 },
+        { name: 'u3', need: 250 }
+      ],
+      events: [
+        { type: 'payment', from: 'u1', to: 'u2', amount: 71.43 },
+        { type: 'payment', from: 'u1', to: 'u3', amount: 100 }
+      ]
+    })
+    should(dist).eql([
+      // Currently (validated with https://www.desmos.com/calculator/t2ls04dtnd) results in:
+      { 'amount': 12.57067201, from: 'u1', to: 'u2' },
+      { 'amount': 15.99932799, from: 'u4', to: 'u2' },
+      { 'amount': 65.99932799, from: 'u1', to: 'u3' },
+      { 'amount': 84.00067201, from: 'u4', to: 'u3' }
+      // Old values:
+      // { amount: 28.57142857, from: 'u4', to: 'u2' },
+      // { amount: 71.42857143, from: 'u4', to: 'u3' }
+    ])
+  })
+})
+describe('group income distribution logic', function () {
   it('can distribute income evenly with two users', function () {
     const dist = groupIncomeDistributionLogic({
       mincomeAmount: 12,
