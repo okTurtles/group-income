@@ -4,9 +4,29 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
     .c-header
       i(
         v-if='summary.private !== undefined'
-        :class='`icon-${ summary.private ? "lock" : "hashtag" }`'
+        :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
       )
       | {{summary.title}}
+      menu-parent
+        menu-trigger.c-menu-trigger.is-icon-small
+          i.icon-angle-down.c-menu-i
+
+        menu-content
+          menu-header
+            i18n Channel Options
+
+          ul
+            menu-item(@click='openModal("EditChannelNameModal")')
+              i18n Rename
+            menu-item(@click='openModal("GroupMembersAllModal", {name: summary.title})')
+              i18n Members
+            menu-item.c-separator(tag='router-link' itemid='hash-3' to='/group-settings')
+              i18n Notifications settings
+            menu-item(@click='openModal("GroupLeaveModal")')
+              i18n(:args='{ groupName: summary.title }') Leave {groupName}
+            menu-item.has-text-danger(@click='openModal("DeleteChannelModal")')
+              i18n Delete channel
+
   template(#description='')
     .c-header-description
       | {{ members.size + ' ' + L('members') }} ∙
@@ -56,6 +76,7 @@ import chatroom from '@containers/chatroom/chatroom.js'
 import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 
 export default {
   name: 'GroupChat',
@@ -67,7 +88,12 @@ export default {
     ChatNav,
     ChatMain,
     ConversationsList,
-    GroupMembers
+    GroupMembers,
+    MenuParent,
+    MenuHeader,
+    MenuTrigger,
+    MenuContent,
+    MenuItem
   },
   computed: {
     ...mapGetters([
@@ -113,11 +139,87 @@ export default {
   }
 }
 
+::v-deep .c-logo {
+  @include touch {
+    display: none;
+  }
+}
+
 .c-header {
-  i {
+  text-transform: capitalize;
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+
+  .c-group-i {
     margin-right: 0.5rem;
     color: $text_1;
+    font-size: 1rem;
   }
+
+  .c-menu {
+    margin-left: 0.5rem;
+  }
+
+  .c-header {
+    font-size: .75rem;
+    font-weight: 400;
+    color: $text_1;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .c-content {
+    min-width: 17.5rem;
+    font-size: 0.875rem;
+    font-weight: 400;
+
+    @include phone {
+      top: auto;
+      position: fixed;
+      padding-bottom: 4rem;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 1rem 1rem 0 0;
+    }
+
+    @include tablet {
+      position: fixed;
+      top: 4.25rem;
+      left: 50%;
+      right: auto;
+      transform: translateX(-50%);
+    }
+
+    @include desktop {
+      top: 2.3rem;
+      position: absolute;
+      left: -6.8rem;
+      right: auto;
+      transform: none;
+    }
+  }
+
+  .c-menu-i {
+    font-size: 1.2rem;
+  }
+
+  .c-separator {
+    border-bottom: 2px solid $general_2;
+  }
+
+  .c-menuItem ::v-deep .c-item-link {
+    height: 2.31rem;
+
+    @include touch {
+      height: 3.43rem;
+    }
+  }
+}
+
+.has-text-danger ::v-deep .c-item-slot{
+  color: $danger_0;
 }
 
 .c-link {
@@ -145,6 +247,7 @@ export default {
 
 .c-header-description {
   display: none;
+
   @include desktop {
     display: flex;
   }

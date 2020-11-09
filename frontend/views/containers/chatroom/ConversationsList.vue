@@ -5,7 +5,7 @@
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'
-      @click='openModal("CreateNewChannel")'
+      @click='openModal("CreateNewChannelModal")'
     )
       i.icon-plus.is-prefix
       i18n New

@@ -63,7 +63,7 @@ export default {
     }
 
     &.is-active {
-      background: $white;
+      background: $background_0;
 
       &::before {
         display: none;
@@ -73,17 +73,6 @@ export default {
 
   ::v-deep .c-avatar {
     margin-right: 0.5rem;
-  }
-}
-
-@include phone {
-  .c-chatnav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    max-height: 100vh;
-    overflow: auto;
   }
 }
 </style>

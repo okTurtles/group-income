@@ -258,7 +258,7 @@ export const groupA = {
       unreadCount: 0,
       private: false,
       type: chatTypes.GROUP,
-      description: 'A place for everyone at {channel} to chat'
+      description: 'A place for everyone to chat'
     },
     c1: {
       id: 'c1',

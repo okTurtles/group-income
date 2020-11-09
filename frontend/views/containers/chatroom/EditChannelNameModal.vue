@@ -5,13 +5,13 @@
 
     form(novalidate @submit.prevent='submit')
       label.field
-        i18n.label Name
-        .c-max-count {{50 - form.length}}
+        i18n.label.c-label-name Name
+        .c-max-count(v-if='form.name') {{50 - form.name.length}}
         input.input(
           type='text'
           name='name'
           maxlength='50'
-          :class='{ error: $v.form.description.$error }'
+          :class='{ error: $v.form.name.$error }'
           v-model='form.name'
           @input='debounceField("name")'
           @blur='updateField("name")'
@@ -82,4 +82,13 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-label-name {
+  float: left;
+}
+
+.c-max-count   {
+  float: right;
+  color: $text_1;
+}
 </style>

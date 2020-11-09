@@ -9,10 +9,10 @@
         :args='{ name: groupSettings.groupName }'
       ) Are you sure you want to delete {name}?
 
-      ul
-        i18n(tag='li') All messages will be deleted;
-        i18n(tag='li') Members will be removed from the channel;
-        i18n(tag='li') This channel will no longer be visible.
+      ul.c-list
+        i18n.c-list-item(tag='li') All messages will be deleted;
+        i18n.c-list-item(tag='li') Members will be removed from the channel;
+        i18n.c-list-item(tag='li') This channel will no longer be visible.
 
       banner-simple.c-banner(severity='danger')
         i18n(
@@ -20,7 +20,7 @@
         ) This action {strong_}cannot be undone{_strong}.
 
       label.checkbox
-        input.input(type='checkbox' name='confirm' v-model='form.confirm')
+        input.input(type='checkbox' name='confirmation' v-model='form.confirmation')
         i18n(:args='{ name: groupSettings.groupName }') Yes, I want to delete {name} permanently.
 
       banner-scoped(ref='formMsg')
@@ -58,7 +58,7 @@ export default {
     return {
       channelId: this.$route.query.channel,
       form: {
-        confirmation: null
+        confirmation: false
       }
     }
   },
@@ -97,6 +97,19 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-banner {
-  margin: 1.5rem 0;
+  margin: 1.5rem 0 1rem 0;
+
+  ::v-deep strong {
+    color: $danger_0;
+  }
+}
+
+.c-list{
+  padding-top: .5rem;
+
+  .c-list-item {
+    list-style: initial;
+    margin: .5rem 1rem;
+  }
 }
 </style>

@@ -32,7 +32,7 @@ Vue.component('SignupModal', () => lazyLoadView({ component: import('../views/co
 Vue.component('PasswordModal', () => lazyLoadView({ component: import('../views/containers/access/PasswordModal.vue'), loading: LoadingModal, error: ErrorModal }))
 Vue.component('UserSettingsModal', () => lazyLoadView({ component: import('../views/containers/user-settings/UserSettingsModal.vue'), loading: LoadingModalFullScreen, error: ErrorModal }))
 Vue.component('GroupLeaveModal', () => lazyLoadView({ component: import('../views/containers/group-settings/GroupLeaveModal.vue'), loading: LoadingModal, error: ErrorModal }))
-// Vue.component('GroupDeletionModal', () => lazyLoadView({ component: import('../views/containers/group-settings/GroupDeletionModal.vue'), loading: LoadingModal, error: ErrorModal }))
+Vue.component('GroupDeletionModal', () => lazyLoadView({ component: import('../views/containers/group-settings/GroupDeletionModal.vue'), loading: LoadingModal, error: ErrorModal }))
 Vue.component('GroupMembersAllModal', () => lazyLoadView({ component: import('../views/containers/dashboard/GroupMembersAllModal.vue'), loading: LoadingModalFullScreen, error: ErrorModal }))
 Vue.component('InvitationLinkModal', () => lazyLoadView({ component: import('../views/containers/group-settings/InvitationLinkModal.vue'), loading: LoadingModal, error: ErrorModal }))
 Vue.component('GroupCreationModal', () => lazyLoadView({ component: import('../views/containers/group-settings/GroupCreationModal.vue'), loading: LoadingModalFullScreen, error: ErrorModal }))
@@ -55,10 +55,10 @@ Vue.component('Appearence', () => import('../views/containers/user-settings/Appe
 Vue.component('AppLogs', () => import('../views/containers/user-settings/AppLogs.vue'))
 Vue.component('Troubleshooting', () => import('../views/containers/user-settings/Troubleshooting.vue'))
 Vue.component('GroupMembersDirectMessages', () => import('../views/containers/chatroom/GroupMembersDirectMessages.vue'))
-Vue.component('CreateNewChannelModal', () => import('../views/containers/chatroom/CreateNewChannelModal.vue'))
-Vue.component('EditChannelNameModal', () => import('../views/containers/chatroom/EditChannelNameModal.vue'))
-Vue.component('EditChannelDescriptionModal', () => import('../views/containers/chatroom/EditChannelDescriptionModal.vue'))
-Vue.component('DeleteChannelModal', () => import('../views/containers/chatroom/DeleteChannelModal.vue'))
+Vue.component('CreateNewChannelModal', () => lazyLoadView({ component: import('../views/containers/chatroom/CreateNewChannelModal.vue'), loading: LoadingModal, error: ErrorModal }))
+Vue.component('EditChannelNameModal', () => lazyLoadView({ component: import('../views/containers/chatroom/EditChannelNameModal.vue'), loading: LoadingModal, error: ErrorModal }))
+Vue.component('EditChannelDescriptionModal', () => lazyLoadView({ component: import('../views/containers/chatroom/EditChannelDescriptionModal.vue'), loading: LoadingModal, error: ErrorModal }))
+Vue.component('DeleteChannelModal', () => lazyLoadView({ component: import('../views/containers/chatroom/DeleteChannelModal.vue'), loading: LoadingModal, error: ErrorModal }))
 
 // TODO Remove after design test period
 Vue.component('DSModalFullscreen', () => import('../views/containers/design-system/DSModalFullscreen.vue'))

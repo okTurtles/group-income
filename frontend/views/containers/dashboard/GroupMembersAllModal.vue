@@ -6,7 +6,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         i18n.is-title-2.c-title(
           tag='h2'
         ) Members
-        | . {{ name }}
+        .c-description {{ name }} . {{isPrivate ? L("Private channel") : L("Public channel")}}
 
       i18n.is-title-2.c-title(
         v-else
@@ -131,6 +131,10 @@ export default {
       name: {
         type: String,
         default: ''
+      },
+      isPrivate: {
+        type: Boolean,
+        default: true
       }
     }
   },
@@ -214,6 +218,10 @@ export default {
     background-color: transparent;
     margin: 0;
   }
+}
+
+.c-description {
+  color: $text_1;
 }
 
 .c-card {

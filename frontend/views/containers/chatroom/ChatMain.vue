@@ -306,6 +306,7 @@ export default {
     width: 100%;
     height: 2.5rem;
     position: absolute;
+    z-index: 1;
     top: 0;
     background: linear-gradient(180deg, $background_0 0%, $background_0_opacity_0 100%);
   }
