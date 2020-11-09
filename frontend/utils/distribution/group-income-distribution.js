@@ -74,13 +74,11 @@ function calculatePayments ({ haves, needs }, totalHave = 0, totalNeed = 0) {
   // for (const have of haves) have.have = have.have / totalHave
   // for (const need of needs) need.need = need.need  * totalPercent
 
-  if(needs.length == 0) return []
+  if (needs.length === 0) return []
 
   const payments = []
 
-
-  if(!totalHave || !totalNeed)
-  {
+  if (!totalHave || !totalNeed) {
     totalHave = haves.reduce((a, b) => a + b.have, 0)//  -(i==h?pledge:0), 0)
     totalNeed = needs.reduce((a, b) => a + b.need, 0)//   - pledge
   }
@@ -89,16 +87,16 @@ function calculatePayments ({ haves, needs }, totalHave = 0, totalNeed = 0) {
 
   for (var h = 0; h < haves.length; h++) {
     const have = haves[h]
-    console.log("HAVE="+JSON.stringify(have));
-    const amount = Math.min(need.need, totalNeed) * Math.min(have.have, totalHave)/totalHave *Math.min(1., totalHave/totalNeed)
+    // console.log('HAVE='+JSON.stringify(have));
+    const amount = Math.min(need.need, totalNeed) * Math.min(have.have, totalHave) / totalHave * Math.min(1, totalHave / totalNeed)
     payments.push({ amount, from: have.name, to: need.name })
-    received += amount;
+    received += amount
     have.have -= amount
   }
 
   need.need -= received
 
-  console.log("NEED="+JSON.stringify(need));
+  // console.log('NEED='+JSON.stringify(need));
 
   return needs.length > 0 ? payments.concat(calculatePayments({ haves, needs }), totalHave, totalNeed) : payments
 }
