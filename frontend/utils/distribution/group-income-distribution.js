@@ -159,6 +159,64 @@ export function groupIncomeDistributionLogic ({
   return dist
 }
 
+function groupIncomeDistributionAdjustFirstLogic ({ getters, monthstamp, adjusted }) {
+  const groupProfiles = getters.groupProfiles
+  const mincomeAmount = getters.groupSettings.mincomeAmount
+  const monthlyPayments = getters.groupMonthlyPayments
+  const allPayments = getters.currentGroupState.payments
+  const thisMonthPayments = monthlyPayments[monthstamp]
+  const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
+
+  //  Much Duplicated code from state.js :(
+  const payments = []
+
+  if (paymentsFrom) {
+    for (const fromUser in paymentsFrom) {
+      for (const toUser in paymentsFrom[fromUser]) {
+        for (const paymentHash of paymentsFrom[fromUser][toUser]) {
+          const { data } = allPayments[paymentHash]
+          payments.push({ amount: data.amount, from: fromUser, to: toUser })
+        }
+      }
+    }
+  }
+
+  /// calculate haves and needs
+  const haves = []
+  const needs = []
+  for (const username in groupProfiles) {
+    const profile = groupProfiles[username]
+    const incomeDetailsType = profile && profile.incomeDetailsType
+    if (incomeDetailsType === 'incomeAmount') {
+      needs.push({ name: username, need: mincomeAmount - profile.incomeAmount })
+    } else if (incomeDetailsType === 'pledgeAmount') {
+      haves.push({ name: username, have: profile.pledgeAmount })
+    }
+  }
+  /// adjust them if `adjusted = true`
+  if (adjusted && (payments.length > 0)) {
+    for (const have of haves) {
+      let alreadySent = 0
+      for (const payment in payments) {
+        const { amount, from } = payments[payment]
+        if (from === have.name) alreadySent += amount
+      }
+      have.have -= alreadySent
+    }
+    // do the same for needs
+    for (const need of needs) {
+      let alreadyReceived = 0
+      for (const payment in payments) {
+        const { amount, to } = payments[payment]
+        if (to === need.name) alreadyReceived += amount
+      }
+      need.need -= alreadyReceived
+    }
+  }
+  /// pass the haves and needs to distributeFromHavesToNeeds
+  return distibuteFromHavesToNeeds({ haves, needs })
+}
+
 export default function groupIncomeDistribution ({ getters, monthstamp, adjusted }) {
   return groupIncomeDistributionLogic({
     mincomeAmount: getters.groupMincomeAmount,
