@@ -26,7 +26,7 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 
-const SUPERMAJORITY = 0.67
+const SUPERMAJORITY = 0.60
 
 export default {
   name: 'VotingRulesInput',
