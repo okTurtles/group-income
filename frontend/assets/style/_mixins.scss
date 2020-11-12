@@ -94,3 +94,41 @@
     padding: 0;
   }
 }
+
+%floating-panel {
+  @include phone {
+    top: auto;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 1rem 1rem 0 0;
+  }
+
+  @include phone {
+    padding-bottom: 4rem;
+  }
+
+  @include tablet {
+    position: fixed;
+    top: 4.25rem;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+  }
+
+  @include desktop {
+    top: 2.3rem;
+    position: absolute;
+    right: auto;
+    transform: none;
+  }
+}
+
+%floating-panel-item {
+  height: 2.31rem;
+
+  @include touch {
+    height: 3.43rem;
+  }
+}

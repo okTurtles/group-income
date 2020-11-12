@@ -43,13 +43,11 @@ export default {
       const emotiWidth = 353
       const emotiHeight = 440
       const padding = 16
-      let left = winWidth / 2 - emotiWidth / 2
+      // let left = winWidth / 2 - emotiWidth / 2
+      let left = '50%'
       let top = this.pos_y - emotiHeight - padding
-      if (winWidth < DESKTOP) {
+      if (winWidth > DESKTOP) {
         left = this.pos_x - emotiWidth / 2
-      }
-      if (left + emotiWidth > winWidth) {
-        left = winWidth - emotiWidth - padding
       }
       if (top < 0) {
         top = this.pos_y + padding
@@ -71,8 +69,10 @@ export default {
       }
     },
     openEmoticon (e) {
-      this.pos_x = e.x
-      this.pos_y = e.y
+      if (e) {
+        this.pos_x = e.x
+        this.pos_y = e.y
+      }
       this.lastFocus = document.activeElement
       this.isActive = true
     },
@@ -114,11 +114,19 @@ export default {
 }
 
 .c-picker-wrapper {
+  @extend %floating-panel;
   position: absolute;
   box-shadow: 0px 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
   max-height: 0;
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
+  padding-bottom: 0;
+
+  .emoji-mart {
+    @include phone {
+      width: 100% !important;
+    }
+  }
 }
 </style>

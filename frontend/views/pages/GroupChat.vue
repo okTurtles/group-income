@@ -165,8 +165,10 @@ export default {
     font-size: .75rem;
     font-weight: 400;
     color: $text_1;
-    padding-top: 0;
     padding-bottom: 0;
+    @include tablet {
+      padding-top: 0;
+    }
   }
 
   .c-content {
@@ -174,30 +176,10 @@ export default {
     font-size: 0.875rem;
     font-weight: 400;
 
-    @include phone {
-      top: auto;
-      position: fixed;
-      padding-bottom: 4rem;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      border-radius: 1rem 1rem 0 0;
-    }
-
-    @include tablet {
-      position: fixed;
-      top: 4.25rem;
-      left: 50%;
-      right: auto;
-      transform: translateX(-50%);
-    }
+    @extend %floating-panel;
 
     @include desktop {
-      top: 2.3rem;
-      position: absolute;
       left: -6.8rem;
-      right: auto;
-      transform: none;
     }
   }
 
@@ -210,11 +192,7 @@ export default {
   }
 
   .c-menuItem ::v-deep .c-item-link {
-    height: 2.31rem;
-
-    @include touch {
-      height: 3.43rem;
-    }
+    @extend %floating-panel-item;
   }
 }
 

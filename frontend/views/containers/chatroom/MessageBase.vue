@@ -1,5 +1,10 @@
 <template lang='pug'>
-.c-message(:class='[variant, isSameSender && "sameSender"]' @click='$emit("wrapperAction")')
+.c-message(
+  :class='[variant, isSameSender && "sameSender"]'
+  @click='$emit("wrapperAction")'
+  v-touch:touchhold='openMenu'
+  v-touch:swipe.left='reply'
+)
   .c-message-wrapper
     slot(name='image')
       avatar.c-avatar(:src='avatar' aria-hidden='true' size='md')
@@ -34,11 +39,11 @@
   message-actions(
     :variant='variant'
     :isCurrentUser='isCurrentUser'
+    ref='messageAction'
     @openEmoticon='openEmoticon($event)'
     @edit='edit'
     @reply='reply'
     @retry='retry'
-    @moreOptions='moreOptions'
     @copyToClipBoard='copyToClipBoard'
     @deleteMessage='deleteMessage'
   )
@@ -98,9 +103,6 @@ export default {
     reply () {
       this.$emit('reply')
     },
-    moreOptions () {
-      console.log('TODO MORE OPTIONS')
-    },
     copyToClipBoard () {
       navigator.clipboard.writeText(this.text)
     },
@@ -112,6 +114,9 @@ export default {
     },
     deleteMessage () {
       this.$emit('deleteMessage')
+    },
+    openMenu () {
+      this.$refs.messageAction.$refs.menu.handleTrigger()
     }
   }
 }

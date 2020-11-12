@@ -1,23 +1,26 @@
 <template lang='pug'>
-menu-parent
+menu-parent(ref='menu')
   .c-actions
-    button.is-icon-small(
+    button.hide-touch.is-icon-small(
       :aria-label='L("Add reaction")'
       @click='action("openEmoticon", $event)'
     )
       i.icon-smile-beam
-    button.is-icon-small(
+
+    button.hide-touch.is-icon-small(
       v-if='isCurrentUser'
       :aria-label='L("Edit")'
       @click='action("edit")'
     )
       i.icon-pencil-alt
-    button.is-icon-small(
+
+    button.hide-touch.is-icon-small(
       :aria-label='L("Reply")'
       @click='action("reply")'
     )
       i.icon-reply
-    button.is-icon-small(
+
+    button.hide-touch.is-icon-small(
       v-if='variant === "failed"'
       :aria-label='L("Add emoticons")'
       @click='action("retry")'
@@ -26,20 +29,44 @@ menu-parent
 
     menu-trigger.is-icon-small(
       :aria-label='L("More options")'
-      @click='action("moreOptions")'
     )
       i.icon-ellipsis-h
 
   menu-content.c-content
     ul
-      menu-item.is-icon-small(
-        tag='button'
+      menu-item.hide-desktop.is-icon-small(tag='button'
+        @click='action("openEmoticon", $event)'
+      )
+        i.icon-smile-beam
+        | {{L('Add reaction')}}
+
+      menu-item.hide-desktop.is-icon-small(tag='button'
+        v-if='isCurrentUser'
+        @click='action("edit")'
+      )
+        i.icon-pencil-alt
+        | {{L('Edit')}}
+
+      menu-item.hide-desktop.is-icon-small(tag='button'
+        @click='action("reply")'
+      )
+        i.icon-reply
+        | {{L('Reply')}}
+
+      menu-item.hide-desktop.is-icon-small(tag='button'
+        v-if='variant === "failed"'
+        @click='action("retry")'
+      )
+        i.icon-undo
+        | {{L('Add emoticons')}}
+
+      menu-item.is-icon-small(tag='button'
         @click='action("copyToClipBoard")'
       )
         i.icon-link
         | {{L('Copy message Link')}}
-      menu-item.is-icon-small.is-danger(
-        tag='button'
+
+      menu-item.is-icon-small.is-danger(tag='button'
         @click='action("deleteMessage")'
       )
         i.icon-trash-alt
@@ -109,11 +136,19 @@ export default {
   width: 13rem;
 
   .c-content {
-    width: 100%;
-    left: auto;
-    right: 0.5rem;
-    top: auto;
-    bottom: calc(100% + 1.5rem);
+    @extend %floating-panel;
+
+    @include desktop {
+      width: 100%;
+      left: auto;
+      right: 0.5rem;
+      top: auto;
+      bottom: calc(100% + 1.5rem);
+    }
+  }
+
+  .c-menuItem ::v-deep .c-item-link {
+    @extend %floating-panel-item;
   }
 }
 </style>
