@@ -10,6 +10,7 @@
       :value='sliderValue'
       @input='handleInput'
     )
+
     transition-expand
       // inner el has paddings. A wrap is needed for a smooth transition.
       div(v-if='warnMajority')
