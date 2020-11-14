@@ -22,6 +22,7 @@
           )
 
         router-link.button.is-small(
+          v-if='copy.payments.ctaText'
           to='/payments'
           :class='copy.payments.ctaClass'
         ) {{ copy.payments.ctaText }}
