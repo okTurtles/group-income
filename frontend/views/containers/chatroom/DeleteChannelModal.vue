@@ -5,7 +5,7 @@
 
     form(novalidate @submit.prevent='submit' data-test='deleteGroup')
       i18n(
-        tag='p'
+        tag='strong'
         :args='{ name: groupSettings.groupName }'
       ) Are you sure you want to delete {name}?
 
@@ -21,7 +21,7 @@
 
       label.checkbox
         input.input(type='checkbox' name='confirmation' v-model='form.confirmation')
-        i18n(:args='{ name: groupSettings.groupName }') Yes, I want to delete {name} permanently.
+        i18n(:args='{ name: groupSettings.groupName, ...LTags("span") }') Yes, I want to {span_}delete {name} permanently{_span}.
 
       banner-scoped(ref='formMsg')
 

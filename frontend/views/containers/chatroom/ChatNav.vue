@@ -54,12 +54,12 @@ export default {
   }
 
   ::v-deep .c-item-link {
-    padding: 1.25rem 0.5rem;
-    margin: 0.25rem 0 0.25rem -0.5rem;
+    padding: 0.5rem 0 0.5rem 0.5rem;
+    margin: 0 0 0 -0.5rem;
     border-radius: $radius;
 
     i {
-      margin-right: 0.5rem;
+      margin-right: 1.5rem;
     }
 
     &.is-active {

@@ -29,7 +29,10 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
   template(#description='')
     .c-header-description
-      | {{ members.size + ' ' + L('members') }} ∙
+      button.is-unstyled.c-link(
+        @click='openModal("GroupMembersAllModal")'
+      ) {{ members.size + ' ' + L('members') }}
+      | ∙
       .is-unstyled.c-link(
         tag='button'
         v-if='summary.description'
@@ -149,7 +152,6 @@ export default {
   text-transform: capitalize;
   display: flex;
   align-items: center;
-  padding: 0 1rem;
 
   .c-group-i {
     margin-right: 0.5rem;
@@ -185,6 +187,7 @@ export default {
 
   .c-menu-i {
     font-size: 1.2rem;
+    transform-origin: 50% 48%;
   }
 
   .c-separator {
@@ -203,7 +206,7 @@ export default {
 .c-link {
   color: $text_0;
   border-color: $text_0;
-  margin-left: .2rem;
+  margin: 0 .2rem;
   cursor: pointer;
   font-family: inherit;
 
@@ -228,6 +231,13 @@ export default {
 
   @include desktop {
     display: flex;
+  }
+}
+
+.c-menu-trigger.is-active {
+  pointer-events: none;
+  .c-menu-i{
+    transform: rotate(180deg);
   }
 }
 </style>

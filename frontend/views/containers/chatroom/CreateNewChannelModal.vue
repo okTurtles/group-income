@@ -41,15 +41,20 @@
 
       hr
 
-      i18n.helper(
-        v-if='form.isPrivate'
-        tag='p'
-      ) Only added members will have access.
+      .c-helper
+        i(
+          :class='`icon-${ form.private ? "lock" : "hashtag" } c-group-i`'
+        )
 
-      i18n.helper(
-        v-else
-        tag='p'
-      ) All group members will be added to this channel.
+        i18n.helper(
+          v-if='form.isPrivate'
+          tag='p'
+        ) Only added members will have access.
+
+        i18n.helper(
+          v-else
+          tag='p'
+        ) All group members will be added to this channel.
 
       banner-scoped(ref='formMsg')
 
@@ -134,5 +139,13 @@ hr {
 
 .helper {
   color: $text_1;
+}
+
+.c-helper {
+  display: flex;
+}
+
+.c-group-i {
+  margin-right: .5rem;
 }
 </style>

@@ -112,19 +112,21 @@ export default {
   .is-icon-small {
     color: $text_1;
     border-radius: 0;
+    width: 2.375rem;
+    height: 2rem;
 
     &:hover {
       background-color: $general_2;
       color: $text_0;
     }
   }
+}
 
-  ::v-deep .is-danger {
-    background-color: $danger_2;
-    .c-item-slot i,
-    .c-item-slot {
-      color: $danger_0;
-    }
+::v-deep .is-danger {
+  background-color: $danger_2;
+  .c-item-slot i,
+  .c-item-slot {
+    color: $danger_0;
   }
 }
 
@@ -150,5 +152,9 @@ export default {
   .c-menuItem ::v-deep .c-item-link {
     @extend %floating-panel-item;
   }
+}
+
+.icon-smile-beam::before {
+  font-weight: 400;
 }
 </style>

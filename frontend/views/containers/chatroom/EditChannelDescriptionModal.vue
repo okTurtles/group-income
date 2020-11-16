@@ -7,7 +7,10 @@
       label.field
         .c-label-group
           i18n.label Description
-          .limit(v-if='form.description') {{ 280 - form.description.length }}
+          .limit(
+            v-if='form.description'
+            :class='{"is-danger": 280 - form.description.length}'
+          ) {{ 280 - form.description.length }}
 
         textarea.textarea(
           name='description'
@@ -42,7 +45,7 @@ import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default {
-  name: 'GroupLeaveModal',
+  name: 'EditChannelDescriptionModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
     ModalTemplate,
@@ -94,5 +97,9 @@ export default {
 .c-label-group {
   display: flex;
   justify-content: space-between;
+}
+
+.is-danger {
+  color: $danger_0;
 }
 </style>

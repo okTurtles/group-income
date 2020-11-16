@@ -32,11 +32,13 @@
   message-reactions(
     v-if='!isEditing'
     :emoticonsList='emoticonsList'
+    :currentUserId='currentUserId'
     @selectEmoticon='selectEmoticon($event)'
     @openEmoticon='openEmoticon($event)'
   )
 
   message-actions(
+    v-if='!isEditing'
     :variant='variant'
     :isCurrentUser='isCurrentUser'
     ref='messageAction'

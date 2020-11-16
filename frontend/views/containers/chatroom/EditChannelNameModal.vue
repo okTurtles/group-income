@@ -6,7 +6,11 @@
     form(novalidate @submit.prevent='submit')
       label.field
         i18n.label.c-label-name Name
-        .c-max-count(v-if='form.name') {{50 - form.name.length}}
+        .c-max-count(
+          v-if='form.name'
+          :class='{"is-danger": 50 - form.name.length}'
+        ) {{50 - form.name.length}}
+
         input.input(
           type='text'
           name='name'
@@ -90,5 +94,9 @@ export default {
 .c-max-count   {
   float: right;
   color: $text_1;
+
+  &.is-danger {
+    color: $danger_0;
+  }
 }
 </style>

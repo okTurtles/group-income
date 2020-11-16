@@ -12,7 +12,7 @@
   textarea.textarea.c-send-textarea(
     ref='textarea'
     :disabled='loading'
-    :placeholder='customSendPlaceholder'
+    :placeholder='L("Write your message...")'
     :style='textareaStyles'
     @keydown.enter.exact.prevent='sendMessage'
     @keydown.ctrl='isNextLine'
@@ -34,16 +34,25 @@
 
     div(v-else)
       .addons
-        button.is-icon(
-          :aria-label='L("Create pool")'
-          @click='createPool'
+        tooltip(
+          direction='top'
+          :text='L("Create poll")'
         )
-          i.icon-poll
-        button.is-icon(
-          :aria-label='L("Add reaction")'
-          @click='openEmoticon'
+          button.is-icon(
+            :aria-label='L("Create poll")'
+            @click='createPool'
+          )
+            i.icon-poll
+
+        tooltip(
+          direction='top'
+          :text='L("Add reaction")'
         )
-          i.icon-smile-beam
+          button.is-icon(
+            :aria-label='L("Add reaction")'
+            @click='openEmoticon'
+          )
+            i.icon-smile-beam
 
       i18n.sr-only(
         tag='button'
@@ -59,9 +68,14 @@
 
 <script>
 import emoticonsMixins from './EmoticonsMixins.js'
+import Tooltip from '@components/Tooltip.vue'
+
 export default {
   name: 'Chatroom',
   mixins: [emoticonsMixins],
+  components: {
+    Tooltip
+  },
   props: {
     title: String,
     searchPlaceholder: String,
@@ -77,9 +91,6 @@ export default {
   },
   data () {
     return {
-      config: {
-        sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')]
-      },
       ephemeral: {
         actionsWidth: '',
         maskHeight: '',
@@ -92,6 +103,7 @@ export default {
     // so those actions don't be above the textarea's value
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
+    this.$refs.textarea.focus()
   },
   computed: {
     textareaStyles () {
@@ -107,9 +119,6 @@ export default {
     },
     isActive () {
       return this.ephemeral.textWithLines
-    },
-    customSendPlaceholder () {
-      return `${this.config.sendPlaceholder[Math.floor(Math.random() * this.config.sendPlaceholder.length)]} ${this.title}`
     }
   },
   methods: {
@@ -186,6 +195,7 @@ $initialHeight: 43px;
   position: relative;
   margin: 0 2.5rem;
   display: block;
+  padding-bottom: .1rem;
 
   &-textarea,
   &-mask {
@@ -247,6 +257,15 @@ $initialHeight: 43px;
       margin-right: .5rem;
     }
   }
+}
+
+.inputgroup .addons button.is-icon:focus {
+  box-shadow: none;
+  border: none;
+}
+
+.inputgroup .addons button.is-icon:first-child:last-child {
+  width: 2rem;
 }
 
 .icon-smile-beam::before {
