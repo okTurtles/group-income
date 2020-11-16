@@ -93,7 +93,7 @@ export default {
   },
   methods: {
     showCreateModal () {
-      sbp('okTurtles.events/emit', REPLACE_MODAL, 'CreateGroup')
+      sbp('okTurtles.events/emit', REPLACE_MODAL, 'GroupCreationModal')
     },
     updateIndicator (i) {
       this.ephemeral.indicator = i
