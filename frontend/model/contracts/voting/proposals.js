@@ -65,7 +65,7 @@ export const proposalDefaults = {
   rule: RULE_PERCENTAGE,
   expires_ms: 14 * DAYS_MILLIS,
   ruleSettings: {
-    [RULE_PERCENTAGE]: { threshold: 0.8 },
+    [RULE_PERCENTAGE]: { threshold: 0.75 },
     [RULE_DISAGREEMENT]: { threshold: 1 }
   }
 }
