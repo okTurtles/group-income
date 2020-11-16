@@ -118,16 +118,18 @@ const chatroom = {
     redirectChat (name, chatName, type, id, shouldReload) {
       // NOTE: Vue re-renders the components when the query changes
       // Force to do it too again after each consecutive reload
-      const reload = shouldReload ? { reload: Number(this.$route.query.reload) ? Number(this.$route.query.reload) + 1 : 1 } : {}
+      const query = {
+        ...this.$route.query
+      }
+      const reload = Number(this.$route.query.reload)
+      if (shouldReload) query.reload = reload ? reload + 1 : 1
       this.$router.push({
         name,
         params: {
           chatName,
           currentConversation: { type, id }
         },
-        query: {
-          ...reload
-        }
+        query
       })
     }
   }

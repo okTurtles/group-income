@@ -35,7 +35,7 @@ export default {
         return ['router-link', 'a', 'button', 'div'].indexOf(value) > -1
       },
       default: 'div',
-      required: true
+      required: false
     }
   },
   inheritAttrs: false,

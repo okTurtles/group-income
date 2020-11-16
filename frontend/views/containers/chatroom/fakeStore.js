@@ -1,4 +1,13 @@
 // NOTE: This fakeStore is just for layout purposes
+import {
+  PROPOSAL_GROUP_SETTING_CHANGE,
+  PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  STATUS_PASSED,
+  STATUS_FAILED,
+  STATUS_EXPIRED,
+  STATUS_CANCELLED
+} from '@model/contracts/voting/constants.js'
 
 export const chatTypes = {
   INDIVIDUAL: 'INDIVIDUAL',
@@ -8,6 +17,15 @@ export const chatTypes = {
 export const messageTypes = {
   INTERACTIVE: 'INTERACTIVE',
   NOTIFICATION: 'NOTIFICATION'
+}
+
+export const interactionType = {
+  CHAT_NEW_MEMBER: 'Chat new member',
+  CHAT_REMOVE_MEMBER: 'Chat remove member',
+  CHAT_DELETE: 'Chat delete',
+  CHAT_NAME_UPDATE: 'Update channel name',
+  CHAT_DESCRIPTION_UPDATE: 'Update channel description',
+  VOTED: 'voted'
 }
 
 // Just for static layout purposes, the currentUserId is '000'
@@ -72,129 +90,158 @@ export const individualConversations = {
   'GIBot': [
     {
       from: 'GIBot',
-      text: 'I\'ve noticed you still didn’t <a href="/profile">add a picture to your profile</a>.\nLet other knows who you are'
+      text: 'I\'ve noticed you still didn’t <a href="/profile">add a picture to your profile</a>.\nLet other knows who you are',
+      time: '3:24 AM'
     },
     {
       from: 'GIBot',
-      text: 'You were invited to join <a href="/join-group">The Dreamers group</a>.'
+      text: 'You were invited to join <a href="/join-group">The Dreamers group</a>.',
+      time: '3:24 AM'
     },
     {
       from: 'GIBot',
-      text: 'There\'s <a href="/dashboard">a new member proposal</a> to the Dreamers.'
+      text: 'There\'s <a href="/dashboard">a new member proposal</a> to the Dreamers.',
+      time: '3:24 AM'
     },
     {
       from: 'GIBot',
       text: 'I’ve noticed you still have to <a href="/contributions">add your Income Details at Dreamers</a>.\nIt’s a mandatory information for you to be fully part of the group',
+      time: '3:24 AM',
       unread: true
     }
   ],
   '333': [
     {
       from: '333',
-      text: 'Hello'
+      text: 'Hello',
+      time: '3:24 AM'
     }
   ],
   '444': [
     {
       from: '444',
-      text: 'check this out:'
+      text: 'check this out:',
+      time: '3:24 AM'
     },
     {
       from: '444',
-      text: 'https://motherfuckingwebsite.com/'
+      text: 'https://motherfuckingwebsite.com/',
+      time: '3:24 AM'
     },
     {
       from: currentUserId,
-      text: 'ahahah there is one even better'
+      text: 'ahahah there is one even better',
+      time: '3:24 AM'
     },
     {
       from: currentUserId,
-      text: 'http://bettermotherfuckingwebsite.com/'
+      text: 'http://bettermotherfuckingwebsite.com/',
+      time: '3:24 AM'
     },
     {
       from: '444',
-      text: 'Epic! 💥 Actually there a lot of them'
+      text: 'Epic! 💥 Actually there a lot of them',
+      time: '3:24 AM'
     },
     {
       from: '444',
-      text: 'this is great!'
+      text: 'this is great!',
+      time: '3:24 AM'
     },
     {
       from: currentUserId,
-      text: 'indeed'
+      text: 'indeed',
+      time: '3:24 AM'
     },
     {
       from: '444',
-      text: 'I wonder who did it...'
+      text: 'I wonder who did it...',
+      time: '3:24 AM'
     },
     {
       from: currentUserId,
-      text: 'Hum...'
+      text: 'Hum...',
+      time: '3:24 AM'
     },
     {
       from: currentUserId,
-      text: 'Maybe looking into the source'
+      text: 'Maybe looking into the source',
+      time: '3:24 AM'
     },
     {
       from: '444',
-      text: 'Good idea, lets check...'
+      text: 'Good idea, lets check...',
+      time: '3:24 AM'
     },
     {
       from: '444',
-      text: '<!-- FOR THE CURIOUS: This site was made by @thebarrytone. Don\'t tell my mom. -->'
+      text: '<!-- FOR THE CURIOUS: This site was made by @thebarrytone. Don\'t tell my mom. -->',
+      time: '3:24 AM'
     },
     {
       from: currentUserId,
-      text: 'smart guy'
+      text: 'smart guy',
+      time: '3:24 AM'
     },
     {
       from: '444',
-      text: 'wow'
+      text: 'wow',
+      time: '3:24 AM'
     },
     {
       from: '444',
-      text: 'this is funny!'
+      text: 'this is funny!',
+      time: '3:24 AM'
     }
   ],
   '555': [
     {
       from: '555',
-      text: 'Hi!'
+      text: 'Hi!',
+      time: '3:24 AM'
     },
     {
       from: currentUserId,
-      text: 'Hey Eric!'
+      text: 'Hey Eric!',
+      time: '3:24 AM'
     },
     {
       from: '555',
-      text: 'I\'m adding you to my group'
+      text: 'I\'m adding you to my group',
+      time: '3:24 AM'
     },
     {
       from: '555',
-      text: 'It\'s called Dreamears'
+      text: 'It\'s called Dreamears',
+      time: '3:24 AM'
     },
     {
       from: messageTypes.INTERACTIVE,
-      id: 'invite123'
+      id: 'invite123',
+      time: '3:24 AM'
     },
     {
       from: currentUserId,
-      text: 'Cool!'
+      text: 'Cool!',
+      time: '3:24 AM'
     },
     {
       from: '555',
       text: 'You\'re welcome 😃',
+      time: '3:24 AM',
       unread: true
     }
   ],
   '111': [
     {
       from: currentUserId,
-      text: 'Hey there'
+      text: 'Hey there',
+      time: '3:24 AM'
     },
     {
       from: currentUserId,
-      text: 'Cool you joined GI too 🙌'
+      text: 'Cool you joined GI too 🙌',
+      time: '3:24 AM'
     }
   ]
 }
@@ -210,7 +257,8 @@ export const groupA = {
       displayName: 'lounge',
       unreadCount: 0,
       private: false,
-      description: 'A place for everyone at {channel} to chat'
+      type: chatTypes.GROUP,
+      description: 'A place for everyone to chat'
     },
     c1: {
       id: 'c1',
@@ -226,44 +274,106 @@ export const groupA = {
   conversations: {
     c0: [
       {
+        time: new Date(2020, 5, 22, 11, 43, 42),
         from: '555',
         text: 'Hi 👋'
       },
       {
+        time: new Date(2020, 7, 23, 11, 34, 42),
         from: '444',
         text: 'It’s missing Sandy'
       },
       {
+        time: new Date(2020, 7, 23, 12, 23, 42),
         from: '555',
         text: 'Yeah, looking for her username, one second'
       },
       {
+        time: new Date(2020, 7, 23, 12, 45, 42),
         from: messageTypes.NOTIFICATION,
+        id: 'youAddedToDreamersGroup',
         text: 'You are now part of The Dreamers group.'
       },
       {
+        time: new Date(2020, 7, 30, 13, 25, 42),
         from: '555',
         text: 'Guys, should we add Katty to the group?'
       },
       {
+        time: new Date(2020, 7, 31, 14, 28, 42),
         from: '000',
-        text: 'There’s no problem to me'
+        text: 'There’s no problem to me',
+        unread: true,
+        emoticons: {
+          '💖': ['555'],
+          '👋': ['000']
+        }
       },
       {
+        time: new Date(2020, 7, 31, 17, 32, 42),
         from: messageTypes.INTERACTIVE,
-        id: 'inviteKattyId'
+        id: 'inviteKattyId',
+        unread: true
       }
     ],
     c1: [
       {
+        time: new Date(2020, 7, 30, 17, 32, 42),
         from: '444',
         text: 'Hi guys'
       },
       {
+        time: new Date(2020, 7, 31, 17, 32, 42),
         from: '444',
         text: 'Lets know where we\'ll go this summer: 🏕 or 🏂?',
         unread: true
       }
     ]
+  }
+}
+
+export const fakeEvents = {
+  youAddedToDreamersGroup: {
+    interactionType: interactionType.CHAT_NEW_MEMBER,
+    from: '444',
+    to: '444'
+  }
+}
+
+export const fakeProposals = {
+  inviteKattyId: {
+    proposalType: PROPOSAL_INVITE_MEMBER,
+    proposalData: {
+      member: 'Katty',
+      reason: 'She\'s cool'
+    },
+    status: STATUS_FAILED,
+    from: '555',
+    to: '444'
+  },
+  changeMincomeId: {
+    proposalType: PROPOSAL_GROUP_SETTING_CHANGE,
+    status: STATUS_PASSED,
+    proposalData: {
+      setting: 'mincomeAmount',
+      proposedValue: 300,
+      currentValue: 200,
+      mincomeCurrency: 'USD',
+      reason: 'Because why not'
+    }
+  },
+  changeVotingRuleId: {
+    proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
+    status: STATUS_EXPIRED,
+    proposalData: {
+      setting: 'votingRule'
+    }
+  },
+  changeVotingSystemId: {
+    proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
+    status: STATUS_CANCELLED,
+    proposalData: {
+      setting: 'votingSystem'
+    }
   }
 }

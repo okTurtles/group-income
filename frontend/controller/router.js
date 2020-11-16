@@ -86,7 +86,7 @@ const router = new Router({
     },
     {
       path: '/design-system',
-      component: () => DesignSystem,
+      component: DesignSystem,
       name: 'DesignSystem',
       meta: { title: L('Design System') }
       // beforeEnter: createEnterGuards(designGuard)

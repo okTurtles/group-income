@@ -1,19 +1,30 @@
 <template lang='pug'>
 .c-greetings
-  avatar(
-    v-for='(user, index) in founders'
-    :key='`user-${index}`'
-    :src='user.picture'
-    :alt='user.displayName || user.username'
-    size='sm'
-  )
-  message-notification {{text}}
+  i18n.is-title-4(tag='h3') Welcome!
+  p {{text}}
+  .buttons
+    i18n.button.is-outlined.is-small(
+      tag='button'
+      @click='openModal("GroupMembersAllModal", {addMemberTo: name})'
+      data-test='addMembers'
+    ) Add members
+
+    i18n.button.is-outlined.is-small(
+      tag='button'
+      v-if='!description'
+      @click.prevent='openModal("EditChannelDescriptionModal")'
+      data-test='addDescription'
+    ) Add a description
+
 </template>
 
 <script>
-import { chatTypes, users, groupA } from './fakeStore.js'
+import { chatTypes } from './fakeStore.js'
 import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
+import L from '@view-utils/translations.js'
+import { OPEN_MODAL } from '@utils/events.js'
+import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'ConversationGreetings',
@@ -21,41 +32,29 @@ export default {
     MessageNotification,
     Avatar
   },
+  props: {
+    type: {
+      type: String
+    },
+    name: {
+      type: String
+    },
+    description: {
+      type: String
+    }
+  },
   computed: {
-    greetingMap () {
-      return {
-        GIBot: 'I’m here to keep you update while you are away.',
-        [chatTypes.INDIVIDUAL]: 'You and {name} can chat in private here.',
-        [chatTypes.GROUP]: 'This is the very beginning of {name} channel.'
-      }
-    },
-    founders () {
-      const foundersMap = {
-        [chatTypes.INDIVIDUAL]: [
-          this.$store.getters.ourUserIdentityContract.attributes,
-          users[this.$route.params.currentConversation.id]
-        ],
-        [chatTypes.GROUP]: [
-          ...groupA.founders.map(founder => users[founder])
-        ]
-      }
-
-      return foundersMap[this.type]
-    },
     text () {
-      if (this.$route.params.currentConversation.id === 'GIBot') {
-        return this.L(this.greetingMap.GIBot)
-      }
-
-      const conversationSummaryMap = {
-        [chatTypes.INDIVIDUAL]: users[this.$route.params.currentConversation.id],
-        [chatTypes.GROUP]: groupA.channels[this.$route.params.currentConversation.id]
-      }
-
-      return this.L(this.greetingMap[this.type], { name: conversationSummaryMap[this.type].displayName })
-    },
-    type () {
-      return this.$route.params.currentConversation.type
+      return {
+        GIBot: L('I’m here to keep you update while you are away.'),
+        [chatTypes.INDIVIDUAL]: L('You and {name} can chat in private here.', { name: this.name }),
+        [chatTypes.GROUP]: L('This is the beginning of {name}.', { name: this.name })
+      }[this.type]
+    }
+  },
+  methods: {
+    openModal (modal, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     }
   }
 }
@@ -65,12 +64,11 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-greetings {
-  margin-bottom: 2rem;
-  display: flex;
-  align-items: flex-end;
+  padding: 0 2.5rem 2rem 2.5rem;
 }
 
-.c-avatar {
-  margin-right: 0.5rem;
+.buttons {
+  margin-top: 1rem;
+  justify-content: flex-start;
 }
 </style>

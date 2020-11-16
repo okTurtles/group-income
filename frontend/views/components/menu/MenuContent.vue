@@ -58,7 +58,7 @@ export default {
     pointer-events: initial;
     max-height: 25rem;
     opacity: 1;
-    transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) 1s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
+    transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) .3s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
   }
 
   ::v-deep .c-item {

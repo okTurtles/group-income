@@ -1,22 +1,64 @@
 <template lang='pug'>
-.c-send
+.c-send.inputgroup(:class='{"is-editing": isEditing}')
+  .c-replying(v-if='replyingMessage')
+    i18n Replying to:&nbsp
+    | {{ replyingMessage }}
+    button.c-clear.is-icon-small(
+      :aria-label='L("Stop replying")'
+      @click='$emit("stopReplying")'
+    )
+      i.icon-times
+
   textarea.textarea.c-send-textarea(
     ref='textarea'
     :disabled='loading'
-    :placeholder='customSendPlaceholder'
+    :placeholder='L("Write your message...")'
     :style='textareaStyles'
-    @keydown.enter.exact='sendMessage'
+    @keydown.enter.exact.prevent='sendMessage'
     @keydown.ctrl='isNextLine'
     @keyup='handleKeyup'
     v-bind='$attrs'
   )
 
   .c-send-actions(ref='actions')
-    i18n.button.c-send-btn(
-      tag='button'
-      :class='{ isActive }'
-      @click='sendMessage'
-    ) Send
+    .c-edit-actions(v-if='isEditing')
+      i18n.is-small.is-outlined(
+        tag='button'
+        @click='$emit("cancelEdit")'
+      ) Cancel
+
+      i18n.button.is-small(
+        tag='button'
+        @click='sendMessage'
+      ) Save changes
+
+    div(v-else)
+      .addons
+        tooltip(
+          direction='top'
+          :text='L("Create poll")'
+        )
+          button.is-icon(
+            :aria-label='L("Create poll")'
+            @click='createPool'
+          )
+            i.icon-poll
+
+        tooltip(
+          direction='top'
+          :text='L("Add reaction")'
+        )
+          button.is-icon(
+            :aria-label='L("Add reaction")'
+            @click='openEmoticon'
+          )
+            i.icon-smile-beam
+
+      i18n.sr-only(
+        tag='button'
+        :class='{ isActive }'
+        @click='sendMessage'
+      ) Send
 
   .textarea.c-send-mask(
     ref='mask'
@@ -25,22 +67,30 @@
 </template>
 
 <script>
+import emoticonsMixins from './EmoticonsMixins.js'
+import Tooltip from '@components/Tooltip.vue'
+
 export default {
   name: 'Chatroom',
-  components: {},
+  mixins: [emoticonsMixins],
+  components: {
+    Tooltip
+  },
   props: {
     title: String,
     searchPlaceholder: String,
     loading: {
       type: Boolean,
       default: false
+    },
+    replyingMessage: String,
+    isEditing: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
-      config: {
-        sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')]
-      },
       ephemeral: {
         actionsWidth: '',
         maskHeight: '',
@@ -51,8 +101,9 @@ export default {
   mounted () {
     // Get actionsWidth to add a dynamic padding to textarea,
     // so those actions don't be above the textarea's value
-    this.ephemeral.actionsWidth = this.$refs.actions.offsetWidth
+    this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
+    this.$refs.textarea.focus()
   },
   computed: {
     textareaStyles () {
@@ -68,9 +119,6 @@ export default {
     },
     isActive () {
       return this.ephemeral.textWithLines
-    },
-    customSendPlaceholder () {
-      return `${this.config.sendPlaceholder[Math.floor(Math.random() * this.config.sendPlaceholder.length)]} ${this.title}`
     }
   },
   methods: {
@@ -80,8 +128,9 @@ export default {
         return this.createNewLine()
       }
     },
-    handleKeyup () {
-      this.updateTextArea()
+    handleKeyup (e) {
+      if (e.keyCode === 13) e.preventDefault()
+      else this.updateTextArea()
     },
     updateTextWithLines () {
       const newValue = this.$refs.textarea.value.replace(/\n/g, '<br>')
@@ -123,8 +172,15 @@ export default {
 
       this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
-
       this.updateTextArea()
+    },
+    createPool () {
+      console.log('TODO')
+    },
+    selectEmoticon (emoticon) {
+      this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
+      this.closeEmoticon()
+      this.updateTextWithLines()
     }
   }
 }
@@ -137,6 +193,9 @@ $initialHeight: 43px;
 
 .c-send {
   position: relative;
+  margin: 0 2.5rem;
+  display: block;
+  padding-bottom: .1rem;
 
   &-textarea,
   &-mask {
@@ -184,5 +243,52 @@ $initialHeight: 43px;
       color: $text_1;
     }
   }
+
+  &.is-editing {
+    margin: 0;
+
+    .c-send-actions {
+      position: relative;
+      margin-top: .5rem;
+      height: auto;
+    }
+
+    .is-outlined {
+      margin-right: .5rem;
+    }
+  }
+}
+
+.inputgroup .addons button.is-icon:focus {
+  box-shadow: none;
+  border: none;
+}
+
+.inputgroup .addons button.is-icon:first-child:last-child {
+  width: 2rem;
+}
+
+.icon-smile-beam::before {
+  font-weight: 400;
+}
+
+.emoji-mart {
+  position: absolute;
+  right: 0;
+  bottom: 4rem;
+  box-shadow: 0px 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+}
+
+.c-replying {
+  background-color: $general_2;
+  padding: 0.5rem 2rem 0.7rem 0.5rem;
+  border-radius: .3rem .3rem 0 0;
+  margin-bottom: -0.2rem;
+}
+
+.c-clear {
+  position: absolute;
+  right: .2rem;
+  top: .4rem;
 }
 </style>

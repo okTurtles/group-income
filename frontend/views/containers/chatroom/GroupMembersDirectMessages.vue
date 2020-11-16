@@ -2,16 +2,7 @@
 modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Group members")')
   .c-container
     .c-header
-      div(v-if='canAddMember')
-        i18n.is-title-2.c-title(
-          tag='h2'
-        ) Members
-        .c-description {{ name }} . {{isPrivate ? L("Private channel") : L("Public channel")}}
-
-      i18n.is-title-2.c-title(
-        v-else
-        tag='h2'
-      ) Group members
+      i18n.is-title-2.c-title(tag='h2') Direct messages
 
     .card.c-card
       search(
@@ -33,45 +24,12 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
       ) Sorry, we couldn't find anyone called "{searchTerm}"
 
       i18n.c-member-count.has-text-1(
-        v-if='!searchText && !canAddMember'
+        v-if='!searchText'
         tag='div'
         :args='{ groupMembersCount }'
         data-test='memberCount'
       ) {groupMembersCount} members
 
-      .c-list-to-add(v-if='canAddMember')
-        .is-subtitle
-          i18n(
-            tag='h3'
-          ) Channel members
-          | &nbsp({{ groupMembersSorted.length }})
-
-        transition-group(
-          v-if='addedMember'
-          name='slide-list'
-          tag='ul'
-        )
-          li.c-search-member(
-            v-for='{username, displayName, invitedBy, isNew} in addedMember'
-            :key='username'
-          )
-            profile-card(:username='username' direction='top-left')
-              .c-identity
-                avatar-user(:username='username' size='sm')
-                .c-name(data-test='username')
-                  span
-                    strong {{ localizedName(username) }}
-                    .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
-
-              .c-actions
-                button.is-icon(@click.stop='removeMember')
-                  i.icon-times
-
-        .is-subtitle.c-second-section
-          i18n(
-            tag='h3'
-          ) Others
-          | &nbsp({{ addedMember.length }})
       transition-group(
         v-if='searchResult'
         name='slide-list'
@@ -93,13 +51,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                 i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
             .c-actions
-              i18n.button.is-outlined.is-small(
-                v-if='addedMember'
-                tag='button'
-                @click.stop='addToChannel()'
-                data-test='addToChannel'
-              ) Add to channel
-              group-members-tooltip-pending(v-else-if='invitedBy' :username='username')
+              group-members-tooltip-pending(v-if='invitedBy' :username='username')
 </template>
 
 <script>
@@ -122,27 +74,8 @@ export default {
   },
   data () {
     return {
-      searchText: '',
-      addedMember: [],
-      canAddMember: {
-        type: Boolean,
-        default: false
-      },
-      name: {
-        type: String,
-        default: ''
-      },
-      isPrivate: {
-        type: Boolean,
-        default: true
-      }
+      searchText: ''
     }
-  },
-  created () {
-    this.name = this.$route.query.name
-    if (this.name) this.canAddMember = true
-    // TODO: get chat member and filter groupMembersSorted
-    this.addedMember = this.groupMembersSorted
   },
   computed: {
     ...mapGetters([
@@ -175,12 +108,6 @@ export default {
     },
     closeModal () {
       this.$refs.modal.close()
-    },
-    removeMember () {
-      console.log('TODO removeMember')
-    },
-    addToChannel () {
-      console.log('TODO addToChannel')
     }
   }
 }
@@ -218,10 +145,6 @@ export default {
     background-color: transparent;
     margin: 0;
   }
-}
-
-.c-description {
-  color: $text_1;
 }
 
 .c-card {
@@ -297,21 +220,5 @@ export default {
   @include tablet {
     display: none;
   }
-}
-
-.is-subtitle {
-  display: flex;
-  margin-top: 1.875rem;
-  margin-bottom: .5rem;
-}
-
-.c-second-section:before {
-  content: '';
-  position: absolute;
-  background-color: $general_2;
-  height: 1px;
-  width: calc(100% + 6rem);
-  top: 0;
-  left: -3rem;
 }
 </style>

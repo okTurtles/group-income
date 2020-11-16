@@ -1,0 +1,160 @@
+<template lang='pug'>
+menu-parent(ref='menu')
+  .c-actions
+    button.hide-touch.is-icon-small(
+      :aria-label='L("Add reaction")'
+      @click='action("openEmoticon", $event)'
+    )
+      i.icon-smile-beam
+
+    button.hide-touch.is-icon-small(
+      v-if='isCurrentUser'
+      :aria-label='L("Edit")'
+      @click='action("edit")'
+    )
+      i.icon-pencil-alt
+
+    button.hide-touch.is-icon-small(
+      :aria-label='L("Reply")'
+      @click='action("reply")'
+    )
+      i.icon-reply
+
+    button.hide-touch.is-icon-small(
+      v-if='variant === "failed"'
+      :aria-label='L("Add emoticons")'
+      @click='action("retry")'
+    )
+      i.icon-undo
+
+    menu-trigger.is-icon-small(
+      :aria-label='L("More options")'
+    )
+      i.icon-ellipsis-h
+
+  menu-content.c-content
+    ul
+      menu-item.hide-desktop.is-icon-small(tag='button'
+        @click='action("openEmoticon", $event)'
+      )
+        i.icon-smile-beam
+        | {{L('Add reaction')}}
+
+      menu-item.hide-desktop.is-icon-small(tag='button'
+        v-if='isCurrentUser'
+        @click='action("edit")'
+      )
+        i.icon-pencil-alt
+        | {{L('Edit')}}
+
+      menu-item.hide-desktop.is-icon-small(tag='button'
+        @click='action("reply")'
+      )
+        i.icon-reply
+        | {{L('Reply')}}
+
+      menu-item.hide-desktop.is-icon-small(tag='button'
+        v-if='variant === "failed"'
+        @click='action("retry")'
+      )
+        i.icon-undo
+        | {{L('Add emoticons')}}
+
+      menu-item.is-icon-small(tag='button'
+        @click='action("copyToClipBoard")'
+      )
+        i.icon-link
+        | {{L('Copy message Link')}}
+
+      menu-item.is-icon-small.is-danger(tag='button'
+        @click='action("deleteMessage")'
+      )
+        i.icon-trash-alt
+        | {{L('Delete message')}}
+</template>
+
+<script>
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+
+export default {
+  name: 'MessageActions',
+  components: {
+    MenuParent,
+    MenuTrigger,
+    MenuContent,
+    MenuItem
+  },
+  props: {
+    variant: String,
+    isCurrentUser: Boolean
+  },
+  methods: {
+    action (type, e) {
+      // Change to sbp action
+      this.$emit(type, e)
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.c-actions {
+  display: none;
+  position: absolute;
+  right: .5rem;
+  top: -1rem;
+  background-color: $background_0;
+  padding: 0.125rem;
+  box-shadow: 0px 0px 1.25rem $general_1_opacity_6;
+
+  .is-icon-small {
+    color: $text_1;
+    border-radius: 0;
+    width: 2.375rem;
+    height: 2rem;
+
+    &:hover {
+      background-color: $general_2;
+      color: $text_0;
+    }
+  }
+}
+
+::v-deep .is-danger {
+  background-color: $danger_2;
+  .c-item-slot i,
+  .c-item-slot {
+    color: $danger_0;
+  }
+}
+
+.c-menu {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 13rem;
+
+  .c-content {
+    @extend %floating-panel;
+
+    @include desktop {
+      width: 100%;
+      left: auto;
+      right: 0.5rem;
+      top: auto;
+      bottom: calc(100% + 1.5rem);
+    }
+  }
+
+  .c-menuItem ::v-deep .c-item-link {
+    @extend %floating-panel-item;
+  }
+}
+
+.icon-smile-beam::before {
+  font-weight: 400;
+}
+</style>

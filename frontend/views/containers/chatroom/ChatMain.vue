@@ -1,36 +1,6 @@
 <template lang='pug'>
 .c-chat-main(v-if='summary.title')
-  main-header(:description='summary.description' :router-back='summary.routerBack')
-
-    template(slot='title')
-      avatar.c-header-avatar(:src='summary.picture' alt='' size='sm')
-        i.c-header-private(
-          v-if='summary.private !== undefined'
-          :class='{"icon-globe": summary.private === false, "icon-lock": summary.private === true}'
-        )
-        | {{summary.title}}
-
-    template(slot='actions')
-      button.is-icon
-        i.icon-user-plus
-      button.is-icon
-        // TODO later - show a tooltip on notifications snooze
-        i.icon-bell
-
-      menu-parent
-        menu-trigger.is-icon
-          i.icon-ellipsis-v
-
-        // TODO later - be a drawer on mobile
-        menu-content.c-actions-content
-          ul
-            menu-item(tag='button' itemid='hash-1' icon='heart')
-              i18n Option 1
-            menu-item(tag='button' itemid='hash-2' icon='heart')
-              i18n Option 2
-            menu-item(tag='button' itemid='hash-3' icon='heart')
-              i18n Option 3
-
+  emoticons
   .c-body(:style='bodyStyles')
     .c-body-loading(v-if='details.isLoading')
       loading
@@ -39,70 +9,71 @@
           - this should be done only after knowing exactly how server gets each conversation data
 
     .c-body-conversation(ref='conversation' v-else='')
-      conversation-greetings
-      template(v-for='(message, index) in details.conversation')
-        i18n.is-subtitle.c-divider(
-          v-if='startedUnreadIndex === index'
-          :key='`subtitle-${index}`'
-        ) New messages
-
-        message-notification(
-          v-if='message.from === messageTypes.NOTIFICATION'
-          :key='`notification-${index}`'
-        ) {{message.text}}
-
-        message-interactive(
-          v-else-if='message.from === messageTypes.INTERACTIVE'
-          :key='`interactive-${index}`'
-          :text='message.text'
-        )
-
-        // cf: https://github.com/vuejs/eslint-plugin-vue/issues/462
-        // eslint-disable-next-line vue/require-component-is
-        message(
-          v-else=''
-          :key='`message-${index}`'
-          :text='message.text'
-          :who='who(isCurrentUser(message.from), message.from)'
-          :avatar='avatar(isCurrentUser, message.from)'
-          :variant='variant(isCurrentUser(message.from))'
-          :hideWho='shouldHideWho(index)'
-          :isSameSender='isSameSender(index)'
-        )
-
-      message(
-        v-for='(message, index) in ephemeral.pendingMessages'
-        :key='`pending-messages-${index}`'
-        v-bind='getPendingAt[index]'
-        @retry='retryMessage(index)'
+      conversation-greetings(
+        :type='type'
+        :name='summary.title'
+        :description='summary.description'
       )
 
+      template(v-for='(message, index) in messages')
+        .c-divider(
+          v-if='changeDay(index) || isNew(index)'
+          :class='{"is-new": isNew(index)}'
+          :key='`date-${index}`'
+        )
+          span(v-if='changeDay(index)') {{proximityDate(message.time)}}
+          i18n.c-new(v-if='isNew(index)' :class='{"is-new-date": changeDay(index)}') New
+
+        component(
+          :is='messageType(message)'
+          :key='messageKey(message, index)'
+          :id='message.id'
+          :text='message.text'
+          :from='message.from'
+          :time='message.time'
+          :emoticonsList='message.emoticons'
+          :who='who(message)'
+          :currentUserId='currentUserAttr.id'
+          :avatar='avatar(isCurrentUser, message.from)'
+          :variant='variant(message)'
+          :isSameSender='isSameSender(index)'
+          :isCurrentUser='isCurrentUser(message.from)'
+          :class='{removed: message.delete}'
+          @retry='retryMessage(index)'
+          @reply='replyMessage(message)'
+          @addEmoticon='addEmoticon(index, $event)'
+          @deleteMessage='deleteMessage(index)'
+        )
+
   .c-footer
-    send-area(:title='summary.title' @send='handleSendMessage' @heightupdate='updateSendAreaHeight' :loading='details.isLoading')
+    send-area(
+      :title='summary.title'
+      @send='handleSendMessage'
+      @heightupdate='updateSendAreaHeight'
+      :loading='details.isLoading'
+      :replyingMessage='ephemeral.replyingMessage'
+      @stopReplying='ephemeral.replyingMessage = null'
+    )
 </template>
 
 <script>
-import MainHeader from './MainHeader.vue'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
-import { currentUserId, messageTypes } from '@containers/chatroom/fakeStore.js'
+import Emoticons from './Emoticons.vue'
+import { currentUserId, messageTypes, fakeEvents } from '@containers/chatroom/fakeStore.js'
+import { proximityDate } from '@utils/time.js'
 
 export default {
   name: 'ChatMain',
   components: {
-    MainHeader,
     Avatar,
+    Emoticons,
     Loading,
-    MenuParent,
-    MenuTrigger,
-    MenuContent,
-    MenuItem,
     Message,
     MessageInteractive,
     MessageNotification,
@@ -117,6 +88,9 @@ export default {
     details: {
       type: Object, // { isLoading: Bool, conversation: Array, participants: Object }
       default () { return {} }
+    },
+    type: {
+      type: String
     }
   },
   data () {
@@ -128,7 +102,8 @@ export default {
       ephemeral: {
         bodyPaddingBottom: '',
         conversationIsLoading: false,
-        pendingMessages: []
+        pendingMessages: [],
+        replyingMessage: ''
       }
     }
   },
@@ -151,6 +126,9 @@ export default {
     }
   },
   computed: {
+    messages () {
+      return { ...this.details.conversation, ...this.ephemeral.pendingMessages }
+    },
     messageVariants () {
       return Message.constants.variants
     },
@@ -160,15 +138,6 @@ export default {
     startedUnreadIndex () {
       return this.details.conversation.findIndex(message => message.unread === true)
     },
-    getPendingAt () {
-      return this.ephemeral.pendingMessages.map((message, index) => ({
-        text: message.text,
-        who: this.who(true),
-        avatar: this.avatar(true),
-        variant: message.hasFailed ? this.messageVariants.FAILED : this.messageVariants.SENT,
-        isSameSender: index > 0
-      }))
-    },
     currentUserAttr () {
       return {
         ...this.$store.getters.ourUserIdentityContract.attributes,
@@ -177,31 +146,61 @@ export default {
     }
   },
   methods: {
+    proximityDate,
+    messageKey (message, index) {
+      let num = 0
+      const emoticons = message.emoticons || {}
+      Object.keys(emoticons).forEach(e => {
+        num += emoticons[e].length
+      })
+      let mt = `message-${index}-${num}`
+      switch (message.from) {
+        case messageTypes.NOTIFICATION:
+          mt = `notification-${index}-${num}`
+          break
+
+        case messageTypes.INTERACTIVE:
+          mt = `interactive-${index}-${num}`
+          break
+      }
+      return mt
+    },
+    messageType (message) {
+      let mt = 'message'
+      switch (message.from) {
+        case messageTypes.NOTIFICATION:
+          mt += '-notification'
+          break
+
+        case messageTypes.INTERACTIVE:
+          mt += '-interactive'
+          break
+      }
+      return mt
+    },
     isCurrentUser (fromId) {
       return this.currentUserAttr.id === fromId
     },
-    shouldHideWho (index) {
-      if (this.isFromGIBot(index)) { return true }
-      return false
+    who (message) {
+      const fromId = message.from === messageTypes.NOTIFICATION ? fakeEvents[message.id].from : message.from
+      const user = this.isCurrentUser(fromId) ? this.currentUserAttr : this.details.participants[fromId]
+      if (user) {
+        return user.displayName || user.username
+      }
     },
-    isFromGIBot (index) {
-      return this.details.conversation[index].from === 'GIBot'
-    },
-    who (isCurrentUser, fromId) {
-      const user = isCurrentUser ? this.currentUserAttr : this.details.participants[fromId]
-
-      return user.displayName || user.username
-    },
-    variant (isCurrentUser) {
-      return isCurrentUser ? this.messageVariants.SENT : this.messageVariants.RECEIVED
+    variant (message) {
+      if (message.hasFailed) {
+        return this.messageVariants.FAILED
+      } else {
+        return this.isCurrentUser(message.from) ? this.messageVariants.SENT : this.messageVariants.RECEIVED
+      }
     },
     avatar (isCurrentUser, fromId) {
       return isCurrentUser ? this.currentUserAttr.picture : this.details.participants[fromId].picture
     },
     isSameSender (index) {
-      if (!this.details.conversation[index - 1]) { return false }
-      if (this.isFromGIBot(index)) { return false }
-      return this.details.conversation[index].from === this.details.conversation[index - 1].from
+      if (!this.messages[index - 1]) { return false }
+      return this.messages[index].from === this.messages[index - 1].from
     },
 
     updateSendAreaHeight (height) {
@@ -209,10 +208,11 @@ export default {
     },
     handleSendMessage (message) {
       console.log('sending...')
-      const index = this.ephemeral.pendingMessages.length
+      const index = Object.keys(this.messages).length + 1
 
-      this.ephemeral.pendingMessages.push({
+      this.$set(this.ephemeral.pendingMessages, index, {
         from: this.currentUserAttr.id,
+        time: new Date(),
         text: message
       })
 
@@ -224,11 +224,59 @@ export default {
       this.sendMessage(index)
       console.log('TODO $store - retry sending a message')
     },
+    replyMessage (message) {
+      console.log('TODO reply to a message logic', message)
+      this.ephemeral.replyingMessage = message.text
+    },
     sendMessage (index) {
       setTimeout(() => {
         console.log('TODO $store send message')
         this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
       }, 2000)
+    },
+    changeDay (index) {
+      const conv = this.messages
+      if (index > 0 && index <= conv.length) {
+        const prev = new Date(conv[index - 1].time)
+        const current = new Date(conv[index].time)
+        return prev.getDay() !== current.getDay()
+      } else return false
+    },
+    isNew (index) {
+      return this.startedUnreadIndex === index
+    },
+    addEmoticon (index, emoticon) {
+      // Todo replace with  deep merge
+      const userId = this.currentUserAttr.id
+      const emoticons = this.details.conversation[index].emoticons || {}
+      if (emoticons[emoticon]) {
+        const alreadyAdded = emoticons[emoticon].indexOf(userId)
+        if (alreadyAdded >= 0) {
+          emoticons[emoticon].splice(alreadyAdded, 1)
+          if (emoticons[emoticon].length === 0) {
+            delete this.messages[emoticon]
+            if (Object.keys(emoticons).length === 0) {
+              delete this.details.conversation[index].emoticons
+              return false
+            }
+          }
+        } else emoticons[emoticon].push(userId)
+      } else {
+        if (!emoticons[emoticon]) emoticons[emoticon] = []
+        emoticons[emoticon].push(userId)
+      }
+
+      this.$set(this.details.conversation[index], 'emoticons', emoticons)
+      this.$forceUpdate()
+    },
+    deleteMessage (index) {
+      // TODO replace by store action
+      this.$set(this.details.conversation[index], 'delete', true)
+      setTimeout(() => {
+        delete this.messages[index]
+        this.$forceUpdate()
+      }, 1000)
+      this.$forceUpdate()
     }
   }
 }
@@ -241,24 +289,7 @@ export default {
   height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-.c-header-top .c-actions-content {
-  top: 2rem;
-  right: 0;
-  left: auto;
-  width: 10rem;
-}
-
-.c-header-private {
-  margin-right: 0.25rem;
-}
-
-.c-header-private,
-.c-header-avatar {
-  @include tablet {
-    display: none;
-  }
+  overflow: hidden;
 }
 
 .c-body {
@@ -266,46 +297,68 @@ export default {
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
+  height: calc(100vh - 14rem);
+  width: calc(100% + 1rem);
+  position: relative;
+
+  &:before {
+    content: '';
+    width: 100%;
+    height: 2.5rem;
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    background: linear-gradient(180deg, $background_0 0%, $background_0_opacity_0 100%);
+  }
 }
 
 .c-body-conversation {
-  padding: 1rem 0;
+  padding: 2rem 0;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
 }
 
 .c-divider {
-  display: flex;
-  align-items: center;
   text-align: center;
+  position: relative;
   margin: 1rem 0;
 
-  &::before,
-  &::after {
-    content: "";
-    flex-grow: 1;
-    border-bottom: 1px solid $warning_0;
+  span {
+    background: $background_0;
+    position: relative;
+    padding: .5rem;
+    color: $text_1;
+    font-size: $size_5;
+
+    + .c-new {
+      position: absolute;
+      right: 0;
+      top: -0.3rem;
+    }
   }
 
-  &::before {
-    margin-right: 0.5rem;
+  &:before {
+    content: '';
+    height: 1px;
+    width: 100%;
+    background-color: $general_0;
+    position: absolute;
+    left: 0;
+    top: 50%;
   }
 
-  &::after {
-    margin-left: 0.5rem;
-  }
-}
+  &.is-new {
+    span {
+      color: $primary_0;
+    }
 
-@include tablet {
-  .c-header {
-    padding: 1rem;
-  }
-
-  .c-body {
-    overflow: auto;
+    &:before {
+      background-color: $primary_0;
+    }
   }
 
-  .c-body-conversation {
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
+  .c-new {
+    font-weight: bold;
   }
 }
 

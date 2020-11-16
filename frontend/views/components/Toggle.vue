@@ -51,7 +51,7 @@ $iconSize: 2.75rem;
   &:focus {
     .icon-bars,
     .icon-info {
-      box-shadow: 0 0 0 2px #{$primary_1};
+      box-shadow: 0 0 0 2px $primary_1;
     }
   }
 
