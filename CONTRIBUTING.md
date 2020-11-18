@@ -20,11 +20,11 @@
 
 Then, [tell folks what you'll be working on](https://gitter.im/okTurtles/group-income), and:
 
-### 2. FORK this repo
+### 2. Create a fork of the repo, or work in a topic branch
 
-Everyone must follow the rules below (inspired by the [C4.1](http://hintjens.com/blog:93) process) to submit _code_ (documentation may be edited directly by maintainers):
+Our process for submitting code is inspired by the [C4.1](http://hintjens.com/blog:93) process (documentation may be edited directly by maintainers):
 
-1. **Always** work in your own fork (Note: it is OK for long-running contributors to work in a branch of this repo, because that is how we get Cypress Dashboard <-> Travis integraton) and submit pull requests (PRs) to `master`.
+1. **Always** either work in your own fork or a topic-branch and submit pull requests (PRs) to `master`. Our [Cypress Dashboard](https://dashboard.cypress.io/) integration currently makes topic-branches a better option for long-term contributor.
 2. **Always** add/update tests for any new/modified functionality. (:exclamation:)
 3. **Always** make sure your PR passes all tests (`grunt test`).
 4. **Always** ensure your PR adheres to the **[Contribution Policy](#contribution-policy)** described below.
