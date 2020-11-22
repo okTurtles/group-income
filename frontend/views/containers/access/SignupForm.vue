@@ -26,8 +26,6 @@ form(data-test='signup' @submit.prevent='')
 
   password-form(:label='L("Password")' name='password' :$v='$v')
 
-  avatar-generator(@generated='handleAvatarUrl')
-
   banner-scoped(ref='formMsg')
 
   .buttons.is-centered
@@ -39,7 +37,6 @@ form(data-test='signup' @submit.prevent='')
 </template>
 
 <script>
-import AvatarGenerator from '@components/AvatarGenerator.vue'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
@@ -50,7 +47,6 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { imageDataURItoBlob } from '@utils/image.js'
 
 export default {
   name: 'SignupForm',
@@ -59,7 +55,6 @@ export default {
     validationsDebouncedMixins
   ],
   components: {
-    AvatarGenerator,
     ModalTemplate,
     PasswordForm,
     BannerScoped,
@@ -70,15 +65,11 @@ export default {
       form: {
         username: null,
         password: null,
-        email: null,
-        pictureBase64: null
+        email: null
       }
     }
   },
   methods: {
-    handleAvatarUrl (base64Url) {
-      this.form.pictureBase64 = base64Url
-    },
     async signup () {
       if (this.$v.form.$invalid) {
         this.$refs.formMsg.danger(L('The form is invalid.'))
@@ -88,8 +79,7 @@ export default {
         await sbp('gi.actions/identity/signupAndLogin', {
           username: this.form.username,
           email: this.form.email,
-          password: this.form.password,
-          picture: this.form.pictureBase64 ? imageDataURItoBlob(this.form.pictureBase64) : ''
+          password: this.form.password
         })
         this.$emit('submitSucceeded')
       } catch (e) {
