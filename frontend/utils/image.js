@@ -4,7 +4,7 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // Copied from https://stackoverflow.com/a/27980815/4737729
 export function imageDataURItoBlob (dataURI) {
   const [prefix, data] = dataURI.split(',')
-  const imageType = (/image\/[^;]+/).exec(prefix)
+  const [imageType] = (/image\/[^;]+/).exec(prefix)
   const byteString = atob(data)
   var ab = new ArrayBuffer(byteString.length)
   var ia = new Uint8Array(ab)
