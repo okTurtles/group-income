@@ -19,6 +19,7 @@
           span.has-text-1 {{getTime(time)}}
 
       slot(name='body')
+        p.c-replying(if='replyingMessage') {{replyingMessage}}
         send-area(
           v-if='isEditing'
           title=''
@@ -75,6 +76,7 @@ export default {
   },
   props: {
     text: String,
+    replyingMessage: String,
     who: String,
     currentUserId: String,
     avatar: String,
@@ -193,5 +195,12 @@ export default {
   &:first-child:last-child {
     margin-bottom: 0.5rem;
   }
+}
+
+.c-replying {
+  font-size: .75rem;
+  color: var(--text_1);
+  font-style: italic;
+  padding-left: .25rem;
 }
 </style>

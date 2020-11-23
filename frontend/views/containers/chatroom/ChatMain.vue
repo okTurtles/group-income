@@ -29,6 +29,7 @@
           :key='messageKey(message, index)'
           :id='message.id'
           :text='message.text'
+          :replyingMessage='message.replyingMessage'
           :from='message.from'
           :time='message.time'
           :emoticonsList='message.emoticons'
@@ -52,6 +53,7 @@
       @heightupdate='updateSendAreaHeight'
       :loading='details.isLoading'
       :replyingMessage='ephemeral.replyingMessage'
+      :replyingTo='ephemeral.replyingTo'
       @stopReplying='ephemeral.replyingMessage = null'
     )
 </template>
@@ -103,7 +105,8 @@ export default {
         bodyPaddingBottom: '',
         conversationIsLoading: false,
         pendingMessages: [],
-        replyingMessage: ''
+        replyingMessage: null,
+        replyingTo: null
       }
     }
   },
@@ -206,15 +209,16 @@ export default {
     updateSendAreaHeight (height) {
       this.ephemeral.bodyPaddingBottom = height
     },
-    handleSendMessage (message) {
+    handleSendMessage (message, replyingMessage = false) {
       console.log('sending...')
       const index = Object.keys(this.messages).length + 1
-
-      this.$set(this.ephemeral.pendingMessages, index, {
+      const newMessage = {
         from: this.currentUserAttr.id,
         time: new Date(),
         text: message
-      })
+      }
+      if (replyingMessage) newMessage.replyingMessage = replyingMessage
+      this.$set(this.ephemeral.pendingMessages, index, newMessage)
 
       this.sendMessage(index)
     },
@@ -225,10 +229,12 @@ export default {
       console.log('TODO $store - retry sending a message')
     },
     replyMessage (message) {
-      console.log('TODO reply to a message logic', message)
       this.ephemeral.replyingMessage = message.text
+      this.ephemeral.replyingTo = this.who(message)
     },
     sendMessage (index) {
+      this.ephemeral.replyingMessage = null
+      this.ephemeral.replyingTo = null
       setTimeout(() => {
         console.log('TODO $store send message')
         this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)

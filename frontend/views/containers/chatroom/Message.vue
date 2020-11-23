@@ -41,7 +41,8 @@ export default {
       default: null
     },
     isSameSender: Boolean,
-    isCurrentUser: Boolean
+    isCurrentUser: Boolean,
+    replyingMessage: null
   },
   constants: Object.freeze({
     variants

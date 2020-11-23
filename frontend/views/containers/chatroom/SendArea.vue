@@ -1,8 +1,8 @@
 <template lang='pug'>
 .c-send.inputgroup(:class='{"is-editing": isEditing}')
   .c-replying(v-if='replyingMessage')
-    i18n Replying to:&nbsp
-    | {{ replyingMessage }}
+    i18n Replying to {{replyingTo}}:&nbsp
+    | "{{ replyingMessage }}"
     button.c-clear.is-icon-small(
       :aria-label='L("Stop replying")'
       @click='$emit("stopReplying")'
@@ -84,6 +84,7 @@ export default {
       default: false
     },
     replyingMessage: String,
+    replyingTo: String,
     isEditing: {
       type: Boolean,
       default: false
@@ -170,7 +171,7 @@ export default {
         return false
       }
 
-      this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
+      this.$emit('send', this.$refs.textarea.value, this.replyingMessage) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
     },
@@ -284,6 +285,12 @@ $initialHeight: 43px;
   padding: 0.5rem 2rem 0.7rem 0.5rem;
   border-radius: .3rem .3rem 0 0;
   margin-bottom: -0.2rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-size: $size_5;
+  color: $text_1;
 }
 
 .c-clear {
