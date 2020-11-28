@@ -1,6 +1,6 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
-import { mapValues } from '~/frontend/utils/giLodash.js'
+// import { mapValues } from '~/frontend/utils/giLodash.js'
 import paymentTotalFromUserToUser from '../../model/contracts/payments/totals.js'
 
 export function dataToEvents (monthstamp, data) {
@@ -159,31 +159,16 @@ export function groupIncomeDistributionLogic ({
   return dist
 }
 
-function groupIncomeDistributionAdjustFirstLogic ({ getters, monthstamp, adjusted }) {
+export function groupIncomeDistributionAdjustFirstLogic ({ getters, monthstamp, adjusted }) {
   const groupProfiles = getters.groupProfiles
   const mincomeAmount = getters.groupSettings.mincomeAmount
-  const monthlyPayments = getters.groupMonthlyPayments
   const allPayments = getters.currentGroupState.payments
-  const thisMonthPayments = monthlyPayments[monthstamp]
+  const thisMonthPayments = getters.monthlyPayments[monthstamp]
   const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
 
-  //  Much Duplicated code from state.js :(
-  const payments = []
-
-  if (paymentsFrom) {
-    for (const fromUser in paymentsFrom) {
-      for (const toUser in paymentsFrom[fromUser]) {
-        for (const paymentHash of paymentsFrom[fromUser][toUser]) {
-          const { data } = allPayments[paymentHash]
-          payments.push({ amount: data.amount, from: fromUser, to: toUser })
-        }
-      }
-    }
-  }
-
-  /// calculate haves and needs
   const haves = []
   const needs = []
+  // calculate haves and needs from pledges and incomes:
   for (const username in groupProfiles) {
     const profile = groupProfiles[username]
     const incomeDetailsType = profile && profile.incomeDetailsType
@@ -193,28 +178,37 @@ function groupIncomeDistributionAdjustFirstLogic ({ getters, monthstamp, adjuste
       haves.push({ name: username, have: profile.pledgeAmount })
     }
   }
-  /// adjust them if `adjusted = true`
-  if (adjusted && (payments.length > 0)) {
-    for (const have of haves) {
-      let alreadySent = 0
-      for (const payment in payments) {
-        const { amount, from } = payments[payment]
-        if (from === have.name) alreadySent += amount
+  /// Adjust haves/needs if `adjusted = true`
+  if (adjusted) {
+    const alreadySent = {}
+    const alreadyReceived = {}
+    if (paymentsFrom) {
+      for (const fromUser in paymentsFrom) {
+        let totalSent = 0
+        for (const toUser in paymentsFrom[fromUser]) {
+          let totalReceved = 0
+          if (!alreadyReceived[toUser]) alreadyReceived[toUser] = 0
+          for (const paymentHash of paymentsFrom[fromUser][toUser]) {
+            totalReceved += allPayments[paymentHash].data.amount
+          }
+          totalSent += totalReceved
+          alreadyReceived[toUser] += totalReceved
+        }
+        alreadySent[fromUser] = totalSent
       }
-      have.have -= alreadySent
-    }
-    // do the same for needs
-    for (const need of needs) {
-      let alreadyReceived = 0
-      for (const payment in payments) {
-        const { amount, to } = payments[payment]
-        if (to === need.name) alreadyReceived += amount
+      for (const have of haves) {
+        have.have -= alreadySent[have.name] ? alreadySent[have.name] : 0
       }
-      need.need -= alreadyReceived
+      for (const need of needs) {
+        need.need -= alreadyReceived[need.name] ? alreadyReceived[need.name] : 0
+      }
     }
   }
   /// pass the haves and needs to distributeFromHavesToNeeds
-  return distibuteFromHavesToNeeds({ haves, needs })
+  const dist = distibuteFromHavesToNeeds({ haves, needs }).filter((payment)=>{
+    return payment.amount > 0
+  })
+  return dist
 }
 
 export default function groupIncomeDistribution ({ getters, monthstamp, adjusted }) {
@@ -285,3 +279,4 @@ What we actually use:
 }
 
 */
+
