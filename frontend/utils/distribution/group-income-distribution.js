@@ -1,6 +1,6 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
-// import { mapValues } from '~/frontend/utils/giLodash.js'
+import { mapValues } from '~/frontend/utils/giLodash.js'
 import paymentTotalFromUserToUser from '../../model/contracts/payments/totals.js'
 
 export function dataToEvents (monthstamp, data) {
@@ -205,7 +205,7 @@ export function groupIncomeDistributionAdjustFirstLogic ({ getters, monthstamp, 
     }
   }
   /// pass the haves and needs to distributeFromHavesToNeeds
-  const dist = distibuteFromHavesToNeeds({ haves, needs }).filter((payment)=>{
+  const dist = distibuteFromHavesToNeeds({ haves, needs }).filter((payment) => {
     return payment.amount > 0
   })
   return dist
@@ -279,4 +279,3 @@ What we actually use:
 }
 
 */
-
