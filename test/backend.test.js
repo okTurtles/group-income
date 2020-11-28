@@ -29,7 +29,7 @@ const fs = require('fs')
 const path = require('path')
 // const { PassThrough, Readable } = require('stream')
 
-chalk.enabled = true // for some reason it's not detecting that terminal supports colors
+chalk.level = 2 // for some reason it's not detecting that terminal supports colors
 const { bold } = chalk
 
 // var unsignedMsg = sign(personas[0], 'futz')
