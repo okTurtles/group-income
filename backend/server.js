@@ -11,12 +11,14 @@ import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
 import { bold } from 'chalk'
 
+const Inert = require('@hapi/inert')
+
 // NOTE: migration guides for Hapi v16 -> v17:
 //       https://github.com/hapijs/hapi/issues/3658
 //       https://medium.com/yld-engineering-blog/so-youre-thinking-about-updating-your-hapi-js-server-to-v17-b5732ab5bdb8
 //       https://futurestud.io/tutorials/hapi-v17-upgrade-guide-your-move-to-async-await
 
-const hapi = Hapi.server({
+const hapi = new Hapi.Server({
   // TODO: improve logging and base it on process.env.NODE_ENV
   //       https://github.com/okTurtles/group-income-simple/issues/32
   // debug: false, // <- Hapi v16 was outputing too many unnecessary debug statements
@@ -24,7 +26,15 @@ const hapi = Hapi.server({
   debug: { log: ['error'], request: ['error'] },
   port: process.env.API_PORT,
   // See: https://github.com/hapijs/discuss/issues/262#issuecomment-204616831
-  routes: { cors: { origin: [process.env.FRONTEND_URL] } }
+  routes: {
+    cors: {
+      origin: [
+        process.env.FRONTEND_URL,
+        // improve support for browsersync proxy
+        process.env.NODE_ENV === 'development' && 'http://localhost:3000'
+      ]
+    }
+  }
 })
 
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
@@ -44,8 +54,17 @@ sbp('sbp/selectors/register', {
   }
 })
 
+// NOTE: uncomment this or enable debug logging support to show all requests
+// hapi.events.on('response', (request, event, tags) => {
+//   console.debug(chalk`{grey ${request.info.remoteAddress}: ${request.method.toUpperCase()} ${request.path} --> ${request.response.statusCode}}`)
+// })
+
 ;(async function () {
-  await hapi.register(GiAuth) // https://hapijs.com/tutorials/plugins
+  // https://hapi.dev/tutorials/plugins
+  await hapi.register([
+    { plugin: GiAuth },
+    { plugin: Inert }
+  ])
   require('./routes.js')
   require('./pubsub.js')
   await hapi.start()

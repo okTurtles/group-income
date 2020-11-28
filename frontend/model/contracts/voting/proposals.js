@@ -26,7 +26,7 @@ export function archiveProposal (state, proposalHash) {
 }
 
 export function buildInvitationUrl (groupId, inviteSecret) {
-  return `${process.env.FRONTEND_URL}/app/join?groupId=${groupId}&secret=${inviteSecret}`
+  return `${location.origin}/app/join?groupId=${groupId}&secret=${inviteSecret}`
 }
 
 export const proposalSettingsType = objectOf({

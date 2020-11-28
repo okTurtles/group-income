@@ -75,11 +75,8 @@ grunt test
 # all tests while skipping build step
 grunt test --skipbuild
 
-# unit tests only
+# unit tests only (always skips build)
 grunt test:unit
-
-# unit tests while skipping build step
-grunt test:unit --skipbuild
 
 # show e2e tests (Cypress) live in a browser
 grunt test --browser

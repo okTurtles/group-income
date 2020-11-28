@@ -6,6 +6,7 @@ import sbp from '~/shared/sbp.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { blake32Hash } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
+import path from 'path'
 import chalk from 'chalk'
 import './database.js'
 import './translations.js'
@@ -15,13 +16,15 @@ const Joi = require('@hapi/joi')
 
 const route = new Proxy({}, {
   get: function (obj, prop) {
-    return function (path: string, options: Object, handler: Function) {
+    return function (path: string, options: Object, handler: Function | Object) {
       sbp('okTurtles.data/apply', SERVER_INSTANCE, function (server: Object) {
         server.route({ path, method: prop, options, handler })
       })
     }
   }
 })
+
+// RESTful API routes
 
 // NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
@@ -175,4 +178,21 @@ route.GET('/translations/get/{language}', {}, async function (request, h) {
     logger(err)
     return Boom.notFound()
   }
+})
+
+// SPA routes
+
+route.GET('/assets/{path*}', {}, {
+  directory: {
+    path: path.resolve('./dist/assets'),
+    redirectToSlash: true
+  }
+})
+
+route.GET('/app/{path*}', {}, {
+  file: path.resolve('./dist/index.html')
+})
+
+route.GET('/', {}, function (req, h) {
+  return h.redirect('/app/')
 })

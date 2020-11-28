@@ -38,7 +38,8 @@ require('@babel/register')({
 
 var PORTS = {
   FRONTEND: 8000 + parseInt(process.env.PORT_SHIFT || 0),
-  BACKEND: 3000 + parseInt(process.env.PORT_SHIFT || 0)
+  // BACKEND: 3000 + parseInt(process.env.PORT_SHIFT || 0)
+  BACKEND: 8000 + parseInt(process.env.PORT_SHIFT || 0)
 }
 Object.assign(process.env, {
   NODE_ENV: process.env.NODE_ENV || (process.argv.some(x => /\b(dist|deploy)\b/.test(x)) ? 'production' : 'development'),
