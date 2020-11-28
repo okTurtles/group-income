@@ -42,7 +42,7 @@ const loginGuard = {
   redirect: (to, from) => ({ path: '/', query: { next: to.path } })
 }
 
-var inviteGuard = {
+const inviteGuard = {
   guard: (to, from) => {
     // ex: http://localhost:8000/app/join?groupId=21XWnNRE7vggw4ngGqmQz5D4vAwPYqcREhEkGop2mYZTKVkx8H&secret=5157
     return !(to.query.groupId && to.query.secret)
@@ -170,12 +170,12 @@ const router = new Router({
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
       beforeEnter: createEnterGuards(inviteGuard)
     },
-    ...(process.env.NODE_ENV === 'development' ? [{
+    ...(process.env.NODE_ENV === 'development' && [{
       path: '/error-testing',
       name: 'ErrorTesting',
       component: () => import('../views/pages/ErrorTesting.vue'),
       meta: { title: L('Error Testing') }
-    }] : []),
+    }]),
     {
       path: '*',
       redirect: '/'

@@ -135,10 +135,10 @@ module.exports = (grunt) => {
     const options = {
       run: {
         headed: grunt.option('browser') === true,
-        ...(process.env.CYPRESS_RECORD_KEY ? {
+        ...(process.env.CYPRESS_RECORD_KEY && {
           record: true,
           key: process.env.CYPRESS_RECORD_KEY
-        } : {})
+        })
       },
       open: {
         // add cypress.open() options here
@@ -152,7 +152,7 @@ module.exports = (grunt) => {
   //  Code for running backend server at the same time as browsersync
   // -------------------------------------------------------------------------
 
-  var killKeepAlive = null
+  let killKeepAlive = null
   grunt.registerTask('keepalive', function () {
     // this keeps grunt running after other async tasks have completed
     killKeepAlive = this.async()
@@ -164,8 +164,8 @@ module.exports = (grunt) => {
     bs.reload('index.html')
   })
 
-  var fork = require('child_process').fork
-  var child = null
+  const fork = require('child_process').fork
+  let child = null
 
   process.on('exit', () => { // 'beforeExit' doesn't work
     // In cases where 'watch' fails while child (server) is still running

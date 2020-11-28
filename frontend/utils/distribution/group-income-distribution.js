@@ -23,7 +23,7 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
       })
     }
   }
-  var dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
+  let dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
   if (adjusted) {
     // if this user has already made some payments to other users this
     // month, we need to take that into account and adjust the distribution.

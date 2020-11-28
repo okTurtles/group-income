@@ -52,7 +52,7 @@ route.POST('/event', {
 route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
   try {
     const { contractID, since } = request.params
-    var stream = await sbp('backend/db/streamEntriesSince', contractID, since)
+    const stream = await sbp('backend/db/streamEntriesSince', contractID, since)
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
@@ -103,7 +103,7 @@ route.GET('/name/{name}', {}, function (request, h) {
 
 route.GET('/latestHash/{contractID}', {}, async function (request, h) {
   try {
-    var entry = await sbp('gi.db/log/lastEntry', request.params.contractID)
+    const entry = await sbp('gi.db/log/lastEntry', request.params.contractID)
     return entry ? entry.hash() : Boom.notFound()
   } catch (err) {
     logger(err)

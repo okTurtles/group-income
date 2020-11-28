@@ -91,7 +91,7 @@ export default {
           password: this.form.password,
           picture: this.form.pictureBase64 ? imageDataURItoBlob(this.form.pictureBase64) : ''
         })
-        this.$emit('submitSucceeded')
+        this.$emit('submit-succeeded')
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)

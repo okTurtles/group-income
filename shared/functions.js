@@ -29,7 +29,7 @@ export function blake32Hash (data: string | Buffer | Uint8Array) {
   const uint8array = blake.blake2b(data, null, 32)
   // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
   // https://github.com/feross/typedarray-to-buffer
-  var buf = Buffer.from(uint8array.buffer)
+  const buf = Buffer.from(uint8array.buffer)
   return multihash.toB58String(multihash.encode(buf, 'blake2b-32', 32))
 }
 

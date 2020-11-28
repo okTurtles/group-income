@@ -14,8 +14,8 @@ import { ACTION_REGEX } from '~/frontend/model/contracts/Contract.js'
 // const nacl = require('tweetnacl')
 import nacl from 'tweetnacl'
 
-var persona = nacl.sign.keyPair()
-var signature = signJSON('', persona)
+const persona = nacl.sign.keyPair()
+const signature = signJSON('', persona)
 
 function signJSON (json, keypair) {
   return sign({
@@ -24,8 +24,8 @@ function signJSON (json, keypair) {
   }, json)
 }
 
-var contractSubscriptions = {}
-var serverSocket
+const contractSubscriptions = {}
+let serverSocket
 
 export function createWebSocket (url: string, options: Object): Promise<Object> {
   return new Promise((resolve, reject) => {
@@ -98,7 +98,7 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (contracts) => {
 sbp('sbp/selectors/register', {
   'backend/publishLogEntry': async (entry: GIMessage, { maxAttempts = 2 } = {}) => {
     const action = ACTION_REGEX.exec(entry.type())[1]
-    var attempt = 1
+    let attempt = 1
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income-simple/issues/608
     while (true) {
@@ -135,7 +135,7 @@ sbp('sbp/selectors/register', {
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
   'backend/eventsSince': async (contractID: string, since: string) => {
-    var events = await fetch(`${process.env.API_URL}/events/${contractID}/${since}`)
+    const events = await fetch(`${process.env.API_URL}/events/${contractID}/${since}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(e => b64ToStr(e))

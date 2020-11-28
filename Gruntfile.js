@@ -36,7 +36,7 @@ require('@babel/register')({
 // values, similar to C macros.
 // =======================
 
-var PORTS = {
+const PORTS = {
   FRONTEND: 8000 + parseInt(process.env.PORT_SHIFT || 0),
   // BACKEND: 3000 + parseInt(process.env.PORT_SHIFT || 0)
   BACKEND: 8000 + parseInt(process.env.PORT_SHIFT || 0)
