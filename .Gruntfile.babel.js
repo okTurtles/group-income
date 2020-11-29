@@ -22,6 +22,7 @@ const fs = require('fs')
 const path = require('path')
 const util = require('util')
 const bs = require('browser-sync').create('rollup')
+const crypto = require('crypto')
 const readFileAsync = util.promisify(fs.readFile)
 
 const development = process.env.NODE_ENV === 'development'
@@ -325,6 +326,7 @@ module.exports = (grunt) => {
             target: process.env.API_URL,
             ws: true
           },
+          tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`,
           reloadDelay: 100,
           reloadThrottle: 2000,
           cors: true,
