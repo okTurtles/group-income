@@ -52,7 +52,7 @@ Run all servers + watch files for changes
 grunt dev
 ```
 
-- If all went well you should be able to visit [http://localhost:8000](http://localhost:8000)
+- If all went well you should be able to visit [http://localhost:3000](http://localhost:3000)
 
 Build the app for distribution
 
