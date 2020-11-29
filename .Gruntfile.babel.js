@@ -237,6 +237,7 @@ module.exports = (grunt) => {
         clearScreen: false,
         chokidar: true
       },
+      preserveEntrySignatures: false,
       output: {
         format: 'system',
         dir: distJS,
@@ -321,7 +322,7 @@ module.exports = (grunt) => {
         watchFlag && browsersync({
           // https://browsersync.io/docs/options
           proxy: {
-            target: process.env.FRONTEND_URL,
+            target: process.env.API_URL,
             ws: true
           },
           reloadDelay: 100,

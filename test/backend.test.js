@@ -54,6 +54,9 @@ const vuexState = {
   appLogsFilter: ['error', 'info', 'warn']
 }
 
+// this is to ensure compatibility between frontend and test/backend.test.js
+sbp('okTurtles.data/set', 'API_URL', process.env.API_URL)
+
 sbp('sbp/selectors/overwrite', {
   // intercept 'state/enqueueHandleEvent' from backend.js
   'state/enqueueHandleEvent': function (e) {

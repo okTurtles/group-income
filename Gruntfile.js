@@ -36,18 +36,12 @@ require('@babel/register')({
 // values, similar to C macros.
 // =======================
 
-const PORTS = {
-  FRONTEND: 8000 + parseInt(process.env.PORT_SHIFT || 0),
-  // BACKEND: 3000 + parseInt(process.env.PORT_SHIFT || 0)
-  BACKEND: 8000 + parseInt(process.env.PORT_SHIFT || 0)
-}
+const API_PORT = 8000 + parseInt(process.env.PORT_SHIFT || 0)
 Object.assign(process.env, {
   NODE_ENV: process.env.NODE_ENV || (process.argv.some(x => /\b(dist|deploy)\b/.test(x)) ? 'production' : 'development'),
-  API_PORT: PORTS.BACKEND,
-  FRONTEND_PORT: PORTS.FRONTEND,
+  API_PORT,
   // TODO: make the protocol (http vs https) variable based on environment var
-  API_URL: 'http://localhost:' + PORTS.BACKEND,
-  FRONTEND_URL: 'http://localhost:' + PORTS.FRONTEND
+  API_URL: 'http://localhost:' + API_PORT
 })
 
 // =======================

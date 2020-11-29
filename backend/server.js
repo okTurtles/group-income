@@ -29,7 +29,7 @@ const hapi = new Hapi.Server({
   routes: {
     cors: {
       origin: [
-        process.env.FRONTEND_URL,
+        process.env.API_URL,
         // improve support for browsersync proxy
         process.env.NODE_ENV === 'development' && 'http://localhost:3000'
       ]

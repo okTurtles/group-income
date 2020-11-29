@@ -1,3 +1,4 @@
+import sbp from '~/shared/sbp.js'
 import { blake32Hash } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 
@@ -29,7 +30,7 @@ export const imageUpload = async (imageFile) => {
       console.debug('picture hash:', hash)
       fd.append('hash', hash)
       fd.append('data', file)
-      fetch(`${process.env.API_URL}/file`, {
+      fetch(`${sbp('okTurtles.data/get', 'API_URL')}/file`, {
         method: 'POST',
         body: fd
       }).then(handleFetchResult('text')).then(resolve).catch(reject)
