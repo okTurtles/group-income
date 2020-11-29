@@ -1,12 +1,14 @@
 import sbp from '~/shared/sbp.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
+import { imageUpload } from '@utils/image.js'
 
 export default sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
     username,
     email,
-    password
+    password,
+    picture
   }) {
     // TODO: make sure we namespace these names:
     //       https://github.com/okTurtles/group-income-simple/issues/598
@@ -18,16 +20,23 @@ export default sbp('sbp/selectors/register', {
       await sbp('gi.db/settings/delete', username)
     }
 
-    const defaultAvatar = `${window.location.origin}/assets/images/user-avatar-default.png`
-    const picture = await sbp('gi.utils/avatar/create') || defaultAvatar
+    let finalPicture = `${window.location.origin}/assets/images/user-avatar-default.png`
 
+    if (picture) {
+      try {
+        finalPicture = await imageUpload(picture)
+      } catch (e) {
+        console.error('actions/identity.js picture upload error:', e)
+        throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }))
+      }
+    }
     // proceed with creation
     const user = await sbp('gi.contracts/identity/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth()],
       attributes: {
         username,
         email: email,
-        picture
+        picture: finalPicture
       }
     })
     const mailbox = await sbp('gi.contracts/mailbox/create', {
@@ -56,7 +65,13 @@ export default sbp('sbp/selectors/register', {
     sync = true
   } = {}) {
     try {
-      const [userID, mailboxID] = await sbp('gi.actions/identity/create', { username, email, password })
+      const randomAvatar = sbp('gi.utils/avatar/create')
+      const [userID, mailboxID] = await sbp('gi.actions/identity/create', {
+        username,
+        email,
+        password,
+        picture: randomAvatar
+      })
 
       await sbp('namespace/register', username, userID)
 
