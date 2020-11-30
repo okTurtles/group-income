@@ -9,7 +9,7 @@ import VuePlugin from 'rollup-plugin-vue'
 import flowRemoveTypes from 'flow-remove-types'
 import json from 'rollup-plugin-json'
 import globals from 'rollup-plugin-node-globals'
-import { eslint } from 'rollup-plugin-eslint'
+import eslint from '@rollup/plugin-eslint'
 import sass from 'rollup-plugin-sass'
 import { createFilter } from 'rollup-pluginutils'
 import transpile from 'vue-template-es2015-compiler'
@@ -20,12 +20,12 @@ const rollup = require('rollup')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
-const url = require('url')
 const util = require('util')
+const bs = require('browser-sync').create('rollup')
+const crypto = require('crypto')
 const readFileAsync = util.promisify(fs.readFile)
 
 const development = process.env.NODE_ENV === 'development'
-const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
 
 const distDir = 'dist'
 const distAssets = `${distDir}/assets`
@@ -57,33 +57,6 @@ module.exports = (grunt) => {
     pkg: grunt.file.readJSON('package.json'),
 
     checkDependencies: { this: { options: { install: true } } },
-
-    watch: {
-      // prevent watch from spawning. if we don't do this, we won't be able
-      // to kill the child when files change.
-      options: { spawn: false },
-      rollup: {
-        options: { livereload },
-        files: [`${distJS}/main.js`]
-      },
-      html: {
-        options: { livereload },
-        files: ['frontend/**/*.html'],
-        tasks: ['copy']
-      },
-      puglint: {
-        files: ['frontend/views/**/*.vue'],
-        tasks: ['exec:puglint']
-      },
-      backend: {
-        files: ['backend/**/*.js', 'shared/**/*.js'],
-        tasks: ['exec:eslint', 'backend:relaunch']
-      },
-      gruntfile: {
-        files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
-        tasks: ['exec:eslintgrunt']
-      }
-    },
 
     copy: {
       node_modules: {
@@ -123,44 +96,7 @@ module.exports = (grunt) => {
       flow: './node_modules/.bin/flow'
     },
 
-    clean: { dist: [`${distDir}/*`] },
-
-    connect: {
-      options: {
-        port: process.env.FRONTEND_PORT,
-        useAvailablePort: true,
-        base: 'dist',
-        livereload: livereload,
-        middleware: (connect, opts, middlewares) => {
-          middlewares.unshift((req, res, next) => {
-            var f = url.parse(req.url).pathname // eslint-disable-line
-            if (f !== undefined) {
-              if (/^\/app(\/|$)/.test(f)) {
-                // NOTE: if you change the URL from /app you must modify it here,
-                //       and also:
-                //       - page() function in `frontend/test.js`
-                //       - base property in `frontend/simple/controller/router.js`
-                console.log(chalk.grey(`Req: ${req.url}, sending index.html for: ${f}`))
-                res.end(fs.readFileSync(`${distDir}/index.html`))
-              // NOTE: next we check for sourcemapped files
-              } else if (/^\/(frontend|shared|node_modules)\//.test(f)) {
-                // NOTE: we will not be doing this or using this in production
-                console.log(chalk`{grey Req: ${req.url},} sending dev file`)
-                res.end(fs.readFileSync(f.slice(1)))
-              } else {
-                console.log(chalk.grey(`sending: ${req.url}`))
-                next() // otherwise send the resource itself, whatever it is
-              }
-            }
-          })
-          return middlewares
-        }
-      },
-      dev: {}
-    }
-    // see also:
-    // https://github.com/lud2k/grunt-serve
-    // https://medium.com/@dan_abramov/the-death-of-react-hot-loader-765fa791d7c4
+    clean: { dist: [`${distDir}/*`] }
   })
 
   // -------------------------------------------------------------------------
@@ -168,10 +104,10 @@ module.exports = (grunt) => {
   // -------------------------------------------------------------------------
 
   grunt.registerTask('default', ['dev'])
-  grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend:relaunch', 'watch'])
+  grunt.registerTask('dev', ['checkDependencies', 'backend:relaunch', 'build:watch', 'keepalive'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['build', 'connect', 'backend:launch', 'exec:test', 'cypress'])
-  grunt.registerTask('test:unit', ['build', 'backend:launch', 'exec:test'])
+  grunt.registerTask('test', ['build', 'backend:launch', 'exec:test', 'cypress'])
+  grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
 
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
@@ -182,6 +118,7 @@ module.exports = (grunt) => {
       // if we are being run with 'grunt dev', tell Primus to generate the file
       // ./frontend/controller/utils/primus.js, otherwise, this is 'grunt test', and this
       // block will be skipped so that pubsub.js can be required through ./backend/index.js
+      // TODO: get rid of this when we remove Primus (#576)
       require('~/backend/pubsub.js') // hack to register 'backend/pubsub/setup' selector
       sbp('backend/pubsub/setup', require('http').createServer(), true)
     }
@@ -199,10 +136,10 @@ module.exports = (grunt) => {
     const options = {
       run: {
         headed: grunt.option('browser') === true,
-        ...(process.env.CYPRESS_RECORD_KEY ? {
+        ...(process.env.CYPRESS_RECORD_KEY && {
           record: true,
           key: process.env.CYPRESS_RECORD_KEY
-        } : {})
+        })
       },
       open: {
         // add cypress.open() options here
@@ -213,11 +150,23 @@ module.exports = (grunt) => {
   })
 
   // -------------------------------------------------------------------------
-  //  Code for running backend server at the same time as frontend server
+  //  Code for running backend server at the same time as browsersync
   // -------------------------------------------------------------------------
 
-  var fork = require('child_process').fork
-  var child = null
+  let killKeepAlive = null
+  grunt.registerTask('keepalive', function () {
+    // this keeps grunt running after other async tasks have completed
+    killKeepAlive = this.async()
+  })
+
+  grunt.registerTask('reload', function () {
+    // unfortunately this doesn't seem to actually refresh browsersync with
+    // the way we're using it... don't know why. Doesn't actually refresh page.
+    bs.reload('index.html')
+  })
+
+  const fork = require('child_process').fork
+  let child = null
 
   process.on('exit', () => { // 'beforeExit' doesn't work
     // In cases where 'watch' fails while child (server) is still running
@@ -228,7 +177,7 @@ module.exports = (grunt) => {
     // will exit leaving a dangling child server process.
     if (child) {
       grunt.log.writeln('Quitting dangling child!')
-      child.send({})
+      child.send({ shutdown: 2 })
     }
   })
 
@@ -263,7 +212,7 @@ module.exports = (grunt) => {
         child = null
         fork2()
       })
-      child.send({})
+      child.send({ shutdown: 1 })
     } else {
       fork2()
     }
@@ -289,6 +238,7 @@ module.exports = (grunt) => {
         clearScreen: false,
         chokidar: true
       },
+      preserveEntrySignatures: false,
       output: {
         format: 'system',
         dir: distJS,
@@ -369,9 +319,48 @@ module.exports = (grunt) => {
           runtimeHelpers: true,
           exclude: 'node_modules/**' // only transpile our source code
         }),
-        globals() // for Buffer support
+        globals(), // for Buffer support
+        // run browsersync only in dev mode
+        watchFlag && browsersync({
+          // https://browsersync.io/docs/options
+          proxy: {
+            target: process.env.API_URL,
+            ws: true
+          },
+          tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`,
+          reloadDelay: 100,
+          reloadThrottle: 2000,
+          cors: true,
+          open: false,
+          logLevel: grunt.option('debug') ? 'debug' : 'info',
+          files: [
+            // glob matching uses https://github.com/micromatch/picomatch
+            `${distJS}/main.js`,
+            `${distDir}/index.html`,
+            `${distAssets}/**/*`,
+            `${distCSS}/**/*`
+          ]
+        }, () => {
+          ;[
+            [['frontend/**/*.html'], ['copy']],
+            [['frontend/views/**/*.vue'], ['exec:puglint']],
+            [['backend/**/*.js', 'shared/**/*.js'], ['exec:eslint', 'backend:relaunch', 'reload']],
+            [['.Gruntfile.babel.js', 'Gruntfile.js'], ['exec:eslintgrunt']]
+          ].forEach(([globs, tasks]) => {
+            globs.forEach(g => {
+              grunt.verbose.debug(chalk`{green browsersync:} watching: ${g}`)
+              bs.watch(g, { ignoreInitial: true }, () => {
+                grunt.verbose.debug(chalk`{green browsersync:} queuing: ${tasks}`)
+                grunt.task.run(tasks.concat(['keepalive']))
+                killKeepAlive && killKeepAlive() // allow the task queue to move forward
+              })
+            })
+          })
+          grunt.verbose.debug(chalk`{green browsersync:} setup done!`)
+        })
       ]
     }
+
     const watcher = rollup.watch(watchOpts)
     watcher.on('event', event => {
       const outputName = watchOpts.output.file || watchOpts.output.dir
@@ -460,6 +449,20 @@ function flow (options = {}) {
       code: flowRemoveTypes(code, options).toString(),
       map: options.pretty ? { mappings: '' } : null
     })
+  }
+}
+
+// Using this instead of rollup-plugin-browsersync because it's so simple
+function browsersync (bsOptions, doneCB) {
+  return {
+    name: 'browsersync',
+    writeBundle (options) {
+      if (!bs.active) {
+        bs.init(bsOptions || { server: '.' }, doneCB)
+      } else {
+        bs.reload(options.file)
+      }
+    }
   }
 }
 

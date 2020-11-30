@@ -78,7 +78,8 @@ function createEase ({
     case 'ExpoOut':
       return t => {
         return (t === duration)
-          ? end : (end - init) * (-Math.pow(2, -10 * t / duration) + 1) + init
+          ? end
+          : (end - init) * (-Math.pow(2, -10 * t / duration) + 1) + init
       }
     default: // 'Linear'
       return t => {

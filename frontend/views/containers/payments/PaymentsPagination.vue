@@ -52,8 +52,8 @@ export default {
     count: Number,
     page: Number,
     rowsPerPage: Number
-    // @changePage('next'|'prev')
-    // @changeRowsPerPage(String) // Page Number
+    // @change-page('next'|'prev')
+    // @change-rows-per-page(String) // Page Number
   },
   data: () => ({
     config: {
@@ -75,13 +75,13 @@ export default {
   },
   methods: {
     updatePagination (e) {
-      this.$emit('changeRowsPerPage', +e.target.value)
+      this.$emit('change-rows-per-page', +e.target.value)
     },
     previousPage () {
-      this.$emit('changePage', 'prev')
+      this.$emit('change-page', 'prev')
     },
     nextPage () {
-      this.$emit('changePage', 'next')
+      this.$emit('change-page', 'next')
     }
   }
 }

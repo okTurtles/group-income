@@ -159,7 +159,7 @@ export default {
       this.ephemeral.maskHeight = this.$refs.mask.offsetHeight - 2
 
       // ... finaly inform the parent about the new height to adjust the layout
-      this.$emit('heightUpdate', this.ephemeral.maskHeight + 'px')
+      this.$emit('height-update', this.ephemeral.maskHeight + 'px')
     },
     createNewLine () {
       this.$refs.textarea.value += '\n'

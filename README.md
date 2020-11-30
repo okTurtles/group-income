@@ -46,13 +46,19 @@ We are continually improving the user experience for everyone, and applying the 
 
 Group Income is an application based on [Vue.js](https://vuejs.org/). Here's how you can get started with development:
 
-Run all servers + watch files for changes
+Run all server + watch files for changes
 
 ```bash
 grunt dev
 ```
 
-- If all went well you should be able to visit [http://localhost:8000](http://localhost:8000)
+- If all went well you should be able to visit [http://localhost:3000](http://localhost:3000)
+
+Create a tunnel to share access over the Internet:
+
+```
+grunt dev --tunnel
+```
 
 Build the app for distribution
 
@@ -75,11 +81,8 @@ grunt test
 # all tests while skipping build step
 grunt test --skipbuild
 
-# unit tests only
+# unit tests only (always skips build)
 grunt test:unit
-
-# unit tests while skipping build step
-grunt test:unit --skipbuild
 
 # show e2e tests (Cypress) live in a browser
 grunt test --browser

@@ -74,7 +74,7 @@ export default {
           username: this.form.username,
           password: this.form.password
         })
-        this.$emit('submitSucceeded')
+        this.$emit('submit-succeeded')
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)

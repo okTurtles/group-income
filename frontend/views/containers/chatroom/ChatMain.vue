@@ -50,11 +50,11 @@
     send-area(
       :title='summary.title'
       @send='handleSendMessage'
-      @heightupdate='updateSendAreaHeight'
+      @height-update='updateSendAreaHeight'
       :loading='details.isLoading'
-      :replyingMessage='ephemeral.replyingMessage'
-      :replyingTo='ephemeral.replyingTo'
-      @stopReplying='ephemeral.replyingMessage = null'
+      :replying-message='ephemeral.replyingMessage'
+      :replying-to='ephemeral.replyingTo'
+      @stop-replying='ephemeral.replyingMessage = null'
     )
 </template>
 
@@ -112,7 +112,7 @@ export default {
   },
   created () {
     // TODO #492 create a global Vue Responsive just for media queries.
-    var mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
+    const mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
     this.config.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
   },

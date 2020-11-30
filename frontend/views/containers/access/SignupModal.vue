@@ -3,7 +3,7 @@
     template(slot='title')
       i18n Sign Up
 
-    signup-form(@submitSucceeded='submit')
+    signup-form(@submit-succeeded='submit')
 
     template(slot='footer')
       p

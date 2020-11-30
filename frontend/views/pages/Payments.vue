@@ -79,8 +79,8 @@ page(
               :count='paymentsFiltered.length'
               :rowsPerPage='ephemeral.rowsPerPage'
               :page.sync='ephemeral.currentPage'
-              @changePage='handlePageChange'
-              @changeRowsPerPage='handleRowsPerPageChange'
+              @change-page='handlePageChange'
+              @change-rows-per-page='handleRowsPerPageChange'
             )
         .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
           i18n(tag='p' :args='{query: form.searchText }') No results for "{query}".
@@ -188,15 +188,17 @@ export default {
     },
     tableTitles () {
       const firstTab = this.needsIncome ? L('Sent by') : L('Send to')
-      return this.ephemeral.activeTab === 'PaymentRowTodo' ? {
-        one: firstTab,
-        two: L('Amount'),
-        three: L('Due in')
-      } : {
-        one: firstTab,
-        two: L('Amount'),
-        three: L('Date')
-      }
+      return this.ephemeral.activeTab === 'PaymentRowTodo'
+        ? {
+          one: firstTab,
+          two: L('Amount'),
+          three: L('Due in')
+        }
+        : {
+          one: firstTab,
+          two: L('Amount'),
+          three: L('Date')
+        }
     },
     introTitle () {
       return this.needsIncome

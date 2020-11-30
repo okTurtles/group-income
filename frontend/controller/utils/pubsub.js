@@ -11,7 +11,7 @@ const { ERROR, PUB, SUB, UNSUB } = RESPONSE_TYPE
 export default function (
   { options, url, handlers }: {options: Object, url: string, handlers: Object}
 ) {
-  var primus = new Primus(url, options)
+  const primus = new Primus(url, options)
   Object.keys(handlers).forEach(event => primus.on(event, handlers[event]))
   return primus
 }
