@@ -6,7 +6,7 @@ import { handleFetchResult } from './utils/misc.js'
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {
   'namespace/register': (name: string, value: string) => {
-    return fetch(`${process.env.API_URL}/name`, {
+    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name`, {
       method: 'POST',
       body: JSON.stringify({ name, value }),
       headers: {
@@ -16,7 +16,7 @@ sbp('sbp/selectors/register', {
   },
   'namespace/lookup': (name: string) => {
     // TODO: should `name` be encodeURI'd?
-    return fetch(`${process.env.API_URL}/name/${name}`).then((r: Object) => {
+    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${name}`).then((r: Object) => {
       if (!r.ok) {
         console.warn(`namespace/lookup: ${r.status} for ${name}`)
         if (r.status !== 404) {

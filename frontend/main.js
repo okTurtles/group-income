@@ -52,8 +52,11 @@ async function startApp () {
     })
   }
 
+  // this is to ensure compatibility between frontend and test/backend.test.js
+  sbp('okTurtles.data/set', 'API_URL', location.origin)
+
   // TODO: handle any socket errors!
-  createWebSocket(process.env.API_URL, {
+  createWebSocket(sbp('okTurtles.data/get', 'API_URL'), {
     // TODO: verify these are good defaults
     timeout: 3000,
     strategy: ['disconnect', 'online', 'timeout']

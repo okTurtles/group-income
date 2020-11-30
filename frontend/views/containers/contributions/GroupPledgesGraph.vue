@@ -135,11 +135,9 @@ export default {
       const { groupGoal, othersPledgesAmount, ourPledgeAmount, pledgeTotal, surplus } = this.graphData
 
       if (groupGoal === 0) {
-        return pledgeTotal > 0 ? [{
-          id: 'goal_zero',
-          percent: 1,
-          color: 'primary'
-        }] : []
+        return pledgeTotal > 0
+          ? [{ id: 'goal_zero', percent: 1, color: 'primary' }]
+          : []
       }
 
       // Note: surplus is added on the innerSlices, so we need to substract its part from the pledges.
