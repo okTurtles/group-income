@@ -42,9 +42,8 @@ export default {
      * - It avoids showing the error while the user is still typing.
      */
     debounceField (fieldName, value) {
-      const $vFieldName = this.$v.form[fieldName]
       // Do a field validation, but don't show $error immediately
-      $vFieldName.$reset()
+      this.$v.form[fieldName].$reset()
       // Wait a little to make sure the user stopped typing...
       this.debounceValidation(fieldName, value)
     },

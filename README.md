@@ -52,7 +52,13 @@ Run all servers + watch files for changes
 grunt dev
 ```
 
-- If all went well you should be able to visit [http://localhost:8000](http://localhost:8000)
+- If all went well you should be able to visit [http://localhost:3000](http://localhost:3000)
+
+Create a tunnel to share access over the Internet:
+
+```
+grunt dev --tunnel
+```
 
 Build the app for distribution
 
@@ -75,11 +81,8 @@ grunt test
 # all tests while skipping build step
 grunt test --skipbuild
 
-# unit tests only
+# unit tests only (always skips build)
 grunt test:unit
-
-# unit tests while skipping build step
-grunt test:unit --skipbuild
 
 # show e2e tests (Cypress) live in a browser
 grunt test --browser

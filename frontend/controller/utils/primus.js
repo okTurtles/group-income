@@ -888,7 +888,7 @@ function encode(input) {
  * @api public
  */
 function querystring(query) {
-  var parser = /([^=?&]+)=?([^&]*)/g
+  var parser = /([^=?#&]+)=?([^&]*)/g
     , result = {}
     , part;
 
@@ -943,8 +943,8 @@ function querystringify(obj, prefix) {
         value = '';
       }
 
-      key = encodeURIComponent(key);
-      value = encodeURIComponent(value);
+      key = encode(key);
+      value = encode(value);
 
       //
       // If we failed to encode the strings, we should bail out as we don't
@@ -1491,7 +1491,7 @@ module.exports = function required(port, protocol) {
 };
 
 },{}],12:[function(_dereq_,module,exports){
-(function (setImmediate,clearImmediate){
+(function (setImmediate,clearImmediate){(function (){
 'use strict';
 
 var has = Object.prototype.hasOwnProperty
@@ -1768,9 +1768,9 @@ Tick.prototype.end = Tick.prototype.destroy = function end() {
 Tick.Timer = Timer;
 module.exports = Tick;
 
-}).call(this,_dereq_("timers").setImmediate,_dereq_("timers").clearImmediate)
+}).call(this)}).call(this,_dereq_("timers").setImmediate,_dereq_("timers").clearImmediate)
 },{"millisecond":5,"timers":13}],13:[function(_dereq_,module,exports){
-(function (setImmediate,clearImmediate){
+(function (setImmediate,clearImmediate){(function (){
 var nextTick = _dereq_('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
 var slice = Array.prototype.slice;
@@ -1847,9 +1847,9 @@ exports.setImmediate = typeof setImmediate === "function" ? setImmediate : funct
 exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate : function(id) {
   delete immediateIds[id];
 };
-}).call(this,_dereq_("timers").setImmediate,_dereq_("timers").clearImmediate)
+}).call(this)}).call(this,_dereq_("timers").setImmediate,_dereq_("timers").clearImmediate)
 },{"process/browser.js":7,"timers":13}],14:[function(_dereq_,module,exports){
-(function (global){
+(function (global){(function (){
 'use strict';
 
 var required = _dereq_('requires-port')
@@ -2301,7 +2301,7 @@ Url.qs = qs;
 
 module.exports = Url;
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+}).call(this)}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"querystringify":8,"requires-port":11}],15:[function(_dereq_,module,exports){
 'use strict';
 
@@ -3637,7 +3637,7 @@ Primus.prototype.decoder = function decoder(data, fn) {
 
   fn(err, data);
 };
-Primus.prototype.version = "7.3.4";
+Primus.prototype.version = "8.0.0";
 
 if (
      'undefined' !== typeof document

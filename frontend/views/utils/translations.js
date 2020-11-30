@@ -142,7 +142,7 @@ Vue.component('i18n', {
       return h(context.props.tag, context.data, text)
     }
     if (context.props.compile) {
-      var result = Vue.compile('<wrap>' + translation + '</wrap>')
+      const result = Vue.compile('<wrap>' + translation + '</wrap>')
       // console.log('TRANSLATED RENDERED TEXT:', context, result.render.toString())
       return result.render.call({
         _c: (tag, ...args) => {

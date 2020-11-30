@@ -32,9 +32,9 @@ module.exports = new Promise((resolve, reject) => {
   require('./server.js')
 })
 
-const shutdownFn = function () {
+const shutdownFn = function (message) {
   sbp('okTurtles.data/apply', PUBSUB_INSTANCE, function (primus) {
-    console.log('message received in child, shutting down...')
+    console.log('message received in child, shutting down...', message)
     primus.on('close', async function () {
       try {
         await sbp('backend/server/stop')

@@ -5,8 +5,9 @@ form(data-test='signup' @submit.prevent='')
     input.input(
       :class='{error: $v.form.username.$error}'
       name='username'
-      @input='e => debounceValidation("username", e.target.value)'
-      @blur='e => updateField("username", e.target.value)'
+      v-model.trim='form.username'
+      @input='debounceField("username")'
+      @blur='updateField("username")'
       data-test='signName'
       v-error:username='{ attrs: { "data-test": "badUsername" } }'
     )
@@ -17,7 +18,7 @@ form(data-test='signup' @submit.prevent='')
       :class='{error: $v.form.email.$error}'
       name='email'
       type='email'
-      v-model='form.email'
+      v-model.trim='form.email'
       @input='debounceField("email")'
       @blur='updateField("email")'
       data-test='signEmail'
@@ -65,7 +66,12 @@ export default {
       form: {
         username: null,
         password: null,
-        email: null
+        email: null,
+        pictureBase64: null
+      },
+      usernameAsyncValidation: {
+        timer: null,
+        resolveFn: null
       }
     }
   },
@@ -81,29 +87,51 @@ export default {
           email: this.form.email,
           password: this.form.password
         })
-        this.$emit('submitSucceeded')
+        this.$emit('submit-succeeded')
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
     }
   },
-  validations: {
-    form: {
-      username: {
-        [L('A username is required.')]: required,
-        [L('A username cannot contain spaces.')]: nonWhitespace,
-        [L('This username is already being used.')]: async (value) => {
-          return !await sbp('namespace/lookup', value)
+  // we use dynamic validation schema to support accessing this.usernameAsyncValidation
+  // https://vuelidate.js.org/#sub-dynamic-validation-schema
+  validations () {
+    return {
+      form: {
+        username: {
+          [L('A username is required.')]: required,
+          [L('A username cannot contain spaces.')]: nonWhitespace,
+          [L('This username is already being used.')]: async (value) => {
+            if (!value) return true
+            if (this.usernameAsyncValidation.timer) {
+              clearTimeout(this.usernameAsyncValidation.timer)
+            }
+            if (this.usernameAsyncValidation.resolveFn) {
+              this.usernameAsyncValidation.resolveFn(true)
+              this.usernameAsyncValidation.resolveFn = null
+            }
+            return new Promise((resolve) => {
+              this.usernameAsyncValidation.resolveFn = resolve
+              this.usernameAsyncValidation.timer = setTimeout(async () => {
+                try {
+                  resolve(!await sbp('namespace/lookup', value))
+                } catch (e) {
+                  console.warn('unexpected exception in SignupForm validation:', e)
+                  resolve(true)
+                }
+              }, 1000)
+            })
+          }
+        },
+        password: {
+          [L('A password is required.')]: required,
+          [L('Your password must be at least 7 characteres long.')]: minLength(7)
+        },
+        email: {
+          [L('An email is required.')]: required,
+          [L('Please enter a valid email.')]: email
         }
-      },
-      password: {
-        [L('A password is required.')]: required,
-        [L('Your password must be at least 7 characteres long.')]: minLength(7)
-      },
-      email: {
-        [L('An email is required.')]: required,
-        [L('Please enter a valid email.')]: email
       }
     }
   }

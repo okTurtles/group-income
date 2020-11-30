@@ -172,7 +172,7 @@ DefineContract({
         //       https://github.com/babel/babel-eslint/issues/511
         const total = (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
           const payment = payments[hash]
-          var { amount, exchangeRate, status } = payment.data
+          let { amount, exchangeRate, status } = payment.data
           if (status !== PAYMENT_COMPLETED) {
             return a
           }
@@ -618,7 +618,7 @@ DefineContract({
         mincomeCurrency: x => typeof x === 'string'
       }),
       process ({ meta, data }, { state, getters }) {
-        for (var key in data) {
+        for (const key in data) {
           Vue.set(state.settings, key, data[key])
         }
       }
@@ -642,7 +642,7 @@ DefineContract({
         )
       }),
       process ({ data, meta }, { state }) {
-        var groupProfile = state.profiles[meta.username]
+        const groupProfile = state.profiles[meta.username]
         const nonMonetary = groupProfile.nonMonetaryContributions
         for (const key in data) {
           const value = data[key]
@@ -686,7 +686,7 @@ DefineContract({
       }
     },
 
-    ...(process.env.NODE_ENV === 'development' ? {
+    ...(process.env.NODE_ENV === 'development' && {
       'gi.contracts/group/malformedMutation': {
         validate: objectOf({ errorType: string }),
         process ({ data }, { state }) {
@@ -698,7 +698,7 @@ DefineContract({
           }
         }
       }
-    } : {})
+    })
     // TODO: remove group profile when leave group is implemented
   }
 })

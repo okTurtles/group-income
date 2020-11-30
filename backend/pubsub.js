@@ -23,7 +23,7 @@ const { ERROR, SUCCESS, SUB, UNSUB, PUB } = RESPONSE_TYPE
 //       multiple channels, and each channel then can have multiple rooms.
 // https://github.com/cayasso/primus-multiplex/blob/master/examples/node/rooms/index.js
 
-var primus
+let primus
 
 sbp('sbp/selectors/register', {
   // generate and save primus client file
@@ -73,8 +73,8 @@ if (sbp('okTurtles.data/get', SERVER_INSTANCE)) {
       // https://github.com/swissmanu/primus-responder
       spark.on('request', async function (req, done) {
         try {
-          var { type, data: { contractID } } = req
-          var success = reply(SUCCESS, { type, id })
+          const { type, data: { contractID } } = req
+          const success = reply(SUCCESS, { type, id })
           console.log(bold(`[pubsub] REQUEST '${type}' from '${id}'`), req)
           switch (type) {
             case SUB:

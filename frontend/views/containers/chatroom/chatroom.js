@@ -13,7 +13,7 @@ const chatroom = {
   },
   created () {
     // TODO #492 create a global Vue Responsive just for media queries.
-    var mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
+    const mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
     this.config.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
   },

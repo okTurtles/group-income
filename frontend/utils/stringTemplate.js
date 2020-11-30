@@ -1,13 +1,13 @@
-var nargs = /\{([0-9a-zA-Z_]+)\}/g
+const nargs = /\{([0-9a-zA-Z_]+)\}/g
 
 export default function template (string: string = '') {
-  var args
+  let args
 
   if (arguments.length === 2 && typeof arguments[1] === 'object') {
     args = arguments[1]
   } else {
     args = new Array(arguments.length - 1)
-    for (var i = 1; i < arguments.length; ++i) {
+    for (let i = 1; i < arguments.length; ++i) {
       args[i - 1] = arguments[i]
     }
   }
@@ -17,7 +17,7 @@ export default function template (string: string = '') {
   }
 
   return string.replace(nargs, function replaceArg (match, i, index) {
-    var result
+    let result
 
     if (string[index - 1] === '{' &&
       string[index + match.length] === '}') {
