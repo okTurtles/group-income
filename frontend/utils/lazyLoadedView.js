@@ -58,6 +58,7 @@ Vue.component('GroupMembersDirectMessages', () => import('../views/containers/ch
 Vue.component('CreateNewChannelModal', () => lazyLoadView({ component: import('../views/containers/chatroom/CreateNewChannelModal.vue'), loading: LoadingModal, error: ErrorModal }))
 Vue.component('EditChannelNameModal', () => lazyLoadView({ component: import('../views/containers/chatroom/EditChannelNameModal.vue'), loading: LoadingModal, error: ErrorModal }))
 Vue.component('EditChannelDescriptionModal', () => lazyLoadView({ component: import('../views/containers/chatroom/EditChannelDescriptionModal.vue'), loading: LoadingModal, error: ErrorModal }))
+Vue.component('LeaveChannelModal', () => lazyLoadView({ component: import('../views/containers/chatroom/LeaveChannelModal.vue'), loading: LoadingModal, error: ErrorModal }))
 Vue.component('DeleteChannelModal', () => lazyLoadView({ component: import('../views/containers/chatroom/DeleteChannelModal.vue'), loading: LoadingModal, error: ErrorModal }))
 
 // TODO Remove after design test period

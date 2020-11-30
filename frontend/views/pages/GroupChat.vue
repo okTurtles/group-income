@@ -22,7 +22,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
               i18n Members
             menu-item.c-separator(tag='router-link' itemid='hash-3' to='/group-settings')
               i18n Notifications settings
-            menu-item(@click='openModal("GroupLeaveModal")')
+            menu-item(@click='openModal("LeaveChannelModal")')
               i18n(:args='{ groupName: summary.title }') Leave {groupName}
             menu-item.has-text-danger(@click='openModal("DeleteChannelModal")')
               i18n Delete channel

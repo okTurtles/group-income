@@ -2,6 +2,7 @@
 modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Group members")')
   .c-container
     .c-header
+      div {{canAddMember}}
       div(v-if='canAddMember')
         i18n.is-title-2.c-title(
           tag='h2'
@@ -124,18 +125,9 @@ export default {
     return {
       searchText: '',
       addedMember: [],
-      canAddMember: {
-        type: Boolean,
-        default: false
-      },
-      name: {
-        type: String,
-        default: ''
-      },
-      isPrivate: {
-        type: Boolean,
-        default: true
-      }
+      canAddMember: false,
+      name: '',
+      isPrivate: true
     }
   },
   created () {
