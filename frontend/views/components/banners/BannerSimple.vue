@@ -16,12 +16,12 @@ export default {
   props: {
     severity: {
       type: String,
-      default: 'info'
+      default: 'info',
+      validator: function (value) {
+        // The value must match one of these strings
+        return ['success', 'info', 'warning', 'danger'].indexOf(value) !== -1
+      }
     }
-  },
-  validator: function (value) {
-    // The value must match one of these strings
-    return ['success', 'info', 'warning', 'danger'].indexOf(value) !== -1
   },
   computed: {
     getIcon () {

@@ -4,16 +4,17 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 
 // Copied from https://stackoverflow.com/a/27980815/4737729
 export function imageDataURItoBlob (dataURI) {
-  const byteString = atob(dataURI.split(',')[1])
+  const [prefix, data] = dataURI.split(',')
+  const [imageType] = (/image\/[^;]+/).exec(prefix)
+  const byteString = atob(data)
   const ab = new ArrayBuffer(byteString.length)
   const ia = new Uint8Array(ab)
 
   for (let i = 0; i < byteString.length; i++) {
     ia[i] = byteString.charCodeAt(i)
   }
-  // Accepts only JPEGs and assumes dataURI begins with: "data:image/jpeg;base64,"
-  // TODO support images in PNG, GIF, etc...
-  return new Blob([ab], { type: 'image/jpeg' })
+
+  return new Blob([ab], { type: imageType })
 }
 
 export const imageUpload = async (imageFile) => {

@@ -30,7 +30,6 @@ export default sbp('sbp/selectors/register', {
         throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }))
       }
     }
-
     // proceed with creation
     const user = await sbp('gi.contracts/identity/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth()],
@@ -61,13 +60,18 @@ export default sbp('sbp/selectors/register', {
   'gi.actions/identity/signup': async function ({
     username,
     email,
-    password, // TODO - implement
-    picture
+    password // TODO - implement
   }, {
     sync = true
   } = {}) {
     try {
-      const [userID, mailboxID] = await sbp('gi.actions/identity/create', { username, email, password, picture })
+      const randomAvatar = sbp('gi.utils/avatar/create')
+      const [userID, mailboxID] = await sbp('gi.actions/identity/create', {
+        username,
+        email,
+        password,
+        picture: randomAvatar
+      })
 
       await sbp('namespace/register', username, userID)
 
