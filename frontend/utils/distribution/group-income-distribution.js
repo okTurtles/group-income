@@ -3,6 +3,75 @@ import incomeDistribution from '~/frontend/utils/distribution/mincome-proportion
 import { mapValues } from '~/frontend/utils/giLodash.js'
 import paymentTotalFromUserToUser from '../../model/contracts/payments/totals.js'
 
+/*
+// Useful for creating mocha tests in conjunction with
+// unfoldParameters in the accompanying *.test.js
+function foldParameters({getters, monthstamp, adjusted}, print = false)
+{
+  // "Cherrypick" the JSON so it is easier to read.
+  let newJSON = {}
+  newJSON.groupProfiles = {}
+  newJSON.currentGroupState = {}
+  newJSON.monthlyPayments = {}
+  for (const username in getters.groupProfiles) {
+    newJSON.groupProfiles[username] = {};
+    newJSON.groupProfiles[username].incomeDetailsType = getters.groupProfiles[username].incomeDetailsType;
+    newJSON.groupProfiles[username].incomeAmount = getters.groupProfiles[username].incomeAmount;
+    newJSON.groupProfiles[username].pledgeAmount = getters.groupProfiles[username].pledgeAmount;
+  }
+
+  newJSON.monthlyPayments = {}
+  newJSON.monthlyPayments[monthstamp] = {}
+  newJSON.monthlyPayments[monthstamp].paymentsFrom = {}
+
+  newJSON.groupSettings = {}
+  newJSON.groupSettings.mincomeAmount = getters.groupSettings.mincomeAmount
+
+  newJSON.currentGroupState = {}
+  newJSON.currentGroupState.payments = {}
+
+  let payment = 0
+  for (const fromUser in getters.monthlyPayments[monthstamp].paymentsFrom) {
+    newJSON.monthlyPayments[monthstamp].paymentsFrom[fromUser] = {}
+    for (const toUser in getters.monthlyPayments[monthstamp].paymentsFrom[fromUser]) {
+      newJSON.monthlyPayments[monthstamp].paymentsFrom[fromUser][toUser] = []
+      for (const paymentHash of getters.monthlyPayments[monthstamp].paymentsFrom[fromUser][toUser]) {
+        payment++
+        const theHash = "paymentHsh"+payment//paymentHash)
+        newJSON.monthlyPayments[monthstamp].paymentsFrom[fromUser][toUser].push(theHash)
+        newJSON.currentGroupState.payments[theHash] = {}
+        newJSON.currentGroupState.payments[theHash].data = {}
+        newJSON.currentGroupState.payments[theHash].data.amount = getters.currentGroupState.payments[paymentHash].data.amount
+      }
+    }
+  }
+
+  // console.log(JSON.stringify(newJSON, null, 2))
+  // "Fold" the JSON so it is easier to read.
+  let payments = [];
+  if (paymentsFrom) {
+    for (const fromUser in paymentsFrom) {
+      for (const toUser in paymentsFrom[fromUser]) {
+        for (const paymentHash of paymentsFrom[fromUser][toUser]) {
+          payments.push({from:fromUser, to: toUser,
+            amount:allPayments[paymentHash].data.amount})
+        }
+      }
+    }
+  }
+  var foldedJSON = {
+    profiles: newJSON.groupProfiles,
+    payments: payments,
+    mincome: mincomeAmount,
+    monthstamp: monthstamp,
+    adjusted: adjusted
+  }
+  if(print)
+    console.log(JSON.stringify(foldedJSON, null, 2))
+  return foldedJSON
+}
+*/
+
 export function dataToEvents (monthstamp, data) {
   const mapUser = ({ withDate }) => ([name, profile]) => ({
     name,

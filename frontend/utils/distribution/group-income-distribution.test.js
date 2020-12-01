@@ -6,6 +6,46 @@
 import should from 'should'
 import { groupIncomeDistributionLogic, groupIncomeDistributionAdjustFirstLogic, groupIncomeDistributionNewLogic, dataToEvents } from './group-income-distribution.js'
 
+function unfoldParameters (json) {
+  const allPayments = {}
+  const paymentsFrom = {}
+
+  let paymentCount = 0
+  for (const p in json.payments) {
+    const payment = json.payments[p]
+    paymentCount++
+    const hash = 'paymentHash' + paymentCount
+    allPayments[hash] = {
+      'data': {
+        amount: payment.amount
+      }
+    }
+    if (!paymentsFrom[payment.from]) paymentsFrom[payment.from] = {}
+    if (!paymentsFrom[payment.from][payment.to]) paymentsFrom[payment.from][payment.to] = []
+    paymentsFrom[payment.from][payment.to].push(hash)
+  }
+
+  const monthlyPayments = {}
+  monthlyPayments[json.monthstamp] = {}
+  monthlyPayments[json.monthstamp].paymentsFrom = paymentsFrom
+
+  return {
+    getters:
+    {
+      'groupProfiles': json.profiles,
+      'currentGroupState': {
+        'payments': allPayments
+      },
+      'monthlyPayments': monthlyPayments,
+      'groupSettings': {
+        'mincomeAmount': json.mincome
+      }
+    },
+    monthstamp: json.monthstamp,
+    adjusted: json.adjusted
+  }
+}
+
 describe('Chunk 0: Adjustment Tests',
   function () {
     it('SCENARIO 1: can distribute income evenly with two users',
@@ -15,33 +55,22 @@ describe('Chunk 0: Adjustment Tests',
       // u2: Income 10$ (a.k.a needs $2)
       // Expected: [{ amount: 2, from: 'u1', to: 'u2' }]
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 10
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 10
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 10
             },
-            'currentGroupState': {
-              'payments': {}
-            },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {}
-              }
-            },
-            'groupSettings': {
-              'mincomeAmount': 12
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 10
             }
           },
-          monthstamp: '2020-11',
-          adjusted: true
-        })
+          'payments': [],
+          'mincome': 12,
+          'monthstamp': '2020-11',
+          'adjusted': true
+        }))
         should(dist).eql([
           { amount: 2, from: 'u1', to: 'u2' }
         ])
@@ -53,45 +82,27 @@ describe('Chunk 0: Adjustment Tests',
       // u1: sends u2 $2
       // Expected: [{ amount: 2, from: 'u1', to: 'u2' }]
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 10
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 10
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 10
             },
-            'currentGroupState': {
-              'payments': {
-                'paymentHsh1': {
-                  'data': {
-                    'amount': 2
-                  }
-                }
-              }
-            },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {
-                  'u1': {
-                    'u2': [
-                      'paymentHsh1'
-                    ]
-                  }
-                }
-              }
-            },
-            'groupSettings': {
-              'mincomeAmount': 12
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 10
             }
           },
-          monthstamp: '2020-11',
-          adjusted: undefined
-        })
+          'payments': [
+            {
+              'from': 'u1',
+              'to': 'u2',
+              'amount': 2
+            }
+          ],
+          'mincome': 12,
+          'monthstamp': '2020-11'
+        }))
         should(dist).eql([
           { amount: 2, from: 'u1', to: 'u2' }
         ])
@@ -103,45 +114,28 @@ describe('Chunk 0: Adjustment Tests',
       // u1: sends u2 $2
       // Expected: []
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 10
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 10
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 10
             },
-            'currentGroupState': {
-              'payments': {
-                'paymentHsh1': {
-                  'data': {
-                    'amount': 2
-                  }
-                }
-              }
-            },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {
-                  'u1': {
-                    'u2': [
-                      'paymentHsh1'
-                    ]
-                  }
-                }
-              }
-            },
-            'groupSettings': {
-              'mincomeAmount': 12
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 10
             }
           },
-          monthstamp: '2020-11',
-          adjusted: true
-        })
+          'payments': [
+            {
+              'from': 'u1',
+              'to': 'u2',
+              'amount': 2
+            }
+          ],
+          'mincome': 12,
+          'monthstamp': '2020-11',
+          'adjusted': true
+        }))
         should(dist).eql([])
       }
     )
@@ -160,49 +154,32 @@ describe('Chunk A: When someone updates their income details',
       // Switch to u1 and go to the payments page.
       // Expected Result: It should show 1 payment to u3 of $25. The sidebar should say 'Amount sent $75 of $100'
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 100
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 925
-              },
-              'u3': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 950
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 100
             },
-            'currentGroupState': {
-              'payments': {
-                'paymentHsh1': {
-                  'data': {
-                    'amount': 75
-                  }
-                }
-              }
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 925
             },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {
-                  'u1': {
-                    'u2': [
-                      'paymentHsh1'
-                    ]
-                  }
-                }
-              }
-            },
-            'groupSettings': {
-              'mincomeAmount': 1000
+            'u3': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 950
             }
           },
-          monthstamp: '2020-11',
-          adjusted: true
-        })
+          'payments': [
+            {
+              'from': 'u1',
+              'to': 'u2',
+              'amount': 75
+            }
+          ],
+          'mincome': 1000,
+          'monthstamp': '2020-11',
+          'adjusted': true
+        }))
         should(dist).eql([
           { amount: 25, from: 'u1', to: 'u3' }
         ])
@@ -217,49 +194,32 @@ describe('Chunk A: When someone updates their income details',
       // Switch to u1 and go to the payments page.
       // Expected Result: Don't show any 'todo' payments. The sidebar should say 'Amount sent $100 of $100'
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 100
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 900
-              },
-              'u3': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 950
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 100
             },
-            'currentGroupState': {
-              'payments': {
-                'paymentHsh1': {
-                  'data': {
-                    'amount': 100
-                  }
-                }
-              }
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 900
             },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {
-                  'u1': {
-                    'u2': [
-                      'paymentHsh1'
-                    ]
-                  }
-                }
-              }
-            },
-            'groupSettings': {
-              'mincomeAmount': 1000
+            'u3': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 950
             }
           },
-          monthstamp: '2020-11',
-          adjusted: true
-        })
+          'payments': [
+            {
+              'from': 'u1',
+              'to': 'u2',
+              'amount': 100
+            }
+          ],
+          'mincome': 1000,
+          'monthstamp': '2020-11',
+          'adjusted': true
+        }))
         should(dist).eql([
 
         ])
@@ -274,49 +234,32 @@ describe('Chunk A: When someone updates their income details',
       // Switch to u1 and go to the payments page.
       // Expected Result: most of the $75 would go to u3, and some of it would go to u2
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 100
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 950
-              },
-              'u3': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 700
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 100
             },
-            'currentGroupState': {
-              'payments': {
-                'paymentHsh1': {
-                  'data': {
-                    'amount': 25
-                  }
-                }
-              }
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 950
             },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {
-                  'u1': {
-                    'u2': [
-                      'paymentHsh1'
-                    ]
-                  }
-                }
-              }
-            },
-            'groupSettings': {
-              'mincomeAmount': 1000
+            'u3': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 700
             }
           },
-          monthstamp: '2020-11',
-          adjusted: true
-        })
+          'payments': [
+            {
+              'from': 'u1',
+              'to': 'u2',
+              'amount': 25
+            }
+          ],
+          'mincome': 1000,
+          'monthstamp': '2020-11',
+          'adjusted': true
+        }))
         should(dist).eql([
           { amount: 5.769230769230769, from: 'u1', to: 'u2' },
           { amount: 69.23076923076924, from: 'u1', to: 'u3' }
@@ -331,37 +274,25 @@ describe('Chunk A: When someone updates their income details',
       // Change the pledge amount of u1 from $100 to $50.
       // Expected Result: Don't show any payment to u3 because u1 already pledge all their money.
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 100
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 950
-              },
-              'u3': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 900
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 100
             },
-            'currentGroupState': {
-              'payments': {}
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 950
             },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {}
-              }
-            },
-            'groupSettings': {
-              'mincomeAmount': 1000
+            'u3': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 900
             }
           },
-          monthstamp: '2020-11',
-          adjusted: undefined
-        })
+          'payments': [],
+          'mincome': 1000,
+          'monthstamp': '2020-11'
+        }))
         should(dist).eql([
           // TODO: it appeas as though the system is passing parameters to our function which do not reflect the change in u1's pledge amount.
         ])
@@ -373,54 +304,36 @@ describe('Chunk A: When someone updates their income details',
       // Expected Result #3: u1 should have no 'todo' payments because u1 already pledge all their money.
 
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters:
-          {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 50
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 950
-              },
-              'u3': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 900
-              },
-              'u4': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 150
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 50
             },
-            'currentGroupState': {
-              'payments': {
-                'paymentHsh1': {
-                  'data': {
-                    'amount': 50
-                  }
-                }
-              }
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 950
             },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {
-                  'u1': {
-                    'u3': [
-                      'paymentHsh1'
-                    ]
-                  }
-                }
-              }
+            'u3': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 900
             },
-            'groupSettings': {
-              'mincomeAmount': 1000
+            'u4': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 150
             }
           },
-          monthstamp: '2020-11',
-          adjusted: true
-        })
+          'payments': [
+            {
+              'from': 'u1',
+              'to': 'u3',
+              'amount': 50
+            }
+          ],
+          'mincome': 1000,
+          'monthstamp': '2020-11',
+          'adjusted': true
+        }))
         should(dist).eql([
           { amount: 50, from: 'u4', to: 'u2' },
           { amount: 50, from: 'u4', to: 'u3' }
@@ -437,33 +350,21 @@ describe('Chunk B: Changing group mincome',
       // Change the mincome from $1000 to $500
       // Expected Result: I don't know... we never discussed this.
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 100
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 950
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 100
             },
-            'currentGroupState': {
-              'payments': {}
-            },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {}
-              }
-            },
-            'groupSettings': {
-              'mincomeAmount': 500
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 950
             }
           },
-          monthstamp: '2020-11',
-          adjusted: undefined
-        })
+          'payments': [],
+          'mincome': 500,
+          'monthstamp': '2020-11'
+        }))
         should(dist).eql([
           { amount: 100, from: 'u1', to: 'u2' }
         ])
@@ -474,33 +375,22 @@ describe('Chunk B: Changing group mincome',
       // Change the mincome from $500 to $750
       // Expected Result: Same, no idea.
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 100
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 450
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 100
             },
-            'currentGroupState': {
-              'payments': {}
-            },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {}
-              }
-            },
-            'groupSettings': {
-              'mincomeAmount': 750
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 450
             }
           },
-          monthstamp: '2020-11',
-          adjusted: true
-        })
+          'payments': [],
+          'mincome': 750,
+          'monthstamp': '2020-11',
+          'adjusted': true
+        }))
         should(dist).eql([
           { amount: 100, from: 'u1', to: 'u2' }
         ])
@@ -517,41 +407,30 @@ describe('Chunk C: 4-way distribution tests',
       // u4: pledge 250$
       // Expected Result: Same, no idea.
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 250
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 900
-              },
-              'u3': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 750
-              },
-              'u4': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 250
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 250
             },
-            'currentGroupState': {
-              'payments': {}
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 900
             },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {}
-              }
+            'u3': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 750
             },
-            'groupSettings': {
-              'mincomeAmount': 1000
+            'u4': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 250
             }
           },
-          monthstamp: '2020-11',
-          adjusted: true
-        })
+          'payments': [],
+          'mincome': 1000,
+          'monthstamp': '2020-11',
+          'adjusted': true
+        }))
         should(dist).eql([
           { amount: 50, from: 'u1', to: 'u2' },
           { amount: 25, from: 'u4', to: 'u2' },
@@ -563,53 +442,36 @@ describe('Chunk C: 4-way distribution tests',
       // u1 fully pays their share to u2
       // Expected Result: Same, no idea.
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 250
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 900
-              },
-              'u3': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 750
-              },
-              'u4': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 250
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 250
             },
-            'currentGroupState': {
-              'payments': {
-                'paymentHsh1': {
-                  'data': {
-                    'amount': 50
-                  }
-                }
-              }
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 900
             },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {
-                  'u1': {
-                    'u2': [
-                      'paymentHsh1'
-                    ]
-                  }
-                }
-              }
+            'u3': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 750
             },
-            'groupSettings': {
-              'mincomeAmount': 1000
+            'u4': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 250
             }
           },
-          monthstamp: '2020-11',
-          adjusted: true
-        })
+          'payments': [
+            {
+              'from': 'u1',
+              'to': 'u2',
+              'amount': 50
+            }
+          ],
+          'mincome': 1000,
+          'monthstamp': '2020-11',
+          'adjusted': true
+        }))
         should(dist).eql([
           // TODO: The full payment does not eliminate the amounts owed by u1 to u2
           { amount: 22.22222222222222, from: 'u1', to: 'u2' },
@@ -622,61 +484,41 @@ describe('Chunk C: 4-way distribution tests',
       // u1 pays their share to u3
       // Expected Result: Same, no idea.
       function () {
-        const dist = groupIncomeDistributionAdjustFirstLogic({
-          getters: {
-            'groupProfiles': {
-              'u1': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 250
-              },
-              'u2': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 900
-              },
-              'u3': {
-                'incomeDetailsType': 'incomeAmount',
-                'incomeAmount': 750
-              },
-              'u4': {
-                'incomeDetailsType': 'pledgeAmount',
-                'pledgeAmount': 250
-              }
+        const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters({
+          'profiles': {
+            'u1': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 250
             },
-            'currentGroupState': {
-              'payments': {
-                'paymentHsh1': {
-                  'data': {
-                    'amount': 50
-                  }
-                },
-                'paymentHsh2': {
-                  'data': {
-                    'amount': 125
-                  }
-                }
-              }
+            'u2': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 900
             },
-            'monthlyPayments': {
-              '2020-11': {
-                'paymentsFrom': {
-                  'u1': {
-                    'u2': [
-                      'paymentHsh1'
-                    ],
-                    'u3': [
-                      'paymentHsh2'
-                    ]
-                  }
-                }
-              }
+            'u3': {
+              'incomeDetailsType': 'incomeAmount',
+              'incomeAmount': 750
             },
-            'groupSettings': {
-              'mincomeAmount': 1000
+            'u4': {
+              'incomeDetailsType': 'pledgeAmount',
+              'pledgeAmount': 250
             }
           },
-          monthstamp: '2020-11',
-          adjusted: true
-        })
+          'payments': [
+            {
+              'from': 'u1',
+              'to': 'u2',
+              'amount': 50
+            },
+            {
+              'from': 'u1',
+              'to': 'u3',
+              'amount': 125
+            }
+          ],
+          'mincome': 1000,
+          'monthstamp': '2020-11',
+          'adjusted': true
+        }))
         should(dist).eql([
           // TODO: The full payment does not eliminate the amounts owed by u1 to u3
           { amount: 11.538461538461538, from: 'u1', to: 'u2' },
