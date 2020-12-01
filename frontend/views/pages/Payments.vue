@@ -190,15 +190,15 @@ export default {
       const firstTab = this.needsIncome ? L('Sent by') : L('Send to')
       return this.ephemeral.activeTab === 'PaymentRowTodo'
         ? {
-          one: firstTab,
-          two: L('Amount'),
-          three: L('Due in')
-        }
+            one: firstTab,
+            two: L('Amount'),
+            three: L('Due in')
+          }
         : {
-          one: firstTab,
-          two: L('Amount'),
-          three: L('Date')
-        }
+            one: firstTab,
+            two: L('Amount'),
+            three: L('Date')
+          }
     },
     introTitle () {
       return this.needsIncome

@@ -1,7 +1,7 @@
 <template lang='pug'>
 message-base(
   v-bind='$props'
-  @addEmoticon='addEmoticon($event)'
+  @add-emoticon='addEmoticon($event)'
   @reply='reply'
 )
 
@@ -61,7 +61,7 @@ export default {
       navigator.clipboard.writeText(this.text)
     },
     addEmoticon (emoticon) {
-      this.$emit('addEmoticon', emoticon)
+      this.$emit('add-emoticon', emoticon)
     }
   }
 }

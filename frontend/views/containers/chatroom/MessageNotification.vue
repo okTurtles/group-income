@@ -76,7 +76,7 @@ export default {
   },
   methods: {
     addEmoticon (emoticon) {
-      this.$emit('addEmoticon', emoticon)
+      this.$emit('add-emoticon', emoticon)
     }
   }
 }

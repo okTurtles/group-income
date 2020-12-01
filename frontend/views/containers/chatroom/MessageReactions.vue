@@ -47,6 +47,7 @@ export default {
       const nameList = list.map(user => {
         const userProp = users[user]
         if (userProp) return userProp.displayName || userProp.name
+        return null
       })
 
       const data = {

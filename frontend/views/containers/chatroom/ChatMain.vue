@@ -42,8 +42,8 @@
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
-          @addEmoticon='addEmoticon(index, $event)'
-          @deleteMessage='deleteMessage(index)'
+          @add-emoticon='addEmoticon(index, $event)'
+          @delete-message='deleteMessage(index)'
         )
 
   .c-footer

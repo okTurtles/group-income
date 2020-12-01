@@ -111,13 +111,13 @@ export default {
       navigator.clipboard.writeText(this.text)
     },
     selectEmoticon (emoticon) {
-      this.$emit('addEmoticon', emoticon.native || emoticon)
+      this.$emit('add-emoticon', emoticon.native || emoticon)
     },
     retry () {
       this.$emit('retry')
     },
     deleteMessage () {
-      this.$emit('deleteMessage')
+      this.$emit('delete-message')
     },
     openMenu () {
       this.$refs.messageAction.$refs.menu.handleTrigger()
