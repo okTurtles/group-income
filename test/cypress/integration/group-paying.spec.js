@@ -5,6 +5,10 @@ export function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
   return new Date(datems).toLocaleDateString(locale, opts)
 }
 
+function dateToMonthstamp (date) {
+  return date.toISOString().slice(0, 7)
+}
+
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const mincome = 1000
@@ -118,7 +122,7 @@ describe('Group Payments', () => {
       cy.getByDT('amount').should('contain', '$71.43')
       cy.getByDT('subtitle').should('contain', `Sent to user2-${userId}`)
 
-      cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric' }))
+      cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(dateToMonthstamp(new Date(timeStart)), { month: 'long', year: 'numeric' }))
       cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1000')
     })
     cy.closeModal()

@@ -46,7 +46,7 @@ We are continually improving the user experience for everyone, and applying the 
 
 Group Income is an application based on [Vue.js](https://vuejs.org/). Here's how you can get started with development:
 
-Run all server + watch files for changes
+Run all servers + watch files for changes
 
 ```bash
 grunt dev
