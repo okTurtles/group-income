@@ -311,7 +311,7 @@ module.exports = (grunt) => {
           // include: /(node_modules\/(blakejs|multihashes|tweetnacl|localforage|@babel|vue.+).*|primus\.js$)/,
           namedExports: {
             'node_modules/vuelidate/lib/validators/index.js': ['required', 'between', 'email', 'minLength', 'requiredIf'],
-            'node_modules/emoji-mart-vue/dist/emoji-mart.js': ['Picker']
+            'node_modules/emoji-mart-vue-fast/dist/emoji-mart.js': ['Picker', 'EmojiIndex']
           },
           ignore: ['crypto']
         }),

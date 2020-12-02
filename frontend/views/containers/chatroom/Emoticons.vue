@@ -1,11 +1,12 @@
 <template lang='pug'>
 .c-picker(:class='{ "is-active": isActive }' @click='isActive = false')
   .c-picker-wrapper(:style='position')
-    picker(set='emojione' @select='select')
+    picker(@select='select' :data='emoji' :show-preview='false')
 </template>
 
 <script>
-import { Picker } from 'emoji-mart-vue'
+import { Picker, EmojiIndex } from 'emoji-mart-vue-fast'
+import data from 'emoji-mart-vue-fast/data/all.json'
 import sbp from '~/shared/sbp.js'
 import { TABLET, DESKTOP } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
@@ -17,6 +18,7 @@ export default {
   },
   data () {
     return {
+      emoji: new EmojiIndex(data),
       pos_x: Number,
       pos_y: Number,
       isActive: false,
@@ -86,6 +88,9 @@ export default {
   }
 }
 </script>
+<style lang="scss">
+@import "@assets/style/components/_emoji-mart.scss";
+</style>
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
