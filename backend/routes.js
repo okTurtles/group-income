@@ -77,7 +77,7 @@ route.POST('/name', {
       value: Joi.string().required()
     })
   }
-}, function (request, h) {
+}, async function (request, h) {
   try {
     const { name, value } = request.payload
     if (sbp('backend/db/lookupName', name)) {
@@ -92,7 +92,7 @@ route.POST('/name', {
   }
 })
 
-route.GET('/name/{name}', {}, function (request, h) {
+route.GET('/name/{name}', {}, async function (request, h) {
   try {
     return sbp('backend/db/lookupName', request.params.name) || Boom.notFound()
   } catch (err) {
