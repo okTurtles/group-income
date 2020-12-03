@@ -180,6 +180,8 @@ describe('Full walkthrough', function () {
     it('Should register Alice and Bob in the namespace', async function () {
       const { alice, bob } = users
       let res = await sbp('namespace/register', alice.data().attributes.username, alice.hash())
+      // NOTE: don't rely on the return values for 'namespace/register'
+      //       too much... in the future we might remove these checks
       res.value.should.equal(alice.hash())
       res = await sbp('namespace/register', bob.data().attributes.username, bob.hash())
       res.value.should.equal(bob.hash())

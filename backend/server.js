@@ -9,7 +9,7 @@ import { makeResponse } from '~/shared/functions.js'
 import { RESPONSE_TYPE } from '~/shared/constants.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
-import { bold } from 'chalk'
+import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
 
@@ -44,7 +44,7 @@ sbp('sbp/selectors/register', {
     const contractID = entry.isFirstMessage() ? entry.hash() : entry.message().contractID
     await sbp('gi.db/log/addEntry', entry)
     const response = makeResponse(RESPONSE_TYPE.ENTRY, entry.serialize())
-    console.log(bold.blue(`broadcasting to room ${contractID}:`), entry.hash(), entry.type())
+    console.log(chalk.blue.bold(`broadcasting to room ${contractID}:`), entry.hash(), entry.type())
     sbp('okTurtles.data/apply', PUBSUB_INSTANCE, p => {
       p.room(contractID).write(response)
     })
@@ -54,10 +54,11 @@ sbp('sbp/selectors/register', {
   }
 })
 
-// NOTE: uncomment this or enable debug logging support to show all requests
-// hapi.events.on('response', (request, event, tags) => {
-//   console.debug(chalk`{grey ${request.info.remoteAddress}: ${request.method.toUpperCase()} ${request.path} --> ${request.response.statusCode}}`)
-// })
+if (process.env.NODE_ENV === 'development' && !process.env.CI) {
+  hapi.events.on('response', (request, event, tags) => {
+    console.debug(chalk`{grey ${request.info.remoteAddress}: ${request.method.toUpperCase()} ${request.path} --> ${request.response.statusCode}}`)
+  })
+}
 
 ;(async function () {
   // https://hapi.dev/tutorials/plugins

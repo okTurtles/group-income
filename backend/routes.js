@@ -42,10 +42,8 @@ route.POST('/event', {
     if (err.name === 'ErrorDBBadPreviousHEAD') {
       console.error(chalk.bold.yellow('ErrorDBBadPreviousHEAD'), err)
       return Boom.conflict(err.message)
-    } else {
-      logger(err)
     }
-    return err
+    return logger(err)
   }
 })
 
@@ -65,8 +63,7 @@ route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
-    logger(err)
-    return err
+    return logger(err)
   }
 })
 
@@ -80,24 +77,17 @@ route.POST('/name', {
 }, async function (request, h) {
   try {
     const { name, value } = request.payload
-    if (sbp('backend/db/lookupName', name)) {
-      return Boom.conflict('exists')
-    } else {
-      sbp('backend/db/registerName', name, value)
-      return { name, value }
-    }
+    return await sbp('backend/db/registerName', name, value)
   } catch (err) {
-    logger(err)
-    return err
+    return logger(err)
   }
 })
 
 route.GET('/name/{name}', {}, async function (request, h) {
   try {
-    return sbp('backend/db/lookupName', request.params.name) || Boom.notFound()
+    return await sbp('backend/db/lookupName', request.params.name)
   } catch (err) {
-    logger(err)
-    return err
+    return logger(err)
   }
 })
 
@@ -106,8 +96,7 @@ route.GET('/latestHash/{contractID}', {}, async function (request, h) {
     const entry = await sbp('gi.db/log/lastEntry', request.params.contractID)
     return entry ? entry.hash() : Boom.notFound()
   } catch (err) {
-    logger(err)
-    return err
+    return logger(err)
   }
 })
 
@@ -157,17 +146,15 @@ route.POST('/file', {
     await sbp('backend/db/writeFile', hash, data)
     return process.env.API_URL + '/file/' + hash
   } catch (err) {
-    logger(err)
-    return err
+    return logger(err)
   }
 })
 
-route.GET('/file/{hash}', {}, function (request, h) {
+route.GET('/file/{hash}', {}, async function (request, h) {
   try {
-    return sbp('backend/db/readFile', request.params.hash)
+    return await sbp('backend/db/readFile', request.params.hash)
   } catch (err) {
-    logger(err)
-    return Boom.notFound()
+    return logger(err)
   }
 })
 
@@ -175,8 +162,7 @@ route.GET('/translations/get/{language}', {}, async function (request, h) {
   try {
     return await sbp('backend/translations/get', request.params.language)
   } catch (err) {
-    logger(err)
-    return Boom.notFound()
+    return logger(err)
   }
 })
 

@@ -14,7 +14,6 @@ const Boom = require('@hapi/boom')
 const writeFileAsync = util.promisify(fs.writeFile)
 const readFileAsync = util.promisify(fs.readFile)
 const dataFolder = path.resolve('./data')
-const namespacePrefix = 'user='
 
 if (!fs.existsSync(dataFolder)) {
   fs.mkdirSync(dataFolder, { mode: 0o750 })
@@ -56,29 +55,35 @@ export default sbp('sbp/selectors/register', {
   },
   // =======================
   // wrapper methods to add / lookup names
-  //
-  // TODO: implement persistence
   // =======================
   'backend/db/registerName': async function (name: string, value: string): Promise {
-    const userKey = namespacePrefix + name
-    // TODO: synchronize what happens when a file does/doesn't exist between
-    //       the in-memory store and the file reading/writing, and the route
-    //       output and behavior.
-    if (await sbp('gi.db/get', userKey)) {
-      throw new Error(`exists: ${name}`)
+    const exists = await sbp('backend/db/lookupName', name)
+    if (exists) {
+      if (!Boom.isBoom(exists)) {
+        return Boom.conflict('exists')
+      } else if (exists.output.statusCode !== 404) {
+        throw exists // throw if this is an error other than "not found"
+      }
     }
-    return sbp('gi.db/set', userKey, value)
+    await sbp('gi.db/set', namespaceKey(name), value)
+    return { name, value }
   },
-  'backend/db/lookupName': function (name: string): Promise<string> {
-    return sbp('gi.db/get', namespacePrefix + name)
+  'backend/db/lookupName': async function (name: string): Promise {
+    // when we're using the in-memory story this will return `null`, so
+    // we return Boom.notFound(). In production mode 'backend/db/readFile'
+    // will return Boom.notFound() for us.
+    const value = await sbp('gi.db/get', namespaceKey(name))
+    return value || Boom.notFound()
   },
   // =======================
   // Filesystem API
   //
   // TODO: add encryption
   // =======================
-  'backend/db/readFile': function (filename: string): Promise<string> {
-    return readFileAsync(throwIfFileOutsideDataDir(filename))
+  'backend/db/readFile': function (filename: string): Promise {
+    const filepath = throwIfFileOutsideDataDir(filename)
+    if (!fs.existsSync(filepath)) return Promise.resolve(Boom.notFound())
+    return readFileAsync(filepath)
   },
   'backend/db/writeFile': function (filename: string, data: any): Promise {
     // TODO: check for how much space we have, and have a server setting
@@ -87,17 +92,21 @@ export default sbp('sbp/selectors/register', {
     //       amount, throw an exception
     const filepath = throwIfFileOutsideDataDir(filename)
     if (fs.existsSync(filepath)) {
-      console.debug('writeFile: exists:', filepath)
+      console.warn('writeFile: exists:', filepath)
       return Promise.resolve()
     }
     return writeFileAsync(filepath, data)
   }
 })
 
+function namespaceKey (name: string): string {
+  return 'user=' + name
+}
+
 function throwIfFileOutsideDataDir (filename: string): string {
   const filepath = path.resolve(path.join(dataFolder, filename))
   if (filepath.indexOf(dataFolder) !== 0) {
-    throw new Error(`bad name: ${filename}`)
+    throw Boom.badRequest(`bad name: ${filename}`)
   }
   return filepath
 }
