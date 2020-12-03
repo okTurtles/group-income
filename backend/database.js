@@ -20,8 +20,6 @@ if (!fs.existsSync(dataFolder)) {
 }
 
 const production = process.env.NODE_ENV === 'production'
-// delete the test database if it exists
-// !production && fs.existsSync('test.db') && fs.unlinkSync('test.db')
 
 export default sbp('sbp/selectors/register', {
   'backend/db/streamEntriesSince': async function (contractID: string, hash: string) {
@@ -64,14 +62,12 @@ export default sbp('sbp/selectors/register', {
       } else if (exists.output.statusCode !== 404) {
         throw exists // throw if this is an error other than "not found"
       }
+      // otherwise it is a Boom.notFound(), proceed ahead
     }
     await sbp('gi.db/set', namespaceKey(name), value)
     return { name, value }
   },
   'backend/db/lookupName': async function (name: string): Promise {
-    // when we're using the in-memory story this will return `null`, so
-    // we return Boom.notFound(). In production mode 'backend/db/readFile'
-    // will return Boom.notFound() for us.
     const value = await sbp('gi.db/get', namespaceKey(name))
     return value || Boom.notFound()
   },
@@ -80,22 +76,27 @@ export default sbp('sbp/selectors/register', {
   //
   // TODO: add encryption
   // =======================
-  'backend/db/readFile': function (filename: string): Promise {
+  'backend/db/readFile': async function (filename: string): Promise {
     const filepath = throwIfFileOutsideDataDir(filename)
-    if (!fs.existsSync(filepath)) return Promise.resolve(Boom.notFound())
-    return readFileAsync(filepath)
+    if (!fs.existsSync(filepath)) {
+      return Boom.notFound()
+    }
+    return await readFileAsync(filepath)
   },
-  'backend/db/writeFile': function (filename: string, data: any): Promise {
+  'backend/db/writeFile': async function (filename: string, data: any): Promise {
     // TODO: check for how much space we have, and have a server setting
     //       that determines how much of the disk space we're allowed to
     //       use. If the size of the file would cause us to exceed this
     //       amount, throw an exception
+    return await writeFileAsync(throwIfFileOutsideDataDir(filename), data)
+  },
+  'backend/db/writeFileOnce': async function (filename: string, data: any): Promise {
     const filepath = throwIfFileOutsideDataDir(filename)
     if (fs.existsSync(filepath)) {
-      console.warn('writeFile: exists:', filepath)
-      return Promise.resolve()
+      console.warn('writeFileOnce: exists:', filepath)
+      return
     }
-    return writeFileAsync(filepath, data)
+    return await writeFileAsync(filepath, data)
   }
 })
 
@@ -113,7 +114,13 @@ function throwIfFileOutsideDataDir (filename: string): string {
 
 if (production || process.env.GI_PERSIST) {
   sbp('sbp/selectors/overwrite', {
-    'gi.db/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
+    // we cannot simply map this to readFile, because 'gi.db/log/getEntry'
+    // calls this and expects a string, not a Buffer
+    // 'gi.db/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
+    'gi.db/get': async function (filename: string) {
+      const value = await sbp('backend/db/readFile', filename)
+      return Boom.isBoom(value) ? null : value.toString('utf8')
+    },
     'gi.db/set': sbp('sbp/selectors/fn', 'backend/db/writeFile')
   })
 }

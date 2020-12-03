@@ -69,6 +69,6 @@ if (process.env.NODE_ENV === 'development' && !process.env.CI) {
   require('./routes.js')
   require('./pubsub.js')
   await hapi.start()
-  console.log('API server running at:', hapi.info.uri)
+  console.log('Backend server running at:', hapi.info.uri)
   sbp('okTurtles.events/emit', SERVER_RUNNING, hapi)
 })()

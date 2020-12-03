@@ -109,10 +109,6 @@ route.GET('/time', {}, function (request, h) {
 // TODO: if the browser deletes our cache then not everyone
 //       has a complete copy of the data and can act as a
 //       new coordinating server... I don't like that.
-//
-// TODO: combine all of these routes into a single generic key-value store?
-//       i.e. the first two routes (/event and /events) should be renamed
-//       and should be able to handle file upload too...
 
 const MEGABTYE = 1048576 // TODO: add settings for these
 const SECOND = 1000
@@ -143,7 +139,7 @@ route.POST('/file', {
       console.error(`hash(${hash}) != ourHash(${ourHash})`)
       return Boom.badRequest('bad hash!')
     }
-    await sbp('backend/db/writeFile', hash, data)
+    await sbp('backend/db/writeFileOnce', hash, data)
     return process.env.API_URL + '/file/' + hash
   } catch (err) {
     return logger(err)
