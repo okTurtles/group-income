@@ -10,6 +10,7 @@ import chalk from 'chalk'
 global.logger = function (err) {
   console.error(err)
   err.stack && console.error(err.stack)
+  return err // routes.js is written in a way that depends on this returning the error
 }
 
 const dontLog = { 'backend/pubsub/setup': true }

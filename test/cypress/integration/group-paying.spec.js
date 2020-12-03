@@ -5,10 +5,6 @@ export function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
   return new Date(datems).toLocaleDateString(locale, opts)
 }
 
-function dateToMonthstamp (date) {
-  return date.toISOString().slice(0, 7)
-}
-
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const mincome = 1000
@@ -122,7 +118,21 @@ describe('Group Payments', () => {
       cy.getByDT('amount').should('contain', '$71.43')
       cy.getByDT('subtitle').should('contain', `Sent to user2-${userId}`)
 
-      cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(dateToMonthstamp(new Date(timeStart)), { month: 'long', year: 'numeric' }))
+      // cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(dateToMonthstamp(new Date(timeStart)), { month: 'long', year: 'numeric' }))
+      // BUG/TODO: I had to revert Sebin's change from here:
+      // https://github.com/okTurtles/group-income-simple/pull/1018/commits/fbb55a22a6c2bf6238a17b4c121272bf5e13014e#r533006646
+      // Because suddenly I started to get failing Cypress tests on December 2, 2020
+      // on my machine. The UI would produce "December 2020", and this would
+      // produce "November 2020":
+      // > humanDate('2020-12', { month: 'long', year: 'numeric' })
+      // 'November 2020'
+      // If I put a single space after the 12, it produces the right date:
+      // > humanDate('2020-12 ', { month: 'long', year: 'numeric' })
+      // 'December 2020'
+      // Not sure how to make this work in all timezones/systems... adding a space
+      // after feels hackish/buggy. If anyone knows the "proper" way to do this
+      // please fix!
+      cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric' }))
       cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1000')
     })
     cy.closeModal()

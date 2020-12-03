@@ -11,9 +11,9 @@ const log = localforage.createInstance({
 
 // make gi.log use localforage for storage
 sbp('sbp/selectors/overwrite', {
-  'gi.db/log/get': key => log.getItem(key),
+  'gi.db/get': key => log.getItem(key),
   // TODO: handle QuotaExceededError
-  'gi.db/log/set': (key, value) => log.setItem(key, value)
+  'gi.db/set': (key, value) => log.setItem(key, value)
 })
 
 // =======================

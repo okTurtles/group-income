@@ -4,6 +4,8 @@ node_js:
 dist: trusty
 compiler: clang # per: https://docs.travis-ci.com/user/languages/c
 env:
+  - NO_PERSIST
+  - GI_PERSIST
 branches:
   only:
     - master # https://github.com/okTurtles/group-income-simple/issues/58

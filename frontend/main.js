@@ -43,9 +43,9 @@ async function startApp () {
       'okTurtles.data'
     ].reduce(reducer, {})
     const selBlacklist = [
-      'gi.db/log/get',
+      'gi.db/get',
       'gi.db/log/logHEAD',
-      'gi.db/log/set'
+      'gi.db/set'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selBlacklist[selector]) return

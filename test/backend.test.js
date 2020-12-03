@@ -100,6 +100,9 @@ describe('Full walkthrough', function () {
   }
 
   function createIdentity (username, email) {
+    // append random id to username to prevent conflict across runs
+    // when GI_PERSIST environment variable is defined
+    username = `${username}-${Math.floor(Math.random() * 1000)}`
     return sbp('gi.contracts/identity/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
       attributes: { username, email }
@@ -170,7 +173,7 @@ describe('Full walkthrough', function () {
       users.alice = await createIdentity('Alice', 'alice@okturtles.org')
       const { alice, bob } = users
       // verify attribute creation and state initialization
-      bob.data().attributes.username.should.equal('Bob')
+      bob.data().attributes.username.should.match(/^Bob/)
       bob.data().attributes.email.should.equal('bob@okturtles.com')
       // send them off!
       await postEntry(alice)
@@ -180,6 +183,8 @@ describe('Full walkthrough', function () {
     it('Should register Alice and Bob in the namespace', async function () {
       const { alice, bob } = users
       let res = await sbp('namespace/register', alice.data().attributes.username, alice.hash())
+      // NOTE: don't rely on the return values for 'namespace/register'
+      //       too much... in the future we might remove these checks
       res.value.should.equal(alice.hash())
       res = await sbp('namespace/register', bob.data().attributes.username, bob.hash())
       res.value.should.equal(bob.hash())
