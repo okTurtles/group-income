@@ -1,4 +1,5 @@
 import Vue from 'vue'
-import Vue2TouchEvents from 'vue2-touch-events'
 
-Vue.use(Vue2TouchEvents)
+if ('ontouchstart' in window || navigator.msMaxTouchPoints) {
+  import('vue2-touch-events').then(Vue2TouchEvents => Vue.use(Vue2TouchEvents.default))
+} else Vue.directive('touch', {})

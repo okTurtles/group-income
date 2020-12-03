@@ -44,8 +44,8 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         .is-subtitle
           i18n(
             tag='h3'
-          ) Channel members
-          | &nbsp({{ groupMembersSorted.length }})
+            :args='{  nbMembers: groupMembersSorted.length }'
+          ) Channel members {nbMembers}
 
         transition-group(
           v-if='addedMember'
@@ -71,8 +71,9 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         .is-subtitle.c-second-section
           i18n(
             tag='h3'
-          ) Others
-          | &nbsp({{ addedMember.length }})
+            :args='{  nbMembers: addedMember.length }'
+          ) Others {nbMembers}
+
       transition-group(
         v-if='searchResult'
         name='slide-list'

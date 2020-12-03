@@ -125,7 +125,7 @@ export const individualConversations = {
     },
     {
       from: '444',
-      text: 'https://motherfuckingwebsite.com/',
+      text: 'https://groupincome.org/',
       time: '3:24 AM'
     },
     {
@@ -135,7 +135,7 @@ export const individualConversations = {
     },
     {
       from: currentUserId,
-      text: 'http://bettermotherfuckingwebsite.com/',
+      text: 'https://groupincome.org/team/',
       time: '3:24 AM'
     },
     {
@@ -175,7 +175,7 @@ export const individualConversations = {
     },
     {
       from: '444',
-      text: '<!-- FOR THE CURIOUS: This site was made by @thebarrytone. Don\'t tell my mom. -->',
+      text: 'No still no luck',
       time: '3:24 AM'
     },
     {

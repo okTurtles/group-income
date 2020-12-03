@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-conversation-list
   .c-group-members-header
-    i18n.is-title-4(tag='h3') {{title}}
+    h3.is-title-4 {{title}}
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'

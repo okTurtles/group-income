@@ -1,8 +1,7 @@
 <template lang='pug'>
 .c-send.inputgroup(:class='{"is-editing": isEditing}')
   .c-replying(v-if='replyingMessage')
-    i18n Replying to {{replyingTo}}:&nbsp
-    | "{{ replyingMessage }}"
+    i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
     button.c-clear.is-icon-small(
       :aria-label='L("Stop replying")'
       @click='$emit("stopReplying")'
@@ -210,6 +209,7 @@ $initialHeight: 43px;
   &-textarea {
     height: $initialHeight;
     resize: none;
+    overflow: hidden;
 
     &::-webkit-scrollbar {
       display: none;

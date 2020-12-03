@@ -5,8 +5,9 @@
 </template>
 
 <script>
+// TODO: find out how to load the emoji picker at runtime only when the user clicks the emoji button
 import { Picker, EmojiIndex } from 'emoji-mart-vue-fast'
-import data from 'emoji-mart-vue-fast/data/all.json'
+import data from 'emoji-mart-vue-fast/data/apple.json'
 import sbp from '~/shared/sbp.js'
 import { TABLET, DESKTOP } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'

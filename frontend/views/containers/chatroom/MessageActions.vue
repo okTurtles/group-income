@@ -38,39 +38,39 @@ menu-parent(ref='menu')
         @click='action("openEmoticon", $event)'
       )
         i.icon-smile-beam
-        | {{L('Add reaction')}}
+        i18n Add reaction
 
       menu-item.hide-desktop.is-icon-small(tag='button'
         v-if='isCurrentUser'
         @click='action("edit")'
       )
         i.icon-pencil-alt
-        | {{L('Edit')}}
+        i18n Edit
 
       menu-item.hide-desktop.is-icon-small(tag='button'
         @click='action("reply")'
       )
         i.icon-reply
-        | {{L('Reply')}}
+        i18n Reply
 
       menu-item.hide-desktop.is-icon-small(tag='button'
         v-if='variant === "failed"'
         @click='action("retry")'
       )
         i.icon-undo
-        | {{L('Add emoticons')}}
+        i18n Add emoticons
 
       menu-item.is-icon-small(tag='button'
         @click='action("copyToClipBoard")'
       )
         i.icon-link
-        | {{L('Copy message Link')}}
+        i18n Copy message Link
 
       menu-item.is-icon-small.is-danger(tag='button'
         @click='action("deleteMessage")'
       )
         i.icon-trash-alt
-        | {{L('Delete message')}}
+        i18n Delete message
 </template>
 
 <script>

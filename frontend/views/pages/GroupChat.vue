@@ -20,7 +20,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
               i18n Rename
             menu-item(@click='openModal("GroupMembersAllModal", {name: summary.title})')
               i18n Members
-            menu-item.c-separator(tag='router-link' itemid='hash-3' to='/group-settings')
+            menu-item.c-separator(@click='openModal("UserSettingsModal", {section: "notifications"})')
               i18n Notifications settings
             menu-item(@click='openModal("LeaveChannelModal")')
               i18n(:args='{ groupName: summary.title }') Leave {groupName}
@@ -29,9 +29,11 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
   template(#description='')
     .c-header-description
-      button.is-unstyled.c-link(
+      i18n.is-unstyled.c-link(
+        tag='button'
         @click='openModal("GroupMembersAllModal")'
-      ) {{ members.size + ' ' + L('members') }}
+        :args='{ numMembers: members.size  }'
+      ) '{numMembers} members'
       | ∙
       .is-unstyled.c-link(
         tag='button'
@@ -40,12 +42,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
       )
         | {{ summary.description }}
         i.icon-pencil-alt
+
       i18n.is-unstyled.c-link(
         tag='button'
         v-else
         @click='openModal("EditChannelDescriptionModal")'
-      )
-        | Add description
+      ) Add description
+
   template(#sidebar='')
     chat-nav(
       :title='L("Chat")'
