@@ -203,3 +203,12 @@ it('should report usage of the `html` attribute', function () {
   assert.equal(errors[0].code, errorCode)
   assert.match(errors[0].message, /html attribute/)
 })
+
+it('should report usage of double curly braces', function () {
+  const invalidUseCase = 'i18n Replying to {{replyingTo}}'
+  const errors = linter.checkString(invalidUseCase)
+
+  assert.equal(errors.length, 1)
+  assert.equal(errors[0].code, errorCode)
+  assert.match(errors[0].message, /double curly braces/i)
+})
