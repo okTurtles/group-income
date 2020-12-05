@@ -32,10 +32,13 @@
       <modal class="l-modal"></modal>
       <cypress-bypass-ui v-if="isInCypress"></cypress-bypass-ui>
     </div>
-    <script src="/assets/js/s.min.js"></script>
+    <script type="text/javascript">
+      import('/assets/js/main.js')
+    </script>
+    <!-- <script src="/assets/js/s.min.js"></script>
     <script type="text/javascript">
       System.import('/assets/js/main.js')
-    </script>
+    </script> -->
     <!-- https://github.com/rollup/rollup-starter-code-splitting -->
     <!-- TODO:
     <script type="text/javascript">

@@ -3,7 +3,6 @@
 import { RESPONSE_TYPE } from '../../../shared/constants.js'
 import { makeResponse as request } from '../../../shared/functions.js'
 import Primus from './primus.js'
-// const Primus = require('./primus.js')
 
 const { ERROR, PUB, SUB, UNSUB } = RESPONSE_TYPE
 

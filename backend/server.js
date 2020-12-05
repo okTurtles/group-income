@@ -28,11 +28,13 @@ const hapi = new Hapi.Server({
   // See: https://github.com/hapijs/discuss/issues/262#issuecomment-204616831
   routes: {
     cors: {
-      origin: [
-        process.env.API_URL,
-        // improve support for browsersync proxy
-        process.env.NODE_ENV === 'development' && 'http://localhost:3000'
-      ]
+      // TODO: figure out if we can live with '*' or if we need to restrict it
+      origin: ['*']
+      // origin: [
+      //   process.env.API_URL,
+      //   // improve support for browsersync proxy
+      //   process.env.NODE_ENV === 'development' && 'http://localhost:3000'
+      // ]
     }
   }
 })

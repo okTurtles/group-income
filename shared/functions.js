@@ -4,9 +4,6 @@ import multihash from 'multihashes'
 import { RESPONSE_TYPE } from './constants.js'
 import type { JSONType, Response, ResType } from './types.js'
 
-// const nacl = require('tweetnacl')
-// const blake = require('blakejs')
-
 import nacl from 'tweetnacl'
 import blake from 'blakejs'
 

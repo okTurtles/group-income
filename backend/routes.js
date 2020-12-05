@@ -164,7 +164,23 @@ route.GET('/translations/get/{language}', {}, async function (request, h) {
 
 // SPA routes
 
-route.GET('/assets/{path*}', {}, {
+route.GET('/assets/{path*}', {
+  ext: {
+    onPostHandler: {
+      method (request, h) {
+        // since our JS is placed under /assets/ and since service workers
+        // have their scope limited by where they are, we must add this
+        // header to allow the service worker to function. Details:
+        // https://w3c.github.io/ServiceWorker/#service-worker-allowed
+        if (request.path.includes('assets/js/sw-')) {
+          console.debug('adding header: Service-Worker-Allowed /')
+          request.response.header('Service-Worker-Allowed', '/')
+        }
+        return h.continue
+      }
+    }
+  }
+}, {
   directory: {
     path: path.resolve('./dist/assets'),
     redirectToSlash: true
