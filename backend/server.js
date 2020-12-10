@@ -43,10 +43,10 @@ sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 sbp('sbp/selectors/register', {
   'backend/server/handleEntry': async function (entry: GIMessage) {
-    const contractID = entry.isFirstMessage() ? entry.hash() : entry.message().contractID
+    const contractID = entry.contractID()
     await sbp('gi.db/log/addEntry', entry)
     const response = makeResponse(RESPONSE_TYPE.ENTRY, entry.serialize())
-    console.log(chalk.blue.bold(`broadcasting to room ${contractID}:`), entry.hash(), entry.type())
+    console.log(chalk.blue.bold(`broadcasting ${entry.description()}`))
     sbp('okTurtles.data/apply', PUBSUB_INSTANCE, p => {
       p.room(contractID).write(response)
     })

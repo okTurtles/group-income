@@ -17,7 +17,6 @@ import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReproce
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constants.js'
 import { PAYMENT_COMPLETED } from '~/frontend/model/contracts/payments/index.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
-import { actionWhitelisted, ACTION_REGEX } from '~/frontend/model/contracts/Contract.js'
 import * as _ from '~/frontend/utils/giLodash.js'
 import * as EVENTS from '~/frontend/utils/events.js'
 import './contracts/group.js'
@@ -57,31 +56,21 @@ const initialState = {
     : ['error', 'warn']
 }
 
-// guard all sbp calls for contract actions with this function
-function guardedSBP (sel: string, ...data: any): any {
-  if (!actionWhitelisted(sel)) {
-    throw new GIErrorIgnoreAndBanIfGroup(`guardedSBP('${sel}') not whitelisted!`)
-  }
-  return sbp(sel, ...data)
-}
-
 sbp('okTurtles.events/on', EVENTS.CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
   contractIsSyncing[contractID] = isSyncing
 })
 
 sbp('sbp/selectors/register', {
   'state/latestContractState': async (contractID: string) => {
-    let events = await sbp('backend/eventsSince', contractID, contractID)
+    const events = await sbp('backend/eventsSince', contractID, contractID)
     let state = {}
-    events = events.map(e => GIMessage.deserialize(e))
-    for (const e of events) {
+    for (const e of events.map(e => GIMessage.deserialize(e))) {
       const stateCopy = _.cloneDeep(state)
       try {
-        const message = { data: e.data(), meta: e.meta(), hash: e.hash(), contractID }
-        guardedSBP(e.type(), message, state)
+        sbp('chelonia/message/process', e, state)
       } catch (err) {
         if (!(err instanceof GIErrorUnrecoverable)) {
-          console.warn(`latestContractState: ignoring mutation ${e.hash()}|${e.type()} because of ${err.name}`)
+          console.warn(`latestContractState: ignoring mutation ${e.description()} because of ${err.name}`)
           state = stateCopy
         } else {
           // TODO: make sure every location that calls latestContractState can handle this
@@ -124,8 +113,8 @@ const mutations = {
     state.loggedIn = false
     state.currentGroupId = null
   },
-  processMessage (state, { selector, message }) {
-    guardedSBP(selector, message, state)
+  processMessage (state, { message }) {
+    sbp('chelonia/message/process', message, state)
   },
   registerContract (state, { contractID, type }) {
     const firstTimeRegistering = !state[contractID]
@@ -579,7 +568,7 @@ const getters = {
     // The code below was originally Object.entries(...) but changed to .keys()
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     return Object.keys(contracts || {})
-      .filter(contractID => contracts[contractID].type === 'group' && state[contractID].settings)
+      .filter(contractID => contracts[contractID].type === 'gi.contracts/group' && state[contractID].settings)
       .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
   },
   groupMembersSorted (state, getters) {
@@ -772,7 +761,7 @@ const actions = {
       // https://github.com/okTurtles/group-income-simple/issues/610
       // https://github.com/okTurtles/group-income-simple/issues/602
       // TODO: use a global notification system to both display a notification
-      console.error(`[ERROR] exception ${e.name} in handleEvent!`, e.message, e)
+      console.error(`[ERROR] exception ${e.name} in handleEvent while processing ${message.description()}!`, e.message, e)
       let updateContractHEAD = false
       let banUser = false
       let enterUnrecoverableState = false
@@ -830,7 +819,7 @@ const actions = {
 const handleEvent = {
   async addMessageToDB (message: GIMessage) {
     if (dropAllMessagesUntilRefresh) {
-      throw new GIErrorDropAndReprocess(`ignoring message until page refresh: ${message.type()}`)
+      throw new GIErrorDropAndReprocess(`ignoring message until page refresh: ${message.description()}`)
     }
     try {
       return await sbp('gi.db/log/addEntry', message)
@@ -842,14 +831,14 @@ const handleEvent = {
           // keep track of what message we're trying to reprocess
           // so that if we're able to fix ourselves we can go back to normal
           attemptToReprocessMessageID = message.hash()
-          console.warn(`addMessageToDB: going to attempt to resync ${message.contractID()} to re-process ${message.type()} / ${message.hash()}`)
+          console.warn(`addMessageToDB: going to attempt to resync ${message.contractID()} to re-process ${message.description()}`)
           setTimeout(() => {
             // re-enable message processing
             dropAllMessagesUntilRefresh = false
             sbp('state/enqueueContractSync', message.contractID())
           }, 1000)
         } else {
-          console.error(`addMessageToDB: already attempted to re-process ${attemptToReprocessMessageID} ${message.type()}, will not attempt again!`)
+          console.error(`addMessageToDB: already attempted to re-process ${attemptToReprocessMessageID} ${message.description()}, will not attempt again!`)
         }
         // the server should never send us a bad previousHEAD (because)
         // it verifies that before adding it to its db. So if we receive
@@ -869,21 +858,12 @@ const handleEvent = {
   processMutation (message: GIMessage) {
     try {
       const contractID = message.contractID()
-      const selector = message.type()
       const hash = message.hash()
-      const data = message.data()
-      const meta = message.meta()
-      const type = ACTION_REGEX.exec(selector)[3]
-      if (!type) {
-        throw new GIErrorIgnoreAndBanIfGroup(`bad selector '${selector}' for message ${hash}`)
-      }
       if (message.isFirstMessage()) {
+        const { type } = message.opValue()
         store.commit('registerContract', { contractID, type })
       }
-      const mutation = { data, meta, hash, contractID }
-      // this selector is created by Contract.js
-      store.commit(`${contractID}/processMessage`, { selector, message: mutation })
-      // all's good, so update our contract HEAD
+      store.commit(`${contractID}/processMessage`, { message })
       store.commit('setContractHEAD', { contractID, HEAD: hash })
     } catch (e) {
       console.error(`processMutation: error ${e.name}`, e)
@@ -905,17 +885,17 @@ const handleEvent = {
   },
   async processSideEffects (message: GIMessage) {
     try {
-      const contractID = message.contractID()
-      const selector = message.type()
-      const hash = message.hash()
-      const data = message.data()
-      const meta = message.meta()
-      const mutation = { data, meta, hash, contractID }
-      // this selector is created by Contract.js
-      await sbp(`${selector}/sideEffect`, mutation)
-      // let any listening components know that we've received, processed, and stored the event
-      sbp('okTurtles.events/emit', hash, contractID, message)
-      sbp('okTurtles.events/emit', EVENTS.EVENT_HANDLED, contractID, message)
+      if ([GIMessage.OP_ACTION, GIMessage.OP_PUB_ACTION].includes(message.opType())) {
+        const contractID = message.contractID()
+        const hash = message.hash()
+        const { type, data, meta } = message.decrypted()
+        const mutation = { data, meta, hash, contractID }
+        // this selector is created by Contract.js
+        await sbp(`${type}/sideEffect`, mutation)
+        // let any listening components know that we've received, processed, and stored the event
+        sbp('okTurtles.events/emit', hash, contractID, message)
+        sbp('okTurtles.events/emit', EVENTS.EVENT_HANDLED, contractID, message)
+      }
     } catch (e) {
       console.error(`processSideEffects: ${e.name}:`, e)
       // if an error happens at this point, it's almost certainly not due to malformed data
@@ -963,10 +943,15 @@ const handleEvent = {
         return // don't do anything, assume the existing users handled this event
       }
       const username = message.meta().username
-      if (message.type().indexOf('gi.contracts/group/') !== 0) {
-        console.warn(`autoBanSenderOfMessage: removing & unsubscribing from ${username} contractID: ${contractID}`)
-        store.commit('removeContract', contractID)
-      }
+      // TODO: this code below doesn't make any sense, we shouldn't
+      //       leave the group just because we banned someone.
+      //       Also, we should handle things differently depending on
+      //       whether this is a malformed message received from a group
+      //       contract or another contract.
+      // if (message.type().indexOf('gi.contracts/group/') !== 0) {
+      //   console.warn(`autoBanSenderOfMessage: removing & unsubscribing from ${username} contractID: ${contractID}`)
+      //   store.commit('removeContract', contractID)
+      // }
       if (username && store.getters.groupProfile(username)) {
         console.warn(`autoBanSenderOfMessage: autobanning ${username}`)
         const groupID = store.state.currentGroupId
@@ -1033,7 +1018,7 @@ const store = new Vuex.Store({
   mutations,
   getters,
   actions,
-  strict: !!process.env.VUEX_STRICT
+  strict: process.env.VUEX_STRICT === 'true'
 })
 const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)
 store.subscribe(debouncedSave)

@@ -45,8 +45,8 @@ export default sbp('sbp/selectors/register', {
     await sbp('backend/publishLogEntry', user)
     await sbp('backend/publishLogEntry', mailbox)
 
-    const userID = user.hash()
-    const mailboxID = mailbox.hash()
+    const userID = user.contractID()
+    const mailboxID = mailbox.contractID()
 
     // set the attribute *after* publishing the identity contract
     const attribute = await sbp('gi.contracts/identity/setAttributes/create',

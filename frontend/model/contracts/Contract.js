@@ -6,6 +6,9 @@ import { GIMessage } from '~/shared/GIMessage.js'
 // this must not be exported, but instead accessed through 'actionWhitelisted'
 const whitelistedSelectors = {}
 const sideEffectStacks = {} // [contractID]: Array<*>
+const cheloniaCfg = sbp('okTurtles.data/get', 'CHELONIA_CONFIG')
+
+cheloniaCfg.whitelisted = (sel) => !!whitelistedSelectors[sel]
 
 export const ACTION_REGEX = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
@@ -15,7 +18,6 @@ export const ACTION_REGEX = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
 // 3 => 'group'
 // 4 => 'payment'
 
-// TODO: define a flow type for contracts
 export function DefineContract (contract: Object) {
   const metadata = contract.metadata || { validate () {}, create: () => ({}) }
   const getters = contract.getters
@@ -34,7 +36,8 @@ export function DefineContract (contract: Object) {
     if (action.indexOf(contract.name) !== 0) {
       throw new Error(`contract action '${action}' must start with prefix: ${contract.name}`)
     }
-    whitelistedSelectors[`${action}/process`] = true
+    const actionSelector = `${action}/process`
+    whitelistedSelectors[actionSelector] = true
     sbp('sbp/selectors/register', {
       [`${action}/create`]: async function (data: Object, contractID: string = null) {
         let previousHEAD = null
@@ -42,16 +45,34 @@ export function DefineContract (contract: Object) {
         if (contractID) {
           state = contract.state(contractID)
           previousHEAD = await sbp('backend/latestHash', contractID)
-        } else if (action !== contract.name) {
-          throw new Error(`contractID required when calling '${action}/create'`)
+        } else {
+          if (action !== contract.name) {
+            throw new Error(`contractID required when calling '${action}/create'`)
+          }
+          const contractMsg = GIMessage.createV1_0(null, null, [
+            GIMessage.OP_CONTRACT,
+            {
+              type: contract.name,
+              authkey: {
+                type: 'dummy',
+                key: 'TODO: add group public key here'
+              }
+            }
+          ])
+          await sbp('backend/publishLogEntry', contractMsg)
+          contractID = previousHEAD = contractMsg.hash()
         }
         const meta = metadata.create()
         const gProxy = gettersProxy(state, getters)
         metadata.validate(meta, { state, ...gProxy, contractID })
         contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
-        return GIMessage.create(contractID, previousHEAD, undefined, `${action}/process`, data, meta)
+        return GIMessage.createV1_0(contractID, previousHEAD, [
+          GIMessage.OP_ACTION,
+          // TODO: encryption happens here
+          JSON.stringify({ type: actionSelector, data, meta })
+        ])
       },
-      [`${action}/process`]: function (message: Object, state: Object) {
+      [actionSelector]: function (message: Object, state: Object) {
         const { meta, data, contractID } = message
         // TODO: optimize so that you're creating a proxy object only when needed
         const gProxy = gettersProxy(state, getters)
@@ -60,7 +81,7 @@ export function DefineContract (contract: Object) {
         contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
         contract.actions[action].process(message, { state, ...gProxy })
       },
-      [`${action}/process/sideEffect`]: async function (message: Object, state: ?Object) {
+      [`${actionSelector}/sideEffect`]: async function (message: Object, state: ?Object) {
         const sideEffects = sideEffectStack(message.contractID)
         while (sideEffects.length > 0) {
           await sbp(...sideEffects.shift())
@@ -92,10 +113,6 @@ function sideEffectStack (contractID: string): Array {
   return stack
 }
 
-export function actionWhitelisted (sel: string): boolean {
-  return !!whitelistedSelectors[sel]
-}
-
 /*
 A contract should have the following publicly readable messages:
 - contract type
@@ -115,8 +132,3 @@ A contract should have the following publicly readable messages:
 //                             than this version cannot read or write
 //       OP_PROP_SET
 //       OP_PROP_DEL
-//
-// To make life easier so that you don't have to call hotUpdate and dynamically
-// re-register vuex submodules, it might be possible to simply get rid of
-// all mutations except for one, "mutate", and have it call an SBP selector
-// that's passed in the state, effectively bypassing most of the vuex stuff.

@@ -507,7 +507,7 @@ DefineContract({
           }
 
           const groupIdToSwitch = Object.keys(contracts)
-            .find(cID => contracts[cID].type === 'group' &&
+            .find(cID => contracts[cID].type === 'gi.contracts/group' &&
                   cID !== contractID &&
                   rootState[cID].settings) || null
 

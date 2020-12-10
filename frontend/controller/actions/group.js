@@ -86,7 +86,7 @@ export default sbp('sbp/selectors/register', {
       await sbp('backend/publishLogEntry', message)
 
       if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', message.hash())
+        await sbp('gi.actions/contract/syncAndWait', message.contractID())
       }
 
       return message
