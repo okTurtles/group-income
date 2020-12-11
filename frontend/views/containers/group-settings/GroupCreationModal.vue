@@ -135,7 +135,7 @@ export default {
         sharedValues: '',
         // randomize to reduce choice bias
         ruleOrder: Math.round(Math.random()) === 1 ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE],
-        mincomeAmount: null,
+        mincomeAmount: '',
         mincomeCurrency: 'USD',
         ruleName: null,
         ruleThreshold: {
