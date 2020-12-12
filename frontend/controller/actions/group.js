@@ -97,7 +97,7 @@ export default sbp('sbp/selectors/register', {
   },
   'gi.actions/group/createAndSwitch': async function (groupParams) {
     const message = await sbp('gi.actions/group/create', groupParams, { sync: true })
-    sbp('gi.actions/group/switch', message.hash())
+    sbp('gi.actions/group/switch', message.contractID())
     return message
   },
   'gi.actions/group/join': async function ({ groupId, inviteSecret }) {

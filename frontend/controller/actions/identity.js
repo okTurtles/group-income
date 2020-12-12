@@ -40,7 +40,7 @@ export default sbp('sbp/selectors/register', {
       }
     })
     const mailbox = await sbp('gi.contracts/mailbox/create', {
-      // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
+      // authorizations: [Events.CanModifyAuths.dummyAuth(user.contractID())]
     })
     await sbp('backend/publishLogEntry', user)
     await sbp('backend/publishLogEntry', mailbox)

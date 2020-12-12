@@ -147,7 +147,7 @@ const mutations = {
   setContractHEAD (state, { contractID, HEAD }) {
     const contract = state.contracts[contractID]
     if (!contract) {
-      console.error(`This contract ${contractID} doesnt exist anymore. Probably you left the group just now.`)
+      console.error(`This contract ${contractID} doesn't exist anymore. Probably you left the group just now.`)
       return
     }
     state.contracts[contractID].HEAD = HEAD
@@ -176,6 +176,7 @@ const mutations = {
   },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
+    console.debug(`setCurrentGroupId(${currentGroupId})`)
     state.currentGroupId = currentGroupId
   },
   pending (state, contractID) {
@@ -273,7 +274,7 @@ const getters = {
     const ourUsername = getters.ourUsername
     const ourGroupProfile = getters.ourGroupProfile
 
-    if (!ourGroupProfile.incomeDetailsType) {
+    if (!ourGroupProfile || !ourGroupProfile.incomeDetailsType) {
       return {}
     }
 
@@ -353,12 +354,13 @@ const getters = {
   },
   ourPayments (state, getters) {
     // Payments relative to the current month only
+    const monthlyPayments = getters.groupMonthlyPayments
+    if (!monthlyPayments || Object.keys(monthlyPayments).length === 0) return
     const currency = currencies[getters.groupSettings.mincomeCurrency]
     const ourUsername = getters.ourUsername
     const cMonthstamp = currentMonthstamp()
     const pDate = dateFromMonthstamp(cMonthstamp)
     const dueIn = lastDayOfMonth(pDate)
-    const monthlyPayments = getters.groupMonthlyPayments
     const allPayments = getters.currentGroupState.payments
     const thisMonthPayments = monthlyPayments[cMonthstamp]
     const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
@@ -521,7 +523,9 @@ const getters = {
     return { sent, todo, late, received, toBeReceived }
   },
   ourPaymentsSummary (state, getters) {
-    const { todo, sent, toBeReceived, received } = getters.ourPayments
+    const ourPayments = getters.ourPayments
+    if (!ourPayments) return
+    const { todo, sent, toBeReceived, received } = ourPayments
     const isCompleted = (p) => p.data.status === PAYMENT_COMPLETED
     const isPartialCount = (list) => list.filter(p => p.partial).length
     const getUniqPCount = (users) => {
@@ -572,10 +576,12 @@ const getters = {
       .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
   },
   groupMembersSorted (state, getters) {
-    const weJoinedMs = new Date(getters.currentGroupState.profiles[getters.ourUsername].joinedDate).getTime()
+    const profiles = getters.currentGroupState.profiles
+    if (!profiles) return
+    const weJoinedMs = new Date(profiles[getters.ourUsername].joinedDate).getTime()
     const isNewMember = (username) => {
       if (username === getters.ourUsername) { return false }
-      const memberProfile = getters.currentGroupState.profiles[username]
+      const memberProfile = profiles[username]
       if (!memberProfile) return false
       const memberJoinedMs = new Date(memberProfile.joinedDate).getTime()
       const joinedAfterUs = weJoinedMs <= memberJoinedMs
@@ -741,7 +747,7 @@ const actions = {
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         console.error('[CRITICAL ERROR] NOT EXPECTING EVENT!', contractID, message)
-        throw new GIErrorUnrecoverable(`not expecting ${message.hash()} ${message.serialize()}`)
+        throw new GIErrorUnrecoverable(`not expecting ${message.description()}: ${message.serialize()}`)
       }
       // the order the following actions are done is critically important!
       // first we make sure we save this message to the db

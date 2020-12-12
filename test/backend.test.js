@@ -61,8 +61,8 @@ sbp('sbp/selectors/overwrite', {
   // intercept 'state/enqueueHandleEvent' from backend.js
   'state/enqueueHandleEvent': function (e) {
     const contractID = e.contractID()
-    console.log(chalk.bold(`enqueueHandleEvent: ${e.description()}: isFirst? ${e.isFirstMessage()}; state: ${vuexState[contractID]}`))
-    if (e.isFirstMessage()) {
+    console.debug(chalk.bold(`enqueueHandleEvent: ${e.description()}: isFirst? ${e.isFirstMessage()}; state: ${vuexState[contractID]}`))
+    if (!vuexState[contractID]) {
       vuexState[contractID] = {}
     }
     sbp('chelonia/message/process', e, vuexState[contractID])
@@ -79,7 +79,7 @@ sbp('sbp/selectors/overwrite', {
 //   console.log(`[sbp] ${selector}:`, data)
 // })
 
-describe.skip('Full walkthrough', function () {
+describe('Full walkthrough', function () {
   const users = {}
   const groups = {}
 
@@ -251,7 +251,7 @@ describe.skip('Full walkthrough', function () {
       // 4. fetch the latest hash for bob's mailbox.
       //    we don't need latest state for it just latest hash
       const res = await sbp('backend/latestHash', state.attributes.mailbox)
-      should(res).equal(bob.mailbox.contractID())
+      should(res).equal(bob.mailbox.hash())
     })
 
     it("Should invite Bob to Alice's group", function (done) {
@@ -266,7 +266,7 @@ describe.skip('Full walkthrough', function () {
       ).then(invite => {
         sbp('okTurtles.events/once', invite.hash(), (entry: GIMessage) => {
           console.log('Bob successfully got invite!')
-          should(entry.opValue().data.message).equal(groups.group1.contractID())
+          should(entry.decrypted().data.message).equal(groups.group1.contractID())
           done()
         })
         postEntry(invite)

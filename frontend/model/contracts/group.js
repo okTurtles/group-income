@@ -227,13 +227,13 @@ DefineContract({
       return currency && currency.symbolWithCode
     },
     groupMonthlyPayments (state, getters) {
-      return getters.currentGroupState.paymentsByMonth
+      return getters.currentGroupState.paymentsByMonth || {}
     },
     thisMonthsPaymentInfo (state, getters) {
       return getters.groupMonthlyPayments[currentMonthstamp()] || {}
     },
     withGroupCurrency (state, getters) {
-      return currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
+      return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.

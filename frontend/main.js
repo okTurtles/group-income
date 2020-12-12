@@ -54,7 +54,7 @@ async function startApp () {
   }
 
   // this is to ensure compatibility between frontend and test/backend.test.js
-  sbp('okTurtles.data/set', 'API_URL', location.origin)
+  sbp('okTurtles.data/set', 'API_URL', window.location.origin)
 
   // TODO: handle any socket errors!
   createWebSocket(sbp('okTurtles.data/get', 'API_URL'), {
