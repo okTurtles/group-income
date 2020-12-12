@@ -7,28 +7,38 @@ import should from 'should'
 import { groupIncomeDistributionLogic, groupIncomeDistributionAdjustFirstLogic, groupIncomeDistributionNewLogic, dataToEvents } from './group-income-distribution.js'
 
 function unfoldParameters (json) {
-  let new_json = {}
+  const newJSON = {}
 
-  new_json.monthstamp = '2020-11'
-  new_json.adjusted = json.adjusted
-  new_json.mincome = json.mincome
+  newJSON.monthstamp = '2020-11'
+  newJSON.adjusted = json.adjusted
+  newJSON.mincome = json.mincome
 
-  new_json.payments = []
+  newJSON.payments = []
 
-  for(const payment in json.payments)
-    for(const from in json.payments[payment])
-      for(const to in json.payments[payment][from])
-        new_json.payments.push({from: from, to: to, amount: json.payments[payment][from][to]})
+  for (const payment in json.payments) {
+    for (const from in json.payments[payment]) {
+      for (const to in json.payments[payment][from]) {
+        newJSON.payments.push({ from: from, to: to, amount: json.payments[payment][from][to] })
+      }
+    }
+  }
 
-  new_json.profiles = {}
+  newJSON.profiles = {}
 
-  for(const profile in json.profiles)
-    if(json.profiles[profile].have)
-      new_json.profiles[profile] = {incomeDetailsType: 'pledgeAmount', pledgeAmount: json.profiles[profile].have}
-    else
-      new_json.profiles[profile] = {incomeDetailsType: 'incomeAmount', incomeAmount: json.profiles[profile].need}
-
-  json = new_json
+  for (const profile in json.profiles) {
+    if (json.profiles[profile].have) {
+      newJSON.profiles[profile] = {
+        incomeDetailsType: 'pledgeAmount',
+        pledgeAmount: json.profiles[profile].have
+      }
+    } else {
+      newJSON.profiles[profile] = {
+        incomeDetailsType: 'incomeAmount',
+        incomeAmount: json.profiles[profile].need
+      }
+    }
+  }
+  json = newJSON
 
   const allPayments = {}
   const paymentsFrom = {}
@@ -159,7 +169,7 @@ describe('Chunk 0: Adjustment Tests',
     )
   }
 )
-describe('Chunk A: When someone updates their income details', //TODO: first!
+describe('Chunk A: When someone updates their income details', // TODO: first!
   function () {
     it('[SCENARIO 1]: after a payment is already made',
       // Create a group with $1000 mincome and 3 members

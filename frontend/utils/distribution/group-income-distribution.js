@@ -66,7 +66,6 @@ function foldParameters({getters, monthstamp, adjusted}, print = false)
     monthstamp: monthstamp,
     adjusted: adjusted
   }
-    
   var new_json = {}
   new_json.mincome = foldedJSON.mincome
   new_json.profiles = {}
