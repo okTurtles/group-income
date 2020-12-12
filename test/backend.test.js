@@ -61,7 +61,6 @@ sbp('sbp/selectors/overwrite', {
   // intercept 'state/enqueueHandleEvent' from backend.js
   'state/enqueueHandleEvent': function (e) {
     const contractID = e.contractID()
-    console.debug(chalk.bold(`enqueueHandleEvent: ${e.description()}: isFirst? ${e.isFirstMessage()}; state: ${vuexState[contractID]}`))
     if (!vuexState[contractID]) {
       vuexState[contractID] = {}
     }

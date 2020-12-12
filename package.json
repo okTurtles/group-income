@@ -108,7 +108,6 @@
     "primus-responder": "1.0.4",
     "primus-rooms": "3.4.1",
     "scrypt-async": "2.0.1",
-    "systemjs": "6.8.0",
     "tweetnacl": "1.0.3",
     "tweetnacl-util": "0.15.1",
     "velocity-animate": "1.5.2",

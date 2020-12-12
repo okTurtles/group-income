@@ -176,7 +176,6 @@ const mutations = {
   },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
-    console.debug(`setCurrentGroupId(${currentGroupId})`)
     state.currentGroupId = currentGroupId
   },
   pending (state, contractID) {
