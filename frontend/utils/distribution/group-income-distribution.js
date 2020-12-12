@@ -66,9 +66,36 @@ function foldParameters({getters, monthstamp, adjusted}, print = false)
     monthstamp: monthstamp,
     adjusted: adjusted
   }
+    
+  var new_json = {}
+  new_json.mincome = foldedJSON.mincome
+  new_json.profiles = {}
+  for(const profile in foldedJSON.profiles)
+  {
+    new_json.profiles[profile] = {}
+    if(foldedJSON.profiles[profile].incomeDetailsType == 'pledgeAmount')
+      new_json.profiles[profile].have = foldedJSON.profiles[profile].pledgeAmount
+    else
+      new_json.profiles[profile].need = foldedJSON.profiles[profile].incomeAmount
+  }
+
+  new_json.payments = [];
+
+  for(const payment in foldedJSON.payments)
+  {
+    const payment_obj = foldedJSON.payments[payment]
+    var new_payment = {}
+
+    new_payment[payment_obj.from] = {}
+    new_payment[payment_obj.from][payment_obj.to] = payment_obj.amount
+
+    new_json.payments.push(new_payment)
+  }
+
   if(print)
-    console.log(JSON.stringify(foldedJSON, null, 2))
-  return foldedJSON
+    console.log(JSON.stringify(new_json, null, 2))
+
+    return new_json
 }
 */
 
