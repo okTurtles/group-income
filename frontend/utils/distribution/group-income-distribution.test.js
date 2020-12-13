@@ -67,7 +67,7 @@ function unfoldParameters (json) {
     {
       'groupProfiles': json.profiles,
       'currentGroupState': {
-        'payments': allPayments
+        payments: allPayments
       },
       'monthlyPayments': monthlyPayments,
       'groupSettings': {
@@ -86,24 +86,18 @@ describe('Chunk 0: Adjustment Tests',
       // mincome: 12
       // u1: pledge 10$
       // u2: Income 10$ (a.k.a needs $2)
-      // Expected: [{ amount: 2, from: 'u1', to: 'u2' }]
+      // Expected: [{ from: 'u1', to: 'u2', amount: 2 }]
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': undefined,
-            'mincome': 12,
-            'profiles': {
-              'u1': {
-                'have': 10
-              },
-              'u2': {
-                'need': 10
-              }
-            },
-            'payments': []
+            mincome: 12,
+            profiles: {
+              u1: { have: 10 },
+              u2: { need: 10 }
+            }
           }))
         should(dist).eql([
-          { amount: 2, from: 'u1', to: 'u2' }
+          { from: 'u1', to: 'u2', amount: 2 }
         ])
       })
     it('SCENARIO 2: ignores existing payments when not adjusted',
@@ -111,30 +105,21 @@ describe('Chunk 0: Adjustment Tests',
       // u1: pledge 10$
       // u2: Income 10$ (a.k.a needs $2)
       // u1: sends u2 $2
-      // Expected: [{ amount: 2, from: 'u1', to: 'u2' }]
+      // Expected: [{ from: 'u1', to: 'u2', amount: 2 }]
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': undefined,
-            'mincome': 12,
-            'profiles': {
-              'u1': {
-                'have': 10
-              },
-              'u2': {
-                'need': 10
-              }
+            mincome: 12,
+            profiles: {
+              u1: { have: 10 },
+              u2: { need: 10 }
             },
-            'payments': [
-              {
-                'u1': {
-                  'u2': 2
-                }
-              }
+            payments: [
+              { u1: { u2: 2 } }
             ]
           }))
         should(dist).eql([
-          { amount: 2, from: 'u1', to: 'u2' }
+          { from: 'u1', to: 'u2', amount: 2 }
         ])
       })
     it('SCENARIO 3: takes into account payments from this month when adjusted',
@@ -146,22 +131,14 @@ describe('Chunk 0: Adjustment Tests',
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 12,
-            'profiles': {
-              'u1': {
-                'have': 10
-              },
-              'u2': {
-                'need': 10
-              }
+            adjusted: true,
+            mincome: 12,
+            profiles: {
+              u1: { have: 10 },
+              u2: { need: 10 }
             },
-            'payments': [
-              {
-                'u1': {
-                  'u2': 2
-                }
-              }
+            payments: [
+              { u1: { u2: 2 } }
             ]
           }))
         should(dist).eql([])
@@ -184,29 +161,19 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 1000,
-            'profiles': {
-              'u1': {
-                'have': 100
-              },
-              'u2': {
-                'need': 925
-              },
-              'u3': {
-                'need': 950
-              }
+            adjusted: true,
+            mincome: 1000,
+            profiles: {
+              u1: { have: 100 },
+              u2: { need: 925 },
+              u3: { need: 950 }
             },
-            'payments': [
-              {
-                'u1': {
-                  'u2': 75
-                }
-              }
+            payments: [
+              { u1: { u2: 75 } }
             ]
           }))
         should(dist).eql([
-          { amount: 25, from: 'u1', to: 'u3' }
+          { from: 'u1', to: 'u3', amount: 25 }
         ])
       })
     it('[SCENARIO 2]: Create a group with $1000 mincome and 3 members',
@@ -221,25 +188,15 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 1000,
-            'profiles': {
-              'u1': {
-                'have': 100
-              },
-              'u2': {
-                'need': 900
-              },
-              'u3': {
-                'need': 950
-              }
+            adjusted: true,
+            mincome: 1000,
+            profiles: {
+              u1: { have: 100 },
+              u2: { need: 900 },
+              u3: { need: 950 }
             },
-            'payments': [
-              {
-                'u1': {
-                  'u2': 100
-                }
-              }
+            payments: [
+              { u1: { u2: 100 } }
             ]
           }))
         should(dist).eql([
@@ -258,30 +215,20 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 1000,
-            'profiles': {
-              'u1': {
-                'have': 100
-              },
-              'u2': {
-                'need': 950
-              },
-              'u3': {
-                'need': 700
-              }
+            adjusted: true,
+            mincome: 1000,
+            profiles: {
+              u1: { have: 100 },
+              u2: { need: 950 },
+              u3: { need: 700 }
             },
-            'payments': [
-              {
-                'u1': {
-                  'u2': 25
-                }
-              }
+            payments: [
+              { u1: { u2: 25 } }
             ]
           }))
         should(dist).eql([
-          { amount: 5.769230769230769, from: 'u1', to: 'u2' },
-          { amount: 69.23076923076924, from: 'u1', to: 'u3' }
+          { from: 'u1', to: 'u2', amount: 5.769230769230769 },
+          { from: 'u1', to: 'u3', amount: 69.23076923076924 }
         ])
       })
     it.skip('[SCENARIO 4]:ignores users who updated income after paying and can no longer pay',
@@ -295,20 +242,13 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 1000,
-            'profiles': {
-              'u1': {
-                'have': 100
-              },
-              'u2': {
-                'need': 950
-              },
-              'u3': {
-                'need': 900
-              }
-            },
-            'payments': []
+            adjusted: true,
+            mincome: 1000,
+            profiles: {
+              u1: { have: 100 },
+              u2: { need: 950 },
+              u3: { need: 900 }
+            }
           }))
         should(dist).eql([
           // TODO: it appeas as though the system is passing parameters to our function which do not reflect the change in u1's pledge amount.
@@ -323,33 +263,21 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 1000,
-            'profiles': {
-              'u1': {
-                'have': 50
-              },
-              'u2': {
-                'need': 950
-              },
-              'u3': {
-                'need': 900
-              },
-              'u4': {
-                'have': 150
-              }
+            adjusted: true,
+            mincome: 1000,
+            profiles: {
+              u1: { have: 50 },
+              u2: { need: 950 },
+              u3: { need: 900 },
+              u4: { have: 150 }
             },
-            'payments': [
-              {
-                'u1': {
-                  'u3': 50
-                }
-              }
+            payments: [
+              { u1: { u3: 50 } }
             ]
           }))
         should(dist).eql([
-          { amount: 50, from: 'u4', to: 'u2' },
-          { amount: 50, from: 'u4', to: 'u3' }
+          { from: 'u4', to: 'u2', amount: 50 },
+          { from: 'u4', to: 'u3', amount: 50 }
         ])
       }
     )
@@ -365,20 +293,15 @@ describe('Chunk B: Changing group mincome',
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 500,
-            'profiles': {
-              'u1': {
-                'have': 100
-              },
-              'u2': {
-                'need': 950
-              }
-            },
-            'payments': []
+            adjusted: true,
+            mincome: 500,
+            profiles: {
+              u1: { have: 100 },
+              u2: { need: 950 }
+            }
           }))
         should(dist).eql([
-          { amount: 100, from: 'u1', to: 'u2' }
+          { from: 'u1', to: 'u2', amount: 100 }
         ])
       })
     it('[SCENARIO 2]: Create a group with $500 mincome and 2 members',
@@ -389,20 +312,15 @@ describe('Chunk B: Changing group mincome',
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 750,
-            'profiles': {
-              'u1': {
-                'have': 100
-              },
-              'u2': {
-                'need': 450
-              }
-            },
-            'payments': []
+            adjusted: true,
+            mincome: 750,
+            profiles: {
+              u1: { have: 100 },
+              u2: { need: 450 }
+            }
           }))
         should(dist).eql([
-          { amount: 100, from: 'u1', to: 'u2' }
+          { from: 'u1', to: 'u2', amount: 100 }
         ])
       }
     )
@@ -419,29 +337,20 @@ describe('Chunk C: 4-way distribution tests',
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 1000,
-            'profiles': {
-              'u1': {
-                'have': 250
-              },
-              'u2': {
-                'need': 900
-              },
-              'u3': {
-                'need': 750
-              },
-              'u4': {
-                'have': 250
-              }
-            },
-            'payments': []
+            adjusted: true,
+            mincome: 1000,
+            profiles: {
+              u1: { have: 250 },
+              u2: { need: 900 },
+              u3: { need: 750 },
+              u4: { have: 250 }
+            }
           }))
         should(dist).eql([
-          { amount: 50, from: 'u1', to: 'u2' },
-          { amount: 25, from: 'u4', to: 'u2' },
-          { amount: 125, from: 'u1', to: 'u3' },
-          { amount: 62.5, from: 'u4', to: 'u3' }
+          { from: 'u1', to: 'u2', amount: 50 },
+          { from: 'u4', to: 'u2', amount: 25 },
+          { from: 'u1', to: 'u3', amount: 125 },
+          { from: 'u4', to: 'u3', amount: 62.5 }
         ])
       })
     it('[SCENARIO 2]: stops asking user to pay someone they fully paid their share to',
@@ -450,36 +359,24 @@ describe('Chunk C: 4-way distribution tests',
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 1000,
-            'profiles': {
-              'u1': {
-                'have': 250
-              },
-              'u2': {
-                'need': 900
-              },
-              'u3': {
-                'need': 750
-              },
-              'u4': {
-                'have': 250
-              }
+            adjusted: true,
+            mincome: 1000,
+            profiles: {
+              u1: { have: 250 },
+              u2: { need: 900 },
+              u3: { need: 750 },
+              u4: { have: 250 }
             },
-            'payments': [
-              {
-                'u1': {
-                  'u2': 50
-                }
-              }
+            payments: [
+              { u1: { u2: 50 } }
             ]
           }))
         should(dist).eql([
           // TODO: The full payment does not eliminate the amounts owed by u1 to u2
-          { amount: 22.22222222222222, from: 'u1', to: 'u2' },
-          { amount: 15.4320987654321, from: 'u4', to: 'u2' },
-          { amount: 111.1111111111111, from: 'u1', to: 'u3' },
-          { amount: 77.16049382716051, from: 'u4', to: 'u3' }
+          { from: 'u1', to: 'u2', amount: 22.22222222222222 },
+          { from: 'u4', to: 'u2', amount: 15.4320987654321 },
+          { from: 'u1', to: 'u3', amount: 111.1111111111111 },
+          { from: 'u4', to: 'u3', amount: 77.16049382716051 }
         ])
       })
     it('[SCENARIO 3]: does not ask users who have paid their full share to pay any more',
@@ -488,41 +385,25 @@ describe('Chunk C: 4-way distribution tests',
       function () {
         const dist = groupIncomeDistributionAdjustFirstLogic(unfoldParameters(
           {
-            'adjusted': true,
-            'mincome': 1000,
-            'profiles': {
-              'u1': {
-                'have': 250
-              },
-              'u2': {
-                'need': 900
-              },
-              'u3': {
-                'need': 750
-              },
-              'u4': {
-                'have': 250
-              }
+            adjusted: true,
+            mincome: 1000,
+            profiles: {
+              u1: { have: 250 },
+              u2: { need: 900 },
+              u3: { need: 750 },
+              u4: { have: 250 }
             },
-            'payments': [
-              {
-                'u1': {
-                  'u2': 50
-                }
-              },
-              {
-                'u1': {
-                  'u3': 125
-                }
-              }
+            payments: [
+              { u1: { u2: 50 } },
+              { u1: { u3: 125 } }
             ]
           }))
         should(dist).eql([
           // TODO: The full payment does not eliminate the amounts owed by u1 to u3
-          { amount: 11.538461538461538, from: 'u1', to: 'u2' },
-          { amount: 29.585798816568047, from: 'u4', to: 'u2' },
-          { amount: 28.846153846153847, from: 'u1', to: 'u3' },
-          { amount: 73.96449704142013, from: 'u4', to: 'u3' }
+          { from: 'u1', to: 'u2', amount: 11.538461538461538 },
+          { from: 'u4', to: 'u2', amount: 29.585798816568047 },
+          { from: 'u1', to: 'u3', amount: 28.846153846153847 },
+          { from: 'u4', to: 'u3', amount: 73.96449704142013 }
 
         ])
       }
