@@ -18,6 +18,7 @@ export const ACTION_REGEX = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
 // 3 => 'group'
 // 4 => 'payment'
 
+// TODO: move this to: 'chelonia/contract/define'
 export function DefineContract (contract: Object) {
   const metadata = contract.metadata || { validate () {}, create: () => ({}) }
   const getters = contract.getters
@@ -49,6 +50,7 @@ export function DefineContract (contract: Object) {
           if (action !== contract.name) {
             throw new Error(`contractID required when calling '${action}/create'`)
           }
+          // TODO: move this to: 'chelonia/contract/register'
           const contractMsg = GIMessage.createV1_0(null, null, [
             GIMessage.OP_CONTRACT,
             {

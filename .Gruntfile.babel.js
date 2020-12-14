@@ -344,6 +344,7 @@ module.exports = (grunt) => {
             reloadThrottle: 2000,
             cors: true,
             open: false,
+            ghostMode: false,
             logLevel: grunt.option('debug') ? 'debug' : 'info',
             files: [
               // glob matching uses https://github.com/micromatch/picomatch

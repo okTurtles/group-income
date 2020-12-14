@@ -8,6 +8,7 @@ export type GIKeyType = { type: string; key: string }
 // Allows server to check if the user is allowed to register this type of contract
 export type GIOpContract = { type: string; authkey: GIKeyType }
 export type GIOpAction = string // encrypted version of GIOpPubAction
+// TODO: rename 'type' to 'selector' below:
 export type GIOpPubAction = { type: string; data: JSONType; meta: JSONObject }
 export type GIOpKeyAuth = { key: GIKeyType, context: string }
 export type GIOpPropSet = { key: string, value: JSONType }
