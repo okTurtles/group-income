@@ -75,7 +75,7 @@ function foldParameters({getters, monthstamp, adjusted}, print = false)
     if(foldedJSON.profiles[profile].incomeDetailsType == 'pledgeAmount')
       new_json.profiles[profile].have = foldedJSON.profiles[profile].pledgeAmount
     else
-      new_json.profiles[profile].need = foldedJSON.profiles[profile].incomeAmount
+      new_json.profiles[profile].need = mincomeAmount - foldedJSON.profiles[profile].incomeAmount
   }
 
   new_json.payments = [];
