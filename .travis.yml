@@ -15,7 +15,7 @@ cache:
   npm: true
   directories:
     - ~/.npm # NPM packages 
-    - ~/.cache # Cypress binary
+    # - ~/.cache # Cypress binary TODO: uncomment this on a future PR!
   # https://cypress.slides.com/cypress-io/cypress-on-ci#/9/7/0
   override:
     - npm ci
