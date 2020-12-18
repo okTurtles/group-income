@@ -24,6 +24,7 @@ branches:
 install:
   # TODO: remove `npm install` below and uncomment the above and below in a future PR
   - npm install
+  - ./node_modules/.bin/cypress install
 #  - npm ci
 script:
   - npm test
