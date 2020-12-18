@@ -22,8 +22,8 @@ branches:
 #     - npm ci
 #     - npm run cy:verify
 install:
-  # TODO: remove `npm install` below and uncomment the above in a future PR
+  # TODO: remove `npm install` below and uncomment the above and below in a future PR
   - npm install
-  - npm ci
+#  - npm ci
 script:
   - npm test
