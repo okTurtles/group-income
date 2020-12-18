@@ -12,7 +12,7 @@ branches:
 cache:
   # Caches $HOME/.npm when npm ci is default script command
   # Caches node_modules in all other cases
-  npm: true
+  # npm: true #TODO: uncomment this on a future PR!
   directories:
     - ~/.npm # NPM packages 
     # - ~/.cache # Cypress binary TODO: uncomment this on a future PR!
