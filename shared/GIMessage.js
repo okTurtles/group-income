@@ -6,14 +6,14 @@ import type { JSONType, JSONObject } from './types.js'
 
 export type GIKeyType = { type: string; key: string }
 // Allows server to check if the user is allowed to register this type of contract
-export type GIOpContract = { type: string; authkey: GIKeyType }
+export type GIOpContract = { type: string; authkey: GIKeyType, parentContract: string }
 export type GIOpAction = string // encrypted version of GIOpPubAction
 // TODO: rename 'type' to 'selector' below:
 export type GIOpPubAction = { type: string; data: JSONType; meta: JSONObject }
 export type GIOpKeyAuth = { key: GIKeyType, context: string }
 export type GIOpPropSet = { key: string, value: JSONType }
 
-export type GIOpType = 'c' | 'a' | 'pa' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd'
+export type GIOpType = 'c' | 'a' | 'pa' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd'
 export type GIOpValue = GIOpContract | GIOpAction | GIOpPubAction | GIOpKeyAuth | GIOpPropSet
 export type GIOp = [GIOpType, GIOpValue]
 
@@ -33,6 +33,7 @@ export class GIMessage {
   static OP_ACTION = 'a' // e2e-encrypted action
   static OP_PUB_ACTION = 'pa' // publicly readable action
   static OP_KEY_AUTH = 'ka' // add this key to the list of keys allowed to write to this contract
+  static OP_KEY_UPDATE = 'ku' // update a key's context
   static OP_KEY_DEAUTH = 'kd' // remove this key from authorized keys
   static OP_PROTOCOL_UPGRADE = 'pu'
   static OP_PROP_SET = 'ps' // set a public key/value pair
