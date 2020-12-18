@@ -14,8 +14,12 @@ cache:
   # Caches node_modules in all other cases
   npm: true
   directories:
-    - node_modules # NPM packages
+    - ~/.npm # NPM packages 
     - ~/.cache # Cypress binary
+  # https://cypress.slides.com/cypress-io/cypress-on-ci#/9/7/0
+  override:
+    - npm ci
+    - npm run cy:verify
 install:
   - npm ci
 script:
