@@ -214,7 +214,7 @@ export default {
       },
       amount: {
         [L('This field is required')]: required,
-        [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
+        [L('The amount must be a number (e.g. 100.75)')]: function (value) {
           return currencies[this.groupSettings.mincomeCurrency].validate(value)
         },
         [L('Oops, you entered a negative number')]: function (value) {

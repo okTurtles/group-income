@@ -769,7 +769,7 @@
 "Oops, you entered a negative number" = "Oups, vous avez entré un nombre négatif";
 
 /* views/containers/contributions/IncomeDetails.vue */
-"The amount cannot have more than 2 decimals" = "Le montant ne peut pas avoir plus de deux décimales";
+"The amount must be a number (e.g. 100.75)" = "Le montant doit être un nombre (par exemple 100,75)";
 
 /* views/containers/contributions/IncomeDetails.vue */
 "The method \"{methodName}\" is incomplete." = "La méthode \"{methodName}\" est incomplète.";
