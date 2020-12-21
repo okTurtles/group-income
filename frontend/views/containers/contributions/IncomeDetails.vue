@@ -72,7 +72,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
 import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import currencies, { mincomePositive, normalizeCurrency } from '@view-utils/currencies.js'
+import currencies, { normalizeCurrency } from '@view-utils/currencies.js'
 import sbp from '~/shared/sbp.js'
 import PaymentMethods from './PaymentMethods.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
@@ -217,7 +217,9 @@ export default {
         [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
           return currencies[this.groupSettings.mincomeCurrency].validate(value)
         },
-        [L('Oops, you entered 0 or a negative number')]: mincomePositive,
+        [L('Oops, you entered a negative number')]: function (value) {
+          return normalizeCurrency(value) >= 0
+        },
         [L('Your income must be lower than the group mincome')]: function (value) {
           return !this.needsIncome || normalizeCurrency(value) < this.groupSettings.mincomeAmount
         }
