@@ -255,7 +255,7 @@
   "Income Details": "Détails de Revenu",
   "No, I don't": "Non",
   "Oops, you entered a negative number": "Oups, vous avez entré un nombre négatif",
-  "The amount must be a number (e.g. 100.75)": "Le montant doit être un nombre (par exemple 100,75)",
+  "The amount cannot have more than 2 decimals": "Le montant ne peut pas avoir plus de deux décimales",
   "The method \"{methodName}\" is incomplete.": "La méthode \"{methodName}\" est incomplète.",
   "The method name for \"{methodValue}\" is missing.": "Le nom de la méthode \"{methodValue}\" n'a pas été trouvé.",
   "This is the minimum income in your group": "Ceci est le revenu minimum du groupe",
