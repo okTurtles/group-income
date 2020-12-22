@@ -233,6 +233,10 @@ DefineContract({
       return getters.groupMonthlyPayments[currentMonthstamp()] || {}
     },
     withGroupCurrency (state, getters) {
+      // TODO: If this group has no defined mincome currency, not even a default one like
+      //       USD, then calling this function is probably an error which should be reported.
+      //       Just make sure the UI doesn't break if an exception is thrown, since this is
+      //       bound to the UI in some location.
       return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     }
   },

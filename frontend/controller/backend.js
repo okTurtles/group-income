@@ -114,7 +114,7 @@ sbp('sbp/selectors/register', {
       }
       if (r.status === 409) {
         if (attempt + 1 > maxAttempts) {
-          console.error(`publishLogEntry: failed to publish ${entry.description()} after ${attempt} of ${maxAttempts} attempts`, entry)
+          console.error(`publishLogEntry: failed to publish ${entry.description()} after ${attempt} attempts`, entry)
           throw new Error(`publishLogEntry: ${r.status} - ${r.statusText}. attempt ${attempt}`)
         }
         // create new entry

@@ -33,7 +33,7 @@ const hapi = new Hapi.Server({
       // origin: [
       //   process.env.API_URL,
       //   // improve support for browsersync proxy
-      //   process.env.NODE_ENV === 'development' && 'http://localhost:3000'
+      //   ...(process.env.NODE_ENV === 'development' && ['http://localhost:3000'])
       // ]
     }
   }

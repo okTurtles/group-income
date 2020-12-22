@@ -526,7 +526,7 @@ const getters = {
     if (!ourPayments) return
     const { todo, sent, toBeReceived, received } = ourPayments
     const isCompleted = (p) => p.data.status === PAYMENT_COMPLETED
-    const isPartialCount = (list) => list.filter(p => p.partial).length
+    const partialPaymentsCount = (list) => list.filter(p => p.partial).length
     const getUniqPCount = (users) => {
       // We need to filter the partial payments already done (sent/received).
       // E.G. We need to send 4 payments. We've sent 1 full payment and another
@@ -537,7 +537,7 @@ const getters = {
 
     if (getters.ourGroupProfile.incomeDetailsType === 'incomeAmount') {
       const receivedCompleted = received.filter(isCompleted)
-      const pPartials = isPartialCount(toBeReceived)
+      const pPartials = partialPaymentsCount(toBeReceived)
       const pByUser = {
         toBeReceived: toBeReceived.map(p => p.from),
         received: received.map(p => p.meta.username)
@@ -551,7 +551,7 @@ const getters = {
       }
     } else {
       const sentCompleted = sent.filter(isCompleted)
-      const pPartials = isPartialCount(todo)
+      const pPartials = partialPaymentsCount(todo)
       const pByUser = {
         todo: todo.map(p => p.to),
         sent: sent.map(p => p.data.toUser)
@@ -890,7 +890,7 @@ const handleEvent = {
   },
   async processSideEffects (message: GIMessage) {
     try {
-      if ([GIMessage.OP_ACTION, GIMessage.OP_PUB_ACTION].includes(message.opType())) {
+      if ([GIMessage.OP_ENCRYPTED_ACTION, GIMessage.OP_PUBLIC_ACTION].includes(message.opType())) {
         const contractID = message.contractID()
         const hash = message.hash()
         const { type, data, meta } = message.decrypted()

@@ -13,7 +13,7 @@ export type GIOpPubAction = { type: string; data: JSONType; meta: JSONObject }
 export type GIOpKeyAuth = { key: GIKeyType, context: string }
 export type GIOpPropSet = { key: string, value: JSONType }
 
-export type GIOpType = 'c' | 'a' | 'pa' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd'
+export type GIOpType = 'c' | 'ea' | 'pa' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd'
 export type GIOpValue = GIOpContract | GIOpAction | GIOpPubAction | GIOpKeyAuth | GIOpPropSet
 export type GIOp = [GIOpType, GIOpValue]
 
@@ -30,8 +30,8 @@ export class GIMessage {
   _mapping: Object
 
   static OP_CONTRACT = 'c'
-  static OP_ACTION = 'a' // e2e-encrypted action
-  static OP_PUB_ACTION = 'pa' // publicly readable action
+  static OP_ENCRYPTED_ACTION = 'ea' // e2e-encrypted action
+  static OP_PUBLIC_ACTION = 'pa' // publicly readable action
   static OP_KEY_AUTH = 'ka' // add this key to the list of keys allowed to write to this contract
   static OP_KEY_UPDATE = 'ku' // update a key's context
   static OP_KEY_DEAUTH = 'kd' // remove this key from authorized keys
@@ -83,7 +83,7 @@ export class GIMessage {
 
   decrypted (fn: ?Function): any {
     if (!this._decrypted) {
-      this._decrypted = this.opType() === GIMessage.OP_ACTION ? fn(this.opValue()) : this.opValue()
+      this._decrypted = this.opType() === GIMessage.OP_ENCRYPTED_ACTION ? fn(this.opValue()) : this.opValue()
     }
     return this._decrypted
   }
@@ -99,9 +99,9 @@ export class GIMessage {
   description (): string {
     const type = this.opType()
     let desc = `<op_${type}`
-    if (type === GIMessage.OP_ACTION && this._decrypted) {
+    if (type === GIMessage.OP_ENCRYPTED_ACTION && this._decrypted) {
       desc += `|${this._decrypted.type}`
-    } else if (type === GIMessage.OP_PUB_ACTION) {
+    } else if (type === GIMessage.OP_PUBLIC_ACTION) {
       desc += `|${this.opValue().type}`
     }
     return `${desc}|${this.hash()} of ${this.contractID()}>`
@@ -130,13 +130,13 @@ sbp('sbp/selectors/register', {
         if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
         state._vm.authorizedKeys.push({ key: v.authkey, context: 'owner' })
       },
-      [GIMessage.OP_ACTION] (v) {
+      [GIMessage.OP_ENCRYPTED_ACTION] (v) {
         if (!config.skipActionProcessing) {
           const decrypted = message.decrypted(config.decryptFn)
-          opFns[GIMessage.OP_PUB_ACTION](decrypted)
+          opFns[GIMessage.OP_PUBLIC_ACTION](decrypted)
         }
       },
-      [GIMessage.OP_PUB_ACTION] (v) {
+      [GIMessage.OP_PUBLIC_ACTION] (v) {
         if (!config.skipActionProcessing) {
           const { data, meta, type } = v
           if (!config.whitelisted(type)) {
@@ -182,8 +182,8 @@ function sanityCheck (msg: GIMessage) {
     case GIMessage.OP_CONTRACT:
       if (!msg.isFirstMessage()) throw new Error('OP_CONTRACT: must be first message')
       break
-    case GIMessage.OP_ACTION:
-      // nothing forn ow
+    case GIMessage.OP_ENCRYPTED_ACTION:
+      // nothing for now
       break
     default:
       throw new Error(`unsupported op: ${type}`)

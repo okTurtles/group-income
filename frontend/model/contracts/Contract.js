@@ -69,7 +69,7 @@ export function DefineContract (contract: Object) {
         metadata.validate(meta, { state, ...gProxy, contractID })
         contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
         return GIMessage.createV1_0(contractID, previousHEAD, [
-          GIMessage.OP_ACTION,
+          GIMessage.OP_ENCRYPTED_ACTION,
           // TODO: encryption happens here
           JSON.stringify({ type: actionSelector, data, meta })
         ])
@@ -114,23 +114,3 @@ function sideEffectStack (contractID: string): Array {
   }
   return stack
 }
-
-/*
-A contract should have the following publicly readable messages:
-- contract type
-- key management related messages (add/remove authorized write keys, along with their capabilities)
-- spoken contract protocol version (note: GIMessage has a 'version' field...)
-*/
-
-// TODO: Modify GIMessage to add base protocol ops
-//       https://github.com/okTurtles/group-income-simple/issues/603
-//       define a base set of protocol messages that are publicly readable
-//       OP_CONTRACT - create a contract with a given name (publicly readable),
-//                     and authorized keys, but all other data is encrypted.
-//       OP_ACTION - an action is applied to the contract. its name and its
-//                   data is encrypted.
-//       OP_KEY_* - key related ops that determine who can write to this contract
-//       OP_PROTOCOL_UPGRADE - bump the protocol version, clients that are less
-//                             than this version cannot read or write
-//       OP_PROP_SET
-//       OP_PROP_DEL
