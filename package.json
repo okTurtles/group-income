@@ -140,7 +140,7 @@
     "chalk": "4.1.0",
     "cheerio": "1.0.0-rc.3",
     "chokidar": "3.4.3",
-    "cypress": "3.5.0",
+    "cypress": "6.2.0",
     "cypress-file-upload": "3.5.0",
     "eslint": "7.14.0",
     "eslint-config-standard": "16.0.2",
