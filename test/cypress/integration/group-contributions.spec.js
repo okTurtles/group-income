@@ -103,7 +103,7 @@ describe('Contributions', () => {
 
     cy.getByDT('openIncomeDetailsModal').click()
     // Make sure only radio box to select the type is visible at the begining
-    cy.getByDT('introIncomeOrPledge').should('not.be.visible')
+    cy.getByDT('introIncomeOrPledge').should('not.exist')
 
     cy.getByDT('doesntNeedIncomeRadio').click()
     // Make sure the user is aksed how much he want to pledge
