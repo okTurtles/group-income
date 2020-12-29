@@ -49,7 +49,7 @@ import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import currencies from '@view-utils/currencies.js'
-import distributeIncome from '@utils/distribution/mincome-proportional.js'
+import groupIncomeDistributionLogic from '@utils/distribution/group-income-distribution.js'
 
 export default {
   name: 'GroupPledgesGraph',
@@ -115,7 +115,7 @@ export default {
       if (!doWePledge && neededPledges > 0) {
         incomeDistribution.push({ name: this.ourUsername, amount: ourIncomeAmount })
 
-        ourIncomeToReceive = distributeIncome(incomeDistribution, mincome)
+        ourIncomeToReceive = groupIncomeDistributionLogic(incomeDistribution, mincome, true)
           .filter(i => i.to === this.ourUsername)
           .reduce((acc, cur) => cur.amount + acc, 0)
       }
@@ -135,11 +135,9 @@ export default {
       const { groupGoal, othersPledgesAmount, ourPledgeAmount, pledgeTotal, surplus } = this.graphData
 
       if (groupGoal === 0) {
-        return pledgeTotal > 0 ? [{
-          id: 'goal_zero',
-          percent: 1,
-          color: 'primary'
-        }] : []
+        return pledgeTotal > 0
+          ? [{ id: 'goal_zero', percent: 1, color: 'primary' }]
+          : []
       }
 
       // Note: surplus is added on the innerSlices, so we need to substract its part from the pledges.

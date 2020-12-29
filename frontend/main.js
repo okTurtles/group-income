@@ -20,6 +20,7 @@ import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
 import CypressBypassUi from './views/containers/navigation/CypressBypassUI.vue'
 import './views/utils/translations.js'
+import './views/utils/avatar.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
 import './views/utils/vStyle.js'
@@ -42,9 +43,9 @@ async function startApp () {
       'okTurtles.data'
     ].reduce(reducer, {})
     const selBlacklist = [
-      'gi.db/log/get',
+      'gi.db/get',
       'gi.db/log/logHEAD',
-      'gi.db/log/set'
+      'gi.db/set'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selBlacklist[selector]) return
@@ -52,8 +53,11 @@ async function startApp () {
     })
   }
 
+  // this is to ensure compatibility between frontend and test/backend.test.js
+  sbp('okTurtles.data/set', 'API_URL', location.origin)
+
   // TODO: handle any socket errors!
-  createWebSocket(process.env.API_URL, {
+  createWebSocket(sbp('okTurtles.data/get', 'API_URL'), {
     // TODO: verify these are good defaults
     timeout: 3000,
     strategy: ['disconnect', 'online', 'timeout']

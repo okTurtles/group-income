@@ -5,8 +5,9 @@ form(data-test='signup' @submit.prevent='')
     input.input(
       :class='{error: $v.form.username.$error}'
       name='username'
-      @input='e => debounceValidation("username", e.target.value)'
-      @blur='e => updateField("username", e.target.value)'
+      v-model.trim='form.username'
+      @input='debounceField("username")'
+      @blur='updateField("username")'
       data-test='signName'
       v-error:username='{ attrs: { "data-test": "badUsername" } }'
     )
@@ -17,7 +18,7 @@ form(data-test='signup' @submit.prevent='')
       :class='{error: $v.form.email.$error}'
       name='email'
       type='email'
-      v-model='form.email'
+      v-model.trim='form.email'
       @input='debounceField("email")'
       @blur='updateField("email")'
       data-test='signEmail'
@@ -25,8 +26,6 @@ form(data-test='signup' @submit.prevent='')
     )
 
   password-form(:label='L("Password")' name='password' :$v='$v')
-
-  avatar-generator(@generated='handleAvatarUrl')
 
   banner-scoped(ref='formMsg')
 
@@ -39,7 +38,6 @@ form(data-test='signup' @submit.prevent='')
 </template>
 
 <script>
-import AvatarGenerator from '@components/AvatarGenerator.vue'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
@@ -50,7 +48,6 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { imageDataURItoBlob } from '@utils/image.js'
 
 export default {
   name: 'SignupForm',
@@ -59,7 +56,6 @@ export default {
     validationsDebouncedMixins
   ],
   components: {
-    AvatarGenerator,
     ModalTemplate,
     PasswordForm,
     BannerScoped,
@@ -72,13 +68,14 @@ export default {
         password: null,
         email: null,
         pictureBase64: null
+      },
+      usernameAsyncValidation: {
+        timer: null,
+        resolveFn: null
       }
     }
   },
   methods: {
-    handleAvatarUrl (base64Url) {
-      this.form.pictureBase64 = base64Url
-    },
     async signup () {
       if (this.$v.form.$invalid) {
         this.$refs.formMsg.danger(L('The form is invalid.'))
@@ -88,32 +85,53 @@ export default {
         await sbp('gi.actions/identity/signupAndLogin', {
           username: this.form.username,
           email: this.form.email,
-          password: this.form.password,
-          picture: this.form.pictureBase64 ? imageDataURItoBlob(this.form.pictureBase64) : ''
+          password: this.form.password
         })
-        this.$emit('submitSucceeded')
+        this.$emit('submit-succeeded')
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
     }
   },
-  validations: {
-    form: {
-      username: {
-        [L('A username is required.')]: required,
-        [L('A username cannot contain spaces.')]: nonWhitespace,
-        [L('This username is already being used.')]: async (value) => {
-          return !await sbp('namespace/lookup', value)
+  // we use dynamic validation schema to support accessing this.usernameAsyncValidation
+  // https://vuelidate.js.org/#sub-dynamic-validation-schema
+  validations () {
+    return {
+      form: {
+        username: {
+          [L('A username is required.')]: required,
+          [L('A username cannot contain spaces.')]: nonWhitespace,
+          [L('This username is already being used.')]: async (value) => {
+            if (!value) return true
+            if (this.usernameAsyncValidation.timer) {
+              clearTimeout(this.usernameAsyncValidation.timer)
+            }
+            if (this.usernameAsyncValidation.resolveFn) {
+              this.usernameAsyncValidation.resolveFn(true)
+              this.usernameAsyncValidation.resolveFn = null
+            }
+            return new Promise((resolve) => {
+              this.usernameAsyncValidation.resolveFn = resolve
+              this.usernameAsyncValidation.timer = setTimeout(async () => {
+                try {
+                  resolve(!await sbp('namespace/lookup', value))
+                } catch (e) {
+                  console.warn('unexpected exception in SignupForm validation:', e)
+                  resolve(true)
+                }
+              }, 1000)
+            })
+          }
+        },
+        password: {
+          [L('A password is required.')]: required,
+          [L('Your password must be at least 7 characteres long.')]: minLength(7)
+        },
+        email: {
+          [L('An email is required.')]: required,
+          [L('Please enter a valid email.')]: email
         }
-      },
-      password: {
-        [L('A password is required.')]: required,
-        [L('Your password must be at least 7 characteres long.')]: minLength(7)
-      },
-      email: {
-        [L('An email is required.')]: required,
-        [L('Please enter a valid email.')]: email
       }
     }
   }

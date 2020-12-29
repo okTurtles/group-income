@@ -43,9 +43,9 @@ export class Crypto {
   // we use dchest/scrypt-async-js in browser
   // TODO: use barrysteyn/node-scrypt in node/electrum
   static keyFromPassword (password) {
-    var salt = Crypto.randomSalt()
+    const salt = Crypto.randomSalt()
     // TODO: use proper parameters. https://github.com/dchest/scrypt-async-js
-    var opts = { N: 16384, r: 8, p: 1 }
+    const opts = { N: 16384, r: 8, p: 1 }
     return new Promise(resolve => scrypt(password, salt, opts, resolve))
   }
 }

@@ -10,13 +10,13 @@ export function mapValues (obj: Object, fn: Function, o: Object = {}) {
 }
 
 export function pick (o: Object, props: [string]) {
-  var x = {}
+  const x = {}
   for (const k of props) { x[k] = o[k] }
   return x
 }
 
 export function omit (o: Object, props: [string]) {
-  var x = {}
+  const x = {}
   for (const k in o) {
     if (!props.includes(k)) {
       x[k] = o[k]
@@ -30,7 +30,7 @@ export function cloneDeep (obj: JSONObject) {
 }
 
 function isMergeableObject (val) {
-  var nonNullObject = val && typeof val === 'object'
+  const nonNullObject = val && typeof val === 'object'
   return nonNullObject && Object.prototype.toString.call(val) !== '[object RegExp]' && Object.prototype.toString.call(val) !== '[object Date]'
 }
 
@@ -54,6 +54,10 @@ export function delay (msec: number) {
 
 export function randomIntFromRange (min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+export function randomFromArray (arr: Array) {
+  return arr[Math.floor(Math.random() * arr.length)]
 }
 
 // TODO: maybe a simplified version like this? https://github.com/component/debounce/blob/master/index.js
@@ -241,7 +245,7 @@ export function deepEqualJSONType (a: any, b: any): boolean {
   } else if (a.constructor.name !== 'Object') {
     throw new Error(`not JSON type: ${a}`)
   }
-  for (var key in a) {
+  for (const key in a) {
     if (!deepEqualJSONType(a[key], b[key])) return false
   }
   return true

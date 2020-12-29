@@ -2,10 +2,10 @@
 
 type TypeFilter = (domain: string, selector: string, data: any) => ?boolean
 
-var selectors: {[string]: Function} = {}
-var globalFilters: Array<TypeFilter> = []
-var domainFilters: {[string]: Array<TypeFilter>} = {}
-var selectorFilters: {[string]: Array<TypeFilter>} = {}
+const selectors: {[string]: Function} = {}
+const globalFilters: Array<TypeFilter> = []
+const domainFilters: {[string]: Array<TypeFilter>} = {}
+const selectorFilters: {[string]: Array<TypeFilter>} = {}
 
 const DOMAIN_REGEX = /^[^/]+/
 
@@ -27,7 +27,7 @@ function sbp (selector: string, ...data: any): any {
 
 const SBP_BASE_SELECTORS = {
   'sbp/selectors/register': function (sels: {[string]: Function}) {
-    var registered = []
+    const registered = []
     for (const selector in sels) {
       if (selectors[selector]) {
         (console.warn || console.log)(`[SBP WARN]: not registering already registered selector: ${selector}`)

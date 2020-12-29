@@ -25,7 +25,7 @@ export class GIMessage {
     actionData: JSONType,
     metaData: ?Object = {}
   ) {
-    var instance = new this()
+    const instance = new this()
     instance._message = {
       version: 1,
       previousHEAD,
@@ -53,7 +53,7 @@ export class GIMessage {
 
   static deserialize (value: string) {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
-    var instance = new this()
+    const instance = new this()
     instance._mapping = { key: blake32Hash(value), value }
     instance._message = JSON.parse(JSON.parse(value).message)
     return instance

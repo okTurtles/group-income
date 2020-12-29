@@ -29,7 +29,7 @@ const fs = require('fs')
 const path = require('path')
 // const { PassThrough, Readable } = require('stream')
 
-chalk.enabled = true // for some reason it's not detecting that terminal supports colors
+chalk.level = 2 // for some reason it's not detecting that terminal supports colors
 const { bold } = chalk
 
 // var unsignedMsg = sign(personas[0], 'futz')
@@ -53,6 +53,9 @@ const vuexState = {
   fontSize: 1,
   appLogsFilter: ['error', 'info', 'warn']
 }
+
+// this is to ensure compatibility between frontend and test/backend.test.js
+sbp('okTurtles.data/set', 'API_URL', process.env.API_URL)
 
 sbp('sbp/selectors/overwrite', {
   // intercept 'state/enqueueHandleEvent' from backend.js
@@ -80,8 +83,8 @@ sbp('sbp/selectors/overwrite', {
 // })
 
 describe('Full walkthrough', function () {
-  var users = {}
-  var groups = {}
+  const users = {}
+  const groups = {}
 
   function login (user) {
     // we set this so that the metadata on subsequent messages is properly filled in
@@ -97,6 +100,9 @@ describe('Full walkthrough', function () {
   }
 
   function createIdentity (username, email) {
+    // append random id to username to prevent conflict across runs
+    // when GI_PERSIST environment variable is defined
+    username = `${username}-${Math.floor(Math.random() * 1000)}`
     return sbp('gi.contracts/identity/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
       attributes: { username, email }
@@ -141,7 +147,7 @@ describe('Full walkthrough', function () {
   }
 
   async function createMailboxFor (user) {
-    var mailbox = await sbp('gi.contracts/mailbox/create', {
+    const mailbox = await sbp('gi.contracts/mailbox/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
     })
     await user.socket.sub(mailbox.hash())
@@ -156,7 +162,7 @@ describe('Full walkthrough', function () {
 
   async function postEntry (entry) {
     console.log(bold.yellow('sending entry with hash:'), entry.hash())
-    var res = await sbp('backend/publishLogEntry', entry)
+    const res = await sbp('backend/publishLogEntry', entry)
     should(res).equal(entry.hash())
     return res
   }
@@ -167,7 +173,7 @@ describe('Full walkthrough', function () {
       users.alice = await createIdentity('Alice', 'alice@okturtles.org')
       const { alice, bob } = users
       // verify attribute creation and state initialization
-      bob.data().attributes.username.should.equal('Bob')
+      bob.data().attributes.username.should.match(/^Bob/)
       bob.data().attributes.email.should.equal('bob@okturtles.com')
       // send them off!
       await postEntry(alice)
@@ -176,7 +182,9 @@ describe('Full walkthrough', function () {
 
     it('Should register Alice and Bob in the namespace', async function () {
       const { alice, bob } = users
-      var res = await sbp('namespace/register', alice.data().attributes.username, alice.hash())
+      let res = await sbp('namespace/register', alice.data().attributes.username, alice.hash())
+      // NOTE: don't rely on the return values for 'namespace/register'
+      //       too much... in the future we might remove these checks
       res.value.should.equal(alice.hash())
       res = await sbp('namespace/register', bob.data().attributes.username, bob.hash())
       res.value.should.equal(bob.hash())
@@ -186,7 +194,7 @@ describe('Full walkthrough', function () {
 
     it('Should verify namespace lookups work', async function () {
       const { alice } = users
-      var res = await sbp('namespace/lookup', alice.data().attributes.username)
+      const res = await sbp('namespace/lookup', alice.data().attributes.username)
       res.should.equal(alice.hash())
       const contractID = await sbp('namespace/lookup', 'susan')
       should(contractID).equal(null)
@@ -225,7 +233,7 @@ describe('Full walkthrough', function () {
       const bobsContractId = await sbp('namespace/lookup', bobsName)
       should(bobsContractId).equal(bob.hash())
       // 2. fetch all events for his identity contract to get latest state for it
-      var events = await sbp('backend/eventsSince', bobsContractId, bobsContractId)
+      let events = await sbp('backend/eventsSince', bobsContractId, bobsContractId)
       should(events).be.an.instanceof(Array)
       console.log(bold.red('EVENTS:'), events)
       // NOTE: even though we could avoid creating instances out of these events,
@@ -235,7 +243,7 @@ describe('Full walkthrough', function () {
       // Illustraiting its importance: when converting the code below from
       // raw-objects to instances, the hash check failed and I caught several bugs!
       events = events.map(e => GIMessage.deserialize(e))
-      var state = {}
+      const state = {}
       for (const e of events) {
         const message = { data: e.data(), meta: e.meta(), hash: e.hash(), contractID: bobsContractId }
         sbp(e.type(), message, state)
@@ -250,7 +258,7 @@ describe('Full walkthrough', function () {
     })
 
     it("Should invite Bob to Alice's group", function (done) {
-      var mailbox = users.bob.mailbox
+      const mailbox = users.bob.mailbox
       sbp('gi.contracts/mailbox/postMessage/create',
         {
           from: users.bob.data().attributes.username,
@@ -274,7 +282,7 @@ describe('Full walkthrough', function () {
 
     it('Should fail with wrong contractID', async function () {
       try {
-        var p = await createPaymentTo(users.bob, 100, '')
+        const p = await createPaymentTo(users.bob, 100, '')
         await postEntry(p)
         return Promise.reject(new Error("shouldn't get here!"))
       } catch (e) {

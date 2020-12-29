@@ -44,7 +44,7 @@ export default {
   },
   methods: {
     timeTravel () {
-      var state = this.ephemeral.history[this.ephemeral.position]
+      const state = this.ephemeral.history[this.ephemeral.position]
       console.debug(`Firing position ${this.ephemeral.position}:`, state)
       store.replaceState(state)
       sbp('okTurtles.events/emit', REPLACED_STATE)

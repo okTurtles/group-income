@@ -15,7 +15,7 @@ exports.plugin = {
           const { authorization } = request.headers
           if (!authorization) h.unauthenticated(Boom.unauthorized('Missing authorization'))
 
-          var [scheme, json] = authorization.split(/\s+/)
+          let [scheme, json] = authorization.split(/\s+/)
           if (scheme !== 'gi') h.unauthenticated(Boom.badRequest('Bad authentication'))
 
           try {
@@ -24,9 +24,9 @@ exports.plugin = {
             return h.unauthenticated(Boom.badRequest('Invalid token format'))
           }
           // http://hapijs.com/api/#serverauthschemename-scheme
-          var isValid = verify(json.msg, json.key, json.sig)
+          const isValid = verify(json.msg, json.key, json.sig)
           json.userId = json.key
-          var credentials = { credentials: json }
+          const credentials = { credentials: json }
           if (!isValid) return h.unauthenticated(Boom.unauthorized('Bad credentials'), credentials)
           return h.authenticated(credentials)
         }

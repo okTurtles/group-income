@@ -6,6 +6,8 @@ import util from 'util'
 
 import sbp from '~/shared/sbp.js'
 
+const Boom = require('@hapi/boom')
+
 const readFileAsync = util.promisify(fs.readFile)
 
 const defaultLanguage = 'en-US'
@@ -26,6 +28,9 @@ export default sbp('sbp/selectors/register', {
     // returns empty so that the UI stays in the default language.
     if (!fileName || !fileName.endsWith(languageFileExtension)) return ''
     const filePath = path.join(languageDir, fileName)
+    if (!fs.existsSync(filePath)) {
+      return Boom.notFound()
+    }
     try {
       return await readFileAsync(filePath)
     } catch (error) {

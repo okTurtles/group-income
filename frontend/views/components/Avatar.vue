@@ -56,8 +56,8 @@ export default {
       try {
         const url = new URL(newBlobURL)
         const imageType = url.searchParams.get('type')
-        var blob = await sbp('gi.db/files/load', newBlobURL)
-        var b
+        let blob = await sbp('gi.db/files/load', newBlobURL)
+        let b
         if (!blob) {
           console.debug('[DEBUG] Avatar: no blob loaded for', newBlobURL)
           // we need to retrieve it from the server and save it.

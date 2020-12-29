@@ -7,7 +7,6 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import L from '~/frontend/views/utils/translations.js'
-// import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
@@ -31,11 +30,11 @@ import { currentMonthstamp, prevMonthstamp, dateFromMonthstamp, lastDayOfMonth }
 import currencies from '~/frontend/views/utils/currencies.js'
 
 Vue.use(Vuex)
-var store // this is set and made the default export at the bottom of the file.
+// let store // this is set and made the default export at the bottom of the file.
 // we have it declared here to make it accessible in mutations
 // 'state' is the Vuex state object, and it can only store JSON-like data
-var dropAllMessagesUntilRefresh = false
-var attemptToReprocessMessageID
+let dropAllMessagesUntilRefresh = false
+let attemptToReprocessMessageID
 const contractIsSyncing: {[string]: boolean} = {}
 
 let defaultTheme = THEME_LIGHT
@@ -129,7 +128,7 @@ const mutations = {
   },
   registerContract (state, { contractID, type }) {
     const firstTimeRegistering = !state[contractID]
-    var vuexModule = {
+    const vuexModule = {
       // vuex module namespaced under this contract's hash
       // see details: https://vuex.vuejs.org/en/modules.html
       namespaced: true,
@@ -353,17 +352,11 @@ const getters = {
   },
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
-    return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp() })
-  },
-  groupAdjustedIncomeDistribution (state, getters) {
-    return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp(), adjusted: true })
+    return groupIncomeDistribution({ getters, monthstamp: currentMonthstamp(), adjusted: false })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
-    return getters.groupIncomeAdjustedDistributionForMonth(currentMonthstamp())
-  },
-  groupIncomeAdjustedDistributionForMonth (state, getters) {
-    return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
+    return groupIncomeDistribution({ getters, monthstamp: currentMonthstamp(), adjusted: true })
   },
   ourPayments (state, getters) {
     // Payments relative to the current month only
@@ -465,7 +458,7 @@ const getters = {
             // If E > 0, then display a row for the late payment.
             const A = payment.amount
             const B = getters.paymentTotalFromUserToUser(ourUsername, payment.to, cMonthstamp)
-            var C = currentDistribution
+            let C = currentDistribution
               .filter(a => a.from === payment.from && a.to === payment.to)
             C = C.length > 0 ? C[0].amount : 0
             const D = pledgeAmount
@@ -648,7 +641,7 @@ const actions = {
     const latest = await sbp('backend/latestHash', contractID)
     console.log(`syncContractWithServer(): ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
-    var recent
+    let recent
     if (state.contracts[contractID]) {
       recent = state.contracts[contractID].HEAD
     } else {
@@ -776,9 +769,9 @@ const actions = {
       // https://github.com/okTurtles/group-income-simple/issues/602
       // TODO: use a global notification system to both display a notification
       console.error(`[ERROR] exception ${e.name} in handleEvent!`, e.message, e)
-      var updateContractHEAD = false
-      var banUser = false
-      var enterUnrecoverableState = false
+      let updateContractHEAD = false
+      let banUser = false
+      let enterUnrecoverableState = false
       // handle all error types defined in ./errors.js + ErrorDBConnection
       if (e instanceof GIErrorUnrecoverable) {
         console.error('[CRITICAL ERROR] handleEvent:', e.message, e.stack)
@@ -973,8 +966,8 @@ const handleEvent = {
       if (username && store.getters.groupProfile(username)) {
         console.warn(`autoBanSenderOfMessage: autobanning ${username}`)
         const groupID = store.state.currentGroupId
-        var proposal
-        var proposalHash
+        let proposal
+        let proposalHash
         // find existing proposal if it exists
         for (const hash in store.state[groupID].proposals) {
           const prop = store.state[groupID].proposals[hash]
@@ -1031,7 +1024,7 @@ const handleEvent = {
   }
 }
 
-store = new Vuex.Store({
+const store = new Vuex.Store({
   state: _.cloneDeep(initialState),
   mutations,
   getters,

@@ -10,6 +10,7 @@
       :value='sliderValue'
       @input='handleInput'
     )
+
     transition-expand
       // inner el has paddings. A wrap is needed for a smooth transition.
       div(v-if='warnMajority')
@@ -26,7 +27,7 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 
-const SUPERMAJORITY = 0.67
+const SUPERMAJORITY = 0.60
 
 export default {
   name: 'VotingRulesInput',

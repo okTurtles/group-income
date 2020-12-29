@@ -37,8 +37,8 @@ export function DefineContract (contract: Object) {
     whitelistedSelectors[`${action}/process`] = true
     sbp('sbp/selectors/register', {
       [`${action}/create`]: async function (data: Object, contractID: string = null) {
-        var previousHEAD = null
-        var state = null
+        let previousHEAD = null
+        let state = null
         if (contractID) {
           state = contract.state(contractID)
           previousHEAD = await sbp('backend/latestHash', contractID)
@@ -85,7 +85,7 @@ function gettersProxy (state: Object, getters: Object) {
 }
 
 function sideEffectStack (contractID: string): Array {
-  var stack = sideEffectStacks[contractID]
+  let stack = sideEffectStacks[contractID]
   if (!stack) {
     sideEffectStacks[contractID] = stack = []
   }

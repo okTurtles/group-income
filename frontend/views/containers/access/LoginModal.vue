@@ -3,7 +3,7 @@
     template(slot='title')
       i18n Log in
 
-    login-form(@submitSucceeded='submit')
+    login-form(@submit-succeeded='submit')
 
     template(slot='footer')
       p

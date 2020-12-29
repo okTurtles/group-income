@@ -1,8 +1,14 @@
-<p align="center"><img width="400px" src="frontend/assets/images/logo-transparent.png" alt="Group Income (Simple Edition)"></p>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-[![Gitter](https://badges.gitter.im/okTurtles/group-income.svg)](https://gitter.im/okTurtles/group-income) [![Build Status](https://img.shields.io/travis/okTurtles/group-income-simple/master.svg)](https://travis-ci.org/okTurtles/group-income-simple) [![Deps](https://david-dm.org/okTurtles/group-income-simple.svg)](https://david-dm.org/okTurtles/group-income-simple/#info=dependencies) [![Dev Deps](https://david-dm.org/okTurtles/group-income-simple/dev-status.svg)](https://david-dm.org/okTurtles/group-income-simple/#info=devDependencies) [![Donate](https://img.shields.io/badge/donate%20-%3D%E2%9D%A4-blue.svg)](https://okturtles.org/donate/)
+<p align="center">
+    <a href="https://groupincome.org"><img width="400px" src="frontend/assets/images/logo-transparent.png" alt="Group Income (Simple Edition)"></a>
+    <br />
+    <br />
+    <a title="Gitter" href="https://gitter.im/okTurtles/group-income"><img src="https://badges.gitter.im/okTurtles/group-income.svg"></a>
+    <a title="Build Status" href="https://travis-ci.org/okTurtles/group-income-simple"><img src="https://img.shields.io/travis/okTurtles/group-income-simple/master.svg"></a>
+    <a title="Deps" href="https://david-dm.org/okTurtles/group-income-simple/#info=dependencies"><img src="https://david-dm.org/okTurtles/group-income-simple.svg"></a>
+    <a title="Dev Deps" href="https://david-dm.org/okTurtles/group-income-simple/#info=devDependencies"><img src="https://david-dm.org/okTurtles/group-income-simple/dev-status.svg"></a>
+    <a title="Visual Source" href="https://www.visualsource.net/repo/github.com/okTurtles/group-income-simple"><img src="https://img.shields.io/badge/visual-source-orange"></a>
+    <a title="Donate" href="https://okturtles.org/donate/"><img src="https://img.shields.io/badge/donate%20-%3D%E2%9D%A4-blue.svg"></a>
+</p>
 
 ## About
 
@@ -52,7 +58,13 @@ Run all servers + watch files for changes
 grunt dev
 ```
 
-- If all went well you should be able to visit [http://localhost:8000](http://localhost:8000)
+- If all went well you should be able to visit [http://localhost:3000](http://localhost:3000)
+
+Create a tunnel to share access over the Internet:
+
+```
+grunt dev --tunnel
+```
 
 Build the app for distribution
 
@@ -75,11 +87,8 @@ grunt test
 # all tests while skipping build step
 grunt test --skipbuild
 
-# unit tests only
+# unit tests only (always skips build)
 grunt test:unit
-
-# unit tests while skipping build step
-grunt test:unit --skipbuild
 
 # show e2e tests (Cypress) live in a browser
 grunt test --browser

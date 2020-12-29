@@ -31,7 +31,7 @@ Cypress.on('window:before:load', (window) => {
       // you make to keep track of the logs
       // Use JSON.stringify to avoid [object, object] in the output
       // logs += JSON.stringify(args.join(' ')) + '\n'
-      logs += `::${consoleProperty}:: ${JSON.stringify(args)} \n`
+      logs += JSON.stringify([consoleProperty, ...args]) + ',\n'
     }
   })
 })
@@ -47,8 +47,8 @@ Cypress.mocha.getRunner().on('test', () => {
 // On a cypress fail. I add the console logs, from the start of test or after the last test fail to the
 // current fail, to the end of the error.stack property.
 Cypress.on('fail', (error) => {
-  error.stack += '\nConsole Logs:\n========================'
-  error.stack += logs
+  error.stack += '\nConsole Logs:\n========================\n'
+  error.stack += '[' + logs + ' null]'
   // clear logs after fail so we dont see duplicate logs
   logs = ''
   // still need to throw the error so tests wont be marked as a pass

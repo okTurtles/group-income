@@ -110,8 +110,7 @@ declare module '@components/MembersCircle.vue' { declare module.exports: Object 
 declare module '../frontend/controller/backend.js' { declare module.exports: Function }
 declare module '../frontend/controller/namespace.js' { declare module.exports: any }
 declare module '../frontend/model/contracts.js' { declare module.exports: Object }
-declare module '../frontend/utils/distribution/mincome-default' { declare module.exports: Function }
-declare module '../frontend/utils/distribution/mincome-proportional' { declare module.exports: Function }
+declare module '../frontend/utils/distribution/group-income-distribution' { declare module.exports: Function }
 declare module '../frontend/utils/giLodash.js' { declare module.exports: Function }
 declare module '../model/state.js' { declare module.exports: Object }
 declare module '../utils.js' { declare module.exports: Function }

@@ -163,7 +163,7 @@ export default {
     },
     moveStart () {
       this.flag = true
-      this.$emit('dragStart', this)
+      this.$emit('drag-start', this)
     },
     moving (e) {
       if (!this.flag) return false
@@ -173,7 +173,7 @@ export default {
     },
     moveEnd () {
       if (this.flag) {
-        this.$emit('dragEnd', this)
+        this.$emit('drag-end', this)
         if (this.lazy && this.isDiff(this.val, this.value)) {
           this.syncValue()
         }
@@ -267,7 +267,7 @@ export default {
     syncValue () {
       const val = this.val
       if (this.range) {
-        this.$emit('callbackRange', this.range[this.currentIndex])
+        this.$emit('callback-range', this.range[this.currentIndex])
       }
       this.$emit('input', val)
     },

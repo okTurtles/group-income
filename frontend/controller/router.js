@@ -5,9 +5,7 @@ import Router from 'vue-router'
 import sbp from '~/shared/sbp.js'
 import store from '@model/state.js'
 
-import DesignSystem from '@pages/DesignSystem.vue'
 import BypassUI from '@pages/BypassUI.vue'
-
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import L from '@view-utils/translations.js'
@@ -25,6 +23,7 @@ const Payments = lazyLoadView({ component: import('@pages/Payments.vue') })
 const GroupChat = lazyLoadView({ component: import('@pages/GroupChat.vue') })
 const Mailbox = lazyLoadView({ component: import('@pages/Mailbox.vue') })
 const GroupSettings = lazyLoadView({ component: import('@pages/GroupSettings.vue') })
+const DesignSystem = lazyLoadView({ component: import('@pages/DesignSystem.vue') })
 
 Vue.use(Router)
 
@@ -43,7 +42,7 @@ const loginGuard = {
   redirect: (to, from) => ({ path: '/', query: { next: to.path } })
 }
 
-var inviteGuard = {
+const inviteGuard = {
   guard: (to, from) => {
     // ex: http://localhost:8000/app/join?groupId=21XWnNRE7vggw4ngGqmQz5D4vAwPYqcREhEkGop2mYZTKVkx8H&secret=5157
     return !(to.query.groupId && to.query.secret)
@@ -171,12 +170,12 @@ const router = new Router({
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
       beforeEnter: createEnterGuards(inviteGuard)
     },
-    ...(process.env.NODE_ENV === 'development' ? [{
+    ...(process.env.NODE_ENV === 'development' && [{
       path: '/error-testing',
       name: 'ErrorTesting',
       component: () => import('../views/pages/ErrorTesting.vue'),
       meta: { title: L('Error Testing') }
-    }] : []),
+    }]),
     {
       path: '*',
       redirect: '/'
