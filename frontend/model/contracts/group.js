@@ -227,13 +227,17 @@ DefineContract({
       return currency && currency.symbolWithCode
     },
     groupMonthlyPayments (state, getters) {
-      return getters.currentGroupState.paymentsByMonth
+      return getters.currentGroupState.paymentsByMonth || {}
     },
     thisMonthsPaymentInfo (state, getters) {
       return getters.groupMonthlyPayments[currentMonthstamp()] || {}
     },
     withGroupCurrency (state, getters) {
-      return currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
+      // TODO: If this group has no defined mincome currency, not even a default one like
+      //       USD, then calling this function is probably an error which should be reported.
+      //       Just make sure the UI doesn't break if an exception is thrown, since this is
+      //       bound to the UI in some location.
+      return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -507,7 +511,7 @@ DefineContract({
           }
 
           const groupIdToSwitch = Object.keys(contracts)
-            .find(cID => contracts[cID].type === 'group' &&
+            .find(cID => contracts[cID].type === 'gi.contracts/group' &&
                   cID !== contractID &&
                   rootState[cID].settings) || null
 

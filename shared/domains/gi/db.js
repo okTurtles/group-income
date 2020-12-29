@@ -78,7 +78,7 @@ export default sbp('sbp/selectors/register', {
   'gi.db/log/lastEntry': async function (contractID: string): Promise<GIMessage> {
     try {
       const hash = await sbp('gi.db/get', sbp('gi.db/log/logHEAD', contractID))
-      if (!hash) throw new Error(`contract ${contractID} hash no latest hash!`)
+      if (!hash) throw new Error(`contract ${contractID} has no latest hash!`)
       return sbp('gi.db/log/getEntry', hash)
     } catch (e) {
       throw new ErrorDBConnection(`${e.name} during lastEntry: ${e.message}`)
