@@ -114,7 +114,21 @@ describe('Contributions', () => {
       'Needed Pledges$0'
     ])
 
-    cy.getByDT('inputIncomeOrPledge').type(500)
+    // Users should be allowed to pledge 0 (see #1027).
+    cy.getByDT('inputIncomeOrPledge').type('0')
+    cy.getByDT('badIncome').should('not.be.visible')
+
+    // Users should not be allowed to pledge a negative amount.
+    cy.getByDT('inputIncomeOrPledge').clear().type('-50')
+    cy.getByDT('badIncome').should('be.visible')
+      .and('contain', 'Oops, you entered a negative number')
+
+    assertGraphicSummary([
+      'Total Pledged$0',
+      'Needed Pledges$0'
+    ])
+
+    cy.getByDT('inputIncomeOrPledge').clear().type(500)
 
     assertGraphicSummary([
       'Total Pledged$500',
