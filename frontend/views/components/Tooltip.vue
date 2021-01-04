@@ -131,7 +131,7 @@ export default {
       this.styles = {
         transform: `translate(${x}px, ${y}px)`,
         pointerEvents: this.manual ? 'initial' : 'none',
-        backgroundColor: this.manual ? 'transparent' : 'var(--background_0)',
+        backgroundColor: this.manual ? 'transparent' : 'var(--text_0)',
         opacity: this.opacity
       }
     }
@@ -214,6 +214,7 @@ export default {
   pointer-events: none;
   background-color: $text_0;
   opacity: 0.95;
+  color: $white;
 
   &.has-text-center {
     text-align: center;

@@ -46,6 +46,7 @@ export default {
     emoticonUserList (emoticon, list) {
       const nameList = list.map(user => {
         const userProp = users[user]
+        if (user === this.currentUserId) return L('You')
         if (userProp) return userProp.displayName || userProp.name
         return null
       })
@@ -80,6 +81,7 @@ export default {
   &.is-user-emoticon {
     color: $primary_0;
     border-color: $primary_0;
+    background-color: $primary_2;
   }
 
   .c-twrapper{

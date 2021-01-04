@@ -122,7 +122,7 @@ export default {
   }
 }
 
-::v-deep .is-danger {
+::v-deep .is-danger:hover {
   background-color: $danger_2;
   .c-item-slot i,
   .c-item-slot {

@@ -98,6 +98,11 @@ export default {
       }
     }
   },
+  watch: {
+    replyingMessage () {
+      this.$refs.textarea.focus()
+    }
+  },
   mounted () {
     // Get actionsWidth to add a dynamic padding to textarea,
     // so those actions don't be above the textarea's value

@@ -8,7 +8,7 @@
         i18n.label.c-label-name Name
         .c-max-count(
           v-if='form.name'
-          :class='{"is-danger": 50 - form.name.length}'
+          :class='{"is-danger": form.name.length >= 50}'
         ) {{50 - form.name.length}}
 
         input.input(

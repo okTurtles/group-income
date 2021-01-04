@@ -502,6 +502,10 @@ p.error {
     &::after {
       transform: translateX(1.1875rem);
     }
+
+    &:hover {
+      background: $primary_0;
+    }
   }
 
   &:disabled:not(:checked)::after {

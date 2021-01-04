@@ -33,7 +33,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         tag='button'
         @click='openModal("GroupMembersAllModal")'
         :args='{ numMembers: members.size  }'
-      ) '{numMembers} members'
+      ) {numMembers} members
       | ∙
       .is-unstyled.c-link(
         tag='button'

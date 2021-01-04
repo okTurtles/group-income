@@ -9,7 +9,7 @@
           i18n.label Description
           .limit(
             v-if='form.description'
-            :class='{"is-danger": 280 - form.description.length}'
+            :class='{"is-danger": form.description.length >= 280}'
           ) {{ 280 - form.description.length }}
 
         textarea.textarea(
