@@ -1,7 +1,7 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 
-export default function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }) {
+export default function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }: Object): any {
   // the monthstamp will always be for the current month. the alternative
   // is to allow the re-generation of the distribution for previous months,
   // but that approach requires also storing the historical mincomeAmount

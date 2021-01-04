@@ -16,14 +16,14 @@ const ENTRIES_MARKER_NTH = 1000
 // these are initialized at captureLogsStart()
 let isCapturing = false
 let isConsoleOveridden = false
-let username = null
+let username = ''
 let lastEntry = null
-let entriesCount = null
+let entriesCount = 0
 let appLogsFilter = []
 
 // LS = Local Storage
-const giLSset = (key, value) => localStorage.setItem(`giConsole/${username}/${key}`, value)
-const giLSget = (key) => localStorage.getItem(`giConsole/${username}/${key}`)
+const giLSset = (key, value) => localStorage.setItem(`giConsole/${username}/${key}`, String(value))
+const giLSget = (key: string): any => localStorage.getItem(`giConsole/${username}/${key}`)
 const giLSremove = (key) => localStorage.removeItem(`giConsole/${username}/${key}`)
 
 const getMarkers = () => JSON.parse(giLSget('markers')) || []
@@ -131,7 +131,7 @@ function verifyLogsConfig () {
   verifyLogsSize()
 }
 
-export function captureLogsStart (userLogged) {
+export function captureLogsStart (userLogged: string) {
   isCapturing = true
   username = userLogged
 
@@ -168,15 +168,15 @@ export function captureLogsStart (userLogged) {
   // NEW_SESSION -> The user opened a new browser or tab.
   // NEW_VISIT -> The user comes from an ongoing session (refresh or login)
   const isNewSession = !sessionStorage.getItem('NEW_SESSION')
-  if (isNewSession) { sessionStorage.setItem('NEW_SESSION', 1) }
+  if (isNewSession) { sessionStorage.setItem('NEW_SESSION', '1') }
   console.log(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', appLogsFilter)
 }
 
-export function captureLogsPause ({ wipeOut }) {
+export function captureLogsPause ({ wipeOut }: { wipeOut: boolean }): void {
   if (wipeOut) { clearLogs() }
 
   isCapturing = false
-  username = null
+  username = ''
   sbp('okTurtles.events/off', SET_APP_LOGS_FILTER)
   console.log('captureLogs paused to:', username)
 }
@@ -184,7 +184,7 @@ export function captureLogsPause ({ wipeOut }) {
 export const getLog = giLSget
 
 // Util to download all stored logs so far
-export function downloadLogs (elLink) {
+export function downloadLogs (elLink: Object): void {
   const filename = 'gi_logs.json'
   const appLogsArr = []
   let prevEntry = giLSget('lastEntry')
@@ -226,7 +226,7 @@ function clearLogs () {
   let i = localStorage.length
   while (i--) {
     const key = localStorage.key(i)
-    if (key.indexOf('giConsole') >= 0) {
+    if (typeof key === 'string' && key.indexOf('giConsole') >= 0) {
       localStorage.removeItem(key)
     }
   }

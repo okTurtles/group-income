@@ -24,14 +24,14 @@ function logSBP (domain, selector, data) {
 ;['backend'].forEach(domain => sbp('sbp/filters/domain/add', domain, logSBP))
 ;[].forEach(sel => sbp('sbp/filters/selector/add', sel, logSBP))
 
-module.exports = new Promise((resolve, reject) => {
+module.exports = (new Promise((resolve, reject) => {
   sbp('okTurtles.events/on', SERVER_RUNNING, function () {
     console.log(chalk.bold('backend startup sequence complete.'))
     resolve()
   })
   // call this after we've registered listener for SERVER_RUNNING
   require('./server.js')
-})
+}): Promise<void>)
 
 const shutdownFn = function (message) {
   sbp('okTurtles.data/apply', PUBSUB_INSTANCE, function (primus) {

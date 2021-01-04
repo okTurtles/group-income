@@ -9,7 +9,12 @@ const confettiComponents = {
   'confetii-triangle': ConfettiTriangle,
   'confetti-logo': ConfettiLogo
 }
-const confettiNames = Object.keys(confettiComponents)
+const confettiNames: Array<
+  | "confetii-triangle"
+  | "confetti-circle"
+  | "confetti-logo"
+  | "confetti-rectangle",
+> = Object.keys(confettiComponents)
 
 export {
   confettiComponents,

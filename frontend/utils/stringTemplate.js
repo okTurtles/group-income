@@ -1,37 +1,31 @@
 const nargs = /\{([0-9a-zA-Z_]+)\}/g
 
-export default function template (string: string = '') {
-  let args
+export default function template (string: string, ...args: any[]): string {
+  const firstArg = args[0]
+  // If the first rest argument is a plain object or array, use it as replacement table.
+  // Otherwise, use the whole rest array as replacement table.
+  const replacementsByKey = (
+    (typeof firstArg === 'object' && firstArg !== null)
+      ? firstArg
+      : args
+  )
 
-  if (arguments.length === 2 && typeof arguments[1] === 'object') {
-    args = arguments[1]
-  } else {
-    args = new Array(arguments.length - 1)
-    for (let i = 1; i < arguments.length; ++i) {
-      args[i - 1] = arguments[i]
+  return string.replace(nargs, function replaceArg (match, capture, index) {
+    // Avoid replacing the capture if it is escaped by double curly braces.
+    if (string[index - 1] === '{' && string[index + match.length] === '}') {
+      return capture
     }
-  }
 
-  if (!args || !args.hasOwnProperty) {
-    args = {}
-  }
+    const maybeReplacement = (
+      // Avoid accessing inherited properties of the replacement table.
+      Object.prototype.hasOwnProperty.call(replacementsByKey, capture)
+        ? replacementsByKey[capture]
+        : undefined
+    )
 
-  return string.replace(nargs, function replaceArg (match, i, index) {
-    let result
-
-    if (string[index - 1] === '{' &&
-      string[index + match.length] === '}') {
-      return i
-    } else {
-      // TODO: find out and fix this eslint error
-      // "Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins"
-      // eslint-disable-next-line
-      result = args.hasOwnProperty(i) ? args[i] : null
-      if (result === null || result === undefined) {
-        return ''
-      }
-
-      return result
+    if (maybeReplacement === null || maybeReplacement === undefined) {
+      return ''
     }
+    return String(maybeReplacement)
   })
 }

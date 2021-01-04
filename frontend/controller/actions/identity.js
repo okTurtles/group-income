@@ -3,7 +3,7 @@ import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
 import { imageUpload } from '@utils/image.js'
 
-export default sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
     username,
     email,
@@ -125,4 +125,4 @@ export default sbp('sbp/selectors/register', {
     const msg = await sbp('gi.contracts/identity/updateSettings/create', settings, contractID)
     await sbp('backend/publishLogEntry', msg)
   }
-})
+}): string[])

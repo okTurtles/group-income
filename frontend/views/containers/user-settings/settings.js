@@ -5,30 +5,30 @@ import L from '@view-utils/translations.js'
 export default {
   activeTab: 3,
   settings: [{
-    legend: L('User settings'),
+    legend: (L('User settings'): any),
     links: [
       {
-        title: L('My account'),
+        title: (L('My account'): any),
         url: 'my-account',
         component: 'UserProfile',
         index: 0
       }, {
-        title: L('Privacy & Safety'),
+        title: (L('Privacy & Safety'): any),
         url: 'privacy-safety',
         component: 'Placeholder',
         index: 1
       }
     ]
   }, {
-    legend: L('App settings'),
+    legend: (L('App settings'): any),
     links: [
       {
-        title: L('Notifications'),
+        title: (L('Notifications'): any),
         url: 'notifications',
         component: 'Placeholder',
         index: 2
       }, {
-        title: L('Appearance'),
+        title: (L('Appearance'): any),
         url: 'appearance',
         component: 'Appearence',
         index: 3
@@ -37,13 +37,13 @@ export default {
   }, {
     links: [
       {
-        title: L('Application Logs'),
+        title: (L('Application Logs'): any),
         url: 'application-logs',
         component: 'AppLogs',
         index: 4
       },
       {
-        title: L('Troubleshooting'),
+        title: (L('Troubleshooting'): any),
         url: 'troubleshooting',
         component: 'Troubleshooting',
         index: 5
@@ -52,7 +52,7 @@ export default {
   }, {
     links: [
       {
-        title: L('Log Out'),
+        title: (L('Log Out'): any),
         url: 'logout',
         action: 'logout'
       }

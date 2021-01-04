@@ -32,7 +32,7 @@ export function prevMonthstamp (monthstamp: string): string {
   return dateToMonthstamp(date)
 }
 
-export function compareMonthstamps (monthstampA: string, monthstampB): number {
+export function compareMonthstamps (monthstampA: string, monthstampB: string): number {
   const A = dateFromMonthstamp(monthstampA).getTime()
   const B = dateFromMonthstamp(monthstampB).getTime()
   return A > B ? 1 : (A < B ? -1 : 0)
@@ -52,9 +52,9 @@ export function lastDayOfMonth (date: Date): Date {
 const locale = (typeof navigator === 'undefined' && 'en-US') || (navigator.languages ? navigator.languages[0] : navigator.language)
 
 export function humanDate (
-  datems,
-  opts = { month: 'short', day: 'numeric' }
-) {
+  datems: number,
+  opts: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+): string {
   if (!datems) {
     console.error('humanDate:: 1st arg `datems` is required')
     return ''

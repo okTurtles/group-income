@@ -89,8 +89,19 @@ function createEase ({
 }
 
 class Confetti {
+  index: number;
+  confettiType: string;
+  disappeared: boolean;
+  explosion: Object;
+  fadeOut: Object;
+  props: Object;
+  sway: Object;
+  tPassedMaster: ?number;
+  tRefMaster: ?number;
+  yVelocity: number;
+
   // Confetti Object constructor
-  constructor (x, y, index, color, confettiType) {
+  constructor (x: number, y: number, index: number, color: string, confettiType: string) {
     this.confettiType = confettiType
     this.index = index
     this.props = {
@@ -210,11 +221,15 @@ class Confetti {
   }
 
   update () {
+    const { tRefMaster } = this
+
     if (this.disappeared) return
-    if (this.tRefMaster === null) {
+    if (tRefMaster == null) {
       this.tRefMaster = Date.now()
+      this.tPassedMaster = 0
+    } else {
+      this.tPassedMaster = Date.now() - tRefMaster
     }
-    this.tPassedMaster = Date.now() - this.tRefMaster
 
     this.explode()
     this.fall()
@@ -262,9 +277,11 @@ class Confetti {
       tStart, duration
     } = this.fadeOut
 
-    this.props.opacity = this.fadeOut.easeFunction(this.tPassedMaster - tStart)
-    if (this.tPassedMaster >= tStart + duration) {
-      this.disappeared = true
+    if (this.tPassedMaster != null) {
+      this.props.opacity = this.fadeOut.easeFunction(this.tPassedMaster - tStart)
+      if (this.tPassedMaster >= tStart + duration) {
+        this.disappeared = true
+      }
     }
   }
 }
@@ -274,7 +291,7 @@ const animationMixins = {
   components: {
     ...confettiComponents
   },
-  data () {
+  data (): {|animationActive: boolean, confettis: Array<any>, timeout: null|} {
     return {
       confettis: [],
       animationActive: true,

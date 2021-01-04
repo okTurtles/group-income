@@ -2,6 +2,7 @@
 
 import sbp from '~/shared/sbp.js'
 import { GIMessage } from '~/shared/GIMessage.js'
+import type { GIOpContract } from '~/shared/GIMessage.js'
 
 // this must not be exported, but instead accessed through 'actionWhitelisted'
 const whitelistedSelectors = {}
@@ -10,7 +11,7 @@ const cheloniaCfg = sbp('okTurtles.data/get', 'CHELONIA_CONFIG')
 
 cheloniaCfg.whitelisted = (sel) => !!whitelistedSelectors[sel]
 
-export const ACTION_REGEX = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
+export const ACTION_REGEX: RegExp = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
 // 0 => 'gi.contracts/group/payment/process'
 // 1 => 'gi.contracts/group/payment/'
@@ -40,7 +41,7 @@ export function DefineContract (contract: Object) {
     const actionSelector = `${action}/process`
     whitelistedSelectors[actionSelector] = true
     sbp('sbp/selectors/register', {
-      [`${action}/create`]: async function (data: Object, contractID: string = null) {
+      [`${action}/create`]: async function (data: Object, contractID: string | null = null) {
         let previousHEAD = null
         let state = null
         if (contractID) {
@@ -51,15 +52,16 @@ export function DefineContract (contract: Object) {
             throw new Error(`contractID required when calling '${action}/create'`)
           }
           // TODO: move this to: 'chelonia/contract/register'
+          const op: GIOpContract = {
+            type: contract.name,
+            authkey: {
+              type: 'dummy',
+              key: 'TODO: add group public key here'
+            }
+          }
           const contractMsg = GIMessage.createV1_0(null, null, [
             GIMessage.OP_CONTRACT,
-            {
-              type: contract.name,
-              authkey: {
-                type: 'dummy',
-                key: 'TODO: add group public key here'
-              }
-            }
+            op
           ])
           await sbp('backend/publishLogEntry', contractMsg)
           contractID = previousHEAD = contractMsg.hash()
@@ -107,7 +109,7 @@ function gettersProxy (state: Object, getters: Object) {
   return { getters: proxyGetters }
 }
 
-function sideEffectStack (contractID: string): Array {
+function sideEffectStack (contractID: string): any[] {
   let stack = sideEffectStacks[contractID]
   if (!stack) {
     sideEffectStacks[contractID] = stack = []

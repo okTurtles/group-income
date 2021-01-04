@@ -64,24 +64,45 @@ function makeCurrency (options) {
 //       example, that would allow the addition of currencies without
 //       having to "recompile" a new version of the app.
 const currencies = {
-  USD: makeCurrency({
+  USD: (makeCurrency({
     symbol: '$',
     symbolWithCode: '$ USD',
     decimalsMax: 2,
     formatCurrency: amount => '$' + amount
-  }),
-  EUR: makeCurrency({
+  }): {|
+  decimalsMax: number,
+  displayWithCurrency: (n: number) => string,
+  displayWithoutCurrency: (n: number) => string,
+  symbol: string,
+  symbolWithCode: string,
+  validate: (n: string) => boolean,
+|}),
+  EUR: (makeCurrency({
     symbol: '€',
     symbolWithCode: '€ EUR',
     decimalsMax: 2,
     formatCurrency: amount => '€' + amount
-  }),
-  BTC: makeCurrency({
+  }): {|
+  decimalsMax: number,
+  displayWithCurrency: (n: number) => string,
+  displayWithoutCurrency: (n: number) => string,
+  symbol: string,
+  symbolWithCode: string,
+  validate: (n: string) => boolean,
+|}),
+  BTC: (makeCurrency({
     symbol: 'Ƀ',
     symbolWithCode: 'Ƀ BTC',
     decimalsMax: DECIMALS_MAX,
     formatCurrency: amount => amount + 'Ƀ'
-  })
+  }): {|
+  decimalsMax: number,
+  displayWithCurrency: (n: number) => string,
+  displayWithoutCurrency: (n: number) => string,
+  symbol: string,
+  symbolWithCode: string,
+  validate: (n: string) => boolean,
+|})
 }
 
 export default currencies

@@ -41,7 +41,7 @@ export default {
      * Validate the field but debounce the visual error ($error).
      * - It avoids showing the error while the user is still typing.
      */
-    debounceField (fieldName, value) {
+    debounceField (fieldName: string, value: any) {
       // Do a field validation, but don't show $error immediately
       this.$v.form[fieldName].$reset()
       // Wait a little to make sure the user stopped typing...
@@ -52,7 +52,7 @@ export default {
      * Validate the field and update it immediatelly.
      * - Usually used on @blur.
      */
-    updateField (fieldName, value) {
+    updateField (fieldName: string, value: any) {
       if (value) { // it means it needs to be manually binded
         this.form[fieldName] = value
       }
@@ -63,8 +63,8 @@ export default {
      * Debounce field validations.
      * - You can call it when u want to debounce expensive validations.
      */
-    debounceValidation: debounce(function (fieldName, value) {
+    debounceValidation: (debounce(function (fieldName, value) {
       this.updateField(fieldName, value)
-    }, 1000)
+    }, 1000): any)
   }
 }

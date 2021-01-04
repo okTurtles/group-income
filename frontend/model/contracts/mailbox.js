@@ -8,7 +8,7 @@ import { objectOf, string, object, unionOf, literalOf, optional } from '~/fronte
 export const TYPE_MESSAGE = 'message'
 export const TYPE_FRIEND_REQ = 'friend-request'
 
-export const messageType = unionOf(...[TYPE_MESSAGE, TYPE_FRIEND_REQ].map(k => literalOf(k)))
+export const messageType: any = unionOf(...[TYPE_MESSAGE, TYPE_FRIEND_REQ].map(k => literalOf(k)))
 
 DefineContract({
   name: 'gi.contracts/mailbox',
