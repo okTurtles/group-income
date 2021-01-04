@@ -4,17 +4,27 @@ node_js:
 dist: trusty
 compiler: clang # per: https://docs.travis-ci.com/user/languages/c
 env:
+  - NO_PERSIST
+  - GI_PERSIST
 branches:
   only:
     - master # https://github.com/okTurtles/group-income-simple/issues/58
-cache:
-  # Caches $HOME/.npm when npm ci is default script command
-  # Caches node_modules in all other cases
-  npm: true
-  directories:
-    - node_modules # NPM packages
-    - ~/.cache # Cypress binary
+# TODO: uncomment this
+# cache:
+#   # Caches $HOME/.npm when npm ci is default script command
+#   # Caches node_modules in all other cases
+#   npm: true
+#   directories:
+#     - ~/.npm # NPM packages 
+#     - ~/.cache # Cypress binary
+#   # https://cypress.slides.com/cypress-io/cypress-on-ci#/9/7/0
+#   override:
+#     - npm ci
+#     - npm run cy:verify
 install:
-  - npm ci
+  # TODO: remove `npm install` below and uncomment the above and below in a future PR
+  - npm install
+  - ./node_modules/.bin/cypress install
+#  - npm ci
 script:
   - npm test

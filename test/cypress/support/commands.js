@@ -172,6 +172,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
     // ...so that it catches correctly the next "Next" button.
     cy.getByDT('nextBtn').click()
 
+    // Make sure that attempting to submit the form without providing a mincome amount doesn't throw (see #1026).
+    cy.get('input[name="mincomeAmount"]').type('{enter}')
     cy.get('input[name="mincomeAmount"]').type(mincome)
     cy.getByDT('nextBtn').click()
 

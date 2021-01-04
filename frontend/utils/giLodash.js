@@ -9,6 +9,10 @@ export function mapValues (obj: Object, fn: Function, o: Object = {}) {
   return o
 }
 
+export function mapObject (obj: Object, fn: Function) {
+  return Object.fromEntries(Object.entries(obj).map(fn))
+}
+
 export function pick (o: Object, props: [string]) {
   const x = {}
   for (const k of props) { x[k] = o[k] }
@@ -209,14 +213,6 @@ export function zip () {
     }
   }
   return zipped
-}
-
-export function fromPairs (arr: Array<*>) {
-  const obj = {}
-  for (const [key, value] of arr) {
-    obj[key] = value
-  }
-  return obj
 }
 
 export function uniq (array: Array<*>) {

@@ -8,7 +8,6 @@ import { CONTRACTS_MODIFIED } from '~/frontend/utils/events.js'
 import { intersection, difference, delay, randomIntFromRange } from '~/frontend/utils/giLodash.js'
 import pubsub from './utils/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
-import { ACTION_REGEX } from '~/frontend/model/contracts/Contract.js'
 
 // temporary identity for signing
 // const nacl = require('tweetnacl')
@@ -97,7 +96,7 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (contracts) => {
 
 sbp('sbp/selectors/register', {
   'backend/publishLogEntry': async (entry: GIMessage, { maxAttempts = 2 } = {}) => {
-    const action = ACTION_REGEX.exec(entry.type())[1]
+    const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income-simple/issues/608
@@ -115,18 +114,21 @@ sbp('sbp/selectors/register', {
       }
       if (r.status === 409) {
         if (attempt + 1 > maxAttempts) {
-          console.error(`publishLogEntry: failed to publish ${action} after ${attempt} of ${maxAttempts} attempts`, entry)
+          console.error(`publishLogEntry: failed to publish ${entry.description()} after ${attempt} attempts`, entry)
           throw new Error(`publishLogEntry: ${r.status} - ${r.statusText}. attempt ${attempt}`)
         }
         // create new entry
         const randDelay = randomIntFromRange(0, 1500)
-        console.warn(`publishLogEntry: attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${action}`)
+        console.warn(`publishLogEntry: attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
         attempt += 1
         await delay(randDelay) // wait half a second before sending it again
-        // re-create it to get correct latestHash
-        entry = await sbp(`${action}create`, entry.data(), entry.contractID())
+        // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
+        if (!entry.isFirstMessage()) {
+          const previousHEAD = await sbp('backend/latestHash', contractID)
+          entry = GIMessage.create(contractID, previousHEAD, entry.op())
+        }
       } else {
-        console.error(`publishLogEntry: ${r.status} - ${r.statusText}, failed to publish ${action}:`, entry)
+        console.error(`publishLogEntry: ${r.status} - ${r.statusText}, failed to publish ${entry.description()}:`, entry)
         throw new Error(`publishLogEntry: ${r.status} - ${r.statusText}`)
       }
     }

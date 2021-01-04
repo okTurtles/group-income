@@ -20,12 +20,10 @@ if (!fs.existsSync(dataFolder)) {
 }
 
 const production = process.env.NODE_ENV === 'production'
-// delete the test database if it exists
-// !production && fs.existsSync('test.db') && fs.unlinkSync('test.db')
 
 export default sbp('sbp/selectors/register', {
   'backend/db/streamEntriesSince': async function (contractID: string, hash: string) {
-    let currentHEAD = await sbp('gi.db/log/get', sbp('gi.db/log/logHEAD', contractID))
+    let currentHEAD = await sbp('gi.db/get', sbp('gi.db/log/logHEAD', contractID))
     if (!currentHEAD) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
@@ -55,45 +53,74 @@ export default sbp('sbp/selectors/register', {
   },
   // =======================
   // wrapper methods to add / lookup names
-  //
-  // TODO: implement persistence
   // =======================
-  'backend/db/registerName': function (name: string, value: string) {
-    if (sbp('okTurtles.data/get', `namespace/${name}`)) throw new Error(`exists: ${name}`)
-    sbp('okTurtles.data/set', `namespace/${name}`, value)
+  'backend/db/registerName': async function (name: string, value: string): Promise {
+    const exists = await sbp('backend/db/lookupName', name)
+    if (exists) {
+      if (!Boom.isBoom(exists)) {
+        return Boom.conflict('exists')
+      } else if (exists.output.statusCode !== 404) {
+        throw exists // throw if this is an error other than "not found"
+      }
+      // otherwise it is a Boom.notFound(), proceed ahead
+    }
+    await sbp('gi.db/set', namespaceKey(name), value)
+    return { name, value }
   },
-  'backend/db/lookupName': function (name: string): string {
-    return sbp('okTurtles.data/get', `namespace/${name}`)
+  'backend/db/lookupName': async function (name: string): Promise {
+    const value = await sbp('gi.db/get', namespaceKey(name))
+    return value || Boom.notFound()
   },
   // =======================
   // Filesystem API
   //
   // TODO: add encryption
   // =======================
-  'backend/db/readFile': function (filename: string): Promise<string> {
-    const filepath = path.resolve(dataFolder + path.sep + filename)
-    if (filepath.indexOf(dataFolder) !== 0) {
-      throw new Error(`readFile: bad filename: ${filename}`)
+  'backend/db/readFile': async function (filename: string): Promise {
+    const filepath = throwIfFileOutsideDataDir(filename)
+    if (!fs.existsSync(filepath)) {
+      return Boom.notFound()
     }
-    return readFileAsync(filepath)
+    return await readFileAsync(filepath)
   },
-  'backend/db/writeFile': function (filename: string, data: any): Promise {
+  'backend/db/writeFile': async function (filename: string, data: any): Promise {
     // TODO: check for how much space we have, and have a server setting
     //       that determines how much of the disk space we're allowed to
     //       use. If the size of the file would cause us to exceed this
     //       amount, throw an exception
-    const filepath = dataFolder + '/' + filename
+    return await writeFileAsync(throwIfFileOutsideDataDir(filename), data)
+  },
+  'backend/db/writeFileOnce': async function (filename: string, data: any): Promise {
+    const filepath = throwIfFileOutsideDataDir(filename)
     if (fs.existsSync(filepath)) {
-      console.debug('writeFile: exists:', filepath)
-      return Promise.resolve()
+      console.warn('writeFileOnce: exists:', filepath)
+      return
     }
-    return writeFileAsync(filepath, data)
+    return await writeFileAsync(filepath, data)
   }
 })
 
-if (production) {
+function namespaceKey (name: string): string {
+  return 'name=' + name
+}
+
+function throwIfFileOutsideDataDir (filename: string): string {
+  const filepath = path.resolve(path.join(dataFolder, filename))
+  if (filepath.indexOf(dataFolder) !== 0) {
+    throw Boom.badRequest(`bad name: ${filename}`)
+  }
+  return filepath
+}
+
+if (production || process.env.GI_PERSIST) {
   sbp('sbp/selectors/overwrite', {
-    'gi.db/log/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
-    'gi.db/log/set': sbp('sbp/selectors/fn', 'backend/db/writeFile')
+    // we cannot simply map this to readFile, because 'gi.db/log/getEntry'
+    // calls this and expects a string, not a Buffer
+    // 'gi.db/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
+    'gi.db/get': async function (filename: string) {
+      const value = await sbp('backend/db/readFile', filename)
+      return Boom.isBoom(value) ? null : value.toString('utf8')
+    },
+    'gi.db/set': sbp('sbp/selectors/fn', 'backend/db/writeFile')
   })
 }

@@ -121,7 +121,7 @@ export default {
         this.subcontent.pop()
       } else {
         this.content = null
-        // Refocus on button that open the modal
+        // Refocus on the button that opened this modal, if any.
         if (this.lastFocus) this.lastFocus.focus()
       }
       if (this.replacement) {

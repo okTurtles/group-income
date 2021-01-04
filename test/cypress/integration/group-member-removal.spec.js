@@ -7,7 +7,7 @@ describe('Group - Removing a member', () => {
   const groupNameA = 'Dreamers'
   const groupNameB = 'Donuts'
 
-  const invitationLinks = []
+  const invitationLinks = {}
 
   function assertMembersCount (count) {
     cy.getByDT('groupMembers').find('ul>li').should('have.length', count)
@@ -242,7 +242,7 @@ describe('Group - Removing a member', () => {
     assertMembersCount(2)
   })
 
-  it('user1 removes user2 from groupA', () => {
+  it('user1 removes user2 from groupA again', () => {
     // this covers edge case scenario described at #944
     cy.giSwitchUser(`user1-${userId}`)
 

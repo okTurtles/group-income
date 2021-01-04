@@ -9,11 +9,12 @@ import sbp from '~/shared/sbp.js'
 const _store = new Map()
 
 export default sbp('sbp/selectors/register', {
-  'okTurtles.data/get': function (key: any) {
+  'okTurtles.data/get': function (key: any): any {
     return _store.get(key)
   },
-  'okTurtles.data/set': function (key: any, data: any) {
+  'okTurtles.data/set': function (key: any, data: any): any {
     _store.set(key, data)
+    return data
   },
   'okTurtles.data/delete': function (key: any) {
     return _store.delete(key)

@@ -25,6 +25,7 @@ const UNEXPECTED_KEY_TYPE = 'Only plain identifiers are allowed as property keys
 const UNEXPECTED_METHOD = 'Methods are not allowed in the `:args` attribute'
 const UNEXPECTED_PROPERTY_TYPE = 'An object literal used in the `:args` attribute can only have plain properties and `LTags()` rest properties'
 const UNEXPECTED_SPREAD_ELEMENT = 'The spread operator is not allowed in the `:args` attribute, unless it applies to an `LTags()` call'
+const UNEXPECTED_VARIABLE = 'Double curly braces (Vue.js variables) are not allowed in i18n strings. Use single braces in the `:args` attribute to pass in variables'
 
 /**
  * Unquotes a string, taking care of unescaping the escaped quotes it may
@@ -314,6 +315,20 @@ module.exports.prototype = {
       const textToken = nextToken
       const usedNames = listUsedNames(i18nString)
 
+      /**
+       * Double braces (Vue.js variables) are not allowed in i18n strings.
+       * Developers should instead use single braces in the `:args` attribute
+       * to pass in variables.
+       *
+       * @see https://github.com/okTurtles/group-income-simple/issues/1027
+       */
+      if (i18nString.includes('{{')) {
+        errors.add(
+          UNEXPECTED_VARIABLE,
+          textToken.line,
+          textToken.column
+        )
+      }
       const {
         names: providedNames,
         errors: errorsInArgsValue

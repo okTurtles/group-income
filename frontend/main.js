@@ -44,9 +44,9 @@ async function startApp () {
       'okTurtles.data'
     ].reduce(reducer, {})
     const selBlacklist = [
-      'gi.db/log/get',
+      'gi.db/get',
       'gi.db/log/logHEAD',
-      'gi.db/log/set'
+      'gi.db/set'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selBlacklist[selector]) return
@@ -55,7 +55,7 @@ async function startApp () {
   }
 
   // this is to ensure compatibility between frontend and test/backend.test.js
-  sbp('okTurtles.data/set', 'API_URL', location.origin)
+  sbp('okTurtles.data/set', 'API_URL', window.location.origin)
 
   // TODO: handle any socket errors!
   createWebSocket(sbp('okTurtles.data/get', 'API_URL'), {
@@ -126,10 +126,11 @@ async function startApp () {
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
 
-      // TODO - Ready to receive real information
-      // setTimeout(() => {
-      //   this.$refs.bannerGeneral.show(this.L('Trying to reconnect...'), 'wifi')
-      // }, 2500)
+      sbp('okTurtles.data/set', 'BANNER', this.$refs.bannerGeneral)
+      // call from anywhere in the app:
+      // sbp('okTurtles.data/get', 'BANNER').show(L('Trying to reconnect...'), 'wifi')
+      // sbp('okTurtles.data/get', 'BANNER').danger(L('message'), 'icon-type')
+      // sbp('okTurtles.data/get', 'BANNER').clean()
 
       if (this.ephemeral.isCorrupted) {
         this.$refs.bannerGeneral.danger(

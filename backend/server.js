@@ -9,7 +9,7 @@ import { makeResponse } from '~/shared/functions.js'
 import { RESPONSE_TYPE } from '~/shared/constants.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
-import { bold } from 'chalk'
+import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
 
@@ -28,11 +28,13 @@ const hapi = new Hapi.Server({
   // See: https://github.com/hapijs/discuss/issues/262#issuecomment-204616831
   routes: {
     cors: {
-      origin: [
-        process.env.API_URL,
-        // improve support for browsersync proxy
-        process.env.NODE_ENV === 'development' && 'http://localhost:3000'
-      ]
+      // TODO: figure out if we can live with '*' or if we need to restrict it
+      origin: ['*']
+      // origin: [
+      //   process.env.API_URL,
+      //   // improve support for browsersync proxy
+      //   ...(process.env.NODE_ENV === 'development' && ['http://localhost:3000'])
+      // ]
     }
   }
 })
@@ -41,10 +43,10 @@ sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 sbp('sbp/selectors/register', {
   'backend/server/handleEntry': async function (entry: GIMessage) {
-    const contractID = entry.isFirstMessage() ? entry.hash() : entry.message().contractID
+    const contractID = entry.contractID()
     await sbp('gi.db/log/addEntry', entry)
     const response = makeResponse(RESPONSE_TYPE.ENTRY, entry.serialize())
-    console.log(bold.blue(`broadcasting to room ${contractID}:`), entry.hash(), entry.type())
+    console.log(chalk.blue.bold(`broadcasting ${entry.description()}`))
     sbp('okTurtles.data/apply', PUBSUB_INSTANCE, p => {
       p.room(contractID).write(response)
     })
@@ -54,10 +56,11 @@ sbp('sbp/selectors/register', {
   }
 })
 
-// NOTE: uncomment this or enable debug logging support to show all requests
-// hapi.events.on('response', (request, event, tags) => {
-//   console.debug(chalk`{grey ${request.info.remoteAddress}: ${request.method.toUpperCase()} ${request.path} --> ${request.response.statusCode}}`)
-// })
+if (process.env.NODE_ENV === 'development' && !process.env.CI) {
+  hapi.events.on('response', (request, event, tags) => {
+    console.debug(chalk`{grey ${request.info.remoteAddress}: ${request.method.toUpperCase()} ${request.path} --> ${request.response.statusCode}}`)
+  })
+}
 
 ;(async function () {
   // https://hapi.dev/tutorials/plugins
@@ -68,6 +71,6 @@ sbp('sbp/selectors/register', {
   require('./routes.js')
   require('./pubsub.js')
   await hapi.start()
-  console.log('API server running at:', hapi.info.uri)
+  console.log('Backend server running at:', hapi.info.uri)
   sbp('okTurtles.events/emit', SERVER_RUNNING, hapi)
 })()
