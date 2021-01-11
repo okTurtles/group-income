@@ -1,14 +1,20 @@
 <template lang='pug'>
-modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Group members")')
+modal-base-template.has-background(
+  ref='modal'
+  :fullscreen='true'
+  :a11yTitle='L("Group members")'
+  :autofocus='false'
+)
   .c-container
     .c-header
       i18n.is-title-2.c-title(tag='h2') Direct messages
 
     .card.c-card
       search(
+        ref='search'
         :placeholder='L("Search...")'
         :label='L("Search")'
-        v-model='searchText'
+        :autofocus='true'
       )
 
       .c-member-count.has-text-1(
@@ -37,21 +43,19 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
       )
         li.c-search-member(
           v-for='{username, displayName, invitedBy, isNew} in searchResult'
+          @click='openDirectMessage(displayName)'
           :key='username'
         )
-          profile-card(:username='username' direction='top-left')
-            .c-identity
-              avatar-user(:username='username' size='sm')
-              .c-name(data-test='username')
-                span
-                  strong {{ localizedName(username) }}
-                  .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+          .c-identity
+            avatar-user(:username='username' size='sm')
+            .c-name(data-test='username')
+              span
+                strong {{ localizedName(username) }}
+                .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
-                i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
-                i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
+              i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
+              i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
-            .c-actions
-              group-members-tooltip-pending(v-if='invitedBy' :username='username')
 </template>
 
 <script>
@@ -60,17 +64,13 @@ import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import ProfileCard from '@components/ProfileCard.vue'
-import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 
 export default {
   name: 'GroupMembersAllModal',
   components: {
     ModalBaseTemplate,
     Search,
-    AvatarUser,
-    GroupMembersTooltipPending,
-    ProfileCard
+    AvatarUser
   },
   data () {
     return {
@@ -105,6 +105,10 @@ export default {
     localizedName (username) {
       const name = this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
+    },
+    openDirectMessage (displayName) {
+      console.log(`TODO: new direct message to ${displayName}`)
+      this.closeModal()
     },
     closeModal () {
       this.$refs.modal.close()

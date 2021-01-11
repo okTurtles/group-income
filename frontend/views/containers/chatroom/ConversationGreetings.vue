@@ -64,7 +64,11 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-greetings {
-  padding: 0 2.5rem 2rem 2.5rem;
+  padding: 0.5rem 1rem;
+
+  @include tablet {
+    padding: 0 2.5rem 2rem 2.5rem;
+  }
 }
 
 .buttons {

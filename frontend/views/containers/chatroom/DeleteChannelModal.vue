@@ -21,7 +21,7 @@
 
       label.checkbox
         input.input(type='checkbox' name='confirmation' v-model='form.confirmation')
-        i18n(:args='{ name: groupSettings.groupName, ...LTags("span") }') Yes, I want to {span_}delete {name} permanently{_span}.
+        i18n(:args='{ name: groupSettings.groupName, ...LTags("strong") }') Yes, I want to {strong_}delete {name} permanently{_strong}.
 
       banner-scoped(ref='formMsg')
 

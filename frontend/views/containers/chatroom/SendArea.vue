@@ -198,9 +198,13 @@ $initialHeight: 43px;
 
 .c-send {
   position: relative;
-  margin: 0 2.5rem;
+  margin: 0 1.5rem;
   display: block;
   padding-bottom: .1rem;
+
+  @include tablet {
+    margin: 0 2.5rem;
+  }
 
   &-textarea,
   &-mask {

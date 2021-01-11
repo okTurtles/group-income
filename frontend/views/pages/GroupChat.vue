@@ -137,8 +137,12 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-card {
-  margin-top: 1.5rem;
+  margin-top: -1.5rem;
   padding: 0 0 1.5rem 0;
+
+  @include tablet {
+    margin-top: 1.5rem;
+  }
 
   &:last-child {
     margin-bottom: 2rem;

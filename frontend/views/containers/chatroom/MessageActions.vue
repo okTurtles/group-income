@@ -1,31 +1,47 @@
 <template lang='pug'>
 menu-parent(ref='menu')
   .c-actions
-    button.hide-touch.is-icon-small(
-      :aria-label='L("Add reaction")'
-      @click='action("openEmoticon", $event)'
+    tooltip(
+      direction='top'
+      :text='L("Add reaction")'
     )
-      i.icon-smile-beam
+      button.hide-touch.is-icon-small(
+        :aria-label='L("Add reaction")'
+        @click='action("openEmoticon", $event)'
+      )
+        i.icon-smile-beam
 
-    button.hide-touch.is-icon-small(
+    tooltip(
       v-if='isCurrentUser'
-      :aria-label='L("Edit")'
-      @click='action("edit")'
+      direction='top'
+      :text='L("Edit")'
     )
-      i.icon-pencil-alt
+      button.hide-touch.is-icon-small(
+        :aria-label='L("Edit")'
+        @click='action("edit")'
+      )
+        i.icon-pencil-alt
 
-    button.hide-touch.is-icon-small(
-      :aria-label='L("Reply")'
-      @click='action("reply")'
+    tooltip(
+      direction='top'
+      :text='L("Reply")'
     )
-      i.icon-reply
+      button.hide-touch.is-icon-small(
+        :aria-label='L("Reply")'
+        @click='action("reply")'
+      )
+        i.icon-reply
 
-    button.hide-touch.is-icon-small(
+    tooltip(
       v-if='variant === "failed"'
-      :aria-label='L("Add emoticons")'
-      @click='action("retry")'
+      direction='top'
+      :text='L("Retry")'
     )
-      i.icon-undo
+      button.hide-touch.is-icon-small(
+        :aria-label='L("Retry")'
+        @click='action("retry")'
+      )
+        i.icon-undo
 
     menu-trigger.is-icon-small(
       :aria-label='L("More options")'
@@ -75,6 +91,7 @@ menu-parent(ref='menu')
 
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import Tooltip from '@components/Tooltip.vue'
 
 export default {
   name: 'MessageActions',
@@ -82,7 +99,8 @@ export default {
     MenuParent,
     MenuTrigger,
     MenuContent,
-    MenuItem
+    MenuItem,
+    Tooltip
   },
   props: {
     variant: String,
