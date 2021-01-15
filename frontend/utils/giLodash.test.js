@@ -34,6 +34,17 @@ describe('Test giLodash', function () {
     callback2.should.be.calledOnce()
     clock.restore()
   })
+  it('should mapObject', function () {
+    should(_.mapObject({
+      foo: 5,
+      bar: 'asdf'
+    }, ([key, value]) => {
+      return [`process.env.${key}`, JSON.stringify(value)]
+    })).deepEqual({
+      'process.env.foo': '5',
+      'process.env.bar': '"asdf"'
+    })
+  })
   it('should merge', function () {
     const a = { a: 'taco', b: { a: 'burrito', b: 'combo' }, c: [20] }
     const b = { a: 'churro', b: { c: 'platter' } }
@@ -53,11 +64,6 @@ describe('Test giLodash', function () {
     should(b).deepEqual([['/foo/bar/node_modules/vue/dist/vue.common.js']])
     should(b).deepEqual([['/foo/bar/node_modules/vue/dist/vue.common.js']])
     should(c).deepEqual([['/foo/bar/node_modules/vue/dist/vue.common.js', undefined]])
-  })
-  it('should fromPairs', function () {
-    const a = _.fromPairs([['a', 1], ['b', 2]])
-    should(a.a).equal(1)
-    should(a.b).equal(2)
   })
   it('should deepEqual for JSON only', function () {
     should(_.deepEqualJSONType(4, 4)).be.true()

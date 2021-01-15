@@ -101,7 +101,7 @@ export default sbp('sbp/selectors/register', {
 })
 
 function namespaceKey (name: string): string {
-  return 'user=' + name
+  return 'name=' + name
 }
 
 function throwIfFileOutsideDataDir (filename: string): string {

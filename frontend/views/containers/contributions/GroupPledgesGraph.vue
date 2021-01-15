@@ -49,7 +49,7 @@ import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import currencies from '@view-utils/currencies.js'
-import groupIncomeDistributionLogic from '@utils/distribution/group-income-distribution.js'
+import distributeIncome from '@utils/distribution/group-income-distribution.js'
 
 export default {
   name: 'GroupPledgesGraph',
@@ -115,7 +115,7 @@ export default {
       if (!doWePledge && neededPledges > 0) {
         incomeDistribution.push({ name: this.ourUsername, amount: ourIncomeAmount })
 
-        ourIncomeToReceive = groupIncomeDistributionLogic(incomeDistribution, mincome, true)
+        ourIncomeToReceive = distributeIncome(incomeDistribution, mincome)
           .filter(i => i.to === this.ourUsername)
           .reduce((acc, cur) => cur.amount + acc, 0)
       }

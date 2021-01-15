@@ -7,6 +7,7 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import L from '~/frontend/views/utils/translations.js'
+// import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
@@ -16,7 +17,6 @@ import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReproce
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constants.js'
 import { PAYMENT_COMPLETED } from '~/frontend/model/contracts/payments/index.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
-import { actionWhitelisted, ACTION_REGEX } from '~/frontend/model/contracts/Contract.js'
 import * as _ from '~/frontend/utils/giLodash.js'
 import * as EVENTS from '~/frontend/utils/events.js'
 import './contracts/group.js'
@@ -56,31 +56,21 @@ const initialState = {
     : ['error', 'warn']
 }
 
-// guard all sbp calls for contract actions with this function
-function guardedSBP (sel: string, ...data: any): any {
-  if (!actionWhitelisted(sel)) {
-    throw new GIErrorIgnoreAndBanIfGroup(`guardedSBP('${sel}') not whitelisted!`)
-  }
-  return sbp(sel, ...data)
-}
-
 sbp('okTurtles.events/on', EVENTS.CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
   contractIsSyncing[contractID] = isSyncing
 })
 
 sbp('sbp/selectors/register', {
   'state/latestContractState': async (contractID: string) => {
-    let events = await sbp('backend/eventsSince', contractID, contractID)
+    const events = await sbp('backend/eventsSince', contractID, contractID)
     let state = {}
-    events = events.map(e => GIMessage.deserialize(e))
-    for (const e of events) {
+    for (const e of events.map(e => GIMessage.deserialize(e))) {
       const stateCopy = _.cloneDeep(state)
       try {
-        const message = { data: e.data(), meta: e.meta(), hash: e.hash(), contractID }
-        guardedSBP(e.type(), message, state)
+        sbp('chelonia/message/process', e, state)
       } catch (err) {
         if (!(err instanceof GIErrorUnrecoverable)) {
-          console.warn(`latestContractState: ignoring mutation ${e.hash()}|${e.type()} because of ${err.name}`)
+          console.warn(`latestContractState: ignoring mutation ${e.description()} because of ${err.name}`)
           state = stateCopy
         } else {
           // TODO: make sure every location that calls latestContractState can handle this
@@ -123,8 +113,8 @@ const mutations = {
     state.loggedIn = false
     state.currentGroupId = null
   },
-  processMessage (state, { selector, message }) {
-    guardedSBP(selector, message, state)
+  processMessage (state, { message }) {
+    sbp('chelonia/message/process', message, state)
   },
   registerContract (state, { contractID, type }) {
     const firstTimeRegistering = !state[contractID]
@@ -157,7 +147,7 @@ const mutations = {
   setContractHEAD (state, { contractID, HEAD }) {
     const contract = state.contracts[contractID]
     if (!contract) {
-      console.error(`This contract ${contractID} doesnt exist anymore. Probably you left the group just now.`)
+      console.error(`This contract ${contractID} doesn't exist anymore. Probably you left the group just now.`)
       return
     }
     state.contracts[contractID].HEAD = HEAD
@@ -283,12 +273,12 @@ const getters = {
     const ourUsername = getters.ourUsername
     const ourGroupProfile = getters.ourGroupProfile
 
-    if (!ourGroupProfile.incomeDetailsType) {
+    if (!ourGroupProfile || !ourGroupProfile.incomeDetailsType) {
       return {}
     }
 
     const doWeNeedIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    const distribution = getters.groupAdjustedIncomeDistribution
+    const distribution = getters.groupIncomeDistribution
 
     const nonMonetaryContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
     const getDisplayName = (username) => getters.globalProfile(username).displayName || username
@@ -352,20 +342,24 @@ const getters = {
   },
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
-    return groupIncomeDistribution({ getters, monthstamp: currentMonthstamp(), adjusted: false })
+    return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp() })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
-    return groupIncomeDistribution({ getters, monthstamp: currentMonthstamp(), adjusted: true })
+    return getters.groupIncomeAdjustedDistributionForMonth(currentMonthstamp())
+  },
+  groupIncomeAdjustedDistributionForMonth (state, getters) {
+    return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
   },
   ourPayments (state, getters) {
     // Payments relative to the current month only
+    const monthlyPayments = getters.groupMonthlyPayments
+    if (!monthlyPayments || Object.keys(monthlyPayments).length === 0) return
     const currency = currencies[getters.groupSettings.mincomeCurrency]
     const ourUsername = getters.ourUsername
     const cMonthstamp = currentMonthstamp()
     const pDate = dateFromMonthstamp(cMonthstamp)
     const dueIn = lastDayOfMonth(pDate)
-    const monthlyPayments = getters.groupMonthlyPayments
     const allPayments = getters.currentGroupState.payments
     const thisMonthPayments = monthlyPayments[cMonthstamp]
     const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
@@ -528,9 +522,11 @@ const getters = {
     return { sent, todo, late, received, toBeReceived }
   },
   ourPaymentsSummary (state, getters) {
-    const { todo, sent, toBeReceived, received } = getters.ourPayments
+    const ourPayments = getters.ourPayments
+    if (!ourPayments) return
+    const { todo, sent, toBeReceived, received } = ourPayments
     const isCompleted = (p) => p.data.status === PAYMENT_COMPLETED
-    const isPartialCount = (list) => list.filter(p => p.partial).length
+    const partialPaymentsCount = (list) => list.filter(p => p.partial).length
     const getUniqPCount = (users) => {
       // We need to filter the partial payments already done (sent/received).
       // E.G. We need to send 4 payments. We've sent 1 full payment and another
@@ -541,13 +537,13 @@ const getters = {
 
     if (getters.ourGroupProfile.incomeDetailsType === 'incomeAmount') {
       const receivedCompleted = received.filter(isCompleted)
-      const pPartials = isPartialCount(toBeReceived)
+      const pPartials = partialPaymentsCount(toBeReceived)
       const pByUser = {
         toBeReceived: toBeReceived.map(p => p.from),
         received: received.map(p => p.meta.username)
       }
       return {
-        paymentsDone: getUniqPCount(pByUser.received),
+        paymentsDone: getUniqPCount(pByUser.received) - pPartials,
         hasPartials: pPartials > 0,
         paymentsTotal: getUniqPCount([...pByUser.toBeReceived, ...pByUser.received]),
         amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
@@ -555,13 +551,13 @@ const getters = {
       }
     } else {
       const sentCompleted = sent.filter(isCompleted)
-      const pPartials = isPartialCount(todo)
+      const pPartials = partialPaymentsCount(todo)
       const pByUser = {
         todo: todo.map(p => p.to),
         sent: sent.map(p => p.data.toUser)
       }
       return {
-        paymentsDone: getUniqPCount(pByUser.sent),
+        paymentsDone: getUniqPCount(pByUser.sent) - pPartials,
         hasPartials: pPartials > 0,
         paymentsTotal: getUniqPCount([...pByUser.todo, ...pByUser.sent]),
         amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),
@@ -575,14 +571,16 @@ const getters = {
     // The code below was originally Object.entries(...) but changed to .keys()
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     return Object.keys(contracts || {})
-      .filter(contractID => contracts[contractID].type === 'group' && state[contractID].settings)
+      .filter(contractID => contracts[contractID].type === 'gi.contracts/group' && state[contractID].settings)
       .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
   },
   groupMembersSorted (state, getters) {
-    const weJoinedMs = new Date(getters.currentGroupState.profiles[getters.ourUsername].joinedDate).getTime()
+    const profiles = getters.currentGroupState.profiles
+    if (!profiles) return
+    const weJoinedMs = new Date(profiles[getters.ourUsername].joinedDate).getTime()
     const isNewMember = (username) => {
       if (username === getters.ourUsername) { return false }
-      const memberProfile = getters.currentGroupState.profiles[username]
+      const memberProfile = profiles[username]
       if (!memberProfile) return false
       const memberJoinedMs = new Date(memberProfile.joinedDate).getTime()
       const joinedAfterUs = weJoinedMs <= memberJoinedMs
@@ -748,7 +746,7 @@ const actions = {
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         console.error('[CRITICAL ERROR] NOT EXPECTING EVENT!', contractID, message)
-        throw new GIErrorUnrecoverable(`not expecting ${message.hash()} ${message.serialize()}`)
+        throw new GIErrorUnrecoverable(`not expecting ${message.description()}: ${message.serialize()}`)
       }
       // the order the following actions are done is critically important!
       // first we make sure we save this message to the db
@@ -768,7 +766,7 @@ const actions = {
       // https://github.com/okTurtles/group-income-simple/issues/610
       // https://github.com/okTurtles/group-income-simple/issues/602
       // TODO: use a global notification system to both display a notification
-      console.error(`[ERROR] exception ${e.name} in handleEvent!`, e.message, e)
+      console.error(`[ERROR] exception ${e.name} in handleEvent while processing ${message.description()}!`, e.message, e)
       let updateContractHEAD = false
       let banUser = false
       let enterUnrecoverableState = false
@@ -826,7 +824,7 @@ const actions = {
 const handleEvent = {
   async addMessageToDB (message: GIMessage) {
     if (dropAllMessagesUntilRefresh) {
-      throw new GIErrorDropAndReprocess(`ignoring message until page refresh: ${message.type()}`)
+      throw new GIErrorDropAndReprocess(`ignoring message until page refresh: ${message.description()}`)
     }
     try {
       return await sbp('gi.db/log/addEntry', message)
@@ -838,14 +836,14 @@ const handleEvent = {
           // keep track of what message we're trying to reprocess
           // so that if we're able to fix ourselves we can go back to normal
           attemptToReprocessMessageID = message.hash()
-          console.warn(`addMessageToDB: going to attempt to resync ${message.contractID()} to re-process ${message.type()} / ${message.hash()}`)
+          console.warn(`addMessageToDB: going to attempt to resync ${message.contractID()} to re-process ${message.description()}`)
           setTimeout(() => {
             // re-enable message processing
             dropAllMessagesUntilRefresh = false
             sbp('state/enqueueContractSync', message.contractID())
           }, 1000)
         } else {
-          console.error(`addMessageToDB: already attempted to re-process ${attemptToReprocessMessageID} ${message.type()}, will not attempt again!`)
+          console.error(`addMessageToDB: already attempted to re-process ${attemptToReprocessMessageID} ${message.description()}, will not attempt again!`)
         }
         // the server should never send us a bad previousHEAD (because)
         // it verifies that before adding it to its db. So if we receive
@@ -865,21 +863,12 @@ const handleEvent = {
   processMutation (message: GIMessage) {
     try {
       const contractID = message.contractID()
-      const selector = message.type()
       const hash = message.hash()
-      const data = message.data()
-      const meta = message.meta()
-      const type = ACTION_REGEX.exec(selector)[3]
-      if (!type) {
-        throw new GIErrorIgnoreAndBanIfGroup(`bad selector '${selector}' for message ${hash}`)
-      }
       if (message.isFirstMessage()) {
+        const { type } = message.opValue()
         store.commit('registerContract', { contractID, type })
       }
-      const mutation = { data, meta, hash, contractID }
-      // this selector is created by Contract.js
-      store.commit(`${contractID}/processMessage`, { selector, message: mutation })
-      // all's good, so update our contract HEAD
+      store.commit(`${contractID}/processMessage`, { message })
       store.commit('setContractHEAD', { contractID, HEAD: hash })
     } catch (e) {
       console.error(`processMutation: error ${e.name}`, e)
@@ -901,17 +890,17 @@ const handleEvent = {
   },
   async processSideEffects (message: GIMessage) {
     try {
-      const contractID = message.contractID()
-      const selector = message.type()
-      const hash = message.hash()
-      const data = message.data()
-      const meta = message.meta()
-      const mutation = { data, meta, hash, contractID }
-      // this selector is created by Contract.js
-      await sbp(`${selector}/sideEffect`, mutation)
-      // let any listening components know that we've received, processed, and stored the event
-      sbp('okTurtles.events/emit', hash, contractID, message)
-      sbp('okTurtles.events/emit', EVENTS.EVENT_HANDLED, contractID, message)
+      if ([GIMessage.OP_ENCRYPTED_ACTION, GIMessage.OP_PUBLIC_ACTION].includes(message.opType())) {
+        const contractID = message.contractID()
+        const hash = message.hash()
+        const { type, data, meta } = message.decrypted()
+        const mutation = { data, meta, hash, contractID }
+        // this selector is created by Contract.js
+        await sbp(`${type}/sideEffect`, mutation)
+        // let any listening components know that we've received, processed, and stored the event
+        sbp('okTurtles.events/emit', hash, contractID, message)
+        sbp('okTurtles.events/emit', EVENTS.EVENT_HANDLED, contractID, message)
+      }
     } catch (e) {
       console.error(`processSideEffects: ${e.name}:`, e)
       // if an error happens at this point, it's almost certainly not due to malformed data
@@ -959,10 +948,15 @@ const handleEvent = {
         return // don't do anything, assume the existing users handled this event
       }
       const username = message.meta().username
-      if (message.type().indexOf('gi.contracts/group/') !== 0) {
-        console.warn(`autoBanSenderOfMessage: removing & unsubscribing from ${username} contractID: ${contractID}`)
-        store.commit('removeContract', contractID)
-      }
+      // TODO: this code below doesn't make any sense, we shouldn't
+      //       leave the group just because we banned someone.
+      //       Also, we should handle things differently depending on
+      //       whether this is a malformed message received from a group
+      //       contract or another contract.
+      // if (message.type().indexOf('gi.contracts/group/') !== 0) {
+      //   console.warn(`autoBanSenderOfMessage: removing & unsubscribing from ${username} contractID: ${contractID}`)
+      //   store.commit('removeContract', contractID)
+      // }
       if (username && store.getters.groupProfile(username)) {
         console.warn(`autoBanSenderOfMessage: autobanning ${username}`)
         const groupID = store.state.currentGroupId
@@ -1029,7 +1023,7 @@ const store = new Vuex.Store({
   mutations,
   getters,
   actions,
-  strict: !!process.env.VUEX_STRICT
+  strict: process.env.VUEX_STRICT === 'true'
 })
 const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)
 store.subscribe(debouncedSave)

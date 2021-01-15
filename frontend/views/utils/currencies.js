@@ -63,7 +63,7 @@ function makeCurrency (options) {
 //       a json file that's read in and generates this object. For
 //       example, that would allow the addition of currencies without
 //       having to "recompile" a new version of the app.
-export const currencies = {
+const currencies = {
   USD: makeCurrency({
     symbol: '$',
     symbolWithCode: '$ USD',

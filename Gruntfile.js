@@ -14,26 +14,16 @@
 //       https://github.com/okTurtles/group-income-simple/issues/73
 // =======================
 
+// NOTE: if you wish to set options, like disabling caching, see:
 // https://babeljs.io/docs/setup/#babel_register
 // https://babeljs.io/docs/en/next/babel-register
-require('@babel/register')({
-  // if we do not set cache: false, then the ports on process.env.(API_URL, etc)
-  // won't get updated correctly. There's a hack that seems to work, which is to
-  // simply console.log those values in backend/server.js and elsewhere,
-  // which seems to "clear the cache" somehow, but this seems cleaner and
-  // safer.
-  // The other alternative is to not use the `transform-inline-environment-variables`
-  // plugin. However, that plugin is definitely needed for the frontend, which
-  // doesn't get run in node.js (and therefore must have process.env.* transformed).
-  cache: false
-})
+require('@babel/register')
 
 // =======================
 // Global environment variables setup
 //
-// `transform-inline-environment-variables` (set in .babelrc), will
-// cause process.env.VARIABLE to be replaced with their corresponding
-// values, similar to C macros.
+// `@rollup/plugin-replace` cause process.env.VARIABLE to be replaced
+// with their corresponding values, similar to C macros.
 // =======================
 
 const API_PORT = 8000 + parseInt(process.env.PORT_SHIFT || 0)

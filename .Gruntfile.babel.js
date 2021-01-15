@@ -10,10 +10,12 @@ import flowRemoveTypes from 'flow-remove-types'
 import json from 'rollup-plugin-json'
 import globals from 'rollup-plugin-node-globals'
 import eslint from '@rollup/plugin-eslint'
+import replace from '@rollup/plugin-replace'
 import sass from 'rollup-plugin-sass'
 import { createFilter } from 'rollup-pluginutils'
 import transpile from 'vue-template-es2015-compiler'
 import { chompLeft, chompRight } from '~/shared/string.js'
+import { mapObject } from '~/frontend/utils/giLodash.js'
 
 const compiler = require('vue-template-compiler') // NOTE: import doesnt work here?
 const rollup = require('rollup')
@@ -232,154 +234,171 @@ module.exports = (grunt) => {
   grunt.registerTask('rollup', function () {
     let done = this.async()
     const watchFlag = this.flags.watch
-    const watchOpts = {
-      input: 'frontend/main.js',
-      watch: {
-        clearScreen: false,
-        chokidar: true
+    const sharedPlugins = {
+      eslint: eslint({ throwOnError: false, throwOnWarning: false }),
+      replace: replace(mapObject(process.env, ([key, value]) => {
+        return [`process.env.${key}`, JSON.stringify(value)]
+      }))
+    }
+    const watchOpts = [
+      {
+        input: 'frontend/controller/serviceworkers/primary.js',
+        output: {
+          format: 'iife',
+          file: `${distJS}/sw-primary.js`,
+          sourcemap: development,
+          inlineDynamicImports: true
+        },
+        plugins: [
+          sharedPlugins.eslint,
+          sharedPlugins.replace
+        ]
       },
-      preserveEntrySignatures: false,
-      output: {
-        format: 'system',
-        dir: distJS,
-        sourcemap: development,
-        sourcemapPathTransform: relativePath => {
-          // const relativePath2 = '/' + path.relative('../../../', relativePath)
-          const relativePath2 = path.relative('../', relativePath)
-          // console.log('RELATIVE PATH: ' + relativePath + ' => ' + relativePath2)
-          return relativePath2
-        }
-      },
-      external: ['crypto'],
-      moduleContext: {
-        'frontend/controller/utils/primus.js': 'window'
-      },
-      plugins: [
-        alias({
-          // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
-          resolve: ['.vue', '.js', '.svg', '.scss'],
-          entries: {
-            'vue': path.resolve('./node_modules/vue/dist/vue.esm.js'),
-            '~': path.resolve('./'),
-            '@controller': path.resolve('./frontend/controller'),
-            '@model': path.resolve('./frontend/model'),
-            '@utils': path.resolve('./frontend/utils'),
-            '@views': path.resolve('./frontend/views'),
-            '@pages': path.resolve('./frontend/views/pages'),
-            '@components': path.resolve('./frontend/views/components'),
-            '@containers': path.resolve('./frontend/views/containers'),
-            '@view-utils': path.resolve('./frontend/views/utils'),
-            '@assets': path.resolve('./frontend/assets'),
-            '@svgs': path.resolve('./frontend/assets/svgs')
-          }
-        }),
-        resolve({
-          // we set `preferBuiltins` to prevent rollup from erroring with
-          // [!] (commonjs plugin) TypeError: Cannot read property 'warn' of undefined
-          // TypeError: Cannot read property 'warn' of undefined
-          preferBuiltins: false
-        }),
-        json(),
-        transformProxy({
-          // NOTE: this completely ignores outFile in the sassOptions
-          //       for some reason, so sourcemaps aren't generated for the SCSS :-\
-          plugin: sass({ output: `${distCSS}/main.css`, options: sassOptions }),
-          match: /\.scss$/,
-          recurse: true
-        }),
-        eslint({ throwOnError: false, throwOnWarning: false }),
-        svgLoader(),
-        transformProxy({
-          plugin: VuePlugin({
-            // https://rollup-plugin-vue.vuejs.org/options.html
-            // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts
-            // https://github.com/vuejs/vue-component-compiler#api
-            needMap: false, // see: https://github.com/okTurtles/group-income-simple/pull/629
-            // css: false, // to prevent loading a massive CSS file, we keep the CSS in components that can be split up
-            style: {
-              preprocessOptions: { scss: sassOptions }
+      {
+        input: 'frontend/main.js',
+        preserveEntrySignatures: false,
+        output: {
+          format: 'es',
+          dir: distJS,
+          sourcemap: development
+        },
+        external: ['crypto'],
+        moduleContext: {
+          'frontend/controller/utils/primus.js': 'window'
+        },
+        plugins: [
+          alias({
+            // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
+            resolve: ['.vue', '.js', '.svg', '.scss'],
+            entries: {
+              'vue': path.resolve('./node_modules/vue/dist/vue.esm.js'),
+              '~': path.resolve('./'),
+              '@controller': path.resolve('./frontend/controller'),
+              '@model': path.resolve('./frontend/model'),
+              '@utils': path.resolve('./frontend/utils'),
+              '@views': path.resolve('./frontend/views'),
+              '@pages': path.resolve('./frontend/views/pages'),
+              '@components': path.resolve('./frontend/views/components'),
+              '@containers': path.resolve('./frontend/views/containers'),
+              '@view-utils': path.resolve('./frontend/views/utils'),
+              '@assets': path.resolve('./frontend/assets'),
+              '@svgs': path.resolve('./frontend/assets/svgs')
             }
           }),
-          match: /\.(scss|vue)$/,
-          recurse: false
-        }),
-        flow({ all: true }),
-        commonjs({
-          // NOTE: uncommenting this saves ~1 second off build process
-          //       while making it a massive pain to deal with dependencies
-          //       and causing "ReferenceError: require is not defined"
-          // include: /(node_modules\/(blakejs|multihashes|tweetnacl|localforage|@babel|vue.+).*|primus\.js$)/,
-          namedExports: {
-            'node_modules/vuelidate/lib/validators/index.js': ['required', 'between', 'email', 'minLength', 'requiredIf']
-          },
-          ignore: ['crypto']
-        }),
-        babel({
-          runtimeHelpers: true,
-          exclude: 'node_modules/**' // only transpile our source code
-        }),
-        globals(), // for Buffer support
-        // run browsersync only in dev mode
-        watchFlag && browsersync({
-          // https://browsersync.io/docs/options
-          proxy: {
-            target: process.env.API_URL,
-            ws: true
-          },
-          tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`,
-          reloadDelay: 100,
-          reloadThrottle: 2000,
-          cors: true,
-          open: false,
-          logLevel: grunt.option('debug') ? 'debug' : 'info',
-          files: [
-            // glob matching uses https://github.com/micromatch/picomatch
-            `${distJS}/main.js`,
-            `${distDir}/index.html`,
-            `${distAssets}/**/*`,
-            `${distCSS}/**/*`
-          ]
-        }, () => {
-          ;[
-            [['frontend/**/*.html'], ['copy']],
-            [['frontend/views/**/*.vue'], ['exec:puglint']],
-            [['backend/**/*.js', 'shared/**/*.js'], ['exec:eslint', 'backend:relaunch', 'reload']],
-            [['.Gruntfile.babel.js', 'Gruntfile.js'], ['exec:eslintgrunt']]
-          ].forEach(([globs, tasks]) => {
-            globs.forEach(g => {
-              grunt.verbose.debug(chalk`{green browsersync:} watching: ${g}`)
-              bs.watch(g, { ignoreInitial: true }, () => {
-                grunt.verbose.debug(chalk`{green browsersync:} queuing: ${tasks}`)
-                grunt.task.run(tasks.concat(['keepalive']))
-                killKeepAlive && killKeepAlive() // allow the task queue to move forward
+          resolve({
+            // we set `preferBuiltins` to prevent rollup from erroring with
+            // [!] (commonjs plugin) TypeError: Cannot read property 'warn' of undefined
+            // TypeError: Cannot read property 'warn' of undefined
+            preferBuiltins: false
+          }),
+          json(),
+          transformProxy({
+            // NOTE: this completely ignores outFile in the sassOptions
+            //       for some reason, so sourcemaps aren't generated for the SCSS :-\
+            plugin: sass({ output: `${distCSS}/main.css`, options: sassOptions }),
+            match: /\.scss$/,
+            recurse: true
+          }),
+          sharedPlugins.eslint,
+          svgLoader(),
+          transformProxy({
+            plugin: VuePlugin({
+              // https://rollup-plugin-vue.vuejs.org/options.html
+              // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts
+              // https://github.com/vuejs/vue-component-compiler#api
+              needMap: false, // see: https://github.com/okTurtles/group-income-simple/pull/629
+              // css: false, // to prevent loading a massive CSS file, we keep the CSS in components that can be split up
+              style: {
+                preprocessOptions: { scss: sassOptions }
+              }
+            }),
+            match: /\.(scss|vue)$/,
+            recurse: false
+          }),
+          sharedPlugins.replace,
+          flow({ all: true }),
+          commonjs({
+            // NOTE: uncommenting this saves ~1 second off build process
+            //       while making it a massive pain to deal with dependencies
+            //       and causing "ReferenceError: require is not defined"
+            // include: /(node_modules\/(blakejs|multihashes|tweetnacl|localforage|@babel|vue.+).*|primus\.js$)/,
+            namedExports: {
+              'node_modules/vuelidate/lib/validators/index.js': ['required', 'between', 'email', 'minLength', 'requiredIf']
+            },
+            ignore: ['crypto']
+          }),
+          babel({
+            runtimeHelpers: true,
+            exclude: 'node_modules/**' // only transpile our source code
+          }),
+          globals(), // for Buffer support
+          // run browsersync only in dev mode
+          watchFlag && browsersync({
+            // https://browsersync.io/docs/options
+            proxy: {
+              target: process.env.API_URL,
+              ws: true
+            },
+            tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`,
+            reloadDelay: 100,
+            reloadThrottle: 2000,
+            cors: true,
+            open: false,
+            ghostMode: false,
+            logLevel: grunt.option('debug') ? 'debug' : 'info',
+            files: [
+              // glob matching uses https://github.com/micromatch/picomatch
+              `${distJS}/main.js`,
+              `${distDir}/index.html`,
+              `${distAssets}/**/*`,
+              `${distCSS}/**/*`
+            ]
+          }, () => {
+            ;[
+              [['frontend/**/*.html'], ['copy']],
+              [['frontend/views/**/*.vue'], ['exec:puglint']],
+              [['backend/**/*.js', 'shared/**/*.js'], ['exec:eslint', 'backend:relaunch', 'reload']],
+              [['.Gruntfile.babel.js', 'Gruntfile.js'], ['exec:eslintgrunt']]
+            ].forEach(([globs, tasks]) => {
+              globs.forEach(g => {
+                grunt.verbose.debug(chalk`{green browsersync:} watching: ${g}`)
+                bs.watch(g, { ignoreInitial: true }, () => {
+                  grunt.verbose.debug(chalk`{green browsersync:} queuing: ${tasks}`)
+                  grunt.task.run(tasks.concat(['keepalive']))
+                  killKeepAlive && killKeepAlive() // allow the task queue to move forward
+                })
               })
             })
+            grunt.verbose.debug(chalk`{green browsersync:} setup done!`)
           })
-          grunt.verbose.debug(chalk`{green browsersync:} setup done!`)
-        })
-      ]
-    }
+        ]
+      }
+    ]
 
     const watcher = rollup.watch(watchOpts)
     watcher.on('event', event => {
-      const outputName = watchOpts.output.file || watchOpts.output.dir
       switch (event.code) {
         case 'BUNDLE_START':
           grunt.log.writeln(chalk`{green rollup:} ${event.input}`)
           break
         case 'START':
-        case 'END':
           grunt.verbose.debug(this.nameArgs, event.code, event)
           break
-        case 'BUNDLE_END':
-          grunt.verbose.debug(this.nameArgs, event.code)
-          grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${(event.duration / 1000).toFixed(1)}s}`)
+        case 'END':
+          grunt.verbose.debug(this.nameArgs, event.code, event)
           watchFlag || watcher.close() // stop watcher (only build once) if 'rollup:watch' isn't called
           done && done()
           // set done to undefined so that if we get an 'ERROR' event later
           // while in watch mode, it doesn't tell grunt that we're done twice
           done = undefined
           break
+        case 'BUNDLE_END': {
+          const output = event.output.map(o => path.relative(__dirname, o)).join(', ')
+          const input = path.basename(event.input)
+          grunt.verbose.debug(this.nameArgs, event.code)
+          grunt.log.writeln(chalk`{green created} {bold ${output}} {green from} {bold ${input}} {green in} {bold ${(event.duration / 1000).toFixed(1)}s}`)
+          break
+        }
         case 'FATAL':
         case 'ERROR':
           grunt.log.error(this.nameArgs, event)

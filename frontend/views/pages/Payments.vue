@@ -144,6 +144,7 @@ export default {
       'paymentTotalFromUserToUser',
       'ourPayments',
       'groupMonthlyPayments',
+      'groupIncomeAdjustedDistributionForMonth',
       'ourGroupProfile',
       'groupSettings',
       'ourUsername',
