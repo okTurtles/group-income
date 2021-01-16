@@ -4,7 +4,7 @@
 // ./node_modules/.bin/mocha -w -R min --require Gruntfile.js frontend/utils/distribution/group-income-distribution.test.js
 
 import should from 'should'
-import { groupIncomeDistributionLogic } from './group-income-distribution.js'
+import groupIncomeDistribution from './group-income-distribution.js'
 
 function unfoldParameters (json, monthstamp = '2020-11') {
   const newJSON = {}
@@ -88,7 +88,7 @@ describe('Chunk 0: Adjustment Tests',
       // u2: Income 10$ (a.k.a needs $2)
       // Expected: [{ from: 'u1', to: 'u2', amount: 2 }]
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             mincome: 12,
             profiles: {
@@ -107,7 +107,7 @@ describe('Chunk 0: Adjustment Tests',
       // u1: sends u2 $2
       // Expected: [{ from: 'u1', to: 'u2', amount: 2 }]
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             mincome: 12,
             profiles: {
@@ -129,7 +129,7 @@ describe('Chunk 0: Adjustment Tests',
       // u1: sends u2 $2
       // Expected: []
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 12,
@@ -159,7 +159,7 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       // Switch to u1 and go to the payments page.
       // Expected Result: It should show 1 payment to u3 of $25. The sidebar should say 'Amount sent $75 of $100'
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 1000,
@@ -186,7 +186,7 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       // Switch to u1 and go to the payments page.
       // Expected Result: Don't show any 'todo' payments. The sidebar should say 'Amount sent $100 of $100'
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 1000,
@@ -213,7 +213,7 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       // Switch to u1 and go to the payments page.
       // Expected Result: most of the $75 would go to u3, and some of it would go to u2
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 1000,
@@ -240,7 +240,7 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       // Change the pledge amount of u1 from $100 to $50.
       // Expected Result: Don't show any payment to u3 because u1 already pledge all their money.
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 1000,
@@ -255,14 +255,14 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
           }))
         should(dist).eql([])
       })
-    it('[SCENARIO 4.1 (continuation)]:can distribute money from new members',
+    it('[SCENARIO 4.1 (continuation)]: can distribute money from new members',
       // Invite a new member u4, who can pledge $150.
       // Expected Result #1: u4 should be asked to send $50 to u2 and $50 to u3.
       // Expected Result #2: u3's payments page should say 'Amount received $50 out of $100'.
       // Expected Result #3: u1 should have no 'todo' payments because u1 already pledge all their money.
 
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 1000,
@@ -293,7 +293,7 @@ describe('Chunk B: Changing group mincome',
       // (Everyone agrees to the mincome change?)
       // Expected Result: I don't know... we never discussed this.
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 500,
@@ -314,7 +314,7 @@ describe('Chunk B: Changing group mincome',
       // (Everyone agrees to the mincome change?)
       // Expected Result: Same, no idea.
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 750,
@@ -337,7 +337,7 @@ describe('Chunk C: 4-way distribution tests',
       // u4: pledge 250$
       // Expected Result: Same, no idea.
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 1000,
@@ -359,7 +359,7 @@ describe('Chunk C: 4-way distribution tests',
       // u1 fully pays their share to u2
       // Expected Result: Same, no idea.
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 1000,
@@ -385,7 +385,7 @@ describe('Chunk C: 4-way distribution tests',
       // u1 pays their share to u3
       // Expected Result: Same, no idea.
       function () {
-        const dist = groupIncomeDistributionLogic(unfoldParameters(
+        const dist = groupIncomeDistribution(unfoldParameters(
           {
             adjusted: true,
             mincome: 1000,
