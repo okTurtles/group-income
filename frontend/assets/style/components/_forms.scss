@@ -65,15 +65,13 @@ legend.legend {
     color: $text_1;
   }
 
-  @media (hover: hover) {
-    &:focus,
-    &:hover {
-      border-color: $primary_0;
-    }
+  &:focus,
+  &:hover {
+    border-color: $primary_0;
+  }
 
-    &:focus {
-      box-shadow: 0 0 0 2px $primary_1;
-    }
+  &:focus {
+    box-shadow: 0 0 0 2px $primary_1;
   }
 
   &.error {

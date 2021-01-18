@@ -13,6 +13,8 @@
     :disabled='loading'
     :placeholder='L("Write your message...")'
     :style='textareaStyles'
+    @focus='textAreaFocus'
+    @blur='textAreaBlur'
     @keydown.enter.exact.prevent='sendMessage'
     @keydown.ctrl='isNextLine'
     @keyup='handleKeyup'
@@ -34,6 +36,7 @@
     div(v-else)
       .addons
         tooltip(
+          v-if='ephemeral.showButtons'
           direction='top'
           :text='L("Create poll")'
         )
@@ -44,6 +47,7 @@
             i.icon-poll
 
         tooltip(
+          v-if='ephemeral.showButtons'
           direction='top'
           :text='L("Add reaction")'
         )
@@ -53,9 +57,10 @@
           )
             i.icon-smile-beam
 
-      i18n.sr-only(
+      i18n.c-send-button(
+        v-if='showSendButton'
         tag='button'
-        :class='{ isActive }'
+        :class='{ isActive, showSendButton }'
         @click='sendMessage'
       ) Send
 
@@ -94,7 +99,9 @@ export default {
       ephemeral: {
         actionsWidth: '',
         maskHeight: '',
-        textWithLines: ''
+        textWithLines: '',
+        showButtons: true,
+        isPhone: false
       }
     }
   },
@@ -103,12 +110,18 @@ export default {
       this.$refs.textarea.focus()
     }
   },
+  created () {
+    // TODO #492 create a global Vue Responsive just for media queries.
+    const mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
+    this.ephemeral.isPhone = mediaIsPhone.matches
+    mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
+  },
   mounted () {
     // Get actionsWidth to add a dynamic padding to textarea,
     // so those actions don't be above the textarea's value
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
-    this.$refs.textarea.focus()
+    if (!this.ephemeral.isPhone) this.$refs.textarea.focus()
   },
   computed: {
     textareaStyles () {
@@ -124,9 +137,19 @@ export default {
     },
     isActive () {
       return this.ephemeral.textWithLines
+    },
+    showSendButton () {
+      return this.ephemeral.isPhone && !this.ephemeral.showButtons
     }
   },
   methods: {
+    textAreaFocus () {
+      this.$emit('start-typing')
+      if (this.ephemeral.isPhone) this.ephemeral.showButtons = false
+    },
+    textAreaBlur () {
+      if (this.ephemeral.isPhone) this.ephemeral.showButtons = true
+    },
     isNextLine (e) {
       const enterKey = e.keyCode === 13
       if ((e.shiftKey || e.altKey || e.ctrlKey) && enterKey) {
@@ -306,5 +329,12 @@ $initialHeight: 43px;
   position: absolute;
   right: .2rem;
   top: .4rem;
+}
+
+.c-send-button {
+  border-radius: 0;
+  margin-top: -1px;
+  margin-right: 0;
+  color: $white;
 }
 </style>

@@ -51,6 +51,7 @@
       :title='summary.title'
       @send='handleSendMessage'
       @height-update='updateSendAreaHeight'
+      @start-typing='updateScroll'
       :loading='details.isLoading'
       :replying-message='ephemeral.replyingMessage'
       :replying-to='ephemeral.replyingTo'
@@ -117,16 +118,7 @@ export default {
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
   },
   updated () {
-    if (this.summary.title) {
-      // force conversation viewport to be at the bottom (most recent messages)
-      if (this.config.isPhone) {
-        this.$nextTick(() => {
-          window.scroll(0, document.body.offsetHeight)
-        })
-      } else {
-        this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
-      }
-    }
+    this.updateScroll()
   },
   computed: {
     messages () {
@@ -221,6 +213,15 @@ export default {
       this.$set(this.ephemeral.pendingMessages, index, newMessage)
 
       this.sendMessage(index)
+    },
+    updateScroll () {
+      console.log('scroll!')
+      if (this.summary.title) {
+        // force conversation viewport to be at the bottom (most recent messages)
+        setTimeout(() => {
+          this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
+        }, 500)
+      }
     },
     retryMessage (index) {
       this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)

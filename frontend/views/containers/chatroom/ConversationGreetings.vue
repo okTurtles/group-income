@@ -3,7 +3,7 @@
   i18n.is-title-4(tag='h3') Welcome!
   p {{text}}
   .buttons
-    i18n.button.is-outlined.is-small(
+    i18n.button.is-outlined.is-small.is-primary(
       tag='button'
       @click='openModal("GroupMembersAllModal", {addMemberTo: name})'
       data-test='addMembers'
@@ -74,5 +74,11 @@ export default {
 .buttons {
   margin-top: 1rem;
   justify-content: flex-start;
+
+  .button {
+    @include phone {
+      width: calc(100% - 1rem)
+    }
+  }
 }
 </style>
