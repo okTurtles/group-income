@@ -52,6 +52,17 @@ export default {
   padding-bottom: 0.5rem;
   padding-top: 0.5rem;
 
+  &:before {
+    content: '';
+    background-color:rgba(10, 10, 10, 0.86);
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: -1;
+  }
+
   &.is-active {
     // Is that enought for every menu?
     // Should we use mask transition instead?

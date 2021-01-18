@@ -44,7 +44,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
           i18n(
             tag='h3'
             :args='{  nbMembers: groupMembersSorted.length }'
-          ) Channel members {nbMembers}
+          ) Channel members ({nbMembers})
 
         transition-group(
           v-if='addedMember'
@@ -71,7 +71,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
           i18n(
             tag='h3'
             :args='{  nbMembers: addedMember.length }'
-          ) Others {nbMembers}
+          ) Others ({nbMembers})
 
       transition-group(
         v-if='searchResult'
@@ -99,7 +99,9 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                 tag='button'
                 @click.stop='addToChannel()'
                 data-test='addToChannel'
-              ) Add to channel
+                :args='LTags("span")'
+              ) Add {span_} to channel{_span}
+
               group-members-tooltip-pending(v-else-if='invitedBy' :username='username')
 </template>
 
@@ -204,6 +206,11 @@ export default {
   background-color: $background_0;
   margin: 0 -1rem;
 
+  @include phone {
+    justify-content: left;
+    padding-left: 1rem;
+  }
+
   @include tablet {
     padding-top: 2rem;
     justify-content: flex-start;
@@ -214,10 +221,19 @@ export default {
 
 .c-description {
   color: $text_1;
+
+  @include phone {
+    position: absolute;
+    top: 5.5rem;
+  }
 }
 
 .c-card {
   margin-top: 1.5rem;
+
+  @include phone {
+    margin-top: 3rem;
+  }
 }
 
 .c-member-count {
@@ -282,6 +298,14 @@ export default {
 
   @include tablet {
     display: block;
+  }
+}
+
+::v-deep .c-actions span {
+  margin-left: .3rem;
+
+  @include phone {
+    display: none;
   }
 }
 
