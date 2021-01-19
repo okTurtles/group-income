@@ -4,7 +4,7 @@
     i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
     button.c-clear.is-icon-small(
       :aria-label='L("Stop replying")'
-      @click='$emit("stopReplying")'
+      @click='stopReplying'
     )
       i.icon-times
 
@@ -191,6 +191,10 @@ export default {
     createNewLine () {
       this.$refs.textarea.value += '\n'
       this.updateTextArea()
+    },
+    stopReplying () {
+      this.ephemeral.replyingMessage = null
+      this.$emit('stop-replying')
     },
     sendMessage () {
       console.log('send')

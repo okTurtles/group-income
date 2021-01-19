@@ -127,6 +127,10 @@ export default {
   padding: 0.125rem;
   box-shadow: 0px 0px 1.25rem $general_1_opacity_6;
 
+  @include phone {
+    right: 1.5rem;
+  }
+
   .is-icon-small {
     color: $text_1;
     border-radius: 0;
@@ -157,6 +161,10 @@ export default {
 
   .c-content {
     @extend %floating-panel;
+
+    @include phone {
+      padding: 0;
+    }
 
     @include desktop {
       width: 100%;

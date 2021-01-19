@@ -215,7 +215,6 @@ export default {
       this.sendMessage(index)
     },
     updateScroll () {
-      console.log('scroll!')
       if (this.summary.title) {
         // force conversation viewport to be at the bottom (most recent messages)
         setTimeout(() => {
