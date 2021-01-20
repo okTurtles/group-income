@@ -3,6 +3,7 @@ button(
   v-if='hideWhenActive ? !isActive : true'
   :aria-pressed='isActive ? "true" : "false"'
   data-test='menuTrigger'
+  :class='{ "is-active" : isActive }'
   @click='handleClick'
 )
   slot

@@ -41,14 +41,13 @@ declare module 'primus-rooms' { declare module.exports: any }
 declare module 'scrypt-async' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
 declare module 'tweetnacl-util' { declare module.exports: any }
-declare module 'velocity-animate' { declare module.exports: any }
 declare module 'vue' { declare module.exports: any }
 declare module 'vue-clickaway' { declare module.exports: any }
 declare module 'vue-router' { declare module.exports: any }
-declare module 'vue-script2' { declare module.exports: any }
 declare module 'vue-slider-component' { declare module.exports: any }
 declare module 'vuelidate' { declare module.exports: any }
 declare module 'vuex' { declare module.exports: any }
+declare module 'vue2-touch-events' { declare module.exports: any }
 declare module 'wicg-inert' { declare module.exports: any }
 declare module 'ws' { declare module.exports: any }
 
@@ -76,6 +75,13 @@ declare module '../views/components/modal/Modal.vue' { declare module.exports: O
 declare module '../views/containers/access/LoginModal.vue' { declare module.exports: Object }
 declare module '../views/containers/access/PasswordModal.vue' { declare module.exports: Object }
 declare module '../views/containers/access/SignupModal.vue' { declare module.exports: Object }
+declare module '../views/containers/chatroom/CreateNewChannelModal.vue' { declare module.exports: Object }
+declare module '../views/containers/chatroom/DeleteChannelModal.vue' { declare module.exports: Object }
+declare module '../views/containers/chatroom/EditChannelDescriptionModal.vue' { declare module.exports: Object }
+declare module '../views/containers/chatroom/EditChannelModal.vue' { declare module.exports: Object }
+declare module '../views/containers/chatroom/EditChannelNameModal.vue' { declare module.exports: Object }
+declare module '../views/containers/chatroom/GroupMembersDirectMessages.vue' { declare module.exports: Object }
+declare module '../views/containers/chatroom/LeaveChannelModal.vue' { declare module.exports: Object }
 declare module '../views/containers/contributions/IncomeDetails.vue' { declare module.exports: Object }
 declare module '../views/containers/dashboard/GroupMembersAllModal.vue' { declare module.exports: Object }
 declare module '../views/containers/design-system/DSModalFullscreen.vue' { declare module.exports: Object }
@@ -83,6 +89,7 @@ declare module '../views/containers/design-system/DSModalNested.vue' { declare m
 declare module '../views/containers/design-system/DSModalQuery.vue' { declare module.exports: Object }
 declare module '../views/containers/design-system/DSModalSimple.vue' { declare module.exports: Object }
 declare module '../views/containers/group-settings/GroupCreationModal.vue' { declare module.exports: Object }
+declare module '../views/containers/group-settings/GroupDeletionModal.vue' { declare module.exports: Object }
 declare module '../views/containers/group-settings/GroupJoinModal.vue' { declare module.exports: Object }
 declare module '../views/containers/group-settings/GroupLeaveModal.vue' { declare module.exports: Object }
 declare module '../views/containers/group-settings/InvitationLinkModal.vue' { declare module.exports: Object }

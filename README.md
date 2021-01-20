@@ -48,9 +48,19 @@ We are continually improving the user experience for everyone, and applying the 
 - [:book: Style Guide — Our development guidelines](docs/Style-Guide.md)
 - [:book: Information Flow - walkthrough of the logical layer](docs/Information-Flow.md)
 
+#### Bounties
+
+Some issues have [bounties](https://github.com/okTurtles/group-income-simple/issues?q=is%3Aissue+is%3Aopen+label%3ANote%3ABounty) assigned to them.
+
+- Anyone can post a bounty by donating to this project and letting us know which issue you'd like the bounty to be applied to.
+- Non-contractors can receive bounties by submitting PRs for them. If we approve and merge the PR, you get the bounty!
+- If there's an issue you'd like okTurtles to prioritize by posting a bounty to it, feel free to let us know via [Gitter](https://gitter.im/okTurtles/group-income) or [Slack](https://join.slack.com/t/okturtles/shared_invite/zt-jc5x4uck-0YqMX5vVGZ9koR2b6LCwiw)!
+
+Any open contractor positions are posted to: [Open Positions](https://groupincome.org/positions/)
+
 #### Basic workflow
 
-Group Income is an application based on [Vue.js](https://vuejs.org/). Here's how you can get started with development:
+To get started with development, follow the steps in **[Getting Started](#getting-started)** first.
 
 Run all servers + watch files for changes
 

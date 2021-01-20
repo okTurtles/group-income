@@ -894,10 +894,10 @@ const handleEvent = {
   },
   async processSideEffects (message: GIMessage) {
     try {
-      if ([GIMessage.OP_ENCRYPTED_ACTION, GIMessage.OP_PUBLIC_ACTION].includes(message.opType())) {
+      if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) {
         const contractID = message.contractID()
         const hash = message.hash()
-        const { type, data, meta } = message.decrypted()
+        const { type, data, meta } = message.decryptedValue()
         const mutation = { data, meta, hash, contractID }
         // this selector is created by Contract.js
         await sbp(`${type}/sideEffect`, mutation)

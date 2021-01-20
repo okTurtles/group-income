@@ -21,7 +21,6 @@ const chatroom = {
     currentConversation () {
       // NOTE - This should be $store responsability but for now
       // I've used the $route just for static mocked layout purposes
-
       if (this.$route.params.currentConversation) {
         return this.$route.params.currentConversation
       }
@@ -31,10 +30,6 @@ const chatroom = {
 
       switch (this.$route.name) {
         case 'Messages':
-          if (this.config.isPhone) {
-            break
-          }
-
           // Open by default the first conversation without unread messages
           for (let i = 0, l = individualMessagesSorted.length; i < l; i++) {
             if (users[individualMessagesSorted[i]].unreadCount === 0) {
@@ -49,10 +44,6 @@ const chatroom = {
           this.redirectChat('MessagesConversation', users[currentId].name, chatTypes.INDIVIDUAL, currentId, shouldRefresh)
           break
         case 'GroupChat':
-          if (this.config.isPhone) {
-            break
-          }
-
           // Open by default the lounge channel id
           currentId = 'c0'
           shouldRefresh = false
@@ -118,16 +109,18 @@ const chatroom = {
     redirectChat (name, chatName, type, id, shouldReload) {
       // NOTE: Vue re-renders the components when the query changes
       // Force to do it too again after each consecutive reload
-      const reload = shouldReload ? { reload: Number(this.$route.query.reload) ? Number(this.$route.query.reload) + 1 : 1 } : {}
+      const query = {
+        ...this.$route.query
+      }
+      const reload = Number(this.$route.query.reload)
+      if (shouldReload) query.reload = reload ? reload + 1 : 1
       this.$router.push({
         name,
         params: {
           chatName,
           currentConversation: { type, id }
         },
-        query: {
-          ...reload
-        }
+        query
       })
     }
   }

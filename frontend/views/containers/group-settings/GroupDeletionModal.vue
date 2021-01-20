@@ -49,7 +49,7 @@ import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default {
-  name: 'GroupLeaveModal',
+  name: 'GroupDeletionModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
     ModalTemplate,
