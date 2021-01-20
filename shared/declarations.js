@@ -60,10 +60,8 @@ declare module 'sqlite3' { declare module.exports: any }
 declare module 'string' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
 declare module 'tweetnacl-util' { declare module.exports: any }
-declare module 'velocity-animate' { declare module.exports: any }
 declare module 'vue' { declare module.exports: any }
 declare module 'vue-router' { declare module.exports: any }
-declare module 'vue-script2' { declare module.exports: any }
 declare module 'vuex' { declare module.exports: any }
 declare module 'ws' { declare module.exports: any }
 declare module '@babel/register' { declare module.exports: any }
