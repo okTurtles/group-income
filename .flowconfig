@@ -17,6 +17,7 @@
 .*/frontend/utils/vuexQueue.js
 .*/frontend/views/containers/chatroom/.*
 .*/historical/.*
+.*/ignored/.*
 .*/node_modules/.*
 .*/scripts/.*
 .*/test/backend.js

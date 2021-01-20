@@ -868,7 +868,7 @@ const handleEvent = {
       const hash = message.hash()
       if (message.isFirstMessage()) {
         // Flow doesn't understand that a first message must be a contract,
-        // so we have to help it a bit in order to acces to 'type' property.
+        // so we have to help it a bit in order to acces the 'type' property.
         const { type } = ((message.opValue(): any): GIOpContract)
         store.commit('registerContract', { contractID, type })
       }

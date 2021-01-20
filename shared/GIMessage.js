@@ -1,4 +1,5 @@
 'use strict'
+
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/data.js'
 import { blake32Hash } from './functions.js'
@@ -14,6 +15,7 @@ export type GIOpKeyAuth = { key: GIKeyType, context: string }
 export type GIOpPropSet = { key: string, value: JSONType }
 
 export type GIOpType = 'c' | 'ea' | 'pa' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd'
+
 export type GIOpValue = GIOpContract | GIOpAction | GIOpPubAction | GIOpKeyAuth | GIOpPropSet
 export type GIOp = [GIOpType, GIOpValue]
 
@@ -24,7 +26,7 @@ sbp('okTurtles.data/set', 'CHELONIA_CONFIG', {
 })
 
 export class GIMessage {
-  // flow type annoations to make flow happy
+  // flow type annotations to make flow happy
   _decrypted: GIOpValue
   _mapping: Object
   _message: Object
@@ -139,7 +141,7 @@ sbp('sbp/selectors/register', {
     const contractID = message.contractID()
     const config = sbp('okTurtles.data/get', 'CHELONIA_CONFIG')
     if (!state._vm) state._vm = {}
-    const opFns = {
+    const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
         state._vm.authorizedKeys.push({ key: v.authkey, context: 'owner' })
@@ -180,7 +182,7 @@ sbp('sbp/selectors/register', {
       processOp = config[`preOp_${opT}`](message, state) !== false && processOp
     }
     if (processOp && !config.skipProcessing) {
-      (opFns[opT]/*: (any) => void */)(opV)
+      opFns[opT](opV)
       config.postOp && config.postOp(message, state)
       config[`postOp_${opT}`] && config[`postOp_${opT}`](message, state)
     }
