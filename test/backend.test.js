@@ -86,7 +86,7 @@ describe('Full walkthrough', function () {
     // we set this so that the metadata on subsequent messages is properly filled in
     // currently group and mailbox contracts use this to determine message sender
     vuexState.loggedIn = {
-      username: user.decrypted().data.attributes.username,
+      username: user.decryptedValue().data.attributes.username,
       identityContractID: user.contractID()
     }
   }
@@ -103,7 +103,7 @@ describe('Full walkthrough', function () {
       // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
       attributes: { username, email }
     })
-    msg.decrypted(JSON.parse)
+    msg.decryptedValue(JSON.parse)
     return msg
   }
   function createGroup (name) {
@@ -133,7 +133,7 @@ describe('Full walkthrough', function () {
   function createPaymentTo (to, amount, contractID, currency = 'USD') {
     return sbp('gi.contracts/group/payment/create',
       {
-        toUser: to.decrypted().data.attributes.username,
+        toUser: to.decryptedValue().data.attributes.username,
         amount: amount,
         currency: currency,
         txid: String(parseInt(Math.random() * 10000000)),
@@ -171,8 +171,8 @@ describe('Full walkthrough', function () {
       users.alice = await createIdentity('Alice', 'alice@okturtles.org')
       const { alice, bob } = users
       // verify attribute creation and state initialization
-      bob.decrypted().data.attributes.username.should.match(/^Bob/)
-      bob.decrypted().data.attributes.email.should.equal('bob@okturtles.com')
+      bob.decryptedValue().data.attributes.username.should.match(/^Bob/)
+      bob.decryptedValue().data.attributes.email.should.equal('bob@okturtles.com')
       // send them off!
       await postEntry(alice)
       await postEntry(bob)
@@ -180,11 +180,11 @@ describe('Full walkthrough', function () {
 
     it('Should register Alice and Bob in the namespace', async function () {
       const { alice, bob } = users
-      let res = await sbp('namespace/register', alice.decrypted().data.attributes.username, alice.contractID())
+      let res = await sbp('namespace/register', alice.decryptedValue().data.attributes.username, alice.contractID())
       // NOTE: don't rely on the return values for 'namespace/register'
       //       too much... in the future we might remove these checks
       res.value.should.equal(alice.contractID())
-      res = await sbp('namespace/register', bob.decrypted().data.attributes.username, bob.contractID())
+      res = await sbp('namespace/register', bob.decryptedValue().data.attributes.username, bob.contractID())
       res.value.should.equal(bob.contractID())
       alice.socket = 'hello'
       should(alice.socket).equal('hello')
@@ -192,7 +192,7 @@ describe('Full walkthrough', function () {
 
     it('Should verify namespace lookups work', async function () {
       const { alice } = users
-      const res = await sbp('namespace/lookup', alice.decrypted().data.attributes.username)
+      const res = await sbp('namespace/lookup', alice.decryptedValue().data.attributes.username)
       res.should.equal(alice.contractID())
       const contractID = await sbp('namespace/lookup', 'susan')
       should(contractID).equal(null)
@@ -227,7 +227,7 @@ describe('Full walkthrough', function () {
     it('Should get mailbox info for Bob', async function () {
       // 1. look up bob's username to get his identity contract
       const { bob } = users
-      const bobsName = bob.decrypted().data.attributes.username
+      const bobsName = bob.decryptedValue().data.attributes.username
       const bobsContractId = await sbp('namespace/lookup', bobsName)
       should(bobsContractId).equal(bob.contractID())
       // 2. fetch all events for his identity contract to get latest state for it
@@ -257,7 +257,7 @@ describe('Full walkthrough', function () {
       const mailbox = users.bob.mailbox
       sbp('gi.contracts/mailbox/postMessage/create',
         {
-          from: users.bob.decrypted().data.attributes.username,
+          from: users.bob.decryptedValue().data.attributes.username,
           messageType: TYPE_MESSAGE,
           message: groups.group1.contractID()
         },
@@ -265,7 +265,7 @@ describe('Full walkthrough', function () {
       ).then(invite => {
         sbp('okTurtles.events/once', invite.hash(), (entry: GIMessage) => {
           console.log('Bob successfully got invite!')
-          should(entry.decrypted().data.message).equal(groups.group1.contractID())
+          should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
           done()
         })
         postEntry(invite)
