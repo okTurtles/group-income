@@ -1,14 +1,15 @@
 <template lang="pug">
 .c-group-members(data-test='groupMembers')
   .c-group-members-header
-    i18n.is-title-4(tag='h3') Members
+    h3.is-title-4 {{title}}
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'
-      @click='openModal(groupShouldPropose ? "AddMembers" : "InvitationLinkModal")'
+      @click='headerButtonAction'
     )
       i.icon-plus.is-prefix
-      i18n Add
+      i18n(v-if='action === "addMember"') Add
+      i18n(v-else) New
 
   ul.c-group-list
     li.c-group-member(
@@ -54,6 +55,17 @@ export default {
     ProfileCard,
     GroupMembersTooltipPending
   },
+  props: {
+    title: {
+      type: String,
+      default: L('Members')
+    },
+    action: {
+      type: String,
+      default: 'addMember',
+      validator: (value) => ['addMember', 'chat'].includes(value)
+    }
+  },
   computed: {
     ...mapGetters([
       'groupMembersCount',
@@ -76,6 +88,13 @@ export default {
     localizedName (username) {
       const name = this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
+    },
+    headerButtonAction () {
+      let modalAction = 'AddMembers'
+      if (this.action === 'addMember' && !this.groupShouldPropose) modalAction = 'InvitationLinkModal'
+      // Todo create new group modal
+      if (this.action === 'chat') modalAction = 'GroupMembersDirectMessages'
+      this.openModal(modalAction)
     }
   }
 }
@@ -106,8 +125,8 @@ export default {
   justify-content: space-between;
   align-items: center;
   height: 3rem;
-  padding: 0.5rem 1.5rem;
-  margin: 0 -1.5rem;
+  padding: 0.5rem 1.5rem 0.5rem 1.5rem;
+  margin: 0 -0.5rem 0 -1.5rem;
 
   &:hover {
     background-color: $general_1;

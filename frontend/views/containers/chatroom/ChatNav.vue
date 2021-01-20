@@ -1,11 +1,6 @@
 <template lang='pug'>
 .c-chatnav
   template(slot='actions')
-    // TODO design search results on mobile - MVP be same as desktop
-    //
-      button.button.is-icon
-        i.icon-search
-
     menu-parent
       menu-trigger.is-icon
         i.icon-ellipsis-v
@@ -19,18 +14,9 @@
           menu-item(tag='button' itemid='hash-3' icon='heart')
             i18n Report a problem
 
-  input.input.c-chatnav-search(
-    type='text'
-    v-if='searchPlaceholder'
-    :placeholder='searchPlaceholder'
-    @keyup='handleSearch'
-  )
-
   .c-chatnav-body
-    template(v-if='ephemeral.isSearching')
-      | Search results for &quot;{{ ephemeral.searchTerm }}&quot; to be done...
-    slot(v-else='')
-      // Content for each chatNav is up to the parent
+    slot
+
 </template>
 
 <script>
@@ -46,30 +32,13 @@ export default {
     MenuContent,
     MenuItem
   },
-  props: {
-    title: String,
-    searchPlaceholder: String
-  },
   data () {
     return {
-      ephemeral: {
-        isSearching: false,
-        searchTerm: null
-      }
+      ephemeral: {}
     }
   },
   computed: {},
-  methods: {
-    handleSearch (e) {
-      if (!e.target.value) {
-        this.ephemeral.isSearching = false
-      } else {
-        console.log('TODO $store - search results...')
-        this.ephemeral.isSearching = true
-      }
-      this.ephemeral.searchTerm = e.target.value
-    }
-  }
+  methods: {}
 }
 </script>
 
@@ -84,34 +53,26 @@ export default {
     min-width: 10rem;
   }
 
-  &-search {
-    margin-top: 1rem;
-  }
-
   ::v-deep .c-item-link {
-    padding: 1.25rem 0.5rem;
-    margin: 0.25rem -0.5rem;
+    padding: 0.5rem 0 0.5rem 0.5rem;
+    margin: 0 0 0 -0.5rem;
     border-radius: $radius;
+
+    i {
+      margin-right: 1.5rem;
+    }
+
+    &.is-active {
+      background: $background_0;
+
+      &::before {
+        display: none;
+      }
+    }
   }
 
   ::v-deep .c-avatar {
     margin-right: 0.5rem;
-  }
-}
-
-@include phone {
-  .c-chatnav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    max-height: 100vh;
-    overflow: auto;
-
-    &-search {
-      margin: 1rem 0.5rem 0;
-      width: calc(100% - 1rem);
-    }
   }
 }
 </style>

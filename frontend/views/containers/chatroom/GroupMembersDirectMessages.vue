@@ -1,23 +1,20 @@
 <template lang='pug'>
-modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Group members")')
+modal-base-template.has-background(
+  ref='modal'
+  :fullscreen='true'
+  :a11yTitle='L("Group members")'
+  :autofocus='false'
+)
   .c-container
     .c-header
-      div(v-if='canAddMember')
-        i18n.is-title-2.c-title(
-          tag='h2'
-        ) Members
-        .c-description {{ name }} . {{isPrivate ? L("Private channel") : L("Public channel")}}
-
-      i18n.is-title-2.c-title(
-        v-else
-        tag='h2'
-      ) Group members
+      i18n.is-title-2.c-title(tag='h2') Direct messages
 
     .card.c-card
       search(
+        ref='search'
         :placeholder='L("Search...")'
         :label='L("Search")'
-        v-model='searchText'
+        :autofocus='true'
       )
 
       .c-member-count.has-text-1(
@@ -33,45 +30,11 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
       ) Sorry, we couldn't find anyone called "{searchTerm}"
 
       i18n.c-member-count.has-text-1(
-        v-if='!searchText && !canAddMember'
+        v-if='!searchText'
         tag='div'
         :args='{ groupMembersCount }'
         data-test='memberCount'
       ) {groupMembersCount} members
-
-      .c-list-to-add(v-if='canAddMember')
-        .is-subtitle
-          i18n(
-            tag='h3'
-            :args='{  nbMembers: groupMembersSorted.length }'
-          ) Channel members ({nbMembers})
-
-        transition-group(
-          v-if='addedMember'
-          name='slide-list'
-          tag='ul'
-        )
-          li.c-search-member(
-            v-for='{username, displayName, invitedBy, isNew} in addedMember'
-            :key='username'
-          )
-            profile-card(:username='username' direction='top-left')
-              .c-identity
-                avatar-user(:username='username' size='sm')
-                .c-name(data-test='username')
-                  span
-                    strong {{ localizedName(username) }}
-                    .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
-
-              .c-actions
-                button.is-icon(@click.stop='removeMember')
-                  i.icon-times
-
-        .is-subtitle.c-second-section
-          i18n(
-            tag='h3'
-            :args='{  nbMembers: addedMember.length }'
-          ) Others ({nbMembers})
 
       transition-group(
         v-if='searchResult'
@@ -80,29 +43,19 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
       )
         li.c-search-member(
           v-for='{username, displayName, invitedBy, isNew} in searchResult'
+          @click='openDirectMessage(displayName)'
           :key='username'
         )
-          profile-card(:username='username' direction='top-left')
-            .c-identity
-              avatar-user(:username='username' size='sm')
-              .c-name(data-test='username')
-                span
-                  strong {{ localizedName(username) }}
-                  .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+          .c-identity
+            avatar-user(:username='username' size='sm')
+            .c-name(data-test='username')
+              span
+                strong {{ localizedName(username) }}
+                .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
-                i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
-                i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
+              i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
+              i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
-            .c-actions
-              i18n.button.is-outlined.is-small(
-                v-if='addedMember'
-                tag='button'
-                @click.stop='addToChannel()'
-                data-test='addToChannel'
-                :args='LTags("span")'
-              ) Add {span_} to channel{_span}
-
-              group-members-tooltip-pending(v-else-if='invitedBy' :username='username')
 </template>
 
 <script>
@@ -111,32 +64,18 @@ import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import ProfileCard from '@components/ProfileCard.vue'
-import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 
 export default {
   name: 'GroupMembersAllModal',
   components: {
     ModalBaseTemplate,
     Search,
-    AvatarUser,
-    GroupMembersTooltipPending,
-    ProfileCard
+    AvatarUser
   },
   data () {
     return {
-      searchText: '',
-      addedMember: [],
-      canAddMember: false,
-      name: '',
-      isPrivate: true
+      searchText: ''
     }
-  },
-  created () {
-    this.name = this.$route.query.name
-    if (this.name) this.canAddMember = true
-    // TODO: get chat member and filter groupMembersSorted
-    this.addedMember = this.groupMembersSorted
   },
   computed: {
     ...mapGetters([
@@ -167,14 +106,12 @@ export default {
       const name = this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
+    openDirectMessage (displayName) {
+      console.log(`TODO: new direct message to ${displayName}`)
+      this.closeModal()
+    },
     closeModal () {
       this.$refs.modal.close()
-    },
-    removeMember () {
-      console.log('TODO removeMember')
-    },
-    addToChannel () {
-      console.log('TODO addToChannel')
     }
   }
 }
@@ -206,11 +143,6 @@ export default {
   background-color: $background_0;
   margin: 0 -1rem;
 
-  @include phone {
-    justify-content: left;
-    padding-left: 1rem;
-  }
-
   @include tablet {
     padding-top: 2rem;
     justify-content: flex-start;
@@ -219,21 +151,8 @@ export default {
   }
 }
 
-.c-description {
-  color: $text_1;
-
-  @include phone {
-    position: absolute;
-    top: 5.5rem;
-  }
-}
-
 .c-card {
   margin-top: 1.5rem;
-
-  @include phone {
-    margin-top: 3rem;
-  }
 }
 
 .c-member-count {
@@ -301,33 +220,9 @@ export default {
   }
 }
 
-::v-deep .c-actions span {
-  margin-left: .3rem;
-
-  @include phone {
-    display: none;
-  }
-}
-
 .c-action-menu {
   @include tablet {
     display: none;
   }
-}
-
-.is-subtitle {
-  display: flex;
-  margin-top: 1.875rem;
-  margin-bottom: .5rem;
-}
-
-.c-second-section:before {
-  content: '';
-  position: absolute;
-  background-color: $general_2;
-  height: 1px;
-  width: calc(100% + 6rem);
-  top: 0;
-  left: -3rem;
 }
 </style>

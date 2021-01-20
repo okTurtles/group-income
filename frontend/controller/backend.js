@@ -125,7 +125,7 @@ sbp('sbp/selectors/register', {
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
           const previousHEAD = await sbp('backend/latestHash', contractID)
-          entry = GIMessage.create(contractID, previousHEAD, entry.op())
+          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op())
         }
       } else {
         console.error(`publishLogEntry: ${r.status} - ${r.statusText}, failed to publish ${entry.description()}:`, entry)

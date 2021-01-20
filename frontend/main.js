@@ -24,6 +24,7 @@ import './views/utils/avatar.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
 import './views/utils/vStyle.js'
+import './utils/touchInteractions.js'
 import 'wicg-inert'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
