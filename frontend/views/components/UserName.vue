@@ -38,7 +38,7 @@ export default {
   strong {
     font-size: $size_2;
     color: $text_0;
-    font-family: poppins;
+    font-family: Poppins;
   }
 }
 

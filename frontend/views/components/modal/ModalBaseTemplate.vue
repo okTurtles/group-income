@@ -6,7 +6,7 @@
       role='dialog'
       tabindex='-1'
       :aria-label='a11yTitle'
-      v-focus=''
+      v-focus='autofocus'
       data-test='modal'
       @close='close'
     )
@@ -22,7 +22,14 @@ export default {
   name: 'ModalBaseTemplate',
   mixins: [modalMixins, trapFocus],
   props: {
-    fullscreen: Boolean
+    fullscreen: {
+      type: Boolean,
+      default: true
+    },
+    autofocus: {
+      type: Boolean,
+      default: true
+    }
   }
 }
 </script>

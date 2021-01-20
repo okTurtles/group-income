@@ -69,6 +69,11 @@ export default {
   align-items: center;
   min-height: 100vh;
 
+  @include phone {
+    justify-content: left;
+    padding-left: 1rem;
+  }
+
   .c-title,
   .c-description {
     text-align: center;
@@ -81,6 +86,11 @@ export default {
 
   .c-description {
     margin: 0 0 0.5rem;
+
+    @include phone {
+      position: absolute;
+      top: 5.5rem;
+    }
   }
 
   @include phone {

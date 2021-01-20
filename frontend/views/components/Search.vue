@@ -15,6 +15,7 @@ form.c-search-form(
         :value='value'
         @keyup.esc='$emit("input", "")'
         @input='$emit("input", $event.target.value)'
+        v-focus='autofocus'
       )
       .addons
         button.c-clear.is-icon-small(
@@ -34,7 +35,7 @@ export default {
   props: {
     value: {
       type: String,
-      required: true
+      required: false
     },
 
     placeholder: {
@@ -45,6 +46,10 @@ export default {
     label: {
       type: String,
       required: true
+    },
+    autofocus: {
+      type: Boolean,
+      default: false
     }
   },
 
