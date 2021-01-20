@@ -28,7 +28,9 @@ export const imageUpload = async (imageFile: File): Promise<any> => {
     reader.onloadend = async function () {
       const fd = new FormData()
       const { result } = reader
-      if (result !== null) {
+      if (result === null) {
+        console.warn('File upload failed: could not load the given file into an array buffer.')
+      } else {
         const hash = blake32Hash(new Uint8Array(((result: any): ArrayBuffer)))
         console.debug('picture hash:', hash)
         fd.append('hash', hash)
