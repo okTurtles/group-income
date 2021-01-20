@@ -60,7 +60,7 @@ Any open contractor positions are posted to: [Open Positions](https://groupincom
 
 #### Basic workflow
 
-Group Income is an application based on [Vue.js](https://vuejs.org/). Here's how you can get started with development:
+To get started with development, follow the steps in **[Getting Started](#getting-started)** first.
 
 Run all servers + watch files for changes
 
