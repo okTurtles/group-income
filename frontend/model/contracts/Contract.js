@@ -69,7 +69,7 @@ export function DefineContract (contract: Object) {
         metadata.validate(meta, { state, ...gProxy, contractID })
         contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
         return GIMessage.createV1_0(contractID, previousHEAD, [
-          GIMessage.OP_ENCRYPTED_ACTION,
+          GIMessage.OP_ACTION_ENCRYPTED,
           // TODO: encryption happens here
           JSON.stringify({ type: actionSelector, data, meta })
         ])

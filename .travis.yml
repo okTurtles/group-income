@@ -9,22 +9,22 @@ env:
 branches:
   only:
     - master # https://github.com/okTurtles/group-income-simple/issues/58
-# TODO: uncomment this
-# cache:
-#   # Caches $HOME/.npm when npm ci is default script command
-#   # Caches node_modules in all other cases
-#   npm: true
-#   directories:
-#     - ~/.npm # NPM packages 
-#     - ~/.cache # Cypress binary
-#   # https://cypress.slides.com/cypress-io/cypress-on-ci#/9/7/0
-#   override:
-#     - npm ci
-#     - npm run cy:verify
+cache:
+  # Caches $HOME/.npm when npm ci is default script command
+  # Caches node_modules in all other cases
+  npm: true
+  directories:
+    - ~/.npm # NPM packages
+    - ~/.cache # Cypress binary
+  # https://cypress.slides.com/cypress-io/cypress-on-ci#/9/7/0
+  override:
+    - npm ci
+    - npm run cy:verify
 install:
-  # TODO: remove `npm install` below and uncomment the above and below in a future PR
-  - npm install
-  - ./node_modules/.bin/cypress install
-#  - npm ci
+  # To update Cypress, you need to uncomment the below
+  # and comment out the entire cache: section above.
+  # - npm install
+  # - ./node_modules/.bin/cypress install
+  - npm ci
 script:
   - npm test
