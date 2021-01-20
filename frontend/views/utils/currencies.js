@@ -1,5 +1,14 @@
 'use strict'
 
+type Currency = {|
+  decimalsMax: number;
+  displayWithCurrency(n: number): string;
+  displayWithoutCurrency(n: number): string;
+  symbol: string;
+  symbolWithCode: string;
+  validate(n: string): boolean;
+|}
+
 // https://github.com/okTurtles/group-income-simple/issues/813#issuecomment-593680834
 // round all accounting to DECIMALS_MAX decimal places max to avoid consensus
 // issues that can arise due to different floating point values
@@ -47,7 +56,7 @@ export function mincomePositive (value: string): boolean {
   return parseFloat(commaToDots(value)) > 0
 }
 
-function makeCurrency (options) {
+function makeCurrency (options): Currency {
   const { symbol, symbolWithCode, decimalsMax, formatCurrency } = options
   return {
     symbol,
@@ -63,46 +72,25 @@ function makeCurrency (options) {
 //       a json file that's read in and generates this object. For
 //       example, that would allow the addition of currencies without
 //       having to "recompile" a new version of the app.
-const currencies = {
-  USD: (makeCurrency({
+const currencies: { [string]: Currency } = {
+  USD: makeCurrency({
     symbol: '$',
     symbolWithCode: '$ USD',
     decimalsMax: 2,
     formatCurrency: amount => '$' + amount
-  }): {|
-  decimalsMax: number,
-  displayWithCurrency: (n: number) => string,
-  displayWithoutCurrency: (n: number) => string,
-  symbol: string,
-  symbolWithCode: string,
-  validate: (n: string) => boolean,
-|}),
-  EUR: (makeCurrency({
+  }),
+  EUR: makeCurrency({
     symbol: '€',
     symbolWithCode: '€ EUR',
     decimalsMax: 2,
     formatCurrency: amount => '€' + amount
-  }): {|
-  decimalsMax: number,
-  displayWithCurrency: (n: number) => string,
-  displayWithoutCurrency: (n: number) => string,
-  symbol: string,
-  symbolWithCode: string,
-  validate: (n: string) => boolean,
-|}),
-  BTC: (makeCurrency({
+  }),
+  BTC: makeCurrency({
     symbol: 'Ƀ',
     symbolWithCode: 'Ƀ BTC',
     decimalsMax: DECIMALS_MAX,
     formatCurrency: amount => amount + 'Ƀ'
-  }): {|
-  decimalsMax: number,
-  displayWithCurrency: (n: number) => string,
-  displayWithoutCurrency: (n: number) => string,
-  symbol: string,
-  symbolWithCode: string,
-  validate: (n: string) => boolean,
-|})
+  })
 }
 
 export default currencies
