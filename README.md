@@ -54,7 +54,7 @@ Some issues have [bounties](https://github.com/okTurtles/group-income-simple/iss
 
 - Anyone can post a bounty by donating to this project and letting us know which issue you'd like the bounty to be applied to.
 - Non-contractors can receive bounties by submitting PRs for them. If we approve and merge the PR, you get the bounty!
-- If there's an issue you'd like to work on that doesn't have a bounty, and you'd like okTurtles to consider posting one to it, feel free to let us know via [Gitter](https://gitter.im/okTurtles/group-income) or [Slack](https://join.slack.com/t/okturtles/shared_invite/zt-jc5x4uck-0YqMX5vVGZ9koR2b6LCwiw)!
+- If there's an issue you'd like okTurtles to prioritize by posting a bounty to it, feel free to let us know via [Gitter](https://gitter.im/okTurtles/group-income) or [Slack](https://join.slack.com/t/okturtles/shared_invite/zt-jc5x4uck-0YqMX5vVGZ9koR2b6LCwiw)!
 
 #### Basic workflow
 
