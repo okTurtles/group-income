@@ -15,7 +15,6 @@
 .*/frontend/utils/crypto.js
 .*/frontend/utils/flowTyper.js
 .*/frontend/utils/vuexQueue.js
-.*/frontend/views/containers/chatroom/.*
 .*/historical/.*
 .*/ignored/.*
 .*/node_modules/.*

@@ -3,7 +3,7 @@ import sbp from '~/shared/sbp.js'
 
 const emoticonsMixins = {
   methods: {
-    openEmoticon (e) {
+    openEmoticon (e: any) {
       sbp('okTurtles.events/emit', OPEN_EMOTICON, e)
       sbp('okTurtles.events/on', CLOSE_EMOTICON, this.closeEmoticon)
       sbp('okTurtles.events/on', SELECT_EMOTICON, this.selectEmoticon)
