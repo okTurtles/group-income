@@ -34,6 +34,15 @@ export default {
 
 .c-content-wrapper {
   min-height: 100%;
+
+  @include phone {
+    border-radius: $radius;
+    background-color: $background;
+    position: relative;
+    z-index: 2;
+    padding-top: .5rem;
+    padding-bottom: 4rem
+  }
 }
 
 .c-content {
@@ -52,13 +61,26 @@ export default {
   padding-bottom: 0.5rem;
   padding-top: 0.5rem;
 
+  &:before {
+    @include phone {
+      content: '';
+      background-color:rgba(10, 10, 10, 0.86);
+      position: fixed;
+      height: 100%;
+      width: 100%;
+      top: 0;
+      left: 0;
+      z-index: -1;
+    }
+  }
+
   &.is-active {
     // Is that enought for every menu?
     // Should we use mask transition instead?
     pointer-events: initial;
     max-height: 25rem;
     opacity: 1;
-    transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) 1s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
+    transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) .3s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
   }
 
   ::v-deep .c-item {

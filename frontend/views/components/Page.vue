@@ -184,7 +184,7 @@ $pagePaddingDesktop: 5.5rem;
 
   &-inner {
     height: 100%;
-    padding: 1.5rem 1.5rem 1rem;
+    padding: 1.5rem 0.5rem 0.5rem 1.5rem;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
   }

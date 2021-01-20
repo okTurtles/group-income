@@ -213,8 +213,8 @@ export default {
   z-index: $zindex-tooltip;
   pointer-events: none;
   background-color: $text_0;
-  color: $white;
   opacity: 0.95;
+  color: $white;
 
   &.has-text-center {
     text-align: center;

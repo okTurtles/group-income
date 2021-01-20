@@ -11,6 +11,7 @@ export default {
       config: {
         Menu: {
           isActive: false,
+          canClose: true,
           handleSelect: this.handleSelect,
           handleTrigger: this.handleTrigger,
           closeMenu: this.closeMenu
@@ -26,13 +27,19 @@ export default {
   methods: {
     handleTrigger () {
       this.config.Menu.isActive = true
+      this.canClose = false
+      setTimeout(() => {
+        this.canClose = true
+      }, 1000)
     },
     handleSelect (itemId) {
       this.closeMenu()
       this.$emit('select', itemId)
     },
     closeMenu () {
-      this.config.Menu.isActive = false
+      if (this.canClose) {
+        this.config.Menu.isActive = false
+      }
     }
   }
 }
