@@ -3,7 +3,7 @@
 export class GIErrorIgnoreAndBanIfGroup extends Error {
   // ugly boilerplate because JavaScript is stupid
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
-  constructor (...params) {
+  constructor (...params: any[]) {
     super(...params)
     this.name = this.constructor.name
     if (Error.captureStackTrace) {
@@ -13,7 +13,7 @@ export class GIErrorIgnoreAndBanIfGroup extends Error {
 }
 
 export class GIErrorDropAndReprocess extends Error {
-  constructor (...params) {
+  constructor (...params: any[]) {
     super(...params)
     this.name = this.constructor.name
     if (Error.captureStackTrace) {
@@ -23,7 +23,7 @@ export class GIErrorDropAndReprocess extends Error {
 }
 
 export class GIErrorUnrecoverable extends Error {
-  constructor (...params) {
+  constructor (...params: any[]) {
     super(...params)
     this.name = this.constructor.name
     if (Error.captureStackTrace) {
@@ -36,7 +36,7 @@ export class GIErrorUnrecoverable extends Error {
 
 // Used to throw human readable errors on UI.
 export class GIErrorUIRuntimeError extends Error {
-  constructor (...params) {
+  constructor (...params: any[]) {
     super(...params)
     this.name = this.constructor.name
     if (Error.captureStackTrace) {

@@ -26,7 +26,7 @@ import {
   PROFILE_STATUS
 } from './constants.js'
 
-export const inviteType = objectOf({
+export const inviteType: any = objectOf({
   inviteSecret: string,
   quantity: number,
   creator: string,
@@ -41,8 +41,16 @@ export function createInvite (
     quantity = 1,
     creator,
     invitee
-  }: { quantity: number, creator: string, invitee: string }
-) {
+  }: { quantity: number, creator: string, invitee?: string }
+): {|
+  creator: string,
+  expires: number,
+  inviteSecret: string,
+  invitee: void | string,
+  quantity: number,
+  responses: {...},
+  status: string,
+|} {
   return {
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
     quantity,
@@ -376,7 +384,7 @@ DefineContract({
           expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
         })(data)
 
-        const dataToCompare = omit(data.proposalData, 'reason')
+        const dataToCompare = omit(data.proposalData, ['reason'])
 
         // Validate this isn't a duplicate proposal
         for (const hash in state.proposals) {
@@ -385,7 +393,7 @@ DefineContract({
             continue
           }
 
-          if (deepEqualJSONType(omit(prop.data.proposalData, 'reason'), dataToCompare)) {
+          if (deepEqualJSONType(omit(prop.data.proposalData, ['reason']), dataToCompare)) {
             throw new TypeError(L('There is an identical open proposal.'))
           }
 

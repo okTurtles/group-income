@@ -33,7 +33,7 @@ export function prevMonthstamp (monthstamp: string): string {
   return dateToMonthstamp(date)
 }
 
-export function compareMonthstamps (monthstampA: string, monthstampB): number {
+export function compareMonthstamps (monthstampA: string, monthstampB: string): number {
   const A = dateFromMonthstamp(monthstampA).getTime()
   const B = dateFromMonthstamp(monthstampB).getTime()
   return A > B ? 1 : (A < B ? -1 : 0)
@@ -53,9 +53,9 @@ export function lastDayOfMonth (date: Date): Date {
 const locale = (typeof navigator === 'undefined' && 'en-US') || (navigator.languages ? navigator.languages[0] : navigator.language)
 
 export function humanDate (
-  datems,
-  opts = { month: 'short', day: 'numeric' }
-) {
+  datems: number,
+  opts: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+): string {
   if (!datems) {
     console.error('humanDate:: 1st arg `datems` is required')
     return ''
@@ -63,7 +63,7 @@ export function humanDate (
   return new Date(datems).toLocaleDateString(locale, opts)
 }
 
-export function proximityDate (date: Date): Date {
+export function proximityDate (date: Date): string {
   date = new Date(date)
   const today = new Date()
   const yesterday = (d => new Date(d.setDate(d.getDate() - 1)))(new Date())
@@ -75,14 +75,15 @@ export function proximityDate (date: Date): Date {
     toReset.setSeconds(0, 0)
   }
 
-  let pd = date > lastWeek ? humanDate(date, { month: 'short', day: 'numeric', year: 'numeric' }) : humanDate(date)
+  const datems = Number(date)
+  let pd = date > lastWeek ? humanDate(datems, { month: 'short', day: 'numeric', year: 'numeric' }) : humanDate(datems)
   if (date.getTime() === yesterday.getTime()) pd = L('Yesterday')
   if (date.getTime() === today.getTime()) pd = L('Today')
 
   return pd
 }
 
-export function getTime (date) {
+export function getTime (date: Date): string {
   const t = new Date(date)
   return `${t.getHours()}:${t.getMinutes()}`
 }

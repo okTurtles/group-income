@@ -15,7 +15,7 @@ import { imageUpload } from '@utils/image.js'
 import { merge } from '@utils/giLodash.js'
 import L, { LError } from '@view-utils/translations.js'
 
-export default sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
     name,
     picture,
@@ -186,4 +186,4 @@ export default sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to update voting rules. {codeError}', { codeError: e.message }))
     }
   }
-})
+}): any)

@@ -274,33 +274,33 @@ export const groupA = {
   conversations: {
     c0: [
       {
-        time: new Date(2020, 5, 22, 11, 43, 42),
+        time: (new Date(2020, 5, 22, 11, 43, 42): Date),
         from: '555',
         text: 'Hi 👋'
       },
       {
-        time: new Date(2020, 7, 23, 11, 34, 42),
+        time: (new Date(2020, 7, 23, 11, 34, 42): Date),
         from: '444',
         text: 'It’s missing Sandy'
       },
       {
-        time: new Date(2020, 7, 23, 12, 23, 42),
+        time: (new Date(2020, 7, 23, 12, 23, 42): Date),
         from: '555',
         text: 'Yeah, looking for her username, one second'
       },
       {
-        time: new Date(2020, 7, 23, 12, 45, 42),
+        time: (new Date(2020, 7, 23, 12, 45, 42): Date),
         from: messageTypes.NOTIFICATION,
         id: 'youAddedToDreamersGroup',
         text: 'You are now part of The Dreamers group.'
       },
       {
-        time: new Date(2020, 7, 30, 13, 25, 42),
+        time: (new Date(2020, 7, 30, 13, 25, 42): Date),
         from: '555',
         text: 'Guys, should we add Katty to the group?'
       },
       {
-        time: new Date(2020, 7, 31, 14, 28, 42),
+        time: (new Date(2020, 7, 31, 14, 28, 42): Date),
         from: '000',
         text: 'There’s no problem to me',
         unread: true,
@@ -310,7 +310,7 @@ export const groupA = {
         }
       },
       {
-        time: new Date(2020, 7, 31, 17, 32, 42),
+        time: (new Date(2020, 7, 31, 17, 32, 42): Date),
         from: messageTypes.INTERACTIVE,
         id: 'inviteKattyId',
         unread: true
@@ -318,12 +318,12 @@ export const groupA = {
     ],
     c1: [
       {
-        time: new Date(2020, 7, 30, 17, 32, 42),
+        time: (new Date(2020, 7, 30, 17, 32, 42): Date),
         from: '444',
         text: 'Hi guys'
       },
       {
-        time: new Date(2020, 7, 31, 17, 32, 42),
+        time: (new Date(2020, 7, 31, 17, 32, 42): Date),
         from: '444',
         text: 'Lets know where we\'ll go this summer: 🏕 or 🏂?',
         unread: true

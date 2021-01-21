@@ -4,22 +4,22 @@
 
 import type { JSONObject } from '~/shared/types.js'
 
-export function mapValues (obj: Object, fn: Function, o: Object = {}) {
+export function mapValues (obj: Object, fn: Function, o: Object = {}): any {
   for (const key in obj) { o[key] = fn(obj[key]) }
   return o
 }
 
-export function mapObject (obj: Object, fn: Function) {
+export function mapObject (obj: Object, fn: Function): {[any]: any} {
   return Object.fromEntries(Object.entries(obj).map(fn))
 }
 
-export function pick (o: Object, props: [string]) {
+export function pick (o: Object, props: string[]): {...} {
   const x = {}
   for (const k of props) { x[k] = o[k] }
   return x
 }
 
-export function omit (o: Object, props: [string]) {
+export function omit (o: Object, props: string[]): {...} {
   const x = {}
   for (const k in o) {
     if (!props.includes(k)) {
@@ -29,7 +29,7 @@ export function omit (o: Object, props: [string]) {
   return x
 }
 
-export function cloneDeep (obj: JSONObject) {
+export function cloneDeep (obj: JSONObject): any {
   return JSON.parse(JSON.stringify(obj))
 }
 
@@ -38,7 +38,7 @@ function isMergeableObject (val) {
   return nonNullObject && Object.prototype.toString.call(val) !== '[object RegExp]' && Object.prototype.toString.call(val) !== '[object Date]'
 }
 
-export function merge (obj: Object, src: Object) {
+export function merge (obj: Object, src: Object): any {
   for (const key in src) {
     const clone = isMergeableObject(src[key]) ? cloneDeep(src[key]) : undefined
     if (clone && isMergeableObject(obj[key])) {
@@ -50,22 +50,22 @@ export function merge (obj: Object, src: Object) {
   return obj
 }
 
-export function delay (msec: number) {
+export function delay (msec: number): Promise<void> {
   return new Promise((resolve, reject) => {
     setTimeout(resolve, msec)
   })
 }
 
-export function randomIntFromRange (min: number, max: number) {
+export function randomIntFromRange (min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
-export function randomFromArray (arr: Array) {
+export function randomFromArray (arr: any[]): any {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
 // TODO: maybe a simplified version like this? https://github.com/component/debounce/blob/master/index.js
-export function debounce (func: Function, wait: number, options?: Object) {
+export function debounce (func: Function, wait: number, options?: Object): any {
   if (typeof func !== 'function') {
     throw new TypeError('Invalid Function')
   }
@@ -189,7 +189,7 @@ export function debounce (func: Function, wait: number, options?: Object) {
   return debounced
 }
 
-export function flatten (arr: Array<*>) {
+export function flatten (arr: Array<*>): Array<any> {
   let flat: Array<*> = []
   for (let i = 0; i < arr.length; i++) {
     if (Array.isArray(arr[i])) {
@@ -201,7 +201,7 @@ export function flatten (arr: Array<*>) {
   return flat
 }
 
-export function zip () {
+export function zip (): any[] {
   const arr = Array.prototype.slice.call(arguments)
   const zipped = []
   let max = 0
@@ -215,19 +215,19 @@ export function zip () {
   return zipped
 }
 
-export function uniq (array: Array<*>) {
+export function uniq (array: any[]): any[] {
   return Array.from(new Set(array))
 }
 
-export function union (...arrays) {
+export function union (...arrays: any[][]): any[] {
   return uniq([].concat.apply([], arrays))
 }
 
-export function intersection (a1: Array<*>, ...arrays) {
+export function intersection (a1: any[], ...arrays: any[][]): any[] {
   return uniq(a1).filter(v1 => arrays.every(v2 => v2.indexOf(v1) >= 0))
 }
 
-export function difference (a1: Array<*>, ...arrays) {
+export function difference (a1: any[], ...arrays: any[][]): any[] {
   const a2 = [].concat.apply([], arrays)
   return a1.filter(v => a2.indexOf(v) === -1)
 }

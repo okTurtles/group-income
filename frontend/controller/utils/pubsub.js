@@ -9,7 +9,7 @@ const { ERROR, PUB, SUB, UNSUB } = RESPONSE_TYPE
 // see commentary in ./backend/hapi.js for more info about this file
 export default function (
   { options, url, handlers }: {options: Object, url: string, handlers: Object}
-) {
+): any {
   const primus = new Primus(url, options)
   Object.keys(handlers).forEach(event => primus.on(event, handlers[event]))
   return primus
