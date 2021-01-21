@@ -108,7 +108,7 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('dev', ['checkDependencies', 'backend:relaunch', 'build:watch', 'keepalive'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['build', 'backend:launch', 'exec:test', 'cypress', 'exec:flow'])
+  grunt.registerTask('test', ['build', 'backend:launch', 'exec:test', 'cypress'])
   grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
 
   // TODO: add 'deploy' per:
@@ -125,7 +125,7 @@ module.exports = (grunt) => {
       sbp('backend/pubsub/setup', require('http').createServer(), true)
     }
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', rollup])
+      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'copy', rollup])
     }
   })
 
