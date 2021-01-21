@@ -72,7 +72,7 @@ function floorTo (number): number {
   throw new TypeError('Not a valid number.')
 }
 
-function incomeDistribution (incomes: Array<IncomeObject>, minCome: number) {
+function incomeDistribution (incomes: Array<IncomeObject>, minCome: number): Array<IncomeObject> {
   const incomeLength = incomes.length
 
   if (incomeLength === 1) {

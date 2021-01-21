@@ -21,8 +21,8 @@ if (!fs.existsSync(dataFolder)) {
 
 const production = process.env.NODE_ENV === 'production'
 
-export default sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesSince': async function (contractID: string, hash: string) {
+export default (sbp('sbp/selectors/register', {
+  'backend/db/streamEntriesSince': async function (contractID: string, hash: string): Promise<*> {
     let currentHEAD = await sbp('gi.db/get', sbp('gi.db/log/logHEAD', contractID))
     if (!currentHEAD) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
@@ -31,7 +31,7 @@ export default sbp('sbp/selectors/register', {
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     return new Readable({
-      async read () {
+      async read (): any {
         try {
           const entry = await sbp('gi.db/log/getEntry', currentHEAD)
           const json = `"${strToB64(entry.serialize())}"`
@@ -54,7 +54,7 @@ export default sbp('sbp/selectors/register', {
   // =======================
   // wrapper methods to add / lookup names
   // =======================
-  'backend/db/registerName': async function (name: string, value: string): Promise {
+  'backend/db/registerName': async function (name: string, value: string): Promise<*> {
     const exists = await sbp('backend/db/lookupName', name)
     if (exists) {
       if (!Boom.isBoom(exists)) {
@@ -67,7 +67,7 @@ export default sbp('sbp/selectors/register', {
     await sbp('gi.db/set', namespaceKey(name), value)
     return { name, value }
   },
-  'backend/db/lookupName': async function (name: string): Promise {
+  'backend/db/lookupName': async function (name: string): Promise<*> {
     const value = await sbp('gi.db/get', namespaceKey(name))
     return value || Boom.notFound()
   },
@@ -76,21 +76,21 @@ export default sbp('sbp/selectors/register', {
   //
   // TODO: add encryption
   // =======================
-  'backend/db/readFile': async function (filename: string): Promise {
+  'backend/db/readFile': async function (filename: string): Promise<*> {
     const filepath = throwIfFileOutsideDataDir(filename)
     if (!fs.existsSync(filepath)) {
       return Boom.notFound()
     }
     return await readFileAsync(filepath)
   },
-  'backend/db/writeFile': async function (filename: string, data: any): Promise {
+  'backend/db/writeFile': async function (filename: string, data: any): Promise<*> {
     // TODO: check for how much space we have, and have a server setting
     //       that determines how much of the disk space we're allowed to
     //       use. If the size of the file would cause us to exceed this
     //       amount, throw an exception
     return await writeFileAsync(throwIfFileOutsideDataDir(filename), data)
   },
-  'backend/db/writeFileOnce': async function (filename: string, data: any): Promise {
+  'backend/db/writeFileOnce': async function (filename: string, data: any): Promise<*> {
     const filepath = throwIfFileOutsideDataDir(filename)
     if (fs.existsSync(filepath)) {
       console.warn('writeFileOnce: exists:', filepath)
@@ -98,7 +98,7 @@ export default sbp('sbp/selectors/register', {
     }
     return await writeFileAsync(filepath, data)
   }
-})
+}): any)
 
 function namespaceKey (name: string): string {
   return 'name=' + name

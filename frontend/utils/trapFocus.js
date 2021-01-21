@@ -1,5 +1,5 @@
 const trapFocus = {
-  data () {
+  data (): {|focusableElements: string, focusedElement: null|} {
     return {
       // focusedElement used when $el is not available (ex: the tooltip)
       focusedElement: null,
@@ -9,13 +9,13 @@ const trapFocus = {
     }
   },
   methods: {
-    focusEl (el = this.$el) {
+    focusEl (el: HTMLElement = this.$el) {
       // prepare the element to be focused programmatically
-      el.setAttribute('tabindex', -1)
+      el.setAttribute('tabindex', '-1')
       // ...and focus it for keyboard/screen reader users
       el.focus()
     },
-    trapFocus (e) {
+    trapFocus (e: KeyboardEvent) {
       const el = this.focusedElement || this.$el
       // Trap focus on modal while navigating through clickable elements only
       if (e.key === 'Tab') {

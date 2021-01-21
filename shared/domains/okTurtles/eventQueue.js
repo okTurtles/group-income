@@ -14,9 +14,9 @@ const STATE_PENDING = 0
 const STATE_INVOKING = 1
 const STATE_FINISHED = 2
 
-export default sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   // TODO: define a proper sbpInvocation Flowtype
-  'okTurtles.eventQueue/queueEvent': async function (name: string, sbpInvocation: Array) {
+  'okTurtles.eventQueue/queueEvent': async function (name: string, sbpInvocation: any[]) {
     if (!eventQueues[name]) {
       eventQueues[name] = { events: [] }
     }
@@ -42,4 +42,4 @@ export default sbp('sbp/selectors/register', {
       }
     }
   }
-})
+}): any)

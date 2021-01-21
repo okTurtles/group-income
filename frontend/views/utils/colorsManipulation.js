@@ -4,25 +4,27 @@ export default {
   methods: {
     // Takes colors in hex format (i.e. #F06D06)
     // and lightens or darkens them with a value
-    lightenDarkenColor (col, amt) {
+    lightenDarkenColor (col: string, amt: number): any {
       return this.HSLToHex(...this.hexToHSLDarken(col, amt))
     },
     // Modified version of https://stackoverflow.com/questions/21646738/convert-hex-to-rgba
-    hexToRgbA (hex, alpha) {
+    hexToRgbA (hex: string, alpha: string): string {
       let c
       if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
         c = hex.substring(1).split('')
         if (c.length === 3) {
           c = [c[0], c[0], c[1], c[1], c[2], c[2]]
         }
-        c = '0x' + c.join('')
+        c = Number('0x' + c.join(''))
         return `rgba(${[(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',')},${alpha})`
       }
       throw new Error('Bad Hexa')
     },
     // Modified version of https://gist.github.com/mjackson/5311256
-    HSLToHex (h, s, l) {
-      let r, g, b
+    HSLToHex (h: number, s: number, l: number): string {
+      let r = 0
+      let g = 0
+      let b = 0
       if (s === 0) {
         r = g = b = l // achromatic
       } else {
@@ -47,8 +49,9 @@ export default {
       return `#${toHex(r)}${toHex(g)}${toHex(b)}`
     },
     // Modified version of https://gist.github.com/mjackson/5311256
-    hexToHSLDarken (hex, increase) {
+    hexToHSLDarken (hex: string, increase: number): number[] {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+      if (result === null) return [NaN, NaN, NaN]
       let r = parseInt(result[1], 16)
       let g = parseInt(result[2], 16)
       let b = parseInt(result[3], 16)
@@ -57,8 +60,8 @@ export default {
       b /= 255
       const max = Math.max(r, g, b)
       const min = Math.min(r, g, b)
-      let h
-      let s
+      let h = 0
+      let s = 0
       let l = (max + min) / 2
       if (max === min) {
         h = s = 0 // achromatic

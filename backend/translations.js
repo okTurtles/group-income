@@ -18,7 +18,7 @@ const languageFileMap = new Map([
   ['fr', 'french.json']
 ])
 
-export default sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   'backend/translations/get': async function (language: string): Promise<string> {
     if (language === defaultLanguage) return ''
     const [languageCode] = language.toLowerCase().split('-')
@@ -39,4 +39,4 @@ export default sbp('sbp/selectors/register', {
       )
     }
   }
-})
+}): any)

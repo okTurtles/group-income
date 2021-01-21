@@ -6,26 +6,38 @@
 # - https://flowtype.org/docs/quick-reference.html
 # - https://flowtype.org/docs/objects.html
 # - https://flowtype.org/docs/functions.html
-.*/node_modules/.*
+.*/Gruntfile.js
 .*/dist/.*
-.*/ignored/.*
-.*/historical/.*
 .*/frontend/assets/.*
-.*/frontend/controller/backend/interface.js
+.*/frontend/controller/service-worker.js
 .*/frontend/controller/utils/primus.js
+.*/frontend/utils/blockies.js
 .*/frontend/utils/crypto.js
-.*/frontend/utils/vuexQueue.js
 .*/frontend/utils/flowTyper.js
-# .*/test/backend.js
+.*/frontend/utils/vuexQueue.js
+.*/historical/.*
+.*/ignored/.*
+.*/node_modules/.*
+.*/scripts/.*
+.*/test/backend.js
+.*/test/.*
 .*/test/frontend.js
 .*.test.js
 
 [libs]
-shared/declarations.js
+./shared/declarations.js
 
 [options]
-module.ignore_non_literal_requires=true
 all=true
+# experimental.const_params=true
+emoji=true
+module.ignore_non_literal_requires=true
 
 # https://github.com/entwicklerstube/babel-plugin-root-import#dont-let-flow-be-confused
 module.name_mapper='^~/\(.*\)$' -> '<PROJECT_ROOT>/\1'
+module.name_mapper='^@components/\(.*\)$' -> '<PROJECT_ROOT>/frontend/views/components/\1'
+module.name_mapper='^@model/\(.*\)$' -> '<PROJECT_ROOT>/frontend/model/\1'
+module.name_mapper='^@pages/\(.*\)$' -> '<PROJECT_ROOT>/frontend/views/pages/\1'
+module.name_mapper='^@utils/\(.*\)$' -> '<PROJECT_ROOT>/frontend/utils/\1'
+module.name_mapper='^@views/\(.*\)$' -> '<PROJECT_ROOT>/frontend/views/\1'
+module.name_mapper='^@view-utils/\(.*\)$' -> '<PROJECT_ROOT>/frontend/views/utils/\1'

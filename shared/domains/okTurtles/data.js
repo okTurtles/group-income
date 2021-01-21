@@ -8,7 +8,7 @@ import sbp from '~/shared/sbp.js'
 
 const _store = new Map()
 
-export default sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   'okTurtles.data/get': function (key: any): any {
     return _store.get(key)
   },
@@ -39,4 +39,4 @@ export default sbp('sbp/selectors/register', {
   'okTurtles.data/apply': function (key: any, fn: Function) {
     return fn(_store.get(key))
   }
-})
+}): string[])

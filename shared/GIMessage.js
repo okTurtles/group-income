@@ -1,4 +1,5 @@
 'use strict'
+
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/data.js'
 import { blake32Hash } from './functions.js'
@@ -6,7 +7,7 @@ import type { JSONType, JSONObject } from './types.js'
 
 export type GIKeyType = { type: string; key: string }
 // Allows server to check if the user is allowed to register this type of contract
-export type GIOpContract = { type: string; authkey: GIKeyType, parentContract: string }
+export type GIOpContract = { type: string; authkey: GIKeyType, parentContract?: string }
 export type GIOpAction = string // encrypted version of GIOpPubAction
 // TODO: rename 'type' to 'selector' below:
 export type GIOpPubAction = { type: string; data: JSONType; meta: JSONObject }
@@ -24,28 +25,28 @@ sbp('okTurtles.data/set', 'CHELONIA_CONFIG', {
 })
 
 export class GIMessage {
-  // flow type annoations to make flow happy
+  // flow type annotations to make flow happy
+  _decrypted: GIOpValue
+  _mapping: Object
   _message: Object
 
-  _mapping: Object
-
-  static OP_CONTRACT = 'c'
-  static OP_ACTION_ENCRYPTED = 'ae' // e2e-encrypted action
-  static OP_ACTION_UNENCRYPTED = 'au' // publicly readable action
-  static OP_KEY_AUTH = 'ka' // add this key to the list of keys allowed to write to this contract
-  static OP_KEY_UPDATE = 'ku' // update a key's context
-  static OP_KEY_DEAUTH = 'kd' // remove this key from authorized keys
-  static OP_PROTOCOL_UPGRADE = 'pu'
-  static OP_PROP_SET = 'ps' // set a public key/value pair
-  static OP_PROP_DEL = 'pd' // delete a public key/value pair
+  static OP_CONTRACT: 'c' = 'c'
+  static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
+  static OP_ACTION_UNENCRYPTED: 'au' = 'au' // publicly readable action
+  static OP_KEY_AUTH: 'ka' = 'ka' // add this key to the list of keys allowed to write to this contract
+  static OP_KEY_UPDATE: 'ku' = 'ku' // update a key's context
+  static OP_KEY_DEAUTH: 'kd' = 'kd' // remove this key from authorized keys
+  static OP_PROTOCOL_UPGRADE: 'pu' = 'pu'
+  static OP_PROP_SET: 'ps' = 'ps' // set a public key/value pair
+  static OP_PROP_DEL: 'pd' = 'pd' // delete a public key/value pair
 
   // eslint-disable-next-line camelcase
   static createV1_0 (
-    contractID: ?string = null,
-    previousHEAD: ?string = null,
+    contractID: string | null = null,
+    previousHEAD: string | null = null,
     op: GIOp,
-    signatureFn: ?Function = defaultSignatureFn
-  ) {
+    signatureFn?: Function = defaultSignatureFn
+  ): this {
     const instance = new this()
     instance._message = {
       version: 1.00,
@@ -73,7 +74,7 @@ export class GIMessage {
     return instance
   }
 
-  static deserialize (value: string) {
+  static deserialize (value: string): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const instance = new this()
     instance._mapping = { key: blake32Hash(value), value }
@@ -81,9 +82,13 @@ export class GIMessage {
     return instance
   }
 
-  decryptedValue (fn: ?Function): any {
+  decryptedValue (fn?: Function): any {
     if (!this._decrypted) {
-      this._decrypted = this.opType() === GIMessage.OP_ACTION_ENCRYPTED ? fn(this.opValue()) : this.opValue()
+      this._decrypted = (
+        this.opType() === GIMessage.OP_ACTION_ENCRYPTED && fn !== undefined
+          ? fn(this.opValue())
+          : this.opValue()
+      )
     }
     return this._decrypted
   }
@@ -100,9 +105,15 @@ export class GIMessage {
     const type = this.opType()
     let desc = `<op_${type}`
     if (type === GIMessage.OP_ACTION_ENCRYPTED && this._decrypted) {
-      desc += `|${this._decrypted.type}`
+      const { _decrypted } = this
+      if (typeof _decrypted.type === 'string') {
+        desc += `|${_decrypted.type}`
+      }
     } else if (type === GIMessage.OP_ACTION_UNENCRYPTED) {
-      desc += `|${this.opValue().type}`
+      const value = this.opValue()
+      if (typeof value.type === 'string') {
+        desc += `|${value.type}`
+      }
     }
     return `${desc}|${this.hash()} of ${this.contractID()}>`
   }
@@ -116,6 +127,10 @@ export class GIMessage {
   hash (): string { return this._mapping.key }
 }
 
+const notImplemented = (v) => {
+  throw new Error(`chelonia: action not implemented: ${v.type}.`)
+}
+
 sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
   'chelonia/message/process': function (message: GIMessage, state: Object) {
@@ -125,18 +140,18 @@ sbp('sbp/selectors/register', {
     const contractID = message.contractID()
     const config = sbp('okTurtles.data/get', 'CHELONIA_CONFIG')
     if (!state._vm) state._vm = {}
-    const opFns = {
-      [GIMessage.OP_CONTRACT] (v) {
+    const opFns: { [GIOpType]: (any) => void } = {
+      [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
         state._vm.authorizedKeys.push({ key: v.authkey, context: 'owner' })
       },
-      [GIMessage.OP_ACTION_ENCRYPTED] (v) {
+      [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpAction) {
         if (!config.skipActionProcessing) {
           const decrypted = message.decryptedValue(config.decryptFn)
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
         }
       },
-      [GIMessage.OP_ACTION_UNENCRYPTED] (v) {
+      [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpPubAction) {
         if (!config.skipActionProcessing) {
           const { data, meta, type } = v
           if (!config.whitelisted(type)) {
@@ -145,14 +160,18 @@ sbp('sbp/selectors/register', {
           sbp(type, { data, meta, hash, contractID }, state)
         }
       },
-      [GIMessage.OP_PROP_SET] (v) {
+      [GIMessage.OP_PROP_DEL]: notImplemented,
+      [GIMessage.OP_PROP_SET] (v: GIOpPropSet) {
         if (!state._vm.props) state._vm.props = {}
         state._vm.props[v.key] = v.value
       },
-      [GIMessage.OP_KEY_AUTH] (v) {
+      [GIMessage.OP_KEY_AUTH] (v: GIOpKeyAuth) {
         if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
         state._vm.authorizedKeys.push(v)
-      }
+      },
+      [GIMessage.OP_KEY_DEAUTH]: notImplemented,
+      [GIMessage.OP_KEY_UPDATE]: notImplemented,
+      [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
     }
     let processOp = true
     if (config.preOp) {

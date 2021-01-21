@@ -96,7 +96,7 @@ String with Vue components inside:
   ) Invite {count} members to the party!
 */
 
-export function LTags (...tags) {
+export function LTags (...tags: string[]): {|br_: string|} {
   const o = {
     'br_': '<br/>'
   }
@@ -110,11 +110,11 @@ export function LTags (...tags) {
 export default function L (
   key: string,
   args: Array<*> | Object | void
-) {
+): string {
   return template(currentTranslationTable[key] || key, args)
 }
 
-export function LError (error) {
+export function LError (error: Error): {|reportError: any|} {
   return {
     reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', {
       errorMsg: error.message,

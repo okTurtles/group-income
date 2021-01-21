@@ -110,7 +110,7 @@ sbp('sbp/selectors/register', {
         }
       })
       if (r.ok) {
-        return r['text']()
+        return r.text()
       }
       if (r.status === 409) {
         if (attempt + 1 > maxAttempts) {

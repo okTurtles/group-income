@@ -18,7 +18,7 @@ const modaMixins = {
       default: false
     }
   },
-  data () {
+  data (): {|modalIsActive: boolean|} {
     return {
       modalIsActive: true
     }
@@ -34,10 +34,10 @@ const modaMixins = {
     ModalClose
   },
   methods: {
-    ...mapMutations([
+    ...(mapMutations([
       'setTemporaryReducedMotion'
-    ]),
-    close (e) {
+    ]): any),
+    close (e: any) {
       this.modalIsActive = false
     },
     unload () {

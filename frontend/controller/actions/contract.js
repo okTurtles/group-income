@@ -1,15 +1,15 @@
 import sbp from '~/shared/sbp.js'
 import { CONTRACT_IS_SYNCING } from '@utils/events.js'
 
-export default sbp('sbp/selectors/register', {
-  'gi.actions/contract/sync': async function (contractIDs: string | array) {
+export default (sbp('sbp/selectors/register', {
+  'gi.actions/contract/sync': async function (contractIDs: string | string[]) {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
 
     for (const id of listOfIds) {
       await sbp('state/enqueueContractSync', id)
     }
   },
-  'gi.actions/contract/syncAndWait': function (contractIDs: string | array) {
+  'gi.actions/contract/syncAndWait': function (contractIDs: string | string[]) {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
 
     const promises = listOfIds.map(id => new Promise((resolve, reject) => {
@@ -25,4 +25,4 @@ export default sbp('sbp/selectors/register', {
 
     return Promise.all(promises)
   }
-})
+}): any)

@@ -19,17 +19,17 @@ import {
   // STATUS_CANCELLED
 } from './constants.js'
 
-export function archiveProposal (state, proposalHash) {
+export function archiveProposal (state: Object, proposalHash: string): void {
   // TODO: handle this better (archive the proposal or whatever)
   console.warn('archiveProposal is not fully implemented yet...')
   // Vue.delete(state.proposals, proposalHash)
 }
 
-export function buildInvitationUrl (groupId, inviteSecret) {
+export function buildInvitationUrl (groupId: string, inviteSecret: string): string {
   return `${location.origin}/app/join?groupId=${groupId}&secret=${inviteSecret}`
 }
 
-export const proposalSettingsType = objectOf({
+export const proposalSettingsType: any = objectOf({
   rule: ruleType,
   expires_ms: number,
   ruleSettings: objectOf({
@@ -39,7 +39,7 @@ export const proposalSettingsType = objectOf({
 })
 
 // returns true IF a single YES vote is required to pass the proposal
-export function oneVoteToPass (proposalHash) {
+export function oneVoteToPass (proposalHash: string): boolean {
   const rootState = sbp('state/vuex/state')
   const state = rootState[rootState.currentGroupId]
   const proposal = state.proposals[proposalHash]
@@ -51,7 +51,7 @@ export function oneVoteToPass (proposalHash) {
   return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
 }
 
-function voteAgainst (state, { meta, data, contractID }) {
+function voteAgainst (state: any, { meta, data, contractID }: any) {
   const { proposalHash } = data
   const proposal = state.proposals[proposalHash]
   proposal.status = STATUS_FAILED
@@ -64,13 +64,13 @@ function voteAgainst (state, { meta, data, contractID }) {
 export const proposalDefaults = {
   rule: RULE_PERCENTAGE,
   expires_ms: 14 * DAYS_MILLIS,
-  ruleSettings: {
+  ruleSettings: ({
     [RULE_PERCENTAGE]: { threshold: 0.75 },
     [RULE_DISAGREEMENT]: { threshold: 1 }
-  }
+  }: {|disagreement: {|threshold: number|}, percentage: {|threshold: number|}|})
 }
 
-const proposals = {
+const proposals: Object = {
   [PROPOSAL_INVITE_MEMBER]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data, contractID }) {
@@ -177,4 +177,4 @@ const proposals = {
 
 export default proposals
 
-export const proposalType = unionOf(...Object.keys(proposals).map(k => literalOf(k)))
+export const proposalType: any = unionOf(...Object.keys(proposals).map(k => literalOf(k)))

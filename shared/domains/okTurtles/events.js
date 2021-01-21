@@ -9,7 +9,7 @@ import './data.js'
 
 const listenKey = evt => `events/${evt}/listeners`
 
-export default sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   'okTurtles.events/on': function (event: string, handler: Function) {
     sbp('okTurtles.data/add', listenKey(event), handler)
   },
@@ -33,4 +33,4 @@ export default sbp('sbp/selectors/register', {
       sbp('okTurtles.data/delete', listenKey(event))
     }
   }
-})
+}): any)

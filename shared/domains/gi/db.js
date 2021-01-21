@@ -12,7 +12,7 @@ import { GIMessage } from '~/shared/GIMessage.js'
 export class ErrorDBBadPreviousHEAD extends Error {
   // ugly boilerplate because JavaScript is stupid
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
-  constructor (...params) {
+  constructor (...params: any[]) {
     super(...params)
     this.name = this.constructor.name
     if (Error.captureStackTrace) {
@@ -21,7 +21,7 @@ export class ErrorDBBadPreviousHEAD extends Error {
   }
 }
 export class ErrorDBConnection extends Error {
-  constructor (...params) {
+  constructor (...params: any[]) {
     super(...params)
     this.name = this.constructor.name
     if (Error.captureStackTrace) {
@@ -30,11 +30,11 @@ export class ErrorDBConnection extends Error {
   }
 }
 
-export default sbp('sbp/selectors/register', {
-  'gi.db/get': function (key: string): Promise {
+export default (sbp('sbp/selectors/register', {
+  'gi.db/get': function (key: string): Promise<*> {
     return Promise.resolve(sbp('okTurtles.data/get', key))
   },
-  'gi.db/set': function (key: string, value: string): Promise {
+  'gi.db/set': function (key: string, value: string): Promise<void> {
     return Promise.resolve(sbp('okTurtles.data/set', key, value))
   },
   'gi.db/log/logHEAD': function (contractID: string): string {
@@ -84,4 +84,4 @@ export default sbp('sbp/selectors/register', {
       throw new ErrorDBConnection(`${e.name} during lastEntry: ${e.message}`)
     }
   }
-})
+}): any)

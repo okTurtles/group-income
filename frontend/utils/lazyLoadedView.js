@@ -16,7 +16,9 @@ these, you must either use route-level guards instead or lazy-load the component
 handling loading state.
 */
 
-const lazyLoadView = ({ component, loading = LoadingPage, error = ErrorPage }) => {
+const lazyLoadView = (
+  { component, loading = LoadingPage, error = ErrorPage }: Object
+): Promise<Object> => {
   const AsyncHandler = () => ({ component, loading, error })
 
   return Promise.resolve({

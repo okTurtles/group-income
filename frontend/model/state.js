@@ -3,6 +3,8 @@
 // This file handles application-level state (as opposed to component-level
 // state) per: http://vuex.vuejs.org/en/intro.html
 
+import type { GIOpContract } from '~/shared/GIMessage.js'
+
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
@@ -34,7 +36,7 @@ Vue.use(Vuex)
 // we have it declared here to make it accessible in mutations
 // 'state' is the Vuex state object, and it can only store JSON-like data
 let dropAllMessagesUntilRefresh = false
-let attemptToReprocessMessageID
+let attemptToReprocessMessageID = ''
 const contractIsSyncing: {[string]: boolean} = {}
 
 let defaultTheme = THEME_LIGHT
@@ -758,7 +760,7 @@ const actions = {
 
       if (attemptToReprocessMessageID === message.hash()) {
         console.warn(`Successfully re-processed ${attemptToReprocessMessageID}!`)
-        attemptToReprocessMessageID = null
+        attemptToReprocessMessageID = ''
       }
     } catch (e) {
       // For details about the rationale for how error handling works here see these links:
@@ -865,7 +867,9 @@ const handleEvent = {
       const contractID = message.contractID()
       const hash = message.hash()
       if (message.isFirstMessage()) {
-        const { type } = message.opValue()
+        // Flow doesn't understand that a first message must be a contract,
+        // so we have to help it a bit in order to acces the 'type' property.
+        const { type } = ((message.opValue(): any): GIOpContract)
         store.commit('registerContract', { contractID, type })
       }
       store.commit(`${contractID}/processMessage`, { message })
@@ -947,6 +951,7 @@ const handleEvent = {
         console.warn(`skipping autoBanSenderOfMessage since we're syncing ${contractID}`)
         return // don't do anything, assume the existing users handled this event
       }
+      // $FlowFixMe[prop-missing]
       const username = message.meta().username
       // TODO: this code below doesn't make any sense, we shouldn't
       //       leave the group just because we banned someone.
@@ -1018,7 +1023,7 @@ const handleEvent = {
   }
 }
 
-const store = new Vuex.Store({
+const store: any = new Vuex.Store({
   state: _.cloneDeep(initialState),
   mutations,
   getters,
