@@ -95,7 +95,7 @@ module.exports = (grunt) => {
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss,vue}"',
-      flow: '"./node_modules/.bin/flow"'
+      flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!'
     },
 
     clean: { dist: [`${distDir}/*`] }
