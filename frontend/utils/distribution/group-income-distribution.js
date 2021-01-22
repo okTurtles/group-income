@@ -114,7 +114,6 @@ function distibuteFromHavesToNeeds ({ haves, needs }) {
   }
   return payments
 }
-
 export default function groupIncomeDistribution ({ getters, monthstamp, adjusted }) {
   const groupProfiles = getters.groupProfiles
   const mincomeAmount = getters.groupSettings.mincomeAmount
@@ -133,6 +132,7 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
     } else if (incomeDetailsType === 'pledgeAmount') {
       haves.push({ name: username, have: profile.pledgeAmount })
     }
+    haves.percent = 0
   }
   /// Adjust haves/needs if `adjusted = true`
   if (adjusted) {
