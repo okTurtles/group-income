@@ -49,8 +49,10 @@ import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import currencies from '@view-utils/currencies.js'
-import groupIncomeDistribution from '@utils/distribution/group-income-distribution.js'
 import { currentMonthstamp } from '@utils/time.js'
+// import distributeIncome from '@utils/distribution/mincome-default.js'
+// import distributeIncome from '@utils/distribution/mincome-proportional.js'
+import groupIncomeDistribution from '@utils/distribution/group-income-distribution.js'
 
 export default {
   name: 'GroupPledgesGraph',
@@ -74,7 +76,7 @@ export default {
       'groupSettings',
       'groupProfiles',
       'currentGroupState',
-      'monthlyPayments',
+      'groupMonthlyPayments',
       'groupMembersCount',
       'ourIdentityContractId',
       'ourUsername'
@@ -118,11 +120,15 @@ export default {
       if (!doWePledge && neededPledges > 0) {
         incomeDistribution.push({ name: this.ourUsername, amount: ourIncomeAmount })
 
+        // ourIncomeToReceive = distributeIncome(incomeDistribution, mincome)
+        //   .filter(i => i.to === this.ourUsername)
+        //   .reduce((acc, cur) => cur.amount + acc, 0)
+
         ourIncomeToReceive = groupIncomeDistribution({
           groupProfiles: this.groupProfiles,
           groupSettings: this.groupSettings,
           currentGroupState: this.currentGroupState,
-          monthlyPayments: this.monthlyPayments
+          monthlyPayments: this.groupMonthlyPayments
         }, currentMonthstamp, true).haves.filter(i => i.to === this.ourUsername)
           .filter(i => i.to === this.ourUsername)
           .reduce((acc, cur) => cur.amount + acc, 0)
