@@ -125,12 +125,15 @@ export default {
         //   .reduce((acc, cur) => cur.amount + acc, 0)
 
         ourIncomeToReceive = groupIncomeDistribution({
-          groupProfiles: this.groupProfiles,
-          groupSettings: this.groupSettings,
-          currentGroupState: this.currentGroupState,
-          monthlyPayments: this.groupMonthlyPayments
-        }, currentMonthstamp, true).haves.filter(i => i.to === this.ourUsername)
-          .filter(i => i.to === this.ourUsername)
+          getters: {
+            groupProfiles: this.groupProfiles,
+            groupSettings: this.groupSettings,
+            currentGroupState: this.currentGroupState,
+            monthlyPayments: this.groupMonthlyPayments
+          },
+          monthstamp: currentMonthstamp,
+          adjusted: true
+        }).filter(i => i.to === this.ourUsername)
           .reduce((acc, cur) => cur.amount + acc, 0)
       }
 
