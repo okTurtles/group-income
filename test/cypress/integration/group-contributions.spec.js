@@ -440,13 +440,13 @@ describe('Contributions', () => {
     })
   })
 
-  it('user3 pledges $100 and sees who they are pledging to - $50 to user1 (Greg)', () => {
+  it('user3 pledges $100 and sees who they are pledging to - $25 to user1 (Greg)', () => {
     cy.giSwitchUser(`user3-${userId}`)
     const graphicLegend = [
       'Total Pledged$200',
       'Needed Pledges$0'
     ]
-    updateIncome(100, false, graphicLegend, '$50 to Greg')
+    updateIncome(100, false, graphicLegend, '$25 to Greg')
   })
 
   it('user4 and user2 increase their pledges to $500 each. user1 sees the receiving contributions from 3 members.', () => {
@@ -456,7 +456,7 @@ describe('Contributions', () => {
       'Needed Pledges$0',
       'Surplus$600'
     ]
-    updateIncome(500, false, graphicLegend4, '$71.43 to Greg')
+    updateIncome(500, false, graphicLegend4, '$52.48 to Greg')
     addNonMonetaryContribution('Korean classes')
 
     cy.giSwitchUser(`user2-${userId}`)
@@ -470,12 +470,12 @@ describe('Contributions', () => {
     cy.giSwitchUser(`user1-${userId}`)
 
     cy.getByDT('contributionsLink').click()
-    cy.get(elReceivingFirst).should('contain', '$100 from 3 members')
+    cy.get(elReceivingFirst).should('contain', '$72.95 from 3 members')
 
     assertContributionsWidget({
       paymentsSummary: ' ', // TODO - just confirm it exists for now.
       monetaryTitle: 'You need $100',
-      monetaryStatus: 'You will receive $100.',
+      monetaryStatus: 'You will receive $72.95.',
       nonMonetaryStatus: 'You and 2 other members are contributing.'
     })
   })
@@ -488,13 +488,12 @@ describe('Contributions', () => {
       'Surplus$310',
       "You'll receive$190"
     ]
-    updateIncome(10, true, graphicLegend4, '$190 from Margarida and Pierre')
+    updateIncome(10, true, graphicLegend4, '$163.61 from Margarida and Pierre')
 
     cy.giSwitchUser(`user2-${userId}`)
     const graphicLegend2 = [
       'Total Pledged$100',
-      'Needed Pledges$380',
-      "You'll receive$39.58"
+      'Needed Pledges$380'
     ]
     updateIncome(10, true, graphicLegend2, '$39.58 from Pierre')
 
