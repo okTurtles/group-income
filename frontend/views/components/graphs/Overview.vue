@@ -47,13 +47,13 @@ export default {
     ...mapGetters([
       'groupProfiles',
       'groupSettings',
-      'groupIncomeDistribution'
+      'groupIncomeAdjustedDistributionForMonth'
     ]),
     mincome () {
       return this.groupSettings.mincomeAmount
     },
     distribution () {
-      return this.groupIncomeDistribution
+      return this.groupIncomeAdjustedDistributionForMonth
     },
     // Extract members incomes
     members () {
