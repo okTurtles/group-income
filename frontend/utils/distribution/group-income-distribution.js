@@ -118,7 +118,7 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
   const groupProfiles = getters.groupProfiles
   const mincomeAmount = getters.groupSettings.mincomeAmount
   const allPayments = getters.currentGroupState.payments
-  const thisMonthPayments = getters.monthlyPayments ? getters.monthlyPayments[monthstamp] : null
+  const thisMonthPayments = getters.groupMonthlyPayments ? getters.groupMonthlyPayments[monthstamp] : null
   const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
 
   const haves = []

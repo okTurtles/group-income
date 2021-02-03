@@ -397,37 +397,10 @@ const getters = {
       return payments
     })()
     const todo = (() => {
-      const payments = []
+      const adjusted = getters.groupIncomeAdjustedDistributionForMonth(cMonthstamp).filter(p => p.from === ourUsername)
       const unadjusted = getters.groupIncomeDistribution.filter(p => p.from === ourUsername)
-
-      for (const p of getters.groupIncomeAdjustedDistribution) {
-        if (p.from === ourUsername) {
-          const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
-          const amount = +currency.displayWithoutCurrency(p.amount)
-          const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
-
-          if (amount > 0) {
-            const partialAmount = existingAmount - amount
-            const existingPayment = {}
-            if (partialAmount > 0) {
-              // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
-              const sentPartial = sent.find((s) => s.username === p.to && s.amount === partialAmount)
-              if (sentPartial) {
-                existingPayment.hash = sentPartial.hash
-              }
-            }
-
-            payments.push({
-              ...existingPayment,
-              ...p,
-              total: existingAmount,
-              partial: partialAmount > 0,
-              dueIn
-            })
-          }
-        }
-      }
-      return payments
+      const totals = unadjusted.reduce((acc, p) => { return acc + p.amount }, 0)
+      return adjusted.map((p, i) => { return { ...p, total: totals[i], partial: p.amount > 0 && totals[i] > p.amount, dueIn } })
     })()
     const late = (() => {
       const currentDistribution = getters.groupIncomeAdjustedDistribution
@@ -544,12 +517,15 @@ const getters = {
         toBeReceived: toBeReceived.map(p => p.from),
         received: received.map(p => p.meta.username)
       }
+      const totalReceivable = getters.groupIncomeDistribution.filter((payment) => payment.to === getters.ourUsername).reduce((acc, payment) => {
+        return acc + payment.amount
+      }, 0)
       return {
-        paymentsDone: getUniqPCount(pByUser.received) - pPartials,
-        hasPartials: pPartials > 0,
         paymentsTotal: getUniqPCount([...pByUser.toBeReceived, ...pByUser.received]),
-        amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
-        amountTotal: toBeReceived.reduce((total, p) => total + p.amount, 0) + received.reduce((total, p) => total + p.data.amount, 0)
+        paymentsDone: getUniqPCount(pByUser.received),
+        hasPartials: pPartials > 0,
+        amountTotal: totalReceivable,
+        amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0)
       }
     } else {
       const sentCompleted = sent.filter(isCompleted)
@@ -558,12 +534,15 @@ const getters = {
         todo: todo.map(p => p.to),
         sent: sent.map(p => p.data.toUser)
       }
+      const totalReceivable = getters.groupIncomeDistribution.filter((payment) => payment.from === getters.ourUsername).reduce((acc, payment) => {
+        return acc + payment.amount
+      }, 0)
       return {
+        paymentsTotal: getUniqPCount([...pByUser.todo, ...pByUser.sent]),
         paymentsDone: getUniqPCount(pByUser.sent) - pPartials,
         hasPartials: pPartials > 0,
-        paymentsTotal: getUniqPCount([...pByUser.todo, ...pByUser.sent]),
-        amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),
-        amountTotal: todo.reduce((total, p) => total + p.amount, 0) + sent.reduce((total, p) => total + p.data.amount, 0)
+        amountTotal: totalReceivable,
+        amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0)
       }
     }
   },

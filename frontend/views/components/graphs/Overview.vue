@@ -60,7 +60,8 @@ export default {
       // Create object that contain what people need / pledge and what people receive / give
       let list = {}
       // TODO: cleanup/improve this code
-      if (this.distribution.length === 0) {
+      const dist = this.distribution()
+      if (dist.length === 0) {
         Object.keys(this.groupProfiles).forEach(username => {
           const profile = this.groupProfiles[username]
           if (profile.incomeDetailsType) {
@@ -71,7 +72,7 @@ export default {
           }
         })
       } else {
-        this.distribution.forEach(distribution => {
+        dist.forEach(distribution => {
           list = this.addToList(list, distribution.from, distribution.amount)
           list = this.addToList(list, distribution.to, -distribution.amount)
         })

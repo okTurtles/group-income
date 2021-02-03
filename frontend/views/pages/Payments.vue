@@ -222,7 +222,6 @@ export default {
     paymentsTodo () {
       const payments = []
       const sentPayments = this.paymentsSent
-
       for (const payment of this.ourPayments.todo) {
         payments.push({
           hash: payment.hash,

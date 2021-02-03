@@ -99,7 +99,7 @@ describe('Group Payments', () => {
     ])
 
     cy.log('assert payments table is correct')
-    assertNavTabs(['Todo1', 'Sent'])
+    assertNavTabs(['Todo2', 'Sent'])
     cy.getByDT('link-PaymentRowSent').click()
     cy.getByDT('payList').find('tbody').children().should('have.length', 1)
     cy.getByDT('payList').within(() => {
