@@ -238,6 +238,7 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
   })
 }
 function getCombinations (arr, n) {
+  arr = JSON.parse(JSON.stringify(arr))
   let i; let j; let k; let elem; const l = arr.length; let childperm; const ret = []
   if (n === 1) {
     for (i = 0; i < arr.length; i++) {
@@ -346,6 +347,7 @@ function calculate (members, tolerance = 1E-24) {
 * @return List of Hashmaps encoding transactions
 */
 function basicDebts (members, tolerance) {
+  console.log(members)
   const debts = []
   let resolvedMembers = 0
   while (resolvedMembers !== members.length) {
@@ -361,8 +363,8 @@ function basicDebts (members, tolerance) {
       continue
     }
 
-    const senderShouldSend = Math.abs(sender.balance * recipient.percent)
-    const recipientShouldReceive = Math.abs(recipient.balance * sender.percent)
+    const senderShouldSend = Math.min(Math.abs(sender.balance * recipient.percent), Math.abs(sender.balance * sender.percent))
+    const recipientShouldReceive = Math.min(Math.abs(recipient.balance * sender.percent), Math.abs(recipient.balance * recipient.percent))
 
     let amount = 0
     if (senderShouldSend > recipientShouldReceive) {
