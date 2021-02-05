@@ -84,10 +84,10 @@ function foldParameters({getters, monthstamp, adjusted}, print = false)
 function distibuteFromHavesToNeeds ({ haves, needs }, { alreadyReceived, alreadySent }, adjusted, totalHave, totalNeed) {
   const pseudoBalances = []
   for (const h of haves) {
-    pseudoBalances.push({ name: h.name, balance: h.have - (adjusted && alreadySent[h.name] ? alreadySent[h.name] : 0), percent:h.percent})
+    pseudoBalances.push({ name: h.name, balance: h.have - (adjusted && alreadySent[h.name] ? alreadySent[h.name] : 0), percent: h.percent })
   }
   for (const n of needs) {
-    pseudoBalances.push({ name: n.name, balance: -n.need + (adjusted && alreadyReceived[n.name] ? alreadyReceived[n.name] : 0), percent:n.percent })
+    pseudoBalances.push({ name: n.name, balance: -n.need + (adjusted && alreadyReceived[n.name] ? alreadyReceived[n.name] : 0), percent: n.percent })
   }
 
   console.log(pseudoBalances)
@@ -189,23 +189,18 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
   }
   /// pass the haves and needs to distributeFromHavesToNeeds
   const dist = distibuteFromHavesToNeeds({ haves, needs }, { alreadyReceived, alreadySent }, adjusted, totalHave, totalNeed)
-  
-  
-  // const stringArray = dist.map(JSON.stringify); 
-  // const uniqueSet = new Set(stringArray); 
-  // const finalDist = Array.from(uniqueSet).map(JSON.parse); 
 
-  
+  // const stringArray = dist.map(JSON.stringify);
+  // const uniqueSet = new Set(stringArray);
+  // const finalDist = Array.from(uniqueSet).map(JSON.parse);
+
   const finalDist = []
 
-  for (let i = 0; i < dist.length; i++)
-  {
+  for (let i = 0; i < dist.length; i++) {
     const first = dist[i]
-    for (let j = i+1; j < dist.length; j++)
-    {
+    for (let j = i + 1; j < dist.length; j++) {
       const second = dist[j]
-      if(first.from === second.from && first.to === second.to)
-      {
+      if (first.from === second.from && first.to === second.to) {
         first.amount += second.amount
         second.amount = 0
       }
@@ -337,8 +332,8 @@ function calculate (members, tolerance = 1E-24) {
   // deal with what is left after removing n- pairs
   const values = basicDebts(validMembers, tolerance)
   const finalResults = []
-  for(const r of results) { finalResults.push(r) }
-  for(const v of values) { finalResults.push(v) }
+  for (const r of results) { finalResults.push(r) }
+  for (const v of values) { finalResults.push(v) }
   return finalResults
 }
 /**
@@ -351,24 +346,23 @@ function calculate (members, tolerance = 1E-24) {
 * @return List of Hashmaps encoding transactions
 */
 function basicDebts (members, tolerance) {
-  let debts = []
+  const debts = []
   let resolvedMembers = 0
   while (resolvedMembers !== members.length) {
     // transaction is from lowes balance to highest balance
     members = members.sort((a, b) => {
-      return  b.balance - a.balance
+      return b.balance - a.balance
     })
     const sender = members[0]
     const recipient = members[members.length - 1]
 
-    if(sender.balance < 0 && recipient.balance < 0)
-    {
+    if (sender.balance < 0 && recipient.balance < 0) {
       resolvedMembers++
       continue
     }
 
-    const senderShouldSend = Math.abs(sender.balance*recipient.percent)
-    const recipientShouldReceive = Math.abs(recipient.balance*sender.percent)
+    const senderShouldSend = Math.abs(sender.balance * recipient.percent)
+    const recipientShouldReceive = Math.abs(recipient.balance * sender.percent)
 
     let amount = 0
     if (senderShouldSend > recipientShouldReceive) {
