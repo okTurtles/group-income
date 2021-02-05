@@ -12,12 +12,12 @@
         .c-status(v-else data-test='paymentsSummary')
           .c-pSummary
             h3.is-title-4 {{ pSummary.title }}
-            p.c-pSummary-status(:class='{"has-text-success": pSummary.max === pSummary.value}')
-              i.icon-check.is-prefix(v-if='pSummary.max === pSummary.value')
+            p.c-pSummary-status(:class='{"has-text-success": pSummary.max === pSummary.value - pSummary.partialCount}')
+              i.icon-check.is-prefix(v-if='pSummary.max === pSummary.value - pSummary.partialCount')
               span.has-text-1 {{ pSummary.label }}
           progress-bar.c-progress(
             :max='pSummary.max'
-            :value='pSummary.value'
+            :value='pSummary.value - pSummary.partialCount'
             :hasMarks='pSummary.hasMarks'
           )
 
@@ -150,17 +150,18 @@ export default {
       return copy
     },
     pSummary () {
-      const { paymentsTotal, paymentsDone, hasPartials } = this.ourPaymentsSummary
+      const { paymentsTotal, paymentsDone, partialCount } = this.ourPaymentsSummary
 
       return {
         title: this.ourGroupProfile.incomeDetailsType === 'incomeAmount' ? L('Payments received') : L('Payments sent'),
-        value: paymentsDone,
+        value: paymentsDone - partialCount,
         max: paymentsTotal,
-        hasMarks: true,
-        hasPartials,
+        hasMarks: partialCount > 0,
+        partialCount,
         label: L('{value} out of {max}', {
-          value: paymentsDone,
-          max: paymentsTotal
+          value: paymentsDone - partialCount,
+          max: paymentsTotal,
+          partialCount
         })
       }
     }

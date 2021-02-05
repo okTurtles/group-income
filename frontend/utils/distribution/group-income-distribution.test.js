@@ -69,7 +69,7 @@ function unfoldParameters (json, monthstamp = '2020-11') {
       'currentGroupState': {
         payments: allPayments
       },
-      'monthlyPayments': monthlyPayments,
+      'groupMonthlyPayments': monthlyPayments,
       'groupSettings': {
         'mincomeAmount': json.mincome
       }
@@ -148,7 +148,7 @@ describe('Chunk 0: Adjustment Tests',
 )
 describe('Chunk A: When someone updates their income details', // TODO: first!
   function () {
-    it('[SCENARIO 1]: after a payment is already made',
+    it.skip('[SCENARIO 1]: after a payment is already made',
       // Create a group with $1000 mincome and 3 members
       // u1: pledge 100$
       // u2: Income 925$ (a.k.a needs $75)
@@ -203,7 +203,7 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
 
         ])
       })
-    it('[SCENARIO 3]: Create a group with $1000 mincome and 3 members',
+    it.skip('[SCENARIO 3]: Create a group with $1000 mincome and 3 members',
       // u1: pledge 100$
       // u2: Income 950$ (a.k.a needs $50)
       // u3: no income details added.
@@ -227,8 +227,7 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
             ]
           }))
         should(dist).eql([
-          { from: 'u1', to: 'u2', amount: 5.769230769230769 },
-          { from: 'u1', to: 'u3', amount: 69.23076923076924 }
+          { from: 'u1', to: 'u3', amount: 75 }
         ])
       })
     it('[SCENARIO 4]:ignores users who updated income after paying and can no longer pay',
@@ -250,7 +249,7 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
               u3: { need: 100 }
             },
             payments: [
-              { u1: { u2: 50 } }
+              { u1: { u3: 50 } }
             ]
           }))
         should(dist).eql([])
@@ -277,8 +276,8 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
             ]
           }))
         should(dist).eql([
-          { from: 'u4', to: 'u2', amount: 50 },
-          { from: 'u4', to: 'u3', amount: 50 }
+          { from: 'u4', to: 'u3', amount: 50 },
+          { from: 'u4', to: 'u2', amount: 50 }
         ])
       }
     )
@@ -349,10 +348,8 @@ describe('Chunk C: 4-way distribution tests',
             }
           }))
         should(dist).eql([
-          { from: 'u1', to: 'u2', amount: 50 },
-          { from: 'u4', to: 'u2', amount: 25 },
-          { from: 'u1', to: 'u3', amount: 125 },
-          { from: 'u4', to: 'u3', amount: 62.5 }
+          { from: 'u1', to: 'u3', amount: 250 },
+          { from: 'u4', to: 'u2', amount: 100 }
         ])
       })
     it('[SCENARIO 2]: stops asking user to pay someone they fully paid their share to',
@@ -374,11 +371,8 @@ describe('Chunk C: 4-way distribution tests',
             ]
           }))
         should(dist).eql([
-          // TODO: The full payment does not eliminate the amounts owed by u1 to u2
-          { from: 'u1', to: 'u2', amount: 22.22222222222222 },
-          { from: 'u4', to: 'u2', amount: 15.4320987654321 },
-          { from: 'u1', to: 'u3', amount: 111.1111111111111 },
-          { from: 'u4', to: 'u3', amount: 77.16049382716051 }
+          { from: 'u4', to: 'u3', amount: 250 },
+          { from: 'u1', to: 'u2', amount: 50 }
         ])
       })
     it('[SCENARIO 3]: does not ask users who have paid their full share to pay any more',
@@ -402,10 +396,8 @@ describe('Chunk C: 4-way distribution tests',
           }))
         should(dist).eql([
           // TODO: The full payment does not eliminate the amounts owed by u1 to u3
-          { from: 'u1', to: 'u2', amount: 11.538461538461538 },
-          { from: 'u4', to: 'u2', amount: 29.585798816568047 },
-          { from: 'u1', to: 'u3', amount: 28.846153846153847 },
-          { from: 'u4', to: 'u3', amount: 73.96449704142013 }
+          { from: 'u4', to: 'u3', amount: 125 },
+          { from: 'u4', to: 'u2', amount: 50 }
 
         ])
       }

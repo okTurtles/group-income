@@ -353,6 +353,11 @@ const getters = {
   groupIncomeAdjustedDistributionForMonth (state, getters) {
     return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
   },
+  lastDayOfThisMonth (state, getters) {
+    const cMonthstamp = currentMonthstamp()
+    const pDate = dateFromMonthstamp(cMonthstamp)
+    return lastDayOfMonth(pDate)
+  },
   ourPayments (state, getters) {
     // Payments relative to the current month only
     const monthlyPayments = getters.groupMonthlyPayments
@@ -409,8 +414,7 @@ const getters = {
       const latePayments = []
       const pastMonth = monthlyPayments[pMonthstamp]
       if (pastMonth) {
-        const pDate = dateFromMonthstamp(pMonthstamp)
-        const dueIn = lastDayOfMonth(pDate)
+        const dueIn = getters.lastDayOfMonth
 
         // This "for loop" logic is wrong (based on cypress tests).
         for (const payment of pastMonth.lastAdjustedDistribution) {
@@ -523,7 +527,7 @@ const getters = {
       return {
         paymentsTotal: getUniqPCount([...pByUser.toBeReceived, ...pByUser.received]),
         paymentsDone: getUniqPCount(pByUser.received),
-        hasPartials: pPartials > 0,
+        partialCount: pPartials,
         amountTotal: totalReceivable,
         amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0)
       }
@@ -539,8 +543,8 @@ const getters = {
       }, 0)
       return {
         paymentsTotal: getUniqPCount([...pByUser.todo, ...pByUser.sent]),
-        paymentsDone: getUniqPCount(pByUser.sent) - pPartials,
-        hasPartials: pPartials > 0,
+        paymentsDone: getUniqPCount(pByUser.sent),
+        partialCount: pPartials,
         amountTotal: totalReceivable,
         amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0)
       }

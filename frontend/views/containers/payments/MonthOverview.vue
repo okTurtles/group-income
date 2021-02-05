@@ -16,7 +16,7 @@
       progress-bar.c-progress(
         :max='item.max'
         :value='item.value'
-        :secValue='item.hasPartials ? item.value + 0.5 : 0'
+        :secValue='item.partialCount > 0 ? item.value + 0.5 : 0'
         :hasMarks='item.hasMarks'
       )
       p(:class='{"has-text-success": item.max === item.value}')
@@ -54,6 +54,7 @@ export default {
   },
   computed: {
     ...mapGetters([
+      'currentGroupState',
       'ourGroupProfile',
       'groupSettings',
       'ourPaymentsSummary',
@@ -63,18 +64,20 @@ export default {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
     summaryCopy () {
-      const { paymentsTotal, paymentsDone, hasPartials, amountTotal, amountDone } = this.ourPaymentsSummary
+      console.debug(this.ourPaymentsSummary)
+      const { paymentsTotal, paymentsDone, partialCount, amountTotal, amountDone } = this.ourPaymentsSummary
 
       const pS = [
         {
           title: this.needsIncome ? L('Payments received') : L('Payments sent'),
-          value: paymentsDone,
+          value: paymentsDone - partialCount,
           max: paymentsTotal,
           hasMarks: true,
-          hasPartials,
+          partialCount,
           label: L('{value} out of {max}', {
-            value: paymentsDone,
-            max: paymentsTotal
+            value: paymentsDone - partialCount,
+            max: paymentsTotal,
+            partialCount
           })
         }
       ]
@@ -84,9 +87,11 @@ export default {
           value: amountDone,
           max: amountTotal,
           hasMarks: false,
+          partialCount,
           label: L('{value} out of {max}', {
-            value: this.currency(amountDone),
-            max: this.currency(amountTotal)
+            value: this.currency(amountDone - partialCount),
+            max: this.currency(amountTotal),
+            partialCount
           })
         })
       } else {
@@ -95,9 +100,11 @@ export default {
           value: amountDone,
           max: amountTotal,
           hasMarks: false,
+          partialCount,
           label: L('{value} out of {max}', {
-            value: this.currency(amountDone),
-            max: this.currency(amountTotal)
+            value: this.currency(amountDone - partialCount),
+            max: this.currency(amountTotal),
+            partialCount
           })
         })
       }

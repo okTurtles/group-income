@@ -122,7 +122,10 @@ export default {
       'groupMincomeCurrency',
       'thisMonthsPaymentInfo',
       'ourPayments',
-      'userDisplayName'
+      'ourUsername',
+      'userDisplayName',
+      'lastDayOfThisMonth',
+      'groupIncomeAdjustedDistribution'
     ]),
     paymentsList () {
       const latePayments = []
@@ -156,18 +159,18 @@ export default {
           date: payment.dueIn
         })
       }
-
-      for (const payment of this.ourPayments.todo) {
-        todoPayments.push({
-          hash: payment.hash,
-          username: payment.to,
-          displayName: this.userDisplayName(payment.to),
-          amount: payment.amount,
-          total: payment.total,
-          partial: payment.partial,
-          isLate: false,
-          date: payment.dueIn
-        })
+      const dist = this.groupIncomeAdjustedDistribution
+      const dueOn = this.lastDayOfThisMonth
+      for (const payment of dist) {
+        if (payment.from === this.ourUsername) {
+          todoPayments.push({
+            username: payment.to,
+            displayName: this.userDisplayName(payment.to),
+            amount: payment.amount,
+            isLate: false,
+            date: dueOn
+          })
+        }
       }
 
       return latePayments.concat(notReceivedPayments, todoPayments)
