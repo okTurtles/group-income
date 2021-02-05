@@ -276,8 +276,8 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
             ]
           }))
         should(dist).eql([
-          { from: 'u4', to: 'u3', amount: 50.00000000000001 },
-          { from: 'u4', to: 'u2', amount: 49.99999999999999 }
+          { from: 'u4', to: 'u3', amount: 50 },
+          { from: 'u4', to: 'u2', amount: 50 }
         ])
       }
     )
@@ -348,10 +348,10 @@ describe('Chunk C: 4-way distribution tests',
             }
           }))
         should(dist).eql([
-          { from: 'u1', to: 'u3', amount: 130.0191369044812 },
-          { from: 'u4', to: 'u3', amount: 119.9808630955188 },
-          { from: 'u4', to: 'u2', amount: 55.019136904481236 },
-          { from: 'u1', to: 'u2', amount: 44.98086309551876 }
+          { from: 'u1', to: 'u3', amount: 125.00000000000003 },
+          { from: 'u4', to: 'u3', amount: 124.99999999999997 },
+          { from: 'u4', to: 'u2', amount: 50.00000000000002 },
+          { from: 'u1', to: 'u2', amount: 49.99999999999998  }
         ])
       })
     it('[SCENARIO 2]: stops asking user to pay someone they fully paid their share to',
@@ -373,10 +373,10 @@ describe('Chunk C: 4-way distribution tests',
             ]
           }))
         should(dist).eql([
-          { from: 'u4', to: 'u3', amount: 125.00000000000169 },
-          { from: 'u1', to: 'u3', amount: 124.9999999999983 },
-          { from: 'u4', to: 'u2', amount: 49.999999999998266 },
-          { from: 'u1', to: 'u2', amount: 1.7343239541235187e-12 }
+          { from: 'u4', to: 'u3', amount: 125.00000000000003 },
+          { from: 'u1', to: 'u3', amount: 124.99999999999997 },
+          { from: 'u4', to: 'u2', amount: 49.99999999999998 },
+          { from: 'u1', to: 'u2', amount: 2.220446049250313e-14 }
         ])
       })
     it('[SCENARIO 3]: does not ask users who have paid their full share to pay any more',
@@ -397,6 +397,28 @@ describe('Chunk C: 4-way distribution tests',
               { u1: { u2: 50 } },
               { u1: { u3: 125 } }
             ]
+          }))
+        should(dist).eql([
+          { from: 'u4', to: 'u3', amount: 125 },
+          { from: 'u4', to: 'u2', amount: 50 }
+        ])
+      }
+    )
+    it('[SCENARIO 4]: Can calculate the cypress tests answer',
+      // u1 pays their share to u3
+      // Expected Result: Same, no idea.
+      function () {
+        const dist = groupIncomeDistribution(unfoldParameters(
+          {
+            adjusted: true,
+            mincome: 1000,
+            profiles: {
+              u1: { have: 100 },
+              u2: { need: 100 },
+              u3: { need: 250 },
+              u4: { have: 250 }
+            },
+            payments: []
           }))
         should(dist).eql([
           { from: 'u4', to: 'u3', amount: 124.99999999999999 },

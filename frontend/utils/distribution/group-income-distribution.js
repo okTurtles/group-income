@@ -194,7 +194,7 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
   // const uniqueSet = new Set(stringArray);
   // const finalDist = Array.from(uniqueSet).map(JSON.parse);
 
-  const finalDist = []
+  let finalDist = []
 
   for (let i = 0; i < dist.length; i++) {
     const first = dist[i]
@@ -207,7 +207,14 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
     }
     finalDist.push(first)
   }
-
+  finalDist = finalDist.map((payment) => {
+    // payment.amount *= Math.min(totalHave - sent, totalDist) / totalDist
+    // const sentFromTo = paymentsFromTo[payment.from] && paymentsFromTo[payment.from][payment.to] ? paymentsFromTo[payment.from][payment.to].amount : 0
+    // payment.amount = Math.max(payment.amount - sentFromTo, 0)
+    return payment
+  }).filter((payment) => {
+    return payment.amount > 0
+  })
   // let lowHave = 1E32
   // let highHave = -1E32
   // for (const h of haves) {
@@ -228,14 +235,8 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
   // }
   // let totalDist = 0
   // for (const d of dist) totalDist += d.amount
-  return finalDist.map((payment) => {
-    // payment.amount *= Math.min(totalHave - sent, totalDist) / totalDist
-    // const sentFromTo = paymentsFromTo[payment.from] && paymentsFromTo[payment.from][payment.to] ? paymentsFromTo[payment.from][payment.to].amount : 0
-    // payment.amount = Math.max(payment.amount - sentFromTo, 0)
-    return payment
-  }).filter((payment) => {
-    return payment.amount > 0
-  })
+  console.log(finalDist)
+  return finalDist
 }
 function getCombinations (arr, n) {
   arr = JSON.parse(JSON.stringify(arr))
@@ -289,6 +290,8 @@ function getCombinations (arr, n) {
 */
 function calculate (members, tolerance = 1E-24) {
   // tolerance += 0.009 // increasing tolerance due to double precision
+  console.log(members)
+
   const results = []
   const validMembers = []
 
@@ -308,22 +311,34 @@ function calculate (members, tolerance = 1E-24) {
   // algorithm and remove them
   let n = 2
   while (n < validMembers.length - 1) {
-    const combinations = getCombinations(validMembers, n)
+    const combinations = getCombinations(validMembers.map((m) => { return [m] }), n)
     let nPairFound = false
     for (const combination of combinations) {
       let sum = 0
       for (let i = 0; i < combination.length; i++) {
-        sum += validMembers.get(combination[i]).balance
+        sum += Math.abs(combination[i].balance)
       }
-      if (Math.abs(sum) <= tolerance) {
+      if (sum <= tolerance) {
         // found n- pair - deal with them
         const pairedValidMembers = []
         for (let i = 0; i < combination.length; i++) {
-          pairedValidMembers.add(validMembers.get(combination[i]))
+          pairedValidMembers.push(combination[i])
         }
         const values = basicDebts(pairedValidMembers, tolerance)
-        results.addAll(values)
-        validMembers.removeAll(pairedValidMembers)
+        results.push(values)
+        const newValidMembers = []
+        for (const m of validMembers) {
+          let found = false
+          for (const p of pairedValidMembers) {
+            if (m.name === p.name) {
+              found = true
+            }
+          }
+          if (!found) {
+            newValidMembers.push(m)
+          }
+        }
+        validMembers = newValidMembers
         nPairFound = true
       }
       if (nPairFound) break
@@ -333,7 +348,7 @@ function calculate (members, tolerance = 1E-24) {
   // deal with what is left after removing n- pairs
   const values = basicDebts(validMembers, tolerance)
   const finalResults = []
-  for (const r of results) { finalResults.push(r) }
+  for (const r of results.flat()) { finalResults.push(r) }
   for (const v of values) { finalResults.push(v) }
   return finalResults
 }
@@ -347,7 +362,7 @@ function calculate (members, tolerance = 1E-24) {
 * @return List of Hashmaps encoding transactions
 */
 function basicDebts (members, tolerance) {
-  console.log(members)
+  members = JSON.parse(JSON.stringify(members))
   const debts = []
   let resolvedMembers = 0
   while (resolvedMembers !== members.length) {
@@ -363,15 +378,10 @@ function basicDebts (members, tolerance) {
       continue
     }
 
-    const senderShouldSend = Math.min(Math.abs(sender.balance * recipient.percent), Math.abs(sender.balance * sender.percent))
-    const recipientShouldReceive = Math.min(Math.abs(recipient.balance * sender.percent), Math.abs(recipient.balance * recipient.percent))
+    const amount = Math.min(Math.abs(recipient.balance * sender.percent), Math.abs(sender.balance * recipient.percent))
+    // const recipientShouldReceive = Math.min(Math.abs(sender.balance * sender.percent), Math.abs(recipient.balance * recipient.percent))
 
-    let amount = 0
-    if (senderShouldSend > recipientShouldReceive) {
-      amount = recipientShouldReceive
-    } else {
-      amount = senderShouldSend
-    }
+    // const amount = Math.min(senderShouldSend, recipientShouldReceive)
     sender.balance -= amount
     recipient.balance += amount
     // create transaction
@@ -380,7 +390,6 @@ function basicDebts (members, tolerance) {
     values.to = recipient.name
     values.amount = amount
     debts.push(values)
-    console.log(values)
     // delete members who are settled
     const senderShouldSendAdjusted = Math.abs(sender.balance)
     const recipientShouldReceiveAdjusted = Math.abs(recipient.balance)
