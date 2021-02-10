@@ -49,8 +49,8 @@ import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import currencies from '@view-utils/currencies.js'
-import distributeIncome from '@utils/distribution/mincome-proportional.js'
-
+import groupIncomeDistribution from '@utils/distribution/group-income-distribution.js'
+import { currentMonthstamp } from '@utils/time.js'
 export default {
   name: 'GroupPledgesGraph',
   components: {
@@ -72,6 +72,8 @@ export default {
     ...mapGetters([
       'groupSettings',
       'groupProfiles',
+      'currentGroupState',
+      'monthlyPayments',
       'groupMembersCount',
       'ourIdentityContractId',
       'ourUsername'
@@ -86,40 +88,40 @@ export default {
       const incomeDistribution = []
       let othersIncomeNeeded = 0
       let othersPledgesAmount = 0
-
       for (const username in this.groupProfiles) {
         const { incomeDetailsType, contractID, ...profile } = this.groupProfiles[username]
         if (contractID === this.ourIdentityContractId) { continue }
-
         const amount = profile[incomeDetailsType]
         const doesNeedPledge = incomeDetailsType === 'incomeAmount'
         const adjustment = doesNeedPledge ? 0 : mincome
         const adjustedAmount = adjustment + profile[incomeDetailsType]
-
         incomeDistribution.push({ name: username, amount: adjustedAmount })
-
         if (doesNeedPledge) {
           othersIncomeNeeded += mincome - amount
         } else if (incomeDetailsType === 'pledgeAmount') {
           othersPledgesAmount += amount
         }
       }
-
       const ourIncomeNeeded = doWeNeedIncome && ourIncomeAmount !== null ? mincome - ourIncomeAmount : null
       const pledgeTotal = othersPledgesAmount + ourPledgeAmount
       const groupGoal = othersIncomeNeeded + ourIncomeNeeded
       const neededPledges = Math.max(0, groupGoal - pledgeTotal)
       const surplus = Math.max(0, pledgeTotal - othersIncomeNeeded - ourIncomeNeeded)
       let ourIncomeToReceive = ourIncomeNeeded
-
       if (!doWePledge && neededPledges > 0) {
         incomeDistribution.push({ name: this.ourUsername, amount: ourIncomeAmount })
-
-        ourIncomeToReceive = distributeIncome(incomeDistribution, mincome)
-          .filter(i => i.to === this.ourUsername)
+        ourIncomeToReceive = groupIncomeDistribution({
+          getters: {
+            groupProfiles: this.groupProfiles,
+            groupSettings: this.groupSettings,
+            currentGroupState: this.currentGroupState,
+            monthlyPayments: this.groupMonthlyPayments
+          },
+          monthstamp: currentMonthstamp,
+          adjusted: true
+        }).filter(i => i.to === this.ourUsername)
           .reduce((acc, cur) => cur.amount + acc, 0)
       }
-
       return {
         othersPledgesAmount,
         ourPledgeAmount,
@@ -133,45 +135,36 @@ export default {
     },
     mainSlices () {
       const { groupGoal, othersPledgesAmount, ourPledgeAmount, pledgeTotal, surplus } = this.graphData
-
       if (groupGoal === 0) {
         return pledgeTotal > 0
           ? [{ id: 'goal_zero', percent: 1, color: 'primary' }]
           : []
       }
-
       // Note: surplus is added on the innerSlices, so we need to substract its part from the pledges.
       // To be fair, we remove the equivalent percentage of each pledge part (others and ours)
-
       const slices = []
-
       if (othersPledgesAmount > 0) {
         const pledgePerc = (othersPledgesAmount / pledgeTotal).toFixed(2)
         const surplusToBeRemoved = surplus * pledgePerc
-
         slices.push({
           id: 'othersPledgesAmount',
           percent: this.decimalSlice(othersPledgesAmount - surplusToBeRemoved),
           color: 'primary'
         })
       }
-
       if (ourPledgeAmount > 0) {
         const pledgePerc = (ourPledgeAmount / pledgeTotal).toFixed(2)
         const surplusToBeRemoved = surplus * pledgePerc
-
         slices.push({
           id: 'ourPledgeAmount',
           percent: this.decimalSlice(ourPledgeAmount - surplusToBeRemoved),
           color: 'primary'
         })
       }
-
       return slices
     },
     innerSlices () {
       const { ourIncomeToReceive, surplus } = this.graphData
-
       if (ourIncomeToReceive > 0) {
         return [{
           id: 'ourIncomeToReceive',
@@ -179,7 +172,6 @@ export default {
           color: 'warning'
         }]
       }
-
       if (surplus > 0) {
         return [{
           id: 'surplus',
@@ -187,7 +179,6 @@ export default {
           color: 'success'
         }]
       }
-
       return []
     }
   },
@@ -206,49 +197,39 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
-
 .c-wrapper {
   position: relative;
   display: flex;
   align-items: center;
   align-content: flex-start;
-
   @include tablet {
     flex-direction: column;
   }
 }
-
 .c-chart {
   ::v-deep .c-piechart {
     width: 7.5rem;
-
     @include tablet {
       width: 10rem;
     }
-
     @include desktop {
       width: 12rem;
     }
   }
 }
-
 .c-title {
   margin-bottom: 0.25rem;
-
   @include phone {
     text-transform: capitalize;
-
     ::v-deep span {
       display: none;
     }
   }
 }
-
 .c-legendList {
   flex-grow: 1;
   margin: 0 0.5rem 0 1rem;
   max-width: 20rem;
-
   @include tablet {
     margin: 1.5rem 0 0 0;
     width: 100%;

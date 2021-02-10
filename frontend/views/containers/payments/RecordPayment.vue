@@ -76,12 +76,13 @@ import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED, PAYMENT_TYPE_
 import L from '@view-utils/translations.js'
 import { validationMixin } from 'vuelidate'
 import SvgSuccess from '@svgs/success.svg'
-import { ISOStringToMonthstamp } from '@utils/time.js'
+import { ISOStringToMonthstamp, currentMonthstamp } from '@utils/time.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from '@containers/payments/RecordPaymentsList.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import groupIncomeDistribution from '@utils/distribution/group-income-distribution.js'
 
 export default {
   name: 'RecordPayment',
@@ -122,7 +123,15 @@ export default {
       'groupMincomeCurrency',
       'thisMonthsPaymentInfo',
       'ourPayments',
-      'userDisplayName'
+      'ourUsername',
+      'userDisplayName',
+      'lastDayOfThisMonth',
+      'groupIncomeDistribution',
+      'groupProfiles',
+      'currentGroupState',
+      'monthlyPayments',
+      'groupMembersCount',
+      'ourIdentityContractId'
     ]),
     paymentsList () {
       const latePayments = []
@@ -157,19 +166,26 @@ export default {
         })
       }
 
-      for (const payment of this.ourPayments.todo) {
-        todoPayments.push({
-          hash: payment.hash,
-          username: payment.to,
-          displayName: this.userDisplayName(payment.to),
-          amount: payment.amount,
-          total: payment.total,
-          partial: payment.partial,
-          isLate: false,
-          date: payment.dueIn
+      const dueOn = this.lastDayOfThisMonth
+      groupIncomeDistribution({
+        getters: {
+          groupProfiles: this.groupProfiles,
+          groupSettings: this.groupSettings,
+          currentGroupState: this.currentGroupState,
+          monthlyPayments: this.groupMonthlyPayments
+        },
+        monthstamp: currentMonthstamp,
+        adjusted: true
+      }).filter((i) => i.to === this.ourUsername)
+        .forEach((payment) => {
+          todoPayments.push({
+            username: payment.to,
+            displayName: this.userDisplayName(payment.to),
+            amount: payment.amount,
+            isLate: false,
+            date: dueOn
+          })
         })
-      }
-
       return latePayments.concat(notReceivedPayments, todoPayments)
     },
     recordNumber () {

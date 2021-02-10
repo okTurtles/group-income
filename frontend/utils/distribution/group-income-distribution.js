@@ -1,40 +1,70 @@
-import { saferFloat } from '~/frontend/views/utils/currencies.js'
-import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 
-export default function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }: Object): any {
-  // the monthstamp will always be for the current month. the alternative
-  // is to allow the re-generation of the distribution for previous months,
-  // but that approach requires also storing the historical mincomeAmount
-  // and historical groupProfiles. Since together these change across multiple
-  // locations in the code, it involves less 'code smell' to do it this way.
-  // see historical/group.js for the ugly way of doing it.
-  const mincomeAmount = getters.groupMincomeAmount
+function distibuteFromHavesToNeeds ({ haves, needs }) {
+  const totalHave = haves.reduce((a, b) => a + b.have, 0)
+  const totalNeed = needs.reduce((a, b) => a + b.need, 0)
+  const totalPercent = Math.min(1, totalHave / totalNeed)
+
+  for (const have of haves) have.percent = have.have / totalHave
+
+  const payments = []
+  for (const need of needs) {
+    for (const have of haves) {
+      const amount = need.need * have.percent * totalPercent
+      need.need -= amount
+      payments.push({ amount, from: have.name, to: need.name })
+    }
+  }
+  return payments
+}
+export default function groupIncomeDistribution ({ getters, monthstamp, adjusted }) {
   const groupProfiles = getters.groupProfiles
-  const currentIncomeDistribution = []
+  const mincomeAmount = getters.groupSettings.mincomeAmount
+  const allPayments = getters.currentGroupState.payments
+  const thisMonthPayments = getters.monthlyPayments ? getters.monthlyPayments[monthstamp] : null
+  const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
+
+  const haves = []
+  const needs = []
+  // calculate haves and needs from pledges and incomes:
   for (const username in groupProfiles) {
     const profile = groupProfiles[username]
     const incomeDetailsType = profile && profile.incomeDetailsType
-    if (incomeDetailsType) {
-      const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
-      const amount = adjustment + profile[incomeDetailsType]
-      currentIncomeDistribution.push({
-        name: username,
-        amount: saferFloat(amount)
-      })
+    if (incomeDetailsType === 'incomeAmount') {
+      needs.push({ name: username, need: mincomeAmount - profile.incomeAmount })
+    } else if (incomeDetailsType === 'pledgeAmount') {
+      haves.push({ name: username, have: profile.pledgeAmount })
     }
+    haves.percent = 0
   }
-  let dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
+  /// Adjust haves/needs if `adjusted = true`
   if (adjusted) {
-    // if this user has already made some payments to other users this
-    // month, we need to take that into account and adjust the distribution.
-    // this will be used by the Payments page to tell how much still
-    // needs to be paid (if it was a partial payment).
-    for (const p of dist) {
-      const alreadyPaid = getters.paymentTotalFromUserToUser(p.from, p.to, monthstamp)
-      // if we "overpaid" because we sent late payments, remove us from consideration
-      p.amount = saferFloat(Math.max(0, p.amount - alreadyPaid))
+    const alreadySent = {}
+    const alreadyReceived = {}
+    if (paymentsFrom) {
+      for (const fromUser in paymentsFrom) {
+        let totalSent = 0
+        for (const toUser in paymentsFrom[fromUser]) {
+          let totalReceved = 0
+          if (!alreadyReceived[toUser]) alreadyReceived[toUser] = 0
+          for (const paymentHash of paymentsFrom[fromUser][toUser]) {
+            totalReceved += allPayments[paymentHash].data.amount
+          }
+          totalSent += totalReceved
+          alreadyReceived[toUser] += totalReceved
+        }
+        alreadySent[fromUser] = totalSent
+      }
+      for (const have of haves) {
+        have.have -= alreadySent[have.name] ? alreadySent[have.name] : 0
+      }
+      for (const need of needs) {
+        need.need -= alreadyReceived[need.name] ? alreadyReceived[need.name] : 0
+      }
     }
-    dist = dist.filter(p => p.amount > 0)
   }
+  /// pass the haves and needs to distributeFromHavesToNeeds
+  const dist = distibuteFromHavesToNeeds({ haves, needs }).filter((payment) => {
+    return payment.amount > 0
+  })
   return dist
 }

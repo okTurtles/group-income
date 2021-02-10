@@ -353,6 +353,11 @@ const getters = {
   groupIncomeAdjustedDistributionForMonth (state, getters) {
     return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
   },
+  lastDayOfThisMonth (state, getters) {
+    const cMonthstamp = currentMonthstamp()
+    const pDate = dateFromMonthstamp(cMonthstamp)
+    return lastDayOfMonth(pDate)
+  },
   ourPayments (state, getters) {
     // Payments relative to the current month only
     const monthlyPayments = getters.groupMonthlyPayments
@@ -436,8 +441,7 @@ const getters = {
       const latePayments = []
       const pastMonth = monthlyPayments[pMonthstamp]
       if (pastMonth) {
-        const pDate = dateFromMonthstamp(pMonthstamp)
-        const dueIn = lastDayOfMonth(pDate)
+        const dueIn = getters.lastDayOfMonth
 
         // This "for loop" logic is wrong (based on cypress tests).
         for (const payment of pastMonth.lastAdjustedDistribution) {
@@ -544,12 +548,16 @@ const getters = {
         toBeReceived: toBeReceived.map(p => p.from),
         received: received.map(p => p.meta.username)
       }
+      const totalReceivable = getters.groupIncomeDistribution.filter((payment) => payment.to === getters.ourUsername).reduce((acc, payment) => {
+        return acc + payment.amount
+      }, 0)
       return {
         paymentsDone: getUniqPCount(pByUser.received) - pPartials,
         hasPartials: pPartials > 0,
         paymentsTotal: getUniqPCount([...pByUser.toBeReceived, ...pByUser.received]),
-        amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
-        amountTotal: toBeReceived.reduce((total, p) => total + p.amount, 0) + received.reduce((total, p) => total + p.data.amount, 0)
+        partialCount: pPartials,
+        amountTotal: totalReceivable,
+        amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0)
       }
     } else {
       const sentCompleted = sent.filter(isCompleted)
@@ -558,12 +566,16 @@ const getters = {
         todo: todo.map(p => p.to),
         sent: sent.map(p => p.data.toUser)
       }
+      const totalReceivable = getters.groupIncomeDistribution.filter((payment) => payment.from === getters.ourUsername).reduce((acc, payment) => {
+        return acc + payment.amount
+      }, 0)
       return {
         paymentsDone: getUniqPCount(pByUser.sent) - pPartials,
         hasPartials: pPartials > 0,
         paymentsTotal: getUniqPCount([...pByUser.todo, ...pByUser.sent]),
-        amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),
-        amountTotal: todo.reduce((total, p) => total + p.amount, 0) + sent.reduce((total, p) => total + p.data.amount, 0)
+        partialCount: pPartials,
+        amountTotal: totalReceivable,
+        amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0)
       }
     }
   },
