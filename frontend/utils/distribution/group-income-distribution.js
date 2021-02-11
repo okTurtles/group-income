@@ -1,4 +1,6 @@
 
+import { saferFloat } from '~/frontend/views/utils/currencies.js'
+
 function distibuteFromHavesToNeeds ({ haves, needs }) {
   const totalHave = haves.reduce((a, b) => a + b.have, 0)
   const totalNeed = needs.reduce((a, b) => a + b.need, 0)
@@ -65,6 +67,9 @@ export default function groupIncomeDistribution ({ getters, monthstamp, adjusted
   /// pass the haves and needs to distributeFromHavesToNeeds
   const dist = distibuteFromHavesToNeeds({ haves, needs }).filter((payment) => {
     return payment.amount > 0
+  }).map((payment) => {
+    payment.amount = saferFloat(payment.amount)
+    return payment
   })
   return dist
 }

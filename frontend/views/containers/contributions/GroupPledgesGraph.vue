@@ -118,7 +118,7 @@ export default {
             monthlyPayments: this.groupMonthlyPayments
           },
           monthstamp: currentMonthstamp,
-          adjusted: true
+          adjusted: false
         }).filter(i => i.to === this.ourUsername)
           .reduce((acc, cur) => cur.amount + acc, 0)
       }

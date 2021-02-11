@@ -370,14 +370,9 @@ DefineContract({
             toUser.push(data.paymentHash)
           }
           paymentMonth.lastAdjustedDistribution = groupIncomeDistribution({
-            getters: { // For some reason "{ getters: getters, ... }" results in undefined getters. Fixed below.
-              groupProfiles: getters.groupProfiles,
-              groupSettings: getters.groupSettings,
-              currentGroupState: getters.currentGroupState,
-              monthlyPayments: getters.groupMonthlyPayments
-            },
+            getters,
             monthstamp: updateMonthstamp,
-            adjusted: false
+            adjusted: true
           })
         }
       }

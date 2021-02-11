@@ -10,15 +10,17 @@ function unfoldParameters (json, monthstamp = '2020-11') {
   const newJSON = {}
 
   newJSON.monthstamp = monthstamp
-  newJSON.adjusted = json.adjusted
+  newJSON.adjusted = !!json.adjustWith
   newJSON.mincome = json.mincome
 
   newJSON.payments = []
 
-  for (const payment in json.payments) {
-    for (const from in json.payments[payment]) {
-      for (const to in json.payments[payment][from]) {
-        newJSON.payments.push({ from: from, to: to, amount: json.payments[payment][from][to] })
+  const payments = json.adjustWith ? json.adjustWith : []
+
+  for (const payment in payments) {
+    for (const from in payments[payment]) {
+      for (const to in payments[payment][from]) {
+        newJSON.payments.push({ from: from, to: to, amount: payments[payment][from][to] })
       }
     }
   }
@@ -113,10 +115,7 @@ describe('Chunk 0: Adjustment Tests',
             profiles: {
               u1: { have: 10 },
               u2: { need: 2 }
-            },
-            payments: [
-              { u1: { u2: 2 } }
-            ]
+            }
           }))
         should(dist).eql([
           { from: 'u1', to: 'u2', amount: 2 }
@@ -131,13 +130,12 @@ describe('Chunk 0: Adjustment Tests',
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 12,
             profiles: {
               u1: { have: 10 },
               u2: { need: 2 }
             },
-            payments: [
+            adjustWith: [
               { u1: { u2: 2 } }
             ]
           }))
@@ -161,14 +159,13 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 1000,
             profiles: {
               u1: { have: 100 },
               u2: { need: 75 },
               u3: { need: 50 }
             },
-            payments: [
+            adjustWith: [
               { u1: { u2: 75 } }
             ]
           }))
@@ -188,14 +185,13 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 1000,
             profiles: {
               u1: { have: 100 },
               u2: { need: 100 },
               u3: { need: 50 }
             },
-            payments: [
+            adjustWith: [
               { u1: { u2: 100 } }
             ]
           }))
@@ -215,20 +211,19 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 1000,
             profiles: {
               u1: { have: 100 },
               u2: { need: 50 },
               u3: { need: 300 }
             },
-            payments: [
+            adjustWith: [
               { u1: { u2: 25 } }
             ]
           }))
         should(dist).eql([
-          { from: 'u1', to: 'u2', amount: 5.769230769230769 },
-          { from: 'u1', to: 'u3', amount: 69.23076923076924 }
+          { from: 'u1', to: 'u2', amount: 5.76923077 },
+          { from: 'u1', to: 'u3', amount: 69.23076923 }
         ])
       })
     it('[SCENARIO 4]:ignores users who updated income after paying and can no longer pay',
@@ -242,14 +237,13 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 1000,
             profiles: {
               u1: { have: 50 },
               u2: { need: 50 },
               u3: { need: 100 }
             },
-            payments: [
+            adjustWith: [
               { u1: { u2: 50 } }
             ]
           }))
@@ -264,7 +258,6 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 1000,
             profiles: {
               u1: { have: 50 },
@@ -272,7 +265,7 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
               u3: { need: 100 },
               u4: { have: 150 }
             },
-            payments: [
+            adjustWith: [
               { u1: { u3: 50 } }
             ]
           }))
@@ -295,7 +288,6 @@ describe('Chunk B: Changing group mincome',
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 500,
             profiles: {
               u1: { have: 600 },
@@ -316,7 +308,6 @@ describe('Chunk B: Changing group mincome',
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 750,
             profiles: {
               u1: { need: 150 },
@@ -339,7 +330,6 @@ describe('Chunk C: 4-way distribution tests',
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 1000,
             profiles: {
               u1: { have: 250 },
@@ -361,7 +351,6 @@ describe('Chunk C: 4-way distribution tests',
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 1000,
             profiles: {
               u1: { have: 250 },
@@ -369,16 +358,16 @@ describe('Chunk C: 4-way distribution tests',
               u3: { need: 250 },
               u4: { have: 250 }
             },
-            payments: [
+            adjustWith: [
               { u1: { u2: 50 } }
             ]
           }))
         should(dist).eql([
           // TODO: The full payment does not eliminate the amounts owed by u1 to u2
-          { from: 'u1', to: 'u2', amount: 22.22222222222222 },
-          { from: 'u4', to: 'u2', amount: 15.4320987654321 },
-          { from: 'u1', to: 'u3', amount: 111.1111111111111 },
-          { from: 'u4', to: 'u3', amount: 77.16049382716051 }
+          { amount: 22.22222222, from: 'u1', to: 'u2' },
+          { amount: 15.43209877, from: 'u4', to: 'u2' },
+          { amount: 111.11111111, from: 'u1', to: 'u3' },
+          { amount: 77.16049383, from: 'u4', to: 'u3' }
         ])
       })
     it('[SCENARIO 3]: does not ask users who have paid their full share to pay any more',
@@ -387,7 +376,6 @@ describe('Chunk C: 4-way distribution tests',
       function () {
         const dist = groupIncomeDistribution(unfoldParameters(
           {
-            adjusted: true,
             mincome: 1000,
             profiles: {
               u1: { have: 250 },
@@ -395,18 +383,17 @@ describe('Chunk C: 4-way distribution tests',
               u3: { need: 250 },
               u4: { have: 250 }
             },
-            payments: [
+            adjustWith: [
               { u1: { u2: 50 } },
               { u1: { u3: 125 } }
             ]
           }))
         should(dist).eql([
           // TODO: The full payment does not eliminate the amounts owed by u1 to u3
-          { from: 'u1', to: 'u2', amount: 11.538461538461538 },
-          { from: 'u4', to: 'u2', amount: 29.585798816568047 },
-          { from: 'u1', to: 'u3', amount: 28.846153846153847 },
-          { from: 'u4', to: 'u3', amount: 73.96449704142013 }
-
+          { amount: 11.53846154, from: 'u1', to: 'u2' },
+          { amount: 29.58579882, from: 'u4', to: 'u2' },
+          { amount: 28.84615385, from: 'u1', to: 'u3' },
+          { amount: 73.96449704, from: 'u4', to: 'u3' }
         ])
       }
     )
