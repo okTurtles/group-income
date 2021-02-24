@@ -1,20 +1,23 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 
-function totalPaymentFrom (paymentsFrom, allPayments, from, to) {
-  let totalFrom = 0
+function totalPaymentsToOrFrom (paymentsFrom, allPayments, toOrFrom) {
+  let totalToOrFrom = 0
   if (paymentsFrom) {
     for (const fromUser in paymentsFrom) {
-      if (fromUser === from) {
-        for (const toUser in paymentsFrom[fromUser]) {
-          for (const paymentHash of paymentsFrom[fromUser][toUser]) {
-            totalFrom += allPayments[paymentHash].data.amount
+      for (const toUser in paymentsFrom[fromUser]) {
+        for (const paymentHash of paymentsFrom[fromUser][toUser]) {
+          if (fromUser === toOrFrom) {
+            totalToOrFrom += allPayments[paymentHash].data.amount
+          }
+          else if(toUser == toOrFrom) {
+            totalToOrFrom -= allPayments[paymentHash].data.amount
           }
         }
       }
     }
   }
-  return totalFrom
+  return totalToOrFrom
 }
 
 export default function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }: Object): any {
@@ -38,10 +41,11 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
       const amount = adjustment + profile[incomeDetailsType]
       currentIncomeDistribution.push({
         name: username,
-        amount: saferFloat(amount) - (adjusted ? totalPaymentFrom(paymentsFrom, allPayments, username) : 0)
+        amount: saferFloat(amount) - (adjusted ? totalPaymentsToOrFrom(paymentsFrom, allPayments, username) : 0)
       })
     }
   }
+  console.table(currentIncomeDistribution)
   let dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
   if (adjusted) {
     // if this user has already made some payments to other users this

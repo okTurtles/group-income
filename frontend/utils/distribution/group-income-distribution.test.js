@@ -235,8 +235,7 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
             ]
           }))
         should(dist).eql([
-          { amount: 25, from: 'u1', to: 'u2' },
-          { amount: 50, from: 'u1', to: 'u3' }
+          { amount: 69.23076923, from: 'u1', to: 'u3' }
         ])
       })
     it('[SCENARIO 4]:ignores users who updated income after paying and can no longer pay',
@@ -353,8 +352,8 @@ describe('Chunk C: 4-way distribution tests',
           }))
         should(dist).eql([
           { amount: 50, from: 'u1', to: 'u2' },
-          { amount: 50, from: 'u4', to: 'u2' },
           { amount: 125, from: 'u1', to: 'u3' },
+          { amount: 50, from: 'u4', to: 'u2' },
           { amount: 125, from: 'u4', to: 'u3' }
         ])
       })
