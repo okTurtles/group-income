@@ -100,9 +100,15 @@ export function DefineContract (contract: Object) {
   }
 }
 
+// the gettersProxy is what makes Vue-like getters possible. In other words,
+// we want to make sure that the getters functions that we defined in each
+// contract that we create get passed the 'state' when a getter is accessed.
+// The only way to pass in the state is by creating a Proxy object that does
+// that for us. This allows us to maintain compatibility with Vue.js and integrate
+// the contract getters into the Vue-facing getters.
 function gettersProxy (state: Object, getters: Object) {
   const proxyGetters = new Proxy({}, {
-    get: function (obj, prop) {
+    get: function (target, prop) {
       return getters[prop](state, proxyGetters)
     }
   })
