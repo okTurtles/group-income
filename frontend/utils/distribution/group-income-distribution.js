@@ -9,8 +9,7 @@ function totalPaymentsToOrFrom (paymentsFrom, allPayments, toOrFrom) {
         for (const paymentHash of paymentsFrom[fromUser][toUser]) {
           if (fromUser === toOrFrom) {
             totalToOrFrom += allPayments[paymentHash].data.amount
-          }
-          else if(toUser == toOrFrom) {
+          } else if (toUser === toOrFrom) {
             totalToOrFrom -= allPayments[paymentHash].data.amount
           }
         }
@@ -45,7 +44,6 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
       })
     }
   }
-  console.table(currentIncomeDistribution)
   let dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
   if (adjusted) {
     // if this user has already made some payments to other users this
