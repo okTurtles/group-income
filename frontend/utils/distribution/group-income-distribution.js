@@ -1,6 +1,22 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 
+function totalPaymentFrom (paymentsFrom, allPayments, from, to) {
+  let totalFrom = 0
+  if (paymentsFrom) {
+    for (const fromUser in paymentsFrom) {
+      if (fromUser === from) {
+        for (const toUser in paymentsFrom[fromUser]) {
+          for (const paymentHash of paymentsFrom[fromUser][toUser]) {
+            totalFrom += allPayments[paymentHash].data.amount
+          }
+        }
+      }
+    }
+  }
+  return totalFrom
+}
+
 export default function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }: Object): any {
   // the monthstamp will always be for the current month. the alternative
   // is to allow the re-generation of the distribution for previous months,
@@ -11,6 +27,9 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
   const mincomeAmount = getters.groupMincomeAmount
   const groupProfiles = getters.groupProfiles
   const currentIncomeDistribution = []
+  const allPayments = getters.currentGroupState.payments
+  const thisMonthPayments = getters.monthlyPayments ? getters.monthlyPayments[monthstamp] : null
+  const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
   for (const username in groupProfiles) {
     const profile = groupProfiles[username]
     const incomeDetailsType = profile && profile.incomeDetailsType
@@ -19,7 +38,7 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
       const amount = adjustment + profile[incomeDetailsType]
       currentIncomeDistribution.push({
         name: username,
-        amount: saferFloat(amount)
+        amount: saferFloat(amount) - (adjusted ? totalPaymentFrom(paymentsFrom, allPayments, username) : 0)
       })
     }
   }
@@ -34,7 +53,7 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
       // if we "overpaid" because we sent late payments, remove us from consideration
       p.amount = saferFloat(Math.max(0, p.amount - alreadyPaid))
     }
-    dist = dist.filter(p => p.amount > 0)
   }
+  dist = dist.filter(p => p.amount > 0)
   return dist
 }
