@@ -30,7 +30,7 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
   const groupProfiles = getters.groupProfiles
   const currentIncomeDistribution = []
   const allPayments = getters.currentGroupState.payments
-  const thisMonthPayments = getters.monthlyPayments ? getters.monthlyPayments[monthstamp] : null
+  const thisMonthPayments = getters.groupMonthlyPayments ? getters.groupMonthlyPayments[monthstamp] : null
   const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
   for (const username in groupProfiles) {
     const profile = groupProfiles[username]

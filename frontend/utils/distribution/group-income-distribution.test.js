@@ -71,7 +71,7 @@ function unfoldParameters (json, monthstamp = '2020-11') {
       'currentGroupState': {
         payments: allPayments
       },
-      'monthlyPayments': monthlyPayments,
+      'groupMonthlyPayments': monthlyPayments,
       'groupMincomeAmount': json.groupMincomeAmount,
       'paymentTotalFromUserToUser': function (from, to, monthstamp) {
         let totalFromTo = 0
