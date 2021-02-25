@@ -951,8 +951,10 @@ const handleEvent = {
         console.warn(`skipping autoBanSenderOfMessage since we're syncing ${contractID}`)
         return // don't do anything, assume the existing users handled this event
       }
-      // $FlowFixMe[prop-missing]
-      const username = message.meta().username
+      // NOTE: we cast to 'any' to work around flow errors
+      //       see: https://stackoverflow.com/a/41329247/1781435
+      const meta: Object = (message.opValue(): any).meta
+      const username = meta && meta.username
       // TODO: this code below doesn't make any sense, we shouldn't
       //       leave the group just because we banned someone.
       //       Also, we should handle things differently depending on
