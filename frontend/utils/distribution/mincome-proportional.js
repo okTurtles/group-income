@@ -1,5 +1,5 @@
 'use strict'
-
+import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import type { IncomeObject } from '~/shared/types.js'
 
 function incomeDistribution (incomes: Array<IncomeObject>, minCome: number): Array<any | {|amount: number, from: string, to: string|}> {
@@ -34,7 +34,7 @@ function incomeDistribution (incomes: Array<IncomeObject>, minCome: number): Arr
           const belowPercentage = belowAmount / belowMincomeTotalAmount
           const paymentAmount = distributionAmount * belowPercentage
           const payment = {
-            amount: paymentAmount,
+            amount: saferFloat(paymentAmount),
             from: fromName,
             to: toName
           }

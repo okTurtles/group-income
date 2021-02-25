@@ -40,22 +40,9 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
       const amount = adjustment + profile[incomeDetailsType]
       currentIncomeDistribution.push({
         name: username,
-        amount: saferFloat(amount) - (adjusted ? totalPaymentsToOrFrom(paymentsFrom, allPayments, username) : 0)
+        amount: saferFloat(amount - (adjusted ? totalPaymentsToOrFrom(paymentsFrom, allPayments, username) : 0))
       })
     }
   }
-  let dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
-  if (adjusted) {
-    // if this user has already made some payments to other users this
-    // month, we need to take that into account and adjust the distribution.
-    // this will be used by the Payments page to tell how much still
-    // needs to be paid (if it was a partial payment).
-    for (const p of dist) {
-      const alreadyPaid = getters.paymentTotalFromUserToUser(p.from, p.to, monthstamp)
-      // if we "overpaid" because we sent late payments, remove us from consideration
-      p.amount = saferFloat(Math.max(0, p.amount - alreadyPaid))
-    }
-  }
-  dist = dist.filter(p => p.amount > 0)
-  return dist
+  return incomeDistribution(currentIncomeDistribution, mincomeAmount).filter(p => p.amount > 0)
 }

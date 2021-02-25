@@ -235,6 +235,7 @@ describe('Chunk A: When someone updates their income details', // TODO: first!
             ]
           }))
         should(dist).eql([
+          { amount: 5.76923077, from: 'u1', to: 'u2' },
           { amount: 69.23076923, from: 'u1', to: 'u3' }
         ])
       })
