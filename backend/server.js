@@ -5,10 +5,9 @@ import './database.js'
 import Hapi from '@hapi/hapi'
 import GiAuth from './auth.js'
 import { GIMessage } from '~/shared/GIMessage.js'
-import { makeResponse } from '~/shared/functions.js'
-import { RESPONSE_TYPE } from '~/shared/constants.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
+import { createMessage, createServer } from './utils/pubsub.js'
 import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
@@ -45,10 +44,13 @@ sbp('sbp/selectors/register', {
   'backend/server/handleEntry': async function (entry: GIMessage) {
     const contractID = entry.contractID()
     await sbp('gi.db/log/addEntry', entry)
-    const response = makeResponse(RESPONSE_TYPE.ENTRY, entry.serialize())
     console.log(chalk.blue.bold(`broadcasting ${entry.description()}`))
-    sbp('okTurtles.data/apply', PUBSUB_INSTANCE, p => {
-      p.room(contractID).write(response)
+    sbp('okTurtles.data/apply', PUBSUB_INSTANCE, pubsub => {
+      if (contractID in pubsub.subscribersByContractID) {
+        pubsub.subscribersByContractID[contractID].forEach((client) => {
+          client.send(createMessage('entry', entry.serialize()))
+        })
+      }
     })
   },
   'backend/server/stop': function () {
@@ -62,6 +64,8 @@ if (process.env.NODE_ENV === 'development' && !process.env.CI) {
   })
 }
 
+sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener))
+
 ;(async function () {
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
@@ -69,7 +73,6 @@ if (process.env.NODE_ENV === 'development' && !process.env.CI) {
     { plugin: Inert }
   ])
   require('./routes.js')
-  require('./pubsub.js')
   await hapi.start()
   console.log('Backend server running at:', hapi.info.uri)
   sbp('okTurtles.events/emit', SERVER_RUNNING, hapi)
