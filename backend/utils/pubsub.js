@@ -67,7 +67,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   // Create and attach server-side WebSocket event listeners.
   ;['close', 'connection', 'error', 'headers', 'listening'].forEach((name) => {
     server.on(name, (...args) => {
-      console.log('[pubsub] Server event:', name, ...args)
+      console.log('[pubsub] Server event:', name)
       try {
         const customHandler = server.customServerHandlers['on' + name]
         const defaultHandler = defaultServerHandlers['on' + name]
