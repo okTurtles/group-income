@@ -1,8 +1,6 @@
-import type { ResType } from './types.js'
-
 // https://flowtype.org/docs/objects.html
 
-export const RESPONSE_TYPE: {[key: string]: ResType} = {
+export const RESPONSE_TYPE: {[key: string]: string} = Object.freeze({
   ERROR: 'error',
   SUCCESS: 'success',
   ALREADY: 'already',
@@ -10,4 +8,4 @@ export const RESPONSE_TYPE: {[key: string]: ResType} = {
   UNSUB: 'unsub',
   PUB: 'pub',
   ENTRY: 'entry'
-}
+})
