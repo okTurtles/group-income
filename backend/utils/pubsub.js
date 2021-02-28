@@ -126,14 +126,7 @@ defaultServerHandlers.onconnection = function onconnection (socket, request) {
   socket.server = this
   socket.subscriptions = new Set()
 
-  const xForwardedFor = request.headers['x-forwarded-for']
-
-  const remoteAddress = (
-    typeof xForwardedFor === 'string' && xForwardedFor !== ''
-      ? xForwardedFor.split(/\s*,\s*/)[0]
-      : request.socket.remoteAddress
-  )
-  console.log(bold(`[pubsub] Socket ${socket.id} connected from ${remoteAddress}`))
+  console.log(bold(`[pubsub] Socket ${socket.id} connected`))
 
   // Create and attach socket event listeners.
   ;['close', 'error', 'message', 'ping', 'pong'].forEach((eventName) => {
