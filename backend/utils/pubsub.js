@@ -58,8 +58,8 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
     ...options,
     server: httpServer
   })
-  server.customClientHandlers = { ...options.clientHandlers }
-  server.customServerHandlers = { ...options.serverHandlers }
+  server.customClientHandlers = options.clientHandlers || {}
+  server.customServerHandlers = options.serverHandlers || {}
   server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
   server.pingInterval = undefined
   server.subscribersByContractID = Object.create(null)

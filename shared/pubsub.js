@@ -82,7 +82,7 @@ export const RESPONSE_TYPE = Object.freeze({
  */
 export function createClient (url: string, options?: Object = {}): PubSubClient {
   const client = {
-    customHandlers: { ...options.handlers },
+    customHandlers: options.handlers || {},
     failedAttempts: 0,
     isReconnecting: false,
     listeners: Object.create(null),
