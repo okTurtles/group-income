@@ -69,8 +69,8 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
     server.on(name, (...args) => {
       console.log('[pubsub] Server event:', name)
       try {
-        const customHandler = server.customServerHandlers['on' + name]
-        const defaultHandler = defaultServerHandlers['on' + name]
+        const customHandler = server.customServerHandlers[name]
+        const defaultHandler = defaultServerHandlers[name]
         // Always call the default handler first.
         if (defaultHandler) {
           defaultHandler.call(server, ...args)
@@ -112,47 +112,47 @@ const generateSocketID = (() => {
 
 // ====== Server socket event handlers ====== //
 
-const defaultServerHandlers = Object.create(null)
+const defaultServerHandlers = {
+  /**
+   * Emitted when a connection handshake completes.
+   *
+   * @param socket - The client socket that connected.
+   * @param request - The http GET request sent by the socket.
+   */
+  connection (socket, request) {
+    socket.id = generateSocketID()
+    socket.isAlive = true
+    socket.server = this
+    socket.subscriptions = new Set()
 
-/**
- * Emitted when a connection handshake completes.
- *
- * @param socket - The client socket that connected.
- * @param request - The http GET request sent by the socket.
- */
-defaultServerHandlers.onconnection = function onconnection (socket, request) {
-  socket.id = generateSocketID()
-  socket.isAlive = true
-  socket.server = this
-  socket.subscriptions = new Set()
+    console.log(bold(`[pubsub] Socket ${socket.id} connected`))
 
-  console.log(bold(`[pubsub] Socket ${socket.id} connected`))
+    // Create and attach socket event listeners.
+    ;['close', 'error', 'message', 'ping', 'pong'].forEach((eventName) => {
+      socket.on(eventName, (...args) => {
+        console.debug(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
+        const customHandler = socket.server.customClientHandlers[eventName]
+        const defaultHandler = defaultClientHandlers[eventName]
 
-  // Create and attach socket event listeners.
-  ;['close', 'error', 'message', 'ping', 'pong'].forEach((eventName) => {
-    socket.on(eventName, (...args) => {
-      console.debug(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
-      const customHandler = socket.server.customClientHandlers['on' + eventName]
-      const defaultHandler = defaultClientHandlers['on' + eventName]
-
-      try {
-        if (defaultHandler) {
-          defaultHandler.call(socket, ...args)
+        try {
+          if (defaultHandler) {
+            defaultHandler.call(socket, ...args)
+          }
+          if (customHandler) {
+            customHandler.call(socket, ...args)
+          }
+        } catch (error) {
+          logger(error)
         }
-        if (customHandler) {
-          customHandler.call(socket, ...args)
-        }
-      } catch (error) {
-        logger(error)
-      }
+      })
     })
-  })
+  }
 }
 
 // ====== Client socket event handlers ====== //
 
 const defaultClientHandlers = {
-  onclose (code: string, reason: string) {
+  close (code: string, reason: string) {
     // Notify other client sockets that this one has left any room they shared.
     for (const contractID of this.subscriptions) {
       const notification = createNotification(UNSUB, { contractID, socketID: this.id })
@@ -167,7 +167,7 @@ const defaultClientHandlers = {
     this.subscriptions.clear()
   },
 
-  onmessage (data: string) {
+  message (data: string) {
     let msg: Message = { type: '' }
     try {
       msg = messageParser(data)
@@ -193,7 +193,7 @@ const defaultClientHandlers = {
     }
   },
 
-  onpong () {
+  pong () {
     this.isAlive = true
   }
 }

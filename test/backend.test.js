@@ -97,10 +97,10 @@ describe('Full walkthrough', function () {
     return new Promise((resolve, reject) => {
       createGIPubSubClient(process.env.API_URL, {
         handlers: {
-          onerror (event) {
+          error (event) {
             reject(event)
           },
-          onopen (event) {
+          open (event) {
             resolve(this)
           }
         },

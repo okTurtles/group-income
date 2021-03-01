@@ -104,8 +104,8 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
       if (client.options.debug) {
         console.debug('[pubsub] Event:', name, ...args)
       }
-      const customHandler = client.customHandlers['on' + name]
-      const defaultHandler = defaultHandlers['on' + name]
+      const customHandler = client.customHandlers[name]
+      const defaultHandler = defaultHandlers[name]
 
       if (defaultHandler) {
         defaultHandler.call(client, event)
@@ -136,7 +136,7 @@ export function createRequest (type: $Values<typeof REQUEST_TYPE>, data: JSONObj
 // ====== Event Handlers ====== //
 
 const defaultHandlers = {
-  onclose (event: CloseEvent) {
+  close (event: CloseEvent) {
     if (this.socket) {
       // Remove event listeners to avoid memory leaks.
       for (const name of eventNames) {
@@ -161,10 +161,10 @@ const defaultHandlers = {
   },
 
   // Do not manually close the socket here as it will be done automatically.
-  onerror (event: Event) {
+  error (event: Event) {
   },
 
-  onmessage (event: MessageEvent) {
+  message (event: MessageEvent) {
     const { data } = event
 
     if (typeof data !== 'string') {
@@ -188,7 +188,7 @@ const defaultHandlers = {
     }
   },
 
-  onopen (event) {
+  open (event) {
     this.pendingSubscriptionSet.forEach(this.sub)
     this.pendingUnsubscriptionSet.forEach(this.unsub)
 
