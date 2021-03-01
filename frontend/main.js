@@ -61,9 +61,10 @@ async function startApp () {
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, createGIPubSubClient(
     sbp('okTurtles.data/get', 'API_URL'), {
       // TODO: verify these are good defaults
-      reconnectOnDisconnection: true,
-      reconnectOnOnline: true,
-      reconnectOnTimeout: true,
+      // Temporarily disable automatic reconnection until it's robust enough.
+      reconnectOnDisconnection: false,
+      reconnectOnOnline: false,
+      reconnectOnTimeout: false,
       timeout: 3000
     }
   ))
