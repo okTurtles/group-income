@@ -131,7 +131,7 @@ defaultServerHandlers.onconnection = function onconnection (socket, request) {
   // Create and attach socket event listeners.
   ;['close', 'error', 'message', 'ping', 'pong'].forEach((eventName) => {
     socket.on(eventName, (...args) => {
-      console.log(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
+      console.debug(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
       const customHandler = socket.server.customClientHandlers['on' + eventName]
       const defaultHandler = defaultClientHandlers['on' + eventName]
 
@@ -172,7 +172,7 @@ const defaultClientHandlers = {
     try {
       msg = messageParser(data)
     } catch (error) {
-      console.log(bold.red(`[pubsub] Malformed message: ${error.message}`))
+      console.error(bold.red(`[pubsub] Malformed message: ${error.message}`))
       return this.terminate()
     }
     const handler = this.server.messageHandlers[msg.type]

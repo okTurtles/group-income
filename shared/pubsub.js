@@ -102,7 +102,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
   for (const name of [...eventNames, ...globalEventNames]) {
     client.listeners[name] = (event: Event, ...args: any[]) => {
       if (client.options.debug) {
-        console.log('[pubsub] Event:', name, ...args)
+        console.debug('[pubsub] Event:', name, ...args)
       }
       const customHandler = client.customHandlers['on' + name]
       const defaultHandler = defaultHandlers['on' + name]
@@ -176,7 +176,7 @@ const defaultHandlers = {
       msg = messageParser(data)
     } catch (error) {
       // TODO: place us in unrecoverable state (see state.js error handling TODOs)
-      console.log(`[pubsub] Malformed message: ${error.message}`)
+      console.error(`[pubsub] Malformed message: ${error.message}`)
       return
     }
     const handler = this.messageHandlers[msg.type]
@@ -218,25 +218,25 @@ const defaultMessageHandlers = {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
   [RESPONSE_TYPE.ERROR] ({ data: { type, contractID } }) {
-    console.debug(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
+    console.log(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
   },
   [RESPONSE_TYPE.SUCCESS] ({ data: { type, contractID } }) {
     const client = this
     switch (type) {
       case REQUEST_TYPE.SUB: {
-        console.debug(`[pubsub] Subscribed to ${contractID}`)
+        console.log(`[pubsub] Subscribed to ${contractID}`)
         client.pendingSubscriptionSet.delete(contractID)
         client.subscriptionSet.add(contractID)
         break
       }
       case REQUEST_TYPE.UNSUB: {
-        console.debug(`[pubsub] Unsubscribed from ${contractID}`)
+        console.log(`[pubsub] Unsubscribed from ${contractID}`)
         client.pendingUnsubscriptionSet.delete(contractID)
         client.subscriptionSet.delete(contractID)
         break
       }
       default: {
-        console.debug(`[pubsub] Malformed response: invalid request type ${type}`)
+        console.error(`[pubsub] Malformed response: invalid request type ${type}`)
       }
     }
   }
