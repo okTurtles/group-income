@@ -4,6 +4,16 @@ import type { JSONObject, JSONType } from '~/shared/types.js'
 
 // ====== Types ====== //
 
+/*
+ * Flowtype usage notes:
+ *
+ * - The '+' prefix indicates properties that should not be re-assigned or
+ *   deleted after their initialization.
+ *
+ * - 'TimeoutID' is an opaque type declared in Flow's core definition file,
+ *   used as the return type of the core setTimeout() function.
+ */
+
 export type Message = {
   [key: string]: JSONType,
   +type: string
@@ -130,6 +140,7 @@ export function createMessage (type: string, data: JSONType): string {
 }
 
 export function createRequest (type: $Values<typeof REQUEST_TYPE>, data: JSONObject): string {
+  // Had to use Object.assign() instead of object spreading to make Flow happy.
   return JSON.stringify(Object.assign({ type }, data))
 }
 
