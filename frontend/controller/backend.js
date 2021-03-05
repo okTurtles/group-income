@@ -3,10 +3,9 @@
 import sbp from '~/shared/sbp.js'
 import { sign, bufToB64, b64ToStr } from '~/shared/functions.js'
 import { GIMessage } from '~/shared/GIMessage.js'
-import { RESPONSE_TYPE } from '~/shared/constants.js'
 import { CONTRACTS_MODIFIED } from '~/frontend/utils/events.js'
 import { intersection, difference, delay, randomIntFromRange } from '~/frontend/utils/giLodash.js'
-import { createClient } from '~/shared/pubsub.js'
+import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 
@@ -28,7 +27,7 @@ export function createGIPubSubClient (url: string, options: Object): Object {
   return createClient(url, {
     ...options,
     messageHandlers: {
-      [RESPONSE_TYPE.ENTRY] (msg) {
+      [NOTIFICATION_TYPE.ENTRY] (msg) {
         // We MUST use 'state/enqueueHandleEvent' here to ensure handleEvent()
         // is called AFTER any currently-running calls to syncContractWithServer().
         // Calling via SBP also makes it simple to implement 'test/backend.js'
