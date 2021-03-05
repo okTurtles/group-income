@@ -21,8 +21,8 @@ export type Message = {
 
 export type PubSubClient = {
   connectionTimeoutID: TimeoutID | void,
-  +customHandlers: Object,
-  failedAttempts: number,
+  +customSocketEventHandlers: Object,
+  failedReconnectionAttempts: number,
   isReconnecting: boolean,
   +listeners: Object,
   +messageHandlers: Object,
@@ -81,26 +81,33 @@ export const RESPONSE_TYPE = Object.freeze({
  *
  * @param {string} url - A WebSocket URL to connect to.
  * @param {Object?} options
- * {number?} timeout - Connection timeout duration in milliseconds.
  * {boolean?} debug
- * {object?} handlers - Custom handlers for socket events.
+ * {object?} handlers - Custom handlers for WebSocket events.
  * {object?} messageHandlers - Custom handlers for different message types.
  * {boolean?} reconnectOnDisconnection - Whether to reconnect after a server-side disconnection.
- * {boolean?} reconnectOnOnline - Whether to reconnect after regaining internet connectivity.
- * {boolean?} reconnectOnTimeout - Whether to reconnect after a timeout.
- * @returns {Object}
+ * {boolean?} reconnectOnOnline - Whether to reconnect after coming back online.
+ * {boolean?} reconnectOnTimeout - Whether to reconnect after a connection timeout.
+ * {number?} timeout - Connection timeout duration in milliseconds.
+ * @returns {PubSubClient}
  */
 export function createClient (url: string, options?: Object = {}): PubSubClient {
   const client = {
-    customHandlers: options.handlers || {},
-    failedAttempts: 0,
+    customSocketEventHandlers: options.handlers || {},
+    // The current number of reconnection attempts that failed (the initial
+    // connection attempt doesn't count). Reset to 0 upon successful connection.
+    // Used to compute how long to wait before the next reconnection attempt.
+    failedReconnectionAttempts: 0,
+    // Whether we are currently disconnected and trying to reconnect.
     isReconnecting: false,
     listeners: Object.create(null),
     messageHandlers: { ...defaultMessageHandlers, ...options.messageHandlers },
     options: { ...defaultOptions, ...options },
+    // Requested subscriptions for which we didn't receive a response yet.
     pendingSubscriptionSet: new Set(),
     pendingUnsubscriptionSet: new Set(),
     reconnectionDelayID: undefined,
+    // The underlying WebSocket object.
+    // A new one is necessary for every connection or reconnection attempt.
     socket: null,
     subscriptionSet: new Set(),
     connectionTimeoutID: undefined,
@@ -109,14 +116,20 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     ...{ connect, destroy, getNextRandomReconnectionDelay, pub, sub, unsub }
   }
   // Create and save references to reusable event listeners.
+  // Every time a new underlying WebSocket object will be created for this
+  // client instance, these event listeners will be detached from the older
+  // socket then attached to the new one, hereby avoiding both unnecessary
+  // allocations and garbage collections of a bunch of functions every time.
+  // Another benefit is the ability to patch the client protocol at runtime by
+  // updating the client's custom event handler map.
   for (const name of [...eventNames, ...globalEventNames]) {
     client.listeners[name] = (event: Event, ...args: any[]) => {
       if (client.options.debug) {
         console.debug('[pubsub] Event:', name, ...args)
       }
-      const customHandler = client.customHandlers[name]
-      const defaultHandler = (defaultHandlers: Object)[name]
-
+      const customHandler = client.customSocketEventHandlers[name]
+      const defaultHandler = (defaultSocketEventHandlers: Object)[name]
+      // Pass the client as the 'this' binding since we are processing client events.
       if (defaultHandler) {
         defaultHandler.call(client, event)
       }
@@ -125,7 +138,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
       }
     }
   }
-  // Attach global event listeners before the first connection.
+  // Add global event listeners before the first connection.
   if (typeof window === 'object') {
     globalEventNames.forEach((name) => {
       window.addEventListener(name, client.listeners[name])
@@ -144,9 +157,9 @@ export function createRequest (type: $Values<typeof REQUEST_TYPE>, data: JSONObj
   return JSON.stringify(Object.assign({ type }, data))
 }
 
-// ====== Event Handlers ====== //
-
-const defaultHandlers = {
+// These handlers receive the PubSubClient instance through the `this` binding.
+const defaultSocketEventHandlers = {
+  // Emitted when the connection is closed.
   close (event: CloseEvent) {
     if (this.socket) {
       // Remove event listeners to avoid memory leaks.
@@ -161,7 +174,7 @@ const defaultHandlers = {
       this.connectionTimeoutID = undefined
     }
     if (this.isReconnecting) {
-      this.failedAttempts++
+      this.failedReconnectionAttempts++
     }
     if (event.reason === 'timeout' && this.options.reconnectOnTimeout) {
       this.reconnectionDelayID = setTimeout(
@@ -170,11 +183,11 @@ const defaultHandlers = {
       )
     }
   },
-
+  // Emitted when an error occurs.
   // Do not manually close the socket here as it will be done automatically.
   error (event: Event) {
   },
-
+  // Emitted when a message is received.
   message (event: MessageEvent) {
     const { data } = event
 
@@ -198,14 +211,14 @@ const defaultHandlers = {
       throw new Error(`Unhandled message type: ${msg.type}`)
     }
   },
-
+  // Emitted when the connection is established.
   open (event) {
     this.pendingSubscriptionSet.forEach(this.sub)
     this.pendingUnsubscriptionSet.forEach(this.unsub)
 
     if (this.isReconnecting) {
       console.log('[pubsub] Connection re-established')
-      this.failedAttempts = 0
+      this.failedReconnectionAttempts = 0
       this.isReconnecting = false
     }
     if (this.connectionTimeoutID) {
@@ -215,8 +228,7 @@ const defaultHandlers = {
   }
 }
 
-// ====== Message Handlers ====== //
-
+// These handlers receive the PubSubClient instance through the `this` binding.
 const defaultMessageHandlers = {
   // PUB can be used to send ephemeral messages outside of any contract log.
   [NOTIFICATION_TYPE.PUB] (msg) {
@@ -321,7 +333,7 @@ function destroy () {
   // Update property values.
   // Note: do not clear 'this.options'.
   this.connectionTimeoutID = undefined
-  this.failedAttempts = 0
+  this.failedReconnectionAttempts = 0
   this.isReconnecting = false
   this.pendingSubscriptionSet.clear()
   this.pendingUnsubscriptionSet.clear()
@@ -351,10 +363,10 @@ function getNextRandomReconnectionDelay (): number {
   } = this.options
 
   const minDelay = (
-    minReconnectionDelay * reconnectionDelayGrowFactor ** this.failedAttempts
+    minReconnectionDelay * reconnectionDelayGrowFactor ** this.failedReconnectionAttempts
   )
   const maxDelay = Math.min(
-    minReconnectionDelay * reconnectionDelayGrowFactor ** (this.failedAttempts + 1),
+    minReconnectionDelay * reconnectionDelayGrowFactor ** (this.failedReconnectionAttempts + 1),
     maxReconnectionDelay
   )
   return minDelay + Math.random() * (maxDelay - minDelay)

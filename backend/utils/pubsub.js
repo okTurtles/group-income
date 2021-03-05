@@ -43,7 +43,6 @@ export function createResponse (type: string, data: JSONType): string {
  * {object?} clientHandlers - Custom handlers for socket events.
  * {object?} messageHandlers - Custom handlers for different message types.
  * {object?} serverHandlers - Custom handlers for server events.
- *
  * {number} backlog - The maximum length of the queue of pending connections.
  * {boolean} clientTracking - Specifies whether or not to track clients.
  * {Function} handleProtocols - A function which can be used to handle the WebSocket subprotocols.
@@ -58,18 +57,18 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
     ...options,
     server: httpServer
   })
-  server.customClientHandlers = options.clientHandlers || {}
-  server.customServerHandlers = options.serverHandlers || {}
+  server.customServerEventHandlers = options.serverHandlers || {}
+  server.customSocketEventHandlers = options.clientHandlers || {}
   server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
   server.pingInterval = undefined
   server.subscribersByContractID = Object.create(null)
 
-  // Create and attach server-side WebSocket event listeners.
+  // Add listeners for server events, i.e. events emitted on the server object.
   ;['close', 'connection', 'error', 'headers', 'listening'].forEach((name) => {
     server.on(name, (...args) => {
       console.log('[pubsub] Server event:', name)
       try {
-        const customHandler = server.customServerHandlers[name]
+        const customHandler = server.customServerEventHandlers[name]
         const defaultHandler = (defaultServerHandlers: Object)[name]
         // Always call the default handler first.
         if (defaultHandler) {
@@ -110,14 +109,15 @@ const generateSocketID = (() => {
   return () => counter++
 })()
 
-// ====== Server socket event handlers ====== //
-
+// Default handlers for server events.
+// The `this` binding refers to the server object.
 const defaultServerHandlers = {
   /**
    * Emitted when a connection handshake completes.
    *
-   * @param socket - The client socket that connected.
-   * @param request - The http GET request sent by the socket.
+   * @see https://github.com/websockets/ws/blob/master/doc/ws.md#event-connection
+   * @param {ws.WebSocket} socket - The client socket that connected.
+   * @param {http.IncomingMessage} request - The underlying Node http GET request.
    */
   connection (socket: Object, request: Object) {
     socket.id = generateSocketID()
@@ -127,12 +127,12 @@ const defaultServerHandlers = {
 
     console.log(bold(`[pubsub] Socket ${socket.id} connected`))
 
-    // Create and attach socket event listeners.
+    // Add listeners for socket events, i.e. events emitted on a socket object.
     ;['close', 'error', 'message', 'ping', 'pong'].forEach((eventName) => {
       socket.on(eventName, (...args) => {
         console.debug(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
-        const customHandler = socket.server.customClientHandlers[eventName]
-        const defaultHandler = (defaultClientHandlers: Object)[eventName]
+        const customHandler = socket.server.customSocketEventHandlers[eventName]
+        const defaultHandler = (defaultSocketEventHandlers: Object)[eventName]
 
         try {
           if (defaultHandler) {
@@ -149,9 +149,9 @@ const defaultServerHandlers = {
   }
 }
 
-// ====== Client socket event handlers ====== //
-
-const defaultClientHandlers = {
+// Default handlers for server-side client socket events.
+// The `this` binding refers to the connected `ws` socket object.
+const defaultSocketEventHandlers = {
   close (code: string, reason: string) {
     // Notify other client sockets that this one has left any room they shared.
     for (const contractID of this.subscriptions) {
@@ -198,8 +198,7 @@ const defaultClientHandlers = {
   }
 }
 
-// ====== Server-side message handlers ====== //
-
+// These handlers receive the connected `ws` socket through the `this` binding.
 const defaultMessageHandlers = {
   [PUB] (msg: Message) {
     // Currently unused.
