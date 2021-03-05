@@ -70,7 +70,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
       console.log('[pubsub] Server event:', name)
       try {
         const customHandler = server.customServerHandlers[name]
-        const defaultHandler = defaultServerHandlers[name]
+        const defaultHandler = (defaultServerHandlers: Object)[name]
         // Always call the default handler first.
         if (defaultHandler) {
           defaultHandler.call(server, ...args)
@@ -119,7 +119,7 @@ const defaultServerHandlers = {
    * @param socket - The client socket that connected.
    * @param request - The http GET request sent by the socket.
    */
-  connection (socket, request) {
+  connection (socket: Object, request: Object) {
     socket.id = generateSocketID()
     socket.isAlive = true
     socket.server = this
@@ -132,7 +132,7 @@ const defaultServerHandlers = {
       socket.on(eventName, (...args) => {
         console.debug(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
         const customHandler = socket.server.customClientHandlers[eventName]
-        const defaultHandler = defaultClientHandlers[eventName]
+        const defaultHandler = (defaultClientHandlers: Object)[eventName]
 
         try {
           if (defaultHandler) {
@@ -201,7 +201,7 @@ const defaultClientHandlers = {
 // ====== Server-side message handlers ====== //
 
 const defaultMessageHandlers = {
-  [PUB] (msg: Object) {
+  [PUB] (msg: Message) {
     // Currently unused.
   },
 

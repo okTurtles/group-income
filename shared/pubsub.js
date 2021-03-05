@@ -115,7 +115,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
         console.debug('[pubsub] Event:', name, ...args)
       }
       const customHandler = client.customHandlers[name]
-      const defaultHandler = defaultHandlers[name]
+      const defaultHandler = (defaultHandlers: Object)[name]
 
       if (defaultHandler) {
         defaultHandler.call(client, event)
