@@ -213,8 +213,13 @@ const defaultSocketEventHandlers = {
   },
   // Emitted when the connection is established.
   open (event) {
-    this.pendingSubscriptionSet.forEach(this.sub)
-    this.pendingUnsubscriptionSet.forEach(this.unsub)
+    // Resend any still unacknowledged request.
+    this.pendingSubscriptionSet.forEach((contractID) => {
+      this.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+    })
+    this.pendingUnsubscriptionSet.forEach((contractID) => {
+      this.socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
+    })
 
     if (this.isReconnecting) {
       console.log('[pubsub] Connection re-established')
@@ -382,21 +387,43 @@ function pub (contractID: string, data: JSONType) {
   // Maybe add this request to a pending list.
 }
 
+/**
+ * Sends a SUB request to the server as soon as possible.
+ *
+ * - A copy of the request will be cached until we get a relevant server response,
+ * allowing to re-send the same request if necessary.
+ * - Any identical UNSUB request that has not been sent yet will be cancelled.
+ * @param contractID - The ID of the contract whose updates we want to subscribe to.
+ */
 function sub (contractID: string) {
   const { socket } = this
 
-  if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+  if (!this.pendingSubscriptionSet.has(contractID)) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+    }
   }
   this.pendingSubscriptionSet.add(contractID)
+  this.pendingUnsubscriptionSet.delete(contractID)
 }
 
+/**
+ * Sends an UNSUB request to the server as soon as possible.
+ *
+ * - A copy of the request will be cached until we get a relevant server response,
+ * allowing to re-send the same request if necessary.
+ * - Any identical SUB request that has not been sent yet will be cancelled.
+ * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
+ */
 function unsub (contractID: string) {
   const { socket } = this
 
-  if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
+  if (!this.pendingUnsubscriptionSet.has(contractID)) {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
+    }
   }
+  this.pendingSubscriptionSet.delete(contractID)
   this.pendingUnsubscriptionSet.add(contractID)
 }
 
