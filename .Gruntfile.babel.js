@@ -61,13 +61,6 @@ module.exports = (grunt) => {
     checkDependencies: { this: { options: { install: true } } },
 
     copy: {
-      node_modules: {
-        cwd: 'node_modules',
-        src: ['systemjs/dist/*.{js,map}'],
-        dest: distJS,
-        expand: true,
-        flatten: true
-      },
       html_files: {
         src: 'frontend/index.html',
         dest: `${distDir}/index.html`
