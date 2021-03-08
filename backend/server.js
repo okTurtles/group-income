@@ -7,7 +7,7 @@ import GiAuth from './auth.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
-import { createMessage, createServer } from './utils/pubsub.js'
+import { createMessage, createServer } from './pubsub.js'
 import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
