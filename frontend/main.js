@@ -63,8 +63,8 @@ async function startApp () {
       // TODO: verify these are good defaults
       // Temporarily disable automatic reconnection until it's robust enough.
       reconnectOnDisconnection: false,
-      reconnectOnOnline: false,
-      reconnectOnTimeout: false,
+      reconnectOnOnline: true,
+      reconnectOnTimeout: true,
       timeout: 3000
     }
   ))
