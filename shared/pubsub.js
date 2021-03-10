@@ -22,21 +22,22 @@ export type Message = {
 export type PubSubClient = {
   connectionTimeoutID: TimeoutID | void,
   +customSocketEventHandlers: Object,
-  failedReconnectionAttempts: number,
-  isReconnecting: boolean,
+  failedConnectionAttempts: number,
+  isNew: boolean,
   +listeners: Object,
   +messageHandlers: Object,
+  nextConnectionAttemptDelayID: TimeoutID | void,
   +options: Object,
   +pendingSubscriptionSet: Set<string>,
   +pendingUnsubscriptionSet: Set<string>,
-  reconnectionDelayID: TimeoutID | void,
+  shouldReconnect: boolean,
   socket: WebSocket | null,
   +subscriptionSet: Set<string>,
   +url: string,
   // Methods
   connect(): void,
   destroy(): void,
-  getNextRandomReconnectionDelay(): number,
+  getNextRandomDelay(): number,
   pub(contractID: string, data: JSONType): void,
   sub(contractID: string): void,
   unsub(contractID: string): void
@@ -96,16 +97,17 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     // The current number of reconnection attempts that failed (the initial
     // connection attempt doesn't count). Reset to 0 upon successful connection.
     // Used to compute how long to wait before the next reconnection attempt.
-    failedReconnectionAttempts: 0,
-    // Whether we are currently disconnected and trying to reconnect.
-    isReconnecting: false,
+    failedConnectionAttempts: 0,
+    // True if this client has never been connected yet.
+    isNew: true,
     listeners: Object.create(null),
     messageHandlers: { ...defaultMessageHandlers, ...options.messageHandlers },
     options: { ...defaultOptions, ...options },
     // Requested subscriptions for which we didn't receive a response yet.
     pendingSubscriptionSet: new Set(),
     pendingUnsubscriptionSet: new Set(),
-    reconnectionDelayID: undefined,
+    nextConnectionAttemptDelayID: undefined,
+    shouldReconnect: true,
     // The underlying WebSocket object.
     // A new one is necessary for every connection or reconnection attempt.
     socket: null,
@@ -116,8 +118,10 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     ...{
       connect,
       destroy,
-      getNextRandomReconnectionDelay,
-      scheduleReconnection,
+      getNextRandomDelay,
+      isConnecting,
+      isReconnecting,
+      scheduleConnectionAttempt,
       pub,
       sub,
       unsub
@@ -167,6 +171,8 @@ const defaultSocketEventHandlers = {
   // Emitted when the connection is closed.
   close (event: CloseEvent) {
     console.log('[pubsub] Event: close', event.code, event.reason)
+    this.failedConnectionAttempts++
+
     if (this.socket) {
       // Remove event listeners to avoid memory leaks.
       for (const name of eventNames) {
@@ -179,17 +185,17 @@ const defaultSocketEventHandlers = {
       clearTimeout(this.connectionTimeoutID)
       this.connectionTimeoutID = undefined
     }
-    if (this.isReconnecting) {
-      this.failedReconnectionAttempts++
+    // See "Status Codes" https://tools.ietf.org/html/rfc6455#section-7.4
+    switch (event.code) {
+      // TODO: verify that this list of codes is correct.
+      case 1000: case 1002: case 1003: case 1007: case 1008: {
+        this.shouldReconnect = false
+        break
+      }
+      default: break
     }
-    if (this.options.reconnectOnOnline) {
-      if (typeof navigator === 'object' && navigator.onLine) {
-        this.scheduleReconnection()
-      }
-    } else if (this.options.reconnectOnTimeout) {
-      if (event.reason === 'timeout') {
-        this.scheduleReconnection()
-      }
+    if (this.shouldReconnect) {
+      this.scheduleConnectionAttempt()
     }
   },
   // Emitted when an error occurs.
@@ -209,8 +215,9 @@ const defaultSocketEventHandlers = {
     try {
       msg = messageParser(data)
     } catch (error) {
-      // TODO: place us in unrecoverable state (see state.js error handling TODOs)
-      console.error(`[pubsub] Malformed message: ${error.message}`)
+      // Place us in unrecoverable state.
+      console.error(`[pubsub] Critical error! Malformed message: ${error.message}`)
+      this.destroy()
       return
     }
     const handler = this.messageHandlers[msg.type]
@@ -223,25 +230,34 @@ const defaultSocketEventHandlers = {
   },
   offline () {
     console.log('[pubsub] Event: offline')
-    // Although the backend won't receive these arguments,
-    // the 'close' event handler will.
-    this.socket.close()
+    // Reset the connection attempt counter so that we'll attempt to
+    // reconnect freshly again when the user is back online.
+    this.failedConnectionAttempts = 0
+    if (this.socket) {
+      this.socket.close()
+    }
   },
   online () {
     console.log('[pubsub] Event: online')
-    // Reset the current reconnection loop if any, so that we'll attempt to
-    // reconnect freshly again when the user is back online.
-    this.failedReconnectionAttempts = 0
-    if (this.options.reconnectOnOnline) {
-      this.isReconnecting = true
-    }
-    if (this.isReconnecting) {
-      this.scheduleReconnection()
+    if (this.options.reconnectOnOnline && this.shouldReconnect) {
+      if (!this.socket) {
+        this.scheduleConnectionAttempt()
+      }
     }
   },
   // Emitted when the connection is established.
   open (event) {
     console.log('[pubsub] Event: open')
+    if (!this.isNew) {
+      console.log('[pubsub] Connection re-established')
+    }
+    this.failedConnectionAttempts = 0
+    this.isNew = false
+
+    if (this.connectionTimeoutID) {
+      clearTimeout(this.connectionTimeoutID)
+      this.connectionTimeoutID = undefined
+    }
     // Resend any still unacknowledged request.
     this.pendingSubscriptionSet.forEach((contractID) => {
       this.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
@@ -249,16 +265,6 @@ const defaultSocketEventHandlers = {
     this.pendingUnsubscriptionSet.forEach((contractID) => {
       this.socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
     })
-
-    if (this.isReconnecting) {
-      console.log('[pubsub] Connection re-established')
-      this.failedReconnectionAttempts = 0
-      this.isReconnecting = false
-    }
-    if (this.connectionTimeoutID) {
-      clearTimeout(this.connectionTimeoutID)
-      this.connectionTimeoutID = undefined
-    }
   }
 }
 
@@ -303,7 +309,7 @@ const defaultOptions = {
   debug: false,
   maxReconnectionDelay: Infinity,
   minReconnectionDelay: 500,
-  maxRetries: 10,
+  maxRetries: 10, // Not implemented.
   reconnectOnDisconnection: false,
   reconnectOnOnline: true,
   reconnectOnTimeout: false,
@@ -335,17 +341,22 @@ function connect () {
   if (this.socket !== null) {
     throw new Error('connect() can only be called if there is no current socket.')
   }
+  if (this.nextConnectionAttemptDelayID) {
+    throw new Error('connect() must not be called during a reconnection delay.')
+  }
+  if (!this.shouldReconnect) {
+    throw new Error('connect() must not be called if shouldReconnect is false.')
+  }
   this.socket = new WebSocket(this.url)
 
   if (this.options.timeout) {
     this.connectionTimeoutID = setTimeout(() => {
       this.connectionTimeoutID = undefined
       if (this.socket) {
-        this.socket.close(1000, 'timeout')
+        this.socket.close(4000, 'timeout')
       }
     }, this.options.timeout)
   }
-  this.reconnectionDelayID = undefined
   // Attach WebSocket event listeners.
   for (const name of eventNames) {
     this.socket.addEventListener(name, this.listeners[name])
@@ -363,15 +374,14 @@ function connect () {
 function destroy () {
   // Clear all timers.
   clearTimeout(this.connectionTimeoutID)
-  clearTimeout(this.reconnectionDelayID)
+  clearTimeout(this.nextConnectionAttemptDelayID)
   // Update property values.
   // Note: do not clear 'this.options'.
   this.connectionTimeoutID = undefined
-  this.failedReconnectionAttempts = 0
-  this.isReconnecting = false
+  this.failedConnectionAttempts = 0
+  this.nextConnectionAttemptDelayID = undefined
   this.pendingSubscriptionSet.clear()
   this.pendingUnsubscriptionSet.clear()
-  this.reconnectionDelayID = undefined
   this.subscriptionSet.clear()
   // Remove global event listeners.
   if (typeof window === 'object') {
@@ -387,9 +397,10 @@ function destroy () {
     this.socket.close()
   }
   this.socket = null
+  this.shouldReconnect = false
 }
 
-function getNextRandomReconnectionDelay (): number {
+function getNextRandomDelay (): number {
   const {
     maxReconnectionDelay,
     minReconnectionDelay,
@@ -397,21 +408,42 @@ function getNextRandomReconnectionDelay (): number {
   } = this.options
 
   const minDelay = (
-    minReconnectionDelay * reconnectionDelayGrowFactor ** this.failedReconnectionAttempts
+    minReconnectionDelay * reconnectionDelayGrowFactor ** this.failedConnectionAttempts
   )
   const maxDelay = Math.min(
-    minReconnectionDelay * reconnectionDelayGrowFactor ** (this.failedReconnectionAttempts + 1),
+    minReconnectionDelay * reconnectionDelayGrowFactor ** (this.failedConnectionAttempts + 1),
     maxReconnectionDelay
   )
   return Math.round(minDelay + Math.random() * (maxDelay - minDelay))
 }
 
-function scheduleReconnection () {
-  const delay = this.getNextRandomReconnectionDelay()
-  const nth = this.failedReconnectionAttempts + 1
+// Whether we are currently disconnected but trying to connect or reconnect.
+function isConnecting (): boolean {
+  return (
+    this.nextConnectionAttemptDelayID || (
+      this.socket && this.socket.readyState === WebSocket.CONNECTING
+    )
+  )
+}
 
-  this.reconnectionDelayID = setTimeout(() => this.connect(), delay)
-  console.log(`[pubsub] Scheduled reconnection attempt ${nth} in ~${delay} ms`)
+// Whether we are currently disconnected but trying to reconnect.
+function isReconnecting (): boolean {
+  return !this.isNew && this.isConnecting()
+}
+
+// Schedules a connection attempt using a REB algorithm to compute the delay.
+function scheduleConnectionAttempt () {
+  if (!this.shouldReconnect) {
+    throw new Error('Cannot call `scheduleConnectionAttempt()` when `shouldReconnect` is false.')
+  }
+  const delay = this.getNextRandomDelay()
+  const nth = this.failedConnectionAttempts + 1
+
+  this.nextConnectionAttemptDelayID = setTimeout(() => {
+    this.nextConnectionAttemptDelayID = undefined
+    this.connect()
+  }, delay)
+  console.log(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
 }
 
 function pub (contractID: string, data: JSONType) {
