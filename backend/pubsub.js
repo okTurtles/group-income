@@ -220,7 +220,7 @@ const defaultMessageHandlers = {
       server.clients.forEach((client) => {
         if (client !== this && client.subscriptions.has(contractID)) {
           if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type, contractID, socketID }))
+            client.send(JSON.stringify({ type, data: { contractID, socketID } }))
           }
         }
       })
@@ -243,7 +243,7 @@ const defaultMessageHandlers = {
       server.clients.forEach((client) => {
         if (client !== this && client.subscriptions.has(contractID)) {
           if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type, contractID, socketID }))
+            client.send(JSON.stringify({ type, data: { contractID, socketID } }))
           }
         }
       })
