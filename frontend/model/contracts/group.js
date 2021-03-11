@@ -110,7 +110,7 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
 function addMonths (startDate, months) {
   const thisMonth = startDate.getMonth()
   startDate.setMonth(thisMonth + months)
-  if (startDate.getMonth() !== thisMonth + 1 && startDate.getMonth() !== 0) {
+  if (startDate.getMonth() !== thisMonth + months && startDate.getMonth() !== 0) {
     startDate.setDate(0)
   }
   return startDate
