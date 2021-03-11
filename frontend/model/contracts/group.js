@@ -107,6 +107,31 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   return monthlyPayments
 }
 
+function nextMonth (date) {
+  const thisMonth = date.getMonth()
+  date.setMonth(thisMonth + 1)
+  if (date.getMonth() !== thisMonth + 1 && date.getMonth() !== 0) {
+    date.setDate(0)
+  }
+  return date
+}
+
+function monthlyCycleStatsAtDate ({ meta, state, atDate }) {
+  let cycleStartDate = new Date(state.distributionCycleStartDate)
+  let cycleEndDate = nextMonth(new Date(cycleStartDate.toISOString()))
+  const cycleNowDate = new Date(atDate)
+  while (cycleEndDate - cycleNowDate < 0) {
+    cycleStartDate = nextMonth(cycleStartDate)
+    cycleEndDate = nextMonth(cycleEndDate)
+  }
+
+  const cycleNow = (cycleNowDate - cycleStartDate) / (cycleEndDate - cycleStartDate)
+  const cycleStart = Math.floor(cycleNow)
+  const cycleEnd = cycleStart + 1
+
+  return { cycleNowDate, cycleStartDate, cycleEndDate, cycleNow, cycleStart, cycleEnd }
+}
+
 DefineContract({
   name: 'gi.contracts/group',
   metadata: {
@@ -246,6 +271,15 @@ DefineContract({
       //       Just make sure the UI doesn't break if an exception is thrown, since this is
       //       bound to the UI in some location.
       return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
+    },
+    currentMonthCycleStats (state, getters) {
+      return monthlyCycleStatsAtDate({ state: getters.currentGroupState, getters, atDate: new Date().toISOString() })
+    },
+    groupCreationDate (state, getters) {
+      return getters.currentGroupState.distributionCycleStartDate
+    },
+    groupDistributionEvents (state, getters) {
+      return getters.currentGroupState.distributionEvents
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -276,6 +310,8 @@ DefineContract({
         const initialState = merge({
           payments: {},
           paymentsByMonth: {},
+          distributionCycleStartDate: meta.createdDate,
+          distributionEvents: [],
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
@@ -369,6 +405,7 @@ DefineContract({
             const toUser = vueFetchInitKV(fromUser, data.toUser, [])
             toUser.push(data.paymentHash)
           }
+          state.distributionEvents.push({ type: 'paymentEvent', data: { from: meta.username, to: data.toUser, amount: payment.meta.amount, when: meta.createdDate, cycle: monthlyCycleStatsAtDate({ meta, state, atDate: meta.createdDate }).cycleNow } })
           paymentMonth.lastAdjustedDistribution = groupIncomeDistribution({
             state, getters, updateMonthstamp, adjusted: true
           })
@@ -672,6 +709,9 @@ DefineContract({
               Vue.set(groupProfile, key, value)
           }
         }
+
+        const income = data.incomeDetailsType === 'incomeAmount' ? data.incomeAmount - state.settings.mincomeAmount : data.pledgeAmount
+        state.distributionEvents.push({ type: 'incomeDeclaredEvent', data: { name: meta.username, income, when: meta.createdDate, cycle: monthlyCycleStatsAtDate({ meta, state, atDate: meta.createdDate }).cycleNow } })
       }
     },
     'gi.contracts/group/updateAllVotingRules': {
