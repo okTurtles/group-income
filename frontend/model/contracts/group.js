@@ -107,22 +107,29 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   return monthlyPayments
 }
 
-function nextMonth (date) {
-  const thisMonth = date.getMonth()
-  date.setMonth(thisMonth + 1)
-  if (date.getMonth() !== thisMonth + 1 && date.getMonth() !== 0) {
-    date.setDate(0)
+function addMonths (startDate, months) {
+  const thisMonth = startDate.getMonth()
+  startDate.setMonth(thisMonth + months)
+  if (startDate.getMonth() !== thisMonth + 1 && startDate.getMonth() !== 0) {
+    startDate.setDate(0)
   }
-  return date
+  return startDate
 }
 
 function monthlyCycleStatsAtDate ({ meta, state, atDate }) {
-  let cycleStartDate = new Date(state.distributionCycleStartDate)
-  let cycleEndDate = nextMonth(new Date(cycleStartDate.toISOString()))
   const cycleNowDate = new Date(atDate)
+
+  const cycleStartDateInitial = new Date(state.distributionCycleStartDate)
+  const cycleEndDateInitial = addMonths(new Date(cycleStartDateInitial.toISOString()), 1)
+
+  let cycleStartDate = new Date(cycleStartDateInitial.toISOString())
+  let cycleEndDate = new Date(cycleEndDateInitial.toISOString())
+
+  let monthIteration = 0
   while (cycleEndDate - cycleNowDate < 0) {
-    cycleStartDate = nextMonth(cycleStartDate)
-    cycleEndDate = nextMonth(cycleEndDate)
+    cycleStartDate = addMonths(cycleStartDateInitial, monthIteration)
+    cycleEndDate = addMonths(cycleStartDateInitial, monthIteration + 1)
+    monthIteration++
   }
 
   const cycleNow = (cycleNowDate - cycleStartDate) / (cycleEndDate - cycleStartDate)
@@ -405,7 +412,7 @@ DefineContract({
             const toUser = vueFetchInitKV(fromUser, data.toUser, [])
             toUser.push(data.paymentHash)
           }
-          state.distributionEvents.push({ type: 'paymentEvent', data: { from: meta.username, to: data.toUser, amount: payment.meta.amount, when: meta.createdDate, cycle: monthlyCycleStatsAtDate({ meta, state, atDate: meta.createdDate }).cycleNow } })
+          state.distributionEvents.push({ type: 'paymentEvent', data: { from: meta.username, to: payment.data.toUser, amount: payment.data.amount, when: meta.createdDate, cycle: monthlyCycleStatsAtDate({ meta, state, atDate: meta.createdDate }).cycleNow } })
           paymentMonth.lastAdjustedDistribution = groupIncomeDistribution({
             state, getters, updateMonthstamp, adjusted: true
           })
