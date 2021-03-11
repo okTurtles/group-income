@@ -116,7 +116,7 @@ function addMonths (startDate, months) {
   return startDate
 }
 
-function monthlyCycleStatsAtDate ({ meta, state, atDate }) {
+function monthlyCycleStatsAtDate ({ state, atDate }) {
   const cycleNowDate = new Date(atDate)
 
   const cycleStartDateInitial = new Date(state.distributionCycleStartDate)
@@ -412,7 +412,7 @@ DefineContract({
             const toUser = vueFetchInitKV(fromUser, data.toUser, [])
             toUser.push(data.paymentHash)
           }
-          state.distributionEvents.push({ type: 'paymentEvent', data: { from: meta.username, to: payment.data.toUser, amount: payment.data.amount, when: meta.createdDate, cycle: monthlyCycleStatsAtDate({ meta, state, atDate: meta.createdDate }).cycleNow } })
+          state.distributionEvents.push({ type: 'paymentEvent', data: { from: meta.username, to: payment.data.toUser, amount: payment.data.amount, when: meta.createdDate, cycle: monthlyCycleStatsAtDate({ state, atDate: meta.createdDate }).cycleNow } })
           paymentMonth.lastAdjustedDistribution = groupIncomeDistribution({
             state, getters, updateMonthstamp, adjusted: true
           })
@@ -718,7 +718,7 @@ DefineContract({
         }
 
         const income = data.incomeDetailsType === 'incomeAmount' ? data.incomeAmount - state.settings.mincomeAmount : data.pledgeAmount
-        state.distributionEvents.push({ type: 'incomeDeclaredEvent', data: { name: meta.username, income, when: meta.createdDate, cycle: monthlyCycleStatsAtDate({ meta, state, atDate: meta.createdDate }).cycleNow } })
+        state.distributionEvents.push({ type: 'incomeDeclaredEvent', data: { name: meta.username, income, when: meta.createdDate, cycle: monthlyCycleStatsAtDate({ state, atDate: meta.createdDate }).cycleNow } })
       }
     },
     'gi.contracts/group/updateAllVotingRules': {
