@@ -127,12 +127,12 @@ function monthlyCycleStatsAtDate ({ state, atDate }) {
 
   let monthIteration = 0
   while (cycleEndDate - cycleNowDate < 0) {
+    monthIteration++
     cycleStartDate = addMonths(cycleStartDateInitial, monthIteration)
     cycleEndDate = addMonths(cycleStartDateInitial, monthIteration + 1)
-    monthIteration++
   }
 
-  const cycleNow = (cycleNowDate - cycleStartDate) / (cycleEndDate - cycleStartDate)
+  const cycleNow = (cycleNowDate - cycleStartDate) / (cycleEndDate - cycleStartDate) + monthIteration
   const cycleStart = Math.floor(cycleNow)
   const cycleEnd = cycleStart + 1
 
