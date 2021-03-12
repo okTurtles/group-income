@@ -84,6 +84,8 @@ export const RESPONSE_TYPE = Object.freeze({
  * @param {Object?} options
  * {boolean?} debug
  * {object?} handlers - Custom handlers for WebSocket events.
+ * {boolean?} manual - Whether the factory should call 'connect()' automatically.
+ *   Also named 'autoConnect' or 'startClosed' in other libraries.
  * {object?} messageHandlers - Custom handlers for different message types.
  * {boolean?} reconnectOnDisconnection - Whether to reconnect after a server-side disconnection.
  * {boolean?} reconnectOnOnline - Whether to reconnect after coming back online.
@@ -153,7 +155,9 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
       window.addEventListener(name, client.listeners[name])
     })
   }
-  client.connect()
+  if (!client.options.manual) {
+    client.connect()
+  }
   return client
 }
 
