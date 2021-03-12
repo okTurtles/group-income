@@ -121,8 +121,6 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
       connect,
       destroy,
       getNextRandomDelay,
-      isConnecting,
-      isReconnecting,
       scheduleConnectionAttempt,
       pub,
       sub,
@@ -421,20 +419,6 @@ function getNextRandomDelay (): number {
     maxReconnectionDelay
   )
   return Math.round(minDelay + Math.random() * (maxDelay - minDelay))
-}
-
-// Whether we are currently disconnected but trying to connect or reconnect.
-function isConnecting (): boolean {
-  return (
-    this.nextConnectionAttemptDelayID || (
-      this.socket && this.socket.readyState === WebSocket.CONNECTING
-    )
-  )
-}
-
-// Whether we are currently disconnected but trying to reconnect.
-function isReconnecting (): boolean {
-  return !this.isNew && this.isConnecting()
 }
 
 // Schedules a connection attempt to happen after a delay computed according to
