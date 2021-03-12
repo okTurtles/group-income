@@ -94,8 +94,8 @@ export const RESPONSE_TYPE = Object.freeze({
 export function createClient (url: string, options?: Object = {}): PubSubClient {
   const client = {
     customSocketEventHandlers: options.handlers || {},
-    // The current number of reconnection attempts that failed (the initial
-    // connection attempt doesn't count). Reset to 0 upon successful connection.
+    // The current number of connection attempts that failed.
+    // Reset to 0 upon successful connection.
     // Used to compute how long to wait before the next reconnection attempt.
     failedConnectionAttempts: 0,
     // True if this client has never been connected yet.
@@ -198,27 +198,28 @@ const defaultSocketEventHandlers = {
       this.scheduleConnectionAttempt()
     }
   },
-  // Emitted when an error occurs.
-  // Do not manually close the socket here as it will be done automatically.
+  // Emitted when an error has occured.
+  // The socket will be closed automatically by the engine if necessary.
   error (event: Event) {
     console.log('[pubsub] Event: error', event)
   },
   // Emitted when a message is received.
+  // The connection will be terminated if the message is malformed or has an
+  // unexpected data type (e.g. binary instead of text).
   message (event: MessageEvent) {
     const { data } = event
 
     if (typeof data !== 'string') {
-      return
+      // TODO: emit an error event before destroying the client.
+      return this.destroy()
     }
 
     let msg: Message = { type: '' }
     try {
       msg = messageParser(data)
     } catch (error) {
-      // Place us in unrecoverable state.
       console.error(`[pubsub] Critical error! Malformed message: ${error.message}`)
-      this.destroy()
-      return
+      return this.destroy()
     }
     const handler = this.messageHandlers[msg.type]
 
@@ -230,8 +231,8 @@ const defaultSocketEventHandlers = {
   },
   offline () {
     console.log('[pubsub] Event: offline')
-    // Reset the connection attempt counter so that we'll attempt to
-    // reconnect freshly again when the user is back online.
+    // Reset the connection attempt counter so that we'll start a new
+    // reconnection loop when we are back online.
     this.failedConnectionAttempts = 0
     if (this.socket) {
       this.socket.close()
@@ -335,8 +336,9 @@ export const messageParser = (data: string): Message => {
   return msg
 }
 
-// ====== Client methods ====== //
+// ====== Methods ====== //
 
+// Performs a connection or reconnection attempt.
 function connect () {
   if (this.socket !== null) {
     throw new Error('connect() can only be called if there is no current socket.')
@@ -345,7 +347,7 @@ function connect () {
     throw new Error('connect() must not be called during a reconnection delay.')
   }
   if (!this.shouldReconnect) {
-    throw new Error('connect() must not be called if shouldReconnect is false.')
+    throw new Error('connect() should no longer be called on this instance.')
   }
   this.socket = new WebSocket(this.url)
 
@@ -364,12 +366,12 @@ function connect () {
 }
 
 /**
- * Immediately remove every event listener and free up ressources.
- * This method is used in unit tests.
+ * Immediately close the socket, stop listening for events and clear any cache.
  *
- * - No 'close' event will be emitted.
+ * This method is used in unit tests.
+ * - In particular, no 'close' event handler will be called.
  * - Any incoming or outgoing buffered data will be discarded.
- * - Any pending request will be discarded.
+ * - Any pending messages will be discarded.
  */
 function destroy () {
   // Clear all timers.
@@ -431,7 +433,8 @@ function isReconnecting (): boolean {
   return !this.isNew && this.isConnecting()
 }
 
-// Schedules a connection attempt using a REB algorithm to compute the delay.
+// Schedules a connection attempt to happen after a delay computed according to
+// a randomized exponential backoff algorithm variant.
 function scheduleConnectionAttempt () {
   if (!this.shouldReconnect) {
     throw new Error('Cannot call `scheduleConnectionAttempt()` when `shouldReconnect` is false.')
@@ -459,9 +462,10 @@ function pub (contractID: string, data: JSONType) {
 /**
  * Sends a SUB request to the server as soon as possible.
  *
- * - A copy of the request will be cached until we get a relevant server response,
- * allowing to re-send the same request if necessary.
+ * - The given contract ID will be cached until we get a relevant server
+ * response, allowing us to resend the same request if necessary.
  * - Any identical UNSUB request that has not been sent yet will be cancelled.
+ * - Calling this method again before the server has responded has no effect.
  * @param contractID - The ID of the contract whose updates we want to subscribe to.
  */
 function sub (contractID: string) {
@@ -479,9 +483,10 @@ function sub (contractID: string) {
 /**
  * Sends an UNSUB request to the server as soon as possible.
  *
- * - A copy of the request will be cached until we get a relevant server response,
- * allowing to re-send the same request if necessary.
+ * - The given contract ID will be cached until we get a relevant server
+ * response, allowing us to resend the same request if necessary.
  * - Any identical SUB request that has not been sent yet will be cancelled.
+ * - Calling this method again before the server has responded has no effect.
  * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
  */
 function unsub (contractID: string) {
