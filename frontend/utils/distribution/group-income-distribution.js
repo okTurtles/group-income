@@ -1,7 +1,10 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
+import parseProRatedDistributionFromEvents from '~/frontend/utils/distribution/pro-rated-event-parser.js'
+import parseMonthlyDistributionFromEvents from '~/frontend/utils/distribution/monthly-event-parser.js'
+import minimizeTotalPaymentsCount from '~/frontend/utils/distribution/payments-minimizer.js'
 
-export default function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }: Object): any {
+export default function groupIncomeDistribution ({ state, getters, monthstamp, adjusted, proRated = true }: Object): any {
   // the monthstamp will always be for the current month. the alternative
   // is to allow the re-generation of the distribution for previous months,
   // but that approach requires also storing the historical mincomeAmount
@@ -9,19 +12,11 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
   // locations in the code, it involves less 'code smell' to do it this way.
   // see historical/group.js for the ugly way of doing it.
   const mincomeAmount = getters.groupMincomeAmount
-  const groupProfiles = getters.groupProfiles
-  const currentIncomeDistribution = []
-  for (const username in groupProfiles) {
-    const profile = groupProfiles[username]
-    const incomeDetailsType = profile && profile.incomeDetailsType
-    if (incomeDetailsType) {
-      const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
-      const amount = adjustment + profile[incomeDetailsType]
-      currentIncomeDistribution.push({
-        name: username,
-        amount: saferFloat(amount)
-      })
-    }
+  let currentIncomeDistribution = []
+  if (proRated) {
+    currentIncomeDistribution = parseProRatedDistributionFromEvents(getters.currentGroupState.distributionEvents, mincomeAmount)
+  } else {
+    currentIncomeDistribution = parseMonthlyDistributionFromEvents(getters.currentGroupState.distributionEvents, mincomeAmount)
   }
   let dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
   if (adjusted) {
@@ -36,5 +31,5 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
     }
     dist = dist.filter(p => p.amount > 0)
   }
-  return dist
+  return minimizeTotalPaymentsCount(dist)
 }
