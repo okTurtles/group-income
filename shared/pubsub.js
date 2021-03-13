@@ -39,6 +39,7 @@ export type PubSubClient = {
   destroy(): void,
   getNextRandomDelay(): number,
   pub(contractID: string, data: JSONType): void,
+  scheduleConnectionAttempt(): void,
   sub(contractID: string): void,
   unsub(contractID: string): void
 }
@@ -196,7 +197,7 @@ const defaultSocketEventHandlers = {
       }
       default: break
     }
-    if (this.shouldReconnect) {
+    if (this.shouldReconnect && this.options.reconnectOnDisconnection) {
       this.scheduleConnectionAttempt()
     }
   },
