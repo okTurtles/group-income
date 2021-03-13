@@ -12,7 +12,6 @@ function parseProRatedDistributionFromEvents (distributionEvents: Array<Object>,
       })
     }
   }
-  console.log(incomeDistribution)
   return incomeDistribution
 }
 
