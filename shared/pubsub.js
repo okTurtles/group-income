@@ -308,16 +308,19 @@ const defaultMessageHandlers = {
   }
 }
 
+// TODO: verify these are good defaults
 const defaultOptions = {
-  debug: false,
-  maxReconnectionDelay: Infinity,
+  debug: process.env.NODE_ENV === 'development',
+  maxReconnectionDelay: 60_000,
   minReconnectionDelay: 500,
   maxRetries: 10, // Not implemented.
-  reconnectOnDisconnection: false,
+  reconnectOnDisconnection: true,
   reconnectOnOnline: true,
+  // Defaults to false to avoid reconnection attempts in case the server doesn't
+  // respond because of a failed authentication.
   reconnectOnTimeout: false,
   reconnectionDelayGrowFactor: 2,
-  timeout: 5000
+  timeout: 5_000
 }
 
 const eventNames = ['close', 'error', 'message', 'open']

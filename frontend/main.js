@@ -60,12 +60,8 @@ async function startApp () {
 
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, createGIPubSubClient(
     sbp('okTurtles.data/get', 'API_URL'), {
-      // TODO: verify these are good defaults
-      // Temporarily disable automatic reconnection until it's robust enough.
-      reconnectOnDisconnection: false,
-      reconnectOnOnline: true,
-      reconnectOnTimeout: true,
-      timeout: 3000
+      // This option can be enabled since we are not doing auth via web sockets.
+      reconnectOnTimeout: true
     }
   ))
   await sbp('translations/init', navigator.language)
