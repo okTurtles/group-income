@@ -90,7 +90,7 @@ export function getTime (date: Date): string {
 
 // TODO: the time.js file SEEMS like a good place to put the following two
 // functions, however, this needs to be discussed with the team.
-export function addMonths (startDate, months) {
+export function addMonths (startDate: Date, months: number): Date {
   const thisMonth = startDate.getMonth()
   startDate.setMonth(thisMonth + months)
   if (startDate.getMonth() !== thisMonth + months && startDate.getMonth() !== 0) {
@@ -99,7 +99,7 @@ export function addMonths (startDate, months) {
   return startDate
 }
 
-export function monthlyCycleStatsAtDate (startOfCyclesDate, atDate) {
+export function monthlyCycleStatsAtDate (startOfCyclesDate: string | Date, atDate: string | Date): any | {|cycleNowDate: Date, cycleStartDate: Date, cycleNow: number, cycleStart: number, cycleEnd: number|} {
   const cycleNowDate = new Date(atDate)
 
   const cycleStartDateInitial = new Date(startOfCyclesDate)

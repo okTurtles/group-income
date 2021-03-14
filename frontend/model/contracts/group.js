@@ -377,7 +377,8 @@ DefineContract({
             const toUser = vueFetchInitKV(fromUser, data.toUser, [])
             toUser.push(data.paymentHash)
           }
-          state.distributionEvents.push({ type: 'paymentEvent',
+          state.distributionEvents.push({
+            type: 'paymentEvent',
             data: {
               from: meta.username,
               to: payment.data.toUser,
@@ -691,7 +692,8 @@ DefineContract({
         }
 
         const income = data.incomeDetailsType === 'incomeAmount' ? data.incomeAmount - state.settings.mincomeAmount : data.pledgeAmount
-        state.distributionEvents.push({ type: 'incomeDeclaredEvent',
+        state.distributionEvents.push({
+          type: 'incomeDeclaredEvent',
           data: {
             name: meta.username,
             income,
