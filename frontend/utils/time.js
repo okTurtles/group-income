@@ -87,3 +87,37 @@ export function getTime (date: Date): string {
   const t = new Date(date)
   return `${t.getHours()}:${t.getMinutes()}`
 }
+
+// TODO: the time.js file SEEMS like a good place to put the following two
+// functions, however, this needs to be discussed with the team.
+export function addMonths (startDate, months) {
+  const thisMonth = startDate.getMonth()
+  startDate.setMonth(thisMonth + months)
+  if (startDate.getMonth() !== thisMonth + months && startDate.getMonth() !== 0) {
+    startDate.setDate(0)
+  }
+  return startDate
+}
+
+export function monthlyCycleStatsAtDate (startOfCyclesDate, atDate) {
+  const cycleNowDate = new Date(atDate)
+
+  const cycleStartDateInitial = new Date(startOfCyclesDate)
+  const cycleEndDateInitial = addMonths(new Date(cycleStartDateInitial.toISOString()), 1)
+
+  let cycleStartDate = new Date(cycleStartDateInitial.toISOString())
+  let cycleEndDate = new Date(cycleEndDateInitial.toISOString())
+
+  let monthIteration = 0
+  while (cycleEndDate - cycleNowDate < 0) {
+    monthIteration++
+    cycleStartDate = addMonths(cycleStartDateInitial, monthIteration)
+    cycleEndDate = addMonths(cycleStartDateInitial, monthIteration + 1)
+  }
+
+  const cycleNow = (cycleNowDate - cycleStartDate) / (cycleEndDate - cycleStartDate) + monthIteration
+  const cycleStart = Math.floor(cycleNow)
+  const cycleEnd = cycleStart + 1
+
+  return { cycleNowDate, cycleStartDate, cycleEndDate, cycleNow, cycleStart, cycleEnd }
+}
