@@ -384,7 +384,7 @@ DefineContract({
               to: payment.data.toUser,
               amount: payment.data.amount,
               when: meta.createdDate,
-              cycle: monthlyCycleStatsAtDate(state.groupCreationDate, meta.createdDate).cycleNow
+              cycle: monthlyCycleStatsAtDate(state.distributionCycleStartDate, meta.createdDate).cycleNow
             }
           })
           paymentMonth.lastAdjustedDistribution = groupIncomeDistribution({
@@ -698,7 +698,7 @@ DefineContract({
             name: meta.username,
             income,
             when: meta.createdDate,
-            cycle: monthlyCycleStatsAtDate(state.groupCreationDate, meta.createdDate).cycleNow
+            cycle: monthlyCycleStatsAtDate(state.distributionCycleStartDate, meta.createdDate).cycleNow
           }
         })
       }
