@@ -106,7 +106,7 @@ const defaultOptions = {
 const generateSocketID = (() => {
   let counter = 0
 
-  return () => counter++
+  return (debugID) => String(counter++) + (debugID ? '-' + debugID : '')
 })()
 
 // Default handlers for server events.
@@ -120,7 +120,10 @@ const defaultServerHandlers = {
    * @param {http.IncomingMessage} request - The underlying Node http GET request.
    */
   connection (socket: Object, request: Object) {
-    socket.id = generateSocketID()
+    const url = request.url
+    const urlSearch = url.includes('?') ? url.slice(url.lastIndexOf('?')) : ''
+    const debugID = new URLSearchParams(urlSearch).get('debugID') || ''
+    socket.id = generateSocketID(debugID)
     socket.isAlive = true
     socket.server = this
     socket.subscriptions = new Set()

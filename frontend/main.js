@@ -58,12 +58,26 @@ async function startApp () {
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
 
+  // URL used to connect to the pubsub server. May include query parameters.
+  let pubsubURL = sbp('okTurtles.data/get', 'API_URL')
+
+  if (process.env.NODE_ENV === 'development') {
+    // This is temporarily used in development mode to help the server improve
+    // its console output until we have a better solution. Do not use for auth.
+    const debugID = Array.from(
+      // Flowtype doesn't support crypto yey: https://github.com/facebook/flow/issues/5019
+      (crypto: any).getRandomValues(new Uint8Array(3)),
+      (byte) => byte.toString(16).padStart(2, '0')
+    ).join('')
+    pubsubURL += `?debugID=${debugID}`
+  }
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, createGIPubSubClient(
-    sbp('okTurtles.data/get', 'API_URL'), {
+    pubsubURL, {
       // This option can be enabled since we are not doing auth via web sockets.
       reconnectOnTimeout: true
     }
   ))
+
   await sbp('translations/init', navigator.language)
 
   const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
