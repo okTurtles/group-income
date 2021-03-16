@@ -198,7 +198,11 @@ const defaultSocketEventHandlers = {
       default: break
     }
     if (this.shouldReconnect && this.options.reconnectOnDisconnection) {
-      this.scheduleConnectionAttempt()
+      if (this.failedConnectionAttempts <= this.options.maxRetries) {
+        this.scheduleConnectionAttempt()
+      } else {
+        this.destroy()
+      }
     }
   },
   // Emitted when an error has occured.
@@ -313,8 +317,8 @@ const defaultMessageHandlers = {
 const defaultOptions = {
   debug: process.env.NODE_ENV === 'development',
   maxReconnectionDelay: 60_000,
+  maxRetries: 10,
   minReconnectionDelay: 500,
-  maxRetries: 10, // Not implemented.
   reconnectOnDisconnection: true,
   reconnectOnOnline: true,
   // Defaults to false to avoid reconnection attempts in case the server doesn't
