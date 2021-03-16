@@ -107,6 +107,19 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   return monthlyPayments
 }
 
+function memberLeaves (state, username, dateLeft) {
+  state.profiles[username].status = PROFILE_STATUS.REMOVED
+  state.profiles[username].departedDate = dateLeft
+  state.distributionEvents.push({
+    type: 'leaveGroup',
+    data: {
+      name: username,
+      when: dateLeft,
+      cycle: monthlyCycleStatsAtDate(state.distributionCycleStartDate, dateLeft).cycleNow
+    }
+  })
+}
+
 DefineContract({
   name: 'gi.contracts/group',
   metadata: {
@@ -522,8 +535,7 @@ DefineContract({
         }
       },
       process ({ data, meta }, { state, getters }) {
-        state.profiles[data.member].status = PROFILE_STATUS.REMOVED
-        state.profiles[data.member].departedDate = meta.createdDate
+        memberLeaves(state, data.member, meta.createdDate)
       },
       async sideEffect ({ data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
@@ -557,8 +569,7 @@ DefineContract({
         reason: string
       }),
       process ({ data, meta, contractID }, { state, getters }) {
-        state.profiles[meta.username].status = PROFILE_STATUS.REMOVED
-        state.profiles[meta.username].departedDate = meta.createdDate
+        memberLeaves(state, meta.username, meta.createdDate)
         sbp('gi.contracts/group/pushSideEffect', contractID,
           ['gi.contracts/group/removeMember/process/sideEffect', {
             meta,

@@ -22,8 +22,8 @@ distributionTODO = mincomeProprotionalAlgo(adjustedDistribution(haves, needs, di
 }
 return distributionTODO
 */
-function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number): Array<any | {|name: string, amount: number|}> {
-  const incomeDistribution = []
+function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthstamp: string): Array<any | {|name: string, amount: number|}> {
+  let incomeDistribution = []
   for (const event of distributionEvents) {
     if (event.type === 'incomeDeclaredEvent') {
       const amount = minCome + event.data.income
@@ -31,6 +31,17 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
         name: event.data.name,
         amount: saferFloat(amount)
       })
+    } else if (event.type === 'paymentEvent') {
+      const amount = event.data.amount
+      const from = event.data.from
+      for (const distribution of incomeDistribution) {
+        if (distribution.name === from) {
+          distribution.amount -= amount
+        }
+      }
+    } else if (event.type === 'leaveEvent') {
+      incomeDistribution = incomeDistribution.filter((e) => e.name !== event.name)
+      // TODO: discuss the ambiguities of the given pseudocode for this case.
     }
   }
   return incomeDistribution
