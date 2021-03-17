@@ -209,48 +209,50 @@ const defaultMessageHandlers = {
   },
 
   [SUB] ({ contractID, type }: SubMessage) {
+    const socket = this
     const socketID = this.id
     const { server, subscriptions } = this
-    const { subscribersByContractID } = this.server
 
-    if (!subscriptions.has(contractID)) {
+    if (!socket.subscriptions.has(contractID)) {
       // Add the given contract ID to our subscriptions.
-      subscriptions.add(contractID)
-      if (!subscribersByContractID[contractID]) {
-        subscribersByContractID[contractID] = new Set()
+      socket.subscriptions.add(contractID)
+      if (!server.subscribersByContractID[contractID]) {
+        server.subscribersByContractID[contractID] = new Set()
       }
-      subscribersByContractID[contractID].add(this)
-      // Notify other subscribers of this contract that we have joined them.
-      server.clients.forEach((client) => {
-        if (client !== this && client.subscriptions.has(contractID)) {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(createNotification(type, { contractID, socketID }))
-          }
+      const subscribers = server.subscribersByContractID[contractID]
+      // Add this socket to the subscribers of the given contract.
+      subscribers.add(this)
+      // Broadcast a notification to every other open subscriber.
+      const notification = createNotification(type, { contractID, socketID })
+      for (const subscriber of subscribers) {
+        if (subscriber.readyState === WebSocket.OPEN) {
+          subscriber.send(notification)
         }
-      })
+      }
     }
     this.send(createResponse(SUCCESS, { type, contractID }))
   },
 
   [UNSUB] ({ contractID, type }: UnsubMessage) {
+    const socket = this
     const socketID = this.id
     const { server, subscriptions } = this
-    const { subscribersByContractID } = this.server
 
-    if (subscriptions.has(contractID)) {
+    if (socket.subscriptions.has(contractID)) {
       // Remove the given contract ID from our subscriptions.
-      subscriptions.delete(contractID)
-      if (subscribersByContractID[contractID]) {
-        subscribersByContractID[contractID].delete(this)
-      }
-      // Notify other subscribers of this contract that we have left them.
-      server.clients.forEach((client) => {
-        if (client !== this && client.subscriptions.has(contractID)) {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(createNotification(type, { contractID, socketID }))
+      socket.subscriptions.delete(contractID)
+      if (server.subscribersByContractID[contractID]) {
+        const subscribers = server.subscribersByContractID[contractID]
+        // Remove this socket from the subscribers of the given contract.
+        subscribers.delete(this)
+        // Broadcast a notification to every other open subscriber.
+        const notification = createNotification(type, { contractID, socketID })
+        for (const subscriber of subscribers) {
+          if (subscriber.readyState === WebSocket.OPEN) {
+            subscriber.send(notification)
           }
         }
-      })
+      }
     }
     this.send(createResponse(SUCCESS, { type, contractID }))
   }
