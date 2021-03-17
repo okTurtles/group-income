@@ -419,14 +419,10 @@ function getNextRandomDelay (): number {
     reconnectionDelayGrowFactor
   } = this.options
 
-  const minDelay = (
-    minReconnectionDelay * reconnectionDelayGrowFactor ** this.failedConnectionAttempts
-  )
-  const maxDelay = Math.min(
-    minReconnectionDelay * reconnectionDelayGrowFactor ** (this.failedConnectionAttempts + 1),
-    maxReconnectionDelay
-  )
-  return Math.round(minDelay + Math.random() * (maxDelay - minDelay))
+  const minDelay = minReconnectionDelay * reconnectionDelayGrowFactor ** this.failedConnectionAttempts
+  const maxDelay = minDelay * reconnectionDelayGrowFactor
+
+  return Math.min(maxReconnectionDelay, Math.round(minDelay + Math.random() * (maxDelay - minDelay)))
 }
 
 // Schedules a connection attempt to happen after a delay computed according to
