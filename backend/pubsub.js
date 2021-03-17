@@ -274,9 +274,9 @@ const serverMethods = {
     }
   },
   // Enumerates the subscribers of a given contract.
-  *enumerateSubscribers (contractID: string): Iterable<Object> {
+  * enumerateSubscribers (contractID: string): Iterable<Object> {
     if (contractID in this.subscribersByContractID) {
-      yield* this.subscribersByContractID[contractID]
+      yield * this.subscribersByContractID[contractID]
     }
   }
 }
