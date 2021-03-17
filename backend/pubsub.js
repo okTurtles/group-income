@@ -10,7 +10,11 @@ import {
   messageParser
 } from '~/shared/pubsub.js'
 
-import type { Message, SubMessage, UnsubMessage } from '~/shared/pubsub.js'
+import type {
+  Message, SubMessage, UnsubMessage,
+  NotificationTypeEnum, ResponseTypeEnum
+} from '~/shared/pubsub.js'
+
 import type { JSONType } from '~/shared/types.js'
 
 const { bold } = require('chalk')
@@ -25,13 +29,13 @@ const { ERROR, SUCCESS } = RESPONSE_TYPE
 export { createClient, createMessage, NOTIFICATION_TYPE, REQUEST_TYPE, RESPONSE_TYPE }
 
 export function createNotification (
-  type: string,
+  type: NotificationTypeEnum,
   data: {| contractID: string, socketID: number |}
 ): string {
   return JSON.stringify({ type, ...data })
 }
 
-export function createResponse (type: string, data: JSONType): string {
+export function createResponse (type: ResponseTypeEnum, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 

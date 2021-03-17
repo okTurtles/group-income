@@ -76,6 +76,10 @@ export const RESPONSE_TYPE = Object.freeze({
   SUCCESS: 'success'
 })
 
+export type NotificationTypeEnum = $Values<typeof NOTIFICATION_TYPE>
+export type RequestTypeEnum = $Values<typeof REQUEST_TYPE>
+export type ResponseTypeEnum = $Values<typeof RESPONSE_TYPE>
+
 // ====== API ====== //
 
 /**
@@ -164,7 +168,7 @@ export function createMessage (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
-export function createRequest (type: $Values<typeof REQUEST_TYPE>, data: JSONObject): string {
+export function createRequest (type: RequestTypeEnum, data: JSONObject): string {
   // Had to use Object.assign() instead of object spreading to make Flow happy.
   return JSON.stringify(Object.assign({ type }, data))
 }
