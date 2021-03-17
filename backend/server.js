@@ -7,7 +7,7 @@ import GiAuth from './auth.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
-import { createMessage, createServer } from './pubsub.js'
+import { createMessage, createServer, NOTIFICATION_TYPE } from './pubsub.js'
 import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
@@ -43,7 +43,7 @@ sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 sbp('sbp/selectors/register', {
   'backend/server/broadcastEntry': async function (entry: GIMessage) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-    const pubsubMessage = createMessage('entry', entry.serialize())
+    const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry.serialize())
     const subscribers = pubsub.enumerateSubscribers(entry.contractID())
     console.log(chalk.blue.bold(`[pubsub] Broadcasting ${entry.description()}`))
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
