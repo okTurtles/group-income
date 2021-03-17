@@ -28,11 +28,8 @@ const { ERROR, SUCCESS } = RESPONSE_TYPE
 // Re-export some useful things from the shared module.
 export { createClient, createMessage, NOTIFICATION_TYPE, REQUEST_TYPE, RESPONSE_TYPE }
 
-export function createNotification (
-  type: NotificationTypeEnum,
-  data: {| contractID: string, socketID: number |}
-): string {
-  return JSON.stringify({ type, ...data })
+export function createNotification (type: NotificationTypeEnum, data: JSONType): string {
+  return JSON.stringify({ type, data })
 }
 
 export function createResponse (type: ResponseTypeEnum, data: JSONType): string {
@@ -227,7 +224,7 @@ const defaultMessageHandlers = {
       server.clients.forEach((client) => {
         if (client !== this && client.subscriptions.has(contractID)) {
           if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type, data: { contractID, socketID } }))
+            client.send(createNotification(type, { contractID, socketID }))
           }
         }
       })
@@ -250,7 +247,7 @@ const defaultMessageHandlers = {
       server.clients.forEach((client) => {
         if (client !== this && client.subscriptions.has(contractID)) {
           if (client.readyState === WebSocket.OPEN) {
-            client.send(JSON.stringify({ type, data: { contractID, socketID } }))
+            client.send(createNotification(type, { contractID, socketID }))
           }
         }
       })
