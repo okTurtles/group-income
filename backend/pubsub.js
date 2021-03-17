@@ -211,7 +211,7 @@ const defaultMessageHandlers = {
   [SUB] ({ contractID, type }: SubMessage) {
     const socket = this
     const socketID = this.id
-    const { server, subscriptions } = this
+    const { server } = this
 
     if (!socket.subscriptions.has(contractID)) {
       // Add the given contract ID to our subscriptions.
@@ -236,7 +236,7 @@ const defaultMessageHandlers = {
   [UNSUB] ({ contractID, type }: UnsubMessage) {
     const socket = this
     const socketID = this.id
-    const { server, subscriptions } = this
+    const { server } = this
 
     if (socket.subscriptions.has(contractID)) {
       // Remove the given contract ID from our subscriptions.
