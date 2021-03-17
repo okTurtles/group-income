@@ -94,7 +94,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
       })
     }, server.options.pingInterval)
   }
-  return server
+  return Object.assign(server, serverMethods)
 }
 
 const defaultOptions = {
@@ -252,5 +252,31 @@ const defaultMessageHandlers = {
       })
     }
     this.send(createResponse(SUCCESS, { type, contractID }))
+  }
+}
+
+const serverMethods = {
+  /**
+   * Broadcasts a message, ignoring clients which are not open.
+   *
+   * @param message
+   * @param to - The intended recipients of the message. Defaults to every open client socket.
+   * @param except - A recipient to exclude. Optional.
+   */
+  broadcast (
+    message: Message,
+    { to, except }: { to?: Iterable<Object>, except?: Object }
+  ) {
+    for (const client of to || this.clients) {
+      if (client.readyState === WebSocket.OPEN && client !== except) {
+        client.send(message)
+      }
+    }
+  },
+  // Enumerates the subscribers of a given contract.
+  *enumerateSubscribers (contractID: string): Iterable<Object> {
+    if (contractID in this.subscribersByContractID) {
+      yield* this.subscribersByContractID[contractID]
+    }
   }
 }
