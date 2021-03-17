@@ -41,14 +41,16 @@ const hapi = new Hapi.Server({
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 sbp('sbp/selectors/register', {
-  'backend/server/handleEntry': async function (entry: GIMessage) {
+  'backend/server/broadcastEntry': async function (entry: GIMessage) {
     const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
     const pubsubMessage = createMessage('entry', entry.serialize())
     const subscribers = pubsub.enumerateSubscribers(entry.contractID())
-
-    await sbp('gi.db/log/addEntry', entry)
     console.log(chalk.blue.bold(`[pubsub] Broadcasting ${entry.description()}`))
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
+  },
+  'backend/server/handleEntry': async function (entry: GIMessage) {
+    await sbp('gi.db/log/addEntry', entry)
+    await sbp('backend/server/broadcastEntry', entry)
   },
   'backend/server/stop': function () {
     return hapi.stop()
