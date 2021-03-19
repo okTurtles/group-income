@@ -107,11 +107,23 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   return monthlyPayments
 }
 
+function memberDeclaredIncome (state, username, income, createdDate) {
+  state.distributionEvents.push({
+    type: 'incomeDeclaredEvent',
+    data: {
+      name: username,
+      income,
+      when: createdDate,
+      cycle: monthlyCycleStatsAtDate(state.distributionCycleStartDate, createdDate).cycleNow
+    }
+  })
+}
+
 function memberLeaves (state, username, dateLeft) {
   state.profiles[username].status = PROFILE_STATUS.REMOVED
   state.profiles[username].departedDate = dateLeft
   state.distributionEvents.push({
-    type: 'leaveGroup',
+    type: 'userExitsGroupEvent',
     data: {
       name: username,
       when: dateLeft,
@@ -296,7 +308,15 @@ DefineContract({
           payments: {},
           paymentsByMonth: {},
           distributionCycleStartDate: meta.createdDate,
-          distributionEvents: [],
+          distributionEvents: [{
+            type: 'startCycleEvent',
+            data: {
+              cycle: 0,
+              when: meta.createdDate,
+              overPayments: [],
+              underPayments: []
+            }
+          }],
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
@@ -701,17 +721,8 @@ DefineContract({
               Vue.set(groupProfile, key, value)
           }
         }
-
         const income = data.incomeDetailsType === 'incomeAmount' ? data.incomeAmount - state.settings.mincomeAmount : data.pledgeAmount
-        state.distributionEvents.push({
-          type: 'incomeDeclaredEvent',
-          data: {
-            name: meta.username,
-            income,
-            when: meta.createdDate,
-            cycle: monthlyCycleStatsAtDate(state.distributionCycleStartDate, meta.createdDate).cycleNow
-          }
-        })
+        memberDeclaredIncome(state, meta.username, income, meta.createdDate)
       }
     },
     'gi.contracts/group/updateAllVotingRules': {

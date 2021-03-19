@@ -109,7 +109,7 @@ export function monthlyCycleStatsAtDate (startOfCyclesDate: string | Date, atDat
   let cycleEndDate = new Date(cycleEndDateInitial.toISOString())
 
   let monthIteration = 0
-  while (cycleEndDate - cycleNowDate < 0) {
+  while (cycleEndDate - cycleNowDate <= 0) {
     monthIteration++
     cycleStartDate = addMonths(cycleStartDateInitial, monthIteration)
     cycleEndDate = addMonths(cycleStartDateInitial, monthIteration + 1)

@@ -1,5 +1,6 @@
 'use strict'
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
+import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 
 // TODO: this algorithm will be responsible for calculating the
 // okTurtles R&D team's assume-friendly-relationships distribution of payments. The pseudocode of the
@@ -22,29 +23,29 @@ distributionTODO = mincomeProprotionalAlgo(adjustedDistribution(haves, needs, di
 }
 return distributionTODO
 */
-function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthstamp: string): Array<any | {|name: string, amount: number|}> {
-  let incomeDistribution = []
+function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number): Array<any | {|from: string, to: string, amount: number|}> {
+  let groupMembers = []
   for (const event of distributionEvents) {
     if (event.type === 'incomeDeclaredEvent') {
       const amount = minCome + event.data.income
-      incomeDistribution.push({
+      groupMembers.push({
         name: event.data.name,
         amount: saferFloat(amount)
       })
     } else if (event.type === 'paymentEvent') {
       const amount = event.data.amount
       const from = event.data.from
-      for (const distribution of incomeDistribution) {
-        if (distribution.name === from) {
-          distribution.amount -= amount
+      for (const member of groupMembers) {
+        if (member.name === from) {
+          member.amount -= amount
         }
       }
     } else if (event.type === 'leaveEvent') {
-      incomeDistribution = incomeDistribution.filter((e) => e.name !== event.name)
+      groupMembers = groupMembers.filter((e) => e.name !== event.name)
       // TODO: discuss the ambiguities of the given pseudocode for this case.
     }
   }
-  return incomeDistribution
+  return incomeDistribution(groupMembers, minCome)
 }
 
 export default parseMonthlyDistributionFromEvents
