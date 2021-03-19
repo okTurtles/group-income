@@ -260,6 +260,7 @@ const defaultSocketEventHandlers = {
     console.log('[pubsub] Event: online')
     if (this.options.reconnectOnOnline && this.shouldReconnect) {
       if (!this.socket) {
+        this.failedConnectionAttempts = 0
         this.scheduleConnectionAttempt()
       }
     }
@@ -271,7 +272,8 @@ const defaultSocketEventHandlers = {
       console.log('[pubsub] Connection re-established')
     }
     this.clearAllTimers()
-    this.failedConnectionAttempts = 0
+    // Set it to -1 so that it becomes 0 on the next `close` event.
+    this.failedConnectionAttempts = -1
     this.isNew = false
     // Setup a ping timeout if required.
     // It will close the connection if we don't get any message from the server.
