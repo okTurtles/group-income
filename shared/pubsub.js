@@ -30,6 +30,7 @@ export type PubSubClient = {
   +options: Object,
   +pendingSubscriptionSet: Set<string>,
   +pendingUnsubscriptionSet: Set<string>,
+  pingTimeoutID: TimeoutID | void,
   shouldReconnect: boolean,
   socket: WebSocket | null,
   +subscriptionSet: Set<string>,
@@ -60,6 +61,8 @@ export type UnsubMessage = {
 
 export const NOTIFICATION_TYPE = Object.freeze({
   ENTRY: 'entry',
+  PING: 'ping',
+  PONG: 'pong',
   PUB: 'pub',
   SUB: 'sub',
   UNSUB: 'unsub'
@@ -92,6 +95,7 @@ export type ResponseTypeEnum = $Values<typeof RESPONSE_TYPE>
  * {boolean?} manual - Whether the factory should call 'connect()' automatically.
  *   Also named 'autoConnect' or 'startClosed' in other libraries.
  * {object?} messageHandlers - Custom handlers for different message types.
+ * {number?} pingTimeout - How long to wait for the server to send a ping, in milliseconds.
  * {boolean?} reconnectOnDisconnection - Whether to reconnect after a server-side disconnection.
  * {boolean?} reconnectOnOnline - Whether to reconnect after coming back online.
  * {boolean?} reconnectOnTimeout - Whether to reconnect after a connection timeout.
@@ -109,11 +113,12 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     isNew: true,
     listeners: Object.create(null),
     messageHandlers: { ...defaultMessageHandlers, ...options.messageHandlers },
+    nextConnectionAttemptDelayID: undefined,
     options: { ...defaultOptions, ...options },
     // Requested subscriptions for which we didn't receive a response yet.
     pendingSubscriptionSet: new Set(),
     pendingUnsubscriptionSet: new Set(),
-    nextConnectionAttemptDelayID: undefined,
+    pingTimeoutID: undefined,
     shouldReconnect: true,
     // The underlying WebSocket object.
     // A new one is necessary for every connection or reconnection attempt.
@@ -123,6 +128,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     url: url.replace(/^http/, 'ws'),
     // Methods
     ...{
+      clearAllTimers,
       connect,
       destroy,
       getNextRandomDelay,
@@ -187,11 +193,8 @@ const defaultSocketEventHandlers = {
       }
     }
     this.socket = null
+    this.clearAllTimers()
 
-    if (this.connectionTimeoutID) {
-      clearTimeout(this.connectionTimeoutID)
-      this.connectionTimeoutID = undefined
-    }
     // See "Status Codes" https://tools.ietf.org/html/rfc6455#section-7.4
     switch (event.code) {
       // TODO: verify that this list of codes is correct.
@@ -213,6 +216,7 @@ const defaultSocketEventHandlers = {
   // The socket will be closed automatically by the engine if necessary.
   error (event: Event) {
     console.log('[pubsub] Event: error', event)
+    clearTimeout(this.pingTimeoutID)
   },
   // Emitted when a message is received.
   // The connection will be terminated if the message is malformed or has an
@@ -222,6 +226,7 @@ const defaultSocketEventHandlers = {
 
     if (typeof data !== 'string') {
       // TODO: emit an error event before destroying the client.
+      console.error('wrong data type', typeof data)
       return this.destroy()
     }
 
@@ -242,6 +247,7 @@ const defaultSocketEventHandlers = {
   },
   offline () {
     console.log('[pubsub] Event: offline')
+    clearTimeout(this.pingTimeoutID)
     // Reset the connection attempt counter so that we'll start a new
     // reconnection loop when we are back online.
     this.failedConnectionAttempts = 0
@@ -263,12 +269,15 @@ const defaultSocketEventHandlers = {
     if (!this.isNew) {
       console.log('[pubsub] Connection re-established')
     }
+    this.clearAllTimers()
     this.failedConnectionAttempts = 0
     this.isNew = false
-
-    if (this.connectionTimeoutID) {
-      clearTimeout(this.connectionTimeoutID)
-      this.connectionTimeoutID = undefined
+    // Setup a ping timeout if required.
+    // It will close the connection if we don't get any message from the server.
+    if (this.options.pingTimeout > 0 && this.options.pingTimeout < Infinity) {
+      this.pingTimeoutID = setTimeout(() => {
+        if (this.socket) this.socket.close()
+      }, this.options.pingTimeout)
     }
     // Resend any still unacknowledged request.
     this.pendingSubscriptionSet.forEach((contractID) => {
@@ -282,6 +291,20 @@ const defaultSocketEventHandlers = {
 
 // These handlers receive the PubSubClient instance through the `this` binding.
 const defaultMessageHandlers = {
+  [NOTIFICATION_TYPE.PING] ({ data }) {
+    console.debug(`[pubsub] Ping received in ${Date.now() - Number(data)} ms`)
+    // Reply with a pong message using the same data.
+    if (this.socket) {
+      this.socket.send(createMessage(NOTIFICATION_TYPE.PONG, data))
+    }
+    // Refresh the ping timer, waiting for the next ping.
+    clearTimeout(this.pingTimeoutID)
+    this.pingTimeoutID = setTimeout(() => {
+      if (this.socket) {
+        this.socket.close()
+      }
+    }, this.options.pingTimeout)
+  },
   // PUB can be used to send ephemeral messages outside of any contract log.
   [NOTIFICATION_TYPE.PUB] (msg) {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
@@ -320,6 +343,7 @@ const defaultMessageHandlers = {
 // TODO: verify these are good defaults
 const defaultOptions = {
   debug: process.env.NODE_ENV === 'development',
+  pingTimeout: 45_000,
   maxReconnectionDelay: 60_000,
   maxRetries: 10,
   minReconnectionDelay: 500,
@@ -351,6 +375,15 @@ export const messageParser = (data: string): Message => {
 }
 
 // ====== Methods ====== //
+
+function clearAllTimers () {
+  clearTimeout(this.connectionTimeoutID)
+  clearTimeout(this.nextConnectionAttemptDelayID)
+  clearTimeout(this.pingTimeoutID)
+  this.connectionTimeoutID = undefined
+  this.nextConnectionAttemptDelayID = undefined
+  this.pingTimeoutID = undefined
+}
 
 // Performs a connection or reconnection attempt.
 function connect () {
@@ -388,14 +421,9 @@ function connect () {
  * - Any pending messages will be discarded.
  */
 function destroy () {
-  // Clear all timers.
-  clearTimeout(this.connectionTimeoutID)
-  clearTimeout(this.nextConnectionAttemptDelayID)
+  this.clearAllTimers()
   // Update property values.
   // Note: do not clear 'this.options'.
-  this.connectionTimeoutID = undefined
-  this.failedConnectionAttempts = 0
-  this.nextConnectionAttemptDelayID = undefined
   this.pendingSubscriptionSet.clear()
   this.pendingUnsubscriptionSet.clear()
   this.subscriptionSet.clear()
@@ -444,6 +472,8 @@ function scheduleConnectionAttempt () {
   }, delay)
   console.log(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
 }
+
+// ===== pub/sub methods ===== //
 
 function pub (contractID: string, data: JSONType) {
   const { socket } = this

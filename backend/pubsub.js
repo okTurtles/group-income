@@ -86,12 +86,18 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   // Setup a ping interval if required.
   if (server.options.pingInterval > 0) {
     server.pingInterval = setInterval(() => {
+      console.debug('[pubsub] Pinging clients')
       server.clients.forEach((client) => {
-        if (!client.isAlive) {
+        if (client.pinged && !client.activeSinceLastPing) {
+          console.log(`[pubsub] Closing irresponsive client ${client.id}`)
           return client.terminate()
         }
-        client.isAlive = false
-        client.ping()
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(createMessage('ping', Date.now()), () => {
+            client.activeSinceLastPing = false
+            client.pinged = true
+          })
+        }
       })
     }, server.options.pingInterval)
   }
@@ -101,7 +107,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
 const defaultOptions = {
   clientTracking: true,
   maxPayload: 6 * 1024 * 1024,
-  pingInterval: undefined
+  pingInterval: 30_000
 }
 
 const generateSocketID = (() => {
@@ -125,7 +131,8 @@ const defaultServerHandlers = {
     const urlSearch = url.includes('?') ? url.slice(url.lastIndexOf('?')) : ''
     const debugID = new URLSearchParams(urlSearch).get('debugID') || ''
     socket.id = generateSocketID(debugID)
-    socket.isAlive = true
+    socket.activeSinceLastPing = true
+    socket.pinged = false
     socket.server = this
     socket.subscriptions = new Set()
 
@@ -167,7 +174,7 @@ const defaultSocketEventHandlers = {
         }
       }
     }
-    this.alive = false
+    this.activeSinceLastPing = false
     this.subscriptions.clear()
   },
 
@@ -179,6 +186,7 @@ const defaultSocketEventHandlers = {
       console.error(bold.red(`[pubsub] Malformed message: ${error.message}`))
       return this.terminate()
     }
+    this.activeSinceLastPing = true
     const handler = this.server.messageHandlers[msg.type]
 
     if (handler) {
@@ -195,15 +203,17 @@ const defaultSocketEventHandlers = {
       console.error(`[pubsub] Unhandled message type: ${msg.type}`)
       this.terminate()
     }
-  },
-
-  pong () {
-    this.isAlive = true
   }
 }
 
 // These handlers receive the connected `ws` socket through the `this` binding.
 const defaultMessageHandlers = {
+  pong (msg: Message) {
+    // const timestamp = Number(msg.data)
+    // const latency = Date.now() - timestamp
+    this.activeSinceLastPing = true
+  },
+
   [PUB] (msg: Message) {
     // Currently unused.
   },
