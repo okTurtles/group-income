@@ -13,7 +13,7 @@ global.logger = function (err) {
   return err // routes.js is written in a way that depends on this returning the error
 }
 
-const dontLog = { 'backend/pubsub/setup': true }
+const dontLog = { 'backend/server/broadcastEntry': true }
 
 function logSBP (domain, selector, data) {
   if (!dontLog[selector]) {

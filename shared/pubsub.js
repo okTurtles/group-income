@@ -36,6 +36,7 @@ export type PubSubClient = {
   +subscriptionSet: Set<string>,
   +url: string,
   // Methods
+  clearAllTimers(): void,
   connect(): void,
   destroy(): void,
   getNextRandomDelay(): number,
