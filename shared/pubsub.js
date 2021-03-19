@@ -21,7 +21,7 @@ export type Message = {
 
 export type PubSubClient = {
   connectionTimeoutID: TimeoutID | void,
-  +customSocketEventHandlers: Object,
+  +customEventHandlers: Object,
   failedConnectionAttempts: number,
   isNew: boolean,
   +listeners: Object,
@@ -39,7 +39,6 @@ export type PubSubClient = {
   clearAllTimers(): void,
   connect(): void,
   destroy(): void,
-  getNextRandomDelay(): number,
   pub(contractID: string, data: JSONType): void,
   scheduleConnectionAttempt(): void,
   sub(contractID: string): void,
@@ -104,8 +103,8 @@ export type ResponseTypeEnum = $Values<typeof RESPONSE_TYPE>
  * @returns {PubSubClient}
  */
 export function createClient (url: string, options?: Object = {}): PubSubClient {
-  const client = {
-    customSocketEventHandlers: options.handlers || {},
+  const client: PubSubClient = {
+    customEventHandlers: options.handlers || {},
     // The current number of connection attempts that failed.
     // Reset to 0 upon successful connection.
     // Used to compute how long to wait before the next reconnection attempt.
@@ -127,17 +126,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     subscriptionSet: new Set(),
     connectionTimeoutID: undefined,
     url: url.replace(/^http/, 'ws'),
-    // Methods
-    ...{
-      clearAllTimers,
-      connect,
-      destroy,
-      getNextRandomDelay,
-      scheduleConnectionAttempt,
-      pub,
-      sub,
-      unsub
-    }
+    ...publicMethods
   }
   // Create and save references to reusable event listeners.
   // Every time a new underlying WebSocket object will be created for this
@@ -148,8 +137,8 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
   // updating the client's custom event handler map.
   for (const name of [...eventNames, ...globalEventNames]) {
     client.listeners[name] = (event: Event) => {
-      const customHandler = client.customSocketEventHandlers[name]
-      const defaultHandler = (defaultSocketEventHandlers: Object)[name]
+      const customHandler = client.customEventHandlers[name]
+      const defaultHandler = (defaultClientEventHandlers: Object)[name]
       // Pass the client as the 'this' binding since we are processing client events.
       if (defaultHandler) {
         defaultHandler.call(client, event)
@@ -181,7 +170,7 @@ export function createRequest (type: RequestTypeEnum, data: JSONObject): string 
 }
 
 // These handlers receive the PubSubClient instance through the `this` binding.
-const defaultSocketEventHandlers = {
+const defaultClientEventHandlers = {
   // Emitted when the connection is closed.
   close (event: CloseEvent) {
     console.log('[pubsub] Event: close', event.code, event.reason)
@@ -377,157 +366,149 @@ export const messageParser = (data: string): Message => {
   return msg
 }
 
-// ====== Methods ====== //
-
-function clearAllTimers () {
-  clearTimeout(this.connectionTimeoutID)
-  clearTimeout(this.nextConnectionAttemptDelayID)
-  clearTimeout(this.pingTimeoutID)
-  this.connectionTimeoutID = undefined
-  this.nextConnectionAttemptDelayID = undefined
-  this.pingTimeoutID = undefined
-}
-
-// Performs a connection or reconnection attempt.
-function connect () {
-  if (this.socket !== null) {
-    throw new Error('connect() can only be called if there is no current socket.')
-  }
-  if (this.nextConnectionAttemptDelayID) {
-    throw new Error('connect() must not be called during a reconnection delay.')
-  }
-  if (!this.shouldReconnect) {
-    throw new Error('connect() should no longer be called on this instance.')
-  }
-  this.socket = new WebSocket(this.url)
-
-  if (this.options.timeout) {
-    this.connectionTimeoutID = setTimeout(() => {
-      this.connectionTimeoutID = undefined
-      if (this.socket) {
-        this.socket.close(4000, 'timeout')
-      }
-    }, this.options.timeout)
-  }
-  // Attach WebSocket event listeners.
-  for (const name of eventNames) {
-    this.socket.addEventListener(name, this.listeners[name])
-  }
-}
-
-/**
- * Immediately close the socket, stop listening for events and clear any cache.
- *
- * This method is used in unit tests.
- * - In particular, no 'close' event handler will be called.
- * - Any incoming or outgoing buffered data will be discarded.
- * - Any pending messages will be discarded.
- */
-function destroy () {
-  this.clearAllTimers()
-  // Update property values.
-  // Note: do not clear 'this.options'.
-  this.pendingSubscriptionSet.clear()
-  this.pendingUnsubscriptionSet.clear()
-  this.subscriptionSet.clear()
-  // Remove global event listeners.
-  if (typeof window === 'object') {
-    for (const name of globalEventNames) {
-      window.removeEventListener(name, this.listeners[name])
-    }
-  }
-  // Remove WebSocket event listeners.
-  if (this.socket) {
-    for (const name of eventNames) {
-      this.socket.removeEventListener(name, this.listeners[name])
-    }
-    this.socket.close()
-  }
-  this.socket = null
-  this.shouldReconnect = false
-}
-
-function getNextRandomDelay (): number {
-  const {
-    maxReconnectionDelay,
-    minReconnectionDelay,
-    reconnectionDelayGrowFactor
-  } = this.options
-
-  const minDelay = minReconnectionDelay * reconnectionDelayGrowFactor ** this.failedConnectionAttempts
-  const maxDelay = minDelay * reconnectionDelayGrowFactor
-
-  return Math.min(maxReconnectionDelay, Math.round(minDelay + Math.random() * (maxDelay - minDelay)))
-}
-
-// Schedules a connection attempt to happen after a delay computed according to
-// a randomized exponential backoff algorithm variant.
-function scheduleConnectionAttempt () {
-  if (!this.shouldReconnect) {
-    throw new Error('Cannot call `scheduleConnectionAttempt()` when `shouldReconnect` is false.')
-  }
-  const delay = this.getNextRandomDelay()
-  const nth = this.failedConnectionAttempts + 1
-
-  this.nextConnectionAttemptDelayID = setTimeout(() => {
+const publicMethods = {
+  clearAllTimers () {
+    clearTimeout(this.connectionTimeoutID)
+    clearTimeout(this.nextConnectionAttemptDelayID)
+    clearTimeout(this.pingTimeoutID)
+    this.connectionTimeoutID = undefined
     this.nextConnectionAttemptDelayID = undefined
-    this.connect()
-  }, delay)
-  console.log(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
-}
+    this.pingTimeoutID = undefined
+  },
 
-// ===== pub/sub methods ===== //
-
-function pub (contractID: string, data: JSONType) {
-  const { socket } = this
-
-  if (socket && socket.readyState === WebSocket.OPEN) {
-    const request = createRequest(REQUEST_TYPE.PUB, { contractID, data })
-    socket.send(request)
-  }
-  // Maybe add this request to a pending list.
-}
-
-/**
- * Sends a SUB request to the server as soon as possible.
- *
- * - The given contract ID will be cached until we get a relevant server
- * response, allowing us to resend the same request if necessary.
- * - Any identical UNSUB request that has not been sent yet will be cancelled.
- * - Calling this method again before the server has responded has no effect.
- * @param contractID - The ID of the contract whose updates we want to subscribe to.
- */
-function sub (contractID: string) {
-  const { socket } = this
-
-  if (!this.pendingSubscriptionSet.has(contractID)) {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+  // Performs a connection or reconnection attempt.
+  connect () {
+    if (this.socket !== null) {
+      throw new Error('connect() can only be called if there is no current socket.')
     }
-  }
-  this.pendingSubscriptionSet.add(contractID)
-  this.pendingUnsubscriptionSet.delete(contractID)
-}
-
-/**
- * Sends an UNSUB request to the server as soon as possible.
- *
- * - The given contract ID will be cached until we get a relevant server
- * response, allowing us to resend the same request if necessary.
- * - Any identical SUB request that has not been sent yet will be cancelled.
- * - Calling this method again before the server has responded has no effect.
- * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
- */
-function unsub (contractID: string) {
-  const { socket } = this
-
-  if (!this.pendingUnsubscriptionSet.has(contractID)) {
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
+    if (this.nextConnectionAttemptDelayID) {
+      throw new Error('connect() must not be called during a reconnection delay.')
     }
+    if (!this.shouldReconnect) {
+      throw new Error('connect() should no longer be called on this instance.')
+    }
+    this.socket = new WebSocket(this.url)
+
+    if (this.options.timeout) {
+      this.connectionTimeoutID = setTimeout(() => {
+        this.connectionTimeoutID = undefined
+        if (this.socket) {
+          this.socket.close(4000, 'timeout')
+        }
+      }, this.options.timeout)
+    }
+    // Attach WebSocket event listeners.
+    for (const name of eventNames) {
+      this.socket.addEventListener(name, this.listeners[name])
+    }
+  },
+
+  /**
+   * Immediately close the socket, stop listening for events and clear any cache.
+   *
+   * This method is used in unit tests.
+   * - In particular, no 'close' event handler will be called.
+   * - Any incoming or outgoing buffered data will be discarded.
+   * - Any pending messages will be discarded.
+   */
+  destroy () {
+    this.clearAllTimers()
+    // Update property values.
+    // Note: do not clear 'this.options'.
+    this.pendingSubscriptionSet.clear()
+    this.pendingUnsubscriptionSet.clear()
+    this.subscriptionSet.clear()
+    // Remove global event listeners.
+    if (typeof window === 'object') {
+      for (const name of globalEventNames) {
+        window.removeEventListener(name, this.listeners[name])
+      }
+    }
+    // Remove WebSocket event listeners.
+    if (this.socket) {
+      for (const name of eventNames) {
+        this.socket.removeEventListener(name, this.listeners[name])
+      }
+      this.socket.close()
+    }
+    this.socket = null
+    this.shouldReconnect = false
+  },
+
+  getNextRandomDelay (): number {
+    const {
+      maxReconnectionDelay,
+      minReconnectionDelay,
+      reconnectionDelayGrowFactor
+    } = this.options
+
+    const minDelay = minReconnectionDelay * reconnectionDelayGrowFactor ** this.failedConnectionAttempts
+    const maxDelay = minDelay * reconnectionDelayGrowFactor
+
+    return Math.min(maxReconnectionDelay, Math.round(minDelay + Math.random() * (maxDelay - minDelay)))
+  },
+
+  // Schedules a connection attempt to happen after a delay computed according to
+  // a randomized exponential backoff algorithm variant.
+  scheduleConnectionAttempt () {
+    if (!this.shouldReconnect) {
+      throw new Error('Cannot call `scheduleConnectionAttempt()` when `shouldReconnect` is false.')
+    }
+    const delay = this.getNextRandomDelay()
+    const nth = this.failedConnectionAttempts + 1
+
+    this.nextConnectionAttemptDelayID = setTimeout(() => {
+      this.nextConnectionAttemptDelayID = undefined
+      this.connect()
+    }, delay)
+    console.log(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
+  },
+
+  // Unused for now.
+  pub (contractID: string, data: JSONType) {
+  },
+
+  /**
+   * Sends a SUB request to the server as soon as possible.
+   *
+   * - The given contract ID will be cached until we get a relevant server
+   * response, allowing us to resend the same request if necessary.
+   * - Any identical UNSUB request that has not been sent yet will be cancelled.
+   * - Calling this method again before the server has responded has no effect.
+   * @param contractID - The ID of the contract whose updates we want to subscribe to.
+   */
+  sub (contractID: string) {
+    const { socket } = this
+
+    if (!this.pendingSubscriptionSet.has(contractID)) {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+      }
+    }
+    this.pendingSubscriptionSet.add(contractID)
+    this.pendingUnsubscriptionSet.delete(contractID)
+  },
+
+  /**
+   * Sends an UNSUB request to the server as soon as possible.
+   *
+   * - The given contract ID will be cached until we get a relevant server
+   * response, allowing us to resend the same request if necessary.
+   * - Any identical SUB request that has not been sent yet will be cancelled.
+   * - Calling this method again before the server has responded has no effect.
+   * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
+   */
+  unsub (contractID: string) {
+    const { socket } = this
+
+    if (!this.pendingUnsubscriptionSet.has(contractID)) {
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
+      }
+    }
+    this.pendingSubscriptionSet.delete(contractID)
+    this.pendingUnsubscriptionSet.add(contractID)
   }
-  this.pendingSubscriptionSet.delete(contractID)
-  this.pendingUnsubscriptionSet.add(contractID)
 }
 
 export default {
@@ -535,5 +516,6 @@ export default {
   REQUEST_TYPE,
   RESPONSE_TYPE,
   createClient,
+  createMessage,
   createRequest
 }

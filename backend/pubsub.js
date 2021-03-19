@@ -22,7 +22,7 @@ const WebSocket = require('ws')
 
 // ====== API ====== //
 
-const { PUB, SUB, UNSUB } = NOTIFICATION_TYPE
+const { PONG, PUB, SUB, UNSUB } = NOTIFICATION_TYPE
 const { ERROR, SUCCESS } = RESPONSE_TYPE
 
 // Re-export some useful things from the shared module.
@@ -208,7 +208,7 @@ const defaultSocketEventHandlers = {
 
 // These handlers receive the connected `ws` socket through the `this` binding.
 const defaultMessageHandlers = {
-  pong (msg: Message) {
+  [PONG] (msg: Message) {
     // const timestamp = Number(msg.data)
     // const latency = Date.now() - timestamp
     this.activeSinceLastPing = true
@@ -286,6 +286,7 @@ const serverMethods = {
       }
     }
   },
+
   // Enumerates the subscribers of a given contract.
   * enumerateSubscribers (contractID: string): Iterable<Object> {
     if (contractID in this.subscribersByContractID) {
