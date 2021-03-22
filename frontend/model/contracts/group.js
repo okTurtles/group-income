@@ -15,7 +15,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps, monthlyCycleStatsAtDate } from '~/frontend/utils/time.js'
+import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps, cycleAtDate } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
@@ -114,7 +114,7 @@ function memberDeclaredIncome (state, username, income, createdDate) {
       name: username,
       income,
       when: createdDate,
-      cycle: monthlyCycleStatsAtDate(state.distributionCycleStartDate, createdDate).cycleNow
+      cycle: cycleAtDate(createdDate)
     }
   })
 }
@@ -127,7 +127,7 @@ function memberLeaves (state, username, dateLeft) {
     data: {
       name: username,
       when: dateLeft,
-      cycle: monthlyCycleStatsAtDate(state.distributionCycleStartDate, dateLeft).cycleNow
+      cycle: cycleAtDate(dateLeft)
     }
   })
 }
@@ -417,7 +417,7 @@ DefineContract({
               to: payment.data.toUser,
               amount: payment.data.amount,
               when: meta.createdDate,
-              cycle: monthlyCycleStatsAtDate(state.distributionCycleStartDate, meta.createdDate).cycleNow
+              cycle: cycleAtDate(meta.createdDate)
             }
           })
           paymentMonth.lastAdjustedDistribution = groupIncomeDistribution({

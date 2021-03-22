@@ -1,5 +1,5 @@
 'use strict'
-import { addMonths, monthlyCycleStatsAtDate } from '~/frontend/utils/time.js'
+import { cycleAtDate, firstDayOfMonth } from '~/frontend/utils/time.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 
 // This helper function inserts monthly-balance-events between the
@@ -11,11 +11,13 @@ function insertMonthlyCycleEvents (distributionEvents: Array<Object>): Array<any
   let lastCycleStartEvent = distributionEvents[0] // Guaranteed to be the first event (from group creation).
   for (const event of distributionEvents) {
     for (let monthCounter = 1; lastCycleStartEvent.data.cycle + monthCounter <= Math.floor(event.data.cycle); monthCounter++) {
+      const whenDate = firstDayOfMonth(new Date(lastCycleStartEvent.data.when))
+      whenDate.setMonth(whenDate.getMonth() + monthCounter)
       const cycleStartEvent = {
         type: 'startCycleEvent',
         data: {
           cycle: lastCycleStartEvent.data.cycle + monthCounter,
-          when: addMonths(new Date(lastCycleStartEvent.data.when), monthCounter).toISOString(),
+          when: whenDate.toISOString(),
           overPayments: [], // List to be populated later, by the events-parser
           underPayments: [] // List to be populated later, by the events-parser
         }
@@ -45,7 +47,7 @@ function flattenDistribution (payments: Array<any | Object>): Array<any | {|from
         (paymentA.to === paymentB.from && paymentA.from === paymentB.to)) {
         // Add or subtract paymentB's amount to paymentA's amount, depending on the relative
         // direction of the two payments:
-        paymentA.amount += (paymentA.from === paymentB.from ? 1 : -1) * paymentB
+        paymentA.amount += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.amount
 
         // Remove paymentB from payments, and decrement the inner sentinal loop variable:
         payments = payments.filter((_, paymentIndex) => { return paymentIndex !== j })
@@ -78,13 +80,11 @@ function subtractDistributions (paymentsA: Array<any | Object>, paymentsB: Array
 // This algorithm is responsible for calculating the pro-rated distribution of
 // payments (with respect to all the events created up until the cycle of the
 // 'monthstamp' parameter).
-function parseProRatedDistributionFromEvents (distributionEvents: Array<Object>, minCome: number): Array<any | {|from: string, to: string, amount: number|}> {
-  const groupCreationEvent = distributionEvents[0] // Guaranteed to be the first event (from group creation):
-  const currentCycleStats = monthlyCycleStatsAtDate(groupCreationEvent.data.when,
-    new Date()) // TODO: discuss possibly making the monthstamp more accurate so it can be pro-rated. We should NOT use 'new Date()' here!
+function parseProRatedDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthstamp: string): Array<any | {|from: string, to: string, amount: number|}> {
+  const currentCycle = cycleAtDate(monthstamp) // TODO: discuss; new Date() is possible NOT ok, here...
 
-  // Trim the distributionEvents of cycles happening the after cycle of the monthstamp parameter:
-  distributionEvents = distributionEvents.filter((a) => Math.floor(a.data.cycle) - currentCycleStats.cycleEnd < 0)
+  // Trim the distributionEvents of cycles happening the after cycle after currentCycle:
+  distributionEvents = distributionEvents.filter((a) => Math.floor(a.data.cycle) - Math.floor(currentCycle + 1) < 0)
 
   // Add blank 'startCycleEvent's in between the distributionEvents of different monthly cycles:
   distributionEvents = insertMonthlyCycleEvents(distributionEvents)

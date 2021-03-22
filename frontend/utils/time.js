@@ -49,6 +49,10 @@ export function lastDayOfMonth (date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0)
 }
 
+export function firstDayOfMonth (date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), 1)
+}
+
 // TODO: Provide locale fallback in case navigator does not exist (e.g. server, Mocha, etc...)
 const locale = (typeof navigator === 'undefined' && 'en-US') || (navigator.languages ? navigator.languages[0] : navigator.language)
 
@@ -88,36 +92,12 @@ export function getTime (date: Date): string {
   return `${t.getHours()}:${t.getMinutes()}`
 }
 
-// TODO: the time.js file SEEMS like a good place to put the following two
-// functions, however, this needs to be discussed with the team.
-export function addMonths (startDate: Date, months: number): Date {
-  const thisMonth = startDate.getMonth()
-  startDate.setMonth(thisMonth + months)
-  if (startDate.getMonth() !== thisMonth + months && startDate.getMonth() !== 0) {
-    startDate.setDate(0)
-  }
-  return startDate
-}
-
-export function monthlyCycleStatsAtDate (startOfCyclesDate: string | Date, atDate: string | Date): any | {|cycleNowDate: Date, cycleStartDate: Date, cycleNow: number, cycleStart: number, cycleEnd: number|} {
-  const cycleNowDate = new Date(atDate)
-
-  const cycleStartDateInitial = new Date(startOfCyclesDate)
-  const cycleEndDateInitial = addMonths(new Date(cycleStartDateInitial.toISOString()), 1)
-
-  let cycleStartDate = new Date(cycleStartDateInitial.toISOString())
-  let cycleEndDate = new Date(cycleEndDateInitial.toISOString())
-
-  let monthIteration = 0
-  while (cycleEndDate - cycleNowDate <= 0) {
-    monthIteration++
-    cycleStartDate = addMonths(cycleStartDateInitial, monthIteration)
-    cycleEndDate = addMonths(cycleStartDateInitial, monthIteration + 1)
-  }
-
-  const cycleNow = (cycleNowDate - cycleStartDate) / (cycleEndDate - cycleStartDate) + monthIteration
-  const cycleStart = Math.floor(cycleNow)
-  const cycleEnd = cycleStart + 1
-
-  return { cycleNowDate, cycleStartDate, cycleEndDate, cycleNow, cycleStart, cycleEnd }
+// Returns the ratio of (the current day of the month) / (days in current month);
+// The current day / month are calculated with respect to the atDate parameter.
+export function cycleAtDate (atDate: string | Date): any | number {
+  const now = new Date(atDate) // Just in case the parameter is a string type.
+  // TODO: should we adjust the time-zone of the date to be a single time zone so
+  // that every group member sees the same distribution, no matter what time zone
+  // they are in? Discussion needed.
+  return now.getDate() / lastDayOfMonth(now).getDate()
 }

@@ -14,9 +14,9 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
   const distributionEvents = getters.currentGroupState.distributionEvents
   let dist = null
   if (proRated) {
-    dist = parseProRatedDistributionFromEvents(distributionEvents, mincomeAmount)
+    dist = parseProRatedDistributionFromEvents(distributionEvents, mincomeAmount, monthstamp)
   } else {
-    dist = parseMonthlyDistributionFromEvents(distributionEvents, mincomeAmount)
+    dist = parseMonthlyDistributionFromEvents(distributionEvents, mincomeAmount, monthstamp)
   }
   if (adjusted) {
     // if this user has already made some payments to other users this
