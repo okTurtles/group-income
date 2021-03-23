@@ -131,7 +131,7 @@ const defaultServerHandlers = {
     socket.server = this
     socket.subscriptions = new Set()
 
-    console.log(bold(`[pubsub] Socket ${socket.id} connected`))
+    console.log(bold(`[pubsub] Socket ${socket.id} connected. Total: ${this.clients.size}`))
 
     // Add listeners for socket events, i.e. events emitted on a socket object.
     ;['close', 'error', 'message', 'ping', 'pong'].forEach((eventName) => {
