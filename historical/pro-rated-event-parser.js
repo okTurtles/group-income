@@ -170,7 +170,7 @@ function parseProRatedDistributionFromEvents (distributionEvents: Array<Object>,
         member.cyclicalIncomeIntegral = 0
       }
       completedMonthlyPayments = [] // and the monthly payments, too...
-    } else if (event.type === 'incomeDeclaredEvent') {
+    } else if (event.type === 'haveNeed') {
       const oldUser = getUser(event.data.name)
       const cyclesIntoMonth = event.data.cycle % 1
       if (oldUser) {
@@ -198,13 +198,23 @@ function parseProRatedDistributionFromEvents (distributionEvents: Array<Object>,
       groupMembers = groupMembers.filter((v) => { return v.name !== event.data.name })
     }
   }
+  monthlyDistribution = paymentsDistribution(proRateIncomes(groupMembers), minCome)
+  const overPayments = monthlyDistribution.filter((p) => {
+    return p.amount < 0
+  }).map((p) => {
+    p.amount = Math.abs(p.amount)
+    return p
+  })
 
+  const underPayments = monthlyDistribution.filter((p) => {
+    return p.amount > 0
+  })
   // Since there is no final startCycleEvent, calculate the haves/needs of the group members at the
   // end of the final cycle. Then use those values as the current income distribution for
   // calculating the payments distribution. Do not adjust for this month's completed payments; that
   // is the callee's job.
 
-  return paymentsDistribution(proRateIncomes(groupMembers), minCome) // TODO: return late-payments as well.
+  return  // TODO: return late-payments as well.
 }
 
 export default parseProRatedDistributionFromEvents

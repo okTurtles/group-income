@@ -107,12 +107,12 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   return monthlyPayments
 }
 
-function memberDeclaredIncome (state, username, income, createdDate) {
+function memberDeclaredIncome (state, username, haveNeed, createdDate) {
   state.distributionEvents.push({
-    type: 'incomeDeclaredEvent',
+    type: 'haveNeedEvent',
     data: {
       name: username,
-      income,
+      haveNeed,
       when: createdDate,
       cycle: cycleAtDate(createdDate)
     }
@@ -313,8 +313,7 @@ DefineContract({
             data: {
               cycle: 0,
               when: meta.createdDate,
-              overPayments: [],
-              underPayments: []
+              latePayments: []
             }
           }],
           invites: {},
@@ -721,8 +720,8 @@ DefineContract({
               Vue.set(groupProfile, key, value)
           }
         }
-        const income = data.incomeDetailsType === 'incomeAmount' ? data.incomeAmount - state.settings.mincomeAmount : data.pledgeAmount
-        memberDeclaredIncome(state, meta.username, income, meta.createdDate)
+        const haveNeed = data.incomeDetailsType === 'incomeAmount' ? data.incomeAmount - state.settings.mincomeAmount : data.pledgeAmount
+        memberDeclaredIncome(state, meta.username, haveNeed, meta.createdDate)
       }
     },
     'gi.contracts/group/updateAllVotingRules': {

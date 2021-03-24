@@ -1,10 +1,8 @@
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
-import parseProRatedDistributionFromEvents from '~/frontend/utils/distribution/pro-rated-event-parser.js'
 import parseMonthlyDistributionFromEvents from '~/frontend/utils/distribution/monthly-event-parser.js'
 import minimizeTotalPaymentsCount from '~/frontend/utils/distribution/payments-minimizer.js'
-
-export default function groupIncomeDistribution ({ state, getters, monthstamp, adjusted, proRated = true, minimizeTotalPayments = false }: Object): any {
-  // the monthstamp will always be for the current month. the alternative
+export default function groupIncomeDistribution ({ state, getters, monthstamp, adjusted, minimizeTxns = false }: Object): any {
+  // the monthstamp will alwayparseProRatedDistributionFromEventss be for the current month. the alternative
   // is to allow the re-generation of the distribution for previous months,
   // but that approach requires also storing the historical mincomeAmount
   // and historical groupProfiles. Since together these change across multiple
@@ -12,12 +10,7 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
   // see historical/group.js for the ugly way of doing it.
   const mincomeAmount = getters.groupMincomeAmount
   const distributionEvents = getters.currentGroupState.distributionEvents
-  let dist = null
-  if (proRated) {
-    dist = parseProRatedDistributionFromEvents(distributionEvents, mincomeAmount, monthstamp)
-  } else {
-    dist = parseMonthlyDistributionFromEvents(distributionEvents, mincomeAmount, monthstamp)
-  }
+  let dist = parseMonthlyDistributionFromEvents(distributionEvents, mincomeAmount, monthstamp)
   if (adjusted) {
     // if this user has already made some payments to other users this
     // month, we need to take that into account and adjust the distribution.
@@ -30,5 +23,5 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
     }
     dist = dist.filter(p => p.amount > 0)
   }
-  return minimizeTotalPayments ? minimizeTotalPaymentsCount(dist) : dist
+  return minimizeTxns ? minimizeTotalPaymentsCount(dist) : dist
 }

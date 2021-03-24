@@ -86,11 +86,8 @@ describe('TODO: make a LONG description for every set of tests', function () {
       type: 'startCycleEvent',
       data: {
         cycle: 0,
-        overPayments: [],
-        underPayments: []
-      },
-      overPayments: [],
-      underPayments: []
+        overPayments: []
+      }
     })
     should(groupIncomeDistribution(unfoldParameters({
       distributionEvents,
@@ -101,7 +98,7 @@ describe('TODO: make a LONG description for every set of tests', function () {
 
   it('TODO: write description', function () {
     distributionEvents.push({
-      type: 'incomeDeclaredEvent',
+      type: 'haveNeedEvent',
       data: {
         name: 'u1',
         income: 100,
@@ -117,7 +114,7 @@ describe('TODO: make a LONG description for every set of tests', function () {
 
   it('TODO: write description', function () {
     distributionEvents.push({
-      type: 'incomeDeclaredEvent',
+      type: 'haveNeedEvent',
       data: {
         name: 'u2',
         income: -50,
@@ -133,7 +130,7 @@ describe('TODO: make a LONG description for every set of tests', function () {
 
   it('TODO: write description', function () {
     distributionEvents.push({
-      type: 'incomeDeclaredEvent',
+      type: 'haveNeedEvent',
       data: {
         name: 'u3',
         income: -50,
@@ -166,7 +163,7 @@ describe('TODO: make a LONG description for every set of tests', function () {
 
   it('TODO: write description', function () {
     distributionEvents.push({
-      type: 'incomeDeclaredEvent',
+      type: 'haveNeedEvent',
       data: {
         name: 'u4',
         income: -100,
