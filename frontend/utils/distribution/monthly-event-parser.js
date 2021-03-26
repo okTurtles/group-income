@@ -1,5 +1,5 @@
 'use strict'
-import { cycleAtDate, firstDayOfMonth } from '~/frontend/utils/time.js'
+import { firstDayOfMonth } from '~/frontend/utils/time.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 
 const monthlyRated = true // True if time-weighted monthly, false if purely pro-rated
@@ -92,11 +92,8 @@ function subtractDistributions (paymentsA: Array<any | Object>, paymentsB: Array
 // This algorithm is responsible for calculating the monthly-rated distribution of
 // payments (with respect to all the events created up until the cycle of the
 // 'monthstamp' parameter).
-function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthstamp: string): Array<any | {|from: string, to: string, amount: number|}> {
-  const currentCycle = cycleAtDate(monthstamp) // TODO: discuss; new Date() is possible NOT ok, here...
-
-  // Trim the distributionEvents of cycles happening the after cycle after currentCycle:
-  distributionEvents = distributionEvents.filter((a) => Math.floor(a.data.cycle) - Math.floor(currentCycle + 1) < 0)
+function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthstamp: string, adjusted: Boolean): Array<any | {|from: string, to: string, amount: number|}> {
+  distributionEvents = JSON.parse(JSON.stringify(distributionEvents))
 
   // Add blank 'startCycleEvent's in between the distributionEvents of different monthly cycles:
   distributionEvents = insertMonthlyCycleEvents(distributionEvents)
@@ -128,14 +125,14 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
   const redistributOverToLatePayments = function (overPayments, latePayments) {
     const adjustingPayments = []
     const needers = groupMembers.filter((m) => m.haveNeed < 0)
-    const totalNeed = needers.reduce((acc, m) => acc + m.haveNeed, 0)
     for (const overPayment of overPayments) {
+      const totalNeedByOthers = needers.reduce((acc, m) => m.name !== overPayment.to ? acc + m.haveNeed : 0, 0)
       for (const needer of needers) {
         if (needer.name !== overPayment.to) {
           adjustingPayments.push({
             from: overPayment.from,
             to: needer.name,
-            amount: overPayment.amount * needer.haveNeed / totalNeed
+            amount: -overPayment.amount * needer.haveNeed / totalNeedByOthers
           })
         }
       }
@@ -160,14 +157,24 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
     return incomeDistribution(groupIncomes, minCome)
   }
   // Loop through the events, pro-rating each user's monthly pledges/needs:
+  let eventCounter = 0
   for (const event of distributionEvents) {
+    eventCounter++
     if (event.type === 'startCycleEvent') {
       monthlyDistribution = paymentsDistribution(proRateHaveNeeds(groupMembers), minCome)
-      // "Double-Adjust" the monthly distribution based on the current cycle's completed payments, and
-      // the previous cycle's under payments:
-      monthlyDistribution = addDistributions(
-        subtractDistributions(monthlyDistribution, completedMonthlyPayments),
-        lastStartCycleEvent.data.latePayments)
+
+      // Check if it is the last event (the next month after monthstamps cycle event), or if the
+      // final distribution should be adjusted, anyway:
+      if (eventCounter < distributionEvents.length || adjusted) {
+        // "Double-Adjust" the monthly distribution based on the current cycle's completed payments
+        monthlyDistribution = addDistributions(
+          subtractDistributions(monthlyDistribution, completedMonthlyPayments),
+          lastStartCycleEvent.data.latePayments)
+      } else {
+        // "Single-Adjust" the monthly distribution based on the previous cycle's under payments:
+        monthlyDistribution = addDistributions(monthlyDistribution,
+          lastStartCycleEvent.data.latePayments)
+      }
 
       const overPayments = monthlyDistribution.filter((p) => {
         return p.amount < 0
