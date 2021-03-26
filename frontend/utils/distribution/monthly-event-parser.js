@@ -92,7 +92,7 @@ function subtractDistributions (paymentsA: Array<any | Object>, paymentsB: Array
 // This algorithm is responsible for calculating the monthly-rated distribution of
 // payments (with respect to all the events created up until the cycle of the
 // 'monthstamp' parameter).
-function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthstamp: string, adjusted: Boolean): Array<any | {|from: string, to: string, amount: number|}> {
+function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthstamp: string): Array<any | {|from: string, to: string, amount: number|}> {
   distributionEvents = JSON.parse(JSON.stringify(distributionEvents))
 
   // Add blank 'startCycleEvent's in between the distributionEvents of different monthly cycles:
@@ -165,7 +165,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
 
       // Check if it is the last event (the next month after monthstamps cycle event), or if the
       // final distribution should be adjusted, anyway:
-      if (eventCounter < distributionEvents.length || adjusted) {
+      if (eventCounter < distributionEvents.length) {
         // "Double-Adjust" the monthly distribution based on the current cycle's completed payments
         monthlyDistribution = addDistributions(
           subtractDistributions(monthlyDistribution, completedMonthlyPayments),

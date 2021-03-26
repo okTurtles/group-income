@@ -10,7 +10,7 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
   // see historical/group.js for the ugly way of doing it.
   const mincomeAmount = getters.groupMincomeAmount
   const distributionEvents = getters.currentGroupState.distributionEvents
-  let dist = parseMonthlyDistributionFromEvents(distributionEvents, mincomeAmount, monthstamp, adjusted)
+  let dist = parseMonthlyDistributionFromEvents(distributionEvents, mincomeAmount, monthstamp)
   if (adjusted) {
     // if this user has already made some payments to other users this
     // month, we need to take that into account and adjust the distribution.
