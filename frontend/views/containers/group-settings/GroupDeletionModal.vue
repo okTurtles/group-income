@@ -75,7 +75,7 @@ export default {
     close () {
       this.$refs.modal.close()
     },
-    async submit () {
+    submit () {
       alert('TODO implement this')
     }
   },

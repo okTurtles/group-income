@@ -71,7 +71,7 @@ if (sbp('okTurtles.data/get', SERVER_INSTANCE)) {
       console.log(bold(`[pubsub] ${id} connected from:`), address)
 
       // https://github.com/swissmanu/primus-responder
-      spark.on('request', async function (req, done) {
+      spark.on('request', function (req, done) {
         try {
           const { type, data: { contractID } } = req
           const success = reply(SUCCESS, { type, id })

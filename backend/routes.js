@@ -119,7 +119,7 @@ route.POST('/file', {
     output: 'data',
     multipart: true,
     allow: 'multipart/form-data',
-    failAction: async function (request, h, err) {
+    failAction: function (request, h, err) {
       console.error('failAction error:', err)
       return err
     },

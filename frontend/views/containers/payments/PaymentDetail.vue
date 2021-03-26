@@ -81,7 +81,7 @@ export default {
     closeModal () {
       this.$refs.modal.close()
     },
-    async submit () {
+    submit () {
       alert('TODO: Implement cancel payment')
     },
     dateFromMonthstamp,
