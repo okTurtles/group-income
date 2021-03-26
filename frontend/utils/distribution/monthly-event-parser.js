@@ -112,7 +112,6 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
   }
 
   const proRateHaveNeeds = function (proRatedMembers, cyclesIntoMonth = 1) {
-    console.log(proRatedMembers, cyclesIntoMonth)
     for (const member of proRatedMembers) {
       // Calculate the time-step of the integral of our constant haveNeed function (ignored when monthlyRated is true)
       const deltaCycle = (cyclesIntoMonth - member.cyclicalIncomeVariable)
