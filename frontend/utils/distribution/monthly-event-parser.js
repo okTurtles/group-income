@@ -112,27 +112,32 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
   }
 
   const proRateHaveNeeds = function (proRatedMembers, cyclesIntoMonth = 1) {
+    console.log(proRatedMembers, cyclesIntoMonth)
     for (const member of proRatedMembers) {
+      // Calculate the time-step of the integral of our constant haveNeed function (ignored when monthlyRated is true)
       const deltaCycle = (cyclesIntoMonth - member.cyclicalIncomeVariable)
+
       // Update the existing user's pro-rated income (cyclicalIncomeIntegral), time-variable (cyclicalIncomeVariable), and currently declared income:
       member.cyclicalIncomeVariable = cyclesIntoMonth
+
+      // Integrate the constant function with respect to whether it is pro-rated monthly, or down to the day (or millisecond):
       member.cyclicalIncomeIntegral = monthlyRated ? member.haveNeed : member.cyclicalIncomeIntegral + deltaCycle * member.haveNeed
-      member.haveNeed = member.cyclicalIncomeIntegral
     }
+    console.log(proRatedMembers, cyclesIntoMonth)
     return proRatedMembers
   }
 
   const redistributOverToLatePayments = function (overPayments, latePayments) {
     const adjustingPayments = []
-    const needers = groupMembers.filter((m) => m.haveNeed < 0)
+    const needers = groupMembers.filter((m) => m.cyclicalIncomeIntegral < 0)
     for (const overPayment of overPayments) {
-      const totalNeedByOthers = needers.reduce((acc, m) => m.name !== overPayment.to ? acc + m.haveNeed : 0, 0)
+      const totalNeedByOthers = needers.reduce((acc, m) => m.name !== overPayment.to ? acc + m.cyclicalIncomeIntegral : 0, 0)
       for (const needer of needers) {
         if (needer.name !== overPayment.to) {
           adjustingPayments.push({
             from: overPayment.from,
             to: needer.name,
-            amount: -overPayment.amount * needer.haveNeed / totalNeedByOthers
+            amount: -overPayment.amount * needer.cyclicalIncomeIntegral / totalNeedByOthers
           })
         } else {
           adjustingPayments.push({
@@ -157,7 +162,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
     const groupIncomes = groupMembers.map((user) => {
       return {
         name: user.name,
-        amount: minCome + user.haveNeed
+        amount: minCome + user.cyclicalIncomeIntegral
       }
     })
     return incomeDistribution(groupIncomes, minCome)
@@ -197,8 +202,8 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
       const oldUser = getUser(event.data.name)
       const cyclesIntoMonth = event.data.cycle % 1
       if (oldUser) {
-        oldUser.haveNeed = event.data.haveNeed
         proRateHaveNeeds([oldUser], cyclesIntoMonth)
+        oldUser.haveNeed = event.data.haveNeed
       } else {
         // Add the user who declared their income to our groupMembers list variable
         groupMembers.push({
