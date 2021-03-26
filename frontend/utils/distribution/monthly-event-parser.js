@@ -134,6 +134,12 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
             to: needer.name,
             amount: -overPayment.amount * needer.haveNeed / totalNeedByOthers
           })
+        } else {
+          adjustingPayments.push({
+            from: overPayment.from,
+            to: needer.name,
+            amount: -overPayment.amount
+          })
         }
       }
     }
@@ -157,24 +163,15 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
     return incomeDistribution(groupIncomes, minCome)
   }
   // Loop through the events, pro-rating each user's monthly pledges/needs:
-  let eventCounter = 0
   for (const event of distributionEvents) {
-    eventCounter++
     if (event.type === 'startCycleEvent') {
       monthlyDistribution = paymentsDistribution(proRateHaveNeeds(groupMembers), minCome)
 
       // Check if it is the last event (the next month after monthstamps cycle event), or if the
       // final distribution should be adjusted, anyway:
-      if (eventCounter < distributionEvents.length) {
-        // "Double-Adjust" the monthly distribution based on the current cycle's completed payments
-        monthlyDistribution = addDistributions(
-          subtractDistributions(monthlyDistribution, completedMonthlyPayments),
-          lastStartCycleEvent.data.latePayments)
-      } else {
-        // "Single-Adjust" the monthly distribution based on the previous cycle's under payments:
-        monthlyDistribution = addDistributions(monthlyDistribution,
-          lastStartCycleEvent.data.latePayments)
-      }
+      monthlyDistribution = addDistributions(
+        subtractDistributions(monthlyDistribution, completedMonthlyPayments),
+        lastStartCycleEvent.data.latePayments)
 
       const overPayments = monthlyDistribution.filter((p) => {
         return p.amount < 0

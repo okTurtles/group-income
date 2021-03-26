@@ -11,7 +11,7 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
   const mincomeAmount = getters.groupMincomeAmount
   const distributionEvents = getters.currentGroupState.distributionEvents
   let dist = parseMonthlyDistributionFromEvents(distributionEvents, mincomeAmount, monthstamp)
-  if (adjusted) {
+  if (!adjusted) {
     // if this user has already made some payments to other users this
     // month, we need to take that into account and adjust the distribution.
     // this will be used by the Payments page to tell how much still
@@ -19,7 +19,7 @@ export default function groupIncomeDistribution ({ state, getters, monthstamp, a
     for (const p of dist) {
       const alreadyPaid = getters.paymentTotalFromUserToUser(p.from, p.to, monthstamp)
       // if we "overpaid" because we sent late payments, remove us from consideration
-      p.amount = saferFloat(Math.max(0, p.amount - alreadyPaid))
+      p.amount = saferFloat(Math.max(0, p.amount + alreadyPaid))
     }
     dist = dist.filter(p => p.amount > 0)
   }
