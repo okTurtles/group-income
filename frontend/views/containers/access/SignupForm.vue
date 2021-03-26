@@ -102,7 +102,7 @@ export default {
         username: {
           [L('A username is required.')]: required,
           [L('A username cannot contain spaces.')]: nonWhitespace,
-          [L('This username is already being used.')]: async (value) => {
+          [L('This username is already being used.')]: (value) => {
             if (!value) return true
             if (this.usernameAsyncValidation.timer) {
               clearTimeout(this.usernameAsyncValidation.timer)

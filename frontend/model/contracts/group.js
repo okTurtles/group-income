@@ -507,7 +507,7 @@ DefineContract({
         state.profiles[data.member].status = PROFILE_STATUS.REMOVED
         state.profiles[data.member].departedDate = meta.createdDate
       },
-      async sideEffect ({ data, contractID }, { state }) {
+      sideEffect ({ data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
 
