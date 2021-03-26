@@ -126,7 +126,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
     return proRatedMembers
   }
 
-  const redistributOverToLatePayments = function (overPayments, latePayments) {
+  const redistributeOverToLatePayments = function (overPayments, latePayments) {
     const adjustingPayments = []
     const needers = groupMembers.filter((m) => m.cyclicalIncomeIntegral < 0)
     for (const overPayment of overPayments) {
@@ -189,7 +189,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
       })
 
       lastStartCycleEvent = event
-      lastStartCycleEvent.data.latePayments = redistributOverToLatePayments(overPayments, latePayments)
+      lastStartCycleEvent.data.latePayments = redistributeOverToLatePayments(overPayments, latePayments)
 
       // Reset the income distribution calcuulation at the start of each cycle...
       for (const member of groupMembers) {
@@ -222,11 +222,6 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
       groupMembers = groupMembers.filter((v) => { return v.name !== event.data.name })
     }
   }
-
-  // Since there is no final startCycleEvent, calculate the haves/needs of the group members at the
-  // end of the final cycle. Then use those values as the current income distribution for
-  // calculating the payments distribution. Do not adjust for this month's completed payments; that
-  // is the callee's job.
 
   return lastStartCycleEvent.data.latePayments // TODO: return late-payments as well.
 }
