@@ -38,7 +38,7 @@ export function createGIPubSubClient (url: string, options: Object): Object {
 }
 
 // Keep pubsub in sync (logged into the right "rooms") with 'store.state.contracts'.
-sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (contracts) => {
+sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (contracts) => {
   const client = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
   const subscribedIDs = [...client.subscriptionSet]
   const currentIDs = Object.keys(contracts)

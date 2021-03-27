@@ -25,7 +25,7 @@ export const imageUpload = async (imageFile: File): Promise<any> => {
     // we use FileReader to get raw bytes to generate correct hash
     const reader = new FileReader()
     // https://developer.mozilla.org/en-US/docs/Web/API/Blob
-    reader.onloadend = async function () {
+    reader.onloadend = function () {
       const fd = new FormData()
       const { result } = reader
       if (result === null) {
