@@ -419,9 +419,7 @@ DefineContract({
               cycle: cycleAtDate(meta.createdDate)
             }
           })
-          paymentMonth.lastAdjustedDistribution = groupIncomeDistribution({
-            state, getters, updateMonthstamp, adjusted: true
-          })
+          paymentMonth.lastAdjustedDistribution = groupIncomeDistribution(getters.currentGroupState.distributionEvents, { mincomeAmount: getters.groupMincomeAmount, adjusted: true })
         }
       }
     },

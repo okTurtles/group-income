@@ -1,8 +1,5 @@
 'use strict'
-import { firstDayOfMonth } from '~/frontend/utils/time.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
-
-const monthlyRated = true // True if time-weighted monthly, false if purely pro-rated
 
 // This helper function inserts monthly-balance-events between the
 // distributionEvents which happen on different cycles. This is so
@@ -13,13 +10,10 @@ function insertMonthlyCycleEvents (distributionEvents: Array<Object>): Array<any
   let lastCycleStartEvent = distributionEvents[0] // Guaranteed to be the first event (from group creation).
   for (const event of distributionEvents) {
     for (let monthCounter = 1; lastCycleStartEvent.data.cycle + monthCounter <= Math.floor(event.data.cycle); monthCounter++) {
-      const whenDate = firstDayOfMonth(new Date(lastCycleStartEvent.data.when))
-      whenDate.setMonth(whenDate.getMonth() + monthCounter)
       const cycleStartEvent = {
         type: 'startCycleEvent',
         data: {
           cycle: lastCycleStartEvent.data.cycle + monthCounter,
-          when: whenDate.toISOString(),
           latePayments: [] // List to be populated later, by the events-parser
         }
       }
@@ -28,13 +22,10 @@ function insertMonthlyCycleEvents (distributionEvents: Array<Object>): Array<any
     }
     newEvents.push(event)
   }
-  const whenDate = firstDayOfMonth(new Date(lastCycleStartEvent.data.when))
-  whenDate.setMonth(whenDate.getMonth() + 1)
   const cycleStartEvent = {
     type: 'startCycleEvent',
     data: {
       cycle: lastCycleStartEvent.data.cycle + 1,
-      when: whenDate.toISOString(),
       latePayments: [] // List to be populated later, by the events-parser
     }
   }
@@ -90,9 +81,8 @@ function subtractDistributions (paymentsA: Array<any | Object>, paymentsB: Array
 }
 
 // This algorithm is responsible for calculating the monthly-rated distribution of
-// payments (with respect to all the events created up until the cycle of the
-// 'monthstamp' parameter).
-function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthstamp: string): Array<any | {|from: string, to: string, amount: number|}> {
+// payments. monthlyRated = True if time-weighted monthly, false if purely pro-rated.
+function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthlyRated: Boolean): Array<any | {|from: string, to: string, amount: number|}> {
   distributionEvents = JSON.parse(JSON.stringify(distributionEvents))
 
   // Add blank 'startCycleEvent's in between the distributionEvents of different monthly cycles:
@@ -122,7 +112,6 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
       // Integrate the constant function with respect to whether it is pro-rated monthly, or down to the day (or millisecond):
       member.cyclicalIncomeIntegral = monthlyRated ? member.haveNeed : member.cyclicalIncomeIntegral + deltaCycle * member.haveNeed
     }
-    console.log(proRatedMembers, cyclesIntoMonth)
     return proRatedMembers
   }
 

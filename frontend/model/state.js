@@ -344,14 +344,14 @@ const getters = {
   },
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
-    return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp() })
+    return groupIncomeDistribution(getters.currentGroupState.distributionEvents, { mincomeAmount: getters.groupMincomeAmount })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
-    return getters.groupIncomeAdjustedDistributionForMonth(currentMonthstamp())
+    return getters.groupIncomeAdjustedDistributionForMonth()
   },
   groupIncomeAdjustedDistributionForMonth (state, getters) {
-    return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
+    return () => groupIncomeDistribution(getters.currentGroupState.distributionEvents, { mincomeAmount: getters.groupMincomeAmount, adjusted: true })
   },
   ourPayments (state, getters) {
     // Payments relative to the current month only
