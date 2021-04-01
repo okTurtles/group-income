@@ -718,8 +718,10 @@ DefineContract({
               Vue.set(groupProfile, key, value)
           }
         }
-        const haveNeed = data.incomeDetailsType === 'incomeAmount' ? data.incomeAmount - state.settings.mincomeAmount : data.pledgeAmount
-        memberDeclaredIncome(state, meta.username, haveNeed, meta.createdDate)
+        if (data.incomeDetailsType) {
+          const haveNeed = data.incomeDetailsType === 'incomeAmount' ? data.incomeAmount - state.settings.mincomeAmount : data.pledgeAmount
+          memberDeclaredIncome(state, meta.username, haveNeed, meta.createdDate)
+        }
       }
     },
     'gi.contracts/group/updateAllVotingRules': {
