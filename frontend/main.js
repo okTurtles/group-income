@@ -65,8 +65,8 @@ async function startApp () {
     // This is temporarily used in development mode to help the server improve
     // its console output until we have a better solution. Do not use for auth.
     const debugID = Array.from(
-      // Flowtype doesn't support crypto yey: https://github.com/facebook/flow/issues/5019
-      (crypto: any).getRandomValues(new Uint8Array(3)),
+      // $FlowIssue doesn't support crypto yet: https://github.com/facebook/flow/issues/5019
+      crypto.getRandomValues(new Uint8Array(3)),
       (byte) => byte.toString(16).padStart(2, '0')
     ).join('')
     pubsubURL += `?debugID=${debugID}`

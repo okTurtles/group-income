@@ -39,6 +39,7 @@ export type PubSubClient = {
   clearAllTimers(): void,
   connect(): void,
   destroy(): void,
+  emit(type: string, detail?: any): void,
   pub(contractID: string, data: JSONType): void,
   scheduleConnectionAttempt(): void,
   sub(contractID: string): void,
@@ -135,16 +136,21 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
   // allocations and garbage collections of a bunch of functions every time.
   // Another benefit is the ability to patch the client protocol at runtime by
   // updating the client's custom event handler map.
-  for (const name of [...eventNames, ...globalEventNames]) {
-    client.listeners[name] = (event: Event) => {
+  for (const name of Object.keys(defaultClientEventHandlers)) {
+    client.listeners[name] = (event) => {
       const customHandler = client.customEventHandlers[name]
-      const defaultHandler = (defaultClientEventHandlers: Object)[name]
+      const defaultHandler = defaultClientEventHandlers[name]
       // Pass the client as the 'this' binding since we are processing client events.
-      if (defaultHandler) {
-        defaultHandler.call(client, event)
-      }
-      if (customHandler) {
-        customHandler.call(client, event)
+      try {
+        if (defaultHandler) {
+          defaultHandler.call(client, event)
+        }
+        if (customHandler) {
+          customHandler.call(client, event)
+        }
+      } catch (error) {
+        // Do not throw any error but emit an `error` event instead.
+        client.emit('error', error.message)
       }
     }
   }
@@ -178,7 +184,7 @@ const defaultClientEventHandlers = {
 
     if (this.socket) {
       // Remove event listeners to avoid memory leaks.
-      for (const name of eventNames) {
+      for (const name of socketEventNames) {
         this.socket.removeEventListener(name, this.listeners[name])
       }
     }
@@ -202,12 +208,14 @@ const defaultClientEventHandlers = {
       }
     }
   },
+
   // Emitted when an error has occured.
   // The socket will be closed automatically by the engine if necessary.
   error (event: Event) {
-    console.log('[pubsub] Event: error', event)
+    console.error('[pubsub] Event: error', event)
     clearTimeout(this.pingTimeoutID)
   },
+
   // Emitted when a message is received.
   // The connection will be terminated if the message is malformed or has an
   // unexpected data type (e.g. binary instead of text).
@@ -215,16 +223,15 @@ const defaultClientEventHandlers = {
     const { data } = event
 
     if (typeof data !== 'string') {
-      // TODO: emit an error event before destroying the client.
-      console.error('wrong data type', typeof data)
+      this.emit('error', `Critical error! Wrong data type: ${typeof data}`)
       return this.destroy()
     }
-
     let msg: Message = { type: '' }
+
     try {
       msg = messageParser(data)
     } catch (error) {
-      console.error(`[pubsub] Critical error! Malformed message: ${error.message}`)
+      this.emit('error', `Critical error! Malformed message: ${error.message}`)
       return this.destroy()
     }
     const handler = this.messageHandlers[msg.type]
@@ -235,7 +242,8 @@ const defaultClientEventHandlers = {
       throw new Error(`Unhandled message type: ${msg.type}`)
     }
   },
-  offline () {
+
+  offline (event: Event) {
     console.log('[pubsub] Event: offline')
     clearTimeout(this.pingTimeoutID)
     // Reset the connection attempt counter so that we'll start a new
@@ -245,7 +253,8 @@ const defaultClientEventHandlers = {
       this.socket.close()
     }
   },
-  online () {
+
+  online (event: Event) {
     console.log('[pubsub] Event: online')
     if (this.options.reconnectOnOnline && this.shouldReconnect) {
       if (!this.socket) {
@@ -254,11 +263,12 @@ const defaultClientEventHandlers = {
       }
     }
   },
+
   // Emitted when the connection is established.
-  open (event) {
+  open (event: Event) {
     console.log('[pubsub] Event: open')
     if (!this.isNew) {
-      console.log('[pubsub] Connection re-established')
+      this.emit('reconnection-succeeded')
     }
     this.clearAllTimers()
     // Set it to -1 so that it becomes 0 on the next `close` event.
@@ -273,11 +283,32 @@ const defaultClientEventHandlers = {
     }
     // Resend any still unacknowledged request.
     this.pendingSubscriptionSet.forEach((contractID) => {
-      this.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+      if (this.socket) {
+        this.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+      }
     })
     this.pendingUnsubscriptionSet.forEach((contractID) => {
-      this.socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
+      if (this.socket) {
+        this.socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
+      }
     })
+  },
+
+  'reconnection-attempt' (event: CustomEvent) {
+    console.log('[pubsub] Trying to reconnect...')
+  },
+
+  'reconnection-succeeded' (event: CustomEvent) {
+    console.log('[pubsub] Connection re-established')
+  },
+
+  'reconnection-failed' (event: CustomEvent) {
+    console.log('[pubsub] Reconnection failed')
+  },
+
+  'reconnection-scheduled' (event: CustomEvent) {
+    const { delay, nth } = event.detail
+    console.log(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
   }
 }
 
@@ -297,19 +328,24 @@ const defaultMessageHandlers = {
       }
     }, this.options.pingTimeout)
   },
+
   // PUB can be used to send ephemeral messages outside of any contract log.
   [NOTIFICATION_TYPE.PUB] (msg) {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
+
   [NOTIFICATION_TYPE.SUB] (msg) {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
+
   [NOTIFICATION_TYPE.UNSUB] (msg) {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
+
   [RESPONSE_TYPE.ERROR] ({ data: { type, contractID } }) {
     console.log(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
   },
+
   [RESPONSE_TYPE.SUCCESS] ({ data: { type, contractID } }) {
     const client = this
     switch (type) {
@@ -348,8 +384,14 @@ const defaultOptions = {
   timeout: 5_000
 }
 
-const eventNames = ['close', 'error', 'message', 'open']
+const customEventNames = [
+  'reconnection-attempt',
+  'reconnection-failed',
+  'reconnection-scheduled',
+  'reconnection-succeeded'
+]
 const globalEventNames = ['offline', 'online']
+const socketEventNames = ['close', 'error', 'message', 'open']
 
 // Parses and validates a received message.
 export const messageParser = (data: string): Message => {
@@ -398,7 +440,7 @@ const publicMethods = {
       }, this.options.timeout)
     }
     // Attach WebSocket event listeners.
-    for (const name of eventNames) {
+    for (const name of socketEventNames) {
       this.socket.addEventListener(name, this.listeners[name])
     }
   },
@@ -426,13 +468,28 @@ const publicMethods = {
     }
     // Remove WebSocket event listeners.
     if (this.socket) {
-      for (const name of eventNames) {
+      for (const name of socketEventNames) {
         this.socket.removeEventListener(name, this.listeners[name])
       }
       this.socket.close()
     }
+    this.listeners = {}
     this.socket = null
     this.shouldReconnect = false
+  },
+
+  // Emits a custom event or an `error` event.
+  // Other fake native events are not allowed so as to not break things.
+  emit (type: string, detail?: mixed) {
+    if (!customEventNames.includes(type) && type !== 'error') {
+      throw new Error(`emit(): argument 'type' must not be '${type}'.`)
+    }
+    // This event object partially implements the `CustomEvent` interface.
+    const event = { type, detail }
+    const listener = this.listeners[type]
+    if (listener) {
+      listener(event)
+    }
   },
 
   getNextRandomDelay (): number {
@@ -458,10 +515,11 @@ const publicMethods = {
     const nth = this.failedConnectionAttempts + 1
 
     this.nextConnectionAttemptDelayID = setTimeout(() => {
+      this.emit('reconnection-attempt')
       this.nextConnectionAttemptDelayID = undefined
       this.connect()
     }, delay)
-    console.log(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
+    this.emit('reconnection-scheduled', { delay, nth })
   },
 
   // Unused for now.
