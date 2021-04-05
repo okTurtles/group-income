@@ -22,7 +22,7 @@ self.addEventListener('activate', function (event) {
 // has the ability to access and clear the localstorage periodically.
 const store = {}
 
-self.addEventListener('message', async function (event) {
+self.addEventListener('message', function (event) {
   console.debug(`[sw] message from ${event.source.id}. Current store:`, store)
   // const client = await self.clients.get(event.source.id)
   // const client = await self.clients.get(event.clientId)

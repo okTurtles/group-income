@@ -41,7 +41,7 @@ export default {
     close () {
       this.$refs.modal.close()
     },
-    async submit () {
+    submit () {
       this.close()
       console.log('Todo')
     }

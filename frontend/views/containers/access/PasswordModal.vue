@@ -118,7 +118,7 @@ export default {
       // We access directly the modal here to avoid broacasting event to every possible modal
       this.$refs.modalTemplate.close()
     },
-    async changePassword () {
+    changePassword () {
       try {
         // TODO check password
         this.closeModal()

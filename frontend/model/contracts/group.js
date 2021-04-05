@@ -554,7 +554,7 @@ DefineContract({
       process ({ data, meta }, { state, getters }) {
         memberLeaves(state, data.member, meta.createdDate)
       },
-      async sideEffect ({ data, contractID }, { state }) {
+      sideEffect ({ data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
 
