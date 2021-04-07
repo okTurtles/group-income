@@ -131,13 +131,14 @@ const defaultServerHandlers = {
    * @param {http.IncomingMessage} request - The underlying Node http GET request.
    */
   connection (socket: Object, request: Object) {
+    const server = this
     const url = request.url
     const urlSearch = url.includes('?') ? url.slice(url.lastIndexOf('?')) : ''
     const debugID = new URLSearchParams(urlSearch).get('debugID') || ''
     socket.id = generateSocketID(debugID)
     socket.activeSinceLastPing = true
     socket.pinged = false
-    socket.server = this
+    socket.server = server
     socket.subscriptions = new Set()
 
     console.log(bold(`[pubsub] Socket ${socket.id} connected. Total: ${this.clients.size}`))
@@ -225,9 +226,10 @@ const defaultSocketEventHandlers = {
 // These handlers receive the connected `ws` socket through the `this` binding.
 const defaultMessageHandlers = {
   [PONG] (msg: Message) {
+    const socket = this
     // const timestamp = Number(msg.data)
     // const latency = Date.now() - timestamp
-    this.activeSinceLastPing = true
+    socket.activeSinceLastPing = true
   },
 
   [PUB] (msg: Message) {
@@ -292,7 +294,9 @@ const publicMethods = {
     message: Message,
     { to, except }: { to?: Iterable<Object>, except?: Object }
   ) {
-    for (const client of to || this.clients) {
+    const server = this
+
+    for (const client of to || server.clients) {
       if (client.readyState === WebSocket.OPEN && client !== except) {
         client.send(message)
       }
@@ -301,8 +305,10 @@ const publicMethods = {
 
   // Enumerates the subscribers of a given contract.
   * enumerateSubscribers (contractID: string): Iterable<Object> {
-    if (contractID in this.subscribersByContractID) {
-      yield * this.subscribersByContractID[contractID]
+    const server = this
+
+    if (contractID in server.subscribersByContractID) {
+      yield * server.subscribersByContractID[contractID]
     }
   }
 }

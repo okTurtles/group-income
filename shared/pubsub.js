@@ -186,32 +186,34 @@ export function createRequest (type: RequestTypeEnum, data: JSONObject): string 
 const defaultClientEventHandlers = {
   // Emitted when the connection is closed.
   close (event: CloseEvent) {
-    console.log('[pubsub] Event: close', event.code, event.reason)
-    this.failedConnectionAttempts++
+    const client = this
 
-    if (this.socket) {
+    console.log('[pubsub] Event: close', event.code, event.reason)
+    client.failedConnectionAttempts++
+
+    if (client.socket) {
       // Remove event listeners to avoid memory leaks.
       for (const name of socketEventNames) {
-        this.socket.removeEventListener(name, this.listeners[name])
+        client.socket.removeEventListener(name, client.listeners[name])
       }
     }
-    this.socket = null
-    this.clearAllTimers()
+    client.socket = null
+    client.clearAllTimers()
 
     // See "Status Codes" https://tools.ietf.org/html/rfc6455#section-7.4
     switch (event.code) {
       // TODO: verify that this list of codes is correct.
       case 1000: case 1002: case 1003: case 1007: case 1008: {
-        this.shouldReconnect = false
+        client.shouldReconnect = false
         break
       }
       default: break
     }
-    if (this.shouldReconnect && this.options.reconnectOnDisconnection) {
-      if (this.failedConnectionAttempts <= this.options.maxRetries) {
-        this.scheduleConnectionAttempt()
+    if (client.shouldReconnect && client.options.reconnectOnDisconnection) {
+      if (client.failedConnectionAttempts <= client.options.maxRetries) {
+        client.scheduleConnectionAttempt()
       } else {
-        sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_FAILED, this)
+        sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_FAILED, client)
       }
     }
   },
@@ -219,36 +221,39 @@ const defaultClientEventHandlers = {
   // Emitted when an error has occured.
   // The socket will be closed automatically by the engine if necessary.
   error (event: Event) {
+    const client = this
+
     console.error('[pubsub] Event: error', event)
-    clearTimeout(this.pingTimeoutID)
+    clearTimeout(client.pingTimeoutID)
   },
 
   // Emitted when a message is received.
   // The connection will be terminated if the message is malformed or has an
   // unexpected data type (e.g. binary instead of text).
   message (event: MessageEvent) {
+    const client = this
     const { data } = event
 
     if (typeof data !== 'string') {
-      sbp('okTurtles.events/emit', PUBSUB_ERROR, this, {
+      sbp('okTurtles.events/emit', PUBSUB_ERROR, client, {
         message: `Wrong data type: ${typeof data}`
       })
-      return this.destroy()
+      return client.destroy()
     }
     let msg: Message = { type: '' }
 
     try {
       msg = messageParser(data)
     } catch (error) {
-      sbp('okTurtles.events/emit', PUBSUB_ERROR, this, {
+      sbp('okTurtles.events/emit', PUBSUB_ERROR, client, {
         message: `Malformed message: ${error.message}`
       })
-      return this.destroy()
+      return client.destroy()
     }
-    const handler = this.messageHandlers[msg.type]
+    const handler = client.messageHandlers[msg.type]
 
     if (handler) {
-      handler.call(this, msg)
+      handler.call(client, msg)
     } else {
       throw new Error(`Unhandled message type: ${msg.type}`)
     }
@@ -256,21 +261,25 @@ const defaultClientEventHandlers = {
 
   offline (event: Event) {
     console.log('[pubsub] Event: offline')
-    clearTimeout(this.pingTimeoutID)
+    const client = this
+
+    clearTimeout(client.pingTimeoutID)
     // Reset the connection attempt counter so that we'll start a new
     // reconnection loop when we are back online.
-    this.failedConnectionAttempts = 0
-    if (this.socket) {
-      this.socket.close()
+    client.failedConnectionAttempts = 0
+    if (client.socket) {
+      client.socket.close()
     }
   },
 
   online (event: Event) {
     console.log('[pubsub] Event: online')
-    if (this.options.reconnectOnOnline && this.shouldReconnect) {
-      if (!this.socket) {
-        this.failedConnectionAttempts = 0
-        this.scheduleConnectionAttempt()
+    const client = this
+
+    if (client.options.reconnectOnOnline && client.shouldReconnect) {
+      if (!client.socket) {
+        client.failedConnectionAttempts = 0
+        client.scheduleConnectionAttempt()
       }
     }
   },
@@ -278,29 +287,31 @@ const defaultClientEventHandlers = {
   // Emitted when the connection is established.
   open (event: Event) {
     console.log('[pubsub] Event: open')
-    if (!this.isNew) {
-      sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SUCCEEDED, this)
+    const client = this
+
+    if (!client.isNew) {
+      sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SUCCEEDED, client)
     }
-    this.clearAllTimers()
+    client.clearAllTimers()
     // Set it to -1 so that it becomes 0 on the next `close` event.
-    this.failedConnectionAttempts = -1
-    this.isNew = false
+    client.failedConnectionAttempts = -1
+    client.isNew = false
     // Setup a ping timeout if required.
     // It will close the connection if we don't get any message from the server.
-    if (this.options.pingTimeout > 0 && this.options.pingTimeout < Infinity) {
-      this.pingTimeoutID = setTimeout(() => {
-        if (this.socket) this.socket.close()
-      }, this.options.pingTimeout)
+    if (client.options.pingTimeout > 0 && client.options.pingTimeout < Infinity) {
+      client.pingTimeoutID = setTimeout(() => {
+        if (client.socket) client.socket.close()
+      }, client.options.pingTimeout)
     }
     // Resend any still unacknowledged request.
-    this.pendingSubscriptionSet.forEach((contractID) => {
-      if (this.socket) {
-        this.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+    client.pendingSubscriptionSet.forEach((contractID) => {
+      if (client.socket) {
+        client.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
       }
     })
-    this.pendingUnsubscriptionSet.forEach((contractID) => {
-      if (this.socket) {
-        this.socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
+    client.pendingUnsubscriptionSet.forEach((contractID) => {
+      if (client.socket) {
+        client.socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
       }
     })
   },
@@ -315,7 +326,9 @@ const defaultClientEventHandlers = {
 
   'reconnection-failed' (event: CustomEvent) {
     console.log('[pubsub] Reconnection failed')
-    this.destroy()
+    const client = this
+
+    client.destroy()
   },
 
   'reconnection-scheduled' (event: CustomEvent) {
@@ -328,17 +341,19 @@ const defaultClientEventHandlers = {
 const defaultMessageHandlers = {
   [NOTIFICATION_TYPE.PING] ({ data }) {
     console.debug(`[pubsub] Ping received in ${Date.now() - Number(data)} ms`)
+    const client = this
+
     // Reply with a pong message using the same data.
-    if (this.socket) {
-      this.socket.send(createMessage(NOTIFICATION_TYPE.PONG, data))
+    if (client.socket) {
+      client.socket.send(createMessage(NOTIFICATION_TYPE.PONG, data))
     }
     // Refresh the ping timer, waiting for the next ping.
-    clearTimeout(this.pingTimeoutID)
-    this.pingTimeoutID = setTimeout(() => {
-      if (this.socket) {
-        this.socket.close()
+    clearTimeout(client.pingTimeoutID)
+    client.pingTimeoutID = setTimeout(() => {
+      if (client.socket) {
+        client.socket.close()
       }
-    }, this.options.pingTimeout)
+    }, client.options.pingTimeout)
   },
 
   // PUB can be used to send ephemeral messages outside of any contract log.
@@ -360,6 +375,7 @@ const defaultMessageHandlers = {
 
   [RESPONSE_TYPE.SUCCESS] ({ data: { type, contractID } }) {
     const client = this
+
     switch (type) {
       case REQUEST_TYPE.SUB: {
         console.log(`[pubsub] Subscribed to ${contractID}`)
@@ -416,38 +432,42 @@ export const messageParser = (data: string): Message => {
 
 const publicMethods = {
   clearAllTimers () {
-    clearTimeout(this.connectionTimeoutID)
-    clearTimeout(this.nextConnectionAttemptDelayID)
-    clearTimeout(this.pingTimeoutID)
-    this.connectionTimeoutID = undefined
-    this.nextConnectionAttemptDelayID = undefined
-    this.pingTimeoutID = undefined
+    const client = this
+
+    clearTimeout(client.connectionTimeoutID)
+    clearTimeout(client.nextConnectionAttemptDelayID)
+    clearTimeout(client.pingTimeoutID)
+    client.connectionTimeoutID = undefined
+    client.nextConnectionAttemptDelayID = undefined
+    client.pingTimeoutID = undefined
   },
 
   // Performs a connection or reconnection attempt.
   connect () {
-    if (this.socket !== null) {
+    const client = this
+
+    if (client.socket !== null) {
       throw new Error('connect() can only be called if there is no current socket.')
     }
-    if (this.nextConnectionAttemptDelayID) {
+    if (client.nextConnectionAttemptDelayID) {
       throw new Error('connect() must not be called during a reconnection delay.')
     }
-    if (!this.shouldReconnect) {
+    if (!client.shouldReconnect) {
       throw new Error('connect() should no longer be called on this instance.')
     }
-    this.socket = new WebSocket(this.url)
+    client.socket = new WebSocket(client.url)
 
-    if (this.options.timeout) {
-      this.connectionTimeoutID = setTimeout(() => {
-        this.connectionTimeoutID = undefined
-        if (this.socket) {
-          this.socket.close(4000, 'timeout')
+    if (client.options.timeout) {
+      client.connectionTimeoutID = setTimeout(() => {
+        client.connectionTimeoutID = undefined
+        if (client.socket) {
+          client.socket.close(4000, 'timeout')
         }
-      }, this.options.timeout)
+      }, client.options.timeout)
     }
     // Attach WebSocket event listeners.
     for (const name of socketEventNames) {
-      this.socket.addEventListener(name, this.listeners[name])
+      client.socket.addEventListener(name, client.listeners[name])
     }
   },
 
@@ -460,38 +480,42 @@ const publicMethods = {
    * - Any pending messages will be discarded.
    */
   destroy () {
-    this.clearAllTimers()
+    const client = this
+
+    client.clearAllTimers()
     // Update property values.
-    // Note: do not clear 'this.options'.
-    this.pendingSubscriptionSet.clear()
-    this.pendingUnsubscriptionSet.clear()
-    this.subscriptionSet.clear()
+    // Note: do not clear 'client.options'.
+    client.pendingSubscriptionSet.clear()
+    client.pendingUnsubscriptionSet.clear()
+    client.subscriptionSet.clear()
     // Remove global event listeners.
     if (typeof window === 'object') {
       for (const name of globalEventNames) {
-        window.removeEventListener(name, this.listeners[name])
+        window.removeEventListener(name, client.listeners[name])
       }
     }
     // Remove WebSocket event listeners.
-    if (this.socket) {
+    if (client.socket) {
       for (const name of socketEventNames) {
-        this.socket.removeEventListener(name, this.listeners[name])
+        client.socket.removeEventListener(name, client.listeners[name])
       }
-      this.socket.close()
+      client.socket.close()
     }
-    this.listeners = {}
-    this.socket = null
-    this.shouldReconnect = false
+    client.listeners = {}
+    client.socket = null
+    client.shouldReconnect = false
   },
 
   getNextRandomDelay (): number {
+    const client = this
+
     const {
       maxReconnectionDelay,
       minReconnectionDelay,
       reconnectionDelayGrowFactor
-    } = this.options
+    } = client.options
 
-    const minDelay = minReconnectionDelay * reconnectionDelayGrowFactor ** this.failedConnectionAttempts
+    const minDelay = minReconnectionDelay * reconnectionDelayGrowFactor ** client.failedConnectionAttempts
     const maxDelay = minDelay * reconnectionDelayGrowFactor
 
     return Math.min(maxReconnectionDelay, Math.round(minDelay + Math.random() * (maxDelay - minDelay)))
@@ -500,18 +524,20 @@ const publicMethods = {
   // Schedules a connection attempt to happen after a delay computed according to
   // a randomized exponential backoff algorithm variant.
   scheduleConnectionAttempt () {
-    if (!this.shouldReconnect) {
+    const client = this
+
+    if (!client.shouldReconnect) {
       throw new Error('Cannot call `scheduleConnectionAttempt()` when `shouldReconnect` is false.')
     }
-    const delay = this.getNextRandomDelay()
-    const nth = this.failedConnectionAttempts + 1
+    const delay = client.getNextRandomDelay()
+    const nth = client.failedConnectionAttempts + 1
 
-    this.nextConnectionAttemptDelayID = setTimeout(() => {
-      sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_ATTEMPT, this)
-      this.nextConnectionAttemptDelayID = undefined
-      this.connect()
+    client.nextConnectionAttemptDelayID = setTimeout(() => {
+      sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_ATTEMPT, client)
+      client.nextConnectionAttemptDelayID = undefined
+      client.connect()
     }, delay)
-    sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SCHEDULED, this, { delay, nth })
+    sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SCHEDULED, client, { delay, nth })
   },
 
   // Unused for now.
@@ -528,15 +554,16 @@ const publicMethods = {
    * @param contractID - The ID of the contract whose updates we want to subscribe to.
    */
   sub (contractID: string) {
+    const client = this
     const { socket } = this
 
-    if (!this.pendingSubscriptionSet.has(contractID)) {
+    if (!client.pendingSubscriptionSet.has(contractID)) {
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
       }
     }
-    this.pendingSubscriptionSet.add(contractID)
-    this.pendingUnsubscriptionSet.delete(contractID)
+    client.pendingSubscriptionSet.add(contractID)
+    client.pendingUnsubscriptionSet.delete(contractID)
   },
 
   /**
@@ -549,15 +576,16 @@ const publicMethods = {
    * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
    */
   unsub (contractID: string) {
+    const client = this
     const { socket } = this
 
-    if (!this.pendingUnsubscriptionSet.has(contractID)) {
+    if (!client.pendingUnsubscriptionSet.has(contractID)) {
       if (socket && socket.readyState === WebSocket.OPEN) {
         socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
       }
     }
-    this.pendingSubscriptionSet.delete(contractID)
-    this.pendingUnsubscriptionSet.add(contractID)
+    client.pendingSubscriptionSet.delete(contractID)
+    client.pendingUnsubscriptionSet.add(contractID)
   }
 }
 
