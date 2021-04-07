@@ -12,6 +12,7 @@ import { mapMutations } from 'vuex'
 import router from './controller/router.js'
 import { createGIPubSubClient } from './controller/backend.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
+import { randomHexString } from './utils/giLodash.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
@@ -64,12 +65,7 @@ async function startApp () {
   if (process.env.NODE_ENV === 'development') {
     // This is temporarily used in development mode to help the server improve
     // its console output until we have a better solution. Do not use for auth.
-    const debugID = Array.from(
-      // $FlowIssue doesn't support crypto yet: https://github.com/facebook/flow/issues/5019
-      crypto.getRandomValues(new Uint8Array(3)),
-      (byte) => byte.toString(16).padStart(2, '0')
-    ).join('')
-    pubsubURL += `?debugID=${debugID}`
+    pubsubURL += `?debugID=${randomHexString(6)}`
   }
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, createGIPubSubClient(
     pubsubURL, {
