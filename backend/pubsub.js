@@ -53,11 +53,12 @@ export function createResponse (type: ResponseTypeEnum, data: JSONType): string 
  * {object?} messageHandlers - Custom handlers for different message types.
  * {object?} serverHandlers - Custom handlers for server events.
  * {object?} socketHandlers - Custom handlers for socket events.
- * {number} backlog - The maximum length of the queue of pending connections.
- * {Function} handleProtocols - A function which can be used to handle the WebSocket subprotocols.
- * {number} maxPayload - The maximum allowed message size in bytes.
- * {string} path - Accept only connections matching this path.
- * {(boolean|object)} perMessageDeflate - Enables/disables per-message deflate.
+ * {number?} backlog=511 - The maximum length of the queue of pending connections.
+ * {Function?} handleProtocols - A function which can be used to handle the WebSocket subprotocols.
+ * {number?} maxPayload=6_291_456 - The maximum allowed message size in bytes.
+ * {string?} path - Accept only connections matching this path.
+ * {(boolean|object)?} perMessageDeflate - Enables/disables per-message deflate.
+ * {number?} pingInterval=30_000 - The time to wait between successive pings.
  * @returns {Object}
  */
 export function createServer (httpServer: Object, options?: Object = {}): Object {
@@ -195,7 +196,7 @@ const defaultSocketEventHandlers = {
 
   message (data: string) {
     const socket = this
-    const { server, id: socketID } = this
+    const { server } = this
     let msg: Message = { type: '' }
 
     try {
