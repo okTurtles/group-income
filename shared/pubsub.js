@@ -1,6 +1,14 @@
 'use strict'
 
+import sbp from '~/shared/sbp.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
+import {
+  PUBSUB_ERROR,
+  PUBSUB_RECONNECTION_ATTEMPT,
+  PUBSUB_RECONNECTION_FAILED,
+  PUBSUB_RECONNECTION_SCHEDULED,
+  PUBSUB_RECONNECTION_SUCCEEDED
+} from '~/frontend/utils/events.js'
 
 // ====== Types ====== //
 
@@ -39,7 +47,6 @@ export type PubSubClient = {
   clearAllTimers(): void,
   connect(): void,
   destroy(): void,
-  emit(type: string, detail?: any): void,
   pub(contractID: string, data: JSONType): void,
   scheduleConnectionAttempt(): void,
   sub(contractID: string): void,
@@ -96,11 +103,11 @@ export type ResponseTypeEnum = $Values<typeof RESPONSE_TYPE>
  * {boolean?} manual - Whether the factory should call 'connect()' automatically.
  *   Also named 'autoConnect' or 'startClosed' in other libraries.
  * {object?} messageHandlers - Custom handlers for different message types.
- * {number?} pingTimeout - How long to wait for the server to send a ping, in milliseconds.
- * {boolean?} reconnectOnDisconnection - Whether to reconnect after a server-side disconnection.
- * {boolean?} reconnectOnOnline - Whether to reconnect after coming back online.
- * {boolean?} reconnectOnTimeout - Whether to reconnect after a connection timeout.
- * {number?} timeout - Connection timeout duration in milliseconds.
+ * {number?} pingTimeout=45_000 - How long to wait for the server to send a ping, in milliseconds.
+ * {boolean?} reconnectOnDisconnection=true - Whether to reconnect after a server-side disconnection.
+ * {boolean?} reconnectOnOnline=true - Whether to reconnect after coming back online.
+ * {boolean?} reconnectOnTimeout=false - Whether to reconnect after a connection timeout.
+ * {number?} timeout=5_000 - Connection timeout duration in milliseconds.
  * @returns {PubSubClient}
  */
 export function createClient (url: string, options?: Object = {}): PubSubClient {
@@ -150,7 +157,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
         }
       } catch (error) {
         // Do not throw any error but emit an `error` event instead.
-        client.emit('error', error.message)
+        sbp('okTurtles.events/emit', PUBSUB_ERROR, client, error.message)
       }
     }
   }
@@ -204,7 +211,7 @@ const defaultClientEventHandlers = {
       if (this.failedConnectionAttempts <= this.options.maxRetries) {
         this.scheduleConnectionAttempt()
       } else {
-        this.destroy()
+        sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_FAILED, this)
       }
     }
   },
@@ -223,7 +230,9 @@ const defaultClientEventHandlers = {
     const { data } = event
 
     if (typeof data !== 'string') {
-      this.emit('error', `Critical error! Wrong data type: ${typeof data}`)
+      sbp('okTurtles.events/emit', PUBSUB_ERROR, this, {
+        message: `Wrong data type: ${typeof data}`
+      })
       return this.destroy()
     }
     let msg: Message = { type: '' }
@@ -231,7 +240,9 @@ const defaultClientEventHandlers = {
     try {
       msg = messageParser(data)
     } catch (error) {
-      this.emit('error', `Critical error! Malformed message: ${error.message}`)
+      sbp('okTurtles.events/emit', PUBSUB_ERROR, this, {
+        message: `Malformed message: ${error.message}`
+      })
       return this.destroy()
     }
     const handler = this.messageHandlers[msg.type]
@@ -268,7 +279,7 @@ const defaultClientEventHandlers = {
   open (event: Event) {
     console.log('[pubsub] Event: open')
     if (!this.isNew) {
-      this.emit('reconnection-succeeded')
+      sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SUCCEEDED, this)
     }
     this.clearAllTimers()
     // Set it to -1 so that it becomes 0 on the next `close` event.
@@ -304,6 +315,7 @@ const defaultClientEventHandlers = {
 
   'reconnection-failed' (event: CustomEvent) {
     console.log('[pubsub] Reconnection failed')
+    this.destroy()
   },
 
   'reconnection-scheduled' (event: CustomEvent) {
@@ -384,12 +396,6 @@ const defaultOptions = {
   timeout: 5_000
 }
 
-const customEventNames = [
-  'reconnection-attempt',
-  'reconnection-failed',
-  'reconnection-scheduled',
-  'reconnection-succeeded'
-]
 const globalEventNames = ['offline', 'online']
 const socketEventNames = ['close', 'error', 'message', 'open']
 
@@ -478,20 +484,6 @@ const publicMethods = {
     this.shouldReconnect = false
   },
 
-  // Emits a custom event or an `error` event.
-  // Other fake native events are not allowed so as to not break things.
-  emit (type: string, detail?: mixed) {
-    if (!customEventNames.includes(type) && type !== 'error') {
-      throw new Error(`emit(): argument 'type' must not be '${type}'.`)
-    }
-    // This event object partially implements the `CustomEvent` interface.
-    const event = { type, detail }
-    const listener = this.listeners[type]
-    if (listener) {
-      listener(event)
-    }
-  },
-
   getNextRandomDelay (): number {
     const {
       maxReconnectionDelay,
@@ -515,11 +507,11 @@ const publicMethods = {
     const nth = this.failedConnectionAttempts + 1
 
     this.nextConnectionAttemptDelayID = setTimeout(() => {
-      this.emit('reconnection-attempt')
+      sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_ATTEMPT, this)
       this.nextConnectionAttemptDelayID = undefined
       this.connect()
     }, delay)
-    this.emit('reconnection-scheduled', { delay, nth })
+    sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SCHEDULED, this, { delay, nth })
   },
 
   // Unused for now.
@@ -566,6 +558,15 @@ const publicMethods = {
     }
     this.pendingSubscriptionSet.delete(contractID)
     this.pendingUnsubscriptionSet.add(contractID)
+  }
+}
+
+// Register custom SBP event listeners before the first connection.
+for (const name of Object.keys(defaultClientEventHandlers)) {
+  if (name === 'error' || !socketEventNames.includes(name)) {
+    sbp('okTurtles.events/on', `pubsub-${name}`, (target, detail?: Object) => {
+      target.listeners[name]({ type: name, target, detail })
+    })
   }
 }
 

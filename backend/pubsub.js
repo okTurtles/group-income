@@ -1,6 +1,11 @@
 /* globals logger */
 'use strict'
 
+/*
+ * Pub/Sub server implementation using the `ws` library.
+ * See https://github.com/websockets/ws#api-docs
+ */
+
 import {
   NOTIFICATION_TYPE,
   REQUEST_TYPE,
@@ -27,6 +32,10 @@ const { ERROR, SUCCESS } = RESPONSE_TYPE
 
 // Re-export some useful things from the shared module.
 export { createClient, createMessage, NOTIFICATION_TYPE, REQUEST_TYPE, RESPONSE_TYPE }
+
+export function createErrorResponse (data: JSONType): string {
+  return JSON.stringify({ type: ERROR, data })
+}
 
 export function createNotification (type: NotificationTypeEnum, data: JSONType): string {
   return JSON.stringify({ type, data })
@@ -78,7 +87,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
           customHandler.call(server, ...args)
         }
       } catch (error) {
-        logger(error)
+        server.emit('error', error)
       }
     })
   })
@@ -148,18 +157,20 @@ const defaultServerHandlers = {
             customHandler.call(socket, ...args)
           }
         } catch (error) {
-          logger(error)
+          socket.server.emit('error', error)
+          socket.terminate()
         }
       })
     })
   },
   error (error: Error) {
-    console.log('[pubsub] Server event: error', error)
+    console.log('[pubsub] Server error:', error)
+    logger(error)
   },
   headers () {
   },
   listening () {
-    console.log('[pubsub] Server event: listening')
+    console.log('[pubsub] Server listening')
   }
 }
 
@@ -186,7 +197,8 @@ const defaultSocketEventHandlers = {
       msg = messageParser(data)
     } catch (error) {
       console.error(bold.red(`[pubsub] Malformed message: ${error.message}`))
-      return this.terminate()
+      rejectMessageAndTerminateSocket(msg, this)
+      return
     }
     this.activeSinceLastPing = true
     const handler = this.server.messageHandlers[msg.type]
@@ -197,12 +209,11 @@ const defaultSocketEventHandlers = {
       } catch (error) {
         // Log the error message and stack trace but do not send it to the client.
         logger(error)
-        // Should we call 'this.terminate()' instead?
-        this.send(createResponse(ERROR, { ...msg }), () => this.close())
+        rejectMessageAndTerminateSocket(msg, this)
       }
     } else {
       console.error(`[pubsub] Unhandled message type: ${msg.type}`)
-      this.terminate()
+      rejectMessageAndTerminateSocket(msg, this)
     }
   }
 }
@@ -292,4 +303,8 @@ const publicMethods = {
       yield * this.subscribersByContractID[contractID]
     }
   }
+}
+
+const rejectMessageAndTerminateSocket = (request: Message, socket: Object) => {
+  socket.send(createErrorResponse({ ...request }), () => socket.terminate())
 }
