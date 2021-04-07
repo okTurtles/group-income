@@ -121,7 +121,7 @@ const defaultOptions = {
 // The `this` binding refers to the server object.
 const defaultServerHandlers = {
   close () {
-    console.log('[pubsub] Server event: close')
+    console.log('[pubsub] Server closed')
   },
   /**
    * Emitted when a connection handshake completes.
@@ -178,42 +178,46 @@ const defaultServerHandlers = {
 // The `this` binding refers to the connected `ws` socket object.
 const defaultSocketEventHandlers = {
   close (code: string, reason: string) {
-    const socketID = this.id
-    const { server } = this
+    const socket = this
+    const { server, id: socketID } = this
+
     // Notify other client sockets that this one has left any room they shared.
-    for (const contractID of this.subscriptions) {
+    for (const contractID of socket.subscriptions) {
       const subscribers = server.subscribersByContractID[contractID]
       // Remove this socket from the subscribers of the given contract.
-      subscribers.delete(this)
+      subscribers.delete(socket)
       const notification = createNotification(UNSUB, { contractID, socketID })
       server.broadcast(notification, { to: subscribers })
     }
-    this.subscriptions.clear()
+    socket.subscriptions.clear()
   },
 
   message (data: string) {
+    const socket = this
+    const { server, id: socketID } = this
     let msg: Message = { type: '' }
+
     try {
       msg = messageParser(data)
     } catch (error) {
       console.error(bold.red(`[pubsub] Malformed message: ${error.message}`))
-      rejectMessageAndTerminateSocket(msg, this)
+      rejectMessageAndTerminateSocket(msg, socket)
       return
     }
-    this.activeSinceLastPing = true
-    const handler = this.server.messageHandlers[msg.type]
+    socket.activeSinceLastPing = true
+    const handler = server.messageHandlers[msg.type]
 
     if (handler) {
       try {
-        handler.call(this, msg)
+        handler.call(socket, msg)
       } catch (error) {
         // Log the error message and stack trace but do not send it to the client.
         logger(error)
-        rejectMessageAndTerminateSocket(msg, this)
+        rejectMessageAndTerminateSocket(msg, socket)
       }
     } else {
       console.error(`[pubsub] Unhandled message type: ${msg.type}`)
-      rejectMessageAndTerminateSocket(msg, this)
+      rejectMessageAndTerminateSocket(msg, socket)
     }
   }
 }
@@ -232,8 +236,7 @@ const defaultMessageHandlers = {
 
   [SUB] ({ contractID, type }: SubMessage) {
     const socket = this
-    const socketID = this.id
-    const { server } = this
+    const { server, id: socketID } = this
 
     if (!socket.subscriptions.has(contractID)) {
       // Add the given contract ID to our subscriptions.
@@ -253,8 +256,7 @@ const defaultMessageHandlers = {
 
   [UNSUB] ({ contractID, type }: UnsubMessage) {
     const socket = this
-    const socketID = this.id
-    const { server } = this
+    const { server, id: socketID } = this
 
     if (socket.subscriptions.has(contractID)) {
       // Remove the given contract ID from our subscriptions.
