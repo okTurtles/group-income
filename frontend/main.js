@@ -70,7 +70,8 @@ async function startApp () {
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, createGIPubSubClient(
     pubsubURL, {
       // This option can be enabled since we are not doing auth via web sockets.
-      reconnectOnTimeout: true
+      reconnectOnTimeout: true,
+      timeout: 5_000
     }
   ))
 
