@@ -10,7 +10,9 @@ import './controller/actions/index.js'
 import Vue from 'vue'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
-import { createWebSocket } from './controller/backend.js'
+import { createGIPubSubClient } from './controller/backend.js'
+import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
+import { randomHexString } from './utils/giLodash.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
@@ -57,12 +59,21 @@ async function startApp () {
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
 
-  // TODO: handle any socket errors!
-  createWebSocket(sbp('okTurtles.data/get', 'API_URL'), {
-    // TODO: verify these are good defaults
-    timeout: 3000,
-    strategy: ['disconnect', 'online', 'timeout']
-  })
+  // URL used to connect to the pubsub server. May include query parameters.
+  let pubsubURL = sbp('okTurtles.data/get', 'API_URL')
+
+  if (process.env.NODE_ENV === 'development') {
+    // This is temporarily used in development mode to help the server improve
+    // its console output until we have a better solution. Do not use for auth.
+    pubsubURL += `?debugID=${randomHexString(6)}`
+  }
+  sbp('okTurtles.data/set', PUBSUB_INSTANCE, createGIPubSubClient(
+    pubsubURL, {
+      // This option can be enabled since we are not doing auth via web sockets.
+      reconnectOnTimeout: true,
+      timeout: 5_000
+    }
+  ))
 
   await sbp('translations/init', navigator.language)
 

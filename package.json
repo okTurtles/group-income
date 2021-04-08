@@ -106,9 +106,6 @@
     "emoji-mart-vue-fast": "7.0.7",
     "localforage": "1.9.0",
     "multihashes": "0.4.15",
-    "primus": "8.0.0",
-    "primus-responder": "1.0.0",
-    "primus-rooms": "3.4.1",
     "scrypt-async": "2.0.1",
     "tweetnacl": "1.0.3",
     "tweetnacl-util": "0.15.1",
@@ -120,7 +117,7 @@
     "vuelidate": "0.7.6",
     "vuex": "3.6.0",
     "wicg-inert": "3.1.0",
-    "ws": "7.4.0"
+    "ws": "7.4.3"
   },
   "devDependencies": {
     "@babel/core": "7.12.9",
