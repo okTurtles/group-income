@@ -20,9 +20,3 @@ export const CONTRACT_IS_SYNCING = 'contract-is-syncing'
 
 export const CAPTURED_LOGS = 'captured-logs'
 export const SET_APP_LOGS_FILTER = 'set-app-logs-filter'
-
-export const PUBSUB_ERROR = 'pubsub-error'
-export const PUBSUB_RECONNECTION_ATTEMPT = 'pubsub-reconnection-attempt'
-export const PUBSUB_RECONNECTION_FAILED = 'pubsub-reconnection-failed'
-export const PUBSUB_RECONNECTION_SCHEDULED = 'pubsub-reconnection-scheduled'
-export const PUBSUB_RECONNECTION_SUCCEEDED = 'pubsub-reconnection-succeeded'

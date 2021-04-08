@@ -2,13 +2,14 @@
 
 import sbp from '~/shared/sbp.js'
 import type { JSONObject, JSONType } from '~/shared/types.js'
-import {
-  PUBSUB_ERROR,
-  PUBSUB_RECONNECTION_ATTEMPT,
-  PUBSUB_RECONNECTION_FAILED,
-  PUBSUB_RECONNECTION_SCHEDULED,
-  PUBSUB_RECONNECTION_SUCCEEDED
-} from '~/frontend/utils/events.js'
+
+// ====== Event name constants ====== //
+
+export const PUBSUB_ERROR = 'pubsub-error'
+export const PUBSUB_RECONNECTION_ATTEMPT = 'pubsub-reconnection-attempt'
+export const PUBSUB_RECONNECTION_FAILED = 'pubsub-reconnection-failed'
+export const PUBSUB_RECONNECTION_SCHEDULED = 'pubsub-reconnection-scheduled'
+export const PUBSUB_RECONNECTION_SUCCEEDED = 'pubsub-reconnection-succeeded'
 
 // ====== Types ====== //
 
