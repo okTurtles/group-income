@@ -7,14 +7,14 @@ const monthlyCycleIntervalMilliseconds = process.env.NODE_ENV === 'development' 
 
 let timerStartInterval
 
-function monthlyCycleCheckHandler (store) {
+function monthlyCycleCheckHandler (store: Object) {
   const groupID = store.state.currentGroupId
   if (groupID) {
     sbp('gi.actions/group/resetMonth', groupID)
   }
 }
 
-export function startMonthlyCycleCheckInterval (store) {
+export function startMonthlyCycleCheckInterval (store: Object) {
   if (timerStartInterval) clearInterval(timerStartInterval)
   timerStartInterval = setInterval(() => {
     monthlyCycleCheckHandler(store)
