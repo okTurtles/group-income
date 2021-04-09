@@ -13,7 +13,7 @@ global.logger = function (err) {
   return err // routes.js is written in a way that depends on this returning the error
 }
 
-const dontLog = { 'backend/pubsub/setup': true }
+const dontLog = { 'backend/server/broadcastEntry': true }
 
 function logSBP (domain, selector, data) {
   if (!dontLog[selector]) {
@@ -34,9 +34,9 @@ module.exports = (new Promise((resolve, reject) => {
 }): Promise<void>)
 
 const shutdownFn = function (message) {
-  sbp('okTurtles.data/apply', PUBSUB_INSTANCE, function (primus) {
+  sbp('okTurtles.data/apply', PUBSUB_INSTANCE, function (pubsub) {
     console.log('message received in child, shutting down...', message)
-    primus.on('close', async function () {
+    pubsub.on('close', async function () {
       try {
         await sbp('backend/server/stop')
         console.log('Hapi server down')
@@ -49,7 +49,7 @@ const shutdownFn = function (message) {
         process.exit(1)
       }
     })
-    primus.destroy({ timeout: 1000 }) // TODO: close: false ?
+    pubsub.close()
   })
 }
 

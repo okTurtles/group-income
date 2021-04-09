@@ -5,7 +5,7 @@ import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 // import * as _ from '~/frontend/utils/giLodash.js'
-import { createWebSocket } from '~/frontend/controller/backend.js'
+import { createGIPubSubClient } from '~/frontend/controller/backend.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // import { blake2bInit, blake2bUpdate, blake2bFinal } from 'blakejs'
 // import multihash from 'multihashes'
@@ -23,6 +23,8 @@ import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
 
 global.fetch = require('node-fetch')
+// Necessary since we are going to use a WebSocket pubsub client in the backend.
+global.WebSocket = require('ws')
 const should = require('should') // eslint-disable-line
 const FormData = require('form-data')
 const fs = require('fs')
@@ -92,7 +94,22 @@ describe('Full walkthrough', function () {
   }
 
   function createSocket () {
-    return createWebSocket(process.env.API_URL, { timeout: 3000, strategy: false })
+    return new Promise((resolve, reject) => {
+      createGIPubSubClient(process.env.API_URL, {
+        handlers: {
+          error (event) {
+            reject(event)
+          },
+          open (event) {
+            resolve(this)
+          }
+        },
+        reconnectOnDisconnection: false,
+        reconnectOnOnline: false,
+        reconnectOnTimeout: false,
+        timeout: 3000
+      })
+    })
   }
 
   async function createIdentity (username, email) {
@@ -345,7 +362,7 @@ describe('Full walkthrough', function () {
       // The code below was originally Object.values(...) but changed to .keys()
       // due to a similar flow issue to https://github.com/facebook/flow/issues/2221
       Object.keys(users).forEach((userKey) => {
-        users[userKey].socket && users[userKey].socket.destroy({ timeout: 500 })
+        users[userKey].socket && users[userKey].socket.destroy()
       })
     })
   })

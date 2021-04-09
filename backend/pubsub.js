@@ -1,127 +1,319 @@
 /* globals logger */
-
 'use strict'
 
-// primus events: https://github.com/primus/primus#events
-// https://github.com/primus/primus-emit (better than primus-emitter)
+/*
+ * Pub/Sub server implementation using the `ws` library.
+ * See https://github.com/websockets/ws#api-docs
+ */
 
-import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/data.js'
-import { bold } from 'chalk'
-import { RESPONSE_TYPE } from '~/shared/constants.js'
-import { makeResponse as reply } from '~/shared/functions.js'
-import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
-import Primus from 'primus'
+import {
+  NOTIFICATION_TYPE,
+  REQUEST_TYPE,
+  RESPONSE_TYPE,
+  createClient,
+  createMessage,
+  messageParser
+} from '~/shared/pubsub.js'
 
-const { ERROR, SUCCESS, SUB, UNSUB, PUB } = RESPONSE_TYPE
+import type {
+  Message, SubMessage, UnsubMessage,
+  NotificationTypeEnum, ResponseTypeEnum
+} from '~/shared/pubsub.js'
 
-// TODO: decide whether it's better to switch to HTTP2 intead of using websockets — NOTE: it probably is (makes it easier to self-host? also more sbp-friendly single-api-endpoint design?)
-// https://www.reddit.com/r/rust/comments/5p6a8z/a_hyper_update_v010_last_week_tokio_soon/
-//
-// NOTE: primus-rooms can be used with primus-multiplex
-//       primus-multiplex makes it so that the server can have
-//       multiple channels, and each channel then can have multiple rooms.
-// https://github.com/cayasso/primus-multiplex/blob/master/examples/node/rooms/index.js
+import type { JSONType } from '~/shared/types.js'
 
-let primus
+const { bold } = require('chalk')
+const WebSocket = require('ws')
 
-sbp('sbp/selectors/register', {
-  // generate and save primus client file
-  // https://github.com/primus/primus#client-library
-  // this function is also used in .Grunfile.babel.js
-  // to save the corresponding frontend version of the primus.js file
-  'backend/pubsub/setup': function (server: Object, saveAndDestroy: boolean = false) {
-    primus = new Primus(server, {
-      transformer: 'websockets',
-      rooms: { wildcard: false }
-    })
-    primus.plugin('rooms', require('primus-rooms'))
-    primus.plugin('responder', require('primus-responder'))
-    if (saveAndDestroy) {
-      primus.save(require('path').join(__dirname, '../frontend/controller/utils/primus.js'))
-      primus.destroy()
-    }
-    sbp('okTurtles.data/set', PUBSUB_INSTANCE, primus)
-    return primus
-  }
-})
+// ====== API ====== //
 
-// This is a hack to check if pubsub.js is being loaded directly (as via 'grunt dev' in .Gruntfile.babel.js)
-// or "properly" by backend/server.js. If we're being loaded directly, this is being done solely to register
-// the 'backend/pubsub/setup' selector so that it can be called with saveAndDestroy=true (in order to
-// generate the file ./frontend/controller/utils/primus.js).
-// TODO: In the future all of this hackishness will go away once we get rid of Primus:
-// https://github.com/okTurtles/group-income-simple/issues/576
-if (sbp('okTurtles.data/get', SERVER_INSTANCE)) {
-  sbp('okTurtles.data/apply', SERVER_INSTANCE, function (server: Object) {
-    sbp('backend/pubsub/setup', server.listener)
+const { PING, PONG, PUB, SUB, UNSUB } = NOTIFICATION_TYPE
+const { ERROR, SUCCESS } = RESPONSE_TYPE
 
-    primus.on('roomserror', function (error, spark) {
-      console.log(bold.red('Rooms error from ' + spark.id), error)
-    })
+// Re-export some useful things from the shared module.
+export { createClient, createMessage, NOTIFICATION_TYPE, REQUEST_TYPE, RESPONSE_TYPE }
 
-    primus.on('joinroom', function (room, spark) {
-      console.log(bold.yellow(spark.id + ' joined ' + room))
-    })
+export function createErrorResponse (data: JSONType): string {
+  return JSON.stringify({ type: ERROR, data })
+}
 
-    primus.on('connection', function (spark) {
-      // spark is the new connection. https://github.com/primus/primus#sparkheaders
-      const { id, address } = spark
-      // console.log('connection has the following headers', headers)
-      console.log(bold(`[pubsub] ${id} connected from:`), address)
+export function createNotification (type: NotificationTypeEnum, data: JSONType): string {
+  return JSON.stringify({ type, data })
+}
 
-      // https://github.com/swissmanu/primus-responder
-      spark.on('request', function (req, done) {
-        try {
-          const { type, data: { contractID } } = req
-          const success = reply(SUCCESS, { type, id })
-          console.log(bold(`[pubsub] REQUEST '${type}' from '${id}'`), req)
-          switch (type) {
-            case SUB:
-              if (spark.rooms().indexOf(contractID) === -1) {
-                spark.join(contractID, function () {
-                  spark.room(contractID).except(id).write(req)
-                  done(success)
-                })
-              } else {
-                console.log(`[pubsub] ${id} already subscribed to: ${contractID}`)
-                done(success)
-              }
-              break
-            case UNSUB:
-              spark.room(contractID).except(id).write(req)
-              spark.leave(contractID, () => done(success))
-              break
-            case PUB:
-              spark.room(contractID).except(id).write(req)
-              break
-            default:
-              console.error(bold.red(`[pubsub] client ${id} didn't give us a valid type!`), req)
-              spark.leaveAll()
-              done(reply(ERROR, `invalid type: ${type}`))
-              spark.end()
-          }
-        } catch (err) {
-          logger(err)
-          done(reply(ERROR, err))
+export function createResponse (type: ResponseTypeEnum, data: JSONType): string {
+  return JSON.stringify({ type, data })
+}
+
+/**
+ * Creates a pubsub server instance.
+ *
+ * @param {(http.Server|https.Server)} server - A Node.js HTTP/S server to attach to.
+ * @param {Object?} options
+ * {object?} messageHandlers - Custom handlers for different message types.
+ * {object?} serverHandlers - Custom handlers for server events.
+ * {object?} socketHandlers - Custom handlers for socket events.
+ * {number?} backlog=511 - The maximum length of the queue of pending connections.
+ * {Function?} handleProtocols - A function which can be used to handle the WebSocket subprotocols.
+ * {number?} maxPayload=6_291_456 - The maximum allowed message size in bytes.
+ * {string?} path - Accept only connections matching this path.
+ * {(boolean|object)?} perMessageDeflate - Enables/disables per-message deflate.
+ * {number?} pingInterval=30_000 - The time to wait between successive pings.
+ * @returns {Object}
+ */
+export function createServer (httpServer: Object, options?: Object = {}): Object {
+  const server = new WebSocket.Server({
+    ...defaultOptions,
+    ...options,
+    ...{ clientTracking: true },
+    server: httpServer
+  })
+  server.customServerEventHandlers = options.serverHandlers || {}
+  server.customSocketEventHandlers = options.socketHandlers || {}
+  server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
+  server.pingIntervalID = undefined
+  server.subscribersByContractID = Object.create(null)
+
+  // Add listeners for server events, i.e. events emitted on the server object.
+  Object.keys(defaultServerHandlers).forEach((name) => {
+    server.on(name, (...args) => {
+      try {
+        const customHandler = server.customServerEventHandlers[name]
+        const defaultHandler = defaultServerHandlers[name]
+        // Always call the default handler first.
+        if (defaultHandler) {
+          defaultHandler.call(server, ...args)
         }
-      })
-      spark.on('leaveallrooms', (rooms) => {
-        console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
-        // this gets called on spark.leaveAll and 'disconnection'
-        rooms.forEach(contractID => {
-          primus.room(contractID).write(reply(UNSUB, { contractID, id }))
-        })
-      })
-
-      spark.on('data', function (data) {
-        console.log(bold.red('[pubsub] received UNHANDLED DATA from client:', data))
-      })
-    })
-
-    primus.on('disconnection', function (spark) {
-      // the spark that disconnected
-      console.log(bold.yellow(`[pubsub] ${spark.id} disconnection`))
+        if (customHandler) {
+          customHandler.call(server, ...args)
+        }
+      } catch (error) {
+        server.emit('error', error)
+      }
     })
   })
+  // Setup a ping interval if required.
+  if (server.options.pingInterval > 0) {
+    server.pingIntervalID = setInterval(() => {
+      console.debug('[pubsub] Pinging clients')
+      server.clients.forEach((client) => {
+        if (client.pinged && !client.activeSinceLastPing) {
+          console.log(`[pubsub] Closing irresponsive client ${client.id}`)
+          return client.terminate()
+        }
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(createMessage(PING, Date.now()), () => {
+            client.activeSinceLastPing = false
+            client.pinged = true
+          })
+        }
+      })
+    }, server.options.pingInterval)
+  }
+  return Object.assign(server, publicMethods)
+}
+
+const defaultOptions = {
+  maxPayload: 6 * 1024 * 1024,
+  pingInterval: 30_000
+}
+
+// Default handlers for server events.
+// The `this` binding refers to the server object.
+const defaultServerHandlers = {
+  close () {
+    console.log('[pubsub] Server closed')
+  },
+  /**
+   * Emitted when a connection handshake completes.
+   *
+   * @see https://github.com/websockets/ws/blob/master/doc/ws.md#event-connection
+   * @param {ws.WebSocket} socket - The client socket that connected.
+   * @param {http.IncomingMessage} request - The underlying Node http GET request.
+   */
+  connection (socket: Object, request: Object) {
+    const server = this
+    const url = request.url
+    const urlSearch = url.includes('?') ? url.slice(url.lastIndexOf('?')) : ''
+    const debugID = new URLSearchParams(urlSearch).get('debugID') || ''
+    socket.id = generateSocketID(debugID)
+    socket.activeSinceLastPing = true
+    socket.pinged = false
+    socket.server = server
+    socket.subscriptions = new Set()
+
+    console.log(bold(`[pubsub] Socket ${socket.id} connected. Total: ${this.clients.size}`))
+
+    // Add listeners for socket events, i.e. events emitted on a socket object.
+    ;['close', 'error', 'message', 'ping', 'pong'].forEach((eventName) => {
+      socket.on(eventName, (...args) => {
+        console.debug(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
+        const customHandler = socket.server.customSocketEventHandlers[eventName]
+        const defaultHandler = (defaultSocketEventHandlers: Object)[eventName]
+
+        try {
+          if (defaultHandler) {
+            defaultHandler.call(socket, ...args)
+          }
+          if (customHandler) {
+            customHandler.call(socket, ...args)
+          }
+        } catch (error) {
+          socket.server.emit('error', error)
+          socket.terminate()
+        }
+      })
+    })
+  },
+  error (error: Error) {
+    console.log('[pubsub] Server error:', error)
+    logger(error)
+  },
+  headers () {
+  },
+  listening () {
+    console.log('[pubsub] Server listening')
+  }
+}
+
+// Default handlers for server-side client socket events.
+// The `this` binding refers to the connected `ws` socket object.
+const defaultSocketEventHandlers = {
+  close (code: string, reason: string) {
+    const socket = this
+    const { server, id: socketID } = this
+
+    // Notify other client sockets that this one has left any room they shared.
+    for (const contractID of socket.subscriptions) {
+      const subscribers = server.subscribersByContractID[contractID]
+      // Remove this socket from the subscribers of the given contract.
+      subscribers.delete(socket)
+      const notification = createNotification(UNSUB, { contractID, socketID })
+      server.broadcast(notification, { to: subscribers })
+    }
+    socket.subscriptions.clear()
+  },
+
+  message (data: string) {
+    const socket = this
+    const { server } = this
+    let msg: Message = { type: '' }
+
+    try {
+      msg = messageParser(data)
+    } catch (error) {
+      console.error(bold.red(`[pubsub] Malformed message: ${error.message}`))
+      rejectMessageAndTerminateSocket(msg, socket)
+      return
+    }
+    socket.activeSinceLastPing = true
+    const handler = server.messageHandlers[msg.type]
+
+    if (handler) {
+      try {
+        handler.call(socket, msg)
+      } catch (error) {
+        // Log the error message and stack trace but do not send it to the client.
+        logger(error)
+        rejectMessageAndTerminateSocket(msg, socket)
+      }
+    } else {
+      console.error(`[pubsub] Unhandled message type: ${msg.type}`)
+      rejectMessageAndTerminateSocket(msg, socket)
+    }
+  }
+}
+
+// These handlers receive the connected `ws` socket through the `this` binding.
+const defaultMessageHandlers = {
+  [PONG] (msg: Message) {
+    const socket = this
+    // const timestamp = Number(msg.data)
+    // const latency = Date.now() - timestamp
+    socket.activeSinceLastPing = true
+  },
+
+  [PUB] (msg: Message) {
+    // Currently unused.
+  },
+
+  [SUB] ({ contractID, type }: SubMessage) {
+    const socket = this
+    const { server, id: socketID } = this
+
+    if (!socket.subscriptions.has(contractID)) {
+      // Add the given contract ID to our subscriptions.
+      socket.subscriptions.add(contractID)
+      if (!server.subscribersByContractID[contractID]) {
+        server.subscribersByContractID[contractID] = new Set()
+      }
+      const subscribers = server.subscribersByContractID[contractID]
+      // Add this socket to the subscribers of the given contract.
+      subscribers.add(socket)
+      // Broadcast a notification to every other open subscriber.
+      const notification = createNotification(type, { contractID, socketID })
+      server.broadcast(notification, { to: subscribers })
+    }
+    socket.send(createResponse(SUCCESS, { type, contractID }))
+  },
+
+  [UNSUB] ({ contractID, type }: UnsubMessage) {
+    const socket = this
+    const { server, id: socketID } = this
+
+    if (socket.subscriptions.has(contractID)) {
+      // Remove the given contract ID from our subscriptions.
+      socket.subscriptions.delete(contractID)
+      if (server.subscribersByContractID[contractID]) {
+        const subscribers = server.subscribersByContractID[contractID]
+        // Remove this socket from the subscribers of the given contract.
+        subscribers.delete(socket)
+        // Broadcast a notification to every remaining open subscriber.
+        const notification = createNotification(type, { contractID, socketID })
+        server.broadcast(notification, { to: subscribers })
+      }
+    }
+    socket.send(createResponse(SUCCESS, { type, contractID }))
+  }
+}
+
+const generateSocketID = (() => {
+  let counter = 0
+
+  return (debugID) => String(counter++) + (debugID ? '-' + debugID : '')
+})()
+
+const publicMethods = {
+  /**
+   * Broadcasts a message, ignoring clients which are not open.
+   *
+   * @param message
+   * @param to - The intended recipients of the message. Defaults to every open client socket.
+   * @param except - A recipient to exclude. Optional.
+   */
+  broadcast (
+    message: Message,
+    { to, except }: { to?: Iterable<Object>, except?: Object }
+  ) {
+    const server = this
+
+    for (const client of to || server.clients) {
+      if (client.readyState === WebSocket.OPEN && client !== except) {
+        client.send(message)
+      }
+    }
+  },
+
+  // Enumerates the subscribers of a given contract.
+  * enumerateSubscribers (contractID: string): Iterable<Object> {
+    const server = this
+
+    if (contractID in server.subscribersByContractID) {
+      yield * server.subscribersByContractID[contractID]
+    }
+  }
+}
+
+const rejectMessageAndTerminateSocket = (request: Message, socket: Object) => {
+  socket.send(createErrorResponse({ ...request }), () => socket.terminate())
 }

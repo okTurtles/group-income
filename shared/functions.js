@@ -1,25 +1,9 @@
 'use strict'
 
 import multihash from 'multihashes'
-import { RESPONSE_TYPE } from './constants.js'
-import type { JSONType, Response, ResType } from './types.js'
 
 import nacl from 'tweetnacl'
 import blake from 'blakejs'
-
-export function makeResponse (
-  type: ResType,
-  data: JSONType,
-  err?: string | {message: string}
-): Response {
-  //   // This type wrangling voodoo comes courtesy of: https://github.com/facebook/flow/issues/3041#issuecomment-268027891
-  if (type === RESPONSE_TYPE.ERROR) {
-    return err
-      ? { type, data, err: typeof err === 'string' ? err : err.message }
-      : { type, err: String(data) }
-  }
-  return { type, data }
-}
 
 export function blake32Hash (data: string | Buffer | Uint8Array): any {
   // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2

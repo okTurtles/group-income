@@ -56,6 +56,15 @@ export function delay (msec: number): Promise<void> {
   })
 }
 
+export function randomBytes (length: number): Uint8Array {
+  // $FlowIssue crypto support: https://github.com/facebook/flow/issues/5019
+  return crypto.getRandomValues(new Uint8Array(length))
+}
+
+export function randomHexString (length: number): string {
+  return Array.from(randomBytes(length), byte => (byte % 16).toString(16)).join('')
+}
+
 export function randomIntFromRange (min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1) + min)
 }

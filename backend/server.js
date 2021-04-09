@@ -5,10 +5,9 @@ import './database.js'
 import Hapi from '@hapi/hapi'
 import GiAuth from './auth.js'
 import { GIMessage } from '~/shared/GIMessage.js'
-import { makeResponse } from '~/shared/functions.js'
-import { RESPONSE_TYPE } from '~/shared/constants.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
+import { createMessage, createServer, NOTIFICATION_TYPE } from './pubsub.js'
 import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
@@ -42,14 +41,16 @@ const hapi = new Hapi.Server({
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 sbp('sbp/selectors/register', {
+  'backend/server/broadcastEntry': async function (entry: GIMessage) {
+    const pubsub = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+    const pubsubMessage = createMessage(NOTIFICATION_TYPE.ENTRY, entry.serialize())
+    const subscribers = pubsub.enumerateSubscribers(entry.contractID())
+    console.log(chalk.blue.bold(`[pubsub] Broadcasting ${entry.description()}`))
+    await pubsub.broadcast(pubsubMessage, { to: subscribers })
+  },
   'backend/server/handleEntry': async function (entry: GIMessage) {
-    const contractID = entry.contractID()
     await sbp('gi.db/log/addEntry', entry)
-    const response = makeResponse(RESPONSE_TYPE.ENTRY, entry.serialize())
-    console.log(chalk.blue.bold(`broadcasting ${entry.description()}`))
-    sbp('okTurtles.data/apply', PUBSUB_INSTANCE, p => {
-      p.room(contractID).write(response)
-    })
+    await sbp('backend/server/broadcastEntry', entry)
   },
   'backend/server/stop': function () {
     return hapi.stop()
@@ -62,6 +63,8 @@ if (process.env.NODE_ENV === 'development' && !process.env.CI) {
   })
 }
 
+sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener))
+
 ;(async function () {
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
@@ -69,7 +72,6 @@ if (process.env.NODE_ENV === 'development' && !process.env.CI) {
     { plugin: Inert }
   ])
   require('./routes.js')
-  require('./pubsub.js')
   await hapi.start()
   console.log('Backend server running at:', hapi.info.uri)
   sbp('okTurtles.events/emit', SERVER_RUNNING, hapi)

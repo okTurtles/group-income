@@ -1,6 +1,5 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
 import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
 import alias from 'rollup-plugin-alias'
@@ -109,14 +108,7 @@ module.exports = (grunt) => {
 
   grunt.registerTask('build', function () {
     const rollup = this.flags.watch ? 'rollup:watch' : 'rollup'
-    if (this.flags.watch) {
-      // if we are being run with 'grunt dev', tell Primus to generate the file
-      // ./frontend/controller/utils/primus.js, otherwise, this is 'grunt test', and this
-      // block will be skipped so that pubsub.js can be required through ./backend/index.js
-      // TODO: get rid of this when we remove Primus (#576)
-      require('~/backend/pubsub.js') // hack to register 'backend/pubsub/setup' selector
-      sbp('backend/pubsub/setup', require('http').createServer(), true)
-    }
+
     if (!grunt.option('skipbuild')) {
       grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'copy', rollup])
     }
@@ -256,9 +248,6 @@ module.exports = (grunt) => {
           sourcemap: development
         },
         external: ['crypto'],
-        moduleContext: {
-          'frontend/controller/utils/primus.js': 'window'
-        },
         plugins: [
           alias({
             // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
@@ -314,7 +303,7 @@ module.exports = (grunt) => {
             // NOTE: uncommenting this saves ~1 second off build process
             //       while making it a massive pain to deal with dependencies
             //       and causing "ReferenceError: require is not defined"
-            // include: /(node_modules\/(blakejs|multihashes|tweetnacl|localforage|@babel|vue.+).*|primus\.js$)/,
+            // include: /(node_modules\/(blakejs|multihashes|tweetnacl|localforage|@babel|vue.+).*)/,
             namedExports: {
               'node_modules/vuelidate/lib/validators/index.js': ['required', 'between', 'email', 'minLength', 'requiredIf'],
               'node_modules/emoji-mart-vue-fast/dist/emoji-mart.js': ['Picker', 'EmojiIndex']
