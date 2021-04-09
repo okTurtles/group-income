@@ -22,6 +22,9 @@ function sbp (selector: string, ...data: any): any {
       }
     }
   }
+  if (!selectors[selector]) {
+    throw new Error(`SBP: selector not registered: ${selector}`)
+  }
   return selectors[selector](...data)
 }
 

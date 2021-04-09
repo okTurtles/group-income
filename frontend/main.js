@@ -11,6 +11,7 @@ import Vue from 'vue'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
 import { createWebSocket } from './controller/backend.js'
+import { startMonthlyCycleCheckInterval } from './controller/monthlyCycleTimer.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
@@ -141,6 +142,7 @@ async function startApp () {
           'times-circle'
         )
       }
+      startMonthlyCycleCheckInterval(this.$store)
     },
     computed: {
       showNav () {

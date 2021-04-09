@@ -9,7 +9,7 @@ function insertMonthlyCycleEvents (distributionEvents: Array<Object>): Array<any
   const newEvents = []
   let lastCycleStartEvent = distributionEvents[0] // Guaranteed to be the first event (from group creation).
   for (const event of distributionEvents) {
-    for (let monthCounter = 1; lastCycleStartEvent.data.cycle + monthCounter <= Math.floor(event.data.cycle); monthCounter++) {
+    for (let monthCounter = lastCycleStartEvent.data.cycle + 1; monthCounter <= Math.floor(event.data.cycle); monthCounter++) {
       const cycleStartEvent = {
         type: 'startCycleEvent',
         data: {

@@ -185,5 +185,15 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.actions/group/leaveGroup failed', e)
       throw new GIErrorUIRuntimeError(L('Failed to update voting rules. {codeError}', { codeError: e.message }))
     }
+  },
+  'gi.actions/group/resetMonth': async function (groupId) {
+    try {
+      const message = await sbp('gi.contracts/group/resetMonth/create', '', groupId)
+      await sbp('backend/publishLogEntry', message)
+      return message
+    } catch (e) {
+      console.error('gi.actions/group/resetMonth failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to resetMonth. {reportError}', LError(e)))
+    }
   }
 }): any)

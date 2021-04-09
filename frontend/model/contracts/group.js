@@ -747,7 +747,15 @@ DefineContract({
         // }
       }
     },
-
+    'gi.contracts/group/resetMonth': {
+      validate: optional(string),
+      process (_, { state, getters }) {
+        // loop through state.distributionEvents
+        // make sure to reset it appropriately, and handle
+        // whatever cases we need...
+        // and then push the reset event wherever you need it into distributionEvents
+      }
+    },
     ...(process.env.NODE_ENV === 'development' && {
       'gi.contracts/group/malformedMutation': {
         validate: objectOf({ errorType: string }),
