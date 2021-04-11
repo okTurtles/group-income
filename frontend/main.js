@@ -136,13 +136,40 @@ async function startApp () {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
-
       sbp('okTurtles.data/set', 'BANNER', this.$refs.bannerGeneral)
       // call from anywhere in the app:
       // sbp('okTurtles.data/get', 'BANNER').show(L('Trying to reconnect...'), 'wifi')
       // sbp('okTurtles.data/get', 'BANNER').danger(L('message'), 'icon-type')
       // sbp('okTurtles.data/get', 'BANNER').clean()
+      sbp('okTurtles.data/apply', PUBSUB_INSTANCE, (instance) => {
+        const banner = this.$refs.bannerGeneral
+        // Allow to access `L` inside event handlers.
+        const L = this.L.bind(this)
 
+        Object.assign(instance.customEventHandlers, {
+          offline () {
+            banner.show(L('Your device appears to be offline.'), 'wifi')
+          },
+          online () {
+            banner.clean()
+          },
+          'reconnection-attempt' () {
+            banner.show(L('Trying to reconnect...'), 'wifi')
+          },
+          'reconnection-failed' () {
+            banner.show(L('Cannot connect to the server.'), 'wifi')
+          },
+          'reconnection-succeeded' () {
+            banner.clean()
+          }
+        })
+      })
+      // Useful in case the app is started in offline mode.
+      if (navigator.onLine === false) {
+        this.$refs.bannerGeneral.show(
+          this.L('Your device appears to be offline.'), 'wifi'
+        )
+      }
       if (this.ephemeral.isCorrupted) {
         this.$refs.bannerGeneral.danger(
           this.L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
