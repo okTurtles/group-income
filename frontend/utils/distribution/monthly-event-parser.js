@@ -1,38 +1,6 @@
 'use strict'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 
-// This helper function inserts monthly-balance-events between the
-// distributionEvents which happen on different cycles. This is so
-// that every event can be pro-rated such that there is a convenient
-// place for tracking/storing over/under-payments between cycles.
-function insertMonthlyCycleEvents (distributionEvents: Array<Object>): Array<any | Object> {
-  const newEvents = []
-  let lastCycleStartEvent = distributionEvents[0] // Guaranteed to be the first event (from group creation).
-  for (const event of distributionEvents) {
-    for (let monthCounter = lastCycleStartEvent.data.cycle + 1; monthCounter <= Math.floor(event.data.cycle); monthCounter++) {
-      const cycleStartEvent = {
-        type: 'startCycleEvent',
-        data: {
-          cycle: lastCycleStartEvent.data.cycle + monthCounter,
-          latePayments: [] // List to be populated later, by the events-parser
-        }
-      }
-      lastCycleStartEvent = cycleStartEvent
-      newEvents.push(cycleStartEvent)
-    }
-    newEvents.push(event)
-  }
-  const cycleStartEvent = {
-    type: 'startCycleEvent',
-    data: {
-      cycle: lastCycleStartEvent.data.cycle + 1,
-      latePayments: [] // List to be populated later, by the events-parser
-    }
-  }
-  newEvents.push(cycleStartEvent)
-  return newEvents
-}
-
 // Flatten's out multiple payments between unique combinations of users
 // for a payment distribution by adding the unique combinations' payment
 // amounts based on the direction (from/to) of the payments:
@@ -85,8 +53,16 @@ function subtractDistributions (paymentsA: Array<any | Object>, paymentsB: Array
 function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthlyRated: Boolean): Array<any | {|from: string, to: string, amount: number|}> {
   distributionEvents = JSON.parse(JSON.stringify(distributionEvents))
 
-  // Add blank 'startCycleEvent's in between the distributionEvents of different monthly cycles:
-  distributionEvents = insertMonthlyCycleEvents(distributionEvents)
+  const lastEvent = distributionEvents[distributionEvents.length - 1]
+  const newLastEvent = {
+    type: 'startCycleEvent',
+    data: {
+      cycle: Math.floor(lastEvent.data.cycle) + 1,
+      latePayments: [] // List to be populated later, by the events-parser
+    }
+  }
+  // Add blank 'startCycleEvent's in after the distributionEvents
+  distributionEvents.push(newLastEvent)
 
   // The following list variable is for DRYing out our calculations of the each cycle's final
   // income distributions.
@@ -162,9 +138,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
 
       // Check if it is the last event (the next month after monthstamps cycle event), or if the
       // final distribution should be adjusted, anyway:
-      monthlyDistribution = addDistributions(
-        subtractDistributions(monthlyDistribution, completedMonthlyPayments),
-        lastStartCycleEvent.data.latePayments)
+      monthlyDistribution = subtractDistributions(monthlyDistribution, completedMonthlyPayments)
 
       const overPayments = monthlyDistribution.filter((p) => {
         return p.amount < 0

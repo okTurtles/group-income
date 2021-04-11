@@ -107,14 +107,33 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   return monthlyPayments
 }
 
+function insertMonthlyCycleEvent (state, event) {
+  // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
+  let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
+  while (Math.floor(lastEvent.data.cycle) !== Math.floor(event.data.cycle)) {
+    // Add the missing monthly cycle event
+    const monthlyCycleEvent = {
+      type: 'startCycleEvent',
+      data: {
+        cycle: lastEvent.data.cycle + 1,
+        latePayments: [] // List to be populated later, by the events-parser
+      }
+    }
+    state.distributionEvents.push(monthlyCycleEvent)
+    lastEvent = monthlyCycleEvent
+  }
+
+  state.distributionEvents.push(event)
+}
+
 function memberDeclaredIncome (state, username, haveNeed, createdDate) {
-  state.distributionEvents.push({
+  insertMonthlyCycleEvent(state, {
     type: 'haveNeedEvent',
     data: {
       name: username,
       haveNeed,
       when: createdDate,
-      cycle: cycleAtDate(createdDate)
+      cycle: cycleAtDate(createdDate, state.distributionEvents[0].data.when)
     }
   })
 }
@@ -122,12 +141,12 @@ function memberDeclaredIncome (state, username, haveNeed, createdDate) {
 function memberLeaves (state, username, dateLeft) {
   state.profiles[username].status = PROFILE_STATUS.REMOVED
   state.profiles[username].departedDate = dateLeft
-  state.distributionEvents.push({
+  insertMonthlyCycleEvent(state, {
     type: 'userExitsGroupEvent',
     data: {
       name: username,
       when: dateLeft,
-      cycle: cycleAtDate(dateLeft)
+      cycle: cycleAtDate(dateLeft, state.distributionEvents[0].data.when)
     }
   })
 }
@@ -409,14 +428,14 @@ DefineContract({
             const toUser = vueFetchInitKV(fromUser, data.toUser, [])
             toUser.push(data.paymentHash)
           }
-          state.distributionEvents.push({
+          insertMonthlyCycleEvent(state, {
             type: 'paymentEvent',
             data: {
               from: meta.username,
               to: payment.data.toUser,
               amount: payment.data.amount,
               when: meta.createdDate,
-              cycle: cycleAtDate(meta.createdDate)
+              cycle: cycleAtDate(meta.createdDate, state.distributionEvents[0].data.when)
             }
           })
           paymentMonth.lastAdjustedDistribution = groupIncomeDistribution(getters.currentGroupState.distributionEvents, { mincomeAmount: getters.groupMincomeAmount, adjusted: true })
@@ -750,10 +769,21 @@ DefineContract({
     'gi.contracts/group/resetMonth': {
       validate: optional(string),
       process (_, { state, getters }) {
-        // loop through state.distributionEvents
-        // make sure to reset it appropriately, and handle
-        // whatever cases we need...
-        // and then push the reset event wherever you need it into distributionEvents
+        // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
+        let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
+        const currentCycle = cycleAtDate(new Date(), state.distributionEvents[0].data.when)
+        while (Math.floor(lastEvent.data.cycle) !== Math.floor(currentCycle)) {
+          // Add the missing monthly cycle event
+          const monthlyCycleEvent = {
+            type: 'startCycleEvent',
+            data: {
+              cycle: lastEvent.data.cycle + 1,
+              latePayments: [] // List to be populated later, by the events-parser
+            }
+          }
+          state.distributionEvents.push(monthlyCycleEvent)
+          lastEvent = monthlyCycleEvent
+        }
       }
     },
     ...(process.env.NODE_ENV === 'development' && {

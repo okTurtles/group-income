@@ -94,10 +94,13 @@ export function getTime (date: Date): string {
 
 // Returns the ratio of (the current day of the month) / (days in current month);
 // The current day / month are calculated with respect to the atDate parameter.
-export function cycleAtDate (atDate: string | Date): any | number {
+export function cycleAtDate (atDate: string | Date, startDate: string | Date): any | number {
   const now = new Date(atDate) // Just in case the parameter is a string type.
   // TODO: should we adjust the time-zone of the date to be a single time zone so
   // that every group member sees the same distribution, no matter what time zone
   // they are in? Discussion needed.
-  return now.getDate() / lastDayOfMonth(now).getDate()
+  const start = new Date(startDate)
+  const partialCycles = now.getDate() / lastDayOfMonth(now).getDate()
+  const fullCycles = now.getMonth() - start.getMonth() + (now.getFullYear() - start.getFullYear()) * 12
+  return partialCycles + fullCycles
 }
