@@ -772,12 +772,12 @@ DefineContract({
         // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
         let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
         const currentCycle = cycleAtDate(new Date(), state.distributionEvents[0].data.when)
-        while (Math.floor(lastEvent.data.cycle) !== Math.floor(currentCycle)) {
+        while (Math.floor(lastEvent.data.cycle) < Math.floor(currentCycle)) {
           // Add the missing monthly cycle event
           const monthlyCycleEvent = {
             type: 'startCycleEvent',
             data: {
-              cycle: lastEvent.data.cycle + 1,
+              cycle: Math.floor(lastEvent.data.cycle + 1),
               latePayments: [] // List to be populated later, by the events-parser
             }
           }
