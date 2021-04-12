@@ -50,7 +50,7 @@ function subtractDistributions (paymentsA: Array<any | Object>, paymentsB: Array
 
 // This algorithm is responsible for calculating the monthly-rated distribution of
 // payments. monthlyRated = True if time-weighted monthly, false if purely pro-rated.
-function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthlyRated: Boolean): Array<any | {|from: string, to: string, amount: number|}> {
+function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthlyRated: Boolean, adjusted: Boolean): Array<any | {|from: string, to: string, amount: number|}> {
   distributionEvents = JSON.parse(JSON.stringify(distributionEvents))
 
   const lastEvent = distributionEvents[distributionEvents.length - 1]
@@ -159,6 +159,11 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
         member.cyclicalIncomeVariable = 0
         member.cyclicalIncomeIntegral = 0
       }
+
+      // Unadjust last
+      if (!adjusted) {
+        lastStartCycleEvent.data.latePayments = reduceDistribution(addDistributions(completedMonthlyPayments, lastStartCycleEvent.data.latePayments))
+      }
       completedMonthlyPayments = [] // and the monthly payments, too...
     } else if (event.type === 'haveNeedEvent') {
       const oldUser = getUser(event.data.name)
@@ -186,7 +191,9 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
     }
   }
 
-  return lastStartCycleEvent.data.latePayments // TODO: return late-payments as well.
+  return lastStartCycleEvent.data.latePayments.filter((payment) => {
+    return payment.from !== payment.to // This happens when a haver switches to being a needer; remove neutral distribution payments.
+  }) // TODO: return late-payments as well.
 }
 
 export default parseMonthlyDistributionFromEvents

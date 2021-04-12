@@ -433,6 +433,7 @@ DefineContract({
             data: {
               from: meta.username,
               to: payment.data.toUser,
+              hash: data.paymentHash,
               amount: payment.data.amount,
               when: meta.createdDate,
               cycle: cycleAtDate(meta.createdDate, state.distributionEvents[0].data.when)
