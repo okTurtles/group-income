@@ -165,12 +165,12 @@ describe('Test group-income-distribution.js', function () {
   it('EVENT: u5 pays $10 to u2. Test un-adjusted first.', function () {
     setup.push({ type: 'paymentEvent', data: { from: 'u5', to: 'u2', amount: 10 } })
     should(groupIncomeDistribution(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
-      { from: 'u1', to: 'u2', amount: 20 },
-      { from: 'u1', to: 'u4', amount: 40 },
-      { from: 'u1', to: 'u3', amount: 40 },
-      { from: 'u5', to: 'u2', amount: 20 },
-      { from: 'u5', to: 'u4', amount: 40 },
-      { from: 'u5', to: 'u3', amount: 40 }
+      { to: 'u2', from: 'u1', amount: 20 },
+      { to: 'u4', from: 'u1', amount: 40 },
+      { to: 'u2', from: 'u5', amount: 20 },
+      { to: 'u3', from: 'u1', amount: 40 },
+      { to: 'u4', from: 'u5', amount: 40 },
+      { to: 'u3', from: 'u5', amount: 40 }
     ])
   })
   it('Test the adjusted version of the previous event-list. Should *not* ignore payment events!', function () {
