@@ -193,7 +193,7 @@ export default (sbp('sbp/selectors/register', {
       return message
     } catch (e) {
       console.error('gi.actions/group/resetMonth failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to resetMonth. {reportError}', LError(e)))
+      throw new GIErrorUIRuntimeError(L('Failed to reset monthly stats: {reportError}', LError(e)))
     }
   }
 }): any)

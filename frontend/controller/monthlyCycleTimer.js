@@ -15,8 +15,8 @@ export function startMonthlyCycleCheckInterval (store: Object) {
       const events = store.getters.currentGroupState.distributionEvents
       const firstEvent = events[0]
       const lastEvent = events[events.length - 1]
+      // Check to see if the last event of the `distributionEvents` has not already been set. Reset it if not.
       if (Math.floor(lastEvent.data.cycle) !== Math.floor(cycleAtDate(new Date(), firstEvent.data.when))) {
-        console.table(lastEvent)
         // run our sbp selector here
         sbp('gi.actions/group/resetMonth', store.state.currentGroupId)
       }

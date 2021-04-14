@@ -92,9 +92,10 @@ export function getTime (date: Date): string {
   return `${t.getHours()}:${t.getMinutes()}`
 }
 
-// Returns the ratio of (the current day of the month) / (days in current month);
-// The current day / month are calculated with respect to the atDate parameter.
-export function cycleAtDate (atDate: string | Date, startDate: string | Date): any | number {
+// Returns months passed + the ratio of (the current day of the month) / (days in current month);
+// The current day / month are calculated with respect to the atDate parameter. Months passed
+// is caclculated from the startDate parameter.
+export function cycleAtDate (atDate: string | Date, startDate: string | Date): number {
   const now = new Date(atDate) // Just in case the parameter is a string type.
   // TODO: should we adjust the time-zone of the date to be a single time zone so
   // that every group member sees the same distribution, no matter what time zone

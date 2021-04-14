@@ -4,7 +4,7 @@ import incomeDistribution from '~/frontend/utils/distribution/mincome-proportion
 // Flatten's out multiple payments between unique combinations of users
 // for a payment distribution by adding the unique combinations' payment
 // amounts based on the direction (from/to) of the payments:
-function reduceDistribution (payments: Array<any | Object>): Array<any | {|from: string, to: string, amount: number|}> {
+function reduceDistribution (payments: Array<Object>): Array<Object> {
   // Don't modify the payments list/object parameter in-place, as this is not intended:
   payments = JSON.parse(JSON.stringify(payments))
   // Loop through the unique combinations of payments:
@@ -30,12 +30,12 @@ function reduceDistribution (payments: Array<any | Object>): Array<any | {|from:
 }
 
 // DRYing function meant for accumulating late payments from a previous cycle
-function addDistributions (paymentsA: Array<any | Object>, paymentsB: Array<any | Object>): Array<any | {|from: string, to: string, amount: number|}> {
+function addDistributions (paymentsA: Array<Object>, paymentsB: Array<Object>): Array<Object> {
   return reduceDistribution([paymentsA, paymentsB].flat())
 }
 
 // DRYing function meant for chipping away a cycle's todoPayments distribution using that cycle's completedMonthlyPayments:
-function subtractDistributions (paymentsA: Array<any | Object>, paymentsB: Array<any | Object>): Array<any | {|from: string, to: string, amount: number|}> {
+function subtractDistributions (paymentsA: Array<Object>, paymentsB: Array<Object>): Array<Object> {
   // Don't modify any payment list/objects parameters in-place, as this is not intended:
   paymentsB = JSON.parse(JSON.stringify(paymentsB))
 
@@ -50,7 +50,7 @@ function subtractDistributions (paymentsA: Array<any | Object>, paymentsB: Array
 
 // This algorithm is responsible for calculating the monthly-rated distribution of
 // payments. monthlyRated = True if time-weighted monthly, false if purely pro-rated.
-function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthlyRated: Boolean, adjusted: Boolean): Array<any | {|from: string, to: string, amount: number|}> {
+function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthlyRated: Boolean, adjusted: Boolean): Array<Object> {
   distributionEvents = JSON.parse(JSON.stringify(distributionEvents))
 
   const lastEvent = distributionEvents[distributionEvents.length - 1]
@@ -69,13 +69,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
   let groupMembers = []
 
   // Convenience function for retreiving a user by name:
-  const getUser = function (userName) {
-    for (const member of groupMembers) {
-      if (member.name === userName) {
-        return member
-      }
-    }
-  }
+  const getUser = name => groupMembers.find(member => member.name === name)
 
   const proRateHaveNeeds = function (proRatedMembers, cyclesIntoMonth = 1) {
     for (const member of proRatedMembers) {
