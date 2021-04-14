@@ -769,14 +769,11 @@ DefineContract({
     },
     'gi.contracts/group/resetMonth': {
       validate: optional(string),
-      process (_, { state, getters }) {
-        // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
+      process ({ meta }, { state, getters }) {
         let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
-        const currentCycle = cycleAtDate(new Date(), state.distributionEvents[0].data.when)
-        // Check to see if the last event of the `distributionEvents` has not already been set up
-        // until the current month. Add it if not.
+        const currentCycle = cycleAtDate(meta.createdDate, state.distributionCycleStartDate)
+        // Add 'startCycleEvent' events for every month missed.
         while (Math.floor(lastEvent.data.cycle) < Math.floor(currentCycle)) {
-          // Add the missing monthly cycle event
           const monthlyCycleEvent = {
             type: 'startCycleEvent',
             data: {

@@ -13,11 +13,11 @@ export function startMonthlyCycleCheckInterval (store: Object) {
   timerStartInterval = setInterval(() => {
     if (store.state.currentGroupId) {
       const events = store.getters.currentGroupState.distributionEvents
-      const firstEvent = events[0]
       const lastEvent = events[events.length - 1]
-      // Check to see if the last event of the `distributionEvents` has not already been set. Reset it if not.
-      if (Math.floor(lastEvent.data.cycle) !== Math.floor(cycleAtDate(new Date(), firstEvent.data.when))) {
-        // run our sbp selector here
+      const currentCycle = cycleAtDate(new Date(), store.getters.currentGroupState.distributionCycleStartDate)
+      // Check if we've already reset the month and if we're in a new month.
+      if (Math.floor(lastEvent.data.cycle) < Math.floor(currentCycle)) {
+        // Add the missing monthly cycle event
         sbp('gi.actions/group/resetMonth', store.state.currentGroupId)
       }
     }
