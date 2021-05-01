@@ -27,7 +27,7 @@ import './contracts/identity.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
-import { currentMonthstamp, prevMonthstamp, dateFromMonthstamp, lastDayOfMonth, cycleAtDate } from '~/frontend/utils/time.js'
+import { currentMonthstamp, prevMonthstamp, dateFromMonthstamp, lastDayOfMonth, dateToMonthstamp } from '~/frontend/utils/time.js'
 import currencies from '~/frontend/views/utils/currencies.js'
 
 Vue.use(Vuex)
@@ -523,20 +523,10 @@ const getters = {
     return { sent, todo, late, received, toBeReceived }
   },
   ourPaymentsSummary (state, getters) {
-    const currentCycle = Math.floor(cycleAtDate(new Date(), getters.currentGroupState.distributionCycleStartDate))
+    const currentCycle = currentMonthstamp()
     const recentEvents = JSON.parse(JSON.stringify(getters.currentGroupState.distributionEvents))
-    const events = []
-    for (const event of recentEvents) {
-      if (Math.floor(event.data.cycle) === currentCycle) {
-        events.push(event)
-      }
-    }
-    const paymentEvents = []
-    for (const event of events) {
-      if (event.type === 'paymentEvent') {
-        paymentEvents.push(event)
-      }
-    }
+    const events = recentEvents.filter((event) => { return dateToMonthstamp(event.data.when) === currentCycle })
+    const paymentEvents = events.filter((event) => { return event.type === 'paymentEvent' })
     const isNeeder = getters.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     const ourUsername = getters.ourUsername
     const ourPaymentEvents = paymentEvents.filter((event) => {

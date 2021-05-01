@@ -5,10 +5,15 @@ export const MINS_MILLIS = 60000
 export const HOURS_MILLIS = 60 * MINS_MILLIS
 export const DAYS_MILLIS = 24 * HOURS_MILLIS
 
-export function dateToMonthstamp (date: Date): string {
+export function addMonthsToDate (date: string, months: number): Date {
+  const now = new Date(date)
+  return new Date(now.setMonth(now.getMonth() + months))
+}
+
+export function dateToMonthstamp (date: string | Date): string {
   // we could use Intl.DateTimeFormat but that doesn't support .format() on Android
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DateTimeFormat/format
-  return date.toISOString().slice(0, 7)
+  return new Date(date).toISOString().slice(0, 7)
 }
 
 // TODO: to prevent conflicts among user timezones, we need
@@ -36,13 +41,13 @@ export function prevMonthstamp (monthstamp: string): string {
 export function compareMonthstamps (monthstampA: string, monthstampB: string): number {
   const A = dateFromMonthstamp(monthstampA).getTime()
   const B = dateFromMonthstamp(monthstampB).getTime()
-  return A > B ? 1 : (A < B ? -1 : 0)
+  return A - B
 }
 
 export function compareISOTimestamps (a: string, b: string): number {
   const A = new Date(a).getTime()
   const B = new Date(b).getTime()
-  return A > B ? 1 : (A < B ? -1 : 0)
+  return A - B
 }
 
 export function lastDayOfMonth (date: Date): Date {
@@ -92,16 +97,8 @@ export function getTime (date: Date): string {
   return `${t.getHours()}:${t.getMinutes()}`
 }
 
-// Returns months passed + the ratio of (the current day of the month) / (days in current month);
-// The current day / month are calculated with respect to the atDate parameter. Months passed
-// is caclculated from the startDate parameter.
-export function cycleAtDate (atDate: string | Date, startDate: string | Date): number {
+export function cycleAtDate (atDate: string | Date): number {
   const now = new Date(atDate) // Just in case the parameter is a string type.
-  // TODO: should we adjust the time-zone of the date to be a single time zone so
-  // that every group member sees the same distribution, no matter what time zone
-  // they are in? Discussion needed.
-  const start = new Date(startDate)
   const partialCycles = now.getDate() / lastDayOfMonth(now).getDate()
-  const fullCycles = now.getMonth() - start.getMonth() + (now.getFullYear() - start.getFullYear()) * 12
-  return partialCycles + fullCycles
+  return partialCycles
 }

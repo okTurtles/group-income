@@ -1,5 +1,6 @@
 'use strict'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
+import { cycleAtDate } from '~/frontend/utils/time.js'
 
 // Flatten's out multiple payments between unique combinations of users
 // for a payment distribution by adding the unique combinations' payment
@@ -53,11 +54,9 @@ function subtractDistributions (paymentsA: Array<Object>, paymentsB: Array<Objec
 function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, minCome: number, monthlyRated: Boolean, adjusted: Boolean): Array<Object> {
   distributionEvents = JSON.parse(JSON.stringify(distributionEvents))
 
-  const lastEvent = distributionEvents[distributionEvents.length - 1]
   const newLastEvent = {
     type: 'startCycleEvent',
     data: {
-      cycle: Math.floor(lastEvent.data.cycle) + 1,
       latePayments: [] // List to be populated later, by the events-parser
     }
   }
@@ -111,7 +110,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
 
   // Make a place to store the previous cycle's startCycleEvent (where over/under-payments are stored)
   // so that they can be included in the next cycle's payment distribution calculations:
-  let lastStartCycleEvent = distributionEvents[0]
+  let lastStartCycleEvent = {}
   let monthlyDistribution = [] // For each cycle's monthly distribution calculation
   let completedMonthlyPayments = [] // For accumulating the payment events of each month's cycle.
 
@@ -161,7 +160,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
       completedMonthlyPayments = [] // and the monthly payments, too...
     } else if (event.type === 'haveNeedEvent') {
       const oldUser = getUser(event.data.name)
-      const cyclesIntoMonth = event.data.cycle % 1
+      const cyclesIntoMonth = monthlyRated ? 1 : cycleAtDate(event.data.when)
       if (oldUser) {
         proRateHaveNeeds([oldUser], cyclesIntoMonth)
         oldUser.haveNeed = event.data.haveNeed
@@ -170,7 +169,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
         groupMembers.push({
           name: event.data.name,
           haveNeed: event.data.haveNeed,
-          cyclicalIncomeVariable: event.data.cycle % 1,
+          cyclicalIncomeVariable: cyclesIntoMonth,
           cyclicalIncomeIntegral: 0
         })
       }

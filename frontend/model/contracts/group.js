@@ -15,7 +15,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps, cycleAtDate } from '~/frontend/utils/time.js'
+import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps, addMonthsToDate, dateToMonthstamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
@@ -107,16 +107,20 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   return monthlyPayments
 }
 
+function compareCycles (whenEnd, whenStart) {
+  return compareMonthstamps(dateToMonthstamp(whenEnd), dateToMonthstamp(whenStart))
+}
+
 function insertMonthlyCycleEvent (state, event) {
   // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
   let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
-  while (Math.floor(lastEvent.data.cycle) !== Math.floor(event.data.cycle)) {
+  while (compareCycles(event.data.when, lastEvent.data.when) > 0) {
     // Add the missing monthly cycle event
     const monthlyCycleEvent = {
       type: 'startCycleEvent',
       data: {
-        cycle: lastEvent.data.cycle + 1,
-        latePayments: [] // List to be populated later, by the events-parser
+        latePayments: [], // List to be populated later, by the events-parser
+        when: dateToMonthstamp(addMonthsToDate(dateToMonthstamp(lastEvent.data.when), 1))
       }
     }
     state.distributionEvents.push(monthlyCycleEvent)
@@ -132,8 +136,7 @@ function memberDeclaredIncome (state, username, haveNeed, createdDate) {
     data: {
       name: username,
       haveNeed,
-      when: createdDate,
-      cycle: cycleAtDate(createdDate, state.distributionEvents[0].data.when)
+      when: createdDate
     }
   })
 }
@@ -145,8 +148,7 @@ function memberLeaves (state, username, dateLeft) {
     type: 'userExitsGroupEvent',
     data: {
       name: username,
-      when: dateLeft,
-      cycle: cycleAtDate(dateLeft, state.distributionEvents[0].data.when)
+      when: dateLeft
     }
   })
 }
@@ -330,7 +332,6 @@ DefineContract({
           distributionEvents: [{
             type: 'startCycleEvent',
             data: {
-              cycle: 0,
               when: meta.createdDate,
               latePayments: []
             }
@@ -435,8 +436,7 @@ DefineContract({
               to: payment.data.toUser,
               hash: data.paymentHash,
               amount: payment.data.amount,
-              when: meta.createdDate,
-              cycle: cycleAtDate(meta.createdDate, state.distributionEvents[0].data.when)
+              when: meta.createdDate
             }
           })
           paymentMonth.lastAdjustedDistribution = groupIncomeDistribution(getters.currentGroupState.distributionEvents, { mincomeAmount: getters.groupMincomeAmount, adjusted: true })
@@ -770,19 +770,17 @@ DefineContract({
     'gi.contracts/group/resetMonth': {
       validate: optional(string),
       process ({ meta }, { state, getters }) {
-        let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
-        const currentCycle = cycleAtDate(meta.createdDate, state.distributionCycleStartDate)
-        // Add 'startCycleEvent' events for every month missed.
-        while (Math.floor(lastEvent.data.cycle) < Math.floor(currentCycle)) {
+        const lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
+        // Add 'startCycleEvent' events if a month has passed.
+        if (compareCycles(meta.createdDate, lastEvent.data.when) > 0) {
           const monthlyCycleEvent = {
             type: 'startCycleEvent',
             data: {
-              cycle: Math.floor(lastEvent.data.cycle + 1),
+              when: dateToMonthstamp(addMonthsToDate(lastEvent.data.when, 1)),
               latePayments: [] // List to be populated later, by the events-parser
             }
           }
           state.distributionEvents.push(monthlyCycleEvent)
-          lastEvent = monthlyCycleEvent
         }
       }
     },

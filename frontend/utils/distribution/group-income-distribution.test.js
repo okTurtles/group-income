@@ -5,7 +5,7 @@ import groupIncomeDistribution from './group-income-distribution.js'
 
 const mincomeAmount = 1000
 let setup = [
-  { type: 'startCycleEvent', data: { cycle: 0, latePayments: [] } }
+  { type: 'startCycleEvent', data: { when: '2021-05', latePayments: [] } }
 ]
 
 describe('Test group-income-distribution.js', function () {
