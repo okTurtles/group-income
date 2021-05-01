@@ -32,12 +32,10 @@ declare module '@hapi/joi' { declare module.exports: any }
 declare module 'blakejs' { declare module.exports: any }
 declare module 'buffer' { declare module.exports: any }
 declare module 'chalk' { declare module.exports: any }
+declare module 'dompurify' { declare module.exports: any }
 declare module 'form-data' { declare module.exports: any }
 declare module 'localforage' { declare module.exports: any }
 declare module 'multihashes' { declare module.exports: any }
-declare module 'primus' { declare module.exports: any }
-declare module 'primus-responder' { declare module.exports: any }
-declare module 'primus-rooms' { declare module.exports: any }
 declare module 'scrypt-async' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
 declare module 'tweetnacl-util' { declare module.exports: any }
@@ -52,7 +50,6 @@ declare module 'wicg-inert' { declare module.exports: any }
 declare module 'ws' { declare module.exports: any }
 
 // .js files
-declare module './primus.js' { declare module.exports: Function }
 declare module '@utils/blockies.js' { declare module.exports: Object }
 declare module '~/frontend/utils/flowTyper.js' { declare module.exports: Object }
 
