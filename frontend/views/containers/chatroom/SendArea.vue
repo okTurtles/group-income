@@ -161,7 +161,7 @@ export default {
       else this.updateTextArea()
     },
     updateTextWithLines () {
-      const newValue = this.$refs.textarea.value.replace(/\n/g, '<br>')
+      const newValue = this.$refs.textarea.value
       if (this.ephemeral.textWithLines === newValue) {
         return false
       }
@@ -175,12 +175,11 @@ export default {
         return false
       }
 
-      const length = this.ephemeral.textWithLines.length
-      const isLastLineEmpty = this.ephemeral.textWithLines.substring(length - 4, length) === '<br>'
+      const isLastLineEmpty = this.ephemeral.textWithLines.endsWith('\n')
 
       // TRICK: Use an invisible element (.mask) as placeholder to know the
       // amount of space the user message takes... (taking in account new lines)
-      this.$refs.mask.innerHTML = this.ephemeral.textWithLines + (isLastLineEmpty ? '.' : '')
+      this.$refs.mask.textContent = this.ephemeral.textWithLines + (isLastLineEmpty ? '.' : '')
 
       // ...and apply the maks's height to the textarea so it dynamically grows as the user types
       this.ephemeral.maskHeight = this.$refs.mask.offsetHeight - 2
