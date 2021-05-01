@@ -39,9 +39,15 @@ export function prevMonthstamp (monthstamp: string): string {
 }
 
 export function compareMonthstamps (monthstampA: string, monthstampB: string): number {
-  const A = dateFromMonthstamp(monthstampA).getTime()
-  const B = dateFromMonthstamp(monthstampB).getTime()
+  const dateA = dateFromMonthstamp(monthstampA)
+  const dateB = dateFromMonthstamp(monthstampB)
+  const A = dateA.getMonth() + dateA.getFullYear() * 12
+  const B = dateB.getMonth() + dateB.getFullYear() * 12
   return A - B
+}
+
+export function compareCycles (whenEnd, whenStart) {
+  return compareMonthstamps(dateToMonthstamp(whenEnd), dateToMonthstamp(whenStart))
 }
 
 export function compareISOTimestamps (a: string, b: string): number {

@@ -15,7 +15,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps, addMonthsToDate, dateToMonthstamp } from '~/frontend/utils/time.js'
+import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps, addMonthsToDate, dateToMonthstamp, compareCycles } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
@@ -107,13 +107,10 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   return monthlyPayments
 }
 
-function compareCycles (whenEnd, whenStart) {
-  return compareMonthstamps(dateToMonthstamp(whenEnd), dateToMonthstamp(whenStart))
-}
-
 function insertMonthlyCycleEvent (state, event) {
   // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
   let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
+  // Fills in multiple missing months when `while` instead of `if`.
   while (compareCycles(event.data.when, lastEvent.data.when) > 0) {
     // Add the missing monthly cycle event
     const monthlyCycleEvent = {
@@ -126,6 +123,10 @@ function insertMonthlyCycleEvent (state, event) {
     state.distributionEvents.push(monthlyCycleEvent)
     lastEvent = monthlyCycleEvent
   }
+
+  state.distributionEvents = state.distributionEvents.filter((e) => {
+    return compareCycles(e.data.when, event.data.when) > -2
+  })
 
   state.distributionEvents.push(event)
 }
@@ -770,18 +771,24 @@ DefineContract({
     'gi.contracts/group/resetMonth': {
       validate: optional(string),
       process ({ meta }, { state, getters }) {
-        const lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
-        // Add 'startCycleEvent' events if a month has passed.
-        if (compareCycles(meta.createdDate, lastEvent.data.when) > 0) {
+        // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
+        let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
+        // Fills in multiple missing months when `while` instead of `if`.
+        while (compareCycles(meta.createdDate, lastEvent.data.when) > 0) {
+          // Add the missing monthly cycle event
           const monthlyCycleEvent = {
             type: 'startCycleEvent',
             data: {
-              when: dateToMonthstamp(addMonthsToDate(lastEvent.data.when, 1)),
-              latePayments: [] // List to be populated later, by the events-parser
+              latePayments: [], // List to be populated later, by the events-parser
+              when: dateToMonthstamp(addMonthsToDate(dateToMonthstamp(lastEvent.data.when), 1))
             }
           }
           state.distributionEvents.push(monthlyCycleEvent)
+          lastEvent = monthlyCycleEvent
         }
+        state.distributionEvents = state.distributionEvents.filter((e) => {
+          return compareCycles(e.data.when, meta.createdDate) > -2
+        })
       }
     },
     ...(process.env.NODE_ENV === 'development' && {
