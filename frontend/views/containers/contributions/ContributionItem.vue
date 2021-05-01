@@ -8,7 +8,7 @@
         v-if='isVisible'
         key='visible'
       )
-        .c-contribution-list(v-html='listOfName')
+        .c-contribution-list(v-safe-html='listOfName')
 
         i18n.is-unstyled.is-link-inherit.link(
           tag='button'
@@ -20,12 +20,12 @@
         v-else
         key='hidden'
         @click='isVisible = !isVisible'
-        v-html='contributionText'
+        v-safe-html='contributionText'
       )
 
   .c-contribution-list(
     v-else=''
-    v-html='contributionText'
+    v-safe-html='contributionText'
   )
 </template>
 

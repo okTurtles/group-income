@@ -7,7 +7,7 @@
       aria-live='polite'
     )
       i(:class='`icon-${ephemeral.icon} is-prefix`')
-      span(v-html='ephemeral.message')
+      span(v-safe-html='ephemeral.message')
 </template>
 
 <script>

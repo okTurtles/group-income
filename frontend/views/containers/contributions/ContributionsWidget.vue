@@ -6,7 +6,7 @@
           h3.is-title-4.c-title(data-test='paymentsTitle') {{ copy.payments.title }}
           .has-text-1(
             data-test='paymentsStatus'
-            v-html='copy.payments.status'
+            v-safe-html='copy.payments.status'
             @click='handlePaymentStatusClick'
           )
         .c-status(v-else data-test='paymentsSummary')
@@ -27,7 +27,7 @@
           :class='copy.payments.ctaClass'
         ) {{ copy.payments.ctaText }}
       .c-column
-        h3.is-title-4.c-title(v-html='copy.monetary.title' data-test='monetaryTitle')
+        h3.is-title-4.c-title(v-safe-html='copy.monetary.title' data-test='monetaryTitle')
         .has-text-1.c-status(data-test='monetaryStatus') {{ copy.monetary.status }}
         i18n.link(tag='button' @click='openModal("IncomeDetails")') Change
       .c-column

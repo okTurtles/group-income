@@ -8,7 +8,7 @@ proposal-template(
   @submit='submit'
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
-    p.has-text-1.c-desc(v-if='changeSystem' v-html='changeSystem' data-test='changeSystem')
+    p.has-text-1.c-desc(v-if='changeSystem' v-safe-html='changeSystem' data-test='changeSystem')
 
     voting-rules-input.c-input(
       v-if='config.rule'

@@ -15,7 +15,7 @@ page(
 
   template(v-else)
     p.p-description
-      span.has-text-1(v-html='introTitle')
+      span.has-text-1(v-safe-html='introTitle')
       | &nbsp;
       i18n.has-text-1(
         @click='handleIncomeClick'

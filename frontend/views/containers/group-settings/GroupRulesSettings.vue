@@ -7,13 +7,13 @@
       :data-test='rule'
     )
       p.is-title-4 {{ config[rule].title }}
-      p.has-text-1.c-expl(v-html='config[rule].explanation')
+      p.has-text-1.c-expl(v-safe-html='config[rule].explanation')
       i18n.pill.is-primary.c-active(v-if='isRuleActive(rule)') Active
 
       dl.c-status(v-if='isRuleActive(rule)')
         dt.c-status-term {{ config[rule].status }}
         dd.c-status-desc
-          span(v-html='votingValue(rule)' data-test='ruleStatus')
+          span(v-safe-html='votingValue(rule)' data-test='ruleStatus')
           button.link(
             tag='button'
             data-test='changeRule'

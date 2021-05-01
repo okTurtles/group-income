@@ -27,7 +27,7 @@
       .c-confirmation(v-if='isConfirmation' key='confirmation')
         svg-proposal.c-svg
         i18n Members of your group will now be asked to vote.
-        span(v-html='confirmationVotingExplanation')
+        span(v-safe-html='confirmationVotingExplanation')
 
       .buttons(:class='{ "is-centered": isConfirmation }')
         button.is-outlined(
@@ -79,7 +79,7 @@
     template(slot='footer' v-if='!isConfirmation')
       .c-footer
         i.icon-vote-yea
-        span(v-if='groupShouldPropose' v-html='footerVotingExplanation')
+        span(v-if='groupShouldPropose' v-safe-html='footerVotingExplanation')
         i18n(
           v-else
           :args='LTags("strong")'

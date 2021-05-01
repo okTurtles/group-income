@@ -2,7 +2,7 @@
   .settings-container
     section.card
       .c-header
-        p.c-instructions(v-html='instructions')
+        p.c-instructions(v-safe-html='instructions')
         fieldset.c-filters
           .c-filters-inner
             legend.c-filters-legend Optional logs:
