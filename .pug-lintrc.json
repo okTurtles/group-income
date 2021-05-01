@@ -4,6 +4,7 @@
     "disallowMultipleLineBreaks": true,
     "disallowStringConcatenation": true,
     "disallowStringInterpolation": true,
+    "disallowVHTMLDirective": true,
     "requireClassLiteralsBeforeAttributes": true,
     "requireClassLiteralsBeforeIdLiterals": true,
     "requireIdLiteralsBeforeAttributes": true,
@@ -19,5 +20,5 @@
     "validateSelfClosingTags": true,
     
     "validateI18n": true,
-    "additionalRules": ["scripts/validate-i18n.js"]
+    "additionalRules": ["scripts/validate-i18n.js", "scripts/disallow-vhtml-directive.js"]
 }
