@@ -26,6 +26,10 @@ For this project we've made the very conscious decision to avoid Object Oriented
 
 You may of course use any necessary classes that others have created if it is unavoidable (for example, some of the built-in Node.js classes). However, avoid creating your own class definitions. In the entire project there is only a single class that we have declared that acts as an exception to this rule, and that is `GIMessage`. If there is no way to avoid creating a class definition, it may be permitted, but a strong case must be made first that there is no other way to do it.
 
+### See Also: "Embrace the SBP way of doing things"
+
+See **[additional notes on how to write code using the SBP paradigm below.](#sbp)**
+
 ## Vue.js Style Guide
 
 Since this is a Vue.js project, any pull request **must** follow the *Priority A* rules mentioned in the [Vue.js Style Guide](https://vuejs.org/v2/style-guide/), and *should* follow the *Priority B* rules. Please take the time to read at least those two sections.
@@ -319,6 +323,12 @@ More details about SBP will be written in a blog post soon. In the meantime, you
 - SBP embraces the LISP idea that `code = data` and gives you all of the benefits and possibilities that affords
 - SBP makes it easier to debug and understand your code
 - SBP makes it possible to create architectures that are remarkably flexible, clean, and safe; this comes from the benefits described above
+
+### Embrace the SBP way of doing things
+
+Embrace the SBP way of doing things as much as possible so that the codebase becomes consistent and easier to port. For example, if you feel like implementing an instance of something, consider doing it via SBP with `okTurtles.data/apply` etc.
+
+Stick to SBP and simpler concepts like objects, branching out when it makes more sense to do so. For example: in `Contract.js` there is a weird JavaScript-ism called `gettersProxy` that relies on the `Proxy` feature/class of JavaScript. That is "weird" in the sense that it's non-standard across languages, it's not SBP, it's not a simple object either. However, it was weirdness that we felt forced to introduce so that we could have direct integration between the Vue.js / Vuex frameworks, and our contract stuff. The end result makes it easier for us to work with Vue.js, but at the cost of having something that is more difficult to port to other environments. These kinds of tradeoffs should be made consciously, meaning it’s ok to make them but they should be the exception rather than the rule.
 
 Search the project for `sbp(` for examples, and talk with @taoeffect about it before diving in (at least until the docs for SBP are still waiting to be written).
 
