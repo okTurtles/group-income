@@ -111,7 +111,7 @@ function insertMonthlyCycleEvent (state, event) {
   // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
   let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
   // Fills in multiple missing months when `while` instead of `if`.
-  while (compareCycles(event.data.when, lastEvent.data.when) > 0) {
+  if (compareCycles(event.data.when, lastEvent.data.when) > 0) {
     // Add the missing monthly cycle event
     const monthlyCycleEvent = {
       type: 'startCycleEvent',
@@ -294,9 +294,6 @@ DefineContract({
       //       bound to the UI in some location.
       return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     },
-    groupCreationDate (state, getters) {
-      return getters.currentGroupState.distributionCycleStartDate
-    },
     groupDistributionEvents (state, getters) {
       return getters.currentGroupState.distributionEvents
     }
@@ -329,7 +326,6 @@ DefineContract({
         const initialState = merge({
           payments: {},
           paymentsByMonth: {},
-          distributionCycleStartDate: meta.createdDate,
           distributionEvents: [{
             type: 'startCycleEvent',
             data: {
@@ -774,13 +770,13 @@ DefineContract({
         // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
         let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
         // Fills in multiple missing months when `while` instead of `if`.
-        while (compareCycles(meta.createdDate, lastEvent.data.when) > 0) {
+        if (compareCycles(meta.createdDate, lastEvent.data.when) > 0) {
           // Add the missing monthly cycle event
           const monthlyCycleEvent = {
             type: 'startCycleEvent',
             data: {
               latePayments: [], // List to be populated later, by the events-parser
-              when: dateToMonthstamp(addMonthsToDate(dateToMonthstamp(lastEvent.data.when), 1))
+              when: meta.createdDate
             }
           }
           state.distributionEvents.push(monthlyCycleEvent)

@@ -46,7 +46,7 @@ export function compareMonthstamps (monthstampA: string, monthstampB: string): n
   return A - B
 }
 
-export function compareCycles (whenEnd, whenStart) {
+export function compareCycles (whenEnd: string, whenStart: string): number {
   return compareMonthstamps(dateToMonthstamp(whenEnd), dateToMonthstamp(whenStart))
 }
 
