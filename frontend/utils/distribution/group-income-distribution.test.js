@@ -35,7 +35,7 @@ function insertMonthlyCycleEvents (events: Array<Object>): Array<Object> {
 
 // Helper fuction that inserts the "when" of each event.data.
 function groupIncomeDistributionWrapper (events, opts, timeSpanMonths = 1.0, startDate = defaultStartDate) {
-  events = [{ type: 'startCycleEvent', data: { when: dateToMonthstamp(defaultStartDate), latePayments: [] } }].concat(events)
+  events = [{ type: 'startCycleEvent', data: { when: dateToMonthstamp(startDate), latePayments: [] } }].concat(events)
   const eventsWithTimeStamps = insertMonthlyCycleEvents(events.map((v, i) => {
     v.data.when = dateToMonthstamp(addMonthsToDate(startDate, i * timeSpanMonths / events.length))
     return v
