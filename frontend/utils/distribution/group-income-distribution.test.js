@@ -8,6 +8,11 @@ let setup = []
 
 const defaultStartDate = '2021-01'
 
+// Helper function that returns the date string for a specific number of cycles past a specific start date.
+function dateAtCyclesPassed (cycles, startDate = defaultStartDate) {
+  return addMonthsToDate(startDate, cycles).toISOString()
+}
+
 // Helper fuction that inserts the "startCycleEvent" between each month's set of events.
 function insertMonthlyCycleEvents (events: Array<Object>): Array<Object> {
   const newEvents = []
@@ -37,7 +42,7 @@ function insertMonthlyCycleEvents (events: Array<Object>): Array<Object> {
 function groupIncomeDistributionWrapper (events, opts, timeSpanMonths = 1.0, startDate = defaultStartDate) {
   events = [{ type: 'startCycleEvent', data: { when: dateToMonthstamp(startDate), latePayments: [] } }].concat(events)
   const eventsWithTimeStamps = insertMonthlyCycleEvents(events.map((v, i) => {
-    v.data.when = dateToMonthstamp(addMonthsToDate(startDate, i * timeSpanMonths / events.length))
+    v.data.when = v.data.when ? v.data.when : dateToMonthstamp(addMonthsToDate(startDate, i * timeSpanMonths / events.length))
     return v
   }))
   console.table(eventsWithTimeStamps) // TODO: for demonstration of commit; REMOVE!!!
@@ -216,6 +221,26 @@ describe('Test group-income-distribution.js', function () {
       { from: 'u5', to: 'u2', amount: 10 },
       { from: 'u5', to: 'u4', amount: 40 },
       { from: 'u5', to: 'u3', amount: 40 }
+    ])
+  })
+  // Setup:
+  // Every month u1 sends u2 $20
+  // Last month u1 only sent u2 $10
+  // So this month u1 has to send u2 $10 (Late Payment) + $20 for this month
+  // So, u1 sends u2 $20
+  // BUT, then u2 adjusts their income details (or maybe someone else does), and u1's TODO list for u2 has now changed from $20 / month, to $10 / month
+  // So, since u1 sent u2 $20 this month, then the late payment of $10 has already been knocked out, plus u1 has paid for this month too
+  it('Test the adjusted version of the previous event-list. Should *not* ignore payment events!', function () {
+    setup = [
+      { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 20, when: dateAtCyclesPassed(0.21) } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -20, when: dateAtCyclesPassed(0.1) } },
+      { from: 'u1', to: 'u2', amount: 20, data: { when: dateAtCyclesPassed(0.2) } },
+      { from: 'u1', to: 'u2', amount: 10, data: { when: dateAtCyclesPassed(1.1) } },
+      { from: 'u1', to: 'u2', amount: 20, data: { when: dateAtCyclesPassed(2.1) } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -10, when: dateAtCyclesPassed(2.2) } }
+    ]
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
+      { from: 'u1', to: 'u2', amount: 10 }
     ])
   })
 })
