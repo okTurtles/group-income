@@ -234,13 +234,11 @@ describe('Test group-income-distribution.js', function () {
     setup = [
       { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 20, when: dateAtCyclesPassed(0.21) } },
       { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -20, when: dateAtCyclesPassed(0.1) } },
-      { from: 'u1', to: 'u2', amount: 20, data: { when: dateAtCyclesPassed(0.2) } },
-      { from: 'u1', to: 'u2', amount: 10, data: { when: dateAtCyclesPassed(1.1) } },
-      { from: 'u1', to: 'u2', amount: 20, data: { when: dateAtCyclesPassed(2.1) } },
+      { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 20, when: dateAtCyclesPassed(0.2) } },
+      { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 10, when: dateAtCyclesPassed(1.1) } },
+      { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 20, when: dateAtCyclesPassed(2.1) } },
       { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -10, when: dateAtCyclesPassed(2.2) } }
     ]
-    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
-      { from: 'u1', to: 'u2', amount: 10 }
-    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([])
   })
 })
