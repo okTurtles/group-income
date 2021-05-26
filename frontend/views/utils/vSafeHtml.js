@@ -20,7 +20,7 @@ import dompurify from 'dompurify'
 import Vue from 'vue'
 
 // See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
-const DEFAULT_CONFIG = {
+export const defaultConfig = {
   // Allow 'href' and 'target' attributes to avoid breaking our hyperlinks,
   // but keep sanitizing their values.
   ALLOWED_ATTR: ['class', 'href', 'style', 'target'],
@@ -31,7 +31,7 @@ const DEFAULT_CONFIG = {
 
 const transform = (el, binding) => {
   if (binding.oldValue !== binding.value) {
-    const config = { ...DEFAULT_CONFIG, ...(binding.arg ?? {}) }
+    const config = { ...defaultConfig, ...(binding.arg ?? {}) }
 
     while (el.firstChild) {
       el.firstChild.remove()
