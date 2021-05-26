@@ -19,14 +19,14 @@
 import dompurify from 'dompurify'
 import Vue from 'vue'
 
+// See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
 const DEFAULT_CONFIG = {
   // Allow 'href' and 'target' attributes to avoid breaking our hyperlinks,
   // but keep sanitizing their values.
   ALLOWED_ATTR: ['class', 'href', 'style', 'target'],
+  ALLOWED_TAGS: ['a', 'b', 'br', 'i', 'span', 'strong', 'u'],
   // This option was in the original file.
-  RETURN_DOM_FRAGMENT: true,
-  // Allow all safe HTML elements but neither SVG nor MathML.
-  USE_PROFILES: { html: true }
+  RETURN_DOM_FRAGMENT: true
 }
 
 const transform = (el, binding) => {
