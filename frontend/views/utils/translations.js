@@ -1,5 +1,7 @@
 'use strict'
 
+import { defaultConfig as defaultDompurifyConfig } from '~/frontend/views/utils/vSafeHtml.js'
+import dompurify from 'dompurify'
 import Vue from 'vue'
 import sbp from '~/shared/sbp.js'
 import template from '~/frontend/utils/stringTemplate.js'
@@ -10,6 +12,12 @@ Vue.prototype.LTags = LTags
 const defaultLanguage = 'en-US'
 const defaultLanguageCode = 'en'
 const defaultTranslationTable: { [string]: string } = {}
+
+// See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
+const dompurifyConfig = {
+  ...defaultDompurifyConfig,
+  RETURN_DOM_FRAGMENT: false
+}
 
 let currentLanguage = defaultLanguage
 let currentLanguageCode = defaultLanguage.split('-')[0]
@@ -124,6 +132,10 @@ export function LError (error: Error): {|reportError: any|} {
   }
 }
 
+function sanitize (inputString) {
+  return dompurify.sanitize(inputString, dompurifyConfig)
+}
+
 Vue.component('i18n', {
   functional: true,
   props: {
@@ -142,7 +154,7 @@ Vue.component('i18n', {
       return h(context.props.tag, context.data, text)
     }
     if (context.props.compile) {
-      const result = Vue.compile('<wrap>' + translation + '</wrap>')
+      const result = Vue.compile('<wrap>' + sanitize(translation) + '</wrap>')
       // console.log('TRANSLATED RENDERED TEXT:', context, result.render.toString())
       return result.render.call({
         _c: (tag, ...args) => {
@@ -156,7 +168,7 @@ Vue.component('i18n', {
       })
     } else {
       if (!context.data.domProps) context.data.domProps = {}
-      context.data.domProps.innerHTML = translation
+      context.data.domProps.innerHTML = sanitize(translation)
       return h(context.props.tag, context.data)
     }
   }
