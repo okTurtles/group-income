@@ -117,7 +117,7 @@
     "vuelidate": "0.7.6",
     "vuex": "3.6.0",
     "wicg-inert": "3.1.0",
-    "ws": "7.4.3"
+    "ws": "7.4.5"
   },
   "devDependencies": {
     "@babel/core": "7.12.9",
