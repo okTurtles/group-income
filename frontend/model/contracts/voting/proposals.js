@@ -130,7 +130,7 @@ const proposals: Object = {
       const message = { data: messageData, meta, contractID }
       sbp('gi.contracts/group/removeMember/process', message, state)
       sbp('gi.contracts/group/pushSideEffect', contractID,
-        ['gi.contracts/group/removeMember/process/sideEffect', message]
+        ['gi.contracts/group/removeMember/sideEffect', message]
       )
     },
     [VOTE_AGAINST]: voteAgainst

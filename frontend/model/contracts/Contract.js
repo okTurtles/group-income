@@ -5,27 +5,26 @@ import { GIMessage } from '~/shared/GIMessage.js'
 import type { GIOpContract } from '~/shared/GIMessage.js'
 
 // this must not be exported, but instead accessed through 'actionWhitelisted'
+// TODO: use these through this.
 const whitelistedSelectors = {}
 const sideEffectStacks = {} // [contractID]: Array<*>
-const cheloniaCfg = sbp('okTurtles.data/get', 'CHELONIA_CONFIG')
 
-cheloniaCfg.whitelisted = (sel) => !!whitelistedSelectors[sel]
-
-export const ACTION_REGEX: RegExp = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
+export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^\/]+))\/(?:([^\/]+)\/)?)process$/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
 // 0 => 'gi.contracts/group/payment/process'
 // 1 => 'gi.contracts/group/payment/'
-// 2 => 'gi.contracts'
-// 3 => 'group'
-// 4 => 'payment'
+// 2 => 'gi.contracts/group'
+// 3 => 'gi.contracts'
+// 4 => 'group'
+// 5 => 'payment'
 
 // TODO: move this to: 'chelonia/contract/define'
 export function DefineContract (contract: Object) {
-  const metadata = contract.metadata || { validate () {}, create: () => ({}) }
-  const getters = contract.getters
+  if (!contract.metadata) contract.metadata = { validate () {}, create: () => ({}) }
+  if (!contract.getters) contract.getters = {}
   sbp('sbp/selectors/register', {
     // expose getters for Vuex integration and other conveniences
-    [`${contract.name}/getters`]: () => getters,
+    [`${contract.name}/getters`]: () => contract.getters,
     [`${contract.name}/state`]: contract.state,
     // there are 2 ways to cause sideEffects to happen: by defining a sideEffect function
     // in the contract, or by calling /pushSideEffect with an async SBP call. You can
@@ -35,11 +34,11 @@ export function DefineContract (contract: Object) {
     }
   })
   for (const action in contract.actions) {
-    if (action.indexOf(contract.name) !== 0) {
+    if (contract.name !== ACTION_REGEX.exec(action)[2]) {
       throw new Error(`contract action '${action}' must start with prefix: ${contract.name}`)
     }
-    const actionSelector = `${action}/process`
-    whitelistedSelectors[actionSelector] = true
+    const actionProcessSelector = `${action}/process`
+    whitelistedSelectors[actionProcessSelector] = true
     sbp('sbp/selectors/register', {
       [`${action}/create`]: async function (data: Object, contractID: string | null = null) {
         let previousHEAD = null
@@ -66,33 +65,33 @@ export function DefineContract (contract: Object) {
           await sbp('backend/publishLogEntry', contractMsg)
           contractID = previousHEAD = contractMsg.hash()
         }
-        const meta = metadata.create()
-        const gProxy = gettersProxy(state, getters)
-        metadata.validate(meta, { state, ...gProxy, contractID })
+        const meta = contract.metadata.create()
+        const gProxy = gettersProxy(state, contract.getters)
+        contract.metadata.validate(meta, { state, ...gProxy, contractID })
         contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
         return GIMessage.createV1_0(contractID, previousHEAD, [
           GIMessage.OP_ACTION_ENCRYPTED,
           // TODO: encryption happens here
-          JSON.stringify({ type: actionSelector, data, meta })
+          JSON.stringify({ type: actionProcessSelector, data, meta })
         ])
       },
-      [actionSelector]: function (message: Object, state: Object) {
+      [actionProcessSelector]: function (message: Object, state: Object) {
         const { meta, data, contractID } = message
         // TODO: optimize so that you're creating a proxy object only when needed
-        const gProxy = gettersProxy(state, getters)
+        const gProxy = gettersProxy(state, contract.getters)
         state = state || contract.state(contractID)
-        metadata.validate(meta, { state, ...gProxy, contractID })
+        contract.metadata.validate(meta, { state, ...gProxy, contractID })
         contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
         contract.actions[action].process(message, { state, ...gProxy })
       },
-      [`${actionSelector}/sideEffect`]: async function (message: Object, state: ?Object) {
+      [`${action}/sideEffect`]: async function (message: Object, state: ?Object) {
         const sideEffects = sideEffectStack(message.contractID)
         while (sideEffects.length > 0) {
           await sbp(...sideEffects.shift())
         }
         if (contract.actions[action].sideEffect) {
           state = state || contract.state(message.contractID)
-          const gProxy = gettersProxy(state, getters)
+          const gProxy = gettersProxy(state, contract.getters)
           await contract.actions[action].sideEffect(message, { state, ...gProxy })
         }
       }

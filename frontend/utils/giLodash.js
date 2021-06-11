@@ -19,6 +19,12 @@ export function pick (o: Object, props: string[]): {...} {
   return x
 }
 
+export function choose (a: Array, indicies: Array): Array {
+  const x = []
+  for (const idx of indicies) { x.push(a[idx]) }
+  return x
+}
+
 export function omit (o: Object, props: string[]): {...} {
   const x = {}
   for (const k in o) {

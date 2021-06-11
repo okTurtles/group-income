@@ -69,7 +69,7 @@ sbp('sbp/selectors/register', {
     for (const e of events.map(e => GIMessage.deserialize(e))) {
       const stateCopy = _.cloneDeep(state)
       try {
-        sbp('chelonia/message/process', e, state)
+        sbp('chelonia/in/processMessage', e, state)
       } catch (err) {
         if (!(err instanceof GIErrorUnrecoverable)) {
           console.warn(`latestContractState: ignoring mutation ${e.description()} because of ${err.name}`)
@@ -116,7 +116,7 @@ const mutations = {
     state.currentGroupId = null
   },
   processMessage (state, { message }) {
-    sbp('chelonia/message/process', message, state)
+    sbp('chelonia/in/processMessage', message, state)
   },
   registerContract (state, { contractID, type }) {
     const firstTimeRegistering = !state[contractID]

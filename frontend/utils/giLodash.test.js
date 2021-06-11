@@ -34,6 +34,10 @@ describe('Test giLodash', function () {
     callback2.should.be.calledOnce()
     clock.restore()
   })
+  it('should choose', function () {
+    const a = _.choose([7, 3, 9, [0], 1], [0, 3])
+    should(a).deepEqual([7, [0]])
+  })
   it('should mapObject', function () {
     should(_.mapObject({
       foo: 5,
