@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 import { GIMessage } from './GIMessage.js'
 import { sanityCheck } from './utils.js'
-import type { GIOpContract } from './GIMessage.js'
+import type { GIOpContract, GIOpActionEnc, GIOpActionUnenc, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
 // eslint-disable-next-line no-useless-escape
 export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^\/]+))(?:\/(?:([^\/]+)\/)?)?)\w*/
@@ -23,13 +23,13 @@ sbp('sbp/selectors/register', {
     this.cfg = {
       decryptFn: JSON.parse, // override!
       encryptFn: JSON.stringify, // override!
-      whitelisted: (sel) => !!this.whitelistedSelectors[sel],
+      whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       latestHashSelector: 'backend/latestHash',
       publishSelector: 'backend/publishLogEntry',
       skipActionProcessing: false
     }
     this.contracts = {}
-    this.whitelistedSelectors = {}
+    this.whitelistedActions = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
     this.sideEffectStack = (contractID: string): Array => {
       let stack = this.sideEffectStacks[contractID]
@@ -53,13 +53,13 @@ sbp('sbp/selectors/register', {
       [`${contract.name}/state`]: contract.state,
       // 2 ways to cause sideEffects to happen: by defining a sideEffect function in the
       // contract, or by calling /pushSideEffect w/async SBP call. Can also do both.
-      [`${contract.name}/pushSideEffect`]: (contractID, asyncSbpCall: Array<*>) => {
+      [`${contract.name}/pushSideEffect`]: (contractID: string, asyncSbpCall: Array<*>) => {
         this.sideEffectStack(contractID).push(asyncSbpCall)
       }
     })
     for (const action in contract.actions) {
       contractFromAction(action) // ensure actions are appropriately named
-      this.whitelistedSelectors[`${action}/process`] = true
+      this.whitelistedActions[action] = true
       sbp('sbp/selectors/register', {
         [`${action}/process`]: (message: Object, state: Object) => {
           const { meta, data, contractID } = message
@@ -84,20 +84,28 @@ sbp('sbp/selectors/register', {
       })
     }
   },
-  'chelonia/out/registerContract': async function (contractName: string, data: Object) {
+  'chelonia/out/registerContract': async function (
+    contractName: string,
+    data: Object,
+    { prePublishContract, prePublish, postPublish, publishOptions }: {
+      prePublishContract: Function, prePublish: Function, postPublish: Function, publishOptions: Object
+    }
+  ) {
     const contract = this.contracts[contractName]
     if (!contract) throw new Error(`contract not defined: ${contractName}`)
-    const op: GIOpContract = {
-      type: contractName,
-      keyJSON: 'TODO: add group public key here'
-    }
     const contractMsg = GIMessage.createV1_0(null, null, [
       GIMessage.OP_CONTRACT,
-      op
+      ({
+        type: contractName,
+        keyJSON: 'TODO: add group public key here'
+      }: GIOpContract)
     ])
-    await sbp(this.cfg.publishSelector, contractMsg)
-    // return another promise to await on, which returns the contract constructor message
-    return sbp('chelonia/out/actionEncrypted', contractName, contractMsg.hash())
+    prePublishContract && prePublishContract(contractMsg)
+    await sbp(this.cfg.publishSelector, contractMsg, publishOptions)
+    const msg = await sbp('chelonia/out/actionEncrypted', contractName, data, contractMsg.hash(), {
+      prePublish, postPublish, publishOptions
+    })
+    return msg
   },
   // all of these functions will do both the creation of the GIMessage
   // and the sending of it via this.cfg.publishSelector
@@ -106,23 +114,27 @@ sbp('sbp/selectors/register', {
   // TODO: in backend.test.js:168 createMailboxFor(), we first subscribe to a mailbox
   //       before sending the message! Not doing this might break our tests...
   //       similar problem on line 283 in backend tests. What do??
-  'chelonia/out/actionEncrypted': async function (action: string, data: Object, contractID: string) {
-    const contract = contractFromAction(this.contracts, action)
-    const state = contract.state(contractID)
-    const previousHEAD = await sbp(this.cfg.latestHashSelector, contractID)
-    const meta = contract.metadata.create()
-    const gProxy = gettersProxy(state, contract.getters)
-    contract.metadata.validate(meta, { state, ...gProxy, contractID })
-    contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
-    const message = GIMessage.createV1_0(contractID, previousHEAD, [
-      GIMessage.OP_ACTION_ENCRYPTED,
-      this.encryptFn({ type: `${action}/process`, data, meta })
-    ])
-    await sbp(this.cfg.publishSelector, message)
-    return message
+  //
+  //       We can address both problems by pass in an options parameter that
+  //       takes options to pass to publishSelector and an option to call
+  //       a custom function in between message creation and publishing
+  'chelonia/out/actionEncrypted': function (
+    action: string,
+    data: Object,
+    contractID: string,
+    options: ?Object
+  ): Promise {
+    return outEncryptedOrUnencryptedAction
+      .call(this, GIMessage.OP_ACTION_ENCRYPTED, action, data, contractID, options)
   },
-  'chelonia/out/actionUnencrypted': async function () {
-
+  'chelonia/out/actionUnencrypted': function (
+    action: string,
+    data: Object,
+    contractID: string,
+    options: ?Object
+  ): Promise {
+    return outEncryptedOrUnencryptedAction
+      .call(this, GIMessage.OP_ACTION_UNENCRYPTED, action, data, contractID, options)
   },
   'chelonia/out/keyAdd': async function () {
 
@@ -161,11 +173,11 @@ sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnenc) {
         if (!config.skipActionProcessing) {
-          const { data, meta, selector } = v
-          if (!config.whitelisted(selector)) {
-            throw new Error(`chelonia: action not whitelisted: '${selector}'`)
+          const { data, meta, action } = v
+          if (!config.whitelisted(action)) {
+            throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
-          sbp(selector, { data, meta, hash, contractID }, state)
+          sbp(`${action}/process`, { data, meta, hash, contractID }, state)
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -201,6 +213,31 @@ function contractFromAction (contracts: Object, action: string): Object {
   const contract = contracts[ACTION_REGEX.exec(action)[2] || null]
   if (!contract) throw new Error(`no contract for action named: ${action}`)
   return contract
+}
+
+async function outEncryptedOrUnencryptedAction (
+  opType: GIOpActionEnc | GIOpActionUnenc,
+  action: string,
+  data: Object,
+  contractID: string,
+  { prePublish, postPublish, publishOptions }: { prePublish: Function, postPublish: Function, publishOptions: Object }
+) {
+  const contract = contractFromAction(this.contracts, action)
+  const state = contract.state(contractID)
+  const previousHEAD = await sbp(this.cfg.latestHashSelector, contractID)
+  const meta = contract.metadata.create()
+  const gProxy = gettersProxy(state, contract.getters)
+  contract.metadata.validate(meta, { state, ...gProxy, contractID })
+  contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
+  const unencMessage = ({ action, data, meta }: GIOpActionUnenc)
+  const message = GIMessage.createV1_0(contractID, previousHEAD, [
+    opType,
+    opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.encryptFn(unencMessage)
+  ])
+  prePublish && prePublish(message)
+  await sbp(this.cfg.publishSelector, message, publishOptions)
+  postPublish && postPublish(message)
+  return message
 }
 
 const notImplemented = (v) => {

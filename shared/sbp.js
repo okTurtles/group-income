@@ -3,7 +3,7 @@
 type TypeFilter = (domain: string, selector: string, data: any) => ?boolean
 
 const selectors: {[string]: Function} = {}
-const domainState: {[string]: Object} = {}
+const domains: {[string]: Object} = {}
 const globalFilters: Array<TypeFilter> = []
 const domainFilters: {[string]: Array<TypeFilter>} = {}
 const selectorFilters: {[string]: Array<TypeFilter>} = {}
@@ -25,13 +25,13 @@ function sbp (selector: string, ...data: any): any {
       }
     }
   }
-  return selectors[selector].call(domainState[domain], ...data)
+  return selectors[selector].call(domains[domain].state, ...data)
 }
 
 const SBP_BASE_SELECTORS = {
-  // TODO: consider making it so that selectors in a domain can only be registered in one go
-  //       to prevent other code from later adding a selector to that domain and thereby
-  //       having access to the domain state.
+  // TODO: implement 'sbp/domains/lock' to prevent further selectors from being registered
+  //       for that domain, and to prevent selectors from being overwritten for that domain.
+  //       Once a domain is locked it cannot be unlocked.
   'sbp/selectors/register': function (sels: {[string]: Function}) {
     const registered = []
     for (const selector in sels) {
@@ -46,12 +46,12 @@ const SBP_BASE_SELECTORS = {
         const fn = selectors[selector] = sels[selector]
         registered.push(selector)
         // ensure each domain has a domain state associated with it
-        if (!domainState[domain]) {
-          domainState[domain] = {}
+        if (!domains[domain]) {
+          domains[domain] = { state: {}, locked: false }
         }
         // call the special _init function immediately upon registering
         if (selector === `${domain}/_init`) {
-          fn.call(domainState[domain])
+          fn.call(domains[domain].state)
         }
       }
     }

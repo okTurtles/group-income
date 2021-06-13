@@ -17,7 +17,7 @@ export type GIKey = {
 // TODO: rename 'type' to 'contractName':
 export type GIOpContract = { type: string; keyJSON: string, parentContract?: string }
 export type GIOpActionEnc = string // encrypted version of GIOpActionUnenc
-export type GIOpActionUnenc = { selector: string; data: JSONType; meta: JSONObject }
+export type GIOpActionUnenc = { action: string; data: JSONType; meta: JSONObject }
 export type GIOpKeyAdd = { keyHash: string, keyJSON: ?string, context: string }
 export type GIOpPropSet = { key: string, value: JSONType }
 

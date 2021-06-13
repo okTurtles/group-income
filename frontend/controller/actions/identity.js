@@ -9,7 +9,8 @@ export default (sbp('sbp/selectors/register', {
     email,
     password,
     picture
-  }) {
+  }) { // TODO: 'sync' should be done in here, not in signup, to
+    //          keep it consistent with how group.js works
     // TODO: make sure we namespace these names:
     //       https://github.com/okTurtles/group-income-simple/issues/598
     const oldSettings = await sbp('gi.db/settings/load', username)

@@ -84,8 +84,8 @@ sbp('sbp/selectors/register', {
   },
   'state/enqueueContractSync': function (contractID: string) {
     // enqueue this invocation in a serial queue to ensure
-    // handleEvent does not get called on contractID while it's being sync,
-    // but after it's finished syncing. This is used in tandem with
+    // handleEvent does not get called on contractID while it's syncing,
+    // but after it's finished. This is used in tandem with
     // 'state/enqueueHandleEvent' defined below. This is all to prevent
     // handleEvent getting called with the wrong previousHEAD for an event.
     return sbp('okTurtles.eventQueue/queueEvent', contractID, [
