@@ -112,15 +112,15 @@ export default {
         },
         'group_create': {
           actionFn: async (params) => {
-            await sbp('gi.actions/group/createAndSwitch', params)
+            await sbp('gi.actions/group/createAndSwitch', { data: params })
           },
           finalize: () => {
             this.$router.push({ path: '/dashboard' }) // eslint-disable-line
           }
         },
         'group_join': {
-          actionFn: async (params) => {
-            await sbp('gi.actions/group/joinAndSwitch', params)
+          actionFn: async ({ groupId, inviteSecret }) => {
+            await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
           },
           finalize: () => {
             this.$router.push({ path: '/dashboard' }) // eslint-disable-line

@@ -230,11 +230,8 @@ export default {
     },
     async handleNonMonetary (type, value) {
       try {
-        const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
-          { [type]: value },
-          this.$store.state.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', groupProfileUpdate)
+        await sbp('gi.actions/group/groupProfileUpdate',
+          { [type]: value }, this.$store.state.currentGroupId)
       } catch (e) {
         alert(e.message)
       }

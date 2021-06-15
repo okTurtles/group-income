@@ -118,7 +118,7 @@ export default {
 
       if (this.groupShouldPropose) {
         try {
-          const proposal = await sbp('gi.contracts/group/proposal/create',
+          await sbp('gi.actions/group/proposal',
             {
               proposalType: PROPOSAL_GROUP_SETTING_CHANGE,
               proposalData: {
@@ -133,8 +133,6 @@ export default {
             },
             this.currentGroupId
           )
-          await sbp('backend/publishLogEntry', proposal)
-
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
           this.$refs.formMsg.danger(L('Failed to propose mincome change: {reportError}', LError(e)))
@@ -144,16 +142,11 @@ export default {
       }
 
       try {
-        const updatedSettings = await sbp(
-          'gi.contracts/group/updateSettings/create',
-          { mincomeAmount },
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', updatedSettings)
+        await sbp('gi.actions/group/updateSettings', { mincomeAmount }, this.currentGroupId)
         this.$refs.proposal.close()
       } catch (e) {
         console.error('Mincome.vue submit() error:', e)
-        this.$refs.formMsg.danger(L('Failed to change mincome: {reportError}', LError(e)))
+        this.$refs.formMsg.danger(e.message)
       }
     }
   }

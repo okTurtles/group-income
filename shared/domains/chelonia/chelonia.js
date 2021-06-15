@@ -6,6 +6,31 @@ import { GIMessage } from './GIMessage.js'
 import { sanityCheck } from './utils.js'
 import type { GIOpContract, GIOpActionEnc, GIOpActionUnenc, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
+// TODO: define ChelContractType for /defineContract
+
+export type ChelRegParams = {
+  contractName: string;
+  data: Object;
+  hooks?: {
+    prePublishContract?: (GIMessage) => void;
+    prePublish?: (GIMessage) => void;
+    postPublish?: (GIMessage) => void;
+  };
+  publishOptions?: { maxAttempts: number };
+}
+
+export type ChelActionParams = {
+  action: string;
+  contractID: string;
+  data: Object;
+  hooks?: {
+    prePublishContract?: (GIMessage) => void;
+    prePublish?: (GIMessage) => void;
+    postPublish?: (GIMessage) => void;
+  };
+  publishOptions?: { maxAttempts: number };
+}
+
 // eslint-disable-next-line no-useless-escape
 export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^\/]+))(?:\/(?:([^\/]+)\/)?)?)\w*/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
@@ -84,13 +109,8 @@ sbp('sbp/selectors/register', {
       })
     }
   },
-  'chelonia/out/registerContract': async function (
-    contractName: string,
-    data: Object,
-    { prePublishContract, prePublish, postPublish, publishOptions }: {
-      prePublishContract: Function, prePublish: Function, postPublish: Function, publishOptions: Object
-    }
-  ) {
+  'chelonia/out/registerContract': async function (params: ChelRegParams) {
+    const { contractName, hooks, publishOptions } = params
     const contract = this.contracts[contractName]
     if (!contract) throw new Error(`contract not defined: ${contractName}`)
     const contractMsg = GIMessage.createV1_0(null, null, [
@@ -100,41 +120,24 @@ sbp('sbp/selectors/register', {
         keyJSON: 'TODO: add group public key here'
       }: GIOpContract)
     ])
-    prePublishContract && prePublishContract(contractMsg)
+    hooks && hooks.prePublishContract && hooks.prePublishContract(contractMsg)
     await sbp(this.cfg.publishSelector, contractMsg, publishOptions)
-    const msg = await sbp('chelonia/out/actionEncrypted', contractName, data, contractMsg.hash(), {
-      prePublish, postPublish, publishOptions
+    const msg = await sbp('chelonia/out/actionEncrypted', {
+      action: contractName,
+      contractID: contractMsg.hash(),
+      data: params.data,
+      hooks,
+      publishOptions
     })
     return msg
   },
   // all of these functions will do both the creation of the GIMessage
   // and the sending of it via this.cfg.publishSelector
-  // TODO: state.js:991 shows a use case we don't cover here:
-  //       (using publishSelector with { maxAttempts: 3 })
-  // TODO: in backend.test.js:168 createMailboxFor(), we first subscribe to a mailbox
-  //       before sending the message! Not doing this might break our tests...
-  //       similar problem on line 283 in backend tests. What do??
-  //
-  //       We can address both problems by pass in an options parameter that
-  //       takes options to pass to publishSelector and an option to call
-  //       a custom function in between message creation and publishing
-  'chelonia/out/actionEncrypted': function (
-    action: string,
-    data: Object,
-    contractID: string,
-    options: ?Object
-  ): Promise {
-    return outEncryptedOrUnencryptedAction
-      .call(this, GIMessage.OP_ACTION_ENCRYPTED, action, data, contractID, options)
+  'chelonia/out/actionEncrypted': function (params: ChelActionParams): Promise {
+    return outEncryptedOrUnencryptedAction.call(this, GIMessage.OP_ACTION_ENCRYPTED, params)
   },
-  'chelonia/out/actionUnencrypted': function (
-    action: string,
-    data: Object,
-    contractID: string,
-    options: ?Object
-  ): Promise {
-    return outEncryptedOrUnencryptedAction
-      .call(this, GIMessage.OP_ACTION_UNENCRYPTED, action, data, contractID, options)
+  'chelonia/out/actionUnencrypted': function (params: ChelActionParams): Promise {
+    return outEncryptedOrUnencryptedAction.call(this, GIMessage.OP_ACTION_UNENCRYPTED, params)
   },
   'chelonia/out/keyAdd': async function () {
 
@@ -217,11 +220,9 @@ function contractFromAction (contracts: Object, action: string): Object {
 
 async function outEncryptedOrUnencryptedAction (
   opType: GIOpActionEnc | GIOpActionUnenc,
-  action: string,
-  data: Object,
-  contractID: string,
-  { prePublish, postPublish, publishOptions }: { prePublish: Function, postPublish: Function, publishOptions: Object }
+  params: ChelActionParams
 ) {
+  const { action, contractID, data, hooks, publishOptions } = params
   const contract = contractFromAction(this.contracts, action)
   const state = contract.state(contractID)
   const previousHEAD = await sbp(this.cfg.latestHashSelector, contractID)
@@ -234,9 +235,9 @@ async function outEncryptedOrUnencryptedAction (
     opType,
     opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.encryptFn(unencMessage)
   ])
-  prePublish && prePublish(message)
+  hooks && hooks.prePublish && hooks.prePublish(message)
   await sbp(this.cfg.publishSelector, message, publishOptions)
-  postPublish && postPublish(message)
+  hooks && hooks.postPublish && hooks.postPublish(message)
   return message
 }
 

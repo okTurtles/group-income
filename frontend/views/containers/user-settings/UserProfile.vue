@@ -86,7 +86,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import sbp from '~/shared/sbp.js'
-import L, { LError } from '@view-utils/translations.js'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'UserProfile',
@@ -125,7 +125,7 @@ export default {
     },
     sbpParams () {
       return {
-        selector: 'gi.contracts/identity/setAttributes/create',
+        selector: 'gi.actions/identity/setAttributes',
         contractID: this.$store.state.loggedIn.identityContractID,
         key: 'picture'
       }
@@ -147,15 +147,14 @@ export default {
       }
 
       try {
-        const attributes = await sbp('gi.contracts/identity/setAttributes/create',
+        await sbp('gi.actions/identity/setAttributes',
           attrs,
           this.$store.state.loggedIn.identityContractID
         )
-        await sbp('backend/publishLogEntry', attributes)
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
         console.error('UserProfile saveProfile() error:', e)
-        this.$refs.formMsg.danger(L('Failed to update profile. {reportError}', LError(e)))
+        this.$refs.formMsg.danger(e.message)
       }
     }
   }

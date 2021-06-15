@@ -94,13 +94,7 @@ export default {
             votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
             expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
           }
-          // TODO: move this into into controller/actions/group.js !
-          const proposal = await sbp('gi.contracts/group/proposal/create',
-            data,
-            this.currentGroupId
-          )
-          await sbp('backend/publishLogEntry', proposal)
-
+          await sbp('gi.actions/group/proposal', data, this.currentGroupId)
           this.ephemeral.currentStep += 1
         } catch (e) {
           console.error('RemoveMember submit() error:', member, e)

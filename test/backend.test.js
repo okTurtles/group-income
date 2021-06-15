@@ -125,42 +125,50 @@ describe('Full walkthrough', function () {
     // append random id to username to prevent conflict across runs
     // when GI_PERSIST environment variable is defined
     username = `${username}-${Math.floor(Math.random() * 1000)}`
-    // const msg = await sbp('gi.contracts/identity/create', {
-    const msg = await sbp('chelonia/out/registerContract', 'gi.contracts/identity', {
-      // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
-      attributes: { username, email }
-    }, {
-      prePublish: (message) => { message.decryptedValue(JSON.parse) },
-      postPublish: (message) => { testFn && testFn(message) }
+    const msg = await sbp('chelonia/out/registerContract', {
+      contractName: 'gi.contracts/identity',
+      data: {
+        // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
+        attributes: { username, email }
+      },
+      hooks: {
+        prePublish: (message) => { message.decryptedValue(JSON.parse) },
+        postPublish: (message) => { testFn && testFn(message) }
+      }
     })
     return msg
   }
-  function createGroup (name, options) {
+  function createGroup (name, hooks): Promise {
     const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
-    return sbp('chelonia/out/registerContract', 'gi.contracts/group', {
-      invites: {
-        [initialInvite.inviteSecret]: initialInvite
-      },
-      settings: {
-        // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
-        groupName: name,
-        groupPicture: '',
-        sharedValues: 'our values',
-        mincomeAmount: 1000,
-        mincomeCurrency: 'USD',
-        proposals: {
-          [PROPOSAL_GROUP_SETTING_CHANGE]: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
-          [PROPOSAL_INVITE_MEMBER]: proposals[PROPOSAL_INVITE_MEMBER].defaults,
-          [PROPOSAL_REMOVE_MEMBER]: proposals[PROPOSAL_REMOVE_MEMBER].defaults,
-          [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
-          [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+    return sbp('chelonia/out/registerContract', {
+      contractName: 'gi.contracts/group',
+      data: {
+        invites: {
+          [initialInvite.inviteSecret]: initialInvite
+        },
+        settings: {
+          // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
+          groupName: name,
+          groupPicture: '',
+          sharedValues: 'our values',
+          mincomeAmount: 1000,
+          mincomeCurrency: 'USD',
+          proposals: {
+            [PROPOSAL_GROUP_SETTING_CHANGE]: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
+            [PROPOSAL_INVITE_MEMBER]: proposals[PROPOSAL_INVITE_MEMBER].defaults,
+            [PROPOSAL_REMOVE_MEMBER]: proposals[PROPOSAL_REMOVE_MEMBER].defaults,
+            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
+            [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+          }
         }
-      }
-    }, options)
+      },
+      hooks
+    })
   }
-  function createPaymentTo (to, amount, contractID, currency = 'USD') {
-    return sbp('chelonia/out/actionEncrypted', 'gi.contracts/group/payment',
-      {
+  function createPaymentTo (to, amount, contractID, currency = 'USD'): Promise {
+    return sbp('chelonia/out/actionEncrypted', {
+      action: 'gi.contracts/group/payment',
+      data: {
         toUser: to.decryptedValue().data.attributes.username,
         amount: amount,
         currency: currency,
@@ -169,20 +177,24 @@ describe('Full walkthrough', function () {
         paymentType: PAYMENT_TYPE_MANUAL
       },
       contractID
-    )
+    })
   }
 
   async function createMailboxFor (user) {
-    const mailbox = await sbp('chelonia/out/registerContract', 'gi.contracts/mailbox', {
-      // authorizations: [Events.CanModifyAuths.dummyAuth(user.contractID())]
-    }, {
-      prePublishContract (message) {
-        user.socket.sub(message.contractID())
+    const mailbox = await sbp('chelonia/out/registerContract', {
+      contractName: 'gi.contracts/mailbox',
+      data: {
+        // authorizations: [Events.CanModifyAuths.dummyAuth(user.contractID())]
+      },
+      hooks: {
+        prePublishContract (message) { user.socket.sub(message.contractID()) }
       }
     })
-    await sbp('chelonia/out/actionEncrypted', 'gi.contracts/identity/setAttributes', {
-      mailbox: mailbox.contractID()
-    }, user.contractID())
+    await sbp('chelonia/out/actionEncrypted', {
+      action: 'gi.contracts/identity/setAttributes',
+      data: { mailbox: mailbox.contractID() },
+      contractID: user.contractID()
+    })
     user.mailbox = mailbox
   }
 
@@ -274,15 +286,20 @@ describe('Full walkthrough', function () {
 
     it("Should invite Bob to Alice's group", function (done) {
       const mailbox = users.bob.mailbox
-      sbp('chelonia/out/actionEncrypted', 'gi.contracts/mailbox/postMessage', {
-        from: users.bob.decryptedValue().data.attributes.username,
-        messageType: TYPE_MESSAGE,
-        message: groups.group1.contractID()
-      }, mailbox.contractID(), {
-        postPublish: (entry: GIMessage) => {
-          console.log('Bob successfully got invite!')
-          should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
-          done()
+      sbp('chelonia/out/actionEncrypted', {
+        action: 'gi.contracts/mailbox/postMessage',
+        data: {
+          from: users.bob.decryptedValue().data.attributes.username,
+          messageType: TYPE_MESSAGE,
+          message: groups.group1.contractID()
+        },
+        contractID: mailbox.contractID(),
+        hooks: {
+          postPublish: (entry: GIMessage) => {
+            console.log('Bob successfully got invite!')
+            should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
+            done()
+          }
         }
       })
     })

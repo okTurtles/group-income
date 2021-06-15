@@ -69,13 +69,12 @@ export default {
     // TODO: make multiple payments
     async cancelPayment () {
       try {
-        const paymentMessage = await sbp('gi.contracts/group/paymentUpdate/create', {
+        await sbp('gi.actions/group/paymentUpdate', {
           paymentHash: this.payment.hash,
           updatedProperties: {
             status: PAYMENT_CANCELLED
           }
         }, this.$store.state.currentGroupId)
-        await sbp('backend/publishLogEntry', paymentMessage)
       } catch (e) {
         console.error(e)
         alert(e.message)

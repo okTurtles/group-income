@@ -40,6 +40,7 @@ export default (sbp('sbp/selectors/register', {
         picture: finalPicture
       }
     })
+    // TODO: convert this to 'gi.actions/mailbox/create'
     const mailbox = await sbp('gi.contracts/mailbox/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(user.contractID())]
     })
@@ -50,12 +51,10 @@ export default (sbp('sbp/selectors/register', {
     const mailboxID = mailbox.contractID()
 
     // set the attribute *after* publishing the identity contract
-    const attribute = await sbp('gi.contracts/identity/setAttributes/create',
+    await sbp('gi.actions/identity/setAttributes',
       { mailbox: mailboxID },
       userID
     )
-    await sbp('backend/publishLogEntry', attribute)
-
     return [userID, mailboxID]
   },
   'gi.actions/identity/signup': async function ({
@@ -122,7 +121,17 @@ export default (sbp('sbp/selectors/register', {
     // TODO: move the logout vuex action code into this function (see #804)
     await sbp('state/vuex/dispatch', 'logout')
   },
+  'gi.actions/identity/setAttributes': async function (attrs, contractID) {
+    try {
+      const msg = await sbp('gi.contracts/identity/setAttributes/create', attrs, contractID)
+      await sbp('backend/publishLogEntry', msg)
+    } catch (e) {
+      console.error('gi.actions/identity/setAttributes failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to set profile attributes. {reportError}', LError(e)))
+    }
+  },
   'gi.actions/identity/updateSettings': async function (settings, contractID) {
+    // TODO: add try/catch + GIErrorUIRuntimeError around this
     const msg = await sbp('gi.contracts/identity/updateSettings/create', settings, contractID)
     await sbp('backend/publishLogEntry', msg)
   }

@@ -110,13 +110,15 @@ export default {
         this.$refs.formMsg.clean()
 
         await sbp('gi.actions/group/createAndSwitch', {
-          name: this.form.groupName,
-          picture: this.ephemeral.groupPictureFile,
-          sharedValues: this.form.sharedValues,
-          mincomeAmount: normalizeCurrency(this.form.mincomeAmount),
-          mincomeCurrency: this.form.mincomeCurrency,
-          ruleName: this.form.ruleName,
-          ruleThreshold: this.form.ruleThreshold[this.form.ruleName]
+          data: {
+            name: this.form.groupName,
+            picture: this.ephemeral.groupPictureFile,
+            sharedValues: this.form.sharedValues,
+            mincomeAmount: normalizeCurrency(this.form.mincomeAmount),
+            mincomeCurrency: this.form.mincomeCurrency,
+            ruleName: this.form.ruleName,
+            ruleThreshold: this.form.ruleThreshold[this.form.ruleName]
+          }
         })
         this.next()
       } catch (e) {

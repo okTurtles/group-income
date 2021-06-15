@@ -142,7 +142,7 @@ export default {
     },
     sbpParams () {
       return {
-        selector: 'gi.contracts/group/updateSettings/create',
+        selector: 'gi.actions/group/updateSettings',
         contractID: this.$store.state.currentGroupId,
         key: 'groupPicture'
       }

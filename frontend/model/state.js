@@ -984,26 +984,28 @@ const handleEvent = {
         if (proposal) {
           // cast our vote if we haven't already cast it
           if (!proposal.votes[store.getters.ourUsername]) {
-            const vote = await sbp('gi.contracts/group/proposalVote/create',
-              { proposalHash, vote: VOTE_FOR },
-              groupID
-            )
-            await sbp('backend/publishLogEntry', vote, { maxAttempts: 3 })
+            await sbp('gi.actions/group/proposalVote', {
+              contractID: groupID,
+              data: { proposalHash, vote: VOTE_FOR },
+              publishOptions: { maxAttempts: 3 }
+            })
           }
         } else {
           // create our proposal to ban the user
-          // TODO: move this into into controller/actions/group.js !
-          proposal = await sbp('gi.contracts/group/proposal/create', {
-            proposalType: PROPOSAL_REMOVE_MEMBER,
-            proposalData: {
-              member: username,
-              reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
-            },
-            votingRule: store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
-            expires_date_ms: Date.now() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
-          }, groupID)
           try {
-            await sbp('backend/publishLogEntry', proposal, { maxAttempts: 1 })
+            proposal = await sbp('gi.actions/group/proposal', {
+              contractID: groupID,
+              data: {
+                proposalType: PROPOSAL_REMOVE_MEMBER,
+                proposalData: {
+                  member: username,
+                  reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
+                },
+                votingRule: store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
+                expires_date_ms: Date.now() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+              },
+              publishOptions: { maxAttempts: 1 }
+            })
           } catch (e) {
             if (attempt > 2) {
               console.error(`autoBanSenderOfMessage: max attempts reached. Error ${e.message} attempting to ban ${username}`, message, e)

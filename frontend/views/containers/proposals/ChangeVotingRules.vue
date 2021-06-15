@@ -142,7 +142,7 @@ export default {
 
       if (this.groupShouldPropose) {
         try {
-          const proposal = await sbp('gi.contracts/group/proposal/create',
+          await sbp('gi.actions/group/proposal',
             {
               proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
               proposalData: {
@@ -159,7 +159,6 @@ export default {
             },
             this.currentGroupId
           )
-          await sbp('backend/publishLogEntry', proposal)
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
           console.error('ChangeVotingRules.vue failed:', e)

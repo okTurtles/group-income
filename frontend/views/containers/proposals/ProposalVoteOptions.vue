@@ -116,8 +116,7 @@ export default {
             }
           }
         }
-        // TODO: move this into into controller/actions/group.js !
-        const vote = await sbp('gi.contracts/group/proposalVote/create',
+        await sbp('gi.actions/group/proposalVote',
           {
             vote: VOTE_FOR,
             proposalHash,
@@ -125,10 +124,9 @@ export default {
           },
           this.currentGroupId
         )
-        await sbp('backend/publishLogEntry', vote)
       } catch (e) {
         console.error('ProposalVoteOptions voteFor failed:', e)
-        this.refVoteMsg.danger(L('We couldn’t register your vote. {reportError}', LError(e)))
+        this.refVoteMsg.danger(e.message)
       }
     },
     async voteAgainst () {
@@ -139,18 +137,16 @@ export default {
       this.ephemeral.changingVote = false
       try {
         this.refVoteMsg.clean()
-        // TODO: move this into into controller/actions/group.js !
-        const vote = await sbp('gi.contracts/group/proposalVote/create',
+        await sbp('gi.actions/group/proposalVote',
           {
             vote: VOTE_AGAINST,
             proposalHash: this.proposalHash
           },
           this.currentGroupId
         )
-        await sbp('backend/publishLogEntry', vote)
       } catch (e) {
         console.error('ProposalVoteOptions voteAgainst failed:', e)
-        this.refVoteMsg.danger(L('We couldn’t register your vote. {reportError}', LError(e)))
+        this.refVoteMsg.danger(e.message)
       }
     },
     async cancelProposal () {
@@ -159,16 +155,11 @@ export default {
       }
       try {
         this.refVoteMsg.clean()
-        const vote = await sbp('gi.contracts/group/proposalCancel/create',
-          {
-            proposalHash: this.proposalHash
-          },
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', vote)
+        await sbp('gi.actions/group/proposalCancel',
+          { proposalHash: this.proposalHash }, this.currentGroupId)
       } catch (e) {
         console.error('ProposalVoteOptions cancelProposal failed:', e)
-        this.refVoteMsg.danger(L('Failed to cancel proposal. {reportError}', LError(e)))
+        this.refVoteMsg.danger(e.message)
       }
     }
   }

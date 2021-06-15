@@ -56,11 +56,7 @@ export default {
 
       try {
         const { selector, contractID, key } = this.sbpParams
-        const newPicture = await sbp(selector,
-          { [key]: picture },
-          contractID
-        )
-        await sbp('backend/publishLogEntry', newPicture)
+        await sbp(selector, { data: { [key]: picture }, contractID })
         this.$refs.picture.setFromBlob(fileReceived)
         this.$refs.formMsg.success(L('Avatar updated!'))
       } catch (e) {

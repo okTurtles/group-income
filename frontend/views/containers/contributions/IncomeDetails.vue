@@ -191,7 +191,7 @@ export default {
 
       try {
         const incomeDetailsType = this.form.incomeDetailsType
-        const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
+        await sbp('gi.actions/group/groupProfileUpdate',
           {
             incomeDetailsType,
             [incomeDetailsType]: normalizeCurrency(this.form.amount),
@@ -199,11 +199,10 @@ export default {
           },
           this.$store.state.currentGroupId
         )
-        await sbp('backend/publishLogEntry', groupProfileUpdate)
         this.closeModal()
       } catch (e) {
         console.error('IncomeDetails submit() error:', e)
-        this.$refs.formMsg.danger(L('Failed to update income details. {reportError}', LError(e)))
+        this.$refs.formMsg.danger(e.message)
       }
     }
   },

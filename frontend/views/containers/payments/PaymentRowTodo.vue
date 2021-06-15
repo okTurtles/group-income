@@ -65,14 +65,12 @@ export default {
     async cancelPayment () {
       try {
         if (this.payment.hash) {
-          // TODO: move this into controller/actions/group.js
-          const paymentMessage = await sbp('gi.contracts/group/paymentUpdate/create', {
+          await sbp('gi.actions/group/paymentUpdate', {
             paymentHash: this.payment.hash,
             updatedProperties: {
               status: PAYMENT_CANCELLED
             }
           }, this.$store.state.currentGroupId)
-          await sbp('backend/publishLogEntry', paymentMessage)
         } else {
           alert(L("Cannot dismiss a payment that hasn't been sent yet."))
         }
