@@ -116,14 +116,10 @@ export default {
             }
           }
         }
-        await sbp('gi.actions/group/proposalVote',
-          {
-            vote: VOTE_FOR,
-            proposalHash,
-            passPayload
-          },
-          this.currentGroupId
-        )
+        await sbp('gi.actions/group/proposalVote', {
+          contractID: this.currentGroupId,
+          data: { vote: VOTE_FOR, proposalHash, passPayload }
+        })
       } catch (e) {
         console.error('ProposalVoteOptions voteFor failed:', e)
         this.refVoteMsg.danger(e.message)
@@ -137,13 +133,10 @@ export default {
       this.ephemeral.changingVote = false
       try {
         this.refVoteMsg.clean()
-        await sbp('gi.actions/group/proposalVote',
-          {
-            vote: VOTE_AGAINST,
-            proposalHash: this.proposalHash
-          },
-          this.currentGroupId
-        )
+        await sbp('gi.actions/group/proposalVote', {
+          contractID: this.currentGroupId,
+          data: { vote: VOTE_AGAINST, proposalHash: this.proposalHash }
+        })
       } catch (e) {
         console.error('ProposalVoteOptions voteAgainst failed:', e)
         this.refVoteMsg.danger(e.message)
@@ -155,8 +148,9 @@ export default {
       }
       try {
         this.refVoteMsg.clean()
-        await sbp('gi.actions/group/proposalCancel',
-          { proposalHash: this.proposalHash }, this.currentGroupId)
+        await sbp('gi.actions/group/proposalCancel', {
+          contractID: this.currentGroupId, data: { proposalHash: this.proposalHash }
+        })
       } catch (e) {
         console.error('ProposalVoteOptions cancelProposal failed:', e)
         this.refVoteMsg.danger(e.message)

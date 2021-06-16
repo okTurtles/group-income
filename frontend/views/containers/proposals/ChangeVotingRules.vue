@@ -142,8 +142,9 @@ export default {
 
       if (this.groupShouldPropose) {
         try {
-          await sbp('gi.actions/group/proposal',
-            {
+          await sbp('gi.actions/group/proposal', {
+            contractID: this.currentGroupId,
+            data: {
               proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
               proposalData: {
                 current: {
@@ -156,9 +157,8 @@ export default {
               },
               votingRule: this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].rule,
               expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].expires_ms
-            },
-            this.currentGroupId
-          )
+            }
+          })
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
           console.error('ChangeVotingRules.vue failed:', e)
@@ -168,10 +168,12 @@ export default {
       } else {
         try {
           await sbp('gi.actions/group/updateAllVotingRules', {
-            ruleName: this.config.rule,
-            ruleThreshold: +this.form.threshold
-          }, this.currentGroupId)
-
+            contractID: this.currentGroupId,
+            data: {
+              ruleName: this.config.rule,
+              ruleThreshold: +this.form.threshold
+            }
+          })
           this.$refs.proposal.close()
         } catch (e) {
           console.error('ChangeVotingRules.vue failed:', e)

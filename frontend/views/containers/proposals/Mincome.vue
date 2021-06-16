@@ -118,8 +118,9 @@ export default {
 
       if (this.groupShouldPropose) {
         try {
-          await sbp('gi.actions/group/proposal',
-            {
+          await sbp('gi.actions/group/proposal', {
+            contractID: this.currentGroupId,
+            data: {
               proposalType: PROPOSAL_GROUP_SETTING_CHANGE,
               proposalData: {
                 setting: 'mincomeAmount',
@@ -130,9 +131,8 @@ export default {
               },
               votingRule: this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].rule,
               expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].expires_ms
-            },
-            this.currentGroupId
-          )
+            }
+          })
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
           this.$refs.formMsg.danger(L('Failed to propose mincome change: {reportError}', LError(e)))
@@ -142,7 +142,9 @@ export default {
       }
 
       try {
-        await sbp('gi.actions/group/updateSettings', { mincomeAmount }, this.currentGroupId)
+        await sbp('gi.actions/group/updateSettings', {
+          contractID: this.currentGroupId, data: { mincomeAmount }
+        })
         this.$refs.proposal.close()
       } catch (e) {
         console.error('Mincome.vue submit() error:', e)

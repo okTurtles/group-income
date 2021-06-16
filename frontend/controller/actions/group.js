@@ -17,6 +17,22 @@ import L, { LError } from '@view-utils/translations.js'
 
 import type { GIActionParams } from './types.js'
 
+function encryptedAction (action: string, humanError: string | Function): { [string]: Function } {
+  return {
+    [action]: async function (params: GIActionParams) {
+      try {
+        return await sbp('chelonia/out/actionEncrypted', { action, ...params })
+      } catch (e) {
+        console.error(`${action} failed!`, e)
+        const strFn = typeof humanError === 'string'
+          ? `${humanError} ${LError(e).reportError}`
+          : humanError(params, e)
+        throw new GIErrorUIRuntimeError(strFn)
+      }
+    }
+  }
+}
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
     data: {
@@ -121,16 +137,6 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     }
   },
-  'gi.actions/group/inviteRevoke': function (params: GIActionParams): Promise {
-    try {
-      return sbp('chelonia/out/actionEncrypted', {
-        action: 'gi.contracts/group/inviteRevoke', ...params
-      })
-    } catch (e) {
-      console.error('gi.actions/group/inviteRevoke failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to revoke invite. {reportError}', LError(e)))
-    }
-  },
   'gi.actions/group/joinAndSwitch': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
@@ -140,104 +146,15 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
   },
-  'gi.actions/group/payment': async function (info, groupId) {
-    try {
-      const message = await sbp('gi.contracts/group/payment/create', info, groupId)
-      await sbp('backend/publishLogEntry', message)
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/payment failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to create payment. {reportError}', LError(e)))
-    }
-  },
-  'gi.actions/group/paymentUpdate': async function (info, groupId) {
-    try {
-      const message = await sbp('gi.contracts/group/paymentUpdate/create', info, groupId)
-      await sbp('backend/publishLogEntry', message)
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/payment failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to update payment. {reportError}', LError(e)))
-    }
-  },
-  'gi.actions/group/groupProfileUpdate': async function (settings, groupId) {
-    try {
-      const message = await sbp('gi.contracts/group/groupProfileUpdate/create', settings, groupId)
-      await sbp('backend/publishLogEntry', message)
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/groupProfileUpdate failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to update group profile. {reportError}', LError(e)))
-    }
-  },
-  'gi.actions/group/proposal': async function (proposalInfo, groupId) {
-    try {
-      const message = await sbp('gi.contracts/group/proposal/create', proposalInfo, groupId)
-      await sbp('backend/publishLogEntry', message)
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/proposal failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to create proposal. {reportError}', LError(e)))
-    }
-  },
-  'gi.actions/group/proposalVote': async function (voteInfo, groupId) {
-    try {
-      const message = await sbp('gi.contracts/group/proposalVote/create', voteInfo, groupId)
-      await sbp('backend/publishLogEntry', message)
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/proposalVote failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to vote on proposal. {reportError}', LError(e)))
-    }
-  },
-  'gi.actions/group/proposalCancel': async function (data, groupId) {
-    try {
-      const message = await sbp('gi.contracts/group/proposalCancel/create', data, groupId)
-      await sbp('backend/publishLogEntry', message)
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/proposalVote failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to cancel proposal. {reportError}', LError(e)))
-    }
-  },
-  'gi.actions/group/updateSettings': async function (settings, groupId) {
-    try {
-      const message = await sbp('gi.contracts/group/updateSettings/create', settings, groupId)
-      await sbp('backend/publishLogEntry', message)
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/updateSettings failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to update group settings. {reportError}', LError(e)))
-    }
-  },
-  'gi.actions/group/removeMember': async function (params, groupID) {
-    try {
-      const message = await sbp('gi.contracts/group/removeMember/create', params, groupID)
-      await sbp('backend/publishLogEntry', message)
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/removeMember failed', e)
-      throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {reportError}', { member: params.member, ...LError(e) }))
-    }
-  },
-  'gi.actions/group/removeOurselves': async function (groupId) {
-    try {
-      const message = await sbp('gi.contracts/group/removeOurselves/create', {}, groupId)
-      await sbp('backend/publishLogEntry', message)
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/leaveGroup failed', e)
-      throw new GIErrorUIRuntimeError(L('Failed to leave group. {codeError}', { codeError: e.message }))
-    }
-  },
-  'gi.actions/group/updateAllVotingRules': async function (params, groupId) {
-    try {
-      const message = await sbp('gi.contracts/group/updateAllVotingRules/create', params, groupId)
-      await sbp('backend/publishLogEntry', message)
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/leaveGroup failed', e)
-      throw new GIErrorUIRuntimeError(L('Failed to update voting rules. {codeError}', { codeError: e.message }))
-    }
-  }
+  ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
+  ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
+  ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
+  ...encryptedAction('gi.actions/group/groupProfileUpdate', L('Failed to update group profile.')),
+  ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.')),
+  ...encryptedAction('gi.actions/group/proposalVote', L('Failed to vote on proposal.')),
+  ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.')),
+  ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
+  ...encryptedAction('gi.actions/group/removeMember', (params, e) => L('Failed to remove {member}: {reportError}', { member: params.member, ...LError(e) })),
+  ...encryptedAction('gi.actions/group/removeOurselves', (params, e) => L('Failed to leave group. {codeError}', { codeError: e.message })),
+  ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message }))
 }): any)

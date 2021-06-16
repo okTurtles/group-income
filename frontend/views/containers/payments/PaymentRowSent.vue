@@ -70,11 +70,14 @@ export default {
     async cancelPayment () {
       try {
         await sbp('gi.actions/group/paymentUpdate', {
-          paymentHash: this.payment.hash,
-          updatedProperties: {
-            status: PAYMENT_CANCELLED
+          contractID: this.$store.state.currentGroupId,
+          data: {
+            paymentHash: this.payment.hash,
+            updatedProperties: {
+              status: PAYMENT_CANCELLED
+            }
           }
-        }, this.$store.state.currentGroupId)
+        })
       } catch (e) {
         console.error(e)
         alert(e.message)

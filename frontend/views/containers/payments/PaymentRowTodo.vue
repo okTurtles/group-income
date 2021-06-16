@@ -66,11 +66,14 @@ export default {
       try {
         if (this.payment.hash) {
           await sbp('gi.actions/group/paymentUpdate', {
-            paymentHash: this.payment.hash,
-            updatedProperties: {
-              status: PAYMENT_CANCELLED
+            contractID: this.$store.state.currentGroupId,
+            data: {
+              paymentHash: this.payment.hash,
+              updatedProperties: {
+                status: PAYMENT_CANCELLED
+              }
             }
-          }, this.$store.state.currentGroupId)
+          })
         } else {
           alert(L("Cannot dismiss a payment that hasn't been sent yet."))
         }

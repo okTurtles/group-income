@@ -85,16 +85,18 @@ export default {
 
       if (this.groupShouldPropose) {
         try {
-          const data = {
-            proposalType: PROPOSAL_REMOVE_MEMBER,
-            proposalData: {
-              member,
-              reason: form.reason
-            },
-            votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
-            expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
-          }
-          await sbp('gi.actions/group/proposal', data, this.currentGroupId)
+          await sbp('gi.actions/group/proposal', {
+            contractID: this.currentGroupId,
+            data: {
+              proposalType: PROPOSAL_REMOVE_MEMBER,
+              proposalData: {
+                member,
+                reason: form.reason
+              },
+              votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
+              expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+            }
+          })
           this.ephemeral.currentStep += 1
         } catch (e) {
           console.error('RemoveMember submit() error:', member, e)
@@ -102,12 +104,13 @@ export default {
 
           this.ephemeral.currentStep = 0
         }
-
         return
       }
 
       try {
-        await sbp('gi.actions/group/removeMember', { member }, this.currentGroupId)
+        await sbp('gi.actions/group/removeMember', {
+          contractID: this.currentGroupId, data: { member }
+        })
         this.$refs.proposal.close()
       } catch (e) {
         console.error(`Failed to remove member ${member}.`, e)
