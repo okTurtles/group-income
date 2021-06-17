@@ -23,8 +23,8 @@ import Vue from 'vue'
 export const defaultConfig = {
   // Allow 'href' and 'target' attributes to avoid breaking our hyperlinks,
   // but keep sanitizing their values.
-  ALLOWED_ATTR: ['class', 'href', 'style', 'target'],
-  ALLOWED_TAGS: ['a', 'b', 'br', 'i', 'span', 'strong', 'u'],
+  ALLOWED_ATTR: ['class'],
+  ALLOWED_TAGS: ['b', 'br', 'i', 'p', 'span', 'strong', 'u'],
   // This option was in the original file.
   RETURN_DOM_FRAGMENT: true
 }

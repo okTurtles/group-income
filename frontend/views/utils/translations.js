@@ -16,6 +16,8 @@ const defaultTranslationTable: { [string]: string } = {}
 // See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
 const dompurifyConfig = {
   ...defaultDompurifyConfig,
+  ALLOWED_ATTR: ['class', 'href', 'rel', 'target'],
+  ALLOWED_TAGS: ['a', 'b', 'br', 'i', 'p', 'span', 'strong', 'u'],
   RETURN_DOM_FRAGMENT: false
 }
 
