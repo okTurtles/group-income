@@ -665,6 +665,7 @@ const actions = {
     }
     sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, false)
   },
+  // TODO: Move this into controller/actions/identity? See #804
   async login (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     user: Object
@@ -706,6 +707,7 @@ const actions = {
     commit('login', user)
     Vue.nextTick(() => sbp('okTurtles.events/emit', EVENTS.LOGIN, user))
   },
+  // TODO: Move this into controller/actions/identity? See #804
   async logout (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object}
   ) {

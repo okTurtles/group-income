@@ -1,3 +1,5 @@
+'use strict'
+
 import sbp from '~/shared/sbp.js'
 import { createInvite } from '@model/contracts/group.js'
 import { INVITE_INITIAL_CREATOR } from '@model/contracts/constants.js'
@@ -10,28 +12,11 @@ import {
   PROPOSAL_GENERIC
 } from '@model/contracts/voting/constants.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
-
 import { imageUpload } from '@utils/image.js'
 import { merge } from '@utils/giLodash.js'
 import L, { LError } from '@view-utils/translations.js'
-
+import { encryptedAction } from './utils.js'
 import type { GIActionParams } from './types.js'
-
-function encryptedAction (action: string, humanError: string | Function): { [string]: Function } {
-  return {
-    [action]: async function (params: GIActionParams) {
-      try {
-        return await sbp('chelonia/out/actionEncrypted', { action, ...params })
-      } catch (e) {
-        console.error(`${action} failed!`, e)
-        const strFn = typeof humanError === 'string'
-          ? `${humanError} ${LError(e).reportError}`
-          : humanError(params, e)
-        throw new GIErrorUIRuntimeError(strFn)
-      }
-    }
-  }
-}
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({

@@ -147,10 +147,9 @@ export default {
       }
 
       try {
-        await sbp('gi.actions/identity/setAttributes',
-          attrs,
-          this.$store.state.loggedIn.identityContractID
-        )
+        await sbp('gi.actions/identity/setAttributes', {
+          data: attrs, contractID: this.$store.state.loggedIn.identityContractID
+        })
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
         console.error('UserProfile saveProfile() error:', e)
