@@ -2,11 +2,10 @@
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
-import { DefineContract } from './Contract.js'
 import { objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 
-DefineContract({
+sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
   state (contractID) {
     return sbp('state/vuex/state')[contractID]

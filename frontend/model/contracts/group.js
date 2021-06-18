@@ -2,7 +2,6 @@
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
-import { DefineContract } from './Contract.js'
 import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
@@ -107,7 +106,7 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   return monthlyPayments
 }
 
-DefineContract({
+sbp('chelonia/defineContract', {
   name: 'gi.contracts/group',
   metadata: {
     validate: objectOf({
