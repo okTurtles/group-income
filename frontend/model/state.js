@@ -3,14 +3,14 @@
 // This file handles application-level state (as opposed to component-level
 // state) per: http://vuex.vuejs.org/en/intro.html
 
-import type { GIOpContract } from '~/shared/GIMessage.js'
+import type { GIOpContract } from '~/shared/domains/chelonia/GIMessage.js'
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import L from '~/frontend/views/utils/translations.js'
 // import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
-import { GIMessage } from '~/shared/GIMessage.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
 import Colors from './colors.js'

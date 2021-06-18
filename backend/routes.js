@@ -3,7 +3,7 @@
 'use strict'
 
 import sbp from '~/shared/sbp.js'
-import { GIMessage } from '~/shared/GIMessage.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { blake32Hash } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'

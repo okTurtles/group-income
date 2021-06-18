@@ -1,6 +1,6 @@
 'use strict'
 
-import type { GIMessage } from './GIMessage.js'
+import { GIMessage } from './GIMessage.js'
 
 export function sanityCheck (msg: GIMessage) {
   const [type] = msg.message().op

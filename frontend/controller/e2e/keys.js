@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 'use strict'
 
 import sbp from '~/shared/sbp.js'
@@ -5,7 +7,7 @@ import { blake32Hash, bytesToB64 } from '~/shared/functions.js'
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
 
-import type { GIKey, GIKeyType } from '~/shared/GIMessage.js'
+import type { GIKey, GIKeyType } from '~/shared/domains/chelonia/GIMessage.js'
 
 function genSeed (): string {
   return bytesToB64(nacl.randomBytes(nacl.box.secretKeyLength))

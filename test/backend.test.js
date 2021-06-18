@@ -3,7 +3,7 @@
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
-import { GIMessage } from '~/shared/GIMessage.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 // import * as _ from '~/frontend/utils/giLodash.js'
 import { createGIPubSubClient } from '~/frontend/controller/backend.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'

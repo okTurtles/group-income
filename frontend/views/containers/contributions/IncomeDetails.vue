@@ -81,7 +81,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
-import L, { LError } from '@view-utils/translations.js'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'IncomeDetails',
