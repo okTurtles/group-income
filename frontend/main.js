@@ -72,7 +72,7 @@ async function startApp () {
     pubsubURL, {
       // This option can be enabled since we are not doing auth via web sockets.
       reconnectOnTimeout: true,
-      timeout: 5_000
+      timeout: 5000
     }
   ))
 

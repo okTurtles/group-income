@@ -3,6 +3,7 @@
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
+import '~/shared/domains/chelonia/chelonia.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 // import * as _ from '~/frontend/utils/giLodash.js'
 import { createGIPubSubClient } from '~/frontend/controller/backend.js'
@@ -295,10 +296,12 @@ describe('Full walkthrough', function () {
         },
         contractID: mailbox.contractID(),
         hooks: {
-          postPublish: (entry: GIMessage) => {
-            console.log('Bob successfully got invite!')
-            should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
-            done()
+          prePublish (invite: GIMessage) {
+            sbp('okTurtles.events/once', invite.hash(), (entry: GIMessage) => {
+              console.debug('Bob successfully got invite!')
+              should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
+              done()
+            })
           }
         }
       })

@@ -2,7 +2,6 @@
 
 // TODO: rename GIMessage to CMessage or something similar
 
-import { sanityCheck } from './utils.js'
 import { blake32Hash } from '~/shared/functions.js'
 import type { JSONType, JSONObject } from '~/shared/types.js'
 
@@ -131,5 +130,19 @@ function defaultSignatureFn (data: string) {
   return {
     type: 'default',
     sig: blake32Hash(data)
+  }
+}
+
+export function sanityCheck (msg: GIMessage) {
+  const [type] = msg.message().op
+  switch (type) {
+    case GIMessage.OP_CONTRACT:
+      if (!msg.isFirstMessage()) throw new Error('OP_CONTRACT: must be first message')
+      break
+    case GIMessage.OP_ACTION_ENCRYPTED:
+      // nothing for now
+      break
+    default:
+      throw new Error(`unsupported op: ${type}`)
   }
 }

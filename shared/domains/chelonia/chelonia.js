@@ -2,8 +2,7 @@
 
 import sbp from '~/shared/sbp.js'
 import { merge } from '~/frontend/utils/giLodash.js'
-import { GIMessage } from './GIMessage.js'
-import { sanityCheck } from './utils.js'
+import { GIMessage, sanityCheck } from './GIMessage.js'
 import type { GIOpContract, GIOpType, GIOpActionEnc, GIOpActionUnenc, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
 // TODO: define ChelContractType for /defineContract
@@ -234,7 +233,7 @@ async function outEncryptedOrUnencryptedAction (
   const unencMessage = ({ action, data, meta }: GIOpActionUnenc)
   const message = GIMessage.createV1_0(contractID, previousHEAD, [
     opType,
-    opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.encryptFn(unencMessage)
+    opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.cfg.encryptFn(unencMessage)
   ])
   hooks && hooks.prePublish && hooks.prePublish(message)
   await sbp(this.cfg.publishSelector, message, publishOptions)

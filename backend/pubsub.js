@@ -115,7 +115,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
 
 const defaultOptions = {
   maxPayload: 6 * 1024 * 1024,
-  pingInterval: 30_000
+  pingInterval: 30000
 }
 
 // Default handlers for server events.
