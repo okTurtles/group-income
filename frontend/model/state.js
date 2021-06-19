@@ -712,7 +712,7 @@ const actions = {
   async logout (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object}
   ) {
-    debouncedSave.cancel()
+    debouncedSave.clear()
     await dispatch('saveSettings')
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
     for (const contractID in state.contracts) {
