@@ -13,7 +13,11 @@ const defaultLanguage = 'en-US'
 const defaultLanguageCode = 'en'
 const defaultTranslationTable: { [string]: string } = {}
 
-// See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
+/**
+ * Allow 'href' and 'target' attributes to avoid breaking our hyperlinks,
+ * but keep sanitizing their values.
+ * See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
+ */
 const dompurifyConfig = {
   ...defaultDompurifyConfig,
   ALLOWED_ATTR: ['class', 'href', 'rel', 'target'],

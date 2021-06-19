@@ -21,8 +21,6 @@ import Vue from 'vue'
 
 // See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
 export const defaultConfig = {
-  // Allow 'href' and 'target' attributes to avoid breaking our hyperlinks,
-  // but keep sanitizing their values.
   ALLOWED_ATTR: ['class'],
   ALLOWED_TAGS: ['b', 'br', 'i', 'p', 'span', 'strong', 'u'],
   // This option was in the original file.
