@@ -36,6 +36,7 @@ function contextStrToDeviceObj (
   return str.split(',')
 }
 
+// $FlowFixMe
 export default sbp('sbp/selectors/register', {
   'gi.e2e/keys/keypair/create': function (
     { type = '' }: {
@@ -54,6 +55,7 @@ export default sbp('sbp/selectors/register', {
       scope: 'admin'
     })
     return {
+      // $FlowFixMe
       description, status, devIdx, devType
     }
   }

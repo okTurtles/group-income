@@ -353,6 +353,7 @@ const getters = {
   groupIncomeAdjustedDistributionForMonth (state, getters) {
     return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
   },
+  // TODO: this is insane, rewrite it and make it cleaner/better
   ourPayments (state, getters) {
     // Payments relative to the current month only
     const monthlyPayments = getters.groupMonthlyPayments
@@ -373,7 +374,7 @@ const getters = {
         for (const toUser in paymentsFrom[getters.ourUsername]) {
           for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
-            payments.push({ hash: paymentHash, data, meta })
+            payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
           }
         }
       }
@@ -388,7 +389,7 @@ const getters = {
             if (toUser === getters.ourUsername) {
               for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
-                payments.push({ hash: paymentHash, data, meta })
+                payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
               }
             }
           }
@@ -504,7 +505,7 @@ const getters = {
             const existingPayment = {}
             if (partialAmount > 0) {
               // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
-              const receivePartial = received.find((r) => r.username === p.to && r.amount === partialAmount)
+              const receivePartial = received.find((r) => r.amount === partialAmount)
               if (receivePartial) {
                 existingPayment.hash = receivePartial.hash
               }

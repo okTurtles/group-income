@@ -12,10 +12,10 @@ const DOMAIN_REGEX = /^[^/]+/
 
 function sbp (selector: string, ...data: any): any {
   const domainLookup = DOMAIN_REGEX.exec(selector)
-  if (!selectors[selector]) {
+  if (!domainLookup || !selectors[selector]) {
     throw new Error(`SBP: selector not registered: ${selector}`)
   }
-  const domain = domainLookup[0] // guaranteed to exist because of 'sbp/selectors/register'
+  const domain = domainLookup[0]
   // Filters can perform additional functions, and by returning `false` they
   // can prevent the execution of a selector. Check the most specific filters first.
   for (const filters of [selectorFilters[selector], domainFilters[domain], globalFilters]) {

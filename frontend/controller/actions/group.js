@@ -108,7 +108,7 @@ export default (sbp('sbp/selectors/register', {
     sbp('gi.actions/group/switch', message.contractID())
     return message
   },
-  'gi.actions/group/join': async function (params: GIActionParams) {
+  'gi.actions/group/join': async function (params: $Exact<GIActionParams>) {
     try {
       // post acceptance event to the group contract
       const message = await sbp('chelonia/out/actionEncrypted', {
@@ -142,4 +142,4 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/removeMember', (params, e) => L('Failed to remove {member}: {reportError}', { member: params.member, ...LError(e) })),
   ...encryptedAction('gi.actions/group/removeOurselves', (params, e) => L('Failed to leave group. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message }))
-}): any)
+}): string[])

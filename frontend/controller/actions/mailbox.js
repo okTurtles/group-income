@@ -4,13 +4,14 @@ import sbp from '~/shared/sbp.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
 import { encryptedAction } from './utils.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/mailbox/create': async function ({
     data = {},
     options: { sync = true } = {},
     publishOptions
-  }) {
+  }): Promise<GIMessage> {
     try {
       const mailbox = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/mailbox', publishOptions, data

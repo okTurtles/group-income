@@ -1,4 +1,8 @@
 /* eslint-env mocha */
+
+// Can run directly with:
+// ./node_modules/.bin/mocha -w --require Gruntfile.js frontend/utils/giLodash.test.js
+
 import * as _ from './giLodash.js'
 import sinon from 'sinon'
 require('should-sinon')
@@ -30,7 +34,7 @@ describe('Test giLodash', function () {
     callback2.should.be.calledOnce()
     debounced2()
     clock.tick(450)
-    debounced2.cancel()
+    debounced2.clear()
     callback2.should.be.calledOnce()
     clock.restore()
   })

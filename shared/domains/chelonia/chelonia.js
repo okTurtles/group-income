@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 import { GIMessage } from './GIMessage.js'
 import { sanityCheck } from './utils.js'
-import type { GIOpContract, GIOpActionEnc, GIOpActionUnenc, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
+import type { GIOpContract, GIOpType, GIOpActionEnc, GIOpActionUnenc, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -56,7 +56,7 @@ sbp('sbp/selectors/register', {
     this.contracts = {}
     this.whitelistedActions = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
-    this.sideEffectStack = (contractID: string): Array => {
+    this.sideEffectStack = (contractID: string): Array<*> => {
       let stack = this.sideEffectStacks[contractID]
       if (!stack) {
         this.sideEffectStacks[contractID] = stack = []
@@ -83,7 +83,7 @@ sbp('sbp/selectors/register', {
       }
     })
     for (const action in contract.actions) {
-      contractFromAction(action) // ensure actions are appropriately named
+      contractFromAction(this.contracts, action) // ensure actions are appropriately named
       this.whitelistedActions[action] = true
       sbp('sbp/selectors/register', {
         [`${action}/process`]: (message: Object, state: Object) => {
@@ -133,10 +133,10 @@ sbp('sbp/selectors/register', {
   },
   // all of these functions will do both the creation of the GIMessage
   // and the sending of it via this.cfg.publishSelector
-  'chelonia/out/actionEncrypted': function (params: ChelActionParams): Promise {
+  'chelonia/out/actionEncrypted': function (params: ChelActionParams): Promise<GIMessage> {
     return outEncryptedOrUnencryptedAction.call(this, GIMessage.OP_ACTION_ENCRYPTED, params)
   },
-  'chelonia/out/actionUnencrypted': function (params: ChelActionParams): Promise {
+  'chelonia/out/actionUnencrypted': function (params: ChelActionParams): Promise<GIMessage> {
     return outEncryptedOrUnencryptedAction.call(this, GIMessage.OP_ACTION_UNENCRYPTED, params)
   },
   'chelonia/out/keyAdd': async function () {
@@ -213,13 +213,14 @@ sbp('sbp/selectors/register', {
 })
 
 function contractFromAction (contracts: Object, action: string): Object {
-  const contract = contracts[ACTION_REGEX.exec(action)[2] || null]
+  const regexResult = ACTION_REGEX.exec(action)
+  const contract = contracts[(regexResult && regexResult[2]) || null]
   if (!contract) throw new Error(`no contract for action named: ${action}`)
   return contract
 }
 
 async function outEncryptedOrUnencryptedAction (
-  opType: GIOpActionEnc | GIOpActionUnenc,
+  opType: 'ae' | 'au',
   params: ChelActionParams
 ) {
   const { action, contractID, data, hooks, publishOptions } = params
