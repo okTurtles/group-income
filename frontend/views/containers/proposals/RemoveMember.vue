@@ -20,7 +20,6 @@ proposal-template(
 import { mapState, mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
-import L, { LError } from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
 import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
