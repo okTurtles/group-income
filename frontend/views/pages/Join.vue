@@ -145,8 +145,8 @@ export default {
       sbp('okTurtles.data/set', 'JOINING_GROUP', true)
       try {
         await sbp('gi.actions/group/joinAndSwitch', {
-          groupId,
-          inviteSecret: secret
+          contractID: groupId,
+          data: { inviteSecret: secret }
         })
         this.pageStatus = 'WELCOME'
       } catch (e) {

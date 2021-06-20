@@ -73,6 +73,7 @@ export class GIMessage {
     return instance
   }
 
+  // TODO: we need signature verification upon decryption somewhere...
   static deserialize (value: string): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const instance = new this()

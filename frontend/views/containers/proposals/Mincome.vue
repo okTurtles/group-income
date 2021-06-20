@@ -32,7 +32,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
 import currencies, { mincomePositive, normalizeCurrency } from '@view-utils/currencies.js'
-import L, { LError } from '@view-utils/translations.js'
+import L from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
@@ -135,7 +135,7 @@ export default {
           })
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
-          this.$refs.formMsg.danger(L('Failed to propose mincome change: {reportError}', LError(e)))
+          this.$refs.formMsg.danger(e.message)
           this.ephemeral.currentStep = 0
         }
         return

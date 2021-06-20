@@ -191,14 +191,14 @@ export default {
 
       try {
         const incomeDetailsType = this.form.incomeDetailsType
-        await sbp('gi.actions/group/groupProfileUpdate',
-          {
+        await sbp('gi.actions/group/groupProfileUpdate', {
+          contractID: this.$store.state.currentGroupId,
+          data: {
             incomeDetailsType,
             [incomeDetailsType]: normalizeCurrency(this.form.amount),
             paymentMethods
-          },
-          this.$store.state.currentGroupId
-        )
+          }
+        })
         this.closeModal()
       } catch (e) {
         console.error('IncomeDetails submit() error:', e)

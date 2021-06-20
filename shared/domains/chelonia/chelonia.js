@@ -234,7 +234,9 @@ async function outEncryptedOrUnencryptedAction (
   const message = GIMessage.createV1_0(contractID, previousHEAD, [
     opType,
     opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.cfg.encryptFn(unencMessage)
-  ])
+  ]
+    // TODO: add the signature function here to sign the message whether encrypted or not
+  )
   hooks && hooks.prePublish && hooks.prePublish(message)
   await sbp(this.cfg.publishSelector, message, publishOptions)
   hooks && hooks.postPublish && hooks.postPublish(message)
