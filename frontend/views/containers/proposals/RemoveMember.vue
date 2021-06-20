@@ -100,7 +100,7 @@ export default {
           this.ephemeral.currentStep += 1
         } catch (e) {
           console.error('RemoveMember submit() error:', member, e)
-          this.$refs.formMsg.danger(L('Failed to propose remove {member}: {reportError}', { ...LError(e), member }))
+          this.$refs.formMsg.danger(e.message)
 
           this.ephemeral.currentStep = 0
         }
