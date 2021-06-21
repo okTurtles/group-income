@@ -55,19 +55,19 @@ nav.c-navigation(
         ul.c-menu-list-bottom
           i18n(
             tag='a'
-            href='https://groupincome.org/blog/'
+            :href='ALLOWED_URLS.BLOG_PAGE'
             target='_blank'
           ) Blog
 
           i18n(
             tag='a'
-            href='https://groupincome.org/faq/'
+            :href='ALLOWED_URLS.FAQ_PAGE'
             target='_blank'
           ) Help &amp; Feedback
 
           i18n(
             tag='a'
-            href='https://groupincome.org/donate/'
+            :href='ALLOWED_URLS.DONATE_PAGE'
             target='_blank'
           ) Donate
 
