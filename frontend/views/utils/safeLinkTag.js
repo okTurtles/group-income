@@ -11,6 +11,7 @@ export default function safeLinkTag (key: string): string {
   if (!Object.prototype.hasOwnProperty.call(urlsByKey, key)) {
     throw new Error(`Unknown URL key: ${key}`)
   }
-  // Make sure to include `noopener` and `noreferrer` in the `rel` attribute.
+  // Make sure to include `noopener` and `noreferrer` in the `rel` attribute,
+  // to prevent reverse tabnabbing attacks.
   return `<a class="link" href="${urlsByKey[key]}" target="_blank" rel="noopener noreferrer">`
 }
