@@ -159,6 +159,10 @@ Vue.component('i18n', {
       console.warn('The following i18n text was not translated correctly:', text)
       return h(context.props.tag, context.data, text)
     }
+    // Prevent reverse tabnabbing by including `rel="noopener noreferrer"` when rendering as an outbound hyperlink.
+    if (context.props.tag === 'a' && context.data.attrs.target === '_blank') {
+      context.data.attrs.rel = 'noopener noreferrer'
+    }
     if (context.props.compile) {
       const result = Vue.compile('<wrap>' + sanitize(translation) + '</wrap>')
       // console.log('TRANSLATED RENDERED TEXT:', context, result.render.toString())
