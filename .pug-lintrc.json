@@ -19,6 +19,8 @@
     "validateIndentation": 2,
     "validateSelfClosingTags": true,
     
+    "validateHrefs": true,
     "validateI18n": true,
-    "additionalRules": ["scripts/validate-i18n.js", "scripts/disallow-vhtml-directive.js"]
+    "additionalRules": ["scripts/validate-hrefs.js", "scripts/validate-i18n.js", "scripts/disallow-vhtml-directive.js"],
+    "excludeFiles": ["node_modules/**", "frontend/views/pages/BypassUI.vue", "frontend/views/pages/DesignSystem.vue", "frontend/views/containers/chatroom/LinkPreview.vue"]
 }
