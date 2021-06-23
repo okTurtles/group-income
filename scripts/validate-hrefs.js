@@ -3,6 +3,7 @@
 const utils = require('pug-lint/lib/utils')
 
 const example = '`:href=\'ALLOWED_URLS.ISSUE_PAGE\'`'
+const excludedFiles = ['frontend/views/pages/BypassUI.vue', 'frontend/views/pages/DesignSystem.vue', 'frontend/views/containers/chatroom/LinkPreview.vue']
 const UNEXPECTED_DYNAMIC_HREF = `Dynamic hrefs are no longer allowed out of safety concern, unless it is e.g. ${example}.`
 const UNEXPECTED_LITERAL_EXTERNAL_HREF = `Literal external hrefs are no longer allowed out of safety and maintainability concerns. Please use e.g. ${example}.`
 
@@ -20,6 +21,8 @@ module.exports.prototype = {
   },
 
   lint (file, errors) {
+    // Hacky workaround for `excludeFiles` config option not working.
+    if (excludedFiles.includes(file.getFilename().replace(/\\/g, '/'))) return
     file.iterateTokensByType('attribute', (token) => {
       if (token.name === 'href') {
         const tokenValue = token.val.slice(1, -1)
