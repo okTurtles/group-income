@@ -20,7 +20,7 @@
     "validateIndentation": 2,
     "validateSelfClosingTags": true,
     
-    "validateHrefs": true,
+    "validateAnchors": true,
     "validateI18n": true,
-    "additionalRules": ["scripts/validate-hrefs.js", "scripts/validate-i18n.js", "scripts/disallow-vhtml-directive.js"]
+    "additionalRules": ["scripts/validate-anchors.js", "scripts/validate-i18n.js", "scripts/disallow-vhtml-directive.js"]
 }
