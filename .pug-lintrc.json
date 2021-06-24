@@ -2,6 +2,7 @@
     "disallowAttributeInterpolation": true,
     "disallowDuplicateAttributes": true,
     "disallowMultipleLineBreaks": true,
+    "disallowSpecificAttributes": "v-html",
     "disallowStringConcatenation": true,
     "disallowStringInterpolation": true,
     "disallowVHTMLDirective": true,
