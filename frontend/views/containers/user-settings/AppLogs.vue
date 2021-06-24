@@ -2,7 +2,16 @@
   .settings-container
     section.card
       .c-header
-        p.c-instructions(v-html='instructions')
+        p.c-instructions
+          i18n(
+            v-if='errorMsg'
+            :args='{ a_: issuePageTag, _a: "</a>", errorMsg }'
+          ) Recent error: "{errorMsg}". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot.
+          i18n(
+            v-else
+            :args='{ a_: issuePageTag, _a: "</a>" }'
+          ) If you encounter problems, please download the logs and {a_}send them to us{_a}.
+
         fieldset.c-filters
           .c-filters-inner
             legend.c-filters-legend Optional logs:
@@ -27,10 +36,10 @@
 
 <script>
 import { mapState, mapMutations, mapActions } from 'vuex'
+import safeLinkTag from '@views/utils/safeLinkTag.js'
 import sbp from '~/shared/sbp.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { downloadLogs, getLog } from '@model/captureLogs.js'
-import L from '@view-utils/translations.js'
 
 export default {
   name: 'AppLogs',
@@ -79,21 +88,17 @@ export default {
     ...mapState([
       'appLogsFilter'
     ]),
+    errorMsg () {
+      return this.$route.query.errorMsg
+    },
     prettyLogs () {
       return this.ephemeral.logs
         .filter(({ type }) => this.form.filter.includes(type))
         .map(({ type, msg, timestamp }) => `${timestamp} [${type}] ${msg.map(JSON.stringify).join(' ')}`)
         .join('\n')
     },
-    instructions () {
-      const errorMsg = this.$route.query.errorMsg
-      const linkTag = {
-        'a_': '<a class="link" target="_blank" href="https://github.com/okTurtles/group-income-simple/issues">',
-        '_a': '</a>'
-      }
-      return errorMsg
-        ? L('Recent error: "{errorMsg}". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot.', { errorMsg, ...linkTag })
-        : L('If you encounter problems, please download the logs and {a_}send them to us{_a}.', linkTag)
+    issuePageTag () {
+      return safeLinkTag('ISSUE_PAGE')
     }
   },
   methods: {

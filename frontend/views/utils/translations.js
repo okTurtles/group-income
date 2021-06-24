@@ -1,5 +1,7 @@
 'use strict'
 
+import { defaultConfig as defaultDompurifyConfig } from '~/frontend/views/utils/vSafeHtml.js'
+import dompurify from 'dompurify'
 import Vue from 'vue'
 import sbp from '~/shared/sbp.js'
 import template from '~/frontend/utils/stringTemplate.js'
@@ -10,6 +12,18 @@ Vue.prototype.LTags = LTags
 const defaultLanguage = 'en-US'
 const defaultLanguageCode = 'en'
 const defaultTranslationTable: { [string]: string } = {}
+
+/**
+ * Allow 'href' and 'target' attributes to avoid breaking our hyperlinks,
+ * but keep sanitizing their values.
+ * See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
+ */
+const dompurifyConfig = {
+  ...defaultDompurifyConfig,
+  ALLOWED_ATTR: ['class', 'href', 'rel', 'target'],
+  ALLOWED_TAGS: ['a', 'b', 'br', 'em', 'i', 'p', 'small', 'span', 'strong', 'sub', 'sup', 'u'],
+  RETURN_DOM_FRAGMENT: false
+}
 
 let currentLanguage = defaultLanguage
 let currentLanguageCode = defaultLanguage.split('-')[0]
@@ -124,6 +138,10 @@ export function LError (error: Error): {|reportError: any|} {
   }
 }
 
+function sanitize (inputString) {
+  return dompurify.sanitize(inputString, dompurifyConfig)
+}
+
 Vue.component('i18n', {
   functional: true,
   props: {
@@ -141,8 +159,12 @@ Vue.component('i18n', {
       console.warn('The following i18n text was not translated correctly:', text)
       return h(context.props.tag, context.data, text)
     }
+    // Prevent reverse tabnabbing by including `rel="noopener noreferrer"` when rendering as an outbound hyperlink.
+    if (context.props.tag === 'a' && context.data.attrs.target === '_blank') {
+      context.data.attrs.rel = 'noopener noreferrer'
+    }
     if (context.props.compile) {
-      const result = Vue.compile('<wrap>' + translation + '</wrap>')
+      const result = Vue.compile('<wrap>' + sanitize(translation) + '</wrap>')
       // console.log('TRANSLATED RENDERED TEXT:', context, result.render.toString())
       return result.render.call({
         _c: (tag, ...args) => {
@@ -156,7 +178,7 @@ Vue.component('i18n', {
       })
     } else {
       if (!context.data.domProps) context.data.domProps = {}
-      context.data.domProps.innerHTML = translation
+      context.data.domProps.innerHTML = sanitize(translation)
       return h(context.props.tag, context.data)
     }
   }

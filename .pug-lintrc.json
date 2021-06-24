@@ -2,8 +2,10 @@
     "disallowAttributeInterpolation": true,
     "disallowDuplicateAttributes": true,
     "disallowMultipleLineBreaks": true,
+    "disallowSpecificAttributes": "v-html",
     "disallowStringConcatenation": true,
     "disallowStringInterpolation": true,
+    "disallowVHTMLDirective": true,
     "requireClassLiteralsBeforeAttributes": true,
     "requireClassLiteralsBeforeIdLiterals": true,
     "requireIdLiteralsBeforeAttributes": true,
@@ -18,6 +20,7 @@
     "validateIndentation": 2,
     "validateSelfClosingTags": true,
     
+    "validateAnchors": true,
     "validateI18n": true,
-    "additionalRules": ["scripts/validate-i18n.js"]
+    "additionalRules": ["scripts/validate-anchors.js", "scripts/validate-i18n.js", "scripts/disallow-vhtml-directive.js"]
 }

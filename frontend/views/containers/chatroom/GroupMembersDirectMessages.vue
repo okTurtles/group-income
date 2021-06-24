@@ -20,7 +20,7 @@ modal-base-template.has-background(
       .c-member-count.has-text-1(
         v-if='searchText && searchCount > 0'
         data-test='memberSearchCount'
-        v-html='resultsCopy'
+        v-safe-html='resultsCopy'
       )
 
       i18n.c-member-count.has-text-1(
