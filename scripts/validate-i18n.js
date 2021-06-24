@@ -280,7 +280,7 @@ module.exports.prototype = {
 
       // Checks if the html attribute was used.
       attributeTokens.forEach(token => {
-        if (token.name === 'html') {
+        if (token.name === 'html' || token.name === ':html') {
           errors.add(UNEXPECTED_HTML_ATTRIBUTE, token.line, token.col)
         } else if (token.name === 'v-html') {
           errors.add(UNEXPECTED_VHTML_DIRECTIVE, token.line, token.col)
