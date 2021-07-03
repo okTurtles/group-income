@@ -23,6 +23,13 @@ afterEach(function () {
   }
 })
 
+Cypress.on('uncaught:exception', (err, runnable) => {
+  // Returning false here prevents Cypress from failing the test.
+  if (err.name === 'NavigationDuplicated') {
+    return false
+  }
+})
+
 /* Some Notes / Best Practices about writing Cypress tests:
 - After performing an action that changes the view, look for ways to assert it
   before looking for the new element that migh not exist yet.
