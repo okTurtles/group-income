@@ -25,7 +25,7 @@ afterEach(function () {
 
 Cypress.on('uncaught:exception', (err, runnable) => {
   // Returning false here prevents Cypress from failing the test.
-  if (err.name === 'NavigationDuplicated') {
+  if (err.name === 'NavigationDuplicated' || err.message.includes('navigation')) {
     return false
   }
 })
