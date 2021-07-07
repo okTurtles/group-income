@@ -29,7 +29,7 @@ export const defaultConfig = {
 
 const transform = (el, binding) => {
   if (binding.oldValue !== binding.value) {
-    const config = { ...defaultConfig, ...(binding.arg ?? {}) }
+    const config = { ...defaultConfig, ...(binding.arg || {}) }
 
     el.textContent = ''
     el.appendChild(dompurify.sanitize(binding.value, config))
