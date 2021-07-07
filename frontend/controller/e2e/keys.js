@@ -14,20 +14,20 @@ function genSeed (): string {
 }
 
 function genDeviceSecretFromSeed (
-  { seed, scope, devIdx }: {
+  { seed, scope, deviceIdx }: {
     seed: string,
     scope: string,
-    devIdx: number
+    deviceIdx: number
   }
 ): string {
-  return blake32Hash(`${seed}group_income${scope}d${devIdx}`)
+  return blake32Hash(`${seed}group_income${scope}d${deviceIdx}`)
 }
 
 function deviceObjToContextStr (
   dev: Object
 ): string {
   // TODO: figure out the description
-  return `scope:${dev.scope},devType:${dev.devType},description:<encrypted description>,devIdx:${dev.devIdx},status:${dev.status}`
+  return `scope:${dev.scope},devType:${dev.devType},description:<encrypted description>,deviceIdx:${dev.deviceIdx},status:${dev.status}`
 }
 
 function contextStrToDeviceObj (
@@ -56,7 +56,7 @@ export default sbp('sbp/selectors/register', {
     })
     return {
       // $FlowFixMe
-      description, status, devIdx, devType
+      description, status, deviceIdx, devType
     }
   }
 })

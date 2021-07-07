@@ -3,7 +3,7 @@
 import sbp from '~/shared/sbp.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 import { GIMessage, sanityCheck } from './GIMessage.js'
-import type { GIOpContract, GIOpType, GIOpActionEnc, GIOpActionUnenc, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
+import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -11,9 +11,9 @@ export type ChelRegParams = {
   contractName: string;
   data: Object;
   hooks?: {
-    prePublishContract?: (GIMessage) => void;
-    prePublish?: (GIMessage) => void;
-    postPublish?: (GIMessage) => void;
+    prepublishContract?: (GIMessage) => void;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
 }
@@ -23,15 +23,14 @@ export type ChelActionParams = {
   contractID: string;
   data: Object;
   hooks?: {
-    prePublishContract?: (GIMessage) => void;
-    prePublish?: (GIMessage) => void;
-    postPublish?: (GIMessage) => void;
+    prepublishContract?: (GIMessage) => void;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
 }
 
-// eslint-disable-next-line no-useless-escape
-export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^\/]+))(?:\/(?:([^\/]+)\/)?)?)\w*/
+export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)\w*/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
 // 0 => 'gi.contracts/group/payment/process'
 // 1 => 'gi.contracts/group/payment/'
@@ -119,7 +118,7 @@ sbp('sbp/selectors/register', {
         keyJSON: 'TODO: add group public key here'
       }: GIOpContract)
     ])
-    hooks && hooks.prePublishContract && hooks.prePublishContract(contractMsg)
+    hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
     await sbp(this.cfg.publishSelector, contractMsg, publishOptions)
     const msg = await sbp('chelonia/out/actionEncrypted', {
       action: contractName,
@@ -167,13 +166,13 @@ sbp('sbp/selectors/register', {
         // TODO: we probably want to be pushing the de-JSON-ified key here
         state._vm.authorizedKeys.push({ key: v.keyJSON, context: 'owner' })
       },
-      [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEnc) {
+      [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing) {
           const decrypted = message.decryptedValue(config.decryptFn)
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
         }
       },
-      [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnenc) {
+      [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
         if (!config.skipActionProcessing) {
           const { data, meta, action } = v
           if (!config.whitelisted(action)) {
@@ -230,16 +229,16 @@ async function outEncryptedOrUnencryptedAction (
   const gProxy = gettersProxy(state, contract.getters)
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
-  const unencMessage = ({ action, data, meta }: GIOpActionUnenc)
+  const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
   const message = GIMessage.createV1_0(contractID, previousHEAD, [
     opType,
     opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.cfg.encryptFn(unencMessage)
   ]
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
-  hooks && hooks.prePublish && hooks.prePublish(message)
+  hooks && hooks.prepublish && hooks.prepublish(message)
   await sbp(this.cfg.publishSelector, message, publishOptions)
-  hooks && hooks.postPublish && hooks.postPublish(message)
+  hooks && hooks.postpublish && hooks.postpublish(message)
   return message
 }
 

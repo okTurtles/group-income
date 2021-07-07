@@ -19,9 +19,9 @@ export function pick (o: Object, props: string[]): {...} {
   return x
 }
 
-export function choose (a: Array<*>, indicies: Array<number>): Array<*> {
+export function choose (array: Array<*>, indices: Array<number>): Array<*> {
   const x = []
-  for (const idx of indicies) { x.push(a[idx]) }
+  for (const idx of indices) { x.push(array[idx]) }
   return x
 }
 

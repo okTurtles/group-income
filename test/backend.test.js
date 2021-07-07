@@ -133,8 +133,8 @@ describe('Full walkthrough', function () {
         attributes: { username, email }
       },
       hooks: {
-        prePublish: (message) => { message.decryptedValue(JSON.parse) },
-        postPublish: (message) => { testFn && testFn(message) }
+        prepublish: (message) => { message.decryptedValue(JSON.parse) },
+        postpublish: (message) => { testFn && testFn(message) }
       }
     })
     return msg
@@ -188,7 +188,7 @@ describe('Full walkthrough', function () {
         // authorizations: [Events.CanModifyAuths.dummyAuth(user.contractID())]
       },
       hooks: {
-        prePublishContract (message) { user.socket.sub(message.contractID()) }
+        prepublishContract (message) { user.socket.sub(message.contractID()) }
       }
     })
     await sbp('chelonia/out/actionEncrypted', {
@@ -246,7 +246,7 @@ describe('Full walkthrough', function () {
       // set user Alice as being logged in so that metadata on messages is properly set
       login(users.alice)
       groups.group1 = await createGroup('group1', {
-        prePublishContract (message) {
+        prepublishContract (message) {
           users.alice.socket.sub(message.contractID())
         }
       })
@@ -296,7 +296,7 @@ describe('Full walkthrough', function () {
         },
         contractID: mailbox.contractID(),
         hooks: {
-          prePublish (invite: GIMessage) {
+          prepublish (invite: GIMessage) {
             sbp('okTurtles.events/once', invite.hash(), (entry: GIMessage) => {
               console.debug('Bob successfully got invite!')
               should(entry.decryptedValue().data.message).equal(groups.group1.contractID())

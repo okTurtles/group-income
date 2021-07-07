@@ -15,13 +15,13 @@ export type GIKey = {
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
 export type GIOpContract = { type: string; keyJSON: string, parentContract?: string }
-export type GIOpActionEnc = string // encrypted version of GIOpActionUnenc
-export type GIOpActionUnenc = { action: string; data: JSONType; meta: JSONObject }
+export type GIOpActionEncrypted = string // encrypted version of GIOpActionUnencrypted
+export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
 export type GIOpKeyAdd = { keyHash: string, keyJSON: ?string, context: string }
 export type GIOpPropSet = { key: string, value: JSONType }
 
 export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd'
-export type GIOpValue = GIOpContract | GIOpActionEnc | GIOpActionUnenc | GIOpKeyAdd | GIOpPropSet
+export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpPropSet
 export type GIOp = [GIOpType, GIOpValue]
 
 export class GIMessage {
