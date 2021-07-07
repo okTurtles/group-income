@@ -43,7 +43,7 @@ sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
   // https://gitlab.okturtles.org/okturtles/group-income-simple/-/wikis/E2E-Protocol/Framework.md#alt-names
   'chelonia/_init': function () {
-    this.cfg = {
+    this.config = {
       decryptFn: JSON.parse, // override!
       encryptFn: JSON.stringify, // override!
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
@@ -63,7 +63,7 @@ sbp('sbp/selectors/register', {
     }
   },
   'chelonia/configure': function (config: ?Object) {
-    merge(this.cfg, config || {})
+    merge(this.config, config || {})
   },
   'chelonia/defineContract': function (contract: Object) {
     if (!ACTION_REGEX.exec(contract.name)) throw new Error(`bad contract name: ${contract.name}`)
@@ -119,7 +119,7 @@ sbp('sbp/selectors/register', {
       }: GIOpContract)
     ])
     hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
-    await sbp(this.cfg.publishSelector, contractMsg, publishOptions)
+    await sbp(this.config.publishSelector, contractMsg, publishOptions)
     const msg = await sbp('chelonia/out/actionEncrypted', {
       action: contractName,
       contractID: contractMsg.hash(),
@@ -130,7 +130,7 @@ sbp('sbp/selectors/register', {
     return msg
   },
   // all of these functions will do both the creation of the GIMessage
-  // and the sending of it via this.cfg.publishSelector
+  // and the sending of it via this.config.publishSelector
   'chelonia/out/actionEncrypted': function (params: ChelActionParams): Promise<GIMessage> {
     return outEncryptedOrUnencryptedAction.call(this, GIMessage.OP_ACTION_ENCRYPTED, params)
   },
@@ -157,7 +157,7 @@ sbp('sbp/selectors/register', {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const contractID = message.contractID()
-    const config = this.cfg
+    const config = this.config
     if (!state._vm) state._vm = {}
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
@@ -224,7 +224,7 @@ async function outEncryptedOrUnencryptedAction (
   const { action, contractID, data, hooks, publishOptions } = params
   const contract = contractFromAction(this.contracts, action)
   const state = contract.state(contractID)
-  const previousHEAD = await sbp(this.cfg.latestHashSelector, contractID)
+  const previousHEAD = await sbp(this.config.latestHashSelector, contractID)
   const meta = contract.metadata.create()
   const gProxy = gettersProxy(state, contract.getters)
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
@@ -232,12 +232,12 @@ async function outEncryptedOrUnencryptedAction (
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
   const message = GIMessage.createV1_0(contractID, previousHEAD, [
     opType,
-    opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.cfg.encryptFn(unencMessage)
+    opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage)
   ]
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
   hooks && hooks.prepublish && hooks.prepublish(message)
-  await sbp(this.cfg.publishSelector, message, publishOptions)
+  await sbp(this.config.publishSelector, message, publishOptions)
   hooks && hooks.postpublish && hooks.postpublish(message)
   return message
 }
