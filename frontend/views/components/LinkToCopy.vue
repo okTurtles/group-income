@@ -10,7 +10,6 @@ component.c-wrapper(
     :value='link'
   )
   a.link.has-ellipsis.c-link(
-    :href='link'
     aria-hidden='true'
     @click.prevent=''
   ) {{ link }}
