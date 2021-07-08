@@ -118,8 +118,9 @@ export default {
       for (const invitee of this.form.invitees) {
         const groupId = this.currentGroupId
         try {
-          const proposal = await sbp('gi.contracts/group/proposal/create',
-            {
+          await sbp('gi.actions/group/proposal', {
+            contractID: groupId,
+            data: {
               proposalType: PROPOSAL_INVITE_MEMBER,
               proposalData: {
                 member: invitee,
@@ -127,10 +128,8 @@ export default {
               },
               votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
               expires_date_ms: expiresDateMs
-            },
-            groupId
-          )
-          await sbp('backend/publishLogEntry', proposal)
+            }
+          })
         } catch (e) {
           hasFailed = true
           console.error(`Invite to ${invitee} failed to be sent!`, e.message)

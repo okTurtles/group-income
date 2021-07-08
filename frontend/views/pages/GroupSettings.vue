@@ -142,7 +142,7 @@ export default {
     },
     sbpParams () {
       return {
-        selector: 'gi.contracts/group/updateSettings/create',
+        selector: 'gi.actions/group/updateSettings',
         contractID: this.$store.state.currentGroupId,
         key: 'groupPicture'
       }
@@ -166,7 +166,9 @@ export default {
       }
 
       try {
-        await sbp('gi.actions/group/updateSettings', attrs, this.currentGroupId)
+        await sbp('gi.actions/group/updateSettings', {
+          contractID: this.currentGroupId, data: attrs
+        })
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
         console.error('GroupSettings saveSettings() error:', e)

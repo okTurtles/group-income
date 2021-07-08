@@ -20,7 +20,6 @@ proposal-template(
 import { mapState, mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
-import L, { LError } from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
 import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -85,35 +84,32 @@ export default {
 
       if (this.groupShouldPropose) {
         try {
-          const data = {
-            proposalType: PROPOSAL_REMOVE_MEMBER,
-            proposalData: {
-              member,
-              reason: form.reason
-            },
-            votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
-            expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
-          }
-          // TODO: move this into into controller/actions/group.js !
-          const proposal = await sbp('gi.contracts/group/proposal/create',
-            data,
-            this.currentGroupId
-          )
-          await sbp('backend/publishLogEntry', proposal)
-
+          await sbp('gi.actions/group/proposal', {
+            contractID: this.currentGroupId,
+            data: {
+              proposalType: PROPOSAL_REMOVE_MEMBER,
+              proposalData: {
+                member,
+                reason: form.reason
+              },
+              votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
+              expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+            }
+          })
           this.ephemeral.currentStep += 1
         } catch (e) {
           console.error('RemoveMember submit() error:', member, e)
-          this.$refs.formMsg.danger(L('Failed to propose remove {member}: {reportError}', { ...LError(e), member }))
+          this.$refs.formMsg.danger(e.message)
 
           this.ephemeral.currentStep = 0
         }
-
         return
       }
 
       try {
-        await sbp('gi.actions/group/removeMember', { member }, this.currentGroupId)
+        await sbp('gi.actions/group/removeMember', {
+          contractID: this.currentGroupId, data: { member }
+        })
         this.$refs.proposal.close()
       } catch (e) {
         console.error(`Failed to remove member ${member}.`, e)

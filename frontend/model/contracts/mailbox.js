@@ -2,7 +2,6 @@
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
-import { DefineContract } from './Contract.js'
 import { objectOf, string, object, unionOf, literalOf, optional } from '~/frontend/utils/flowTyper.js'
 
 export const TYPE_MESSAGE = 'message'
@@ -10,7 +9,7 @@ export const TYPE_FRIEND_REQ = 'friend-request'
 
 export const messageType: any = unionOf(...[TYPE_MESSAGE, TYPE_FRIEND_REQ].map(k => literalOf(k)))
 
-DefineContract({
+sbp('chelonia/defineContract', {
   name: 'gi.contracts/mailbox',
   metadata: {
     // TODO: why is this missing the from username..?

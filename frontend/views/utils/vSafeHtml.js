@@ -29,11 +29,9 @@ export const defaultConfig = {
 
 const transform = (el, binding) => {
   if (binding.oldValue !== binding.value) {
-    const config = { ...defaultConfig, ...(binding.arg ?? {}) }
+    const config = { ...defaultConfig, ...(binding.arg || {}) }
 
-    while (el.firstChild) {
-      el.firstChild.remove()
-    }
+    el.textContent = ''
     el.appendChild(dompurify.sanitize(binding.value, config))
   }
 }

@@ -5,7 +5,7 @@ import multihash from 'multihashes'
 import nacl from 'tweetnacl'
 import blake from 'blakejs'
 
-export function blake32Hash (data: string | Buffer | Uint8Array): any {
+export function blake32Hash (data: string | Buffer | Uint8Array): string {
   // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
   const uint8array = blake.blake2b(data, null, 32)
   // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
