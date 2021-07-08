@@ -65,6 +65,7 @@ export default {
       for (const tabItem of this.tabNav) {
         for (const link of tabItem.links) {
           if (this.activeTab !== link.index && link.url === section) {
+            this.activeComponent = link.component
             return this.changeTab(link.index)
           }
         }
