@@ -3,7 +3,8 @@
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
-import { GIMessage } from '~/shared/GIMessage.js'
+import '~/shared/domains/chelonia/chelonia.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 // import * as _ from '~/frontend/utils/giLodash.js'
 import { createGIPubSubClient } from '~/frontend/controller/backend.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
@@ -66,13 +67,26 @@ sbp('sbp/selectors/overwrite', {
     if (!vuexState[contractID]) {
       vuexState[contractID] = {}
     }
-    sbp('chelonia/message/process', e, vuexState[contractID])
+    sbp('chelonia/in/processMessage', e, vuexState[contractID])
     sbp('okTurtles.events/emit', e.hash(), e)
   },
   // for handling the loggedIn metadata() in Contracts.js
   'state/vuex/state': () => {
     return vuexState
   }
+})
+
+sbp('sbp/selectors/register', {
+  'backend.tests/postEntry': async function (entry) {
+    console.log(bold.yellow('sending entry with hash:'), entry.hash())
+    const res = await sbp('backend/publishLogEntry', entry)
+    should(res).equal(entry.hash())
+    return res
+  }
+})
+
+sbp('chelonia/configure', {
+  publishSelector: 'backend.tests/postEntry'
 })
 
 // uncomment this to help with debugging:
@@ -97,12 +111,8 @@ describe('Full walkthrough', function () {
     return new Promise((resolve, reject) => {
       createGIPubSubClient(process.env.API_URL, {
         handlers: {
-          error (event) {
-            reject(event)
-          },
-          open (event) {
-            resolve(this)
-          }
+          error (event) { reject(event) },
+          open (event) { resolve(this) }
         },
         reconnectOnDisconnection: false,
         reconnectOnOnline: false,
@@ -112,44 +122,54 @@ describe('Full walkthrough', function () {
     })
   }
 
-  async function createIdentity (username, email) {
+  async function createIdentity (username, email, testFn) {
     // append random id to username to prevent conflict across runs
     // when GI_PERSIST environment variable is defined
     username = `${username}-${Math.floor(Math.random() * 1000)}`
-    const msg = await sbp('gi.contracts/identity/create', {
-      // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
-      attributes: { username, email }
-    })
-    msg.decryptedValue(JSON.parse)
-    return msg
-  }
-  function createGroup (name) {
-    const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
-
-    return sbp('gi.contracts/group/create', {
-      invites: {
-        [initialInvite.inviteSecret]: initialInvite
-      },
-      settings: {
+    const msg = await sbp('chelonia/out/registerContract', {
+      contractName: 'gi.contracts/identity',
+      data: {
         // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
-        groupName: name,
-        groupPicture: '',
-        sharedValues: 'our values',
-        mincomeAmount: 1000,
-        mincomeCurrency: 'USD',
-        proposals: {
-          [PROPOSAL_GROUP_SETTING_CHANGE]: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
-          [PROPOSAL_INVITE_MEMBER]: proposals[PROPOSAL_INVITE_MEMBER].defaults,
-          [PROPOSAL_REMOVE_MEMBER]: proposals[PROPOSAL_REMOVE_MEMBER].defaults,
-          [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
-          [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
-        }
+        attributes: { username, email }
+      },
+      hooks: {
+        prepublish: (message) => { message.decryptedValue(JSON.parse) },
+        postpublish: (message) => { testFn && testFn(message) }
       }
     })
+    return msg
   }
-  function createPaymentTo (to, amount, contractID, currency = 'USD') {
-    return sbp('gi.contracts/group/payment/create',
-      {
+  function createGroup (name, hooks): Promise {
+    const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
+    return sbp('chelonia/out/registerContract', {
+      contractName: 'gi.contracts/group',
+      data: {
+        invites: {
+          [initialInvite.inviteSecret]: initialInvite
+        },
+        settings: {
+          // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
+          groupName: name,
+          groupPicture: '',
+          sharedValues: 'our values',
+          mincomeAmount: 1000,
+          mincomeCurrency: 'USD',
+          proposals: {
+            [PROPOSAL_GROUP_SETTING_CHANGE]: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
+            [PROPOSAL_INVITE_MEMBER]: proposals[PROPOSAL_INVITE_MEMBER].defaults,
+            [PROPOSAL_REMOVE_MEMBER]: proposals[PROPOSAL_REMOVE_MEMBER].defaults,
+            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
+            [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+          }
+        }
+      },
+      hooks
+    })
+  }
+  function createPaymentTo (to, amount, contractID, currency = 'USD'): Promise {
+    return sbp('chelonia/out/actionEncrypted', {
+      action: 'gi.contracts/group/payment',
+      data: {
         toUser: to.decryptedValue().data.attributes.username,
         amount: amount,
         currency: currency,
@@ -158,41 +178,34 @@ describe('Full walkthrough', function () {
         paymentType: PAYMENT_TYPE_MANUAL
       },
       contractID
-    )
+    })
   }
 
   async function createMailboxFor (user) {
-    const mailbox = await sbp('gi.contracts/mailbox/create', {
-      // authorizations: [Events.CanModifyAuths.dummyAuth(user.contractID())]
+    const mailbox = await sbp('chelonia/out/registerContract', {
+      contractName: 'gi.contracts/mailbox',
+      data: {
+        // authorizations: [Events.CanModifyAuths.dummyAuth(user.contractID())]
+      },
+      hooks: {
+        prepublishContract (message) { user.socket.sub(message.contractID()) }
+      }
     })
-    await user.socket.sub(mailbox.contractID())
-    await postEntry(mailbox)
-    await postEntry(
-      await sbp('gi.contracts/identity/setAttributes/create', {
-        mailbox: mailbox.contractID()
-      }, user.contractID())
-    )
+    await sbp('chelonia/out/actionEncrypted', {
+      action: 'gi.contracts/identity/setAttributes',
+      data: { mailbox: mailbox.contractID() },
+      contractID: user.contractID()
+    })
     user.mailbox = mailbox
-  }
-
-  async function postEntry (entry) {
-    console.log(bold.yellow('sending entry with hash:'), entry.hash())
-    const res = await sbp('backend/publishLogEntry', entry)
-    should(res).equal(entry.hash())
-    return res
   }
 
   describe('Identity tests', function () {
     it('Should create identity contracts for Alice and Bob', async function () {
       users.bob = await createIdentity('Bob', 'bob@okturtles.com')
       users.alice = await createIdentity('Alice', 'alice@okturtles.org')
-      const { alice, bob } = users
       // verify attribute creation and state initialization
-      bob.decryptedValue().data.attributes.username.should.match(/^Bob/)
-      bob.decryptedValue().data.attributes.email.should.equal('bob@okturtles.com')
-      // send them off!
-      await postEntry(alice)
-      await postEntry(bob)
+      users.bob.decryptedValue().data.attributes.username.should.match(/^Bob/)
+      users.bob.decryptedValue().data.attributes.email.should.equal('bob@okturtles.com')
     })
 
     it('Should register Alice and Bob in the namespace', async function () {
@@ -232,9 +245,11 @@ describe('Full walkthrough', function () {
     it('Should create a group & subscribe Alice', async function () {
       // set user Alice as being logged in so that metadata on messages is properly set
       login(users.alice)
-      groups.group1 = await createGroup('group1')
-      await users.alice.socket.sub(groups.group1.contractID())
-      await postEntry(groups.group1)
+      groups.group1 = await createGroup('group1', {
+        prepublishContract (message) {
+          users.alice.socket.sub(message.contractID())
+        }
+      })
     })
 
     // NOTE: The frontend needs to use the `fetch` API instead of superagent because
@@ -259,7 +274,7 @@ describe('Full walkthrough', function () {
       // raw-objects to instances, the hash check failed and I caught several bugs!
       const state = {}
       for (const e of events.map(e => GIMessage.deserialize(e))) {
-        sbp('chelonia/message/process', e, state)
+        sbp('chelonia/in/processMessage', e, state)
       }
       console.log(bold.red('FINAL STATE:'), state)
       // 3. get bob's mailbox contractID from his identity contract attributes
@@ -272,31 +287,33 @@ describe('Full walkthrough', function () {
 
     it("Should invite Bob to Alice's group", function (done) {
       const mailbox = users.bob.mailbox
-      sbp('gi.contracts/mailbox/postMessage/create',
-        {
+      sbp('chelonia/out/actionEncrypted', {
+        action: 'gi.contracts/mailbox/postMessage',
+        data: {
           from: users.bob.decryptedValue().data.attributes.username,
           messageType: TYPE_MESSAGE,
           message: groups.group1.contractID()
         },
-        mailbox.contractID()
-      ).then(invite => {
-        sbp('okTurtles.events/once', invite.hash(), (entry: GIMessage) => {
-          console.log('Bob successfully got invite!')
-          should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
-          done()
-        })
-        postEntry(invite)
+        contractID: mailbox.contractID(),
+        hooks: {
+          prepublish (invite: GIMessage) {
+            sbp('okTurtles.events/once', invite.hash(), (entry: GIMessage) => {
+              console.debug('Bob successfully got invite!')
+              should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
+              done()
+            })
+          }
+        }
       })
     })
 
-    it('Should post an event', async function () {
-      await postEntry(await createPaymentTo(users.bob, 100, groups.group1.contractID()))
+    it('Should post an event', function () {
+      return createPaymentTo(users.bob, 100, groups.group1.contractID())
     })
 
     it('Should fail with wrong contractID', async function () {
       try {
-        const p = await createPaymentTo(users.bob, 100, '')
-        await postEntry(p)
+        await createPaymentTo(users.bob, 100, '')
         return Promise.reject(new Error("shouldn't get here!"))
       } catch (e) {
         return Promise.resolve()

@@ -1,6 +1,7 @@
 import allowedUrlsByKey from '@view-utils/allowedUrls.js'
 
 export default function safeLinkTag (key: string): string {
+  // $FlowFixMe
   if (!Object.prototype.hasOwnProperty.call(allowedUrlsByKey, key)) {
     throw new Error(`Unknown URL key: ${key}`)
   }

@@ -5,6 +5,7 @@ import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/data.js'
 import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
+import '~/shared/domains/chelonia/chelonia.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import Vue from 'vue'
@@ -73,7 +74,7 @@ async function startApp () {
     pubsubURL, {
       // This option can be enabled since we are not doing auth via web sockets.
       reconnectOnTimeout: true,
-      timeout: 5_000
+      timeout: 5000
     }
   ))
 

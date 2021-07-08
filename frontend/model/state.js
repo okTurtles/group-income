@@ -3,14 +3,14 @@
 // This file handles application-level state (as opposed to component-level
 // state) per: http://vuex.vuejs.org/en/intro.html
 
-import type { GIOpContract } from '~/shared/GIMessage.js'
+import type { GIOpContract } from '~/shared/domains/chelonia/GIMessage.js'
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import L from '~/frontend/views/utils/translations.js'
 // import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
-import { GIMessage } from '~/shared/GIMessage.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
 import Colors from './colors.js'
@@ -69,7 +69,7 @@ sbp('sbp/selectors/register', {
     for (const e of events.map(e => GIMessage.deserialize(e))) {
       const stateCopy = _.cloneDeep(state)
       try {
-        sbp('chelonia/message/process', e, state)
+        sbp('chelonia/in/processMessage', e, state)
       } catch (err) {
         if (!(err instanceof GIErrorUnrecoverable)) {
           console.warn(`latestContractState: ignoring mutation ${e.description()} because of ${err.name}`)
@@ -84,8 +84,8 @@ sbp('sbp/selectors/register', {
   },
   'state/enqueueContractSync': function (contractID: string) {
     // enqueue this invocation in a serial queue to ensure
-    // handleEvent does not get called on contractID while it's being sync,
-    // but after it's finished syncing. This is used in tandem with
+    // handleEvent does not get called on contractID while it's syncing,
+    // but after it's finished. This is used in tandem with
     // 'state/enqueueHandleEvent' defined below. This is all to prevent
     // handleEvent getting called with the wrong previousHEAD for an event.
     return sbp('okTurtles.eventQueue/queueEvent', contractID, [
@@ -116,7 +116,7 @@ const mutations = {
     state.currentGroupId = null
   },
   processMessage (state, { message }) {
-    sbp('chelonia/message/process', message, state)
+    sbp('chelonia/in/processMessage', message, state)
   },
   registerContract (state, { contractID, type }) {
     const firstTimeRegistering = !state[contractID]
@@ -353,6 +353,7 @@ const getters = {
   groupIncomeAdjustedDistributionForMonth (state, getters) {
     return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
   },
+  // TODO: this is insane, rewrite it and make it cleaner/better
   ourPayments (state, getters) {
     // Payments relative to the current month only
     const monthlyPayments = getters.groupMonthlyPayments
@@ -373,7 +374,7 @@ const getters = {
         for (const toUser in paymentsFrom[getters.ourUsername]) {
           for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
-            payments.push({ hash: paymentHash, data, meta })
+            payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
           }
         }
       }
@@ -388,7 +389,7 @@ const getters = {
             if (toUser === getters.ourUsername) {
               for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
-                payments.push({ hash: paymentHash, data, meta })
+                payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
               }
             }
           }
@@ -504,7 +505,7 @@ const getters = {
             const existingPayment = {}
             if (partialAmount > 0) {
               // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
-              const receivePartial = received.find((r) => r.username === p.to && r.amount === partialAmount)
+              const receivePartial = received.find((r) => r.amount === partialAmount)
               if (receivePartial) {
                 existingPayment.hash = receivePartial.hash
               }
@@ -665,6 +666,7 @@ const actions = {
     }
     sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, false)
   },
+  // TODO: Move this into controller/actions/identity? See #804
   async login (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     user: Object
@@ -706,10 +708,11 @@ const actions = {
     commit('login', user)
     Vue.nextTick(() => sbp('okTurtles.events/emit', EVENTS.LOGIN, user))
   },
+  // TODO: Move this into controller/actions/identity? See #804
   async logout (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object}
   ) {
-    debouncedSave.cancel()
+    debouncedSave.clear()
     await dispatch('saveSettings')
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
     for (const contractID in state.contracts) {
@@ -897,10 +900,10 @@ const handleEvent = {
       if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) {
         const contractID = message.contractID()
         const hash = message.hash()
-        const { type, data, meta } = message.decryptedValue()
+        const { action, data, meta } = message.decryptedValue()
         const mutation = { data, meta, hash, contractID }
         // this selector is created by Contract.js
-        await sbp(`${type}/sideEffect`, mutation)
+        await sbp(`${action}/sideEffect`, mutation)
         // let any listening components know that we've received, processed, and stored the event
         sbp('okTurtles.events/emit', hash, contractID, message)
         sbp('okTurtles.events/emit', EVENTS.EVENT_HANDLED, contractID, message)
@@ -984,26 +987,28 @@ const handleEvent = {
         if (proposal) {
           // cast our vote if we haven't already cast it
           if (!proposal.votes[store.getters.ourUsername]) {
-            const vote = await sbp('gi.contracts/group/proposalVote/create',
-              { proposalHash, vote: VOTE_FOR },
-              groupID
-            )
-            await sbp('backend/publishLogEntry', vote, { maxAttempts: 3 })
+            await sbp('gi.actions/group/proposalVote', {
+              contractID: groupID,
+              data: { proposalHash, vote: VOTE_FOR },
+              publishOptions: { maxAttempts: 3 }
+            })
           }
         } else {
           // create our proposal to ban the user
-          // TODO: move this into into controller/actions/group.js !
-          proposal = await sbp('gi.contracts/group/proposal/create', {
-            proposalType: PROPOSAL_REMOVE_MEMBER,
-            proposalData: {
-              member: username,
-              reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
-            },
-            votingRule: store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
-            expires_date_ms: Date.now() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
-          }, groupID)
           try {
-            await sbp('backend/publishLogEntry', proposal, { maxAttempts: 1 })
+            proposal = await sbp('gi.actions/group/proposal', {
+              contractID: groupID,
+              data: {
+                proposalType: PROPOSAL_REMOVE_MEMBER,
+                proposalData: {
+                  member: username,
+                  reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
+                },
+                votingRule: store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
+                expires_date_ms: Date.now() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+              },
+              publishOptions: { maxAttempts: 1 }
+            })
           } catch (e) {
             if (attempt > 2) {
               console.error(`autoBanSenderOfMessage: max attempts reached. Error ${e.message} attempting to ban ${username}`, message, e)

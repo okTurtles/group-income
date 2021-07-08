@@ -243,12 +243,14 @@ export default {
           const recipient = this.ephemeral.recipients[i]
           // TODO:: latestContractState is inefficient
           const state = await sbp('state/latestContractState', recipient.contractID)
-          const message = await sbp('gi.contracts/mailbox/postMessage/create', {
-            messageType: TYPE_MESSAGE,
-            from: this.ourUsername,
-            message: this.ephemeral.composedMessage
-          }, state.attributes.mailbox)
-          await sbp('backend/publishLogEntry', message)
+          await sbp('gi.actions/mailbox/postMessage', {
+            contractID: state.attributes.mailbox,
+            data: {
+              messageType: TYPE_MESSAGE,
+              from: this.ourUsername,
+              message: this.ephemeral.composedMessage
+            }
+          })
         }
         this.inboxMode()
       } catch (ex) {

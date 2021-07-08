@@ -81,7 +81,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
-import L, { LError } from '@view-utils/translations.js'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'IncomeDetails',
@@ -191,19 +191,18 @@ export default {
 
       try {
         const incomeDetailsType = this.form.incomeDetailsType
-        const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
-          {
+        await sbp('gi.actions/group/groupProfileUpdate', {
+          contractID: this.$store.state.currentGroupId,
+          data: {
             incomeDetailsType,
             [incomeDetailsType]: normalizeCurrency(this.form.amount),
             paymentMethods
-          },
-          this.$store.state.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', groupProfileUpdate)
+          }
+        })
         this.closeModal()
       } catch (e) {
         console.error('IncomeDetails submit() error:', e)
-        this.$refs.formMsg.danger(L('Failed to update income details. {reportError}', LError(e)))
+        this.$refs.formMsg.danger(e.message)
       }
     }
   },

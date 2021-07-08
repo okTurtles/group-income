@@ -25,7 +25,7 @@
 <script>
 import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
-import L, { LError } from '@view-utils/translations.js'
+import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
 import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
 import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
@@ -116,19 +116,13 @@ export default {
             }
           }
         }
-        // TODO: move this into into controller/actions/group.js !
-        const vote = await sbp('gi.contracts/group/proposalVote/create',
-          {
-            vote: VOTE_FOR,
-            proposalHash,
-            passPayload
-          },
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', vote)
+        await sbp('gi.actions/group/proposalVote', {
+          contractID: this.currentGroupId,
+          data: { vote: VOTE_FOR, proposalHash, passPayload }
+        })
       } catch (e) {
         console.error('ProposalVoteOptions voteFor failed:', e)
-        this.refVoteMsg.danger(L('We couldn’t register your vote. {reportError}', LError(e)))
+        this.refVoteMsg.danger(e.message)
       }
     },
     async voteAgainst () {
@@ -139,18 +133,13 @@ export default {
       this.ephemeral.changingVote = false
       try {
         this.refVoteMsg.clean()
-        // TODO: move this into into controller/actions/group.js !
-        const vote = await sbp('gi.contracts/group/proposalVote/create',
-          {
-            vote: VOTE_AGAINST,
-            proposalHash: this.proposalHash
-          },
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', vote)
+        await sbp('gi.actions/group/proposalVote', {
+          contractID: this.currentGroupId,
+          data: { vote: VOTE_AGAINST, proposalHash: this.proposalHash }
+        })
       } catch (e) {
         console.error('ProposalVoteOptions voteAgainst failed:', e)
-        this.refVoteMsg.danger(L('We couldn’t register your vote. {reportError}', LError(e)))
+        this.refVoteMsg.danger(e.message)
       }
     },
     async cancelProposal () {
@@ -159,16 +148,12 @@ export default {
       }
       try {
         this.refVoteMsg.clean()
-        const vote = await sbp('gi.contracts/group/proposalCancel/create',
-          {
-            proposalHash: this.proposalHash
-          },
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', vote)
+        await sbp('gi.actions/group/proposalCancel', {
+          contractID: this.currentGroupId, data: { proposalHash: this.proposalHash }
+        })
       } catch (e) {
         console.error('ProposalVoteOptions cancelProposal failed:', e)
-        this.refVoteMsg.danger(L('Failed to cancel proposal. {reportError}', LError(e)))
+        this.refVoteMsg.danger(e.message)
       }
     }
   }
