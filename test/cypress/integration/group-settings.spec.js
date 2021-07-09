@@ -40,7 +40,7 @@ describe('Changing Group Settings', () => {
     cy.getByDT('groupSettingsLink').click()
 
     cy.fixture(groupPicture, 'base64').then(fileContent => {
-      cy.get('[data-test="avatar"]').upload({ fileContent, fileName: groupPicture, mimeType: 'image/png' }, { subjectType: 'input' })
+      cy.get('[data-test="avatar"]').attachFile({ fileContent, fileName: groupPicture, mimeType: 'image/png' }, { subjectType: 'input' })
     })
 
     cy.getByDT('avatarMsg').should('contain', 'Avatar updated!')
