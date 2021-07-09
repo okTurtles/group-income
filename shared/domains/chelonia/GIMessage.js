@@ -1,28 +1,28 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/data.js'
-import { blake32Hash } from './functions.js'
-import type { JSONType, JSONObject } from './types.js'
+// TODO: rename GIMessage to CMessage or something similar
 
-export type GIKeyType = { type: string; key: string }
+import { blake32Hash } from '~/shared/functions.js'
+import type { JSONType, JSONObject } from '~/shared/types.js'
+
+export type GIKeyType = ''
+
+export type GIKey = {
+  type: GIKeyType;
+  data: Object; // based on GIKeyType this will change
+  meta: Object;
+}
 // Allows server to check if the user is allowed to register this type of contract
-export type GIOpContract = { type: string; authkey: GIKeyType, parentContract?: string }
-export type GIOpAction = string // encrypted version of GIOpPubAction
-// TODO: rename 'type' to 'selector' below:
-export type GIOpPubAction = { type: string; data: JSONType; meta: JSONObject }
-export type GIOpKeyAuth = { key: GIKeyType, context: string }
+// TODO: rename 'type' to 'contractName':
+export type GIOpContract = { type: string; keyJSON: string, parentContract?: string }
+export type GIOpActionEncrypted = string // encrypted version of GIOpActionUnencrypted
+export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
+export type GIOpKeyAdd = { keyHash: string, keyJSON: ?string, context: string }
 export type GIOpPropSet = { key: string, value: JSONType }
 
-export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd'
-export type GIOpValue = GIOpContract | GIOpAction | GIOpPubAction | GIOpKeyAuth | GIOpPropSet
+export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd'
+export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpPropSet
 export type GIOp = [GIOpType, GIOpValue]
-
-sbp('okTurtles.data/set', 'CHELONIA_CONFIG', {
-  // override these!
-  decryptFn: JSON.parse,
-  whitelisted: (sel) => false
-})
 
 export class GIMessage {
   // flow type annotations to make flow happy
@@ -33,9 +33,8 @@ export class GIMessage {
   static OP_CONTRACT: 'c' = 'c'
   static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
   static OP_ACTION_UNENCRYPTED: 'au' = 'au' // publicly readable action
-  static OP_KEY_AUTH: 'ka' = 'ka' // add this key to the list of keys allowed to write to this contract
-  static OP_KEY_UPDATE: 'ku' = 'ku' // update a key's context
-  static OP_KEY_DEAUTH: 'kd' = 'kd' // remove this key from authorized keys
+  static OP_KEY_ADD: 'ka' = 'ka' // add this key to the list of keys allowed to write to this contract, or update an existing key
+  static OP_KEY_DEL: 'kd' = 'kd' // remove this key from authorized keys
   static OP_PROTOCOL_UPGRADE: 'pu' = 'pu'
   static OP_PROP_SET: 'ps' = 'ps' // set a public key/value pair
   static OP_PROP_DEL: 'pd' = 'pd' // delete a public key/value pair
@@ -74,6 +73,7 @@ export class GIMessage {
     return instance
   }
 
+  // TODO: we need signature verification upon decryption somewhere...
   static deserialize (value: string): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const instance = new this()
@@ -127,67 +127,6 @@ export class GIMessage {
   hash (): string { return this._mapping.key }
 }
 
-const notImplemented = (v) => {
-  throw new Error(`chelonia: action not implemented: ${v.type}.`)
-}
-
-sbp('sbp/selectors/register', {
-  // https://www.wordnik.com/words/chelonia
-  'chelonia/message/process': function (message: GIMessage, state: Object) {
-    sanityCheck(message)
-    const [opT, opV] = message.op()
-    const hash = message.hash()
-    const contractID = message.contractID()
-    const config = sbp('okTurtles.data/get', 'CHELONIA_CONFIG')
-    if (!state._vm) state._vm = {}
-    const opFns: { [GIOpType]: (any) => void } = {
-      [GIMessage.OP_CONTRACT] (v: GIOpContract) {
-        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
-        state._vm.authorizedKeys.push({ key: v.authkey, context: 'owner' })
-      },
-      [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpAction) {
-        if (!config.skipActionProcessing) {
-          const decrypted = message.decryptedValue(config.decryptFn)
-          opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
-        }
-      },
-      [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpPubAction) {
-        if (!config.skipActionProcessing) {
-          const { data, meta, type } = v
-          if (!config.whitelisted(type)) {
-            throw new Error(`chelonia: action not whitelisted: '${type}'`)
-          }
-          sbp(type, { data, meta, hash, contractID }, state)
-        }
-      },
-      [GIMessage.OP_PROP_DEL]: notImplemented,
-      [GIMessage.OP_PROP_SET] (v: GIOpPropSet) {
-        if (!state._vm.props) state._vm.props = {}
-        state._vm.props[v.key] = v.value
-      },
-      [GIMessage.OP_KEY_AUTH] (v: GIOpKeyAuth) {
-        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
-        state._vm.authorizedKeys.push(v)
-      },
-      [GIMessage.OP_KEY_DEAUTH]: notImplemented,
-      [GIMessage.OP_KEY_UPDATE]: notImplemented,
-      [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
-    }
-    let processOp = true
-    if (config.preOp) {
-      processOp = config.preOp(message, state) !== false && processOp
-    }
-    if (config[`preOp_${opT}`]) {
-      processOp = config[`preOp_${opT}`](message, state) !== false && processOp
-    }
-    if (processOp && !config.skipProcessing) {
-      opFns[opT](opV)
-      config.postOp && config.postOp(message, state)
-      config[`postOp_${opT}`] && config[`postOp_${opT}`](message, state)
-    }
-  }
-})
-
 function defaultSignatureFn (data: string) {
   return {
     type: 'default',
@@ -195,7 +134,7 @@ function defaultSignatureFn (data: string) {
   }
 }
 
-function sanityCheck (msg: GIMessage) {
+export function sanityCheck (msg: GIMessage) {
   const [type] = msg.message().op
   switch (type) {
     case GIMessage.OP_CONTRACT:

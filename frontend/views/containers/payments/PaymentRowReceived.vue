@@ -74,11 +74,14 @@ export default {
           return
         }
         await sbp('gi.actions/group/paymentUpdate', {
-          paymentHash: this.payment.hash,
-          updatedProperties: {
-            status: PAYMENT_NOT_RECEIVED
+          contractID: this.$store.state.currentGroupId,
+          data: {
+            paymentHash: this.payment.hash,
+            updatedProperties: {
+              status: PAYMENT_NOT_RECEIVED
+            }
           }
-        }, this.$store.state.currentGroupId)
+        })
       } catch (e) {
         console.error(e)
         alert(e.message)

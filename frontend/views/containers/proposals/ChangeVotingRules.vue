@@ -8,7 +8,7 @@ proposal-template(
   @submit='submit'
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
-    p.has-text-1.c-desc(v-if='changeSystem' v-html='changeSystem' data-test='changeSystem')
+    p.has-text-1.c-desc(v-if='changeSystem' v-safe-html='changeSystem' data-test='changeSystem')
 
     voting-rules-input.c-input(
       v-if='config.rule'
@@ -142,8 +142,9 @@ export default {
 
       if (this.groupShouldPropose) {
         try {
-          const proposal = await sbp('gi.contracts/group/proposal/create',
-            {
+          await sbp('gi.actions/group/proposal', {
+            contractID: this.currentGroupId,
+            data: {
               proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
               proposalData: {
                 current: {
@@ -156,10 +157,8 @@ export default {
               },
               votingRule: this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].rule,
               expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].expires_ms
-            },
-            this.currentGroupId
-          )
-          await sbp('backend/publishLogEntry', proposal)
+            }
+          })
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
           console.error('ChangeVotingRules.vue failed:', e)
@@ -169,10 +168,12 @@ export default {
       } else {
         try {
           await sbp('gi.actions/group/updateAllVotingRules', {
-            ruleName: this.config.rule,
-            ruleThreshold: +this.form.threshold
-          }, this.currentGroupId)
-
+            contractID: this.currentGroupId,
+            data: {
+              ruleName: this.config.rule,
+              ruleThreshold: +this.form.threshold
+            }
+          })
           this.$refs.proposal.close()
         } catch (e) {
           console.error('ChangeVotingRules.vue failed:', e)

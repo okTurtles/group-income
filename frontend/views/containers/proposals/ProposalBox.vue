@@ -2,7 +2,7 @@
 li.c-wrapper
   avatar-user.c-avatar(:username='proposal.meta.username' size='sm')
   .c-header
-    h4.is-title-4.c-header-title(data-test='title' v-html='title')
+    h4.is-title-4.c-header-title(data-test='title' v-safe-html='title')
     span.has-text-1 {{ humanDate }}
   .c-main
     ul

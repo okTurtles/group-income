@@ -226,15 +226,20 @@ export default {
             paymentType: PAYMENT_TYPE_MANUAL,
             ...(memo ? { memo } : {}) // TODO/BUG with flowTyper validation. Empty string '' fails.
           }
-          const msg = await sbp('gi.actions/group/payment', paymentInfo, this.currentGroupId)
+          const msg = await sbp('gi.actions/group/payment', {
+            contractID: this.currentGroupId, data: paymentInfo
+          })
           // TODO: hack until /payment supports sending completed payment
           //       (and "uncompleting" a payment)
           await sbp('gi.actions/group/paymentUpdate', {
-            paymentHash: msg.hash(),
-            updatedProperties: {
-              status: PAYMENT_COMPLETED
+            contractID: this.currentGroupId,
+            data: {
+              paymentHash: msg.hash(),
+              updatedProperties: {
+                status: PAYMENT_COMPLETED
+              }
             }
-          }, this.currentGroupId)
+          })
         } catch (e) {
           hasError = true
           console.error('RecordPayment submit() error:', e)

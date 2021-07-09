@@ -2,7 +2,7 @@
 
 import sbp from '~/shared/sbp.js'
 import { sign, bufToB64, b64ToStr } from '~/shared/functions.js'
-import { GIMessage } from '~/shared/GIMessage.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { CONTRACTS_MODIFIED } from '~/frontend/utils/events.js'
 import { intersection, difference, delay, randomIntFromRange } from '~/frontend/utils/giLodash.js'
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'

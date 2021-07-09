@@ -2,7 +2,6 @@
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
-import { DefineContract } from './Contract.js'
 import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
@@ -154,7 +153,7 @@ function memberLeaves (state, username, dateLeft) {
   })
 }
 
-DefineContract({
+sbp('chelonia/defineContract', {
   name: 'gi.contracts/group',
   metadata: {
     validate: objectOf({
@@ -605,7 +604,7 @@ DefineContract({
       process ({ data, meta, contractID }, { state, getters }) {
         memberLeaves(state, meta.username, meta.createdDate)
         sbp('gi.contracts/group/pushSideEffect', contractID,
-          ['gi.contracts/group/removeMember/process/sideEffect', {
+          ['gi.contracts/group/removeMember/sideEffect', {
             meta,
             data: { member: meta.username, reason: data.reason || '' },
             contractID

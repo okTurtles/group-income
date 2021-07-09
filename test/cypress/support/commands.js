@@ -159,7 +159,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
   cy.getByDT('modal').within(() => {
     cy.getByDT('groupName').type(name)
     cy.fixture(image, 'base64').then(fileContent => {
-      cy.get('[data-test="groupPicture"]').upload({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
+      cy.get('[data-test="groupPicture"]').attachFile({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
     })
     cy.getByDT('nextBtn').click()
 

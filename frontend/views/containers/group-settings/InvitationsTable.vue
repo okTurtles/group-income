@@ -116,7 +116,7 @@ import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
 import { mapGetters, mapState } from 'vuex'
-import L, { LError } from '@view-utils/translations.js'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'InvitationsTable',
@@ -256,17 +256,17 @@ export default {
 
       try {
         this.ephemeral.inviteRevokedNow = inviteSecret
-        const message = await sbp('gi.contracts/group/inviteRevoke/create', {
-          inviteSecret
-        }, this.currentGroupId)
-        await sbp('backend/publishLogEntry', message)
+        await sbp('gi.actions/group/inviteRevoke', {
+          data: { inviteSecret },
+          contractID: this.currentGroupId
+        })
         setTimeout(() => {
           this.ephemeral.inviteRevokedNow = null
         }, 2000)
       } catch (e) {
         this.ephemeral.inviteRevokedNow = null
         console.error('InvitationsTable.vue handleRevokeClick() error:', e)
-        this.$refs.inviteError.danger(L('Failed to revoke link. {reportError}', LError(e)))
+        this.$refs.inviteError.danger(e.message)
       }
     }
   }

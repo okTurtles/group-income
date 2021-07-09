@@ -2,7 +2,7 @@
 
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/data.js'
-import { GIMessage } from '~/shared/GIMessage.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
 // NOTE: To enable persistence of log use 'sbp/selectors/overwrite'
 //       to overwrite the following selectors:

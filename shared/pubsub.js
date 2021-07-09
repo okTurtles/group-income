@@ -400,8 +400,8 @@ const defaultMessageHandlers = {
 // TODO: verify these are good defaults
 const defaultOptions = {
   debug: process.env.NODE_ENV === 'development',
-  pingTimeout: 45_000,
-  maxReconnectionDelay: 60_000,
+  pingTimeout: 45000,
+  maxReconnectionDelay: 60000,
   maxRetries: 10,
   minReconnectionDelay: 500,
   reconnectOnDisconnection: true,
@@ -410,7 +410,7 @@ const defaultOptions = {
   // respond because of a failed authentication.
   reconnectOnTimeout: false,
   reconnectionDelayGrowFactor: 2,
-  timeout: 5_000
+  timeout: 5000
 }
 
 const globalEventNames = ['offline', 'online']

@@ -32,7 +32,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
 import currencies, { mincomePositive, normalizeCurrency } from '@view-utils/currencies.js'
-import L, { LError } from '@view-utils/translations.js'
+import L from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
@@ -118,8 +118,9 @@ export default {
 
       if (this.groupShouldPropose) {
         try {
-          const proposal = await sbp('gi.contracts/group/proposal/create',
-            {
+          await sbp('gi.actions/group/proposal', {
+            contractID: this.currentGroupId,
+            data: {
               proposalType: PROPOSAL_GROUP_SETTING_CHANGE,
               proposalData: {
                 setting: 'mincomeAmount',
@@ -130,30 +131,24 @@ export default {
               },
               votingRule: this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].rule,
               expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].expires_ms
-            },
-            this.currentGroupId
-          )
-          await sbp('backend/publishLogEntry', proposal)
-
+            }
+          })
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
-          this.$refs.formMsg.danger(L('Failed to propose mincome change: {reportError}', LError(e)))
+          this.$refs.formMsg.danger(e.message)
           this.ephemeral.currentStep = 0
         }
         return
       }
 
       try {
-        const updatedSettings = await sbp(
-          'gi.contracts/group/updateSettings/create',
-          { mincomeAmount },
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', updatedSettings)
+        await sbp('gi.actions/group/updateSettings', {
+          contractID: this.currentGroupId, data: { mincomeAmount }
+        })
         this.$refs.proposal.close()
       } catch (e) {
         console.error('Mincome.vue submit() error:', e)
-        this.$refs.formMsg.danger(L('Failed to change mincome: {reportError}', LError(e)))
+        this.$refs.formMsg.danger(e.message)
       }
     }
   }

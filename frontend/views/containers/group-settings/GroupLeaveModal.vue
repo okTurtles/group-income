@@ -103,7 +103,7 @@ export default {
       if (this.$v.form.$invalid) { return }
 
       try {
-        await sbp('gi.actions/group/removeOurselves', this.currentGroupId)
+        await sbp('gi.actions/group/removeOurselves', { contractID: this.currentGroupId, data: {} })
       } catch (e) {
         console.error('GroupLeaveModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)

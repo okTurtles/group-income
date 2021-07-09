@@ -5,6 +5,7 @@ import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/data.js'
 import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
+import '~/shared/domains/chelonia/chelonia.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import Vue from 'vue'
@@ -22,10 +23,12 @@ import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
 import CypressBypassUi from './views/containers/navigation/CypressBypassUI.vue'
+import './views/utils/allowedUrls.js'
 import './views/utils/translations.js'
 import './views/utils/avatar.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
+import './views/utils/vSafeHtml.js'
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import 'wicg-inert'
@@ -72,7 +75,7 @@ async function startApp () {
     pubsubURL, {
       // This option can be enabled since we are not doing auth via web sockets.
       reconnectOnTimeout: true,
-      timeout: 5_000
+      timeout: 5000
     }
   ))
 

@@ -1,14 +1,18 @@
+'use strict'
+
 import sbp from '~/shared/sbp.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
 import { imageUpload } from '@utils/image.js'
+import './mailbox.js'
+
+import { encryptedAction } from './utils.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
-    username,
-    email,
-    password,
-    picture
+    data: { username, email, password, picture },
+    options: { sync = true } = {},
+    publishOptions
   }) {
     // TODO: make sure we namespace these names:
     //       https://github.com/okTurtles/group-income-simple/issues/598
@@ -31,53 +35,51 @@ export default (sbp('sbp/selectors/register', {
       }
     }
     // proceed with creation
-    const user = await sbp('gi.contracts/identity/create', {
-      // authorizations: [Events.CanModifyAuths.dummyAuth()],
-      attributes: {
-        username,
-        email: email,
-        picture: finalPicture
-      }
-    })
-    const mailbox = await sbp('gi.contracts/mailbox/create', {
-      // authorizations: [Events.CanModifyAuths.dummyAuth(user.contractID())]
-    })
-    await sbp('backend/publishLogEntry', user)
-    await sbp('backend/publishLogEntry', mailbox)
-
-    const userID = user.contractID()
+    // first create the mailbox for the user and subscribe to it
+    // and do this outside of a try block so that if it throws the error just gets passed up
+    const mailbox = await sbp('gi.actions/mailbox/create', { options: { sync: true } })
     const mailboxID = mailbox.contractID()
-
-    // set the attribute *after* publishing the identity contract
-    const attribute = await sbp('gi.contracts/identity/setAttributes/create',
-      { mailbox: mailboxID },
-      userID
-    )
-    await sbp('backend/publishLogEntry', attribute)
-
+    let userID
+    // next create the identity contract itself and associate it with the mailbox
+    try {
+      const user = await sbp('chelonia/out/registerContract', {
+        contractName: 'gi.contracts/identity',
+        publishOptions,
+        data: {
+          attributes: { username, email, picture: finalPicture }
+        }
+      })
+      userID = user.contractID()
+      if (sync) {
+        await sbp('gi.actions/contract/syncAndWait', userID)
+      }
+      await sbp('gi.actions/identity/setAttributes', {
+        contractID: userID, data: { mailbox: mailboxID }
+      })
+    } catch (e) {
+      console.error('gi.actions/identity/create failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
+    }
     return [userID, mailboxID]
   },
   'gi.actions/identity/signup': async function ({
-    username,
-    email,
-    password // TODO - implement
-  }, {
-    sync = true
-  } = {}) {
+    data: { username, email, password },
+    options: { sync = true } = {},
+    publishOptions
+  }) {
     try {
       const randomAvatar = sbp('gi.utils/avatar/create')
       const [userID, mailboxID] = await sbp('gi.actions/identity/create', {
-        username,
-        email,
-        password,
-        picture: randomAvatar
+        data: {
+          username,
+          email,
+          password,
+          picture: randomAvatar
+        },
+        options: { sync },
+        publishOptions
       })
-
       await sbp('namespace/register', username, userID)
-
-      if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', [userID, mailboxID])
-      }
       return [userID, mailboxID]
     } catch (e) {
       await sbp('gi.actions/identity/logout') // TODO: should this be here?
@@ -86,11 +88,9 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/identity/login': async function ({
-    username,
-    password
-  }, {
-    sync = true
-  } = {}) {
+    data: { username, password },
+    options: { sync = true } = {}
+  }) {
     // TODO: Insert cryptography here
     const userId = await sbp('namespace/lookup', username)
     if (!userId) {
@@ -112,17 +112,19 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to login: {reportError}', LError(e)))
     }
   },
-  'gi.actions/identity/signupAndLogin': async function (signupParams) {
-    const contractIDs = await sbp('gi.actions/identity/signup', signupParams, { sync: true })
-    await sbp('gi.actions/identity/login', signupParams, { sync: true })
+  'gi.actions/identity/signupAndLogin': async function ({ data }) {
+    const contractIDs = await sbp('gi.actions/identity/signup', {
+      data, options: { sync: true }
+    })
+    await sbp('gi.actions/identity/login', {
+      data, options: { sync: false } // don't need to sync since we already did
+    })
     return contractIDs
   },
   'gi.actions/identity/logout': async function () {
     // TODO: move the logout vuex action code into this function (see #804)
     await sbp('state/vuex/dispatch', 'logout')
   },
-  'gi.actions/identity/updateSettings': async function (settings, contractID) {
-    const msg = await sbp('gi.contracts/identity/updateSettings/create', settings, contractID)
-    await sbp('backend/publishLogEntry', msg)
-  }
+  ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.')),
+  ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.'))
 }): string[])

@@ -57,18 +57,18 @@ export default {
   },
   methods: {
     async sendMalformedMessage () {
-      const msg = await sbp('gi.contracts/group/inviteAccept/create',
-        { inviteSecret: 'poop!' },
-        this.$store.state.currentGroupId
-      )
-      sbp('backend/publishLogEntry', msg)
+      await sbp('chelonia/out/actionEncrypted', {
+        action: 'gi.contracts/group/inviteAccept',
+        data: { inviteSecret: 'poop!' },
+        contractID: this.$store.state.currentGroupId
+      })
     },
     async sendMalformedMutationOfType () {
-      const msg = await sbp('gi.contracts/group/malformedMutation/create',
-        { errorType: this.form.mutationErrorType },
-        this.$store.state.currentGroupId
-      )
-      sbp('backend/publishLogEntry', msg)
+      await sbp('chelonia/out/actionEncrypted', {
+        action: 'gi.contracts/group/malformedMutation',
+        data: { errorType: this.form.mutationErrorType },
+        contractID: this.$store.state.currentGroupId
+      })
     }
   }
 }

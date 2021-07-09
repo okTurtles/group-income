@@ -18,7 +18,7 @@
             )
             span
               span.has-text-bold {{ config[rule].label }}
-              span.has-text-1.c-option-hint(v-html='config[rule].hint')
+              span.has-text-1.c-option-hint(v-safe-html='config[rule].hint')
           img.c-box-img(src='/assets/images/rule-placeholder.png' alt='')
 
         transition-expand

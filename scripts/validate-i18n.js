@@ -26,6 +26,7 @@ const UNEXPECTED_METHOD = 'Methods are not allowed in the `:args` attribute'
 const UNEXPECTED_PROPERTY_TYPE = 'An object literal used in the `:args` attribute can only have plain properties and `LTags()` rest properties'
 const UNEXPECTED_SPREAD_ELEMENT = 'The spread operator is not allowed in the `:args` attribute, unless it applies to an `LTags()` call'
 const UNEXPECTED_VARIABLE = 'Double curly braces (Vue.js variables) are not allowed in i18n strings. Use single braces in the `:args` attribute to pass in variables'
+const UNEXPECTED_VHTML_DIRECTIVE = 'The `v-html` is no longer allowed out of safety concern. Please use `v-safe-html` instead.'
 
 /**
  * Unquotes a string, taking care of unescaping the escaped quotes it may
@@ -279,8 +280,10 @@ module.exports.prototype = {
 
       // Checks if the html attribute was used.
       attributeTokens.forEach(token => {
-        if (token.name === 'html') {
+        if (token.name === 'html' || token.name === ':html') {
           errors.add(UNEXPECTED_HTML_ATTRIBUTE, token.line, token.col)
+        } else if (token.name === 'v-html') {
+          errors.add(UNEXPECTED_VHTML_DIRECTIVE, token.line, token.col)
         }
       })
       const argsToken = attributeTokens.find(token => token.name === ':args')
