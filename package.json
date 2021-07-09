@@ -138,7 +138,7 @@
     "browser-sync": "2.26.13",
     "cheerio": "1.0.0-rc.3",
     "chokidar": "3.4.3",
-    "cypress": "7.6.0",
+    "cypress": "7.7.0",
     "cypress-file-upload": "5.0.8",
     "eslint": "7.14.0",
     "eslint-config-standard": "16.0.2",
