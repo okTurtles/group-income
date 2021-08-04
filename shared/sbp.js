@@ -8,6 +8,12 @@ const globalFilters: Array<TypeFilter> = []
 const domainFilters: {[string]: Array<TypeFilter>} = {}
 const selectorFilters: {[string]: Array<TypeFilter>} = {}
 
+// Makes the `Buffer` global available in the browser.
+if (typeof window === 'object') {
+  const { Buffer } = require('buffer')
+  window.Buffer = Buffer
+}
+
 const DOMAIN_REGEX = /^[^/]+/
 
 function sbp (selector: string, ...data: any): any {
