@@ -1,4 +1,4 @@
-// TODO Remove font-awesome and replace by https://icomoon.io font
+// TODO Remove font-awesome and replace by https://icomoon.io font.
 
 // More fonts icon in node_module/fontawesome
 $icons: (
@@ -68,8 +68,7 @@ $icons: (
     url("../fonts/Icons/fa-solid-900.eot?#iefix") format("embedded-opentype"),
     url("../fonts/Icons/fa-solid-900.woff2") format("woff2"),
     url("../fonts/Icons/fa-solid-900.woff") format("woff"),
-    url("../fonts/Icons/fa-solid-900.ttf") format("truetype"),
-    url("../fonts/Icons/fa-solid-900.svg#fontawesome") format("svg");
+    url("../fonts/Icons/fa-solid-900.ttf") format("truetype");
 }
 
 @font-face {
@@ -81,8 +80,7 @@ $icons: (
     url("../fonts/Icons/fa-regular-400.eot?#iefix") format("embedded-opentype"),
     url("../fonts/Icons/fa-regular-400.woff2") format("woff2"),
     url("../fonts/Icons/fa-regular-400.woff") format("woff"),
-    url("../fonts/Icons/fa-regular-400.ttf") format("truetype"),
-    url("../fonts/Icons/fa-regular-400.svg#fontawesome") format("svg");
+    url("../fonts/Icons/fa-regular-400.ttf") format("truetype");
 }
 
 [class^="icon-"] {
