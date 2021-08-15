@@ -211,7 +211,7 @@ module.exports = (grunt) => {
       // - anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.
       // The `--require @babel/register` flags ensure Babel support in our test files.
       test: {
-        cmd: 'node node_modules/mocha/bin/mocha --require @babel/register --exit -R spec --bail "{./{,!(node_modules|test)/**/}*.test.js,./test/*.js}"',
+        cmd: 'node node_modules/mocha/bin/mocha --require @babel/register --exit -t 9000 -R spec --bail "{./{,!(node_modules|test)/**/}*.test.js,./test/*.js}"',
         options: { env: process.env }
       }
     }
