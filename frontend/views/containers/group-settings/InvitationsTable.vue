@@ -274,6 +274,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@use "sass:math";
 @import "@assets/style/_variables.scss";
 
 .c-section {
@@ -329,7 +330,7 @@ export default {
     align-items: center;
 
     .c-tip {
-      margin-left: $size_4 / 2;
+      margin-left: math.div($size_4, 2);
       line-height: 1.3125rem;
     }
   }

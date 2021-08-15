@@ -21,6 +21,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
+@use "sass:math";
 @import "@assets/style/_variables.scss";
 @import "@assets/style/_mixins.scss";
 
@@ -35,7 +36,7 @@ $iconSize: 2.75rem;
   padding: 0.5rem 0;
   width: 2rem + $iconSize; // gap on the edge
   background-color: transparent;
-  transition: height 1ms $speed, width 1ms $speed, background $speed/2;
+  transition: height 1ms $speed, width 1ms $speed, background math.div($speed, 2);
   overflow: hidden;
   color: $text_0;
 
@@ -70,7 +71,7 @@ $iconSize: 2.75rem;
     height: $iconSize;
     text-align: center;
     line-height: $iconSize;
-    transition: opacity $speed/5 $speed;
+    transition: opacity math.div($speed, 5) $speed;
   }
 
   .is-active & {
@@ -78,7 +79,7 @@ $iconSize: 2.75rem;
     height: 100vh;
     width: 200vw;
     top: 0;
-    transition: height 1ms 1ms, width 1ms 1ms, background $speed/2;
+    transition: height 1ms 1ms, width 1ms 1ms, background math.div($speed, 2);
 
     .icon-info,
     .icon-bars {
