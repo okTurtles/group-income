@@ -342,14 +342,14 @@ module.exports = (grunt) => {
     ;[
       [['frontend/**/*.html'], ['copy']],
       [['frontend/views/**/*.vue'], ['exec:puglint']],
-      [['backend/**/*.js', 'shared/**/*.js'], ['exec:eslint', 'backend:relaunch', 'esbuild']],
+      [['backend/**/*.js', 'shared/**/*.js'], ['exec:eslint', 'backend:relaunch']],
       [['Gruntfile.js'], ['exec:eslint']]
     ].forEach(([globs, tasks]) => {
       globs.forEach(glob => {
         grunt.verbose.debug(chalk`{green browsersync:} watching: ${glob}`)
         browserSync.watch(glob, { ignoreInitial: true }, () => {
           grunt.verbose.debug(chalk`{green browsersync:} queuing: ${tasks}`)
-          grunt.task.run(tasks.concat(['keepalive']))
+          grunt.task.run(tasks.concat(['esbuild', 'keepalive']))
           // Allow the task queue to move forward.
           killKeepAlive && killKeepAlive()
         })
