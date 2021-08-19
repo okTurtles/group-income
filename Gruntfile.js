@@ -59,7 +59,7 @@ const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
 const distDir = 'dist'
 const distJS = 'dist/assets/js'
-// const serviceWorkerDir = 'frontend/controller/serviceworkers'
+const serviceWorkerDir = 'frontend/controller/serviceworkers'
 const srcDir = 'frontend'
 
 const chompLeft = (s, what) => s.startsWith(what) ? s.slice(what.length) : s
@@ -310,7 +310,7 @@ module.exports = (grunt) => {
   // --------------------
 
   grunt.registerTask('esbuild', async function () {
-    let done = this.async()
+    const done = this.async()
     const aliasPlugin = require('./scripts/esbuild-alias-plugin.js')(aliasPluginOptions)
     const flowRemoveTypesPlugin = require('./scripts/esbuild-flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
@@ -335,9 +335,7 @@ module.exports = (grunt) => {
     await fs.promises.unlink(`${distJS}/main.css`)
 
     if (!this.flags.watch) {
-      done && done()
-      done = undefined
-      return
+      return done()
     }
 
     // BrowserSync setup.
@@ -346,21 +344,30 @@ module.exports = (grunt) => {
 
     ;[
       [['frontend/**/*.html'], ['copy']],
+      [['frontend/**/*.js'], ['exec:eslint']],
       [['frontend/views/**/*.vue'], ['exec:puglint']],
       [['backend/**/*.js', 'shared/**/*.js'], ['exec:eslint', 'backend:relaunch']],
       [['Gruntfile.js'], ['exec:eslint']]
     ].forEach(([globs, tasks]) => {
       globs.forEach(glob => {
-        grunt.verbose.debug(chalk`{green browsersync:} watching: ${glob}`)
-        browserSync.watch(glob, { ignoreInitial: true }, () => {
-          grunt.verbose.debug(chalk`{green browsersync:} queuing: ${tasks}`)
-          grunt.task.run(tasks.concat(['esbuild', 'keepalive']))
+        browserSync.watch(glob, { ignoreInitial: true }, async (eventTypeName, filePath) => {
+          grunt.log.writeln(chalk`{green file event:} '${eventTypeName}' {green detected on} ${filePath}`)
+          // These tasks will run concurrently with the incremental rebuild.
+          grunt.task.run(tasks)
+          // Only rebuild the relevant entry point.
+          if (filePath.startsWith(serviceWorkerDir)) {
+            await buildServiceWorkers.run()
+          } else {
+            await buildMain.run()
+          }
+          grunt.task.run(['keepalive'])
           // Allow the task queue to move forward.
           killKeepAlive && killKeepAlive()
         })
       })
     })
-    grunt.verbose.debug(chalk`{green browsersync:} setup done!`)
+    grunt.log.writeln(chalk`{green browsersync:} setup done!`)
+    done()
   })
 
   // eslint-disable-next-line no-unused-vars
