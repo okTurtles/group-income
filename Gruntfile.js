@@ -347,7 +347,7 @@ module.exports = (grunt) => {
     ;[
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], ['exec:eslint']],
-      [['frontend/views/**/*.vue'], ['exec:puglint']],
+      [['frontend/views/**/*.vue'], ['exec:eslint', 'exec:puglint', 'exec:stylelint']],
       [['backend/**/*.js', 'shared/**/*.js'], ['exec:eslint', 'backend:relaunch']],
       [['Gruntfile.js'], ['exec:eslint']]
     ].forEach(([globs, tasks]) => {
