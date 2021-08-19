@@ -313,11 +313,11 @@ module.exports = (grunt) => {
 
   grunt.registerTask('esbuild', async function () {
     const done = this.async()
-    const aliasPlugin = require('./scripts/esbuild-alias-plugin.js')(aliasPluginOptions)
-    const flowRemoveTypesPlugin = require('./scripts/esbuild-flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
+    const aliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')(aliasPluginOptions)
+    const flowRemoveTypesPlugin = require('./scripts/esbuild-plugins/flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
-    const svgPlugin = require('./scripts/esbuild-vue-inline-svg-plugin.js')()
-    const vuePlugin = require('./scripts/esbuild-vue-plugin.js')(vuePluginOptions)
+    const svgPlugin = require('./scripts/esbuild-plugins/vue-inline-svg-plugin.js')()
+    const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
 
     const buildMain = createEsbuildTask({
