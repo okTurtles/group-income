@@ -13,17 +13,8 @@ const createEsbuildTask = (options = {}, { rebuildDelay, rebuildThrottle } = {})
 
     // Internal state.
     state: {
-      delayTimeoutID: 0,
-      // Files where a linting task failed. Should only be used by linting plugins.
-      failingFilenames: new Set(),
       // Holds the latest esbuild result object.
-      result: null,
-      // If true, calling run() will do nothing but schedule the task for later.
-      running: false,
-      // If true, the task will run or run again as soon as possible.
-      scheduled: false,
-      // The task cannot run while it is throttled, although it can be scheduled.
-      throttled: false
+      result: null
     },
 
     // Calls to run can be batched and throttled according to the corresponding options.
@@ -47,22 +38,19 @@ const createEsbuildTask = (options = {}, { rebuildDelay, rebuildThrottle } = {})
 const defaultPlugin = {
   name: 'default',
   setup (build) {
+    // TODO: add support for multiple entry points per task.
     const entryPoint = build.initialOptions.entryPoints[0]
     const output = build.initialOptions.outdir || build.initialOptions.outfile
-    const state = {
-      result: null,
-      t0: 0
-    }
+    // Will store the build or rebuild start timestamp, in milliseconds.
+    let t0 = 0
 
     build.onStart(() => {
       console.log(chalk`{green esbuild:} ${entryPoint}`)
-      state.t0 = Date.now()
+      t0 = Date.now()
     })
 
     build.onEnd((result) => {
-      state.result = result
-
-      const duration = Date.now() - state.t0
+      const duration = Date.now() - t0
       console.log(chalk`{green created} {bold ${output}} {green from} {bold ${entryPoint}} {green in} {bold ${(duration / 1e3).toFixed(1)}s}`)
     })
   }
