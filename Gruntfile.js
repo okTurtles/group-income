@@ -62,6 +62,8 @@ const distJS = 'dist/assets/js'
 const serviceWorkerDir = 'frontend/controller/serviceworkers'
 const srcDir = 'frontend'
 
+// Not imported but copied from '~/shared/string.js' to avoid needing Babel here.
+// Only used in the callback passed to the `importer` option of the SASS plugin.
 const chompLeft = (s, what) => s.startsWith(what) ? s.slice(what.length) : s
 const development = NODE_ENV === 'development'
 
