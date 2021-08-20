@@ -5,8 +5,9 @@ import multihash from 'multihashes'
 import nacl from 'tweetnacl'
 import blake from 'blakejs'
 
-// Makes the `Buffer` global available in the browser.
-if (typeof window === 'object') {
+// Makes the `Buffer` global available in the browser if needed.
+if (typeof window === 'object' && typeof Buffer === 'undefined') {
+  // Only import `Buffer` to hopefully help treeshaking.
   const { Buffer } = require('buffer')
   window.Buffer = Buffer
 }
