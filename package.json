@@ -4,9 +4,7 @@
   "private": true,
   "description": "",
   "scripts": {
-    "backend": "cross-env LOAD_TARGET_FILE=./backend/index.js nodemon --watch backend/ Gruntfile.js",
-    "rollup": "rollup -c",
-    "rollup-dev": "rollup -c -w",
+    "backend": "npx nodemon --watch backend/ -- --require ./Gruntfile.js --require @babel/register ./backend/index.js",
     "sass-dev": "node-sass --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/style",
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "cy:open": "cypress open",
