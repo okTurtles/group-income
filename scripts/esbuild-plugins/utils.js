@@ -1,10 +1,27 @@
+/* eslint-disable require-await */
 'use strict'
 
 const { dirname, join, relative } = require('path')
 
+const chalk = require('chalk')
+
+const chalkFileEvent = (eventName, filePath) => {
+  return chalk`{green file event:} '${eventName}' {green detected on} ${filePath}`
+}
+
+const chalkLintingTime = (dt, linters, filePaths) => {
+  const linterNames = linters.map(linter => linter.name)
+  const whatHasBeenLinted = (
+    filePaths.length === 1 ? filePaths[0] : `${filePaths.length} files`
+  )
+  return chalk`{green ${linterNames.join(', ')}:} linted ${whatHasBeenLinted} {green in} ${formatElapsedTime(dt)}s`
+}
+
 const escapeForRegExp = (string) => {
   return string.replace(/[.*+?^${}()|\\[\]]/g, '\\$&')
 }
+
+const formatElapsedTime = (dt) => (dt / 1e3).toFixed(1)
 
 /**
  * Creates an alias replacement function from an array of path aliases, to be
@@ -51,3 +68,111 @@ exports.createFilterRegExpFromAliases = (aliases) => {
   }
   return new RegExp(`^(${aliases.map(escapeForRegExp).sort().reverse().join('|')})(/|$)`)
 }
+
+/**
+ * Lints some source code with ESLint.
+ *
+ * @param {string} code
+ * @param {Object} [options]
+ */
+exports.createEslinter = (options = {}) => {
+  const {
+    format = 'stylish',
+    throwOnError = false,
+    throwOnWarning = false
+  } = options
+
+  const { CLIEngine } = require('eslint')
+  const cli = new CLIEngine()
+  const formatter = cli.getFormatter(format)
+
+  return {
+    name: 'eslint',
+
+    async lintCode (code, filename = '') {
+      const report = cli.executeOnText(code, filename)
+
+      const { errorCount, results, warningCount } = report
+
+      if (!errorCount && !warningCount) {
+        return
+      }
+      const output = formatter(results)
+
+      if (output) {
+        console.log(output)
+      }
+      if (errorCount && (throwOnError || throwOnWarning)) {
+        throw new Error('Errors were found.')
+      }
+      if (warningCount && throwOnWarning) {
+        throw new Error('Warnings were found.')
+      }
+    }
+  }
+}
+
+/**
+ * Lints a .vue file with pug-lint-vue.
+ *
+ * @param {string} filename
+ * @param {Object} [options]
+ */
+exports.createPuglinter = (options = {}) => {
+  const Linter = require('pug-lint-vue/lib/linter')
+  const linter = new Linter(options)
+
+  return {
+    name: 'puglint',
+
+    async lintCode (code, filename = '') {
+      linter.lintErrors.length = 0
+      linter.checkSourceCode(code, filename)
+    }
+  }
+}
+
+/**
+ * Lints some source code with stylelint.
+ *
+ * @param {string} code
+ * @param {Object} [options]
+ */
+exports.createStylelinter = (options = {}) => {
+  const {
+    throwOnError = false,
+    throwOnWarning = false
+  } = options
+  const stylelint = require('stylelint')
+
+  return {
+    name: 'stylelint',
+
+    async lintCode (code) {
+      // https://github.com/stylelint/stylelint/blob/master/docs/user-guide/usage/node-api.md
+      await stylelint.lint({ ...options, code }).then(({
+        errored,
+        output,
+        maxWarningsExceeded,
+        postcssResults,
+        results
+      }) => {
+        const foundWarnings = maxWarningsExceeded ? maxWarningsExceeded.foundWarnings : 0
+
+        if (errored || foundWarnings) {
+          console.log(output)
+        }
+        if (errored && throwOnError) {
+          throw new Error('Errors were found.')
+        }
+        if (foundWarnings && throwOnWarning) {
+          throw new Error('Warnings were found.')
+        }
+      })
+    }
+  }
+}
+
+exports.formatElapsedTime = formatElapsedTime
+exports.chalkFileEvent = chalkFileEvent
+exports.chalkLintingTime = chalkLintingTime

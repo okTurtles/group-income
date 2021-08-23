@@ -149,11 +149,20 @@ module.exports = (grunt) => {
     splitting: false
   }
 
+  // https://github.com/rollup/plugins/tree/master/packages/eslint#options
+  const eslintOptions = {
+    format: 'stylish',
+    throwOnError: false,
+    throwOnWarning: false
+  }
+
   // By default, `flow-remove-types` doesn't process files which don't start with a `@flow` annotation,
   // so we have to pass the `all` option since we don't use `@flow` annotations.
   const flowRemoveTypesPluginOptions = {
     all: true
   }
+
+  const puglintOptions = {}
 
   // https://github.com/sass/dart-sass#javascript-api
   const sassPluginOptions = {
@@ -172,6 +181,13 @@ module.exports = (grunt) => {
         ? { file: resolve('./frontend/assets', chompLeft(url, '@assets/')) }
         : null
     }
+  }
+
+  // https://github.com/stylelint/stylelint/blob/master/docs/user-guide/usage/node-api.md#options
+  const stylelintOptions = {
+    formatter: 'string',
+    throwOnError: false,
+    throwOnWarning: false
   }
 
   const vuePluginOptions = {
@@ -340,29 +356,46 @@ module.exports = (grunt) => {
       return done()
     }
 
+    const eslint = require('./scripts/esbuild-plugins/utils.js').createEslinter(eslintOptions)
+    const puglint = require('./scripts/esbuild-plugins/utils.js').createPuglinter(puglintOptions)
+    const stylelint = require('./scripts/esbuild-plugins/utils.js').createStylelinter(stylelintOptions)
+    const { chalkFileEvent, chalkLintingTime } = require('./scripts/esbuild-plugins/utils.js')
+
     // BrowserSync setup.
     const browserSync = require('browser-sync').create('esbuild')
     browserSync.init(browserSyncOptions)
 
     ;[
       [['frontend/**/*.html'], ['copy']],
-      [['frontend/**/*.js'], ['exec:eslint']],
-      [['frontend/views/**/*.vue'], ['exec:eslint', 'exec:puglint', 'exec:stylelint']],
-      [['backend/**/*.js', 'shared/**/*.js'], ['exec:eslint', 'backend:relaunch']],
-      [['Gruntfile.js'], ['exec:eslint']]
+      [['frontend/**/*.js'], [eslint]],
+      [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]],
+      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
+      [['Gruntfile.js'], [eslint]]
     ].forEach(([globs, tasks]) => {
       globs.forEach(glob => {
         browserSync.watch(glob, { ignoreInitial: true }, async (eventTypeName, filePath) => {
-          grunt.log.writeln(chalk`{green file event:} '${eventTypeName}' {green detected on} ${filePath}`)
-          // These tasks will run concurrently with the incremental rebuild.
-          grunt.task.run(tasks)
+          grunt.log.writeln(chalkFileEvent(eventTypeName, filePath))
+
+          if (eventTypeName === 'add' || eventTypeName === 'change') {
+            // Read and lint the changed file.
+            const code = await fs.promises.readFile(filePath, 'utf8')
+            const linters = tasks.filter(task => typeof task === 'object')
+            const lintingStartMs = Date.now()
+
+            await Promise.all(linters.map(linter => linter.lintCode(code, filePath)))
+
+            // Log the linting time, formatted with Chalk.
+            grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, linters, [filePath]))
+          }
           // Only rebuild the relevant entry point.
           if (filePath.startsWith(serviceWorkerDir)) {
             await buildServiceWorkers.run()
           } else {
             await buildMain.run()
           }
+          grunt.task.run(tasks.filter(task => typeof task === 'string'))
           grunt.task.run(['keepalive'])
+
           // Allow the task queue to move forward.
           killKeepAlive && killKeepAlive()
         })
