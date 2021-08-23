@@ -5,6 +5,13 @@ import multihash from 'multihashes'
 import nacl from 'tweetnacl'
 import blake from 'blakejs'
 
+// Makes the `Buffer` global available in the browser if needed.
+if (typeof window === 'object' && typeof Buffer === 'undefined') {
+  // Only import `Buffer` to hopefully help treeshaking.
+  const { Buffer } = require('buffer')
+  window.Buffer = Buffer
+}
+
 export function blake32Hash (data: string | Buffer | Uint8Array): string {
   // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
   const uint8array = blake.blake2b(data, null, 32)
