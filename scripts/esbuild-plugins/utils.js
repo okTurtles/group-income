@@ -2,6 +2,7 @@
 'use strict'
 
 const { dirname, join, relative } = require('path')
+const { promises } = require('fs')
 
 const chalk = require('chalk')
 
@@ -20,6 +21,8 @@ const chalkLintingTime = (dt, linters, filePaths) => {
 const escapeForRegExp = (string) => {
   return string.replace(/[.*+?^${}()|\\[\]]/g, '\\$&')
 }
+
+const fileCache = new Map()
 
 const formatElapsedTime = (dt) => (dt / 1e3).toFixed(1)
 
@@ -104,12 +107,6 @@ exports.createFilterRegExpFromAliases = (aliases) => {
   return new RegExp(`^(${aliases.map(escapeForRegExp).sort().reverse().join('|')})(/|$)`)
 }
 
-/**
- * Lints some source code with ESLint.
- *
- * @param {string} code
- * @param {Object} [options]
- */
 exports.createEslinter = (options = {}) => {
   const {
     format = 'stylish',
@@ -124,6 +121,12 @@ exports.createEslinter = (options = {}) => {
   return {
     name: 'eslint',
 
+    /**
+     * Lints some source code with ESLint.
+     *
+     * @param {string} code
+     * @param {string} [filename]
+     */
     async lintCode (code, filename = '') {
       const report = cli.executeOnText(code, filename)
 
@@ -147,12 +150,6 @@ exports.createEslinter = (options = {}) => {
   }
 }
 
-/**
- * Lints a .vue file with pug-lint-vue.
- *
- * @param {string} filename
- * @param {Object} [options]
- */
 exports.createPuglinter = (options = {}) => {
   const Linter = require('pug-lint-vue/lib/linter')
   const linter = new Linter(options)
@@ -160,19 +157,19 @@ exports.createPuglinter = (options = {}) => {
   return {
     name: 'puglint',
 
+    /**
+     * Lints the contents of a .vue file with pug-lint-vue.
+     *
+     * @param {string} code
+     * @param {string} [filename]
+     */
     async lintCode (code, filename = '') {
       linter.lintErrors.length = 0
-      linter.checkSourceCode(code, filename)
+      linter.checkString(code, filename)
     }
   }
 }
 
-/**
- * Lints some source code with stylelint.
- *
- * @param {string} code
- * @param {Object} [options]
- */
 exports.createStylelinter = (options = {}) => {
   const {
     throwOnError = false,
@@ -183,6 +180,11 @@ exports.createStylelinter = (options = {}) => {
   return {
     name: 'stylelint',
 
+    /**
+     * Lints some source code with stylelint.
+     *
+     * @param {string} code
+     */
     async lintCode (code) {
       // https://github.com/stylelint/stylelint/blob/master/docs/user-guide/usage/node-api.md
       await stylelint.lint({ ...options, code }).then(({
