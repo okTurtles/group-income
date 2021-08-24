@@ -157,7 +157,7 @@
     "load-grunt-tasks": "5.1.0",
     "mocha": "8.2.1",
     "node-fetch": "2.6.1",
-    "pug-lint-vue": "0.4.0",
+    "pug-lint-vue": "github:snowteamer/pug-lint-vue#2702763877bfd1b77c56c81542a22a058e42e952",
     "sass": "1.37.5",
     "should": "13.2.3",
     "should-sinon": "0.0.6",
