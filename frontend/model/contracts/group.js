@@ -14,7 +14,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps, addMonthsToDate, dateToMonthstamp, compareCycles } from '~/frontend/utils/time.js'
+import { currentMonthstamp, prevMonthstamp, ISOStringToMonthstamp, compareMonthstamps, addMonthsToDate, dateToMonthstamp, compareCycles } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
@@ -128,6 +128,10 @@ function insertMonthlyCycleEvent (state, event) {
   })
 
   state.distributionEvents.push(event)
+
+  state.distributionEvents.sort((a, b) => {
+    return compareCycles(a.data.when, b.data.when)
+  })
 }
 
 function memberDeclaredIncome (state, username, haveNeed, createdDate) {
@@ -328,7 +332,7 @@ sbp('chelonia/defineContract', {
           distributionEvents: [{
             type: 'startCycleEvent',
             data: {
-              when: meta.createdDate,
+              when: dateToMonthstamp(meta.createdDate),
               latePayments: []
             }
           }],
@@ -425,6 +429,7 @@ sbp('chelonia/defineContract', {
             const toUser = vueFetchInitKV(fromUser, data.toUser, [])
             toUser.push(data.paymentHash)
           }
+          console.error(payment)
           insertMonthlyCycleEvent(state, {
             type: 'paymentEvent',
             data: {
@@ -432,7 +437,7 @@ sbp('chelonia/defineContract', {
               to: payment.data.toUser,
               hash: data.paymentHash,
               amount: payment.data.amount,
-              when: meta.createdDate
+              when: payment.data.isLate ? prevMonthstamp(dateToMonthstamp(payment.meta.createdDate)) : payment.meta.createdDate
             }
           })
           paymentMonth.lastAdjustedDistribution = groupIncomeDistribution(getters.currentGroupState.distributionEvents, { mincomeAmount: getters.groupMincomeAmount, adjusted: true })
@@ -775,7 +780,7 @@ sbp('chelonia/defineContract', {
             type: 'startCycleEvent',
             data: {
               latePayments: [], // List to be populated later, by the events-parser
-              when: meta.createdDate
+              when: dateToMonthstamp(addMonthsToDate(dateToMonthstamp(lastEvent.data.when), 1))
             }
           }
           state.distributionEvents.push(monthlyCycleEvent)

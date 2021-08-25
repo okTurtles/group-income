@@ -27,7 +27,7 @@ import './contracts/identity.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
-import { currentMonthstamp, prevMonthstamp, dateFromMonthstamp, lastDayOfMonth, dateToMonthstamp } from '~/frontend/utils/time.js'
+import { currentMonthstamp } from '~/frontend/utils/time.js'
 import currencies from '~/frontend/views/utils/currencies.js'
 
 Vue.use(Vuex)
@@ -360,8 +360,6 @@ const getters = {
     const currency = currencies[getters.groupSettings.mincomeCurrency]
     const ourUsername = getters.ourUsername
     const cMonthstamp = currentMonthstamp()
-    const pDate = dateFromMonthstamp(cMonthstamp)
-    const dueIn = lastDayOfMonth(pDate)
     const allPayments = getters.currentGroupState.payments
     const thisMonthPayments = monthlyPayments[cMonthstamp]
     const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
@@ -397,98 +395,7 @@ const getters = {
       return payments
     })()
     const todo = (() => {
-      const payments = []
-      const unadjusted = getters.groupIncomeDistribution.filter(p => p.from === ourUsername)
-
-      for (const p of getters.groupIncomeAdjustedDistribution) {
-        if (p.from === ourUsername) {
-          const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
-          const amount = +currency.displayWithoutCurrency(p.amount)
-          const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
-
-          if (amount > 0) {
-            const partialAmount = existingAmount - amount
-            const existingPayment = {}
-            if (partialAmount > 0) {
-              // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
-              const sentPartial = sent.find((s) => s.username === p.to && s.amount === partialAmount)
-              if (sentPartial) {
-                existingPayment.hash = sentPartial.hash
-              }
-            }
-
-            payments.push({
-              ...existingPayment,
-              ...p,
-              total: existingAmount,
-              partial: partialAmount > 0,
-              dueIn
-            })
-          }
-        }
-      }
-      return payments
-    })()
-    const late = (() => {
-      const currentDistribution = getters.groupIncomeAdjustedDistribution
-      const { pledgeAmount } = getters.ourGroupProfile
-      const pMonthstamp = prevMonthstamp(cMonthstamp)
-      const latePayments = []
-      const pastMonth = monthlyPayments[pMonthstamp]
-      if (pastMonth) {
-        const pDate = dateFromMonthstamp(pMonthstamp)
-        const dueIn = lastDayOfMonth(pDate)
-
-        // This "for loop" logic is wrong (based on cypress tests).
-        for (const payment of pastMonth.lastAdjustedDistribution) {
-          if (payment.from === ourUsername && payment.amount > 0) {
-            // Let A = the amount we owe from the previous distribution.
-            // Let B = the total we've sent to payment.to from the current
-            //         month's paymentsFrom.
-            // Let C = the total amount we "owe" to payment.to from the
-            //         current month's distribution.
-            // Let D = the amount we're pledging this month
-            // Let E = the amount still unpaid for the previous month's distribution,
-            //         calculated as: C > 0 ? A : A + D - B
-            //
-            // If E > 0, then display a row for the late payment.
-            const A = payment.amount
-            const B = getters.paymentTotalFromUserToUser(ourUsername, payment.to, cMonthstamp)
-            let C = currentDistribution
-              .filter(a => a.from === payment.from && a.to === payment.to)
-            C = C.length > 0 ? C[0].amount : 0
-            const D = pledgeAmount
-            const E = C > 0 ? A : A + D - B
-            if (E > 0) {
-              latePayments.push({
-                username: payment.to,
-                displayName: getters.userDisplayName(payment.to),
-                amount: payment.amount, // TODO: include currency (what if it was changed?)
-                // partiaL: TODO add this info as it is in this.paymentsTodo
-                isLate: true,
-                date: dueIn
-              })
-            }
-          }
-        }
-
-        // If we comment the "for loop" above and and uncomment this block of code, it seems to work as expected.
-        /*
-        const adjusted = getters.groupIncomeAdjustedDistributionForMonth(pMonthstamp)
-        for (const payment of adjusted) {
-          if (payment.from !== ourUsername) {
-            continue
-          }
-
-          latePayments.push({
-            ...payment,
-            // partial: TODO add this info, but what's the cleanest way to do it?
-            date: dueIn
-          })
-        }
-        */
-      }
-      return latePayments
+      return getters.groupIncomeAdjustedDistribution.filter(p => p.from === ourUsername)
     })()
     const toBeReceived = (() => {
       const unadjusted = getters.groupIncomeDistribution.filter(p => p.to === ourUsername)
@@ -521,28 +428,21 @@ const getters = {
       return payments
     })()
 
-    return { sent, todo, late, received, toBeReceived }
+    return { sent, todo, received, toBeReceived }
   },
   ourPaymentsSummary (state, getters) {
-    const currentCycle = currentMonthstamp()
-    const recentEvents = JSON.parse(JSON.stringify(getters.currentGroupState.distributionEvents))
-    const events = recentEvents.filter((event) => { return dateToMonthstamp(event.data.when) === currentCycle })
-    const paymentEvents = events.filter((event) => { return event.type === 'paymentEvent' })
     const isNeeder = getters.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     const ourUsername = getters.ourUsername
-    const ourPaymentEvents = paymentEvents.filter((event) => {
-      return isNeeder ? event.data.to === ourUsername : event.data.from === ourUsername
-    })
     const isOurPayment = (payment) => {
       return isNeeder ? payment.to === ourUsername : payment.from === ourUsername
     }
     const ourUnadjustedPayments = getters.groupIncomeDistribution.filter(isOurPayment)
     const ourAdjustedPayments = getters.groupIncomeAdjustedDistribution.filter(isOurPayment)
-    const paymentsDone = ourUnadjustedPayments.length - ourAdjustedPayments.length
-    const hasPartials = ourPaymentEvents.length > paymentsDone
-    const paymentsTotal = ourUnadjustedPayments.length
-    const amountTotal = ourUnadjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
-    const amountDone = amountTotal - ourAdjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
+    const paymentsDone = ourUnadjustedPayments.filter((p) => !p.isLate).length - ourAdjustedPayments.filter((p) => !p.isLate).length
+    const hasPartials = ourAdjustedPayments.filter((p) => p.partial).length > 0
+    const paymentsTotal = ourUnadjustedPayments.filter((p) => !p.isLate).length
+    const amountTotal = ourUnadjustedPayments.filter((p) => !p.isLate).reduce((acc, payment) => acc + payment.amount, 0)
+    const amountDone = amountTotal - ourAdjustedPayments.filter((p) => !p.isLate).reduce((acc, payment) => acc + payment.amount, 0)
     return {
       paymentsDone,
       hasPartials,

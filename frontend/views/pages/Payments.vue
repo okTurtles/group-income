@@ -205,20 +205,6 @@ export default {
         ? L('You are currently {strong_}receiving{_strong} mincome.', LTags('strong'))
         : L('You are currently {strong_}sending{_strong} mincome.', LTags('strong'))
     },
-    paymentsLate () {
-      const payments = []
-      for (const payment of this.ourPayments.late) {
-        payments.push({
-          username: payment.to,
-          displayName: this.userDisplayName(payment.to),
-          amount: payment.amount,
-          partial: payment.partial,
-          isLate: true,
-          date: payment.date
-        })
-      }
-      return payments
-    },
     paymentsTodo () {
       const payments = []
       const sentPayments = this.paymentsSent
@@ -231,13 +217,13 @@ export default {
           amount: payment.amount,
           total: payment.total,
           partial: payment.partial,
-          isLate: false,
-          date: payment.dueIn
+          isLate: payment.isLate,
+          date: payment.dueOn
         })
       }
 
       const notReceived = sentPayments.filter(p => p.data.status === PAYMENT_NOT_RECEIVED)
-      return this.paymentsLate.concat(notReceived, payments)
+      return [notReceived, payments].flat()
     },
     paymentsSent () {
       const payments = []
