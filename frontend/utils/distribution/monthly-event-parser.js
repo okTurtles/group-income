@@ -2,8 +2,7 @@
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import { lastDayOfMonth, dateFromMonthstamp, dateToMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
 
-// Flatten's out multiple payments between unique combinations of users
-// for a payment distribution:
+// Merges multiple payments between any combinations two of users:
 function reduceDistribution (payments: Array<Object>): Array<Object> {
   // Don't modify the payments list/object parameter in-place, as this is not intended:
   payments = JSON.parse(JSON.stringify(payments))
@@ -19,7 +18,7 @@ function reduceDistribution (payments: Array<Object>): Array<Object> {
         // direction of the two payments:
         paymentA.amount += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.amount
         // Remove paymentB from payments, and decrement the inner sentinal loop variable:
-        payments = payments.filter((_, paymentIndex) => { return paymentIndex !== j })
+        payments = payments.filter((payment) => payment !== paymentB)
         j--
       }
     }
@@ -127,6 +126,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
     startCycleEvent = event
     startCycleEvent.data.latePayments = redistributeOverToLatePayments(overPayments, latePayments)
 
+    lastStartCycleEvent.data.latePayments = redistributeOverToLatePayments(overPayments, lastStartCycleEvent.data.latePayments)
     // Unadjust last
     if (!adjusted) {
       startCycleEvent.data.latePayments = reduceDistribution(addDistributions(completedMonthlyPayments, startCycleEvent.data.latePayments))
@@ -181,7 +181,6 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
       latePayments: [] // List to be populated later, by the events-parser
     }
   }
-  console.debug(distributionEvents)
   handleCycleEvent(artificialEnd, true)
 
   lastStartCycleEvent.data.latePayments.forEach((payment) => {

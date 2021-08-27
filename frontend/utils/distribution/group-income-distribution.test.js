@@ -45,7 +45,7 @@ function groupIncomeDistributionWrapper (events, opts, timeSpanMonths = 1.0, sta
     v.data.when = v.data.when ? v.data.when : dateToMonthstamp(addMonthsToDate(startDate, i * timeSpanMonths / events.length))
     return v
   }))
-  console.table(eventsWithTimeStamps) // TODO: for demonstration of commit; REMOVE!!!
+  // console.table(eventsWithTimeStamps) // TODO: for demonstration of commit; REMOVE!!!
   return groupIncomeDistribution(eventsWithTimeStamps, opts)
 }
 
@@ -240,8 +240,6 @@ describe('Test group-income-distribution.js', function () {
       { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 20, when: dateAtCyclesPassed(2.1) } },
       { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -10, when: dateAtCyclesPassed(2.2) } }
     ]
-    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
-      { amount: 10, from: 'u1', to: 'u2', total: 20, partial: true, isLate: true, dueOn: '2021-02' }
-    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([])
   })
 })
