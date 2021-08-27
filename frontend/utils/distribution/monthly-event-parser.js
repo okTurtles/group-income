@@ -17,6 +17,7 @@ function reduceDistribution (payments: Array<Object>): Array<Object> {
         // Add or subtract paymentB's amount to paymentA's amount, depending on the relative
         // direction of the two payments:
         paymentA.amount += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.amount
+        paymentA.total += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.total
         // Remove paymentB from payments, and decrement the inner sentinal loop variable:
         payments = payments.filter((payment) => payment !== paymentB)
         j--
@@ -39,6 +40,7 @@ function subtractDistributions (paymentsA: Array<Object>, paymentsB: Array<Objec
   // Reverse the sign of the second operand's amounts so that the final addition is actually subtraction:
   paymentsB = paymentsB.map((p) => {
     p.amount *= -1
+    p.total *= -1
     return p
   })
 
@@ -60,6 +62,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
   const redistributeOverToLatePayments = function (overPayments, latePayments) {
     const adjustingPayments = []
     const needers = groupMembers.filter((m) => m.haveNeed < 0)
+    const havers = groupMembers.filter((m) => m.haveNeed > 0)
     for (const overPayment of overPayments) {
       const totalNeedByOthers = needers.reduce((acc, m) => m.name !== overPayment.to ? acc - m.haveNeed : 0, 0)
       for (const needer of needers) {
@@ -68,8 +71,25 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
         adjustment.to = needer.name
         if (needer.name !== overPayment.to) {
           adjustment.amount = -overPayment.amount * needer.haveNeed / totalNeedByOthers
+          adjustment.total = -overPayment.total * needer.haveNeed / totalNeedByOthers
         } else {
           adjustment.amount = -overPayment.amount
+          adjustment.total = -overPayment.total
+        }
+        adjustingPayments.push(adjustment)
+      }
+      // Not known if necessary!
+      const totalPledgedByOthers = havers.reduce((acc, m) => m.name !== overPayment.from ? acc + m.haveNeed : 0, 0)
+      for (const haver of havers) {
+        const adjustment = JSON.parse(JSON.stringify(overPayment))
+        adjustment.from = overPayment.to
+        adjustment.to = haver.name
+        if (haver.name !== overPayment.from) {
+          adjustment.amount = overPayment.amount * haver.haveNeed / totalPledgedByOthers
+          adjustment.total = overPayment.total * haver.haveNeed / totalPledgedByOthers
+        } else {
+          adjustment.amount = overPayment.amount
+          adjustment.total = overPayment.total
         }
         adjustingPayments.push(adjustment)
       }
@@ -79,7 +99,7 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
 
   // Make a place to store this and the previous cycle's startCycleEvent (where over/under-payments are stored)
   // so that they can be included in the next cycle's payment distribution calculations:
-  let startCycleEvent = { data: { latePayments: [] } }
+  let startCycleEvent = { data: { monthlyDistribution: [], completedPayments: [] } }
   let lastStartCycleEvent = {}
   let monthlyDistribution = [] // For each cycle's monthly distribution calculation
   let completedMonthlyPayments = [] // For accumulating the payment events of each month's cycle.
@@ -110,27 +130,10 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
       v.partial = (v.total !== v.amount)
     })
 
-    // "Overpayments sometimes occur *internally* as a result of people leaving, joining, and (re-)setting income.
-    // Our task is to redistribute the overpayments back into the current late payments so nobody in need is asked to pay.
-    const overPayments = monthlyDistribution.filter((p) => {
-      return p.amount < 0
-    }).map((p) => {
-      p.amount = Math.abs(p.amount)
-      return p
-    })
-
-    const latePayments = monthlyDistribution.filter((p) => {
-      return p.amount > 0
-    })
-
     startCycleEvent = event
-    startCycleEvent.data.latePayments = redistributeOverToLatePayments(overPayments, latePayments)
+    startCycleEvent.data.monthlyDistribution = monthlyDistribution
+    startCycleEvent.data.completedPayments = completedMonthlyPayments
 
-    lastStartCycleEvent.data.latePayments = redistributeOverToLatePayments(overPayments, lastStartCycleEvent.data.latePayments)
-    // Unadjust last
-    if (!adjusted) {
-      startCycleEvent.data.latePayments = reduceDistribution(addDistributions(completedMonthlyPayments, startCycleEvent.data.latePayments))
-    }
     completedMonthlyPayments = [] // and the monthly payments, too...
   }
 
@@ -151,7 +154,8 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
     completedMonthlyPayments.push({
       from: event.data.from,
       to: event.data.to,
-      amount: event.data.amount
+      amount: event.data.amount,
+      total: 0
     })
   }
 
@@ -178,23 +182,55 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
     type: 'startCycleEvent',
     data: {
       when: lastWhen,
-      latePayments: [] // List to be populated later, by the events-parser
+      monthlyDistribution: [] // List to be populated later, by the events-parser
     }
   }
   handleCycleEvent(artificialEnd, true)
 
-  lastStartCycleEvent.data.latePayments.forEach((payment) => {
+  // "Overpayments sometimes occur *internally* as a result of people leaving, joining, and (re-)setting income.
+  // Our task is to redistribute the overpayments back into the current late payments so nobody in need is asked to pay.
+  let overPayments = JSON.parse(JSON.stringify(lastStartCycleEvent.data.monthlyDistribution)).filter((p) => {
+    return p.amount < 0
+  }).map((p) => {
+    p.amount = Math.abs(p.amount)
+    p.total = Math.abs(p.total)
+    return p
+  })
+
+  startCycleEvent.data.monthlyDistribution = redistributeOverToLatePayments(overPayments, startCycleEvent.data.monthlyDistribution)
+
+  if (!adjusted) {
+    startCycleEvent.data.monthlyDistribution = reduceDistribution(addDistributions(startCycleEvent.data.completedPayments, startCycleEvent.data.monthlyDistribution))
+  }
+
+  overPayments = JSON.parse(JSON.stringify(startCycleEvent.data.monthlyDistribution)).filter((p) => {
+    return p.amount < 0
+  }).map((p) => {
+    p.amount = Math.abs(p.amount)
+    p.total = Math.abs(p.total)
+    return p
+  })
+
+  lastStartCycleEvent.data.monthlyDistribution = redistributeOverToLatePayments(overPayments, lastStartCycleEvent.data.monthlyDistribution)
+  // Unadjust last
+  if (!adjusted) {
+    lastStartCycleEvent.data.monthlyDistribution = reduceDistribution(addDistributions(lastStartCycleEvent.data.completedPayments, lastStartCycleEvent.data.monthlyDistribution))
+  }
+
+  lastStartCycleEvent.data.monthlyDistribution.forEach((payment) => {
+    payment.amount = Math.min(payment.amount, payment.total)
     payment.isLate = true
     payment.dueOn = dateToMonthstamp(lastDayOfMonth(dateFromMonthstamp(prevMonthstamp(dateToMonthstamp(new Date(lastWhen))))))
   })
-  startCycleEvent.data.latePayments.forEach((payment) => {
+  startCycleEvent.data.monthlyDistribution.forEach((payment) => {
+    payment.amount = Math.min(payment.amount, payment.total)
     payment.isLate = false
     payment.dueOn = dateToMonthstamp(lastDayOfMonth(dateFromMonthstamp(dateToMonthstamp(new Date(lastWhen)))))
   })
 
   const previousTwoCycles = [
-    lastStartCycleEvent.data.latePayments,
-    startCycleEvent.data.latePayments
+    lastStartCycleEvent.data.monthlyDistribution,
+    startCycleEvent.data.monthlyDistribution
   ].flat()
 
   return previousTwoCycles.filter((payment) => {
