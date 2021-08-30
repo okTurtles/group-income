@@ -21,7 +21,7 @@ const defaultTranslationTable: { [string]: string } = {}
 const dompurifyConfig = {
   ...defaultDompurifyConfig,
   ALLOWED_ATTR: ['class', 'href', 'rel', 'target'],
-  ALLOWED_TAGS: ['a', 'b', 'br', 'em', 'i', 'p', 'small', 'span', 'strong', 'sub', 'sup', 'u'],
+  ALLOWED_TAGS: ['a', 'b', 'br', 'button', 'em', 'i', 'p', 'small', 'span', 'strong', 'sub', 'sup', 'u'],
   RETURN_DOM_FRAGMENT: false
 }
 
