@@ -84,7 +84,7 @@ module.exports = (grunt) => {
       '@view-utils': './frontend/views/utils',
       '@views': './frontend/views',
       'vue': './node_modules/vue/dist/vue.esm.js',
-      '~': './'
+      '~': '.'
     }
   }
 
@@ -196,6 +196,7 @@ module.exports = (grunt) => {
       // So we can write @import 'vue-slider-component/lib/theme/default.scss'; in .vue <style>.
       'vue-slider-component': './node_modules/vue-slider-component'
     },
+    cache: new Map(),
     debug: false
   }
 
@@ -386,6 +387,11 @@ module.exports = (grunt) => {
 
             // Log the linting time, formatted with Chalk.
             grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, linters, [filePath]))
+
+            // Invalidate the Vue plugin cache if a Sass or SVG file was changed.
+            if (['.sass', '.scss', '.svg'].includes(path.extname(filePath)) && eventTypeName === 'change') {
+              vuePluginOptions.cache.clear()
+            }
           }
           // Only rebuild the relevant entry point.
           if (filePath.startsWith(serviceWorkerDir)) {

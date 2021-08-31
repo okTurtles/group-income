@@ -9,7 +9,13 @@ const componentCompiler = require('@vue/component-compiler')
 
 const { createAliasReplacer } = require('./utils')
 
-module.exports = ({ aliases, debug = false } = {}) => {
+/**
+ * @param {Object} [options.aliases]
+ * @param {Map} [options.cache]
+ * @param {boolean} [options.debug]
+ * @returns {Object}
+ */
+module.exports = ({ aliases = null, cache = null, debug = false } = {}) => {
   const aliasReplacer = aliases ? createAliasReplacer(aliases) : null
 
   return {
@@ -17,12 +23,17 @@ module.exports = ({ aliases, debug = false } = {}) => {
     setup (build) {
       build.onLoad({ filter: /[^/]\.vue$/ }, async ({ path }) => {
         const filename = relative(process.cwd(), path)
+        if (cache && cache.has(filename)) {
+          if (debug) console.log('vue plugin: reading from cache')
+          return cache.get(filename)
+        }
         const source = await readFile(path, 'utf8')
           .then(source => aliasReplacer ? aliasReplacer({ path, source }) : source)
 
-        if (debug) console.log('Compiling:', filename)
+        if (debug) console.log('vue plugin: compiling', filename)
         const { result /*, usedFiles */ } = await compile({ filename, source })
 
+        if (cache) cache.set(filename, result)
         return result
       })
     }

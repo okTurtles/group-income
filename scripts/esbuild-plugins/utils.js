@@ -62,23 +62,27 @@ const updateFileCache = (filename, contents, mtimeMs = Date.now()) => {
 }
 
 /**
- * Creates an alias replacement function from an array of path aliases, to be
- * used in at-import rules.
+ * Creates an alias replacement function from a mapping of path aliases, to be
+ * used in import statements, import expressions and at-import rules.
  *
  * - See `createFilterRegExpFromAliases()`.
  *
- * @param {string[]} aliases
- * @returns {RegExp}
+ * @param {Object} aliases
+ * @returns {Function}
  */
 exports.createAliasReplacer = (aliases) => {
   if (Object.keys(aliases).some(alias => alias.includes('/'))) {
     throw new Error('Path aliases may not include slash characters.')
   }
+  const cwd = process.cwd()
   const escapedAndSortedAliases = Object.keys(aliases).map(escapeForRegExp).sort().reverse()
-  const re = new RegExp(`@import ['"](${escapedAndSortedAliases.join('|')})(?:['"]|/[^"']+?["'])`, 'g')
+  const re = new RegExp(
+    `(?:^import[ (]|\\bimport[ (]|import .+? from |^\\} from )['"](${escapedAndSortedAliases.join('|')})(?:['"]|/[^"']+?["'])`,
+    'gm'
+  )
 
   return function aliasReplacer ({ path, source }) {
-    const relativeDirPath = relative(dirname(path), process.cwd())
+    const relativeDirPath = relative(dirname(path), cwd)
 
     return source.replace(re, (match, capture) => {
       const resolvedPathSegment = aliases[capture]
