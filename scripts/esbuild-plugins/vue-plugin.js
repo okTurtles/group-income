@@ -24,7 +24,7 @@ module.exports = ({ aliases = null, cache = null, debug = false } = {}) => {
       build.onLoad({ filter: /[^/]\.vue$/ }, async ({ path }) => {
         const filename = relative(process.cwd(), path)
         if (cache && cache.has(filename)) {
-          if (debug) console.log('vue plugin: reading from cache')
+          if (debug) console.log('vue plugin: reading from cache:', filename)
           return cache.get(filename)
         }
         const source = await readFile(path, 'utf8')
