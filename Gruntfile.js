@@ -196,6 +196,8 @@ module.exports = (grunt) => {
       // So we can write @import 'vue-slider-component/lib/theme/default.scss'; in .vue <style>.
       'vue-slider-component': './node_modules/vue-slider-component'
     },
+    // This map's keys will be relative paths to Vue files (without leading ./),
+    // while its values will be corresponding compiled JS strings.
     cache: new Map(),
     debug: false
   }
@@ -384,12 +386,19 @@ module.exports = (grunt) => {
             const lintingStartMs = Date.now()
 
             await Promise.all(linters.map(linter => linter.lintCode(code, filePath)))
+              // Don't crash the Grunt process on lint errors.
+              .catch(() => {})
 
             // Log the linting time, formatted with Chalk.
             grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, linters, [filePath]))
-
+          }
+          // Update the Vue plugin cache if a Vue file was changed.
+          if (eventTypeName === 'change') {
+            if (path.extname(filePath) === '.vue') {
+              vuePluginOptions.cache.delete(filePath)
+            }
             // Invalidate the Vue plugin cache if a Sass or SVG file was changed.
-            if (['.sass', '.scss', '.svg'].includes(path.extname(filePath)) && eventTypeName === 'change') {
+            if (['.sass', '.scss', '.svg'].includes(path.extname(filePath))) {
               vuePluginOptions.cache.clear()
             }
           }
