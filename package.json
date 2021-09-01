@@ -46,11 +46,7 @@
     }
   },
   "eslintIgnore": [
-    "!.Gruntfile.babel.js",
-    "**/vue2-slider.vue",
-    "frontend/_static/*",
     "frontend/assets/*",
-    "frontend/controller/utils/primus.js",
     "frontend/utils/flowTyper.js",
     "historical/*",
     "shared/types.js",
