@@ -403,6 +403,7 @@ export default {
   @include desktop {
     padding-top: 2.5rem;
   }
+
   .c-svg {
     filter: contrast(0%) brightness(186%);
   }

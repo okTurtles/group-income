@@ -78,7 +78,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import 'vue-slider-component/lib/theme/default.scss';
+@import "vue-slider-component/lib/theme/default.scss";
 
 .time-travel {
   position: fixed;

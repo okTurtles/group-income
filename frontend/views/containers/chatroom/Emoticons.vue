@@ -114,7 +114,7 @@ export default {
       pointer-events: initial;
       max-height: 30rem;
       opacity: 1;
-      transition: opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) .3s;
+      transition: opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s;
     }
   }
 }
@@ -122,7 +122,7 @@ export default {
 .c-picker-wrapper {
   @extend %floating-panel;
   position: absolute;
-  box-shadow: 0px 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
   max-height: 0;
   opacity: 0;
   overflow: hidden;

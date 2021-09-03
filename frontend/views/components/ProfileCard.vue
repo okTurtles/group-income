@@ -254,9 +254,11 @@ export default {
   @include tablet {
     left: auto;
     right: 1rem;
+
     /* Hide it visually... */
     opacity: 0;
     pointer-events: none;
+
     /* ...but keep it for keyboard users. */
     &:focus {
       opacity: 1;

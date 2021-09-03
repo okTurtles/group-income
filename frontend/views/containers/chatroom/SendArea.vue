@@ -226,7 +226,7 @@ $initialHeight: 43px;
   position: relative;
   margin: 0 1.5rem;
   display: block;
-  padding-bottom: .1rem;
+  padding-bottom: 0.1rem;
 
   @include tablet {
     margin: 0 2.5rem;
@@ -285,12 +285,12 @@ $initialHeight: 43px;
 
     .c-send-actions {
       position: relative;
-      margin-top: .5rem;
+      margin-top: 0.5rem;
       height: auto;
     }
 
     .is-outlined {
-      margin-right: .5rem;
+      margin-right: 0.5rem;
     }
   }
 }
@@ -312,13 +312,13 @@ $initialHeight: 43px;
   position: absolute;
   right: 0;
   bottom: 4rem;
-  box-shadow: 0px 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 }
 
 .c-replying {
   background-color: $general_2;
   padding: 0.5rem 2rem 0.7rem 0.5rem;
-  border-radius: .3rem .3rem 0 0;
+  border-radius: 0.3rem 0.3rem 0 0;
   margin-bottom: -0.2rem;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -330,8 +330,8 @@ $initialHeight: 43px;
 
 .c-clear {
   position: absolute;
-  right: .2rem;
-  top: .4rem;
+  right: 0.2rem;
+  top: 0.4rem;
 }
 
 .c-send-button {

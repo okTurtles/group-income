@@ -20,6 +20,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
 .wrapper-container {
   height: 100%;
   width: 100%;
