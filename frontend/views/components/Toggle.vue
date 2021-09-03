@@ -70,7 +70,7 @@ $iconSize: 2.75rem;
     height: $iconSize;
     text-align: center;
     line-height: $iconSize;
-    transition: opacity math.div($speed, 5) $speed;
+    transition: opacity $speed * 0.5 $speed;
   }
 
   .is-active & {
