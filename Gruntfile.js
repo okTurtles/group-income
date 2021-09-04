@@ -186,7 +186,9 @@ module.exports = (grunt) => {
 
   // https://github.com/stylelint/stylelint/blob/master/docs/user-guide/usage/node-api.md#options
   const stylelintOptions = {
+    cache: true,
     formatter: 'string',
+    syntax: 'scss',
     throwOnError: false,
     throwOnWarning: false
   }
@@ -379,6 +381,7 @@ module.exports = (grunt) => {
     ;[
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
+      [['frontend/assets/style/**/*.scss'], [stylelint]],
       [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]],
       [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
       [['Gruntfile.js'], [eslint]]
