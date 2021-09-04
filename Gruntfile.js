@@ -159,7 +159,8 @@ module.exports = (grunt) => {
   // By default, `flow-remove-types` doesn't process files which don't start with a `@flow` annotation,
   // so we have to pass the `all` option since we don't use `@flow` annotations.
   const flowRemoveTypesPluginOptions = {
-    all: true
+    all: true,
+    cache: new Map()
   }
 
   const puglintOptions = {}
@@ -188,6 +189,13 @@ module.exports = (grunt) => {
     formatter: 'string',
     throwOnError: false,
     throwOnWarning: false
+  }
+
+  const svgInlineVuePluginOptions = {
+    // This map's keys will be relative paths to SVG files (without leading ./),
+    // while its values will be corresponding compiled JS strings.
+    cache: new Map(),
+    debug: false
   }
 
   const vuePluginOptions = {
@@ -335,7 +343,7 @@ module.exports = (grunt) => {
     const aliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')(aliasPluginOptions)
     const flowRemoveTypesPlugin = require('./scripts/esbuild-plugins/flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
-    const svgPlugin = require('./scripts/esbuild-plugins/vue-inline-svg-plugin.js')()
+    const svgPlugin = require('./scripts/esbuild-plugins/vue-inline-svg-plugin.js')(svgInlineVuePluginOptions)
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
 
@@ -376,10 +384,10 @@ module.exports = (grunt) => {
       [['Gruntfile.js'], [eslint]]
     ].forEach(([globs, tasks]) => {
       globs.forEach(glob => {
-        browserSync.watch(glob, { ignoreInitial: true }, async (eventTypeName, filePath) => {
-          grunt.log.writeln(chalkFileEvent(eventTypeName, filePath))
+        browserSync.watch(glob, { ignoreInitial: true }, async (eventName, filePath) => {
+          grunt.log.writeln(chalkFileEvent(eventName, filePath))
 
-          if (eventTypeName === 'add' || eventTypeName === 'change') {
+          if (eventName === 'add' || eventName === 'change') {
             // Read and lint the changed file.
             const code = await fs.promises.readFile(filePath, 'utf8')
             const linters = tasks.filter(task => typeof task === 'object')
@@ -392,13 +400,21 @@ module.exports = (grunt) => {
             // Log the linting time, formatted with Chalk.
             grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, linters, [filePath]))
           }
-          // Update the Vue plugin cache if a Vue file was changed.
-          if (eventTypeName === 'change') {
-            if (path.extname(filePath) === '.vue') {
+
+          if (eventName === 'change' || eventName === 'unlink') {
+            const extension = path.extname(filePath)
+
+            // Remove the corresponding plugin cache entry, if any.
+            if (extension === '.js') {
+              flowRemoveTypesPluginOptions.cache.delete(filePath)
+            } else if (extension === '.svg') {
+              svgInlineVuePluginOptions.cache.delete(filePath)
+            } else if (extension === '.vue') {
               vuePluginOptions.cache.delete(filePath)
             }
-            // Invalidate the Vue plugin cache if a Sass or SVG file was changed.
-            if (['.sass', '.scss', '.svg'].includes(path.extname(filePath))) {
+            // Clear the whole Vue plugin cache if a Sass or SVG file was
+            // changed since some compiled Vue files might include it.
+            if (['.sass', '.scss', '.svg'].includes(extension)) {
               vuePluginOptions.cache.clear()
             }
           }
