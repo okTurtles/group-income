@@ -176,7 +176,6 @@ module.exports = (grunt) => {
     ],
     // This option has currently no effect, so I had to add at-import path aliasing in the Vue plugin.
     importer (url, previous, done) {
-      console.log('SASS plugin import:', url)
       // So we can write `@import '@assets/style/_variables.scss'` in the <style> section of .vue components too.
       return url.startsWith('@assets/')
         ? { file: resolve('./frontend/assets', chompLeft(url, '@assets/')) }
@@ -194,7 +193,7 @@ module.exports = (grunt) => {
   }
 
   const svgInlineVuePluginOptions = {
-    // This map's keys will be relative paths to SVG files (without leading ./),
+    // This map's keys will be relative SVG file paths without leading dot,
     // while its values will be corresponding compiled JS strings.
     cache: new Map(),
     debug: false
@@ -206,7 +205,7 @@ module.exports = (grunt) => {
       // So we can write @import 'vue-slider-component/lib/theme/default.scss'; in .vue <style>.
       'vue-slider-component': './node_modules/vue-slider-component'
     },
-    // This map's keys will be relative paths to Vue files (without leading ./),
+    // This map's keys will be relative Vue file paths without leading dot,
     // while its values will be corresponding compiled JS strings.
     cache: new Map(),
     debug: false
@@ -379,14 +378,14 @@ module.exports = (grunt) => {
     browserSync.init(browserSyncOptions)
 
     ;[
+      [['Gruntfile.js'], [eslint]],
+      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
       [['frontend/assets/style/**/*.scss'], [stylelint]],
       [['frontend/assets/svgs/**/*.svg'], []],
-      [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]],
-      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
-      [['Gruntfile.js'], [eslint]]
+      [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]]
     ].forEach(([globs, tasks]) => {
       globs.forEach(glob => {
         browserSync.watch(glob, { ignoreInitial: true }, async (eventName, filePath) => {

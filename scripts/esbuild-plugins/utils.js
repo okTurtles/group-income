@@ -2,7 +2,6 @@
 'use strict'
 
 const { dirname, join, relative } = require('path')
-const { promises } = require('fs')
 
 const chalk = require('chalk')
 
@@ -22,44 +21,7 @@ const escapeForRegExp = (string) => {
   return string.replace(/[.*+?^${}()|\\[\]]/g, '\\$&')
 }
 
-const fileCache = new Map()
-
 const formatElapsedTime = (dt) => (dt / 1e3).toFixed(1)
-
-const readFileUsingCache = async (filename) => {
-  const stats = await promises.stat(filename)
-
-  if (!stats.isFile()) {
-    throw new Error(`Not a file: ${filename}.`)
-  }
-  const { mtimeMs } = stats
-  const cachedInfo = fileCache.get(filename)
-
-  // Update the cache if the given file entry is missing or outdated.
-  if (!cachedInfo || mtimeMs > cachedInfo.mtimeMs) {
-    console.debug('Reading from disk')
-    const contents = await promises.readFile(filename, 'utf8')
-
-    console.debug('Updating file cache')
-    fileCache.set(filename, { mtimeMs, contents })
-    return contents
-  }
-  // Return cached contents it the given file entry was up-to-date.
-  console.debug('Reading from cache')
-  return cachedInfo.contents
-}
-// readFileUsingCache("./Gruntfile.js").then(code => console.log(code.length))
-
-const updateFileCache = (filename, contents, mtimeMs = Date.now()) => {
-  const entryValue = fileCache.get(filename)
-
-  if (entryValue) {
-    entryValue.contents = contents
-    entryValue.mtimeMs = mtimeMs
-  } else {
-    fileCache.set(filename, { contents, mtimeMs })
-  }
-}
 
 /**
  * Creates an alias replacement function from a mapping of path aliases, to be
@@ -217,5 +179,3 @@ exports.createStylelinter = (options = {}) => {
 exports.formatElapsedTime = formatElapsedTime
 exports.chalkFileEvent = chalkFileEvent
 exports.chalkLintingTime = chalkLintingTime
-exports.readFileUsingCache = readFileUsingCache
-exports.updateFileCache = updateFileCache
