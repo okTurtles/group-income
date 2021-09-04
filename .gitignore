@@ -8,6 +8,7 @@
 
 # Caches
 .eslintcache
+.stylelintcache
 
 # Database
 /sqlite.db
