@@ -382,6 +382,7 @@ module.exports = (grunt) => {
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/style/**/*.scss'], [stylelint]],
+      [['frontend/assets/svgs/**/*.svg'], []],
       [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]],
       [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
       [['Gruntfile.js'], [eslint]]
