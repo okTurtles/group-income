@@ -307,8 +307,8 @@ export default {
   width: calc(100% + 1rem);
   position: relative;
 
-  &:before {
-    content: '';
+  &::before {
+    content: "";
     width: 100%;
     height: 2.5rem;
     position: absolute;
@@ -332,7 +332,7 @@ export default {
   span {
     background: $background_0;
     position: relative;
-    padding: .5rem;
+    padding: 0.5rem;
     color: $text_1;
     font-size: $size_5;
 
@@ -343,8 +343,8 @@ export default {
     }
   }
 
-  &:before {
-    content: '';
+  &::before {
+    content: "";
     height: 1px;
     width: 100%;
     background-color: $general_0;
@@ -358,7 +358,7 @@ export default {
       color: $primary_0;
     }
 
-    &:before {
+    &::before {
       background-color: $primary_0;
     }
   }

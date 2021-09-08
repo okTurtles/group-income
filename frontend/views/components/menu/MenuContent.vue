@@ -40,8 +40,8 @@ export default {
     background-color: $background;
     position: relative;
     z-index: 2;
-    padding-top: .5rem;
-    padding-bottom: 4rem
+    padding-top: 0.5rem;
+    padding-bottom: 4rem;
   }
 }
 
@@ -53,7 +53,7 @@ export default {
   z-index: 2;
   border-radius: $radius;
   background-color: $background;
-  box-shadow: 0px 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
+  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
   max-height: 0;
   opacity: 0;
   overflow: hidden;
@@ -61,10 +61,10 @@ export default {
   padding-bottom: 0.5rem;
   padding-top: 0.5rem;
 
-  &:before {
+  &::before {
     @include phone {
-      content: '';
-      background-color:rgba(10, 10, 10, 0.86);
+      content: "";
+      background-color: rgba(10, 10, 10, 0.86);
       position: fixed;
       height: 100%;
       width: 100%;
@@ -80,7 +80,7 @@ export default {
     pointer-events: initial;
     max-height: 25rem;
     opacity: 1;
-    transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) .3s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
+    transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
   }
 
   ::v-deep .c-item {

@@ -207,7 +207,7 @@ module.exports = (grunt) => {
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
-      stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss,vue}"',
+      stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss}" "frontend/views/**/*.vue"',
       // Test files:
       // - anything in the `/test` folder, e.g. integration tests;
       // - anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.

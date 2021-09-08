@@ -185,7 +185,7 @@ export default {
 }
 
 .c-link {
-  margin-left: .25rem;
+  margin-left: 0.25rem;
   border-bottom: 1px solid $text_1;
   cursor: pointer;
   text-decoration: none;

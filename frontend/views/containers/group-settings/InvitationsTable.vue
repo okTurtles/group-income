@@ -274,7 +274,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@use "sass:math";
 @import "@assets/style/_variables.scss";
 
 .c-section {
@@ -330,7 +329,7 @@ export default {
     align-items: center;
 
     .c-tip {
-      margin-left: math.div($size_4, 2);
+      margin-left: $size_4 * 0.5;
       line-height: 1.3125rem;
     }
   }
@@ -437,6 +436,7 @@ export default {
     min-width: 13.375rem;
     margin: 3.5rem 0 0 3rem;
   }
+
   .c-dropdown-fallback {
     min-width: 8.5rem;
     margin-top: 2rem;
