@@ -43,7 +43,7 @@ Object.assign(process.env, applyPortShift(process.env))
 
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { fork } = require('child_process')
+const { exec, fork } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -84,7 +84,7 @@ module.exports = (grunt) => {
       '@view-utils': './frontend/views/utils',
       '@views': './frontend/views',
       'vue': './node_modules/vue/dist/vue.esm.js',
-      '~': './'
+      '~': '.'
     }
   }
 
@@ -149,11 +149,21 @@ module.exports = (grunt) => {
     splitting: false
   }
 
+  // https://github.com/rollup/plugins/tree/master/packages/eslint#options
+  const eslintOptions = {
+    format: 'stylish',
+    throwOnError: false,
+    throwOnWarning: false
+  }
+
   // By default, `flow-remove-types` doesn't process files which don't start with a `@flow` annotation,
   // so we have to pass the `all` option since we don't use `@flow` annotations.
   const flowRemoveTypesPluginOptions = {
-    all: true
+    all: true,
+    cache: new Map()
   }
+
+  const puglintOptions = {}
 
   // https://github.com/sass/dart-sass#javascript-api
   const sassPluginOptions = {
@@ -166,12 +176,27 @@ module.exports = (grunt) => {
     ],
     // This option has currently no effect, so I had to add at-import path aliasing in the Vue plugin.
     importer (url, previous, done) {
-      console.log('SASS plugin import:', url)
       // So we can write `@import '@assets/style/_variables.scss'` in the <style> section of .vue components too.
       return url.startsWith('@assets/')
         ? { file: resolve('./frontend/assets', chompLeft(url, '@assets/')) }
         : null
     }
+  }
+
+  // https://github.com/stylelint/stylelint/blob/master/docs/user-guide/usage/node-api.md#options
+  const stylelintOptions = {
+    cache: true,
+    formatter: 'string',
+    syntax: 'scss',
+    throwOnError: false,
+    throwOnWarning: false
+  }
+
+  const svgInlineVuePluginOptions = {
+    // This map's keys will be relative SVG file paths without leading dot,
+    // while its values will be corresponding compiled JS strings.
+    cache: new Map(),
+    debug: false
   }
 
   const vuePluginOptions = {
@@ -180,6 +205,9 @@ module.exports = (grunt) => {
       // So we can write @import 'vue-slider-component/lib/theme/default.scss'; in .vue <style>.
       'vue-slider-component': './node_modules/vue-slider-component'
     },
+    // This map's keys will be relative Vue file paths without leading dot,
+    // while its values will be corresponding compiled JS strings.
+    cache: new Map(),
     debug: false
   }
 
@@ -204,10 +232,10 @@ module.exports = (grunt) => {
     },
 
     exec: {
-      eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
+      eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
-      stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss}" "frontend/views/**/*.vue"',
+      stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
       // Test files:
       // - anything in the `/test` folder, e.g. integration tests;
       // - anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.
@@ -316,7 +344,7 @@ module.exports = (grunt) => {
     const aliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')(aliasPluginOptions)
     const flowRemoveTypesPlugin = require('./scripts/esbuild-plugins/flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
-    const svgPlugin = require('./scripts/esbuild-plugins/vue-inline-svg-plugin.js')()
+    const svgPlugin = require('./scripts/esbuild-plugins/vue-inline-svg-plugin.js')(svgInlineVuePluginOptions)
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
 
@@ -340,29 +368,69 @@ module.exports = (grunt) => {
       return done()
     }
 
+    const eslint = require('./scripts/esbuild-plugins/utils.js').createEslinter(eslintOptions)
+    const puglint = require('./scripts/esbuild-plugins/utils.js').createPuglinter(puglintOptions)
+    const stylelint = require('./scripts/esbuild-plugins/utils.js').createStylelinter(stylelintOptions)
+    const { chalkFileEvent, chalkLintingTime } = require('./scripts/esbuild-plugins/utils.js')
+
     // BrowserSync setup.
     const browserSync = require('browser-sync').create('esbuild')
     browserSync.init(browserSyncOptions)
 
     ;[
+      [['Gruntfile.js'], [eslint]],
+      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
       [['frontend/**/*.html'], ['copy']],
-      [['frontend/**/*.js'], ['exec:eslint']],
-      [['frontend/views/**/*.vue'], ['exec:eslint', 'exec:puglint', 'exec:stylelint']],
-      [['backend/**/*.js', 'shared/**/*.js'], ['exec:eslint', 'backend:relaunch']],
-      [['Gruntfile.js'], ['exec:eslint']]
+      [['frontend/**/*.js'], [eslint]],
+      [['frontend/assets/{fonts,images}/**/*'], ['copy']],
+      [['frontend/assets/style/**/*.scss'], [stylelint]],
+      [['frontend/assets/svgs/**/*.svg'], []],
+      [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]]
     ].forEach(([globs, tasks]) => {
       globs.forEach(glob => {
-        browserSync.watch(glob, { ignoreInitial: true }, async (eventTypeName, filePath) => {
-          grunt.log.writeln(chalk`{green file event:} '${eventTypeName}' {green detected on} ${filePath}`)
-          // These tasks will run concurrently with the incremental rebuild.
-          grunt.task.run(tasks)
+        browserSync.watch(glob, { ignoreInitial: true }, async (eventName, filePath) => {
+          grunt.log.writeln(chalkFileEvent(eventName, filePath))
+
+          if (eventName === 'add' || eventName === 'change') {
+            // Read and lint the changed file.
+            const code = await fs.promises.readFile(filePath, 'utf8')
+            const linters = tasks.filter(task => typeof task === 'object')
+            const lintingStartMs = Date.now()
+
+            await Promise.all(linters.map(linter => linter.lintCode(code, filePath)))
+              // Don't crash the Grunt process on lint errors.
+              .catch(() => {})
+
+            // Log the linting time, formatted with Chalk.
+            grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, linters, [filePath]))
+          }
+
+          if (eventName === 'change' || eventName === 'unlink') {
+            const extension = path.extname(filePath)
+
+            // Remove the corresponding plugin cache entry, if any.
+            if (extension === '.js') {
+              flowRemoveTypesPluginOptions.cache.delete(filePath)
+            } else if (extension === '.svg') {
+              svgInlineVuePluginOptions.cache.delete(filePath)
+            } else if (extension === '.vue') {
+              vuePluginOptions.cache.delete(filePath)
+            }
+            // Clear the whole Vue plugin cache if a Sass or SVG file was
+            // changed since some compiled Vue files might include it.
+            if (['.sass', '.scss', '.svg'].includes(extension)) {
+              vuePluginOptions.cache.clear()
+            }
+          }
           // Only rebuild the relevant entry point.
           if (filePath.startsWith(serviceWorkerDir)) {
             await buildServiceWorkers.run()
           } else {
             await buildMain.run()
           }
+          grunt.task.run(tasks.filter(task => typeof task === 'string'))
           grunt.task.run(['keepalive'])
+
           // Allow the task queue to move forward.
           killKeepAlive && killKeepAlive()
         })
@@ -399,6 +467,8 @@ module.exports = (grunt) => {
       grunt.log.writeln('Quitting dangling child!')
       child.send({ shutdown: 2 })
     }
+    // Stops the Flowtype server.
+    exec('./node_modules/.bin/flow stop')
   })
 
   process.on('uncaughtException', (err) => {
