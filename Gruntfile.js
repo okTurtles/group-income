@@ -43,7 +43,7 @@ Object.assign(process.env, applyPortShift(process.env))
 
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { fork } = require('child_process')
+const { exec, fork } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
@@ -467,6 +467,8 @@ module.exports = (grunt) => {
       grunt.log.writeln('Quitting dangling child!')
       child.send({ shutdown: 2 })
     }
+    // Stops the Flowtype server.
+    exec('./node_modules/.bin/flow stop')
   })
 
   process.on('uncaughtException', (err) => {
