@@ -171,7 +171,7 @@ export default {
   }
 
   .c-header {
-    font-size: .75rem;
+    font-size: 0.75rem;
     font-weight: 400;
     color: $text_1;
     padding-bottom: 0;
@@ -206,30 +206,30 @@ export default {
   }
 }
 
-.has-text-danger ::v-deep .c-item-slot{
+.has-text-danger ::v-deep .c-item-slot {
   color: $danger_0;
 }
 
 .c-link {
   color: $text_0;
   border-color: $text_0;
-  margin: 0 .2rem;
+  margin: 0 0.2rem;
   cursor: pointer;
   font-family: inherit;
 
   &:hover {
     text-decoration: underline;
 
-    .icon-pencil-alt{
+    .icon-pencil-alt {
       opacity: 1;
-      margin-left: .2rem;
+      margin-left: 0.2rem;
     }
   }
 }
 
 .icon-pencil-alt {
   opacity: 0;
-  margin-left: .2rem;
+  margin-left: 0.2rem;
   transition: opacity 0.3s cubic-bezier(1, 0.5, 0.8, 1);
 }
 
@@ -243,7 +243,8 @@ export default {
 
 .c-menu-trigger.is-active {
   pointer-events: none;
-  .c-menu-i{
+
+  .c-menu-i {
     transform: rotate(180deg);
   }
 }

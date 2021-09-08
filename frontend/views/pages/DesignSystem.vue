@@ -1460,18 +1460,22 @@ section.card {
 
 table {
   width: 100%;
+
   th,
   td {
     min-width: 6rem;
     padding-right: 1rem;
     vertical-align: baseline;
+
     &.c-top {
       vertical-align: top;
     }
   }
+
   td:first-child {
     min-width: 14rem;
   }
+
   td:last-child {
     width: 35rem;
   }
@@ -1484,7 +1488,7 @@ table {
   margin-top: 2rem;
   margin-bottom: 0.5rem;
 
-  [class^='icon-']::before {
+  [class^="icon-"]::before {
     margin-right: 10px;
   }
 }
@@ -1519,7 +1523,7 @@ table {
   border-radius: $radius;
   margin-right: 1rem;
 
-  .table td{
+  .table td {
     vertical-align: top;
   }
 }
@@ -1529,7 +1533,7 @@ table {
 }
 
 .colors td {
-  vertical-align: top
+  vertical-align: top;
 }
 
 .message {

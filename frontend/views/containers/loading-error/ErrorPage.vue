@@ -35,7 +35,7 @@ export default {
 }
 
 .c-title {
-  margin-bottom: .5rem;
+  margin-bottom: 0.5rem;
 }
 
 .c-text {

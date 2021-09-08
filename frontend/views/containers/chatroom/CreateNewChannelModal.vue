@@ -117,16 +117,17 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
 .c-label-name {
   float: left;
 }
 
-.c-max-count   {
+.c-max-count {
   float: right;
   color: $text_1;
 }
 
-.c-inline-input{
+.c-inline-input {
   display: flex;
   justify-content: space-between;
 }
@@ -146,6 +147,6 @@ hr {
 }
 
 .c-group-i {
-  margin-right: .5rem;
+  margin-right: 0.5rem;
 }
 </style>

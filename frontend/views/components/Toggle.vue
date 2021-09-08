@@ -21,7 +21,6 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-@use "sass:math";
 @import "@assets/style/_variables.scss";
 @import "@assets/style/_mixins.scss";
 
@@ -34,13 +33,13 @@ $iconSize: 2.75rem;
   position: absolute;
   top: 0;
   padding: 0.5rem 0;
-  width: 2rem + $iconSize; // gap on the edge
+  width: 2rem + $iconSize; // Gap on the edge.
   background-color: transparent;
-  transition: height 1ms $speed, width 1ms $speed, background math.div($speed, 2);
+  transition: height 1ms $speed, width 1ms $speed, background $speed * 0.5;
   overflow: hidden;
   color: $text_0;
 
-  // Similar to .button.is-icon but adapted to a "corner" button
+  // Similar to `.button.is-icon` but adapted to a "corner" button.
   &:hover,
   &:focus {
     .icon-bars,
@@ -71,7 +70,7 @@ $iconSize: 2.75rem;
     height: $iconSize;
     text-align: center;
     line-height: $iconSize;
-    transition: opacity math.div($speed, 5) $speed;
+    transition: opacity $speed * 0.5 $speed;
   }
 
   .is-active & {
@@ -79,7 +78,7 @@ $iconSize: 2.75rem;
     height: 100vh;
     width: 200vw;
     top: 0;
-    transition: height 1ms 1ms, width 1ms 1ms, background math.div($speed, 2);
+    transition: height 1ms 1ms, width 1ms 1ms, background $speed * 0.5;
 
     .icon-info,
     .icon-bars {

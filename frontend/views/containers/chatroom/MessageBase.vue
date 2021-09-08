@@ -135,7 +135,6 @@ export default {
   @include tablet {
     padding: 0.5rem 2.5rem;
   }
-
   position: relative;
   max-height: 100%;
 
@@ -159,6 +158,7 @@ export default {
 
   &:hover {
     background-color: $general_2;
+
     ::v-deep .c-actions {
       display: flex;
     }
@@ -203,9 +203,9 @@ export default {
 }
 
 .c-replying {
-  font-size: .75rem;
+  font-size: 0.75rem;
   color: var(--text_1);
   font-style: italic;
-  padding-left: .25rem;
+  padding-left: 0.25rem;
 }
 </style>

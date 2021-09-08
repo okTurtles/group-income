@@ -303,7 +303,7 @@ export default {
   .c-tag-amount,
   .c-tag-total {
     border-radius: 3px;
-    background: rgba(256, 256,256,.4);
+    background: rgba(256, 256, 256, 0.4);
     padding: 0 0.125rem;
   }
 

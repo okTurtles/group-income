@@ -113,9 +113,22 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(45deg); filter: hue-rotate(0deg); border-color: $primary_0 transparent transparent; }
-  50% { transform: rotate(315deg); filter: hue-rotate(360deg); border-color: $primary_0 transparent transparent; }
-  100% { transform: rotate(585deg); border-color: $white; }
+  0% {
+    transform: rotate(45deg);
+    filter: hue-rotate(0deg);
+    border-color: $primary_0 transparent transparent;
+  }
+
+  50% {
+    transform: rotate(315deg);
+    filter: hue-rotate(360deg);
+    border-color: $primary_0 transparent transparent;
+  }
+
+  100% {
+    transform: rotate(585deg);
+    border-color: $white;
+  }
 }
 
 .c-avatar {

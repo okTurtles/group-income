@@ -90,7 +90,7 @@ export default {
   }
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     left: 0;
     width: 2px;
