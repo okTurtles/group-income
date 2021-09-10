@@ -480,7 +480,7 @@
 /* views/containers/contributions/IncomeDetails.vue */
 "{firstMember} and {othersMember} will ensure you meet the mincome" = "{firstMember} and {othersMember} will ensure you meet the mincome";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue */
+/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Save";
 
 /* views/containers/contributions/Contribution.vue */
@@ -1308,6 +1308,9 @@
 /* views/containers/contributions/ContributionsWidget.vue */
 "No members in the group are pledging yet! 😔" = "No members in the group are pledging yet! 😔";
 
+/* views/pages/Home.vue */
+"Create" = "Create";
+
 /* views/pages/DesignSystem.vue */
 "Send donation" = "Send donation";
 
@@ -1571,6 +1574,9 @@
 
 /* views/pages/Payments.vue */
 "Sent by" = "Sent by";
+
+/* views/pages/Home.vue */
+"Create a new group and invite your friends." = "Create a new group and invite your friends.";
 
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/proposals/Mincome.vue */
 "The amount must be a number. (E.g. 100.75)" = "The amount must be a number. (E.g. 100.75)";
