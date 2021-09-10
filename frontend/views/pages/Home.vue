@@ -31,8 +31,10 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
   .create-or-join(v-else key='body-create')
     .card
       svg-create-group
-      h3.is-title-3 Create
-      p Create a new group and invite your friends.
+      h3.is-title-3
+        i18n Create
+      p
+        i18n Create a new group and invite your friends.
 
       i18n(
         tag='button'
