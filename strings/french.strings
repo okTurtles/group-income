@@ -610,7 +610,7 @@
 "Leave group" = "Quitter le groupe";
 
 /* views/containers/chatroom/MessageActions.vue */
-"Add emoticons" = "Ajouter des émotes";
+"Add emoticons" = "Ajouter des émoticônes";
 
 /* views/containers/chatroom/MessageActions.vue */
 "Copy message Link" = "Copier le lien du message";
@@ -1870,7 +1870,7 @@
 "New Message" = "Nouveau message";
 
 /* views/pages/Mailbox.vue */
-"No Messages" = "Pas de messages";
+"No Messages" = "Pas de message";
 
 /* views/pages/Mailbox.vue */
 "Return" = "Retour en arrière";
