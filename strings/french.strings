@@ -426,6 +426,12 @@
 /* MISSING TRANSLATION - views/pages/GroupChat.vue */
 "{numMembers} members" = "{numMembers} members";
 
+/* MISSING TRANSLATION - views/pages/Home.vue */
+"Create a new group and invite your friends." = "Create a new group and invite your friends.";
+
+/* MISSING TRANSLATION - views/pages/Home.vue */
+"Create" = "Create";
+
 /* MISSING TRANSLATION - views/pages/Join.vue */
 "Oh no! {br_}This invite is not valid" = "Oh no! {br_}This invite is not valid";
 
@@ -792,7 +798,7 @@
 /* views/containers/chatroom/DeleteChannelModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "This action {strong_}cannot be undone{_strong}." = "Cette action {strong_}est irréversible{_strong}.";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue */
+/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Enregistrer";
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/group-settings/GroupDeletionModal.vue */
