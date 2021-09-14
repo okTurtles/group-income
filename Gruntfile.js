@@ -228,6 +228,11 @@ module.exports = (grunt) => {
         src: ['**/*', '!style/**', '!svgs/**'],
         dest: distAssets,
         expand: true
+      },
+      strings: {
+        src: ['strings/*.json', '!strings/english.json'],
+        dest: distAssets,
+        expand: true
       }
     },
 
