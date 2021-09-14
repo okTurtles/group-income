@@ -112,7 +112,17 @@ sbp('sbp/selectors/register', {
       .then(handleFetchResult('text'))
   },
   'backend/translations/get': (language: string) => {
-    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/translations/get/${language}`)
-      .then(handleFetchResult('json'))
+    const [languageCode] = language.toLowerCase().split('-')
+    const languageFileMap = new Map([
+      ['fr', 'french.json']
+    ])
+    const languageFileName = languageFileMap.get(languageCode) || ''
+
+    if (languageFileName) {
+      return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/assets/strings/${languageFileName}`)
+        .then(handleFetchResult('json'))
+    } else {
+      return {}
+    }
   }
 })
