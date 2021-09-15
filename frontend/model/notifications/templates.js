@@ -1,6 +1,21 @@
 import L from '@view-utils/translations.js'
 import { timeSince } from '@utils/time.js'
 
+type TemplateArguments = {
+  timestamp: number;
+  data: Object;
+}
+
+type TemplateDescription = {
+  avatar: string;
+  icon: string;
+  level: 'danger' | 'info';
+  body: string;
+  linkTo: string;
+  date: string;
+  read: boolean;
+}
+
 // Notification templates based on issue #663
 // TODO/REVIEW - list might be stale / incomplete.
 
@@ -9,7 +24,7 @@ const dateNow = 1590823007327
 
 // TODO - add/improve logic to needed keys:
 // - avatar, name, linkTo, read
-export const MEMBER_ADDED = ({ timestamp, data }) => {
+export const MEMBER_ADDED = ({ timestamp, data }: TemplateArguments): TemplateDescription => {
   const name = data.username // getDisplayName()
   const avatar = ''
   return {
@@ -25,7 +40,7 @@ export const MEMBER_ADDED = ({ timestamp, data }) => {
   }
 }
 
-export const MEMBER_REMOVED = ({ timestamp, data }) => {
+export const MEMBER_REMOVED = ({ timestamp, data }: TemplateArguments): TemplateDescription => {
   const name = data.username
   const avatar = ''
   return {
@@ -42,7 +57,7 @@ export const MEMBER_REMOVED = ({ timestamp, data }) => {
   }
 }
 
-export const MEMBER_LEFT = ({ timestamp, data }) => {
+export const MEMBER_LEFT = ({ timestamp, data }: TemplateArguments): TemplateDescription => {
   const name = data.username
   const avatar = ''
   return {
@@ -58,7 +73,7 @@ export const MEMBER_LEFT = ({ timestamp, data }) => {
   }
 }
 
-export const INCOME_DETAILS_OLD = ({ timestamp }) => {
+export const INCOME_DETAILS_OLD = ({ timestamp }: TemplateArguments): TemplateDescription => {
   const avatar = ''
   return {
     avatar,
@@ -71,7 +86,7 @@ export const INCOME_DETAILS_OLD = ({ timestamp }) => {
   }
 }
 
-export const SEND_CONTRIBUTION = ({ timestamp, data }) => {
+export const SEND_CONTRIBUTION = ({ timestamp, data }: TemplateArguments): TemplateDescription => {
   const month = 'June'
   const avatar = ''
   return {
@@ -88,7 +103,7 @@ export const SEND_CONTRIBUTION = ({ timestamp, data }) => {
   }
 }
 
-export const PROPOSAL_NEW = ({ timestamp, data }) => {
+export const PROPOSAL_NEW = ({ timestamp, data }: TemplateArguments): TemplateDescription => {
   const avatar = ''
   const member = `<strong>${data.creator}</strong>`
 

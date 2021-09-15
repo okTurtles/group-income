@@ -103,7 +103,7 @@ export function proximityDate (date: Date): string {
   return pd
 }
 
-export function timeSince (datems: number, dateNow: number = Date.now()) {
+export function timeSince (datems: number, dateNow: number = Date.now()): string {
   const interval = dateNow - datems
 
   if (interval >= DAYS_MILLIS * 2) {
