@@ -21,7 +21,7 @@
               avatar(:src='item.avatarUrlTODO' size='md')
               i(:class='`icon-${item.icon} ${iconBg(item.level)}`')
             span.c-item-content
-              span.c-item-text(:v-safe-html='item.body')
+              span.c-item-text(v-safe-html='item.body')
               span.c-item-date.has-text-1.has-text-small {{ item.date }}
 </template>
 
