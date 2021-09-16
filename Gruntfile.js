@@ -389,6 +389,7 @@ module.exports = (grunt) => {
     ].forEach(([globs, tasks]) => {
       globs.forEach(glob => {
         browserSync.watch(glob, { ignoreInitial: true }, async (eventName, filePath) => {
+          const extension = path.extname(filePath)
           grunt.log.writeln(chalkFileEvent(eventName, filePath))
 
           if (eventName === 'add' || eventName === 'change') {
@@ -406,8 +407,6 @@ module.exports = (grunt) => {
           }
 
           if (eventName === 'change' || eventName === 'unlink') {
-            const extension = path.extname(filePath)
-
             // Remove the corresponding plugin cache entry, if any.
             if (extension === '.js') {
               flowRemoveTypesPluginOptions.cache.delete(filePath)
@@ -427,6 +426,14 @@ module.exports = (grunt) => {
             await buildServiceWorkers.run()
           } else {
             await buildMain.run()
+            if (['.css', '.sass', '.scss'].includes(extension)) {
+              // Esbuild outputs `main.css` and `main.css.map` along `main.js`,
+              // but `index.html` wants to load them from `dist/assets/css`.
+              await fs.promises.copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
+              if (buildMain.options.sourcemap) {
+                await fs.promises.copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
+              }
+            }
           }
           grunt.task.run(tasks.filter(task => typeof task === 'string'))
           grunt.task.run(['keepalive'])
