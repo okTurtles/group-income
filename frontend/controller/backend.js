@@ -15,7 +15,8 @@ import { PUBSUB_INSTANCE } from './instance-keys.js'
 // const nacl = require('tweetnacl')
 import nacl from 'tweetnacl'
 
-// Used in the 'backend/translations/get()' SBP function.
+// Used in the 'backend/translations/get' SBP function.
+// Do not include 'english.json' here unless the browser might need to download it.
 const languageFileMap = new Map([
   ['fr', 'french.json']
 ])
@@ -131,7 +132,7 @@ sbp('sbp/selectors/register', {
     const [languageCode] = language.toLowerCase().split('-')
     const languageFileName = languageFileMap.get(languageCode) || ''
 
-    if (languageFileName) {
+    if (languageFileName !== '') {
       return await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/assets/strings/${languageFileName}`)
         .then(handleFetchResult('json'))
     }
