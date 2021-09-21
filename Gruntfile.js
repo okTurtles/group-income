@@ -111,56 +111,59 @@ module.exports = (grunt) => {
     tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
   }
 
-  // Options that are shared between our esbuild tasks.
-  const esbuildOptionsDefault = {
-    bundle: true,
-    define: {
-      'process.env.BUILD': "'web'", // Required by Vuelidate.
-      'process.env.NODE_ENV': `'${NODE_ENV}'`,
-      'process.env.VUEX_STRICT': VUEX_STRICT
+  // https://esbuild.github.io/api/
+  const esbuildOptionBags = {
+    // Native options that are shared between our esbuild tasks.
+    default: {
+      bundle: true,
+      define: {
+        'process.env.BUILD': "'web'", // Required by Vuelidate.
+        'process.env.NODE_ENV': `'${NODE_ENV}'`,
+        'process.env.VUEX_STRICT': VUEX_STRICT
+      },
+      external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
+      incremental: true,
+      loader: {
+        '.eot': 'file',
+        '.ttf': 'file',
+        '.woff': 'file',
+        '.woff2': 'file'
+      },
+      sourcemap: development,
+      splitting: false, // Split mode has still a few issues so don't enable it yet.
+      watch: false // Not using esbuild's own watch mode since it involves polling.
     },
-    external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
-    incremental: true,
-    loader: {
-      '.eot': 'file',
-      '.ttf': 'file',
-      '.woff': 'file',
-      '.woff2': 'file'
+    // Native options used when building the main entry point.
+    main: {
+      assetNames: '../css/[name]',
+      entryPoints: [`${srcDir}/main.js`],
+      format: 'esm',
+      outfile: `${distJS}/main.js`
     },
-    sourcemap: development,
-    splitting: false, // Split mode has still a few issues so don't enable it yet.
-    watch: false // Not using esbuild's own watch mode since it involves polling.
-  }
-
-  // Native options for building the main entry point.
-  const esbuildOptionsMain = {
-    assetNames: '../css/[name]',
-    entryPoints: [`${srcDir}/main.js`],
-    format: 'esm',
-    outfile: `${distJS}/main.js`
-  }
-
-  // Additional options which are not part of the esbuild API.
-  const esbuildOtherOptionsMain = {
-    // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
-    // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
-    // making a post-build copying operation necessary.
-    postoperation: async ({ fileEventName, filePath } = {}) => {
-      // Only after a fresh build or a rebuild caused by a CSS file event.
-      if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
-        await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
-        if (development) {
-          await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
-        }
-      }
+    // Native options used when building our service worker(s).
+    serviceWorkers: {
+      entryPoints: ['./frontend/controller/serviceworkers/primary.js'],
+      format: 'iife',
+      outdir: distJS
     }
   }
 
-  // Native options for building the service worker(s).
-  const esbuildOptionsServiceWorkers = {
-    entryPoints: ['./frontend/controller/serviceworkers/primary.js'],
-    format: 'iife',
-    outdir: distJS
+  // Additional options which are not part of the esbuild API.
+  const esbuildOtherOptionBags = {
+    main: {
+      // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
+      // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
+      // making a post-build copying operation necessary.
+      postoperation: async ({ fileEventName, filePath } = {}) => {
+        // Only after a fresh build or a rebuild caused by a CSS file event.
+        if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
+          await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
+          if (development) {
+            await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
+          }
+        }
+      }
+    }
   }
 
   // https://github.com/rollup/plugins/tree/master/packages/eslint#options
@@ -363,14 +366,14 @@ module.exports = (grunt) => {
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
 
     const buildMain = createEsbuildTask({
-      ...esbuildOptionsDefault,
-      ...esbuildOptionsMain,
+      ...esbuildOptionBags.default,
+      ...esbuildOptionBags.main,
       plugins: [aliasPlugin, flowRemoveTypesPlugin, sassPlugin, svgPlugin, vuePlugin]
-    }, esbuildOtherOptionsMain)
+    }, esbuildOtherOptionBags.main)
 
     const buildServiceWorkers = createEsbuildTask({
-      ...esbuildOptionsDefault,
-      ...esbuildOptionsServiceWorkers,
+      ...esbuildOptionBags.default,
+      ...esbuildOptionBags.serviceWorkers,
       plugins: [aliasPlugin, flowRemoveTypesPlugin]
     })
 
