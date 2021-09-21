@@ -3,13 +3,19 @@
 const chalk = require('chalk')
 const esbuild = require('esbuild')
 
-const createEsbuildTask = (options = {}, { rebuildDelay, rebuildThrottle } = {}) => {
-  if (!options.plugins) options.plugins = []
+/**
+ * @param {Object} esbuildOptions - Native esbuild options.
+ * @param {Object} otherOptions - Additional options that are not part of the esbuild API.
+ * @returns {Object}
+ */
+const createEsbuildTask = (esbuildOptions = {}, otherOptions = {}) => {
+  if (!esbuildOptions.plugins) esbuildOptions.plugins = []
 
-  options.plugins[options.plugins.length] = defaultPlugin
+  // Make sure our 'default' plugin is always included.
+  esbuildOptions.plugins.push(defaultPlugin)
 
   return {
-    options,
+    options: { ...esbuildOptions, ...otherOptions },
 
     // Internal state.
     state: {
@@ -17,18 +23,31 @@ const createEsbuildTask = (options = {}, { rebuildDelay, rebuildThrottle } = {})
       result: null
     },
 
-    // Calls to run can be batched and throttled according to the corresponding options.
+    // Used to do an initial build.
     async run () {
-      const { options, state } = this
+      const { state } = this
 
-      try {
-        if (state.result) {
-          await state.result.rebuild()
-        } else {
-          state.result = await esbuild.build(options)
-        }
-      } catch (error) {
-        console.log(error)
+      if (state.result && esbuildOptions.incremental) {
+        throw new Error('Cannot use run() again on this task. Use rerun() instead.')
+      }
+      state.result = await esbuild.build(esbuildOptions)
+
+      if (otherOptions.postoperation) {
+        await otherOptions.postoperation()
+      }
+    },
+
+    // Used to do a rebuild after an input file event has been detected.
+    async rerun ({ fileEventName, filePath }) {
+      const { state } = this
+
+      if (!state.result || !esbuildOptions.incremental) {
+        throw new Error('Cannot use rerun() on this task. Use run() instead.')
+      }
+      await state.result.rebuild()
+
+      if (otherOptions.postoperation) {
+        await otherOptions.postoperation({ fileEventName, filePath })
       }
     }
   }
