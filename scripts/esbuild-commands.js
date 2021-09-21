@@ -50,8 +50,10 @@ const defaultPlugin = {
     })
 
     build.onEnd((result) => {
-      const duration = Date.now() - t0
-      console.log(chalk`{green esbuild: created} {bold ${output}} {green from} {bold ${entryPoint}} {green in} {bold ${(duration / 1e3).toFixed(1)}s}`)
+      if (!result.errors.length) {
+        const duration = Date.now() - t0
+        console.log(chalk`{green esbuild: created} {bold ${output}} {green from} {bold ${entryPoint}} {green in} {bold ${(duration / 1e3).toFixed(1)}s}`)
+      }
     })
   }
 }
