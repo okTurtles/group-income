@@ -44,7 +44,7 @@ Object.assign(process.env, applyPortShift(process.env))
 const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
-const fs = require('fs')
+const { copyFile, readFile } = require('fs/promises')
 const path = require('path')
 const { resolve } = path
 
@@ -111,42 +111,59 @@ module.exports = (grunt) => {
     tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
   }
 
-  // Options that are shared between our esbuild tasks.
-  const esbuildOptionsDefault = {
-    bundle: true,
-    define: {
-      'process.env.BUILD': "'web'", // Required by Vuelidate.
-      'process.env.NODE_ENV': `'${NODE_ENV}'`,
-      'process.env.VUEX_STRICT': VUEX_STRICT
+  // https://esbuild.github.io/api/
+  const esbuildOptionBags = {
+    // Native options that are shared between our esbuild tasks.
+    default: {
+      bundle: true,
+      define: {
+        'process.env.BUILD': "'web'", // Required by Vuelidate.
+        'process.env.NODE_ENV': `'${NODE_ENV}'`,
+        'process.env.VUEX_STRICT': VUEX_STRICT
+      },
+      external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
+      incremental: true,
+      loader: {
+        '.eot': 'file',
+        '.ttf': 'file',
+        '.woff': 'file',
+        '.woff2': 'file'
+      },
+      sourcemap: development,
+      splitting: false, // Split mode has still a few issues so don't enable it yet.
+      watch: false // Not using esbuild's own watch mode since it involves polling.
     },
-    external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
-    incremental: true,
-    loader: {
-      '.eot': 'file',
-      '.ttf': 'file',
-      '.woff': 'file',
-      '.woff2': 'file'
+    // Native options used when building the main entry point.
+    main: {
+      assetNames: '../css/[name]',
+      entryPoints: [`${srcDir}/main.js`],
+      format: 'esm',
+      outfile: `${distJS}/main.js`
     },
-    sourcemap: development,
-    splitting: false, // Split mode has still a few issues so don't enable it yet.
-    watch: false // Not using esbuild's own watch mode since it involves polling.
+    // Native options used when building our service worker(s).
+    serviceWorkers: {
+      entryPoints: ['./frontend/controller/serviceworkers/primary.js'],
+      format: 'iife',
+      outdir: distJS
+    }
   }
 
-  // Options for building the main entry point.
-  const esbuildOptionsMain = {
-    assetNames: '../css/[name]',
-    entryPoints: [`${srcDir}/main.js`],
-    format: 'esm',
-    outfile: `${distJS}/main.js`,
-    splitting: false
-  }
-
-  // Options for building the service worker(s).
-  const esbuildOptionsServiceWorkers = {
-    entryPoints: ['./frontend/controller/serviceworkers/primary.js'],
-    format: 'iife',
-    outdir: distJS,
-    splitting: false
+  // Additional options which are not part of the esbuild API.
+  const esbuildOtherOptionBags = {
+    main: {
+      // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
+      // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
+      // making a post-build copying operation necessary.
+      postoperation: async ({ fileEventName, filePath } = {}) => {
+        // Only after a fresh build or a rebuild caused by a CSS file event.
+        if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
+          await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
+          if (development) {
+            await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
+          }
+        }
+      }
+    }
   }
 
   // https://github.com/rollup/plugins/tree/master/packages/eslint#options
@@ -354,25 +371,25 @@ module.exports = (grunt) => {
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
 
     const buildMain = createEsbuildTask({
-      ...esbuildOptionsDefault,
-      ...esbuildOptionsMain,
+      ...esbuildOptionBags.default,
+      ...esbuildOptionBags.main,
       plugins: [aliasPlugin, flowRemoveTypesPlugin, sassPlugin, svgPlugin, vuePlugin]
-    })
+    }, esbuildOtherOptionBags.main)
+
     const buildServiceWorkers = createEsbuildTask({
-      ...esbuildOptionsDefault,
-      ...esbuildOptionsServiceWorkers,
+      ...esbuildOptionBags.default,
+      ...esbuildOptionBags.serviceWorkers,
       plugins: [aliasPlugin, flowRemoveTypesPlugin]
     })
 
-    await Promise.all([buildMain.run(), buildServiceWorkers.run()])
-    // Necessary since our main HTML file loads its CSS from the `assets` folder.
-    await fs.promises.copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
-    await fs.promises.unlink(`${distJS}/main.css`)
+    await Promise.all([buildMain.run(), buildServiceWorkers.run()]).catch(error => {
+      grunt.log.error(error.message)
+      process.exit(1)
+    })
 
     if (!this.flags.watch) {
       return done()
     }
-
     const eslint = require('./scripts/esbuild-plugins/utils.js').createEslinter(eslintOptions)
     const puglint = require('./scripts/esbuild-plugins/utils.js').createPuglinter(puglintOptions)
     const stylelint = require('./scripts/esbuild-plugins/utils.js').createStylelinter(stylelintOptions)
@@ -393,12 +410,13 @@ module.exports = (grunt) => {
       [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]]
     ].forEach(([globs, tasks]) => {
       globs.forEach(glob => {
-        browserSync.watch(glob, { ignoreInitial: true }, async (eventName, filePath) => {
-          grunt.log.writeln(chalkFileEvent(eventName, filePath))
+        browserSync.watch(glob, { ignoreInitial: true }, async (fileEventName, filePath) => {
+          const extension = path.extname(filePath)
+          grunt.log.writeln(chalkFileEvent(fileEventName, filePath))
 
-          if (eventName === 'add' || eventName === 'change') {
+          if (fileEventName === 'add' || fileEventName === 'change') {
             // Read and lint the changed file.
-            const code = await fs.promises.readFile(filePath, 'utf8')
+            const code = await readFile(filePath, 'utf8')
             const linters = tasks.filter(task => typeof task === 'object')
             const lintingStartMs = Date.now()
 
@@ -410,9 +428,7 @@ module.exports = (grunt) => {
             grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, linters, [filePath]))
           }
 
-          if (eventName === 'change' || eventName === 'unlink') {
-            const extension = path.extname(filePath)
-
+          if (fileEventName === 'change' || fileEventName === 'unlink') {
             // Remove the corresponding plugin cache entry, if any.
             if (extension === '.js') {
               flowRemoveTypesPluginOptions.cache.delete(filePath)
@@ -428,10 +444,14 @@ module.exports = (grunt) => {
             }
           }
           // Only rebuild the relevant entry point.
-          if (filePath.startsWith(serviceWorkerDir)) {
-            await buildServiceWorkers.run()
-          } else {
-            await buildMain.run()
+          try {
+            if (filePath.startsWith(serviceWorkerDir)) {
+              await buildServiceWorkers.run({ fileEventName, filePath })
+            } else {
+              await buildMain.run({ fileEventName, filePath })
+            }
+          } catch (error) {
+            grunt.log.error(error.message)
           }
           grunt.task.run(tasks.filter(task => typeof task === 'string'))
           grunt.task.run(['keepalive'])

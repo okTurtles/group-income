@@ -3,32 +3,43 @@
 const chalk = require('chalk')
 const esbuild = require('esbuild')
 
-const createEsbuildTask = (options = {}, { rebuildDelay, rebuildThrottle } = {}) => {
-  if (!options.plugins) options.plugins = []
+/**
+ * @param {Object} esbuildOptions - Native esbuild options.
+ * @param {Object} otherOptions - Additional options that are not part of the esbuild API.
+ * @returns {Object}
+ */
+const createEsbuildTask = (esbuildOptions = {}, otherOptions = {}) => {
+  const { postoperation } = otherOptions
 
-  options.plugins[options.plugins.length] = defaultPlugin
+  if (!esbuildOptions.plugins) esbuildOptions.plugins = []
+
+  // Make sure our 'default' plugin is always included.
+  esbuildOptions.plugins.push(defaultPlugin)
 
   return {
-    options,
-
     // Internal state.
     state: {
       // Holds the latest esbuild result object.
       result: null
     },
 
-    // Calls to run can be batched and throttled according to the corresponding options.
-    async run () {
-      const { options, state } = this
+    // Used to do initial builds as well as rebuilds after an input file event has been detected.
+    async run ({ fileEventName, filePath } = {}) {
+      const { state } = this
 
-      try {
-        if (state.result) {
-          await state.result.rebuild()
-        } else {
-          state.result = await esbuild.build(options)
+      if (!state.result || !esbuildOptions.incremental) {
+        if (fileEventName || filePath) {
+          throw new Error('No argument should be provided when first running this task.')
         }
-      } catch (error) {
-        console.log(error)
+        state.result = await esbuild.build(esbuildOptions)
+      } else {
+        if (!fileEventName || !filePath) {
+          throw new Error('Arguments `fileEventName` and `filePath` must be provided when rerunning this task.')
+        }
+        await state.result.rebuild()
+      }
+      if (postoperation) {
+        await postoperation({ fileEventName, filePath })
       }
     }
   }
@@ -50,8 +61,10 @@ const defaultPlugin = {
     })
 
     build.onEnd((result) => {
-      const duration = Date.now() - t0
-      console.log(chalk`{green esbuild: created} {bold ${output}} {green from} {bold ${entryPoint}} {green in} {bold ${(duration / 1e3).toFixed(1)}s}`)
+      if (!result.errors.length) {
+        const duration = Date.now() - t0
+        console.log(chalk`{green esbuild: created} {bold ${output}} {green from} {bold ${entryPoint}} {green in} {bold ${(duration / 1e3).toFixed(1)}s}`)
+      }
     })
   }
 }
