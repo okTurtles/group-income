@@ -9,45 +9,37 @@ const esbuild = require('esbuild')
  * @returns {Object}
  */
 const createEsbuildTask = (esbuildOptions = {}, otherOptions = {}) => {
+  const { postoperation } = otherOptions
+
   if (!esbuildOptions.plugins) esbuildOptions.plugins = []
 
   // Make sure our 'default' plugin is always included.
   esbuildOptions.plugins.push(defaultPlugin)
 
   return {
-    options: { ...esbuildOptions, ...otherOptions },
-
     // Internal state.
     state: {
       // Holds the latest esbuild result object.
       result: null
     },
 
-    // Used to do an initial build.
-    async run () {
-      const { state } = this
-
-      if (state.result && esbuildOptions.incremental) {
-        throw new Error('Cannot use run() again on this task. Use rerun() instead.')
-      }
-      state.result = await esbuild.build(esbuildOptions)
-
-      if (otherOptions.postoperation) {
-        await otherOptions.postoperation()
-      }
-    },
-
-    // Used to do a rebuild after an input file event has been detected.
-    async rerun ({ fileEventName, filePath }) {
+    // Used to do initial builds as well as rebuilds after an input file event has been detected.
+    async run ({ fileEventName, filePath } = {}) {
       const { state } = this
 
       if (!state.result || !esbuildOptions.incremental) {
-        throw new Error('Cannot use rerun() on this task. Use run() instead.')
+        if (fileEventName || filePath) {
+          throw new Error('No argument should be provided when first running this task.')
+        }
+        state.result = await esbuild.build(esbuildOptions)
+      } else {
+        if (!fileEventName || !filePath) {
+          throw new Error('Arguments `fileEventName` and `filePath` must be provided when rerunning this task.')
+        }
+        await state.result.rebuild()
       }
-      await state.result.rebuild()
-
-      if (otherOptions.postoperation) {
-        await otherOptions.postoperation({ fileEventName, filePath })
+      if (postoperation) {
+        await postoperation({ fileEventName, filePath })
       }
     }
   }

@@ -441,9 +441,9 @@ module.exports = (grunt) => {
           // Only rebuild the relevant entry point.
           try {
             if (filePath.startsWith(serviceWorkerDir)) {
-              await buildServiceWorkers.rerun({ fileEventName, filePath })
+              await buildServiceWorkers.run({ fileEventName, filePath })
             } else {
-              await buildMain.rerun({ fileEventName, filePath })
+              await buildMain.run({ fileEventName, filePath })
             }
           } catch (error) {
             grunt.log.error(error.message)
