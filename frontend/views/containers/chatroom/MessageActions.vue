@@ -121,11 +121,11 @@ export default {
 .c-actions {
   display: none;
   position: absolute;
-  right: .5rem;
+  right: 0.5rem;
   top: -1rem;
   background-color: $background_0;
   padding: 0.125rem;
-  box-shadow: 0px 0px 1.25rem $general_1_opacity_6;
+  box-shadow: 0 0 1.25rem $general_1_opacity_6;
 
   @include phone {
     right: 1.5rem;
@@ -146,6 +146,7 @@ export default {
 
 ::v-deep .is-danger:hover {
   background-color: $danger_2;
+
   .c-item-slot i,
   .c-item-slot {
     color: $danger_0;

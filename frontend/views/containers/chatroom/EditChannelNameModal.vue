@@ -91,7 +91,7 @@ export default {
   float: left;
 }
 
-.c-max-count   {
+.c-max-count {
   float: right;
   color: $text_1;
 

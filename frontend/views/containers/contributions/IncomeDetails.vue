@@ -60,7 +60,8 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
         button-submit.is-success(
           @click='submit'
           data-test='submitIncome'
-        ) Save
+        )
+          i18n Save
 
     group-pledges-graph.c-graph(
       :type='form.incomeDetailsType'

@@ -77,7 +77,7 @@ export default {
 
   .button {
     @include phone {
-      width: calc(100% - 1rem)
+      width: calc(100% - 1rem);
     }
   }
 }

@@ -63,6 +63,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
 .c-emoticons-list {
   padding-left: 2.5rem;
   display: flex;
@@ -73,9 +74,9 @@ export default {
   background-color: $general_2;
   border: 1px solid $general_1;
   border-radius: 3px;
-  padding: 0 .5rem;
-  margin-right: .5rem;
-  margin-top: .5rem;
+  padding: 0 0.5rem;
+  margin-right: 0.5rem;
+  margin-top: 0.5rem;
   cursor: pointer;
 
   &.is-user-emoticon {
@@ -84,7 +85,7 @@ export default {
     background-color: $primary_2;
   }
 
-  .c-twrapper{
+  .c-twrapper {
     display: flex;
     outline: none;
   }
@@ -100,18 +101,21 @@ export default {
 
 .c-add-icon {
   background-color: transparent;
+
   button {
     height: auto;
+
     &:focus {
       box-shadow: none;
       background: transparent;
     }
   }
+
   i {
     color: $general_0;
 
     &.icon-plus {
-      font-size: .6rem;
+      font-size: 0.6rem;
       margin-left: 0.3rem;
     }
   }

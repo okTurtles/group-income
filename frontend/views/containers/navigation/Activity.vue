@@ -61,6 +61,7 @@ export default {
   font-size: $size_4;
   transform-origin: center 2px;
   margin-top: 2px;
+
   &.is-active {
     font-weight: 900;
   }

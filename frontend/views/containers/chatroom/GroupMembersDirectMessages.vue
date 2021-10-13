@@ -185,7 +185,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid $general_0;
-  transition: opacity ease-in .25s, height ease-in .25s;
+  transition: opacity ease-in 0.25s, height ease-in 0.25s;
 
   &:last-child {
     border-bottom: 0;
@@ -197,7 +197,8 @@ export default {
   }
 }
 
-.slide-list-enter, .slide-list-leave-to {
+.slide-list-enter,
+.slide-list-leave-to {
   height: 0;
   opacity: 0;
 }

@@ -9,7 +9,6 @@ import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
 import './database.js'
-import './translations.js'
 
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
@@ -149,14 +148,6 @@ route.POST('/file', {
 route.GET('/file/{hash}', {}, async function (request, h) {
   try {
     return await sbp('backend/db/readFile', request.params.hash)
-  } catch (err) {
-    return logger(err)
-  }
-})
-
-route.GET('/translations/get/{language}', {}, async function (request, h) {
-  try {
-    return await sbp('backend/translations/get', request.params.language)
   } catch (err) {
     return logger(err)
   }

@@ -73,7 +73,7 @@ export default {
   top: 0.75rem;
 
   @include tablet {
-    top: 1.5rem
+    top: 1.5rem;
   }
 
   @include desktop {

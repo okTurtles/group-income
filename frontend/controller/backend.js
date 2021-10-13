@@ -1,5 +1,7 @@
 'use strict'
 
+import type { JSONObject } from '~/shared/types.js'
+
 import sbp from '~/shared/sbp.js'
 import { sign, bufToB64, b64ToStr } from '~/shared/functions.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -12,6 +14,12 @@ import { PUBSUB_INSTANCE } from './instance-keys.js'
 // temporary identity for signing
 // const nacl = require('tweetnacl')
 import nacl from 'tweetnacl'
+
+// Used in the 'backend/translations/get' SBP function.
+// Do not include 'english.json' here unless the browser might need to download it.
+const languageFileMap = new Map([
+  ['fr', 'french.json']
+])
 
 const persona = nacl.sign.keyPair()
 const signature = signJSON('', persona)
@@ -111,8 +119,22 @@ sbp('sbp/selectors/register', {
     return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/latestHash/${contractID}`)
       .then(handleFetchResult('text'))
   },
-  'backend/translations/get': (language: string) => {
-    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/translations/get/${language}`)
-      .then(handleFetchResult('json'))
+  /**
+   * Fetches a JSON object containing translation strings for a given language.
+   *
+   * @param language - A BPC-47 language tag like the value
+   * of `navigator.language`.
+   *
+   * @see The 'translations/init' SBP selector in `~view-utils/translations.js`.
+   */
+  async 'backend/translations/get' (language: string): Promise<?JSONObject> {
+    // The language code is usually the first part of the language tag.
+    const [languageCode] = language.toLowerCase().split('-')
+    const languageFileName = languageFileMap.get(languageCode) || ''
+
+    if (languageFileName !== '') {
+      return await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/assets/strings/${languageFileName}`)
+        .then(handleFetchResult('json'))
+    }
   }
 })

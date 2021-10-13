@@ -104,12 +104,12 @@ export default {
   }
 }
 
-.c-list{
-  padding-top: .5rem;
+.c-list {
+  padding-top: 0.5rem;
 
   .c-list-item {
     list-style: initial;
-    margin: .5rem 1rem;
+    margin: 0.5rem 1rem;
   }
 }
 </style>
