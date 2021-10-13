@@ -59,44 +59,6 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
   // Convenience function for retreiving a user by name:
   const getUser = name => groupMembers.find(member => member.name === name)
 
-  const redistributeOverToLatePayments = function (overPayments, latePayments) {
-    const adjustingPayments = []
-    const needers = groupMembers.filter((m) => m.haveNeed < 0)
-    const havers = groupMembers.filter((m) => m.haveNeed > 0)
-    for (const overPayment of overPayments) {
-      const totalNeedByOthers = needers.reduce((acc, m) => m.name !== overPayment.to ? acc - m.haveNeed : 0, 0)
-      for (const needer of needers) {
-        const adjustment = JSON.parse(JSON.stringify(overPayment))
-        adjustment.from = overPayment.from
-        adjustment.to = needer.name
-        if (needer.name !== overPayment.to) {
-          adjustment.amount = -overPayment.amount * needer.haveNeed / totalNeedByOthers
-          adjustment.total = -overPayment.total * needer.haveNeed / totalNeedByOthers
-        } else {
-          adjustment.amount = -overPayment.amount
-          adjustment.total = -overPayment.total
-        }
-        adjustingPayments.push(adjustment)
-      }
-      // Not known if necessary!
-      const totalPledgedByOthers = havers.reduce((acc, m) => m.name !== overPayment.from ? acc + m.haveNeed : 0, 0)
-      for (const haver of havers) {
-        const adjustment = JSON.parse(JSON.stringify(overPayment))
-        adjustment.from = overPayment.to
-        adjustment.to = haver.name
-        if (haver.name !== overPayment.from) {
-          adjustment.amount = overPayment.amount * haver.haveNeed / totalPledgedByOthers
-          adjustment.total = overPayment.total * haver.haveNeed / totalPledgedByOthers
-        } else {
-          adjustment.amount = overPayment.amount
-          adjustment.total = overPayment.total
-        }
-        adjustingPayments.push(adjustment)
-      }
-    }
-    return reduceDistribution([latePayments, adjustingPayments].flat())
-  }
-
   // Make a place to store this and the previous cycle's startCycleEvent (where over/under-payments are stored)
   // so that they can be included in the next cycle's payment distribution calculations:
   let startCycleEvent = { data: { monthlyDistribution: [], completedPayments: [] } }
@@ -191,30 +153,22 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
   // Our task is to redistribute the overpayments back into the current late payments so nobody in need is asked to pay.
   let overPayments = JSON.parse(JSON.stringify(lastStartCycleEvent.data.monthlyDistribution)).filter((p) => {
     return p.amount < 0
-  }).map((p) => {
-    p.amount = Math.abs(p.amount)
-    p.total = Math.abs(p.total)
-    return p
   })
 
-  startCycleEvent.data.monthlyDistribution = redistributeOverToLatePayments(overPayments, startCycleEvent.data.monthlyDistribution)
+  startCycleEvent.data.monthlyDistribution = addDistributions(startCycleEvent.data.monthlyDistribution, overPayments)
 
   if (!adjusted) {
-    startCycleEvent.data.monthlyDistribution = reduceDistribution(addDistributions(startCycleEvent.data.completedPayments, startCycleEvent.data.monthlyDistribution))
+    startCycleEvent.data.monthlyDistribution = addDistributions(startCycleEvent.data.completedPayments, startCycleEvent.data.monthlyDistribution)
   }
 
   overPayments = JSON.parse(JSON.stringify(startCycleEvent.data.monthlyDistribution)).filter((p) => {
     return p.amount < 0
-  }).map((p) => {
-    p.amount = Math.abs(p.amount)
-    p.total = Math.abs(p.total)
-    return p
   })
 
-  lastStartCycleEvent.data.monthlyDistribution = redistributeOverToLatePayments(overPayments, lastStartCycleEvent.data.monthlyDistribution)
+  lastStartCycleEvent.data.monthlyDistribution = addDistributions(lastStartCycleEvent.data.monthlyDistribution, overPayments)
   // Unadjust last
   if (!adjusted) {
-    lastStartCycleEvent.data.monthlyDistribution = reduceDistribution(addDistributions(lastStartCycleEvent.data.completedPayments, lastStartCycleEvent.data.monthlyDistribution))
+    lastStartCycleEvent.data.monthlyDistribution = addDistributions(lastStartCycleEvent.data.completedPayments, lastStartCycleEvent.data.monthlyDistribution)
   }
 
   lastStartCycleEvent.data.monthlyDistribution.forEach((payment) => {
