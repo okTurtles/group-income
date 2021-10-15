@@ -206,7 +206,6 @@ describe('Test group-income-distribution.js', function () {
   it('EVENT: u5 pays $10 to u2. Test un-adjusted first.', function () {
     setup.push({ type: 'paymentEvent', data: { from: 'u5', to: 'u2', amount: 10 } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
-
       { from: 'u1', to: 'u2', amount: 20, total: 20, isLate: false, partial: false, dueOn: '2021-01' },
       { from: 'u1', to: 'u4', amount: 40, total: 40, isLate: false, partial: false, dueOn: '2021-01' },
       { from: 'u5', to: 'u2', amount: 20, total: 20, isLate: false, partial: false, dueOn: '2021-01' },
@@ -239,7 +238,7 @@ describe('Test group-income-distribution.js', function () {
       { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 20, when: dateAtCyclesPassed(0.4) } },
       { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 10, when: dateAtCyclesPassed(1.1) } },
       { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 20, when: dateAtCyclesPassed(2.1) } },
-      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: 10, when: dateAtCyclesPassed(2.2) } }
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -10, when: dateAtCyclesPassed(2.2) } }
     ]
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([])
   })

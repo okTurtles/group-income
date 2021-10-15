@@ -105,8 +105,8 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
 
     forgivemory.lastMonthlyDistribution = simpleCopy(forgivemory.monthlyDistribution)
     forgivemory.lastMonthlyPayments = simpleCopy(forgivemory.monthlyPayments)
-    forgivemory.monthlyPayments = []
-    forgivemory.monthlyDistribution = []
+    forgivemory.monthlyPayments = completedMonthlyPayments
+    forgivemory.monthlyDistribution = monthlyDistribution
 
     startCycleEvent = event
     startCycleEvent.data.monthlyDistribution = monthlyDistribution
@@ -116,47 +116,79 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
   }
 
   const forgiveWithoutForget = (member) => {
-    const toFilter = member.haveNeed < 0 ? (payment) => payment.to !== member.name : (payment) => payment.from !== member.name
-    const fromFilter = member.haveNeed < 0 ? (payment) => payment.from !== member.name : (payment) => payment.to !== member.name
+    const toFilter = (payment) => payment.to !== member.name
+    const fromFilter = (payment) => payment.from !== member.name
 
     const notToFilter = (payment) => !toFilter(payment)
     const notFromFilter = (payment) => !fromFilter(payment)
 
-    // Move payments FROM:
-    forgivemory.lastMonthlyPayments = simpleCopy([forgivemory.lastMonthlyPayments,
-      lastStartCycleEvent.data.completedPayments.filter(fromFilter)].flat())
-    forgivemory.monthlyPayments = simpleCopy([forgivemory.monthlyPayments,
-      startCycleEvent.data.completedPayments.filter(fromFilter)].flat())
-    forgivemory.lastMonthlyDistribution = simpleCopy([forgivemory.lastMonthlyDistribution,
-      lastStartCycleEvent.data.monthlyDistribution.filter(fromFilter)].flat())
-    forgivemory.monthlyDistribution = simpleCopy([forgivemory.monthlyDistribution,
-      startCycleEvent.data.monthlyDistribution.filter(fromFilter)].flat())
+    if (member.haveNeed < 0) {
+      // Move payments FROM to memory:
+      forgivemory.lastMonthlyPayments = simpleCopy([forgivemory.lastMonthlyPayments,
+        lastStartCycleEvent.data.completedPayments.filter(fromFilter)].flat())
+      forgivemory.monthlyPayments = simpleCopy([forgivemory.monthlyPayments,
+        startCycleEvent.data.completedPayments.filter(fromFilter)].flat())
+      forgivemory.lastMonthlyDistribution = simpleCopy([forgivemory.lastMonthlyDistribution,
+        lastStartCycleEvent.data.monthlyDistribution.filter(fromFilter)].flat())
+      forgivemory.monthlyDistribution = simpleCopy([forgivemory.monthlyDistribution,
+        startCycleEvent.data.monthlyDistribution.filter(fromFilter)].flat())
 
-    lastStartCycleEvent.data.completedPayments = lastStartCycleEvent.data.completedPayments.filter(notFromFilter)
-    startCycleEvent.data.completedPayments = startCycleEvent.data.completedPayments.filter(notFromFilter)
-    lastStartCycleEvent.data.monthlyDistribution = lastStartCycleEvent.data.monthlyDistribution.filter(notFromFilter)
-    startCycleEvent.data.monthlyDistribution = startCycleEvent.data.monthlyDistribution.filter(notFromFilter)
+      lastStartCycleEvent.data.completedPayments = lastStartCycleEvent.data.completedPayments.filter(notFromFilter)
+      startCycleEvent.data.completedPayments = startCycleEvent.data.completedPayments.filter(notFromFilter)
+      lastStartCycleEvent.data.monthlyDistribution = lastStartCycleEvent.data.monthlyDistribution.filter(notFromFilter)
+      startCycleEvent.data.monthlyDistribution = startCycleEvent.data.monthlyDistribution.filter(notFromFilter)
 
-    // Restore payments TO:
-    lastStartCycleEvent.data.completedPayments = simpleCopy([lastStartCycleEvent.data.completedPayments,
-      forgivemory.lastMonthlyPayments.filter(toFilter)].flat())
-    startCycleEvent.data.completedPayments = simpleCopy([startCycleEvent.data.completedPayments,
-      forgivemory.monthlyPayments.filter(toFilter)].flat())
-    lastStartCycleEvent.data.monthlyDistribution = simpleCopy([lastStartCycleEvent.data.monthlyDistribution,
-      forgivemory.lastMonthlyDistribution.filter(toFilter)].flat())
-    startCycleEvent.data.monthlyDistribution = simpleCopy([startCycleEvent.data.monthlyDistribution,
-      forgivemory.monthlyDistribution.filter(toFilter)].flat())
+      // Restore payments TO:
+      lastStartCycleEvent.data.completedPayments = simpleCopy([lastStartCycleEvent.data.completedPayments,
+        forgivemory.lastMonthlyPayments.filter(toFilter)].flat())
+      startCycleEvent.data.completedPayments = simpleCopy([startCycleEvent.data.completedPayments,
+        forgivemory.monthlyPayments.filter(toFilter)].flat())
+      lastStartCycleEvent.data.monthlyDistribution = simpleCopy([lastStartCycleEvent.data.monthlyDistribution,
+        forgivemory.lastMonthlyDistribution.filter(toFilter)].flat())
+      startCycleEvent.data.monthlyDistribution = simpleCopy([startCycleEvent.data.monthlyDistribution,
+        forgivemory.monthlyDistribution.filter(toFilter)].flat())
 
-    forgivemory.lastMonthlyPayments = forgivemory.lastMonthlyPayments.filter(notToFilter)
-    forgivemory.monthlyPayments = forgivemory.monthlyPayments.filter(notToFilter)
-    forgivemory.lastMonthlyDistribution = forgivemory.lastMonthlyDistribution.filter(notToFilter)
-    forgivemory.monthlyDistribution = forgivemory.monthlyDistribution.filter(notToFilter)
+      forgivemory.lastMonthlyPayments = forgivemory.lastMonthlyPayments.filter(notToFilter)
+      forgivemory.monthlyPayments = forgivemory.monthlyPayments.filter(notToFilter)
+      forgivemory.lastMonthlyDistribution = forgivemory.lastMonthlyDistribution.filter(notToFilter)
+      forgivemory.monthlyDistribution = forgivemory.monthlyDistribution.filter(notToFilter)
+    } else {
+      // Move payments TO to memory:
+      forgivemory.lastMonthlyPayments = simpleCopy([forgivemory.lastMonthlyPayments,
+        lastStartCycleEvent.data.completedPayments.filter(toFilter)].flat())
+      forgivemory.monthlyPayments = simpleCopy([forgivemory.monthlyPayments,
+        startCycleEvent.data.completedPayments.filter(toFilter)].flat())
+      forgivemory.lastMonthlyDistribution = simpleCopy([forgivemory.lastMonthlyDistribution,
+        lastStartCycleEvent.data.monthlyDistribution.filter(toFilter)].flat())
+      forgivemory.monthlyDistribution = simpleCopy([forgivemory.monthlyDistribution,
+        startCycleEvent.data.monthlyDistribution.filter(toFilter)].flat())
+
+      lastStartCycleEvent.data.completedPayments = lastStartCycleEvent.data.completedPayments.filter(notToFilter)
+      startCycleEvent.data.completedPayments = startCycleEvent.data.completedPayments.filter(notToFilter)
+      lastStartCycleEvent.data.monthlyDistribution = lastStartCycleEvent.data.monthlyDistribution.filter(notToFilter)
+      startCycleEvent.data.monthlyDistribution = startCycleEvent.data.monthlyDistribution.filter(notToFilter)
+
+      // Restore payments FROM:
+      lastStartCycleEvent.data.completedPayments = simpleCopy([lastStartCycleEvent.data.completedPayments,
+        forgivemory.lastMonthlyPayments.filter(toFilter)].flat())
+      startCycleEvent.data.completedPayments = simpleCopy([startCycleEvent.data.completedPayments,
+        forgivemory.monthlyPayments.filter(toFilter)].flat())
+      lastStartCycleEvent.data.monthlyDistribution = simpleCopy([lastStartCycleEvent.data.monthlyDistribution,
+        forgivemory.lastMonthlyDistribution.filter(toFilter)].flat())
+      startCycleEvent.data.monthlyDistribution = simpleCopy([startCycleEvent.data.monthlyDistribution,
+        forgivemory.monthlyDistribution.filter(toFilter)].flat())
+
+      forgivemory.lastMonthlyPayments = forgivemory.lastMonthlyPayments.filter(notToFilter)
+      forgivemory.monthlyPayments = forgivemory.monthlyPayments.filter(notToFilter)
+      forgivemory.lastMonthlyDistribution = forgivemory.lastMonthlyDistribution.filter(notToFilter)
+      forgivemory.monthlyDistribution = forgivemory.monthlyDistribution.filter(notToFilter)
+    }
   }
 
   const handleIncomeEvent = (event) => {
     const oldUser = getUser(event.data.name)
     if (oldUser) {
-      const sideSwitched = Math.sign(oldUser.haveNeed) === Math.sign(event.data.haveNeed)
+      const sideSwitched = Math.sign(oldUser.haveNeed) !== Math.sign(event.data.haveNeed)
       oldUser.haveNeed = event.data.haveNeed
       if (sideSwitched) forgiveWithoutForget(oldUser)
     } else {
@@ -205,7 +237,6 @@ function parseMonthlyDistributionFromEvents (distributionEvents: Array<Object>, 
     }
   }
   handleCycleEvent(artificialEnd)
-
   // "Overpayments sometimes occur *internally* as a result of people leaving, joining, and (re-)setting income.
   // Our task is to redistribute the overpayments back into the current late payments so nobody in need is asked to pay.
   let overPayments = simpleCopy(lastStartCycleEvent.data.monthlyDistribution).filter((p) => {
