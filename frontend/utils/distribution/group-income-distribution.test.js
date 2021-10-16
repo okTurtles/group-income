@@ -270,7 +270,7 @@ describe('Test group-income-distribution.js', function () {
   })
   it('Test the unadjusted version of the previous event-list. Should ignore payment events!', function () {
     setup = setup.concat({ type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 10, when: dateAtCyclesPassed(0.9) } })
-    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([  
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
       { from: 'u1', to: 'u3', amount: 6.666666666666666, total: 6.666666666666666, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-01' }
     ])
