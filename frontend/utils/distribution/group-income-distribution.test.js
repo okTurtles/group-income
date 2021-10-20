@@ -292,20 +292,31 @@ describe('Test group-income-distribution.js', function () {
   })
   it('', function () {
     setup = setup.concat({ type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 10, when: dateAtCyclesPassed(1.01) } })
-    console.table(JSON.stringify(setup, null, 2))
+    // console.table(JSON.stringify(setup, null, 2))
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
       { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-02' },
       { amount: 6.666666666666666, from: 'u1', to: 'u3', total: 6.666666666666666, partial: false, isLate: false, dueOn: '2021-02' }
     ])
-    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([{
-      amount: 13.333333333333332,
-      from: 'u2',
-      to: 'u3',
-      total: 13.333333333333332,
-      partial: false,
-      isLate: false,
-      dueOn: '2021-02'
-    }
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
+      {
+        amount: 13.333333333333332,
+        from: 'u2',
+        to: 'u3',
+        total: 13.333333333333332,
+        partial: false,
+        isLate: false,
+        dueOn: '2021-02'
+      }
+      // TODO: discuss if necessary:
+      // ,{
+      //   amount: 6.666666666666666,
+      //   from: 'u1',
+      //   to: 'u3',
+      //   total: 6.666666666666666,
+      //   partial: false,
+      //   isLate: false,
+      //   dueOn: '2021-02'
+      // }
     ])
   })
 })
