@@ -780,7 +780,7 @@ sbp('chelonia/defineContract', {
             type: 'startCycleEvent',
             data: {
               latePayments: [], // List to be populated later, by the events-parser
-              when: dateToMonthstamp(addMonthsToDate(dateToMonthstamp(lastEvent.data.when), 1))
+              when: dateToMonthstamp(addMonthsToDate(dateToMonthstamp(meta.createdDate), 1))
             }
           }
           state.distributionEvents.push(monthlyCycleEvent)
