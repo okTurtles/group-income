@@ -774,13 +774,13 @@ sbp('chelonia/defineContract', {
         // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
         let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
         // Fills in multiple missing months when `while` instead of `if`.
-        if (compareCycles(meta.createdDate, lastEvent.data.when) > 0) {
+        while (compareCycles(meta.createdDate, lastEvent.data.when) > 0) {
           // Add the missing monthly cycle event
           const monthlyCycleEvent = {
             type: 'startCycleEvent',
             data: {
               latePayments: [], // List to be populated later, by the events-parser
-              when: dateToMonthstamp(addMonthsToDate(dateToMonthstamp(meta.createdDate), 1))
+              when: dateToMonthstamp(addMonthsToDate(lastEvent.data.when, 1))
             }
           }
           state.distributionEvents.push(monthlyCycleEvent)
