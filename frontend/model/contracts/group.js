@@ -110,12 +110,11 @@ function insertMonthlyCycleEvent (state, event) {
   // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
   let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
   // Fills in multiple missing months when `while` instead of `if`.
-  if (compareCycles(event.data.when, lastEvent.data.when) > 0) {
+  if (lastEvent && compareCycles(event.data.when, lastEvent.data.when) > 0) {
     // Add the missing monthly cycle event
     const monthlyCycleEvent = {
       type: 'startCycleEvent',
       data: {
-        latePayments: [], // List to be populated later, by the events-parser
         when: dateToMonthstamp(addMonthsToDate(dateToMonthstamp(lastEvent.data.when), 1))
       }
     }
@@ -124,7 +123,7 @@ function insertMonthlyCycleEvent (state, event) {
   }
 
   state.distributionEvents = state.distributionEvents.filter((e) => {
-    return compareCycles(e.data.when, event.data.when) > -2
+    return compareCycles(lastEvent.data.when, e.data.when) > -2
   })
 
   state.distributionEvents.push(event)
@@ -329,13 +328,7 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           payments: {},
           paymentsByMonth: {},
-          distributionEvents: [{
-            type: 'startCycleEvent',
-            data: {
-              when: dateToMonthstamp(meta.createdDate),
-              latePayments: []
-            }
-          }],
+          distributionEvents: [],
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
@@ -779,7 +772,6 @@ sbp('chelonia/defineContract', {
           const monthlyCycleEvent = {
             type: 'startCycleEvent',
             data: {
-              latePayments: [], // List to be populated later, by the events-parser
               when: dateToMonthstamp(addMonthsToDate(lastEvent.data.when, 1))
             }
           }
@@ -787,7 +779,7 @@ sbp('chelonia/defineContract', {
           lastEvent = monthlyCycleEvent
         }
         state.distributionEvents = state.distributionEvents.filter((e) => {
-          return compareCycles(e.data.when, meta.createdDate) > -2
+          return compareCycles(lastEvent.data.when, e.data.when) > -2
         })
       }
     },

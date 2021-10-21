@@ -13,6 +13,7 @@ export function startMonthlyCycleCheckInterval (store: Object) {
   timerStartInterval = setInterval(() => {
     if (store.state.currentGroupId) {
       const events = store.getters.currentGroupState.distributionEvents
+      if (events.length === 0) return
       const lastEvent = events[events.length - 1]
       const lastCycle = dateToMonthstamp(lastEvent.data.when)
       const currentCycle = currentMonthstamp()

@@ -24,7 +24,8 @@ function insertMonthlyCycleEvents (events: Array<Object>): Array<Object> {
       const monthlyCycleEvent = {
         type: 'startCycleEvent',
         data: {
-          latePayments: [], // List to be populated later, by the events-parser
+          payments: [], // List to be populated later, by the events-parser
+          distribution: [], // List to be populated later, by the events-parser
           when: dateToMonthstamp(addMonthsToDate(dateToMonthstamp(lastEvent.data.when), 1))
         }
       }
@@ -40,7 +41,7 @@ function insertMonthlyCycleEvents (events: Array<Object>): Array<Object> {
 
 // Helper fuction that inserts the "when" of each event.data.
 function groupIncomeDistributionWrapper (events, opts, timeSpanMonths = 1.0, startDate = defaultStartDate) {
-  events = [{ type: 'startCycleEvent', data: { when: dateToMonthstamp(startDate), latePayments: [] } }].concat(events)
+  // events = [{ type: 'startCycleEvent', data: { when: dateToMonthstamp(startDate), payments: [], distribution: [] } }].concat(events)
   const eventsWithTimeStamps = insertMonthlyCycleEvents(events.map((v, i) => {
     v.data.when = v.data.when ? v.data.when : dateToMonthstamp(addMonthsToDate(startDate, i * timeSpanMonths / events.length))
     return v
@@ -306,17 +307,17 @@ describe('Test group-income-distribution.js', function () {
         partial: false,
         isLate: false,
         dueOn: '2021-02'
+      },
+      // TODO: discuss if the following is correct:
+      {
+        amount: 6.666666666666666,
+        from: 'u1',
+        to: 'u3',
+        total: 6.666666666666666,
+        partial: false,
+        isLate: false,
+        dueOn: '2021-02'
       }
-      // TODO: discuss if necessary:
-      // ,{
-      //   amount: 6.666666666666666,
-      //   from: 'u1',
-      //   to: 'u3',
-      //   total: 6.666666666666666,
-      //   partial: false,
-      //   isLate: false,
-      //   dueOn: '2021-02'
-      // }
     ])
   })
 })
