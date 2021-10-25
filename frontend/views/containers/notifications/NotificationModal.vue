@@ -30,7 +30,6 @@ export default {
   },
   methods: {
     clickSettings () {
-      // BUG - Section notification does not open. Fixed at #946
       sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', {
         section: 'notifications'
       })
@@ -42,51 +41,50 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-container {
-  height: 100%;
-  width: 100%;
-  background-color: $general_2;
-}
-
-.c-header,
-.c-container {
-  @include tablet {
-    width: 50rem;
-    max-width: 100%;
-  }
-}
-
-.c-header {
-  display: flex;
-  min-height: 4.75rem;
-  padding: 0 1rem;
-  justify-content: flex-start;
-  align-items: center;
-  background-color: $background_0;
-  margin: 0 -1rem;
-
-  @include tablet {
-    padding: 2rem 0 0;
-    justify-content: space-between;
-    align-items: baseline;
-    background-color: transparent;
-    margin: 0;
+.c-btnSettings {
+  @include phone {
+    position: absolute;
+    left: 1rem;
+    margin-top: 8rem;
   }
 }
 
 .c-card {
   margin-top: 1.5rem;
+
+  @include phone {
+    margin-top: 3.5rem;
+  }
 }
 
-@include phone {
-  .c-btnSettings {
-    position: absolute;
-    left: 1rem;
-    margin-top: 8rem;
-  }
+.c-container {
+  background-color: $general_2;
+  height: 100%;
+  width: 100%;
 
-  .c-card {
-    margin-top: 3.5rem;
+  @include tablet {
+    max-width: 100%;
+    width: 50rem;
+  }
+}
+
+.c-header {
+  display: flex;
+  align-items: center;
+  background-color: $background_0;
+  justify-content: flex-start;
+  margin: 0 -1rem;
+  min-height: 4.75rem;
+  padding: 0 1rem;
+
+  @include tablet {
+    align-items: baseline;
+    background-color: transparent;
+    justify-content: space-between;
+    margin: 0;
+    max-width: 100%;
+    padding: 2rem 0 0;
+    width: 50rem;
   }
 }
 </style>
