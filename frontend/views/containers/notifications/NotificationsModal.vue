@@ -8,20 +8,20 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         i18n Settings
 
     .card.c-card
-      notifications-list(variant='default')
+      notification-list(variant='default')
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import NotificationsList from './NotificationsList.vue'
+import NotificationList from './NotificationList.vue'
 
 export default {
   name: 'NotificationsModal',
   components: {
     ModalBaseTemplate,
-    NotificationsList
+    NotificationList
   },
   data () {
     return {

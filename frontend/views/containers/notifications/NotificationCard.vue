@@ -15,7 +15,7 @@ tooltip(
         i18n.link(tag='button' @click='handleSettingsClick') Settings
 
       .c-body
-        notifications-list(variant='compact' @select='toggleTooltip')
+        notification-list(variant='compact' @select='toggleTooltip')
       .c-footer(v-if='notificationCount')
         router-link.link(:to='{ query: { modal: "NotificationsModal" }}' @click.native='toggleTooltip')
           i18n See all
@@ -29,13 +29,13 @@ import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import ModalClose from '@components/modal/ModalClose.vue'
 import Tooltip from '@components/Tooltip.vue'
-import NotificationsList from './NotificationsList.vue'
+import NotificationList from './NotificationList.vue'
 
 export default {
   name: 'NotificationCard',
   components: {
     ModalClose,
-    NotificationsList,
+    NotificationList,
     Tooltip
   },
   methods: {

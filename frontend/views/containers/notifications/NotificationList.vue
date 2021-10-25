@@ -34,7 +34,7 @@ import Avatar from '@components/Avatar.vue'
 import L from '@view-utils/translations.js'
 
 export default {
-  name: 'NotificationsList',
+  name: 'NotificationList',
   props: {
     variant: {
       type: String,
