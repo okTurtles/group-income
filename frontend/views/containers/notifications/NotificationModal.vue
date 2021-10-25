@@ -18,7 +18,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import NotificationList from './NotificationList.vue'
 
 export default {
-  name: 'NotificationsModal',
+  name: 'NotificationModal',
   components: {
     ModalBaseTemplate,
     NotificationList

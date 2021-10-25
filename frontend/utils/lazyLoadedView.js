@@ -63,7 +63,7 @@ Vue.component('EditChannelDescriptionModal', () => lazyLoadView({ component: imp
 Vue.component('LeaveChannelModal', () => lazyLoadView({ component: import('../views/containers/chatroom/LeaveChannelModal.vue'), loading: LoadingModal, error: ErrorModal }))
 Vue.component('DeleteChannelModal', () => lazyLoadView({ component: import('../views/containers/chatroom/DeleteChannelModal.vue'), loading: LoadingModal, error: ErrorModal }))
 
-Vue.component('NotificationsModal', () => import('../views/containers/notifications/NotificationsModal.vue'))
+Vue.component('NotificationModal', () => import('../views/containers/notifications/NotificationModal.vue'))
 
 // TODO Remove after design test period
 Vue.component('DSModalFullscreen', () => import('../views/containers/design-system/DSModalFullscreen.vue'))

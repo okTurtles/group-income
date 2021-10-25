@@ -17,7 +17,7 @@ tooltip(
       .c-body
         notification-list(variant='compact' @select='toggleTooltip')
       .c-footer(v-if='notificationCount')
-        router-link.link(:to='{ query: { modal: "NotificationsModal" }}' @click.native='toggleTooltip')
+        router-link.link(:to='{ query: { modal: "NotificationModal" }}' @click.native='toggleTooltip')
           i18n See all
 
       modal-close.c-close(:aria-label='L("Close profile")' @close='toggleTooltip')

@@ -1,6 +1,6 @@
 <template lang='pug'>
 div
-  router-link.button.is-icon-small.c-btn.hide-tablet(:to='{ query: { modal: "NotificationsModal" }}')
+  router-link.button.is-icon-small.c-btn.hide-tablet(:to='{ query: { modal: "NotificationModal" }}')
     i.icon-bell(:class='{ "is-active": notificationCount }')
     badge(v-if='notificationCount' data-test='alertNotification') {{ notificationCount }}
   notification-card
