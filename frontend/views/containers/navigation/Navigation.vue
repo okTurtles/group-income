@@ -248,10 +248,4 @@ export default ({
 .c-toggle {
   left: 100%;
 }
-
-.c-toggle-badge {
-  top: 0.5rem;
-  right: 1rem;
-}
-
 </style>

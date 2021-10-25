@@ -25,6 +25,8 @@ export default ({
 .c-badge {
   display: flex;
   position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
   align-items: center;
   background-color: $danger_0;
   border: 1px solid $background;
