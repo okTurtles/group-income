@@ -3,7 +3,7 @@ div
   router-link.button.is-icon-small.c-btn.hide-tablet(:to='{ query: { modal: "NotificationsModal" }}')
     i.icon-bell(:class='{ "is-active": notificationCount }')
     badge(v-if='notificationCount' data-test='alertNotification') {{ notificationCount }}
-  notifications-card
+  notification-card
     button.is-icon-small.c-btn.hide-phone
       i.icon-bell(:class='{ "is-active": notificationCount }')
       badge(v-if='notificationCount' data-test='alertNotification') {{ notificationCount }}
@@ -11,14 +11,14 @@ div
 
 <script>
 import { mapGetters } from 'vuex'
-import NotificationsCard from './NotificationsCard.vue'
+import NotificationCard from './NotificationCard.vue'
 import Badge from '@components/Badge.vue'
 
 export default {
   name: 'NotificationBell',
   components: {
     Badge,
-    NotificationsCard
+    NotificationCard
   },
   computed: {
     ...mapGetters([

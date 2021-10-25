@@ -32,7 +32,7 @@ import Tooltip from '@components/Tooltip.vue'
 import NotificationsList from './NotificationsList.vue'
 
 export default {
-  name: 'NotificationsCard',
+  name: 'NotificationCard',
   components: {
     ModalClose,
     NotificationsList,
