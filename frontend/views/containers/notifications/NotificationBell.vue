@@ -15,7 +15,7 @@ import NotificationsCard from './NotificationsCard.vue'
 import Badge from '@components/Badge.vue'
 
 export default {
-  name: 'NotificationsBell',
+  name: 'NotificationBell',
   components: {
     Badge,
     NotificationsCard

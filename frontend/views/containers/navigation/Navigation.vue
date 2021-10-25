@@ -14,7 +14,7 @@ nav.c-navigation(
       router-link(to='/home')
         img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
-      notifications-bell
+      notification-bell
 
     .c-navigation-body(
       @click.self='enableTimeTravel'
@@ -81,7 +81,7 @@ nav.c-navigation(
 
 <script>
 import Badge from '@components/Badge.vue'
-import NotificationsBell from '@containers/notifications/NotificationsBell.vue'
+import NotificationBell from '@containers/notifications/NotificationBell.vue'
 import GroupsList from './GroupsList.vue'
 import Profile from './Profile.vue'
 import Toggle from '@components/Toggle.vue'
@@ -97,7 +97,7 @@ export default ({
   components: {
     Badge,
     Toggle,
-    NotificationsBell,
+    NotificationBell,
     GroupsList,
     Profile,
     ListItem
