@@ -16,7 +16,7 @@ tooltip(
 
       .c-body
         notifications-list(variant='compact' @select='toggleTooltip')
-      .c-footer(v-if='notificationsCount')
+      .c-footer(v-if='notificationCount')
         router-link.link(:to='{ query: { modal: "NotificationsModal" }}' @click.native='toggleTooltip')
           i18n See all
 
@@ -52,7 +52,7 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'notificationsCount'
+      'notificationCount'
     ])
   }
 }

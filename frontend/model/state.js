@@ -491,7 +491,7 @@ const getters = {
   isDarkTheme (state) {
     return Colors[state.theme].theme === THEME_DARK
   },
-  notificationsCount (state, getters) {
+  notificationCount (state, getters) {
     // TODO with real data
     if (getters.groupMembersCount === 1) {
       return 1

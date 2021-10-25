@@ -1,12 +1,12 @@
 <template lang='pug'>
 div
   router-link.button.is-icon-small.c-btn.hide-tablet(:to='{ query: { modal: "NotificationsModal" }}')
-    i.icon-bell(:class='{ "is-active": notificationsCount }')
-    badge(v-if='notificationsCount' data-test='alertNotification') {{ notificationsCount }}
+    i.icon-bell(:class='{ "is-active": notificationCount }')
+    badge(v-if='notificationCount' data-test='alertNotification') {{ notificationCount }}
   notifications-card
     button.is-icon-small.c-btn.hide-phone
-      i.icon-bell(:class='{ "is-active": notificationsCount }')
-      badge(v-if='notificationsCount' data-test='alertNotification') {{ notificationsCount }}
+      i.icon-bell(:class='{ "is-active": notificationCount }')
+      badge(v-if='notificationCount' data-test='alertNotification') {{ notificationCount }}
 </template>
 
 <script>
@@ -22,7 +22,7 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'notificationsCount'
+      'notificationCount'
     ])
   }
 }

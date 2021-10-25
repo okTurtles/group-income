@@ -1,6 +1,6 @@
 <template lang='pug'>
   div(:class='variant')
-    .c-empty(v-if='!notificationsCount')
+    .c-empty(v-if='!notificationCount')
       i18n.has-text-1 Nothing to see here... yet!
 
     .c-loading(v-else-if='ephemeral.isLoading')
@@ -57,12 +57,12 @@ export default {
     // TODO this (All dumb logic for now)
 
     // Simulate view with no notifications
-    if (this.notificationsCount === 0) {
+    if (this.notificationCount === 0) {
       return null
     }
 
     // Simulate view with only 1 notification
-    if (this.notificationsCount === 1) {
+    if (this.notificationCount === 1) {
       this.ephemeral.isLoading = true
       setTimeout(() => {
         // handpick a notification that is "MEMBER_ADDED"
@@ -83,7 +83,7 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'notificationsCount'
+      'notificationCount'
     ]),
     dateNow () {
       // Hardcoded so the dummy layout makes sense
