@@ -23,29 +23,25 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-badge {
+  display: flex;
   position: absolute;
+  align-items: center;
   background-color: $danger_0;
   border: 1px solid $background;
   border-radius: 50%;
-  top: 0;
-  right: 0;
-  display: flex;
+  color: $background;
+  font-size: 0.7rem;
+  font-weight: 600;
   justify-content: center;
-  align-items: center;
-
-  &.is-default {
-    top: -0.25rem;
-    right: -0.25rem;
-    color: $background;
-    width: 1rem;
-    height: 1rem;
-    font-size: 0.7rem;
-    font-weight: normal;
-    line-height: 0.2; // force pixel alignment on Chrome
-  }
+  height: 1rem;
+  line-height: 0.2; // Force pixel alignment in Chrome.
+  min-width: 1rem; // Allow expansion when several digits must be displayed.
+  padding: 0 2px 1px 1px; // Prevent contents from touching rounded corners.
 
   &.is-compact {
-    width: 0.5rem;
+    top: 0;
+    right: 0;
+    min-width: 0.5rem;
     height: 0.5rem;
     font-size: 0;
   }

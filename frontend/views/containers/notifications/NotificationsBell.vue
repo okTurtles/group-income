@@ -32,17 +32,8 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-badge {
-  position: absolute;
-  top: -1px;
-  right: -1px;
-  line-height: 1rem;
-  width: 1rem;
-  height: 1rem;
-  color: $background;
-  background-color: $danger_0;
-  border-radius: 50%;
-  font-size: 0.7rem;
-  font-weight: 600;
+  top: -0.25rem;
+  right: -0.25rem;
 }
 
 .icon-bell {

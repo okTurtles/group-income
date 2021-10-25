@@ -249,8 +249,7 @@ export default ({
   left: 100%;
 }
 
-// Need this nesting because of order of CSS
-.c-navigation .c-toggle .c-toggle-badge {
+.c-toggle-badge {
   top: 0.5rem;
   right: 1rem;
 }
