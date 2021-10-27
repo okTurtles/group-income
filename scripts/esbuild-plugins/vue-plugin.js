@@ -5,7 +5,9 @@
 const { readFile } = require('fs').promises
 const { relative } = require('path')
 
+// https://github.com/vuejs/vue-component-compiler#api
 const componentCompiler = require('@vue/component-compiler')
+const flowRemoveTypes = require('flow-remove-types')
 
 const { createAliasReplacer } = require('./utils')
 
@@ -13,9 +15,11 @@ const { createAliasReplacer } = require('./utils')
  * @param {Object} [options.aliases]
  * @param {Map} [options.cache]
  * @param {boolean} [options.debug]
+ * @param {Object} [options.flowtype] Options for `flow-remove-types`.
+ * Pass `null` to disable Flowtype syntax support.
  * @returns {Object}
  */
-module.exports = ({ aliases = null, cache = null, debug = false } = {}) => {
+module.exports = ({ aliases = null, cache = null, debug = false, flowtype = null } = {}) => {
   const aliasReplacer = aliases ? createAliasReplacer(aliases) : null
 
   return {
@@ -31,7 +35,7 @@ module.exports = ({ aliases = null, cache = null, debug = false } = {}) => {
           .then(source => aliasReplacer ? aliasReplacer({ path, source }) : source)
 
         if (debug) console.log('vue plugin: compiling', filename)
-        const { result /*, usedFiles */ } = await compile({ filename, source })
+        const { result /*, usedFiles */ } = await compile({ filename, source, options: { flowtype } })
 
         if (cache) cache.set(filename, result)
         return result
@@ -66,7 +70,7 @@ editModule('module', (mod) => {
 })
 
 const compiler = componentCompiler.createDefaultCompiler()
-const compile = ({ filename, source }) => {
+const compile = ({ filename, source, options }) => {
   usedFiles = new Set()
 
   try {
@@ -77,6 +81,9 @@ const compile = ({ filename, source }) => {
     const resultErrors = combineErrors(result.template, ...result.styles)
     if (resultErrors.length > 0) {
       return { result: { errors: resultErrors }, usedFiles }
+    }
+    if (options.flowtype) {
+      result.script.code = flowRemoveTypes(result.script.code, options.flowtype).toString()
     }
     const output = componentCompiler.assemble(compiler, source, result, {})
     return { result: { contents: output.code }, usedFiles }
