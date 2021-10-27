@@ -16,7 +16,7 @@ const { createAliasReplacer } = require('./utils')
  * @param {Map} [options.cache]
  * @param {boolean} [options.debug]
  * @param {Object} [options.flowtype] Options for `flow-remove-types`.
- * Pass `null` to disable Flowtype syntax support.
+ * Leave it out to disable Flowtype syntax support.
  * @returns {Object}
  */
 module.exports = ({ aliases = null, cache = null, debug = false, flowtype = null } = {}) => {
