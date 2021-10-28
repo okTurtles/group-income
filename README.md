@@ -88,7 +88,9 @@ Clean up files in `dist/`
 grunt clean
 ```
 
-Run tests
+Run tests.
+
+**NOTE: You may need to first install Cypress using `./node_modules/.bin/cypress install`**
 
 ```bash
 # all tests
