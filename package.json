@@ -12,6 +12,7 @@
     "eslintfix": "eslint \"**/*.{js,vue}\" --fix",
     "i18n": "node scripts/i18n.js",
     "flow": "flow",
+    "flow:vue": "eslint --cache --plugin flowtype-errors --rule 'flowtype-errors/show-errors: error' './frontend/views/**/*.vue'",
     "double": "PORT_SHIFT=1 grunt dev",
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh"
@@ -137,6 +138,7 @@
     "eslint-config-standard": "16.0.2",
     "eslint-plugin-cypress": "2.11.3",
     "eslint-plugin-flowtype": "5.7.2",
+    "eslint-plugin-flowtype-errors": "4.4.0",
     "eslint-plugin-import": "2.22.1",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "4.2.1",

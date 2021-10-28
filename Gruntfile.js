@@ -225,7 +225,8 @@ module.exports = (grunt) => {
     // This map's keys will be relative Vue file paths without leading dot,
     // while its values will be corresponding compiled JS strings.
     cache: new Map(),
-    debug: false
+    debug: false,
+    flowtype: flowRemoveTypesPluginOptions
   }
 
   grunt.initConfig({
