@@ -15,9 +15,9 @@
 //       banging-head-on-desk timesink (literally those words).
 //       Have the script explain which files represent what.
 
-// our globals
+// Our globals.
 declare function logger(err: Error): void
-// nodejs globals
+// Nodejs globals.
 declare var process: any
 
 // =======================
@@ -33,6 +33,8 @@ declare module 'blakejs' { declare module.exports: any }
 declare module 'buffer' { declare module.exports: any }
 declare module 'chalk' { declare module.exports: any }
 declare module 'dompurify' { declare module.exports: any }
+declare module 'emoji-mart-vue-fast' { declare module.exports: any }
+declare module 'emoji-mart-vue-fast/data/apple.json' { declare module.exports: any }
 declare module 'form-data' { declare module.exports: any }
 declare module 'localforage' { declare module.exports: any }
 declare module 'multihashes' { declare module.exports: any }
@@ -44,167 +46,17 @@ declare module 'vue-clickaway' { declare module.exports: any }
 declare module 'vue-router' { declare module.exports: any }
 declare module 'vue-slider-component' { declare module.exports: any }
 declare module 'vuelidate' { declare module.exports: any }
+declare module 'vuelidate/lib/validators' { declare module.exports: any }
+declare module 'vuelidate/lib/validators/maxLength' { declare module.exports: any }
+declare module 'vuelidate/lib/validators/required' { declare module.exports: any }
+declare module 'vuelidate/lib/validators/sameAs.js' { declare module.exports: any }
 declare module 'vuex' { declare module.exports: any }
 declare module 'vue2-touch-events' { declare module.exports: any }
 declare module 'wicg-inert' { declare module.exports: any }
 declare module 'ws' { declare module.exports: any }
 
-// .js files
+// Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
+declare module '@assets/style/main.scss' { declare module.exports: any }
+// Other .js files.
 declare module '@utils/blockies.js' { declare module.exports: Object }
 declare module '~/frontend/utils/flowTyper.js' { declare module.exports: Object }
-
-// .vue files
-declare module '../views/Contributions.vue' { declare module.exports: Object }
-declare module '../views/CreateGroup.vue' { declare module.exports: Object }
-declare module '../views/DesignSystem.vue' { declare module.exports: Object }
-declare module '../views/GroupChat.vue' { declare module.exports: Object }
-declare module '../views/GroupDashboard.vue' { declare module.exports: Object }
-declare module '../views/Home.vue' { declare module.exports: Object }
-declare module '../views/Join.vue' { declare module.exports: Object }
-declare module '../views/Mailbox.vue' { declare module.exports: Object }
-declare module '../views/Messages.vue' { declare module.exports: Object }
-declare module '../views/Payments.vue' { declare module.exports: Object }
-declare module '../views/ProposeMember.vue' { declare module.exports: Object }
-declare module '../views/UserGroup.vue' { declare module.exports: Object }
-declare module '../views/UserProfile.vue' { declare module.exports: Object }
-declare module '../views/VueAssistant.vue' { declare module.exports: Object }
-declare module '../views/components/modal/Modal.vue' { declare module.exports: Object }
-declare module '../views/containers/access/LoginModal.vue' { declare module.exports: Object }
-declare module '../views/containers/access/PasswordModal.vue' { declare module.exports: Object }
-declare module '../views/containers/access/SignupModal.vue' { declare module.exports: Object }
-declare module '../views/containers/chatroom/CreateNewChannelModal.vue' { declare module.exports: Object }
-declare module '../views/containers/chatroom/DeleteChannelModal.vue' { declare module.exports: Object }
-declare module '../views/containers/chatroom/EditChannelDescriptionModal.vue' { declare module.exports: Object }
-declare module '../views/containers/chatroom/EditChannelModal.vue' { declare module.exports: Object }
-declare module '../views/containers/chatroom/EditChannelNameModal.vue' { declare module.exports: Object }
-declare module '../views/containers/chatroom/GroupMembersDirectMessages.vue' { declare module.exports: Object }
-declare module '../views/containers/chatroom/LeaveChannelModal.vue' { declare module.exports: Object }
-declare module '../views/containers/contributions/IncomeDetails.vue' { declare module.exports: Object }
-declare module '../views/containers/dashboard/GroupMembersAllModal.vue' { declare module.exports: Object }
-declare module '../views/containers/design-system/DSModalFullscreen.vue' { declare module.exports: Object }
-declare module '../views/containers/design-system/DSModalNested.vue' { declare module.exports: Object }
-declare module '../views/containers/design-system/DSModalQuery.vue' { declare module.exports: Object }
-declare module '../views/containers/design-system/DSModalSimple.vue' { declare module.exports: Object }
-declare module '../views/containers/group-settings/GroupCreationModal.vue' { declare module.exports: Object }
-declare module '../views/containers/group-settings/GroupDeletionModal.vue' { declare module.exports: Object }
-declare module '../views/containers/group-settings/GroupJoinModal.vue' { declare module.exports: Object }
-declare module '../views/containers/group-settings/GroupLeaveModal.vue' { declare module.exports: Object }
-declare module '../views/containers/group-settings/InvitationLinkModal.vue' { declare module.exports: Object }
-declare module '../views/containers/navigation/CypressBypassUI.vue' { declare module.exports: Object }
-declare module '../views/containers/navigation/TimeTravel.vue' { declare module.exports: Object }
-declare module '../views/containers/payments/PaymentDetail.vue' { declare module.exports: Object }
-declare module '../views/containers/payments/PaymentsHistoryModal.vue' { declare module.exports: Object }
-declare module '../views/containers/payments/RecordPayment.vue' { declare module.exports: Object }
-declare module '../views/containers/proposals/AddMember.vue' { declare module.exports: Object }
-declare module '../views/containers/proposals/AddMembers.vue' { declare module.exports: Object }
-declare module '../views/containers/proposals/ChangeVotingRules.vue' { declare module.exports: Object }
-declare module '../views/containers/proposals/Mincome.vue' { declare module.exports: Object }
-declare module '../views/containers/proposals/RemoveMember.vue' { declare module.exports: Object }
-declare module '../views/containers/user-settings/AppLogs.vue' { declare module.exports: Object }
-declare module '../views/containers/user-settings/Appearence.vue' { declare module.exports: Object }
-declare module '../views/containers/user-settings/Placeholder.vue' { declare module.exports: Object }
-declare module '../views/containers/user-settings/Troubleshooting.vue' { declare module.exports: Object }
-declare module '../views/containers/user-settings/UserProfile.vue' { declare module.exports: Object }
-declare module '../views/containers/user-settings/UserSettingsModal.vue' { declare module.exports: Object }
-declare module '../views/pages/ErrorTesting.vue' { declare module.exports: Object }
-declare module './Bars.vue' { declare module.exports: Object }
-declare module './ButtonCountdown.vue' { declare module.exports: Object }
-declare module './ConfettiCircle.vue' { declare module.exports: Object }
-declare module './ConfettiLogo.vue' { declare module.exports: Object }
-declare module './ConfettiRectangle.vue' { declare module.exports: Object }
-declare module './ConfettiTriangle.vue' { declare module.exports: Object }
-declare module './GraphLegendGroup.vue' { declare module.exports: Object }
-declare module './GraphLegendItem.vue' { declare module.exports: Object }
-declare module './GroupMincome.vue' { declare module.exports: Object }
-declare module './GroupName.vue' { declare module.exports: Object }
-declare module './GroupPrivacy.vue' { declare module.exports: Object }
-declare module './GroupPurpose.vue' { declare module.exports: Object }
-declare module './GroupRules.vue' { declare module.exports: Object }
-declare module './MaskToModal.vue' { declare module.exports: Object }
-declare module './Masker.vue' { declare module.exports: Object }
-declare module './MenuContent.vue' { declare module.exports: Object }
-declare module './MenuHeader.vue' { declare module.exports: Object }
-declare module './MenuItem.vue' { declare module.exports: Object }
-declare module './MenuParent.vue' { declare module.exports: Object }
-declare module './MenuTrigger.vue' { declare module.exports: Object }
-declare module './ModalClose.vue' { declare module.exports: Object }
-declare module './PieChart.vue' { declare module.exports: Object }
-declare module './Progress.vue' { declare module.exports: Object }
-declare module './SupportHistory.vue' { declare module.exports: Object }
-declare module './Target.vue' { declare module.exports: Object }
-declare module './Trigger.vue' { declare module.exports: Object }
-declare module './Voting.vue' { declare module.exports: Object }
-declare module './views/Contributions.vue' { declare module.exports: Object }
-declare module './views/CreateGroup.vue' { declare module.exports: Object }
-declare module './views/DesignSystem.vue' { declare module.exports: Object }
-declare module './views/GroupChat.vue' { declare module.exports: Object }
-declare module './views/GroupDashboard.vue' { declare module.exports: Object }
-declare module './views/Home.vue' { declare module.exports: Object }
-declare module './views/Join.vue' { declare module.exports: Object }
-declare module './views/Mailbox.vue' { declare module.exports: Object }
-declare module './views/Messages.vue' { declare module.exports: Object }
-declare module './views/Payments.vue' { declare module.exports: Object }
-declare module './views/ProposeMember.vue' { declare module.exports: Object }
-declare module './views/UserGroup.vue' { declare module.exports: Object }
-declare module './views/UserProfile.vue' { declare module.exports: Object }
-declare module './views/VueAssistant.vue' { declare module.exports: Object }
-declare module './views/components/AppStyles.vue' { declare module.exports: Object }
-declare module './views/components/Modal/Modal.vue' { declare module.exports: Object }
-declare module './views/components/banners/BannerGeneral.vue' { declare module.exports: Object }
-declare module './views/components/modal/Modal.vue' { declare module.exports: Object }
-declare module './views/containers/LoginModal.vue' { declare module.exports: Object }
-declare module './views/containers/Signup.vue' { declare module.exports: Object }
-declare module './views/containers/access/LoginModal.vue' { declare module.exports: Object }
-declare module './views/containers/access/PasswordModal.vue' { declare module.exports: Object }
-declare module './views/containers/access/SignupModal.vue' { declare module.exports: Object }
-declare module './views/containers/contributions/IncomeDetails.vue' { declare module.exports: Object }
-declare module './views/containers/dashboard/GroupMembersAllModal.vue' { declare module.exports: Object }
-declare module './views/containers/design-system/DSModalFullscreen.vue' { declare module.exports: Object }
-declare module './views/containers/design-system/DSModalNested.vue' { declare module.exports: Object }
-declare module './views/containers/design-system/DSModalQuery.vue' { declare module.exports: Object }
-declare module './views/containers/design-system/DSModalSimple.vue' { declare module.exports: Object }
-declare module './views/containers/group-settings/GroupCreationModal.vue' { declare module.exports: Object }
-declare module './views/containers/group-settings/GroupJoinModal.vue' { declare module.exports: Object }
-declare module './views/containers/group-settings/GroupLeaveModal.vue' { declare module.exports: Object }
-declare module './views/containers/group-settings/InvitationLinkModal.vue' { declare module.exports: Object }
-declare module './views/containers/navigation/CypressBypassUI.vue' { declare module.exports: Object }
-declare module './views/containers/navigation/CypressBypassUI.vue' { declare module.exports: Object }
-declare module './views/containers/navigation/Navigation.vue' { declare module.exports: Object }
-declare module './views/containers/navigation/TimeTravel.vue' { declare module.exports: Object }
-declare module './views/containers/payments/PaymentDetail.vue' { declare module.exports: Object }
-declare module './views/containers/payments/PaymentsHistoryModal.vue' { declare module.exports: Object }
-declare module './views/containers/payments/RecordPayment.vue' { declare module.exports: Object }
-declare module './views/containers/proposals/AddMember.vue' { declare module.exports: Object }
-declare module './views/containers/proposals/AddMembers.vue' { declare module.exports: Object }
-declare module './views/containers/proposals/ChangeVotingRules.vue' { declare module.exports: Object }
-declare module './views/containers/proposals/ChangeVotingRules.vue' { declare module.exports: Object }
-declare module './views/containers/proposals/Mincome.vue' { declare module.exports: Object }
-declare module './views/containers/proposals/RemoveMember.vue' { declare module.exports: Object }
-declare module './views/containers/proposals/RuleAddMember.vue' { declare module.exports: Object }
-declare module './views/containers/proposals/RuleRemoveMember.vue' { declare module.exports: Object }
-declare module './views/containers/sidebar/Sidebar.vue' { declare module.exports: Object }
-declare module './views/containers/user-settings/AppLogs.vue' { declare module.exports: Object }
-declare module './views/containers/user-settings/Appearance.vue' { declare module.exports: Object }
-declare module './views/containers/user-settings/Placeholder.vue' { declare module.exports: Object }
-declare module './views/containers/user-settings/Troubleshooting.vue' { declare module.exports: Object }
-declare module './views/containers/user-settings/UserProfile.vue' { declare module.exports: Object }
-declare module './views/containers/user-settings/UserSettingsModal.vue' { declare module.exports: Object }
-declare module '@components/ListItem.vue' { declare module.exports: Object }
-declare module '@components/MembersCircle.vue' { declare module.exports: Object }
-declare module '@components/i18n.vue' { declare module.exports: Object }
-declare module '@pages/BypassUI.vue' { declare module.exports: Object }
-declare module '@pages/Contributions.vue' { declare module.exports: Object }
-declare module '@pages/DesignSystem.vue' { declare module.exports: Object }
-declare module '@pages/GroupChat.vue' { declare module.exports: Object }
-declare module '@pages/GroupDashboard.vue' { declare module.exports: Object }
-declare module '@pages/GroupSettings.vue' { declare module.exports: Object }
-declare module '@pages/Home.vue' { declare module.exports: Object }
-declare module '@pages/Join.vue' { declare module.exports: Object }
-declare module '@pages/Mailbox.vue' { declare module.exports: Object }
-declare module '@pages/Messages.vue' { declare module.exports: Object }
-declare module '@pages/Payments.vue' { declare module.exports: Object }
-declare module '@views/containers/loading-error/ErrorModal.vue' { declare module.exports: Object }
-declare module '@views/containers/loading-error/ErrorPage.vue' { declare module.exports: Object }
-declare module '@views/containers/loading-error/LoadingBaseModal.vue' { declare module.exports: Object }
-declare module '@views/containers/loading-error/LoadingModal.vue' { declare module.exports: Object }
-declare module '@views/containers/loading-error/LoadingPage.vue' { declare module.exports: Object }
