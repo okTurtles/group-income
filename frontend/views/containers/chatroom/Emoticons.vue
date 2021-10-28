@@ -12,7 +12,7 @@ import sbp from '~/shared/sbp.js'
 import { TABLET, DESKTOP } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
 
-export default {
+export default ({
   name: 'Chatroom',
   components: {
     Picker
@@ -87,7 +87,7 @@ export default {
       sbp('okTurtles.events/emit', CLOSE_EMOTICON)
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss">
 @import "@assets/style/components/_emoji-mart.scss";

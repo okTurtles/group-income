@@ -40,7 +40,7 @@ import { mapMutations } from 'vuex'
 import SelectorTheme from './Theme.vue'
 import SelectorFontSize from './FontSize.vue'
 
-export default {
+export default ({
   name: 'SettingsAppearence',
   components: {
     SelectorTheme,
@@ -58,7 +58,7 @@ export default {
       this.setReducedMotion(e.target.checked)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

@@ -23,7 +23,7 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'SliderContinuous',
   props: {
     /** Unique id to connect form and label */
@@ -62,7 +62,7 @@ export default {
       this.ephemeral.styleVars = `--percent: ${percent}%; --factor: ${this.getFactor(percent)};`
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

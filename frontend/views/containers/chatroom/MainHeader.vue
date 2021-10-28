@@ -30,7 +30,7 @@ header.c-header(
 <script>
 import Avatar from '@components/Avatar.vue'
 
-export default {
+export default ({
   // TODO later - apply & adapt this MainHeader to all other pages
   // - maybe create ChatHeader that consumes MainHeader
   name: 'MainHeader',
@@ -42,7 +42,7 @@ export default {
     description: String,
     routerBack: String
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -7,14 +7,14 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'CalloutCard',
   props: {
     title: String,
     svg: Object, // Svg file as component
     isCard: Boolean
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

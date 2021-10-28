@@ -36,7 +36,7 @@
 
 import { debounce } from '@utils/giLodash.js'
 
-export default {
+export default ({
   name: 'PieChart',
   props: {
     slices: {
@@ -117,7 +117,7 @@ export default {
       this.ephemeral.isLabelVisible = false
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

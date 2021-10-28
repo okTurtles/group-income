@@ -37,7 +37,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 import VotingRulesInput from '@components/VotingRulesInput.vue'
 
-export default {
+export default ({
   name: 'ChangeVotingRules',
   components: {
     BannerScoped,
@@ -190,7 +190,7 @@ export default {
       ]
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

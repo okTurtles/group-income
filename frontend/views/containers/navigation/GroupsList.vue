@@ -34,7 +34,7 @@ import Tooltip from '@components/Tooltip.vue'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
-export default {
+export default ({
   name: 'GroupsList',
   components: {
     Avatar,
@@ -59,7 +59,7 @@ export default {
       this.$store.commit('setCurrentGroupId', hash)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

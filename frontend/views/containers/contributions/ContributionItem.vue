@@ -32,7 +32,7 @@
 <script>
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'ContributionItem',
   props: {
     who: [String, Array],
@@ -136,7 +136,7 @@ export default {
       return `icon-${style[this.type].icon} icon-round has-background-${style[this.type].color} has-text-${style[this.type].color}`
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

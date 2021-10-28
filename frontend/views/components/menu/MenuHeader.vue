@@ -4,9 +4,9 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'MenuHeader'
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

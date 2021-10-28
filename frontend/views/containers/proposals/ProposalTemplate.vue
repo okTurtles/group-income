@@ -94,7 +94,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
 
-export default {
+export default ({
   name: 'ModalForm',
   components: {
     ModalTemplate,
@@ -207,7 +207,7 @@ export default {
       await this.$listeners.submit(form)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

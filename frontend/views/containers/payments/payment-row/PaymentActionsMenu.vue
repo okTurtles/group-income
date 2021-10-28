@@ -10,7 +10,7 @@
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 
-export default {
+export default ({
   name: 'PaymentNotReceivedTooltip',
   components: {
     MenuParent,
@@ -21,7 +21,7 @@ export default {
   props: {
     member: String
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

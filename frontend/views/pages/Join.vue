@@ -52,7 +52,7 @@ import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'Join',
   components: {
     Loading,
@@ -157,7 +157,7 @@ export default {
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

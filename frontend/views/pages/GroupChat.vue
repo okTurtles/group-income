@@ -84,7 +84,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 
-export default {
+export default ({
   name: 'GroupChat',
   mixins: [
     chatroom
@@ -130,7 +130,7 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

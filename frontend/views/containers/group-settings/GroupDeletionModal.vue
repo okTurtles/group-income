@@ -48,7 +48,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
-export default {
+export default ({
   name: 'GroupDeletionModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -89,7 +89,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

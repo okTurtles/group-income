@@ -45,7 +45,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'DeleteChannelModal',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -90,7 +90,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

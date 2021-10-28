@@ -88,7 +88,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'UserProfile',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -157,7 +157,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

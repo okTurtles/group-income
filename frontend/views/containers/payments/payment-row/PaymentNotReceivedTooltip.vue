@@ -12,7 +12,7 @@
 <script>
 import Tooltip from '@components/Tooltip.vue'
 
-export default {
+export default ({
   name: 'PaymentNotReceivedTooltip',
   components: {
     Tooltip
@@ -20,7 +20,7 @@ export default {
   props: {
     member: String
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -84,7 +84,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'IncomeDetails',
   mixins: [validationMixin],
   components: {
@@ -226,7 +226,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

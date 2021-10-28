@@ -29,7 +29,7 @@ form.c-search-form(
 <script>
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'Search',
 
   props: {
@@ -58,7 +58,7 @@ export default {
       this.$emit('input', this.value)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

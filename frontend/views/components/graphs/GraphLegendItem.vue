@@ -11,7 +11,7 @@ li.c-wlegend(:class='`c-wlegend-${variant}`')
 </template>
 
 <script>
-export default {
+export default ({
   name: 'GraphLegendItem',
   props: {
     amount: {
@@ -27,7 +27,7 @@ export default {
       default: 'side'
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

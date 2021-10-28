@@ -11,7 +11,7 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'Message',
   props: {
     severity: {
@@ -33,7 +33,7 @@ export default {
       }[this.severity]
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -40,7 +40,7 @@
 import Avatar from '@components/Avatar.vue'
 import { imageDataURItoBlob } from '@utils/image.js'
 
-export default {
+export default ({
   name: 'GroupName',
   props: {
     group: { type: Object },
@@ -116,7 +116,7 @@ export default {
       this.$assistant.ephemeral.groupPictureType = 'image'
     }
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

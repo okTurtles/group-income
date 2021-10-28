@@ -20,7 +20,7 @@ import LinkToCopy from '@components/LinkToCopy.vue'
 import { INVITE_INITIAL_CREATOR } from '@model/contracts/constants.js'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 
-export default {
+export default ({
   name: 'InvitationLinkModal',
   components: {
     ModalTemplate,
@@ -48,7 +48,7 @@ export default {
       this.$refs.modal.close()
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

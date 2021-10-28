@@ -36,7 +36,7 @@ import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
 
-export default {
+export default ({
   name: 'GroupDashboard',
   computed: {
     ...mapState([
@@ -73,5 +73,5 @@ export default {
     GroupPurpose
     // GroupSettings
   }
-}
+}: Object)
 </script>

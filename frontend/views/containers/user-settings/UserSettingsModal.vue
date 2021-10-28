@@ -16,7 +16,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import TabWrapper from '@components/tabs/TabWrapper.vue'
 import settings from './settings.js'
 
-export default {
+export default ({
   name: 'SettingsWrapper',
   components: {
     ModalBaseTemplate,
@@ -28,7 +28,7 @@ export default {
   created () {
     sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'UserSettingsModal', { section: true })
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

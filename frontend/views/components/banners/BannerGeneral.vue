@@ -13,7 +13,7 @@
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
 
-export default {
+export default ({
   name: 'BannerGeneral',
   components: {
     TransitionExpand
@@ -44,7 +44,7 @@ export default {
       this.ephemeral.severity = 'danger'
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

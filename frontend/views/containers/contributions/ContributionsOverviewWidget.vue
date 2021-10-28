@@ -19,7 +19,7 @@ import Overview from '@components/graphs/Overview.vue'
 import SupportHistory from '@components/graphs/SupportHistory.vue'
 import PageSection from '@components/PageSection.vue'
 
-export default {
+export default ({
   name: 'ContributionsOverview',
   data () {
     return {
@@ -36,7 +36,7 @@ export default {
       this.showHistory = !this.showHistory
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

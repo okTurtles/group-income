@@ -67,7 +67,7 @@ const interactiveMessage = (interaction, summary = null) => {
   }
 }
 
-export default {
+export default ({
   name: 'MessageInteractive',
   props: {
     id: String,
@@ -136,7 +136,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -14,7 +14,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import CalloutCard from '@components/CalloutCard.vue'
 import SvgConversation from '@svgs/conversation.svg'
 
-export default {
+export default ({
   name: 'StartInvitingWidget',
   components: {
     CalloutCard,
@@ -30,5 +30,5 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')
     }
   }
-}
+}: Object)
 </script>

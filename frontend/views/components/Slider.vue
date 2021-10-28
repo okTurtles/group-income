@@ -18,7 +18,7 @@
       span.slide-bar-separate-text(:class='{isActive: index===currentValue}') {{ r.label }}
 </template>
 <script>
-export default {
+export default ({
   name: 'AppSlider',
 
   data () {
@@ -306,7 +306,7 @@ export default {
     this.isComponentExists = false
     this.unbindEvents()
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

@@ -17,7 +17,7 @@
 // import ChatMain from './ChatMain.vue'
 // import ChatNav from './ChatNav.vue'
 
-// export default {
+// export default ({
 //   name: 'Chatroom',
 //   components: {
 //     ChatMain,
@@ -156,7 +156,7 @@
 //       })
 //     }
 //   }
-// }
+// }: Object)
 </script>
 
 <style lang="scss" scoped>

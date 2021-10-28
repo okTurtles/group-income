@@ -25,7 +25,7 @@ import { mapGetters, mapMutations } from 'vuex'
 import Themes from '@model/colors.js'
 import colorsMixins from '@view-utils/colorsManipulation.js'
 
-export default {
+export default ({
   name: 'SelectorTheme',
 
   mixins: [colorsMixins],
@@ -47,7 +47,7 @@ export default {
       'colors'
     ])
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

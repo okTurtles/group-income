@@ -60,7 +60,7 @@ import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
 
-export default {
+export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
   components: {
@@ -123,7 +123,7 @@ export default {
       this.$refs.messageAction.$refs.menu.handleTrigger()
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

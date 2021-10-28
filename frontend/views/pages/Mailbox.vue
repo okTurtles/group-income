@@ -169,7 +169,7 @@ const criteria = (msg) => msg.meta.createdDate
 
 // TODO: this whole file needs to be improved/rewritten
 
-export default {
+export default ({
   name: 'Mailbox',
 
   components: {
@@ -310,7 +310,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

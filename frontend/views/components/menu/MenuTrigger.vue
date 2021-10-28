@@ -9,7 +9,7 @@ button(
   slot
 </template>
 <script>
-export default {
+export default ({
   name: 'MenuTrigger',
   props: {
     hideWhenActive: Boolean
@@ -25,5 +25,5 @@ export default {
       this.Menu.handleTrigger()
     }
   }
-}
+}: Object)
 </script>

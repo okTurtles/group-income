@@ -33,7 +33,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
-export default {
+export default ({
   name: 'ModalDSNestedExample',
   components: {
     ModalBaseTemplate
@@ -51,7 +51,7 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

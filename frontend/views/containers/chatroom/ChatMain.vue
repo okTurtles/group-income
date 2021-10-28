@@ -71,7 +71,7 @@ import Emoticons from './Emoticons.vue'
 import { currentUserId, messageTypes, fakeEvents } from '@containers/chatroom/fakeStore.js'
 import { proximityDate } from '@utils/time.js'
 
-export default {
+export default ({
   name: 'ChatMain',
   components: {
     Avatar,
@@ -285,7 +285,7 @@ export default {
       this.$forceUpdate()
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

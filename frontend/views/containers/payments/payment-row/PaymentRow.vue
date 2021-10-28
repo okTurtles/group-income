@@ -25,7 +25,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import { humanDate } from '@utils/time.js'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'PaymentRowSent',
   components: {
     AvatarUser
@@ -51,7 +51,7 @@ export default {
   methods: {
     humanDate
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

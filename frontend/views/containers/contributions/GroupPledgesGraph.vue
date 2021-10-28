@@ -51,7 +51,7 @@ import Tooltip from '@components/Tooltip.vue'
 import currencies from '@view-utils/currencies.js'
 import distributeIncome from '@utils/distribution/mincome-proportional.js'
 
-export default {
+export default ({
   name: 'GroupPledgesGraph',
   components: {
     PieChart,
@@ -201,7 +201,7 @@ export default {
       return Math.min(Math.max(0, perc), 1)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

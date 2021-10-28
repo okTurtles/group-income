@@ -18,7 +18,7 @@
 import modalMixins from './ModalMixins.js'
 import trapFocus from '@utils/trapFocus.js'
 
-export default {
+export default ({
   name: 'ModalBaseTemplate',
   mixins: [modalMixins, trapFocus],
   props: {
@@ -31,7 +31,7 @@ export default {
       default: true
     }
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

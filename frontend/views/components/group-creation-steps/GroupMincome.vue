@@ -44,7 +44,7 @@
 <script>
 import currencies from '@view-utils/currencies.js'
 
-export default {
+export default ({
   name: 'GroupMincome',
   props: {
     group: { type: Object },
@@ -74,5 +74,5 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>

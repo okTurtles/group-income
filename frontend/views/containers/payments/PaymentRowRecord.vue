@@ -30,7 +30,7 @@ import currencies from '@view-utils/currencies.js'
 import { humanDate } from '@utils/time.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 
-export default {
+export default ({
   name: 'PaymentRowRecord',
   components: {
     PaymentRow
@@ -78,7 +78,7 @@ export default {
       this.form.amount = this.config.initialAmount
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -26,7 +26,7 @@
 import Avatar from '@components/Avatar.vue'
 import Badge from '@components/Badge.vue'
 
-export default {
+export default ({
   // NOTE - maybe this approach should be used in the sidebar to switch between groups instead of a dropdown...
   name: 'GroupsShortcut',
   components: {
@@ -47,7 +47,7 @@ export default {
       return ['#958cfd', '#fd978c', '#62d27d'][index] || ''
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

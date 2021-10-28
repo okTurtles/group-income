@@ -26,7 +26,7 @@ component.c-wrapper(
 <script>
 import Tooltip from '@components/Tooltip.vue'
 
-export default {
+export default ({
   name: 'LinkToCopy',
   components: {
     Tooltip
@@ -65,7 +65,7 @@ export default {
       }, 1500)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

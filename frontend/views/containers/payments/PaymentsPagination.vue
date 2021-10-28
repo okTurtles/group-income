@@ -46,7 +46,7 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'PaymentsPagination',
   props: {
     count: Number,
@@ -84,7 +84,7 @@ export default {
       this.$emit('change-page', 'next')
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

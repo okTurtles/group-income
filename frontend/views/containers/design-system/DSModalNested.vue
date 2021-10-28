@@ -50,7 +50,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
-export default {
+export default ({
   name: 'DSModalSimple',
   data () {
     return {
@@ -77,5 +77,5 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     }
   }
-}
+}: Object)
 </script>

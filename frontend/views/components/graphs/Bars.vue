@@ -65,7 +65,7 @@ import { debounce } from '@utils/giLodash.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 import currencies from '@view-utils/currencies.js'
 
-export default {
+export default ({
   name: 'Bars',
   props: {
     totals: Array,
@@ -257,7 +257,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

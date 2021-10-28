@@ -9,7 +9,7 @@ div
 </template>
 
 <script>
-export default {
+export default ({
   name: 'GroupPrivacy',
   props: {
     group: { type: Object }
@@ -17,5 +17,5 @@ export default {
   mounted () {
     this.$emit('focusref', 'next')
   }
-}
+}: Object)
 </script>

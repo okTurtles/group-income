@@ -38,7 +38,7 @@ import ProgressBar from '@components/graphs/Progress.vue'
 import L from '@view-utils/translations.js'
 import { humanDate } from '@utils/time.js'
 
-export default {
+export default ({
   name: 'MonthOverview',
   components: {
     ProgressBar
@@ -112,7 +112,7 @@ export default {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

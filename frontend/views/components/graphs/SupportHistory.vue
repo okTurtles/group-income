@@ -19,7 +19,7 @@ div
 <script>
 import { toPercent } from '@view-utils/filters.js'
 
-export default {
+export default ({
   name: 'GroupSupportHistory',
   props: {
     history: {
@@ -47,7 +47,7 @@ export default {
   filters: {
     toPercent
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

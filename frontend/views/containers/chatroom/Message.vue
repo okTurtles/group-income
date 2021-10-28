@@ -16,7 +16,7 @@ const variants = {
   FAILED: 'failed'
 }
 
-export default {
+export default ({
   name: 'Message',
   components: {
     MessageBase
@@ -64,7 +64,7 @@ export default {
       this.$emit('add-emoticon', emoticon)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

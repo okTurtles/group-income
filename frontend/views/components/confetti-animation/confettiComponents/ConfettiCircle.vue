@@ -20,7 +20,7 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'ConfettiCircle',
   inheritAttrs: false,
   props: {
@@ -30,5 +30,5 @@ export default {
     transforms: Object,
     color: String
   }
-}
+}: Object)
 </script>

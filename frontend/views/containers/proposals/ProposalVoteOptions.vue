@@ -32,7 +32,7 @@ import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts
 import { createInvite } from '@model/contracts/group.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
-export default {
+export default ({
   name: 'Vote',
   props: {
     proposalHash: String
@@ -157,7 +157,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

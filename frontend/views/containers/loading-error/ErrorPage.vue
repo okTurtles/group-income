@@ -13,7 +13,7 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'ErrorPage',
   props: {
     type: {
@@ -21,7 +21,7 @@ export default {
       default: 500
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

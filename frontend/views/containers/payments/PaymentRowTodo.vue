@@ -36,7 +36,7 @@ import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
 
-export default {
+export default ({
   name: 'PaymentRowTodo',
   components: {
     MenuItem,
@@ -83,7 +83,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -8,7 +8,7 @@ span.c-badge(
 </template>
 
 <script>
-export default {
+export default ({
   name: 'Badge',
   props: {
     type: {
@@ -16,7 +16,7 @@ export default {
       validator: (type) => ['default', 'compact'].indexOf(type) !== -1
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

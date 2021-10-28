@@ -29,7 +29,7 @@ import Tooltip from '@components/Tooltip.vue'
 import { users } from '@containers/chatroom/fakeStore.js'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'MessageReactions',
   mixins: [emoticonsMixins],
   components: {
@@ -58,7 +58,7 @@ export default {
       return L('{userList} reacted with {emotiName}', data)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

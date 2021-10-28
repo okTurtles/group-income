@@ -6,7 +6,7 @@ modal-base-template(:fullscreen='true' :a11yTitle='L("Payments History")')
 <script>
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 
-export default {
+export default ({
   name: 'PlaceHolder',
   components: {
     ModalBaseTemplate
@@ -14,5 +14,5 @@ export default {
   props: {
     name: String
   }
-}
+}: Object)
 </script>

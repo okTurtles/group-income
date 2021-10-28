@@ -29,7 +29,7 @@ import chatroom from '@containers/chatroom/chatroom.js'
 import GroupsShortcut from '@containers/chatroom/GroupsShortcut.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 
-export default {
+export default ({
   name: 'Messages',
   mixins: [
     chatroom
@@ -68,7 +68,7 @@ export default {
       this.$store.commit('setCurrentGroupId', hash)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

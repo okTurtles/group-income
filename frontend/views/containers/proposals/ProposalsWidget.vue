@@ -30,7 +30,7 @@ import ProposalBox from '@containers/proposals/ProposalBox.vue'
 import PageSection from '@components/PageSection.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
 
-export default {
+export default ({
   name: 'ProposalsWidget',
   components: {
     ProposalBox,
@@ -106,5 +106,5 @@ export default {
       return proposal.votes[this.ourUserIdentityContract.attributes.username] || proposal.status !== STATUS_OPEN
     }
   }
-}
+}: Object)
 </script>

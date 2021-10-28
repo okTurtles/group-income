@@ -9,7 +9,7 @@ list-item.c-menuItem(disable-radius='' v-bind='$attrs' on='$listeners' @click='h
 </template>
 <script>
 import ListItem from '@components/ListItem.vue'
-export default {
+export default ({
   name: 'MenuItem',
   inject: ['Menu'],
   components: { ListItem },
@@ -20,7 +20,7 @@ export default {
       this.Menu.handleSelect(this.$attrs['item-id']) // Use $attrs to access passed props
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

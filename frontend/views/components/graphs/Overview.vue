@@ -37,7 +37,7 @@ import { mapGetters } from 'vuex'
 import currencies from '@view-utils/currencies.js'
 import { GraphLegendItem, Bars } from '@components/graphs/index.js'
 
-export default {
+export default ({
   name: 'Overview',
   components: {
     GraphLegendItem,
@@ -126,7 +126,7 @@ export default {
       return list
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -107,7 +107,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'GroupSettings',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
@@ -190,7 +190,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

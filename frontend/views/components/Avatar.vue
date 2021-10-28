@@ -14,7 +14,7 @@
 import sbp from '~/shared/sbp.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 
-export default {
+export default ({
   name: 'Avatar',
   props: {
     src: String, // acts as a placeholder when used together with blobURL
@@ -97,7 +97,7 @@ export default {
       return this.objectURL || this.src
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

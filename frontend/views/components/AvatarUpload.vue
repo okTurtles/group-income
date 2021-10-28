@@ -27,7 +27,7 @@ import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L, { LError } from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'AvatarUpload',
   props: {
     avatar: String,
@@ -65,7 +65,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

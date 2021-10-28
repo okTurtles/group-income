@@ -25,7 +25,7 @@ import ProposalItem from './ProposalItem.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 
-export default {
+export default ({
   name: 'ProposalBox',
   props: {
     proposalHashes: Array // [hash1, hash2, ...]
@@ -107,7 +107,7 @@ export default {
       this.ephemeral.isReasonHidden = !this.ephemeral.isReasonHidden
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

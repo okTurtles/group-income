@@ -37,7 +37,7 @@ import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
 
-export default {
+export default ({
   name: 'MincomeProposal',
   components: {
     ProposalTemplate,
@@ -152,7 +152,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

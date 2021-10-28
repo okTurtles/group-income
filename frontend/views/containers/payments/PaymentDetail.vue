@@ -37,7 +37,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
 import { ISOStringToMonthstamp, dateFromMonthstamp, humanDate } from '@utils/time.js'
 
-export default {
+export default ({
   name: 'PaymentDetail',
   components: {
     ModalTemplate
@@ -90,7 +90,7 @@ export default {
   validations: {
     form: {}
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

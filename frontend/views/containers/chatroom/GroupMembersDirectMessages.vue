@@ -65,7 +65,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 
-export default {
+export default ({
   name: 'GroupMembersAllModal',
   components: {
     ModalBaseTemplate,
@@ -114,7 +114,7 @@ export default {
       this.$refs.modal.close()
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -8,7 +8,7 @@
 
 <script>
 import L from '@view-utils/translations.js'
-export default {
+export default ({
   name: 'Loading',
   props: {
     title: {
@@ -25,7 +25,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

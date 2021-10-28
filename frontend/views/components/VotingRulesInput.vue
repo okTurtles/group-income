@@ -29,7 +29,7 @@ import TransitionExpand from '@components/TransitionExpand.vue'
 
 const SUPERMAJORITY = 0.60
 
-export default {
+export default ({
   name: 'VotingRulesInput',
   components: {
     BannerSimple,
@@ -87,7 +87,7 @@ export default {
       this.$emit('update', value)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

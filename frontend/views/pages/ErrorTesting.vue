@@ -28,7 +28,7 @@ import PageSection from '@components/PageSection.vue'
 import { EVENT_HANDLED } from '@utils/events.js'
 import * as Errors from '@model/errors.js'
 
-export default {
+export default ({
   name: 'ErrorTesting',
   components: {
     Page,
@@ -71,5 +71,5 @@ export default {
       })
     }
   }
-}
+}: Object)
 </script>
