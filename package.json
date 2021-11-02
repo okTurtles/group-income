@@ -128,8 +128,6 @@
     "babel-eslint": "10.1.0",
     "babel-plugin-root-import": "6.6.0",
     "browser-sync": "2.27.7",
-    "cheerio": "1.0.0-rc.3",
-    "chokidar": "3.4.3",
     "cypress": "7.7.0",
     "cypress-file-upload": "5.0.8",
     "esbuild": "0.12.21",
