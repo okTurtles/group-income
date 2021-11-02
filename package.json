@@ -140,7 +140,7 @@
     "eslint-plugin-import": "2.22.1",
     "eslint-plugin-node": "11.1.0",
     "eslint-plugin-promise": "4.2.1",
-    "eslint-plugin-vue": "7.1.0",
+    "eslint-plugin-vue": "7.20.0",
     "flow-bin": "0.154.0",
     "flow-remove-types": "2.153.0",
     "form-data": "3.0.0",
