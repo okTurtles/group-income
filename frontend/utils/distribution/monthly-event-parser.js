@@ -64,7 +64,7 @@ function parsedistributionFromEvents (distributionEvents: Array<Object>, minCome
   const getUser = name => groupMembers.find(member => member.name === name)
 
   const forgivemory = [] // Forgiven late payments, and forgotten over payments
-  const attentionSpan = 3 // Number of cycles (or months) of 'forgivemory'
+  const attentionSpan = 2 // Number of cycles (or months) of 'forgivemory'
 
   // Make a place to store this and preceding cycles' startCycleEvent (where over/under-payments are stored)
   // so that they can be included in the next cycle's payment distribution calculations:
@@ -72,41 +72,42 @@ function parsedistributionFromEvents (distributionEvents: Array<Object>, minCome
   let distribution = [] // For each cycle's monthly distribution calculation
   let payments = [] // For accumulating the payment events of each month's cycle.
 
+  const forgiveWithFilter = (filter) => {
+    forgivemory.forEach((memory, index) => {
+      memory.payments = memory.payments.concat(cycleEvents[index].data.payments.filter(filter))
+      memory.distribution = memory.distribution.concat(cycleEvents[index].data.distribution.filter(filter))
+    })
+    cycleEvents = cycleEvents.map((cycleEvent) =>
+      ({
+        data: {
+          when: cycleEvent.data.when,
+          payments: cycleEvent.data.payments.filter((o) => !filter(o)),
+          distribution: cycleEvent.data.distribution.filter((o) => !filter(o))
+        }
+      })
+    )
+  }
+  const rememberWithFilter = (filter) => {
+    cycleEvents = cycleEvents.map((cycleEvent, index) =>
+      ({
+        data: {
+          when: cycleEvent.data.when,
+          payments: cycleEvent.data.payments.concat(forgivemory[index].payments.filter((o) => filter(o))),
+          distribution: cycleEvent.data.distribution.concat(forgivemory[index].distribution.filter((o) => filter(o)))
+        }
+      })
+    )
+    forgivemory.forEach((memory, index) => {
+      memory.payments = memory.payments.filter((o) => !filter(o))
+      memory.distribution = memory.distribution.filter((o) => !filter(o))
+    })
+  }
+
   // Create a helper function that forgives income/leave/join events, without forgetting them
   // (for up to attentionSpan number of cycles):
   const forgiveWithoutForget = (member, fromSwitching, restoreAlso) => {
-    const toFilter = (payment) => payment.to !== member.name
     const fromFilter = (payment) => payment.from !== member.name
-    const forgiveWithFilter = (filter) => {
-      forgivemory.forEach((memory, index) => {
-        memory.payments = memory.payments.concat(cycleEvents[index].data.payments.filter(filter))
-        memory.distribution = memory.distribution.concat(cycleEvents[index].data.distribution.filter(filter))
-      })
-      cycleEvents = cycleEvents.map((cycleEvent) =>
-        ({
-          data: {
-            when: cycleEvent.data.when,
-            payments: cycleEvent.data.payments.filter((o) => !filter(o)),
-            distribution: cycleEvent.data.distribution.filter((o) => !filter(o))
-          }
-        })
-      )
-    }
-    const rememberWithFilter = (filter) => {
-      cycleEvents = cycleEvents.map((cycleEvent, index) =>
-        ({
-          data: {
-            when: cycleEvent.data.when,
-            payments: cycleEvent.data.payments.concat(forgivemory[index].payments.filter((o) => filter(o))),
-            distribution: cycleEvent.data.distribution.concat(forgivemory[index].distribution.filter((o) => filter(o)))
-          }
-        })
-      )
-      forgivemory.forEach((memory, index) => {
-        memory.payments = memory.payments.filter((o) => !filter(o))
-        memory.distribution = memory.distribution.filter((o) => !filter(o))
-      })
-    }
+    const toFilter = (payment) => payment.to !== member.name
     if ((member.haveNeed < 0 && fromSwitching) || (member.haveNeed > 0 && !fromSwitching)) {
       forgiveWithFilter(fromFilter) // Move payments FROM USER to forgivemory
       if (restoreAlso) {
@@ -155,9 +156,6 @@ function parsedistributionFromEvents (distributionEvents: Array<Object>, minCome
       distribution
     })
 
-    if (forgivemory.length > attentionSpan) forgivemory.pop()
-    if (cycleEvents.length > attentionSpan) cycleEvents.shift()
-
     payments = []
     distribution = []
   }
@@ -204,6 +202,9 @@ function parsedistributionFromEvents (distributionEvents: Array<Object>, minCome
     }
   })
 
+  while (forgivemory.length > attentionSpan) forgivemory.pop()
+  while (cycleEvents.length > attentionSpan) cycleEvents.shift()
+
   distribution = paymentsDistribution(groupMembers, minCome).map((payment) => {
     payment.total = payment.amount
     return payment
@@ -233,6 +234,7 @@ function parsedistributionFromEvents (distributionEvents: Array<Object>, minCome
       distribution
     })
   }
+
   const finalOverPayments = []
   let overPayments = []
   cycleEvents.forEach((startCycleEvent, cycleIndex) => {
@@ -251,7 +253,7 @@ function parsedistributionFromEvents (distributionEvents: Array<Object>, minCome
   })
 
   const finalDistribution = cycleEvents.reverse().map((startCycleEvent, cycleIndex) => {
-    startCycleEvent.data.distribution = subtractDistributions(startCycleEvent.data.distribution, finalOverPayments[Math.min(cycleIndex + 1, cycleEvents.length - 1)])
+    startCycleEvent.data.distribution = subtractDistributions(startCycleEvent.data.distribution, cycleIndex + 1 < cycleEvents.length ? finalOverPayments[cycleIndex + 1] : [])
 
     if (!adjusted) {
       startCycleEvent.data.distribution = addDistributions(startCycleEvent.data.payments, startCycleEvent.data.distribution)

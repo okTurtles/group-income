@@ -27,8 +27,7 @@ import './contracts/identity.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
-import { currentMonthstamp } from '~/frontend/utils/time.js'
-import currencies from '~/frontend/views/utils/currencies.js'
+import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
 
 Vue.use(Vuex)
 // let store // this is set and made the default export at the bottom of the file.
@@ -354,81 +353,60 @@ const getters = {
   },
   // TODO: this is insane, rewrite it and make it cleaner/better
   ourPayments (state, getters) {
-    // Payments relative to the current month only
     const monthlyPayments = getters.groupMonthlyPayments
     if (!monthlyPayments || Object.keys(monthlyPayments).length === 0) return
-    const currency = currencies[getters.groupSettings.mincomeCurrency]
     const ourUsername = getters.ourUsername
     const cMonthstamp = currentMonthstamp()
+    const pMonthstamp = prevMonthstamp(cMonthstamp)
     const allPayments = getters.currentGroupState.payments
     const thisMonthPayments = monthlyPayments[cMonthstamp]
     const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
+    const pMonthPayments = monthlyPayments[pMonthstamp]
+    const pPaymentsFrom = pMonthPayments && pMonthPayments.paymentsFrom
 
-    const sent = (() => {
-      const payments = []
+    const sentInMonth = (monthlyFromPayments) => {
+      return () => {
+        const payments = []
 
-      if (paymentsFrom) {
-        for (const toUser in paymentsFrom[getters.ourUsername]) {
-          for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
-            const { data, meta } = allPayments[paymentHash]
-            payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+        if (monthlyFromPayments) {
+          for (const toUser in monthlyFromPayments[getters.ourUsername]) {
+            for (const paymentHash of monthlyFromPayments[getters.ourUsername][toUser]) {
+              const { data, meta } = allPayments[paymentHash]
+              payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+            }
           }
         }
+        return payments
       }
-      return payments
-    })()
-    const received = (() => {
-      const payments = []
-
-      if (paymentsFrom) {
-        for (const fromUser in paymentsFrom) {
-          for (const toUser in paymentsFrom[fromUser]) {
-            if (toUser === getters.ourUsername) {
-              for (const paymentHash of paymentsFrom[fromUser][toUser]) {
-                const { data, meta } = allPayments[paymentHash]
-                payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+    }
+    const receivedInMonth = (monthlyFromPayments) => {
+      return () => {
+        const payments = []
+        if (monthlyFromPayments) {
+          for (const fromUser in monthlyFromPayments) {
+            for (const toUser in monthlyFromPayments[fromUser]) {
+              if (toUser === getters.ourUsername) {
+                for (const paymentHash of monthlyFromPayments[fromUser][toUser]) {
+                  const { data, meta } = allPayments[paymentHash]
+                  payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+                }
               }
             }
           }
         }
+        return payments
       }
-      return payments
-    })()
-    const todo = (() => {
+    }
+
+    const todo = () => {
       return getters.groupIncomeAdjustedDistribution.filter(p => p.from === ourUsername)
-    })()
-    const toBeReceived = (() => {
-      const unadjusted = getters.groupIncomeDistribution.filter(p => p.to === ourUsername)
-      const payments = []
-      for (const p of getters.groupIncomeAdjustedDistribution) {
-        if (p.to === ourUsername) {
-          const existPayment = unadjusted.find(({ from }) => from === p.from) || { amount: 0 }
-          const amount = +currency.displayWithoutCurrency(p.amount)
-          const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
+    }
 
-          if (amount > 0) {
-            const partialAmount = existingAmount - amount
-            const existingPayment = {}
-            if (partialAmount > 0) {
-              // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
-              const receivePartial = received.find((r) => r.amount === partialAmount)
-              if (receivePartial) {
-                existingPayment.hash = receivePartial.hash
-              }
-            }
-            payments.push({
-              ...existingPayment,
-              ...p,
-              total: existingAmount,
-              partial: partialAmount > 0
-            })
-          }
-        }
-      }
-      return payments
-    })()
-
-    return { sent, todo, received, toBeReceived }
+    return {
+      sent: [...sentInMonth(paymentsFrom)(), ...sentInMonth(pPaymentsFrom)()],
+      received: [...receivedInMonth(paymentsFrom)(), ...receivedInMonth(pPaymentsFrom)()],
+      todo: todo()
+    }
   },
   ourPaymentsSummary (state, getters) {
     const isNeeder = getters.ourGroupProfile.incomeDetailsType === 'incomeAmount'
