@@ -9,12 +9,12 @@ let setup = []
 const defaultStartDate = '2021-01'
 
 // Helper function that returns the date string for a specific number of cycles past a specific start date.
-function dateAtCyclesPassed(cycles, startDate = defaultStartDate) {
+function dateAtCyclesPassed (cycles, startDate = defaultStartDate) {
   return addMonthsToDate(startDate, cycles).toISOString()
 }
 
 // Helper fuction that inserts the "startCycleEvent" between each month's set of events.
-function insertMonthlyCycleEvents(events: Array<Object>): Array<Object> {
+function insertMonthlyCycleEvents (events: Array<Object>): Array<Object> {
   const newEvents = []
   let lastEvent = null
   for (const event of events) {
@@ -40,7 +40,7 @@ function insertMonthlyCycleEvents(events: Array<Object>): Array<Object> {
 }
 
 // Helper fuction that inserts the "when" of each event.data.
-function groupIncomeDistributionWrapper(events, opts, timeSpanMonths = 1.0, startDate = defaultStartDate) {
+function groupIncomeDistributionWrapper (events, opts, timeSpanMonths = 1.0, startDate = defaultStartDate) {
   // events = [{ type: 'startCycleEvent', data: { when: dateToMonthstamp(startDate), payments: [], distribution: [] } }].concat(events)
   const eventsWithTimeStamps = insertMonthlyCycleEvents(events.map((v, i) => {
     v.data.when = v.data.when ? v.data.when : dateToMonthstamp(addMonthsToDate(startDate, i * timeSpanMonths / events.length))
@@ -56,9 +56,9 @@ describe('Test group-income-distribution.js', function () {
   })
   it('EVENTS: [u1, u5, u2 and u3] join the group and set haveNeeds of [100, 100, -50, and -50], respectively. Test unadjusted.', function () {
     setup = setup.concat([{ type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 100 } },
-    { type: 'haveNeedEvent', data: { name: 'u5', haveNeed: 100 } },
-    { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -50 } },
-    { type: 'haveNeedEvent', data: { name: 'u3', haveNeed: -50 } }
+      { type: 'haveNeedEvent', data: { name: 'u5', haveNeed: 100 } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -50 } },
+      { type: 'haveNeedEvent', data: { name: 'u3', haveNeed: -50 } }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
       { amount: 25, from: 'u1', to: 'u2', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
