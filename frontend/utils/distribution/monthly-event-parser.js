@@ -263,7 +263,9 @@ function parsedistributionFromEvents (distributionEvents: Distribution, minCome:
   })
 
   const finalDistribution = cycleEvents.reverse().map((startCycleEvent, cycleIndex) => {
-    startCycleEvent.data.distribution = subtractDistributions(startCycleEvent.data.distribution, cycleIndex + 1 < cycleEvents.length ? finalOverPayments[cycleIndex + 1] : [])
+    const previousDistribution = cycleIndex + 1 < cycleEvents.length ? finalOverPayments[cycleIndex + 1] : []
+
+    startCycleEvent.data.distribution = subtractDistributions(startCycleEvent.data.distribution, previousDistribution)
 
     if (!adjusted) {
       startCycleEvent.data.distribution = addDistributions(startCycleEvent.data.payments, startCycleEvent.data.distribution)
