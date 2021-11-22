@@ -1,72 +1,65 @@
 # Information Flow
 
-It's recommended that you understand the [basics of `sbp`](Style-Guide.md#sbp) before moving on because everything that will come next, works around it.
+It's recommended that you understand the [basics of `sbp`](Style-Guide.md#sbp) before moving on because everything below relies on it.
 
-The simplest way to explain this is by starting to explain a couple of functions you'll see together a lot of times across the project. These two functions are the core to make any logical change at Group Income:
+In Group Income, we use a framework for building software out of something called "contract chains" (if you're familiar with how smart contracts in Ethereum work, this will make more sense to you).
+
+A contract chain is an immutable linked-list of events. We use this sequence of events to build up a state. For example, in Group Income we have a "group contract" that represents everything happening within a single group. The first event in the contract defines and registers the contract itself, in this case, the specific instance of a group. Each subsequent event represents an action that happens within the group.
+
+So for example, if we want to update the settings of a group, we do this:
 
 ```js
 // Example: Update a group minimum income to 150
 
-// 1. Message - Create a set of data to be later processed
-const message = await sbp(
-  'gi.contracts/group/updateSettings/create',
-  { mincomeAmount: 150 },
-  currentGroupId
-)
-
-// 2. Mutation - Send the message to the server and update the store (Vuex) accordingly
-await sbp('backend/publishLogEntry', message)
+await sbp('gi.actions/group/updateSettings', {
+  contractID: this.currentGroupId, data: { mincomeAmount: 150 }
+})
 ```
 
-Now, let's see in more detail what really happens in each function:
+This action accomplishes two things at once:
 
-##### 1. Create a Message
-First, we need to create a message using a selector under _'gi.contracts'_ domain.
-When we call the first `sbp` function we need to pass three parameters:
-- `selector`: For example, _'gi.contracts/group/updateSettings/create'_ has a [_domain_ _gi.contracts/_](../frontend/model/contracts/group.js) based on a [Contract](../frontend/model/Contract.js) which will process the action _group/updateSettings/create_.
-- `data`: a set of information passed to the action when it's processed.
-- `contractId`: the current group hash where the action should take effect on.
+1. It creates the event — an *action* — and wraps it in a [`GIMessage`](../shared/GIMessage.js) object.
+2. It sends this `GIMessage` to the server - appending it to the contract `contractID` (in this case, the current group we're in)
 
-The `gi.contract/*/create` selector will create and return a [GIMessage](../shared/GIMessage.js) (an event) based on the parameters passed.
+> _Contracts_ can be thought of as *distributed classes*. When you create a contract, you create an *instance*, similarly to how instances in [OOP](https://en.wikipedia.org/wiki/Object-oriented_programming) can be created. Contracts have an internal state that is updated by *actions*. A contract can be a group, a user profile (identity), or any other thing. All current contracts can be found at [`frontend/model/contracts/`](../frontend/model/contracts/).
 
-> **Note:** _Contracts_ can be thought of as *distributed classes*. When you create a contract, you create an *instance*, similarly to how instances in [OOP](https://en.wikipedia.org/wiki/Object-oriented_programming) can be created. Contracts have an internal state that is updated by *actions*. A contract can be a group, a user profile (identity), or any other thing. All current contracts can be found at [`model/contracts/`](../frontend/model/contracts/).
+##### Data Representation
 
-##### 2. Perform a Mutation
+`GIMessages`, and in fact all data in Group Income, is referenced by its hash, and on the server, stored in a file with a file name that is equal to that hash. Retrieving that data then becomes a simple hash lookup, similar to how IPFS and the Dat Protocol work.
 
-With a `GIMessage` created in the step before, we now need to send it to the server:
+##### Actions
 
-```js
-await sbp('backend/publishLogEntry', message)
-```
+All of the contract actions for all the contracts used in Group Income are defined in [`frontend/controller/actions/`](..frontend/controller/actions/).
 
-###### 2.1 Communication with the server (database)
+##### Client <-> Server Communication Details
 
-GIMessages ("events") are used to represent either the creation of a contract, or an action performed upon that contract. When a client sends these messages to the server, they are sent back to everyone who is subscribed to that contract. Then, upon receiving a message/event, each client uses it to update their local copy of the contract state. That's all done under the selector _'backend/publishLogEntry'_.
+When a client sends a `GIMessage` to a contract stored on the server, that message is sent back (via websockets) to everyone who is subscribed to that contract, including the client that sent the message. Upon receiving this message/event, each client uses it to update their local copy of the contract state, per the `process` function that is defined for that action. All of these `process` functions can be found in [`frontend/model/contracts/`](../frontend/model/contracts/).
 
-The sbp selector `'backend/publishLogEntry'` sends a POST request to the server with the _message_ serialized. The server will, through a _websocket_, return the _message_ back to the client, then deserialize and dispatch it to Vuex.
+##### Vuex Integration
 
-Then, [the dispatch event is handled by Vuex at model/state.js](../frontend/model/state.js#L302). There, the event is verified and, if all goes right, the message is processed through `sbp`, with the given `selector` (the action), the state based on the `contractId` and the `data`.
+In Group Income, we integrate our contract framework with Vuex, and the logic for that integration can be found in [`frontend/model/state.js`](../frontend/model/state.js).
 
-###### 2.1 Vuex reaction
+This allows the UI to be automatically updated whenever an action is sent to the contract. Our framework even supports Vuex-like getters, that can be directly bound to the UI.
 
-So far, you might wonder:
+###### The `process` function
 
-> _Where do I create a contract action? ('gi.contracts/group/updateSettings')_.
+Whenever a message is received by a client, it is first processed through the Vuex action `handleEvent` in [`frontend/model/state.js`](../frontend/model/state.js).
 
-All actions of a contract are in the contract definition. For example, the Group actions are created at [`contracts/group.js`](../frontend/model/contracts/group.js).
+From there is sent to our framework and contract logic. In most cases, a normal non-async function is called, call the `process` function. This processes the message and applies the logic to update the state based on the action name and any data that is associated with it.
+
+In our example above, the name of the *contract action* generated by `sbp('gi.actions/group/updateSettings', ...)` is called `'gi.contracts/group/updateSettings'`, and its `process` function is defined in [`frontend/model/contracts/group.js`](../frontend/model/contracts/group.js):
 
 ```js
 'gi.contracts/group/updateSettings': {
-  // Method to validate the received data type (FlowJS)
-  validate: object,
-  // Runs when the selector 'gi.contracts/group/updateSettings/process' is called
-  // state: contractId's state
-  // data: { mincomeAmount: 150 }
-  // meta: /* Metadata - read note bellow */
-  process (state, { data, meta }) {
-    // Performs the needed mutation to Vuex state, in this case,
-    // updates the given keys (mincomeAmount) with the new value (150).
-    for (var key in data) {
+  validate: objectMaybeOf({
+    groupName: x => typeof x === 'string',
+    groupPicture: x => typeof x === 'string',
+    sharedValues: x => typeof x === 'string',
+    mincomeAmount: x => typeof x === 'number' && x > 0,
+    mincomeCurrency: x => typeof x === 'string'
+  }),
+  process ({ meta, data }, { state, getters }) {
+    for (const key in data) {
       Vue.set(state.settings, key, data[key])
     }
   }
@@ -75,17 +68,21 @@ All actions of a contract are in the contract definition. For example, the Group
 
 > **Note**: Metadata is only included when contracts define a metadata key in their contract definition. It includes information about the action, such as when it was created and who created it.
 
-##### 3. Getting the latest changes of a _Contract_
+##### Subscribing to a contract
 
-We are almost there, the only question remaining is:
+Subscribing to a contract is done by calling either of these selectors: `'gi.actions/contract/sync'` or `'gi.actions/contract/syncAndWait'`
 
-> _How do users know what Contracts should they subscribe to and where is that done?_
+For example:
 
 ```js
-  await sbp('state/enqueueContractSync', contractId)
+sbp('gi.actions/contract/sync', contractId)
+
+// OR
+
+await sbp('gi.actions/contract/syncAndWait', contractId)
 ```
 
-`'state/enqueueContractSync'` is what's used to both subscribe to a contract as well as fetch the latest events from it.
+These selectors will subscribe us to the contract and begin listening for new updates.
 
 (...WIP...)
 
