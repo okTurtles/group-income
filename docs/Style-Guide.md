@@ -22,7 +22,7 @@ _It is still on you to ensure your code conforms to the `standard` spec, whether
 
 ### A Note On Classes: Avoid Them
 
-For this project we've made the very conscious decision to avoid Object Oriented Programming (OOP) as much as possible. Instead, we use [Selector-based Programming (SBP)](#sbp). What this means in practice is that where you'd normally see classes being used, we ask that you use SBP namespaces instead. We do this to avoid many of the pitfalls of OOB, and as a result our code ends up much simpler and more flexible than it otherwise would be.
+For this project we've made the very conscious decision to avoid Object Oriented Programming (OOP) as much as possible. Instead, we use [Selector-based Programming (SBP)](#sbp). What this means in practice is that where you'd normally see classes being used, we ask that you use SBP namespaces instead. We do this to avoid many of the pitfalls of OOP, and as a result our code ends up much simpler and more flexible than it otherwise would be.
 
 You may of course use any necessary classes that others have created if it is unavoidable (for example, some of the built-in Node.js classes). However, avoid creating your own class definitions. In the entire project there is only a single class that we have declared that acts as an exception to this rule, and that is `GIMessage`. If there is no way to avoid creating a class definition, it may be permitted, but a strong case must be made first that there is no other way to do it.
 
