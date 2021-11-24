@@ -183,9 +183,9 @@ describe('Group Payments', () => {
     cy.getByDT('link-PaymentRowSent').click()
     cy.getByDT('payList').find('tbody').children().should('have.length', 2)
     cy.getByDT('payList').within(() => {
-      cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user3-${userId}`)
-      cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$100')
-      cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', humanDateToday)
+      cy.getByDT('payRow').eq(1).find('td:nth-child(1)').should('contain', `user3-${userId}`)
+      cy.getByDT('payRow').eq(1).find('td:nth-child(2)').should('contain', '$100')
+      cy.getByDT('payRow').eq(1).find('td:nth-child(3)').should('contain', humanDateToday)
     })
 
     cy.log('user3 confirms the received payment')
