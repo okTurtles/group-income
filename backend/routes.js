@@ -139,7 +139,7 @@ route.POST('/file', {
       return Boom.badRequest('bad hash!')
     }
     await sbp('backend/db/writeFileOnce', hash, data)
-    return process.env.API_URL + '/file/' + hash
+    return '/file/' + hash
   } catch (err) {
     return logger(err)
   }
