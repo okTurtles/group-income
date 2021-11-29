@@ -370,7 +370,7 @@ describe('Full walkthrough', function () {
       })
       await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
         .then(handleFetchResult('text'))
-        .then(r => should(r).equal(`${process.env.API_URL}/file/${hash}`))
+        .then(r => should(r).equal(`/file/${hash}`))
     })
   })
 
