@@ -422,7 +422,6 @@ sbp('chelonia/defineContract', {
             const toUser = vueFetchInitKV(fromUser, data.toUser, [])
             toUser.push(data.paymentHash)
           }
-          console.error(payment)
           insertMonthlyCycleEvent(state, {
             type: 'paymentEvent',
             data: {
