@@ -29,7 +29,7 @@ import Toggle from '@components/Toggle.vue'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { debounce } from '@utils/giLodash.js'
 
-export default {
+export default ({
   name: 'Page',
   components: {
     Toggle
@@ -73,7 +73,7 @@ export default {
       this.ephemeral.isTouch = window.innerWidth < DESKTOP
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -26,7 +26,7 @@ import L from '@view-utils/translations.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 
-export default {
+export default ({
   name: 'ConversationGreetings',
   components: {
     MessageNotification,
@@ -57,7 +57,7 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

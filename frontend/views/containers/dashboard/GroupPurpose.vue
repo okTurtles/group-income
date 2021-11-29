@@ -24,7 +24,7 @@
 <script>
 import { mapGetters } from 'vuex'
 
-export default {
+export default ({
   name: 'GroupPurpose',
   computed: {
     ...mapGetters([
@@ -37,7 +37,7 @@ export default {
       console.log('Open shared value form')
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

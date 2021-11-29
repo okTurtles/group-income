@@ -10,7 +10,7 @@
 <script>
 import { mixin as clickaway } from 'vue-clickaway'
 
-export default {
+export default ({
   name: 'MenuOptions',
   mixins: [
     clickaway
@@ -26,7 +26,7 @@ export default {
       this.Menu.closeMenu()
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

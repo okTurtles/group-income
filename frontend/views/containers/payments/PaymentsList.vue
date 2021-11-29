@@ -21,7 +21,7 @@ import PaymentRowTodo from './PaymentRowTodo.vue'
 import PaymentRowSent from './PaymentRowSent.vue'
 import PaymentRowReceived from './PaymentRowReceived.vue'
 
-export default {
+export default ({
   name: 'PaymentsList',
   components: {
     AvatarUser,
@@ -45,7 +45,7 @@ export default {
       required: true
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

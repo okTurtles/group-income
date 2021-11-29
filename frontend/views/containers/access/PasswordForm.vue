@@ -28,7 +28,7 @@ label.field
 <script>
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
-export default {
+export default ({
   name: 'PasswordForm',
   data () {
     return {
@@ -70,7 +70,7 @@ export default {
   created () {
     this.isLock = !this.showPassword
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

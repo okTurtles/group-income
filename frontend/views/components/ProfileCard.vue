@@ -91,7 +91,7 @@ import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import { PROFILE_STATUS } from '~/frontend/model/contracts/constants.js'
 
-export default {
+export default ({
   name: 'ProfileCard',
   props: {
     username: String,
@@ -154,7 +154,7 @@ export default {
       return !!this.ourContributionSummary.receivingMonetary
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -10,12 +10,12 @@
 <script>
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 
-export default {
+export default ({
   name: 'LoadingModal',
   components: {
     ModalBaseTemplate
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

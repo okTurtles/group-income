@@ -30,7 +30,7 @@ import Avatar from '@components/Avatar.vue'
 import ConfettiAnimation from '@components/confetti-animation/ConfettiAnimation.vue'
 import { mapGetters } from 'vuex'
 
-export default {
+export default ({
   name: 'GroupWelcome',
   components: {
     Avatar,
@@ -55,7 +55,7 @@ export default {
       this.$router.push({ path: '/dashboard' })
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

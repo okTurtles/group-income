@@ -93,7 +93,7 @@ menu-parent(ref='menu')
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
 
-export default {
+export default ({
   name: 'MessageActions',
   components: {
     MenuParent,
@@ -112,7 +112,7 @@ export default {
       this.$emit(type, e)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

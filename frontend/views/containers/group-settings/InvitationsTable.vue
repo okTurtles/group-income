@@ -118,7 +118,7 @@ import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constant
 import { mapGetters, mapState } from 'vuex'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'InvitationsTable',
   components: {
     BannerScoped,
@@ -270,7 +270,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

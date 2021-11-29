@@ -7,7 +7,7 @@
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 
-export default {
+export default ({
   name: 'Modal',
   data () {
     return {
@@ -141,5 +141,5 @@ export default {
       this.queries[componentName] = queries
     }
   }
-}
+}: Object)
 </script>

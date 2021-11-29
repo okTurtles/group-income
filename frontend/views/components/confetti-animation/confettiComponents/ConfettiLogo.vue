@@ -27,7 +27,7 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'ConfettiLogo',
   inheritAttrs: false,
   data () {
@@ -45,7 +45,7 @@ export default {
     opacity: [Number, String],
     transforms: Object
   }
-}
+}: Object)
 </script>
 
 <style scoped lang="scss">

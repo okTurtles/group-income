@@ -47,7 +47,7 @@ import ProgressBar from '@components/graphs/Progress.vue'
 import L, { LTags } from '@view-utils/translations.js'
 import currencies from '@view-utils/currencies.js'
 
-export default {
+export default ({
   name: 'ContributionsWidget',
   components: {
     PageSection,
@@ -175,7 +175,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

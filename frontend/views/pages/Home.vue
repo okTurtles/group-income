@@ -73,7 +73,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
 
-export default {
+export default ({
   name: 'Home',
   components: {
     SvgJoinGroup,
@@ -92,7 +92,7 @@ export default {
       sbp('state/vuex/dispatch', 'logout')
     }
   }
-}
+}: Object)
 </script>
 
 <style scoped lang="scss">

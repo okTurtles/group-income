@@ -141,7 +141,7 @@ import Contribution from '@containers/contributions/Contribution.vue'
 import ContributionItem from '@containers/contributions/ContributionItem.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 
-export default {
+export default ({
   name: 'Contributions',
   components: {
     Page,
@@ -245,7 +245,7 @@ export default {
       return this.currency.displayWithCurrency(amount)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss">

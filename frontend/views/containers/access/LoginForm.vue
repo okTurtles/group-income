@@ -38,7 +38,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
-export default {
+export default ({
   name: 'LoginForm',
   mixins: [
     validationMixin,
@@ -98,7 +98,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

@@ -9,7 +9,7 @@ button.c-toggle.is-unstyled(
 </template>
 
 <script>
-export default {
+export default ({
   name: 'Toggle',
   props: {
     element: {
@@ -18,7 +18,7 @@ export default {
       required: true
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

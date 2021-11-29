@@ -41,7 +41,7 @@ import sbp from '~/shared/sbp.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { downloadLogs, getLog } from '@model/captureLogs.js'
 
-export default {
+export default ({
   name: 'AppLogs',
   data () {
     return {
@@ -126,7 +126,7 @@ export default {
       downloadLogs(this.$refs.linkDownload)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

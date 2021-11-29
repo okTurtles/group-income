@@ -23,7 +23,7 @@ menu-parent
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '@components/menu/index.js'
 import Badge from '@components/Badge.vue'
 
-export default {
+export default ({
   name: 'Activity',
   props: {
     activityCount: Number
@@ -37,7 +37,7 @@ export default {
     MenuHeader,
     MenuItem
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

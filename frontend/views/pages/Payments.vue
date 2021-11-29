@@ -105,7 +105,7 @@ import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import L, { LTags } from '@view-utils/translations.js'
 import { ISOStringToMonthstamp, humanDate } from '@utils/time.js'
 
-export default {
+export default ({
   name: 'Payments',
   components: {
     Page,
@@ -347,7 +347,7 @@ export default {
       this.ephemeral.currentPage = 0 // go back to first page.
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

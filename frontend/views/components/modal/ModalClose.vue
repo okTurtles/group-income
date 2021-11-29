@@ -10,13 +10,13 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'ModalClose',
   props: {
     backOnMobile: Boolean,
     fullscreen: Boolean
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

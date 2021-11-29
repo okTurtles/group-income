@@ -5,9 +5,9 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'PlaceHolder'
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

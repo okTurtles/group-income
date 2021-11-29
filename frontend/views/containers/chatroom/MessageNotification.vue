@@ -11,7 +11,7 @@ import { interactionType, fakeEvents, users } from '@containers/chatroom/fakeSto
 import chatroom from '@containers/chatroom/chatroom.js'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'MessageNotification',
   components: {
     MessageBase
@@ -79,7 +79,7 @@ export default {
       this.$emit('add-emoticon', emoticon)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

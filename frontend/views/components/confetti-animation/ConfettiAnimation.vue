@@ -15,10 +15,10 @@ svg.c-svg(
 
 <script>
 import animationMixins from './AnimationMixins.js'
-export default {
+export default ({
   mixins: [animationMixins],
   name: 'ConfettiAnimation'
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

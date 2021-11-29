@@ -9,7 +9,7 @@
 <script>
 import { humanDate } from '@utils/time.js'
 
-export default {
+export default ({
   name: 'CypressBypassUI',
   methods: {
     humanDate,
@@ -20,7 +20,7 @@ export default {
       this.$router.push({ path })
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -35,7 +35,7 @@ import sbp from '~/shared/sbp.js'
 import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
 
-export default {
+export default ({
   name: 'ConversationsList',
   components: {
     ListItem,
@@ -78,7 +78,7 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

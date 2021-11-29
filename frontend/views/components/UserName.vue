@@ -10,7 +10,7 @@
 <script>
 import { mapGetters } from 'vuex'
 
-export default {
+export default ({
   name: 'UserName',
   props: {
     username: String
@@ -23,7 +23,7 @@ export default {
       return this.globalProfile(this.username).displayName
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

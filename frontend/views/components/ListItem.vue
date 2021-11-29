@@ -19,7 +19,7 @@ li.c-item
 <script>
 import Badge from './Badge.vue'
 
-export default {
+export default ({
   name: 'ListItem',
   components: {
     Badge
@@ -46,7 +46,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

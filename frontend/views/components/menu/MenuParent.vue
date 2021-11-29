@@ -4,7 +4,7 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'MenuSelect',
   data () {
     return {
@@ -42,7 +42,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

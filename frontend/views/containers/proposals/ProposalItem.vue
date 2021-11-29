@@ -58,7 +58,7 @@ import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { INVITE_STATUS } from '@model/contracts/constants.js'
 
-export default {
+export default ({
   name: 'ProposalItem',
   props: {
     proposalHash: String
@@ -207,7 +207,7 @@ export default {
       return false
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

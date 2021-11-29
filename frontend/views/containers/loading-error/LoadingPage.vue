@@ -15,9 +15,9 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'LoadingPage'
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -74,7 +74,7 @@
 import emoticonsMixins from './EmoticonsMixins.js'
 import Tooltip from '@components/Tooltip.vue'
 
-export default {
+export default ({
   name: 'Chatroom',
   mixins: [emoticonsMixins],
   components: {
@@ -214,7 +214,7 @@ export default {
       this.updateTextWithLines()
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

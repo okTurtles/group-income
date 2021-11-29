@@ -12,7 +12,7 @@ Slider(
 import { mapGetters, mapMutations } from 'vuex'
 import Slider from '@components/Slider.vue'
 
-export default {
+export default ({
   name: 'FontSize',
 
   data () {
@@ -58,5 +58,5 @@ export default {
       })
     }
   }
-}
+}: Object)
 </script>

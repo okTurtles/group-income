@@ -34,7 +34,7 @@ import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import TabItem from '@components/tabs/TabItems.vue'
 
-export default {
+export default ({
   name: 'TabWrapper',
   components: {
     TabItem
@@ -119,7 +119,7 @@ export default {
   beforeDestroy () {
     this.$router.push(this.$route.query)
   }
-}
+}: Object)
 </script>
 
 <style lang='scss' scoped>

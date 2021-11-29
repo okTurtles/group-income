@@ -21,7 +21,7 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'GroupPurpose',
   props: {
     group: { type: Object },
@@ -40,5 +40,5 @@ export default {
       })
     }
   }
-}
+}: Object)
 </script>

@@ -18,7 +18,7 @@
 <script>
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 
-export default {
+export default ({
   name: 'LoadingModal',
   components: {
     ModalTemplate
@@ -29,7 +29,7 @@ export default {
       default: 500
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

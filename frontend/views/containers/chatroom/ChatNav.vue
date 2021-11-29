@@ -23,7 +23,7 @@
 import MainHeader from './MainHeader.vue'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 
-export default {
+export default ({
   name: 'ChatNav',
   components: {
     MainHeader,
@@ -39,7 +39,7 @@ export default {
   },
   computed: {},
   methods: {}
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

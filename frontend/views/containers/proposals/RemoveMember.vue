@@ -25,7 +25,7 @@ import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 
-export default {
+export default ({
   name: 'RemoveMember',
   components: {
     Avatar,
@@ -112,12 +112,12 @@ export default {
         })
         this.$refs.proposal.close()
       } catch (e) {
-        console.error(`Failed to remove member ${member}.`, e)
+        console.error('Failed to remove member %s:', member, e.message)
         this.$refs.formMsg.danger(e.message)
       }
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

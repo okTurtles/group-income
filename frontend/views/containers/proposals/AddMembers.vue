@@ -52,7 +52,7 @@ import sbp from '~/shared/sbp.js'
 import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/constants.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 
-export default {
+export default ({
   name: 'AddMembers',
   mixins: [validationMixin],
   components: {
@@ -141,7 +141,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";

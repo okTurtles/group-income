@@ -12,7 +12,7 @@
 </template>
 
 <script>
-export default {
+export default ({
   name: 'link-preview',
   props: {
     url: {
@@ -55,5 +55,5 @@ export default {
       return this.validUrl
     }
   }
-}
+}: Object)
 </script>

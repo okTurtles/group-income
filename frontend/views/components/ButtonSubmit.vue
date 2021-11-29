@@ -40,7 +40,7 @@ So, when pressing Enter, buttonSubmit(@click) gets called directly too.
 More details about this approach:
 https://github.com/okTurtles/group-income-simple/pull/854/files#r388638068
 */
-export default {
+export default ({
   name: 'ButtonSubmit',
   props: {
     disabled: Boolean
@@ -84,5 +84,5 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>

@@ -34,7 +34,7 @@ import sbp from '~/shared/sbp.js'
 import Page from '@components/Page.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 
-export default {
+export default ({
   name: 'BypassUI',
   components: {
     Page,
@@ -136,7 +136,7 @@ export default {
       return this.actions[action].finalize()
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

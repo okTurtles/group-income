@@ -22,7 +22,7 @@ import SvgHello from '@svgs/hello.svg'
 import SvgContributions from '@svgs/contributions.svg'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'AddIncomeDetailsWidget',
   components: {
     CalloutCard
@@ -60,5 +60,5 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, name)
     }
   }
-}
+}: Object)
 </script>

@@ -10,7 +10,6 @@
 .*/dist/.*
 .*/frontend/assets/.*
 .*/frontend/controller/service-worker.js
-.*/frontend/controller/utils/primus.js
 .*/frontend/utils/blockies.js
 .*/frontend/utils/crypto.js
 .*/frontend/utils/flowTyper.js
@@ -32,10 +31,12 @@ all=true
 # experimental.const_params=true
 emoji=true
 module.ignore_non_literal_requires=true
-
+module.name_mapper.extension='svg' -> '<PROJECT_ROOT>/frontend/views/utils/vueComponentStub.js.flow'
+module.name_mapper.extension='vue' -> '<PROJECT_ROOT>/frontend/views/utils/vueComponentStub.js.flow'
 # https://github.com/entwicklerstube/babel-plugin-root-import#dont-let-flow-be-confused
 module.name_mapper='^~/\(.*\)$' -> '<PROJECT_ROOT>/\1'
 module.name_mapper='^@components/\(.*\)$' -> '<PROJECT_ROOT>/frontend/views/components/\1'
+module.name_mapper='^@containers/\(.*\)$' -> '<PROJECT_ROOT>/frontend/views/containers/\1'
 module.name_mapper='^@model/\(.*\)$' -> '<PROJECT_ROOT>/frontend/model/\1'
 module.name_mapper='^@pages/\(.*\)$' -> '<PROJECT_ROOT>/frontend/views/pages/\1'
 module.name_mapper='^@utils/\(.*\)$' -> '<PROJECT_ROOT>/frontend/utils/\1'

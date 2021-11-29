@@ -11,7 +11,7 @@ import { mapGetters } from 'vuex'
 import Tooltip from '@components/Tooltip.vue'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'GroupMembersTooltipPending',
   components: {
     Tooltip
@@ -32,5 +32,5 @@ export default {
         : L('This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy}.', { invitedBy })
     }
   }
-}
+}: Object)
 </script>

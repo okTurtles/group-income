@@ -69,7 +69,7 @@ import { required } from 'vuelidate/lib/validators'
 import L from '@view-utils/translations.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
-export default {
+export default ({
   name: 'Contribution',
   mixins: [validationMixin],
   components: {
@@ -187,7 +187,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

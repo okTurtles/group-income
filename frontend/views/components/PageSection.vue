@@ -8,12 +8,12 @@ section.card
 </template>
 
 <script>
-export default {
+export default ({
   name: 'PageSection',
   props: {
     title: String
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

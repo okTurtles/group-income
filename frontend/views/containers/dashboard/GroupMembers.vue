@@ -47,7 +47,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'GroupMembers',
   components: {
     Avatar,
@@ -97,7 +97,7 @@ export default {
       this.openModal(modalAction)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

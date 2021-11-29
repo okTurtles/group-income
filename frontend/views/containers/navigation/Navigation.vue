@@ -91,7 +91,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { debounce } from '@utils/giLodash.js'
 
-export default {
+export default ({
   name: 'Navigation',
   components: {
     Toggle,
@@ -165,7 +165,7 @@ export default {
       this.ephemeral.isTouch = window.innerWidth < DESKTOP
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

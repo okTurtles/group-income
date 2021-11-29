@@ -19,7 +19,7 @@ import { cloneDeep } from '@utils/giLodash.js'
 import '~/shared/domains/okTurtles/data.js'
 import '~/shared/domains/okTurtles/events.js'
 const disableTimeTravel = false
-export default {
+export default ({
   name: 'TimeTravel',
   components: { VueSlider },
   created () {
@@ -74,7 +74,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

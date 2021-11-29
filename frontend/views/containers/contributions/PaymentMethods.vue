@@ -50,7 +50,7 @@ import { mapGetters } from 'vuex'
 import Vue from 'vue'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'PaymentMethods',
   components: {},
   data: () => ({
@@ -121,7 +121,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -43,7 +43,7 @@ import SvgAccess from '@svgs/access.svg'
 import SvgInvitation from '@svgs/invitation.svg'
 import SvgProposal from '@svgs/proposal.svg'
 
-export default {
+export default ({
   name: 'GroupJoinModal',
   components: {
     ModalBaseTemplate,
@@ -100,7 +100,7 @@ export default {
       history.pushState(null, null, `#${this.config[i]}`)
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -69,7 +69,7 @@ import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'PasswordModal',
   mixins: [validationMixin],
   data () {
@@ -128,7 +128,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

@@ -34,7 +34,7 @@ span.c-twrapper(
 import { TABLET } from '@view-utils/breakpoints.js'
 import trapFocus from '@utils/trapFocus.js'
 
-export default {
+export default ({
   name: 'Tooltip',
   mixins: [trapFocus],
   props: {
@@ -192,7 +192,7 @@ export default {
       }
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>
