@@ -38,7 +38,7 @@ export const imageUpload = async (imageFile: File): Promise<any> => {
         fetch(`${sbp('okTurtles.data/get', 'API_URL')}/file`, {
           method: 'POST',
           body: fd
-        }).then(handleFetchResult('text')).then(resolve).catch(reject)
+        }).then(handleFetchResult('text')).then(path => resolve(window.location.origin + path)).catch(reject)
       }
     }
     reader.readAsArrayBuffer(file)
