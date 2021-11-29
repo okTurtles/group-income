@@ -2,7 +2,7 @@
 
 import type { IncomeObject } from '~/shared/types.js'
 
-function incomeDistribution (incomes: Array<IncomeObject>, minCome: number): Array<any | {|amount: number, from: string, to: string|}> {
+function incomeDistribution (incomes: Array<IncomeObject>, minCome: number): Array<any | {|amount: number, total: number, partial: boolean, isLate: boolean, from: string, to: string, dueOn: string|}> {
   const membersBelow = []
   let belowMincomeTotalAmount = 0
   const membersAbove = []

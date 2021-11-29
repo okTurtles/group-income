@@ -146,17 +146,6 @@ export default ({
         })
       }
 
-      for (const payment of this.ourPayments.late) {
-        latePayments.push({
-          username: payment.to,
-          displayName: this.userDisplayName(payment.to),
-          amount: payment.amount,
-          partial: payment.partial,
-          isLate: true,
-          date: payment.dueIn
-        })
-      }
-
       for (const payment of this.ourPayments.todo) {
         todoPayments.push({
           hash: payment.hash,
@@ -165,8 +154,8 @@ export default ({
           amount: payment.amount,
           total: payment.total,
           partial: payment.partial,
-          isLate: false,
-          date: payment.dueIn
+          isLate: payment.isLate,
+          date: payment.dueOn
         })
       }
 
@@ -214,6 +203,7 @@ export default ({
             toUser: payment.username,
             amount: +pRecord.amount,
             total: payment.amount,
+            isLate: payment.isLate,
             // Even if amount is the same, it can be a partial from a previous partial payment
             // TODO: Maybe this can fix the Payments.vue bug when looking for other partials' hash.
             partial: payment.partial || pRecord.amount - payment.amount > 0,
