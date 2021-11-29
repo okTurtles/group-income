@@ -18,7 +18,7 @@ This semi-centralized "Simple Edition" of Group Income is our way to rapidly pro
 
 ## Getting Started
 
-1. Install [Node.js](https://nodejs.org) (version 14 LTS).
+1. Install [Node.js](https://nodejs.org) (up to version 16; [there's a problem with version 17](https://github.com/okTurtles/group-income-simple/issues/1108))
 2. Install [Grunt](https://github.com/gruntjs/grunt): `npm install -g grunt-cli`
 3. Clone this repo (or a fork of it if you plan on [contributing](#contributing)) and `cd` into it.
 4. Install dependencies: `npm install`
@@ -88,7 +88,9 @@ Clean up files in `dist/`
 grunt clean
 ```
 
-Run tests
+Run tests.
+
+**NOTE: You may need to first install Cypress using `./node_modules/.bin/cypress install`**
 
 ```bash
 # all tests
