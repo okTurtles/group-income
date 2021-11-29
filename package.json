@@ -144,6 +144,7 @@
     "flow-bin": "0.154.0",
     "flow-remove-types": "2.153.0",
     "form-data": "3.0.0",
+    "grunt": "1.4.1",
     "grunt-check-dependencies": "1.0.0",
     "grunt-contrib-clean": "2.0.0",
     "grunt-contrib-copy": "1.0.0",
