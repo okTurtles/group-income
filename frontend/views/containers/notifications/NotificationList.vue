@@ -223,16 +223,22 @@ export default {
 
   .compact & {
     padding: 1rem;
-
-    .c-item-date {
-      margin-left: 0.5rem;
-    }
   }
 }
 
 .c-item-content {
   flex-grow: 1;
   margin-left: 0.5rem;
+}
+
+.c-item-date {
+  margin-left: 0.5rem;
+
+  @include tablet {
+    .default & {
+      margin-left: 0;
+    }
+  }
 }
 
 .c-thumbCircle {
