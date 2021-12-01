@@ -204,11 +204,6 @@ export default {
 
   &.unread {
     background-color: $general_2;
-
-    &:hover,
-    &:focus {
-      background-color: $general_1;
-    }
   }
 
   .default & {
