@@ -4,7 +4,7 @@ nav.c-navigation(
   :class='{ "is-active": ephemeral.isActive }'
 )
   toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive')
-
+    badge.c-toggle-badge(v-if='notificationCount') {{ notificationCount }}
   groups-list(v-if='groupsByName.length > 1' :inert='isInert')
 
   .c-navigation-wrapper(:inert='isInert')
@@ -14,7 +14,7 @@ nav.c-navigation(
       router-link(to='/home')
         img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
-      activity(:activityCount='activityCount' v-if='groupsByName.length')
+      notification-bell
 
     .c-navigation-body(
       @click.self='enableTimeTravel'
@@ -80,7 +80,8 @@ nav.c-navigation(
 </template>
 
 <script>
-import Activity from './Activity.vue'
+import Badge from '@components/Badge.vue'
+import NotificationBell from '@containers/notifications/NotificationBell.vue'
 import GroupsList from './GroupsList.vue'
 import Profile from './Profile.vue'
 import Toggle from '@components/Toggle.vue'
@@ -94,8 +95,9 @@ import { debounce } from '@utils/giLodash.js'
 export default ({
   name: 'Navigation',
   components: {
+    Badge,
     Toggle,
-    Activity,
+    NotificationBell,
     GroupsList,
     Profile,
     ListItem
@@ -134,7 +136,8 @@ export default ({
     ...mapGetters([
       'groupsByName',
       'unreadMessageCount',
-      'colors'
+      'colors',
+      'notificationCount'
     ]),
     activityCount () {
       // TODO: implement this? (or not?)

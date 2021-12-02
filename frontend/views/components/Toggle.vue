@@ -5,7 +5,9 @@ button.c-toggle.is-unstyled(
   :aria-label='L("Toggle navigation")'
 )
   i.icon-bars(v-if='element === "navigation"')
+    slot
   i.icon-info(v-else-if='element === "sidebar"')
+    slot
 </template>
 
 <script>
@@ -65,6 +67,7 @@ $iconSize: 2.75rem;
 
   .icon-bars,
   .icon-info {
+    position: relative; // Allow the badge to be anchored to the icon rather than to the button.
     border-radius: 50%;
     width: $iconSize;
     height: $iconSize;

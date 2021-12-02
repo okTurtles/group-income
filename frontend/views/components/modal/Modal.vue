@@ -122,6 +122,7 @@ export default ({
       } else {
         this.content = null
         // Refocus on the button that opened this modal, if any.
+        // TODO - find a way to support lastFocus when opened through profile|notifications card.
         if (this.lastFocus) this.lastFocus.focus()
       }
       if (this.replacement) {
