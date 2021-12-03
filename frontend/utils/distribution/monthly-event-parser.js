@@ -1,17 +1,18 @@
 'use strict'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import { lastDayOfMonth, dateFromMonthstamp, dateToMonthstamp, addMonthsToDate } from '~/frontend/utils/time.js'
+import minimizeTotalPaymentsCount from '~/frontend/utils/distribution/payments-minimizer.js'
 
 type Payment = {| amount: number; total: number; partial: boolean; isLate: boolean; from: string; to: string; dueOn: string; |}
 
 type Distribution = Array<Payment>;
 
-function simpleCopy (variable) {
+function simpleCopy(variable) {
   return JSON.parse(JSON.stringify(variable))
 }
 
 // Merges multiple payments between any combinations two of users:
-function reduceDistribution (payments: Distribution): Distribution {
+function reduceDistribution(payments: Distribution): Distribution {
   // Don't modify the payments list/object parameter in-place, as this is not intended:
   payments = simpleCopy(payments)
   for (let i = 0; i < payments.length; i++) {
@@ -36,12 +37,12 @@ function reduceDistribution (payments: Distribution): Distribution {
 }
 
 // DRYing function meant for accumulating late payments from a previous cycle
-function addDistributions (paymentsA: Distribution, paymentsB: Distribution): Distribution {
+function addDistributions(paymentsA: Distribution, paymentsB: Distribution): Distribution {
   return reduceDistribution([...paymentsA, ...paymentsB])
 }
 
 // DRYing function meant for chipping away a cycle's todoPayments distribution using that cycle's payments:
-function subtractDistributions (paymentsA: Distribution, paymentsB: Distribution): Distribution {
+function subtractDistributions(paymentsA: Distribution, paymentsB: Distribution): Distribution {
   // Don't modify any payment list/objects parameters in-place, as this is not intended:
   paymentsB = simpleCopy(paymentsB)
 
@@ -57,7 +58,7 @@ function subtractDistributions (paymentsA: Distribution, paymentsB: Distribution
 
 // This algorithm is responsible for calculating the monthly-rated distribution of
 // payments.
-function parsedistributionFromEvents (distributionEvents: Distribution, minCome: number, adjusted: Boolean): Distribution {
+function parsedistributionFromEvents(distributionEvents: Distribution, minCome: number, adjusted: Boolean, minimizeTxns: Boolean): Distribution {
   distributionEvents = simpleCopy(distributionEvents)
 
   // The following list variable is for DRYing out our calculations of the each cycle's final
@@ -83,26 +84,26 @@ function parsedistributionFromEvents (distributionEvents: Distribution, minCome:
       memory.distribution = memory.distribution.concat(cycleEvents[index].data.distribution.filter(filter))
     })
     cycleEvents = cycleEvents.map((cycleEvent) =>
-      ({
-        data: {
-          when: cycleEvent.data.when,
-          payments: cycleEvent.data.payments.filter((o) => !filter(o)),
-          distribution: cycleEvent.data.distribution.filter((o) => !filter(o))
-        }
-      })
+    ({
+      data: {
+        when: cycleEvent.data.when,
+        payments: cycleEvent.data.payments.filter((o) => !filter(o)),
+        distribution: cycleEvent.data.distribution.filter((o) => !filter(o))
+      }
+    })
     )
   }
 
   // Remember what a specific user was supposed to pay when their income details change to having.
   const rememberWithFilter = (filter) => {
     cycleEvents = cycleEvents.map((cycleEvent, index) =>
-      ({
-        data: {
-          when: cycleEvent.data.when,
-          payments: cycleEvent.data.payments.concat(forgivemory[index].payments.filter((o) => filter(o))),
-          distribution: cycleEvent.data.distribution.concat(forgivemory[index].distribution.filter((o) => filter(o)))
-        }
-      })
+    ({
+      data: {
+        when: cycleEvent.data.when,
+        payments: cycleEvent.data.payments.concat(forgivemory[index].payments.filter((o) => filter(o))),
+        distribution: cycleEvent.data.distribution.concat(forgivemory[index].distribution.filter((o) => filter(o)))
+      }
+    })
     )
     forgivemory.forEach((memory, index) => {
       memory.payments = memory.payments.filter((o) => !filter(o))
@@ -136,7 +137,8 @@ function parsedistributionFromEvents (distributionEvents: Distribution, minCome:
         amount: minCome + user.haveNeed
       }
     })
-    return incomeDistribution(groupIncomes, minCome)
+    const preMinimized = incomeDistribution(groupIncomes, minCome)
+    return minimizeTxns ? minimizeTotalPaymentsCount(preMinimized, groupMembers) : preMinimized
   }
 
   // Create a helper function for handling each startCycleEvent:
@@ -262,7 +264,7 @@ function parsedistributionFromEvents (distributionEvents: Distribution, minCome:
     finalOverPayments.push(overPayments)
   })
 
-  const finalDistribution = cycleEvents.reverse().map((startCycleEvent, cycleIndex) => {
+  distribution = cycleEvents.reverse().map((startCycleEvent, cycleIndex) => {
     const previousDistribution = cycleIndex + 1 < cycleEvents.length ? finalOverPayments[cycleIndex + 1] : []
 
     startCycleEvent.data.distribution = subtractDistributions(startCycleEvent.data.distribution, previousDistribution)
@@ -279,7 +281,7 @@ function parsedistributionFromEvents (distributionEvents: Distribution, minCome:
     })
   }).reverse().flat()
 
-  return finalDistribution.filter((payment) => {
+  return distribution.filter((payment) => {
     return payment.from !== payment.to // This happens when a haver switches to being a needer; remove neutral distribution payments.
   })
 }
