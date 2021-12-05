@@ -2,8 +2,6 @@
 // https://github.com/lodash/babel-plugin-lodash
 // additional tiny versions of lodash functions are available in VueScript2
 
-import type { JSONObject } from '~/shared/types.js'
-
 export function mapValues (obj: Object, fn: Function, o: Object = {}): any {
   for (const key in obj) { o[key] = fn(obj[key]) }
   return o
@@ -35,7 +33,7 @@ export function omit (o: Object, props: string[]): {...} {
   return x
 }
 
-export function cloneDeep (obj: JSONObject): any {
+export function cloneDeep (obj: any): any {
   return JSON.parse(JSON.stringify(obj))
 }
 

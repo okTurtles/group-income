@@ -50,7 +50,7 @@ function groupIncomeDistributionWrapper (events, opts, timeSpanMonths = 1.0, sta
   return groupIncomeDistribution(eventsWithTimeStamps, opts)
 }
 
-describe('Test group-income-distribution.js', function () {
+describe('Test group-income-distribution.js (without minimization)', function () {
   it('Test empty distirbution event list for un-adjusted distribution.', function () {
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([])
   })
@@ -66,6 +66,10 @@ describe('Test group-income-distribution.js', function () {
       { amount: 25, from: 'u5', to: 'u2', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 25, from: 'u5', to: 'u3', total: 25, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 50, from: 'u1', to: 'u2', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 50, from: 'u5', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
   })
   it('Test the adjusted version of the previous event-list. Should be unchanged.', function () {
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
@@ -73,6 +77,10 @@ describe('Test group-income-distribution.js', function () {
       { amount: 25, from: 'u1', to: 'u3', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 25, from: 'u5', to: 'u2', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 25, from: 'u5', to: 'u3', total: 25, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 50, from: 'u1', to: 'u2', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 50, from: 'u5', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('EVENT: a payment of $10 is made from u1 to u2. Test unadjusted first (again, unchanged)', function () {
@@ -83,12 +91,11 @@ describe('Test group-income-distribution.js', function () {
       { amount: 25, from: 'u5', to: 'u2', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 25, from: 'u5', to: 'u3', total: 25, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u2', amount: 50, total: 50, dueOn: '2021-01', isLate: false, partial: false },
+      { amount: 50, from: 'u5', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
   })
-  // With transaction minimization enabled it should look like this:
-  // expect(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true })).eql([
-  //   { from: 'u1', to: 'u2', amount: 50 },
-  //   { from: 'u5', to: 'u3', amount: 50 }
-  // ])
   it('Test the adjusted version of the previous event-list. Should *not* ignore payment events!', function () {
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
       { amount: 15, from: 'u1', to: 'u2', total: 25, partial: true, isLate: false, dueOn: '2021-01' },
@@ -96,12 +103,11 @@ describe('Test group-income-distribution.js', function () {
       { amount: 25, from: 'u5', to: 'u2', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 25, from: 'u5', to: 'u3', total: 25, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 40, from: 'u1', to: 'u2', total: 50, partial: true, isLate: false, dueOn: '2021-01' },
+      { from: 'u5', to: 'u3', amount: 50, total: 50, dueOn: '2021-01', isLate: false, partial: false }
+    ])
   })
-  // With transaction minimization enabled it should look like this:
-  // expect(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
-  //   { from: 'u1', to: 'u2', amount: 40 },
-  //   { from: 'u5', to: 'u3', amount: 50 }
-  // ])
   it('EVENT: u4 joins and sets a need of 100. Test un-adjsuted first.', function () {
     setup.push({ type: 'haveNeedEvent', data: { name: 'u4', haveNeed: -100 } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
@@ -112,6 +118,11 @@ describe('Test group-income-distribution.js', function () {
       { amount: 25, from: 'u5', to: 'u3', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u2', amount: 50, total: 50, dueOn: '2021-01', isLate: false, partial: false },
+      { amount: 50, from: 'u1', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u5', to: 'u4', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
   })
   it('Test the adjusted version of the previous event-list. Should *not* ignore payment events!', function () {
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
@@ -122,13 +133,12 @@ describe('Test group-income-distribution.js', function () {
       { amount: 25, from: 'u5', to: 'u3', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 40, from: 'u1', to: 'u2', total: 50, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 50, from: 'u1', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u5', to: 'u4', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
   })
-  // With transaction minimization enabled it should look like this:
-  // expect(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxn\s: true })).eql([
-  //   { from: 'u1', to: 'u2', amount: 40 },
-  //   { from: 'u1', to: 'u3', amount: 50 },
-  //   { from: 'u5', to: 'u4', amount: 100 }
-  // ])
   it('EVENT: u3 removes themselves from the group. Test un-adjsuted first.', function () {
     setup.push({ type: 'userExitsGroupEvent', data: { name: 'u3' } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
@@ -136,7 +146,11 @@ describe('Test group-income-distribution.js', function () {
       { amount: 50, from: 'u1', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 25, from: 'u5', to: 'u2', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
-
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u2', amount: 50, total: 50, dueOn: '2021-01', isLate: false, partial: false },
+      { amount: 25, from: 'u1', to: 'u4', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 75, from: 'u5', to: 'u4', total: 75, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('Test the adjusted version of the previous event-list. Should *not* ignore payment events!', function () {
@@ -146,13 +160,12 @@ describe('Test group-income-distribution.js', function () {
       { amount: 25, from: 'u5', to: 'u2', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 40, from: 'u1', to: 'u2', total: 50, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 25, from: 'u1', to: 'u4', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 75, from: 'u5', to: 'u4', total: 75, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
   })
-  // With transaction minimization enabled it should look like this:
-  // expect(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
-  //   { from: 'u1', to: 'u2', amount: 40 },
-  //   { from: 'u1', to: 'u4', amount: 25 },
-  //   { from: 'u5', to: 'u4', amount: 75 }
-  // ])
   it('EVENT: u1 pays $5 to u4. Test un-adjsuted first.', function () {
     setup.push({ type: 'paymentEvent', data: { from: 'u1', to: 'u4', amount: 5 } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
@@ -160,6 +173,11 @@ describe('Test group-income-distribution.js', function () {
       { amount: 50, from: 'u1', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 25, from: 'u5', to: 'u2', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u2', amount: 50, total: 50, dueOn: '2021-01', isLate: false, partial: false },
+      { amount: 25, from: 'u1', to: 'u4', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 75, from: 'u5', to: 'u4', total: 75, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('Test the adjusted version of the previous event-list. Should *not* ignore payment events!', function () {
@@ -169,13 +187,12 @@ describe('Test group-income-distribution.js', function () {
       { amount: 25, from: 'u5', to: 'u2', total: 25, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 40, from: 'u1', to: 'u2', total: 50, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 20, from: 'u1', to: 'u4', total: 25, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 75, from: 'u5', to: 'u4', total: 75, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
   })
-  // With transaction minimization enabled it should look like this:
-  // expect(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
-  //   { from: 'u1', to: 'u2', amount: 40 },
-  //   { from: 'u1', to: 'u4', amount: 20 },
-  //   { from: 'u5', to: 'u4', amount: 75 }
-  // ])
   it('EVENT: u3 rejoins and sets haveNeed to -100. Test un-adjuusted first.', function () {
     setup.push({ type: 'haveNeedEvent', data: { name: 'u3', haveNeed: -100 } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
@@ -186,6 +203,12 @@ describe('Test group-income-distribution.js', function () {
       { amount: 40, from: 'u5', to: 'u4', total: 40, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 40, from: 'u5', to: 'u3', total: 40, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u2', amount: 40, total: 40, dueOn: '2021-01', isLate: false, partial: false },
+      { from: 'u1', to: 'u4', amount: 60, total: 60, dueOn: '2021-01', isLate: false, partial: false },
+      { amount: 20, from: 'u5', to: 'u4', total: 20, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 80, from: 'u5', to: 'u3', total: 80, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
   })
   it('Test the adjusted version of the previous event-list. Should *not* ignore payment events!', function () {
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
@@ -196,14 +219,13 @@ describe('Test group-income-distribution.js', function () {
       { amount: 40, from: 'u5', to: 'u4', total: 40, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 40, from: 'u5', to: 'u3', total: 40, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 30, from: 'u1', to: 'u2', total: 40, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 55, from: 'u1', to: 'u4', total: 60, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 20, from: 'u5', to: 'u4', total: 20, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 80, from: 'u5', to: 'u3', total: 80, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
   })
-  // Something along these lines (could be different! but shouldn't exceed this number of txns!)
-  // expect(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
-  //   { from: 'u1', to: 'u2', amount: 30 },
-  //   { from: 'u1', to: 'u4', amount: 55 },
-  //   { from: 'u5', to: 'u3', amount: 80 },
-  //   { from: 'u5', to: 'u4', amount: 20 }
-  // ])
   it('EVENT: u5 pays $10 to u2. Test un-adjusted first.', function () {
     setup.push({ type: 'paymentEvent', data: { from: 'u5', to: 'u2', amount: 10 } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
@@ -214,6 +236,12 @@ describe('Test group-income-distribution.js', function () {
       { amount: 40, from: 'u5', to: 'u4', total: 40, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 40, from: 'u5', to: 'u3', total: 40, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u2', amount: 40, total: 40, dueOn: '2021-01', isLate: false, partial: false },
+      { from: 'u1', to: 'u4', amount: 60, total: 60, dueOn: '2021-01', isLate: false, partial: false },
+      { amount: 20, from: 'u5', to: 'u4', total: 20, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 80, from: 'u5', to: 'u3', total: 80, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
   })
   it('Test the adjusted version of the previous event-list. Should *not* ignore payment events!', function () {
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
@@ -223,6 +251,12 @@ describe('Test group-income-distribution.js', function () {
       { amount: 10, from: 'u5', to: 'u2', total: 20, partial: true, isLate: false, dueOn: '2021-01' },
       { amount: 40, from: 'u5', to: 'u4', total: 40, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 40, from: 'u5', to: 'u3', total: 40, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 30, from: 'u1', to: 'u2', total: 40, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 55, from: 'u1', to: 'u4', total: 60, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 20, from: 'u5', to: 'u4', total: 20, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 80, from: 'u5', to: 'u3', total: 80, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   // Setup:
@@ -242,6 +276,7 @@ describe('Test group-income-distribution.js', function () {
       { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -10, when: dateAtCyclesPassed(2.2) } }
     ]
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([])
   })
 
   // # EVENT: [u1, u2 and u3] join a group and set haveNeeds of [20, 20, -20], respectively
@@ -263,7 +298,14 @@ describe('Test group-income-distribution.js', function () {
       { from: 'u1', to: 'u3', amount: 6.666666666666666, total: 6.666666666666666, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u3', amount: 6.666666666666666, total: 6.666666666666666, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
+      { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
       { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
@@ -272,15 +314,25 @@ describe('Test group-income-distribution.js', function () {
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
       { amount: 20, from: 'u2', to: 'u3', total: 20, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 20, from: 'u2', to: 'u3', total: 20, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
   })
   it('Test the unadjusted version of the previous event-list. Should *not* ignore payment events!', function () {
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
+      { from: 'u2', to: 'u3', amount: 20, total: 20, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
       { from: 'u2', to: 'u3', amount: 20, total: 20, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('Cycle test. Unadjusted.', function () {
     setup = setup.concat({ type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 10, when: dateAtCyclesPassed(0.09) } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
+      { from: 'u1', to: 'u3', amount: 6.666666666666666, total: 6.666666666666666, isLate: false, partial: false, dueOn: '2021-01' },
+      { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
       { from: 'u1', to: 'u3', amount: 6.666666666666666, total: 6.666666666666666, isLate: false, partial: false, dueOn: '2021-01' },
       { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-01' }
     ])
@@ -291,15 +343,28 @@ describe('Test group-income-distribution.js', function () {
       { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: true, dueOn: '2021-02' },
       { amount: 20, from: 'u2', to: 'u3', total: 20, partial: false, isLate: false, dueOn: '2021-02' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: true, dueOn: '2021-02' },
+      { amount: 20, from: 'u2', to: 'u3', total: 20, partial: false, isLate: false, dueOn: '2021-02' }
+    ])
   })
-  it('Cycl test. Unadjusted & adjusted.', function () {
+  it('Cycle test.', function () {
     setup = setup.concat({ type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 10, when: dateAtCyclesPassed(1.02) } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
       { from: 'u1', to: 'u3', amount: 6.666666666666666, total: 6.666666666666666, isLate: true, partial: false, dueOn: '2021-02' },
       { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-02' },
       { amount: 6.666666666666666, from: 'u1', to: 'u3', total: 6.666666666666666, partial: false, isLate: false, dueOn: '2021-02' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u3', amount: 6.666666666666666, total: 6.666666666666666, isLate: true, partial: false, dueOn: '2021-02' },
+      { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-02' },
+      { amount: 6.666666666666666, from: 'u1', to: 'u3', total: 6.666666666666666, partial: false, isLate: false, dueOn: '2021-02' }
+    ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
+      { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-02' },
+      { amount: 6.666666666666666, from: 'u1', to: 'u3', total: 6.666666666666666, partial: false, isLate: false, dueOn: '2021-02' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
       { amount: 13.333333333333332, from: 'u2', to: 'u3', total: 13.333333333333332, partial: false, isLate: false, dueOn: '2021-02' },
       { amount: 6.666666666666666, from: 'u1', to: 'u3', total: 6.666666666666666, partial: false, isLate: false, dueOn: '2021-02' }
     ])
@@ -317,11 +382,21 @@ describe('Test group-income-distribution.js', function () {
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 100, from: 'u1', to: 'u2', total: 100, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 150, from: 'u1', to: 'u3', total: 150, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
       { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 178.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 100, from: 'u1', to: 'u2', total: 100, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 150, from: 'u1', to: 'u3', total: 150, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('Cypress/group-paying.spec.js unit-test equivalent - user1 sends $71.43 to user2 (total).', function () {
@@ -332,10 +407,20 @@ describe('Test group-income-distribution.js', function () {
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 100, from: 'u1', to: 'u2', total: 100, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 150, from: 'u1', to: 'u3', total: 150, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
       { amount: 178.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 28.569999999999993, from: 'u1', to: 'u2', total: 100, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 150, from: 'u1', to: 'u3', total: 150, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('Cypress/group-paying.spec.js unit-test equivalent - user1 sends $100 to user3 (partial).', function () {
@@ -346,10 +431,20 @@ describe('Test group-income-distribution.js', function () {
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 100, from: 'u1', to: 'u2', total: 100, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 150, from: 'u1', to: 'u3', total: 150, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
       { amount: 78.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: true, isLate: false, dueOn: '2021-01' },
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 28.569999999999993, from: 'u1', to: 'u2', total: 100, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 50, from: 'u1', to: 'u3', total: 150, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('Cypress/group-paying.spec.js unit-test equivalent - user1 changes their income details to "needing.', function () {
@@ -359,7 +454,17 @@ describe('Test group-income-distribution.js', function () {
       { amount: 22.22222222222222, from: 'u4', to: 'u2', total: 22.22222222222222, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 55.55555555555556, from: 'u4', to: 'u3', total: 55.55555555555556, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 22.22222222222222, from: 'u4', to: 'u1', total: 22.22222222222222, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 22.22222222222222, from: 'u4', to: 'u2', total: 22.22222222222222, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 55.55555555555556, from: 'u4', to: 'u3', total: 55.55555555555556, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
+      { amount: 22.22222222222222, from: 'u4', to: 'u1', total: 22.22222222222222, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 22.22222222222222, from: 'u4', to: 'u2', total: 22.22222222222222, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 55.55555555555556, from: 'u4', to: 'u3', total: 55.55555555555556, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
       { amount: 22.22222222222222, from: 'u4', to: 'u1', total: 22.22222222222222, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 22.22222222222222, from: 'u4', to: 'u2', total: 22.22222222222222, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 55.55555555555556, from: 'u4', to: 'u3', total: 55.55555555555556, partial: false, isLate: false, dueOn: '2021-01' }
@@ -373,10 +478,20 @@ describe('Test group-income-distribution.js', function () {
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u2', amount: 100, total: 100, dueOn: '2021-01', isLate: false, partial: false },
+      { from: 'u1', to: 'u3', amount: 150, total: 150, dueOn: '2021-01', isLate: false, partial: false },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
       { amount: 78.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: true, isLate: false, dueOn: '2021-01' },
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 28.569999999999993, from: 'u1', to: 'u2', total: 100, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 50, from: 'u1', to: 'u3', total: 150, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('Cypress/group-paying.spec.js unit-test equivalent - one month later, user1 sends to user3 the missing $78.57.', function () {
@@ -391,6 +506,14 @@ describe('Test group-income-distribution.js', function () {
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-02' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-02' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u2', amount: 100, total: 100, dueOn: '2021-02', isLate: true, partial: false },
+      { from: 'u1', to: 'u3', amount: 150, total: 150, dueOn: '2021-02', isLate: true, partial: false },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: true, dueOn: '2021-02' },
+      { from: 'u1', to: 'u3', amount: 150, total: 150, dueOn: '2021-02', isLate: false, partial: false },
+      { amount: 100, from: 'u1', to: 'u2', total: 100, partial: false, isLate: false, dueOn: '2021-02' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-02' }
+    ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
       { amount: 78.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: true, isLate: true, dueOn: '2021-02' },
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: true, dueOn: '2021-02' },
@@ -399,6 +522,14 @@ describe('Test group-income-distribution.js', function () {
       { amount: 100.00142857142859, from: 'u1', to: 'u3', total: 178.57142857142858, partial: true, isLate: false, dueOn: '2021-02' },
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-02' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-02' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 28.569999999999993, from: 'u1', to: 'u2', total: 100, partial: true, isLate: true, dueOn: '2021-02' },
+      { amount: 50, from: 'u1', to: 'u3', total: 150, partial: true, isLate: true, dueOn: '2021-02' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: true, dueOn: '2021-02' },
+      { amount: 100, from: 'u1', to: 'u2', total: 100, partial: false, isLate: false, dueOn: '2021-02' },
+      { amount: 71.43, from: 'u1', to: 'u3', total: 150, partial: true, isLate: false, dueOn: '2021-02' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-02' }
     ])
   })
   it('Added cypress test - two months later, make sure the first months distributions are gone.', function () {
@@ -417,6 +548,17 @@ describe('Test group-income-distribution.js', function () {
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-03' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-03' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
+      { from: 'u1', to: 'u2', amount: 100, total: 100, dueOn: '2021-02', isLate: true, partial: false },
+      { from: 'u1', to: 'u3', amount: 150, total: 150, dueOn: '2021-02', isLate: true, partial: false },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: true, dueOn: '2021-02' },
+      { from: 'u1', to: 'u3', amount: 150, total: 150, dueOn: '2021-03', isLate: true, partial: false },
+      { amount: 100, from: 'u1', to: 'u2', total: 100, partial: false, isLate: true, dueOn: '2021-03' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: true, dueOn: '2021-03' },
+      { from: 'u1', to: 'u3', amount: 150, total: 150, dueOn: '2021-03', isLate: false, partial: false },
+      { amount: 100, from: 'u1', to: 'u2', total: 100, partial: false, isLate: false, dueOn: '2021-03' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-03' }
+    ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
       { amount: 78.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: true, isLate: true, dueOn: '2021-02' },
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: true, dueOn: '2021-02' },
@@ -427,6 +569,15 @@ describe('Test group-income-distribution.js', function () {
       { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-03' },
       { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-03' },
       { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-03' }
+    ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
+      { amount: 28.569999999999993, from: 'u1', to: 'u2', total: 100, partial: true, isLate: true, dueOn: '2021-02' },
+      { amount: 50, from: 'u1', to: 'u3', total: 150, partial: true, isLate: true, dueOn: '2021-02' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: true, dueOn: '2021-02' },
+      { amount: 100, from: 'u1', to: 'u2', total: 100, partial: false, isLate: true, dueOn: '2021-03' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: true, dueOn: '2021-03' },
+      { amount: 100, from: 'u1', to: 'u2', total: 100, partial: false, isLate: false, dueOn: '2021-03' },
+      { amount: 100, from: 'u4', to: 'u3', total: 100, partial: false, isLate: false, dueOn: '2021-03' }
     ])
   })
 })
