@@ -38,6 +38,11 @@ div
       i18n.is-title-1(tag='h1' data-test='pageTitle' :args='LTags()') Oh no! {br_}This invite is not valid
       p.has-text-1(data-test='helperText') {{ ephemeral.errorMsg }}
       i18n.c-goHome(tag='button' @click='goHome') Take me home
+    .c-broken(v-else-if='isStatus("EXPIRED")')
+      svg-broken-link.c-svg
+      i18n.is-title-1(tag='h1' data-test='pageTitle' :args='LTags()') Oh no! {br_}This invite is already expired
+      p.has-text-1(data-test='helperText') {{ ephemeral.errorMsg }}
+      i18n.c-goHome(tag='button' @click='goHome') Take me home
 </template>
 
 <script>
@@ -75,7 +80,7 @@ export default ({
     pageStatus: {
       get () { return this.ephemeral.pageStatus },
       set (status) {
-        const posibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'INVALID']
+        const posibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED']
         if (!posibleStatus.includes(status)) {
           throw new Error(`Bad status: ${status}. Use one of the following: ${posibleStatus.join(', ')}`)
         }
@@ -100,6 +105,11 @@ export default ({
         console.error('Join.vue error: Link is not valid.')
         this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
         this.pageStatus = 'INVALID'
+        return
+      } else if (!invite || invite.expires < Date.now()) {
+        console.log('Join.vue error: Link is already expired.')
+        this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+        this.pageStatus = 'EXPIRED'
         return
       }
       let creator = null

@@ -50,6 +50,7 @@ export function createInvite (
   responses: {...},
   status: string,
 |} {
+  const expiresInDate = creator === INVITE_INITIAL_CREATOR ? 30 : 7
   return {
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
     quantity,
@@ -57,7 +58,7 @@ export function createInvite (
     invitee,
     status: INVITE_STATUS.VALID,
     responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: 1638588240000 // 04 december 2021. // TODO this
+    expires: Date.now() + 1000 * 86400 * expiresInDate
   }
 }
 
