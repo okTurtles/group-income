@@ -70,13 +70,13 @@ describe('Proposals - Add members', () => {
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
 
     // Expiry check in Group Settings page
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
-    cy.getByDT('groupSettingsLink').click()
-    cy.get('td.c-name:contains("Anyone")').should('not.exist')
-    cy.get('.c-title-wrapper select').select('All links')
-    cy.get('td.c-name:contains("Anyone")').siblings('.c-state').get('.c-state-expire').should('contain', 'Expired')
+    // cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    // cy.getByDT('groupSettingsLink').click()
+    // cy.get('td.c-name:contains("Anyone")').should('not.exist')
+    // cy.get('.c-title-wrapper select').select('All links')
+    // cy.get('td.c-name:contains("Anyone")').siblings('.c-state').get('.c-state-expire').should('contain', 'Expired')
 
-    cy.giLogout()
+    // cy.giLogout()
   })
 
   it('not registered user2 and user3 join the group through the invitation link', () => {
@@ -294,13 +294,13 @@ describe('Proposals - Add members', () => {
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
 
     // Expiry check in Group Settings page
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
-    cy.getByDT('groupSettingsLink').click()
-    cy.get('td.c-name:contains("user6")').should('not.exist')
-    cy.get('.c-title-wrapper select').select('All links')
-    cy.get('td.c-name:contains("user6")').siblings('.c-state').get('.c-state-expire').should('contain', 'Expired')
+    // cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    // cy.getByDT('groupSettingsLink').click()
+    // cy.get('td.c-name:contains("user6")').should('not.exist')
+    // cy.get('.c-title-wrapper select').select('All links')
+    // cy.get('td.c-name:contains("user6")').siblings('.c-state').get('.c-state-expire').should('contain', 'Expired')
 
-    cy.giLogout()
+    // cy.giLogout()
   })
 
   it('user6 registers through a unique invitation link to join a group', () => {
