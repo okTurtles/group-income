@@ -61,12 +61,22 @@ describe('Proposals - Add members', () => {
   })
 
   it(`initial invitation link has ${groupInviteLinkExpiry.anyone} days of expiry`, () => {
+    // Try to join with expired link
     cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
     cy.visit(invitationLinks.anyone)
     cy.getByDT('pageTitle')
       .invoke('text')
       .should('contain', 'Oh no! This invite is already expired')
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+
+    // Expiry check in Group Settings page
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.getByDT('groupSettingsLink').click()
+    cy.get('td.c-name:contains("Anyone")').should('not.exist')
+    cy.get('.c-title-wrapper select').select('All links')
+    cy.get('td.c-name:contains("Anyone")').siblings('.c-state').get('.c-state-expire').should('contain', 'Expired')
+
+    cy.giLogout()
   })
 
   it('not registered user2 and user3 join the group through the invitation link', () => {
@@ -275,12 +285,22 @@ describe('Proposals - Add members', () => {
   })
 
   it(`proposal-based invitation link has ${groupInviteLinkExpiry.proposal} days of expiry`, () => {
+    // Try to join with expired link
     cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
     cy.visit(invitationLinks.user6)
     cy.getByDT('pageTitle')
       .invoke('text')
       .should('contain', 'Oh no! This invite is already expired')
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+
+    // Expiry check in Group Settings page
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.getByDT('groupSettingsLink').click()
+    cy.get('td.c-name:contains("user6")').should('not.exist')
+    cy.get('.c-title-wrapper select').select('All links')
+    cy.get('td.c-name:contains("user6")').siblings('.c-state').get('.c-state-expire').should('contain', 'Expired')
+
+    cy.giLogout()
   })
 
   it('user6 registers through a unique invitation link to join a group', () => {
