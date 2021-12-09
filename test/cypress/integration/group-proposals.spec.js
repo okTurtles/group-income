@@ -77,7 +77,7 @@ describe('Proposals - Add members', () => {
     cy.giInviteMember([`user7-${userId}`])
   })
 
-  it('user2 proposes to change mincome to $500', () => {
+  it(`user2 proposes to change mincome to $${groupNewMincome}`, () => {
     cy.getByDT('groupMincome').within(() => {
       cy.get('button').click()
     })
@@ -217,7 +217,7 @@ describe('Proposals - Add members', () => {
     assertInvitationLinkFor(1, 'user6')
   })
 
-  it('user1 votes "yes" to the new mincome ($500) and proposal is accepted.', () => {
+  it(`user1 votes "yes" to the new mincome ($${groupMincome}) and proposal is accepted.`, () => {
     assertMincome(groupMincome)
 
     tryUnsuccessfullyToProposeNewSimilarMincome()
@@ -269,7 +269,7 @@ describe('Proposals - Add members', () => {
     })
   })
 
-  it('an expired invitation link cannot used', () => {
+  it('an already used invitation link cannot be used again', () => {
     cy.visit(invitationLinks.user6) // already used on the previous test
     cy.getByDT('pageTitle')
       .invoke('text')
@@ -279,6 +279,8 @@ describe('Proposals - Add members', () => {
     cy.url().should('eq', 'http://localhost:8000/app/')
     cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
   })
+
+  // TODO: add a case to check expiry
 
   it('an invalid invitation link cannot be used', () => {
     cy.visit('http://localhost:8000/app/join?groupId=321&secret=123')
