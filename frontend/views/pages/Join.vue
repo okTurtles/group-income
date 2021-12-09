@@ -80,9 +80,9 @@ export default ({
     pageStatus: {
       get () { return this.ephemeral.pageStatus },
       set (status) {
-        const posibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED']
-        if (!posibleStatus.includes(status)) {
-          throw new Error(`Bad status: ${status}. Use one of the following: ${posibleStatus.join(', ')}`)
+        const possibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'INVALID', 'EXPIRED']
+        if (!possibleStatus.includes(status)) {
+          throw new Error(`Bad status: ${status}. Use one of the following: ${possibleStatus.join(', ')}`)
         }
         this.ephemeral.pageStatus = status
       }
