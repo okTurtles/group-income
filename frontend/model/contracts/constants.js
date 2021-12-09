@@ -10,3 +10,8 @@ export const PROFILE_STATUS = {
   ACTIVE: 'active',
   REMOVED: 'removed'
 }
+
+export const MAX_INVITE_AGE_IN_DAYS = {
+  INITIAL: 30,
+  PROPOSAL: 7
+}

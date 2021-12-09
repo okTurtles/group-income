@@ -22,7 +22,8 @@ import L from '~/frontend/views/utils/translations.js'
 import {
   INVITE_INITIAL_CREATOR,
   INVITE_STATUS,
-  PROFILE_STATUS
+  PROFILE_STATUS,
+  MAX_INVITE_AGE_IN_DAYS
 } from './constants.js'
 
 export const inviteType: any = objectOf({
@@ -50,7 +51,7 @@ export function createInvite (
   responses: {...},
   status: string,
 |} {
-  const expiresInDate = creator === INVITE_INITIAL_CREATOR ? 30 : 7
+  const expiresInDate = creator === INVITE_INITIAL_CREATOR ? MAX_INVITE_AGE_IN_DAYS.INITIAL : MAX_INVITE_AGE_IN_DAYS.PROPOSAL
   return {
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
     quantity,
