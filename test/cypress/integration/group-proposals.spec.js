@@ -2,6 +2,10 @@ const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const groupMincome = 250
 const groupNewMincome = 500
+const groupInviteLinkExpiry = {
+  anyone: 30,
+  proposal: 7
+}
 
 function assertProposalOpenState ({ description }) {
   cy.getByDT('statusDescription')
@@ -54,6 +58,15 @@ describe('Proposals - Add members', () => {
     })
 
     cy.giLogout()
+  })
+
+  it(`initial invitation link has ${groupInviteLinkExpiry.anyone} days of expiry`, () => {
+    cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
+    cy.visit(invitationLinks.anyone)
+    cy.getByDT('pageTitle')
+      .invoke('text')
+      .should('contain', 'Oh no! This invite is already expired')
+    cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
   })
 
   it('not registered user2 and user3 join the group through the invitation link', () => {
@@ -261,6 +274,15 @@ describe('Proposals - Add members', () => {
     })
   })
 
+  it(`proposal-based invitation link has ${groupInviteLinkExpiry.proposal} days of expiry`, () => {
+    cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
+    cy.visit(invitationLinks.user6)
+    cy.getByDT('pageTitle')
+      .invoke('text')
+      .should('contain', 'Oh no! This invite is already expired')
+    cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+  })
+
   it('user6 registers through a unique invitation link to join a group', () => {
     cy.giAcceptGroupInvite(invitationLinks.user6, {
       groupName,
@@ -279,8 +301,6 @@ describe('Proposals - Add members', () => {
     cy.url().should('eq', 'http://localhost:8000/app/')
     cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
   })
-
-  // TODO: add a case to check expiry
 
   it('an invalid invitation link cannot be used', () => {
     cy.visit('http://localhost:8000/app/join?groupId=321&secret=123')
