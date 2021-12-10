@@ -43,7 +43,10 @@ async function startApp () {
   // NOTE: we setup this global SBP filter and domain regs here
   //       to get logging for all subsequent SBP calls.
   //       In the future we might move it elsewhere.
-  if (process.env.NODE_ENV !== 'production') {
+  // ?debug=true
+  // force debug output even in production
+  const debugParam = new URLSearchParams(window.location.search).get('debug')
+  if (process.env.NODE_ENV !== 'production' || debugParam === 'true') {
     const reducer = (o, v) => { o[v] = true; return o }
     const domainBlacklist = [
       'sbp',
