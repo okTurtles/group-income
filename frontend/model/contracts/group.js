@@ -14,7 +14,10 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { currentMonthstamp, prevMonthstamp, ISOStringToMonthstamp, compareMonthstamps, addMonthsToDate, dateToMonthstamp, compareCycles } from '~/frontend/utils/time.js'
+import {
+  currentMonthstamp, prevMonthstamp, ISOStringToMonthstamp, compareMonthstamps,
+  addMonthsToDate, dateToMonthstamp, compareCycles, DAYS_MILLIS
+} from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
@@ -59,7 +62,7 @@ export function createInvite (
     invitee,
     status: INVITE_STATUS.VALID,
     responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: Date.now() + 1000 * 86400 * expiresInDate
+    expires: Date.now() + DAYS_MILLIS * expiresInDate
   }
 }
 
