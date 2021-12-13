@@ -27,7 +27,7 @@ export default ({
   methods: {
     submit () {
       this.$refs.modal.close()
-      this.$router.push({ path: '/dashboard' })
+      this.$router.push({ path: '/dashboard' }).catch(() => {})
     },
     showSignupModal () {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'SignupModal')
