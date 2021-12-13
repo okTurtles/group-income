@@ -33,7 +33,7 @@
 import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import TabItem from '@components/tabs/TabItems.vue'
-import { logExceptNavigationDuplicated } from '@utils/errorHandlers.js'
+import { logExceptNavigationDuplicated } from '@controller/utils/misc.js'
 
 export default ({
   name: 'TabWrapper',
