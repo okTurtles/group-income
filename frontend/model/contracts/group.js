@@ -43,8 +43,9 @@ export function createInvite (
   {
     quantity = 1,
     creator,
+    expires,
     invitee
-  }: { quantity: number, creator: string, invitee?: string }
+  }: { quantity: number, creator: string, expires?: number, invitee?: string }
 ): {|
   creator: string,
   expires: number,
@@ -54,7 +55,6 @@ export function createInvite (
   responses: {...},
   status: string,
 |} {
-  const expiresInDate = creator === INVITE_INITIAL_CREATOR ? INVITE_EXPIRES_IN_DAYS.INITIAL : INVITE_EXPIRES_IN_DAYS.PROPOSAL
   return {
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
     quantity,
@@ -62,7 +62,7 @@ export function createInvite (
     invitee,
     status: INVITE_STATUS.VALID,
     responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: Date.now() + DAYS_MILLIS * expiresInDate
+    expires: Date.now() + DAYS_MILLIS * (expires || INVITE_EXPIRES_IN_DAYS.INITIAL)
   }
 }
 
@@ -337,7 +337,8 @@ sbp('chelonia/defineContract', {
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
-            groupCreator: meta.username
+            groupCreator: meta.username,
+            inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
           },
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)

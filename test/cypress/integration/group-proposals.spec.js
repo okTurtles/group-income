@@ -1,10 +1,12 @@
+import { INVITE_EXPIRES_IN_DAYS } from '~/frontend/model/contracts/constants.js'
+
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const groupMincome = 250
 const groupNewMincome = 500
 const groupInviteLinkExpiry = {
-  anyone: 30,
-  proposal: 7
+  anyone: INVITE_EXPIRES_IN_DAYS.INITIAL,
+  proposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
 }
 
 function assertProposalOpenState ({ description }) {

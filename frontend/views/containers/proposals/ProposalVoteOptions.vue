@@ -108,7 +108,8 @@ export default ({
           if (this.type === PROPOSAL_INVITE_MEMBER) {
             passPayload = createInvite({
               invitee: this.proposal.data.proposalData.member,
-              creator: this.proposal.meta.username
+              creator: this.proposal.meta.username,
+              expires: this.currentGroupState.settings.inviteExpiryProposal
             })
           } else if (this.type === PROPOSAL_REMOVE_MEMBER) {
             passPayload = {
