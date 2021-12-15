@@ -14,7 +14,10 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { currentMonthstamp, prevMonthstamp, ISOStringToMonthstamp, compareMonthstamps, addMonthsToDate, dateToMonthstamp, compareCycles } from '~/frontend/utils/time.js'
+import {
+  currentMonthstamp, prevMonthstamp, ISOStringToMonthstamp, compareMonthstamps,
+  addMonthsToDate, dateToMonthstamp, compareCycles, DAYS_MILLIS
+} from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
@@ -22,7 +25,8 @@ import L from '~/frontend/views/utils/translations.js'
 import {
   INVITE_INITIAL_CREATOR,
   INVITE_STATUS,
-  PROFILE_STATUS
+  PROFILE_STATUS,
+  INVITE_EXPIRES_IN_DAYS
 } from './constants.js'
 
 export const inviteType: any = objectOf({
@@ -39,8 +43,9 @@ export function createInvite (
   {
     quantity = 1,
     creator,
+    expires,
     invitee
-  }: { quantity: number, creator: string, invitee?: string }
+  }: { quantity: number, creator: string, expires?: number, invitee?: string }
 ): {|
   creator: string,
   expires: number,
@@ -57,7 +62,7 @@ export function createInvite (
     invitee,
     status: INVITE_STATUS.VALID,
     responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: 1638588240000 // 04 december 2021. // TODO this
+    expires: Date.now() + DAYS_MILLIS * (expires || INVITE_EXPIRES_IN_DAYS.INITIAL)
   }
 }
 
@@ -332,7 +337,8 @@ sbp('chelonia/defineContract', {
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
-            groupCreator: meta.username
+            groupCreator: meta.username,
+            inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
           },
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)

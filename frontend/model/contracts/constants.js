@@ -10,3 +10,8 @@ export const PROFILE_STATUS = {
   ACTIVE: 'active',
   REMOVED: 'removed'
 }
+
+export const INVITE_EXPIRES_IN_DAYS = {
+  INITIAL: 30,
+  PROPOSAL: 7
+}
