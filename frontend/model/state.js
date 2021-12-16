@@ -24,6 +24,7 @@ import * as EVENTS from '~/frontend/utils/events.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
+import './contracts/chatroom.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
@@ -553,8 +554,22 @@ const actions = {
       const contracts = store.state.contracts
       for (const contractID in contracts) {
         const { type } = contracts[contractID]
-        commit('registerContract', { contractID, type })
-        await sbp('state/enqueueContractSync', contractID)
+        if (type !== 'gi.contracts/chatroom') {
+          commit('registerContract', { contractID, type })
+          await sbp('state/enqueueContractSync', contractID)
+        }
+        // sync all chatroom contracts
+        if (type === 'gi.contracts/group') {
+          await sbp('gi.actions/contract/syncAndWait', contractID)
+          const { chatRooms } = store.state[contractID]
+          for (const chatRoomContractID in chatRooms) {
+            commit('registerContract', {
+              contractID: chatRoomContractID,
+              type: 'gi.contracts/chatroom'
+            })
+            await sbp('state/enqueueContractSync', chatRoomContractID)
+          }
+        }
       }
       // it's insane, and I'm not sure how this can happen, but it did... and
       // the following steps actually fixed it...

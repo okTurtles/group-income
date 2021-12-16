@@ -24,6 +24,7 @@ import {
   INVITE_STATUS,
   PROFILE_STATUS
 } from './constants.js'
+import { chatRoomType } from './chatroom.js'
 
 export const inviteType: any = objectOf({
   inviteSecret: string,
@@ -298,6 +299,17 @@ sbp('chelonia/defineContract', {
     },
     groupDistributionEvents (state, getters) {
       return getters.currentGroupState.distributionEvents
+    },
+    getChatRooms (state, getters) {
+      return getters.currentGroupState.chatRooms
+    },
+    getGeneralChatroomContractID (state, getters) {
+      for (const chatRoomContractID of Object.keys(getters.getChatRooms)) {
+        if (!state.chatRooms[chatRoomContractID].creator) {
+          return chatRoomContractID
+        }
+      }
+      return null
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -321,7 +333,8 @@ sbp('chelonia/defineContract', {
             [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
             [PROPOSAL_GENERIC]: proposalSettingsType
           })
-        })
+        }),
+        chatRooms: mapOf(string, chatRoomType)
       }),
       process ({ data, meta }, { state, getters }) {
         // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
@@ -638,6 +651,15 @@ sbp('chelonia/defineContract', {
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
+
+        // join general chatroom after accept invitation
+        const generalChatRoomContractID = getters.getGeneralChatroomContractID
+        if (generalChatRoomContractID) {
+          sbp('gi.actions/chatroom/join', {
+            contractID: generalChatRoomContractID,
+            data: {}
+          })
+        }
       },
       // !! IMPORANT!!
       // Actions here MUST NOT modify contract state!

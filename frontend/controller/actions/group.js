@@ -2,7 +2,7 @@
 
 import sbp from '~/shared/sbp.js'
 import { createInvite } from '@model/contracts/group.js'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/constants.js'
+import { INVITE_INITIAL_CREATOR, CHATROOM_GENERAL_NAME } from '@model/contracts/constants.js'
 import proposals from '@model/contracts/voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER,
@@ -44,6 +44,11 @@ export default (sbp('sbp/selectors/register', {
     }
 
     try {
+      // create default chatroom contract
+      const chatRoomContractMsg = await sbp('gi.actions/chatroom/createAndJoin', { data: { name: CHATROOM_GENERAL_NAME } })
+      await sbp('gi.actions/contract/syncAndWait', chatRoomContractMsg.contractID())
+
+      // create group contract
       const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
       const proposalSettings = {
         rule: ruleName,
@@ -88,6 +93,11 @@ export default (sbp('sbp/selectors/register', {
                 merge({}, proposals[PROPOSAL_GENERIC].defaults),
                 proposalSettings
               )
+            }
+          },
+          chatRooms: {
+            [chatRoomContractMsg.contractID()]: {
+              name: CHATROOM_GENERAL_NAME
             }
           }
         }

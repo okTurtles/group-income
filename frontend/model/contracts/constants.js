@@ -10,3 +10,5 @@ export const PROFILE_STATUS = {
   ACTIVE: 'active',
   REMOVED: 'removed'
 }
+
+export const CHATROOM_GENERAL_NAME = 'General'
