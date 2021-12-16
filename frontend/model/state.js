@@ -554,22 +554,8 @@ const actions = {
       const contracts = store.state.contracts
       for (const contractID in contracts) {
         const { type } = contracts[contractID]
-        if (type !== 'gi.contracts/chatroom') {
-          commit('registerContract', { contractID, type })
-          await sbp('state/enqueueContractSync', contractID)
-        }
-        // sync all chatroom contracts
-        if (type === 'gi.contracts/group') {
-          await sbp('gi.actions/contract/syncAndWait', contractID)
-          const { chatRooms } = store.state[contractID]
-          for (const chatRoomContractID in chatRooms) {
-            commit('registerContract', {
-              contractID: chatRoomContractID,
-              type: 'gi.contracts/chatroom'
-            })
-            await sbp('state/enqueueContractSync', chatRoomContractID)
-          }
-        }
+        commit('registerContract', { contractID, type })
+        await sbp('state/enqueueContractSync', contractID)
       }
       // it's insane, and I'm not sure how this can happen, but it did... and
       // the following steps actually fixed it...
