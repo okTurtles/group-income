@@ -110,7 +110,7 @@ sbp('chelonia/defineContract', {
           return
         }
         Vue.set(state.users, identityContractID, {
-          joinedDate: new Date().toISOString()
+          joinedDate: meta.createdDate
         })
       }
     }
