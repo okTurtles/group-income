@@ -37,6 +37,9 @@ export default (sbp('sbp/selectors/register', {
   'gi.db/set': function (key: string, value: string): Promise<void> {
     return Promise.resolve(sbp('okTurtles.data/set', key, value))
   },
+  'gi.db/delete': function (key: string) {
+    return Promise.resolve(sbp('okTurtles.data/delete', key))
+  },
   'gi.db/log/logHEAD': function (contractID: string): string {
     return `${contractID}-HEAD`
   },
@@ -65,6 +68,10 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.db/set', sbp('gi.db/log/logHEAD', contractID), entry.hash())
       console.debug(`[addLogEntry] HEAD for ${contractID} updated to:`, entry.hash())
       await sbp('gi.db/set', entry.hash(), entry.serialize())
+      const isLightweightClient = sbp('okTurtles.data/get', 'LIGHTWEIGHT_CLIENT')
+      if (isLightweightClient && previousHEAD) {
+        await sbp('gi.db/delete', previousHEAD)
+      }
       return entry.hash()
     } catch (e) {
       if (e.name.indexOf('ErrorDB') === 0) {

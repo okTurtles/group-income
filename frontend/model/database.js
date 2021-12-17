@@ -13,7 +13,8 @@ const log = localforage.createInstance({
 sbp('sbp/selectors/overwrite', {
   'gi.db/get': key => log.getItem(key),
   // TODO: handle QuotaExceededError
-  'gi.db/set': (key, value) => log.setItem(key, value)
+  'gi.db/set': (key, value) => log.setItem(key, value),
+  'gi.db/delete': (key: string) => log.removeItem(key)
 })
 
 // =======================
