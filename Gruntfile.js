@@ -39,7 +39,7 @@ const applyPortShift = (env) => {
   return { ...env, API_PORT, API_URL }
 }
 
-Object.assign(process.env, applyPortShift(process.env), { GI_PERSIST: true })
+Object.assign(process.env, applyPortShift(process.env))
 
 const chalk = require('chalk')
 const crypto = require('crypto')
