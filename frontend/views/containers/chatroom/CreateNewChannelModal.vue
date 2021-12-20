@@ -102,7 +102,7 @@ export default ({
       this.$refs.modal.close()
     },
     async submit () {
-      await sbp('gi.actions/group/addChatRoom', {
+      await sbp('gi.actions/group/addAndJoinChatRoom', {
         contractID: this.currentGroupId,
         data: { ...this.form, editable: true }
       })
