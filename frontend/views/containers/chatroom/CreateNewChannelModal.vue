@@ -3,7 +3,7 @@
     template(slot='title')
       i18n Create a channel
 
-    form(novalidate @submit.prevent='submit')
+    form(novalidate @submit.prevent='')
       label.field
         i18n.label.c-label-name Name
         .c-max-count(v-if='form.name') {{50 - form.name.length}}
@@ -36,7 +36,7 @@
         i18n.label Private channel
         input.switch(
           type='checkbox'
-          :value='form.isPrivate'
+          :value='form.private'
         )
 
       hr
@@ -47,7 +47,7 @@
         )
 
         i18n.helper(
-          v-if='form.isPrivate'
+          v-if='form.private'
           tag='p'
         ) Only added members will have access.
 
@@ -69,6 +69,8 @@
 
 <script>
 import { validationMixin } from 'vuelidate'
+import { mapState } from 'vuex'
+import sbp from '~/shared/sbp.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import maxLength from 'vuelidate/lib/validators/maxLength'
@@ -83,12 +85,15 @@ export default ({
     ModalTemplate,
     BannerScoped
   },
+  computed: {
+    ...mapState(['currentGroupId'])
+  },
   data () {
     return {
       form: {
         name: null,
         description: null,
-        isPrivate: false
+        private: false
       }
     }
   },
@@ -96,8 +101,11 @@ export default ({
     close () {
       this.$refs.modal.close()
     },
-    submit () {
-      console.log('TODO implement this.')
+    async submit () {
+      await sbp('gi.actions/group/addChatRoom', {
+        contractID: this.currentGroupId,
+        data: { ...this.form, editable: true }
+      })
       this.close()
     }
   },
