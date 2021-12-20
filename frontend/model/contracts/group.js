@@ -2,7 +2,10 @@
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
-import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
+import {
+  arrayOf, mapOf, objectOf, objectMaybeOf, optional,
+  string, number, object, unionOf, tupleOf, boolean
+} from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './voting/rules.js'
@@ -22,9 +25,9 @@ import L from '~/frontend/views/utils/translations.js'
 import {
   INVITE_INITIAL_CREATOR,
   INVITE_STATUS,
-  PROFILE_STATUS
+  PROFILE_STATUS,
+  CHATROOM_GENERAL_NAME
 } from './constants.js'
-import { chatRoomType } from './chatroom.js'
 
 export const inviteType: any = objectOf({
   inviteSecret: string,
@@ -305,7 +308,7 @@ sbp('chelonia/defineContract', {
     },
     getGeneralChatroomContractID (state, getters) {
       for (const chatRoomContractID of Object.keys(getters.getChatRooms)) {
-        if (!state.chatRooms[chatRoomContractID].creator) {
+        if (state.chatRooms[chatRoomContractID].name === CHATROOM_GENERAL_NAME) {
           return chatRoomContractID
         }
       }
@@ -333,8 +336,7 @@ sbp('chelonia/defineContract', {
             [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
             [PROPOSAL_GENERIC]: proposalSettingsType
           })
-        }),
-        chatRooms: mapOf(string, chatRoomType)
+        })
       }),
       process ({ data, meta }, { state, getters }) {
         // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
@@ -349,7 +351,8 @@ sbp('chelonia/defineContract', {
           },
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
-          }
+          },
+          chatRooms: {}
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -629,7 +632,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/inviteAccept': {
-      validate: objectOf({
+      validate: objectMaybeOf({
         inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
       process ({ data, meta }, { state, getters }) {
@@ -651,15 +654,6 @@ sbp('chelonia/defineContract', {
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
-
-        // join general chatroom after accept invitation
-        const generalChatRoomContractID = getters.getGeneralChatroomContractID
-        if (generalChatRoomContractID) {
-          sbp('gi.actions/chatroom/join', {
-            contractID: generalChatRoomContractID,
-            data: {}
-          })
-        }
       },
       // !! IMPORANT!!
       // Actions here MUST NOT modify contract state!
@@ -801,6 +795,80 @@ sbp('chelonia/defineContract', {
         }
         state.distributionEvents = state.distributionEvents.filter((e) => {
           return compareCycles(lastEvent.data.when, e.data.when) > -2
+        })
+      }
+    },
+    'gi.contracts/group/addChatRoom': {
+      validate: objectMaybeOf({
+        chatRoomContractID: string,
+        creator: optional(string),
+        name: string,
+        private: optional(boolean)
+      }),
+      process ({ data, meta }, { state, getters }) {
+        const chatRoom = merge({}, data)
+        delete chatRoom.chatRoomContractID
+        Vue.set(state.chatRooms, data.chatRoomContractID, chatRoom)
+      }
+    },
+    'gi.contracts/group/removeChatRoom': {
+      validate: objectOf({
+        chatRoomContractID: string
+      }),
+      process ({ data, meta }, { state, getters }) {
+        Vue.delete(state.chatRooms, data.chatRoomContractID)
+      },
+      sideEffect ({ meta, data, contractID }, { state }) {
+        sbp('state/vuex/commit', 'removeContract', data.chatRoomContractID)
+      }
+    },
+    'gi.contracts/group/joinChatRoom': {
+      validate: objectMaybeOf({
+        chatRoomContractID: optional(string)
+      }),
+      process ({ data, meta }, { state, getters }) {
+        // const identityContractID = data.identityContractID || meta.identityContractID
+        // const chatRoomContractID = data.chatRoomContractID || getters.getGeneralChatroomContractID
+        // sbp('gi.actions/chatroom/join', {
+        //   contractID: chatRoomContractID,
+        //   data: { identityContractID }
+        // })
+      },
+      sideEffect ({ meta, data, contractID }, { state }) {
+        const rootState = sbp('state/vuex/state')
+
+        if (meta.username === rootState.loggedIn.username) {
+          const generalChatRoomContractID = Object.keys(state.chatRooms)
+            .find(cID => state.chatRooms[cID].name === CHATROOM_GENERAL_NAME)
+          const chatRoomContractID = data.chatRoomContractID || generalChatRoomContractID
+
+          sbp('gi.actions/contract/sync', chatRoomContractID)
+        }
+      }
+    },
+    'gi.contracts/group/leaveChatRoom': {
+      validate: objectOf({
+        identityContractID: optional(string),
+        chatRoomContractID: string
+      }),
+      process ({ data, meta }, { state, getters }) {
+        // TODO
+      },
+      sideEffect ({ meta, data, contractID }, { state }) {
+        if (data.identityContractID) {
+          sbp('state/vuex/commit', 'removeContract', data.chatRoomContractID)
+        }
+      }
+    },
+    'gi.contracts/group/renameChatRoom': {
+      validate: objectOf({
+        chatRoomContractID: string,
+        name: string
+      }),
+      process ({ data, meta }, { state, getters }) {
+        Vue.set(state.chatRooms, data.chatRoomContractID, {
+          ...getters.getChatRooms[data.chatRoomContractID],
+          name: data.name
         })
       }
     },

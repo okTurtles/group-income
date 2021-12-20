@@ -12,7 +12,6 @@ import { merge } from '~/frontend/utils/giLodash.js'
 export const chatRoomType: any = objectMaybeOf({
   name: string, // General, Bulgaria Hackathon 2021, ...
   description: optional(string),
-  creator: optional(string), // undefined creator means 'general' channel
   private: optional(boolean)
 })
 
@@ -84,13 +83,15 @@ sbp('chelonia/defineContract', {
     // This is the constructor of Chat contract
     'gi.contracts/chatroom': {
       validate: chatRoomType,
-      process ({ data }, { state }) {
+      process ({ meta, data }, { state }) {
         const initialState = merge({
           settings: {
             maxNameLetters: 50,
             maxDescriptionLetters: 280
           },
-          attributes: {},
+          attributes: {
+            creator: meta.identityContractID
+          },
           users: {},
           messages: {}
         }, data)
@@ -112,6 +113,7 @@ sbp('chelonia/defineContract', {
         Vue.set(state.users, identityContractID, {
           joinedDate: meta.createdDate
         })
+        // create a new system message to inform a new member is joined
       }
     }
   }

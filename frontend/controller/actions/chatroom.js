@@ -9,24 +9,11 @@ export default (sbp('sbp/selectors/register', {
       data: params.data
     })
 
-    sbp('state/enqueueContractSync', message.contractID())
-
     return message
   },
-  'gi.actions/chatroom/join': async function (params: $Exact<GIActionParams>) {
-    await sbp('state/enqueueContractSync', params.contractID)
-
+  'gi.actions/chatroom/join': async function (params: GIActionParams) {
     await sbp('chelonia/out/actionEncrypted', {
-      action: 'gi.contracts/chatroom/join', ...params
+      ...params, action: 'gi.contracts/chatroom/join'
     })
-  },
-  'gi.actions/chatroom/createAndJoin': async function (params: GIActionParams) {
-    const message = await sbp('gi.actions/chatroom/create', params)
-
-    await sbp('gi.actions/chatroom/join', {
-      contractID: message.contractID(),
-      data: {}
-    })
-    return message
   }
 }): string[])

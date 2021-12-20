@@ -44,11 +44,6 @@ export default (sbp('sbp/selectors/register', {
     }
 
     try {
-      // create default chatroom contract
-      const chatRoomContractMsg = await sbp('gi.actions/chatroom/createAndJoin', { data: { name: CHATROOM_GENERAL_NAME } })
-      await sbp('gi.actions/contract/syncAndWait', chatRoomContractMsg.contractID())
-
-      // create group contract
       const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
       const proposalSettings = {
         rule: ruleName,
@@ -94,11 +89,6 @@ export default (sbp('sbp/selectors/register', {
                 proposalSettings
               )
             }
-          },
-          chatRooms: {
-            [chatRoomContractMsg.contractID()]: {
-              name: CHATROOM_GENERAL_NAME
-            }
           }
         }
       })
@@ -116,6 +106,12 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/createAndSwitch': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/create', params)
     sbp('gi.actions/group/switch', message.contractID())
+
+    // create a 'General' chatroom contract and let the creator join
+    await sbp('gi.actions/group/addAndJoinChatRoom', {
+      contractID: message.contractID(),
+      data: { name: CHATROOM_GENERAL_NAME }
+    })
     return message
   },
   'gi.actions/group/join': async function (params: $Exact<GIActionParams>) {
@@ -126,6 +122,15 @@ export default (sbp('sbp/selectors/register', {
       })
       // sync the group's contract state
       await sbp('state/enqueueContractSync', params.contractID)
+
+      // join the 'General' chatroom by default
+      await sbp('gi.actions/group/joinChatRoom', {
+        contractID: params.contractID,
+        data: {
+          chatRoomContractID: params.data.chatRoomContractID
+        }
+      })
+
       return message
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
@@ -140,6 +145,46 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
+  },
+  'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
+    const message = await sbp('gi.actions/chatroom/create', { data: params.data })
+
+    // register a 'General' chatroom contract by default
+    await sbp('chelonia/out/actionEncrypted', {
+      action: 'gi.contracts/group/addChatRoom',
+      contractID: params.contractID,
+      data: {
+        ...params.data,
+        chatRoomContractID: message.contractID()
+      }
+    })
+
+    await sbp('gi.actions/contract/syncAndWait', params.contractID)
+
+    return message
+  },
+  'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
+    const message = await sbp('gi.actions/chatroom/join', {
+      contractID: params.data.chatRoomContractID,
+      data: params.data
+    })
+
+    await sbp('chelonia/out/actionEncrypted', {
+      ...params, action: 'gi.contracts/group/joinChatRoom'
+    })
+
+    return message
+  },
+  'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
+    const message = await sbp('gi.actions/group/addChatRoom', params)
+
+    // join the 'General' chatroom by default
+    await sbp('gi.actions/group/joinChatRoom', {
+      contractID: params.contractID,
+      data: { chatRoomContractID: message.contractID() }
+    })
+
+    return message
   },
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),

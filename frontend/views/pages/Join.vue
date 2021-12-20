@@ -43,7 +43,7 @@ div
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS, CHATROOM_GENERAL_NAME } from '@model/contracts/constants.js'
 import SignupForm from '@containers/access/SignupForm.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import Loading from '@components/Loading.vue'
@@ -122,7 +122,9 @@ export default ({
         groupPicture: state.settings.groupPicture,
         creator,
         creatorPicture,
-        message
+        message,
+        chatRoomContractID: Object.keys(state.chatRooms)
+          .find(cID => state.chatRooms[cID].name === CHATROOM_GENERAL_NAME)
       }
       this.pageStatus = 'SIGNING'
     } catch (e) {
@@ -146,7 +148,10 @@ export default ({
       try {
         await sbp('gi.actions/group/joinAndSwitch', {
           contractID: groupId,
-          data: { inviteSecret: secret }
+          data: {
+            inviteSecret: secret,
+            chatRoomContractID: this.ephemeral.invitation.chatRoomContractID
+          }
         })
         this.pageStatus = 'WELCOME'
       } catch (e) {
