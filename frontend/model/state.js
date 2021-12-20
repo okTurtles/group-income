@@ -17,7 +17,6 @@ import Colors from './colors.js'
 import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constants.js'
-import { CHATROOM_GENERAL_NAME } from './contracts/constants.js'
 // import { PAYMENT_COMPLETED } from '~/frontend/model/contracts/payments/index.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
 import * as _ from '~/frontend/utils/giLodash.js'
@@ -46,7 +45,7 @@ if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(
 
 const initialState = {
   currentGroupId: null,
-  currentChatRoomName: CHATROOM_GENERAL_NAME,
+  currentChatRoomID: null,
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }

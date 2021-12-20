@@ -9,10 +9,11 @@ import {
 } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 
-export const chatRoomType: any = objectMaybeOf({
+export const chatRoomType: any = objectOf({
   name: string, // General, Bulgaria Hackathon 2021, ...
-  description: optional(string),
-  private: optional(boolean)
+  description: string,
+  private: boolean,
+  editable: boolean
 })
 
 export const ChatMessageTypeNormal = 'normal'
@@ -89,12 +90,14 @@ sbp('chelonia/defineContract', {
             maxNameLetters: 50,
             maxDescriptionLetters: 280
           },
-          attributes: {
-            creator: meta.identityContractID
-          },
           users: {},
           messages: {}
-        }, data)
+        }, {
+          attributes: {
+            ...data,
+            creator: meta.identityContractID
+          }
+        })
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }

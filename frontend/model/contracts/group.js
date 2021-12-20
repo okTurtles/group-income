@@ -25,8 +25,7 @@ import L from '~/frontend/views/utils/translations.js'
 import {
   INVITE_INITIAL_CREATOR,
   INVITE_STATUS,
-  PROFILE_STATUS,
-  CHATROOM_GENERAL_NAME
+  PROFILE_STATUS
 } from './constants.js'
 
 export const inviteType: any = objectOf({
@@ -308,7 +307,7 @@ sbp('chelonia/defineContract', {
     },
     getGeneralChatroomContractID (state, getters) {
       for (const chatRoomContractID of Object.keys(getters.getChatRooms)) {
-        if (state.chatRooms[chatRoomContractID].name === CHATROOM_GENERAL_NAME) {
+        if (!state.chatRooms[chatRoomContractID].editable) {
           return chatRoomContractID
         }
       }
@@ -799,16 +798,19 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/addChatRoom': {
-      validate: objectMaybeOf({
+      validate: objectOf({ // TODO: need to use objectMaybeOf
         chatRoomContractID: string,
-        creator: optional(string),
         name: string,
-        private: optional(boolean)
+        description: string,
+        private: boolean,
+        editable: boolean
       }),
       process ({ data, meta }, { state, getters }) {
-        const chatRoom = merge({}, data)
-        delete chatRoom.chatRoomContractID
-        Vue.set(state.chatRooms, data.chatRoomContractID, chatRoom)
+        Vue.set(state.chatRooms, data.chatRoomContractID, {
+          creator: meta.identityContractID,
+          name: data.name,
+          editable: data.editable
+        })
       }
     },
     'gi.contracts/group/removeChatRoom': {
@@ -839,7 +841,7 @@ sbp('chelonia/defineContract', {
 
         if (meta.username === rootState.loggedIn.username) {
           const generalChatRoomContractID = Object.keys(state.chatRooms)
-            .find(cID => state.chatRooms[cID].name === CHATROOM_GENERAL_NAME)
+            .find(cID => state.chatRooms[cID].editable)
           const chatRoomContractID = data.chatRoomContractID || generalChatRoomContractID
 
           sbp('gi.actions/contract/sync', chatRoomContractID)

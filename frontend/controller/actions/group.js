@@ -110,7 +110,12 @@ export default (sbp('sbp/selectors/register', {
     // create a 'General' chatroom contract and let the creator join
     await sbp('gi.actions/group/addAndJoinChatRoom', {
       contractID: message.contractID(),
-      data: { name: CHATROOM_GENERAL_NAME }
+      data: {
+        name: CHATROOM_GENERAL_NAME,
+        description: '',
+        private: false,
+        editable: false
+      }
     })
     return message
   },
