@@ -28,6 +28,8 @@ import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
+// Vuex modules.
+import notificationModule from '@model/notifications/vuexModule.js'
 
 Vue.use(Vuex)
 // let store // this is set and made the default export at the bottom of the file.
@@ -490,15 +492,6 @@ const getters = {
   },
   isDarkTheme (state) {
     return Colors[state.theme].theme === THEME_DARK
-  },
-  notificationCount (state, getters) {
-    // TODO with real data
-    if (getters.groupMembersCount === 1) {
-      return 1
-    } else if (getters.groupMembersCount === 2) {
-      return 1
-    }
-    return 7
   }
 }
 
@@ -905,6 +898,9 @@ const store: any = new Vuex.Store({
   mutations,
   getters,
   actions,
+  modules: {
+    notifications: notificationModule
+  },
   strict: process.env.VUEX_STRICT === 'true'
 })
 const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)
