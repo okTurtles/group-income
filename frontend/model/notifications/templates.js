@@ -1,133 +1,99 @@
 import L from '@view-utils/translations.js'
-import { timeSince } from '@utils/time.js'
+import { monthName } from '~/frontend/utils/time.js'
 
-type TemplateArguments = {
-  timestamp: number;
-  data: Object;
+type NewProposalType =
+  | 'ADD_MEMBER'
+  | 'CHANGE_MINCOME'
+  | 'CHANGE_VOTING_RULE'
+  | 'REMOVE_MEMBER';
+
+type NotificationLevel = 'danger' | 'info';
+
+export type NotificationTemplate = {
+  +body: string;
+  +icon: string;
+  +level: NotificationLevel;
+  +linkTo: string;
+  +creator?: string;
+  +subtype?: string;
 }
 
-type TemplateDescription = {
-  avatar: string;
-  icon: string;
-  level: 'danger' | 'info';
-  body: string;
-  linkTo: string;
-  date: string;
-  read: boolean;
-}
+const strong = (text) => `<strong>${text}</strong>`
 
-// Notification templates based on issue #663
-// TODO/REVIEW - list might be stale / incomplete.
+export default ({
+  CONTRIBUTION_REMINDER (data: { monthstamp: string }) {
+    return {
+      // REVIEW @mmbotelho - Rename contributions to payments?
+      // TODO: Translate `month` when English is not the current language.
+      body: L('Do not forget to send your {month} contributions.', {
+        month: strong(monthName(data.monthstamp))
+      }),
+      icon: 'coins',
+      level: 'info',
+      linkTo: '/payments'
+    }
+  },
+  INCOME_DETAILS_OLD (data: {}) {
+    return {
+      body: L("You haven't updated your income details in more than 6 months. Would you like to review them now?"),
+      icon: 'coins',
+      level: 'info',
+      linkTo: '/contributions/TODO-LINK-MODAL'
+    }
+  },
+  MEMBER_ADDED (data: { username: string }) {
+    return {
+      body: L('The group has a new member. Say hi to {name}!', {
+        name: strong(data.username)
+      }),
+      icon: 'user-plus',
+      level: 'info',
+      linkTo: '/group-chat/XXXX'
+    }
+  },
+  MEMBER_LEFT (data: { username: string }) {
+    return {
+      body: L('{name} has left your group. Contributions were updated accordingly.', {
+        name: strong(data.username)
+      }),
+      icon: 'icon-minus',
+      level: 'info',
+      linkTo: '/contributions'
+    }
+  },
+  MEMBER_REMOVED (data: { username: string }) {
+    return {
+      // REVIEW @mmbotelho - Not only contributions, but also proposals.
+      body: L('{name} was kicked out of the group. Contributions were updated accordingly.', {
+        name: strong(data.username)
+      }),
+      icon: 'user-minus',
+      level: 'danger',
+      linkTo: '/contributions'
+    }
+  },
+  NEW_PROPOSAL (data: { creator: string, subtype: NewProposalType }) {
+    const bodyTemplateMap = {
+      ADD_MEMBER: (creator: string) => L('{member} proposed to add members to the group. Vote now!', { member: strong(creator) }),
+      CHANGE_MINCOME: (creator: string) => L('{member} proposed to change the group mincome. Vote now!', { member: strong(creator) }),
+      CHANGE_VOTING_RULE: (creator: string) => L('{member} proposed to change the group voting system. Vote now!', { member: strong(creator) }),
+      REMOVE_MEMBER: (creator: string) => L('{member} proposed to remove a member from the group. Vote now!', { member: strong(creator) })
+    }
 
-// Hardcoded so the dummy layout makes sense
-const dateNow = 1590823007327
+    const iconMap = {
+      ADD_MEMBER: 'user-plus',
+      CHANGE_MINCOME: 'coins',
+      CHANGE_VOTING_RULE: 'vote-yea',
+      REMOVE_MEMBER: 'user-minus'
+    }
 
-// TODO - add/improve logic to needed keys:
-// - avatar, name, linkTo, read
-export const MEMBER_ADDED = ({ timestamp, data }: TemplateArguments): TemplateDescription => {
-  const name = data.username // getDisplayName()
-  const avatar = ''
-  return {
-    avatar,
-    icon: 'user-plus',
-    level: 'info',
-    body: L('The group has a new member. Say hi to {name}!', {
-      name: `<strong>${name}</strong>`
-    }),
-    linkTo: '/group-chat/XXXX',
-    date: timeSince(timestamp, dateNow),
-    read: false
+    return {
+      body: bodyTemplateMap[data.subtype](data.creator),
+      creator: data.creator,
+      icon: iconMap[data.subtype],
+      level: 'info',
+      linkTo: '/dashboard#TODO-proposals',
+      subtype: data.subtype
+    }
   }
-}
-
-export const MEMBER_REMOVED = ({ timestamp, data }: TemplateArguments): TemplateDescription => {
-  const name = data.username
-  const avatar = ''
-  return {
-    avatar,
-    icon: 'user-minus',
-    level: 'danger',
-    // REVIEW @mmbotelho - Not only contributions, but also proposals.
-    body: L('{name} was kicked out of the group. Contributions were updated accordingly.', {
-      name: `<strong>${name}</strong>`
-    }),
-    linkTo: '/contributions',
-    date: timeSince(timestamp, dateNow),
-    read: true
-  }
-}
-
-export const MEMBER_LEFT = ({ timestamp, data }: TemplateArguments): TemplateDescription => {
-  const name = data.username
-  const avatar = ''
-  return {
-    avatar,
-    icon: 'icon-minus',
-    level: 'info',
-    body: L('{name} has left your group. Contributions were updated accordingly.', {
-      name: `<strong>${name}</strong>`
-    }),
-    linkTo: '/contributions',
-    date: timeSince(timestamp, dateNow),
-    read: true
-  }
-}
-
-export const INCOME_DETAILS_OLD = ({ timestamp }: TemplateArguments): TemplateDescription => {
-  const avatar = ''
-  return {
-    avatar,
-    icon: 'coins',
-    level: 'info',
-    body: L("You haven't updated your income details in more than 6 months. Would you like to review them now?"),
-    linkTo: '/contributions/TODO-LINK-MODAL',
-    date: timeSince(timestamp, dateNow),
-    read: true
-  }
-}
-
-export const SEND_CONTRIBUTION = ({ timestamp, data }: TemplateArguments): TemplateDescription => {
-  const month = 'June'
-  const avatar = ''
-  return {
-    avatar,
-    icon: 'coins',
-    level: 'info',
-    // REVIEW @mmbotelho - ranem contribution to payments?
-    body: L('Do not forget to send your {month} contributions.', {
-      month: `<strong>${month}</strong>`
-    }),
-    linkTo: '/payments',
-    date: timeSince(timestamp, dateNow),
-    read: true
-  }
-}
-
-export const PROPOSAL_NEW = ({ timestamp, data }: TemplateArguments): TemplateDescription => {
-  const avatar = ''
-  const member = `<strong>${data.creator}</strong>`
-
-  const bodyMap = {
-    MINCOME: L('{member} proposed to change the group mincome. Vote now!', { member }), // @mmbotelho copy changed
-    ADD_MEMBER: L('{member} proposed to add members to the group. Vote now!', { member }),
-    REMOVE_MEMBER: L('{member} proposed to remove a member from the group. Vote now!', { member }),
-    VOTING_RULE: L('{member} proposed to change the group voting system. Vote now!', { member })
-  }
-
-  const iconMap = {
-    MINCOME: 'coins',
-    ADD_MEMBER: 'user-plus',
-    REMOVE_MEMBER: 'user-minus',
-    VOTING_RULE: 'vote-yea'
-  }
-
-  return {
-    avatar,
-    icon: iconMap[data.type],
-    level: 'info',
-    body: bodyMap[data.type],
-    linkTo: '/dashboard#TODO-proposals',
-    date: timeSince(timestamp, dateNow),
-    read: true
-  }
-}
+}: { [key: string]: ((data: Object) => NotificationTemplate) })

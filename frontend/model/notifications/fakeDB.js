@@ -9,17 +9,17 @@ export default {
   },
   '1032': {
     timestamp: 1590822227327,
-    type: 'SEND_CONTRIBUTION',
+    type: 'CONTRIBUTION_REMINDER',
     data: {
-      month: '04'
+      monthstamp: '04'
     }
   },
   '7393': {
     timestamp: 1590815807327,
-    type: 'PROPOSAL_NEW',
+    type: 'NEW_PROPOSAL',
     data: {
       creator: 'greg',
-      type: 'MINCOME',
+      subtype: 'CHANGE_MINCOME',
       value: '$1000'
     }
   },
