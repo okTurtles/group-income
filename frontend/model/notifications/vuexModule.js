@@ -17,9 +17,11 @@ const actions = ({
     }
   },
   async [keys.LOGOUT] (context: VuexModuleContext) {
-    // Make sure to save the notifications *before* clearing them.
-    await sbp('gi.notifications/save')
-    context.commit(keys.REMOVE_ALL_NOTIFICATIONS)
+    if (context.rootState.loggedIn) {
+      // Make sure to save the notifications *before* clearing them.
+      await sbp('gi.notifications/save')
+      context.commit(keys.REMOVE_ALL_NOTIFICATIONS)
+    }
   }
 }: Object)
 
