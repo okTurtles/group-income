@@ -1,6 +1,6 @@
 import type { Notification } from './types.flow.js'
 
-import { notificationStorageLimits } from '@model/database.js'
+import { notificationStorageLimits } from '~/frontend/model/database.js'
 
 import { DAYS_MILLIS as ONE_DAY, HOURS_MILLIS as ONE_HOUR } from '~/frontend/utils/time.js'
 

@@ -1,136 +1,95 @@
 <template lang='pug'>
   div(:class='variant')
-    .c-empty(v-if='!notificationCount')
-      i18n.has-text-1 Nothing to see here... yet!
-
-    .c-loading(v-else-if='ephemeral.isLoading')
+    .c-loading(v-if='ephemeral.isLoading')
       i18n.sr-only Loading...
       .c-skeleton(v-for='i in [0, 1, 2, 3]' :key='i')
         .c-skeleton-circle
         .c-skeleton-line
 
-    template(v-else v-for='(list, type) in notifications')
-      span.is-subtitle.c-title {{ title(type) }}
+    .c-empty(v-else-if='!notificationCount')
+      i18n.has-text-1 Nothing to see here... yet!
+
+    template(v-else v-for='list of notificationLists')
+      span.is-subtitle.c-title(v-if='list.title') {{ list.title }}
       ul.c-list(
-        :aria-label='title(type)'
+        :aria-label='list.title'
         @click='() => $emit("select")'
       )
-        li(v-for='item of list')
-          router-link.c-item(:to='item.linkTo' :class='item.read ? "" : "unread"')
+        li(v-for='item of list.items')
+          router-link.c-item(:to='item.linkTo' :class='item.read ? "" : "unread"' @click.native='markAsRead(item)')
             span.c-thumbCircle
-              avatar(:src='item.avatarUrlTODO' size='md')
+              avatar-user(:username='item.username' size='md')
               i(:class='`icon-${item.icon} ${iconBg(item.level)}`')
             span.c-item-content
               span.c-item-text(v-safe-html='item.body')
-              span.c-item-date.has-text-1.has-text-small {{ item.date }}
+              span.c-item-date.has-text-1.has-text-small {{ ageTag(item) }}
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import * as templates from '@model/notifications/templates.js'
-import { HOURS_MILLIS } from '@utils/time.js'
-import fakeDBWithNotifications from '@model/notifications/fakeDB.js'
-import Avatar from '@components/Avatar.vue'
+
+import { timeSince } from '@utils/time.js'
+import AvatarUser from '@components/AvatarUser.vue'
 import L from '@view-utils/translations.js'
 
-export default {
+export default ({
   name: 'NotificationList',
   props: {
     variant: {
       type: String,
       validator: (value) => ['compact', 'default'].includes(value),
-      default: 'defaut'
+      default: 'default'
     }
   },
   data: () => ({
-    config: {
-      notifications: null
-    },
     ephemeral: {
       isLoading: false
     }
   }),
   components: {
-    Avatar
-  },
-  mounted () {
-    // TODO this (All dumb logic for now)
-
-    // Simulate view with no notifications
-    if (this.notificationCount === 0) {
-      return null
-    }
-
-    // Simulate view with only 1 notification
-    if (this.notificationCount === 1) {
-      this.ephemeral.isLoading = true
-      setTimeout(() => {
-        // handpick a notification that is "MEMBER_ADDED"
-        this.config.notifications = {
-          3213: fakeDBWithNotifications[3213]
-        }
-        this.ephemeral.isLoading = false
-      }, 500)
-      return
-    }
-
-    // Load notifications from fake DB
-    this.ephemeral.isLoading = true
-    setTimeout(() => {
-      this.config.notifications = fakeDBWithNotifications
-      this.ephemeral.isLoading = false
-    }, 1500)
+    AvatarUser
   },
   computed: {
     ...mapGetters([
-      'notificationCount'
+      'newNotifications',
+      'newNotificationCount',
+      'notificationCount',
+      'olderNotifications'
     ]),
-    dateNow () {
-      // Hardcoded so the dummy layout makes sense
-      return 1590823007327
-    },
     notifications () {
-      if (!this.config.notifications) {
-        return {}
+      return this.$store.state.notifications
+    },
+    notificationLists () {
+      const defaultCategory = 'OLDER'
+      const lists = [
+        { title: L('NEW'), items: this.newNotifications },
+        { title: L('OLDER'), items: this.olderNotifications }
+      ].filter(list => list.items.length > 0)
+
+      // If the only currently non-empty list has a category like 'OLDER' or 'UNREAD', then its title does not need to be displayed.
+      // See https://www.figma.com/file/mxGadAHfkWH6qApebQvcdN/Group-Income-2.0?node-id=4107%3A0
+      if (lists.length === 1 && lists[0].title === defaultCategory) {
+        lists[0].title = ''
       }
-
-      const list = {}
-      const listNew = []
-      const listOlder = []
-
-      for (const nId in this.config.notifications) {
-        const { timestamp, type, data } = this.config.notifications[nId]
-        const listToPush = this.dateNow - timestamp < HOURS_MILLIS * 2 ? listNew : listOlder
-        listToPush.push(templates[type]({ data, timestamp }))
-      }
-
-      if (listNew.length > 0) {
-        list.new = listNew
-      }
-
-      if (listOlder.length > 0) {
-        list.older = listOlder
-      }
-
-      return list
+      return lists
     }
   },
   methods: {
-    title: (type) => {
-      return {
-        new: L('New'),
-        older: L('Older')
-      }[type]
+    ageTag (item: Object): number {
+      return timeSince(item.timestamp)
     },
-    iconBg: (level) => {
+    iconBg (level: string): string {
       return {
         info: 'has-background-primary has-text-primary',
         success: 'has-background-success has-text-success',
         danger: 'has-background-danger has-text-danger'
       }[level]
+    },
+    markAsRead (item: Object): void {
+      item.read = true
     }
   }
-}
+}: Object)
 </script>
 
 <style lang="scss" scoped>

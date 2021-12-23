@@ -1,4 +1,4 @@
-import L from '@view-utils/translations.js'
+import L from '~/frontend/views/utils/translations.js'
 import { monthName } from '~/frontend/utils/time.js'
 
 type NewProposalType =

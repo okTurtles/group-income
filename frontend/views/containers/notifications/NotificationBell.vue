@@ -1,18 +1,18 @@
 <template lang='pug'>
 div
   router-link.button.is-icon-small.c-btn.hide-tablet(:to='{ query: { modal: "NotificationModal" }}')
-    i.icon-bell(:class='{ "is-active": notificationCount }')
-    badge(v-if='notificationCount' data-test='alertNotification') {{ notificationCount }}
+    i.icon-bell(:class='{ "is-active": unreadNotificationCount }')
+    badge(v-if='unreadNotificationCount' data-test='alertNotification') {{ unreadNotificationCount }}
   notification-card
     button.is-icon-small.c-btn.hide-phone
-      i.icon-bell(:class='{ "is-active": notificationCount }')
-      badge(v-if='notificationCount' data-test='alertNotification') {{ notificationCount }}
+      i.icon-bell(:class='{ "is-active": unreadNotificationCount }')
+      badge(v-if='unreadNotificationCount' data-test='alertNotification') {{ unreadNotificationCount }}
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import NotificationCard from './NotificationCard.vue'
 import Badge from '@components/Badge.vue'
+import NotificationCard from './NotificationCard.vue'
 
 export default {
   name: 'NotificationBell',
@@ -22,7 +22,7 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'notificationCount'
+      'unreadNotificationCount'
     ])
   }
 }

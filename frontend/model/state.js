@@ -29,7 +29,7 @@ import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
 // Vuex modules.
-import notificationModule from '@model/notifications/vuexModule.js'
+import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 
 Vue.use(Vuex)
 // let store // this is set and made the default export at the bottom of the file.
