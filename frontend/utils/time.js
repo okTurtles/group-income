@@ -83,6 +83,43 @@ export function humanDate (
   return new Date(datems).toLocaleDateString(locale, opts)
 }
 
+export function isFullMonthstamp (arg: any): boolean {
+  return typeof arg === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(arg)
+}
+
+export function isMonthstamp (arg: any): boolean {
+  return isShortMonthstamp(arg) || isFullMonthstamp(arg)
+}
+
+export function isShortMonthstamp (arg: any): boolean {
+  return typeof arg === 'string' && /^(0[1-9]|1[0-2])$/.test(arg)
+}
+
+export function monthName (monthstamp: string): string {
+  const monthIndex = Number.parseInt(monthstamp.slice(-2), 10)
+
+  if (!isMonthstamp(monthstamp)) {
+    console.error('monthName:: 1st arg `monthstamp` must be a valid monthstamp')
+    return ''
+  }
+  // Call the `L()` function on every individual month name directly so that the
+  // `strings` tool can discover them when analyzing this file.
+  return [
+    L('January'),
+    L('February'),
+    L('March'),
+    L('April'),
+    L('May'),
+    L('June'),
+    L('July'),
+    L('August'),
+    L('September'),
+    L('October'),
+    L('November'),
+    L('December')
+  ][monthIndex - 1]
+}
+
 export function proximityDate (date: Date): string {
   date = new Date(date)
   const today = new Date()
