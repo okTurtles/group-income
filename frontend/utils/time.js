@@ -107,15 +107,19 @@ export function timeSince (datems: number, dateNow: number = Date.now()): string
   const interval = dateNow - datems
 
   if (interval >= DAYS_MILLIS * 2) {
-    return humanDate(datems)
+    // Make sure to replace any ordinary space character by a non-breaking one.
+    return humanDate(datems).replace(/\x32/g, '\xa0')
   }
   if (interval >= DAYS_MILLIS) {
-    return '1d'
+    return L('1d')
   }
   if (interval >= HOURS_MILLIS) {
     return Math.floor(interval / HOURS_MILLIS) + 'h'
   }
-  return Math.max(1, Math.floor(interval / MINS_MILLIS)) + 'm'
+  if (interval >= MINS_MILLIS) {
+    return Math.max(1, Math.floor(interval / MINS_MILLIS)) + 'm'
+  }
+  return '<1m'
 }
 
 export function cycleAtDate (atDate: string | Date): number {
