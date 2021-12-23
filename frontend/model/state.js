@@ -21,7 +21,7 @@ import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constant
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
 import * as _ from '~/frontend/utils/giLodash.js'
 import * as EVENTS from '~/frontend/utils/events.js'
-import './contracts/group.js'
+import { getGeneralChatRoomID } from './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
 import './contracts/chatroom.js'
@@ -45,7 +45,7 @@ if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(
 
 const initialState = {
   currentGroupId: null,
-  currentChatRoomID: null,
+  currentChatRoomId: null,
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
@@ -206,6 +206,14 @@ const mutations = {
   },
   setAppLogsFilters (state, filters) {
     state.appLogsFilter = filters
+  },
+  setCurrentChatRoomId (state, { groupId, chatRoomId }) {
+    // TODO: unsubscribe from events for all members who are not in this group
+    if (chatRoomId) {
+      state.currentChatRoomId = chatRoomId
+    } else if (groupId) {
+      state.currentChatRoomId = getGeneralChatRoomID(state[groupId].chatRooms)
+    }
   }
 }
 
@@ -235,8 +243,12 @@ const getters = {
   // library, we can simply import them here, while excluding the getter for
   // `currentGroupState`, and redefining it here based on the Vuex rootState.
   ..._.omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
+  ..._.omit(sbp('gi.contracts/chatroom/getters'), ['currentChatRoomState']),
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
+  },
+  currentChatRoomState (state) {
+    return state[state.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
   },
   mailboxContract (state, getters) {
     const contract = getters.ourUserIdentityContract
@@ -483,7 +495,6 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
-
   colors (state) {
     return Colors[state.theme]
   },
@@ -501,6 +512,29 @@ const getters = {
       return 1
     }
     return 7
+  },
+  getChatRoomsInDetail (state, getters) {
+    const chatRoomsInDetail = _.merge({}, getters.getChatRooms)
+    for (const contractID in chatRoomsInDetail) {
+      const chatRoom = state[contractID]
+      if (chatRoom && chatRoom.attributes) {
+        chatRoomsInDetail[contractID] = {
+          ...chatRoom.attributes,
+          id: contractID,
+          displayName: chatRoom.attributes.name,
+          unreadCount: 0,
+          joined: true
+        }
+      } else {
+        chatRoomsInDetail[contractID] = {
+          id: contractID,
+          name: chatRoomsInDetail[contractID].name,
+          private: chatRoomsInDetail[contractID].private,
+          joined: false
+        }
+      }
+    }
+    return chatRoomsInDetail
   }
 }
 
@@ -568,6 +602,11 @@ const actions = {
       if (currentGroupId && !contracts[currentGroupId]) {
         console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
         await sbp('state/enqueueContractSync', currentGroupId)
+      }
+      const currentChatRoomId = store.state.currentChatRoomId
+      if (currentChatRoomId && !contracts[currentChatRoomId]) {
+        console.error(`login: lost current chatroom state somehow for ${currentChatRoomId}! attempting resync...`)
+        await sbp('state/enqueueContractSync', currentChatRoomId)
       }
       if (!contracts[user.identityContractID]) {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)

@@ -123,7 +123,7 @@ export default ({
         creator,
         creatorPicture,
         message,
-        chatRoomContractID: Object.keys(state.chatRooms).find(cID => !state.chatRooms[cID].editable)
+        chatRoomID: Object.keys(state.chatRooms).find(cID => !state.chatRooms[cID].editable)
       }
       this.pageStatus = 'SIGNING'
     } catch (e) {
@@ -149,7 +149,7 @@ export default ({
           contractID: groupId,
           data: {
             inviteSecret: secret,
-            chatRoomContractID: this.ephemeral.invitation.chatRoomContractID
+            chatRoomID: this.ephemeral.invitation.chatRoomID
           }
         })
         this.pageStatus = 'WELCOME'

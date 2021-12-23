@@ -12,3 +12,10 @@ export const PROFILE_STATUS = {
 }
 
 export const CHATROOM_GENERAL_NAME = 'General'
+export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
+export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
+
+export const chatRoomTypes = {
+  INDIVIDUAL: 'INDIVIDUAL',
+  GROUP: 'GROUP'
+}

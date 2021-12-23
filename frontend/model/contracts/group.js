@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import {
   arrayOf, mapOf, objectOf, objectMaybeOf, optional,
-  string, number, object, unionOf, tupleOf, boolean
+  string, number, object, unionOf, literalOf, tupleOf
 } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
@@ -25,7 +25,8 @@ import L from '~/frontend/views/utils/translations.js'
 import {
   INVITE_INITIAL_CREATOR,
   INVITE_STATUS,
-  PROFILE_STATUS
+  PROFILE_STATUS,
+  chatRoomTypes
 } from './constants.js'
 
 export const inviteType: any = objectOf({
@@ -62,6 +63,17 @@ export function createInvite (
     responses: {}, // { bob: true } list of usernames that accepted the invite.
     expires: 1638588240000 // 04 december 2021. // TODO this
   }
+}
+
+export function getGeneralChatRoomID (chatRooms: {
+  [string]: { creator: string, name: string, editable: boolean }
+}): string | null {
+  for (const chatRoomID of Object.keys(chatRooms)) {
+    if (!chatRooms[chatRoomID].editable) {
+      return chatRoomID
+    }
+  }
+  return null
 }
 
 function initGroupProfile (contractID: string, joinedDate: string) {
@@ -249,7 +261,6 @@ sbp('chelonia/defineContract', {
         return saferFloat(total)
       }
     },
-
     groupMembersByUsername (state, getters) {
       return Object.keys(getters.groupProfiles)
     },
@@ -305,13 +316,26 @@ sbp('chelonia/defineContract', {
     getChatRooms (state, getters) {
       return getters.currentGroupState.chatRooms
     },
-    getGeneralChatroomContractID (state, getters) {
-      for (const chatRoomContractID of Object.keys(getters.getChatRooms)) {
-        if (!state.chatRooms[chatRoomContractID].editable) {
-          return chatRoomContractID
-        }
-      }
-      return null
+    getChatRoomIDsInSort (state, getters) {
+      const chatRooms = getters.getChatRooms
+      return Object.keys(chatRooms)
+        .map(chatRoomID => ({
+          name: chatRooms[chatRoomID].name,
+          id: chatRoomID
+        })).sort((former, latter) => {
+          const formerName = String(former.name).toLowerCase()
+          const latterName = String(latter.name).toLowerCase()
+          if (formerName > latterName) {
+            return 1
+          } else if (formerName < latterName) {
+            return -1
+          }
+          return 0
+        }).map(chatRoom => chatRoom.id)
+    },
+    getGeneralChatRoomID (state, getters) {
+      const chatRooms = getters.getChatRooms
+      return getGeneralChatRoomID(chatRooms)
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -798,41 +822,45 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/addChatRoom': {
-      validate: objectOf({ // TODO: need to use objectMaybeOf
-        chatRoomContractID: string,
+      validate: objectMaybeOf({
+        chatRoomID: string,
         name: string,
-        description: string,
-        private: boolean,
-        editable: boolean
+        type: unionOf(...Object.values(chatRoomTypes).map(v => literalOf(v)))
+        // TODO: need to define 'editable' as boolean
+        // but 'boolean' TypeValidator doesn't work fine inside objectMaybeOf
+        // editable: boolean
+        // private: boolean
       }),
       process ({ data, meta }, { state, getters }) {
-        Vue.set(state.chatRooms, data.chatRoomContractID, {
+        Vue.set(state.chatRooms, data.chatRoomID, {
           creator: meta.identityContractID,
           name: data.name,
+          type: data.type,
+          private: data.private,
           editable: data.editable
         })
       }
     },
     'gi.contracts/group/removeChatRoom': {
       validate: objectOf({
-        chatRoomContractID: string
+        chatRoomID: string
       }),
       process ({ data, meta }, { state, getters }) {
-        Vue.delete(state.chatRooms, data.chatRoomContractID)
+        Vue.delete(state.chatRooms, data.chatRoomID)
       },
       sideEffect ({ meta, data, contractID }, { state }) {
-        sbp('state/vuex/commit', 'removeContract', data.chatRoomContractID)
+        sbp('state/vuex/commit', 'removeContract', data.chatRoomID)
       }
     },
     'gi.contracts/group/joinChatRoom': {
       validate: objectMaybeOf({
-        chatRoomContractID: optional(string)
+        chatRoomID: optional(string)
       }),
       process ({ data, meta }, { state, getters }) {
         // const identityContractID = data.identityContractID || meta.identityContractID
-        // const chatRoomContractID = data.chatRoomContractID || getters.getGeneralChatroomContractID
+        // const chatRoomID = data.chatRoomID || getters.getGeneralChatRoomID
         // sbp('gi.actions/chatroom/join', {
-        //   contractID: chatRoomContractID,
+        //   contractID: chatRoomID,
         //   data: { identityContractID }
         // })
       },
@@ -842,34 +870,34 @@ sbp('chelonia/defineContract', {
         if (meta.username === rootState.loggedIn.username) {
           const generalChatRoomContractID = Object.keys(state.chatRooms)
             .find(cID => state.chatRooms[cID].editable)
-          const chatRoomContractID = data.chatRoomContractID || generalChatRoomContractID
+          const chatRoomID = data.chatRoomID || generalChatRoomContractID
 
-          sbp('gi.actions/contract/sync', chatRoomContractID)
+          sbp('gi.actions/contract/sync', chatRoomID)
         }
       }
     },
     'gi.contracts/group/leaveChatRoom': {
       validate: objectOf({
         identityContractID: optional(string),
-        chatRoomContractID: string
+        chatRoomID: string
       }),
       process ({ data, meta }, { state, getters }) {
         // TODO
       },
       sideEffect ({ meta, data, contractID }, { state }) {
         if (data.identityContractID) {
-          sbp('state/vuex/commit', 'removeContract', data.chatRoomContractID)
+          sbp('state/vuex/commit', 'removeContract', data.chatRoomID)
         }
       }
     },
     'gi.contracts/group/renameChatRoom': {
       validate: objectOf({
-        chatRoomContractID: string,
+        chatRoomID: string,
         name: string
       }),
       process ({ data, meta }, { state, getters }) {
-        Vue.set(state.chatRooms, data.chatRoomContractID, {
-          ...getters.getChatRooms[data.chatRoomContractID],
+        Vue.set(state.chatRooms, data.chatRoomID, {
+          ...getters.getChatRooms[data.chatRoomID],
           name: data.name
         })
       }

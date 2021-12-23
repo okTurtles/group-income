@@ -17,16 +17,16 @@
       tag='router-link'
       variant='solid'
       :icon='getIcon(id)'
-      :badgeCount='list.conversations[id].unreadCount'
+      :badgeCount='list.channels[id].unreadCount'
       :to='buildUrl(id)'
     )
       avatar(
-        v-if='list.conversations[id].picture'
-        :src='list.conversations[id].picture'
+        v-if='list.channels[id].picture'
+        :src='list.channels[id].picture'
         size='sm'
       )
 
-      span {{list.conversations[id].displayName || list.conversations[id].name}}
+      span {{list.channels[id].displayName || list.channels[id].name}}
 </template>
 
 <script>
@@ -43,9 +43,9 @@ export default ({
   },
   props: {
     title: String,
-    /** List of conversations - shape: {
+    /** List of channels - shape: {
       order: [] - see fakeStore.js - individualMessagesSorted,
-      conversations: - see fakeStore.js - users or groupChannels
+      channels: - see fakeStore.js - users or groupChannels
     }
     */
     list: Object,
@@ -54,12 +54,12 @@ export default ({
   },
   methods: {
     getIcon (id) {
-      const isPrivate = this.list.conversations[id].private
+      const isPrivate = this.list.channels[id].private
       return isPrivate === undefined ? '' : (isPrivate ? 'lock' : 'hashtag')
     },
     buildUrl (id) {
       const { list, routeName, type } = this
-      const { name } = list.conversations[id] || {}
+      const { name } = list.channels[id] || {}
 
       // NOTE - This should be $store responsability
       // ...but for now I've used the $route params just for mocked layout purposes

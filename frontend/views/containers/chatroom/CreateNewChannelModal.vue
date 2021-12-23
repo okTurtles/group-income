@@ -36,7 +36,8 @@
         i18n.label Private channel
         input.switch(
           type='checkbox'
-          :value='form.private'
+          :checked='form.private'
+          @change='handleChannelPrivate'
         )
 
       hr
@@ -77,6 +78,7 @@ import maxLength from 'vuelidate/lib/validators/maxLength'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { chatRoomTypes } from '@model/contracts/constants.js'
 
 export default ({
   name: 'CreateNewChannelModal',
@@ -104,9 +106,12 @@ export default ({
     async submit () {
       await sbp('gi.actions/group/addAndJoinChatRoom', {
         contractID: this.currentGroupId,
-        data: { ...this.form, editable: true }
+        data: { ...this.form, type: chatRoomTypes.GROUP, editable: true }
       })
       this.close()
+    },
+    handleChannelPrivate (e) {
+      this.form.private = e.target.checked
     }
   },
   validations: {

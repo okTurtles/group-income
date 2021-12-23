@@ -2,7 +2,7 @@
 
 import sbp from '~/shared/sbp.js'
 import { createInvite } from '@model/contracts/group.js'
-import { INVITE_INITIAL_CREATOR, CHATROOM_GENERAL_NAME } from '@model/contracts/constants.js'
+import { INVITE_INITIAL_CREATOR, CHATROOM_GENERAL_NAME, chatRoomTypes } from '@model/contracts/constants.js'
 import proposals from '@model/contracts/voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER,
@@ -97,6 +97,18 @@ export default (sbp('sbp/selectors/register', {
         await sbp('gi.actions/contract/syncAndWait', message.contractID())
       }
 
+      // create a 'General' chatroom contract and let the creator join
+      await sbp('gi.actions/group/addAndJoinChatRoom', {
+        contractID: message.contractID(),
+        data: {
+          name: CHATROOM_GENERAL_NAME,
+          type: chatRoomTypes.GROUP,
+          description: '',
+          private: false,
+          editable: false
+        }
+      })
+
       return message
     } catch (e) {
       console.error('gi.actions/group/create failed!', e)
@@ -106,17 +118,6 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/createAndSwitch': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/create', params)
     sbp('gi.actions/group/switch', message.contractID())
-
-    // create a 'General' chatroom contract and let the creator join
-    await sbp('gi.actions/group/addAndJoinChatRoom', {
-      contractID: message.contractID(),
-      data: {
-        name: CHATROOM_GENERAL_NAME,
-        description: '',
-        private: false,
-        editable: false
-      }
-    })
     return message
   },
   'gi.actions/group/join': async function (params: $Exact<GIActionParams>) {
@@ -131,9 +132,7 @@ export default (sbp('sbp/selectors/register', {
       // join the 'General' chatroom by default
       await sbp('gi.actions/group/joinChatRoom', {
         contractID: params.contractID,
-        data: {
-          chatRoomContractID: params.data.chatRoomContractID
-        }
+        data: { chatRoomID: params.data.chatRoomID }
       })
 
       return message
@@ -150,17 +149,18 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
+    // TODO: need to switch chatroom to 'General' of new group
+    sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupId })
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/chatroom/create', { data: params.data })
 
-    // register a 'General' chatroom contract by default
     await sbp('chelonia/out/actionEncrypted', {
       action: 'gi.contracts/group/addChatRoom',
       contractID: params.contractID,
       data: {
         ...params.data,
-        chatRoomContractID: message.contractID()
+        chatRoomID: message.contractID()
       }
     })
 
@@ -170,7 +170,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/chatroom/join', {
-      contractID: params.data.chatRoomContractID,
+      contractID: params.data.chatRoomID,
       data: params.data
     })
 
@@ -186,10 +186,20 @@ export default (sbp('sbp/selectors/register', {
     // join the 'General' chatroom by default
     await sbp('gi.actions/group/joinChatRoom', {
       contractID: params.contractID,
-      data: { chatRoomContractID: message.contractID() }
+      data: { chatRoomID: message.contractID() }
     })
 
     return message
+  },
+  'gi.actions/group/renameChatRoom': function (params: GIActionParams) {
+    sbp('gi.actions/chatroom/renameChatRoom', {
+      contractID: params.data.chatRoomID,
+      data: { name: params.data.name }
+    })
+
+    sbp('chelonia/out/actionEncrypted', {
+      ...params, action: 'gi.contracts/group/renameChatRoom'
+    })
   },
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),

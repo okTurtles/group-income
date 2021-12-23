@@ -4,14 +4,20 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import {
   objectMaybeOf, objectOf, mapOf, arrayOf,
-  string, boolean, optional, number
-  // literalOf, unionOf
+  string, boolean, optional, number,
+  literalOf, unionOf
 } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
+import {
+  CHATROOM_NAME_LIMITS_IN_CHARS,
+  CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
+  chatRoomTypes
+} from './constants.js'
 
 export const chatRoomType: any = objectOf({
   name: string, // General, Bulgaria Hackathon 2021, ...
   description: string,
+  type: unionOf(...Object.values(chatRoomTypes).map(v => literalOf(v))),
   private: boolean,
   editable: boolean
 })
@@ -80,6 +86,23 @@ sbp('chelonia/defineContract', {
   state (contractID) {
     return sbp('state/vuex/state')[contractID]
   },
+  getters: {
+    currentChatRoomState (state) {
+      return state
+    },
+    chatRoomSettings (state, getters) {
+      return getters.currentChatRoomState.settings
+    },
+    chatRoomAttributes (state, getters) {
+      return getters.currentChatRoomState.attributes
+    },
+    chatRoomUsers (state, getters) {
+      return getters.currentChatRoomState.users
+    },
+    chatRoomMessages (state, getters) {
+      return getters.currentChatRoomState.messages
+    }
+  },
   actions: {
     // This is the constructor of Chat contract
     'gi.contracts/chatroom': {
@@ -87,8 +110,8 @@ sbp('chelonia/defineContract', {
       process ({ meta, data }, { state }) {
         const initialState = merge({
           settings: {
-            maxNameLetters: 50,
-            maxDescriptionLetters: 280
+            maxNameLetters: CHATROOM_NAME_LIMITS_IN_CHARS,
+            maxDescriptionLetters: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
           },
           users: {},
           messages: {}
@@ -117,6 +140,14 @@ sbp('chelonia/defineContract', {
           joinedDate: meta.createdDate
         })
         // create a new system message to inform a new member is joined
+      }
+    },
+    'gi.contracts/chatroom/renameChatRoom': {
+      validate: objectOf({
+        name: string
+      }),
+      process ({ data, meta }, { state }) {
+        Vue.set(state.attributes, 'name', data.name)
       }
     }
   }

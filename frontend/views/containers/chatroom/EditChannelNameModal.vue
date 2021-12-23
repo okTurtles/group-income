@@ -3,7 +3,7 @@
     template(slot='title')
       i18n Rename channel
 
-    form(novalidate @submit.prevent='submit')
+    form(novalidate @submit.prevent='')
       label.field
         i18n.label.c-label-name Name
         .c-max-count(
@@ -35,6 +35,7 @@
 
 <script>
 import sbp from '~/shared/sbp.js'
+import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
@@ -50,6 +51,10 @@ export default ({
     ModalTemplate,
     BannerScoped
   },
+  computed: {
+    ...mapState(['currentGroupId', 'currentChatRoomId']),
+    ...mapGetters(['currentChatRoomState'])
+  },
   data () {
     return {
       channelId: this.$route.query.channel,
@@ -58,19 +63,32 @@ export default ({
       }
     }
   },
-  computed: {},
   methods: {
     close () {
       this.$refs.modal.close()
     },
     async submit () {
-      alert('TODO implement this')
       try {
-        await sbp('gi.actions/channel/renameChannel', this.form.name)
+        if (this.currentChatRoomState.attributes.name === this.form.name) {
+          // TODO: No need to update chatroom name. Display message box or toast or sth else
+          console.log('TODO: Channel name is not changed')
+        } else if (!this.currentChatRoomState.attributes.editable) {
+          // TODO: display message box '"General" chatroom can not be renamed'
+          console.log('TODO: "General" chatroom can not be renamed')
+        } else {
+          await sbp('gi.actions/group/renameChatRoom', {
+            contractID: this.currentGroupId,
+            data: {
+              chatRoomID: this.currentChatRoomId,
+              name: this.form.name
+            }
+          })
+        }
       } catch (e) {
         console.error('RenameChannelModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
+      this.close()
     }
   },
   validations: {
