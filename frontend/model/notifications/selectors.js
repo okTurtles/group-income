@@ -1,4 +1,4 @@
-import type { Notification } from './types.flow.js'
+import type { Notification, NotificationData } from './types.flow.js'
 
 import sbp from '~/shared/sbp.js'
 
@@ -12,7 +12,7 @@ import templates from './templates.js'
  */
 sbp('sbp/selectors/register', {
   // Creates and dispatches a new notification.
-  'gi.notifications/emit' (type: string, data: Notification) {
+  'gi.notifications/emit' (type: string, data: NotificationData) {
     const template = templates[type]
 
     // Creates the notification object in a single step.
