@@ -6,26 +6,26 @@ import type {
 import sbp from '~/shared/sbp.js'
 import './selectors.js'
 import { age, isNew, isOlder } from './utils.js'
-import * as keys from './vuexModuleKeys.js'
+import * as keys from './mutationKeys.js'
 
-const actions = ({
-  async [keys.LOGIN] (context: VuexModuleContext, user: Object) {
+const actions = {
+  async login (context: VuexModuleContext, user: Object) {
     const notifications = await sbp('gi.db/notifications/load', user.username)
 
     if (notifications && notifications.length) {
       context.commit(keys.SET_NOTIFICATIONS, notifications)
     }
   },
-  async [keys.LOGOUT] (context: VuexModuleContext) {
+  async logout (context: VuexModuleContext) {
     if (context.rootState.loggedIn) {
       // Make sure to save the notifications *before* clearing them.
       await sbp('gi.notifications/save')
       context.commit(keys.REMOVE_ALL_NOTIFICATIONS)
     }
   }
-}: Object)
+}
 
-const getters = ({
+const getters = {
   newNotifications (state, getters) {
     return state.filter(item => isNew(item))
   },
@@ -53,9 +53,9 @@ const getters = ({
   unreadNotificationCount (state, getters) {
     return getters.unreadNotifications.length
   }
-}: Object)
+}
 
-const mutations = ({
+const mutations = {
   [keys.ADD_NOTIFICATION] (state, notification: Notification) {
     if (state.includes(notification)) {
       throw new Error('This notification is already in the store.')
@@ -94,7 +94,7 @@ const mutations = ({
   [keys.SET_NOTIFICATIONS] (state, notifications: Notification[]) {
     state.splice(0, state.length, ...notifications)
   }
-}: Object)
+}
 
 export default ({
   state: () => [],

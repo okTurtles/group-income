@@ -3,7 +3,7 @@ import type { Notification } from './types.flow.js'
 import sbp from '~/shared/sbp.js'
 
 import { applyStorageRules } from './utils.js'
-import * as keys from './vuexModuleKeys.js'
+import * as keys from './mutationKeys.js'
 import templates from './templates.js'
 
 /*
