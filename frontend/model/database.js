@@ -9,13 +9,42 @@ const log = localforage.createInstance({
   storeName: 'Contracts'
 })
 
+const isLightweightClient = process.env.LIGHTWEIGHT_CLIENT ?? true
+
 // make gi.log use localforage for storage
-sbp('sbp/selectors/overwrite', {
-  'gi.db/get': key => log.getItem(key),
-  // TODO: handle QuotaExceededError
-  'gi.db/set': (key, value) => log.setItem(key, value),
-  'gi.db/delete': (key: string) => log.removeItem(key)
-})
+sbp('sbp/selectors/overwrite',
+  isLightweightClient
+    ? {
+        'gi.db/get': key => {
+          const contractId = sbp('gi.db/log/isLogHEAD', key)
+          if (!contractId) {
+            return null
+          }
+          const state = sbp('state/vuex/state')
+          if (state?.contracts?.[contractId]?.HEAD) {
+            return state.contracts[contractId].HEAD
+          }
+          return null
+        },
+        'gi.db/set': (key, value) => {
+          return Promise.resolve(value)
+        },
+        'gi.db/delete': () => {
+          return Promise.resolve()
+        }
+      }
+    : {
+        'gi.db/get': key => {
+          return log.getItem(`${key}`)
+        },
+        // TODO: handle QuotaExceededError
+        'gi.db/set': (key, value) => {
+          return log.setItem(key, value)
+        },
+        'gi.db/delete': (key: string) => {
+          return log.removeItem(`${key}`)
+        }
+      })
 
 // =======================
 // App settings to persist state across sessions

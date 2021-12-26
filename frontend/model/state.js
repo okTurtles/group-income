@@ -656,6 +656,7 @@ const actions = {
         updateContractHEAD = true
       } else if (e instanceof GIErrorDropAndReprocess) {
         dropAllMessagesUntilRefresh = true
+        // dropAllMessagesUntilRefresh = false
       } else {
         console.error(`[CRITICAL ERROR] handleEvent: UNKNOWN ERROR ${e.name} SHOULD NEVER HAPPEN:`, e.message, e.stack)
         enterUnrecoverableState = true
