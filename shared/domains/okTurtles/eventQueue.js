@@ -17,7 +17,6 @@ const STATE_FINISHED = 2
 export default (sbp('sbp/selectors/register', {
   // TODO: define a proper sbpInvocation Flowtype
   'okTurtles.eventQueue/queueEvent': async function (name: string, sbpInvocation: any[]) {
-    console.log('Called queueEvent: ' + name + ' ' + JSON.stringify(sbpInvocation))
     if (!eventQueues[name]) {
       eventQueues[name] = { events: [] }
     }
@@ -32,22 +31,11 @@ export default (sbp('sbp/selectors/register', {
       if (event.state === STATE_PENDING) {
         event.state = STATE_INVOKING
         event.promise = sbp(...event.sbpInvocation)
-        try {
-          await event.promise
-        } catch (e) {
-          console.log('Throwing from queueEvent', e)
-          throw e
-        }
+        await event.promise
         event.state = STATE_FINISHED
       } else if (event.state === STATE_INVOKING) {
         // wait for invocation to finish
         await event.promise
-        try {
-          await event.promise
-        } catch (e) {
-          console.log('Throwing from queueEvent', e)
-          throw e
-        }
       } else {
         // STATE_FINISHED
         events.shift()
