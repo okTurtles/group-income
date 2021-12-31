@@ -1,8 +1,11 @@
 import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 
+// The maximum allowed age of read (resp. unread) stored notifications.
+// Not to be confused with maximum storage duration.
 export const MAX_AGE_READ = 30 * DAYS_MILLIS
 export const MAX_AGE_UNREAD = Infinity
-// The maximum number of notifications allowed in offline storage.
+// The maximum allowed number of stored notifications.
 export const MAX_COUNT = 30
+// The maximum allowed number of read (resp. unread) stored notifications.
 export const MAX_COUNT_READ = 20
 export const MAX_COUNT_UNREAD = 30
