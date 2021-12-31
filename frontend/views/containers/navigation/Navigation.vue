@@ -4,7 +4,7 @@ nav.c-navigation(
   :class='{ "is-active": ephemeral.isActive }'
 )
   toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive')
-    badge.c-toggle-badge(v-if='notificationCount') {{ notificationCount }}
+    badge.c-toggle-badge(v-if='unreadNotificationCount') {{ unreadNotificationCount }}
   groups-list(v-if='groupsByName.length > 1' :inert='isInert')
 
   .c-navigation-wrapper(:inert='isInert')
@@ -137,7 +137,7 @@ export default ({
       'groupsByName',
       'unreadMessageCount',
       'colors',
-      'notificationCount'
+      'unreadNotificationCount'
     ]),
     activityCount () {
       // TODO: implement this? (or not?)
