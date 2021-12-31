@@ -2,10 +2,9 @@
 
 import type { Notification } from '@model/notifications/types.flow.js'
 
-import sbp from '~/shared/sbp.js'
 import localforage from 'localforage'
+import sbp from '~/shared/sbp.js'
 import '~/shared/domains/gi/db.js'
-import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 
 const log = localforage.createInstance({
   name: 'Group Income',
@@ -77,32 +76,6 @@ sbp('sbp/selectors/register', {
 const notificationStorage = localforage.createInstance({
   name: 'Group Income',
   storeName: 'Notifications'
-})
-
-/*
- * Updating the notification offline storage:
- * ------------------------------------------
- * 1. Discard any expired notification, e.g. read notifications older than `MAX_AGE_READ`.
- * 2. If MAX_COUNT_READ is defined and valid, and more than MAX_COUNT_READ read notifications remain,
- *   then discard every read notification older than the MAX_COUNT_READ newest ones.
- * 3. Same for MAX_COUNT_UNREAD.
- * 4. If `MAX_COUNT` or less notifications remain candidate for storage,
- *   then store them, sorted by their creation timestamp in descending order.
- * 5. Otherwise,
- *   5a. discard read notifications older than 48h;
- *   5b. discard unread notifications older than three weeks;
- *   5c. discard read notifications older than 25h;
- *   5d. discard unread notifications older than two weeks;
- *   5e. discard read notifications;
- *   5f. discard unread notifications, older ones first.
- */
-export const notificationStorageLimits = Object.freeze({
-  MAX_AGE_READ: 30 * DAYS_MILLIS,
-  MAX_AGE_UNREAD: Infinity,
-  // The maximum number of notifications allowed in offline storage.
-  MAX_COUNT: 30,
-  MAX_COUNT_READ: 20,
-  MAX_COUNT_UNREAD: 30
 })
 
 sbp('sbp/selectors/register', {
