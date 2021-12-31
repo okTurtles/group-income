@@ -1,29 +1,8 @@
-import type {
-  Notification,
-  VuexModuleContext
-} from './types.flow.js'
+import type { Notification } from './types.flow.js'
 
-import sbp from '~/shared/sbp.js'
 import './selectors.js'
 import { age, isNew, isOlder } from './utils.js'
 import * as keys from './mutationKeys.js'
-
-const actions = {
-  async login (context: VuexModuleContext, user: Object) {
-    const notifications = await sbp('gi.db/notifications/load', user.username)
-
-    if (notifications && notifications.length) {
-      context.commit(keys.SET_NOTIFICATIONS, notifications)
-    }
-  },
-  async logout (context: VuexModuleContext) {
-    if (context.rootState.loggedIn) {
-      // Make sure to save the notifications *before* clearing them.
-      await sbp('gi.notifications/save')
-      context.commit(keys.REMOVE_ALL_NOTIFICATIONS)
-    }
-  }
-}
 
 const getters = {
   newNotifications (state, getters) {
@@ -98,7 +77,6 @@ const mutations = {
 
 export default ({
   state: () => [],
-  actions,
   getters,
   mutations
 }: Object)
