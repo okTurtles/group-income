@@ -66,36 +66,44 @@ export function applyStorageRules (notifications: Notification[]): Notification[
     items.length = MAX_COUNT
   }
   // Sort items in chronological order, newest items first.
-  // In case two items have the same age, then make the higher priority item come first.
-  return items.sort((itemA, itemB) => age(itemA) - age(itemB))
+  return items.sort(compareOnAge)
 }
 
-export function compareOnPriority (notificationA: Notification, notificationB: Notification): -1 | 0 | 1 {
+// Compares notifications, so that newer ones come first.
+export function compareOnAge (notificationA: Notification, notificationB: Notification): -1 | 1 {
+  return age(notificationA) <= age(notificationB) ? -1 : 1
+}
+
+// Compares notifications, so that higher priority ones come first.
+export function compareOnPriority (notificationA: Notification, notificationB: Notification): -1 | 1 {
   const TWO_DAYS = 2 * ONE_DAY
   const FIFTEEN_DAYS = 15 * ONE_DAY
   const THREE_WEEKS = 21 * ONE_DAY
   const preferA = -1
   const preferB = 1
 
-  if (notificationA.read && !notificationB.read) {
-    if (age(notificationA) < ONE_DAY && age(notificationB) > FIFTEEN_DAYS) {
-      return preferA
+  // If the given notifications are both read or both unread, then prefer the newer one.
+  if ((notificationA.read && notificationB.read) || (!notificationA.read && !notificationB.read)) {
+    return age(notificationA) <= age(notificationB) ? preferA : preferB
+  } else {
+    // Here, one notification is read, the other is unread.
+    const read = notificationA.read ? notificationA : notificationB
+    const unread = !notificationA.read ? notificationA : notificationB
+
+    // Prefer the unread one by default.
+    let preferred = unread
+
+    // However, under certain conditions we might want to keep the already read one instead.
+    // Note: use a condition array so that it is easy to add/remove conditions later.
+    const conditions = [
+      (read, unread) => age(read) < ONE_DAY && age(unread) > FIFTEEN_DAYS,
+      (read, unread) => age(read) < TWO_DAYS && age(unread) > THREE_WEEKS
+    ]
+    if (conditions.some(condition => condition(read, unread))) {
+      preferred = read
     }
-    if (age(notificationA) < TWO_DAYS && age(notificationB) > THREE_WEEKS) {
-      return preferA
-    }
-    return preferB
+    return preferred === notificationA ? preferA : preferB
   }
-  if (!notificationA.read && notificationB.read) {
-    if (age(notificationA) > FIFTEEN_DAYS && age(notificationB) < ONE_DAY) {
-      return preferB
-    }
-    if (age(notificationA) > THREE_WEEKS && age(notificationB) < TWO_DAYS) {
-      return preferB
-    }
-    return preferA
-  }
-  return age(notificationA) <= age(notificationB) ? preferA : preferB
 }
 
 export function isExpired (notification: Notification): boolean {
