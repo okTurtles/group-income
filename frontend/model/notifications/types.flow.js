@@ -1,3 +1,9 @@
+export type NewProposalType =
+  | 'ADD_MEMBER'
+  | 'CHANGE_MINCOME'
+  | 'CHANGE_VOTING_RULE'
+  | 'REMOVE_MEMBER';
+
 export type Notification = {
   +body: string;
   +icon: string;
@@ -17,10 +23,13 @@ export type NotificationData = {
   +username: string;
 }
 
-export type VuexModuleContext = {
-  commit: Function;
-  dispatch: Function;
-  rootGetters: Object;
-  rootState: Object;
-  state: Object;
+export type NotificationLevel = 'danger' | 'info';
+
+export type NotificationTemplate = {
+  +body: string;
+  +icon: string;
+  +level: NotificationLevel;
+  +linkTo: string;
+  +creator?: string;
+  +subtype?: string;
 }

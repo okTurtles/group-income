@@ -1,22 +1,10 @@
+import type {
+  NewProposalType,
+  NotificationTemplate
+} from './types.flow.js'
+
 import L from '~/frontend/views/utils/translations.js'
 import { monthName } from '~/frontend/utils/time.js'
-
-type NewProposalType =
-  | 'ADD_MEMBER'
-  | 'CHANGE_MINCOME'
-  | 'CHANGE_VOTING_RULE'
-  | 'REMOVE_MEMBER';
-
-type NotificationLevel = 'danger' | 'info';
-
-export type NotificationTemplate = {
-  +body: string;
-  +icon: string;
-  +level: NotificationLevel;
-  +linkTo: string;
-  +creator?: string;
-  +subtype?: string;
-}
 
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.
