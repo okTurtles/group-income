@@ -151,12 +151,13 @@ export function timeSince (datems: number, dateNow: number = Date.now()): string
     return L('1d')
   }
   if (interval >= HOURS_MILLIS) {
-    return Math.floor(interval / HOURS_MILLIS) + 'h'
+    return L('{hours}h', { hours: Math.floor(interval / HOURS_MILLIS) })
   }
   if (interval >= MINS_MILLIS) {
-    return Math.max(1, Math.floor(interval / MINS_MILLIS)) + 'm'
+    // Maybe use 'min' symbol rather than 'm'?
+    return L('{minutes}m', { minutes: Math.max(1, Math.floor(interval / MINS_MILLIS)) })
   }
-  return '<1m'
+  return L('<1m')
 }
 
 export function cycleAtDate (atDate: string | Date): number {
