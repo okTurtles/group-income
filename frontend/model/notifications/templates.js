@@ -18,7 +18,11 @@ export type NotificationTemplate = {
   +subtype?: string;
 }
 
-const strong = (text) => `<strong>${text}</strong>`
+// Note: this escaping is not intended as a protection against XSS.
+// It is only done to enable correct rendering of special characters in usernames.
+// To guard against XSS when rendering usernames, use the `v-safe-html` directive.
+const escapeForHtml = (text) => text.replace(/[<>&]/g, '\\$&')
+const strong = (text) => `<strong>${escapeForHtml(text)}</strong>`
 
 export default ({
   CONTRIBUTION_REMINDER (data: { monthstamp: string }) {
