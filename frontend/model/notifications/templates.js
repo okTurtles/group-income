@@ -37,9 +37,12 @@ export default ({
       linkTo: '/payments'
     }
   },
-  INCOME_DETAILS_OLD (data: {}) {
+  INCOME_DETAILS_OLD (data: { months: number }) {
     return {
-      body: L("You haven't updated your income details in more than 6 months. Would you like to review them now?"),
+      body: L("You haven't updated your income details in more than {months} months. Would you like to review them now?", {
+        // Avoid displaying decimals.
+        months: Math.floor(data.months)
+      }),
       icon: 'coins',
       level: 'info',
       linkTo: '/contributions/TODO-LINK-MODAL'
