@@ -11,7 +11,7 @@ import {
 } from './storageConstants.js'
 
 // How much time a notification can stay in the "new" state.
-export const NEW_STATUS_MAX_AGE = 2 * ONE_HOUR
+export const NEW_STATUS_DURATION = 2 * ONE_HOUR
 
 export function age (notification: Notification): number {
   return Date.now() - notification.timestamp
@@ -111,7 +111,7 @@ export function isExpired (notification: Notification): boolean {
 }
 
 export function isNew (notification: Notification): boolean {
-  return Date.now() - notification.timestamp < NEW_STATUS_MAX_AGE
+  return Date.now() - notification.timestamp < NEW_STATUS_DURATION
 }
 
 export function isOlder (notification: Notification): boolean {
