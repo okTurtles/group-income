@@ -89,6 +89,7 @@ describe('Group Voting Rules', () => {
       } else {
         cy.getByDT('submitBtn').click()
       }
+      cy.getByDT('closeModal').should('not.exist')
     })
   }
 

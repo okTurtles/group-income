@@ -72,6 +72,7 @@ export default ({
   @include phone {
     justify-content: left;
     padding-left: 1rem;
+    padding-top: 8rem;
   }
 
   .c-title,
@@ -86,11 +87,6 @@ export default ({
 
   .c-description {
     margin: 0 0 0.5rem;
-
-    @include phone {
-      position: absolute;
-      top: 5.5rem;
-    }
   }
 
   @include phone {
