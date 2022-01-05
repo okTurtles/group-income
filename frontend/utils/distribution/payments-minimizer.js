@@ -50,16 +50,9 @@ function untangleDistribution (distribution, havers, needers) {
 // such that the least number of payments are made.
 function minimizeTotalPaymentsCount (distribution: Distribution, groupMembers: Array<Object>): Distribution {
   distribution = cloneDeep(distribution)
-  for (let i = 0; i < groupMembers.length * groupMembers.length; i++) {
-    const left = (i + 1) % 2 * 2 - 1
-    const right = (i) % 2 * 2 - 1
-
-    const havers = groupMembers.filter((m) => m.haveNeed > 0).sort((a, b) => left * a.haveNeed - right * b.haveNeed)
-    let needers = groupMembers.filter((m) => m.haveNeed < 0).sort((a, b) => left * a.haveNeed - right * b.haveNeed)
-
-    if (i % 4 > 2) needers = needers.reverse()
-    untangleDistribution(distribution, havers, needers)
-  }
+  const havers = groupMembers.filter((m) => m.haveNeed > 0).sort((a, b) => a.haveNeed - b.haveNeed)
+  const needers = groupMembers.filter((m) => m.haveNeed < 0).sort((a, b) => a.haveNeed - b.haveNeed)
+  untangleDistribution(distribution, havers, needers)
   return distribution
 }
 
