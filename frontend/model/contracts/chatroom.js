@@ -142,12 +142,20 @@ sbp('chelonia/defineContract', {
         // create a new system message to inform a new member is joined
       }
     },
-    'gi.contracts/chatroom/renameChatRoom': {
+    'gi.contracts/chatroom/rename': {
       validate: objectOf({
         name: string
       }),
       process ({ data, meta }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
+      }
+    },
+    'gi.contracts/chatroom/changeDescription': {
+      validate: objectOf({
+        description: string
+      }),
+      process ({ data, meta }, { state }) {
+        Vue.set(state.attributes, 'description', data.description)
       }
     }
   }

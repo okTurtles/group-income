@@ -3,7 +3,7 @@
     template(slot='title')
       i18n Channel description
 
-    form(novalidate @submit.prevent='submit')
+    form(novalidate @submit.prevent='')
       label.field
         .c-label-group
           i18n.label Description
@@ -36,6 +36,7 @@
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
@@ -79,8 +80,19 @@ export default ({
     close () {
       this.$refs.modal.close()
     },
-    submit () {
-      alert('TODO implement this')
+    async submit () {
+      try {
+        await sbp('gi.actions/chatroom/changeDescription', {
+          contractID: this.currentChatRoomId,
+          data: {
+            description: this.form.description
+          }
+        })
+      } catch (e) {
+        console.error('ChangeChannelDescriptionModal submit() error:', e)
+        this.$refs.formMsg.danger(e.message)
+      }
+      this.close()
     }
   },
   validations: {
