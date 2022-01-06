@@ -63,6 +63,9 @@ export default ({
       }
     }
   },
+  created () {
+    this.form.name = this.currentChatRoomState.attributes.name
+  },
   methods: {
     close () {
       this.$refs.modal.close()
