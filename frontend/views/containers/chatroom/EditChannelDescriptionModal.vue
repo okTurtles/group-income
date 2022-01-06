@@ -9,13 +9,13 @@
           i18n.label Description
           .limit(
             v-if='form.description'
-            :class='{"is-danger": form.description.length >= 280}'
-          ) {{ 280 - form.description.length }}
+            :class='{"is-danger": form.description.length >= maxDescriptionCharacters}'
+          ) {{ maxDescriptionCharacters - form.description.length }}
 
         textarea.textarea(
           name='description'
           :placeholder='L("Description of the channel")'
-          maxlength='280'
+          maxlength='maxDescriptionCharacters'
           :class='{ error: $v.form.description.$error }'
           v-model='form.description'
           @input='debounceField("description")'
@@ -37,12 +37,13 @@
 
 <script>
 import { validationMixin } from 'vuelidate'
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { CHATROOM_DESCRIPTION_LIMITS_IN_CHARS } from '@model/contracts/constants.js'
 
 export default ({
   name: 'EditChannelDescriptionModal',
@@ -60,12 +61,19 @@ export default ({
     }
   },
   computed: {
+    ...mapState(['currentChatRoomId']),
     ...mapGetters([
-      'groupSettings'
+      'groupSettings', 'currentChatRoomState'
     ]),
+    maxDescriptionCharacters () {
+      return CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
+    },
     code () {
       return L('DELETE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })
     }
+  },
+  created () {
+    this.form.description = this.currentChatRoomState.attributes.description
   },
   methods: {
     close () {
@@ -78,8 +86,10 @@ export default ({
   validations: {
     form: {
       description: {
-        [L('The description is limited to 280 characters')]: function (value) {
-          return value ? Number(value.length) <= 280 : false
+        [L('The description is limited to {max} characters', {
+          max: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
+        })]: function (value) {
+          return value ? Number(value.length) <= CHATROOM_DESCRIPTION_LIMITS_IN_CHARS : false
         }
       }
     }

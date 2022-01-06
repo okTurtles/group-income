@@ -8,13 +8,13 @@
         i18n.label.c-label-name Name
         .c-max-count(
           v-if='form.name'
-          :class='{"is-danger": form.name.length >= 50}'
-        ) {{50 - form.name.length}}
+          :class='{"is-danger": form.name.length >= maxNameCharacters}'
+        ) {{maxNameCharacters - form.name.length}}
 
         input.input(
           type='text'
           name='name'
-          maxlength='50'
+          maxlength='maxNameCharacters'
           :class='{ error: $v.form.name.$error }'
           v-model='form.name'
           @input='debounceField("name")'
@@ -43,6 +43,7 @@ import maxLength from 'vuelidate/lib/validators/maxLength'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { CHATROOM_NAME_LIMITS_IN_CHARS } from '@model/contracts/constants.js'
 
 export default ({
   name: 'EditChannelNameModal',
@@ -53,7 +54,10 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId', 'currentChatRoomId']),
-    ...mapGetters(['currentChatRoomState'])
+    ...mapGetters(['currentChatRoomState']),
+    maxNameCharacters () {
+      return CHATROOM_NAME_LIMITS_IN_CHARS
+    }
   },
   data () {
     return {
@@ -98,7 +102,7 @@ export default ({
     form: {
       name: {
         [L('This field is required')]: required,
-        maxLength: maxLength(50)
+        maxLength: maxLength(CHATROOM_NAME_LIMITS_IN_CHARS)
       }
     }
   }

@@ -553,7 +553,7 @@
 "Channel description" = "Description du salon";
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue */
-"The description is limited to 280 characters" = "La description est limitée à 280 caractères";
+"The description is limited to {max} characters" = "La description est limitée à {max} caractères";
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Enregistrer";
