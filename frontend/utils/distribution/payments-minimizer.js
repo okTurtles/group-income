@@ -69,7 +69,8 @@ function minimizeTotalPaymentsCount (distribution: Distribution, groupMembers: A
   // entire string at once: instead you untangle it in larger
   // and larger sections, and eventually it comes undone.
 
-  const maxKnot = 10 // This is the maximum number of knots we will untangle at a time.
+  // Set the maximum number of knots we will untangle at a time.
+  const maxKnot = Math.min(10, Math.min(havers.length, needers.length))
 
   const subHavers = [] // Stores the havers into group sizes of maxKnot
   const subNeeders = [] // Stores the needers into group sizes of maxKnot

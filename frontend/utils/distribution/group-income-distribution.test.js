@@ -120,9 +120,8 @@ describe('Test group-income-distribution.js (without minimization)', function ()
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
       { from: 'u1', to: 'u2', amount: 50, total: 50, dueOn: '2021-01', isLate: false, partial: false },
-      { amount: 50, from: 'u1', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 50, from: 'u5', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
+      { amount: 50, from: 'u1', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u5', to: 'u4', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('Test the adjusted version of the previous event-list. Should *not* ignore payment events!', function () {
@@ -136,10 +135,8 @@ describe('Test group-income-distribution.js (without minimization)', function ()
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
       { amount: 40, from: 'u1', to: 'u2', total: 50, partial: true, isLate: false, dueOn: '2021-01' },
-      { amount: 50, from: 'u1', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 50, from: 'u5', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
-
+      { amount: 50, from: 'u1', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u5', to: 'u4', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('EVENT: u3 removes themselves from the group. Test un-adjsuted first.', function () {
