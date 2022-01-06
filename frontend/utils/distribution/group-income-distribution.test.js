@@ -119,9 +119,10 @@ describe('Test group-income-distribution.js (without minimization)', function ()
       { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
-      { amount: 50, from: 'u1', to: 'u2', total: 50, isLate: false, partial: false, dueOn: '2021-01' },
-      { amount: 50, from: 'u1', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 100, from: 'u5', to: 'u4', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
+      { from: 'u1', to: 'u2', amount: 50, total: 50, dueOn: '2021-01', isLate: false, partial: false },
+      { amount: 50, from: 'u1', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 50, from: 'u5', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('Test the adjusted version of the previous event-list. Should *not* ignore payment events!', function () {
@@ -135,8 +136,10 @@ describe('Test group-income-distribution.js (without minimization)', function ()
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
       { amount: 40, from: 'u1', to: 'u2', total: 50, partial: true, isLate: false, dueOn: '2021-01' },
-      { amount: 50, from: 'u1', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 100, from: 'u5', to: 'u4', total: 100, partial: false, isLate: false, dueOn: '2021-01' }
+      { amount: 50, from: 'u1', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 50, from: 'u5', to: 'u3', total: 50, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
+
     ])
   })
   it('EVENT: u3 removes themselves from the group. Test un-adjsuted first.', function () {
@@ -590,39 +593,40 @@ describe('Test group-income-distribution.js (without minimization)', function ()
       { type: 'haveNeedEvent', data: { name: 'u6', haveNeed: -100, when: dateAtCyclesPassed(0.06) } }
     ]
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
-      { amount: 75.00000000000001, from: 'u1', to: 'u4', total: 75.00000000000001, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 199.99999999999997, from: 'u1', to: 'u5', total: 199.99999999999997, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 99.99999999999999, from: 'u1', to: 'u6', total: 99.99999999999999, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 299.99999999999994, from: 'u2', to: 'u4', total: 299.99999999999994, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 374.99999999999994, from: 'u1', to: 'u4', total: 374.99999999999994, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 1.4210854715202004e-14, from: 'u2', to: 'u4', total: 1.4210854715202004e-14, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 200, from: 'u2', to: 'u5', total: 200, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u2', to: 'u6', total: 100, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 225, from: 'u3', to: 'u4', total: 225, partial: false, isLate: false, dueOn: '2021-01' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
-      { amount: 75.00000000000001, from: 'u1', to: 'u4', total: 75.00000000000001, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 199.99999999999997, from: 'u1', to: 'u5', total: 199.99999999999997, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 99.99999999999999, from: 'u1', to: 'u6', total: 99.99999999999999, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 299.99999999999994, from: 'u2', to: 'u4', total: 299.99999999999994, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 374.99999999999994, from: 'u1', to: 'u4', total: 374.99999999999994, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 1.4210854715202004e-14, from: 'u2', to: 'u4', total: 1.4210854715202004e-14, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 200, from: 'u2', to: 'u5', total: 200, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u2', to: 'u6', total: 100, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 225, from: 'u3', to: 'u4', total: 225, partial: false, isLate: false, dueOn: '2021-01' }
     ])
     setup.push({ type: 'paymentEvent', data: { from: 'u1', to: 'u4', amount: 75.00000000000001, when: dateAtCyclesPassed(0.07) } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })).eql([
-      { from: 'u1', to: 'u4', amount: 75.00000000000001, total: 75.00000000000001, dueOn: '2021-01', isLate: false, partial: false },
-      { amount: 199.99999999999997, from: 'u1', to: 'u5', total: 199.99999999999997, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 99.99999999999999, from: 'u1', to: 'u6', total: 99.99999999999999, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 299.99999999999994, from: 'u2', to: 'u4', total: 299.99999999999994, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 225, from: 'u3', to: 'u4', total: 225, partial: false, isLate: false, dueOn: '2021-01' }
 
+      { amount: 374.99999999999994, from: 'u1', to: 'u4', total: 374.99999999999994, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 1.4210854715202004e-14, from: 'u2', to: 'u4', total: 1.4210854715202004e-14, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 200, from: 'u2', to: 'u5', total: 200, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u2', to: 'u6', total: 100, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 225, from: 'u3', to: 'u4', total: 225, partial: false, isLate: false, dueOn: '2021-01' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
-      { amount: 199.99999999999997, from: 'u1', to: 'u5', total: 199.99999999999997, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 99.99999999999999, from: 'u1', to: 'u6', total: 99.99999999999999, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 299.99999999999994, from: 'u2', to: 'u4', total: 299.99999999999994, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 299.99999999999994, from: 'u1', to: 'u4', total: 374.99999999999994, partial: true, isLate: false, dueOn: '2021-01' },
+      { amount: 1.4210854715202004e-14, from: 'u2', to: 'u4', total: 1.4210854715202004e-14, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 200, from: 'u2', to: 'u5', total: 200, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100, from: 'u2', to: 'u6', total: 100, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 225, from: 'u3', to: 'u4', total: 225, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
   it('Transaction minimization-specific load-test.', function () {
     setup = []
     // Add maxH havers user#1, user#2, ... user#H ... user#maxH to setup. Each haver has a haveNeed of H^2:
-    const maxH = 30 // Approximately half of Dunbar's number.
+    const maxH = 50 // Approximately half of Dunbar's number.
     for (let h = 1; h <= maxH; h++) {
       const name = 'user#' + (h < 10 ? '0' + h : h)
       const haveNeed = Math.pow(h, 2)
@@ -630,78 +634,170 @@ describe('Test group-income-distribution.js (without minimization)', function ()
       setup.push({ type: 'haveNeedEvent', data: { name, haveNeed, when } })
     }
     // Add maxN needers user#(maxH+1), user#(maxH+2), ... user#N ... user#(maxH+maxN) to setup. Each needer has a haveNeed of -N*2:
-    const maxN = 30 // Approximately half of Dunbar's number.
+    const maxN = 50 // Approximately half of Dunbar's number.
     for (let n = maxH + 1; n <= maxH + maxN; n++) {
       const name = 'user#' + n
       const haveNeed = -2 * n
       const when = dateAtCyclesPassed(Math.random())
       setup.push({ type: 'haveNeedEvent', data: { name, haveNeed, when } })
     }
+    setup.sort((eventA, eventB) => eventA.when < eventB.when ? -1 : 1)
     const dist = groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: true, mincomeAmount })
     dist.sort((pA, pB) => pA.amount - pB.amount).sort((pA, pB) => pA.from < pB.from ? -1 : 1)
 
     should(dist).eql([
-      { amount: 0.2887361184558435, from: 'user#01', to: 'user#31', total: 0.2887361184558435, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 1.1549444738233743, from: 'user#02', to: 'user#32', total: 1.1549444738233743, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 2.5986250661025907, from: 'user#03', to: 'user#33', total: 2.5986250661025907, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 4.619777895293496, from: 'user#04', to: 'user#34', total: 4.619777895293496, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 7.2184029613960865, from: 'user#05', to: 'user#31', total: 7.2184029613960865, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 10.394500264410363, from: 'user#06', to: 'user#35', total: 10.394500264410363, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 14.148069804336327, from: 'user#07', to: 'user#36', total: 14.148069804336327, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 18.479111581173985, from: 'user#08', to: 'user#32', total: 18.479111581173985, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 23.387625594923325, from: 'user#09', to: 'user#37', total: 23.387625594923325, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 28.873611845584342, from: 'user#10', to: 'user#33', total: 28.873611845584342, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 34.93707033315705, from: 'user#11', to: 'user#38', total: 34.93707033315705, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 41.578001057641465, from: 'user#12', to: 'user#34', total: 41.578001057641465, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 48.79640401903755, from: 'user#13', to: 'user#39', total: 48.79640401903755, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 56.59227921734532, from: 'user#14', to: 'user#40', total: 56.59227921734532, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 10.472765732416713, from: 'user#15', to: 'user#41', total: 10.472765732416713, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 54.492860920148075, from: 'user#15', to: 'user#31', total: 54.492860920148075, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 14.310946589106294, from: 'user#16', to: 'user#42', total: 14.310946589106294, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 59.605499735589625, from: 'user#16', to: 'user#35', total: 59.605499735589625, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 83.44473823373878, from: 'user#17', to: 'user#43', total: 83.44473823373878, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 35.698572184029615, from: 'user#18', to: 'user#44', total: 35.698572184029615, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 57.85193019566368, from: 'user#18', to: 'user#36', total: 57.85193019566368, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 32.706504494976194, from: 'user#19', to: 'user#45', total: 32.706504494976194, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 71.5272342675833, from: 'user#19', to: 'user#41', total: 71.5272342675833, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 45.80539397144368, from: 'user#20', to: 'user#46', total: 45.80539397144368, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 69.68905341089369, from: 'user#20', to: 'user#42', total: 69.68905341089369, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 32.35430988894764, from: 'user#21', to: 'user#47', total: 32.35430988894764, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 44.36594394500264, from: 'user#21', to: 'user#32', total: 44.36594394500264, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 50.612374405076686, from: 'user#21', to: 'user#37', total: 50.612374405076686, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 43.74828133262824, from: 'user#22', to: 'user#49', total: 43.74828133262824, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 96, from: 'user#22', to: 'user#48', total: 96, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 52.741406663141206, from: 'user#23', to: 'user#51', total: 52.741406663141206, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 100.00000000000003, from: 'user#23', to: 'user#50', total: 100.00000000000003, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 34.527763088313066, from: 'user#24', to: 'user#33', total: 34.527763088313066, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 38.419883659439435, from: 'user#24', to: 'user#45', total: 38.419883659439435, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 41.06292966684295, from: 'user#24', to: 'user#38', total: 41.06292966684295, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 52.3014278159704, from: 'user#24', to: 'user#44', total: 52.3014278159704, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 54.25171866737175, from: 'user#25', to: 'user#49', total: 54.25171866737175, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 61.64569011105237, from: 'user#25', to: 'user#47', total: 61.64569011105237, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 64.56266525647806, from: 'user#25', to: 'user#52', total: 64.56266525647806, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 21.320359598096378, from: 'user#26', to: 'user#54', total: 21.320359598096378, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 29.20359598096245, from: 'user#26', to: 'user#39', total: 29.20359598096245, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 46.194606028556315, from: 'user#26', to: 'user#46', total: 46.194606028556315, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 98.46705446853505, from: 'user#26', to: 'user#53', total: 98.46705446853505, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 21.802221047065046, from: 'user#27', to: 'user#34', total: 21.802221047065046, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 23.40772078265468, from: 'user#27', to: 'user#40', total: 23.40772078265468, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 29.340454785827756, from: 'user#27', to: 'user#55', total: 29.340454785827756, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 49.258593336858794, from: 'user#27', to: 'user#51', total: 49.258593336858794, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 86.67964040190364, from: 'user#27', to: 'user#54', total: 86.67964040190364, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 33.70957165520905, from: 'user#28', to: 'user#57', total: 33.70957165520905, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 80.65954521417224, from: 'user#28', to: 'user#55', total: 80.65954521417224, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 112, from: 'user#28', to: 'user#56', total: 112, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 12.329772607087676, from: 'user#29', to: 'user#59', total: 12.329772607087676, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 18.873611845584378, from: 'user#29', to: 'user#45', total: 18.873611845584378, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 39.437334743521944, from: 'user#29', to: 'user#52', total: 39.437334743521944, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 80.29042834479094, from: 'user#29', to: 'user#57', total: 80.29042834479094, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 91.8959280803794, from: 'user#29', to: 'user#58', total: 91.8959280803794, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 2.5552617662612342, from: 'user#30', to: 'user#43', total: 2.5552617662612342, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 7.532945531464954, from: 'user#30', to: 'user#53', total: 7.532945531464954, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 24.10407191962061, from: 'user#30', to: 'user#58', total: 24.10407191962061, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 105.67022739291231, from: 'user#30', to: 'user#59', total: 105.67022739291231, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 120.00000000000003, from: 'user#30', to: 'user#60', total: 120.00000000000003, partial: false, isLate: false, dueOn: '2021-01' }
+      { amount: 0.17588817705299942, from: 'user#01', to: 'user#97', total: 0.17588817705299942, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 0.18264414676761792, from: 'user#02', to: 'user#83', total: 0.18264414676761792, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 0.5209085614443798, from: 'user#02', to: 'user#98', total: 0.5209085614443798, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 1.5829935934769948, from: 'user#03', to: 'user#96', total: 1.5829935934769948, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 2.8142108328479907, from: 'user#04', to: 'user#96', total: 2.8142108328479907, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 4.3972044263249845, from: 'user#05', to: 'user#94', total: 4.3972044263249845, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 2.5647990681421087, from: 'user#06', to: 'user#89', total: 2.5647990681421087, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 3.767175305765871, from: 'user#06', to: 'user#97', total: 3.767175305765871, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 2.6255096097845074, from: 'user#07', to: 'user#92', total: 2.6255096097845074, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 5.993011065812464, from: 'user#07', to: 'user#86', total: 5.993011065812464, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 11.256843331391963, from: 'user#08', to: 'user#85', total: 11.256843331391963, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 2.3934769947583625, from: 'user#09', to: 'user#93', total: 2.3934769947583625, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 4.857542224810654, from: 'user#09', to: 'user#80', total: 4.857542224810654, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 6.995923121723938, from: 'user#09', to: 'user#72', total: 6.995923121723938, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 4.101013395457723, from: 'user#10', to: 'user#96', total: 4.101013395457723, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 5.8394408852644215, from: 'user#10', to: 'user#100', total: 5.8394408852644215, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 7.648363424577798, from: 'user#10', to: 'user#86', total: 7.648363424577798, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 21.28246942341293, from: 'user#11', to: 'user#90', total: 21.28246942341293, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 25.327897495631916, from: 'user#12', to: 'user#72', total: 25.327897495631916, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 29.725101921956906, from: 'user#13', to: 'user#89', total: 29.725101921956906, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 34.47408270238789, from: 'user#14', to: 'user#92', total: 34.47408270238789, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 39.574839836924866, from: 'user#15', to: 'user#88', total: 39.574839836924866, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 45.02737332556785, from: 'user#16', to: 'user#75', total: 45.02737332556785, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 18.478089691321113, from: 'user#17', to: 'user#84', total: 18.478089691321113, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 32.35359347699571, from: 'user#17', to: 'user#98', total: 32.35359347699571, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 56.98776936517182, from: 'user#18', to: 'user#77', total: 56.98776936517182, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 8.061129877691524, from: 'user#19', to: 'user#82', total: 8.061129877691524, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 9.538217821788082, from: 'user#19', to: 'user#85', total: 9.538217821788082, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 45.89628421665317, from: 'user#19', to: 'user#84', total: 45.89628421665317, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 70.35527082119977, from: 'user#20', to: 'user#95', total: 70.35527082119977, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 8.021619103086712, from: 'user#21', to: 'user#83', total: 8.021619103086712, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 23.43608619685513, from: 'user#21', to: 'user#82', total: 23.43608619685513, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 46.1089807804309, from: 'user#21', to: 'user#68', total: 46.1089807804309, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 6.364589400116483, from: 'user#22', to: 'user#62', total: 6.364589400116483, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 21.28526499708795, from: 'user#22', to: 'user#97', total: 21.28526499708795, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 57.4800232964473, from: 'user#22', to: 'user#72', total: 57.4800232964473, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 22.16144437973209, from: 'user#23', to: 'user#68', total: 22.16144437973209, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 31.21211415259173, from: 'user#23', to: 'user#78', total: 31.21211415259173, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 39.67128712871288, from: 'user#23', to: 'user#96', total: 39.67128712871288, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 14.032847990681422, from: 'user#24', to: 'user#100', total: 14.032847990681422, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 31.312754804892226, from: 'user#24', to: 'user#92', total: 31.312754804892226, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 55.96598718695402, from: 'user#24', to: 'user#84', total: 55.96598718695402, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 13.390099009900988, from: 'user#25', to: 'user#81', total: 13.390099009900988, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 27.3341409435061, from: 'user#25', to: 'user#94', total: 27.3341409435061, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 28.42497379149682, from: 'user#25', to: 'user#79', total: 28.42497379149682, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 40.78089691322072, from: 'user#25', to: 'user#76', total: 40.78089691322072, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 17.110355270818633, from: 'user#26', to: 'user#85', total: 17.110355270818633, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 33.3744903902155, from: 'user#26', to: 'user#76', total: 33.3744903902155, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 68.41556202679348, from: 'user#26', to: 'user#96', total: 68.41556202679348, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 24.653046010483365, from: 'user#27', to: 'user#77', total: 24.653046010483365, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 44.58185206755971, from: 'user#27', to: 'user#86', total: 44.58185206755971, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 58.98758299359348, from: 'user#27', to: 'user#74', total: 58.98758299359348, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 1.9227489807801987, from: 'user#28', to: 'user#94', total: 1.9227489807801987, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 8.026651135702188, from: 'user#28', to: 'user#83', total: 8.026651135702188, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 23.62599883517759, from: 'user#28', to: 'user#86', total: 23.62599883517759, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 104.32093185789157, from: 'user#28', to: 'user#99', total: 104.32093185789157, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 4.925800815375668, from: 'user#29', to: 'user#90', total: 4.925800815375668, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 18.769248689574837, from: 'user#29', to: 'user#73', total: 18.769248689574837, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 20.44799068142101, from: 'user#29', to: 'user#93', total: 20.44799068142101, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 25.09749563191619, from: 'user#29', to: 'user#80', total: 25.09749563191619, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 78.6814210832848, from: 'user#29', to: 'user#52', total: 78.6814210832848, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 2.77255678508925, from: 'user#30', to: 'user#96', total: 2.77255678508925, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 24.341572510192993, from: 'user#30', to: 'user#90', total: 24.341572510192993, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 37.40048922539308, from: 'user#30', to: 'user#88', total: 37.40048922539308, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 93.78474082702415, from: 'user#30', to: 'user#89', total: 93.78474082702415, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 29.028538147932434, from: 'user#31', to: 'user#89', total: 29.028538147932434, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 140, from: 'user#31', to: 'user#70', total: 140, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 25.318578916715182, from: 'user#32', to: 'user#52', total: 25.318578916715182, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 154.79091438555622, from: 'user#32', to: 'user#91', total: 154.79091438555622, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 3.124239953406862, from: 'user#33', to: 'user#89', total: 3.124239953406862, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 50.4179848573095, from: 'user#33', to: 'user#87', total: 50.4179848573095, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 137.99999999999997, from: 'user#33', to: 'user#69', total: 137.99999999999997, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 2.3217239370995877, from: 'user#34', to: 'user#53', total: 2.3217239370995877, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 39.541991846243455, from: 'user#34', to: 'user#73', total: 39.541991846243455, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 72.45059988351774, from: 'user#34', to: 'user#92', total: 72.45059988351774, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 89.01241700640652, from: 'user#34', to: 'user#74', total: 89.01241700640652, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 4.671310425160179, from: 'user#35', to: 'user#66', total: 4.671310425160179, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 19.77258008153754, from: 'user#35', to: 'user#89', total: 19.77258008153754, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 57.01912638322652, from: 'user#35', to: 'user#85', total: 57.01912638322652, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 134, from: 'user#35', to: 'user#67', total: 134, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 8.5308794408855, from: 'user#36', to: 'user#75', total: 8.5308794408855, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 77.8446126965638, from: 'user#36', to: 'user#76', total: 77.8446126965638, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 141.57558532323796, from: 'user#36', to: 'user#93', total: 141.57558532323796, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 17.763075131042527, from: 'user#37', to: 'user#80', total: 17.763075131042527, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 26.16284216656972, from: 'user#37', to: 'user#97', total: 26.16284216656972, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 69.5363075131041, from: 'user#37', to: 'user#87', total: 69.5363075131041, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 127.32868957483987, from: 'user#37', to: 'user#66', total: 127.32868957483987, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 0.5036691904484556, from: 'user#38', to: 'user#58', total: 0.5036691904484556, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 16.0147233546884, from: 'user#38', to: 'user#77', total: 16.0147233546884, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 112.67624927198602, from: 'user#38', to: 'user#94', total: 112.67624927198602, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 124.78788584740829, from: 'user#38', to: 'user#78', total: 124.78788584740829, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 16.000652300524187, from: 'user#39', to: 'user#96', total: 16.000652300524187, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 42.664368083867004, from: 'user#39', to: 'user#83', total: 42.664368083867004, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 91.22548631333741, from: 'user#39', to: 'user#65', total: 91.22548631333741, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 117.63541059988353, from: 'user#39', to: 'user#62', total: 117.63541059988353, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 19.438555620267913, from: 'user#40', to: 'user#60', total: 19.438555620267913, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 58.17584158415838, from: 'user#40', to: 'user#79', total: 58.17584158415838, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 91.52479906814214, from: 'user#40', to: 'user#95', total: 91.52479906814214, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 112.28188701223063, from: 'user#40', to: 'user#80', total: 112.28188701223063, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 72.849900990099, from: 'user#41', to: 'user#81', total: 72.849900990099, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 100.56144437973208, from: 'user#41', to: 'user#60', total: 100.56144437973208, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 122.2566802562609, from: 'user#41', to: 'user#63', total: 122.2566802562609, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 8.024554455445676, from: 'user#42', to: 'user#97', total: 8.024554455445676, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 37.33768200349449, from: 'user#42', to: 'user#61', total: 37.33768200349449, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 56.64172393709748, from: 'user#42', to: 'user#96', total: 56.64172393709748, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 75.76000000000002, from: 'user#42', to: 'user#81', total: 75.76000000000002, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 132.50278392545337, from: 'user#42', to: 'user#82', total: 132.50278392545337, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 21.90434478741981, from: 'user#43', to: 'user#84', total: 21.90434478741981, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 31.755061153174267, from: 'user#43', to: 'user#59', total: 31.755061153174267, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 71.3991846243448, from: 'user#43', to: 'user#79', total: 71.3991846243448, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 84.66231799650552, from: 'user#43', to: 'user#61', total: 84.66231799650552, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 115.49633080955154, from: 'user#43', to: 'user#58', total: 115.49633080955154, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 3.7433197437390966, from: 'user#44', to: 'user#63', total: 3.7433197437390966, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 15.231962725679868, from: 'user#44', to: 'user#85', total: 15.231962725679868, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 25.7552941176519, from: 'user#44', to: 'user#84', total: 25.7552941176519, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 54.09994175888179, from: 'user#44', to: 'user#64', total: 54.09994175888179, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 107.10471753057647, from: 'user#44', to: 'user#83', total: 107.10471753057647, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 134.58427489807778, from: 'user#44', to: 'user#97', total: 134.58427489807778, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 17.591426907396688, from: 'user#45', to: 'user#68', total: 17.591426907396688, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 56.344461269656406, from: 'user#45', to: 'user#77', total: 56.344461269656406, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 83.99273150844496, from: 'user#45', to: 'user#57', total: 83.99273150844496, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 86.24493884682572, from: 'user#45', to: 'user#59', total: 86.24493884682572, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 112, from: 'user#45', to: 'user#56', total: 112, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 26.441933605125243, from: 'user#46', to: 'user#91', total: 26.441933605125243, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 38.774513686662594, from: 'user#46', to: 'user#65', total: 38.774513686662594, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 54.196156086196844, from: 'user#46', to: 'user#72', total: 54.196156086196844, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 59.843494467094935, from: 'user#46', to: 'user#85', total: 59.843494467094935, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 90.15077460687243, from: 'user#46', to: 'user#86', total: 90.15077460687243, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 102.77251019219473, from: 'user#46', to: 'user#98', total: 102.77251019219473, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 0.0379732090855871, from: 'user#47', to: 'user#64', total: 0.0379732090855871, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 30.007268491555042, from: 'user#47', to: 'user#57', total: 30.007268491555042, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 52.80298194525339, from: 'user#47', to: 'user#75', total: 52.80298194525339, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 87.68875946418169, from: 'user#47', to: 'user#73', total: 87.68875946418169, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 108.00000000000001, from: 'user#47', to: 'user#54', total: 108.00000000000001, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 110, from: 'user#47', to: 'user#55', total: 110, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 21.582947000582642, from: 'user#48', to: 'user#93', total: 21.582947000582642, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 43.13705299941764, from: 'user#48', to: 'user#92', total: 43.13705299941764, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 43.638765288293264, from: 'user#48', to: 'user#75', total: 43.638765288293264, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 50.138147932440305, from: 'user#48', to: 'user#68', total: 50.138147932440305, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 54.0457076295864, from: 'user#48', to: 'user#87', total: 54.0457076295864, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 93.6790681421084, from: 'user#48', to: 'user#99', total: 93.6790681421084, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 99.02467093768202, from: 'user#48', to: 'user#88', total: 99.02467093768202, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 0.76715200931854, from: 'user#49', to: 'user#91', total: 0.76715200931854, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 73.86208503203262, from: 'user#49', to: 'user#64', total: 73.86208503203262, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 102, from: 'user#49', to: 'user#51', total: 102, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 103.67827606290042, from: 'user#49', to: 'user#53', total: 103.67827606290042, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 142, from: 'user#49', to: 'user#71', total: 142, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 28.119930110658096, from: 'user#50', to: 'user#95', total: 28.119930110658096, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 41.6696563774027, from: 'user#50', to: 'user#94', total: 41.6696563774027, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 60.352987769365185, from: 'user#50', to: 'user#98', total: 60.352987769365185, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 129.4501572510184, from: 'user#50', to: 'user#90', total: 129.4501572510184, partial: false, isLate: false, dueOn: '2021-01' },
+      { amount: 180.12771112405414, from: 'user#50', to: 'user#100', total: 180.12771112405414, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
 })
