@@ -39,11 +39,9 @@ import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
-import maxLength from 'vuelidate/lib/validators/maxLength'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { CHATROOM_NAME_LIMITS_IN_CHARS } from '@model/contracts/constants.js'
 
 export default ({
   name: 'EditChannelNameModal',
@@ -56,7 +54,7 @@ export default ({
     ...mapState(['currentGroupId', 'currentChatRoomId']),
     ...mapGetters(['currentChatRoomState']),
     maxNameCharacters () {
-      return CHATROOM_NAME_LIMITS_IN_CHARS
+      return this.currentChatRoomState.settings.maxNameLetters
     }
   },
   data () {
@@ -102,7 +100,9 @@ export default ({
     form: {
       name: {
         [L('This field is required')]: required,
-        maxLength: maxLength(CHATROOM_NAME_LIMITS_IN_CHARS)
+        [L('This field is limited to characters')]: function (value) {
+          return value ? Number(value.length) <= this.maxNameCharacters : false
+        }
       }
     }
   }

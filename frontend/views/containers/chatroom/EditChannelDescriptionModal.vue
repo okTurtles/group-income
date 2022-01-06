@@ -44,7 +44,6 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { CHATROOM_DESCRIPTION_LIMITS_IN_CHARS } from '@model/contracts/constants.js'
 
 export default ({
   name: 'EditChannelDescriptionModal',
@@ -67,7 +66,7 @@ export default ({
       'groupSettings', 'currentChatRoomState'
     ]),
     maxDescriptionCharacters () {
-      return CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
+      return this.currentChatRoomState.settings.maxDescriptionLetters
     },
     code () {
       return L('DELETE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })
@@ -98,10 +97,8 @@ export default ({
   validations: {
     form: {
       description: {
-        [L('The description is limited to {max} characters', {
-          max: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
-        })]: function (value) {
-          return value ? Number(value.length) <= CHATROOM_DESCRIPTION_LIMITS_IN_CHARS : false
+        [L('This field is limited to characters')]: function (value) {
+          return value ? Number(value.length) <= this.maxDescriptionCharacters : false
         }
       }
     }

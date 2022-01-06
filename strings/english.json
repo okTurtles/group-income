@@ -379,7 +379,7 @@
   "{firstMember} and {othersMembersCount} others will ensure you meet the mincome": "{firstMember} and {othersMembersCount} others will ensure you meet the mincome",
   "See all {groupMembersCount} members": "See all {groupMembersCount} members",
   "Proposal Accepted": "Proposal Accepted",
-  "The description is limited to {max} characters": "The description is limited to {max} characters",
+  "This field is limited to characters": "This field is limited to characters",
   "Giving": "Giving",
   "Show info": "Show info",
   "Are you sure you want to vote yes?": "Are you sure you want to vote yes?",
