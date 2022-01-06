@@ -49,26 +49,19 @@ export default ({
     }
     */
     list: Object,
-    routeName: String,
-    type: String
+    routeName: String
   },
   methods: {
     getIcon (id) {
       const isPrivate = this.list.channels[id].private
       return isPrivate === undefined ? '' : (isPrivate ? 'lock' : 'hashtag')
     },
-    buildUrl (id) {
-      const { list, routeName, type } = this
-      const { name } = list.channels[id] || {}
-
+    buildUrl (chatRoomId) {
       // NOTE - This should be $store responsability
       // ...but for now I've used the $route params just for mocked layout purposes
       return {
-        name: routeName,
-        params: {
-          chatName: name,
-          currentConversation: { type, id }
-        }
+        name: this.routeName,
+        params: { chatRoomId }
       }
 
       // ... once $store is implement, we can just pass the following:

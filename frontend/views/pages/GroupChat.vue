@@ -58,7 +58,6 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         routepath='/group-chat/'
         :list='channels'
         route-name='GroupChatConversation'
-        :type='type.groups'
       )
 
       group-members(:title='L("Direct Messages")' action='chat')
@@ -74,7 +73,6 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 <script>
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
-import { chatTypes, users, groupA } from '@containers/chatroom/fakeStore.js'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
@@ -83,6 +81,7 @@ import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
+import { chatRoomTypes } from '@model/contracts/constants.js'
 
 export default ({
   name: 'GroupChat',
@@ -103,10 +102,20 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupsByName',
       'getChatRoomIDsInSort',
-      'getChatRoomsInDetail'
+      'getChatRoomsInDetail',
+      'globalProfile',
+      'groupMembersSorted',
+      'groupProfiles',
+      'groupMembersCount'
     ]),
+    groupUsers () {
+      const groupUsers = {}
+      for (const username in this.groupProfiles) {
+        groupUsers[this.groupProfiles[username].contractID] = this.globalProfile(username)
+      }
+      return groupUsers
+    },
     channels () {
       return {
         order: this.getChatRoomIDsInSort,
@@ -115,21 +124,38 @@ export default ({
     },
     members () {
       return {
-        order: groupA.members,
-        conversations: users,
-        size: groupA.members.length
+        order: this.groupMembersSorted.map(member => this.groupProfiles[member.username].contractID),
+        conversations: this.groupUsers,
+        size: this.groupMembersCount
       }
     },
     type () {
       return {
-        members: chatTypes.INDIVIDUAL,
-        groups: chatTypes.GROUP
+        members: chatRoomTypes.INDIVIDUAL,
+        groups: chatRoomTypes.GROUP
       }
     }
   },
   methods: {
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    }
+  },
+  watch: {
+    '$route' (to: Object, from: Object) {
+      this.$nextTick(() => {
+        this.refreshTitle()
+      })
+      const { chatRoomId } = to.params
+      if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+        if (this.isJoinedChatRoom(chatRoomId)) {
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+            chatRoomId: to.params.chatRoomId
+          })
+        } else {
+          this.redirectChat('GroupChatConversation')
+        }
+      }
     }
   }
 }: Object)

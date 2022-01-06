@@ -55,6 +55,7 @@ const groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/' })
 }
+
 // TODO: add state machine guard and redirect to critical error page if necessary
 // var mailGuard = {
 //   guard: (to, from) => from.name !== Mailbox.name,
@@ -157,7 +158,7 @@ const router: any = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
-      path: '/group-chat/:chatName',
+      path: '/group-chat/:chatRoomId',
       component: () => GroupChat,
       name: 'GroupChatConversation',
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
