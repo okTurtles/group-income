@@ -517,7 +517,7 @@ const getters = {
     const chatRoomsInDetail = _.merge({}, getters.getChatRooms)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
-      if (chatRoom && chatRoom.attributes) {
+      if (chatRoom && chatRoom.attributes && chatRoom.users[state.loggedIn.identityContractID]) {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
