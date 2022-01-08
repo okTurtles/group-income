@@ -63,8 +63,6 @@ async function startApp () {
     })
   }
 
-  sbp('okTurtles.data/set', 'LIGHTWEIGHT_CLIENT', process.env.LIGHTWEIGHT_CLIENT ?? true)
-
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
 

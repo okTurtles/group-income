@@ -9,14 +9,14 @@ const log = localforage.createInstance({
   storeName: 'Contracts'
 })
 
-const isLightweightClient = process.env.LIGHTWEIGHT_CLIENT ?? true
+const isLightweightClient = process.env.LIGHTWEIGHT_CLIENT === 'true'
 
 // make gi.log use localforage for storage
 sbp('sbp/selectors/overwrite',
   isLightweightClient
     ? {
         'gi.db/get': key => {
-          const contractId = sbp('gi.db/log/isLogHEAD', key)
+          const contractId = sbp('gi.db/log/contractIDFromLogHEAD', key)
           if (!contractId) {
             return null
           }

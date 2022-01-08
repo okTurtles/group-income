@@ -43,7 +43,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.db/log/logHEAD': function (contractID: string): string {
     return `${contractID}-HEAD`
   },
-  'gi.db/log/isLogHEAD': function (key: string): string | boolean {
+  'gi.db/log/contractIDFromLogHEAD': function (key: string): string | boolean {
     return key.slice(-5) === '-HEAD' ? key.slice(0, -5) : false
   },
   'gi.db/log/getEntry': async function (hash: string): Promise<GIMessage> {
