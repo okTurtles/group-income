@@ -19,3 +19,8 @@ export const chatRoomTypes = {
   INDIVIDUAL: 'INDIVIDUAL',
   GROUP: 'GROUP'
 }
+
+export const messageTypes = {
+  INTERACTIVE: 'INTERACTIVE',
+  NOTIFICATION: 'NOTIFICATION'
+}

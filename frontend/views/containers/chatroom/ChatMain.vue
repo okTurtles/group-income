@@ -35,7 +35,7 @@
           :emoticonsList='message.emoticons'
           :who='who(message)'
           :currentUserId='currentUserAttr.id'
-          :avatar='avatar(isCurrentUser, message.from)'
+          :avatar='avatar(message.from)'
           :variant='variant(message)'
           :isSameSender='isSameSender(index)'
           :isCurrentUser='isCurrentUser(message.from)'
@@ -68,7 +68,8 @@ import MessageNotification from './MessageNotification.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
 import Emoticons from './Emoticons.vue'
-import { currentUserId, messageTypes, fakeEvents } from '@containers/chatroom/fakeStore.js'
+import { currentUserId, fakeEvents } from '@containers/chatroom/fakeStore.js'
+import { messageTypes } from '@model/contracts/constants.js'
 import { proximityDate } from '@utils/time.js'
 
 export default ({
@@ -136,7 +137,7 @@ export default ({
     currentUserAttr () {
       return {
         ...this.$store.getters.ourUserIdentityContract.attributes,
-        id: currentUserId
+        id: this.$store.state.loggedIn.identityContractID
       }
     }
   },
@@ -190,14 +191,16 @@ export default ({
         return this.isCurrentUser(message.from) ? this.messageVariants.SENT : this.messageVariants.RECEIVED
       }
     },
-    avatar (isCurrentUser, fromId) {
-      return isCurrentUser ? this.currentUserAttr.picture : this.details.participants[fromId].picture
+    avatar (fromId) {
+      if (fromId === messageTypes.NOTIFICATION || fromId === messageTypes.INTERACTIVE) {
+        return this.currentUserAttr.picture
+      }
+      return this.details.participants[fromId].picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
       return this.messages[index].from === this.messages[index - 1].from
     },
-
     updateSendAreaHeight (height) {
       this.ephemeral.bodyPaddingBottom = height
     },

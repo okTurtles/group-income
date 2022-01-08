@@ -1,4 +1,42 @@
-import { chatRoomTypes } from '@model/contracts/constants.js'
+import { chatRoomTypes, messageTypes } from '@model/contracts/constants.js'
+
+const fakeMessages = [
+  {
+    time: (new Date(2020, 5, 22, 11, 43, 42): Date),
+    from: '21XWnNTQGFZaeK8SwrAe5FZ9LtWbK1bNdMqF2ai4FJeJRVYAbu',
+    text: 'Hi 👋'
+  },
+  {
+    time: (new Date(2020, 7, 23, 11, 34, 42): Date),
+    from: '21XWnNVjz6rjPc28X3XWbHJM3ZdDEE8hb3abGZx47gjazaG2XJ',
+    text: 'It’s missing Sandy'
+  },
+  {
+    time: (new Date(2020, 7, 23, 12, 23, 42): Date),
+    from: '21XWnNTQGFZaeK8SwrAe5FZ9LtWbK1bNdMqF2ai4FJeJRVYAbu',
+    text: 'Yeah, looking for her username, one second'
+  },
+  {
+    time: (new Date(2020, 7, 23, 12, 45, 42): Date),
+    from: messageTypes.NOTIFICATION,
+    id: 'youAddedToDreamersGroup',
+    text: 'You are now part of The Dreamers group.'
+  },
+  {
+    time: (new Date(2020, 7, 30, 13, 25, 42): Date),
+    from: '21XWnNTQGFZaeK8SwrAe5FZ9LtWbK1bNdMqF2ai4FJeJRVYAbu',
+    text: 'Guys, should we add Katty to the group?'
+  },
+  {
+    time: (new Date(2020, 7, 31, 14, 28, 42): Date),
+    from: '21XWnNVjz6rjPc28X3XWbHJM3ZdDEE8hb3abGZx47gjazaG2XJ',
+    text: 'There’s no problem to me',
+    unread: true,
+    emoticons: {
+      '💖': ['21XWnNTQGFZaeK8SwrAe5FZ9LtWbK1bNdMqF2ai4FJeJRVYAbu']
+    }
+  }
+]
 
 const chatroom = {
   data (): Object {
@@ -37,8 +75,8 @@ const chatroom = {
     generalChatRoomId (): string {
       return this.$store.getters['getGeneralChatRoomID']
     },
-    currentIdentityContractId (): string {
-      return this.$store.state.loggedIn.identityContractID
+    chatRoomsInDetail (): Object {
+      return this.$store.getters['getChatRoomsInDetail']
     },
     summary (): Object {
       if (!this.currentChatRoomState || !this.currentChatRoomState.attributes) {
@@ -57,15 +95,21 @@ const chatroom = {
       }
     },
     details (): Object {
+      const participants = this.currentChatRoomState.users || {}
+      for (const identityContractID in participants) {
+        participants[identityContractID] = {
+          ...participants[identityContractID],
+          ...this.$store.state[identityContractID].attributes
+        }
+      }
       return {
         isLoading: false,
-        conversation: {},
-        participants: this.currentChatRoomState.users || {}
+        conversation: fakeMessages,
+        participants
       }
     },
     isJoinedChatRoom (): boolean {
-      return chatRoomId => !!this.$store.state.contracts[chatRoomId] &&
-        !!this.$store.state[chatRoomId].users[this.currentIdentityContractId]
+      return chatRoomId => this.chatRoomsInDetail[chatRoomId].joined
     }
   },
   methods: {
