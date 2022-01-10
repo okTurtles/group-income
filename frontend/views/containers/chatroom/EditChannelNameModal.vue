@@ -68,6 +68,11 @@ export default ({
   created () {
     this.form.name = this.currentChatRoomState.attributes.name
   },
+  mounted () {
+    if (!this.currentChatRoomState.attributes.editable) {
+      this.close()
+    }    
+  },
   methods: {
     close () {
       this.$refs.modal.close()

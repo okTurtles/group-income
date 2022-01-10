@@ -4,7 +4,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
     .c-header
       i(
         v-if='summary.private !== undefined'
-        :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
+        :class='`icon-${ summary.private ? "lock" : (summary.joined ? "hashtag" : "plus") } c-group-i`'
       )
       | {{summary.title}}
       menu-parent
@@ -16,7 +16,10 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
             i18n Channel Options
 
           ul
-            menu-item(@click='openModal("EditChannelNameModal")')
+            menu-item(
+              v-if='summary.editable'
+              @click='openModal("EditChannelNameModal")'
+            )
               i18n Rename
             menu-item(@click='openModal("GroupMembersAllModal", {name: summary.title})')
               i18n Members

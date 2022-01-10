@@ -1,5 +1,9 @@
 import { chatRoomTypes, messageTypes } from '@model/contracts/constants.js'
 
+/**
+ * TODO: need to remove this fakeMessages later
+ * At this moment, just used the examples of identityContractIDs
+**/
 const fakeMessages = [
   {
     time: (new Date(2020, 5, 22, 11, 43, 42): Date),
@@ -91,6 +95,8 @@ const chatroom = {
         description: this.currentChatRoomState.attributes.description,
         routerBack: type === chatRoomTypes.INDIVIDUAL ? '/messages' : '/group-chat',
         private: this.currentChatRoomState.attributes.private,
+        editable: this.currentChatRoomState.attributes.editable,
+        joined: this.isJoinedChatRoom(this.currentChatRoomId),
         picture: this.currentChatRoomState.attributes.picture
       }
     },
