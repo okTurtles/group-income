@@ -113,6 +113,8 @@ const chatroom = {
       const reload = Number(this.$route.query.reload)
       if (shouldReload) query.reload = reload ? reload + 1 : 1
 
+      // Temporarily blocked the chatrooms which the user is not part of
+      // Need to open it later and display messages just like Slack
       chatRoomId = chatRoomId || (this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.generalChatRoomId)
 
       this.$router.push({

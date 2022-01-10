@@ -54,7 +54,8 @@ export default ({
   methods: {
     getIcon (id) {
       const isPrivate = this.list.channels[id].private
-      return isPrivate === undefined ? '' : (isPrivate ? 'lock' : 'hashtag')
+      const isJoined = this.list.channels[id].joined
+      return isPrivate === undefined ? '' : (isPrivate ? 'lock' : (isJoined ? 'hashtag' : 'plus'))
     },
     buildUrl (chatRoomId) {
       // NOTE - This should be $store responsability
