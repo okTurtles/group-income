@@ -68,7 +68,7 @@ import MessageNotification from './MessageNotification.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
 import Emoticons from './Emoticons.vue'
-import { currentUserId, fakeEvents } from '@containers/chatroom/fakeStore.js'
+import { fakeEvents } from '@containers/chatroom/fakeStore.js'
 import { messageTypes } from '@model/contracts/constants.js'
 import { proximityDate } from '@utils/time.js'
 

@@ -316,21 +316,26 @@ sbp('chelonia/defineContract', {
     getChatRooms (state, getters) {
       return getters.currentGroupState.chatRooms
     },
-    getChatRoomIDsInSort (state, getters) {
+    getChatRoomIDsInSort (state, getters, rootState, rootGetters) {
       const chatRooms = getters.getChatRooms
       return Object.keys(chatRooms)
         .map(chatRoomID => ({
           name: chatRooms[chatRoomID].name,
+          private: chatRooms[chatRoomID].private,
+          joined: rootGetters.isJoinedChatRoom(chatRoomID),
           id: chatRoomID
-        })).sort((former, latter) => {
+        })).filter(details => !details.private || details.joined).sort((former, latter) => {
           const formerName = String(former.name).toLowerCase()
           const latterName = String(latter.name).toLowerCase()
-          if (formerName > latterName) {
-            return 1
-          } else if (formerName < latterName) {
-            return -1
+          if (former.joined === latter.joined) {
+            if (formerName > latterName) {
+              return 1
+            } else if (formerName < latterName) {
+              return -1
+            }
+            return 0
           }
-          return 0
+          return former.joined ? -1 : 1
         }).map(chatRoom => chatRoom.id)
     },
     getGeneralChatRoomID (state, getters) {

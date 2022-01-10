@@ -513,7 +513,12 @@ const getters = {
     }
     return 7
   },
-  getChatRoomsInDetail (state, getters) {
+  isJoinedChatRoom (state, getters) {
+    return (chatRoomId: string) => {
+      return !!state[chatRoomId]?.users && !!state[chatRoomId]?.users[state.loggedIn.identityContractID]
+    }
+  },
+  getChatRoomsInDetail (state, getters) { // TODO: I don't think this is necessary. need to implement this in getChatRooms getter
     const chatRoomsInDetail = _.merge({}, getters.getChatRooms)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
