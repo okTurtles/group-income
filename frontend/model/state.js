@@ -540,6 +540,11 @@ const getters = {
       }
     }
     return chatRoomsInDetail
+  },
+  chatRoomUsersInSort (state, getters) {
+    return getters.groupMembersSorted
+      .map(member => getters.groupProfiles[member.username].contractID)
+      .filter(contractID => !!getters.chatRoomUsers[contractID])
   }
 }
 

@@ -108,17 +108,9 @@ export default ({
       'getChatRoomIDsInSort',
       'getChatRoomsInDetail',
       'globalProfile',
-      'groupMembersSorted',
       'groupProfiles',
-      'groupMembersCount'
+      'chatRoomUsersInSort'
     ]),
-    groupUsers () {
-      const groupUsers = {}
-      for (const username in this.groupProfiles) {
-        groupUsers[this.groupProfiles[username].contractID] = this.globalProfile(username)
-      }
-      return groupUsers
-    },
     channels () {
       return {
         order: this.getChatRoomIDsInSort,
@@ -127,9 +119,8 @@ export default ({
     },
     members () {
       return {
-        order: this.groupMembersSorted.map(member => this.groupProfiles[member.username].contractID),
-        conversations: this.groupUsers,
-        size: this.groupMembersCount
+        order: this.chatRoomUsersInSort,
+        size: this.chatRoomUsersInSort.length
       }
     },
     type () {

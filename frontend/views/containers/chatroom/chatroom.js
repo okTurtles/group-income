@@ -1,39 +1,39 @@
-import { chatRoomTypes, messageTypes } from '@model/contracts/constants.js'
+import { chatRoomTypes } from '@model/contracts/constants.js'
 
 /**
  * TODO: need to remove this fakeMessages later
  * At this moment, just used the examples of identityContractIDs
 **/
 const fakeMessages = [
-  {
-    time: (new Date(2020, 5, 22, 11, 43, 42): Date),
-    from: '21XWnNHCSA1fRMdfy59qA3rw5wUqEx2dqYpu1o3mFuEycVqbyS',
-    text: 'Hi 👋'
-  },
-  {
-    time: (new Date(2020, 7, 23, 11, 34, 42): Date),
-    from: '21XWnNWhTiaF7kGmj2yTEEJPUaCbBJSTdJZNaPCjmZqC8QzLci',
-    text: 'It’s missing Sandy'
-  },
-  {
-    time: (new Date(2020, 7, 23, 12, 23, 42): Date),
-    from: '21XWnNHCSA1fRMdfy59qA3rw5wUqEx2dqYpu1o3mFuEycVqbyS',
-    text: 'Yeah, looking for her username, one second'
-  },
-  {
-    time: (new Date(2020, 7, 30, 13, 25, 42): Date),
-    from: '21XWnNMWqf3Wbf5tavSJascMXWznrucYvJYDP6YsRxmQs63F4j',
-    text: 'Guys, should we add Katty to the group?'
-  },
-  {
-    time: (new Date(2020, 7, 31, 14, 28, 42): Date),
-    from: '21XWnNWhTiaF7kGmj2yTEEJPUaCbBJSTdJZNaPCjmZqC8QzLci',
-    text: 'There’s no problem to me',
-    unread: true,
-    emoticons: {
-      '💖': ['21XWnNHCSA1fRMdfy59qA3rw5wUqEx2dqYpu1o3mFuEycVqbyS']
-    }
-  }
+  // {
+  //   time: (new Date(2020, 5, 22, 11, 43, 42): Date),
+  //   from: '21XWnNHCSA1fRMdfy59qA3rw5wUqEx2dqYpu1o3mFuEycVqbyS',
+  //   text: 'Hi 👋'
+  // },
+  // {
+  //   time: (new Date(2020, 7, 23, 11, 34, 42): Date),
+  //   from: '21XWnNWhTiaF7kGmj2yTEEJPUaCbBJSTdJZNaPCjmZqC8QzLci',
+  //   text: 'It’s missing Sandy'
+  // },
+  // {
+  //   time: (new Date(2020, 7, 23, 12, 23, 42): Date),
+  //   from: '21XWnNHCSA1fRMdfy59qA3rw5wUqEx2dqYpu1o3mFuEycVqbyS',
+  //   text: 'Yeah, looking for her username, one second'
+  // },
+  // {
+  //   time: (new Date(2020, 7, 30, 13, 25, 42): Date),
+  //   from: '21XWnNMWqf3Wbf5tavSJascMXWznrucYvJYDP6YsRxmQs63F4j',
+  //   text: 'Guys, should we add Katty to the group?'
+  // },
+  // {
+  //   time: (new Date(2020, 7, 31, 14, 28, 42): Date),
+  //   from: '21XWnNWhTiaF7kGmj2yTEEJPUaCbBJSTdJZNaPCjmZqC8QzLci',
+  //   text: 'There’s no problem to me',
+  //   unread: true,
+  //   emoticons: {
+  //     '💖': ['21XWnNHCSA1fRMdfy59qA3rw5wUqEx2dqYpu1o3mFuEycVqbyS']
+  //   }
+  // }
 ]
 
 const chatroom = {

@@ -71,7 +71,7 @@ export default ({
   mounted () {
     if (!this.currentChatRoomState.attributes.editable) {
       this.close()
-    }    
+    }
   },
   methods: {
     close () {
