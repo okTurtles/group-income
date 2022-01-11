@@ -24,3 +24,8 @@ export const messageTypes = {
   INTERACTIVE: 'INTERACTIVE',
   NOTIFICATION: 'NOTIFICATION'
 }
+
+export const INVITE_EXPIRES_IN_DAYS = {
+  INITIAL: 30,
+  PROPOSAL: 7
+}

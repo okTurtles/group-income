@@ -223,7 +223,7 @@ export default ({
       status
     }) {
       const isAnyoneLink = creator === INVITE_INITIAL_CREATOR
-      const isInviteExpired = expiryTime <= 0
+      const isInviteExpired = expiryTime < Date.now()
       const isInviteRevoked = status === INVITE_STATUS.REVOKED
       const numberOfResponses = Object.keys(responses).length
       const isAllInviteUsed = numberOfResponses === quantity

@@ -21,7 +21,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
               @click='openModal("EditChannelNameModal")'
             )
               i18n Rename
-            menu-item(@click='openModal("GroupMembersAllModal", {name: summary.title})')
+            menu-item(@click='openModal("GroupMembersAllModal", {name: summary.title, private: summary.private})')
               i18n Members
             menu-item.c-separator(@click='openModal("UserSettingsModal", {section: "notifications"})')
               i18n Notifications settings

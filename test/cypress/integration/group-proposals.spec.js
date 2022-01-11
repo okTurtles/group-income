@@ -1,7 +1,13 @@
+import { INVITE_EXPIRES_IN_DAYS } from '../../../frontend/model/contracts/constants.js'
+
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const groupMincome = 250
 const groupNewMincome = 500
+const groupInviteLinkExpiry = {
+  anyone: INVITE_EXPIRES_IN_DAYS.INITIAL,
+  proposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
+}
 
 function assertProposalOpenState ({ description }) {
   cy.getByDT('statusDescription')
@@ -56,6 +62,25 @@ describe('Proposals - Add members', () => {
     cy.giLogout()
   })
 
+  it(`initial invitation link has ${groupInviteLinkExpiry.anyone} days of expiry`, () => {
+    // Try to join with expired link
+    cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.anyone)
+    cy.visit(invitationLinks.anyone)
+    cy.getByDT('pageTitle')
+      .invoke('text')
+      .should('contain', 'Oh no! This invite is already expired')
+    cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+
+    // Expiry check in Group Settings page
+    // cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    // cy.getByDT('groupSettingsLink').click()
+    // cy.get('td.c-name:contains("Anyone")').should('not.exist')
+    // cy.get('.c-title-wrapper select').select('All links')
+    // cy.get('td.c-name:contains("Anyone")').siblings('.c-state').get('.c-state-expire').should('contain', 'Expired')
+
+    // cy.giLogout()
+  })
+
   it('not registered user2 and user3 join the group through the invitation link', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user2-${userId}`, groupName })
     cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user3-${userId}`, groupName })
@@ -77,7 +102,7 @@ describe('Proposals - Add members', () => {
     cy.giInviteMember([`user7-${userId}`])
   })
 
-  it('user2 proposes to change mincome to $500', () => {
+  it(`user2 proposes to change mincome to $${groupNewMincome}`, () => {
     cy.getByDT('groupMincome').within(() => {
       cy.get('button').click()
     })
@@ -217,7 +242,7 @@ describe('Proposals - Add members', () => {
     assertInvitationLinkFor(1, 'user6')
   })
 
-  it('user1 votes "yes" to the new mincome ($500) and proposal is accepted.', () => {
+  it(`user1 votes "yes" to the new mincome ($${groupMincome}) and proposal is accepted.`, () => {
     assertMincome(groupMincome)
 
     tryUnsuccessfullyToProposeNewSimilarMincome()
@@ -261,6 +286,25 @@ describe('Proposals - Add members', () => {
     })
   })
 
+  it(`proposal-based invitation link has ${groupInviteLinkExpiry.proposal} days of expiry`, () => {
+    // Try to join with expired link
+    cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
+    cy.visit(invitationLinks.user6)
+    cy.getByDT('pageTitle')
+      .invoke('text')
+      .should('contain', 'Oh no! This invite is already expired')
+    cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+
+    // Expiry check in Group Settings page
+    // cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    // cy.getByDT('groupSettingsLink').click()
+    // cy.get('td.c-name:contains("user6")').should('not.exist')
+    // cy.get('.c-title-wrapper select').select('All links')
+    // cy.get('td.c-name:contains("user6")').siblings('.c-state').get('.c-state-expire').should('contain', 'Expired')
+
+    // cy.giLogout()
+  })
+
   it('user6 registers through a unique invitation link to join a group', () => {
     cy.giAcceptGroupInvite(invitationLinks.user6, {
       groupName,
@@ -269,7 +313,7 @@ describe('Proposals - Add members', () => {
     })
   })
 
-  it('an expired invitation link cannot used', () => {
+  it('an already used invitation link cannot be used again', () => {
     cy.visit(invitationLinks.user6) // already used on the previous test
     cy.getByDT('pageTitle')
       .invoke('text')

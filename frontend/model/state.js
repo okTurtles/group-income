@@ -544,7 +544,7 @@ const getters = {
   chatRoomUsersInSort (state, getters) {
     return getters.groupMembersSorted
       .map(member => getters.groupProfiles[member.username].contractID)
-      .filter(contractID => !!getters.chatRoomUsers[contractID])
+      .filter(contractID => !!getters.chatRoomUsers[contractID] && !getters.chatRoomUsers[contractID].leavedDate) // TODO: going to add leavedDate field later
   }
 }
 
