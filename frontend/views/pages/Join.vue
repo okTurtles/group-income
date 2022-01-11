@@ -106,7 +106,7 @@ export default ({
         this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
         this.pageStatus = 'INVALID'
         return
-      } else if (!invite || invite.expires < Date.now()) {
+      } else if (invite && invite.expires < Date.now()) {
         console.log('Join.vue error: Link is already expired.')
         this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
         this.pageStatus = 'EXPIRED'
