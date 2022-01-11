@@ -120,7 +120,14 @@ export default ({
         },
         'group_join': {
           actionFn: async ({ groupId, inviteSecret }) => {
-            await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
+            const state = await sbp('state/latestContractState', groupId)
+            await sbp('gi.actions/group/joinAndSwitch', {
+              contractID: groupId,
+              data: {
+                inviteSecret,
+                chatRoomID: Object.keys(state?.chatRooms).find(cID => !state?.chatRooms[cID].editable)
+              }
+            })
           },
           finalize: () => {
             this.$router.push({ path: '/dashboard' }) // eslint-disable-line
