@@ -95,6 +95,10 @@ export default ({
           this.$router.push({ path: '/dashboard' })
           return
         } else {
+          const state = await sbp('state/latestContractState', this.$route.query.groupId)
+          this.ephemeral.invitation = {
+            chatRoomID: Object.keys(state.chatRooms).find(cID => !state.chatRooms[cID].editable)
+          }
           await this.accept()
           return
         }
