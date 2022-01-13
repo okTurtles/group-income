@@ -132,7 +132,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta }, { state }) {
         const identityContractID = data.identityContractID || meta.identityContractID
-        if (state.users[identityContractID]) {
+        if (state.users[identityContractID] && !state.users[identityContractID].departedDate) {
           console.log(`chatroom Join: ${identityContractID} is already joined the chatroom #${state.name}`)
           return
         }
@@ -156,6 +156,30 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
+      }
+    },
+    'gi.contracts/chatroom/leave': {
+      validate: objectMaybeOf({
+        identityContractID: optional(string)
+      }),
+      process ({ data, meta }, { state }) {
+        const identityContractID = data.identityContractID || meta.identityContractID
+        if (!state.users[identityContractID]) {
+          console.log(`chatroom Leave: ${identityContractID} is not a member of this chatroom #${state.name}`)
+          return
+        }
+        Vue.set(state.users[identityContractID], 'departedDate', meta.createdDate)
+        // create a new system message to inform a member is leaved
+      },
+      sideEffect ({ meta, data, contractID }, { state }) {
+        const rootState = sbp('state/vuex/state')
+        if (data.identityContractID === rootState.loggedIn.identityContractID) {
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+            groupId: rootState.currentGroupId
+          })
+          sbp('state/vuex/commit', 'removeContract', contractID)
+          // TODO: need to switch URL if user is in GroupChat page
+        }
       }
     }
   }

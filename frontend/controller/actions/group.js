@@ -201,6 +201,15 @@ export default (sbp('sbp/selectors/register', {
       ...params, action: 'gi.contracts/group/renameChatRoom'
     })
   },
+  'gi.actions/group/leaveChatRooms': function (params: {
+    identityContractID: string, chatRoomIDsToLeave: string[] }) {
+    for (const chatRoomID of params.chatRoomIDsToLeave) {
+      sbp('gi.actions/chatroom/leave', {
+        contractID: chatRoomID,
+        data: { identityContractID: params.identityContractID }
+      })
+    }
+  },
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),

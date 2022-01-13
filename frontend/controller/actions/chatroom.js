@@ -25,5 +25,10 @@ export default (sbp('sbp/selectors/register', {
     await sbp('chelonia/out/actionEncrypted', {
       ...params, action: 'gi.contracts/chatroom/changeDescription'
     })
+  },
+  'gi.actions/chatroom/leave': async function (params: GIActionParams) {
+    await sbp('chelonia/out/actionEncrypted', {
+      ...params, action: 'gi.contracts/chatroom/leave'
+    })
   }
 }): string[])

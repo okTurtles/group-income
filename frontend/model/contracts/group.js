@@ -620,8 +620,9 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
+        const { identityContractID, username } = rootState.loggedIn
 
-        if (data.member === rootState.loggedIn.username) {
+        if (data.member === username) {
           // If this member is re-joining the group, ignore the rest
           // so the member doesn't remove themself again.
           if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
@@ -630,8 +631,16 @@ sbp('chelonia/defineContract', {
 
           const groupIdToSwitch = Object.keys(contracts)
             .find(cID => contracts[cID].type === 'gi.contracts/group' &&
-                  cID !== contractID &&
-                  rootState[cID].settings) || null
+              cID !== contractID && rootState[cID].settings) || null
+
+          const chatRoomIDsToLeave = Object.keys(contracts)
+            .filter(cID => contracts[cID].type === 'gi.contracts/chatroom' &&
+              rootState[cID].users[identityContractID] &&
+              !rootState[cID].users[identityContractID].departedDate) || []
+
+          sbp('gi.actions/group/leaveChatRooms', {
+            identityContractID, chatRoomIDsToLeave
+          })
 
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           sbp('state/vuex/commit', 'removeContract', contractID)
@@ -859,7 +868,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta }, { state, getters }) {
         Vue.delete(state.chatRooms, data.chatRoomID)
       },
-      sideEffect ({ meta, data, contractID }, { state }) {
+      sideEffect ({ meta, data }, { state }) {
         sbp('state/vuex/commit', 'removeContract', data.chatRoomID)
       }
     },
@@ -867,37 +876,15 @@ sbp('chelonia/defineContract', {
       validate: objectMaybeOf({
         chatRoomID: optional(string)
       }),
-      process ({ data, meta }, { state, getters }) {
-        // const identityContractID = data.identityContractID || meta.identityContractID
-        // const chatRoomID = data.chatRoomID || getters.getGeneralChatRoomID
-        // sbp('gi.actions/chatroom/join', {
-        //   contractID: chatRoomID,
-        //   data: { identityContractID }
-        // })
-      },
-      sideEffect ({ meta, data, contractID }, { state }) {
+      process ({ data, meta }, { state, getters }) {},
+      sideEffect ({ meta, data }, { state }) {
         const rootState = sbp('state/vuex/state')
-
         if (meta.username === rootState.loggedIn.username) {
           const generalChatRoomContractID = Object.keys(state.chatRooms)
             .find(cID => state.chatRooms[cID].editable)
           const chatRoomID = data.chatRoomID || generalChatRoomContractID
 
           sbp('gi.actions/contract/sync', chatRoomID)
-        }
-      }
-    },
-    'gi.contracts/group/leaveChatRoom': {
-      validate: objectOf({
-        identityContractID: optional(string),
-        chatRoomID: string
-      }),
-      process ({ data, meta }, { state, getters }) {
-        // TODO
-      },
-      sideEffect ({ meta, data, contractID }, { state }) {
-        if (data.identityContractID) {
-          sbp('state/vuex/commit', 'removeContract', data.chatRoomID)
         }
       }
     },
