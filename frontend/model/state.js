@@ -208,11 +208,12 @@ const mutations = {
     state.appLogsFilter = filters
   },
   setCurrentChatRoomId (state, { groupId, chatRoomId }) {
-    // TODO: unsubscribe from events for all members who are not in this group
     if (chatRoomId) {
       state.currentChatRoomId = chatRoomId
-    } else if (groupId) {
+    } else if (groupId && state[groupId]) {
       state.currentChatRoomId = getGeneralChatRoomID(state[groupId].chatRooms)
+    } else {
+      state.currentChatRoomId = null
     }
   }
 }
@@ -454,7 +455,7 @@ const getters = {
   },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
-    if (!profiles) return
+    if (!profiles) return []
     const weJoinedMs = new Date(profiles[getters.ourUsername].joinedDate).getTime()
     const isNewMember = (username) => {
       if (username === getters.ourUsername) { return false }
@@ -542,9 +543,8 @@ const getters = {
     return chatRoomsInDetail
   },
   chatRoomUsersInSort (state, getters) {
-    return getters.groupMembersSorted
-      .map(member => getters.groupProfiles[member.username].contractID)
-      .filter(contractID => !!getters.chatRoomUsers[contractID] && !getters.chatRoomUsers[contractID].leavedDate) // TODO: going to add leavedDate field later
+    return getters.groupMembersSorted.map(member => getters.groupProfiles[member.username].contractID)
+      .filter(contractID => !!getters.chatRoomUsers[contractID] && !getters.chatRoomUsers[contractID].departedDate)
   }
 }
 

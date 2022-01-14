@@ -319,7 +319,7 @@ sbp('chelonia/defineContract', {
       return getters.currentGroupState.distributionEvents
     },
     getChatRooms (state, getters) {
-      return getters.currentGroupState.chatRooms
+      return getters.currentGroupState.chatRooms || {}
     },
     getChatRoomIDsInSort (state, getters, rootState, rootGetters) {
       const chatRooms = getters.getChatRooms
@@ -884,13 +884,19 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/joinChatRoom': {
       validate: objectMaybeOf({
-        chatRoomID: optional(string)
+        chatRoomID: string
       }),
       process ({ data, meta }, { state, getters }) {},
-      sideEffect ({ meta, data }, { state }) {
+      async sideEffect ({ meta, data }, { state }) {
         const rootState = sbp('state/vuex/state')
         if (meta.username === rootState.loggedIn.username) {
-          sbp('gi.actions/contract/sync', data.chatRoomID || getGeneralChatRoomID(state.chatRooms))
+          sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
+          await sbp('state/enqueueContractSync', data.chatRoomID)
+          sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
+          sbp('gi.actions/chatroom/join', {
+            contractID: data.chatRoomID,
+            data: { identityContractID: meta.identityContractID }
+          })
         }
       }
     },
