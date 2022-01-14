@@ -31,6 +31,10 @@ const getters = {
 
   unreadNotificationCount (state, getters) {
     return getters.unreadNotifications.length
+  },
+  // Used when there are multiple groups. Here only group-level notifications are counted.
+  unreadNotificationCountForGroup (state, getters) {
+    return (groupID) => state.filter(item => !item.read && item.groupID === groupID).length
   }
 }
 
