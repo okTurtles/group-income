@@ -344,8 +344,7 @@ sbp('chelonia/defineContract', {
         }).map(chatRoom => chatRoom.id)
     },
     getGeneralChatRoomID (state, getters) {
-      const chatRooms = getters.getChatRooms
-      return getGeneralChatRoomID(chatRooms)
+      return getGeneralChatRoomID(getters.getChatRooms)
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -715,6 +714,17 @@ sbp('chelonia/defineContract', {
               await sbp('state/enqueueContractSync', state.profiles[name].contractID)
             }
           }
+          // join the 'General' chatroom by default
+          const generalChatRoomContractID = getGeneralChatRoomID(state.chatRooms)
+          if (generalChatRoomContractID) {
+            await sbp('gi.actions/group/joinChatRoom', {
+              contractID,
+              data: {
+                identityContractID: rootState.loggedIn.identityContractID,
+                chatRoomID: generalChatRoomContractID
+              }
+            })
+          }
         } else {
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
@@ -880,11 +890,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ meta, data }, { state }) {
         const rootState = sbp('state/vuex/state')
         if (meta.username === rootState.loggedIn.username) {
-          const generalChatRoomContractID = Object.keys(state.chatRooms)
-            .find(cID => state.chatRooms[cID].editable)
-          const chatRoomID = data.chatRoomID || generalChatRoomContractID
-
-          sbp('gi.actions/contract/sync', chatRoomID)
+          sbp('gi.actions/contract/sync', data.chatRoomID || getGeneralChatRoomID(state.chatRooms))
         }
       }
     },

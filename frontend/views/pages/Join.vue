@@ -95,10 +95,6 @@ export default ({
           this.$router.push({ path: '/dashboard' })
           return
         } else {
-          const state = await sbp('state/latestContractState', this.$route.query.groupId)
-          this.ephemeral.invitation = {
-            chatRoomID: Object.keys(state.chatRooms).find(cID => !state.chatRooms[cID].editable)
-          }
           await this.accept()
           return
         }
@@ -136,8 +132,7 @@ export default ({
         groupPicture: state.settings.groupPicture,
         creator,
         creatorPicture,
-        message,
-        chatRoomID: Object.keys(state.chatRooms).find(cID => !state.chatRooms[cID].editable)
+        message
       }
       this.pageStatus = 'SIGNING'
     } catch (e) {
@@ -161,10 +156,7 @@ export default ({
       try {
         await sbp('gi.actions/group/joinAndSwitch', {
           contractID: groupId,
-          data: {
-            inviteSecret: secret,
-            chatRoomID: this.ephemeral.invitation.chatRoomID
-          }
+          data: { inviteSecret: secret }
         })
         this.pageStatus = 'WELCOME'
       } catch (e) {

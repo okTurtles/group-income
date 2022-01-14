@@ -129,12 +129,6 @@ export default (sbp('sbp/selectors/register', {
       // sync the group's contract state
       await sbp('state/enqueueContractSync', params.contractID)
 
-      // join the 'General' chatroom by default
-      await sbp('gi.actions/group/joinChatRoom', {
-        contractID: params.contractID,
-        data: { chatRoomID: params.data.chatRoomID }
-      })
-
       return message
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)

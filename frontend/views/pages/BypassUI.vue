@@ -120,14 +120,9 @@ export default ({
         },
         'group_join': {
           actionFn: async ({ groupId, inviteSecret }) => {
-            const state = await sbp('state/latestContractState', groupId)
-            console.log(JSON.stringify(state))
             await sbp('gi.actions/group/joinAndSwitch', {
               contractID: groupId,
-              data: {
-                inviteSecret,
-                chatRoomID: Object.keys(state.chatRooms).find(cID => !state.chatRooms[cID].editable)
-              }
+              data: { inviteSecret }
             })
           },
           finalize: () => {
