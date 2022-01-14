@@ -5,33 +5,32 @@ import { age, isNew, isOlder } from './utils.js'
 import * as keys from './mutationKeys.js'
 
 const getters = {
-  newNotifications (state, getters) {
-    return state.filter(item => isNew(item))
+  currentGroupNewNotifications (state, getters) {
+    return getters.currentGroupNotifications.filter(isNew)
   },
 
-  newNotificationCount (state, getters) {
-    return getters.newNotifications.length
+  currentGroupNotificationCount (state, getters) {
+    return getters.currentGroupNotifications.length
   },
 
-  notificationCount (state, getters) {
-    return state.length
+  // Notifications relevant to the current group, plus notifications that don't belong to any group in particular.
+  currentGroupNotifications (state, getters, rootState) {
+    return state.filter(item => !item.groupID || item.groupID === rootState.currentGroupId)
   },
 
-  olderNotifications (state, getters) {
-    return state.filter(item => isOlder(item))
+  currentGroupOlderNotifications (state, getters) {
+    return getters.currentGroupNotifications.filter(isOlder)
   },
 
-  olderNotificationCount (state, getters) {
-    return getters.olderNotifications.length
+  // Unread notifications relevant to the current group, plus notifications that don't belong to any group in particular.
+  currentGroupUnreadNotifications (state, getters, rootState) {
+    return getters.currentGroupNotifications.filter(item => !item.read)
   },
 
-  unreadNotifications (state, getters) {
-    return state.filter(item => !item.read)
+  currentGroupUnreadNotificationCount (state, getters) {
+    return getters.currentGroupUnreadNotifications.length
   },
 
-  unreadNotificationCount (state, getters) {
-    return getters.unreadNotifications.length
-  },
   // Used when there are multiple groups. Here only group-level notifications are counted.
   unreadNotificationCountForGroup (state, getters) {
     return (groupID) => state.filter(item => !item.read && item.groupID === groupID).length

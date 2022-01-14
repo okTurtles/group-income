@@ -6,7 +6,7 @@
         .c-skeleton-circle
         .c-skeleton-line
 
-    .c-empty(v-else-if='!notificationCount')
+    .c-empty(v-else-if='!currentGroupNotificationCount')
       i18n.has-text-1 Nothing to see here... yet!
 
     template(v-else v-for='list of notificationLists')
@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 
 import { timeSince } from '@utils/time.js'
 import AvatarUser from '@components/AvatarUser.vue'
@@ -50,20 +50,19 @@ export default ({
     AvatarUser
   },
   computed: {
-    ...mapGetters([
-      'newNotifications',
-      'newNotificationCount',
-      'notificationCount',
-      'olderNotifications'
+    ...mapState([
+      'currentGroupId'
     ]),
-    notifications () {
-      return this.$store.state.notifications
-    },
+    ...mapGetters([
+      'currentGroupNotificationCount',
+      'currentGroupNewNotifications',
+      'currentGroupOlderNotifications'
+    ]),
     notificationLists () {
       const defaultCategory = 'OLDER'
       const lists = [
-        { title: L('NEW'), items: this.newNotifications },
-        { title: L('OLDER'), items: this.olderNotifications }
+        { title: L('NEW'), items: this.currentGroupNewNotifications },
+        { title: L('OLDER'), items: this.currentGroupOlderNotifications }
       ].filter(list => list.items.length > 0)
 
       // If the only currently non-empty list has a category like 'OLDER' or 'UNREAD', then its title does not need to be displayed.

@@ -11,15 +11,20 @@ import templates from './templates.js'
 sbp('sbp/selectors/register', {
   // Creates and dispatches a new notification.
   'gi.notifications/emit' (type: string, data: NotificationData) {
-    const template = templates[type]
+    const template = templates[type](data)
+
+    if (template.scope === 'group' && !data.groupID) {
+      throw new TypeError('Incomplete notification data: `data.groupID` is required.')
+    }
 
     // Creates the notification object in a single step.
     const notification = {
-      ...template(data),
+      ...template,
+      // Sets 'groupID' if this notification only pertains to a certain group.
+      ...(template.scope === 'group' ? { groupID: data.groupID } : {}),
       read: false,
       timestamp: Date.now(),
-      type,
-      username: data.username
+      type
     }
     sbp('state/vuex/commit', keys.ADD_NOTIFICATION, notification)
   },

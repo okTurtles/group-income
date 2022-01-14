@@ -22,7 +22,8 @@ export default ({
       }),
       icon: 'coins',
       level: 'info',
-      linkTo: '/payments'
+      linkTo: '/payments',
+      scope: 'user'
     }
   },
   INCOME_DETAILS_OLD (data: { months: number }) {
@@ -33,30 +34,33 @@ export default ({
       }),
       icon: 'coins',
       level: 'info',
-      linkTo: '/contributions/TODO-LINK-MODAL'
+      linkTo: '/contributions/TODO-LINK-MODAL',
+      scope: 'user'
     }
   },
-  MEMBER_ADDED (data: { username: string }) {
+  MEMBER_ADDED (data: { groupID: string, username: string }) {
     return {
       body: L('The group has a new member. Say hi to {name}!', {
         name: strong(data.username)
       }),
       icon: 'user-plus',
       level: 'info',
-      linkTo: '/group-chat/XXXX'
+      linkTo: '/group-chat/XXXX',
+      scope: 'group'
     }
   },
-  MEMBER_LEFT (data: { username: string }) {
+  MEMBER_LEFT (data: { groupID: string, username: string }) {
     return {
       body: L('{name} has left your group. Contributions were updated accordingly.', {
         name: strong(data.username)
       }),
       icon: 'icon-minus',
       level: 'info',
-      linkTo: '/contributions'
+      linkTo: '/contributions',
+      scope: 'group'
     }
   },
-  MEMBER_REMOVED (data: { username: string }) {
+  MEMBER_REMOVED (data: { groupID: string, username: string }) {
     return {
       // REVIEW @mmbotelho - Not only contributions, but also proposals.
       body: L('{name} was kicked out of the group. Contributions were updated accordingly.', {
@@ -64,10 +68,11 @@ export default ({
       }),
       icon: 'user-minus',
       level: 'danger',
-      linkTo: '/contributions'
+      linkTo: '/contributions',
+      scope: 'group'
     }
   },
-  NEW_PROPOSAL (data: { creator: string, subtype: NewProposalType }) {
+  NEW_PROPOSAL (data: { groupID: string, creator: string, subtype: NewProposalType }) {
     const bodyTemplateMap = {
       ADD_MEMBER: (creator: string) => L('{member} proposed to add members to the group. Vote now!', { member: strong(creator) }),
       CHANGE_MINCOME: (creator: string) => L('{member} proposed to change the group mincome. Vote now!', { member: strong(creator) }),
@@ -88,7 +93,8 @@ export default ({
       icon: iconMap[data.subtype],
       level: 'info',
       linkTo: '/dashboard#TODO-proposals',
-      subtype: data.subtype
+      subtype: data.subtype,
+      scope: 'group'
     }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })
