@@ -75,7 +75,7 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import Tooltip from '@components/Tooltip.vue'
 
 export default ({
-  name: 'Chatroom',
+  name: 'SendArea',
   mixins: [emoticonsMixins],
   components: {
     Tooltip

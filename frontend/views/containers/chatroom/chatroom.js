@@ -120,7 +120,7 @@ const chatroom = {
         routerBack: type === chatRoomTypes.INDIVIDUAL ? '/messages' : '/group-chat',
         private: this.currentChatRoomState.attributes.private,
         editable: this.currentChatRoomState.attributes.editable,
-        joined: this.isJoinedChatRoom(this.currentChatRoomId),
+        joined: true,
         picture: this.currentChatRoomState.attributes.picture
       }
     },
@@ -163,7 +163,7 @@ const chatroom = {
         document.title = title
       }
     },
-    async loadSummary (): void {
+    async loadSummary (): Promise<void> {
       const { chatRoomId } = this.$route.params
       const state = await sbp('state/latestContractState', chatRoomId)
       const title = state.attributes.name
@@ -176,7 +176,7 @@ const chatroom = {
         routerBack: type === chatRoomTypes.INDIVIDUAL ? '/messages' : '/group-chat',
         private: state.attributes.private,
         editable: state.attributes.editable,
-        joined: this.isJoinedChatRoom(chatRoomId),
+        joined: false,
         picture: state.attributes.picture
       }
       const participantsInSort = this.groupMembersSorted.map(member => this.groupProfiles[member.username].contractID)

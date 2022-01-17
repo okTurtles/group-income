@@ -48,6 +48,7 @@
 
   .c-footer
     send-area(
+      v-if='summary.joined'
       :title='summary.title'
       @send='handleSendMessage'
       @height-update='updateSendAreaHeight'
@@ -57,6 +58,7 @@
       :replying-to='ephemeral.replyingTo'
       @stop-replying='ephemeral.replyingMessage = null'
     )
+    view-area(v-else)
 </template>
 
 <script>
@@ -67,6 +69,7 @@ import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
+import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { fakeEvents } from '@containers/chatroom/fakeStore.js'
 import { messageTypes } from '@model/contracts/constants.js'
@@ -82,7 +85,8 @@ export default ({
     MessageInteractive,
     MessageNotification,
     ConversationGreetings,
-    SendArea
+    SendArea,
+    ViewArea
   },
   props: {
     summary: {
