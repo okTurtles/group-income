@@ -23,11 +23,20 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
               i18n Rename
             menu-item(@click='openModal("GroupMembersAllModal", {name: summary.title, private: summary.private})')
               i18n Members
-            menu-item.c-separator(@click='openModal("UserSettingsModal", {section: "notifications"})')
+            menu-item(
+              :class='`${summary.editable ? "c-separator" : ""}`'
+              @click='openModal("UserSettingsModal", {section: "notifications"})'
+            )
               i18n Notifications settings
-            menu-item(@click='openModal("LeaveChannelModal")')
-              i18n(:args='{ groupName: summary.title }') Leave {groupName}
-            menu-item.has-text-danger(@click='openModal("DeleteChannelModal")')
+            menu-item(
+              v-if='summary.editable'
+              @click='openModal("LeaveChannelModal")'
+            )
+              i18n(:args='{ channelName: summary.title }') Leave {channelName}
+            menu-item.has-text-danger(
+              v-if='summary.editable'
+              @click='openModal("DeleteChannelModal")'
+            )
               i18n Delete channel
 
   template(#description='')
