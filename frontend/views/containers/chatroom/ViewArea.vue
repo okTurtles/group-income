@@ -5,11 +5,11 @@
     b  #channel
   .c-view-actions-wrapper
     button.is-success(
-      @click='joinChannel'
+      @click='join'
       data-test='joinChannel'
     ) Join Channel
     button(
-      @click='seeDetails'
+      @click='see'
       data-test='seeDetails'
     ) See More Details
 </template>
@@ -28,17 +28,21 @@ export default ({
     ])
   },
   methods: {
-    joinChannel: function () {
+    join: function () {
       // TODO: need to make button as button-submit
-      sbp('gi.actions/group/joinChatRoom', {
-        contractID: this.currentGroupId,
-        data: {
-          identityContractID: this.loggedIn.identityContractID,
-          chatRoomID: this.currentChatRoomId
-        }
-      })
+      try {
+        sbp('gi.actions/group/joinChatRoom', {
+          contractID: this.currentGroupId,
+          data: {
+            identityContractID: this.loggedIn.identityContractID,
+            chatRoomID: this.currentChatRoomId
+          }
+        })
+      } catch (e) {
+        console.error('ViewArea join() error:', e)
+      }
     },
-    seeDetails: function () {
+    see: function () {
       console.log('TODO')
     }
   }

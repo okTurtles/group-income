@@ -1,13 +1,13 @@
 <template lang='pug'>
-  modal-template(ref='modal' :a11yTitle='L("Leave group")')
+  modal-template(ref='modal' :a11yTitle='L("Leave Channel")')
     template(slot='title')
-      i18n Leave group
+      i18n Leave Channel
 
-    form(novalidate @submit.prevent='submit' data-test='leaveGroup')
+    form(novalidate @submit.prevent='' data-test='leaveChannel')
       i18n(
         tag='strong'
-        :args='{ groupName: groupSettings.groupName }'
-      ) Are you sure you want to leave {groupName}?
+        :args='{ channelName: currentChatRoomState.attributes.name }'
+      ) Are you sure you want to leave {channelName}?
 
       i18n(
         tag='p'
@@ -22,9 +22,10 @@
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 
 export default ({
   name: 'ChannelLeaveModal',
@@ -34,16 +35,26 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupSettings'
+      'currentChatRoomState'
+    ]),
+    ...mapState([
+      'currentChatRoomId',
+      'loggedIn'
     ])
   },
   methods: {
     close () {
       this.$refs.modal.close()
     },
-    submit () {
-      this.close()
-      console.log('Todo')
+    async submit () {
+      try {
+        await sbp('gi.actions/chatroom/leave', {
+          contractID: this.currentChatRoomId,
+          data: { identityContractID: this.loggedIn.identityContractID }
+        })
+      } catch (e) {
+        console.error('LeaveChannelModal submit() error:', e)
+      }
     }
   }
 }: Object)

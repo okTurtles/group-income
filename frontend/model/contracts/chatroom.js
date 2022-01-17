@@ -164,7 +164,7 @@ sbp('chelonia/defineContract', {
         identityContractID: string
       }),
       process ({ data, meta }, { state }) {
-        const { identityContractID } = data.identityContractID
+        const { identityContractID } = data
         if (state.users[identityContractID] && !state.users[identityContractID].departedDate) {
           Vue.set(state.users[identityContractID], 'departedDate', meta.createdDate)
           // create a new system message to inform a member is leaved
@@ -172,20 +172,18 @@ sbp('chelonia/defineContract', {
         }
         console.log(`chatroom Leave: ${identityContractID} is not a member of this chatroom #${state.name}`)
       },
-      sideEffect ({ meta, data, contractID }, { state }) {
-        const rootState = sbp('state/vuex/state')
-        const { identityContractID } = data.identityContractID
-
+      async sideEffect ({ meta, data, contractID }, { state }) {
         if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
           return
         }
-
-        if (identityContractID === rootState.loggedIn.identityContractID) {
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+        const rootState = sbp('state/vuex/state')
+        if (data.identityContractID === rootState.loggedIn.identityContractID) {
+          await sbp('state/vuex/commit', 'setCurrentChatRoomId', {
             groupId: rootState.currentGroupId
           })
-          sbp('state/vuex/commit', 'removeContract', contractID)
           // TODO: need to switch URL if user is in GroupChat page
+          sbp('controller/router').push({ name: 'GroupChat' })
+          sbp('state/vuex/commit', 'removeContract', contractID)
         }
       }
     }
