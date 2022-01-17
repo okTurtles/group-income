@@ -1,3 +1,4 @@
+import sbp from '~/shared/sbp.js'
 import { chatRoomTypes } from '@model/contracts/constants.js'
 
 /**
@@ -43,7 +44,9 @@ const chatroom = {
         isPhone: null
       },
       ephemeral: {
-        isLoading: true
+        isLoading: true,
+        loadedSummary: null,
+        loadedDetails: null
       }
     }
   },
@@ -57,8 +60,17 @@ const chatroom = {
      * TODO
      * show toast or dialog that the chatRoomId in URL is not incorrect or that is not-yet-joined chatRoomId
     **/
-    if (!this.$route.params.chatRoomId || !this.isJoinedChatRoom(this.$route.params.chatRoomId)) {
+    const { chatRoomId } = this.$route.params
+    if (!chatRoomId) {
+      this.ephemeral.loadedSummary = null
       this.redirectChat('GroupChatConversation')
+    } else if (!this.isJoinedChatRoom(chatRoomId)) {
+      if (!this.isPublicChatRoom(chatRoomId)) {
+        this.ephemeral.loadedSummary = null
+        this.redirectChat('GroupChatConversation')
+      } else {
+        this.loadSummary()
+      }
     } else {
       this.refreshTitle()
     }
@@ -73,8 +85,17 @@ const chatroom = {
     currentChatRoomId (): string {
       return this.$store.state['currentChatRoomId']
     },
+    chatRoomUsersInSort (): Object {
+      return this.$store.getters['chatRoomUsersInSort']
+    },
     generalChatRoomId (): string {
       return this.$store.getters['getGeneralChatRoomID']
+    },
+    groupMembersSorted (): Object {
+      return this.$store.getters['groupMembersSorted']
+    },
+    groupProfiles (): Object {
+      return this.$store.getters['groupProfiles']
     },
     chatRoomsInDetail (): Object {
       return this.$store.getters['getChatRoomsInDetail']
@@ -82,9 +103,12 @@ const chatroom = {
     isJoinedChatRoom (): function {
       return (chatRoomId: string): boolean => this.$store.getters['isJoinedChatRoom'](chatRoomId)
     },
+    isPublicChatRoom (): function {
+      return (chatRoomId: string): boolean => this.$store.getters['isPublicChatRoom'](chatRoomId)
+    },
     summary (): Object {
-      if (!this.currentChatRoomState || !this.currentChatRoomState.attributes) {
-        return {}
+      if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
+        return this.ephemeral.loadedSummary || {}
       }
       const title = this.currentChatRoomState.attributes.name
       const type = this.currentChatRoomState.attributes.type
@@ -102,9 +126,13 @@ const chatroom = {
     },
     details (): Object {
       // participants should be the members who joined at least once, even they have leaved at the moment
+      if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
+        return this.ephemeral.loadedDetails || {}
+      }
       return {
         isLoading: false,
         conversation: fakeMessages,
+        participantsInSort: this.chatRoomUsersInSort,
         participants: this.currentChatRoomUsers
       }
     }
@@ -129,8 +157,37 @@ const chatroom = {
         query
       })
     },
-    refreshTitle (): void {
-      document.title = this.currentChatRoomState.attributes.name
+    refreshTitle (title?: string): void {
+      title = title || this.currentChatRoomState.attributes?.name
+      if (title) {
+        document.title = title
+      }
+    },
+    async loadSummary (): void {
+      const { chatRoomId } = this.$route.params
+      const state = await sbp('state/latestContractState', chatRoomId)
+      const title = state.attributes.name
+      const type = state.attributes.type
+
+      this.ephemeral.loadedSummary = {
+        type,
+        title,
+        description: state.attributes.description,
+        routerBack: type === chatRoomTypes.INDIVIDUAL ? '/messages' : '/group-chat',
+        private: state.attributes.private,
+        editable: state.attributes.editable,
+        joined: this.isJoinedChatRoom(chatRoomId),
+        picture: state.attributes.picture
+      }
+      const participantsInSort = this.groupMembersSorted.map(member => this.groupProfiles[member.username].contractID)
+        .filter(contractID => !!state.users[contractID] && !state.users[contractID].departedDate) || []
+      this.ephemeral.loadedDetails = {
+        isLoading: false,
+        conversation: fakeMessages,
+        participantsInSort,
+        participants: state.users
+      }
+      this.refreshTitle(title)
     }
   }
 }

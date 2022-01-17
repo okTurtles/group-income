@@ -91,16 +91,16 @@ sbp('chelonia/defineContract', {
       return state
     },
     chatRoomSettings (state, getters) {
-      return getters.currentChatRoomState.settings
+      return getters.currentChatRoomState.settings || {}
     },
     chatRoomAttributes (state, getters) {
-      return getters.currentChatRoomState.attributes
+      return getters.currentChatRoomState.attributes || {}
     },
     chatRoomUsers (state, getters) {
-      return getters.currentChatRoomState.users
+      return getters.currentChatRoomState.users || {}
     },
     chatRoomMessages (state, getters) {
-      return getters.currentChatRoomState.messages
+      return getters.currentChatRoomState.messages || {}
     }
   },
   actions: {

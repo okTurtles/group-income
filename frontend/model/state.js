@@ -514,6 +514,11 @@ const getters = {
     }
     return 7
   },
+  isPublicChatRoom (state, getters) {
+    return (chatRoomId: string) => {
+      return !state[chatRoomId]?.attributes.private
+    }
+  },
   isJoinedChatRoom (state, getters) {
     return (chatRoomId: string) => {
       return !!state[chatRoomId]?.users && !!state[chatRoomId]?.users[state.loggedIn.identityContractID]
@@ -544,7 +549,7 @@ const getters = {
   },
   chatRoomUsersInSort (state, getters) {
     return getters.groupMembersSorted.map(member => getters.groupProfiles[member.username].contractID)
-      .filter(contractID => !!getters.chatRoomUsers[contractID] && !getters.chatRoomUsers[contractID].departedDate)
+      .filter(contractID => !!getters.chatRoomUsers[contractID] && !getters.chatRoomUsers[contractID].departedDate) || []
   }
 }
 
@@ -613,11 +618,12 @@ const actions = {
         console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
         await sbp('state/enqueueContractSync', currentGroupId)
       }
-      const currentChatRoomId = store.state.currentChatRoomId
-      if (currentChatRoomId && !contracts[currentChatRoomId]) {
-        console.error(`login: lost current chatroom state somehow for ${currentChatRoomId}! attempting resync...`)
-        await sbp('state/enqueueContractSync', currentChatRoomId)
-      }
+      // commented resync for the chatroom contract, because current chatroom contract id could be what the user is not part of
+      // const currentChatRoomId = store.state.currentChatRoomId
+      // if (currentChatRoomId && !contracts[currentChatRoomId]) {
+      //   console.error(`login: lost current chatroom state somehow for ${currentChatRoomId}! attempting resync...`)
+      //   await sbp('state/enqueueContractSync', currentChatRoomId)
+      // }
       if (!contracts[user.identityContractID]) {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
         await sbp('state/enqueueContractSync', user.identityContractID)

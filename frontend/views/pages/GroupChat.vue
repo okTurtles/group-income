@@ -4,7 +4,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
     .c-header
       i(
         v-if='summary.private !== undefined'
-        :class='`icon-${ summary.private ? "lock" : (summary.joined ? "hashtag" : "plus") } c-group-i`'
+        :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
       )
       | {{summary.title}}
       menu-parent
@@ -108,8 +108,7 @@ export default ({
       'getChatRoomIDsInSort',
       'getChatRoomsInDetail',
       'globalProfile',
-      'groupProfiles',
-      'chatRoomUsersInSort'
+      'groupProfiles'
     ]),
     channels () {
       return {
@@ -119,8 +118,9 @@ export default ({
     },
     members () {
       return {
-        order: this.chatRoomUsersInSort,
-        size: this.chatRoomUsersInSort.length
+        order: this.details.participantsInSort,
+        users: this.details.participants,
+        size: this.details.participantsInSort?.length
       }
     },
     type () {
@@ -137,15 +137,20 @@ export default ({
   },
   watch: {
     '$route' (to: Object, from: Object) {
-      this.$nextTick(() => {
-        this.refreshTitle()
-      })
       const { chatRoomId } = to.params
       if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+        this.$nextTick(() => {
+          this.refreshTitle()
+        })
         if (this.isJoinedChatRoom(chatRoomId)) {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
             chatRoomId: to.params.chatRoomId
           })
+        } else if (this.isPublicChatRoom(chatRoomId)) {
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+            chatRoomId: to.params.chatRoomId
+          })
+          this.loadSummary()
         } else {
           this.redirectChat('GroupChatConversation')
         }
