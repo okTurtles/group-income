@@ -103,7 +103,8 @@ sbp('sbp/selectors/register', {
   },
   'state/vuex/state': () => store.state,
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
-  'state/vuex/dispatch': (...args) => store.dispatch(...args)
+  'state/vuex/dispatch': (...args) => store.dispatch(...args),
+  'state/vuex/getters': () => store.getters
 })
 
 // Mutations must be synchronous! Never call these directly, instead use commit()

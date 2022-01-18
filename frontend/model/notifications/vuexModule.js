@@ -1,5 +1,7 @@
 import type { Notification } from './types.flow.js'
 
+import sbp from '~/shared/sbp.js'
+
 import './selectors.js'
 import { age, isNew, isOlder } from './utils.js'
 import * as keys from './mutationKeys.js'
@@ -22,18 +24,30 @@ const getters = {
     return getters.currentGroupNotifications.filter(isOlder)
   },
 
+  currentGroupUnreadNotificationCount (state, getters) {
+    return getters.currentGroupUnreadNotifications.length
+  },
+
   // Unread notifications relevant to the current group, plus notifications that don't belong to any group in particular.
   currentGroupUnreadNotifications (state, getters, rootState) {
     return getters.currentGroupNotifications.filter(item => !item.read)
   },
 
-  currentGroupUnreadNotificationCount (state, getters) {
-    return getters.currentGroupUnreadNotifications.length
+  totalUnreadNotificationCount (state, getters) {
+    return state.filter(item => !item.read).length
   },
 
-  // Used when there are multiple groups. Here only group-level notifications are counted.
-  unreadNotificationCountForGroup (state, getters) {
-    return (groupID) => state.filter(item => !item.read && item.groupID === groupID).length
+  // Finds what number to display on a group's avatar badge in the sidebar.
+  unreadNotificationCountFor (state, getters) {
+    return (groupID) => getters.unreadNotificationsFor(groupID).length
+  },
+
+  unreadNotificationsFor (state, getters, rootState) {
+    return (groupID) => (
+      groupID === rootState.currentGroupId
+        ? getters.currentGroupUnreadNotifications
+        : state.filter(item => !item.read && item.groupID === groupID)
+    )
   }
 }
 
@@ -53,8 +67,10 @@ const mutations = {
     notification.read = true
   },
 
-  [keys.MARK_ALL_NOTIFICATIONS_AS_READ] (state) {
-    state.forEach(item => {
+  // Passing the current group ID will clear the bell icon's badge.
+  // With another group ID, that group's avatar badge in the sidebar will be cleared.
+  [keys.MARK_ALL_NOTIFICATIONS_AS_READ] (state, groupID: string) {
+    sbp('state/vuex/getters').unreadNotificationsFor(groupID).forEach(item => {
       item.read = true
     })
   },
