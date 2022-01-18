@@ -4,6 +4,8 @@ import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/data.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
+const headSuffix = '-HEAD'
+
 // NOTE: To enable persistence of log use 'sbp/selectors/overwrite'
 //       to overwrite the following selectors:
 //       - 'gi.db/get'
@@ -37,14 +39,14 @@ export default (sbp('sbp/selectors/register', {
   'gi.db/set': function (key: string, value: string): Promise<void> {
     return Promise.resolve(sbp('okTurtles.data/set', key, value))
   },
-  'gi.db/delete': function (key: string) {
+  'gi.db/delete': function (key: string): Promise<void> {
     return Promise.resolve(sbp('okTurtles.data/delete', key))
   },
   'gi.db/log/logHEAD': function (contractID: string): string {
-    return `${contractID}-HEAD`
+    return `${contractID}${headSuffix}`
   },
-  'gi.db/log/contractIDFromLogHEAD': function (key: string): string | boolean {
-    return key.slice(-5) === '-HEAD' ? key.slice(0, -5) : false
+  'gi.db/log/contractIdFromLogHEAD': function (key: string): string | boolean {
+    return key.endsWith(headSuffix) ? key.slice(0, -headSuffix.length) : false
   },
   'gi.db/log/getEntry': async function (hash: string): Promise<GIMessage> {
     try {

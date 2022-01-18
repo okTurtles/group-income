@@ -52,7 +52,7 @@ const { resolve } = path
 // We will rather load it later, and only if necessary.
 // require('@babel/register')
 
-const { NODE_ENV = 'development', VUEX_STRICT = 'true', LIGHTWEIGHT_CLIENT = 'true' } = process.env
+const { LIGHTWEIGHT_CLIENT = 'true', NODE_ENV = 'development', VUEX_STRICT = 'true' } = process.env
 
 const backendIndex = './backend/index.js'
 const distAssets = 'dist/assets'
@@ -118,9 +118,9 @@ module.exports = (grunt) => {
       bundle: true,
       define: {
         'process.env.BUILD': "'web'", // Required by Vuelidate.
+        'process.env.LIGHTWEIGHT_CLIENT': LIGHTWEIGHT_CLIENT,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
-        'process.env.VUEX_STRICT': VUEX_STRICT,
-        'process.env.LIGHTWEIGHT_CLIENT': LIGHTWEIGHT_CLIENT
+        'process.env.VUEX_STRICT': VUEX_STRICT
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
       incremental: true,

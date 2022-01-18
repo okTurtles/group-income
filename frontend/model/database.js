@@ -16,7 +16,7 @@ sbp('sbp/selectors/overwrite',
   isLightweightClient
     ? {
         'gi.db/get': key => {
-          const contractId = sbp('gi.db/log/contractIDFromLogHEAD', key)
+          const contractId = sbp('gi.db/log/contractIdFromLogHEAD', key)
           if (!contractId) {
             return null
           }
