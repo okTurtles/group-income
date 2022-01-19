@@ -327,6 +327,7 @@
   "Members": "Membres",
   "Add {span_} to channel{_span}": "Ajouter {span_} au salon{_span}",
   "Channel members ({nbMembers})": "Membres du salon ({nbMembers})",
+  "Channel members": "Membres du salon",
   "Others ({nbMembers})": "Autres ({nbMembers})",
   "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy} (you).": "Ce membre n'a pas encore utilisé son lien d'invitation pour rejoindre le groupe. Ce lien devrait lui être communiqué par {invitedBy} (vous).",
   "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy}.": "Ce membre n'a pas encore utilisé son lien d'invitation pour rejoindre le groupe. Ce lien devrait lui être communiqué par {invitedBy}.",

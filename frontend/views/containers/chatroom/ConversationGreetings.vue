@@ -5,7 +5,7 @@
   .buttons
     i18n.button.is-outlined.is-small.is-primary(
       tag='button'
-      @click='openModal("ChatMembersAllModal", {addMemberTo: name})'
+      @click='openModal("ChatMembersAllModal")'
       data-test='addMembers'
     ) Add members
 

@@ -981,8 +981,11 @@
 /* views/containers/dashboard/GroupMembersAllModal.vue */
 "Add {span_} to channel{_span}" = "Ajouter {span_} au salon{_span}";
 
-/* views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/dashboard/ChatMembersAllModal.vue */
 "Channel members ({nbMembers})" = "Membres du salon ({nbMembers})";
+
+/* views/containers/dashboard/ChatMembersAllModal.vue */
+"Channel members" = "Membres du salon";
 
 /* views/containers/dashboard/GroupMembersAllModal.vue */
 "Others ({nbMembers})" = "Autres ({nbMembers})";

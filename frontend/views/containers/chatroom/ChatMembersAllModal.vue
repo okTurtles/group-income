@@ -1,17 +1,12 @@
 <template lang='pug'>
-modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Group members")')
+modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Channel members")')
   .c-container
     .c-header
-      div(v-if='canAddMember')
+      div
         i18n.is-title-2.c-title(
           tag='h2'
         ) Members
-        .c-description {{ name }} . {{isPrivate ? L("Private channel") : L("Public channel")}}
-
-      i18n.is-title-2.c-title(
-        v-else
-        tag='h2'
-      ) Group members
+        .c-description {{ attributes.name }} ∙ {{attributes.private ? L("Private channel") : L("Public channel")}}
 
     .card.c-card
       search(
@@ -32,27 +27,20 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         :args='{searchTerm: `<strong>${searchText}</strong>`}'
       ) Sorry, we couldn't find anyone called "{searchTerm}"
 
-      i18n.c-member-count.has-text-1(
-        v-if='!searchText && !canAddMember'
-        tag='div'
-        :args='{ groupMembersCount }'
-        data-test='memberCount'
-      ) {groupMembersCount} members
-
-      .c-list-to-add(v-if='canAddMember')
+      .c-list-to-add
         .is-subtitle
           i18n(
             tag='h3'
-            :args='{  nbMembers: groupMembersSorted.length }'
+            :args='{  nbMembers: chatRoomUsersInSort.length }'
           ) Channel members ({nbMembers})
 
         transition-group(
-          v-if='addedMember'
+          v-if='addedMembers.length'
           name='slide-list'
           tag='ul'
         )
           li.c-search-member(
-            v-for='{username, displayName, invitedBy, isNew} in addedMember'
+            v-for='{username, displayName} in addedMembers'
             :key='username'
           )
             profile-card(:username='username' direction='top-left')
@@ -70,7 +58,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         .is-subtitle.c-second-section
           i18n(
             tag='h3'
-            :args='{  nbMembers: addedMember.length }'
+            :args='{  nbMembers: addedMembers.length }'
           ) Others ({nbMembers})
 
       transition-group(
@@ -95,7 +83,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 
             .c-actions
               i18n.button.is-outlined.is-small(
-                v-if='addedMember'
+                v-if='addedMembers'
                 tag='button'
                 @click.stop='addToChannel()'
                 data-test='addToChannel'
@@ -126,31 +114,29 @@ export default ({
   data () {
     return {
       searchText: '',
-      addedMember: [],
-      canAddMember: false,
-      name: '',
-      isPrivate: true
+      addedMembers: [],
+      canAddMembers: []
     }
   },
   created () {
-    this.name = this.$route.query.name
-    if (this.name) this.canAddMember = true
-    // TODO: get chat member and filter groupMembersSorted
-    this.addedMember = this.groupMembersSorted
+    this.addedMembers = this.chatRoomUsersInSort
+    this.canAddMembers = this.groupMembersSorted.filter(member => !this.addedMembers.find(mb => mb.username === member.username))
   },
   computed: {
     ...mapGetters([
+      'currentChatRoomState',
       'groupMembersSorted',
       'groupMembersCount',
+      'chatRoomUsersInSort',
       'ourUsername',
       'userDisplayName'
     ]),
     searchResult () {
-      if (!this.searchText) { return this.groupMembersSorted }
+      if (!this.searchText) { return this.canAddMembers }
 
       const searchTextCaps = this.searchText.toUpperCase()
       const isInList = (n) => n.toUpperCase().indexOf(searchTextCaps) > -1
-      return this.groupMembersSorted.filter(({ username, displayName }) =>
+      return this.canAddMembers.filter(({ username, displayName }) =>
         (!searchTextCaps || isInList(username) || isInList(displayName))
       )
     },
@@ -160,6 +146,13 @@ export default ({
     resultsCopy () {
       const args = { searchCount: `<strong>${this.searchCount}</strong>`, searchTerm: `<strong>${this.searchText}</strong>`, ...LTags('strong') }
       return this.searchCount === 1 ? L('Showing {strong_}1 result{_strong} for "{searchTerm}"', args) : L('Showing {searchCount} {strong_}results{_strong} for "{searchTerm}"', args)
+    },
+    attributes () {
+      return {
+        name: this.currentChatRoomState.attributes.name,
+        description: this.currentChatRoomState.attributes.description,
+        private: this.currentChatRoomState.attributes.private
+      }
     }
   },
   methods: {

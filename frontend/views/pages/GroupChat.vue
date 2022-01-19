@@ -21,7 +21,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
               @click='openModal("EditChannelNameModal")'
             )
               i18n Rename
-            menu-item(@click='openModal("ChatMembersAllModal", {name: summary.title, private: summary.private})')
+            menu-item(@click='openModal("ChatMembersAllModal")')
               i18n Members
             menu-item(
               :class='`${summary.editable ? "c-separator" : ""}`'

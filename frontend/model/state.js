@@ -548,8 +548,9 @@ const getters = {
     return chatRoomsInDetail
   },
   chatRoomUsersInSort (state, getters) {
-    return getters.groupMembersSorted.map(member => member.username)
-      .filter(username => !!getters.chatRoomUsers[username] && !getters.chatRoomUsers[username].departedDate) || []
+    return getters.groupMembersSorted
+      .map(member => ({ username: member.username, displayName: member.displayName }))
+      .filter(member => !!getters.chatRoomUsers[member.username] && !getters.chatRoomUsers[member.username].departedDate) || []
   }
 }
 

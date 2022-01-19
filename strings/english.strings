@@ -606,6 +606,12 @@
 /* views/containers/dashboard/GroupMembersAllModal.vue */
 "Channel members ({nbMembers})" = "Channel members ({nbMembers})";
 
+/* views/containers/dashboard/ChatMembersAllModal.vue */
+"Channel members ({nbMembers})" = "Channel members ({nbMembers})";
+
+/* views/containers/dashboard/ChatMembersAllModal.vue */
+"Channel members" = "Channel members";
+
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "no" = "no";
 
