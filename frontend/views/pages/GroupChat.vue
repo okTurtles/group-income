@@ -7,7 +7,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
       )
       | {{summary.title}}
-      menu-parent
+      menu-parent(v-if='summary.joined')
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
 
