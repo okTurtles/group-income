@@ -50,7 +50,7 @@ export default ({
       try {
         await sbp('gi.actions/chatroom/leave', {
           contractID: this.currentChatRoomId,
-          data: { identityContractID: this.loggedIn.identityContractID }
+          data: { username: this.loggedIn.username }
         })
       } catch (e) {
         console.error('LeaveChannelModal submit() error:', e)

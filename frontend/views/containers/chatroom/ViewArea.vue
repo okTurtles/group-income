@@ -5,6 +5,7 @@
     b {{'#' + title}}
   .c-view-actions-wrapper
     button.button.is-small.is-outlined(
+      @click='see'
       data-test='channelDescription'
     )
       i18n Channel Description
@@ -38,7 +39,6 @@ export default ({
         sbp('gi.actions/group/joinChatRoom', {
           contractID: this.currentGroupId,
           data: {
-            identityContractID: this.loggedIn.identityContractID,
             chatRoomID: this.currentChatRoomId
           }
         })

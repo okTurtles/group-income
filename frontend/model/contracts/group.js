@@ -619,7 +619,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
-        const { identityContractID, username } = rootState.loggedIn
+        const { username } = rootState.loggedIn
 
         if (data.member === username) {
           // If this member is re-joining the group, ignore the rest
@@ -634,11 +634,11 @@ sbp('chelonia/defineContract', {
 
           const chatRoomIDsToLeave = Object.keys(contracts)
             .filter(cID => contracts[cID].type === 'gi.contracts/chatroom' &&
-              rootState[cID].users[identityContractID] &&
-              !rootState[cID].users[identityContractID].departedDate) || []
+              rootState[cID].users[username] &&
+              !rootState[cID].users[username].departedDate) || []
 
           sbp('gi.actions/group/leaveChatRooms', {
-            identityContractID, chatRoomIDsToLeave
+            username, chatRoomIDsToLeave
           })
 
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
@@ -720,7 +720,6 @@ sbp('chelonia/defineContract', {
             await sbp('gi.actions/group/joinChatRoom', {
               contractID,
               data: {
-                identityContractID: rootState.loggedIn.identityContractID,
                 chatRoomID: generalChatRoomContractID
               }
             })
@@ -883,7 +882,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/joinChatRoom': {
-      validate: objectMaybeOf({
+      validate: objectOf({
         chatRoomID: string
       }),
       process ({ data, meta }, { state, getters }) {},
@@ -895,7 +894,7 @@ sbp('chelonia/defineContract', {
           sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
           sbp('gi.actions/chatroom/join', {
             contractID: data.chatRoomID,
-            data: { identityContractID: meta.identityContractID }
+            data: { username: meta.username }
           })
         }
       }

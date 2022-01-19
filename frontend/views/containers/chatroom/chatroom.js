@@ -179,8 +179,8 @@ const chatroom = {
         joined: false,
         picture: state.attributes.picture
       }
-      const participantsInSort = this.groupMembersSorted.map(member => this.groupProfiles[member.username].contractID)
-        .filter(contractID => !!state.users[contractID] && !state.users[contractID].departedDate) || []
+      const participantsInSort = this.groupMembersSorted.map(member => member.username)
+        .filter(username => !!state.users[username] && !state.users[username].departedDate) || []
       this.ephemeral.loadedDetails = {
         isLoading: false,
         conversation: fakeMessages,

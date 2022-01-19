@@ -189,11 +189,11 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/group/leaveChatRooms': function (params: {
-    identityContractID: string, chatRoomIDsToLeave: string[] }) {
+    username: string, chatRoomIDsToLeave: string[] }) {
     for (const chatRoomID of params.chatRoomIDsToLeave) {
       sbp('gi.actions/chatroom/leave', {
         contractID: chatRoomID,
-        data: { identityContractID: params.identityContractID }
+        data: { username: params.username }
       })
     }
   },

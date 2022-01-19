@@ -521,14 +521,14 @@ const getters = {
   },
   isJoinedChatRoom (state, getters) {
     return (chatRoomId: string) => {
-      return !!state[chatRoomId]?.users && !!state[chatRoomId]?.users[state.loggedIn.identityContractID]
+      return !!state[chatRoomId]?.users && !!state[chatRoomId]?.users[state.loggedIn.username]
     }
   },
   getChatRoomsInDetail (state, getters) { // TODO: I don't think this is necessary. need to implement this in getChatRooms getter
     const chatRoomsInDetail = _.merge({}, getters.getChatRooms)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
-      if (chatRoom && chatRoom.attributes && chatRoom.users[state.loggedIn.identityContractID]) {
+      if (chatRoom && chatRoom.attributes && chatRoom.users[state.loggedIn.username]) {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
@@ -548,8 +548,8 @@ const getters = {
     return chatRoomsInDetail
   },
   chatRoomUsersInSort (state, getters) {
-    return getters.groupMembersSorted.map(member => getters.groupProfiles[member.username].contractID)
-      .filter(contractID => !!getters.chatRoomUsers[contractID] && !getters.chatRoomUsers[contractID].departedDate) || []
+    return getters.groupMembersSorted.map(member => member.username)
+      .filter(username => !!getters.chatRoomUsers[username] && !getters.chatRoomUsers[username].departedDate) || []
   }
 }
 

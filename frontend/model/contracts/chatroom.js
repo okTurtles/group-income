@@ -118,7 +118,7 @@ sbp('chelonia/defineContract', {
         }, {
           attributes: {
             ...data,
-            creator: meta.identityContractID
+            creator: meta.username
           }
         })
         for (const key in initialState) {
@@ -128,15 +128,15 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/join': {
       validate: objectMaybeOf({
-        identityContractID: string
+        username: string
       }),
       process ({ data, meta }, { state }) {
-        const { identityContractID } = data
-        if (state.users[identityContractID] && !state.users[identityContractID].departedDate) {
-          console.log(`chatroom Join: ${identityContractID} is already joined the chatroom #${state.name}`)
+        const { username } = data
+        if (state.users[username] && !state.users[username].departedDate) {
+          console.log(`chatroom Join: ${username} is already joined the chatroom #${state.name}`)
           return
         }
-        Vue.set(state.users, identityContractID, {
+        Vue.set(state.users, username, {
           joinedDate: meta.createdDate,
           departedDate: null
         })
@@ -161,23 +161,23 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/leave': {
       validate: objectMaybeOf({
-        identityContractID: string
+        username: string
       }),
       process ({ data, meta }, { state }) {
-        const { identityContractID } = data
-        if (state.users[identityContractID] && !state.users[identityContractID].departedDate) {
-          Vue.set(state.users[identityContractID], 'departedDate', meta.createdDate)
+        const { username } = data
+        if (state.users[username] && !state.users[username].departedDate) {
+          Vue.set(state.users[username], 'departedDate', meta.createdDate)
           // create a new system message to inform a member is leaved
           return
         }
-        console.log(`chatroom Leave: ${identityContractID} is not a member of this chatroom #${state.name}`)
+        console.log(`chatroom Leave: ${username} is not a member of this chatroom #${state.name}`)
       },
       async sideEffect ({ meta, data, contractID }, { state }) {
         if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
           return
         }
         const rootState = sbp('state/vuex/state')
-        if (data.identityContractID === rootState.loggedIn.identityContractID) {
+        if (data.username === rootState.loggedIn.username) {
           await sbp('state/vuex/commit', 'setCurrentChatRoomId', {
             groupId: rootState.currentGroupId
           })
