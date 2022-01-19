@@ -1,17 +1,18 @@
 <template lang='pug'>
 .c-view-wrapper
   p.c-view-label
-    span You are viewing
-    b  #channel
+    span You are viewing{{' '}}
+    b {{'#' + title}}
   .c-view-actions-wrapper
-    button.is-success(
+    button.button.is-small.is-outlined(
+      data-test='channelDescription'
+    )
+      i18n Channel Description
+    button.button.is-success.is-small(
       @click='join'
       data-test='joinChannel'
-    ) Join Channel
-    button(
-      @click='see'
-      data-test='seeDetails'
-    ) See More Details
+    )
+      i18n Join Channel
 </template>
 
 <script>
@@ -26,6 +27,9 @@ export default ({
       'currentGroupId',
       'loggedIn'
     ])
+  },
+  props: {
+    title: String
   },
   methods: {
     join: function () {

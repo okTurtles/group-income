@@ -74,7 +74,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
       group-members(:title='L("Direct Messages")' action='chat')
 
-  .card.c-card
+  .card.c-card.no-padding
     chat-main(
       :summary='summary'
       :details='details'
@@ -147,10 +147,10 @@ export default ({
   watch: {
     '$route' (to: Object, from: Object) {
       const { chatRoomId } = to.params
+      this.$nextTick(() => {
+        this.refreshTitle()
+      })
       if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
-        this.$nextTick(() => {
-          this.refreshTitle()
-        })
         if (this.isJoinedChatRoom(chatRoomId)) {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
             chatRoomId: to.params.chatRoomId
@@ -182,6 +182,10 @@ export default ({
 
   &:last-child {
     margin-bottom: 2rem;
+  }
+
+  &.no-padding {
+    padding: 0;
   }
 }
 

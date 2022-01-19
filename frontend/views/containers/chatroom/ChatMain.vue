@@ -58,7 +58,10 @@
       :replying-to='ephemeral.replyingTo'
       @stop-replying='ephemeral.replyingMessage = null'
     )
-    view-area(v-else)
+    view-area(
+      v-else
+      :title='summary.title'
+    )
 </template>
 
 <script>
@@ -303,6 +306,7 @@ export default ({
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-radius: 10px;
 }
 
 .c-body {

@@ -226,7 +226,7 @@ $initialHeight: 43px;
   position: relative;
   margin: 0 1.5rem;
   display: block;
-  padding-bottom: 0.1rem;
+  padding: 1rem 0 2rem 0;
 
   @include tablet {
     margin: 0 2.5rem;
@@ -262,7 +262,7 @@ $initialHeight: 43px;
 
   &-actions {
     position: absolute;
-    bottom: 0;
+    bottom: 2rem;
     right: 0;
     height: $initialHeight;
   }
