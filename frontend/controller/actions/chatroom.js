@@ -11,24 +11,8 @@ export default (sbp('sbp/selectors/register', {
 
     return message
   },
-  'gi.actions/chatroom/join': async function (params: GIActionParams) {
-    await sbp('chelonia/out/actionEncrypted', {
-      ...params, action: 'gi.contracts/chatroom/join'
-    })
-  },
-  'gi.actions/chatroom/rename': async function (params: GIActionParams) {
-    await sbp('chelonia/out/actionEncrypted', {
-      ...params, action: 'gi.contracts/chatroom/rename'
-    })
-  },
-  'gi.actions/chatroom/changeDescription': async function (params: GIActionParams) {
-    await sbp('chelonia/out/actionEncrypted', {
-      ...params, action: 'gi.contracts/chatroom/changeDescription'
-    })
-  },
-  'gi.actions/chatroom/leave': async function (params: GIActionParams) {
-    await sbp('chelonia/out/actionEncrypted', {
-      ...params, action: 'gi.contracts/chatroom/leave'
-    })
-  }
+  ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.')),
+  ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
+  ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
+  ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.')),
 }): string[])

@@ -1305,6 +1305,18 @@
 /* controller/actions/identity.js */
 "Failed to set profile attributes." = "Failed to set profile attributes.";
 
+/* controller/actions/chatroom.js */
+"Failed to join chat channel.": "Failed to join chat channel.",
+
+/* controller/actions/chatroom.js */
+"Failed to rename chat channel.": "Failed to rename chat channel.",
+
+/* controller/actions/chatroom.js */
+"Failed to change chat channel description.": "Failed to change chat channel description.",
+
+/* controller/actions/chatroom.js */
+"Failed to leave chat channel.": "Failed to leave chat channel.",
+
 /* views/containers/payments/RecordPaymentsList.vue */
 "Sent to" = "Sent to";
 
