@@ -520,8 +520,9 @@ const getters = {
     }
   },
   isJoinedChatRoom (state, getters) {
-    return (chatRoomId: string) => {
-      return !!state[chatRoomId]?.users && !!state[chatRoomId]?.users[state.loggedIn.username]
+    return (chatRoomId: string, username: string) => {
+      return !!state[chatRoomId]?.users && !!state[chatRoomId]?.users[username || state.loggedIn.username]
+        && !state[chatRoomId]?.users[username || state.loggedIn.username].departedDate
     }
   },
   getChatRoomsInDetail (state, getters) { // TODO: I don't think this is necessary. need to implement this in getChatRooms getter

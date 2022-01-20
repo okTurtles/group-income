@@ -52,8 +52,17 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                     .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
               .c-actions
-                button.is-icon(@click.stop='removeMember')
+                button.is-icon(
+                  v-if='!username.departedDate'
+                  @click.stop='removeMember(username)'
+                )
                   i.icon-times
+                .has-text-success(v-else)
+                  i.icon-check
+                  i18n Removed.
+                  button.is-unstyled.c-action-undo(
+                    @click.stop='addToChannel(username, true)'
+                  ) Undo
 
         .is-subtitle.c-second-section
           i18n(
@@ -67,7 +76,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName} in searchResult'
+          v-for='{username, displayName, joinedDate} in searchResult'
           :key='username'
         )
           profile-card(:username='username' direction='top-left')
@@ -80,16 +89,24 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 
             .c-actions
               i18n.button.is-outlined.is-small(
+                v-if='!joinedDate'
                 tag='button'
-                @click.stop='addToChannel()'
+                @click.stop='addToChannel(username)'
                 data-test='addToChannel'
                 :args='LTags("span")'
               ) Add {span_} to channel{_span}
+              .has-text-success(v-else)
+                i.icon-check
+                i18n Added.
+                button.is-unstyled.c-action-undo(
+                  @click.stop='removeMember(username, true)'
+                ) Undo
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
 import L, { LTags } from '@view-utils/translations.js'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
@@ -113,17 +130,29 @@ export default ({
     }
   },
   created () {
-    this.addedMembers = this.chatRoomUsersInSort
-    this.canAddMembers = this.groupMembersSorted.filter(member => !this.addedMembers.find(mb => mb.username === member.username))
+    this.addedMembers = this.chatRoomUsersInSort.map(member => ({ ...member, departedDate: null }))
+    this.canAddMembers = this.groupMembersSorted
+      .filter(member => !this.addedMembers.find(mb => mb.username === member.username))
+      .map(member => ({
+        username: member.username,
+        displayName: member.displayName,
+        joinedDate: null
+    }))
   },
   computed: {
     ...mapGetters([
       'currentChatRoomState',
       'groupMembersSorted',
       'groupMembersCount',
+      'groupMembersByUsername',
       'chatRoomUsersInSort',
       'ourUsername',
-      'userDisplayName'
+      'userDisplayName',
+      'isJoinedChatRoom'
+    ]),
+    ...mapState([
+      'currentGroupId',
+      'currentChatRoomId'
     ]),
     searchResult () {
       if (!this.searchText) { return this.canAddMembers }
@@ -150,18 +179,36 @@ export default ({
     }
   },
   methods: {
-    localizedName (username) {
+    localizedName (username: string) {
       const name = this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     closeModal () {
       this.$refs.modal.close()
     },
-    removeMember () {
-      console.log('TODO removeMember')
+    removeMember (username: string, undoing = false) {
+      if (!this.isJoinedChatRoom(this.currentChatRoomId, username)) {
+        console.log(`${username} is not part of this chatroom`)
+        return
+      }
+      console.log('TODO removeMember', username)
     },
-    addToChannel () {
-      console.log('TODO addToChannel')
+    async addToChannel (username: string, undoing = false) {
+      if (this.isJoinedChatRoom(this.currentChatRoomId, username)) {
+        console.log(`${username} is already joined this chatroom`)
+        return
+      }
+      try {
+        await sbp('gi.actions/group/joinChatRoom', {
+          contractID: this.currentGroupId,
+          data: { username, chatRoomID: this.currentChatRoomId }
+        })
+        this.canAddMembers = this.canAddMembers.map(member =>
+          member.username === username ? { ...member, joinedDate: new Date().toISOString() } : member)
+      } catch (e) {
+        console.error('ChatMembersAllModal.vue addToChannel() error:', e)
+      }
+      console.log('TODO addToChannel', username)
     }
   }
 }: Object)
@@ -276,24 +323,21 @@ export default ({
   border-bottom: 0;
 }
 
-.c-actions-buttons {
-  display: none;
-  margin-top: 0;
-
-  i {
-    margin-right: 0.5rem;
-  }
-
-  @include tablet {
-    display: block;
-  }
-}
-
 ::v-deep .c-actions span {
   margin-left: 0.3rem;
 
   @include phone {
     display: none;
+  }
+}
+
+::v-deep .c-actions .c-action-undo {
+  margin-left: 0.5rem;
+  color: $text_1;
+
+  &:hover, &:focus {
+    cursor: pointer;
+    border-bottom: 1px solid $text_1;
   }
 }
 

@@ -882,19 +882,21 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/joinChatRoom': {
-      validate: objectOf({
+      validate: objectMaybeOf({
+        username: string,
         chatRoomID: string
       }),
       process ({ data, meta }, { state, getters }) {},
       async sideEffect ({ meta, data }, { state }) {
         const rootState = sbp('state/vuex/state')
-        if (meta.username === rootState.loggedIn.username) {
+        const username = data.username || meta.username
+        if (username === rootState.loggedIn.username) {
           sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
           await sbp('state/enqueueContractSync', data.chatRoomID)
           sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
           sbp('gi.actions/chatroom/join', {
             contractID: data.chatRoomID,
-            data: { username: meta.username }
+            data: { username }
           })
         }
       }
