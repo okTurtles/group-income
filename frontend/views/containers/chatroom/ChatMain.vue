@@ -136,7 +136,10 @@ export default ({
       return Message.constants.variants
     },
     bodyStyles () {
-      return this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      const unjoinedStyles =
+        this.summary.joined ? {} : { height: !this.config.isPhone ? 'calc(100vh - 18rem)' : 'calc(100vh - 16rem)' }
+      return { ...phoneStyles, ...unjoinedStyles }
     },
     startedUnreadIndex () {
       return this.details.conversation.findIndex(message => message.unread === true)
