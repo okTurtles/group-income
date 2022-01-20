@@ -9,7 +9,7 @@
       data-test='channelDescription'
     )
       i18n Channel Description
-    button.button.is-success.is-small(
+    button-submit.is-success.is-small(
       @click='join'
       data-test='joinChannel'
     )
@@ -19,9 +19,13 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapState } from 'vuex'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default ({
   name: 'ViewArea',
+  components: {
+    ButtonSubmit
+  },
   computed: {
     ...mapState([
       'currentChatRoomId',
@@ -33,10 +37,9 @@ export default ({
     title: String
   },
   methods: {
-    join: function () {
-      // TODO: need to make button as button-submit
+    join: async function () {
       try {
-        sbp('gi.actions/group/joinChatRoom', {
+        await sbp('gi.actions/group/joinChatRoom', {
           contractID: this.currentGroupId,
           data: {
             chatRoomID: this.currentChatRoomId
