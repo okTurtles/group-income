@@ -35,7 +35,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
           ) Channel members ({nbMembers})
 
         transition-group(
-          v-if='addedMembers.length'
+          v-if='addedMembers'
           name='slide-list'
           tag='ul'
         )
@@ -58,7 +58,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         .is-subtitle.c-second-section
           i18n(
             tag='h3'
-            :args='{  nbMembers: addedMembers.length }'
+            :args='{  nbMembers: canAddMembers.length }'
           ) Others ({nbMembers})
 
       transition-group(
@@ -67,7 +67,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName, invitedBy, isNew} in searchResult'
+          v-for='{username, displayName} in searchResult'
           :key='username'
         )
           profile-card(:username='username' direction='top-left')
@@ -78,19 +78,13 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                   strong {{ localizedName(username) }}
                   .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
-                i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
-                i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
-
             .c-actions
               i18n.button.is-outlined.is-small(
-                v-if='addedMembers'
                 tag='button'
                 @click.stop='addToChannel()'
                 data-test='addToChannel'
                 :args='LTags("span")'
               ) Add {span_} to channel{_span}
-
-              group-members-tooltip-pending(v-else-if='invitedBy' :username='username')
 </template>
 
 <script>

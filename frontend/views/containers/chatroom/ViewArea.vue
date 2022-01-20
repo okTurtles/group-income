@@ -62,8 +62,13 @@ export default ({
   justify-content: center;
   flex-direction: column;
   width: 100%;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding-top: 2rem;
+  padding-bottom: 2.5rem;
+
+  @include phone {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
 
   .c-view-label {
     text-align: center;
@@ -71,12 +76,19 @@ export default ({
   }
 
   .c-view-actions-wrapper {
-    margin-top: 0.5rem;
+    margin-top: 1.5rem;
     display: inline-flex;
     justify-content: center;
 
+    @include phone {
+      margin-top: 1rem;
+    }
+
     button:first-child {
-      margin-right: 2rem;
+      margin-right: 1rem;
+      @include phone {
+        margin-right: 0.5rem;
+      }
     }
   }
 }
