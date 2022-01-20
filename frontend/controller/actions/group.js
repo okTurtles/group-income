@@ -162,11 +162,6 @@ export default (sbp('sbp/selectors/register', {
 
     return message
   },
-  'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
-    return await sbp('chelonia/out/actionEncrypted', {
-      ...params, action: 'gi.contracts/group/joinChatRoom'
-    })
-  },
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', params)
 
@@ -197,6 +192,7 @@ export default (sbp('sbp/selectors/register', {
       })
     }
   },
+  ...encryptedAction('gi.actions/group/joinChatRoom', L('Failed to join chat channel.')),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
