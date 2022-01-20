@@ -343,7 +343,7 @@ sbp('chelonia/defineContract', {
           return former.joined ? -1 : 1
         }).map(chatRoom => chatRoom.id)
     },
-    getGeneralChatRoomID (state, getters) {
+    generalChatRoomId (state, getters) {
       return getGeneralChatRoomID(getters.getChatRooms)
     }
   },
@@ -892,7 +892,7 @@ sbp('chelonia/defineContract', {
         const username = data.username || meta.username
         if (username === rootState.loggedIn.username) {
           sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
-          await sbp('state/enqueueContractSync', data.chatRoomID)
+          await sbp('gi.actions/contract/sync', data.chatRoomID)
           sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
           sbp('gi.actions/chatroom/join', {
             contractID: data.chatRoomID,

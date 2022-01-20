@@ -1,3 +1,4 @@
+import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { chatRoomTypes } from '@model/contracts/constants.js'
 
@@ -37,7 +38,7 @@ const fakeMessages = [
   // }
 ]
 
-const chatroom = {
+const chatroom: Object = {
   data (): Object {
     return {
       config: {
@@ -76,30 +77,18 @@ const chatroom = {
     }
   },
   computed: {
-    currentChatRoomState (): Object {
-      return this.$store.getters['currentChatRoomState']
-    },
-    currentChatRoomUsers (): Object {
-      return this.$store.getters['chatRoomUsers']
-    },
-    currentChatRoomId (): string {
-      return this.$store.state['currentChatRoomId']
-    },
-    chatRoomUsersInSort (): Object {
-      return this.$store.getters['chatRoomUsersInSort']
-    },
-    generalChatRoomId (): string {
-      return this.$store.getters['getGeneralChatRoomID']
-    },
-    groupMembersSorted (): Object {
-      return this.$store.getters['groupMembersSorted']
-    },
-    groupProfiles (): Object {
-      return this.$store.getters['groupProfiles']
-    },
-    chatRoomsInDetail (): Object {
-      return this.$store.getters['getChatRoomsInDetail']
-    },
+    ...mapGetters([
+      'currentChatRoomState',
+      'chatRoomUsers',
+      'chatRoomUsersInSort',
+      'generalChatRoomId',
+      'groupMembersSorted',
+      'groupProfiles',
+      'chatRoomsInDetail'
+    ]),
+    ...mapState([
+      'currentChatRoomId'
+    ]),
     isJoinedChatRoom (): function {
       return (chatRoomId: string): boolean => this.$store.getters['isJoinedChatRoom'](chatRoomId)
     },
@@ -133,7 +122,7 @@ const chatroom = {
         isLoading: false,
         conversation: fakeMessages,
         participantsInSort: this.chatRoomUsersInSort,
-        participants: this.currentChatRoomUsers
+        participants: this.chatRoomUsers
       }
     }
   },

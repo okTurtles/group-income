@@ -115,14 +115,14 @@ export default ({
   computed: {
     ...mapGetters([
       'getChatRoomIDsInSort',
-      'getChatRoomsInDetail',
+      'chatRoomsInDetail',
       'globalProfile',
       'groupProfiles'
     ]),
     channels () {
       return {
         order: this.getChatRoomIDsInSort,
-        channels: this.getChatRoomsInDetail
+        channels: this.chatRoomsInDetail
       }
     },
     members () {

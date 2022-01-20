@@ -65,6 +65,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
@@ -129,6 +130,10 @@ export default ({
     this.updateScroll()
   },
   computed: {
+    ...mapGetters([
+      'ourIdentityContractId',
+      'ourUserIdentityContract'
+    ]),
     messages () {
       return { ...this.details.conversation, ...this.ephemeral.pendingMessages }
     },
@@ -146,8 +151,8 @@ export default ({
     },
     currentUserAttr () {
       return {
-        ...this.$store.getters.ourUserIdentityContract.attributes,
-        id: this.$store.state.loggedIn.identityContractID
+        ...this.ourUserIdentityContract.attributes,
+        id: this.ourIdentityContractId
       }
     }
   },

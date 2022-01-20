@@ -525,7 +525,7 @@ const getters = {
         !state[chatRoomId]?.users[username || state.loggedIn.username].departedDate
     }
   },
-  getChatRoomsInDetail (state, getters) { // TODO: I don't think this is necessary. need to implement this in getChatRooms getter
+  chatRoomsInDetail (state, getters) {
     const chatRoomsInDetail = _.merge({}, getters.getChatRooms)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
