@@ -137,7 +137,7 @@ export default ({
         username: member.username,
         displayName: member.displayName,
         joinedDate: null
-    }))
+      }))
   },
   computed: {
     ...mapGetters([
@@ -335,7 +335,8 @@ export default ({
   margin-left: 0.5rem;
   color: $text_1;
 
-  &:hover, &:focus {
+  &:hover,
+  &:focus {
     cursor: pointer;
     border-bottom: 1px solid $text_1;
   }
