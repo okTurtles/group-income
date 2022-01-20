@@ -178,11 +178,13 @@ sbp('chelonia/defineContract', {
         }
         const rootState = sbp('state/vuex/state')
         if (data.username === rootState.loggedIn.username) {
-          await sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            groupId: rootState.currentGroupId
-          })
-          // TODO: need to switch URL if user is in GroupChat page
-          sbp('controller/router').push({ name: 'GroupChat' })
+          if (contractID === rootState.currentChatRoomId) {
+            await sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+              groupId: rootState.currentGroupId
+            })
+            // TODO: need to switch URL if user is in GroupChat page
+            sbp('controller/router').push({ name: 'GroupChat' })
+          }
           sbp('state/vuex/commit', 'removeContract', contractID)
         }
       }

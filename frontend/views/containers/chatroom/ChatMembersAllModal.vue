@@ -40,7 +40,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
           tag='ul'
         )
           li.c-search-member(
-            v-for='{username, displayName} in addedMembers'
+            v-for='{username, displayName, departedDate} in addedMembers'
             :key='username'
           )
             profile-card(:username='username' direction='top-left')
@@ -53,7 +53,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 
               .c-actions
                 button.is-icon(
-                  v-if='!username.departedDate'
+                  v-if='!departedDate'
                   @click.stop='removeMember(username)'
                 )
                   i.icon-times
@@ -186,12 +186,25 @@ export default ({
     closeModal () {
       this.$refs.modal.close()
     },
-    removeMember (username: string, undoing = false) {
+    async removeMember (username: string, undoing = false) {
       if (!this.isJoinedChatRoom(this.currentChatRoomId, username)) {
         console.log(`${username} is not part of this chatroom`)
         return
       }
-      console.log('TODO removeMember', username)
+      try {
+        await sbp('gi.actions/group/leaveChatRooms', {
+          username, chatRoomIDsToLeave: [this.currentChatRoomId]
+        })
+        if (undoing) {
+          this.canAddMembers = this.canAddMembers.map(member =>
+            member.username === username ? { ...member, joinedDate: null } : member)
+        } else {
+          this.addedMembers = this.addedMembers.map(member =>
+            member.username === username ? { ...member, departedDate: new Date().toISOString() } : member)
+        }
+      } catch (e) {
+        console.error('ChatMembersAllModal.vue removeMember() error:', e)
+      }
     },
     async addToChannel (username: string, undoing = false) {
       if (this.isJoinedChatRoom(this.currentChatRoomId, username)) {
@@ -203,12 +216,16 @@ export default ({
           contractID: this.currentGroupId,
           data: { username, chatRoomID: this.currentChatRoomId }
         })
-        this.canAddMembers = this.canAddMembers.map(member =>
-          member.username === username ? { ...member, joinedDate: new Date().toISOString() } : member)
+        if (undoing) {
+          this.addedMembers = this.addedMembers.map(member =>
+            member.username === username ? { ...member, departedDate: null } : member)
+        } else {
+          this.canAddMembers = this.canAddMembers.map(member =>
+            member.username === username ? { ...member, joinedDate: new Date().toISOString() } : member)
+        }
       } catch (e) {
         console.error('ChatMembersAllModal.vue addToChannel() error:', e)
       }
-      console.log('TODO addToChannel', username)
     }
   }
 }: Object)
