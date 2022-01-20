@@ -21,7 +21,7 @@ sbp('sbp/selectors/overwrite',
             return null
           }
           const state = sbp('state/vuex/state')
-          if (state?.contracts?.[contractId]?.HEAD) {
+          if (state.contracts[contractId]?.HEAD) {
             return state.contracts[contractId].HEAD
           }
           return null

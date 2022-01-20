@@ -45,8 +45,8 @@ export default (sbp('sbp/selectors/register', {
   'gi.db/log/logHEAD': function (contractID: string): string {
     return `${contractID}${headSuffix}`
   },
-  'gi.db/log/contractIdFromLogHEAD': function (key: string): string | boolean {
-    return key.endsWith(headSuffix) ? key.slice(0, -headSuffix.length) : false
+  'gi.db/log/contractIdFromLogHEAD': function (key: string): ?string {
+    return key.endsWith(headSuffix) ? key.slice(0, -headSuffix.length) : null
   },
   'gi.db/log/getEntry': async function (hash: string): Promise<GIMessage> {
     try {
