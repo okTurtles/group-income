@@ -6,35 +6,47 @@ type Payment = {| amount: number; total: number; partial: boolean; isLate: boole
 type Distribution = Array<Payment>
 
 function untangleDistribution (distribution, havers, needers) {
+  const paymentsByFrom = distribution.reduce((acc, p) => {
+    acc[p.from] ? acc[p.from].push(p) : acc[p.from] = [p]
+    return acc
+  }, {})
+  const paymentsByTo = distribution.reduce((acc, p) => {
+    acc[p.to] ? acc[p.to].push(p) : acc[p.to] = [p]
+    return acc
+  }, {})
   for (const haver of havers) {
-    const outgoing = distribution.filter((p) => p.from === haver.name)
-    for (const paymentfrom of outgoing) {
-      const needer = paymentfrom.to
-      for (const otherNeeder of needers) {
-        if (needer !== otherNeeder.name) {
-          const incoming = distribution.filter((p) => p.to === otherNeeder.name)
-          const filteredByFrom = incoming.filter((p) => p.from === haver.name && p.dueOn === paymentfrom.dueOn)
-          if (filteredByFrom.length === 1) {
-            const crossOver = filteredByFrom[0]
-            for (const paymentTo of incoming) {
-              const otherHaver = paymentTo.from
-              if (haver.name !== otherHaver && paymentfrom.dueOn === paymentTo.dueOn) {
-                const otherHaverPayments = distribution.filter((p) => otherHaver === p.from)
-                for (const otherFrom of otherHaverPayments) {
-                  if (needer === otherFrom.to && paymentTo.dueOn === otherFrom.dueOn) {
-                    const maxCriss = Math.min(paymentfrom.amount, paymentTo.amount)
-                    const maxCross = Math.min(otherFrom.amount, crossOver.amount)
-                    const maxAmount = Math.min(maxCriss, maxCross)
+    const outgoing = paymentsByFrom[haver.name]
+    if (outgoing) {
+      for (const paymentfrom of outgoing) {
+        const needer = paymentfrom.to
+        for (const otherNeeder of needers) {
+          if (needer !== otherNeeder.name) {
+            const incoming = paymentsByTo[otherNeeder.name]
+            if (incoming) {
+              const filteredByFrom = incoming.filter((p) => p.dueOn === paymentfrom.dueOn)
+              if (filteredByFrom.length === 1) {
+                const crossOver = filteredByFrom[0]
+                for (const paymentTo of incoming) {
+                  const otherHaver = paymentTo.from
+                  if (haver.name !== otherHaver && paymentfrom.dueOn === paymentTo.dueOn) {
+                    const otherHaverPayments = distribution.filter((p) => otherHaver === p.from)
+                    for (const otherFrom of otherHaverPayments) {
+                      if (needer === otherFrom.to && paymentTo.dueOn === otherFrom.dueOn) {
+                        const maxCriss = Math.min(paymentfrom.amount, paymentTo.amount)
+                        const maxCross = Math.min(otherFrom.amount, crossOver.amount)
+                        const maxAmount = Math.min(maxCriss, maxCross)
 
-                    paymentfrom.amount += maxAmount
-                    paymentfrom.total += maxAmount
-                    paymentTo.amount += maxAmount
-                    paymentTo.total += maxAmount
+                        paymentfrom.amount += maxAmount
+                        paymentfrom.total += maxAmount
+                        paymentTo.amount += maxAmount
+                        paymentTo.total += maxAmount
 
-                    otherFrom.amount -= maxAmount
-                    otherFrom.total -= maxAmount
-                    crossOver.amount -= maxAmount
-                    crossOver.total -= maxAmount
+                        otherFrom.amount -= maxAmount
+                        otherFrom.total -= maxAmount
+                        crossOver.amount -= maxAmount
+                        crossOver.total -= maxAmount
+                      }
+                    }
                   }
                 }
               }
