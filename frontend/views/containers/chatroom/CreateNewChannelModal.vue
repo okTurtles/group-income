@@ -93,8 +93,8 @@ export default ({
   data () {
     return {
       form: {
-        name: null,
-        description: null,
+        name: '',
+        description: '',
         private: false
       }
     }
@@ -104,10 +104,14 @@ export default ({
       this.$refs.modal.close()
     },
     async submit () {
-      await sbp('gi.actions/group/addAndJoinChatRoom', {
-        contractID: this.currentGroupId,
-        data: { ...this.form, type: chatRoomTypes.GROUP }
-      })
+      try {
+        await sbp('gi.actions/group/addAndJoinChatRoom', {
+          contractID: this.currentGroupId,
+          data: { ...this.form, type: chatRoomTypes.GROUP }
+        })
+      } catch (e) {
+        console.error('CreateNewChannelModal.vue submit() error:', e)
+      }
       this.close()
     },
     handleChannelPrivate (e) {
