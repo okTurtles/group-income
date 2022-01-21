@@ -21,7 +21,6 @@ import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constant
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
 import * as _ from '~/frontend/utils/giLodash.js'
 import * as EVENTS from '~/frontend/utils/events.js'
-import { getGeneralChatRoomID } from './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
 import './contracts/chatroom.js'
@@ -211,7 +210,7 @@ const mutations = {
     if (chatRoomId) {
       state.currentChatRoomId = chatRoomId
     } else if (groupId && state[groupId]) {
-      state.currentChatRoomId = getGeneralChatRoomID(state[groupId].chatRooms)
+      state.currentChatRoomId = state[groupId].generalChatRoomId
     } else {
       state.currentChatRoomId = null
     }

@@ -17,24 +17,24 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
           ul
             menu-item(
-              v-if='summary.editable'
+              v-if='!summary.general'
               @click='openModal("EditChannelNameModal")'
             )
               i18n Rename
             menu-item(@click='openModal("ChatMembersAllModal")')
               i18n Members
             menu-item(
-              :class='`${summary.editable ? "c-separator" : ""}`'
+              :class='`${!summary.general ? "c-separator" : ""}`'
               @click='openModal("UserSettingsModal", {section: "notifications"})'
             )
               i18n Notifications settings
             menu-item(
-              v-if='summary.editable'
+              v-if='!summary.general'
               @click='openModal("LeaveChannelModal")'
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
-              v-if='summary.editable'
+              v-if='!summary.general'
               @click='openModal("DeleteChannelModal")'
             )
               i18n Delete channel

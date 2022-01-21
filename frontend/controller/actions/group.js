@@ -104,10 +104,9 @@ export default (sbp('sbp/selectors/register', {
           name: CHATROOM_GENERAL_NAME,
           type: chatRoomTypes.GROUP,
           description: '',
-          private: false,
-          editable: false
+          private: false
         }
-      })
+      }, true)
 
       return message
     } catch (e) {
@@ -146,7 +145,7 @@ export default (sbp('sbp/selectors/register', {
     // TODO: need to switch chatroom to 'General' of new group
     sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupId })
   },
-  'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
+  'gi.actions/group/addChatRoom': async function (params: GIActionParams, general = false) {
     const message = await sbp('gi.actions/chatroom/create', { data: params.data })
 
     await sbp('chelonia/out/actionEncrypted', {
@@ -154,7 +153,8 @@ export default (sbp('sbp/selectors/register', {
       contractID: params.contractID,
       data: {
         ...params.data,
-        chatRoomID: message.contractID()
+        chatRoomID: message.contractID(),
+        general
       }
     })
 
@@ -162,10 +162,9 @@ export default (sbp('sbp/selectors/register', {
 
     return message
   },
-  'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
-    const message = await sbp('gi.actions/group/addChatRoom', params)
+  'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams, general = false) {
+    const message = await sbp('gi.actions/group/addChatRoom', params, general)
 
-    // join the 'General' chatroom by default
     await sbp('gi.actions/group/joinChatRoom', {
       contractID: params.contractID,
       data: { chatRoomID: message.contractID() }

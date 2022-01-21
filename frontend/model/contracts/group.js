@@ -70,17 +70,6 @@ export function createInvite (
   }
 }
 
-export function getGeneralChatRoomID (chatRooms: {
-  [string]: { creator: string, name: string, editable: boolean }
-}): string | null {
-  for (const chatRoomID of Object.keys(chatRooms)) {
-    if (!chatRooms[chatRoomID].editable) {
-      return chatRoomID
-    }
-  }
-  return null
-}
-
 function initGroupProfile (contractID: string, joinedDate: string) {
   return {
     globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
@@ -344,7 +333,7 @@ sbp('chelonia/defineContract', {
         }).map(chatRoom => chatRoom.id)
     },
     generalChatRoomId (state, getters) {
-      return getGeneralChatRoomID(getters.getChatRooms)
+      return getters.currentGroupState.generalChatRoomId
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -632,8 +621,8 @@ sbp('chelonia/defineContract', {
             .find(cID => contracts[cID].type === 'gi.contracts/group' &&
               cID !== contractID && rootState[cID].settings) || null
 
-          const chatRoomIDsToLeave = Object.keys(contracts)
-            .filter(cID => contracts[cID].type === 'gi.contracts/chatroom' &&
+          const chatRoomIDsToLeave = Object.keys(state.chatRooms)
+            .filter(cID => rootState[cID] &&
               rootState[cID].users[username] &&
               !rootState[cID].users[username].departedDate) || []
 
@@ -702,7 +691,7 @@ sbp('chelonia/defineContract', {
       // They MUST NOT call 'commit'!
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      async sideEffect ({ meta, contractID }, { state }) {
+      async sideEffect ({ meta, contractID }, { state, getters }) {
         const rootState = sbp('state/vuex/state')
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
@@ -715,12 +704,11 @@ sbp('chelonia/defineContract', {
             }
           }
           // join the 'General' chatroom by default
-          const generalChatRoomContractID = getGeneralChatRoomID(state.chatRooms)
-          if (generalChatRoomContractID) {
+          if (getters.generalChatRoomId) {
             await sbp('gi.actions/group/joinChatRoom', {
               contractID,
               data: {
-                chatRoomID: generalChatRoomContractID
+                chatRoomID: getters.generalChatRoomId
               }
             })
           }
@@ -855,19 +843,21 @@ sbp('chelonia/defineContract', {
         chatRoomID: string,
         name: string,
         type: unionOf(...Object.values(chatRoomTypes).map(v => literalOf(v)))
-        // TODO: need to define 'editable' as boolean
+        // TODO: need to define 'private', 'general' as boolean
         // but 'boolean' TypeValidator doesn't work fine inside objectMaybeOf
-        // editable: boolean
-        // private: boolean
+        // private: boolean,
+        // general: boolean
       }),
       process ({ data, meta }, { state, getters }) {
         Vue.set(state.chatRooms, data.chatRoomID, {
           creator: meta.identityContractID,
           name: data.name,
           type: data.type,
-          private: data.private,
-          editable: data.editable
+          private: data.private
         })
+        if (data.general && !state.generalChatRoomId) {
+          Vue.set(state, 'generalChatRoomId', data.chatRoomID)
+        }
       }
     },
     'gi.contracts/group/removeChatRoom': {

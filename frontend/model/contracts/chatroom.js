@@ -15,11 +15,10 @@ import {
 } from './constants.js'
 
 export const chatRoomType: any = objectOf({
-  name: string, // General, Bulgaria Hackathon 2021, ...
+  name: string,
   description: string,
   type: unionOf(...Object.values(chatRoomTypes).map(v => literalOf(v))),
-  private: boolean,
-  editable: boolean
+  private: boolean
 })
 
 export const ChatMessageTypeNormal = 'normal'

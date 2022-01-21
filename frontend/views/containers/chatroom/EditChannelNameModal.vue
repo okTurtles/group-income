@@ -52,7 +52,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId', 'currentChatRoomId']),
-    ...mapGetters(['currentChatRoomState']),
+    ...mapGetters(['currentChatRoomState', 'generalChatRoomId']),
     maxNameCharacters () {
       return this.currentChatRoomState.settings.maxNameLetters
     }
@@ -69,7 +69,7 @@ export default ({
     this.form.name = this.currentChatRoomState.attributes.name
   },
   mounted () {
-    if (!this.currentChatRoomState.attributes.editable) {
+    if (this.generalChatRoomId === this.currentChatRoomId) {
       this.close()
     }
   },
@@ -82,8 +82,8 @@ export default ({
         if (this.currentChatRoomState.attributes.name === this.form.name) {
           // TODO: No need to update chatroom name. Display message box or toast or sth else
           console.log('TODO: Channel name is not changed')
-        } else if (!this.currentChatRoomState.attributes.editable) {
-          // TODO: display message box '"General" chatroom can not be renamed'
+        } else if (this.currentChatRoomId === this.generalChatRoomId) {
+          // TODO: display warning message '"General" chatroom can not be renamed'
           console.log('TODO: "General" chatroom can not be renamed')
         } else {
           await sbp('gi.actions/group/renameChatRoom', {

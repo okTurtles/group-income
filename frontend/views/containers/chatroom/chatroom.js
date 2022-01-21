@@ -108,7 +108,7 @@ const chatroom: Object = {
         description: this.currentChatRoomState.attributes.description,
         routerBack: type === chatRoomTypes.INDIVIDUAL ? '/messages' : '/group-chat',
         private: this.currentChatRoomState.attributes.private,
-        editable: this.currentChatRoomState.attributes.editable,
+        general: this.generalChatRoomId === this.currentChatRoomId,
         joined: true,
         picture: this.currentChatRoomState.attributes.picture
       }
@@ -164,7 +164,6 @@ const chatroom: Object = {
         description: state.attributes.description,
         routerBack: type === chatRoomTypes.INDIVIDUAL ? '/messages' : '/group-chat',
         private: state.attributes.private,
-        editable: state.attributes.editable,
         joined: false,
         picture: state.attributes.picture
       }

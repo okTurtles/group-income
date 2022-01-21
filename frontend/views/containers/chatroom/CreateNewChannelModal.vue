@@ -106,7 +106,7 @@ export default ({
     async submit () {
       await sbp('gi.actions/group/addAndJoinChatRoom', {
         contractID: this.currentGroupId,
-        data: { ...this.form, type: chatRoomTypes.GROUP, editable: true }
+        data: { ...this.form, type: chatRoomTypes.GROUP }
       })
       this.close()
     },
