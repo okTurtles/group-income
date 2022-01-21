@@ -3,7 +3,7 @@ import { cloneDeep } from '~/frontend/utils/giLodash.js'
 
 type Payment = {| amount: number; total: number; partial: boolean; isLate: boolean; from: string; to: string; dueOn: string; |}
 
-type Distribution = Array<Payment>;
+type Distribution = Array<Payment>
 
 function untangleDistribution (distribution, havers, needers) {
   for (const haver of havers) {
@@ -52,54 +52,42 @@ function untangleDistribution (distribution, havers, needers) {
 function minimizeTotalPaymentsCount (distribution: Distribution, groupMembers: Array<Object>): Distribution {
   distribution = cloneDeep(distribution)
 
-  let havers = groupMembers.filter((m) => m.haveNeed > 0).sort((a, b) => a.haveNeed - b.haveNeed)
-  let needers = groupMembers.filter((m) => m.haveNeed < 0).sort((a, b) => a.haveNeed - b.haveNeed)
+  const havers = groupMembers.filter((m) => m.haveNeed > 0).sort((a, b) => a.haveNeed - b.haveNeed)
+  const needers = groupMembers.filter((m) => m.haveNeed < 0).sort((a, b) => a.haveNeed - b.haveNeed)
 
-  const tangledHavers = []
-  const tangledNeeders = []
-
-  havers.forEach((haver, index) => (index % 2) ? tangledHavers.push(haver) : tangledHavers.unshift(haver))
-  needers.forEach((needer, index) => (index % 2) ? tangledNeeders.push(needer) : tangledNeeders.unshift(needer))
-
-  havers = tangledHavers
-  needers = tangledNeeders
+  const maxGroupSize = Math.max(havers.length, needers.length)
 
   // You can think of this algorithm as a method of untangling
-  // a closed-loop on string; you don't try to untangle the
+  // a closed-loop of string; you don't try to untangle the
   // entire string at once: instead you untangle it in larger
   // and larger sections, and eventually it comes undone.
+  for (let subdivisions = 2; subdivisions <= maxGroupSize; subdivisions++) {
+    const subHavers = [] // Stores the havers into group sizes of subdivisions
+    const subNeeders = [] // Stores the needers into group sizes of subdivisions
 
-  // Set the maximum number of knots we will untangle at a time.
-  const maxKnot = Math.min(10, Math.min(havers.length, needers.length))
+    const maxSubHavers = Math.ceil(havers.length / subdivisions)
+    for (let step = 0; step < maxSubHavers; step++) {
+      const subArray = havers.slice(step * subdivisions, Math.min((step + 1) * subdivisions, havers.length))
+      subHavers.push(subArray)
+    }
 
-  const subHavers = [] // Stores the havers into group sizes of maxKnot
-  const subNeeders = [] // Stores the needers into group sizes of maxKnot
-
-  const maxSubHavers = Math.ceil(havers.length / maxKnot)
-  for (let step = 0; step < maxSubHavers; step++) {
-    const subArray = havers.slice(step * maxKnot, Math.min((step + 1) * maxKnot, havers.length))
-    subHavers.push(subArray)
-  }
-
-  const maxSubNeeders = Math.ceil(needers.length / maxKnot)
-  for (let step = 0; step < maxSubNeeders; step++) {
-    const subArray = needers.slice(step * maxKnot, Math.min((step + 1) * maxKnot, needers.length))
-    subNeeders.push(subArray)
-  }
-
-  // Divide & conquer the problem:
-  for (let haverGroup = 0; haverGroup < maxSubHavers; haverGroup++) {
-    for (let neederGroup = 0; neederGroup < maxSubNeeders; neederGroup++) {
-      const subHaves = subHavers[haverGroup]
-      const subNeeds = subNeeders[neederGroup]
+    const maxSubNeeders = Math.ceil(needers.length / subdivisions)
+    for (let step = 0; step < maxSubNeeders; step++) {
+      const subArray = needers.slice(step * subdivisions, Math.min((step + 1) * subdivisions, needers.length))
+      subNeeders.push(subArray)
+    }
+    const maxGroupCount = Math.max(subHavers.length, subNeeders.length)
+    // Divide & conquer the problem:
+    for (let group = 0; group < maxGroupCount; group++) {
+      const subHaves = subHavers[group % subHavers.length]
+      const subNeeds = subNeeders[group % subNeeders.length]
 
       function filterIrrelivant (payment) {
         return subHaves.find((haver) => haver.name === payment.from) &&
-              subNeeds.find((needer) => needer.name === payment.to)
+          subNeeds.find((needer) => needer.name === payment.to)
       }
 
       const minimizable = distribution.filter((payment) => filterIrrelivant(payment))
-
       untangleDistribution(minimizable, subHaves, subNeeds)
 
       // WITHOUT this line: we get no boosts in computational efficiency
@@ -107,8 +95,8 @@ function minimizeTotalPaymentsCount (distribution: Distribution, groupMembers: A
       distribution = distribution.filter((payment) => payment.amount > 0)
     }
   }
-
-  untangleDistribution(distribution, havers, needers) // Conquer
+  untangleDistribution(distribution, havers, needers)
+  distribution = distribution.filter((payment) => payment.amount > 0)
   return distribution
 }
 
