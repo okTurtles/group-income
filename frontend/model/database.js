@@ -35,14 +35,14 @@ sbp('sbp/selectors/overwrite',
       }
     : {
         'gi.db/get': key => {
-          return log.getItem(`${key}`)
+          return log.getItem(key)
         },
         // TODO: handle QuotaExceededError
         'gi.db/set': (key, value) => {
           return log.setItem(key, value)
         },
         'gi.db/delete': (key: string) => {
-          return log.removeItem(`${key}`)
+          return log.removeItem(key)
         }
       })
 
