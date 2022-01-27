@@ -5,6 +5,7 @@
 // ***********************************************
 
 import 'cypress-file-upload'
+import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
 
 /* Get element by data-test attribute and other attributes
  ex:
@@ -151,6 +152,11 @@ Cypress.Commands.add('giCreateGroup', (name, {
 
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     cy.getByDT('groupName').should('contain', name)
+    // Added by Alex to wait until General chatroom contract is fully synced
+    cy.getByDT('groupChatLink').click()
+    cy.getByDT('channelName').should('text', CHATROOM_GENERAL_NAME)
+    cy.getByDT('dashboard').click()
+    cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     return
   }
 
@@ -159,7 +165,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
   cy.getByDT('modal').within(() => {
     cy.getByDT('groupName').type(name)
     cy.fixture(image, 'base64').then(fileContent => {
-      cy.get('[data-test="groupPicture"]').attachFile({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
+      cy.getByDT('groupPicture').attachFile({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
     })
     cy.getByDT('nextBtn').click()
 
@@ -192,7 +198,10 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
     cy.getByDT('toDashboardBtn').click()
   })
-
+  // Added by Alex to wait until General chatroom contract is fully synced
+  cy.getByDT('groupChatLink').click()
+  cy.getByDT('channelName').should('text', CHATROOM_GENERAL_NAME)
+  cy.getByDT('dashboard').click()
   cy.url().should('eq', 'http://localhost:8000/app/dashboard')
 })
 
@@ -268,6 +277,10 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     }
 
     cy.getByDT('toDashboardBtn').click()
+    // Added by Alex to wait until General chatroom contract is fully synced
+    cy.getByDT('groupChatLink').click()
+    cy.getByDT('channelName').should('text', CHATROOM_GENERAL_NAME)
+    cy.getByDT('dashboard').click()
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
   }
 

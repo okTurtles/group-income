@@ -1,5 +1,5 @@
 <template lang='pug'>
-page(pageTestName='dashboard' pageTestHeaderName='groupName')
+page(pageTestName='groupChat' pageTestHeaderName='channelName')
   template(#title='')
     .c-header
       i(
