@@ -262,6 +262,11 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     const groupId = params.get('groupId')
     const inviteSecret = params.get('secret')
     cyBypassUI('group_join', { groupId, inviteSecret })
+    // Added by Alex to wait until General chatroom contract is fully synced
+    cy.getByDT('groupChatLink').click()
+    cy.getByDT('channelName').should('text', CHATROOM_GENERAL_NAME)
+    cy.getByDT('dashboard').click()
+    cy.url().should('eq', 'http://localhost:8000/app/dashboard')
   } else {
     cy.visit(invitationLink)
 
