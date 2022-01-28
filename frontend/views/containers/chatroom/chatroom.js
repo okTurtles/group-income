@@ -7,35 +7,35 @@ import { chatRoomTypes } from '@model/contracts/constants.js'
  * At this moment, just used the examples of identityContractIDs
 **/
 const fakeMessages = [
-  // {
-  //   time: (new Date(2020, 5, 22, 11, 43, 42): Date),
-  //   from: '21XWnNHCSA1fRMdfy59qA3rw5wUqEx2dqYpu1o3mFuEycVqbyS',
-  //   text: 'Hi 👋'
-  // },
-  // {
-  //   time: (new Date(2020, 7, 23, 11, 34, 42): Date),
-  //   from: '21XWnNWhTiaF7kGmj2yTEEJPUaCbBJSTdJZNaPCjmZqC8QzLci',
-  //   text: 'It’s missing Sandy'
-  // },
-  // {
-  //   time: (new Date(2020, 7, 23, 12, 23, 42): Date),
-  //   from: '21XWnNHCSA1fRMdfy59qA3rw5wUqEx2dqYpu1o3mFuEycVqbyS',
-  //   text: 'Yeah, looking for her username, one second'
-  // },
-  // {
-  //   time: (new Date(2020, 7, 30, 13, 25, 42): Date),
-  //   from: '21XWnNMWqf3Wbf5tavSJascMXWznrucYvJYDP6YsRxmQs63F4j',
-  //   text: 'Guys, should we add Katty to the group?'
-  // },
-  // {
-  //   time: (new Date(2020, 7, 31, 14, 28, 42): Date),
-  //   from: '21XWnNWhTiaF7kGmj2yTEEJPUaCbBJSTdJZNaPCjmZqC8QzLci',
-  //   text: 'There’s no problem to me',
-  //   unread: true,
-  //   emoticons: {
-  //     '💖': ['21XWnNHCSA1fRMdfy59qA3rw5wUqEx2dqYpu1o3mFuEycVqbyS']
-  //   }
-  // }
+  {
+    time: (new Date(2020, 5, 22, 11, 43, 42): Date),
+    from: 'AlexJin',
+    text: 'Hi 👋'
+  },
+  {
+    time: (new Date(2020, 7, 23, 11, 34, 42): Date),
+    from: 'StefanLei',
+    text: 'It’s missing Sandy'
+  },
+  {
+    time: (new Date(2020, 7, 23, 12, 23, 42): Date),
+    from: 'AlexJin',
+    text: 'Yeah, looking for her username, one second'
+  },
+  {
+    time: (new Date(2020, 7, 30, 13, 25, 42): Date),
+    from: 'StefanLei',
+    text: 'Guys, should we add Katty to the group?'
+  },
+  {
+    time: (new Date(2020, 7, 31, 14, 28, 42): Date),
+    from: 'StefanLei',
+    text: 'There’s no problem to me',
+    unread: true,
+    emoticons: {
+      '💖': ['AlexJin']
+    }
+  }
 ]
 
 const chatroom: Object = {
@@ -84,6 +84,7 @@ const chatroom: Object = {
       'generalChatRoomId',
       'groupMembersSorted',
       'groupProfiles',
+      'globalProfile',
       'chatRoomsInDetail'
     ]),
     ...mapState([
@@ -118,11 +119,20 @@ const chatroom: Object = {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
         return this.ephemeral.loadedDetails || {}
       }
+      const participants = {}
+      for (const username in this.chatRoomUsers) {
+        const { displayName, picture, email } = this.globalProfile(username)
+        participants[username] = {
+          ...this.chatRoomUsers[username],
+          displayName, picture, email
+        }
+      }
+      console.log(participants)
       return {
         isLoading: false,
         conversation: fakeMessages,
         participantsInSort: this.chatRoomUsersInSort,
-        participants: this.chatRoomUsers
+        participants
       }
     }
   },
@@ -169,11 +179,20 @@ const chatroom: Object = {
       }
       const participantsInSort = this.groupMembersSorted.map(member => member.username)
         .filter(username => !!state.users[username] && !state.users[username].departedDate) || []
+
+      const participants = {}
+      for (const username in state.users) {
+        const { displayName, picture, email } = this.globalProfile(username)
+        participants[username] = {
+          ...state.users[username],
+          displayName, picture, email
+        }
+      }
       this.ephemeral.loadedDetails = {
         isLoading: false,
         conversation: fakeMessages,
         participantsInSort,
-        participants: state.users
+        participants
       }
       this.refreshTitle(title)
     }

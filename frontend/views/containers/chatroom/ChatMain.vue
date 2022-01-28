@@ -190,7 +190,7 @@ export default ({
       return mt
     },
     isCurrentUser (fromId) {
-      return this.currentUserAttr.id === fromId
+      return this.currentUserAttr.username === fromId
     },
     who (message) {
       const fromId = message.from === messageTypes.NOTIFICATION ? fakeEvents[message.id].from : message.from
@@ -223,7 +223,7 @@ export default ({
       console.log('sending...')
       const index = Object.keys(this.messages).length + 1
       const newMessage = {
-        from: this.currentUserAttr.id,
+        from: this.currentUserAttr.username,
         time: new Date(),
         text: message
       }
