@@ -22,19 +22,19 @@ export const chatRoomType: any = objectOf({
 })
 
 export const messageType: any = objectOf({
-  id: string, // hash of message when it is initialized
+  id: string, // hash of message once it is initialized
   type: unionOf(...Object.values(messageTypes).map(v => literalOf(v))),
   from: string, // username
-  time: string,
-  text: string,
+  time: string, // new Date()
+  text: string, // message text | proposalId when type is INTERACTIVE
   replyingMessage: objectOf({
-    id: string,
-    username: string,
-    text: string,
-    time: string
+    id: string, // scroll to the original message and highlight
+    username: string, // display
+    text: string, // display
+    time: string // to search easily
   }),
-  emoticons: arrayOf(mapOf(string, arrayOf(string))),
-  onlyVisibleTo: arrayOf(string)
+  emoticons: mapOf(string, arrayOf(string)), // mapping of emoticons and usernames
+  onlyVisibleTo: arrayOf(string) // list of usernames, only necessary when type is NOTIFICATION
 })
 
 sbp('chelonia/defineContract', {
