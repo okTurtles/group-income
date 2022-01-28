@@ -4,14 +4,14 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import {
   objectMaybeOf, objectOf, mapOf, arrayOf,
-  string, boolean, optional, number,
-  literalOf, unionOf
+  string, boolean, literalOf, unionOf
 } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
-  chatRoomTypes
+  chatRoomTypes,
+  messageTypes
 } from './constants.js'
 
 export const chatRoomType: any = objectOf({
@@ -21,48 +21,20 @@ export const chatRoomType: any = objectOf({
   private: boolean
 })
 
-export const ChatMessageTypeNormal = 'normal'
-export const ChatMessageTypeInform = 'inform'
-export const ChatMessageTypePoll = 'poll'
-
-export const chatMessageNormal: any = objectOf({
-  text: string, // can not be empty
-  creator: string, // identityContractID
-  createdDate: string, // new Date().toISOString() when created
-  editedDate: optional(string), // new Date().toISOString() when updated
-  removedDate: optional(string), // new Date().toISOString() when removed
-  repliedTo: optional(string), // messageID
-  previewDismissed: optional(boolean) // we use this when we want to discuss the preview of URL link
-})
-
-export const chatMessageInform: any = objectOf({
-  text: string, // can not be empty
-  creator: string, // TODO: need to decide if necessary
-  createdDate: string, // new Date().toISOString()
-  // when a channel is removed, the users will automatically redirected to the #general channel and a message would be displayed ONLY for them
-  visibleTo: mapOf(string, boolean), // default: {}
-  previewDismissed: optional(boolean)
-})
-
-export const chatMessagePoll: any = objectOf({
-  text: string, // can not be empty
-  creator: string, // identityContractID
-  createdDate: string, // new Date().toISOString()
-  options: arrayOf(string), // minimal length: 2
-  votes: mapOf(string, objectOf({ // key: string = identityContractID
-    votedFor: number, // index of options
-    votedDate: string, // new Date().toISOString()
-    updatedDate: string // new Date().toISOString()
-  })),
-  previewDismissed: optional(boolean)
-})
-
 export const messageType: any = objectOf({
   id: string, // hash of message when it is initialized
-  // type: unionOf(...[ChatMessageTypeNormal, ChatMessageTypeInform, ChatMessageTypePoll].map(k => literalOf(k))),
-  // value: unionOf(...[chatMessageNormal, chatMessageInform, chatMessagePoll])
+  type: unionOf(...Object.values(messageTypes).map(v => literalOf(v))),
+  from: string, // username
+  time: string,
   text: string,
-  creator: string
+  replyingMessage: objectOf({
+    id: string,
+    username: string,
+    text: string,
+    time: string
+  }),
+  emoticons: arrayOf(mapOf(string, arrayOf(string))),
+  onlyVisibleTo: arrayOf(string)
 })
 
 sbp('chelonia/defineContract', {

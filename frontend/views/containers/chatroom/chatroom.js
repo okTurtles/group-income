@@ -124,10 +124,11 @@ const chatroom: Object = {
         const { displayName, picture, email } = this.globalProfile(username)
         participants[username] = {
           ...this.chatRoomUsers[username],
-          displayName, picture, email
+          displayName,
+          picture,
+          email
         }
       }
-      console.log(participants)
       return {
         isLoading: false,
         conversation: fakeMessages,
@@ -185,7 +186,9 @@ const chatroom: Object = {
         const { displayName, picture, email } = this.globalProfile(username)
         participants[username] = {
           ...state.users[username],
-          displayName, picture, email
+          displayName,
+          picture,
+          email
         }
       }
       this.ephemeral.loadedDetails = {
