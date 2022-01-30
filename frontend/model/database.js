@@ -68,24 +68,3 @@ sbp('sbp/selectors/register', {
     return files.removeItem(url)
   }
 })
-
-// =======================
-// Save recent notifications here
-// =======================
-
-const notificationStorage = localforage.createInstance({
-  name: 'Group Income',
-  storeName: 'Notifications'
-})
-
-sbp('sbp/selectors/register', {
-  'gi.db/notifications/save': function (username: string, items: Notification[]): Promise<void> {
-    return notificationStorage.setItem(username, items)
-  },
-  'gi.db/notifications/load': function (username: string): Promise<Notification[]> {
-    return notificationStorage.getItem(username)
-  },
-  'gi.db/notifications/delete': function (username: string): Promise<void> {
-    return notificationStorage.removeItem(username)
-  }
-})
