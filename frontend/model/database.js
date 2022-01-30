@@ -1,7 +1,5 @@
 'use strict'
 
-import type { Notification } from '@model/notifications/types.flow.js'
-
 import localforage from 'localforage'
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/gi/db.js'
