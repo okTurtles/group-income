@@ -23,6 +23,11 @@ afterEach(function () {
   }
 })
 
+// Prevent errors when English is not the current OS locale language.
+Cypress.on('window:before:load', window => {
+  Object.defineProperty(window.navigator, 'language', { value: 'en-US' })
+})
+
 Cypress.on('uncaught:exception', (err, runnable) => {
   // Returning false here prevents Cypress from failing the test.
   if (err.name === 'NavigationDuplicated' || err.message.includes('navigation')) {
