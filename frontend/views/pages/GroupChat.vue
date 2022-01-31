@@ -93,7 +93,7 @@ import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { chatRoomTypes } from '@model/contracts/constants.js'
+import { CHATROOM_TYPES } from '@model/contracts/constants.js'
 
 export default ({
   name: 'GroupChat',
@@ -134,8 +134,8 @@ export default ({
     },
     type () {
       return {
-        members: chatRoomTypes.INDIVIDUAL,
-        groups: chatRoomTypes.GROUP
+        members: CHATROOM_TYPES.INDIVIDUAL,
+        groups: CHATROOM_TYPES.GROUP
       }
     }
   },

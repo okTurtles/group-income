@@ -29,7 +29,7 @@ import {
   INVITE_INITIAL_CREATOR,
   INVITE_STATUS,
   PROFILE_STATUS,
-  chatRoomTypes,
+  CHATROOM_TYPES,
   INVITE_EXPIRES_IN_DAYS
 } from './constants.js'
 
@@ -842,7 +842,7 @@ sbp('chelonia/defineContract', {
       validate: objectMaybeOf({
         chatRoomID: string,
         name: string,
-        type: unionOf(...Object.values(chatRoomTypes).map(v => literalOf(v)))
+        type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v)))
         // TODO: need to define 'private', 'general' as boolean
         // but 'boolean' TypeValidator doesn't work fine inside objectMaybeOf
         // private: boolean,

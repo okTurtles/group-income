@@ -2,7 +2,7 @@
 
 import sbp from '~/shared/sbp.js'
 import { createInvite } from '@model/contracts/group.js'
-import { INVITE_INITIAL_CREATOR, CHATROOM_GENERAL_NAME, chatRoomTypes } from '@model/contracts/constants.js'
+import { INVITE_INITIAL_CREATOR, CHATROOM_GENERAL_NAME, CHATROOM_TYPES } from '@model/contracts/constants.js'
 import proposals from '@model/contracts/voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER,
@@ -102,7 +102,7 @@ export default (sbp('sbp/selectors/register', {
         contractID: message.contractID(),
         data: {
           name: CHATROOM_GENERAL_NAME,
-          type: chatRoomTypes.GROUP,
+          type: CHATROOM_TYPES.GROUP,
           description: '',
           private: false
         }

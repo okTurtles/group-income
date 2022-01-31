@@ -1,11 +1,18 @@
 import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
-import { chatRoomTypes } from '@model/contracts/constants.js'
+import { CHATROOM_TYPES } from '@model/contracts/constants.js'
+import { CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
 
 /**
  * TODO: need to remove this fakeMessages later
  * At this moment, just used the examples of identityContractIDs
 **/
+
+const initChatChannelDetails = {
+  isLoading: true,
+  participantsInSort: [],
+  participants: []
+}
 
 const chatroom: Object = {
   data (): Object {
@@ -16,11 +23,7 @@ const chatroom: Object = {
       ephemeral: {
         isLoading: true,
         loadedSummary: null,
-        loadedDetails: {
-          isLoading: true,
-          participantsInSort: [],
-          participants: []
-        }
+        loadedDetails: initChatChannelDetails
       }
     }
   },
@@ -80,7 +83,7 @@ const chatroom: Object = {
         type,
         title,
         description: this.currentChatRoomState.attributes.description,
-        routerBack: type === chatRoomTypes.INDIVIDUAL ? '/messages' : '/group-chat',
+        routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
         private: this.currentChatRoomState.attributes.private,
         general: this.generalChatRoomId === this.currentChatRoomId,
         joined: true,
@@ -137,6 +140,7 @@ const chatroom: Object = {
       }
     },
     async loadSummary (): Promise<void> {
+      this.ephemeral.loadedDetails = initChatChannelDetails
       const { chatRoomId } = this.$route.params
       const state = await sbp('state/latestContractState', chatRoomId)
       const title = state.attributes.name
@@ -146,15 +150,13 @@ const chatroom: Object = {
         type,
         title,
         description: state.attributes.description,
-        routerBack: type === chatRoomTypes.INDIVIDUAL ? '/messages' : '/group-chat',
+        routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
         private: state.attributes.private,
         joined: false,
         picture: state.attributes.picture
       }
       const participantsInSort = this.groupMembersSorted.map(member => member.username)
         .filter(username => !!state.users[username] && !state.users[username].departedDate) || []
-
-      console.log('##################', participantsInSort, this.groupMembersSorted)
 
       const participants = {}
       for (const username in state.users) {
@@ -172,6 +174,7 @@ const chatroom: Object = {
         participantsInSort,
         participants
       }
+      sbp('okTurtles.events/emit', `${CHATROOM_STATE_LOADED}-${chatRoomId}`, state)
       this.refreshTitle(title)
     }
   }

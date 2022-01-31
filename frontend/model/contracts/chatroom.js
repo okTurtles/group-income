@@ -10,20 +10,23 @@ import { merge } from '~/frontend/utils/giLodash.js'
 import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
-  chatRoomTypes,
-  messageTypes
+  CHATROOM_MESSAGES_PER_PAGE,
+  MESSAGE_ACTION_TYPES,
+  CHATROOM_TYPES,
+  MESSAGE_TYPES
 } from './constants.js'
+import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 
 export const chatRoomType: any = objectOf({
   name: string,
   description: string,
-  type: unionOf(...Object.values(chatRoomTypes).map(v => literalOf(v))),
+  type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
   private: boolean
 })
 
 export const messageType: any = objectMaybeOf({
   id: string, // hash of message once it is initialized
-  type: unionOf(...Object.values(messageTypes).map(v => literalOf(v))),
+  type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
   from: string, // username
   time: string, // new Date()
   text: string, // message text | proposalId when type is INTERACTIVE
@@ -46,19 +49,25 @@ export function createMessage ({ meta, data, hash }: {
 
   let newMessage = { type, time: new Date(createdDate), id: hash }
   switch (type) {
-    case messageTypes.TEXT:
+    case MESSAGE_TYPES.TEXT:
       newMessage = !replyingMessage
         ? { ...newMessage, from: username, text }
         : { ...newMessage, from: username, text, replyingMessage }
       break
-    case messageTypes.POLL:
+    case MESSAGE_TYPES.POLL:
       break
-    case messageTypes.NOTIFICATION:
+    case MESSAGE_TYPES.NOTIFICATION:
       break
-    case messageTypes.INTERACTIVE:
+    case MESSAGE_TYPES.INTERACTIVE:
       break
   }
   return newMessage
+}
+
+export function getLatestMessages ({
+  count, messages
+}: { count: number, messages: Array<Object> }): Array<Object> {
+  return messages.slice(Math.max(messages.length - count, 0))
 }
 
 sbp('chelonia/defineContract', {
@@ -96,7 +105,10 @@ sbp('chelonia/defineContract', {
     },
     chatRoomLatestMessages (state, getters) {
       const messages = getters.currentChatRoomState.messages || []
-      return messages.slice(Math.max(messages.length - 5, 1))
+      return getLatestMessages({
+        count: getters.chatRoomSettings.messagesPerPage,
+        messages
+      })
     }
   },
   actions: {
@@ -106,6 +118,7 @@ sbp('chelonia/defineContract', {
       process ({ meta, data }, { state }) {
         const initialState = merge({
           settings: {
+            messagesPerPage: CHATROOM_MESSAGES_PER_PAGE,
             maxNameLetters: CHATROOM_NAME_LIMITS_IN_CHARS,
             maxDescriptionLetters: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
           },
@@ -187,7 +200,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/addMessage': {
       validate: objectMaybeOf({
-        type: unionOf(...Object.values(messageTypes).map(v => literalOf(v))),
+        type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
         text: string,
         replyingMessage: objectOf({
           id: string, // scroll to the original message and highlight
@@ -200,6 +213,15 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const newMessage = createMessage({ meta, data, hash })
         Vue.set(state.messages, [state.messages.length], newMessage)
+      },
+      sideEffect ({ meta, data, contractID, hash }) {
+        sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, {
+          type: MESSAGE_ACTION_TYPES.ADD_MESSAGE,
+          data: {
+            hash,
+            message: createMessage({ meta, data, hash })
+          }
+        })
       }
     },
     'gi.contracts/chatroom/deleteMessage': {

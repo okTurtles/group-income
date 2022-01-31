@@ -77,9 +77,10 @@ import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { fakeEvents } from '@containers/chatroom/fakeStore.js'
-import { messageTypes } from '@model/contracts/constants.js'
-import { createMessage } from '@model/contracts/chatroom.js'
+import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES } from '@model/contracts/constants.js'
+import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
 import { proximityDate } from '@utils/time.js'
+import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
 
 export default ({
   name: 'ChatMain',
@@ -115,7 +116,6 @@ export default ({
       messages: [],
       ephemeral: {
         bodyPaddingBottom: '',
-        conversationIsLoading: false,
         replyingMessage: null,
         replyingTo: null
       }
@@ -126,7 +126,13 @@ export default ({
     const mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
     this.config.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
+  },
+  mounted () {
+    sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
     this.setInitMessages()
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
   },
   updated () {
     this.updateScroll()
@@ -136,9 +142,11 @@ export default ({
       'currentChatRoomId'
     ]),
     ...mapGetters([
+      'chatRoomSettings',
       'chatRoomLatestMessages',
       'ourIdentityContractId',
-      'ourUserIdentityContract'
+      'ourUserIdentityContract',
+      'isJoinedChatRoom'
     ]),
     messageVariants () {
       return Message.constants.variants
@@ -169,11 +177,11 @@ export default ({
       })
       let mt = `message-${index}-${num}`
       switch (message.from) {
-        case messageTypes.NOTIFICATION:
+        case MESSAGE_TYPES.NOTIFICATION:
           mt = `notification-${index}-${num}`
           break
 
-        case messageTypes.INTERACTIVE:
+        case MESSAGE_TYPES.INTERACTIVE:
           mt = `interactive-${index}-${num}`
           break
       }
@@ -182,11 +190,11 @@ export default ({
     messageType (message) {
       let mt = 'message'
       switch (message.from) {
-        case messageTypes.NOTIFICATION:
+        case MESSAGE_TYPES.NOTIFICATION:
           mt += '-notification'
           break
 
-        case messageTypes.INTERACTIVE:
+        case MESSAGE_TYPES.INTERACTIVE:
           mt += '-interactive'
           break
       }
@@ -196,7 +204,7 @@ export default ({
       return this.currentUserAttr.username === fromId
     },
     who (message) {
-      const fromId = message.from === messageTypes.NOTIFICATION ? fakeEvents[message.id].from : message.from
+      const fromId = message.from === MESSAGE_TYPES.NOTIFICATION ? fakeEvents[message.id].from : message.from
       const user = this.isCurrentUser(fromId) ? this.currentUserAttr : this.details.participants[fromId]
       if (user) {
         return user.displayName || user.username
@@ -210,7 +218,7 @@ export default ({
       }
     },
     avatar (fromId) {
-      if (fromId === messageTypes.NOTIFICATION || fromId === messageTypes.INTERACTIVE) {
+      if (fromId === MESSAGE_TYPES.NOTIFICATION || fromId === MESSAGE_TYPES.INTERACTIVE) {
         return this.currentUserAttr.picture
       }
       return this.details.participants[fromId].picture
@@ -227,7 +235,7 @@ export default ({
       // Consider only simple TEXT now
       // TODO: implement other types of messages later
       const data = {
-        type: messageTypes.TEXT,
+        type: MESSAGE_TYPES.TEXT,
         text: message
       }
 
@@ -240,12 +248,8 @@ export default ({
             const { meta, data } = msgValue
             this.messages.push({
               ...createMessage({ meta, data, hash: message.hash() }),
-              id: message.contractID(),
               pending: true
             })
-          },
-          postpublish: (message) => {
-
           }
         }
       })
@@ -324,11 +328,42 @@ export default ({
       this.$forceUpdate()
     },
     setInitMessages () {
-      this.messages = this.chatRoomLatestMessages
+      if (this.isJoinedChatRoom(this.currentChatRoomId)) {
+        this.messages = this.chatRoomLatestMessages
+      } else {
+        this.messages = []
+        sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
+          this.messages = getLatestMessages({
+            count: this.chatRoomSettings.messagesPerPage,
+            messages: state.messages
+          })
+        })
+      }
+    },
+    listenChatRoomActions ({ type, data }) {
+      if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE) {
+        const { hash, message } = data
+        if (message.type === MESSAGE_TYPES.TEXT) {
+          if (this.isCurrentUser(message.from)) {
+            const msg = this.messages.find(msg => msg.pending === true && msg.id === hash)
+            if (msg) {
+              delete msg.pending
+            } else {
+              this.messages.push(message)
+            }
+          } else {
+            this.messages.push(message)
+          }
+        }
+      }
     }
   },
   watch: {
     currentChatRoomId (to, from) {
+      sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)
+      if (this.isJoinedChatRoom(to)) {
+        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
+      }
       this.setInitMessages()
     }
   }

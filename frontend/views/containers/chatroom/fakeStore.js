@@ -8,15 +8,11 @@ import {
   STATUS_EXPIRED,
   STATUS_CANCELLED
 } from '@model/contracts/voting/constants.js'
+import { MESSAGE_TYPES } from '@model/contracts/constants.js'
 
 export const chatTypes = {
   INDIVIDUAL: 'INDIVIDUAL',
   GROUP: 'GROUP'
-}
-
-export const messageTypes = {
-  INTERACTIVE: 'INTERACTIVE',
-  NOTIFICATION: 'NOTIFICATION'
 }
 
 export const interactionType = {
@@ -216,7 +212,7 @@ export const individualConversations = {
       time: '3:24 AM'
     },
     {
-      from: messageTypes.INTERACTIVE,
+      from: MESSAGE_TYPES.INTERACTIVE,
       id: 'invite123',
       time: '3:24 AM'
     },
@@ -290,7 +286,7 @@ export const groupA = {
       },
       {
         time: (new Date(2020, 7, 23, 12, 45, 42): Date),
-        from: messageTypes.NOTIFICATION,
+        from: MESSAGE_TYPES.NOTIFICATION,
         id: 'youAddedToDreamersGroup',
         text: 'You are now part of The Dreamers group.'
       },
@@ -311,7 +307,7 @@ export const groupA = {
       },
       {
         time: (new Date(2020, 7, 31, 17, 32, 42): Date),
-        from: messageTypes.INTERACTIVE,
+        from: MESSAGE_TYPES.INTERACTIVE,
         id: 'inviteKattyId',
         unread: true
       }

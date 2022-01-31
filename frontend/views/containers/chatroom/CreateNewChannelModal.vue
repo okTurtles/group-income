@@ -78,7 +78,7 @@ import maxLength from 'vuelidate/lib/validators/maxLength'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { chatRoomTypes } from '@model/contracts/constants.js'
+import { CHATROOM_TYPES } from '@model/contracts/constants.js'
 
 export default ({
   name: 'CreateNewChannelModal',
@@ -107,7 +107,7 @@ export default ({
       try {
         await sbp('gi.actions/group/addAndJoinChatRoom', {
           contractID: this.currentGroupId,
-          data: { ...this.form, type: chatRoomTypes.GROUP }
+          data: { ...this.form, type: CHATROOM_TYPES.GROUP }
         })
       } catch (e) {
         console.error('CreateNewChannelModal.vue submit() error:', e)

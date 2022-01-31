@@ -14,13 +14,14 @@ export const PROFILE_STATUS = {
 export const CHATROOM_GENERAL_NAME = 'General'
 export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
 export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
+export const CHATROOM_MESSAGES_PER_PAGE = 20
 
-export const chatRoomTypes = {
+export const CHATROOM_TYPES = {
   INDIVIDUAL: 'INDIVIDUAL',
   GROUP: 'GROUP'
 }
 
-export const messageTypes = {
+export const MESSAGE_TYPES = {
   POLL: 'MESSAGE-POLL',
   TEXT: 'MESSAGE-TEXT',
   INTERACTIVE: 'MESSAGE-INTERACTIVE',
@@ -30,4 +31,10 @@ export const messageTypes = {
 export const INVITE_EXPIRES_IN_DAYS = {
   INITIAL: 30,
   PROPOSAL: 7
+}
+
+export const MESSAGE_ACTION_TYPES = {
+  ADD_MESSAGE: 'message-action-add-message',
+  EDIT_MESSAGE: 'message-action-edit-message',
+  DELETE_MESSAGE: 'message-action-delete-message'
 }
