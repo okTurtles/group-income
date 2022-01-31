@@ -437,6 +437,7 @@
   "Failed to rename chat channel.": "Failed to rename chat channel.",
   "Failed to change chat channel description.": "Failed to change chat channel description.",
   "Failed to leave chat channel.": "Failed to leave chat channel.",
+  "Failed to add message.": "Failed to add message.",
   "Sent to": "Sent to",
   "Mute chat": "Mute chat",
   "No members in the group are pledging yet! 😔": "No members in the group are pledging yet! 😔",

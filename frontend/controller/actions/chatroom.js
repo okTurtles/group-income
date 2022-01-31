@@ -13,6 +13,7 @@ export default (sbp('sbp/selectors/register', {
 
     return message
   },
+  ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
   ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.')),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),

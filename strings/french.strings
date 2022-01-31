@@ -150,6 +150,9 @@
 /* controller/actions/chatroom.js */
 "Failed to leave chat channel.": "Impossible de quitter le canal de chat.",
 
+/* controller/actions/chatroom.js */
+"Failed to add message.": "Échec de l'ajout du message.",
+
 /* controller/actions/mailbox.js */
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
 

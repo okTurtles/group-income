@@ -1317,6 +1317,9 @@
 /* controller/actions/chatroom.js */
 "Failed to leave chat channel.": "Failed to leave chat channel.",
 
+/* controller/actions/chatroom.js */
+"Failed to add message.": "Failed to add message.",
+
 /* views/containers/payments/RecordPaymentsList.vue */
 "Sent to" = "Sent to";
 

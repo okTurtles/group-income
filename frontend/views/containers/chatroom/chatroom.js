@@ -6,37 +6,6 @@ import { chatRoomTypes } from '@model/contracts/constants.js'
  * TODO: need to remove this fakeMessages later
  * At this moment, just used the examples of identityContractIDs
 **/
-const fakeMessages = [
-  {
-    time: (new Date(2020, 5, 22, 11, 43, 42): Date),
-    from: 'AlexJin',
-    text: 'Hi 👋'
-  },
-  {
-    time: (new Date(2020, 7, 23, 11, 34, 42): Date),
-    from: 'StefanLei',
-    text: 'It’s missing Sandy'
-  },
-  {
-    time: (new Date(2020, 7, 23, 12, 23, 42): Date),
-    from: 'AlexJin',
-    text: 'Yeah, looking for her username, one second'
-  },
-  {
-    time: (new Date(2020, 7, 30, 13, 25, 42): Date),
-    from: 'StefanLei',
-    text: 'Guys, should we add Katty to the group?'
-  },
-  {
-    time: (new Date(2020, 7, 31, 14, 28, 42): Date),
-    from: 'StefanLei',
-    text: 'There’s no problem to me',
-    unread: true,
-    emoticons: {
-      '💖': ['AlexJin']
-    }
-  }
-]
 
 const chatroom: Object = {
   data (): Object {
@@ -47,7 +16,11 @@ const chatroom: Object = {
       ephemeral: {
         isLoading: true,
         loadedSummary: null,
-        loadedDetails: null
+        loadedDetails: {
+          isLoading: true,
+          participantsInSort: [],
+          participants: []
+        }
       }
     }
   },
@@ -124,6 +97,7 @@ const chatroom: Object = {
         const { displayName, picture, email } = this.globalProfile(username)
         participants[username] = {
           ...this.chatRoomUsers[username],
+          username,
           displayName,
           picture,
           email
@@ -131,7 +105,6 @@ const chatroom: Object = {
       }
       return {
         isLoading: false,
-        conversation: fakeMessages,
         participantsInSort: this.chatRoomUsersInSort,
         participants
       }
@@ -181,11 +154,14 @@ const chatroom: Object = {
       const participantsInSort = this.groupMembersSorted.map(member => member.username)
         .filter(username => !!state.users[username] && !state.users[username].departedDate) || []
 
+      console.log('##################', participantsInSort, this.groupMembersSorted)
+
       const participants = {}
       for (const username in state.users) {
         const { displayName, picture, email } = this.globalProfile(username)
         participants[username] = {
           ...state.users[username],
+          username,
           displayName,
           picture,
           email
@@ -193,7 +169,6 @@ const chatroom: Object = {
       }
       this.ephemeral.loadedDetails = {
         isLoading: false,
-        conversation: fakeMessages,
         participantsInSort,
         participants
       }

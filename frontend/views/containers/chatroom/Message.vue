@@ -13,6 +13,7 @@ import MessageBase from './MessageBase.vue'
 const variants = {
   SENT: 'sent',
   RECEIVED: 'received',
+  PENDING: 'pending',
   FAILED: 'failed'
 }
 
@@ -33,7 +34,7 @@ export default ({
     variant: {
       type: String,
       validator (value) {
-        return [variants.SENT, variants.RECEIVED, variants.FAILED].indexOf(value) !== -1
+        return [variants.SENT, variants.RECEIVED, variants.PENDING, variants.FAILED].indexOf(value) !== -1
       }
     },
     emoticonsList: {

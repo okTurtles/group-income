@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import {
   objectMaybeOf, objectOf, mapOf, arrayOf,
-  string, boolean, literalOf, unionOf
+  string, boolean, literalOf, unionOf, number
 } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 import {
@@ -21,7 +21,7 @@ export const chatRoomType: any = objectOf({
   private: boolean
 })
 
-export const messageType: any = objectOf({
+export const messageType: any = objectMaybeOf({
   id: string, // hash of message once it is initialized
   type: unionOf(...Object.values(messageTypes).map(v => literalOf(v))),
   from: string, // username
@@ -29,13 +29,37 @@ export const messageType: any = objectOf({
   text: string, // message text | proposalId when type is INTERACTIVE
   replyingMessage: objectOf({
     id: string, // scroll to the original message and highlight
-    username: string, // display
-    text: string, // display
-    time: string // to search easily
+    index: number, // index of the list of messages
+    username: string, // display username
+    text: string // display text(if too long, truncate)
   }),
   emoticons: mapOf(string, arrayOf(string)), // mapping of emoticons and usernames
   onlyVisibleTo: arrayOf(string) // list of usernames, only necessary when type is NOTIFICATION
+  // TODO: need to consider POLL and add more down here
 })
+
+export function createMessage ({ meta, data, hash }: {
+  meta: Object, data: Object, hash: string
+}): Object {
+  const { type, text, replyingMessage } = data
+  const { username, createdDate } = meta
+
+  let newMessage = { type, time: new Date(createdDate), id: hash }
+  switch (type) {
+    case messageTypes.TEXT:
+      newMessage = !replyingMessage
+        ? { ...newMessage, from: username, text }
+        : { ...newMessage, from: username, text, replyingMessage }
+      break
+    case messageTypes.POLL:
+      break
+    case messageTypes.NOTIFICATION:
+      break
+    case messageTypes.INTERACTIVE:
+      break
+  }
+  return newMessage
+}
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/chatroom',
@@ -70,8 +94,9 @@ sbp('chelonia/defineContract', {
     chatRoomUsers (state, getters) {
       return getters.currentChatRoomState.users || {}
     },
-    chatRoomMessages (state, getters) {
-      return getters.currentChatRoomState.messages || {}
+    chatRoomLatestMessages (state, getters) {
+      const messages = getters.currentChatRoomState.messages || []
+      return messages.slice(Math.max(messages.length - 5, 1))
     }
   },
   actions: {
@@ -85,7 +110,7 @@ sbp('chelonia/defineContract', {
             maxDescriptionLetters: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
           },
           users: {},
-          messages: {}
+          messages: []
         }, {
           attributes: {
             ...data,
@@ -158,6 +183,55 @@ sbp('chelonia/defineContract', {
           }
           sbp('state/vuex/commit', 'removeContract', contractID)
         }
+      }
+    },
+    'gi.contracts/chatroom/addMessage': {
+      validate: objectMaybeOf({
+        type: unionOf(...Object.values(messageTypes).map(v => literalOf(v))),
+        text: string,
+        replyingMessage: objectOf({
+          id: string, // scroll to the original message and highlight
+          username: string, // display
+          text: string, // display
+          time: string // to search easily
+        }),
+        onlyVisibleTo: arrayOf(string)
+      }),
+      process ({ data, meta, hash }, { state }) {
+        const newMessage = createMessage({ meta, data, hash })
+        Vue.set(state.messages, [state.messages.length], newMessage)
+      }
+    },
+    'gi.contracts/chatroom/deleteMessage': {
+      validate: objectMaybeOf({
+
+      }),
+      process ({ data, meta }, { state }) {
+
+      }
+    },
+    'gi.contracts/chatroom/editMessage': {
+      validate: objectMaybeOf({
+
+      }),
+      process ({ data, meta }, { state }) {
+
+      }
+    },
+    'gi.contracts/chatroom/addEmoticon': {
+      validate: objectMaybeOf({
+
+      }),
+      process ({ data, meta }, { state }) {
+
+      }
+    },
+    'gi.contracts/chatroom/deleteEmoticon': {
+      validate: objectMaybeOf({
+
+      }),
+      process ({ data, meta }, { state }) {
+
       }
     }
   }

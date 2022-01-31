@@ -65,7 +65,8 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import sbp from '~/shared/sbp.js'
+import { mapGetters, mapState } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
@@ -77,6 +78,7 @@ import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { fakeEvents } from '@containers/chatroom/fakeStore.js'
 import { messageTypes } from '@model/contracts/constants.js'
+import { createMessage } from '@model/contracts/chatroom.js'
 import { proximityDate } from '@utils/time.js'
 
 export default ({
@@ -98,7 +100,7 @@ export default ({
       default () { return {} }
     },
     details: {
-      type: Object, // { isLoading: Bool, conversation: Array, participants: Object }
+      type: Object, // { isLoading: Bool, participants: Object }
       default () { return {} }
     },
     type: {
@@ -107,14 +109,13 @@ export default ({
   },
   data () {
     return {
-      messageTypes: messageTypes,
       config: {
         isPhone: null
       },
+      messages: [],
       ephemeral: {
         bodyPaddingBottom: '',
         conversationIsLoading: false,
-        pendingMessages: [],
         replyingMessage: null,
         replyingTo: null
       }
@@ -125,18 +126,20 @@ export default ({
     const mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
     this.config.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
+    this.setInitMessages()
   },
   updated () {
     this.updateScroll()
   },
   computed: {
+    ...mapState([
+      'currentChatRoomId'
+    ]),
     ...mapGetters([
+      'chatRoomLatestMessages',
       'ourIdentityContractId',
       'ourUserIdentityContract'
     ]),
-    messages () {
-      return { ...this.details.conversation, ...this.ephemeral.pendingMessages }
-    },
     messageVariants () {
       return Message.constants.variants
     },
@@ -147,7 +150,7 @@ export default ({
       return { ...phoneStyles, ...unjoinedStyles }
     },
     startedUnreadIndex () {
-      return this.details.conversation.findIndex(message => message.unread === true)
+      return this.messages.findIndex(message => message.unread === true)
     },
     currentUserAttr () {
       return {
@@ -200,7 +203,7 @@ export default ({
       }
     },
     variant (message) {
-      if (message.hasFailed) {
+      if (message.pending) {
         return this.messageVariants.FAILED
       } else {
         return this.isCurrentUser(message.from) ? this.messageVariants.SENT : this.messageVariants.RECEIVED
@@ -219,18 +222,36 @@ export default ({
     updateSendAreaHeight (height) {
       this.ephemeral.bodyPaddingBottom = height
     },
-    handleSendMessage (message, replyingMessage = false) {
+    handleSendMessage (message, replyingMessage = null) {
       console.log('sending...')
-      const index = Object.keys(this.messages).length + 1
-      const newMessage = {
-        from: this.currentUserAttr.username,
-        time: new Date(),
+      // Consider only simple TEXT now
+      // TODO: implement other types of messages later
+      const data = {
+        type: messageTypes.TEXT,
         text: message
       }
-      if (replyingMessage) newMessage.replyingMessage = replyingMessage
-      this.$set(this.ephemeral.pendingMessages, index, newMessage)
 
-      this.sendMessage(index)
+      sbp('gi.actions/chatroom/addMessage', {
+        contractID: this.currentChatRoomId,
+        data: !replyingMessage ? data : { ...data, replyingMessage },
+        hooks: {
+          prepublish: (message) => {
+            const msgValue = JSON.parse(message.opValue())
+            const { meta, data } = msgValue
+            this.messages.push({
+              ...createMessage({ meta, data, hash: message.hash() }),
+              id: message.contractID(),
+              pending: true
+            })
+          },
+          postpublish: (message) => {
+
+          }
+        }
+      })
+
+      // Alex: Not sure why this is necessary
+      // this.sendMessage(index)
     },
     updateScroll () {
       if (this.summary.title) {
@@ -241,9 +262,9 @@ export default ({
       }
     },
     retryMessage (index) {
-      this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
+      // this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
 
-      this.sendMessage(index)
+      // this.sendMessage(index)
       console.log('TODO $store - retry sending a message')
     },
     replyMessage (message) {
@@ -255,7 +276,7 @@ export default ({
       this.ephemeral.replyingTo = null
       setTimeout(() => {
         console.log('TODO $store send message')
-        this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
+        // this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
       }, 2000)
     },
     changeDay (index) {
@@ -272,7 +293,7 @@ export default ({
     addEmoticon (index, emoticon) {
       // Todo replace with  deep merge
       const userId = this.currentUserAttr.id
-      const emoticons = this.details.conversation[index].emoticons || {}
+      const emoticons = this.messages[index].emoticons || {}
       if (emoticons[emoticon]) {
         const alreadyAdded = emoticons[emoticon].indexOf(userId)
         if (alreadyAdded >= 0) {
@@ -280,7 +301,7 @@ export default ({
           if (emoticons[emoticon].length === 0) {
             delete this.messages[emoticon]
             if (Object.keys(emoticons).length === 0) {
-              delete this.details.conversation[index].emoticons
+              delete this.messages[index].emoticons
               return false
             }
           }
@@ -290,17 +311,25 @@ export default ({
         emoticons[emoticon].push(userId)
       }
 
-      this.$set(this.details.conversation[index], 'emoticons', emoticons)
+      this.$set(this.messages[index], 'emoticons', emoticons)
       this.$forceUpdate()
     },
     deleteMessage (index) {
       // TODO replace by store action
-      this.$set(this.details.conversation[index], 'delete', true)
+      this.$set(this.messages[index], 'delete', true)
       setTimeout(() => {
         delete this.messages[index]
         this.$forceUpdate()
       }, 1000)
       this.$forceUpdate()
+    },
+    setInitMessages () {
+      this.messages = this.chatRoomLatestMessages
+    }
+  },
+  watch: {
+    currentChatRoomId (to, from) {
+      this.setInitMessages()
     }
   }
 }: Object)
