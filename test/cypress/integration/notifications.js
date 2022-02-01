@@ -62,17 +62,30 @@ describe('Notifications - single group', () => {
     cy.getByDT('dashboardBadge').should('not.exist')
   })
 
+  it('should display an empty notification list', () => {
+    cy.getByDT('notificationBell').click()
+    cy.getByDT('notificationCard').should('be.visible')
+    cy.getByDT('notificationCard').should('contain', 'Nothing to see here... yet!')
+    cy.get('.c-item-content').should('have.length', 0)
+  })
+
   it('should increment the badge counter', () => {
     cy.window().its('sbp').then(async sbp => {
       const { currentGroupId } = sbp('state/vuex/state')
       const getters = sbp('state/vuex/getters')
+      const notificationCount = fakeDB.length
 
       for (const [index, { type, data = {} }] of fakeDB.entries()) {
         await sbp('gi.notifications/emit', type, { ...data, groupID: currentGroupId })
 
         expect(getters.currentGroupUnreadNotificationCount).to.equal(index + 1)
       }
-      cy.getByDT('dashboardBadge').should('contain', String(fakeDB.length))
+      cy.getByDT('dashboardBadge').should('have.text', notificationCount)
+      cy.getByDT('alertNotification').each(elem => cy.wrap(elem).should('have.text', notificationCount))
     })
+  })
+
+  it('should display the correct number of notifications', () => {
+    cy.get('.c-item-content').should('have.length', fakeDB.length)
   })
 })
