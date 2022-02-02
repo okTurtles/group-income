@@ -52,6 +52,11 @@ const getters = {
 }
 
 const mutations = {
+  // Seems necessary because the red badge would not clear upon signing up a new user in Cypress via the bypassUI mechanism.
+  logout (state) {
+    state.splice(0, state.length)
+  },
+
   [keys.ADD_NOTIFICATION] (state, notification: Notification) {
     if (state.includes(notification)) {
       throw new Error('This notification is already in the store.')
