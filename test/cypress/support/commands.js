@@ -5,7 +5,6 @@
 // ***********************************************
 
 import 'cypress-file-upload'
-import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
 
 /* Get element by data-test attribute and other attributes
  ex:
@@ -152,11 +151,12 @@ Cypress.Commands.add('giCreateGroup', (name, {
 
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     cy.getByDT('groupName').should('contain', name)
-    // Added by Alex to wait until General chatroom contract is fully synced
-    cy.getByDT('groupChatLink').click()
-    cy.getByDT('channelName').should('text', CHATROOM_GENERAL_NAME)
-    cy.getByDT('dashboard').click()
-    cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+    // wait for general chatroom contract to finish syncing
+    cy.wait(500); // eslint-disable-line
+    cy.getByDT('app').then(([el]) => {
+      cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+      cy.get(el).should('have.attr', 'data-sync', '')
+    })
     return
   }
 
@@ -198,11 +198,13 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
     cy.getByDT('toDashboardBtn').click()
   })
-  // Added by Alex to wait until General chatroom contract is fully synced
-  cy.getByDT('groupChatLink').click()
-  cy.getByDT('channelName').should('text', CHATROOM_GENERAL_NAME)
-  cy.getByDT('dashboard').click()
   cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+  // wait for general chatroom contract to finish syncing
+  cy.wait(500); // eslint-disable-line
+  cy.getByDT('app').then(([el]) => {
+    cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+    cy.get(el).should('have.attr', 'data-sync', '')
+  })
 })
 
 function inviteUser (invitee, index) {
@@ -262,11 +264,14 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     const groupId = params.get('groupId')
     const inviteSecret = params.get('secret')
     cyBypassUI('group_join', { groupId, inviteSecret })
-    // Added by Alex to wait until General chatroom contract is fully synced
-    cy.getByDT('groupChatLink').click()
-    cy.getByDT('channelName').should('text', CHATROOM_GENERAL_NAME)
-    cy.getByDT('dashboard').click()
-    cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+    // wait for general chatroom contract to finish syncing
+    cy.wait(500); // eslint-disable-line
+    cy.getByDT('app').then(([el]) => {
+      if (!isLoggedIn) {
+        cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+      }
+      cy.get(el).should('have.attr', 'data-sync', '')
+    })
   } else {
     cy.visit(invitationLink)
 
@@ -282,11 +287,15 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     }
 
     cy.getByDT('toDashboardBtn').click()
-    // Added by Alex to wait until General chatroom contract is fully synced
-    cy.getByDT('groupChatLink').click()
-    cy.getByDT('channelName').should('text', CHATROOM_GENERAL_NAME)
-    cy.getByDT('dashboard').click()
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+    // wait for general chatroom contract to finish syncing
+    cy.wait(500); // eslint-disable-line
+    cy.getByDT('app').then(([el]) => {
+      if (!isLoggedIn) {
+        cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+      }
+      cy.get(el).should('have.attr', 'data-sync', '')
+    })
   }
 
   if (displayName) {
