@@ -76,18 +76,19 @@ const chatroom: Object = {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
         return this.ephemeral.loadedSummary || {}
       }
-      const title = this.currentChatRoomState.attributes.name
-      const type = this.currentChatRoomState.attributes.type
+
+      const { name, type, description, creator, picture } = this.currentChatRoomState.attributes
 
       return {
         type,
-        title,
-        description: this.currentChatRoomState.attributes.description,
+        title: name,
+        description,
         routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
         private: this.currentChatRoomState.attributes.private,
         general: this.generalChatRoomId === this.currentChatRoomId,
         joined: true,
-        picture: this.currentChatRoomState.attributes.picture
+        creator,
+        picture
       }
     },
     details (): Object {
@@ -143,17 +144,17 @@ const chatroom: Object = {
       this.ephemeral.loadedDetails = initChatChannelDetails
       const { chatRoomId } = this.$route.params
       const state = await sbp('state/latestContractState', chatRoomId)
-      const title = state.attributes.name
-      const type = state.attributes.type
+      const { name, type, description, picture, creator } = state.attributes
 
       this.ephemeral.loadedSummary = {
         type,
-        title,
-        description: state.attributes.description,
+        title: name,
+        description,
         routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
         private: state.attributes.private,
         joined: false,
-        picture: state.attributes.picture
+        picture,
+        creator
       }
       const participantsInSort = this.groupMembersSorted.map(member => member.username)
         .filter(username => !!state.users[username] && !state.users[username].departedDate) || []
@@ -175,7 +176,7 @@ const chatroom: Object = {
         participants
       }
       sbp('okTurtles.events/emit', `${CHATROOM_STATE_LOADED}-${chatRoomId}`, state)
-      this.refreshTitle(title)
+      this.refreshTitle(name)
     }
   }
 }

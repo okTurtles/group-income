@@ -34,7 +34,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
-              v-if='!summary.general'
+              v-if='!summary.general && ourUsername === summary.creator'
               @click='openModal("DeleteChannelModal")'
             )
               i18n Delete channel
@@ -117,7 +117,8 @@ export default ({
       'getChatRoomIDsInSort',
       'chatRoomsInDetail',
       'globalProfile',
-      'groupProfiles'
+      'groupProfiles',
+      'ourUsername'
     ]),
     channels () {
       return {
