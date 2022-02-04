@@ -154,7 +154,6 @@ Cypress.Commands.add('giCreateGroup', (name, {
     // wait for general chatroom contract to finish syncing
     cy.wait(500); // eslint-disable-line
     cy.getByDT('app').then(([el]) => {
-      cy.get(el).should('have.attr', 'data-logged-in', 'yes')
       cy.get(el).should('have.attr', 'data-sync', '')
     })
     return
@@ -202,7 +201,6 @@ Cypress.Commands.add('giCreateGroup', (name, {
   // wait for general chatroom contract to finish syncing
   cy.wait(500); // eslint-disable-line
   cy.getByDT('app').then(([el]) => {
-    cy.get(el).should('have.attr', 'data-logged-in', 'yes')
     cy.get(el).should('have.attr', 'data-sync', '')
   })
 })
