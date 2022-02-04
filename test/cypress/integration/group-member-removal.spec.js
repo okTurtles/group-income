@@ -232,7 +232,7 @@ describe('Group - Removing a member', () => {
 
   it('user2 rejoins the groupA', () => {
     // Wait for contracts to sync before visiting invitationLink. TODO avoid .wait().
-    cy.wait(500); // eslint-disable-line
+    cy.wait(2000); // eslint-disable-line
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
       groupName: groupNameA,
