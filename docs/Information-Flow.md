@@ -1,6 +1,6 @@
 # Information Flow
 
-It's recommended that you understand the [basics of `sbp`](Style-Guide.md#sbp) before moving on because everything below relies on it.
+It's recommended that you understand the [basics of `sbp`](https://github.com/okTurtles/sbp-js) before moving on because everything below relies on it.
 
 In Group Income, we use a framework for building software out of something called "contract chains" (if you're familiar with how smart contracts in Ethereum work, this will make more sense to you).
 
