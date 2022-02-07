@@ -122,7 +122,7 @@
 
 /* controller/actions/identity.js */
 "Failed to login: {reportError}" = "Erreur lors de la connexion : {reportError}";
-
+failed to delete
 /* controller/actions/identity.js */
 "Failed to set profile attributes." = "L'attribution des caractéristiques du profil a échoué.";
 
@@ -149,6 +149,9 @@
 
 /* controller/actions/chatroom.js */
 "Failed to leave chat channel.": "Impossible de quitter le canal de chat.",
+
+/* controller/actions/chatroom.js */
+"Failed to delete chat channel.": "Échec de la suppression du canal de chat.",
 
 /* controller/actions/chatroom.js */
 "Failed to add message.": "Échec de l'ajout du message.",
@@ -704,6 +707,12 @@
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Restantes {title}";
+
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
+"Kicked {displayName} from {title}" = "Expulsé {displayName} de {title}";
+
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
+"Joined {title}" = "Joint {title}";
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/ProposalTemplate.vue */
 "New proposal" = "Nouvelle proposition";

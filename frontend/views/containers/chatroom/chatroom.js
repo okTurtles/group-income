@@ -157,7 +157,7 @@ const chatroom: Object = {
         creator
       }
       const participantsInSort = this.groupMembersSorted.map(member => member.username)
-        .filter(username => !!state.users[username] && !state.users[username].departedDate) || []
+        .filter(username => !!state.users[username]) || []
 
       const participants = {}
       for (const username in state.users) {

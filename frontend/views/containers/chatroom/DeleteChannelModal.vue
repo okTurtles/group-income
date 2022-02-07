@@ -6,7 +6,7 @@
     form(novalidate @submit.prevent='submit' data-test='deleteGroup')
       i18n(
         tag='strong'
-        :args='{ name: groupSettings.groupName }'
+        :args='{ name: chatRoomAttributes.name }'
       ) Are you sure you want to delete {name}?
 
       ul.c-list
@@ -21,7 +21,7 @@
 
       label.checkbox
         input.input(type='checkbox' name='confirmation' v-model='form.confirmation')
-        i18n(:args='{ name: groupSettings.groupName, ...LTags("strong") }') Yes, I want to {strong_}delete {name} permanently{_strong}.
+        i18n(:args='{ name: chatRoomAttributes.name, ...LTags("strong") }') Yes, I want to {strong_}delete {name} permanently{_strong}.
 
       banner-scoped(ref='formMsg')
 
@@ -37,7 +37,7 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -56,16 +56,14 @@ export default ({
   },
   data () {
     return {
-      channelId: this.$route.query.channel,
       form: {
         confirmation: false
       }
     }
   },
   computed: {
-    ...mapGetters([
-      'groupSettings'
-    ])
+    ...mapGetters(['chatRoomAttributes']),
+    ...mapState(['currentChatRoomId'])
   },
   methods: {
     close () {
@@ -76,7 +74,11 @@ export default ({
 
       try {
         // TODO
-        await sbp('gi.actions/channel/removeChannel', this.channelId)
+        console.log('TODO')
+        await sbp('gi.actions/chatroom/delete', {
+          contractID: this.currentChatRoomId,
+          data: {}
+        })
       } catch (e) {
         console.error('RemoveChannelModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)

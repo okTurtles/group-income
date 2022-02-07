@@ -219,6 +219,12 @@
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Left {title}";
 
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
+"Kicked {displayName} from {title}" = "Kicked {displayName} from {title}";
+
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
+"Joined {title}" = "Joined {title}";
+
 /* views/containers/payments/RecordPayment.vue */
 "Please support the development of Group Income by {r1}sending a donation{r2}!" = "Please support the development of Group Income by {r1}sending a donation{r2}!";
 
@@ -1316,6 +1322,9 @@
 
 /* controller/actions/chatroom.js */
 "Failed to leave chat channel.": "Failed to leave chat channel.",
+
+/* controller/actions/chatroom.js */
+"Failed to delete chat channel.": "Failed to delete chat channel.",
 
 /* controller/actions/chatroom.js */
 "Failed to add message.": "Failed to add message.",

@@ -6,10 +6,10 @@ message-base(v-bind='$props' @addEmoticon='addEmoticon($event)')
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
-import { interactionType, fakeEvents, users } from '@containers/chatroom/fakeStore.js'
-import chatroom from '@containers/chatroom/chatroom.js'
 import L from '@view-utils/translations.js'
+import { MESSAGE_NOTIFICATIONS } from '@model/contracts/constants.js'
 
 export default ({
   name: 'MessageNotification',
@@ -19,6 +19,7 @@ export default ({
   props: {
     id: String,
     text: String,
+    notification: Object, // { type, params }
     who: String,
     currentUserId: String,
     avatar: String,
@@ -34,44 +35,49 @@ export default ({
     isCurrentUser: Boolean
   },
   computed: {
+    ...mapGetters(['globalProfile']),
     message () {
-      const summary = chatroom.summary
       let text = ''
       let variant = 'simple'
-      const event = fakeEvents[this.id]
-
-      switch (event.interactionType) {
-        case interactionType.CHAT_NEW_MEMBER:
-          text = L('Added members to this channel: {displayName}', users[event.to])
+      const { username, channelName, channelDescription } = this.notification.params
+      const displayName = !username ? '' : this.globalProfile(username).displayName || username
+      switch (this.notification.type) {
+        case MESSAGE_NOTIFICATIONS.ADD_MEMBER:
+          text = L('Added a member to this channel: {displayName}', { displayName })
           break
 
-        case interactionType.CHAT_REMOVE_MEMBER:
-          text = L('Left {title}', summary)
+        case MESSAGE_NOTIFICATIONS.JOIN_MEMBER:
+          text = L('Joined {title}', { title: channelName })
           break
 
-        case interactionType.CHAT_NAME_UPDATE:
-          text = L('Updated the channel name to: {title}', summary)
+        case MESSAGE_NOTIFICATIONS.LEAVE_MEMBER:
+          text = L('Left {title}', { title: channelName })
           break
 
-        case interactionType.CHAT_DESCRIPTION_UPDATE:
-          text = L('Updated the channel description to: {title}', summary)
+        case MESSAGE_NOTIFICATIONS.KICK_MEMBER:
+          text = L('Kicked {displayName} from {title}', { displayName, title: channelName })
           break
 
-        case interactionType.CHAT_DELETE:
-          text = L('Deleted the channel: {title}', summary)
+        case MESSAGE_NOTIFICATIONS.UPDATE_NAME:
+          text = L('Updated the channel name to: {title}', { title: channelName })
+          break
+
+        case MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION:
+          text = L('Updated the channel description to: {description}', { description: channelDescription })
+          break
+
+        case MESSAGE_NOTIFICATIONS.DELETE_CHANNEL:
+          text = L('Deleted the channel: {title}', { title: channelName })
           variant = 'tooltip'
           break
 
-        case interactionType.VOTED:
+        case MESSAGE_NOTIFICATIONS.VOTE:
           text = L('Voted on “{}”')
           variant = 'poll'
           break
       }
 
-      return {
-        text,
-        variant
-      }
+      return { text, variant }
     }
   },
   methods: {

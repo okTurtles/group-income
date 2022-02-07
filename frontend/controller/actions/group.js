@@ -173,7 +173,7 @@ export default (sbp('sbp/selectors/register', {
     return message
   },
   'gi.actions/group/renameChatRoom': function (params: GIActionParams) {
-    sbp('gi.actions/chatroom/renameChatRoom', {
+    sbp('gi.actions/chatroom/rename', {
       contractID: params.data.chatRoomID,
       data: { name: params.data.name }
     })

@@ -13,7 +13,8 @@ import {
   CHATROOM_MESSAGES_PER_PAGE,
   MESSAGE_ACTION_TYPES,
   CHATROOM_TYPES,
-  MESSAGE_TYPES
+  MESSAGE_TYPES,
+  MESSAGE_NOTIFICATIONS
 } from './constants.js'
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 
@@ -29,7 +30,11 @@ export const messageType: any = objectMaybeOf({
   type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
   from: string, // username
   time: string, // new Date()
-  text: string, // message text | proposalId when type is INTERACTIVE
+  text: string, // message text | proposalId when type is INTERACTIVE | notificationType when type if NOTIFICATION
+  notification: objectMaybeOf({
+    type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
+    params: mapOf(string, string) // { username, channelDescription, channelName }
+  }),
   replyingMessage: objectOf({
     id: string, // scroll to the original message and highlight
     index: number, // index of the list of messages
@@ -45,21 +50,24 @@ export function createMessage ({ meta, data, hash }: {
   meta: Object, data: Object, hash: string
 }): Object {
   const { type, text, replyingMessage } = data
-  const { username, createdDate } = meta
+  const { createdDate } = meta
 
-  let newMessage = { type, time: new Date(createdDate), id: hash }
-  switch (type) {
-    case MESSAGE_TYPES.TEXT:
-      newMessage = !replyingMessage
-        ? { ...newMessage, from: username, text }
-        : { ...newMessage, from: username, text, replyingMessage }
-      break
-    case MESSAGE_TYPES.POLL:
-      break
-    case MESSAGE_TYPES.NOTIFICATION:
-      break
-    case MESSAGE_TYPES.INTERACTIVE:
-      break
+  let newMessage = { type, time: new Date(createdDate), id: hash, from: meta.username }
+
+  if (type === MESSAGE_TYPES.TEXT) {
+    newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
+  } else if (type === MESSAGE_TYPES.POLL) {
+    // TODO: Poll message creation
+  } else if (type === MESSAGE_TYPES.NOTIFICATION) {
+    const params = { ...data }
+    delete params.type
+    delete params.notificationType
+    newMessage = {
+      ...newMessage,
+      notification: { type: data.notificationType, params }
+    }
+  } else if (type === MESSAGE_TYPES.INTERACTIVE) {
+    // TODO: Interactive message creation for proposals
   }
   return newMessage
 }
@@ -68,6 +76,49 @@ export function getLatestMessages ({
   count, messages
 }: { count: number, messages: Array<Object> }): Array<Object> {
   return messages.slice(Math.max(messages.length - count, 0))
+}
+
+export async function leaveChatRoom ({ contractID }: {
+  contractID: string
+}) {
+  const rootState = sbp('state/vuex/state')
+  if (contractID === rootState.currentChatRoomId) {
+    await sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+      groupId: rootState.currentGroupId
+    })
+    const curRouteName = sbp('controller/router').history.current.name
+    if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {
+      sbp('controller/router').push({ name: 'GroupChat' })
+    }
+  }
+  sbp('state/vuex/commit', 'removeContract', contractID)
+}
+
+function createNotificationData (
+  notificationType: string,
+  channelName: string,
+  moreParams: Object = {}
+): Object {
+  return {
+    type: MESSAGE_TYPES.NOTIFICATION,
+    notificationType,
+    channelName,
+    ...moreParams
+  }
+}
+
+function emitMessageEvents ({ type, contractID, hash, state }: {
+  type: string, contractID: string, hash: string, state: Object
+}): void {
+  for (let i = state.messages.length - 1; i >= 0; i--) {
+    if (state.messages[i].id === hash) {
+      sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, {
+        type,
+        data: { message: state.messages[i] }
+      })
+      break
+    }
+  }
 }
 
 sbp('chelonia/defineContract', {
@@ -156,48 +207,71 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         name: string
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
+        const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, state.attributes.name)
+        const newMessage = createMessage({ meta, hash, data: notificationData })
+        Vue.set(state.messages, [state.messages.length], newMessage)
+      },
+      sideEffect ({ contractID, hash }, { state }) {
+        emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/changeDescription': {
       validate: objectOf({
         description: string
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
+        const notificationData = createNotificationData(
+          MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION,
+          state.attributes.name,
+          { channelDescription: state.attributes.description }
+        )
+        const newMessage = createMessage({ meta, hash, data: notificationData })
+        Vue.set(state.messages, [state.messages.length], newMessage)
+      },
+      sideEffect ({ contractID, hash }, { state }) {
+        emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/leave': {
-      validate: objectMaybeOf({
+      validate: objectOf({
         username: string
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta, hash }, { state }) {
         const { username } = data
         if (state.users[username] && !state.users[username].departedDate) {
           Vue.set(state.users[username], 'departedDate', meta.createdDate)
-          // create a new system message to inform a member is leaved
+
+          const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
+          const notificationData = createNotificationData(
+            notificationType,
+            state.attributes.name,
+            notificationType === MESSAGE_NOTIFICATIONS.KICK_MEMBER ? { username } : {})
+          const newMessage = createMessage({ meta, hash, data: notificationData })
+          Vue.set(state.messages, [state.messages.length], newMessage)
           return
         }
         console.log(`chatroom Leave: ${username} is not a member of this chatroom #${state.name}`)
       },
-      async sideEffect ({ meta, data, contractID }, { state }) {
+      sideEffect ({ data, contractID }) {
         if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
           return
         }
         const rootState = sbp('state/vuex/state')
         if (data.username === rootState.loggedIn.username) {
-          if (contractID === rootState.currentChatRoomId) {
-            await sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-              groupId: rootState.currentGroupId
-            })
-            const curRouteName = sbp('controller/router').history.current.name
-            if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {
-              sbp('controller/router').push({ name: 'GroupChat' })
-            }
-          }
-          sbp('state/vuex/commit', 'removeContract', contractID)
+          leaveChatRoom({ contractID })
         }
+      }
+    },
+    'gi.contracts/chatroom/delete': {
+      process ({ data, meta }, { state }) {},
+      sideEffect ({ meta, contractID }, { state }) {
+        if (state.attributes.creator === meta.username) {
+          leaveChatRoom({ contractID })
+        }
+        // TODO: add message in general chatroom
       }
     },
     'gi.contracts/chatroom/addMessage': {
@@ -216,14 +290,8 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, data, hash })
         Vue.set(state.messages, [state.messages.length], newMessage)
       },
-      sideEffect ({ meta, data, contractID, hash }) {
-        sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, {
-          type: MESSAGE_ACTION_TYPES.ADD_MESSAGE,
-          data: {
-            hash,
-            message: createMessage({ meta, data, hash })
-          }
-        })
+      sideEffect ({ contractID, hash }, { state }) {
+        emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/deleteMessage': {

@@ -27,8 +27,8 @@
         component(
           :is='messageType(message)'
           :key='messageKey(message, index)'
-          :id='message.id'
           :text='message.text'
+          :notification='message.notification'
           :replyingMessage='message.replyingMessage'
           :from='message.from'
           :time='message.time'
@@ -128,7 +128,7 @@ export default ({
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
   },
   mounted () {
-    sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
+    this.setMessageEventListener({ force: true })
     this.setInitMessages()
   },
   beforeDestroy () {
@@ -189,7 +189,7 @@ export default ({
     },
     messageType (message) {
       let mt = 'message'
-      switch (message.from) {
+      switch (message.type) {
         case MESSAGE_TYPES.NOTIFICATION:
           mt += '-notification'
           break
@@ -225,6 +225,7 @@ export default ({
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
+      if (this.messages[index].type !== MESSAGE_TYPES.TEXT) { return false }
       return this.messages[index].from === this.messages[index - 1].from
     },
     updateSendAreaHeight (height) {
@@ -330,6 +331,7 @@ export default ({
     setInitMessages () {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
         this.messages = this.chatRoomLatestMessages
+        console.log(this.messages)
       } else {
         this.messages = []
         sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
@@ -340,12 +342,28 @@ export default ({
         })
       }
     },
+    setMessageEventListener ({ force = false, from, to }) {
+      if (force) {
+        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
+      } else {
+        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)
+        if (this.isJoinedChatRoom(to)) {
+          sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
+        }
+      }
+    },
     listenChatRoomActions ({ type, data }) {
       if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE) {
-        const { hash, message } = data
+        const { message } = data
         if (message.type === MESSAGE_TYPES.TEXT) {
           if (this.isCurrentUser(message.from)) {
-            const msg = this.messages.find(msg => msg.pending === true && msg.id === hash)
+            let msg = null
+            for (let i = this.messages.length - 1; i >= 0; i--) {
+              if (this.messages[i].id === message.id) {
+                msg = this.messages[i]
+                break
+              }
+            }
             if (msg) {
               delete msg.pending
             } else {
@@ -354,16 +372,15 @@ export default ({
           } else {
             this.messages.push(message)
           }
+        } else if (message.type === MESSAGE_TYPES.NOTIFICATION) {
+          this.messages.push(message)
         }
       }
     }
   },
   watch: {
     currentChatRoomId (to, from) {
-      sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)
-      if (this.isJoinedChatRoom(to)) {
-        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
-      }
+      this.setMessageEventListener({ from, to })
       this.setInitMessages()
     }
   }
