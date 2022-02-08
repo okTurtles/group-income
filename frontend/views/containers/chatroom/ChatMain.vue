@@ -331,7 +331,6 @@ export default ({
     setInitMessages () {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
         this.messages = this.chatRoomLatestMessages
-        console.log(this.messages)
       } else {
         this.messages = []
         sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {

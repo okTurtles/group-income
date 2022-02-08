@@ -59,12 +59,11 @@ export function createMessage ({ meta, data, hash }: {
   } else if (type === MESSAGE_TYPES.POLL) {
     // TODO: Poll message creation
   } else if (type === MESSAGE_TYPES.NOTIFICATION) {
-    const params = { ...data }
+    const params = { ...data.notification }
     delete params.type
-    delete params.notificationType
     newMessage = {
       ...newMessage,
-      notification: { type: data.notificationType, params }
+      notification: { type: data.notification.type, params }
     }
   } else if (type === MESSAGE_TYPES.INTERACTIVE) {
     // TODO: Interactive message creation for proposals
@@ -101,9 +100,11 @@ function createNotificationData (
 ): Object {
   return {
     type: MESSAGE_TYPES.NOTIFICATION,
-    notificationType,
-    channelName,
-    ...moreParams
+    notification: {
+      type: notificationType,
+      channelName,
+      ...moreParams
+    }
   }
 }
 
@@ -270,14 +271,20 @@ sbp('chelonia/defineContract', {
       sideEffect ({ meta, contractID }, { state }) {
         if (state.attributes.creator === meta.username) {
           leaveChatRoom({ contractID })
+          // TODO: add notification in general chatroom
+          // const rootState = sbp('state/vuex/state')
+          // const contracts = rootState.contracts || {}
         }
-        // TODO: add message in general chatroom
       }
     },
     'gi.contracts/chatroom/addMessage': {
       validate: objectMaybeOf({
         type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
         text: string,
+        notification: objectMaybeOf({
+          type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
+          params: mapOf(string, string) // { username, channelDescription, channelName }
+        }),
         replyingMessage: objectOf({
           id: string, // scroll to the original message and highlight
           username: string, // display
