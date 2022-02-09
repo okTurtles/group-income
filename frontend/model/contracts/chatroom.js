@@ -7,6 +7,7 @@ import {
   string, boolean, literalOf, unionOf, number
 } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
+import L from '@view-utils/translations.js'
 import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
@@ -179,7 +180,9 @@ sbp('chelonia/defineContract', {
         }, {
           attributes: {
             ...data,
-            creator: meta.username
+            creator: meta.username,
+            deletedDate: null,
+            archievedDate: null
           }
         })
         for (const key in initialState) {
@@ -267,13 +270,23 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/delete': {
-      process ({ data, meta }, { state }) {},
-      sideEffect ({ meta, contractID }, { state }) {
-        if (state.attributes.creator === meta.username) {
+      validate: (data, { state, getters, meta }) => {
+        if (state.attributes.creator !== meta.username) {
+          throw new TypeError(L('Only the channel creator can delete channel.'))
+        }
+      },
+      process ({ data, meta }, { state, rootState }) {
+        Vue.set(state.attributes, 'deletedDate', meta.createdDate)
+        for (const username in state.users) {
+          Vue.set(state.users[username], 'departedDate', meta.createdDate)
+        }
+      },
+      sideEffect ({ meta, contractID, hash }, { state }) {
+        if (state.attributes.creator === meta.username) { // Not sure this condition is necessary
+          if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
+            return
+          }
           leaveChatRoom({ contractID })
-          // TODO: add notification in general chatroom
-          // const rootState = sbp('state/vuex/state')
-          // const contracts = rootState.contracts || {}
         }
       }
     },
@@ -283,6 +296,7 @@ sbp('chelonia/defineContract', {
         text: string,
         notification: objectMaybeOf({
           type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
+          channelName: string,
           params: mapOf(string, string) // { username, channelDescription, channelName }
         }),
         replyingMessage: objectOf({

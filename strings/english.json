@@ -392,6 +392,7 @@
   "Password": "Password",
   "The groups voting system changed.": "The groups voting system changed.",
   "Only the group creator can remove members.": "Only the group creator can remove members.",
+  "Only the channel creator can delete channel.": "Only the channel creator can delete channel.",
   "Payment value": "Payment value",
   "Retry": "Retry",
   "Failed to create proposal.": "Failed to create proposal.",

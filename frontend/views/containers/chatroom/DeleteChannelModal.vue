@@ -3,7 +3,7 @@
     template(slot='title')
       i18n Delete channel
 
-    form(novalidate @submit.prevent='submit' data-test='deleteGroup')
+    form(novalidate @submit.prevent='' data-test='deleteGroup')
       i18n(
         tag='strong'
         :args='{ name: chatRoomAttributes.name }'
@@ -44,6 +44,10 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import L from '@view-utils/translations.js'
+import {
+  MESSAGE_TYPES,
+  MESSAGE_NOTIFICATIONS
+} from '@model/contracts/constants.js'
 
 export default ({
   name: 'DeleteChannelModal',
@@ -62,8 +66,8 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['chatRoomAttributes']),
-    ...mapState(['currentChatRoomId'])
+    ...mapGetters(['chatRoomAttributes', 'generalChatRoomId', 'chatRoomAttributes']),
+    ...mapState(['currentChatRoomId', 'currentGroupId'])
   },
   methods: {
     close () {
@@ -73,11 +77,24 @@ export default ({
       if (this.$v.form.$invalid) { return }
 
       try {
-        // TODO
-        console.log('TODO')
-        await sbp('gi.actions/chatroom/delete', {
-          contractID: this.currentChatRoomId,
-          data: {}
+        await sbp('gi.actions/group/deleteChatRoom', {
+          contractID: this.currentGroupId,
+          data: { chatRoomID: this.currentChatRoomId },
+          hooks: {
+            postpublish: (message) => {
+              sbp('gi.actions/chatroom/addMessage', {
+                contractID: this.generalChatRoomId,
+                data: {
+                  type: MESSAGE_TYPES.NOTIFICATION,
+                  notification: {
+                    type: MESSAGE_NOTIFICATIONS.DELETE_CHANNEL,
+                    channelName: this.chatRoomAttributes.name
+                  }
+                }
+              })
+              sbp('gi.actions/chatroom/delete', { contractID: this.currentChatRoomId, data: {} })
+            }
+          }
         })
       } catch (e) {
         console.error('RemoveChannelModal submit() error:', e)

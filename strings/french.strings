@@ -122,7 +122,7 @@
 
 /* controller/actions/identity.js */
 "Failed to login: {reportError}" = "Erreur lors de la connexion : {reportError}";
-failed to delete
+
 /* controller/actions/identity.js */
 "Failed to set profile attributes." = "L'attribution des caractéristiques du profil a échoué.";
 
@@ -150,7 +150,7 @@ failed to delete
 /* controller/actions/chatroom.js */
 "Failed to leave chat channel.": "Impossible de quitter le canal de chat.",
 
-/* controller/actions/chatroom.js */
+/* controller/actions/chatroom.js, controller/actions/group.js */
 "Failed to delete chat channel.": "Échec de la suppression du canal de chat.",
 
 /* controller/actions/chatroom.js */
@@ -203,6 +203,9 @@ failed to delete
 
 /* model/contracts/group.js */
 "Only the group creator can remove members." = "Seul le fondateur du groupe peut exclure des membres.";
+
+/* model/contracts/chatroom.js */
+"Only the channel creator can delete channel." = "Seul le créateur de la chaîne peut supprimer une chaîne.";
 
 /* model/contracts/group.js */
 "The link does not exist." = "Le lien n'existe pas.";

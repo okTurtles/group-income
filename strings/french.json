@@ -67,6 +67,7 @@
   "Invalid associated proposal.": "La proposition associée est invalide.",
   "Not part of the group.": "Ne fait pas partie du groupe.",
   "Only the group creator can remove members.": "Seul le fondateur du groupe peut exclure des membres.",
+  "Only the channel creator can delete channel.": "Seul le créateur de la chaîne peut supprimer une chaîne.",
   "The link does not exist.": "Le lien n'existe pas.",
   "There is an identical open proposal.": "Une proposition identique a déjà été créée.",
   "Automated ban because they're sending malformed messages resulting in: {error}": "Bannissement automatique pour envoi de messages malformés causant l'erreur : {error}",

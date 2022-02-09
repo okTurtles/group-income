@@ -191,6 +191,7 @@ export default (sbp('sbp/selectors/register', {
       })
     }
   },
+  ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/joinChatRoom', L('Failed to join chat channel.')),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),

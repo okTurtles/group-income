@@ -1182,6 +1182,9 @@
 /* model/contracts/group.js */
 "Only the group creator can remove members." = "Only the group creator can remove members.";
 
+/* model/contracts/chatroom.js */
+"Only the channel creator can delete channel." = "Only the channel creator can delete channel.";
+
 /* views/containers/contributions/PaymentMethods.vue */
 "Payment value" = "Payment value";
 
@@ -1323,7 +1326,7 @@
 /* controller/actions/chatroom.js */
 "Failed to leave chat channel.": "Failed to leave chat channel.",
 
-/* controller/actions/chatroom.js */
+/* controller/actions/chatroom.js, controller/actions/group.js */
 "Failed to delete chat channel.": "Failed to delete chat channel.",
 
 /* controller/actions/chatroom.js */

@@ -308,10 +308,19 @@ sbp('chelonia/defineContract', {
       return getters.currentGroupState.distributionEvents
     },
     getChatRooms (state, getters) {
-      return getters.currentGroupState.chatRooms || {}
+      const active = {}
+      const deleted = {}
+      for (const cID in getters.currentGroupState.chatRooms) {
+        if (!getters.currentGroupState.chatRooms[cID].deletedDate) {
+          active[cID] = getters.currentGroupState.chatRooms[cID]
+        } else {
+          deleted[cID] = getters.currentGroupState.chatRooms[cID]
+        }
+      }
+      return { active, deleted, all: { ...active, ...deleted } }
     },
     getChatRoomIDsInSort (state, getters, rootState, rootGetters) {
-      const chatRooms = getters.getChatRooms
+      const chatRooms = getters.getChatRooms.active
       return Object.keys(chatRooms)
         .map(chatRoomID => ({
           name: chatRooms[chatRoomID].name,
@@ -850,25 +859,27 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta }, { state, getters }) {
         Vue.set(state.chatRooms, data.chatRoomID, {
-          creator: meta.identityContractID,
+          creator: meta.username,
           name: data.name,
           type: data.type,
-          private: data.private
+          private: data.private,
+          deletedDate: null
         })
         if (data.general && !state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
       }
     },
-    'gi.contracts/group/removeChatRoom': {
-      validate: objectOf({
-        chatRoomID: string
-      }),
-      process ({ data, meta }, { state, getters }) {
-        Vue.delete(state.chatRooms, data.chatRoomID)
+    'gi.contracts/group/deleteChatRoom': {
+      validate: (data, { getters, meta }) => {
+        objectOf({ chatRoomID: string })(data)
+
+        if (getters.getChatRooms.active[data.chatRoomID].creator !== meta.username) {
+          throw new TypeError(L('Only the channel creator can delete channel.'))
+        }
       },
-      sideEffect ({ meta, data }, { state }) {
-        sbp('state/vuex/commit', 'removeContract', data.chatRoomID)
+      process ({ data, meta }, { state, getters }) {
+        Vue.set(state.chatRooms[data.chatRoomID], 'deletedDate', meta.createdDate)
       }
     },
     'gi.contracts/group/joinChatRoom': {
@@ -898,7 +909,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta }, { state, getters }) {
         Vue.set(state.chatRooms, data.chatRoomID, {
-          ...getters.getChatRooms[data.chatRoomID],
+          ...getters.getChatRooms.active[data.chatRoomID],
           name: data.name
         })
       }
