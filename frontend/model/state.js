@@ -520,8 +520,9 @@ const getters = {
   },
   isJoinedChatRoom (state, getters) {
     return (chatRoomId: string, username: string) => {
-      return !!state[chatRoomId]?.users && !!state[chatRoomId]?.users[username || state.loggedIn.username] &&
-        !state[chatRoomId]?.users[username || state.loggedIn.username].departedDate
+      username = username || state.loggedIn.username
+      return !!state[chatRoomId]?.users && !!state[chatRoomId]?.users[username] &&
+        !state[chatRoomId]?.users[username].departedDate
     }
   },
   chatRoomsInDetail (state, getters) {

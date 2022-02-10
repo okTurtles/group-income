@@ -192,10 +192,21 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/join': {
       validate: objectMaybeOf({
-        username: string
+        username: string,
+        referer: string
       }),
-      process ({ data, meta }, { state }) {
-        const { username } = data
+      process ({ data, meta, hash }, { state }) {
+        const { username, referer } = data
+
+        const notificationType = username === referer ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER
+        const notificationData = createNotificationData(
+          notificationType,
+          state.attributes.name,
+          notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { username } : {}
+        )
+        const newMessage = createMessage({ meta, hash, data: notificationData })
+        Vue.set(state.messages, [state.messages.length], newMessage)
+
         if (state.users[username] && !state.users[username].departedDate) {
           console.log(`chatroom Join: ${username} is already joined the chatroom #${state.name}`)
           return
@@ -204,7 +215,9 @@ sbp('chelonia/defineContract', {
           joinedDate: meta.createdDate,
           departedDate: null
         })
-        // create a new system message to inform a new member is joined
+      },
+      sideEffect ({ contractID, hash }, { state }) {
+        emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/rename': {
@@ -246,7 +259,10 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const { username } = data
         if (state.users[username] && !state.users[username].departedDate) {
-          Vue.set(state.users[username], 'departedDate', meta.createdDate)
+          // TODO: Alex - need to skip if JOINING_GROUP is true ???
+          if (!sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
+            Vue.set(state.users[username], 'departedDate', meta.createdDate)
+          }
 
           const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
           const notificationData = createNotificationData(
@@ -259,7 +275,7 @@ sbp('chelonia/defineContract', {
         }
         console.log(`chatroom Leave: ${username} is not a member of this chatroom #${state.name}`)
       },
-      sideEffect ({ data, contractID }) {
+      sideEffect ({ data, hash, contractID }, { state }) {
         if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
           return
         }
@@ -267,6 +283,7 @@ sbp('chelonia/defineContract', {
         if (data.username === rootState.loggedIn.username) {
           leaveChatRoom({ contractID })
         }
+        emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/delete': {
@@ -281,7 +298,7 @@ sbp('chelonia/defineContract', {
           Vue.set(state.users[username], 'departedDate', meta.createdDate)
         }
       },
-      sideEffect ({ meta, contractID, hash }, { state }) {
+      sideEffect ({ meta, contractID }, { state }) {
         if (state.attributes.creator === meta.username) { // Not sure this condition is necessary
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return

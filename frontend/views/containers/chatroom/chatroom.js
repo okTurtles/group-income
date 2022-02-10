@@ -46,7 +46,7 @@ const chatroom: Object = {
         this.ephemeral.loadedSummary = null
         this.redirectChat('GroupChatConversation')
       } else {
-        this.loadSummary()
+        this.loadSummaryAndDetails()
       }
     } else {
       this.refreshTitle()
@@ -61,17 +61,13 @@ const chatroom: Object = {
       'groupMembersSorted',
       'groupProfiles',
       'globalProfile',
-      'chatRoomsInDetail'
+      'chatRoomsInDetail',
+      'isJoinedChatRoom',
+      'isPublicChatRoom'
     ]),
     ...mapState([
       'currentChatRoomId'
     ]),
-    isJoinedChatRoom (): function {
-      return (chatRoomId: string): boolean => this.$store.getters['isJoinedChatRoom'](chatRoomId)
-    },
-    isPublicChatRoom (): function {
-      return (chatRoomId: string): boolean => this.$store.getters['isPublicChatRoom'](chatRoomId)
-    },
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
         return this.ephemeral.loadedSummary || {}
@@ -140,7 +136,7 @@ const chatroom: Object = {
         document.title = title
       }
     },
-    async loadSummary (): Promise<void> {
+    async loadSummaryAndDetails (): Promise<void> {
       this.ephemeral.loadedDetails = initChatChannelDetails
       const { chatRoomId } = this.$route.params
       const state = await sbp('state/latestContractState', chatRoomId)

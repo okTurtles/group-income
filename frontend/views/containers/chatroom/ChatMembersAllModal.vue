@@ -211,6 +211,7 @@ export default ({
         console.log(`${username} is already joined this chatroom`)
         return
       }
+
       try {
         await sbp('gi.actions/group/joinChatRoom', {
           contractID: this.currentGroupId,

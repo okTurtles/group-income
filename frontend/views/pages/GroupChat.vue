@@ -160,7 +160,7 @@ export default ({
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
             chatRoomId: to.params.chatRoomId
           })
-          this.loadSummary()
+          this.loadSummaryAndDetails()
         } else {
           this.redirectChat('GroupChatConversation')
         }
