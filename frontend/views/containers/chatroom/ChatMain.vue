@@ -31,7 +31,7 @@
           :notification='message.notification'
           :replyingMessage='message.replyingMessage'
           :from='message.from'
-          :time='message.time'
+          :time='time(message.time)'
           :emoticonsList='message.emoticons'
           :who='who(message)'
           :currentUserId='currentUserAttr.id'
@@ -216,6 +216,9 @@ export default ({
       } else {
         return this.isCurrentUser(message.from) ? this.messageVariants.SENT : this.messageVariants.RECEIVED
       }
+    },
+    time (strTime) {
+      return new Date(strTime)
     },
     avatar (fromId) {
       if (fromId === MESSAGE_TYPES.NOTIFICATION || fromId === MESSAGE_TYPES.INTERACTIVE) {
