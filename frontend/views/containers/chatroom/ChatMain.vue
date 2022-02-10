@@ -226,6 +226,7 @@ export default ({
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
       if (this.messages[index].type !== MESSAGE_TYPES.TEXT) { return false }
+      if (this.messages[index].type !== this.messages[index - 1].type) { return false }
       return this.messages[index].from === this.messages[index - 1].from
     },
     updateSendAreaHeight (height) {
