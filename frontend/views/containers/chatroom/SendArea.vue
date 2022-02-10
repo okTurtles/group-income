@@ -282,10 +282,12 @@ $initialHeight: 43px;
 
   &.is-editing {
     margin: 0;
+    padding: 0;
 
     .c-send-actions {
       position: relative;
       margin-top: 0.5rem;
+      bottom: 0;
       height: auto;
     }
 
