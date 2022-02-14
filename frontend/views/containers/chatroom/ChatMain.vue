@@ -8,7 +8,7 @@
           TODO later - Design a cool skeleton loading
           - this should be done only after knowing exactly how server gets each conversation data
 
-    .c-body-conversation(ref='conversation' v-else='')
+    .c-body-conversation(ref='conversation' v-else='' data-test='conversationWapper')
       conversation-greetings(
         :type='type'
         :name='summary.title'

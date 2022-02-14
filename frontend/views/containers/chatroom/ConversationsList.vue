@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-conversation-list
+.c-conversation-list(data-test='channelsList')
   .c-group-members-header
     h3.is-title-4 {{title}}
 
