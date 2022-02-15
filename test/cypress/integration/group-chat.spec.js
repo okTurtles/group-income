@@ -13,7 +13,7 @@ const additionalChatRooms = [
 ]
 
 describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
-  it(`creating a group means creating and joining a "${CHATROOM_GENERAL_NAME}" chatroom`, () => {
+  it(`user1 creats a group and joins "${CHATROOM_GENERAL_NAME}" chatroom by default`, () => {
     cy.visit('/')
     cy.giSignup(user1)
 
@@ -33,12 +33,16 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   })
 
-  it('create private and public chatrooms and check their visibilities and orders', () => {
-    cy.log(invitationLinkAnyone)
+  it('user1 creates different types of chatrooms and logout', () => {
     for (const c of additionalChatRooms) {
       cy.giAddNewChatroom(c.name, c.description, c.isPrivate)
     }
+    // TODO: need to remove cy.wait
+    cy.wait(500) // eslint-disable-line
     cy.giLogout()
+  })
+
+  it('user2 joins the group and checks visibilities and orders of chatrooms inside the group', () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       groupName,
@@ -59,6 +63,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         })
       })
     })
+    cy.giLogout()
   })
 
   it('users can easily join any public chatrooms by themselves', () => {

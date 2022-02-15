@@ -152,7 +152,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     cy.getByDT('groupName').should('contain', name)
     // wait for general chatroom contract to finish syncing
-    cy.wait(500); // eslint-disable-line
+    cy.wait(500) // eslint-disable-line
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
@@ -199,7 +199,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
   })
   cy.url().should('eq', 'http://localhost:8000/app/dashboard')
   // wait for general chatroom contract to finish syncing
-  cy.wait(500); // eslint-disable-line
+  cy.wait(500) // eslint-disable-line
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-sync', '')
   })
@@ -263,7 +263,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     const inviteSecret = params.get('secret')
     cyBypassUI('group_join', { groupId, inviteSecret })
     // wait for general chatroom contract to finish syncing
-    cy.wait(500); // eslint-disable-line
+    cy.wait(500) // eslint-disable-line
     cy.getByDT('app').then(([el]) => {
       if (!isLoggedIn) {
         cy.get(el).should('have.attr', 'data-logged-in', 'yes')
@@ -287,7 +287,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.getByDT('toDashboardBtn').click()
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     // wait for general chatroom contract to finish syncing
-    cy.wait(500); // eslint-disable-line
+    cy.wait(500) // eslint-disable-line
     cy.getByDT('app').then(([el]) => {
       if (!isLoggedIn) {
         cy.get(el).should('have.attr', 'data-logged-in', 'yes')
