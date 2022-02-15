@@ -2,7 +2,12 @@
 
 import sbp from '~/shared/sbp.js'
 import { createInvite } from '@model/contracts/group.js'
-import { INVITE_INITIAL_CREATOR, CHATROOM_GENERAL_NAME, CHATROOM_TYPES } from '@model/contracts/constants.js'
+import {
+  INVITE_INITIAL_CREATOR,
+  CHATROOM_GENERAL_NAME,
+  CHATROOM_TYPES,
+  CHATROOM_PRIVACY_LEVEL
+} from '@model/contracts/constants.js'
 import proposals from '@model/contracts/voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER,
@@ -104,7 +109,7 @@ export default (sbp('sbp/selectors/register', {
           name: CHATROOM_GENERAL_NAME,
           type: CHATROOM_TYPES.GROUP,
           description: '',
-          private: false
+          privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP
         }
       }, true)
 
@@ -142,7 +147,6 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
-    // TODO: need to switch chatroom to 'General' of new group
     sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupId })
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams, general = false) {

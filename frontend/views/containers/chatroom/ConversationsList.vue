@@ -34,6 +34,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 
 export default ({
   name: 'ConversationsList',
@@ -53,9 +54,9 @@ export default ({
   },
   methods: {
     getIcon (id) {
-      const isPrivate = this.list.channels[id].private
+      const isPrivate = this.list.channels[id].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
       const isJoined = this.list.channels[id].joined
-      return isPrivate === undefined ? '' : (isPrivate ? 'lock' : (isJoined ? 'hashtag' : 'plus'))
+      return isPrivate ? 'lock' : (isJoined ? 'hashtag' : 'plus')
     },
     buildUrl (chatRoomId) {
       // NOTE - This should be $store responsability

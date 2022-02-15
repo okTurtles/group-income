@@ -30,6 +30,7 @@ import {
   INVITE_STATUS,
   PROFILE_STATUS,
   CHATROOM_TYPES,
+  CHATROOM_PRIVACY_LEVEL,
   INVITE_EXPIRES_IN_DAYS
 } from './constants.js'
 
@@ -324,10 +325,10 @@ sbp('chelonia/defineContract', {
       return Object.keys(chatRooms)
         .map(chatRoomID => ({
           name: chatRooms[chatRoomID].name,
-          private: chatRooms[chatRoomID].private,
+          privacyLevel: chatRooms[chatRoomID].privacyLevel,
           joined: rootGetters.isJoinedChatRoom(chatRoomID),
           id: chatRoomID
-        })).filter(details => !details.private || details.joined).sort((former, latter) => {
+        })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {
           const formerName = String(former.name).toLowerCase()
           const latterName = String(latter.name).toLowerCase()
           if (former.joined === latter.joined) {
@@ -858,13 +859,8 @@ sbp('chelonia/defineContract', {
         // general: boolean
       }),
       process ({ data, meta }, { state, getters }) {
-        Vue.set(state.chatRooms, data.chatRoomID, {
-          creator: meta.username,
-          name: data.name,
-          type: data.type,
-          private: data.private,
-          deletedDate: null
-        })
+        const { name, type, privacyLevel } = data
+        Vue.set(state.chatRooms, data.chatRoomID, { creator: meta.username, name, type, privacyLevel, deletedDate: null })
         if (data.general && !state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
@@ -893,12 +889,14 @@ sbp('chelonia/defineContract', {
         const username = data.username || meta.username
         if (username === rootState.loggedIn.username) {
           sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
+          await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
+          sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
+        }
+        if (meta.username === rootState.loggedIn.username) {
           await sbp('gi.actions/chatroom/join', {
             contractID: data.chatRoomID,
             data: { username, referer: meta.username }
           })
-          await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
-          sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
         }
       }
     },

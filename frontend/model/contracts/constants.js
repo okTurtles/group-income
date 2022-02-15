@@ -21,6 +21,12 @@ export const CHATROOM_TYPES = {
   GROUP: 'group'
 }
 
+export const CHATROOM_PRIVACY_LEVEL = {
+  GROUP: 'chatroom-privacy-level-group',
+  PRIVATE: 'chatroom-privacy-level-private',
+  PUBLIC: 'chatroom-privacy-level-public'
+}
+
 export const MESSAGE_TYPES = {
   POLL: 'message-poll',
   TEXT: 'message-text',

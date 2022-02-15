@@ -1315,6 +1315,9 @@
 "Failed to set profile attributes." = "Failed to set profile attributes.";
 
 /* controller/actions/chatroom.js */
+"Failed to create chat channel.": "Failed to create chat channel.",
+
+/* controller/actions/chatroom.js */
 "Failed to join chat channel.": "Failed to join chat channel.",
 
 /* controller/actions/chatroom.js */

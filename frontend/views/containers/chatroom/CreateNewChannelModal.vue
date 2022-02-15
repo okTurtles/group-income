@@ -82,7 +82,7 @@ import maxLength from 'vuelidate/lib/validators/maxLength'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { CHATROOM_TYPES } from '@model/contracts/constants.js'
+import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 
 export default ({
   name: 'CreateNewChannelModal',
@@ -108,10 +108,16 @@ export default ({
       this.$refs.modal.close()
     },
     async submit () {
+      const { name, description } = this.form
       try {
         await sbp('gi.actions/group/addAndJoinChatRoom', {
           contractID: this.currentGroupId,
-          data: { ...this.form, type: CHATROOM_TYPES.GROUP }
+          data: {
+            name,
+            description,
+            privacyLevel: !this.form.private ? CHATROOM_PRIVACY_LEVEL.GROUP : CHATROOM_PRIVACY_LEVEL.PRIVATE,
+            type: CHATROOM_TYPES.GROUP
+          }
         })
       } catch (e) {
         console.error('CreateNewChannelModal.vue submit() error:', e)

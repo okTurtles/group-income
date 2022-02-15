@@ -16,7 +16,8 @@ import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/d
 import Colors from './colors.js'
 import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
-import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constants.js'
+import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 // import { PAYMENT_COMPLETED } from '~/frontend/model/contracts/payments/index.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
 import * as _ from '~/frontend/utils/giLodash.js'
@@ -515,7 +516,7 @@ const getters = {
   },
   isPublicChatRoom (state, getters) {
     return (chatRoomId: string) => {
-      return !state[chatRoomId]?.attributes.private
+      return state[chatRoomId]?.attributes.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE
     }
   },
   isJoinedChatRoom (state, getters) {
@@ -533,17 +534,12 @@ const getters = {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
-          displayName: chatRoom.attributes.name,
-          unreadCount: 0,
+          unreadCount: 0, // TODO: need to implement
           joined: true
         }
       } else {
-        chatRoomsInDetail[contractID] = {
-          id: contractID,
-          name: chatRoomsInDetail[contractID].name,
-          private: chatRoomsInDetail[contractID].private,
-          joined: false
-        }
+        const { name, privacyLevel } = chatRoomsInDetail[contractID]
+        chatRoomsInDetail[contractID] = { id: contractID, name, privacyLevel, joined: false }
       }
     }
     return chatRoomsInDetail

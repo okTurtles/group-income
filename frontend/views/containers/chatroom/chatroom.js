@@ -1,6 +1,6 @@
 import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
-import { CHATROOM_TYPES } from '@model/contracts/constants.js'
+import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 import { CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
 
 /**
@@ -73,14 +73,15 @@ const chatroom: Object = {
         return this.ephemeral.loadedSummary || {}
       }
 
-      const { name, type, description, creator, picture } = this.currentChatRoomState.attributes
+      const { name, type, description, creator, picture, privacyLevel } = this.currentChatRoomState.attributes
 
       return {
         type,
         title: name,
         description,
         routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
-        private: this.currentChatRoomState.attributes.private,
+        private: this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
+        privacyLevel,
         general: this.generalChatRoomId === this.currentChatRoomId,
         joined: true,
         creator,
@@ -140,14 +141,15 @@ const chatroom: Object = {
       this.ephemeral.loadedDetails = initChatChannelDetails
       const { chatRoomId } = this.$route.params
       const state = await sbp('state/latestContractState', chatRoomId)
-      const { name, type, description, picture, creator } = state.attributes
+      const { name, type, description, picture, creator, privacyLevel } = state.attributes
 
       this.ephemeral.loadedSummary = {
         type,
         title: name,
         description,
         routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
-        private: state.attributes.private,
+        private: state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
+        privacyLevel,
         joined: false,
         picture,
         creator

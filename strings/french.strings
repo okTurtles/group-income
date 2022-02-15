@@ -139,6 +139,9 @@
 "Invalid username or password" = "Nom d'utilisateur ou mot de passe invalide";
 
 /* controller/actions/chatroom.js */
+"Failed to create chat channel.": "Échec de la création du canal de discussion.",
+
+/* controller/actions/chatroom.js */
 "Failed to join chat channel.": "Échec de la connexion au canal de chat.",
 
 /* controller/actions/chatroom.js */

@@ -45,6 +45,7 @@
   "Failed to update profile settings.": "La mise à jour des paramètres du profil a échoué.",
   "Failed to upload the profile picture. {codeError}": "Le chargement de l'image de profil a échoué. {codeError}",
   "Invalid username or password": "Nom d'utilisateur ou mot de passe invalide",
+  "Failed to create chat channel.": "Échec de la création du canal de discussion.",
   "Failed to join chat channel.": "Échec de la connexion au canal de chat.",
   "Failed to rename chat channel.": "Impossible de renommer le canal de chat.",
   "Failed to change chat channel description.": "Échec de la modification de la description du canal de chat.",

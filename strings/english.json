@@ -436,6 +436,7 @@
   "Choose...": "Choose...",
   "created for": "created for",
   "Failed to set profile attributes.": "Failed to set profile attributes.",
+  "Failed to create chat channel.": "Failed to create chat channel.",  
   "Failed to join chat channel.": "Failed to join chat channel.",
   "Failed to rename chat channel.": "Failed to rename chat channel.",
   "Failed to change chat channel description.": "Failed to change chat channel description.",

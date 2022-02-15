@@ -112,6 +112,7 @@ import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 
 export default ({
   name: 'ChatMembersAllModal',
@@ -167,15 +168,18 @@ export default ({
       return Object.keys(this.searchResult).length
     },
     resultsCopy () {
-      const args = { searchCount: `<strong>${this.searchCount}</strong>`, searchTerm: `<strong>${this.searchText}</strong>`, ...LTags('strong') }
-      return this.searchCount === 1 ? L('Showing {strong_}1 result{_strong} for "{searchTerm}"', args) : L('Showing {searchCount} {strong_}results{_strong} for "{searchTerm}"', args)
+      const args = {
+        searchCount: `<strong>${this.searchCount}</strong>`,
+        searchTerm: `<strong>${this.searchText}</strong>`,
+        ...LTags('strong')
+      }
+      return this.searchCount === 1
+        ? L('Showing {strong_}1 result{_strong} for "{searchTerm}"', args)
+        : L('Showing {searchCount} {strong_}results{_strong} for "{searchTerm}"', args)
     },
     attributes () {
-      return {
-        name: this.currentChatRoomState.attributes.name,
-        description: this.currentChatRoomState.attributes.description,
-        private: this.currentChatRoomState.attributes.private
-      }
+      const { name, description, privacyLevel } = this.currentChatRoomState.attributes
+      return { name, description, private: privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE, privacyLevel }
     }
   },
   methods: {

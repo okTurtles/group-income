@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import {
   objectMaybeOf, objectOf, mapOf, arrayOf,
-  string, boolean, literalOf, unionOf, number
+  string, literalOf, unionOf, number
 } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 import L from '@view-utils/translations.js'
@@ -14,6 +14,7 @@ import {
   CHATROOM_MESSAGES_PER_PAGE,
   MESSAGE_ACTION_TYPES,
   CHATROOM_TYPES,
+  CHATROOM_PRIVACY_LEVEL,
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS
 } from './constants.js'
@@ -23,7 +24,7 @@ export const chatRoomType: any = objectOf({
   name: string,
   description: string,
   type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
-  private: boolean
+  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
 })
 
 export const messageType: any = objectMaybeOf({
