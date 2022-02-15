@@ -4,7 +4,7 @@
     h3.is-title-4 {{title}}
 
     button.button.is-small.is-outlined(
-      data-test='inviteButton'
+      data-test='newChannelButton'
       @click='openModal("CreateNewChannelModal")'
     )
       i.icon-plus.is-prefix

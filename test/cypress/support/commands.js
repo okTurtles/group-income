@@ -322,3 +322,27 @@ Cypress.Commands.add('giAddRandomIncome', () => {
   cy.getByDT('inputIncomeOrPledge').type(salary)
   cy.getByDT('submitIncome').click()
 })
+
+Cypress.Commands.add('giAddNewChatroom', (
+  name, description = '', isPrivate = false
+) => {
+  // Needs to be in 'Group Chat' page
+  cy.getByDT('newChannelButton').click()
+
+  cy.getByDT('modal').within(() => {
+    cy.get('.c-modal-header').should('contain', 'Create a channel')
+    cy.getByDT('createChannelName').clear().type(name)
+    if (description) {
+      cy.getByDT('createChannelDescription').clear().type(description)
+    } else {
+      cy.getByDT('createChannelDescription').clear()
+    }
+    if (isPrivate) {
+      cy.getByDT('createChannelPrivate').check()
+    } else {
+      cy.getByDT('createChannelPrivate').uncheck()
+    }
+    cy.getByDT('createChannelSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+  })
+})

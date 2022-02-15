@@ -3,7 +3,7 @@
     template(slot='title')
       i18n Create a channel
 
-    form(novalidate @submit.prevent='')
+    form(novalidate @submit.prevent='' data-test='createChannel')
       label.field
         i18n.label.c-label-name Name
         .c-max-count(v-if='form.name') {{50 - form.name.length}}
@@ -13,6 +13,7 @@
           maxlength='50'
           :class='{ error: $v.form.name.$error }'
           v-model='form.name'
+          data-test='createChannelName'
           @input='debounceField("name")'
           @blur='updateField("name")'
           v-error:name=''
@@ -26,6 +27,7 @@
           maxlength='500'
           :class='{ error: $v.form.description.$error }'
           v-model='form.description'
+          data-test='createChannelDescription'
           @input='debounceField("description")'
           @blur='updateField("description")'
           v-error:description=''
@@ -37,6 +39,7 @@
         input.switch(
           type='checkbox'
           :checked='form.private'
+          data-test='createChannelPrivate'
           @change='handleChannelPrivate'
         )
 
@@ -63,6 +66,7 @@
         i18n.is-outlined(tag='button' @click='close') Cancel
         i18n.is-success(
           tag='button'
+          data-test='createChannelSubmit'
           @click='submit'
           :disabled='$v.form.$invalid'
         ) Create channel
