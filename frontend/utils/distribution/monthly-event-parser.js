@@ -4,6 +4,8 @@ import { lastDayOfMonth, dateFromMonthstamp, dateToMonthstamp, addMonthsToDate }
 import minimizeTotalPaymentsCount from '~/frontend/utils/distribution/payments-minimizer.js'
 import { cloneDeep } from '~/frontend/utils/giLodash.js'
 
+// import matrix from 'matrix-js'
+
 type Payment = {| amount: number; total: number; partial: boolean; isLate: boolean; from: string; to: string; dueOn: string; |}
 
 type Distribution = Array<Payment>;
@@ -52,10 +54,35 @@ function subtractDistributions (paymentsA: Distribution, paymentsB: Distribution
 
   return addDistributions(paymentsA, paymentsB)
 }
+// Create a helper function for calculating each cycle's payment distribution:
+function paymentsDistribution (groupMembers, payments, mincome, adjusted, minimizeTxns): Distribution {
+  const groupIncomes = groupMembers.map((user) => {
+    return {
+      name: user.name,
+      amount: mincome + user.haveNeed
+    }
+  })
+  let distribution = incomeDistribution(groupIncomes, mincome)
+
+  distribution = minimizeTxns ? minimizeTotalPaymentsCount(distribution, groupMembers) : distribution
+  distribution = distribution.map((payment) => {
+    payment.total = payment.amount
+    return payment
+  })
+
+  if (adjusted) {
+    distribution = subtractDistributions(distribution, payments)
+  }
+
+  distribution.forEach((v) => {
+    v.partial = (v.total !== v.amount)
+  })
+  return distribution
+}
 
 // This algorithm is responsible for calculating the monthly-rated distribution of
 // payments.
-function parsedistributionFromEvents (distributionEvents: Distribution, minCome: number, adjusted: Boolean, minimizeTxns: Boolean): Distribution {
+function parsedistributionFromEvents (distributionEvents: Distribution, mincome: number, adjusted: Boolean, minimizeTxns: Boolean): Distribution {
   distributionEvents = cloneDeep(distributionEvents)
 
   // The following list variable is for DRYing out our calculations of the each cycle's final
@@ -123,32 +150,10 @@ function parsedistributionFromEvents (distributionEvents: Distribution, minCome:
     }
   }
 
-  // Create a helper function for calculating each cycle's payment distribution:
-  const paymentsDistribution = function (groupMembers, minCome): Distribution {
-    const groupIncomes = groupMembers.map((user) => {
-      return {
-        name: user.name,
-        amount: minCome + user.haveNeed
-      }
-    })
-    const preMinimized = incomeDistribution(groupIncomes, minCome)
-    return minimizeTxns ? minimizeTotalPaymentsCount(preMinimized, groupMembers) : preMinimized
-  }
-
   // Create a helper function for handling each startCycleEvent:
   const handleCycleEvent = (event) => {
-    distribution = paymentsDistribution(groupMembers, minCome).map((payment) => {
-      payment.total = payment.amount
-      return payment
-    })
+    distribution = paymentsDistribution(groupMembers, payments, mincome, adjusted, minimizeTxns)
 
-    if (adjusted) {
-      distribution = subtractDistributions(distribution, payments)
-    }
-
-    distribution.forEach((v) => {
-      v.partial = (v.total !== v.amount)
-    })
     const eventCopy = cloneDeep(event)
     eventCopy.data.payments = cloneDeep(payments)
     eventCopy.data.distribution = cloneDeep(distribution)
@@ -211,18 +216,7 @@ function parsedistributionFromEvents (distributionEvents: Distribution, minCome:
   while (forgivemory.length > attentionSpan) forgivemory.pop()
   while (cycleEvents.length > attentionSpan) cycleEvents.shift()
 
-  distribution = paymentsDistribution(groupMembers, minCome).map((payment) => {
-    payment.total = payment.amount
-    return payment
-  })
-
-  if (adjusted) {
-    distribution = subtractDistributions(distribution, payments)
-  }
-
-  distribution.forEach((v) => {
-    v.partial = (v.total !== v.amount)
-  })
+  distribution = paymentsDistribution(groupMembers, payments, mincome, adjusted, minimizeTxns)
 
   if (distributionEvents.length > 0) {
     const lastEvent = distributionEvents[distributionEvents.length - 1]
