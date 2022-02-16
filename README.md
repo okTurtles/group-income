@@ -14,8 +14,6 @@
 
 [Group Income](https://groupincome.org/) is a fair income sharing mechanism that allows groups to provide their members a minimum income.
 
-This semi-centralized "Simple Edition" of Group Income is our way to rapidly prototype, develop, and research the concept with real groups.
-
 ## Getting Started
 
 1. Install [Node.js](https://nodejs.org)
