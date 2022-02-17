@@ -81,6 +81,7 @@ import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES } from '@model/contracts/constants.
 import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
 import { proximityDate } from '@utils/time.js'
 import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
+import { CONTRACT_IS_SYNCING } from '@utils/events.js'
 
 export default ({
   name: 'ChatMain',
@@ -346,32 +347,37 @@ export default ({
       }
     },
     setMessageEventListener ({ force = false, from, to }) {
+      if (from) {
+        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)  
+      }
       if (force) {
-        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
+        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)
       } else {
-        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)
         if (this.isJoinedChatRoom(to)) {
           sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
         }
       }
     },
     listenChatRoomActions ({ type, data }) {
+      const addIfNotExist = (msg) => {
+        let m = null
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+          if (this.messages[i].id === msg.id) {
+            m = this.messages[i]
+            break
+          }
+        }
+        if (m) {
+          delete m.pending
+        } else {
+          this.messages.push(msg)
+        }
+      }
       if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE) {
         const { message } = data
         if (message.type === MESSAGE_TYPES.TEXT) {
           if (this.isCurrentUser(message.from)) {
-            let msg = null
-            for (let i = this.messages.length - 1; i >= 0; i--) {
-              if (this.messages[i].id === message.id) {
-                msg = this.messages[i]
-                break
-              }
-            }
-            if (msg) {
-              delete msg.pending
-            } else {
-              this.messages.push(message)
-            }
+            addIfNotExist(message)
           } else {
             this.messages.push(message)
           }
@@ -385,6 +391,16 @@ export default ({
     currentChatRoomId (to, from) {
       this.setMessageEventListener({ from, to })
       this.setInitMessages()
+    },
+    'summary.joined' (to, from) {
+      if (to) {
+        sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
+          if (contractID === this.currentChatRoomId && isSyncing === false) {
+            this.setInitMessages()
+            this.setMessageEventListener({ force: true })
+          }
+        })
+      }
     }
   }
 }: Object)

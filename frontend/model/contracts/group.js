@@ -877,8 +877,7 @@ sbp('chelonia/defineContract', {
         const username = data.username || meta.username
         if (username === rootState.loggedIn.username) {
           sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
-          await sbp('state/enqueueContractSync', data.chatRoomID)
-          // await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
+          await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
           sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
         }
       }

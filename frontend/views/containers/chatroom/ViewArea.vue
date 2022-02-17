@@ -41,9 +41,7 @@ export default ({
       try {
         await sbp('gi.actions/group/joinChatRoom', {
           contractID: this.currentGroupId,
-          data: {
-            chatRoomID: this.currentChatRoomId
-          }
+          data: { chatRoomID: this.currentChatRoomId }
         })
       } catch (e) {
         console.error('ViewArea join() error:', e)
