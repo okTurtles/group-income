@@ -28,8 +28,8 @@ export default ({
   },
   computed: {
     ...mapState([
-      'currentChatRoomId',
       'currentGroupId',
+      'currentChatRoomId',
       'loggedIn'
     ])
   },

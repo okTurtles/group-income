@@ -111,7 +111,7 @@ export default (sbp('sbp/selectors/register', {
           description: '',
           privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP
         }
-      }, true)
+      })
 
       return message
     } catch (e) {
@@ -133,6 +133,16 @@ export default (sbp('sbp/selectors/register', {
       // sync the group's contract state
       await sbp('state/enqueueContractSync', params.contractID)
 
+      // join the 'General' chatroom by default
+      const rootState = sbp('state/vuex/state')
+      const generalChatRoomId = rootState[params.contractID].generalChatRoomId
+      if (generalChatRoomId) {
+        await sbp('gi.actions/group/joinChatRoom', {
+          contractID: params.contractID,
+          data: { chatRoomID: generalChatRoomId }
+        })
+      }
+
       return message
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
@@ -149,7 +159,7 @@ export default (sbp('sbp/selectors/register', {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
     sbp('state/vuex/commit', 'setCurrentChatRoomId', { groupId })
   },
-  'gi.actions/group/addChatRoom': async function (params: GIActionParams, general = false) {
+  'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/chatroom/create', { data: params.data })
 
     await sbp('chelonia/out/actionEncrypted', {
@@ -157,8 +167,7 @@ export default (sbp('sbp/selectors/register', {
       contractID: params.contractID,
       data: {
         ...params.data,
-        chatRoomID: message.contractID(),
-        general
+        chatRoomID: message.contractID()
       }
     })
 
@@ -166,8 +175,26 @@ export default (sbp('sbp/selectors/register', {
 
     return message
   },
-  'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams, general = false) {
-    const message = await sbp('gi.actions/group/addChatRoom', params, general)
+  'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
+    const message = await sbp('chelonia/out/actionEncrypted', {
+      ...params,
+      action: 'gi.contracts/group/joinChatRoom',
+      hooks: {
+        prepublish: async (msg) => {
+          const rootState = sbp('state/vuex/state')
+          const referer = rootState.loggedIn.username
+          await sbp('gi.actions/chatroom/join', {
+            contractID: params.data.chatRoomID,
+            data: { username: params.data.username || referer, referer }
+          })
+        }
+      }
+    })
+
+    return message
+  },
+  'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
+    const message = await sbp('gi.actions/group/addChatRoom', params)
 
     await sbp('gi.actions/group/joinChatRoom', {
       contractID: params.contractID,
@@ -186,17 +213,14 @@ export default (sbp('sbp/selectors/register', {
       ...params, action: 'gi.contracts/group/renameChatRoom'
     })
   },
-  'gi.actions/group/leaveChatRooms': function (params: {
-    username: string, chatRoomIDsToLeave: string[] }) {
-    for (const chatRoomID of params.chatRoomIDsToLeave) {
-      sbp('gi.actions/chatroom/leave', {
-        contractID: chatRoomID,
-        data: { username: params.username }
-      })
+  'gi.actions/group/leaveChatRooms': function (params: GIActionParams) {
+    const { username, chatRoomIDsToLeave } = params.options || {}
+    for (const contractID of chatRoomIDsToLeave) {
+      sbp('gi.actions/chatroom/leave', { contractID, data: { username } })
     }
   },
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
-  ...encryptedAction('gi.actions/group/joinChatRoom', L('Failed to join chat channel.')),
+  // ...encryptedAction('gi.actions/group/joinChatRoom', L('Failed to join chat channel.')),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),

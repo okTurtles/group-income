@@ -35,7 +35,7 @@ export const messageType: any = objectMaybeOf({
   text: string, // message text | proposalId when type is INTERACTIVE | notificationType when type if NOTIFICATION
   notification: objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
-    params: mapOf(string, string) // { username, channelDescription, channelName }
+    params: mapOf(string, string) // { username }
   }),
   replyingMessage: objectOf({
     id: string, // scroll to the original message and highlight
@@ -48,8 +48,8 @@ export const messageType: any = objectMaybeOf({
   // TODO: need to consider POLL and add more down here
 })
 
-export function createMessage ({ meta, data, hash }: {
-  meta: Object, data: Object, hash: string
+export function createMessage ({ meta, data, hash, state }: {
+  meta: Object, data: Object, hash: string, state?: Object
 }): Object {
   const { type, text, replyingMessage } = data
   const { createdDate } = meta
@@ -61,7 +61,11 @@ export function createMessage ({ meta, data, hash }: {
   } else if (type === MESSAGE_TYPES.POLL) {
     // TODO: Poll message creation
   } else if (type === MESSAGE_TYPES.NOTIFICATION) {
-    const params = { ...data.notification }
+    const params = {
+      channelName: state?.attributes.name,
+      channelDescription: state?.attributes.description,
+      ...data.notification
+    }
     delete params.type
     newMessage = {
       ...newMessage,
@@ -97,14 +101,12 @@ export async function leaveChatRoom ({ contractID }: {
 
 function createNotificationData (
   notificationType: string,
-  channelName: string,
   moreParams: Object = {}
 ): Object {
   return {
     type: MESSAGE_TYPES.NOTIFICATION,
     notification: {
       type: notificationType,
-      channelName,
       ...moreParams
     }
   }
@@ -202,16 +204,16 @@ sbp('chelonia/defineContract', {
         const notificationType = username === referer ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER
         const notificationData = createNotificationData(
           notificationType,
-          state.attributes.name,
           notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { username } : {}
         )
-        const newMessage = createMessage({ meta, hash, data: notificationData })
+        const newMessage = createMessage({ meta, hash, data: notificationData, state })
         Vue.set(state.messages, [state.messages.length], newMessage)
 
         if (state.users[username] && !state.users[username].departedDate) {
           console.log(`chatroom Join: ${username} is already joined the chatroom #${state.name}`)
           return
         }
+
         Vue.set(state.users, username, {
           joinedDate: meta.createdDate,
           departedDate: null
@@ -227,8 +229,8 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
-        const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, state.attributes.name)
-        const newMessage = createMessage({ meta, hash, data: notificationData })
+        const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {})
+        const newMessage = createMessage({ meta, hash, data: notificationData, state })
         Vue.set(state.messages, [state.messages.length], newMessage)
       },
       sideEffect ({ contractID, hash }, { state }) {
@@ -242,11 +244,9 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
         const notificationData = createNotificationData(
-          MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION,
-          state.attributes.name,
-          { channelDescription: state.attributes.description }
+          MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {}
         )
-        const newMessage = createMessage({ meta, hash, data: notificationData })
+        const newMessage = createMessage({ meta, hash, data: notificationData, state })
         Vue.set(state.messages, [state.messages.length], newMessage)
       },
       sideEffect ({ contractID, hash }, { state }) {
@@ -260,7 +260,6 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const { username } = data
         if (state.users[username] && !state.users[username].departedDate) {
-          // TODO: Alex - need to skip if JOINING_GROUP is true ???
           if (!sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             Vue.set(state.users[username], 'departedDate', meta.createdDate)
           }
@@ -268,9 +267,8 @@ sbp('chelonia/defineContract', {
           const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
           const notificationData = createNotificationData(
             notificationType,
-            state.attributes.name,
             notificationType === MESSAGE_NOTIFICATIONS.KICK_MEMBER ? { username } : {})
-          const newMessage = createMessage({ meta, hash, data: notificationData })
+          const newMessage = createMessage({ meta, hash, data: notificationData, state })
           Vue.set(state.messages, [state.messages.length], newMessage)
           return
         }
@@ -314,8 +312,7 @@ sbp('chelonia/defineContract', {
         text: string,
         notification: objectMaybeOf({
           type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
-          channelName: string,
-          params: mapOf(string, string) // { username, channelDescription, channelName }
+          params: mapOf(string, string) // { username }
         }),
         replyingMessage: objectOf({
           id: string, // scroll to the original message and highlight
@@ -326,7 +323,7 @@ sbp('chelonia/defineContract', {
         onlyVisibleTo: arrayOf(string)
       }),
       process ({ data, meta, hash }, { state }) {
-        const newMessage = createMessage({ meta, data, hash })
+        const newMessage = createMessage({ meta, data, hash, state })
         Vue.set(state.messages, [state.messages.length], newMessage)
       },
       sideEffect ({ contractID, hash }, { state }) {

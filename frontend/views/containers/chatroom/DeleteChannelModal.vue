@@ -66,7 +66,7 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['chatRoomAttributes', 'generalChatRoomId', 'chatRoomAttributes']),
+    ...mapGetters(['chatRoomAttributes', 'generalChatRoomId']),
     ...mapState(['currentChatRoomId', 'currentGroupId'])
   },
   methods: {
@@ -88,7 +88,8 @@ export default ({
                   type: MESSAGE_TYPES.NOTIFICATION,
                   notification: {
                     type: MESSAGE_NOTIFICATIONS.DELETE_CHANNEL,
-                    channelName: this.chatRoomAttributes.name
+                    channelName: this.chatRoomAttributes.name,
+                    channelDescription: this.chatRoomAttributes.description
                   }
                 }
               })

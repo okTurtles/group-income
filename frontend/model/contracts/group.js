@@ -637,7 +637,7 @@ sbp('chelonia/defineContract', {
               !rootState[cID].users[username].departedDate) || []
 
           sbp('gi.actions/group/leaveChatRooms', {
-            username, chatRoomIDsToLeave
+            contractID, data: {}, options: { username, chatRoomIDsToLeave }
           })
 
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
@@ -712,15 +712,6 @@ sbp('chelonia/defineContract', {
             if (name !== rootState.loggedIn.username) {
               await sbp('state/enqueueContractSync', state.profiles[name].contractID)
             }
-          }
-          // join the 'General' chatroom by default
-          if (getters.generalChatRoomId) {
-            await sbp('gi.actions/group/joinChatRoom', {
-              contractID,
-              data: {
-                chatRoomID: getters.generalChatRoomId
-              }
-            })
           }
         } else {
           // we're an existing member of the group getting notified that a
@@ -852,16 +843,13 @@ sbp('chelonia/defineContract', {
       validate: objectMaybeOf({
         chatRoomID: string,
         name: string,
-        type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v)))
-        // TODO: need to define 'private', 'general' as boolean
-        // but 'boolean' TypeValidator doesn't work fine inside objectMaybeOf
-        // private: boolean,
-        // general: boolean
+        type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
+        privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
       }),
       process ({ data, meta }, { state, getters }) {
         const { name, type, privacyLevel } = data
         Vue.set(state.chatRooms, data.chatRoomID, { creator: meta.username, name, type, privacyLevel, deletedDate: null })
-        if (data.general && !state.generalChatRoomId) {
+        if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
       }
@@ -889,14 +877,9 @@ sbp('chelonia/defineContract', {
         const username = data.username || meta.username
         if (username === rootState.loggedIn.username) {
           sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
-          await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
+          await sbp('state/enqueueContractSync', data.chatRoomID)
+          // await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
           sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
-        }
-        if (meta.username === rootState.loggedIn.username) {
-          await sbp('gi.actions/chatroom/join', {
-            contractID: data.chatRoomID,
-            data: { username, referer: meta.username }
-          })
         }
       }
     },
