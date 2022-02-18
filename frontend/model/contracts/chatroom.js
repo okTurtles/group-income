@@ -7,7 +7,7 @@ import {
   string, literalOf, unionOf, number
 } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
-import L from '@view-utils/translations.js'
+import L from '~/frontend/views/utils/translations.js'
 import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
