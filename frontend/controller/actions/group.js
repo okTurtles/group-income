@@ -185,7 +185,7 @@ export default (sbp('sbp/selectors/register', {
 
       return await sbp('chelonia/out/actionEncrypted', {
         ...params,
-        action: 'gi.contracts/group/joinChatRoom',
+        action: 'gi.contracts/group/joinChatRoom'
       })
     } catch (e) {
       console.error('gi.actions/group/joinChatRoom failed!', e)
