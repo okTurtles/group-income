@@ -9,7 +9,8 @@ let invitationLinkAnyone
 const additionalChatRooms = [
   { name: 'Mid Fielders', description: '', isPrivate: false },
   { name: 'Utility Players', description: 'Footballers who are suitable to playing at several positions.', isPrivate: true },
-  { name: 'Forwards', description: '', isPrivate: false }
+  { name: 'Forwards', description: '', isPrivate: false },
+  { name: 'Top 10', description: '10 players in any position having highest ratings.', isPrivate: true }
 ]
 
 describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {

@@ -175,21 +175,18 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
     try {
-      const message = await sbp('chelonia/out/actionEncrypted', {
+      const rootState = sbp('state/vuex/state')
+      const referer = rootState.loggedIn.username
+
+      await sbp('gi.actions/chatroom/join', {
+        contractID: params.data.chatRoomID,
+        data: { username: params.data.username || referer, referer }
+      })
+
+      return await sbp('chelonia/out/actionEncrypted', {
         ...params,
         action: 'gi.contracts/group/joinChatRoom',
-        hooks: {
-          prepublish: async (msg) => {
-            const rootState = sbp('state/vuex/state')
-            const referer = rootState.loggedIn.username
-            await sbp('gi.actions/chatroom/join', {
-              contractID: params.data.chatRoomID,
-              data: { username: params.data.username || referer, referer }
-            })
-          }
-        }
       })
-      return message
     } catch (e) {
       console.error('gi.actions/group/joinChatRoom failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join chat channel.'))
