@@ -171,27 +171,29 @@ export default (sbp('sbp/selectors/register', {
       }
     })
 
-    await sbp('gi.actions/contract/syncAndWait', params.contractID)
-
     return message
   },
   'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
-    const message = await sbp('chelonia/out/actionEncrypted', {
-      ...params,
-      action: 'gi.contracts/group/joinChatRoom',
-      hooks: {
-        prepublish: async (msg) => {
-          const rootState = sbp('state/vuex/state')
-          const referer = rootState.loggedIn.username
-          await sbp('gi.actions/chatroom/join', {
-            contractID: params.data.chatRoomID,
-            data: { username: params.data.username || referer, referer }
-          })
+    try {
+      const message = await sbp('chelonia/out/actionEncrypted', {
+        ...params,
+        action: 'gi.contracts/group/joinChatRoom',
+        hooks: {
+          prepublish: async (msg) => {
+            const rootState = sbp('state/vuex/state')
+            const referer = rootState.loggedIn.username
+            await sbp('gi.actions/chatroom/join', {
+              contractID: params.data.chatRoomID,
+              data: { username: params.data.username || referer, referer }
+            })
+          }
         }
-      }
-    })
-
-    return message
+      })
+      return message
+    } catch (e) {
+      console.error('gi.actions/group/joinChatRoom failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to join chat channel.'))
+    }
   },
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', params)
@@ -220,7 +222,6 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
-  // ...encryptedAction('gi.actions/group/joinChatRoom', L('Failed to join chat channel.')),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),

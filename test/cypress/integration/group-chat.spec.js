@@ -42,7 +42,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout()
   })
 
-  it('user2 joins the group and checks visibilities and orders of chatrooms inside the group', () => {
+  it('user2 joins the group and he can easily join any public chatrooms by themselves', () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       groupName,
@@ -51,6 +51,10 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
     cy.getByDT('groupChatLink').click()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+  })
+
+  it('user2 checks visibilities and orders of chatrooms inside the group', () => {
+    // TODO: need to set order more complex
     cy.getByDT('channelsList').within(() => {
       cy.get('ul').children().should('have.length', 3)
       cy.get('ul').within(([list]) => {
@@ -64,10 +68,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       })
     })
     cy.giLogout()
-  })
-
-  it('users can easily join any public chatrooms by themselves', () => {
-
   })
 
   it('invitation is the only way to join any private chatrooms', () => {

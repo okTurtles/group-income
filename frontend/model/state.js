@@ -16,7 +16,7 @@ import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/d
 import Colors from './colors.js'
 import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
-import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
+import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constants.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 // import { PAYMENT_COMPLETED } from '~/frontend/model/contracts/payments/index.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
