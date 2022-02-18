@@ -348,7 +348,7 @@ export default ({
     },
     setMessageEventListener ({ force = false, from, to }) {
       if (from) {
-        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)  
+        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)
       }
       if (force) {
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)

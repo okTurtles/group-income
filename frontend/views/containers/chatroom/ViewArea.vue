@@ -29,8 +29,7 @@ export default ({
   computed: {
     ...mapState([
       'currentGroupId',
-      'currentChatRoomId',
-      'loggedIn'
+      'currentChatRoomId'
     ])
   },
   props: {
