@@ -12,7 +12,10 @@ Cypress.on('window:before:load', (window) => {
   }
 
   // Get your apps iframe by id.
-  const docIframe = window.parent.document.getElementById("Your App: 'group-income-simple'")
+  const docIframe = window.parent.document.getElementById("Your App: 'group-income'")
+  if (!docIframe) {
+    throw new Error('`docIframe` is null!')
+  }
 
   // Get the window object inside of the iframe
   const appWindow = docIframe.contentWindow;
