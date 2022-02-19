@@ -3,10 +3,10 @@
     <br />
     <br />
     <a title="Gitter" href="https://gitter.im/okTurtles/group-income"><img src="https://badges.gitter.im/okTurtles/group-income.svg"></a>
-    <a title="Build Status" href="https://travis-ci.org/okTurtles/group-income-simple"><img src="https://img.shields.io/travis/okTurtles/group-income-simple/master.svg"></a>
-    <a title="Deps" href="https://david-dm.org/okTurtles/group-income-simple/#info=dependencies"><img src="https://david-dm.org/okTurtles/group-income-simple.svg"></a>
-    <a title="Dev Deps" href="https://david-dm.org/okTurtles/group-income-simple/#info=devDependencies"><img src="https://david-dm.org/okTurtles/group-income-simple/dev-status.svg"></a>
-    <a title="Visual Source" href="https://www.visualsource.net/repo/github.com/okTurtles/group-income-simple"><img src="https://img.shields.io/badge/visual-source-orange"></a>
+    <a title="Build Status" href="https://travis-ci.org/okTurtles/group-income"><img src="https://img.shields.io/travis/okTurtles/group-income/master.svg"></a>
+    <a title="Deps" href="https://david-dm.org/okTurtles/group-income/#info=dependencies"><img src="https://david-dm.org/okTurtles/group-income.svg"></a>
+    <a title="Dev Deps" href="https://david-dm.org/okTurtles/group-income/#info=devDependencies"><img src="https://david-dm.org/okTurtles/group-income/dev-status.svg"></a>
+    <a title="Visual Source" href="https://www.visualsource.net/repo/github.com/okTurtles/group-income"><img src="https://img.shields.io/badge/visual-source-orange"></a>
     <a title="Donate" href="https://okturtles.org/donate/"><img src="https://img.shields.io/badge/donate%20-%3D%E2%9D%A4-blue.svg"></a>
 </p>
 
@@ -48,7 +48,7 @@ We are continually improving the user experience for everyone, and applying the 
 
 #### Bounties
 
-Some issues have [bounties](https://github.com/okTurtles/group-income-simple/issues?q=is%3Aissue+is%3Aopen+label%3ANote%3ABounty) assigned to them.
+Some issues have [bounties](https://github.com/okTurtles/group-income/issues?q=is%3Aissue+is%3Aopen+label%3ANote%3ABounty) assigned to them.
 
 - Anyone can post a bounty by donating to this project and letting us know which issue you'd like the bounty to be applied to.
 - Non-contractors can receive bounties by submitting PRs for them. If we approve and merge the PR, you get the bounty!
