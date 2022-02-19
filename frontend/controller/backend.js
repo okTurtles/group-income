@@ -71,7 +71,7 @@ sbp('sbp/selectors/register', {
     const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
-    // https://github.com/okTurtles/group-income-simple/issues/608
+    // https://github.com/okTurtles/group-income/issues/608
     while (true) {
       const r = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/event`, {
         method: 'POST',

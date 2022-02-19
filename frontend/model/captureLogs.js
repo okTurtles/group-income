@@ -198,7 +198,7 @@ export function downloadLogs (elLink: Object): void {
 
   const file = new Blob([JSON.stringify({
     // Add instructions in case the user opens the file.
-    '_instructions': 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income-simple/issues',
+    '_instructions': 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income/issues',
     'ua': navigator.userAgent,
     // stringify logs upront because it's an array...
     logs: JSON.stringify(appLogsArr)

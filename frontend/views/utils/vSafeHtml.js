@@ -42,7 +42,7 @@ const transform = (el, binding) => {
  * Please use this instead of `v-html` everywhere user input is expected,
  *   in order to avoid XSS vulnerabilities.
  *
- * See https://github.com/okTurtles/group-income-simple/issues/975
+ * See https://github.com/okTurtles/group-income/issues/975
  */
 
 Vue.directive('safe-html', {

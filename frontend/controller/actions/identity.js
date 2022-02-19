@@ -15,11 +15,11 @@ export default (sbp('sbp/selectors/register', {
     publishOptions
   }) {
     // TODO: make sure we namespace these names:
-    //       https://github.com/okTurtles/group-income-simple/issues/598
+    //       https://github.com/okTurtles/group-income/issues/598
     const oldSettings = await sbp('gi.db/settings/load', username)
     if (oldSettings) {
       // TODO: prompt to ask user before deleting and overwriting an existing user
-      //       https://github.com/okTurtles/group-income-simple/issues/599
+      //       https://github.com/okTurtles/group-income/issues/599
       console.warn(`deleting settings for pre-existing identity ${username}!`, oldSettings)
       await sbp('gi.db/settings/delete', username)
     }

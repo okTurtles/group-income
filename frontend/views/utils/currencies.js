@@ -9,7 +9,7 @@ type Currency = {|
   validate(n: string): boolean;
 |}
 
-// https://github.com/okTurtles/group-income-simple/issues/813#issuecomment-593680834
+// https://github.com/okTurtles/group-income/issues/813#issuecomment-593680834
 // round all accounting to DECIMALS_MAX decimal places max to avoid consensus
 // issues that can arise due to different floating point values
 // at extreme precisions. If this becomes inadequate, instead of increasing
