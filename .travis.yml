@@ -8,7 +8,7 @@ env:
   - GI_PERSIST
 branches:
   only:
-    - master # https://github.com/okTurtles/group-incomeZ/issues/58
+    - master # https://github.com/okTurtles/group-income/issues/58
 cache:
   # Caches $HOME/.npm when npm ci is default script command
   # Caches node_modules in all other cases
