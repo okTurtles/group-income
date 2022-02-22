@@ -1,5 +1,8 @@
 <template lang='pug'>
-.c-send.inputgroup(:class='{"is-editing": isEditing}')
+.c-send.inputgroup(
+  :class='{"is-editing": isEditing}'
+  data-test='messageInputWrapper'
+)
   .c-replying(v-if='replyingMessage')
     i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
     button.c-clear.is-icon-small(
