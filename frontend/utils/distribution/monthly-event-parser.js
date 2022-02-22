@@ -152,8 +152,6 @@ function parsedistributionFromEvents (distributionEvents: Distribution, mincome:
 
   // Create a helper function for handling each startCycleEvent:
   const handleCycleEvent = (event) => {
-    distribution = paymentsDistribution(groupMembers, payments, mincome, adjusted, minimizeTxns)
-
     const eventCopy = cloneDeep(event)
     eventCopy.data.payments = cloneDeep(payments)
     eventCopy.data.distribution = cloneDeep(distribution)
@@ -211,6 +209,7 @@ function parsedistributionFromEvents (distributionEvents: Distribution, mincome:
     } else if (event.type === 'userExitsGroupEvent') {
       handleExitEvent(event)
     }
+    distribution = paymentsDistribution(groupMembers, payments, mincome, adjusted, minimizeTxns)
   })
 
   while (forgivemory.length > attentionSpan) forgivemory.pop()
