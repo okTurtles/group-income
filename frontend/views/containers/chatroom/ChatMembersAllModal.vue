@@ -38,6 +38,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
           v-if='addedMembers'
           name='slide-list'
           tag='ul'
+          data-test='joinedChannelMembersList'
         )
           li.c-search-member(
             v-for='{username, displayName, departedDate} in addedMembers'
@@ -74,6 +75,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         v-if='searchResult'
         name='slide-list'
         tag='ul'
+        data-test='unjoinedChannelMembersList'
       )
         li.c-search-member(
           v-for='{username, displayName, joinedDate} in searchResult'

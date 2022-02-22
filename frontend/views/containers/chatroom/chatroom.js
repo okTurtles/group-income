@@ -1,7 +1,7 @@
 import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
-import { logExceptNavigationDuplicated } from '@controller/utils/misc.js'
+import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 import { CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
 
 const initChatChannelDetails = {

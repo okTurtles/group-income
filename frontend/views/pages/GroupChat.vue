@@ -45,6 +45,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
         tag='button'
         @click='openModal("ChatMembersAllModal")'
         :args='{ numMembers: members.size  }'
+        data-test='channelMembers'
       ) {numMembers} members
       | ∙
       .is-unstyled.c-link(
