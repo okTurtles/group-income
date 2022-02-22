@@ -191,6 +191,12 @@ sbp('chelonia/defineContract', {
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
+      },
+      sideEffect ({ contractID, meta }) {
+        const rootState = sbp('state/vuex/state')
+        if (meta.username === rootState.loggedIn.username) {
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: contractID })
+        }
       }
     },
     'gi.contracts/chatroom/join': {

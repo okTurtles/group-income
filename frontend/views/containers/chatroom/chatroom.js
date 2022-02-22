@@ -1,12 +1,8 @@
 import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
+import { logExceptNavigationDuplicated } from '@controller/utils/misc.js'
 import { CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
-
-/**
- * TODO: need to remove this fakeMessages later
- * At this moment, just used the examples of identityContractIDs
-**/
 
 const initChatChannelDetails = {
   isLoading: true,
@@ -129,7 +125,7 @@ const chatroom: Object = {
         name,
         params: { chatRoomId },
         query
-      })
+      }).catch(logExceptNavigationDuplicated)
     },
     refreshTitle (title?: string): void {
       title = title || this.currentChatRoomState.attributes?.name
@@ -176,6 +172,11 @@ const chatroom: Object = {
       }
       sbp('okTurtles.events/emit', `${CHATROOM_STATE_LOADED}-${chatRoomId}`, state)
       this.refreshTitle(name)
+    }
+  },
+  watch: {
+    'currentChatRoomId' (to: string, from: string) {
+      this.redirectChat('GroupChatConversation', to)
     }
   }
 }

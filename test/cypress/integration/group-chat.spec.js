@@ -14,6 +14,25 @@ const additionalChatRooms = [
 ]
 
 describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
+  function checkIfJoinedChannel (username, channelName) {
+    cy.getByDT('joinChannel').click()
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('textarea').should('exist')
+    })
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('div.c-message').should('have.length', 2)
+      cy.get('div.c-message:last-child').within(() => {
+        cy.get('.c-who > span:first-child').should('contain', username)
+        cy.get('.c-notification').should('contain', `Joined ${channelName}`)
+      })
+    })
+  }
+
+  function joinChannel (username, channelName) {
+    cy.getByDT('joinChannel').click()
+    checkIfJoinedChannel(userName, channelName)
+  }
+
   it(`user1 creats a group and joins "${CHATROOM_GENERAL_NAME}" chatroom by default`, () => {
     cy.visit('/')
     cy.giSignup(user1)
@@ -27,19 +46,14 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelsList').within(() => {
       cy.get('ul').children().should('have.length', 1)
     })
-    cy.getByDT('conversationWapper').within(() => {
-      cy.get('div.c-message').should('have.length', 1)
-      cy.get('div.c-message .c-who > span:first-child').should('contain', user1)
-      cy.get('div.c-message .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
-    })
+    checkIfJoinedChannel(user1, CHATROOM_GENERAL_NAME)
   })
 
   it('user1 creates different types of chatrooms and logout', () => {
     for (const c of additionalChatRooms) {
       cy.giAddNewChatroom(c.name, c.description, c.isPrivate)
+      checkIfJoinedChannel(user1, c.name)
     }
-    // TODO: need to remove cy.wait
-    cy.wait(500) // eslint-disable-line
     cy.giLogout()
   })
 
@@ -56,32 +70,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelsList').within(() => {
       cy.get('ul > li:nth-child(2) > a').click() // click Forwards
     })
-    cy.getByDT('joinChannel').click()
-    cy.getByDT('messageInputWrapper').within(() => {
-      cy.get('textarea').should('exist')
-    })
-    cy.getByDT('conversationWapper').within(() => {
-      cy.get('div.c-message').should('have.length', 2)
-      cy.get('div.c-message:last-child').within(() => {
-        cy.get('.c-who > span:first-child').should('contain', user2)
-        cy.get('.c-notification').should('contain', `Joined Forwards`)
-      })
-    })
+    joinChannel(user2, 'Forwards')
     // Joins 'Utility Players' channel
     cy.getByDT('channelsList').within(() => {
       cy.get('ul > li:nth-child(4) > a').click() // click Utility Players
     })
-    cy.getByDT('joinChannel').click()
-    cy.getByDT('messageInputWrapper').within(() => {
-      cy.get('textarea').should('exist')
-    })
-    cy.getByDT('conversationWapper').within(() => {
-      cy.get('div.c-message').should('have.length', 2)
-      cy.get('div.c-message:last-child').within(() => {
-        cy.get('.c-who > span:first-child').should('contain', user2)
-        cy.get('.c-notification').should('contain', `Joined Utility Players`)
-      })
-    })
+    joinChannel(user2, 'Utility Players')
   })
 
   it('user2 checks visibilities and orders of chatrooms inside the group', () => {
