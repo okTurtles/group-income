@@ -30,7 +30,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   function joinChannel (username, channelName) {
     cy.getByDT('joinChannel').click()
-    checkIfJoinedChannel(userName, channelName)
+    checkIfJoinedChannel(username, channelName)
   }
 
   it(`user1 creats a group and joins "${CHATROOM_GENERAL_NAME}" chatroom by default`, () => {
@@ -78,12 +78,11 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     joinChannel(user2, 'Utility Players')
   })
 
-  it('user2 checks visibilities and orders of chatrooms inside the group', () => {
-    // TODO: need to set order more complex
+  it('user2 checks visibilities and chatroom orders inside the group', () => {
     // cy.getByDT('channelsList').within(() => {
     //   cy.get('ul').children().should('have.length', 1 + additionalChatRooms.filter(c => !c.isPrivate).length)
     //   cy.get('ul').within(([list]) => {
-    //     const visibleChatRoomNames = []
+    //     const visibleChatRoomNames = ['Forwards', CHATROOM_GENERAL_NAME, 'Utility Players', 'Mid Fielders']
     //     visibleChatRoomNames.forEach((chatRoomName, index) => {
     //       cy.get(list).children().eq(index)
     //         .invoke('text')
@@ -91,7 +90,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     //     })
     //   })
     // })
-    cy.giLogout()
   })
 
   it('invitation is the only way to join any private chatrooms', () => {
