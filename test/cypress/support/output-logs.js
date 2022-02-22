@@ -3,18 +3,23 @@
 // Copied directly from: https://github.com/cypress-io/cypress/issues/3199#issuecomment-466593084
 // ***********
 
+const APPLICATION_NAME = 'group-income'
+
 let logs = ''
 
 Cypress.on('window:before:load', (window) => {
-  // Only output App logs when running headless.
+  // Only output app logs when running headless.
   if (!Cypress.browser.isHeadless) {
     return
   }
 
-  // Get your apps iframe by id.
-  const docIframe = window.parent.document.getElementById("Your App: 'group-income-simple'")
+  // Get your app's iframe by id.
+  const docIframe = window.parent.document.getElementById(`Your App: '${APPLICATION_NAME}'`)
 
-  // Get the window object inside of the iframe
+  if (!docIframe) {
+    throw new Error('Cannot find app iframe: `docIframe` is null. Make sure the given app name is correct.')
+  }
+  // Get the window object inside of the iframe.
   const appWindow = docIframe.contentWindow;
 
   // This is where I overwrite all of the console methods.
