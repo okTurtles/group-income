@@ -35,7 +35,17 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     checkIfJoinedChannel(username, channelName, true, true)
   }
 
-  it(`user1 creats a group and joins "${CHATROOM_GENERAL_NAME}" chatroom by default`, () => {
+  function switchChannel (channelName) {
+    cy.getByDT('channelsList').within(() => {
+      cy.get('ul > li').each(($el, index, $list) => {
+        if ($el.text() === channelName) {
+          cy.wrap($el).click()
+        }
+      })
+    })
+  }
+
+  it(`user1 creats a group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
     cy.visit('/')
     cy.giSignup(user1)
 
@@ -51,7 +61,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     checkIfJoinedChannel(user1, CHATROOM_GENERAL_NAME, true, true)
   })
 
-  it('user1 creates different types of chatrooms and logout', () => {
+  it('user1 creates different types of channels and logout', () => {
     for (const c of additionalChatRooms) {
       cy.giAddNewChatroom(c.name, c.description, c.isPrivate)
       cy.getByDT('channelName').should('contain', c.name)
@@ -70,18 +80,14 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('groupChatLink').click()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     // Joins 'Forwards' channel
-    cy.getByDT('channelsList').within(() => {
-      cy.get('ul > li:nth-child(2) > a').click() // click Forwards
-    })
+    switchChannel('Forwards')
     joinChannel(user2, 'Forwards')
     // Joins 'Utility Players' channel
-    cy.getByDT('channelsList').within(() => {
-      cy.get('ul > li:nth-child(4) > a').click() // click Utility Players
-    })
+    switchChannel('Utility Players')
     joinChannel(user2, 'Utility Players')
   })
 
-  it('user2 checks visibilities and chatroom orders inside the group', () => {
+  it('user2 checks visibilities and channel orders inside the group', () => {
     cy.getByDT('channelsList').within(() => {
       cy.get('ul').children().should('have.length', 1 + additionalChatRooms.filter(c => !c.isPrivate).length)
       cy.get('ul').within(([list]) => {
@@ -95,40 +101,40 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   })
 
-  it('invitation is the only way to join any private chatrooms', () => {
+  it('user1 adds user2 to a private channel', () => {
     cy.giSwitchUser(user1)
     cy.getByDT('groupChatLink').click()
 
-    cy.getByDT('channelsList').within(() => {
-      cy.get('ul > li:nth-child(4) > a').click() // Click 'Top 10' channel
-    })
+    switchChannel('Top 10')
     cy.getByDT('channelMembers').click()
     cy.getByDT('unjoinedChannelMembersList').within(() => {
       cy.getByDT('addToChannel').click()
     })
     cy.getByDT('closeModal').click()
     checkIfJoinedChannel(user2, 'Top 10', false, false)
+
     cy.giSwitchUser(user2)
     cy.getByDT('groupChatLink').click()
-    cy.getByDT('channelsList').within(() => {
-      cy.get('ul > li:nth-child(3) > a').click() // Click 'Top 10' channel
-    })
+    switchChannel('Top 10')
     checkIfJoinedChannel(user2, 'Top 10', true, false)
   })
 
-  it('users can leave any types of chatrooms by themselves', () => {
+  it('user2 leaves two public channels by himself', () => {
+    // Forward, General, Top 10, Utility Players
+    switchChannel()
+
     cy.giLogout()
   })
 
-  it('leaving a group means leaving all the chatrooms of the group', () => {
+  it('leaving a group means leaving all the channels of the group', () => {
 
   })
 
-  it('users can see all messages of any public chatrooms', () => {
+  it('users can see all messages of any public channels', () => {
 
   })
 
-  it('closing chatroom means leaving and make it unaccessible and unvisible', () => {
+  it('closing channel means leaving and make it unaccessible and unvisible', () => {
 
   })
 })
