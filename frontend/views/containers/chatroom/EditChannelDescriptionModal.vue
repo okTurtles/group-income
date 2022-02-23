@@ -21,6 +21,7 @@
           @input='debounceField("description")'
           @blur='updateField("description")'
           v-error:description=''
+          data-test='updateChannelDescription'
         )
         i18n.helper This is optional.
 
@@ -32,6 +33,7 @@
           tag='button'
           @click='submit'
           :disabled='$v.form.$invalid'
+          data-test='updateChannelDescriptionSubmit'
         ) Save
 </template>
 

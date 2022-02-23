@@ -20,6 +20,7 @@
           @input='debounceField("name")'
           @blur='updateField("name")'
           v-error:name=''
+          data-test='updateChannelName'
         )
 
       banner-scoped(ref='formMsg')
@@ -30,6 +31,7 @@
           tag='button'
           @click='submit'
           :disabled='$v.form.$invalid'
+          data-test='updateChannelNameSubmit'
         ) Save
 </template>
 

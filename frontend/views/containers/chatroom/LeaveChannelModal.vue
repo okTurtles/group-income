@@ -17,7 +17,7 @@
         i18n.is-outlined(tag='button' @click='close') Cancel
         button-submit.is-danger(
           @click='submit'
-          data-test='btnSubmit'
+          data-test='leaveChannelSubmit'
         ) {{ L('Leave Channel') }}
 </template>
 

@@ -19,6 +19,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
             menu-item(
               v-if='!summary.general'
               @click='openModal("EditChannelNameModal")'
+              data-test='renameChannel'
             )
               i18n Rename
             menu-item(@click='openModal("ChatMembersAllModal")')
@@ -31,11 +32,13 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
             menu-item(
               v-if='!summary.general'
               @click='openModal("LeaveChannelModal")'
+              data-test='leaveChannel'
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
               v-if='!summary.general && ourUsername === summary.creator'
               @click='openModal("DeleteChannelModal")'
+              data-test='deleteChannel'
             )
               i18n Delete channel
 
@@ -52,6 +55,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
         tag='button'
         v-if='summary.description'
         @click='openModal("EditChannelDescriptionModal")'
+        data-test='updateDescription'
       )
         | {{ summary.description }}
         i.icon-pencil-alt

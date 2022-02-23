@@ -40,8 +40,65 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.get('ul > li').each(($el, index, $list) => {
         if ($el.text() === channelName) {
           cy.wrap($el).click()
+          return false
         }
       })
+    })
+    cy.getByDT('channelName').should('contain', channelName)
+  }
+
+  function leaveChannel (channelName, selfLeave = true) {
+    switchChannel(channelName)
+    if (selfLeave) {
+      cy.getByDT('channelName').within(() => {
+        cy.getByDT('menuTrigger').click()
+      })
+      cy.getByDT('leaveChannel').click()
+      cy.getByDT('leaveChannelSubmit').click()
+      cy.getByDT('closeModal').should('not.exist')
+      cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    } else {
+      // Leave other from the channel
+    }
+  }
+
+  function deleteChannel (channelName) {
+    switchChannel(channelName)
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('deleteChannel').click()
+    cy.getByDT('deleteChannelConfirmation').click()
+    cy.getByDT('deleteChannelSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('div.c-message:last-child .c-notification').should('contain', `Deleted the channel: ${channelName}`)
+    })
+  }
+
+  function updateName (name) {
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('renameChannel').click()
+    cy.getByDT('updateChannelName').clear()
+    cy.getByDT('updateChannelName').type(name)
+    cy.getByDT('updateChannelNameSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel name to: ${name}`)
+    })
+  }
+
+  function updateDescription (description) {
+    cy.getByDT('updateDescription').click()
+    cy.getByDT('updateChannelDescription').clear()
+    cy.getByDT('updateChannelDescription').type(description)
+    cy.getByDT('updateChannelDescriptionSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel description to: ${description}`)
     })
   }
 
@@ -89,7 +146,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it('user2 checks visibilities and channel orders inside the group', () => {
     cy.getByDT('channelsList').within(() => {
-      cy.get('ul').children().should('have.length', 1 + additionalChatRooms.filter(c => !c.isPrivate).length)
+      cy.get('ul').children().should('have.length', 4)
       cy.get('ul').within(([list]) => {
         const visibleChatRoomNames = ['Forwards', CHATROOM_GENERAL_NAME, 'Utility Players', 'Mid Fielders']
         visibleChatRoomNames.forEach((chatRoomName, index) => {
@@ -120,21 +177,45 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it('user2 leaves two public channels by himself', () => {
-    // Forward, General, Top 10, Utility Players
-    switchChannel()
+    leaveChannel('Forwards', true)
+    leaveChannel('Utility Players', true)
 
+    cy.giSwitchUser(user1)
+    cy.getByDT('groupChatLink').click()
+    // Check user2 if joined in 'Forwards' channel
+    switchChannel('Forwards')
+    cy.getByDT('channelMembers').click()
+    cy.getByDT('unjoinedChannelMembersList').within(() => {
+      cy.getByDT('username').should('contain', user2)
+    })
+    cy.getByDT('closeModal').click()
+    cy.getByDT('closeModal').should('not.exist')
+    // Check user2 if joined in 'Utility Players' channel
+    switchChannel('Utility Players')
+    cy.getByDT('channelMembers').click()
+    cy.getByDT('unjoinedChannelMembersList').within(() => {
+      cy.getByDT('username').should('contain', user2)
+    })
+    cy.getByDT('closeModal').click()
+    cy.getByDT('closeModal').should('not.exist')
+  })
+
+  it('user1 deletes two channels and makes it unvisible, unaccessible', () => {
+    deleteChannel('Forwards')
+    deleteChannel('Mid Fielders')
+    cy.getByDT('channelsList').within(() => {
+      cy.get('ul').children().should('have.length', 3)
+    })
+  })
+
+  it('user1 rename channel and update description too', () => {
+    switchChannel('Top 10')
+    updateName('Heros')
+    updateDescription('World-class players around the world')
     cy.giLogout()
   })
 
   it('leaving a group means leaving all the channels of the group', () => {
-
-  })
-
-  it('users can see all messages of any public channels', () => {
-
-  })
-
-  it('closing channel means leaving and make it unaccessible and unvisible', () => {
 
   })
 })

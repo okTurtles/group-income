@@ -19,7 +19,7 @@
           :args='LTags("strong")'
         ) This action {strong_}cannot be undone{_strong}.
 
-      label.checkbox
+      label.checkbox(data-test='deleteChannelConfirmation')
         input.input(type='checkbox' name='confirmation' v-model='form.confirmation')
         i18n(:args='{ name: chatRoomAttributes.name, ...LTags("strong") }') Yes, I want to {strong_}delete {name} permanently{_strong}.
 
@@ -30,7 +30,7 @@
         button-submit.is-danger(
           @click='submit'
           :disabled='$v.form.$invalid'
-          data-test='btnSubmit'
+          data-test='deleteChannelSubmit'
           ) {{ L('Delete channel') }}
 </template>
 
