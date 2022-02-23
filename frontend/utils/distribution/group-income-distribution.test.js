@@ -341,15 +341,15 @@ describe('Test group-income-distribution.js', function () {
   it('Cypress/group-paying.spec.js unit-test equivalent - user1 sends $100 to user3 (partial).', function () {
     setup.push({ type: 'paymentEvent', data: { from: 'u1', to: 'u3', amount: 100, when: dateAtCyclesPassed(0.06) } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
-      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 178.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
+      { from: 'u1', to: 'u2', amount: 71.42857142857142, total: 71.42857142857142, dueOn: '2021-01', isLate: false, partial: false },
+      { from: 'u1', to: 'u3', amount: 178.57142857142856, total: 178.57142857142856, dueOn: '2021-01', isLate: false, partial: false },
+      { amount: 28.571428571428562, from: 'u4', to: 'u2', total: 28.571428571428562, isLate: false, partial: false, dueOn: '2021-01' },
+      { amount: 71.42857142857142, from: 'u4', to: 'u3', total: 71.42857142857142, isLate: false, partial: false, dueOn: '2021-01' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
-      { amount: 78.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: true, isLate: false, dueOn: '2021-01' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
+      { amount: 78.57142857142857, from: 'u1', to: 'u3', total: 178.57142857142856, isLate: false, partial: true, dueOn: '2021-01' },
+      { amount: 28.571428571428562, from: 'u4', to: 'u2', total: 28.571428571428562, isLate: false, partial: false, dueOn: '2021-01' },
+      { amount: 71.42857142857142, from: 'u4', to: 'u3', total: 71.42857142857142, isLate: false, partial: false, dueOn: '2021-01' }
     ])
   })
   it('Cypress/group-paying.spec.js unit-test equivalent - user1 changes their income details to "needing.', function () {
@@ -368,65 +368,66 @@ describe('Test group-income-distribution.js', function () {
   it('Cypress/group-paying.spec.js unit-test equivalent - user1 changes their income details back to "giving".', function () {
     setup.push({ type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 250, when: dateAtCyclesPassed(0.08) } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
-      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 178.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
+      { from: 'u1', to: 'u2', amount: 71.42857142857142, total: 71.42857142857142, dueOn: '2021-01', isLate: false, partial: false },
+      { from: 'u1', to: 'u3', amount: 178.57142857142856, total: 178.57142857142856, dueOn: '2021-01', isLate: false, partial: false },
+      { amount: 28.571428571428562, from: 'u4', to: 'u2', total: 28.571428571428562, isLate: false, partial: false, dueOn: '2021-01' },
+      { amount: 71.42857142857142, from: 'u4', to: 'u3', total: 71.42857142857142, isLate: false, partial: false, dueOn: '2021-01' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
-      { amount: 78.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: true, isLate: false, dueOn: '2021-01' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-01' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-01' }
+      { amount: 78.57142857142857, from: 'u1', to: 'u3', total: 178.57142857142856, isLate: false, partial: true, dueOn: '2021-01' },
+      { amount: 28.571428571428562, from: 'u4', to: 'u2', total: 28.571428571428562, isLate: false, partial: false, dueOn: '2021-01' },
+      { amount: 71.42857142857142, from: 'u4', to: 'u3', total: 71.42857142857142, isLate: false, partial: false, dueOn: '2021-01' }
     ])
   })
   it('Cypress/group-paying.spec.js unit-test equivalent - one month later, user1 sends to user3 the missing $78.57.', function () {
     setup.push({ type: 'paymentEvent', data: { from: 'u1', to: 'u3', amount: 78.57, when: dateAtCyclesPassed(1.01) } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
-      { from: 'u1', to: 'u2', amount: 71.42857142857143, total: 71.42857142857143, dueOn: '2021-02', isLate: true, partial: false },
-      { from: 'u1', to: 'u3', amount: 178.57142857142858, total: 178.57142857142858, dueOn: '2021-02', isLate: true, partial: false },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: true, dueOn: '2021-02' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: true, dueOn: '2021-02' },
+      { from: 'u1', to: 'u2', amount: 71.42857142857142, total: 71.42857142857142, dueOn: '2021-02', isLate: true, partial: false },
+      { from: 'u1', to: 'u3', amount: 178.57142857142856, total: 178.57142857142856, dueOn: '2021-02', isLate: true, partial: false },
+      { amount: 28.571428571428562, from: 'u4', to: 'u2', total: 28.571428571428562, isLate: true, partial: false, dueOn: '2021-02' },
+      { amount: 71.42857142857142, from: 'u4', to: 'u3', total: 71.42857142857142, isLate: true, partial: false, dueOn: '2021-02' },
       { from: 'u1', to: 'u3', amount: 178.57142857142858, total: 178.57142857142858, dueOn: '2021-02', isLate: false, partial: false },
-      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-02' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-02' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-02' }
+      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, isLate: false, partial: false, dueOn: '2021-02' },
+      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, isLate: false, partial: false, dueOn: '2021-02' },
+      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, isLate: false, partial: false, dueOn: '2021-02' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
-      { amount: 78.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: true, isLate: true, dueOn: '2021-02' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: true, dueOn: '2021-02' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: true, dueOn: '2021-02' },
-      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-02' },
-      { amount: 100.00142857142859, from: 'u1', to: 'u3', total: 178.57142857142858, partial: true, isLate: false, dueOn: '2021-02' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-02' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-02' }
+      { amount: 78.57142857142857, from: 'u1', to: 'u3', total: 178.57142857142856, isLate: true, partial: true, dueOn: '2021-02' },
+      { amount: 28.571428571428562, from: 'u4', to: 'u2', total: 28.571428571428562, isLate: true, partial: false, dueOn: '2021-02' },
+      { amount: 71.42857142857142, from: 'u4', to: 'u3', total: 71.42857142857142, isLate: true, partial: false, dueOn: '2021-02' },
+      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, isLate: false, partial: false, dueOn: '2021-02' },
+      { amount: 100.00142857142859, from: 'u1', to: 'u3', total: 178.57142857142858, isLate: false, partial: true, dueOn: '2021-02' },
+      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, isLate: false, partial: false, dueOn: '2021-02' },
+      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, isLate: false, partial: false, dueOn: '2021-02' }
     ])
   })
   it('Added cypress test - two months later, make sure the first months distributions are gone.', function () {
     setup.push({ type: 'paymentEvent', data: { from: 'u1', to: 'u3', amount: 178.58, when: dateAtCyclesPassed(2.01) } })
     should(groupIncomeDistributionWrapper(setup, { adjusted: false, minimizeTxns: false, mincomeAmount })).eql([
-      { from: 'u1', to: 'u2', amount: 71.42857142857143, total: 71.42857142857143, dueOn: '2021-02', isLate: true, partial: false },
-      { from: 'u1', to: 'u3', amount: 178.57142857142858, total: 178.57142857142858, dueOn: '2021-02', isLate: true, partial: false },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: true, dueOn: '2021-02' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: true, dueOn: '2021-02' },
-      { from: 'u1', to: 'u3', amount: 178.57142857142858, total: 178.57142857142858, dueOn: '2021-03', isLate: true, partial: false },
-      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, partial: false, isLate: true, dueOn: '2021-03' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: true, dueOn: '2021-03' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: true, dueOn: '2021-03' },
-      { from: 'u1', to: 'u3', amount: 178.57142857142858, total: 178.57142857142858, dueOn: '2021-03', isLate: false, partial: false },
-      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-03' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-03' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-03' }
+      { from: 'u1', to: 'u2', amount: 71.42857142857142, total: 71.42857142857142, dueOn: '2021-02', isLate: true, partial: false },
+      { from: 'u1', to: 'u3', amount: 178.57142857142856, total: 178.57142857142856, dueOn: '2021-02', isLate: true, partial: false },
+      { amount: 28.571428571428562, from: 'u4', to: 'u2', total: 28.571428571428562, isLate: true, partial: false, dueOn: '2021-02' },
+      { amount: 71.42857142857142, from: 'u4', to: 'u3', total: 71.42857142857142, isLate: true, partial: false, dueOn: '2021-02' },
+      { from: 'u1', to: 'u3', amount: 2.842170943040401e-14, total: 2.842170943040401e-14, dueOn: '2021-03', isLate: true, partial: false },
+      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, isLate: true, partial: false, dueOn: '2021-03' },
+      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, isLate: true, partial: false, dueOn: '2021-03' },
+      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, isLate: true, partial: false, dueOn: '2021-03' },
+      { from: 'u1', to: 'u3', amount: 178.57142857142856, total: 178.57142857142856, dueOn: '2021-03', isLate: false, partial: false },
+      { amount: 71.42857142857142, from: 'u1', to: 'u2', total: 71.42857142857142, isLate: false, partial: false, dueOn: '2021-03' },
+      { amount: 28.571428571428562, from: 'u4', to: 'u2', total: 28.571428571428562, isLate: false, partial: false, dueOn: '2021-03' },
+      { amount: 71.42857142857142, from: 'u4', to: 'u3', total: 71.42857142857142, isLate: false, partial: false, dueOn: '2021-03' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false, mincomeAmount })).eql([
-      { amount: 78.57142857142858, from: 'u1', to: 'u3', total: 178.57142857142858, partial: true, isLate: true, dueOn: '2021-02' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: true, dueOn: '2021-02' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: true, dueOn: '2021-02' },
-      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, partial: false, isLate: true, dueOn: '2021-03' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: true, dueOn: '2021-03' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: true, dueOn: '2021-03' },
-      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-03' },
-      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, partial: false, isLate: false, dueOn: '2021-03' },
-      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, partial: false, isLate: false, dueOn: '2021-03' }
+      { amount: 78.57142857142857, from: 'u1', to: 'u3', total: 178.57142857142856, isLate: true, partial: true, dueOn: '2021-02' },
+      { amount: 28.571428571428562, from: 'u4', to: 'u2', total: 28.571428571428562, isLate: true, partial: false, dueOn: '2021-02' },
+      { amount: 71.42857142857142, from: 'u4', to: 'u3', total: 71.42857142857142, isLate: true, partial: false, dueOn: '2021-02' },
+      { amount: 71.42857142857143, from: 'u1', to: 'u2', total: 71.42857142857143, isLate: true, partial: false, dueOn: '2021-03' },
+      { amount: 2.842170943040401e-14, from: 'u1', to: 'u3', total: 2.842170943040401e-14, isLate: true, partial: false, dueOn: '2021-03' },
+      { amount: 28.57142857142857, from: 'u4', to: 'u2', total: 28.57142857142857, isLate: true, partial: false, dueOn: '2021-03' },
+      { amount: 71.42857142857143, from: 'u4', to: 'u3', total: 71.42857142857143, isLate: true, partial: false, dueOn: '2021-03' },
+      { amount: 71.42857142857142, from: 'u1', to: 'u2', total: 71.42857142857142, isLate: false, partial: false, dueOn: '2021-03' },
+      { amount: 28.571428571428562, from: 'u4', to: 'u2', total: 28.571428571428562, isLate: false, partial: false, dueOn: '2021-03' },
+      { amount: 71.42857142857142, from: 'u4', to: 'u3', total: 71.42857142857142, isLate: false, partial: false, dueOn: '2021-03' }
     ])
   })
 })
