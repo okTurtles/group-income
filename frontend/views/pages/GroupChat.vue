@@ -27,6 +27,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
             menu-item(
               :class='`${!summary.general ? "c-separator" : ""}`'
               @click='openModal("UserSettingsModal", {section: "notifications"})'
+              data-test='notificationsSettings'
             )
               i18n Notifications settings
             menu-item(

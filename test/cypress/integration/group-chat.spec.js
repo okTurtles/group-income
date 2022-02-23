@@ -102,6 +102,16 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   }
 
+  function closeMenu (joined = true) {
+    // TODO: need to remove cy.wait. Dropdown menu can not closable for a few seconds
+    cy.wait(1000) // eslint-disable-line
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('textarea').should('exist')
+      cy.get('textarea').click()
+    })
+    cy.getByDT('notificationsSettings').should('not.exist')
+  }
+
   it(`user1 creats a group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
     cy.visit('/')
     cy.giSignup(user1)
@@ -176,6 +186,30 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     checkIfJoinedChannel(user2, 'Top 10', true, false)
   })
 
+  it('user2 has limitations to leave, delete, rename, update description', () => {
+    cy.log(`Any users can not leave, rename, delete "${CHATROOM_GENERAL_NAME}" channel`)
+    switchChannel(CHATROOM_GENERAL_NAME)
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('menuContent').within(() => {
+      cy.getByDT('leaveChannel').should('not.exist')
+      cy.getByDT('deleteChannel').should('not.exist')
+      cy.getByDT('renameChannel').should('not.exist')
+    })
+    closeMenu(true)
+
+    cy.log('Users can not delete channel unless they are not creators')
+    switchChannel('Forwards')
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('menuContent').within(() => {
+      cy.getByDT('deleteChannel').should('not.exist')
+    })
+    closeMenu(true)
+  })
+
   it('user2 leaves two public channels by himself', () => {
     leaveChannel('Forwards', true)
     leaveChannel('Utility Players', true)
@@ -212,10 +246,35 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     switchChannel('Top 10')
     updateName('Heros')
     updateDescription('World-class players around the world')
-    cy.giLogout()
   })
 
-  it('leaving a group means leaving all the channels of the group', () => {
+  it('user2 leaves group and leaves all the channel inside the group', () => {
+    const channels = [CHATROOM_GENERAL_NAME, 'Heros', 'Utility Players']
+    cy.giSwitchUser(user2)
 
+    cy.getByDT('groupSettingsLink').click()
+    cy.getByDT('leaveModalBtn').click()
+
+    cy.getByDT('leaveGroup', 'form').within(() => {
+      cy.getByDT('username').clear().type(user2)
+      cy.getByDT('password').type('123456789')
+      cy.getByDT('confirmation').clear().type(`LEAVE ${groupName.toUpperCase()}`)
+
+      cy.getByDT('btnSubmit').click()
+    })
+
+    cy.getByDT('closeModal').should('not.exist')
+    // TODO: need to remove cy.wait. Waits for the contracts being removed.
+    cy.wait(2000) // eslint-disable-line
+    cy.giLogout({ hasNoGroup: true })
+    cy.giLogin(user1)
+
+    cy.getByDT('groupChatLink').click()
+    for (const name of channels) {
+      switchChannel(name)
+      cy.getByDT('channelMembers').should('contain', '1 members')
+    }
+
+    cy.giLogout()
   })
 })
