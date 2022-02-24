@@ -530,7 +530,9 @@ const getters = {
     const chatRoomsInDetail = _.merge({}, getters.getChatRooms.active)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
-      if (chatRoom && chatRoom.attributes && chatRoom.users[state.loggedIn.username]) {
+      if (chatRoom && chatRoom.attributes &&
+        chatRoom.users[state.loggedIn.username] &&
+        !chatRoom.users[state.loggedIn.username].departedDate) {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,

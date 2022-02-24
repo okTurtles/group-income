@@ -18,6 +18,7 @@ import {
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS
 } from './constants.js'
+import * as Errors from '../errors.js'
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 
@@ -209,6 +210,12 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state }) {
         const { username, referer } = data
+        if (state.users[username] &&
+          !state.users[username].departedDate &&
+          !sbp('okTurtles.data/get', 'JOINING_CHATROOM') &&
+          !sbp('okTurtles.data/get', 'JOINING_GROUP')) {
+          throw new Errors.GIErrorInvalidChatroomAction('can not join the chatroom which you are already part of')
+        }
 
         const notificationType = username === referer ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER
         const notificationData = createNotificationData(
@@ -217,11 +224,6 @@ sbp('chelonia/defineContract', {
         )
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
-
-        if (state.users[username] && !state.users[username].departedDate) {
-          console.log(`chatroom Join: ${username} is already joined the chatroom #${state.name}`)
-          return
-        }
 
         Vue.set(state.users, username, {
           joinedDate: meta.createdDate,
@@ -268,20 +270,17 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state }) {
         const { username } = data
-        if (state.users[username] && !state.users[username].departedDate) {
-          if (!sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
-            Vue.set(state.users[username], 'departedDate', meta.createdDate)
-          }
-
-          const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
-          const notificationData = createNotificationData(
-            notificationType,
-            notificationType === MESSAGE_NOTIFICATIONS.KICK_MEMBER ? { username } : {})
-          const newMessage = createMessage({ meta, hash, data: notificationData, state })
-          state.messages.push(newMessage)
-          return
+        if (!state.users[username] || state.users[username].departedDate) {
+          throw new Errors.GIErrorInvalidChatroomAction('can not leave the chatroom which you are not part of')
         }
-        console.log(`chatroom Leave: ${username} is not a member of this chatroom #${state.name}`)
+        Vue.set(state.users[username], 'departedDate', meta.createdDate)
+
+        const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
+        const notificationData = createNotificationData(
+          notificationType,
+          notificationType === MESSAGE_NOTIFICATIONS.KICK_MEMBER ? { username } : {})
+        const newMessage = createMessage({ meta, hash, data: notificationData, state })
+        state.messages.push(newMessage)
       },
       sideEffect ({ data, hash, contractID }, { state }) {
         if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
