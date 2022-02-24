@@ -842,9 +842,11 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/addChatRoom': {
       validate: objectMaybeOf({
         chatRoomID: string,
-        name: string,
-        type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
-        privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
+        attributes: objectMaybeOf({
+          name: string,
+          type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
+          privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))  
+        })
       }),
       process ({ data, meta }, { state, getters }) {
         const { name, type, privacyLevel } = data

@@ -113,10 +113,12 @@ export default ({
         await sbp('gi.actions/group/addAndJoinChatRoom', {
           contractID: this.currentGroupId,
           data: {
-            name,
-            description,
-            privacyLevel: !this.form.private ? CHATROOM_PRIVACY_LEVEL.GROUP : CHATROOM_PRIVACY_LEVEL.PRIVATE,
-            type: CHATROOM_TYPES.GROUP
+            attributes: {
+              name,
+              description,
+              privacyLevel: !this.form.private ? CHATROOM_PRIVACY_LEVEL.GROUP : CHATROOM_PRIVACY_LEVEL.PRIVATE,
+              type: CHATROOM_TYPES.GROUP
+            }
           }
         })
       } catch (e) {

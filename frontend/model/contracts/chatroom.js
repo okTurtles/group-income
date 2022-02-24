@@ -23,10 +23,12 @@ import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 
 export const chatRoomType: any = objectOf({
-  name: string,
-  description: string,
-  type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
-  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
+  attributes: objectOf({
+    name: string,
+    description: string,
+    type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
+    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
+  })
 })
 
 export const messageType: any = objectMaybeOf({
@@ -182,16 +184,14 @@ sbp('chelonia/defineContract', {
             maxNameLetters: CHATROOM_NAME_LIMITS_IN_CHARS,
             maxDescriptionLetters: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
           },
-          users: {},
-          messages: []
-        }, {
           attributes: {
-            ...data,
             creator: meta.username,
             deletedDate: null,
             archievedDate: null
-          }
-        })
+          },
+          users: {},
+          messages: []
+        }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }

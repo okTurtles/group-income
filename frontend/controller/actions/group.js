@@ -106,10 +106,12 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.actions/group/addAndJoinChatRoom', {
         contractID: message.contractID(),
         data: {
-          name: CHATROOM_GENERAL_NAME,
-          type: CHATROOM_TYPES.GROUP,
-          description: '',
-          privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP
+          attributes: {
+            name: CHATROOM_GENERAL_NAME,
+            type: CHATROOM_TYPES.GROUP,
+            description: '',
+            privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP
+          }
         }
       })
 
@@ -162,13 +164,11 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/chatroom/create', { data: params.data })
 
+    const { name, type, privacyLevel } = params.data.attributes
     await sbp('chelonia/out/actionEncrypted', {
       action: 'gi.contracts/group/addChatRoom',
       contractID: params.contractID,
-      data: {
-        ...params.data,
-        chatRoomID: message.contractID()
-      }
+      data: { name, type, privacyLevel, chatRoomID: message.contractID() }
     })
 
     return message
