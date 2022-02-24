@@ -19,6 +19,7 @@ import {
   MESSAGE_NOTIFICATIONS
 } from './constants.js'
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
+import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 
 export const chatRoomType: any = objectOf({
   name: string,
@@ -28,10 +29,7 @@ export const chatRoomType: any = objectOf({
 })
 
 export const messageType: any = objectMaybeOf({
-  id: string, // hash of message once it is initialized
   type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
-  from: string, // username
-  time: string, // new Date()
   text: string, // message text | proposalId when type is INTERACTIVE | notificationType when type if NOTIFICATION
   notification: objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
@@ -54,7 +52,12 @@ export function createMessage ({ meta, data, hash, state }: {
   const { type, text, replyingMessage } = data
   const { createdDate } = meta
 
-  let newMessage = { type, time: new Date(createdDate), id: hash, from: meta.username }
+  let newMessage = {
+    type,
+    time: new Date(createdDate).toISOString(),
+    id: hash,
+    from: meta.username
+  }
 
   if (type === MESSAGE_TYPES.TEXT) {
     newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
@@ -93,7 +96,7 @@ export async function leaveChatRoom ({ contractID }: {
     })
     const curRouteName = sbp('controller/router').history.current.name
     if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {
-      sbp('controller/router').push({ name: 'GroupChat' })
+      sbp('controller/router').push({ name: 'GroupChat' }).catch(logExceptNavigationDuplicated)
     }
   }
   sbp('state/vuex/commit', 'removeContract', contractID)
@@ -213,7 +216,7 @@ sbp('chelonia/defineContract', {
           notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { username } : {}
         )
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
-        Vue.set(state.messages, [state.messages.length], newMessage)
+        state.messages.push(newMessage)
 
         if (state.users[username] && !state.users[username].departedDate) {
           console.log(`chatroom Join: ${username} is already joined the chatroom #${state.name}`)
@@ -237,7 +240,7 @@ sbp('chelonia/defineContract', {
         Vue.set(state.attributes, 'name', data.name)
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {})
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
-        Vue.set(state.messages, [state.messages.length], newMessage)
+        state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash }, { state }) {
         emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
@@ -253,7 +256,7 @@ sbp('chelonia/defineContract', {
           MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {}
         )
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
-        Vue.set(state.messages, [state.messages.length], newMessage)
+        state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash }, { state }) {
         emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
@@ -275,7 +278,7 @@ sbp('chelonia/defineContract', {
             notificationType,
             notificationType === MESSAGE_NOTIFICATIONS.KICK_MEMBER ? { username } : {})
           const newMessage = createMessage({ meta, hash, data: notificationData, state })
-          Vue.set(state.messages, [state.messages.length], newMessage)
+          state.messages.push(newMessage)
           return
         }
         console.log(`chatroom Leave: ${username} is not a member of this chatroom #${state.name}`)
@@ -313,24 +316,10 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/addMessage': {
-      validate: objectMaybeOf({
-        type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
-        text: string,
-        notification: objectMaybeOf({
-          type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
-          params: mapOf(string, string) // { username }
-        }),
-        replyingMessage: objectOf({
-          id: string, // scroll to the original message and highlight
-          username: string, // display
-          text: string, // display
-          time: string // to search easily
-        }),
-        onlyVisibleTo: arrayOf(string)
-      }),
+      validate: messageType,
       process ({ data, meta, hash }, { state }) {
         const newMessage = createMessage({ meta, data, hash, state })
-        Vue.set(state.messages, [state.messages.length], newMessage)
+        state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash }, { state }) {
         emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
