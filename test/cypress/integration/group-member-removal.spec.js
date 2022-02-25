@@ -193,6 +193,9 @@ describe('Group - Removing a member', () => {
 
     // Verify userBot has no group now
     cy.giLogin(`userBot-${userId}`) // [*note_1*]
+    cy.getByDT('app').then(([el]) => {
+      cy.get(el).should('have.attr', 'data-sync', '')
+    })
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
 
     cy.giLogout({ hasNoGroup: true })
