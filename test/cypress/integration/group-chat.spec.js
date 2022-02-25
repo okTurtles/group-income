@@ -269,6 +269,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout({ hasNoGroup: true })
     cy.giLogin(user1)
 
+    // Check how many members are joined to each channel
     cy.getByDT('groupChatLink').click()
     for (const name of channels) {
       switchChannel(name)
