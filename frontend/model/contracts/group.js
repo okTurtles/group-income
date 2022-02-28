@@ -329,8 +329,8 @@ sbp('chelonia/defineContract', {
           joined: rootGetters.isJoinedChatRoom(chatRoomID),
           id: chatRoomID
         })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {
-          const formerName = String(former.name).toLowerCase()
-          const latterName = String(latter.name).toLowerCase()
+          const formerName = former.name
+          const latterName = latter.name
           if (former.joined === latter.joined) {
             if (formerName > latterName) {
               return 1
@@ -673,7 +673,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/inviteAccept': {
-      validate: objectMaybeOf({
+      validate: objectOf({
         inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
       process ({ data, meta }, { state, getters }) {
