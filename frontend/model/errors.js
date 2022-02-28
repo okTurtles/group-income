@@ -32,16 +32,6 @@ export class GIErrorUnrecoverable extends Error {
   }
 }
 
-export class GIErrorInvalidChatroomAction extends Error {
-  constructor (...params: any[]) {
-    super(...params)
-    this.name = this.constructor.name
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor)
-    }
-  }
-}
-
 // Used to throw human readable errors on UI.
 export class GIErrorUIRuntimeError extends Error {
   constructor (...params: any[]) {

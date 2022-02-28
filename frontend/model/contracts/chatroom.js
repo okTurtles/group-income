@@ -18,7 +18,6 @@ import {
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS
 } from './constants.js'
-import * as Errors from '../errors.js'
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 
@@ -204,20 +203,19 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/join': {
-      validate: objectMaybeOf({
-        username: string,
-        referer: string
+      validate: objectOf({
+        username: string
       }),
       process ({ data, meta, hash }, { state }) {
-        const { username, referer } = data
+        const { username } = data
         if (state.users[username] &&
           !state.users[username].departedDate &&
           !sbp('okTurtles.data/get', 'JOINING_CHATROOM') &&
           !sbp('okTurtles.data/get', 'JOINING_GROUP')) {
-          throw new Errors.GIErrorInvalidChatroomAction('can not join the chatroom which you are already part of')
+          throw new Error('can not join the chatroom which you are already part of')
         }
 
-        const notificationType = username === referer ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER
+        const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER
         const notificationData = createNotificationData(
           notificationType,
           notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { username } : {}
@@ -271,7 +269,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const { username } = data
         if (!state.users[username] || state.users[username].departedDate) {
-          throw new Errors.GIErrorInvalidChatroomAction('can not leave the chatroom which you are not part of')
+          throw new Error('can not leave the chatroom which you are not part of')
         }
         Vue.set(state.users[username], 'departedDate', meta.createdDate)
 

@@ -176,11 +176,12 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
     try {
       const rootState = sbp('state/vuex/state')
-      const referer = rootState.loggedIn.username
 
       await sbp('gi.actions/chatroom/join', {
         contractID: params.data.chatRoomID,
-        data: { username: params.data.username || referer, referer }
+        data: {
+          username: params.data.username || rootState.loggedIn.username
+        }
       })
 
       return await sbp('chelonia/out/actionEncrypted', {
