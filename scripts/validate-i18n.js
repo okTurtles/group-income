@@ -13,7 +13,7 @@ const assert = require('assert')
 const acorn = require('acorn')
 const utils = require('pug-lint/lib/utils')
 
-const link = 'https://github.com/okTurtles/group-income-simple/pull/727'
+const link = 'https://github.com/okTurtles/group-income/pull/727'
 
 const INVALID_HTML_TAGNAME = 'The `LTags()` function should not be called with invalid HTML tag names'
 const SINGLE_EXPRESSION_REQUIRED = 'The `:args` attribute must be a single expression'
@@ -323,7 +323,7 @@ module.exports.prototype = {
        * Developers should instead use single braces in the `:args` attribute
        * to pass in variables.
        *
-       * @see https://github.com/okTurtles/group-income-simple/issues/1027
+       * @see https://github.com/okTurtles/group-income/issues/1027
        */
       if (i18nString.includes('{{')) {
         errors.add(

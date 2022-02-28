@@ -14,7 +14,7 @@ if ! docker images -a | egrep -q "\b$PROJECT_NAME\b"; then
 fi
 
 # TODO: sync/configure the ports below if they're changed
-# https://github.com/okTurtles/group-income-simple/issues/71
+# https://github.com/okTurtles/group-income/issues/71
 PORT_SHIFT=${PORT_SHIFT:-0}
 FRONTEND_PORT=$(( 8000 + $PORT_SHIFT ))
 BACKEND_PORT=$(( 3000 + $PORT_SHIFT ))

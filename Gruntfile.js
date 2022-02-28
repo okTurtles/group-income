@@ -355,7 +355,7 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('default', ['dev'])
-  // TODO: add 'deploy' as per https://github.com/okTurtles/group-income-simple/issues/10
+  // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
   grunt.registerTask('dev', ['checkDependencies', 'backend:relaunch', 'build:watch', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
