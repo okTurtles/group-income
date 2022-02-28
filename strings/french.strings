@@ -139,7 +139,7 @@
 "Invalid username or password" = "Nom d'utilisateur ou mot de passe invalide";
 
 /* controller/actions/chatroom.js */
-"Failed to create chat channel.": "Échec de la création du canal de discussion.",
+"Failed to create chat channel.": "La création de la conversation a échouée.",
 
 /* controller/actions/chatroom.js */
 "Failed to join chat channel.": "Échec de la connexion au canal de chat.",
@@ -154,7 +154,7 @@
 "Failed to leave chat channel.": "Impossible de quitter le canal de chat.",
 
 /* controller/actions/chatroom.js, controller/actions/group.js */
-"Failed to delete chat channel.": "Échec de la suppression du canal de chat.",
+"Failed to delete chat channel.": "Impossible de supprimer la conversation.",
 
 /* controller/actions/chatroom.js */
 "Failed to add message.": "Échec de l'ajout du message.",
@@ -208,7 +208,7 @@
 "Only the group creator can remove members." = "Seul le fondateur du groupe peut exclure des membres.";
 
 /* model/contracts/chatroom.js */
-"Only the channel creator can delete channel." = "Seul le créateur de la chaîne peut supprimer une chaîne.";
+"Only the channel creator can delete channel." = "Seul le créateur peut supprimer sa conversation.";
 
 /* model/contracts/group.js */
 "The link does not exist." = "Le lien n'existe pas.";

@@ -80,7 +80,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
 
       group-members(:title='L("Direct Messages")' action='chat')
 
-  .card.c-card.no-padding
+  .card.c-card
     chat-main(
       :summary='summary'
       :details='details'
@@ -181,7 +181,7 @@ export default ({
 
 .c-card {
   margin-top: -1.5rem;
-  padding: 0 0 1.5rem 0;
+  padding: 0;
 
   @include tablet {
     margin-top: 1.5rem;
@@ -189,10 +189,6 @@ export default ({
 
   &:last-child {
     margin-bottom: 2rem;
-  }
-
-  &.no-padding {
-    padding: 0;
   }
 }
 
