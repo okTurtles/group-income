@@ -1,6 +1,6 @@
 'use strict'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
-import { lastDayOfMonth, dateFromMonthstamp, dateToMonthstamp, addMonthsToDate } from '~/frontend/utils/time.js'
+import { lastDayOfMonth, dateFromMonthstamp, dateToMonthstamp } from '~/frontend/utils/time.js'
 import { cloneDeep } from '~/frontend/utils/giLodash.js'
 import minimizeTotalPaymentsCount from '~/frontend/utils/distribution/payments-minimizer.js'
 
@@ -52,6 +52,27 @@ function subtractDistributions (paymentsA: Distribution, paymentsB: Distribution
 
   return addDistributions(paymentsA, paymentsB)
 }
+
+function scaleDistribution (groupMembers, payments, distribution) {
+  const havers = groupMembers.filter(m => m.haveNeed > 0)
+  for (const haver of havers) {
+    const paymentsFrom = payments.filter(p => p.from === haver.name)
+    const totalPaidFrom = paymentsFrom.reduce((a, p) => a + Math.max(p.amount, 0), 0)
+    const distributionFrom = distribution.filter(p => p.from === haver.name)
+    const totalDistFrom = distributionFrom.reduce((a, p) => a + Math.max(p.amount, 0), 0)
+    const scalar = Math.max((totalDistFrom) / (haver.haveNeed - totalPaidFrom), 1)
+    distribution = distribution.map(p => {
+      if (p.from === haver.name) {
+        p.amount /= scalar
+        p.total /= scalar
+      }
+      return p
+    })
+  }
+
+  return distribution
+}
+
 // Create a helper function for calculating each cycle's payment distribution:
 function paymentsDistribution (groupMembers, payments, mincome, adjusted, minimizeTxns) {
   const groupIncomes = groupMembers.map((user) => {
@@ -62,31 +83,13 @@ function paymentsDistribution (groupMembers, payments, mincome, adjusted, minimi
   })
 
   let distribution = incomeDistribution(groupIncomes, mincome)
-
-  distribution = minimizeTxns ? minimizeTotalPaymentsCount(distribution, groupMembers) : distribution
   distribution = distribution.map((payment) => {
     payment.total = payment.amount
     return payment
   })
 
-  distribution = subtractDistributions(distribution, payments)
-
-  const havers = groupMembers.filter(m => m.haveNeed > 0)
-  let ratio = 1
-  for (const haver of havers) {
-    const paymentsFrom = payments.filter(p => p.from === haver.name)
-    const totalPaidFrom = paymentsFrom.reduce((a, p) => a + p.amount, 0)
-    const distributionFrom = distribution.filter(p => p.from === haver.name)
-    const totalDistFrom = distributionFrom.reduce((a, p) => a + p.amount, 0)
-    const scalar = (totalDistFrom) / (haver.haveNeed - totalPaidFrom)
-    ratio = Math.max(ratio, scalar)
-  }
-
-  distribution = distribution.map(p => {
-    p.amount /= ratio
-    p.total /= ratio
-    return p
-  })
+  if (adjusted) distribution = subtractDistributions(distribution, payments)
+  distribution = minimizeTxns ? minimizeTotalPaymentsCount(distribution, groupMembers) : distribution
 
   return distribution
 }
@@ -104,7 +107,6 @@ function parsedistributionFromEvents (distributionEvents: Distribution, mincome:
   const getUser = name => groupMembers.find(member => member.name === name)
 
   const forgivemory = [] // Forgiven late payments, and forgotten over payments
-  const attentionSpan = 2 // Number of cycles (or months) of 'forgivemory'
 
   // Make a place to store this and preceding cycles' startCycleEvent (where over/under-payments are stored)
   // so that they can be included in the next cycle's payment distribution calculations:
@@ -212,7 +214,6 @@ function parsedistributionFromEvents (distributionEvents: Distribution, mincome:
   // Loop through the events, pro-rating each user's monthly pledges/needs:
   distributionEvents.forEach((event) => {
     if (event.type === 'startCycleEvent') {
-      distribution = paymentsDistribution(groupMembers, payments, mincome, adjusted, minimizeTxns)
       handleCycleEvent(event)
     } else if (event.type === 'haveNeedEvent') {
       handleIncomeEvent(event)
@@ -223,67 +224,21 @@ function parsedistributionFromEvents (distributionEvents: Distribution, mincome:
     }
   })
 
-  while (forgivemory.length > attentionSpan) forgivemory.pop()
-  while (cycleEvents.length > attentionSpan) cycleEvents.shift()
-
   distribution = paymentsDistribution(groupMembers, payments, mincome, adjusted, minimizeTxns)
+  distribution = subtractDistributions(distribution, payments)
+  distribution = scaleDistribution(groupMembers, payments, distribution)
+  distribution = addDistributions(distribution, payments)
 
-  if (distributionEvents.length > 0) {
-    const lastEvent = distributionEvents[distributionEvents.length - 1]
-    const cycle = {
-      data: {
-        when: lastEvent.type === 'startCycleEvent' ? dateToMonthstamp(addMonthsToDate(lastEvent.data.when, 1)) : lastEvent.data.when,
-        payments,
-        distribution
-      }
-    }
-    cycleEvents.push(cycle)
+  if (!adjusted) distribution = addDistributions(distribution, payments)
 
-    forgivemory.unshift({
-      payments,
-      distribution
-    })
-  }
-
-  const finalOverPayments = []
-  let overPayments = []
-  cycleEvents.forEach((startCycleEvent, cycleIndex) => {
-    // "Overpayments sometimes occur *internally* as a result of people leaving, joining, and (re-)setting income.
-    // This routine is to redistribute the overpayments back into the current late payments so nobody in need is asked to pay.
-    const over = cloneDeep(startCycleEvent.data.distribution).filter((p) => {
-      return p.amount < 0
-    }).map((p) => {
-      p.amount = Math.abs(p.amount)
-      p.total = Math.abs(p.total)
-
-      return p
-    })
-    overPayments = cloneDeep(over)
-    finalOverPayments.push(overPayments)
+  distribution = distribution.map((payment) => {
+    payment.amount = Math.min(payment.amount, payment.total)
+    payment.partial = (payment.total !== payment.amount)
+    payment.isLate = false
+    payment.dueOn = dateToMonthstamp(lastDayOfMonth(dateFromMonthstamp(dateToMonthstamp(new Date(distributionEvents[distributionEvents.length - 1].data.when)))))
+    return payment
   })
-
-  distribution = cycleEvents.reverse().map((startCycleEvent, cycleIndex) => {
-    const previousDistribution = cycleIndex + 1 < cycleEvents.length ? finalOverPayments[cycleIndex + 1] : []
-
-    startCycleEvent.data.distribution = subtractDistributions(startCycleEvent.data.distribution, previousDistribution)
-
-    if (!adjusted) {
-      startCycleEvent.data.distribution = addDistributions(startCycleEvent.data.payments, startCycleEvent.data.distribution)
-    }
-    startCycleEvent.data.distribution = startCycleEvent.data.distribution.map((payment) => {
-      payment.amount = Math.min(payment.amount, payment.total)
-      payment.isLate = cycleIndex > 0
-      payment.partial = (payment.total !== payment.amount)
-      payment.dueOn = dateToMonthstamp(lastDayOfMonth(dateFromMonthstamp(dateToMonthstamp(new Date(startCycleEvent.data.when)))))
-      return payment
-    })
-
-    return startCycleEvent.data.distribution
-  }).reverse().flat()
-
-  return distribution.filter((payment) => {
-    return payment.from !== payment.to // This happens when a haver switches to being a needer; remove neutral distribution payments.
-  })
+  return distribution
 }
 
 export default parsedistributionFromEvents

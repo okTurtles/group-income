@@ -70,7 +70,7 @@ describe('Group Payments', () => {
     setIncomeDetails(true, 100)
   })
 
-  it('user1 sends $71.43 to user2 (total)', () => {
+  it.skip('user1 sends $71.43 to user2 (total)', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
 
     cy.getByDT('paymentsLink').click()
@@ -154,7 +154,7 @@ describe('Group Payments', () => {
     ])
   })
 
-  it('user1 sends $100 to user3 (partial)', () => {
+  it.skip('user1 sends $100 to user3 (partial)', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
     cy.getByDT('paymentsLink').click()
     cy.getByDT('recordPayment').click()
@@ -200,7 +200,7 @@ describe('Group Payments', () => {
     })
   })
 
-  it('user1 changes their income details to "needing" and sees the correct UI', () => {
+  it.skip('user1 changes their income details to "needing" and sees the correct UI', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
 
     setIncomeDetails(false, 950)
@@ -219,14 +219,14 @@ describe('Group Payments', () => {
     ])
   })
 
-  it('user1 changes their income details back to "giving" and sees the correct UI', () => {
+  it.skip('user1 changes their income details back to "giving" and sees the correct UI', () => {
     setIncomeDetails(true, 250)
 
     cy.getByDT('paymentsLink').click()
     assertNavTabs(['Todo1', 'Sent'])
   })
 
-  it('one month later, user1 sends to user3 the missing $78.57 (test incomplete)', () => {
+  it.skip('one month later, user1 sends to user3 the missing $78.57 (test incomplete)', () => {
     cy.clock(timeStart, ['Date'])
     cy.visit('/')
     cy.tick(timeOneMonth)
@@ -275,7 +275,8 @@ describe('Group Payments', () => {
       cy.getByDT('payRow').eq(1).find('td:nth-child(1)').should('contain', 'user3')
       cy.getByDT('payRow').eq(1).find('td:nth-child(2)').should('contain', '$178.57')
     })
-
+  })
+  it('log out', () => {
     cy.giLogout()
   })
 })
