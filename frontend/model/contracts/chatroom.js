@@ -197,6 +197,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, meta }) {
         const rootState = sbp('state/vuex/state')
+        // this condition makes users to redirect to the newly-created channel only after they created a new channel
         if (meta.username === rootState.loggedIn.username) {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: contractID })
         }

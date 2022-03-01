@@ -348,22 +348,24 @@ export default ({
   border-bottom: 0;
 }
 
-::v-deep .c-actions span {
-  margin-left: 0.3rem;
+::v-deep .c-actions {
+  span {
+    margin-left: 0.3rem;
 
-  @include phone {
-    display: none;
+    @include phone {
+      display: none;
+    }
   }
-}
 
-::v-deep .c-actions .c-action-undo {
-  margin-left: 0.5rem;
-  color: $text_1;
+  .c-action-undo {
+    margin-left: 0.5rem;
+    color: $text_1;
 
-  &:hover,
-  &:focus {
-    cursor: pointer;
-    border-bottom: 1px solid $text_1;
+    &:hover,
+    &:focus {
+      cursor: pointer;
+      border-bottom: 1px solid $text_1;
+    }
   }
 }
 
