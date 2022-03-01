@@ -21,13 +21,15 @@ import {
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 
-export const chatRoomType: any = objectOf({
-  attributes: objectOf({
-    name: string,
-    description: string,
-    type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
-    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
-  })
+export const chatRoomAttributes: any = {
+  name: string,
+  description: string,
+  type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
+  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
+}
+
+const chatRoomType: any = objectOf({
+  attributes: objectOf(chatRoomAttributes)
 })
 
 export const messageType: any = objectMaybeOf({
@@ -197,7 +199,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, meta }) {
         const rootState = sbp('state/vuex/state')
-        // this condition makes users to redirect to the newly-created channel only after they created a new channel
+        // this condition makes users redirect to the newly-created channel only after they created a new channel
         if (meta.username === rootState.loggedIn.username) {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: contractID })
         }
@@ -210,7 +212,6 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const { username } = data
         if (state.users[username] &&
-          !state.users[username].departedDate &&
           !sbp('okTurtles.data/get', 'JOINING_CHATROOM') &&
           !sbp('okTurtles.data/get', 'JOINING_GROUP')) {
           throw new Error('can not join the chatroom which you are already part of')
@@ -225,8 +226,7 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
 
         Vue.set(state.users, username, {
-          joinedDate: meta.createdDate,
-          departedDate: null
+          joinedDate: meta.createdDate
         })
       },
       sideEffect ({ contractID, hash }, { state }) {
@@ -269,10 +269,10 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state }) {
         const { username } = data
-        if (!state.users[username] || state.users[username].departedDate) {
+        if (!state.users[username]) {
           throw new Error('can not leave the chatroom which you are not part of')
         }
-        Vue.set(state.users[username], 'departedDate', meta.createdDate)
+        Vue.delete(state.users, username)
 
         const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
         const notificationData = createNotificationData(
@@ -301,7 +301,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta }, { state, rootState }) {
         Vue.set(state.attributes, 'deletedDate', meta.createdDate)
         for (const username in state.users) {
-          Vue.set(state.users[username], 'departedDate', meta.createdDate)
+          Vue.delete(state.users, username)
         }
       },
       sideEffect ({ meta, contractID }, { state }) {

@@ -6,7 +6,7 @@ import { CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
 
 const initChatChannelDetails = {
   isLoading: true,
-  participantsInSort: [],
+  numberOfParticipants: 0,
   participants: []
 }
 
@@ -90,7 +90,7 @@ const chatroom: Object = {
         return this.ephemeral.loadedDetails || {}
       }
       const participants = {}
-      for (const username in this.chatRoomUsers) {
+      for (const username in this.groupProfiles) {
         const { displayName, picture, email } = this.globalProfile(username)
         participants[username] = {
           ...this.chatRoomUsers[username],
@@ -102,7 +102,7 @@ const chatroom: Object = {
       }
       return {
         isLoading: false,
-        participantsInSort: this.chatRoomUsersInSort,
+        numberOfParticipants: Object.keys(this.chatRoomUsers).length,
         participants
       }
     }
@@ -150,12 +150,9 @@ const chatroom: Object = {
         picture,
         creator
       }
-      const participantsInSort = this.groupMembersSorted.map(m => ({
-        username: m.username, displayName: m.displayName
-      })).filter(m => !!state.users[m.username] && !state.users[m.username].departedDate) || []
 
       const participants = {}
-      for (const username in state.users) {
+      for (const username in this.groupProfiles) {
         const { displayName, picture, email } = this.globalProfile(username)
         participants[username] = {
           ...state.users[username],
@@ -167,7 +164,7 @@ const chatroom: Object = {
       }
       this.ephemeral.loadedDetails = {
         isLoading: false,
-        participantsInSort,
+        numberOfParticipants: Object.keys(state.users).length,
         participants
       }
       sbp('okTurtles.events/emit', `${CHATROOM_STATE_LOADED}-${chatRoomId}`, state)

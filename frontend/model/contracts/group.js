@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import {
   arrayOf, mapOf, objectOf, objectMaybeOf, optional,
-  string, number, object, unionOf, literalOf, tupleOf
+  string, number, object, unionOf, tupleOf
 } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
@@ -25,11 +25,11 @@ import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
+import { chatRoomAttributes } from './chatroom.js'
 import {
   INVITE_INITIAL_CREATOR,
   INVITE_STATUS,
   PROFILE_STATUS,
-  CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL,
   INVITE_EXPIRES_IN_DAYS
 } from './constants.js'
@@ -632,9 +632,7 @@ sbp('chelonia/defineContract', {
               cID !== contractID && rootState[cID].settings) || null
 
           const chatRoomIDsToLeave = Object.keys(state.chatRooms)
-            .filter(cID => rootState[cID] &&
-              rootState[cID].users[username] &&
-              !rootState[cID].users[username].departedDate) || []
+            .filter(cID => rootState[cID] && rootState[cID].users[username]) || []
 
           sbp('gi.actions/group/leaveChatRooms', {
             contractID, data: {}, options: { username, chatRoomIDsToLeave }
@@ -840,17 +838,19 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/addChatRoom': {
-      validate: objectMaybeOf({
+      validate: objectOf({
         chatRoomID: string,
-        attributes: objectMaybeOf({
-          name: string,
-          type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
-          privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
-        })
+        attributes: objectOf(chatRoomAttributes)
       }),
       process ({ data, meta }, { state, getters }) {
-        const { name, type, privacyLevel } = data
-        Vue.set(state.chatRooms, data.chatRoomID, { creator: meta.username, name, type, privacyLevel, deletedDate: null })
+        const { name, type, privacyLevel } = data.attributes
+        Vue.set(state.chatRooms, data.chatRoomID, {
+          creator: meta.username,
+          name,
+          type,
+          privacyLevel,
+          deletedDate: null
+        })
         if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }

@@ -522,8 +522,7 @@ const getters = {
   isJoinedChatRoom (state, getters) {
     return (chatRoomId: string, username: string) => {
       username = username || state.loggedIn.username
-      return !!state[chatRoomId]?.users && !!state[chatRoomId]?.users[username] &&
-        !state[chatRoomId]?.users[username].departedDate
+      return !!state[chatRoomId]?.users && !!state[chatRoomId]?.users[username]
     }
   },
   chatRoomsInDetail (state, getters) {
@@ -531,8 +530,7 @@ const getters = {
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&
-        chatRoom.users[state.loggedIn.username] &&
-        !chatRoom.users[state.loggedIn.username].departedDate) {
+        chatRoom.users[state.loggedIn.username]) {
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
@@ -549,7 +547,7 @@ const getters = {
   chatRoomUsersInSort (state, getters) {
     return getters.groupMembersSorted
       .map(member => ({ username: member.username, displayName: member.displayName }))
-      .filter(member => !!getters.chatRoomUsers[member.username] && !getters.chatRoomUsers[member.username].departedDate) || []
+      .filter(member => !!getters.chatRoomUsers[member.username]) || []
   }
 }
 

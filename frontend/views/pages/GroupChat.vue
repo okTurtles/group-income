@@ -134,9 +134,8 @@ export default ({
     },
     members () {
       return {
-        order: this.details.participantsInSort,
         users: this.details.participants,
-        size: this.details.participantsInSort.length
+        size: this.details.numberOfParticipants
       }
     },
     type () {

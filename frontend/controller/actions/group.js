@@ -164,11 +164,13 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/chatroom/create', { data: params.data })
 
-    const { name, type, privacyLevel } = params.data.attributes
     await sbp('chelonia/out/actionEncrypted', {
+      ...params,
       action: 'gi.contracts/group/addChatRoom',
-      contractID: params.contractID,
-      data: { name, type, privacyLevel, chatRoomID: message.contractID() }
+      data: {
+        ...params.data,
+        chatRoomID: message.contractID()
+      }
     })
 
     return message
@@ -197,7 +199,7 @@ export default (sbp('sbp/selectors/register', {
     const message = await sbp('gi.actions/group/addChatRoom', params)
 
     await sbp('gi.actions/group/joinChatRoom', {
-      contractID: params.contractID,
+      ...params,
       data: { chatRoomID: message.contractID() }
     })
 
