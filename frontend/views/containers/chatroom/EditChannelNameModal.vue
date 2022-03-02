@@ -107,7 +107,7 @@ export default ({
     form: {
       name: {
         [L('This field is required')]: required,
-        [L('This field is limited to characters')]: function (value) {
+        [L('Reached character limit.')]: function (value) {
           return value ? Number(value.length) <= this.maxNameCharacters : false
         }
       }

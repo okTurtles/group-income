@@ -1153,7 +1153,7 @@
 "Proposal Accepted" = "Proposal Accepted";
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue */
-"This field is limited to characters" = "This field is limited to characters";
+"Reached character limit." = "Reached character limit.";
 
 /* views/pages/Contributions.vue */
 "Giving" = "Giving";

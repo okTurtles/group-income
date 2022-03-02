@@ -191,7 +191,7 @@
   "This action {strong_}cannot be undone{_strong}.": "Cette action {strong_}est irréversible{_strong}.",
   "Delete channel": "Supprimer le salon",
   "Channel description": "Description du salon",
-  "This field is limited to characters": "Ce champ est limitée à caractères",
+  "Reached character limit.": "Limite de caractères atteinte.",
   "Save": "Enregistrer",
   "DELETE {GROUP_NAME}": "SUPPRIMER {GROUP_NAME}",
   "Rename channel": "Renommer le salon",
