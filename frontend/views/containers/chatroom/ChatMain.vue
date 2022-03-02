@@ -131,9 +131,11 @@ export default ({
   mounted () {
     this.setMessageEventListener({ force: true })
     this.setInitMessages()
+    window.addEventListener('resize', this.resizeEventHandler)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
+    window.removeEventListener('resize', this.resizeEventHandler)
   },
   updated () {
     this.updateScroll()
@@ -155,7 +157,9 @@ export default ({
     bodyStyles () {
       const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
       const unjoinedStyles =
-        this.summary.joined ? {} : { height: !this.config.isPhone ? 'calc(100vh - 18rem)' : 'calc(100vh - 16rem)' }
+        this.summary.joined
+          ? {}
+          : { height: !this.config.isPhone ? 'calc(var(--vh, 1vh) * 100 - 18rem)' : 'calc(var(--vh, 1vh) * 100 - 16rem)' }
       return { ...phoneStyles, ...unjoinedStyles }
     },
     startedUnreadIndex () {
@@ -385,6 +389,10 @@ export default ({
           this.messages.push(message)
         }
       }
+    },
+    resizeEventHandler () {
+      const vh = window.innerHeight * 0.01
+      document.documentElement.style.setProperty('--vh', `${vh}px`)
     }
   },
   watch: {
@@ -422,7 +430,7 @@ export default ({
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
-  height: calc(100vh - 14rem);
+  height: calc(var(--vh, 1vh) * 100 - 14rem);
   width: calc(100% + 1rem);
   position: relative;
 

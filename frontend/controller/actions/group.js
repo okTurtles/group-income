@@ -196,6 +196,8 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
+    // TODO: need to consider hooks inside params,
+    // with the current codebase, hooks are called twice, which is unexpected
     const message = await sbp('gi.actions/group/addChatRoom', params)
 
     await sbp('gi.actions/group/joinChatRoom', {
