@@ -18,7 +18,7 @@ menu-parent(ref='menu')
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Edit")'
-        @click='action("edit")'
+        @click='action("edit-message")'
       )
         i.icon-pencil-alt
 
@@ -58,7 +58,7 @@ menu-parent(ref='menu')
 
       menu-item.hide-desktop.is-icon-small(tag='button'
         v-if='isCurrentUser && isEditable'
-        @click='action("edit")'
+        @click='action("edit-message")'
       )
         i.icon-pencil-alt
         i18n Edit
@@ -83,7 +83,7 @@ menu-parent(ref='menu')
         i18n Copy message Link
 
       menu-item.is-icon-small.is-danger(tag='button'
-        @click='action("deleteMessage")'
+        @click='action("delete-message")'
       )
         i.icon-trash-alt
         i18n Delete message

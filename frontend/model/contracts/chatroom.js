@@ -120,17 +120,24 @@ function createNotificationData (
 }
 
 function emitMessageEvents ({ type, contractID, hash, state }: {
-  type: string, contractID: string, hash: string, state: Object
+  type: string,
+  contractID: string,
+  hash: string,
+  state?: Object
 }): void {
-  for (let i = state.messages.length - 1; i >= 0; i--) {
-    if (state.messages[i].id === hash) {
-      sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, {
-        type,
-        data: { message: state.messages[i] }
-      })
-      break
+  let data = {}
+  if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE || type === MESSAGE_ACTION_TYPES.EDIT_MESSAGE) {
+    const messagesCount = state?.messages.length || 0
+    for (let i = messagesCount - 1; i >= 0; i--) {
+      if (state?.messages[i].id === hash) {
+        data = { message: state?.messages[i] }
+        break
+      }
     }
+  } else if (type === MESSAGE_ACTION_TYPES.DELETE_MESSAGE) {
+    data = { id: hash }
   }
+  sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { type, data })
 }
 
 sbp('chelonia/defineContract', {
@@ -324,19 +331,50 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/editMessage': {
-      validate: objectMaybeOf({
-
-      }),
+      validate: (data, { state, meta }) => {
+        objectOf({
+          id: string,
+          text: string
+        })(data)
+        // TODO: need to check if the meta.username === message.from
+      },
       process ({ data, meta }, { state }) {
-
+        for (let i = state.messages.length - 1; i >= 0; i--) {
+          if (state.messages[i].id === data.id) {
+            state.messages[i].text = data.text
+            state.messages[i].updatedDate = meta.createdDate
+            break
+          }
+        }
+      },
+      sideEffect ({ contractID, data }, { state }) {
+        emitMessageEvents({
+          type: MESSAGE_ACTION_TYPES.EDIT_MESSAGE,
+          contractID,
+          hash: data.id,
+          state
+        })
       }
     },
     'gi.contracts/chatroom/deleteMessage': {
-      validate: objectMaybeOf({
-
+      validate: objectOf({
+        id: string
       }),
       process ({ data, meta }, { state }) {
-
+        for (let i = state.messages.length - 1; i >= 0; i--) {
+          if (state.messages[i].id === data.id) {
+            state.messages.splice(i, 1)
+            break
+          }
+        }
+      },
+      sideEffect ({ contractID, data }, { state }) {
+        emitMessageEvents({
+          type: MESSAGE_ACTION_TYPES.DELETE_MESSAGE,
+          contractID,
+          hash: data.id,
+          state
+        })
       }
     },
     'gi.contracts/chatroom/addEmoticon': {

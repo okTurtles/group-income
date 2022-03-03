@@ -43,8 +43,9 @@
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
+          @edit-message='(newMessage) => editMessage(message, newMessage)'
+          @delete-message='deleteMessage(message)'
           @add-emoticon='addEmoticon(index, $event)'
-          @delete-message='deleteMessage(index)'
         )
 
   .c-footer
@@ -245,10 +246,7 @@ export default ({
       console.log('sending...')
       // Consider only simple TEXT now
       // TODO: implement other types of messages later
-      const data = {
-        type: MESSAGE_TYPES.TEXT,
-        text: message
-      }
+      const data = { type: MESSAGE_TYPES.TEXT, text: message }
 
       sbp('gi.actions/chatroom/addMessage', {
         contractID: this.currentChatRoomId,
@@ -259,7 +257,7 @@ export default ({
             const { meta, data } = msgValue
             this.messages.push({
               ...createMessage({ meta, data, hash: message.hash() }),
-              // TODO: pending is useful to turn the message gray (just like Slack)
+              // TODO: pending is useful to turn the message gray meaning failed (just like Slack)
               // when we don't get event after a certain period
               pending: true
             })
@@ -287,6 +285,31 @@ export default ({
     replyMessage (message) {
       this.ephemeral.replyingMessage = message.text
       this.ephemeral.replyingTo = this.who(message)
+    },
+    editMessage (message, newMessage) {
+      console.log('updating...')
+      sbp('gi.actions/chatroom/editMessage', {
+        contractID: this.currentChatRoomId,
+        data: { id: message.id, text: newMessage },
+        hooks: {
+          prepublish: (msg) => {
+            message.text = newMessage
+            message.pending = true
+          }
+        }
+      })
+    },
+    deleteMessage (message) {
+      console.log('Deleting-----------------------------------', message)
+      sbp('gi.actions/chatroom/deleteMessage', {
+        contractID: this.currentChatRoomId,
+        data: { id: message.id },
+        hooks: {
+          prepublish: (msg) => {
+            // need to do something
+          }
+        }
+      })
     },
     sendMessage (index) {
       this.ephemeral.replyingMessage = null
@@ -331,15 +354,6 @@ export default ({
       this.$set(this.messages[index], 'emoticons', emoticons)
       this.$forceUpdate()
     },
-    deleteMessage (index) {
-      // TODO replace by store action
-      this.$set(this.messages[index], 'delete', true)
-      setTimeout(() => {
-        delete this.messages[index]
-        this.$forceUpdate()
-      }, 1000)
-      this.$forceUpdate()
-    },
     setInitMessages () {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
         this.messages = this.chatRoomLatestMessages
@@ -380,8 +394,27 @@ export default ({
           this.messages.push(msg)
         }
       }
-      if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE) {
-        const { message } = data
+
+      const updateIfExist = (msg) => {
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+          if (this.messages[i].id === msg.id) {
+            this.messages.splice(i, 1, msg)
+            break
+          }
+        }
+      }
+
+      const deleteIfExist = (id) => {
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+          if (this.messages[i].id === id) {
+            this.messages.splice(i, 1)
+            break
+          }
+        }
+      }
+
+      const { message, id } = data
+      if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE && message) {
         if (message.type === MESSAGE_TYPES.TEXT) {
           if (this.isCurrentUser(message.from)) {
             addIfNotExist(message)
@@ -391,6 +424,10 @@ export default ({
         } else if (message.type === MESSAGE_TYPES.NOTIFICATION) {
           this.messages.push(message)
         }
+      } else if (type === MESSAGE_ACTION_TYPES.EDIT_MESSAGE && message) {
+        updateIfExist(message)
+      } else if (type === MESSAGE_ACTION_TYPES.DELETE_MESSAGE && id) {
+        deleteIfExist(id)
       }
     },
     resizeEventHandler () {

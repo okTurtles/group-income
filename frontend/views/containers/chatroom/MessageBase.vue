@@ -22,9 +22,9 @@
         p.c-replying(if='replyingMessage') {{replyingMessage}}
         send-area(
           v-if='isEditing'
-          title=''
+          :defaultText='text'
           :isEditing='true'
-          @send='sendEdit'
+          @send='onMessageEdited'
           @cancelEdit='cancelEdit'
         )
 
@@ -45,11 +45,11 @@
     :isCurrentUser='isCurrentUser'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
-    @edit='edit'
+    @edit-message='editMessage'
+    @delete-message='deleteMessage'
     @reply='reply'
     @retry='retry'
     @copyToClipBoard='copyToClipBoard'
-    @deleteMessage='deleteMessage'
   )
 </template>
 
@@ -96,12 +96,17 @@ export default ({
   },
   methods: {
     getTime,
-    edit () {
+    editMessage () {
       this.isEditing = true
     },
-    sendEdit (newMessage) {
+    onMessageEdited (newMessage) {
       this.isEditing = false
-      this.$emit('edit', newMessage)
+      if (this.text !== newMessage) {
+        this.$emit('message-edited', newMessage)
+      }
+    },
+    deleteMessage () {
+      this.$emit('delete-message')
     },
     cancelEdit () {
       this.isEditing = false
@@ -117,9 +122,6 @@ export default ({
     },
     retry () {
       this.$emit('retry')
-    },
-    deleteMessage () {
-      this.$emit('delete-message')
     },
     openMenu () {
       this.$refs.messageAction.$refs.menu.handleTrigger()

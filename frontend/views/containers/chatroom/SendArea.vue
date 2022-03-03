@@ -85,6 +85,7 @@ export default ({
   },
   props: {
     title: String,
+    defaultText: String,
     searchPlaceholder: String,
     loading: {
       type: Boolean,
@@ -120,6 +121,7 @@ export default ({
     mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
   },
   mounted () {
+    this.$refs.textarea.value = this.defaultText || ''
     // Get actionsWidth to add a dynamic padding to textarea,
     // so those actions don't be above the textarea's value
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth

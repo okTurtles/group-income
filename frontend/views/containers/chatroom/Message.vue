@@ -3,6 +3,8 @@ message-base(
   v-bind='$props'
   @add-emoticon='addEmoticon($event)'
   @reply='reply'
+  @message-edited='editMessage'
+  @delete-message='deleteMessage'
 )
 
 </template>
@@ -50,8 +52,11 @@ export default ({
     variants
   }),
   methods: {
-    edit () {
-      this.$emit('edit')
+    editMessage (newMessage) {
+      this.$emit('edit-message', newMessage)
+    },
+    deleteMessage () {
+      this.$emit('delete-message')
     },
     reply () {
       this.$emit('reply')
