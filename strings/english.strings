@@ -1335,6 +1335,12 @@
 /* controller/actions/chatroom.js */
 "Failed to add message.": "Failed to add message.",
 
+/* controller/actions/chatroom.js */
+"Failed to edit message.": "Failed to edit message.",
+
+/* controller/actions/chatroom.js */
+"Failed to delete message.": "Failed to delete message.",
+
 /* views/containers/payments/RecordPaymentsList.vue */
 "Sent to" = "Sent to";
 

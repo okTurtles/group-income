@@ -323,7 +323,7 @@ sbp('chelonia/defineContract', {
         emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
-    'gi.contracts/chatroom/deleteMessage': {
+    'gi.contracts/chatroom/editMessage': {
       validate: objectMaybeOf({
 
       }),
@@ -331,7 +331,7 @@ sbp('chelonia/defineContract', {
 
       }
     },
-    'gi.contracts/chatroom/editMessage': {
+    'gi.contracts/chatroom/deleteMessage': {
       validate: objectMaybeOf({
 
       }),

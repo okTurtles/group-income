@@ -52,6 +52,8 @@
   "Failed to leave chat channel.": "Impossible de quitter le canal de chat.",
   "Failed to delete chat channel.": "Impossible de supprimer la conversation.",
   "Failed to add message.": "Échec de l'ajout du message.",
+  "Failed to edit message.": "Échec de la modification du message.",
+  "Failed to delete message.": "Échec de la suppression du message.",
   "Failed to create mailbox: {reportError}": "La création de la boîte de réception a échoué : {reportError}",
   "Failed to post message to mailbox.": "L'envoi du message a échoué.",
   "Group Chat": "Conversation du groupe",

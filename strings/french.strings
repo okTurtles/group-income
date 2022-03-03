@@ -159,6 +159,12 @@
 /* controller/actions/chatroom.js */
 "Failed to add message.": "Échec de l'ajout du message.",
 
+/* controller/actions/chatroom.js */
+"Failed to edit message.": "Échec de la modification du message.",
+
+/* controller/actions/chatroom.js */
+"Failed to delete message.": "Échec de la suppression du message.",
+
 /* controller/actions/mailbox.js */
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
 

@@ -443,6 +443,8 @@
   "Failed to leave chat channel.": "Failed to leave chat channel.",
   "Failed to delete chat channel.": "Failed to delete chat channel.",
   "Failed to add message.": "Failed to add message.",
+  "Failed to edit message.": "Failed to edit mesage.",
+  "Failed to delete message.": "Failed to delete mesage.",
   "Sent to": "Sent to",
   "Mute chat": "Mute chat",
   "No members in the group are pledging yet! 😔": "No members in the group are pledging yet! 😔",
