@@ -91,13 +91,16 @@ const chatroom: Object = {
       }
       const participants = {}
       for (const username in this.groupProfiles) {
-        const { displayName, picture, email } = this.globalProfile(username)
+        // need to consider if someone is joining
+        // especially, his identity contract is not synced yet,
+        // but `General` chatroom contract is already synced
+        const { displayName, picture, email } = this.globalProfile(username) || {}
         participants[username] = {
           ...this.chatRoomUsers[username],
-          username,
-          displayName,
-          picture,
-          email
+          username: username || '',
+          displayName: displayName || '',
+          picture: picture || '',
+          email: email || ''
         }
       }
       return {
