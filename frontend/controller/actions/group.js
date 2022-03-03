@@ -202,7 +202,8 @@ export default (sbp('sbp/selectors/register', {
 
     await sbp('gi.actions/group/joinChatRoom', {
       ...params,
-      data: { chatRoomID: message.contractID() }
+      data: { chatRoomID: message.contractID() },
+      hooks: { prepublish: null, postpublish: params.hooks?.postpublish }
     })
 
     return message
