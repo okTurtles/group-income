@@ -196,9 +196,9 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
-    // TODO: need to consider hooks inside params,
-    // with the current codebase, hooks are called twice, which is unexpected
-    const message = await sbp('gi.actions/group/addChatRoom', params)
+    const message = await sbp('gi.actions/group/addChatRoom', {
+      ...params, hooks: { prepublish: params.hooks?.prepublish, postpublish: null }
+    })
 
     await sbp('gi.actions/group/joinChatRoom', {
       ...params,
@@ -214,7 +214,9 @@ export default (sbp('sbp/selectors/register', {
     })
 
     sbp('chelonia/out/actionEncrypted', {
-      ...params, action: 'gi.contracts/group/renameChatRoom'
+      ...params,
+      hooks: { prepublish: null, postpublish: params.hooks?.postpublish },
+      action: 'gi.contracts/group/renameChatRoom'
     })
   },
   'gi.actions/group/leaveChatRooms': function (params: GIActionParams) {
