@@ -51,13 +51,10 @@ const chatroom: Object = {
   computed: {
     ...mapGetters([
       'currentChatRoomState',
+      'currentGroupState',
       'chatRoomUsers',
-      'chatRoomUsersInSort',
       'generalChatRoomId',
-      'groupMembersSorted',
-      'groupProfiles',
       'globalProfile',
-      'chatRoomsInDetail',
       'isJoinedChatRoom',
       'isPublicChatRoom'
     ]),
@@ -90,10 +87,11 @@ const chatroom: Object = {
         return this.ephemeral.loadedDetails || {}
       }
       const participants = {}
-      for (const username in this.groupProfiles) {
-        // need to consider if someone is joining
-        // especially, his identity contract is not synced yet,
-        // but `General` chatroom contract is already synced
+      for (const username in this.currentGroupState.profiles) {
+        // need to consider the time when someone is joining
+        // here, his identity contract is not synced yet,
+        // but `General` chatroom contract is already synced,
+        // that's why need to init with empty json object
         const { displayName, picture, email } = this.globalProfile(username) || {}
         participants[username] = {
           ...this.chatRoomUsers[username],
@@ -155,7 +153,7 @@ const chatroom: Object = {
       }
 
       const participants = {}
-      for (const username in this.groupProfiles) {
+      for (const username in this.currentGroupState.profiles) {
         const { displayName, picture, email } = this.globalProfile(username)
         participants[username] = {
           ...state.users[username],
