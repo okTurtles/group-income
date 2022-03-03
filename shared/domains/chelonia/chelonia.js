@@ -41,7 +41,7 @@ export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)
 
 sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
-  // https://gitlab.okturtles.org/okturtles/group-income-simple/-/wikis/E2E-Protocol/Framework.md#alt-names
+  // https://gitlab.okturtles.org/okturtles/group-income/-/wikis/E2E-Protocol/Framework.md#alt-names
   'chelonia/_init': function () {
     this.config = {
       decryptFn: JSON.parse, // override!

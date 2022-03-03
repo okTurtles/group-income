@@ -273,7 +273,7 @@ There are **three exceptions**, and all of them have to do with different types 
 
 **The object returned by `data ()` should have only these keys:**
 
-1. **`form`** — the data to be validated by [`vuelidate`](https://github.com/okTurtles/group-income-simple/issues/334) and bound using `v-model` to a form.
+1. **`form`** — the data to be validated by [`vuelidate`](https://github.com/okTurtles/group-income/issues/334) and bound using `v-model` to a form.
 2. **`config`** — some Vue.js components require bindings to config data (for example, the `sliderConfig` for `<vue-slider>` in `TimeTravel.vue` and `steps` for `helpers/StepAssistant.js` in `CreateGroup.vue` or [Vue Provide](https://vuejs.org/v2/api/#provide-inject)).
 3. **`ephemeral`** — any data we might not care to save beyond the life of the view (unless some other action is performed) should be placed here. There shouldn't be much that fits in this category (as, for example, most error handling stuff should be handled by `form` and in the `<template>` section). However, it might be useful to cache some data temporarily (like a profile picture or URL) here.
 
@@ -281,56 +281,13 @@ Remember: if you can use a computed property based on the Vuex store, it means y
 
 ## SBP
 
-Virtually everything in this project is [going to be converted](https://github.com/okTurtles/group-income-simple/issues/295) to SBP ("selector-based programming", see `shared/sbp.js`).
-
-In SBP everything works based on selectors. A selector is a string composed of two parts: a _domain_ and an _action_. For example, in `'okTurtles.data/set'`, the domain is `okTurtles.data` and the action is `/set`.
-The first argument of `sbp()` is always a selector you registered before and the rest of the arguments are parameters to be later processed by the function assigned to the selector.
-
-```
-sbp(selector, ...args)
-```
-
-You can think about it as calling a normal function, but with more advantages. One of them is to access any selector from anywhere in the project by just importing `sbp` itself.
-
-```js
-// Using SBP:
-import sbp from '~/shared/sbp.js'
-
-// - call any selector registered
-sbp('okTurtles.data/set', { login: true })
-sbp('okTurtles.events/emit', 'CLOSE_MODAL')
-```
-
-```js
-// Using standard functions:
-
-// - import each function individually
-import okTurtlesDataSet from 'path/to/method/data-set.js'
-import okTurtlesEventsEmit from 'path/to/method/events-emit.js'
-
-okTurtlesDataSet({ login: true })
-okTurtlesEventsEmit('CLOSE_MODAL')
-```
-
-More details about SBP will be written in a blog post soon. In the meantime, you are encouraged to adopt this paradigm wherever possible in your own code. In the meantime, here are some benefits of using SBP:
-
-- SBP helps you organize code
-- SBP helps you create code by thinking in terms of namespaces and APIs
-- SBP will make it trivial to secure your code
-- SBP makes code inter-operable with other languages, more future-proof, and more portable
-- SBP replaces the need for OOP
-- SBP is based on message-passing (an idea from Smalltalk) and comes with all of the benefits that message-passing architectures afford
-- SBP embraces the LISP idea that `code = data` and gives you all of the benefits and possibilities that affords
-- SBP makes it easier to debug and understand your code
-- SBP makes it possible to create architectures that are remarkably flexible, clean, and safe; this comes from the benefits described above
+This project uses **[SBP: Selector-based programming](https://github.com/okTurtles/sbp-js)** as its core programming paradigm.
 
 ### Embrace the SBP way of doing things
 
-Embrace the SBP way of doing things as much as possible so that the codebase becomes consistent and easier to port. For example, if you feel like implementing an instance of something, consider doing it via SBP with `okTurtles.data/apply` etc.
+Embrace the [SBP way](https://github.com/okTurtles/sbp-js) of doing things as much as possible so that the codebase becomes consistent and easier to port. For example, if you feel like implementing an instance of something, consider doing it via SBP with `okTurtles.data/apply` etc.
 
 Stick to SBP and simpler concepts like objects, branching out when it makes more sense to do so. For example: in `Contract.js` there is a weird JavaScript-ism called `gettersProxy` that relies on the `Proxy` feature/class of JavaScript. That is "weird" in the sense that it's non-standard across languages, it's not SBP, it's not a simple object either. However, it was weirdness that we felt forced to introduce so that we could have direct integration between the Vue.js / Vuex frameworks, and our contract stuff. The end result makes it easier for us to work with Vue.js, but at the cost of having something that is more difficult to port to other environments. These kinds of tradeoffs should be made consciously, meaning it’s ok to make them but they should be the exception rather than the rule.
-
-Search the project for `sbp(` for examples, and talk with @taoeffect about it before diving in (at least until the docs for SBP are still waiting to be written).
 
 ---
 

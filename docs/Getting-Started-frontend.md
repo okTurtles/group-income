@@ -209,7 +209,7 @@ In the section [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-n
 
 We've chosen (for now at least) to use Browserify over Webpack, Grunt over Gulp, and Vue.js over React, even though these are all perfectly fine tools in the modern web development toolkit. Briefly, our reasoning:
 
-- Although Webpack has features that Browserify does not, it is also far more difficult to get up and running with, and I don't think it provides web-based implementations of Node.js's API the way Browserify does. For now at least, Browserify seems to be serving our needs just fine, and [it's unlikely](https://github.com/okTurtles/group-income-simple/issues/44) that we'll switch away from it.
+- Although Webpack has features that Browserify does not, it is also far more difficult to get up and running with, and I don't think it provides web-based implementations of Node.js's API the way Browserify does. For now at least, Browserify seems to be serving our needs just fine, and [it's unlikely](https://github.com/okTurtles/group-income/issues/44) that we'll switch away from it.
 - The reasons for choosing Vue.js over React are mentioned [above](#vuejs---modern-frontend-component-framework).
 - Grunt and Gulp appear to be about evenly matched, and although Gulp seems to be hip and has a nifty design, Grunt is also perfectly well designed too and works just as well. We were already experienced with Grunt so we went with it. Plus, we like its emphasis on configuration over code and its native support for template strings. Either tool will serve you well.
 - Riot.js is very similar to Vue.js, perhaps even more minimalist. I might have used it instead had I come across it first. Both are great!
@@ -228,7 +228,7 @@ Pre-reqs:
 1. Install [node.js](https://nodejs.org/) if you haven't already. On a Mac the recommended way to install Node is via [Homebrew](https://brew.sh/) via: `brew install node`
 2. Install the [`grunt`](https://gruntjs.com/) command line tool via: `npm install -g grunt-cli`
 
-Once you have `npm`, and `grunt`, clone this repo using `git`, and within the `group-income-simple` directory run these two commands:
+Once you have `npm`, and `grunt`, clone this repo using `git`, and within the `group-income` directory run these two commands:
 
 ```
 npm install
@@ -427,5 +427,5 @@ It's **not** convenient for much else. It is especially not good for designers w
 
 ### Useful Links
 
-- See our [Architecture Notes](https://github.com/okTurtles/group-income-simple/wiki/Architecture-Notes) for additional useful links and tutorials.
-- Some of this discussion comes from [issue 37](https://github.com/okTurtles/group-income-simple/issues/37).
+- See our [Architecture Notes](https://github.com/okTurtles/group-income/wiki/Architecture-Notes) for additional useful links and tutorials.
+- Some of this discussion comes from [issue 37](https://github.com/okTurtles/group-income/issues/37).

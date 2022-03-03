@@ -16,6 +16,12 @@
 import './commands.js'
 import './output-logs.js'
 
+before(function () {
+  cy.clearCookies()
+  cy.clearLocalStorage()
+  indexedDB.deleteDatabase('Group Income')
+})
+
 // Abort tests on first fail
 afterEach(function () {
   if (this.currentTest.state === 'failed') {
