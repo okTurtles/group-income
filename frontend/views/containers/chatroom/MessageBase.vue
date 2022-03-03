@@ -41,6 +41,7 @@
   message-actions(
     v-if='!isEditing'
     :variant='variant'
+    :type='type'
     :isCurrentUser='isCurrentUser'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
@@ -84,6 +85,7 @@ export default ({
       type: Date,
       required: true
     },
+    type: String,
     emoticonsList: {
       type: Object,
       default: null

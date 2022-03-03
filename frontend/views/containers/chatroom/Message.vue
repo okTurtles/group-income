@@ -23,6 +23,7 @@ export default ({
     MessageBase
   },
   props: {
+    type: String,
     text: String,
     who: String,
     currentUserId: String,

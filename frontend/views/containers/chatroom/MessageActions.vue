@@ -12,7 +12,7 @@ menu-parent(ref='menu')
         i.icon-smile-beam
 
     tooltip(
-      v-if='isCurrentUser'
+      v-if='isCurrentUser && isEditable'
       direction='top'
       :text='L("Edit")'
     )
@@ -57,7 +57,7 @@ menu-parent(ref='menu')
         i18n Add reaction
 
       menu-item.hide-desktop.is-icon-small(tag='button'
-        v-if='isCurrentUser'
+        v-if='isCurrentUser && isEditable'
         @click='action("edit")'
       )
         i.icon-pencil-alt
@@ -92,6 +92,7 @@ menu-parent(ref='menu')
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
+import { MESSAGE_TYPES } from '@model/contracts/constants.js'
 
 export default ({
   name: 'MessageActions',
@@ -104,7 +105,16 @@ export default ({
   },
   props: {
     variant: String,
+    type: String,
     isCurrentUser: Boolean
+  },
+  computed: {
+    isEditable (): Boolean {
+      if (this.type === MESSAGE_TYPES.TEXT) {
+        return true
+      }
+      return false
+    }
   },
   methods: {
     action (type, e) {

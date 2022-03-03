@@ -27,6 +27,7 @@
         component(
           :is='messageType(message)'
           :key='messageKey(message, index)'
+          :type='message.type'
           :text='message.text'
           :notification='message.notification'
           :replyingMessage='message.replyingMessage'
@@ -258,6 +259,8 @@ export default ({
             const { meta, data } = msgValue
             this.messages.push({
               ...createMessage({ meta, data, hash: message.hash() }),
+              // TODO: pending is useful to turn the message gray (just like Slack)
+              // when we don't get event after a certain period
               pending: true
             })
           }
