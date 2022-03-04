@@ -1315,31 +1315,34 @@
 "Failed to set profile attributes." = "Failed to set profile attributes.";
 
 /* controller/actions/chatroom.js */
-"Failed to create chat channel.": "Failed to create chat channel.",
+"Failed to create chat channel.": "Failed to create chat channel.";
 
 /* controller/actions/chatroom.js */
-"Failed to join chat channel.": "Failed to join chat channel.",
+"Failed to join chat channel.": "Failed to join chat channel.";
 
 /* controller/actions/chatroom.js */
-"Failed to rename chat channel.": "Failed to rename chat channel.",
+"Failed to rename chat channel.": "Failed to rename chat channel.";
 
 /* controller/actions/chatroom.js */
-"Failed to change chat channel description.": "Failed to change chat channel description.",
+"Failed to change chat channel description.": "Failed to change chat channel description.";
 
 /* controller/actions/chatroom.js */
-"Failed to leave chat channel.": "Failed to leave chat channel.",
+"Failed to leave chat channel.": "Failed to leave chat channel.";
 
 /* controller/actions/chatroom.js, controller/actions/group.js */
-"Failed to delete chat channel.": "Failed to delete chat channel.",
+"Failed to delete chat channel.": "Failed to delete chat channel.";
 
 /* controller/actions/chatroom.js */
-"Failed to add message.": "Failed to add message.",
+"Failed to add message.": "Failed to add message.";
 
 /* controller/actions/chatroom.js */
-"Failed to edit message.": "Failed to edit message.",
+"Failed to edit message.": "Failed to edit message.";
 
 /* controller/actions/chatroom.js */
-"Failed to delete message.": "Failed to delete message.",
+"Failed to delete message.": "Failed to delete message.";
+
+/* controller/actions/chatroom.js */
+"Failed to make emotion.": "Failed to make emotion.";
 
 /* views/containers/payments/RecordPaymentsList.vue */
 "Sent to" = "Sent to";

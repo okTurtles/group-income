@@ -382,20 +382,47 @@ sbp('chelonia/defineContract', {
         })
       }
     },
-    'gi.contracts/chatroom/addEmoticon': {
-      validate: objectMaybeOf({
-
+    'gi.contracts/chatroom/makeEmotion': {
+      validate: objectOf({
+        id: string,
+        emoticon: string
       }),
-      process ({ data, meta }, { state }) {
-
-      }
-    },
-    'gi.contracts/chatroom/deleteEmoticon': {
-      validate: objectMaybeOf({
-
-      }),
-      process ({ data, meta }, { state }) {
-
+      process ({ data, meta, contractID }, { state }) {
+        const { id, emoticon } = data
+        for (let i = state.messages.length - 1; i >= 0; i--) {
+          if (state.messages[i].id === id) {
+            let emoticons = state.messages[i].emoticons || {}
+            if (emoticons[emoticon]) {
+              const alreadyAdded = emoticons[emoticon].indexOf(meta.username)
+              if (alreadyAdded >= 0) {
+                emoticons[emoticon].splice(alreadyAdded, 1)
+                if (!emoticons[emoticon].length) {
+                  delete emoticons[emoticon]
+                  if (!Object.keys(emoticons).length) {
+                    emoticons = null
+                  }
+                }
+              } else {
+                emoticons[emoticon].push(meta.username)
+              }
+            } else {
+              emoticons[emoticon] = [meta.username]
+            }
+            if (emoticons) {
+              Vue.set(state.messages[i], 'emoticons', emoticons)
+            } else {
+              Vue.delete(state.messages[i], 'emoticons')
+            }
+            break
+          }
+        }
+        sbp('gi.contracts/chatroom/pushSideEffect', contractID,
+          ['gi.contracts/chatroom/editMessage/sideEffect', {
+            meta,
+            data: { id: data.id },
+            contractID
+          }]
+        )
       }
     }
   }

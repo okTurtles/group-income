@@ -35,7 +35,7 @@
           :time='time(message.time)'
           :emoticonsList='message.emoticons'
           :who='who(message)'
-          :currentUserId='currentUserAttr.id'
+          :currentUsername='currentUserAttr.username'
           :avatar='avatar(message.from)'
           :variant='variant(message)'
           :isSameSender='isSameSender(index)'
@@ -45,7 +45,7 @@
           @reply='replyMessage(message)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @delete-message='deleteMessage(message)'
-          @add-emoticon='addEmoticon(index, $event)'
+          @add-emoticon='addEmoticon(message, $event)'
         )
 
   .c-footer
@@ -207,12 +207,12 @@ export default ({
       }
       return mt
     },
-    isCurrentUser (fromId) {
-      return this.currentUserAttr.username === fromId
+    isCurrentUser (from) {
+      return this.currentUserAttr.username === from
     },
     who (message) {
-      const fromId = message.from === MESSAGE_TYPES.NOTIFICATION ? fakeEvents[message.id].from : message.from
-      const user = this.isCurrentUser(fromId) ? this.currentUserAttr : this.details.participants[fromId]
+      const from = message.from === MESSAGE_TYPES.NOTIFICATION ? fakeEvents[message.id].from : message.from
+      const user = this.isCurrentUser(from) ? this.currentUserAttr : this.details.participants[from]
       if (user) {
         return user.displayName || user.username
       }
@@ -227,11 +227,11 @@ export default ({
     time (strTime) {
       return new Date(strTime)
     },
-    avatar (fromId) {
-      if (fromId === MESSAGE_TYPES.NOTIFICATION || fromId === MESSAGE_TYPES.INTERACTIVE) {
+    avatar (from) {
+      if (from === MESSAGE_TYPES.NOTIFICATION || from === MESSAGE_TYPES.INTERACTIVE) {
         return this.currentUserAttr.picture
       }
-      return this.details.participants[fromId].picture
+      return this.details.participants[from].picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
@@ -300,7 +300,7 @@ export default ({
       })
     },
     deleteMessage (message) {
-      console.log('Deleting-----------------------------------', message)
+      console.log('deleting...')
       sbp('gi.actions/chatroom/deleteMessage', {
         contractID: this.currentChatRoomId,
         data: { id: message.id },
@@ -330,29 +330,16 @@ export default ({
     isNew (index) {
       return this.startedUnreadIndex === index
     },
-    addEmoticon (index, emoticon) {
-      // Todo replace with  deep merge
-      const userId = this.currentUserAttr.id
-      const emoticons = this.messages[index].emoticons || {}
-      if (emoticons[emoticon]) {
-        const alreadyAdded = emoticons[emoticon].indexOf(userId)
-        if (alreadyAdded >= 0) {
-          emoticons[emoticon].splice(alreadyAdded, 1)
-          if (emoticons[emoticon].length === 0) {
-            delete this.messages[emoticon]
-            if (Object.keys(emoticons).length === 0) {
-              delete this.messages[index].emoticons
-              return false
-            }
+    addEmoticon (message, emoticon) {
+      sbp('gi.actions/chatroom/makeEmotion', {
+        contractID: this.currentChatRoomId,
+        data: { id: message.id, emoticon },
+        hooks: {
+          prepublish: (msg) => {
+            // need to do something
           }
-        } else emoticons[emoticon].push(userId)
-      } else {
-        if (!emoticons[emoticon]) emoticons[emoticon] = []
-        emoticons[emoticon].push(userId)
-      }
-
-      this.$set(this.messages[index], 'emoticons', emoticons)
-      this.$forceUpdate()
+        }
+      })
     },
     setInitMessages () {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {

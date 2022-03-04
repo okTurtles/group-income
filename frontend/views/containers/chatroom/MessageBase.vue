@@ -33,7 +33,7 @@
   message-reactions(
     v-if='!isEditing'
     :emoticonsList='emoticonsList'
-    :currentUserId='currentUserId'
+    :currentUsername='currentUsername'
     @selectEmoticon='selectEmoticon($event)'
     @openEmoticon='openEmoticon($event)'
   )
@@ -45,8 +45,8 @@
     :isCurrentUser='isCurrentUser'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
-    @edit-message='editMessage'
-    @delete-message='deleteMessage'
+    @editMessage='editMessage'
+    @deleteMessage='deleteMessage'
     @reply='reply'
     @retry='retry'
     @copyToClipBoard='copyToClipBoard'
@@ -79,7 +79,7 @@ export default ({
     text: String,
     replyingMessage: String,
     who: String,
-    currentUserId: String,
+    currentUsername: String,
     avatar: String,
     time: {
       type: Date,

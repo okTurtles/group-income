@@ -139,31 +139,34 @@
 "Invalid username or password" = "Nom d'utilisateur ou mot de passe invalide";
 
 /* controller/actions/chatroom.js */
-"Failed to create chat channel.": "La création de la conversation a échouée.",
+"Failed to create chat channel.": "La création de la conversation a échouée.";
 
 /* controller/actions/chatroom.js */
-"Failed to join chat channel.": "Échec de la connexion au canal de chat.",
+"Failed to join chat channel.": "Échec de la connexion au canal de chat.";
 
 /* controller/actions/chatroom.js */
-"Failed to rename chat channel.": "Impossible de renommer le canal de chat.",
+"Failed to rename chat channel.": "Impossible de renommer le canal de chat.";
 
 /* controller/actions/chatroom.js */
-"Failed to change chat channel description.": "Échec de la modification de la description du canal de chat.",
+"Failed to change chat channel description.": "Échec de la modification de la description du canal de chat.";
 
 /* controller/actions/chatroom.js */
-"Failed to leave chat channel.": "Impossible de quitter le canal de chat.",
+"Failed to leave chat channel.": "Impossible de quitter le canal de chat.";
 
 /* controller/actions/chatroom.js, controller/actions/group.js */
-"Failed to delete chat channel.": "Impossible de supprimer la conversation.",
+"Failed to delete chat channel.": "Impossible de supprimer la conversation.";
 
 /* controller/actions/chatroom.js */
-"Failed to add message.": "Échec de l'ajout du message.",
+"Failed to add message.": "Échec de l'ajout du message.";
 
 /* controller/actions/chatroom.js */
-"Failed to edit message.": "Échec de la modification du message.",
+"Failed to edit message.": "Échec de la modification du message.";
 
 /* controller/actions/chatroom.js */
-"Failed to delete message.": "Échec de la suppression du message.",
+"Failed to delete message.": "Échec de la suppression du message.";
+
+/* controller/actions/chatroom.js */
+"Failed to make emotion.": "Échec de la création d'émotions.";
 
 /* controller/actions/mailbox.js */
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
