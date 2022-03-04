@@ -43,7 +43,7 @@ export default ({
       const displayName = !username ? '' : this.globalProfile(username).displayName || username
       switch (this.notification.type) {
         case MESSAGE_NOTIFICATIONS.ADD_MEMBER:
-          text = L('Added a member to this channel: {displayName}', { displayName })
+          text = L('Added a member to {title}: {displayName}', { displayName, title: channelName })
           break
 
         case MESSAGE_NOTIFICATIONS.JOIN_MEMBER:
@@ -55,7 +55,7 @@ export default ({
           break
 
         case MESSAGE_NOTIFICATIONS.KICK_MEMBER:
-          text = L('Kicked {displayName} from {title}', { displayName, title: channelName })
+          text = L('Kicked a member from {title}: {displayName}', { displayName, title: channelName })
           break
 
         case MESSAGE_NOTIFICATIONS.UPDATE_NAME:

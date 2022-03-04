@@ -721,7 +721,7 @@
 "Left {title}" = "Restantes {title}";
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
-"Kicked {displayName} from {title}" = "Expulsé {displayName} de {title}";
+"Kicked a member from {title}: {displayName}" = "Membre expulsé de {title}: {displayName}";
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Joined {title}" = "Joint {title}";
@@ -730,7 +730,7 @@
 "New proposal" = "Nouvelle proposition";
 
 /* views/containers/chatroom/MessageNotification.vue */
-"Added members to this channel: {displayName}" = "Membres ajoutés au salon : {displayName}";
+"Added a member to {title}: {displayName}" = "Membre ajoutés au {title}: {displayName}";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Deleted the channel: {title}" = "Le salon {title} a été supprimé";
