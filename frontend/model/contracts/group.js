@@ -166,6 +166,16 @@ function memberLeaves (state, username, dateLeft) {
   })
 }
 
+function memberLeavesFromChatRooms (state, username, contractID) {
+  const rootState = sbp('state/vuex/state')
+  const chatRoomIDsToLeave = Object.keys(state.chatRooms)
+    .filter(cID => rootState[cID] && rootState[cID].users[username]) || []
+
+  sbp('gi.actions/group/leaveChatRooms', {
+    contractID, data: {}, options: { username, chatRoomIDsToLeave }
+  })
+}
+
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/group',
   metadata: {
@@ -615,10 +625,21 @@ sbp('chelonia/defineContract', {
       process ({ data, meta }, { state, getters }) {
         memberLeaves(state, data.member, meta.createdDate)
       },
-      sideEffect ({ data, contractID }, { state }) {
+      sideEffect ({ data, meta, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
         const { username } = rootState.loggedIn
+
+        // let user leaves all the chatrooms inside the group
+        if (data.proposalHash) {
+          // Removing by proposal
+          if (state.proposals[data.proposalHash].meta.username === username) {
+            memberLeavesFromChatRooms(state, data.member, contractID)
+          }
+        } else if (meta.username === username) {
+          // Removing without proposal
+          memberLeavesFromChatRooms(state, data.member, contractID)
+        }
 
         if (data.member === username) {
           // If this member is re-joining the group, ignore the rest
@@ -630,13 +651,6 @@ sbp('chelonia/defineContract', {
           const groupIdToSwitch = Object.keys(contracts)
             .find(cID => contracts[cID].type === 'gi.contracts/group' &&
               cID !== contractID && rootState[cID].settings) || null
-
-          const chatRoomIDsToLeave = Object.keys(state.chatRooms)
-            .filter(cID => rootState[cID] && rootState[cID].users[username]) || []
-
-          sbp('gi.actions/group/leaveChatRooms', {
-            contractID, data: {}, options: { username, chatRoomIDsToLeave }
-          })
 
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           sbp('state/vuex/commit', 'removeContract', contractID)
