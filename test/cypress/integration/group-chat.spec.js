@@ -25,7 +25,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', username)
         cy.get('div.c-message:last-child .c-notification').should('contain', `Joined ${channelName}`)
       } else {
-        cy.get('div.c-message:last-child .c-notification').should('contain', `Added a member to this channel: ${username}`)
+        cy.get('div.c-message:last-child .c-notification').should('contain', `Added a member to ${channelName}: ${username}`)
       }
     })
   }
