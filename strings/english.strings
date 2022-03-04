@@ -220,7 +220,7 @@
 "Left {title}" = "Left {title}";
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
-"Kicked {displayName} from {title}" = "Kicked {displayName} from {title}";
+"Kicked a member from {title}: {displayName}" = "Kicked a member from {title}: {displayName}";
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Joined {title}" = "Joined {title}";
@@ -685,7 +685,7 @@
 "Notifications" = "Notifications";
 
 /* views/containers/chatroom/MessageNotification.vue */
-"Added members to this channel: {displayName}" = "Added members to this channel: {displayName}";
+"Added a member to {title}: {displayName}" = "Added a member to {title}: {displayName}";
 
 /* views/components/modal/ModalClose.vue */
 "close modal" = "close modal";

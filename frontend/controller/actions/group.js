@@ -221,9 +221,9 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'gi.actions/group/leaveChatRooms': function (params: GIActionParams) {
-    const { username, chatRoomIDsToLeave } = params.options || {}
+    const { username, member, chatRoomIDsToLeave } = params.options || {}
     for (const contractID of chatRoomIDsToLeave) {
-      sbp('gi.actions/chatroom/leave', { contractID, data: { username } })
+      sbp('gi.actions/chatroom/leave', { contractID, data: { username, member } })
     }
   },
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),

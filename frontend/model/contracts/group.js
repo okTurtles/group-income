@@ -166,16 +166,6 @@ function memberLeaves (state, username, dateLeft) {
   })
 }
 
-function memberLeavesFromChatRooms (state, username, contractID) {
-  const rootState = sbp('state/vuex/state')
-  const chatRoomIDsToLeave = Object.keys(state.chatRooms)
-    .filter(cID => rootState[cID] && rootState[cID].users[username]) || []
-
-  sbp('gi.actions/group/leaveChatRooms', {
-    contractID, data: {}, options: { username, chatRoomIDsToLeave }
-  })
-}
-
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/group',
   metadata: {
@@ -631,14 +621,19 @@ sbp('chelonia/defineContract', {
         const { username } = rootState.loggedIn
 
         // let user leaves all the chatrooms inside the group
-        if (data.proposalHash) {
-          // Removing by proposal
-          if (state.proposals[data.proposalHash].meta.username === username) {
-            memberLeavesFromChatRooms(state, data.member, contractID)
-          }
-        } else if (meta.username === username) {
-          // Removing without proposal
-          memberLeavesFromChatRooms(state, data.member, contractID)
+        if (meta.username === username) {
+          const chatRoomIDsToLeave = Object.keys(state.chatRooms)
+            .filter(cID => rootState[cID] && rootState[cID].users[data.member]) || []
+
+          sbp('gi.actions/group/leaveChatRooms', {
+            contractID,
+            data: {},
+            options: {
+              username: meta.username,
+              member: data.member,
+              chatRoomIDsToLeave
+            }
+          })
         }
 
         if (data.member === username) {
