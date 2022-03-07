@@ -4,7 +4,7 @@
 // https://github.com/facebook/flow/issues/2092#issuecomment-232917073
 //
 // Note that the modules can (and should) be properly fixed with flow-typed
-// https://github.com/okTurtles/group-income-simple/issues/157
+// https://github.com/okTurtles/group-income/issues/157
 // =======================
 
 // TODO: create a script in scripts/ to run flow via grunt-exec
@@ -23,7 +23,7 @@ declare var process: any
 // =======================
 // Fix "Required module not found" in a hackish way.
 // TODO: Proper fix is to use:
-// https://github.com/okTurtles/group-income-simple/issues/157
+// https://github.com/okTurtles/group-income/issues/157
 // =======================
 declare module '@hapi/boom' { declare module.exports: any }
 declare module '@hapi/hapi' { declare module.exports: any }

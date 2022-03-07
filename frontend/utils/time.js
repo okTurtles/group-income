@@ -18,7 +18,7 @@ export function dateToMonthstamp (date: string | Date): string {
 
 // TODO: to prevent conflicts among user timezones, we need
 //       to use the server's time, and not our time here.
-//       https://github.com/okTurtles/group-income-simple/issues/531
+//       https://github.com/okTurtles/group-income/issues/531
 export function currentMonthstamp (): string {
   return dateToMonthstamp(new Date())
 }

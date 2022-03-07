@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
-//       https://github.com/okTurtles/group-income-simple/issues/603
+//       https://github.com/okTurtles/group-income/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './voting/proposals.js'
 import {
@@ -329,7 +329,7 @@ sbp('chelonia/defineContract', {
         })
       }),
       process ({ data, meta }, { state, getters }) {
-        // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
+        // TODO: checkpointing: https://github.com/okTurtles/group-income/issues/354
         const initialState = merge({
           payments: {},
           paymentsByMonth: {},
@@ -356,7 +356,7 @@ sbp('chelonia/defineContract', {
         // TODO: how to handle payments to groups or users outside of this group?
         toUser: string,
         amount: number,
-        currencyFromTo: tupleOf(string, string), // must be one of the keys in currencies.js (e.g. USD, EUR, etc.) TODO: handle old clients not having one of these keys, see OP_PROTOCOL_UPGRADE https://github.com/okTurtles/group-income-simple/issues/603
+        currencyFromTo: tupleOf(string, string), // must be one of the keys in currencies.js (e.g. USD, EUR, etc.) TODO: handle old clients not having one of these keys, see OP_PROTOCOL_UPGRADE https://github.com/okTurtles/group-income/issues/603
         // multiply 'amount' by 'exchangeRate', which must always be
         // based on the firstMonthsCurrency of the month in which this payment was created.
         // it is then further multiplied by the month's 'mincomeExchangeRate', which
@@ -396,7 +396,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state, getters }) {
         // TODO: we don't want to keep a history of all payments in memory all the time
-        //       https://github.com/okTurtles/group-income-simple/issues/426
+        //       https://github.com/okTurtles/group-income/issues/426
         const payment = state.payments[data.paymentHash]
         // TODO: move these types of validation errors into the validate function so
         //       that they can be done before sending as well as upon receiving
@@ -490,7 +490,7 @@ sbp('chelonia/defineContract', {
         const { data, hash, meta } = message
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
-          // https://github.com/okTurtles/group-income-simple/issues/602
+          // https://github.com/okTurtles/group-income/issues/602
           console.error(`proposalVote: no proposal for ${data.proposalHash}!`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalVote without existing proposal')
         }
@@ -517,7 +517,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta }, { state }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
-          // https://github.com/okTurtles/group-income-simple/issues/602
+          // https://github.com/okTurtles/group-income/issues/602
           console.error(`proposalCancel: no proposal for ${data.proposalHash}!`, { data, meta })
           throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalVote without existing proposal')
         } else if (proposal.meta.username !== meta.username) {

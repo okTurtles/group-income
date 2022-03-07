@@ -19,7 +19,7 @@ const Inert = require('@hapi/inert')
 
 const hapi = new Hapi.Server({
   // TODO: improve logging and base it on process.env.NODE_ENV
-  //       https://github.com/okTurtles/group-income-simple/issues/32
+  //       https://github.com/okTurtles/group-income/issues/32
   // debug: false, // <- Hapi v16 was outputing too many unnecessary debug statements
   //               // v17 doesn't seem to do this anymore so I've re-enabled the logging
   debug: { log: ['error'], request: ['error'] },

@@ -1,5 +1,5 @@
 {
-  "name": "group-income-simple",
+  "name": "group-income",
   "version": "0.0.1",
   "private": true,
   "description": "",
@@ -86,7 +86,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@gitlab.okturtles.com:okturtles/group-income-simple.git"
+    "url": "git@gitlab.okturtles.com:okturtles/group-income.git"
   },
   "author": "okTurtles Foundation",
   "license": "AGPL-3.0",
