@@ -172,16 +172,8 @@ export default {
   margin-top: 1rem;
 }
 
-.c-group-list {
-  margin-top: 1rem;
-}
-
-.c-group-member {
-  position: relative;
-}
-
 .c-action-container {
-  margin-top: .5rem;
+  margin-top: 0.5rem;
 
   @include tablet {
     margin-left: auto;
@@ -220,7 +212,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   min-height: 4.625rem;
-  padding: .5rem 0;
+  padding: 0.5rem 0;
   border-bottom: 1px solid $general_0;
 
   &:first-child {
@@ -248,7 +240,7 @@ export default {
 
   span,
   i {
-    margin-left: .5rem;
+    margin-left: 0.5rem;
   }
 }
 </style>
