@@ -9,7 +9,7 @@ message-base(v-bind='$props' @addEmoticon='addEmoticon($event)')
 import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
 import L from '@view-utils/translations.js'
-import { MESSAGE_NOTIFICATIONS } from '@model/contracts/constants.js'
+import { MESSAGE_NOTIFICATIONS, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
 
 export default ({
   name: 'MessageNotification',
@@ -30,6 +30,17 @@ export default ({
     emoticonsList: {
       type: Object,
       default: null
+    },
+    variant: {
+      type: String,
+      validator (value) {
+        return [
+          MESSAGE_VARIANTS.SENT,
+          MESSAGE_VARIANTS.RECEIVED,
+          MESSAGE_VARIANTS.PENDING,
+          MESSAGE_VARIANTS.FAILED
+        ].indexOf(value) !== -1
+      }
     },
     isSameSender: Boolean,
     isCurrentUser: Boolean
