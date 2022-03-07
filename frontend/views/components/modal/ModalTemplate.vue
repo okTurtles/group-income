@@ -15,7 +15,7 @@
           :class='{ "has-subtitle": $scopedSlots.subtitle }'
           v-if='$scopedSlots.title || $scopedSlots.subtitle'
         )
-          modal-close(@close='close' :back-on-mobile='backOnMobile')
+          modal-close(@close='close' :back-on-mobile='backOnMobile' v-if='!modalForceAction')
           h2.is-subtitle(v-if='$scopedSlots.subtitle')
             slot(name='subtitle')
           h1.is-title-1(v-if='$scopedSlots.title')

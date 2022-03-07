@@ -13,6 +13,10 @@ const modaMixins = {
       type: Boolean,
       default: false
     },
+    modalForceAction: {
+      type: Boolean,
+      default: false
+    },
     loading: {
       type: Boolean,
       default: false
@@ -38,7 +42,9 @@ const modaMixins = {
       'setTemporaryReducedMotion'
     ]): any),
     close (e: any) {
-      this.modalIsActive = false
+      if (!this.modalForceAction) {
+        this.modalIsActive = false
+      }
     },
     unload () {
       if (!this.loading) sbp('okTurtles.events/emit', CLOSE_MODAL)
