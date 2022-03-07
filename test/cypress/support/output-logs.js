@@ -13,10 +13,7 @@ Cypress.on('window:before:load', (window) => {
     return
   }
   // Get your apps iframe by id.
-  const docIframe = window.parent.document.getElementById("Your App: 'group-income'")
-  if (!docIframe) {
-    throw new Error('`docIframe` is null!')
-  }
+  const docIframe = window.parent.document.getElementById(`Your App: '${APPLICATION_NAME}'`)
 
   if (!docIframe) {
     throw new Error('Cannot find app iframe: `docIframe` is null. Make sure the given app name is correct.')
