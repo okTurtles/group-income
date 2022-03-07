@@ -18,6 +18,7 @@ export default ({
   },
   props: {
     id: String,
+    type: String,
     text: String,
     notification: Object, // { type, params }
     who: String,
