@@ -55,3 +55,10 @@ export const MESSAGE_NOTIFICATIONS = {
   DELETE_CHANNEL: 'delete-channel',
   VOTE: 'vote'
 }
+
+export const MESSAGE_VARIANTS = {
+  PENDING: 'pending',
+  SENT: 'sent',
+  RECEIVED: 'received',
+  FAILED: 'failed'
+}

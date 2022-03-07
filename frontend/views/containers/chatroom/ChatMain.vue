@@ -79,7 +79,7 @@ import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { fakeEvents } from '@containers/chatroom/fakeStore.js'
-import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES } from '@model/contracts/constants.js'
+import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
 import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
 import { proximityDate } from '@utils/time.js'
 import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
@@ -153,9 +153,6 @@ export default ({
       'ourUserIdentityContract',
       'isJoinedChatRoom'
     ]),
-    messageVariants () {
-      return Message.constants.variants
-    },
     bodyStyles () {
       const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
       const unjoinedStyles =
@@ -219,11 +216,11 @@ export default ({
     },
     variant (message) {
       if (message.pending) {
-        return this.messageVariants.PENDING
+        return MESSAGE_VARIANTS.PENDING
       } else if (message.hasFailed) {
-        return this.messageVariants.FAILED
+        return MESSAGE_VARIANTS.FAILED
       } else {
-        return this.isCurrentUser(message.from) ? this.messageVariants.SENT : this.messageVariants.RECEIVED
+        return this.isCurrentUser(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
     },
     time (strTime) {

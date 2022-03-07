@@ -85,6 +85,7 @@ export default ({
       type: Date,
       required: true
     },
+    notification: Object,
     type: String,
     emoticonsList: {
       type: Object,
