@@ -34,12 +34,7 @@ export default ({
     variant: {
       type: String,
       validator (value) {
-        return [
-          MESSAGE_VARIANTS.SENT,
-          MESSAGE_VARIANTS.RECEIVED,
-          MESSAGE_VARIANTS.PENDING,
-          MESSAGE_VARIANTS.FAILED
-        ].indexOf(value) !== -1
+        return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
     isSameSender: Boolean,
