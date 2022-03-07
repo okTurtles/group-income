@@ -219,6 +219,8 @@ export default ({
     },
     variant (message) {
       if (message.pending) {
+        return this.messageVariants.PENDING
+      } else if (message.hasFailed) {
         return this.messageVariants.FAILED
       } else {
         return this.isCurrentUser(message.from) ? this.messageVariants.SENT : this.messageVariants.RECEIVED
@@ -416,6 +418,7 @@ export default ({
       } else if (type === MESSAGE_ACTION_TYPES.DELETE_MESSAGE && id) {
         deleteIfExist(id)
       }
+      this.$forceUpdate()
     },
     resizeEventHandler () {
       const vh = window.innerHeight * 0.01

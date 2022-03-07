@@ -148,6 +148,10 @@ export default ({
     transition: opacity 0.7s ease-in-out 0.3s, background-color 0.3s ease-in;
   }
 
+  &.pending {
+    color: $general_0;
+  }
+
   &.sameSender {
     margin-top: 0.25rem;
   }
