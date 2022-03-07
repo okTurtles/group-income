@@ -93,7 +93,7 @@ describe('Notifications - single group', () => {
     cy.get('.is-subtitle').should('have.text', 'NEW')
   })
 
-  it('should display correct category titles', () => {
+  it.skip('should display correct category titles', () => {
     cy.clock(Date.now())
     cy.visit('/')
     // Skip two hours.
