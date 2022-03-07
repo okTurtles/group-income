@@ -81,7 +81,7 @@ import Emoticons from './Emoticons.vue'
 import { fakeEvents } from '@containers/chatroom/fakeStore.js'
 import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
 import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
-import { proximityDate } from '@utils/time.js'
+import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
 import { CONTRACT_IS_SYNCING } from '@utils/events.js'
 
@@ -236,6 +236,9 @@ export default ({
       if (!this.messages[index - 1]) { return false }
       if (this.messages[index].type !== MESSAGE_TYPES.TEXT) { return false }
       if (this.messages[index].type !== this.messages[index - 1].type) { return false }
+      const timeBetween = new Date(this.messages[index].time).getTime() -
+        new Date(this.messages[index - 1].time).getTime()
+      if (timeBetween > MINS_MILLIS * 10) { return false }
       return this.messages[index].from === this.messages[index - 1].from
     },
     updateSendAreaHeight (height) {
