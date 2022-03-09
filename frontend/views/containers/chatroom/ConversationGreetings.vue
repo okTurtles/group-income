@@ -36,7 +36,7 @@ export default ({
   },
   props: {
     members: {
-      type: Number,
+      type: Number
     },
     creator: {
       type: String
