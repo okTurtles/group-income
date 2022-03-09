@@ -4,6 +4,7 @@
   p {{text}}
   .buttons
     i18n.button.is-outlined.is-small.is-primary(
+      v-if='members < 2'
       tag='button'
       @click='openModal("ChatMembersAllModal")'
       data-test='addMembers'
@@ -34,6 +35,9 @@ export default ({
     Avatar
   },
   props: {
+    members: {
+      type: Number,
+    },
     creator: {
       type: String
     },

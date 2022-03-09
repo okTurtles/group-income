@@ -10,6 +10,7 @@
 
     .c-body-conversation(ref='conversation' v-else='' data-test='conversationWapper')
       conversation-greetings(
+        :members='details.numberOfParticipants'
         :creator='summary.creator'
         :type='type'
         :name='summary.title'

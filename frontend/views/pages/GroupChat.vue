@@ -52,19 +52,19 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
         data-test='channelMembers'
       ) {numMembers} members
       | ∙
-      .is-unstyled.c-link(
-        tag='button'
+      .is-unstyled(
+        :class='{"c-link": ourUsername === summary.creator}'
         v-if='summary.description'
-        @click='openModal("EditChannelDescriptionModal")'
+        @click='editDescription'
         data-test='updateDescription'
       )
         | {{ summary.description }}
         i.icon-pencil-alt
 
-      i18n.is-unstyled.c-link(
-        tag='button'
+      i18n.is-unstyled(
+        :class='{"c-link": ourUsername === summary.creator}'
         v-else
-        @click='openModal("EditChannelDescriptionModal")'
+        @click='editDescription'
       ) Add description
 
   template(#sidebar='')
@@ -148,6 +148,11 @@ export default ({
   methods: {
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    },
+    editDescription () {
+      if (this.ourUsername === this.summary.creator) {
+        this.openModal('EditChannelDescriptionModal')
+      }
     }
   },
   watch: {
