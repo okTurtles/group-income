@@ -17,7 +17,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
 
           ul
             menu-item(
-              v-if='!summary.general'
+              v-if='!summary.general && ourUsername === summary.creator'
               @click='openModal("EditChannelNameModal")'
               data-test='renameChannel'
             )

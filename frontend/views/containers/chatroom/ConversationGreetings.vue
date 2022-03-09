@@ -11,7 +11,7 @@
 
     i18n.button.is-outlined.is-small(
       tag='button'
-      v-if='!description'
+      v-if='!description && creator === ourUsername'
       @click.prevent='openModal("EditChannelDescriptionModal")'
       data-test='addDescription'
     ) Add a description
@@ -19,6 +19,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { CHATROOM_TYPES } from '@model/contracts/constants.js'
 import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
@@ -33,6 +34,9 @@ export default ({
     Avatar
   },
   props: {
+    creator: {
+      type: String
+    },
     type: {
       type: String
     },
@@ -44,6 +48,7 @@ export default ({
     }
   },
   computed: {
+    ...mapGetters(['ourUsername']),
     text () {
       return {
         GIBot: L('I’m here to keep you update while you are away.'),
