@@ -342,6 +342,12 @@ const getters = {
   },
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
+    // TODO: instead of calling getters.currentGroupState.distributionEvents
+    //       create a getter called getters.distributionEvents, and have it
+    //       return different events based on whether or not we're in a new
+    //       month. If we're in a new month with no existing payments, it will
+    //       generate is own events that consist only of haveNeedEvents (and
+    //       any late payments).
     return groupIncomeDistribution(getters.currentGroupState.distributionEvents, { mincomeAmount: getters.groupMincomeAmount })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system

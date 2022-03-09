@@ -186,6 +186,7 @@ async function startApp () {
           'times-circle'
         )
       }
+      // TODO: delete this line and corresponding monthlyCycleTimer.js file
       startMonthlyCycleCheckInterval(this.$store)
     },
     computed: {

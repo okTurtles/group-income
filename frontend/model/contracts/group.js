@@ -111,6 +111,7 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   return monthlyPayments
 }
 
+// TODO: rewrite this so that it doesn't use startCycleEvent
 function insertMonthlyCycleEvent (state, event) {
   // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
   let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]

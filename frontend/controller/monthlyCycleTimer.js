@@ -1,5 +1,7 @@
 'use strict'
 
+// TODO: delete this file
+
 import sbp from '~/shared/sbp.js'
 import { dateToMonthstamp, compareMonthstamps, currentMonthstamp } from '~/frontend/utils/time.js'
 
