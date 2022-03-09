@@ -98,9 +98,11 @@ export async function leaveChatRoom ({ contractID }: {
     await sbp('state/vuex/commit', 'setCurrentChatRoomId', {
       groupId: rootState.currentGroupId
     })
+    const chatRoomId = rootState.currentChatRoomId
     const curRouteName = sbp('controller/router').history.current.name
     if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {
-      sbp('controller/router').push({ name: 'GroupChat' }).catch(logExceptNavigationDuplicated)
+      sbp('controller/router').push({ name: 'GroupChatConversation', params: { chatRoomId } })
+        .catch(logExceptNavigationDuplicated)
     }
   }
   sbp('state/vuex/commit', 'removeContract', contractID)
@@ -207,14 +209,12 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/join': {
       validate: objectOf({
-        username: string
+        username: string // username of joining member
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash }, { state, getters }) {
         const { username } = data
-        if (state.users[username] &&
-          !sbp('okTurtles.data/get', 'JOINING_CHATROOM') &&
-          !sbp('okTurtles.data/get', 'JOINING_GROUP')) {
-          throw new Error('can not join the chatroom which you are already part of')
+        if (state.users[username] && !sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
+          throw new Error('Can not join the chatroom which you are already part of')
         }
 
         const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER
@@ -225,9 +225,7 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
 
-        Vue.set(state.users, username, {
-          joinedDate: meta.createdDate
-        })
+        Vue.set(state.users, username, { joinedDate: meta.createdDate })
       },
       sideEffect ({ contractID, hash }, { state }) {
         emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
@@ -266,13 +264,13 @@ sbp('chelonia/defineContract', {
     'gi.contracts/chatroom/leave': {
       validate: objectOf({
         username: optional(string), // coming from the gi.contracts/group/removeMember
-        member: string // username to remove
+        member: string // username to be removed
       }),
       process ({ data, meta, hash }, { state }) {
         const { member } = data
         const isKicked = !data.username && member !== meta.username
         if (!state.users[member]) {
-          throw new Error('can not leave the chatroom which you are not part of')
+          throw new Error(`Can not leave the chatroom which ${member} are not part of`)
         }
         Vue.delete(state.users, member)
 

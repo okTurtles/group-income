@@ -63,7 +63,8 @@ const chatroom: Object = {
     ]),
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
-        return this.ephemeral.loadedSummary || {}
+        const joiningChatRoom = !!sbp('okTurtles.data/get', 'JOINING_CHATROOM')
+        return joiningChatRoom ? { ...this.ephemeral.loadedSummary, joined: true } : this.ephemeral.loadedSummary || {}
       }
 
       const { name, type, description, creator, picture, privacyLevel } = this.currentChatRoomState.attributes

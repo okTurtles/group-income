@@ -612,7 +612,7 @@ sbp('chelonia/defineContract', {
           }
         }
       },
-      process ({ data, meta }, { state, getters }) {
+      process ({ data, meta }, { state }) {
         memberLeaves(state, data.member, meta.createdDate)
       },
       sideEffect ({ data, meta, contractID }, { state }) {
@@ -622,8 +622,13 @@ sbp('chelonia/defineContract', {
 
         // let user leaves all the chatrooms inside the group
         if (meta.username === username) {
-          const chatRoomIDsToLeave = Object.keys(state.chatRooms)
-            .filter(cID => rootState[cID] && rootState[cID].users[data.member]) || []
+          let chatRoomIDsToLeave = []
+          if (!sbp('okTurtles.data/get', 'JOINING_GROUP')) {
+            chatRoomIDsToLeave = Object.keys(state.chatRooms)
+              .filter(cID => rootState[cID] && rootState[cID].users[data.member]) || []
+          } else if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
+            chatRoomIDsToLeave = [state.generalChatRoomId]
+          }
 
           sbp('gi.actions/group/leaveChatRooms', {
             contractID,
@@ -662,7 +667,7 @@ sbp('chelonia/defineContract', {
       validate: objectMaybeOf({
         reason: string
       }),
-      process ({ data, meta, contractID }, { state, getters }) {
+      process ({ data, meta, contractID }, { state }) {
         memberLeaves(state, meta.username, meta.createdDate)
         sbp('gi.contracts/group/pushSideEffect', contractID,
           ['gi.contracts/group/removeMember/sideEffect', {
@@ -683,7 +688,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
-      process ({ data, meta }, { state, getters }) {
+      process ({ data, meta }, { state }) {
         console.debug('inviteAccept:', data, state.invites)
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== INVITE_STATUS.VALID) {
@@ -708,7 +713,7 @@ sbp('chelonia/defineContract', {
       // They MUST NOT call 'commit'!
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      async sideEffect ({ meta, contractID }, { state, getters }) {
+      async sideEffect ({ meta }, { state }) {
         const rootState = sbp('state/vuex/state')
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
@@ -728,7 +733,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/inviteRevoke': {
-      validate: (data, { state, getters, meta }) => {
+      validate: (data, { state, meta }) => {
         objectOf({
           inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
         })(data)
@@ -737,7 +742,7 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('The link does not exist.'))
         }
       },
-      process ({ data, meta }, { state, getters }) {
+      process ({ data, meta }, { state }) {
         const invite = state.invites[data.inviteSecret]
         Vue.set(invite, 'status', INVITE_STATUS.REVOKED)
       }
@@ -752,7 +757,7 @@ sbp('chelonia/defineContract', {
         mincomeAmount: x => typeof x === 'number' && x > 0,
         mincomeCurrency: x => typeof x === 'string'
       }),
-      process ({ meta, data }, { state, getters }) {
+      process ({ meta, data }, { state }) {
         for (const key in data) {
           Vue.set(state.settings, key, data[key])
         }
@@ -826,7 +831,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/resetMonth': {
       validate: optional(string),
-      process ({ meta }, { state, getters }) {
+      process ({ meta }, { state }) {
         // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
         let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
         // Fills in multiple missing months when `while` instead of `if`.
@@ -851,7 +856,7 @@ sbp('chelonia/defineContract', {
         chatRoomID: string,
         attributes: objectOf(chatRoomAttributes)
       }),
-      process ({ data, meta }, { state, getters }) {
+      process ({ data, meta }, { state }) {
         const { name, type, privacyLevel } = data.attributes
         Vue.set(state.chatRooms, data.chatRoomID, {
           creator: meta.username,
@@ -873,7 +878,7 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       },
-      process ({ data, meta }, { state, getters }) {
+      process ({ data, meta }, { state }) {
         Vue.set(state.chatRooms[data.chatRoomID], 'deletedDate', meta.createdDate)
       }
     },
@@ -882,14 +887,16 @@ sbp('chelonia/defineContract', {
         username: string,
         chatRoomID: string
       }),
-      process ({ data, meta }, { state, getters }) {},
+      process ({ data, meta }, { state }) {},
       async sideEffect ({ meta, data }, { state }) {
         const rootState = sbp('state/vuex/state')
         const username = data.username || meta.username
         if (username === rootState.loggedIn.username) {
-          sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
-          await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
-          sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
+          if (!sbp('okTurtles.data/get', 'JOINING_GROUP') || sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+            sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
+            await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
+            sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
+          }
         }
       }
     },

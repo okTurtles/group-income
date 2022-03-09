@@ -346,7 +346,7 @@ export default ({
         this.messages = []
         sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
           this.messages = getLatestMessages({
-            count: this.chatRoomSettings.messagesPerPage,
+            count: this.chatRoomSettings.messagesPerPage, // TODO: this.chatRoomSettings could be {}
             messages: state.messages
           })
         })
@@ -400,7 +400,8 @@ export default ({
   },
   watch: {
     currentChatRoomId (to, from) {
-      this.setMessageEventListener({ from, to })
+      const force = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
+      this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
     },
     'summary.joined' (to, from) {
