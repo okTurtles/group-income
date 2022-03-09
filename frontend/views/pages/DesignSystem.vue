@@ -639,7 +639,7 @@ page(
         | Invitation links that are used across the app have the uniform design with 'click-to-copy' functionality.
         | Please refer to&nbsp;
         a.link(
-          href='https://github.com/okTurtles/group-income-simple/issues/756'
+          href='https://github.com/okTurtles/group-income/issues/756'
           target='_link'
         ) issue #756
         | &nbsp;for more information.

@@ -13,9 +13,9 @@
 
 ### 1. Decide what to work on
 
-- Check the [open issues](https://github.com/okTurtles/group-income-simple/issues).
-- View the [project board](https://github.com/okTurtles/group-income-simple/projects).
-- Check especially what's [`up for grabs`](../../labels/Note%3AUp-for-grabs), [`high priority`](../../labels/Priority%3AHigh), [`level: starter`](../../labels/Level%3AStarter), or has a **[`Bounty`](https://github.com/okTurtles/group-income-simple/issues?q=is%3Aopen+is%3Aissue+label%3ANote%3ABounty)**
+- Check the [open issues](https://github.com/okTurtles/group-income/issues).
+- View the [project board](https://github.com/okTurtles/group-income/projects).
+- Check especially what's [`up for grabs`](../../labels/Note%3AUp-for-grabs), [`high priority`](../../labels/Priority%3AHigh), [`level: starter`](../../labels/Level%3AStarter), or has a **[`Bounty`](https://github.com/okTurtles/group-income/issues?q=is%3Aopen+is%3Aissue+label%3ANote%3ABounty)**
 - Read some docs, like: __[:book: Frontend: Getting Started](docs/Getting-Started-frontend.md)__ and  __[:book: Style Guide](docs/Style-Guide.md)__
 
 Then, [tell folks what you'll be working on](https://gitter.im/okTurtles/group-income), and:
@@ -42,7 +42,7 @@ This contribution policy will evolve over time. For now it is based on a slightl
 #### Pull Request Requirements (:exclamation:)
 
 1. A PR **SHOULD** be a minimal and accurate answer to exactly one identified and agreed problem.
-2. A PR **SHOULD** follow [the boy scout rule](https://github.com/okTurtles/group-income-simple/issues/383#issuecomment-383381863): leave the code cleaner than you found it when the refactor effort is not too big.
+2. A PR **SHOULD** follow [the boy scout rule](https://github.com/okTurtles/group-income/issues/383#issuecomment-383381863): leave the code cleaner than you found it when the refactor effort is not too big.
 3. A PR **MAY NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
 4. A PR **MUST** pass all tests on at least the principle target platform.
 5. A PR **MUST** include new tests for any new functionality introduced.

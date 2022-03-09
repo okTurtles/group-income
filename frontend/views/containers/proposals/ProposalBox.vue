@@ -169,7 +169,7 @@ export default ({
   grid-area: main;
   margin-top: 1.5rem;
   word-break: break-word;
-  min-width: 0; // So ellipsis works correctly inside grid. pls refer to a discussion here(https://github.com/okTurtles/group-income-simple/pull/765#issuecomment-551691920) for the context.
+  min-width: 0; // So ellipsis works correctly inside grid. pls refer to a discussion here(https://github.com/okTurtles/group-income/pull/765#issuecomment-551691920) for the context.
 
   @include tablet {
     margin-top: 1rem;

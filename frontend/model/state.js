@@ -643,9 +643,9 @@ const actions = {
       }
     } catch (e) {
       // For details about the rationale for how error handling works here see these links:
-      // https://gitlab.okturtles.org/okturtles/group-income-simple/snippets/9
-      // https://github.com/okTurtles/group-income-simple/issues/610
-      // https://github.com/okTurtles/group-income-simple/issues/602
+      // https://gitlab.okturtles.org/okturtles/group-income/snippets/9
+      // https://github.com/okTurtles/group-income/issues/610
+      // https://github.com/okTurtles/group-income/issues/602
       // TODO: use a global notification system to both display a notification
       console.error(`[ERROR] exception ${e.name} in handleEvent while processing ${message.description()}!`, e.message, e)
       let updateContractHEAD = false
@@ -685,7 +685,7 @@ const actions = {
           // NOTE: this random delay is here for multiple reasons:
           const randomDelay = _.randomIntFromRange(0, 1500)
           // 1. to avoid backend throwing 'bad previousHEAD' error
-          // https://github.com/okTurtles/group-income-simple/issues/608
+          // https://github.com/okTurtles/group-income/issues/608
           // 2. because we need to make sure that if a proposal has been cast by someone,
           // then we are likely to find it in store.state, so we have this random delay
           // here a the top, before we iterate store.state[groupID].proposals, and
