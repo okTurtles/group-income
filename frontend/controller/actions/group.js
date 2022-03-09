@@ -178,18 +178,20 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
     try {
       const rootState = sbp('state/vuex/state')
-
+      const username = params.data.username || rootState.loggedIn.username
       await sbp('gi.actions/chatroom/join', {
         contractID: params.data.chatRoomID,
-        data: {
-          username: params.data.username || rootState.loggedIn.username
-        }
+        data: { username }
       })
 
-      return await sbp('chelonia/out/actionEncrypted', {
+      if (username === rootState.loggedIn.username) {
+        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
+      }
+      await sbp('chelonia/out/actionEncrypted', {
         ...params,
         action: 'gi.contracts/group/joinChatRoom'
       })
+      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
     } catch (e) {
       console.error('gi.actions/group/joinChatRoom failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join chat channel.'))
