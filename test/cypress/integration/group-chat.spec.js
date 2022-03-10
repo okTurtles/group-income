@@ -4,6 +4,7 @@ const groupName = 'Footballers'
 const userId = Math.floor(Math.random() * 10000)
 const user1 = `user1-${userId}`
 const user2 = `user2-${userId}`
+// const = user3 = `user3-${userId}`
 let invitationLinkAnyone
 
 const additionalChatRooms = [
