@@ -194,7 +194,7 @@ export default ({
   methods: {
     updateDetailsForUnjoinedChannel () {
       const details = sbp('okTurtles.data/get', 'GROUPCHAT_DETAILS')
-      if (details.name) {
+      if (details?.name) {
         this.details = details
       }
       this.initializeMembers()
