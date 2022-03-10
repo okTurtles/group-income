@@ -52,7 +52,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                     strong {{ localizedName(username) }}
                     .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
-              .c-actions
+              .c-actions(v-if='isJoined && removable(username)')
                 button.is-icon(
                   v-if='!departedDate'
                   @click.stop='removeMember(username)'
@@ -89,7 +89,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                   strong {{ localizedName(username) }}
                   .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
-            .c-actions
+            .c-actions(v-if='isJoined')
               i18n.button.is-outlined.is-small(
                 v-if='!joinedDate'
                 tag='button'
@@ -115,6 +115,14 @@ import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
+import { CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'
+
+const initDetails = {
+  name: '',
+  description: '',
+  privacyLevel: CHATROOM_PRIVACY_LEVEL.PUBLIC,
+  participants: []
+}
 
 export default ({
   name: 'ChatMembersAllModal',
@@ -129,25 +137,21 @@ export default ({
     return {
       searchText: '',
       addedMembers: [],
-      canAddMembers: []
+      canAddMembers: [],
+      details: initDetails
     }
   },
   created () {
-    this.addedMembers = this.chatRoomUsersInSort.map(member => ({ ...member, departedDate: null }))
-    this.canAddMembers = this.groupMembersSorted
-      .filter(member => !this.addedMembers.find(mb => mb.username === member.username))
-      .map(member => ({
-        username: member.username,
-        displayName: member.displayName,
-        joinedDate: null
-      }))
+    this.updateDetailsForUnjoinedChannel()
+    if (!this.isJoined && !this.attributes.name) {
+      sbp('okTurtles.events/on', CHATROOM_DETAILS_UPDATED, this.updateDetailsForUnjoinedChannel)
+    }
   },
   computed: {
     ...mapGetters([
       'currentChatRoomState',
+      'currentGroupState',
       'groupMembersSorted',
-      'groupMembersCount',
-      'groupMembersByUsername',
       'chatRoomUsersInSort',
       'ourUsername',
       'userDisplayName',
@@ -180,17 +184,53 @@ export default ({
         : L('Showing {searchCount} {strong_}results{_strong} for "{searchTerm}"', args)
     },
     attributes () {
-      const { name, description, privacyLevel } = this.currentChatRoomState.attributes
+      const { name, description, privacyLevel } = this.currentChatRoomState.attributes || this.details
       return { name, description, private: privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE, privacyLevel }
+    },
+    isJoined () {
+      return this.isJoinedChatRoom(this.currentChatRoomId)
     }
   },
   methods: {
+    updateDetailsForUnjoinedChannel () {
+      const details = sbp('okTurtles.data/get', 'GROUPCHAT_DETAILS')
+      if (details.name) {
+        this.details = details
+      }
+      this.initializeMembers()
+    },
+    initializeMembers () {
+      const members = this.isJoined ? this.chatRoomUsersInSort : this.details.participants
+      this.addedMembers = members.map(member => ({ ...member, departedDate: null }))
+      this.canAddMembers = this.groupMembersSorted
+        .filter(member => !this.addedMembers.find(mb => mb.username === member.username))
+        .map(member => ({
+          username: member.username,
+          displayName: member.displayName,
+          joinedDate: null
+        }))
+    },
     localizedName (username: string) {
       const name = this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     closeModal () {
       this.$refs.modal.close()
+      sbp('okTurtles.events/off', CHATROOM_DETAILS_UPDATED)
+    },
+    removable (username: string) {
+      if (!this.isJoined) {
+        return false
+      }
+      const { creator } = this.currentChatRoomState.attributes
+      if (this.currentGroupState.generalChatRoomId === this.currentChatRoomId) {
+        return false
+      } else if (this.ourUsername === creator) {
+        return true
+      } else if (this.ourUsername === username) {
+        return true
+      }
+      return false
     },
     async removeMember (username: string, undoing = false) {
       if (!this.isJoinedChatRoom(this.currentChatRoomId, username)) {

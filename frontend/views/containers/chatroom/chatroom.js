@@ -2,7 +2,7 @@ import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
-import { CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
+import { CHATROOM_STATE_LOADED, CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'
 
 const initChatChannelDetails = {
   isLoading: true,
@@ -47,6 +47,9 @@ const chatroom: Object = {
     } else {
       this.refreshTitle()
     }
+  },
+  mounted () {
+    this.setGroupChatDetailsAsGlobal()
   },
   computed: {
     ...mapGetters([
@@ -154,6 +157,7 @@ const chatroom: Object = {
       }
 
       const participants = {}
+      const members = {}
       for (const username in this.currentGroupState.profiles) {
         const { displayName, picture, email } = this.globalProfile(username)
         participants[username] = {
@@ -163,19 +167,39 @@ const chatroom: Object = {
           picture,
           email
         }
+        if (state.users[username]) {
+          members[username] = { username, displayName, picture, email }
+        }
       }
       this.ephemeral.loadedDetails = {
         isLoading: false,
         numberOfParticipants: Object.keys(state.users).length,
-        participants
+        participants,
+        members
       }
       sbp('okTurtles.events/emit', `${CHATROOM_STATE_LOADED}-${chatRoomId}`, state)
       this.refreshTitle(name)
+      this.setGroupChatDetailsAsGlobal()
+    },
+    setGroupChatDetailsAsGlobal () {
+      if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
+        sbp('okTurtles.data/set', 'GROUPCHAT_DETAILS', {
+          participants: Object.keys(this.details.members || {})
+            .map(un => ({ username: un, displayName: this.details.members[un].displayName })),
+          name: this.summary.title,
+          description: this.summary.description,
+          privacyLevel: this.summary.privacyLevel
+        })
+        sbp('okTurtles.events/emit', CHATROOM_DETAILS_UPDATED)
+      }
     }
   },
   watch: {
     'currentChatRoomId' (to: string, from: string) {
       this.redirectChat('GroupChatConversation', to)
+      this.$nextTick(() => {
+        this.setGroupChatDetailsAsGlobal()
+      })
     }
   }
 }
