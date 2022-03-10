@@ -32,12 +32,10 @@ function reduceDistribution (payments: Distribution): Distribution {
   return payments
 }
 
-// DRYing function meant for accumulating late payments from a previous cycle
 function addDistributions (paymentsA: Distribution, paymentsB: Distribution): Distribution {
   return reduceDistribution([...paymentsA, ...paymentsB])
 }
 
-// DRYing function meant for chipping away a cycle's todoPayments distribution using that cycle's payments:
 function subtractDistributions (paymentsA: Distribution, paymentsB: Distribution): Distribution {
   // Don't modify any payment list/objects parameters in-place, as this is not intended:
   paymentsB = cloneDeep(paymentsB)
@@ -112,6 +110,9 @@ function parsedistributionFromEvents (
       if (idx === -1) throw new Error(`userExitsGroupEvent: no such user: ${event.data.name}`)
       groupMembers.splice(idx, 1)
     }
+    // TODO: if we decide to handle latePayments as part of the distribution
+    //       events, then add a dummy function here that does nothing for latePaymentEvents
+    //       and handle the events separately down below (see other TODO at end of function)
   }
 
   // handle all events, filling out payments and groupMembers arrays
@@ -153,7 +154,7 @@ function parsedistributionFromEvents (
     // if the amount being sent is greater than the adjustedNeed
     // we must redistribute the excess to the other needers who don't
     // have enough
-    // console.log({ needer, payments, incomingPayments, adjustedNeed, totalToNeeder })
+    // console.log({ needer, payments, incomingPayments, adjustedNeed, totalToNeeder, totalReceived })
     if (totalToNeeder > adjustedNeed) {
       // loop through the payments being sent to needer
       // propertionally reduce them so that totalToNeeder = adjustedNeed
@@ -191,7 +192,7 @@ function parsedistributionFromEvents (
       return p
     })
     // console.log({ distribution, overDistribution, adjustOverpayDistribution })
-    distribution = addDistributions(distribution, adjustOverpayDistribution)
+    distribution = addDistributions(distribution, adjustOverpayDistribution).filter(p => p.amount > 0)
   }
 
   const dueDate = dateToMonthstamp(lastDayOfMonth(dateFromMonthstamp(dateToMonthstamp(distributionEvents[distributionEvents.length - 1].data.when))))
@@ -204,6 +205,9 @@ function parsedistributionFromEvents (
   })
 
   // TODO: add in latePayments to the end of the distribution
+  //       consider passing in latePayments through distributionEvents
+  //       instead of as a separate option, and simply do the event handler
+  //       for it down here instead of up above.
 
   return distribution
 }
