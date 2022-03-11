@@ -226,7 +226,7 @@ describe('Group Payments', () => {
     assertNavTabs(['Todo1', 'Sent'])
   })
 
-  it('one month later, user1 sends to user3 the missing $78.57 (test incomplete)', () => {
+  it.skip('one month later, user1 sends to user3 the missing $78.57 (test incomplete)', () => {
     cy.clock(timeStart, ['Date'])
     cy.visit('/')
     cy.tick(timeOneMonth)
@@ -275,7 +275,8 @@ describe('Group Payments', () => {
       cy.getByDT('payRow').eq(1).find('td:nth-child(1)').should('contain', 'user3')
       cy.getByDT('payRow').eq(1).find('td:nth-child(2)').should('contain', '$178.57')
     })
-
+  })
+  it('log out', () => {
     cy.giLogout()
   })
 })
