@@ -67,7 +67,6 @@ function scaleDistribution (groupMembers, payments, distribution) {
 // payments.
 function parsedistributionFromEvents (
   distributionEvents: Distribution,
-  mincome: number,
   adjusted: boolean,
   latePayments?: Array<Object>
 ): Distribution {
