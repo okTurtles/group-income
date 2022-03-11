@@ -62,8 +62,8 @@ describe('Test group-income-distribution.js', function () {
       { from: 'u1', to: 'u2', amount: 50 }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
-      { from: 'u5', to: 'u3', amount: 50 },
-      { from: 'u1', to: 'u2', amount: 40 }
+      { from: 'u1', to: 'u2', amount: 40 },
+      { from: 'u5', to: 'u3', amount: 50 }
     ])
   })
   it('EVENT: Adjusted of "a payment of $10 is made from u1 to u2."', function () {
@@ -95,9 +95,9 @@ describe('Test group-income-distribution.js', function () {
       { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
-      { from: 'u5', to: 'u4', amount: 100 },
+      { from: 'u1', to: 'u2', amount: 40 },
       { from: 'u1', to: 'u3', amount: 50 },
-      { from: 'u1', to: 'u2', amount: 40 }
+      { from: 'u5', to: 'u4', amount: 100 }
     ])
   })
   it('EVENT: u3 removes themselves from the group. Test un-adjsuted first.', function () {
@@ -118,9 +118,9 @@ describe('Test group-income-distribution.js', function () {
       { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
-      { from: 'u5', to: 'u4', amount: 75 },
+      { from: 'u1', to: 'u2', amount: 40 },
       { from: 'u1', to: 'u4', amount: 25 },
-      { from: 'u1', to: 'u2', amount: 40 }
+      { from: 'u5', to: 'u4', amount: 75 }
     ])
   })
   it('EVENT: u1 pays $5 to u4. Test un-adjsuted first.', function () {
@@ -140,9 +140,9 @@ describe('Test group-income-distribution.js', function () {
       { amount: 50, from: 'u5', to: 'u4', total: 50, partial: false, isLate: false, dueOn: '2021-01' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
-      { from: 'u5', to: 'u4', amount: 75 },
+      { from: 'u1', to: 'u2', amount: 40 },
       { from: 'u1', to: 'u4', amount: 20 },
-      { from: 'u1', to: 'u2', amount: 40 }
+      { from: 'u5', to: 'u4', amount: 75 }
     ])
   })
   it('EVENT: u3 rejoins and sets haveNeed to -100. Test un-adjuusted first.', function () {
@@ -166,10 +166,10 @@ describe('Test group-income-distribution.js', function () {
       { amount: 40, from: 'u5', to: 'u3', total: 40, partial: false, isLate: false, dueOn: '2021-01' }
     ])
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true, mincomeAmount })).eql([
-      { from: 'u5', to: 'u3', amount: 80 },
-      { from: 'u5', to: 'u4', amount: 20 },
+      { from: 'u1', to: 'u2', amount: 30 },
       { from: 'u1', to: 'u4', amount: 55 },
-      { from: 'u1', to: 'u2', amount: 30 }
+      { from: 'u5', to: 'u4', amount: 20 },
+      { from: 'u5', to: 'u3', amount: 80 }
     ])
   })
   it('EVENT: u5 pays $10 to u2. Test un-adjusted first.', function () {

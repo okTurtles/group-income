@@ -27,7 +27,7 @@ import './contracts/identity.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
-import { currentMonthstamp, prevMonthstamp, dateToMonthstamp, dateFromMonthstamp } from '~/frontend/utils/time.js'
+import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
 
 Vue.use(Vuex)
 // let store // this is set and made the default export at the bottom of the file.
@@ -340,48 +340,27 @@ const getters = {
       return profile.displayName || username
     }
   },
+  thisMonthsPaymentInfo (state, getters) {
+    return getters.groupMonthlyPayments[currentMonthstamp()]
+  },
   latePayments (state, getters) {
     const monthlyPayments = getters.groupMonthlyPayments
-    if (!monthlyPayments || Object.keys(monthlyPayments).length === 0) return
+    if (Object.keys(monthlyPayments).length === 0) return
     const ourUsername = getters.ourUsername
     const pMonthPayments = monthlyPayments[prevMonthstamp(currentMonthstamp())]
     if (pMonthPayments) {
       return pMonthPayments.lastAdjustedDistribution.filter(todo => todo.from === ourUsername)
     }
   },
-  // do not confuse this with getters.groupDistributionEvents AKA state.distributionEvents!
-  // this getter is special: it creates distribution events on-the-fly based on the current month!
-  // it is used so that the Payments todo view is updated immediately when we enter a new month
-  thisMonthsDistributionEvents (state, getters) {
-    // create haveNeed events based on who's in the group right now with their current values
-    const groupProfiles = getters.groupProfiles
-    const distributionEvents = []
-    const cMonthstamp = currentMonthstamp()
-    const nowstamp = dateFromMonthstamp(cMonthstamp)
-    for (const username in groupProfiles) {
-      const { incomeDetailsType } = groupProfiles[username]
-      if (incomeDetailsType) {
-        const amount = groupProfiles[username][incomeDetailsType]
-        const haveNeed = incomeDetailsType === 'incomeAmount' ? amount - getters.groupMincomeAmount : amount
-        distributionEvents.push({
-          type: 'haveNeedEvent',
-          data: { name: username, haveNeed, when: nowstamp }
-        })
-      }
-    }
-    return distributionEvents.concat(getters.groupDistributionEvents.filter(e => {
-      return e.type !== 'haveNeedEvent' && dateToMonthstamp(e.data.when) === cMonthstamp
-    }))
-  },
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
-    return groupIncomeDistribution(getters.thisMonthsDistributionEvents, {
+    return groupIncomeDistribution(getters.distributionEventsForMonth(currentMonthstamp()), {
       mincomeAmount: getters.groupMincomeAmount
     })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
-    return groupIncomeDistribution(getters.thisMonthsDistributionEvents, {
+    return groupIncomeDistribution(getters.distributionEventsForMonth(currentMonthstamp()), {
       mincomeAmount: getters.groupMincomeAmount,
       adjusted: true,
       latePayments: getters.latePayments
@@ -390,7 +369,7 @@ const getters = {
   // TODO: this is insane, rewrite it and make it cleaner/better
   ourPayments (state, getters) {
     const monthlyPayments = getters.groupMonthlyPayments
-    if (!monthlyPayments || Object.keys(monthlyPayments).length === 0) return
+    if (Object.keys(monthlyPayments).length === 0) return
     const ourUsername = getters.ourUsername
     const cMonthstamp = currentMonthstamp()
     const pMonthstamp = prevMonthstamp(cMonthstamp)
