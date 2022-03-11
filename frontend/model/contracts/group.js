@@ -15,7 +15,7 @@ import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/in
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
 import {
-  dateFromMonthstamp, ISOStringToMonthstamp, compareMonthstamps, DAYS_MILLIS
+  dateFromMonthstamp, dateToMonthstamp, ISOStringToMonthstamp, compareMonthstamps, DAYS_MILLIS
 } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
@@ -303,13 +303,15 @@ sbp('chelonia/defineContract', {
         const datestamp = dateFromMonthstamp(monthstamp)
         let distributionEvents = []
         for (const username in groupProfiles) {
-          const { incomeDetailsType } = groupProfiles[username]
+          const { incomeDetailsType, joinedDate } = groupProfiles[username]
           if (incomeDetailsType) {
             const amount = groupProfiles[username][incomeDetailsType]
             const haveNeed = incomeDetailsType === 'incomeAmount' ? amount - getters.groupMincomeAmount : amount
+            // construct 'when' this way in case we ever use a pro-rated algorithm
+            const when = dateToMonthstamp(joinedDate) === monthstamp ? joinedDate : datestamp
             distributionEvents.push({
               type: 'haveNeedEvent',
-              data: { name: username, haveNeed, when: datestamp }
+              data: { name: username, haveNeed, when }
             })
           }
         }
