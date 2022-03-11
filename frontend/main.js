@@ -11,7 +11,6 @@ import './controller/actions/index.js'
 import Vue from 'vue'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
-import { startMonthlyCycleCheckInterval } from './controller/monthlyCycleTimer.js'
 import { createGIPubSubClient } from './controller/backend.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import { randomHexString } from './utils/giLodash.js'
@@ -186,8 +185,6 @@ async function startApp () {
           'times-circle'
         )
       }
-      // TODO: delete this line and corresponding monthlyCycleTimer.js file
-      startMonthlyCycleCheckInterval(this.$store)
     },
     computed: {
       showNav () {

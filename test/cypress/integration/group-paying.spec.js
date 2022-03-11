@@ -70,7 +70,7 @@ describe('Group Payments', () => {
     setIncomeDetails(true, 100)
   })
 
-  it.skip('user1 sends $71.43 to user2 (total)', () => {
+  it('user1 sends $71.43 to user2 (total)', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
 
     cy.getByDT('paymentsLink').click()
@@ -154,7 +154,7 @@ describe('Group Payments', () => {
     ])
   })
 
-  it.skip('user1 sends $100 to user3 (partial)', () => {
+  it('user1 sends $100 to user3 (partial)', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
     cy.getByDT('paymentsLink').click()
     cy.getByDT('recordPayment').click()
@@ -200,7 +200,7 @@ describe('Group Payments', () => {
     })
   })
 
-  it.skip('user1 changes their income details to "needing" and sees the correct UI', () => {
+  it('user1 changes their income details to "needing" and sees the correct UI', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
 
     setIncomeDetails(false, 950)
@@ -219,7 +219,7 @@ describe('Group Payments', () => {
     ])
   })
 
-  it.skip('user1 changes their income details back to "giving" and sees the correct UI', () => {
+  it('user1 changes their income details back to "giving" and sees the correct UI', () => {
     setIncomeDetails(true, 250)
 
     cy.getByDT('paymentsLink').click()

@@ -101,7 +101,7 @@ function parsedistributionFromEvents (
         amount: event.data.amount,
         total: 0,
         dueOn: '',
-        isLate: false,
+        isLate: !!event.data.isLate,
         partial: false
       })
     },
@@ -136,6 +136,7 @@ function parsedistributionFromEvents (
   // necessary for 'Adjusted 100h2x 100n3x w/payment' test case
   distribution = scaleDistribution(groupMembers, payments, distribution)
 
+  // next we need to distribute any overpayments to needers who don't have enough
   const overDistribution = []
   let overageExists = false
 
