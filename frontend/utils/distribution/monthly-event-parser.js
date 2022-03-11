@@ -3,9 +3,7 @@ import mincomeProportional from '~/frontend/utils/distribution/mincome-proportio
 import { lastDayOfMonth, dateFromMonthstamp, dateToMonthstamp } from '~/frontend/utils/time.js'
 import { cloneDeep } from '~/frontend/utils/giLodash.js'
 
-type Payment = {| amount: number; total: number; partial: boolean; isLate: boolean; from: string; to: string; dueOn: string; |}
-
-type Distribution = Array<Payment>;
+type Distribution = Array<Object>;
 
 // Merges multiple payments between any combinations two of users:
 function reduceDistribution (payments: Distribution): Distribution {
@@ -120,10 +118,7 @@ function parsedistributionFromEvents (
     eventHandlers[event.type](event)
   }
 
-  distribution = mincomeProportional(
-    groupMembers.map(user => ({ name: user.name, amount: mincome + user.haveNeed })),
-    mincome
-  )
+  distribution = mincomeProportional(groupMembers)
 
   if (!adjusted) return distribution
 
@@ -173,7 +168,7 @@ function parsedistributionFromEvents (
           todo.total -= proportionOver
           overDistribution.push({
             name: todo.from,
-            amount: proportionOver
+            haveNeed: proportionOver
           })
         }
       }
@@ -182,13 +177,13 @@ function parsedistributionFromEvents (
       // so we add them to our overDistribution as a needer
       overDistribution.push({
         name: needer.name,
-        amount: -(adjustedNeed - totalToNeeder)
+        haveNeed: -(adjustedNeed - totalToNeeder)
       })
     }
   }
 
   if (overageExists) {
-    const adjustOverpayDistribution = mincomeProportional(overDistribution, 0).map(p => {
+    const adjustOverpayDistribution = mincomeProportional(overDistribution).map(p => {
       p.total = p.amount
       return p
     })
