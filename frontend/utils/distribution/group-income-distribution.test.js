@@ -208,6 +208,12 @@ describe('Test group-income-distribution.js', function () {
       { amount: 33.33333333333333, from: 'u2', to: 'u4', total: 33.33333333333333, partial: false, isLate: false, dueOn: '2021-01' },
       { amount: 33.33333333333333, from: 'u2', to: 'u5', total: 33.33333333333333, partial: false, isLate: false, dueOn: '2021-01' }
     ])
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
+      { amount: 33.33333333333333, from: 'u1', to: 'u3' },
+      { amount: 16.66666666666668, from: 'u1', to: 'u5' },
+      { amount: 41.66666666666665, from: 'u2', to: 'u5' },
+      { amount: 58.33333333333333, from: 'u2', to: 'u4' }
+    ])
   })
 
   // # EVENT: [u1, u2 and u3] join a group and set haveNeeds of [20, 20, -20], respectively

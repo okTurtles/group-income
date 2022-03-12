@@ -376,37 +376,32 @@ const getters = {
     const pPaymentsFrom = pMonthPayments && pMonthPayments.paymentsFrom
 
     const sentInMonth = (monthlyFromPayments) => {
-      return () => {
-        const payments = []
-
-        if (monthlyFromPayments) {
-          for (const toUser in monthlyFromPayments[getters.ourUsername]) {
-            for (const paymentHash of monthlyFromPayments[getters.ourUsername][toUser]) {
-              const { data, meta } = allPayments[paymentHash]
-              payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
-            }
+      const payments = []
+      if (monthlyFromPayments) {
+        for (const toUser in monthlyFromPayments[ourUsername]) {
+          for (const paymentHash of monthlyFromPayments[ourUsername][toUser]) {
+            const { data, meta } = allPayments[paymentHash]
+            payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
           }
         }
-        return payments
       }
+      return payments
     }
     const receivedInMonth = (monthlyFromPayments) => {
-      return () => {
-        const payments = []
-        if (monthlyFromPayments) {
-          for (const fromUser in monthlyFromPayments) {
-            for (const toUser in monthlyFromPayments[fromUser]) {
-              if (toUser === getters.ourUsername) {
-                for (const paymentHash of monthlyFromPayments[fromUser][toUser]) {
-                  const { data, meta } = allPayments[paymentHash]
-                  payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
-                }
+      const payments = []
+      if (monthlyFromPayments) {
+        for (const fromUser in monthlyFromPayments) {
+          for (const toUser in monthlyFromPayments[fromUser]) {
+            if (toUser === ourUsername) {
+              for (const paymentHash of monthlyFromPayments[fromUser][toUser]) {
+                const { data, meta } = allPayments[paymentHash]
+                payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
               }
             }
           }
         }
-        return payments
       }
+      return payments
     }
 
     const todo = () => {
@@ -414,8 +409,8 @@ const getters = {
     }
 
     return {
-      sent: [...sentInMonth(paymentsFrom)(), ...sentInMonth(pPaymentsFrom)()],
-      received: [...receivedInMonth(paymentsFrom)(), ...receivedInMonth(pPaymentsFrom)()],
+      sent: [...sentInMonth(paymentsFrom), ...sentInMonth(pPaymentsFrom)],
+      received: [...receivedInMonth(paymentsFrom), ...receivedInMonth(pPaymentsFrom)],
       todo: todo()
     }
   },
