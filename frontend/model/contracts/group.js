@@ -214,8 +214,6 @@ sbp('chelonia/defineContract', {
         return saferFloat(total)
       }
     },
-<<<<<<< HEAD
-=======
     paymentHashesForMonth (state, getters) {
       return (monthstamp) => {
         const monthlyPayments = getters.groupMonthlyPayments[monthstamp]
@@ -257,7 +255,6 @@ sbp('chelonia/defineContract', {
         }
       }
     },
->>>>>>> master
     groupMembersByUsername (state, getters) {
       return Object.keys(getters.groupProfiles)
     },
@@ -305,10 +302,6 @@ sbp('chelonia/defineContract', {
       //       bound to the UI in some location.
       return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     },
-<<<<<<< HEAD
-    groupDistributionEvents (state, getters) {
-      return getters.currentGroupState.distributionEvents
-    },
     getChatRooms (state, getters) {
       const active = {}
       const deleted = {}
@@ -345,7 +338,7 @@ sbp('chelonia/defineContract', {
     },
     generalChatRoomId (state, getters) {
       return getters.currentGroupState.generalChatRoomId
-=======
+    },
     distributionEventsForMonth (state, getters) {
       return (monthstamp) => {
         const groupProfiles = getters.groupProfiles
@@ -370,7 +363,6 @@ sbp('chelonia/defineContract', {
         }
         return distributionEvents
       }
->>>>>>> master
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
