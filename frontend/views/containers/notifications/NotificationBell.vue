@@ -1,12 +1,12 @@
 <template lang='pug'>
 div
   router-link.button.is-icon-small.c-btn.hide-tablet(:to='{ query: { modal: "NotificationModal" }}')
-    i.icon-bell(:class='{ "is-active": currentGroupUnreadNotificationCount }')
-    badge(v-if='currentGroupUnreadNotificationCount' data-test='alertNotification') {{ currentGroupUnreadNotificationCount }}
+    i.icon-bell(:class='{ "is-active": currentUnreadNotificationCount }')
+    badge(v-if='currentUnreadNotificationCount' data-test='alertNotification') {{ currentUnreadNotificationCount }}
   notification-card
     button.is-icon-small.c-btn.hide-phone
-      i.icon-bell(:class='{ "is-active": currentGroupUnreadNotificationCount }')
-      badge(v-if='currentGroupUnreadNotificationCount' data-test='alertNotification') {{ currentGroupUnreadNotificationCount }}
+      i.icon-bell(:class='{ "is-active": currentUnreadNotificationCount }')
+      badge(v-if='currentUnreadNotificationCount' data-test='alertNotification') {{ currentUnreadNotificationCount }}
 </template>
 
 <script>
@@ -22,7 +22,7 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'currentGroupUnreadNotificationCount'
+      'currentUnreadNotificationCount'
     ])
   }
 }

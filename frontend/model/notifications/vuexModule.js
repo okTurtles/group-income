@@ -7,30 +7,39 @@ import { age, isNew, isOlder } from './utils.js'
 import * as keys from './mutationKeys.js'
 
 const getters = {
-  currentGroupNewNotifications (state, getters) {
-    return getters.currentGroupNotifications.filter(isNew)
-  },
-
-  currentGroupNotificationCount (state, getters) {
-    return getters.currentGroupNotifications.length
-  },
-
-  // Notifications relevant to the current group, plus notifications that don't belong to any group in particular.
+  // Notifications relevant to the current group only.
   currentGroupNotifications (state, getters, rootState) {
-    return state.filter(item => !item.groupID || item.groupID === rootState.currentGroupId)
-  },
-
-  currentGroupOlderNotifications (state, getters) {
-    return getters.currentGroupNotifications.filter(isOlder)
+    return state.filter(item => item.groupID === rootState.currentGroupId)
   },
 
   currentGroupUnreadNotificationCount (state, getters) {
     return getters.currentGroupUnreadNotifications.length
   },
 
-  // Unread notifications relevant to the current group, plus notifications that don't belong to any group in particular.
+  // Unread notifications relevant to the current group only.
   currentGroupUnreadNotifications (state, getters, rootState) {
     return getters.currentGroupNotifications.filter(item => !item.read)
+  },
+
+  currentNewNotifications (state, getters) {
+    return getters.currentNotifications.filter(isNew)
+  },
+
+  currentNotificationCount (state, getters) {
+    return getters.currentNotifications.length
+  },
+
+  // Notifications relevant to the current group, plus notifications that don't belong to any group in particular.
+  currentNotifications (state, getters, rootState) {
+    return state.filter(item => !item.groupID || item.groupID === rootState.currentGroupId)
+  },
+
+  currentOlderNotifications (state, getters) {
+    return getters.currentNotifications.filter(isOlder)
+  },
+
+  currentUnreadNotificationCount (state, getters) {
+    return getters.currentNotifications.filter(item => !item.read).length
   },
 
   totalUnreadNotificationCount (state, getters) {
@@ -38,11 +47,11 @@ const getters = {
   },
 
   // Finds what number to display on a group's avatar badge in the sidebar.
-  unreadNotificationCountFor (state, getters) {
-    return (groupID) => getters.unreadNotificationsFor(groupID).length
+  unreadGroupNotificationCountFor (state, getters) {
+    return (groupID) => getters.unreadGroupNotificationsFor(groupID).length
   },
 
-  unreadNotificationsFor (state, getters, rootState) {
+  unreadGroupNotificationsFor (state, getters, rootState) {
     return (groupID) => (
       groupID === rootState.currentGroupId
         ? getters.currentGroupUnreadNotifications

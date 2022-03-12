@@ -12,7 +12,7 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
     )
       button.c-group-picture.is-unstyled(@click='handleMenuSelect(group.contractID)')
         avatar.c-avatar(:src='$store.state[group.contractID].settings.groupPicture')
-      badge(v-if='unreadNotificationCountFor(group.contractID)') {{ unreadNotificationCountFor(group.contractID) }}
+      badge(v-if='unreadGroupNotificationCountFor(group.contractID)' data-test='groupBadge') {{ unreadGroupNotificationCountFor(group.contractID) }}
 
   li.c-group-list-item
     tooltip(
@@ -49,7 +49,7 @@ export default ({
     ]),
     ...mapGetters([
       'groupsByName',
-      'unreadNotificationCountFor'
+      'unreadGroupNotificationCountFor'
     ])
   },
   methods: {
