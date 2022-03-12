@@ -18,8 +18,7 @@ import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/in
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
 import {
-  currentMonthstamp, prevMonthstamp, ISOStringToMonthstamp, compareMonthstamps,
-  addMonthsToDate, dateToMonthstamp, compareCycles, DAYS_MILLIS
+  dateFromMonthstamp, dateToMonthstamp, ISOStringToMonthstamp, compareMonthstamps, DAYS_MILLIS
 } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
@@ -100,70 +99,29 @@ function initPaymentMonth ({ getters }) {
   }
 }
 
-function clearOldPayments ({ state }) {
+function clearOldPayments ({ state, getters }) {
   const sortedMonthKeys = Object.keys(state.paymentsByMonth).sort()
   // save two months payments, max
   while (sortedMonthKeys.length > 2) {
-    // TODO: archive the old payments and clear them from state.payments!
-    Vue.delete(state.paymentsByMonth, sortedMonthKeys.shift())
+    const monthstamp = sortedMonthKeys.shift()
+    for (const paymentHash of getters.paymentHashesForMonth(monthstamp)) {
+      Vue.delete(state.payments, paymentHash)
+      // TODO: archive the old payments in a sideEffect, not here
+    }
+    Vue.delete(state.paymentsByMonth, monthstamp)
   }
 }
 
 function initFetchMonthlyPayments ({ meta, state, getters }) {
   const monthstamp = ISOStringToMonthstamp(meta.createdDate)
   const monthlyPayments = vueFetchInitKV(state.paymentsByMonth, monthstamp, initPaymentMonth({ getters }))
-  clearOldPayments({ state })
+  clearOldPayments({ state, getters })
   return monthlyPayments
-}
-
-function insertMonthlyCycleEvent (state, event) {
-  // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
-  let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
-  // Fills in multiple missing months when `while` instead of `if`.
-  if (lastEvent && compareCycles(event.data.when, lastEvent.data.when) > 0) {
-    // Add the missing monthly cycle event
-    const monthlyCycleEvent = {
-      type: 'startCycleEvent',
-      data: {
-        when: dateToMonthstamp(addMonthsToDate(dateToMonthstamp(lastEvent.data.when), 1))
-      }
-    }
-    state.distributionEvents.push(monthlyCycleEvent)
-    lastEvent = monthlyCycleEvent
-  }
-
-  state.distributionEvents = state.distributionEvents.filter((e) => {
-    return compareCycles(lastEvent.data.when, e.data.when) > -2
-  })
-
-  state.distributionEvents.push(event)
-
-  state.distributionEvents.sort((a, b) => {
-    return compareCycles(a.data.when, b.data.when)
-  })
-}
-
-function memberDeclaredIncome (state, username, haveNeed, createdDate) {
-  insertMonthlyCycleEvent(state, {
-    type: 'haveNeedEvent',
-    data: {
-      name: username,
-      haveNeed,
-      when: createdDate
-    }
-  })
 }
 
 function memberLeaves (state, username, dateLeft) {
   state.profiles[username].status = PROFILE_STATUS.REMOVED
   state.profiles[username].departedDate = dateLeft
-  insertMonthlyCycleEvent(state, {
-    type: 'userExitsGroupEvent',
-    data: {
-      name: username,
-      when: dateLeft
-    }
-  })
 }
 
 sbp('chelonia/defineContract', {
@@ -256,6 +214,50 @@ sbp('chelonia/defineContract', {
         return saferFloat(total)
       }
     },
+<<<<<<< HEAD
+=======
+    paymentHashesForMonth (state, getters) {
+      return (monthstamp) => {
+        const monthlyPayments = getters.groupMonthlyPayments[monthstamp]
+        if (monthlyPayments) {
+          let hashes = []
+          const { paymentsFrom } = monthlyPayments
+          for (const fromUser in paymentsFrom) {
+            for (const toUser in paymentsFrom[fromUser]) {
+              hashes = hashes.concat(paymentsFrom[fromUser][toUser])
+            }
+          }
+          return hashes
+        }
+      }
+    },
+    paymentsDistributionEventsForMonth (state, getters) {
+      return (monthstamp) => {
+        const hashes = getters.paymentHashesForMonth(monthstamp)
+        if (hashes) {
+          const payments = getters.currentGroupState.payments
+          const events = []
+          for (const paymentHash of hashes) {
+            const payment = payments[paymentHash]
+            if (payment.data.status === PAYMENT_COMPLETED) {
+              events.push({
+                type: 'paymentEvent',
+                data: {
+                  from: payment.meta.username,
+                  to: payment.data.toUser,
+                  hash: paymentHash,
+                  amount: payment.data.amount,
+                  isLate: !!payment.data.isLate,
+                  when: payment.data.completedDate
+                }
+              })
+            }
+          }
+          return events
+        }
+      }
+    },
+>>>>>>> master
     groupMembersByUsername (state, getters) {
       return Object.keys(getters.groupProfiles)
     },
@@ -292,11 +294,9 @@ sbp('chelonia/defineContract', {
       const currency = currencies[getters.groupSettings.mincomeCurrency]
       return currency && currency.symbolWithCode
     },
-    groupMonthlyPayments (state, getters) {
+    groupMonthlyPayments (state, getters): Object {
+      // note: a lot of code expects this to return an object, so keep the || {} below
       return getters.currentGroupState.paymentsByMonth || {}
-    },
-    thisMonthsPaymentInfo (state, getters) {
-      return getters.groupMonthlyPayments[currentMonthstamp()] || {}
     },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
@@ -305,6 +305,7 @@ sbp('chelonia/defineContract', {
       //       bound to the UI in some location.
       return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     },
+<<<<<<< HEAD
     groupDistributionEvents (state, getters) {
       return getters.currentGroupState.distributionEvents
     },
@@ -344,6 +345,32 @@ sbp('chelonia/defineContract', {
     },
     generalChatRoomId (state, getters) {
       return getters.currentGroupState.generalChatRoomId
+=======
+    distributionEventsForMonth (state, getters) {
+      return (monthstamp) => {
+        const groupProfiles = getters.groupProfiles
+        const datestamp = dateFromMonthstamp(monthstamp)
+        let distributionEvents = []
+        for (const username in groupProfiles) {
+          const { incomeDetailsType, joinedDate } = groupProfiles[username]
+          if (incomeDetailsType) {
+            const amount = groupProfiles[username][incomeDetailsType]
+            const haveNeed = incomeDetailsType === 'incomeAmount' ? amount - getters.groupMincomeAmount : amount
+            // construct 'when' this way in case we ever use a pro-rated algorithm
+            const when = dateToMonthstamp(joinedDate) === monthstamp ? joinedDate : datestamp
+            distributionEvents.push({
+              type: 'haveNeedEvent',
+              data: { name: username, haveNeed, when }
+            })
+          }
+        }
+        const paymentEvents = getters.paymentsDistributionEventsForMonth(monthstamp)
+        if (paymentEvents) {
+          distributionEvents = distributionEvents.concat(paymentEvents)
+        }
+        return distributionEvents
+      }
+>>>>>>> master
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -374,7 +401,6 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           payments: {},
           paymentsByMonth: {},
-          distributionEvents: [],
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
@@ -470,17 +496,9 @@ sbp('chelonia/defineContract', {
             const toUser = vueFetchInitKV(fromUser, data.toUser, [])
             toUser.push(data.paymentHash)
           }
-          insertMonthlyCycleEvent(state, {
-            type: 'paymentEvent',
-            data: {
-              from: meta.username,
-              to: payment.data.toUser,
-              hash: data.paymentHash,
-              amount: payment.data.amount,
-              when: payment.data.isLate ? prevMonthstamp(dateToMonthstamp(payment.meta.createdDate)) : payment.meta.createdDate
-            }
-          })
-          paymentMonth.lastAdjustedDistribution = groupIncomeDistribution(getters.currentGroupState.distributionEvents, { mincomeAmount: getters.groupMincomeAmount, adjusted: true })
+          paymentMonth.lastAdjustedDistribution = groupIncomeDistribution(
+            getters.distributionEventsForMonth(updateMonthstamp), { adjusted: true }
+          )
         }
       }
     },
@@ -800,10 +818,6 @@ sbp('chelonia/defineContract', {
               Vue.set(groupProfile, key, value)
           }
         }
-        if (data.incomeDetailsType) {
-          const haveNeed = data.incomeDetailsType === 'incomeAmount' ? data.incomeAmount - state.settings.mincomeAmount : data.pledgeAmount
-          memberDeclaredIncome(state, meta.username, haveNeed, meta.createdDate)
-        }
       }
     },
     'gi.contracts/group/updateAllVotingRules': {
@@ -827,28 +841,6 @@ sbp('chelonia/defineContract', {
         //     Vue.set(state.settings.proposals[proposalSetting].ruleSettings[data.ruleName], 'expires_ms', data.expires_ms)
         //   }
         // }
-      }
-    },
-    'gi.contracts/group/resetMonth': {
-      validate: optional(string),
-      process ({ meta }, { state }) {
-        // Loop through missing monthly cycle events that happen before the 'event' parameter's cycle
-        let lastEvent = state.distributionEvents[state.distributionEvents.length - 1]
-        // Fills in multiple missing months when `while` instead of `if`.
-        while (compareCycles(meta.createdDate, lastEvent.data.when) > 0) {
-          // Add the missing monthly cycle event
-          const monthlyCycleEvent = {
-            type: 'startCycleEvent',
-            data: {
-              when: dateToMonthstamp(addMonthsToDate(lastEvent.data.when, 1))
-            }
-          }
-          state.distributionEvents.push(monthlyCycleEvent)
-          lastEvent = monthlyCycleEvent
-        }
-        state.distributionEvents = state.distributionEvents.filter((e) => {
-          return compareCycles(lastEvent.data.when, e.data.when) > -2
-        })
       }
     },
     'gi.contracts/group/addChatRoom': {
