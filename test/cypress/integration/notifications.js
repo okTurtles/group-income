@@ -184,7 +184,7 @@ describe('Notifications - multiple groups', () => {
   })
 
   it('user-specific notifications should not affect group badges', () => {
-    cy.window().its('sbp').then(async sbp => {
+    cy.window().its('sbp').then(sbp => {
       const getters = sbp('state/vuex/getters')
 
       // User-level notifications should not increase the group's notification count.
