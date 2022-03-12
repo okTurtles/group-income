@@ -66,8 +66,8 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['chatRoomAttributes', 'generalChatRoomId']),
-    ...mapState(['currentChatRoomId', 'currentGroupId'])
+    ...mapGetters(['currentChatRoomId', 'chatRoomAttributes', 'generalChatRoomId']),
+    ...mapState(['currentGroupId'])
   },
   methods: {
     close () {

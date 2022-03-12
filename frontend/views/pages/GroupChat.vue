@@ -162,17 +162,15 @@ export default ({
         this.refreshTitle()
       })
       if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
-        if (this.isJoinedChatRoom(chatRoomId)) {
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            chatRoomId: to.params.chatRoomId
-          })
-        } else if (this.isPublicChatRoom(chatRoomId)) {
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            chatRoomId: to.params.chatRoomId
-          })
-          this.loadSummaryAndDetails()
-        } else {
+        if (!this.isJoinedChatRoom(chatRoomId) && !this.isPublicChatRoom(chatRoomId)) {
           this.redirectChat('GroupChatConversation')
+        } else {
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+            chatRoomId: to.params.chatRoomId
+          })
+          if (this.isPublicChatRoom(chatRoomId)) {
+            this.loadSummaryAndDetails()
+          }
         }
       }
     }

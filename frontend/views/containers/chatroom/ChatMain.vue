@@ -70,7 +70,7 @@
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { mapGetters, mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
@@ -145,10 +145,8 @@ export default ({
     this.updateScroll()
   },
   computed: {
-    ...mapState([
-      'currentChatRoomId'
-    ]),
     ...mapGetters([
+      'currentChatRoomId',
       'chatRoomSettings',
       'chatRoomLatestMessages',
       'ourIdentityContractId',

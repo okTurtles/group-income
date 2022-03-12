@@ -94,14 +94,15 @@ export async function leaveChatRoom ({ contractID }: {
   contractID: string
 }) {
   const rootState = sbp('state/vuex/state')
-  if (contractID === rootState.currentChatRoomId) {
+  const rootGetters = sbp('state/vuex/getters')
+  if (contractID === rootGetters.currentChatRoomId) {
     await sbp('state/vuex/commit', 'setCurrentChatRoomId', {
       groupId: rootState.currentGroupId
     })
-    const chatRoomId = rootState.currentChatRoomId
     const curRouteName = sbp('controller/router').history.current.name
     if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {
-      sbp('controller/router').push({ name: 'GroupChatConversation', params: { chatRoomId } })
+      sbp('controller/router')
+        .push({ name: 'GroupChatConversation', params: { chatRoomId: rootGetters.currentChatRoomId } })
         .catch(logExceptNavigationDuplicated)
     }
   }

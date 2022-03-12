@@ -53,8 +53,8 @@ export default ({
     BannerScoped
   },
   computed: {
-    ...mapState(['currentGroupId', 'currentChatRoomId']),
-    ...mapGetters(['currentChatRoomState', 'generalChatRoomId']),
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'generalChatRoomId']),
     maxNameCharacters () {
       return this.currentChatRoomState.settings.maxNameLetters
     }

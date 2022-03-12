@@ -149,6 +149,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'currentChatRoomId',
       'currentChatRoomState',
       'currentGroupState',
       'groupMembersSorted',
@@ -158,8 +159,7 @@ export default ({
       'isJoinedChatRoom'
     ]),
     ...mapState([
-      'currentGroupId',
-      'currentChatRoomId'
+      'currentGroupId'
     ]),
     searchResult () {
       if (!this.searchText) { return this.canAddMembers }

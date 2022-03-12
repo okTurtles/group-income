@@ -40,7 +40,7 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
-import { mapState, mapGetters } from 'vuex'
+import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -63,10 +63,7 @@ export default ({
     }
   },
   computed: {
-    ...mapState(['currentChatRoomId']),
-    ...mapGetters([
-      'groupSettings', 'currentChatRoomState'
-    ]),
+    ...mapGetters(['currentChatRoomId', 'groupSettings', 'currentChatRoomState']),
     maxDescriptionCharacters () {
       return this.currentChatRoomState.settings.maxDescriptionLetters
     },
