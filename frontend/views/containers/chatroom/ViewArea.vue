@@ -18,7 +18,7 @@
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default ({
@@ -27,10 +27,8 @@ export default ({
     ButtonSubmit
   },
   computed: {
-    ...mapState([
-      'currentGroupId',
-      'currentChatRoomId'
-    ])
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['currentChatRoomId'])
   },
   props: {
     title: String

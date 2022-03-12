@@ -34,13 +34,8 @@ export default ({
     ButtonSubmit
   },
   computed: {
-    ...mapGetters([
-      'currentChatRoomState'
-    ]),
-    ...mapState([
-      'currentChatRoomId',
-      'loggedIn'
-    ])
+    ...mapGetters(['currentChatRoomId', 'currentChatRoomState']),
+    ...mapState(['loggedIn'])
   },
   methods: {
     close () {

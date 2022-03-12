@@ -45,7 +45,7 @@ if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(
 
 const initialState = {
   currentGroupId: null,
-  currentChatRoomId: null,
+  currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
@@ -102,7 +102,8 @@ sbp('sbp/selectors/register', {
   },
   'state/vuex/state': () => store.state,
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
-  'state/vuex/dispatch': (...args) => store.dispatch(...args)
+  'state/vuex/dispatch': (...args) => store.dispatch(...args),
+  'state/vuex/getters': () => store.getters
 })
 
 // Mutations must be synchronous! Never call these directly, instead use commit()
@@ -178,7 +179,7 @@ const mutations = {
   },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
-    state.currentGroupId = currentGroupId
+    Vue.set(state, 'currentGroupId', currentGroupId)
   },
   pending (state, contractID) {
     if (!state.contracts[contractID] && !state.pending.includes(contractID)) {
@@ -209,11 +210,11 @@ const mutations = {
   },
   setCurrentChatRoomId (state, { groupId, chatRoomId }) {
     if (chatRoomId) {
-      state.currentChatRoomId = chatRoomId
+      Vue.set(state.currentChatRoomIDs, state.currentGroupId, chatRoomId)
     } else if (groupId && state[groupId]) {
-      state.currentChatRoomId = state[groupId].generalChatRoomId
+      Vue.set(state.currentChatRoomIDs, state.currentGroupId, state[groupId].generalChatRoomId || null)
     } else {
-      state.currentChatRoomId = null
+      Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
     }
   }
 }
@@ -248,8 +249,8 @@ const getters = {
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },
-  currentChatRoomState (state) {
-    return state[state.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
+  currentChatRoomState (state, getters) {
+    return state[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
   },
   mailboxContract (state, getters) {
     const contract = getters.ourUserIdentityContract
@@ -514,6 +515,9 @@ const getters = {
     }
     return 7
   },
+  currentChatRoomId (state, getters) {
+    return state.currentChatRoomIDs[state.currentGroupId] || null
+  },
   isPublicChatRoom (state, getters) {
     return (chatRoomId: string) => {
       return state[chatRoomId]?.attributes.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE
@@ -616,12 +620,7 @@ const actions = {
         console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
         await sbp('state/enqueueContractSync', currentGroupId)
       }
-      // commented resync for the chatroom contract, because current chatroom contract id could be what the user is not part of
-      // const currentChatRoomId = store.state.currentChatRoomId
-      // if (currentChatRoomId && !contracts[currentChatRoomId]) {
-      //   console.error(`login: lost current chatroom state somehow for ${currentChatRoomId}! attempting resync...`)
-      //   await sbp('state/enqueueContractSync', currentChatRoomId)
-      // }
+      // TODO: resync for the chatroom contract, because current chatroom contract id could be what the user is not part of
       if (!contracts[user.identityContractID]) {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
         await sbp('state/enqueueContractSync', user.identityContractID)

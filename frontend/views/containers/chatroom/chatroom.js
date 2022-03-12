@@ -1,4 +1,4 @@
-import { mapGetters, mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
@@ -53,6 +53,7 @@ const chatroom: Object = {
   },
   computed: {
     ...mapGetters([
+      'currentChatRoomId',
       'currentChatRoomState',
       'currentGroupState',
       'chatRoomUsers',
@@ -60,9 +61,6 @@ const chatroom: Object = {
       'globalProfile',
       'isJoinedChatRoom',
       'isPublicChatRoom'
-    ]),
-    ...mapState([
-      'currentChatRoomId'
     ]),
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
