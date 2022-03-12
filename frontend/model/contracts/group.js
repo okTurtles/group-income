@@ -446,6 +446,7 @@ sbp('chelonia/defineContract', {
             toUser.push(data.paymentHash)
           }
           paymentMonth.lastAdjustedDistribution = groupIncomeDistribution(
+            // TODO: decide whether or not latePayments should be passed in here as well
             getters.distributionEventsForMonth(updateMonthstamp), { adjusted: true }
           )
         }
