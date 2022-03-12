@@ -9,7 +9,6 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import L from '~/frontend/views/utils/translations.js'
-// import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
@@ -356,21 +355,33 @@ const getters = {
       return profile.displayName || username
     }
   },
+  thisMonthsPaymentInfo (state, getters) {
+    return getters.groupMonthlyPayments[currentMonthstamp()]
+  },
+  latePayments (state, getters) {
+    const monthlyPayments = getters.groupMonthlyPayments
+    if (Object.keys(monthlyPayments).length === 0) return
+    const ourUsername = getters.ourUsername
+    const pMonthPayments = monthlyPayments[prevMonthstamp(currentMonthstamp())]
+    if (pMonthPayments) {
+      return pMonthPayments.lastAdjustedDistribution.filter(todo => todo.from === ourUsername)
+    }
+  },
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
-    return groupIncomeDistribution(getters.currentGroupState.distributionEvents, { mincomeAmount: getters.groupMincomeAmount })
+    return groupIncomeDistribution(getters.distributionEventsForMonth(currentMonthstamp()))
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
-    return getters.groupIncomeAdjustedDistributionForMonth()
-  },
-  groupIncomeAdjustedDistributionForMonth (state, getters) {
-    return () => groupIncomeDistribution(getters.currentGroupState.distributionEvents, { mincomeAmount: getters.groupMincomeAmount, adjusted: true })
+    return groupIncomeDistribution(getters.distributionEventsForMonth(currentMonthstamp()), {
+      adjusted: true,
+      latePayments: getters.latePayments
+    })
   },
   // TODO: this is insane, rewrite it and make it cleaner/better
   ourPayments (state, getters) {
     const monthlyPayments = getters.groupMonthlyPayments
-    if (!monthlyPayments || Object.keys(monthlyPayments).length === 0) return
+    if (Object.keys(monthlyPayments).length === 0) return
     const ourUsername = getters.ourUsername
     const cMonthstamp = currentMonthstamp()
     const pMonthstamp = prevMonthstamp(cMonthstamp)
