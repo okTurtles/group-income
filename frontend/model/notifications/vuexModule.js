@@ -42,11 +42,15 @@ const getters = {
     return getters.currentNotifications.filter(item => !item.read).length
   },
 
+  currentUnreadNotifications (state, getters) {
+    return getters.currentNotifications.filter(item => !item.read)
+  },
+
   totalUnreadNotificationCount (state, getters) {
     return state.filter(item => !item.read).length
   },
 
-  // Finds what number to display on a group's avatar badge in the sidebar.
+  // Finds what number to display on a group's avatar badge in the sidebar. Used in GroupsList.vue.
   unreadGroupNotificationCountFor (state, getters) {
     return (groupID) => getters.unreadGroupNotificationsFor(groupID).length
   },
@@ -81,10 +85,9 @@ const mutations = {
     notification.read = true
   },
 
-  // Passing the current group ID will clear the bell icon's badge.
-  // With another group ID, that group's avatar badge in the sidebar will be cleared.
-  [keys.MARK_ALL_NOTIFICATIONS_AS_READ] (state, groupID: string) {
-    sbp('state/vuex/getters').unreadNotificationsFor(groupID).forEach(item => {
+  // Clears the bell icon's badge, as well as the current group avatar's badge in the sidebar if visible.
+  [keys.MARK_ALL_NOTIFICATIONS_AS_READ] (state) {
+    sbp('state/vuex/getters').currentUnreadNotifications.forEach(item => {
       item.read = true
     })
   },
