@@ -194,10 +194,12 @@ const chatroom: Object = {
   },
   watch: {
     'currentChatRoomId' (to: string, from: string) {
-      this.redirectChat('GroupChatConversation', to)
-      this.$nextTick(() => {
-        this.setGroupChatDetailsAsGlobal()
-      })
+      if (to) {
+        this.redirectChat('GroupChatConversation', to)
+        this.$nextTick(() => {
+          this.setGroupChatDetailsAsGlobal()
+        })
+      }
     }
   }
 }
