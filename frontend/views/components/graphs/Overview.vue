@@ -7,7 +7,7 @@ div
         :amount='withCurrency(totalCovered)'
         color='warning-solid'
         variant='inline'
-      ) {{ L('Total covered') }}
+      ) {{ L('Total needed') }}
 
       graph-legend-item(
         :amount='withCurrency(totalCovered)'
