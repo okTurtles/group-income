@@ -74,3 +74,28 @@ A full-width Modal with just `transition` as wrapper. Note that this Modal has "
 ---
 
 Caught a mistake or want to contribute to the documentation? Edit this page on GitHub!
+
+### The `Prompt`
+To call a prompt with yes / no question we need to call sbp with this format:
+
+```js
+sbp('okTurtles.events/emit', OPEN_MODAL, 'Prompt', null, {
+  question: L('Would you like fresh tacos?'),
+  heading: L('Update info'),
+  yesButton: L('Yes'),
+  noButton: L('No')
+})
+```
+
+Following by a listener to the response:
+
+```js
+sbp('okTurtles.events/on', MODAL_RESPONSE, function (response) {
+  sbp('okTurtles.events/off', MODAL_RESPONSE)
+  if (response) {
+    console.log('Yes')
+  } else {
+    console.log('No')
+  }
+})
+```
