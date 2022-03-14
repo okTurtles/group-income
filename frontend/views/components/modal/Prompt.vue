@@ -31,7 +31,8 @@ export default ({
   name: 'Prompt',
   components: {
     ModalTemplate,
-    ButtonSubmit
+    ButtonSubmit,
+    L
   },
   mounted () {
     if (Object.keys(this.$attrs).length === 0) this.closeModal()
