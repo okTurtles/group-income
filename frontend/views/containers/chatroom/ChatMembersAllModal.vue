@@ -55,6 +55,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
               .c-actions(v-if='isJoined && removable(username)')
                 button.is-icon(
                   v-if='!departedDate'
+                  :data-test='"removeMember-" + username'
                   @click.stop='removeMember(username)'
                 )
                   i.icon-times
@@ -94,7 +95,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                 v-if='!joinedDate'
                 tag='button'
                 @click.stop='addToChannel(username)'
-                data-test='addToChannel'
+                :data-test='"addToChannel-" + username'
                 :args='LTags("span")'
               ) Add {span_} to channel{_span}
               .has-text-success(v-else)
