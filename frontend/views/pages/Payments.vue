@@ -143,8 +143,6 @@ export default ({
       'groupIncomeAdjustedDistribution',
       'paymentTotalFromUserToUser',
       'ourPayments',
-      'groupMonthlyPayments',
-      'groupIncomeAdjustedDistributionForMonth',
       'ourGroupProfile',
       'groupSettings',
       'ourUsername',

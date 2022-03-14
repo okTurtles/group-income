@@ -49,7 +49,7 @@ import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import currencies from '@view-utils/currencies.js'
-import distributeIncome from '@utils/distribution/mincome-proportional.js'
+import mincomeProportional from '@utils/distribution/mincome-proportional.js'
 
 export default ({
   name: 'GroupPledgesGraph',
@@ -83,7 +83,7 @@ export default ({
       // NOTE: validate this.amount to avoid negative values in the graph
       const ourPledgeAmount = doWePledge && this.amount >= 0 && this.amount
       const ourIncomeAmount = doWeNeedIncome && this.amount < mincome && this.amount
-      const incomeDistribution = []
+      const haveNeeds = []
       let othersIncomeNeeded = 0
       let othersPledgesAmount = 0
 
@@ -93,10 +93,10 @@ export default ({
 
         const amount = profile[incomeDetailsType]
         const doesNeedPledge = incomeDetailsType === 'incomeAmount'
-        const adjustment = doesNeedPledge ? 0 : mincome
-        const adjustedAmount = adjustment + profile[incomeDetailsType]
+        const adjustment = doesNeedPledge ? mincome : 0
+        const haveNeed = amount - adjustment
 
-        incomeDistribution.push({ name: username, amount: adjustedAmount })
+        haveNeeds.push({ name: username, haveNeed })
 
         if (doesNeedPledge) {
           othersIncomeNeeded += mincome - amount
@@ -113,9 +113,9 @@ export default ({
       let ourIncomeToReceive = ourIncomeNeeded
 
       if (!doWePledge && neededPledges > 0) {
-        incomeDistribution.push({ name: this.ourUsername, amount: ourIncomeAmount })
+        haveNeeds.push({ name: this.ourUsername, haveNeed: ourIncomeAmount - mincome })
 
-        ourIncomeToReceive = distributeIncome(incomeDistribution, mincome)
+        ourIncomeToReceive = mincomeProportional(haveNeeds)
           .filter(i => i.to === this.ourUsername)
           .reduce((acc, cur) => cur.amount + acc, 0)
       }
