@@ -34,7 +34,7 @@ export default {
     warning_0: '#F28A2B',
     warning_1: '#615850',
     warning_2: '#4E5254',
-    danger_0: '#FF938C',
+    danger_0: '#FF4B40',
     danger_1: '#807474',
     danger_2: '#4E5254',
     text_0: '#E8E8E8',
