@@ -13,14 +13,15 @@ modal-template(ref='modal' :a11yTitle='$attrs.heading' :modalForceAction='true')
           | {{ $attrs.question }}
 
       .buttons
-        button.is-outlined(type='button' @click='closeModal') {{ $attrs.noButton }}
+        button.is-outlined(type='button' @click='closeModal') {{ $attrs.noButton || L('No')}}
         button-submit.is-success(
           @click='submit'
           data-test='submitPrompt'
-        ) {{ $attrs.yesButton }}
+        ) {{ $attrs.yesButton || L('Yes')}}
 </template>
 
 <script>
+import L from '@view-utils/translations.js'
 import { MODAL_RESPONSE } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
