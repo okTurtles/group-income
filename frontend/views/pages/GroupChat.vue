@@ -55,15 +55,16 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
       .is-unstyled(
         :class='{"c-link": ourUsername === summary.creator}'
         v-if='summary.description'
-        @click='editDescription'
         data-test='updateDescription'
+        @click='editDescription'
       )
         | {{ summary.description }}
         i.icon-pencil-alt
 
       i18n.is-unstyled(
-        :class='{"c-link": ourUsername === summary.creator}'
         v-else
+        :class='{"c-link": ourUsername === summary.creator}'
+        data-test='updateDescription'
         @click='editDescription'
       ) Add description
 

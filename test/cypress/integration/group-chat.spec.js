@@ -12,15 +12,15 @@ let me
 // since we are differentiate channels by their names in test mode
 // of course, we can create same name in production
 const chatRooms = [
-  { name: 'Channel12', description: 'Description for Channel12', isPrivate: false, users: [user2] },
-  { name: 'Channel14', description: 'Description for Channel14', isPrivate: true, users: [] },
-  { name: 'Channel13', description: '', isPrivate: true, users: [user2] },
-  { name: 'Channel11', description: '', isPrivate: false, users: [] },
-  { name: 'Channel15', description: '', isPrivate: false, users: [user2] },
-  { name: 'Channel23', description: 'Description for Channel23', isPrivate: false, users: [] },
-  { name: 'Channel22', description: 'Description for Channel22', isPrivate: true, users: [user1, user3] },
-  { name: 'Channel24', description: '', isPrivate: true, users: [user3] },
-  { name: 'Channel21', description: '', isPrivate: false, users: [user1] }
+  { name: 'Channel12', description: 'Description for Channel12', isPrivate: false, users: [user1, user2] },
+  { name: 'Channel14', description: 'Description for Channel14', isPrivate: true, users: [user1] },
+  { name: 'Channel13', description: '', isPrivate: true, users: [user1, user2] },
+  { name: 'Channel11', description: '', isPrivate: false, users: [user1] },
+  { name: 'Channel15', description: '', isPrivate: false, users: [user1, user2] },
+  { name: 'Channel23', description: 'Description for Channel23', isPrivate: false, users: [user2] },
+  { name: 'Channel22', description: 'Description for Channel22', isPrivate: true, users: [user2, user1, user3] },
+  { name: 'Channel24', description: '', isPrivate: true, users: [user2, user3] },
+  { name: 'Channel21', description: '', isPrivate: false, users: [user2, user1] }
 ]
 const channelsOf1For2 = chatRooms.filter(c => c.name.startsWith('Channel1') && c.users.includes(user2)).map(c => c.name)
 const channelsOf2For1 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.users.includes(user1)).map(c => c.name)
@@ -130,30 +130,30 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   //   })
   // }
 
-  // function updateName (name) {
-  //   cy.getByDT('channelName').within(() => {
-  //     cy.getByDT('menuTrigger').click()
-  //   })
-  //   cy.getByDT('renameChannel').click()
-  //   cy.getByDT('updateChannelName').clear()
-  //   cy.getByDT('updateChannelName').type(name)
-  //   cy.getByDT('updateChannelNameSubmit').click()
-  //   cy.getByDT('closeModal').should('not.exist')
-  //   cy.getByDT('conversationWapper').within(() => {
-  //     cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel name to: ${name}`)
-  //   })
-  // }
+  function updateName (name) {
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('renameChannel').click()
+    cy.getByDT('updateChannelName').clear()
+    cy.getByDT('updateChannelName').type(name)
+    cy.getByDT('updateChannelNameSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel name to: ${name}`)
+    })
+  }
 
-  // function updateDescription (description) {
-  //   cy.getByDT('updateDescription').click()
-  //   cy.getByDT('updateChannelDescription').clear()
-  //   cy.getByDT('updateChannelDescription').type(description)
-  //   cy.getByDT('updateChannelDescriptionSubmit').click()
-  //   cy.getByDT('closeModal').should('not.exist')
-  //   cy.getByDT('conversationWapper').within(() => {
-  //     cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel description to: ${description}`)
-  //   })
-  // }
+  function updateDescription (description) {
+    cy.getByDT('updateDescription').click()
+    cy.getByDT('updateChannelDescription').clear()
+    cy.getByDT('updateChannelDescription').type(description)
+    cy.getByDT('updateChannelDescriptionSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel description to: ${description}`)
+    })
+  }
 
   // function closeMenu (joined = true) {
   //   // TODO: need to remove cy.wait. Dropdown menu can not closable for a few seconds
@@ -239,26 +239,73 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giSwitchUser(user1)
     me = user1
     cy.getByDT('groupChatLink').click()
+    cy.log('Users can update details(name, description) of the channels they created.')
+    const undetailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && !c.description)[0]
+    const detailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && c.description)[0]
+    const notUpdatableChannel = chatRooms.filter(c => !c.name.startsWith('Channel1') && !c.description && c.users.includes(me))[0]
+    const notJoinedChannel = chatRooms.filter(c => !c.name.startsWith('Channel1') && !c.users.includes(me))[0]
+
+    cy.log(`user1 can add description of ${undetailedChannel.name} chatroom because he is the creator`)
+    cy.log('"Add Description" button is visible because no description is added')
+    switchChannel(undetailedChannel.name)
+    cy.getByDT('conversationWapper').within(() => {
+      cy.getByDT('addDescription').should('exist')
+    })
+    const newName1 = 'Updated-' + undetailedChannel.name
+    updateName(newName1)
+    undetailedChannel.name = newName1
+    const newDescription1 = 'Description for ' + undetailedChannel.name
+    updateDescription(newDescription1)
+    undetailedChannel.description = newDescription1
+
+    cy.log('"Add Description" button is invisible because description is already added')
+    cy.log('but user1 can update description because he is creator')
+    switchChannel(detailedChannel.name)
+    cy.getByDT('conversationWapper').within(() => {
+      cy.getByDT('addDescription').should('not.exist')
+    })
+    const newDescription2 = 'Description for Updated-' + detailedChannel.name
+    updateDescription(newDescription2)
+    detailedChannel.description = newDescription2
+
+
+    cy.log(`user1 can not update details of ${notUpdatableChannel.name} chatroom because he is not creator`)
+    switchChannel(notUpdatableChannel.name)
+    cy.getByDT('conversationWapper').within(() => {
+      cy.getByDT('addDescription').should('not.exist')
+    })
+    cy.getByDT('updateDescription').should('not.have.class', 'c-link')
+    cy.getByDT('updateDescription').click()
+    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('renameChannel').should('not.exist')
+
+    cy.log('Users can not add members to the channels they are not part of. Users can only see members inside.')
+    switchChannel(notJoinedChannel.name)
+    cy.getByDT('channelMembers').click()
+    cy.get('[data-test^="addToChannel-"]').should('not.exist')
+    cy.get('[data-test^="removeMember-"]').should('not.exist')
+    cy.getByDT('closeModal').click()
+    cy.getByDT('closeModal').should('not.exist')
+
     cy.log('Users can not see the private channels they are not part of.')
-    const joinedChannels = chatRooms.map(c => c.name).filter(cn => cn.startsWith('Channel1'))
-      .concat([CHATROOM_GENERAL_NAME, ...channelsOf2For1]).sort()
-    const unjoinedChannels = chatRooms
-      .filter(c => !c.name.startsWith('Channel1') && !c.users.includes(user1) && !c.isPrivate)
-      .map(c => c.name).sort()
+    // TODO
+
+    cy.log('Joined-channels are always in front of unjoined-channels. It means the channels order are different for each user.')
+    const joinedChannels = chatRooms.filter(c => c.users.includes(me)).map(c => c.name)
+      .concat([CHATROOM_GENERAL_NAME]).sort()
+    const unjoinedChannels = chatRooms.filter(c => !c.users.includes(me) && !c.isPrivate).map(c => c.name).sort()
     const visibleChatRooms = joinedChannels.concat(unjoinedChannels)
     cy.getByDT('channelsList').within(() => {
       cy.get('ul').children().should('have.length', visibleChatRooms.length)
       cy.get('ul').within(([list]) => {
         visibleChatRooms.forEach((chatRoomName, index) => {
-          cy.get(list).children().eq(index)
-            .invoke('text')
-            .should('contain', chatRoomName)
+          cy.get(list).children().eq(index).invoke('text').should('contain', chatRoomName)
         })
       })
     })
-    cy.log('Joined-channels are always in front of unjoined-channels. It means the channels order are different for each user.')
-    cy.log('Users can update details(name, description) of the channels they created.')
-    cy.log('Users can add members only in the channels they are part of.')
     cy.giLogout()
   })
 })
