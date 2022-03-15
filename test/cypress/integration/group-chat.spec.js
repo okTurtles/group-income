@@ -59,25 +59,25 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   }
 
-  // function checkIfLeaved (channelName, kicker, leaver) {
-  //   // Attention: to check if other member is left
-  //   // me needs to be logged in that channel
-  //   kicker = kicker || me
-  //   leaver = leaver || me
-  //   const selfLeave = kicker === leaver
-  //   const selfCheck = me === leaver
-  //   if (selfCheck) {
-  //     cy.getByDT('channelsList').within(() => {
-  //       cy.getByDT(`channel-${channelName}-out`).should('exist')
-  //     })
-  //     // do not switch to the channel to check notifications
-  //     // considering it sync the chatroom contract from the beginning
-  //   } else {
-  //     cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', kicker)
-  //     const message = selfLeave ? `Leaved ${channelName}` : `Kicked a member to ${channelName}: ${leaver}`
-  //     cy.get('div.c-message:last-child .c-notification').should('contain', message)
-  //   }
-  // }
+  function checkIfLeaved (channelName, kicker, leaver) {
+    // Attention: to check if other member is left
+    // me needs to be logged in that channel
+    kicker = kicker || me
+    leaver = leaver || me
+    const selfLeave = kicker === leaver
+    const selfCheck = me === leaver
+    if (selfCheck) {
+      cy.getByDT('channelsList').within(() => {
+        cy.getByDT(`channel-${channelName}-out`).should('exist')
+      })
+      // do not switch to the channel to check notifications
+      // considering it sync the chatroom contract from the beginning
+    } else {
+      cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', kicker)
+      const message = selfLeave ? `Leaved ${channelName}` : `Kicked a member from ${channelName}: ${leaver}`
+      cy.get('div.c-message:last-child .c-notification').should('contain', message)
+    }
+  }
 
   function joinChannel (channelName) {
     cy.getByDT('joinChannel').click()
@@ -95,26 +95,28 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     checkIfJoined(channelName, null, username)
   }
 
-  // function leaveChannel (channelName) {
-  //   switchChannel(channelName)
-  //   cy.getByDT('channelName').within(() => {
-  //     cy.getByDT('menuTrigger').click()
-  //   })
-  //   cy.getByDT('leaveChannel').click()
-  //   cy.getByDT('leaveChannelSubmit').click()
-  //   cy.getByDT('closeModal').should('not.exist')
-  //   cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-  // }
+  function leaveChannel (channelName) {
+    switchChannel(channelName)
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('leaveChannel').click()
+    cy.getByDT('leaveChannelSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    checkIfLeaved(channelName)
+  }
 
-  // function kickMemberFromChannel (channelName, username) {
-  //   switchChannel(channelName)
-  //   cy.getByDT('channelMembers').click()
-  //   cy.getByDT('joinedChannelMembersList').within(() => {
-  //     cy.getByDT('removeMember-' + username).click()
-  //   })
-  //   cy.getByDT('closeModal').click()
-  //   cy.getByDT('closeModal').should('not.exist')
-  // }
+  function kickMemberFromChannel (channelName, username) {
+    switchChannel(channelName)
+    cy.getByDT('channelMembers').click()
+    cy.getByDT('joinedChannelMembersList').within(() => {
+      cy.getByDT('removeMember-' + username).click()
+    })
+    cy.getByDT('closeModal').click()
+    cy.getByDT('closeModal').should('not.exist')
+    checkIfLeaved(channelName, null, username)
+  }
 
   // function deleteChannel (channelName) {
   //   switchChannel(channelName)
@@ -322,15 +324,27 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.get('ul').children().should('have.length', 1)
     })
     checkIfJoined(CHATROOM_GENERAL_NAME)
-    // Change from group2 to group1 dashboard
+    // Change from group2 to group1 group chat page
     cy.getByDT('groupsList').find('li:first-child button').click()
     switchChannel(channelsOf2For1[0])
-    // Change from group1 to group2 dashboard
+    // Change from group1 to group2 group chat page
     cy.getByDT('groupsList').find('li:nth-child(2) button').click()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    // Change from group2 to group1 dashboard
+    // Change from group2 to group1 group chat page
     cy.getByDT('groupsList').find('li:first-child button').click()
     cy.getByDT('channelName').should('contain', channelsOf2For1[0])
+  })
+
+  it('user1 kicks user2 from a channel and user2 leaves a group by himself', () => {
+    const leavingChannels = chatRooms
+      .filter(c => c.name.includes('Channel1') && c.users.includes(user2) && !c.isPrivate).map(c => c.name)
+    // User1 kicks user2
+    kickMemberFromChannel(leavingChannels[0], user2)
+    // Leave channel by himself
+    cy.giSwitchUser(user2)
+    me = user2
+    cy.getByDT('groupChatLink').click()
+    leaveChannel(leavingChannels[1])
     cy.giLogout()
   })
 })
