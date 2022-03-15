@@ -1,6 +1,7 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
 
-const groupName = 'Dreamers'
+const groupName1 = 'Dreamers'
+const groupName2 = 'Footballers'
 const userId = Math.floor(Math.random() * 10000)
 const user1 = `user1-${userId}`
 const user2 = `user2-${userId}`
@@ -165,12 +166,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   //   cy.getByDT('notificationsSettings').should('not.exist')
   // }
 
-  it(`user1 creats '${groupName}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
+  it(`user1 creats '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
     cy.visit('/')
     cy.giSignup(user1)
     me = user1
 
-    cy.giCreateGroup(groupName, { bypassUI: true })
+    cy.giCreateGroup(groupName1, { bypassUI: true })
     cy.giGetInvitationAnyone().then(url => {
       invitationLinkAnyone = url
     })
@@ -190,20 +191,20 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout()
   })
 
-  it(`user3 joins ${groupName} group and logout`, () => {
+  it(`user3 joins ${groupName1} group and logout`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
-      groupName,
+      groupName1,
       shouldLogoutAfter: true,
       bypassUI: true
     })
     // do not need to update me
   })
 
-  it(`user2 joins ${groupName} group and joins two public channels by himself`, () => {
+  it(`user2 joins ${groupName1} group and joins two public channels by himself`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
-      groupName,
+      groupName1,
       shouldLogoutAfter: false,
       bypassUI: true
     })
@@ -239,7 +240,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giSwitchUser(user1)
     me = user1
     cy.getByDT('groupChatLink').click()
-    cy.log('Users can update details(name, description) of the channels they created.')
+    cy.log('ssers can update details(name, description) of the channels they created.')
     const undetailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && !c.description)[0]
     const detailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && c.description)[0]
     const notUpdatableChannel = chatRooms.filter(c => !c.name.startsWith('Channel1') && !c.description && c.users.includes(me))[0]
@@ -268,7 +269,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     updateDescription(newDescription2)
     detailedChannel.description = newDescription2
 
-
     cy.log(`user1 can not update details of ${notUpdatableChannel.name} chatroom because he is not creator`)
     switchChannel(notUpdatableChannel.name)
     cy.getByDT('conversationWapper').within(() => {
@@ -282,18 +282,24 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
     cy.getByDT('renameChannel').should('not.exist')
 
-    cy.log('Users can not add members to the channels they are not part of. Users can only see members inside.')
+    cy.log('users can not add members to the channels they are not part of. Users can only see members inside.')
     switchChannel(notJoinedChannel.name)
+    cy.log('users can view the messages inside the visible channels even though they are not part of')
     cy.getByDT('channelMembers').click()
     cy.get('[data-test^="addToChannel-"]').should('not.exist')
     cy.get('[data-test^="removeMember-"]').should('not.exist')
     cy.getByDT('closeModal').click()
     cy.getByDT('closeModal').should('not.exist')
 
-    cy.log('Users can not see the private channels they are not part of.')
-    // TODO
+    cy.log(`users can not change name of "${CHATROOM_GENERAL_NAME}" chatroom even creator`)
+    switchChannel(CHATROOM_GENERAL_NAME)
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('renameChannel').should('not.exist')
 
-    cy.log('Joined-channels are always in front of unjoined-channels. It means the channels order are different for each user.')
+    cy.log('users can not see the private channels they are not part of.')
+    cy.log('joined-channels are always in front of unjoined-channels. It means the channels order are different for each user.')
     const joinedChannels = chatRooms.filter(c => c.users.includes(me)).map(c => c.name)
       .concat([CHATROOM_GENERAL_NAME]).sort()
     const unjoinedChannels = chatRooms.filter(c => !c.users.includes(me) && !c.isPrivate).map(c => c.name).sort()
@@ -306,6 +312,25 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         })
       })
     })
+  })
+
+  it('user1 sees that each group has it\'s current chatroom state individually', () => {
+    cy.giCreateGroup(groupName2, { bypassUI: true })
+    cy.getByDT('groupChatLink').click()
+    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    cy.getByDT('channelsList').within(() => {
+      cy.get('ul').children().should('have.length', 1)
+    })
+    checkIfJoined(CHATROOM_GENERAL_NAME)
+    // Change from group2 to group1 dashboard
+    cy.getByDT('groupsList').find('li:first-child button').click()
+    switchChannel(channelsOf2For1[0])
+    // Change from group1 to group2 dashboard
+    cy.getByDT('groupsList').find('li:nth-child(2) button').click()
+    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    // Change from group2 to group1 dashboard
+    cy.getByDT('groupsList').find('li:first-child button').click()
+    cy.getByDT('channelName').should('contain', channelsOf2For1[0])
     cy.giLogout()
   })
 })
