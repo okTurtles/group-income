@@ -28,6 +28,11 @@ const channelsOf2For1 = chatRooms.filter(c => c.name.startsWith('Channel2') && c
 const channelsOf2For3 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.users.includes(user3)).map(c => c.name)
 
 describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
+  function switchUser (username) {
+    cy.giSwitchUser(username)
+    me = username
+  }
+
   function switchChannel (channelName) {
     cy.getByDT('channelsList').within(() => {
       cy.get('ul > li').each(($el, index, $list) => {
@@ -74,7 +79,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       // considering it sync the chatroom contract from the beginning
     } else {
       cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', kicker)
-      const message = selfLeave ? `Leaved ${channelName}` : `Kicked a member from ${channelName}: ${leaver}`
+      const message = selfLeave ? `Left ${channelName}` : `Kicked a member from ${channelName}: ${leaver}`
       cy.get('div.c-message:last-child .c-notification').should('contain', message)
     }
   }
@@ -116,6 +121,18 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('closeModal').click()
     cy.getByDT('closeModal').should('not.exist')
     checkIfLeaved(channelName, null, username)
+  }
+
+  function openRemoveMemberModal (username, nth) {
+    cy.getByDT('groupMembers').find(`ul>li:nth-child(${nth})`).within(() => {
+      cy.getByDT('username').should('contain', username)
+
+      cy.getByDT('openMemberProfileCard').click()
+    })
+
+    cy.getByDT('memberProfileCard').within(() => {
+      cy.getByDT('buttonRemoveMember').should('contain', 'Remove member').click()
+    })
   }
 
   // function deleteChannel (channelName) {
@@ -196,24 +213,29 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   it(`user3 joins ${groupName1} group and logout`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
-      groupName1,
-      shouldLogoutAfter: true,
+      groupName: groupName1,
+      shouldLogoutAfter: false,
       bypassUI: true
     })
-    // do not need to update me
+    // wait until all the chatroom contracts are synced
+    cy.wait(2000) // eslint-disable-line
+    cy.giLogout()
   })
 
   it(`user2 joins ${groupName1} group and joins two public channels by himself`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
-      groupName1,
+      groupName: groupName1,
       shouldLogoutAfter: false,
       bypassUI: true
     })
     me = user2
+
     cy.getByDT('groupChatLink').click()
+
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     checkIfJoined(CHATROOM_GENERAL_NAME)
+
     const publicUser1Channels = chatRooms.filter(c => c.name.startsWith('Channel1') && !c.isPrivate).map(c => c.name)
     const channels = channelsOf1For2.filter(cn => publicUser1Channels.includes(cn))
     for (const cn of channels) {
@@ -239,8 +261,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it('user1 checks the visibilities, sort order and permissions', () => {
-    cy.giSwitchUser(user1)
-    me = user1
+    switchUser(user1)
     cy.getByDT('groupChatLink').click()
     cy.log('ssers can update details(name, description) of the channels they created.')
     const undetailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && !c.description)[0]
@@ -267,7 +288,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('conversationWapper').within(() => {
       cy.getByDT('addDescription').should('not.exist')
     })
-    const newDescription2 = 'Description for Updated-' + detailedChannel.name
+    const newDescription2 = 'Updated description for ' + detailedChannel.name
     updateDescription(newDescription2)
     detailedChannel.description = newDescription2
 
@@ -306,6 +327,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       .concat([CHATROOM_GENERAL_NAME]).sort()
     const unjoinedChannels = chatRooms.filter(c => !c.users.includes(me) && !c.isPrivate).map(c => c.name).sort()
     const visibleChatRooms = joinedChannels.concat(unjoinedChannels)
+
     cy.getByDT('channelsList').within(() => {
       cy.get('ul').children().should('have.length', visibleChatRooms.length)
       cy.get('ul').within(([list]) => {
@@ -324,12 +346,15 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.get('ul').children().should('have.length', 1)
     })
     checkIfJoined(CHATROOM_GENERAL_NAME)
+
     // Change from group2 to group1 group chat page
     cy.getByDT('groupsList').find('li:first-child button').click()
     switchChannel(channelsOf2For1[0])
+
     // Change from group1 to group2 group chat page
     cy.getByDT('groupsList').find('li:nth-child(2) button').click()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+
     // Change from group2 to group1 group chat page
     cy.getByDT('groupsList').find('li:first-child button').click()
     cy.getByDT('channelName').should('contain', channelsOf2For1[0])
@@ -338,13 +363,127 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   it('user1 kicks user2 from a channel and user2 leaves a group by himself', () => {
     const leavingChannels = chatRooms
       .filter(c => c.name.includes('Channel1') && c.users.includes(user2) && !c.isPrivate).map(c => c.name)
+
     // User1 kicks user2
     kickMemberFromChannel(leavingChannels[0], user2)
+
     // Leave channel by himself
-    cy.giSwitchUser(user2)
-    me = user2
+    switchUser(user2)
+
     cy.getByDT('groupChatLink').click()
     leaveChannel(leavingChannels[1])
+  })
+
+  it('user2 creates a proposal to remove user3', () => {
+    // Create proposal to let user3 leave the group
+    cy.getByDT('dashboard').click()
+
+    openRemoveMemberModal(user3, 3)
+
+    cy.getByDT('modalProposal').within(() => {
+      cy.getByDT('description').should('contain', `Remove ${user3} from the group`)
+      cy.getByDT('nextBtn').click()
+      cy.getByDT('reason', 'textarea').clear().type('Leaving group by proposal to test leaving chatroom')
+      cy.getByDT('submitBtn').click()
+      cy.getByDT('finishBtn').click()
+      cy.getByDT('closeModal').should('not.exist')
+    })
+
+    cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
+      cy.getByDT('typeDescription').should('contain', `Remove ${user3} from the group.`)
+      cy.getByDT('statusDescription').should('contain', '1 out of 2 members voted.') // 1 out of 2 - user3 can't vote.
+    })
+  })
+
+  it('user1 approves the proposal and removes user3', () => {
+    switchUser(user1)
+
+    cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
+      cy.getByDT('typeDescription').should('contain', `Remove ${user3} from the group.`)
+      cy.getByDT('voteFor').click()
+      cy.getByDT('statusDescription')
+        .should('contain', 'Proposal accepted!')
+    })
+    cy.getByDT('groupChatLink').click()
+
+    switchChannel(CHATROOM_GENERAL_NAME)
+    checkIfLeaved(CHATROOM_GENERAL_NAME, user3, user3)
+  })
+
+  it('user3 is removed from the group.', () => {
+    cy.giLogout()
+    cy.giLogin(user3)
+    // wait until all the chatroom contracts are removed
+    cy.wait(1500) // eslint-disable-line
+    cy.giLogout({ hasNoGroup: true })
+  })
+
+  it('user2 leaves the group by himself', () => {
+    // switchUser(user2)
+    cy.giLogin(user2)
+    me = user2
+    cy.getByDT('groupSettingsLink').click()
+    cy.getByDT('leaveModalBtn').click()
+
+    cy.getByDT('leaveGroup', 'form').within(() => {
+      cy.getByDT('username').clear().type(user2)
+      cy.getByDT('password').type('123456789')
+      cy.getByDT('confirmation').clear().type(`LEAVE ${groupName1.toUpperCase()}`)
+
+      cy.getByDT('btnSubmit').click()
+    })
+
+    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('app').then(([el]) => {
+      cy.get(el).should('have.attr', 'data-sync', '')
+    })
+    cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
+    // wait until all the chatroom contracts are removed
+    cy.wait(1000) // eslint-disable-line
+    cy.giLogout({ hasNoGroup: true })
+  })
+
+  it(`user1 checks if user2 and user3 are removed from all the channels including ${CHATROOM_GENERAL_NAME}`, () => {
+    cy.giLogin(user1, { bypassUI: true })
+    me = user1
+
+    cy.getByDT('groupChatLink').click()
+
+    switchChannel(CHATROOM_GENERAL_NAME)
+    cy.getByDT('channelMembers').should('contain', '1 members')
+  })
+
+  it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again`, () => {
+    switchUser(user3)
+
+    cy.giAcceptGroupInvite(invitationLinkAnyone, {
+      username: user3,
+      groupName: groupName1,
+      shouldLogoutAfter: false,
+      isLoggedIn: true
+    })
+
+    cy.getByDT('groupChatLink').click()
+
+    checkIfJoined(CHATROOM_GENERAL_NAME)
+    cy.getByDT('channelMembers').should('contain', '2 members')
+  })
+
+  it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again`, () => {
+    switchUser(user2)
+
+    cy.giAcceptGroupInvite(invitationLinkAnyone, {
+      username: user2,
+      groupName: groupName1,
+      shouldLogoutAfter: false,
+      isLoggedIn: true
+    })
+
+    cy.getByDT('groupChatLink').click()
+
+    checkIfJoined(CHATROOM_GENERAL_NAME)
+    cy.getByDT('channelMembers').should('contain', '3 members')
+
     cy.giLogout()
   })
 })
