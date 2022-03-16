@@ -135,20 +135,21 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   }
 
-  // function deleteChannel (channelName) {
-  //   switchChannel(channelName)
-  //   cy.getByDT('channelName').within(() => {
-  //     cy.getByDT('menuTrigger').click()
-  //   })
-  //   cy.getByDT('deleteChannel').click()
-  //   cy.getByDT('deleteChannelConfirmation').click()
-  //   cy.getByDT('deleteChannelSubmit').click()
-  //   cy.getByDT('closeModal').should('not.exist')
-  //   cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-  //   cy.getByDT('conversationWapper').within(() => {
-  //     cy.get('div.c-message:last-child .c-notification').should('contain', `Deleted the channel: ${channelName}`)
-  //   })
-  // }
+  function deleteChannel (channelName) {
+    switchChannel(channelName)
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('deleteChannel').click()
+    cy.getByDT('deleteChannelConfirmation').click()
+    cy.getByDT('deleteChannelSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', me)
+      cy.get('div.c-message:last-child .c-notification').should('contain', `Deleted the channel: ${channelName}`)
+    })
+  }
 
   function updateName (name) {
     cy.getByDT('channelName').within(() => {
@@ -465,7 +466,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogout({ hasNoGroup: true })
   })
 
-  it(`user1 checks if user2 and user3 are removed from all the channels including ${CHATROOM_GENERAL_NAME}, then logout`, () => {
+  it(`user1 checks if user2 and user3 are removed from all the channels including ${CHATROOM_GENERAL_NAME}`, () => {
     cy.giLogin(user1, { bypassUI: true })
     me = user1
 
@@ -473,6 +474,11 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     switchChannel(CHATROOM_GENERAL_NAME)
     cy.getByDT('channelMembers').should('contain', '1 members')
+  })
+
+  it('user1 delete a channel and logout', () => {
+    const channel = chatRooms.filter(c => c.name.startsWith('Channel1')).map(c => c.name)[0]
+    deleteChannel(channel)
 
     cy.giLogout()
   })
@@ -498,7 +504,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelMembers').should('contain', '2 members')
   })
 
-  it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again`, () => {
+  it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
     switchUser(user2)
 
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
