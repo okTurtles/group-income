@@ -16,6 +16,7 @@
       :key='id'
       tag='router-link'
       variant='solid'
+      :data-test='getChannelTestData(id)'
       :icon='getIcon(id)'
       :badgeCount='list.channels[id].unreadCount'
       :to='buildUrl(id)'
@@ -53,6 +54,10 @@ export default ({
     routeName: String
   },
   methods: {
+    getChannelTestData (id) {
+      const prefix = `channel-${this.list.channels[id].name}`
+      return prefix + (this.list.channels[id].joined ? '-in' : '-out')
+    },
     getIcon (id) {
       const isPrivate = this.list.channels[id].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
       const isJoined = this.list.channels[id].joined
