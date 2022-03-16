@@ -210,6 +210,20 @@ const defaultClientEventHandlers = {
       }
       default: break
     }
+    // If we should reconnect then consider our current subscriptions as pending again,
+    // waiting to be restored upon reconnection.
+    if (client.shouldReconnect) {
+      client.subscriptionSet.forEach((contractID) => {
+        // Skip contracts from which we had to unsubscribe anyway.
+        if (!client.pendingUnsubscriptionSet.has(contractID)) {
+          client.pendingSubscriptionSet.add(contractID)
+        }
+      })
+    }
+    // We are no longer subscribed to any contracts since we are now disconnected.
+    client.subscriptionSet.clear()
+    client.pendingUnsubscriptionSet.clear()
+
     if (client.shouldReconnect && client.options.reconnectOnDisconnection) {
       if (client.failedConnectionAttempts <= client.options.maxRetries) {
         client.scheduleConnectionAttempt()
@@ -304,15 +318,10 @@ const defaultClientEventHandlers = {
         if (client.socket) client.socket.close()
       }, client.options.pingTimeout)
     }
-    // Resend any still unacknowledged request.
+
     client.pendingSubscriptionSet.forEach((contractID) => {
       if (client.socket) {
         client.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
-      }
-    })
-    client.pendingUnsubscriptionSet.forEach((contractID) => {
-      if (client.socket) {
-        client.socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
       }
     })
   },

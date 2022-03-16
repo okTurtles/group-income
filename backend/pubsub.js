@@ -252,7 +252,7 @@ const defaultMessageHandlers = {
       subscribers.add(socket)
       // Broadcast a notification to every other open subscriber.
       const notification = createNotification(type, { contractID, socketID })
-      server.broadcast(notification, { to: subscribers })
+      server.broadcast(notification, { to: subscribers, except: socket })
     }
     socket.send(createResponse(SUCCESS, { type, contractID }))
   },
@@ -270,7 +270,7 @@ const defaultMessageHandlers = {
         subscribers.delete(socket)
         // Broadcast a notification to every remaining open subscriber.
         const notification = createNotification(type, { contractID, socketID })
-        server.broadcast(notification, { to: subscribers })
+        server.broadcast(notification, { to: subscribers, except: socket })
       }
     }
     socket.send(createResponse(SUCCESS, { type, contractID }))
