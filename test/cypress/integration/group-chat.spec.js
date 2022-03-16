@@ -217,8 +217,15 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       shouldLogoutAfter: false,
       bypassUI: true
     })
-    // wait until all the chatroom contracts are synced
-    cy.wait(2000) // eslint-disable-line
+    me = user3
+    cy.getByDT('groupChatLink').click()
+
+    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    checkIfJoined(CHATROOM_GENERAL_NAME)
+
+    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
+      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
+    })
     cy.giLogout()
   })
 
@@ -235,6 +242,10 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     checkIfJoined(CHATROOM_GENERAL_NAME)
+
+    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
+      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
+    })
 
     const publicUser1Channels = chatRooms.filter(c => c.name.startsWith('Channel1') && !c.isPrivate).map(c => c.name)
     const channels = channelsOf1For2.filter(cn => publicUser1Channels.includes(cn))
@@ -395,7 +406,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   })
 
-  it('user1 approves the proposal and removes user3', () => {
+  it('user1 approves the proposal and removes user3 and logout', () => {
     switchUser(user1)
 
     cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
@@ -404,24 +415,33 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.getByDT('statusDescription')
         .should('contain', 'Proposal accepted!')
     })
+
     cy.getByDT('groupChatLink').click()
 
     switchChannel(CHATROOM_GENERAL_NAME)
     checkIfLeaved(CHATROOM_GENERAL_NAME, user3, user3)
+
+    cy.giLogout()
   })
 
-  it('user3 is removed from the group.', () => {
-    cy.giLogout()
+  // TODO: this test case is not necesasry but it is here
+  // because of the issue #1176
+  it('user3 tries to login and noticed that he was removed from the group as well as all the channels inside', () => {
     cy.giLogin(user3)
-    // wait until all the chatroom contracts are removed
-    cy.wait(1500) // eslint-disable-line
+    me = user3
+
+    cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
+
     cy.giLogout({ hasNoGroup: true })
   })
 
   it('user2 leaves the group by himself', () => {
-    // switchUser(user2)
     cy.giLogin(user2)
     me = user2
+
+    // wait until all the chatroom contracts are removed
+    cy.wait(1000) // eslint-disable-line
+
     cy.getByDT('groupSettingsLink').click()
     cy.getByDT('leaveModalBtn').click()
 
@@ -438,12 +458,14 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
+
     // wait until all the chatroom contracts are removed
     cy.wait(1000) // eslint-disable-line
+
     cy.giLogout({ hasNoGroup: true })
   })
 
-  it(`user1 checks if user2 and user3 are removed from all the channels including ${CHATROOM_GENERAL_NAME}`, () => {
+  it(`user1 checks if user2 and user3 are removed from all the channels including ${CHATROOM_GENERAL_NAME}, then logout`, () => {
     cy.giLogin(user1, { bypassUI: true })
     me = user1
 
@@ -451,11 +473,18 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     switchChannel(CHATROOM_GENERAL_NAME)
     cy.getByDT('channelMembers').should('contain', '1 members')
+
+    cy.giLogout()
   })
 
+  // TODO: can not rejoin the group by himself unless he uses the link made by proposal
+  // so the scenario could be updated later when e2e protocol would be ready
   it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again`, () => {
-    switchUser(user3)
-
+    cy.giLogin(user3)
+    me = user3
+    cy.wait(500) // eslint-disable-line
+    cy.giLogout({ hasNoGroup: true })
+    cy.giLogin(user3)
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
       groupName: groupName1,
