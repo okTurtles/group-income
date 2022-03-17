@@ -58,7 +58,7 @@ export function createMessage ({ meta, data, hash, state }: {
 
   let newMessage = {
     type,
-    time: new Date(createdDate).toISOString(),
+    datetime: new Date(createdDate).toISOString(),
     id: hash,
     from: meta.username
   }
@@ -96,12 +96,12 @@ export async function leaveChatRoom ({ contractID }: {
   const rootState = sbp('state/vuex/state')
   const rootGetters = sbp('state/vuex/getters')
   if (contractID === rootGetters.currentChatRoomId) {
-    await sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+    sbp('state/vuex/commit', 'setCurrentChatRoomId', {
       groupId: rootState.currentGroupId
     })
     const curRouteName = sbp('controller/router').history.current.name
     if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {
-      sbp('controller/router')
+      await sbp('controller/router')
         .push({ name: 'GroupChatConversation', params: { chatRoomId: rootGetters.currentChatRoomId } })
         .catch(logExceptNavigationDuplicated)
     }
@@ -122,7 +122,7 @@ function createNotificationData (
   }
 }
 
-function emitMessageEvents ({ type, contractID, hash, state }: {
+function emitMessageEvent ({ type, contractID, hash, state }: {
   type: string, contractID: string, hash: string, state: Object
 }): void {
   for (let i = state.messages.length - 1; i >= 0; i--) {
@@ -185,8 +185,8 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           settings: {
             messagesPerPage: CHATROOM_MESSAGES_PER_PAGE,
-            maxNameLetters: CHATROOM_NAME_LIMITS_IN_CHARS,
-            maxDescriptionLetters: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
+            maxNameLength: CHATROOM_NAME_LIMITS_IN_CHARS,
+            maxDescriptionLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
           },
           attributes: {
             creator: meta.username,
@@ -229,7 +229,7 @@ sbp('chelonia/defineContract', {
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
       },
       sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/rename': {
@@ -243,7 +243,7 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/changeDescription': {
@@ -259,7 +259,7 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/leave': {
@@ -293,7 +293,7 @@ sbp('chelonia/defineContract', {
         if (data.member === rootState.loggedIn.username) {
           leaveChatRoom({ contractID })
         }
-        emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/delete': {
@@ -324,7 +324,7 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvents({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/deleteMessage': {

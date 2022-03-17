@@ -8,12 +8,10 @@ import type { GIActionParams } from './types.js'
 export default (sbp('sbp/selectors/register', {
   'gi.actions/chatroom/create': async function (params: GIActionParams) {
     try {
-      const message = await sbp('chelonia/out/registerContract', {
+      return await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/chatroom',
         data: params.data
       })
-
-      return message
     } catch (e) {
       console.error('gi.actions/chatroom/register failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create chat channel.'))

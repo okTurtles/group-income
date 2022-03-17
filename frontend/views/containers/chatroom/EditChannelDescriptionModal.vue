@@ -65,7 +65,7 @@ export default ({
   computed: {
     ...mapGetters(['currentChatRoomId', 'groupSettings', 'currentChatRoomState']),
     maxDescriptionCharacters () {
-      return this.currentChatRoomState.settings.maxDescriptionLetters
+      return this.currentChatRoomState.settings.maxDescriptionLength
     },
     code () {
       return L('DELETE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })

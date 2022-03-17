@@ -16,7 +16,7 @@
           :class='{ "sr-only": isSameSender }'
         )
           span.is-title-4 {{who}}
-          span.has-text-1 {{getTime(time)}}
+          span.has-text-1 {{getTime(datetime)}}
 
       slot(name='body')
         p.c-replying(if='replyingMessage') {{replyingMessage}}
@@ -80,7 +80,7 @@ export default ({
     who: String,
     currentUserId: String,
     avatar: String,
-    time: {
+    datetime: {
       type: Date,
       required: true
     },
