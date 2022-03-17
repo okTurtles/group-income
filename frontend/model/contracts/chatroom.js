@@ -133,7 +133,7 @@ function emitMessageEvent ({ type, contractID, hash, state }: {
     const messagesCount = state?.messages.length || 0
     for (let i = messagesCount - 1; i >= 0; i--) {
       if (state?.messages[i].id === hash) {
-        data = { message: state?.messages[i] }
+        data = { message: { ...state?.messages[i] } }
         break
       }
     }

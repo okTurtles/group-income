@@ -82,7 +82,9 @@ menu-parent(ref='menu')
         i.icon-link
         i18n Copy message Link
 
-      menu-item.is-icon-small.is-danger(tag='button'
+      menu-item.is-icon-small.is-danger(
+        tag='button'
+        data-test='deleteMessage'
         @click='action("deleteMessage")'
       )
         i.icon-trash-alt

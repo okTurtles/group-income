@@ -84,6 +84,7 @@ import { fakeEvents } from '@containers/chatroom/fakeStore.js'
 import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
 import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
+import { cloneDeep } from '@utils/giLodash.js'
 import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
 import { CONTRACT_IS_SYNCING } from '@utils/events.js'
 
@@ -345,7 +346,7 @@ export default ({
     },
     setInitMessages () {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        this.messages = this.chatRoomLatestMessages
+        this.messages = cloneDeep(this.chatRoomLatestMessages)
       } else {
         this.messages = []
         sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
