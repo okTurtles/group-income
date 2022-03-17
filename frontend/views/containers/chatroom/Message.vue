@@ -24,7 +24,7 @@ export default ({
     who: String,
     currentUsername: String,
     avatar: String,
-    time: {
+    datetime: {
       type: Date,
       required: true
     },

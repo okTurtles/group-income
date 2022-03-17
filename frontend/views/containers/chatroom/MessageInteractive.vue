@@ -6,7 +6,7 @@ message-base(v-bind='$props' @wrapperAction='action')
   template(#header='')
     .c-header
       span.c-title.is-title-5(:class='interactiveMessage.proposalSeverity') {{interactiveMessage.proposalStatus}}
-      span.has-text-1 {{getTime(time)}}
+      span.has-text-1 {{getTime(datetime)}}
   template(#body='')
     .c-text
       | {{interactiveMessage.text}}
@@ -71,7 +71,7 @@ export default ({
   name: 'MessageInteractive',
   props: {
     id: String,
-    time: Date
+    datetime: Date
   },
   components: {
     SvgHorn,

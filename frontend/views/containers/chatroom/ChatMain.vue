@@ -23,7 +23,7 @@
           :class='{"is-new": isNew(index)}'
           :key='`date-${index}`'
         )
-          span(v-if='changeDay(index)') {{proximityDate(message.time)}}
+          span(v-if='changeDay(index)') {{proximityDate(message.datetime)}}
           i18n.c-new(v-if='isNew(index)' :class='{"is-new-date": changeDay(index)}') New
 
         component(
@@ -34,7 +34,7 @@
           :notification='message.notification'
           :replyingMessage='message.replyingMessage'
           :from='message.from'
-          :time='time(message.time)'
+          :datetime='time(message.datetime)'
           :emoticonsList='message.emoticons'
           :who='who(message)'
           :currentUsername='currentUserAttr.username'
@@ -236,8 +236,8 @@ export default ({
       if (!this.messages[index - 1]) { return false }
       if (this.messages[index].type !== MESSAGE_TYPES.TEXT) { return false }
       if (this.messages[index].type !== this.messages[index - 1].type) { return false }
-      const timeBetween = new Date(this.messages[index].time).getTime() -
-        new Date(this.messages[index - 1].time).getTime()
+      const timeBetween = new Date(this.messages[index].datetime).getTime() -
+        new Date(this.messages[index - 1].datetime).getTime()
       if (timeBetween > MINS_MILLIS * 10) { return false }
       return this.messages[index].from === this.messages[index - 1].from
     },
@@ -324,8 +324,8 @@ export default ({
     changeDay (index) {
       const conv = this.messages
       if (index > 0 && index <= conv.length) {
-        const prev = new Date(conv[index - 1].time)
-        const current = new Date(conv[index].time)
+        const prev = new Date(conv[index - 1].datetime)
+        const current = new Date(conv[index].datetime)
         return prev.getDay() !== current.getDay()
       } else return false
     },

@@ -56,7 +56,7 @@ export default ({
     ...mapState(['currentGroupId']),
     ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'generalChatRoomId']),
     maxNameCharacters () {
-      return this.currentChatRoomState.settings.maxNameLetters
+      return this.currentChatRoomState.settings.maxNameLength
     }
   },
   data () {
