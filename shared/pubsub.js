@@ -238,7 +238,7 @@ const defaultClientEventHandlers = {
   error (event: Event) {
     const client = this
 
-    console.error('[pubsub] Event: error', event)
+    console.log('[pubsub] Event: error', event)
     clearTimeout(client.pingTimeoutID)
   },
 
@@ -318,7 +318,7 @@ const defaultClientEventHandlers = {
         if (client.socket) client.socket.close()
       }, client.options.pingTimeout)
     }
-
+    // Send any pending request.
     client.pendingSubscriptionSet.forEach((contractID) => {
       if (client.socket) {
         client.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
@@ -350,9 +350,11 @@ const defaultClientEventHandlers = {
 // These handlers receive the PubSubClient instance through the `this` binding.
 const defaultMessageHandlers = {
   [NOTIFICATION_TYPE.PING] ({ data }) {
-    console.debug(`[pubsub] Ping received in ${Date.now() - Number(data)} ms`)
     const client = this
 
+    if (client.options.logPingMessages) {
+      console.debug(`[pubsub] Ping received in ${Date.now() - Number(data)} ms`)
+    }
     // Reply with a pong message using the same data.
     if (client.socket) {
       client.socket.send(createMessage(NOTIFICATION_TYPE.PONG, data))
@@ -368,15 +370,15 @@ const defaultMessageHandlers = {
 
   // PUB can be used to send ephemeral messages outside of any contract log.
   [NOTIFICATION_TYPE.PUB] (msg) {
-    console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
+    console.warn(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
   [NOTIFICATION_TYPE.SUB] (msg) {
-    console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
+    console.warn(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
   [NOTIFICATION_TYPE.UNSUB] (msg) {
-    console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
+    console.warn(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
   [RESPONSE_TYPE.ERROR] ({ data: { type, contractID } }) {
@@ -408,7 +410,7 @@ const defaultMessageHandlers = {
 
 // TODO: verify these are good defaults
 const defaultOptions = {
-  debug: process.env.NODE_ENV === 'development',
+  logPingMessages: process.env.NODE_ENV === 'development' && !process.env.CI,
   pingTimeout: 45000,
   maxReconnectionDelay: 60000,
   maxRetries: 10,

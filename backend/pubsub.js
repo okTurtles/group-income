@@ -50,6 +50,8 @@ export function createResponse (type: ResponseTypeEnum, data: JSONType): string 
  *
  * @param {(http.Server|https.Server)} server - A Node.js HTTP/S server to attach to.
  * @param {Object?} options
+ * {boolean?} logPingRounds - Whether to log ping rounds.
+ * {boolean?} logPongMessages - Whether to log received pong messages.
  * {object?} messageHandlers - Custom handlers for different message types.
  * {object?} serverHandlers - Custom handlers for server events.
  * {object?} socketHandlers - Custom handlers for socket events.
@@ -68,8 +70,8 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
     ...{ clientTracking: true },
     server: httpServer
   })
-  server.customServerEventHandlers = options.serverHandlers || {}
-  server.customSocketEventHandlers = options.socketHandlers || {}
+  server.customServerEventHandlers = { ...options.serverHandlers }
+  server.customSocketEventHandlers = { ...options.socketHandlers }
   server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
   server.pingIntervalID = undefined
   server.subscribersByContractID = Object.create(null)
@@ -95,10 +97,12 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   // Setup a ping interval if required.
   if (server.options.pingInterval > 0) {
     server.pingIntervalID = setInterval(() => {
-      console.debug('[pubsub] Pinging clients')
+      if (server.clients.length && server.options.logPingRounds) {
+        console.debug('[pubsub] Pinging clients')
+      }
       server.clients.forEach((client) => {
         if (client.pinged && !client.activeSinceLastPing) {
-          console.log(`[pubsub] Closing irresponsive client ${client.id}`)
+          console.log(`[pubsub] Disconnecting irresponsive client ${client.id}`)
           return client.terminate()
         }
         if (client.readyState === WebSocket.OPEN) {
@@ -114,6 +118,8 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
 }
 
 const defaultOptions = {
+  logPingRounds: process.env.NODE_ENV === 'development' && !process.env.CI,
+  logPongMessages: false,
   maxPayload: 6 * 1024 * 1024,
   pingInterval: 30000
 }
@@ -147,7 +153,10 @@ const defaultServerHandlers = {
     // Add listeners for socket events, i.e. events emitted on a socket object.
     ;['close', 'error', 'message', 'ping', 'pong'].forEach((eventName) => {
       socket.on(eventName, (...args) => {
-        console.debug(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
+        // Logging of 'message' events is handled in the default 'message' event handler.
+        if (eventName !== 'message') {
+          console.log(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
+        }
         const customHandler = socket.server.customSocketEventHandlers[eventName]
         const defaultHandler = (defaultSocketEventHandlers: Object)[eventName]
 
@@ -206,6 +215,11 @@ const defaultSocketEventHandlers = {
       rejectMessageAndTerminateSocket(msg, socket)
       return
     }
+    // Now that we have successfully parsed the message, we can log it.
+    if (msg.type !== 'pong' || server.options.logPongMessages) {
+      console.log(`[pubsub] Received '${msg.type}' on socket ${socket.id}`, data)
+    }
+    // The socket can be marked as active since it just received a message.
     socket.activeSinceLastPing = true
     const handler = server.messageHandlers[msg.type]
 
