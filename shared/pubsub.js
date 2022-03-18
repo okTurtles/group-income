@@ -32,6 +32,7 @@ export type PubSubClient = {
   connectionTimeoutID: TimeoutID | void,
   +customEventHandlers: Object,
   failedConnectionAttempts: number,
+  +isLocal: boolean,
   isNew: boolean,
   +listeners: Object,
   +messageHandlers: Object,
@@ -118,6 +119,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     // Reset to 0 upon successful connection.
     // Used to compute how long to wait before the next reconnection attempt.
     failedConnectionAttempts: 0,
+    isLocal: /\/\/(localhost|127\.0\.0\.1)([:?/]|$)/.test(url),
     // True if this client has never been connected yet.
     isNew: true,
     listeners: Object.create(null),
@@ -225,10 +227,14 @@ const defaultClientEventHandlers = {
     client.pendingUnsubscriptionSet.clear()
 
     if (client.shouldReconnect && client.options.reconnectOnDisconnection) {
-      if (client.failedConnectionAttempts <= client.options.maxRetries) {
-        client.scheduleConnectionAttempt()
-      } else {
+      if (client.failedConnectionAttempts > client.options.maxRetries) {
         sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_FAILED, client)
+      } else {
+        // If we are definetely offline then do not try to reconnect now,
+        // unless the server is local.
+        if (!isDefinetelyOffline() || client.isLocal) {
+          client.scheduleConnectionAttempt()
+        }
       }
     }
   },
@@ -278,7 +284,7 @@ const defaultClientEventHandlers = {
     console.log('[pubsub] Event: offline')
     const client = this
 
-    clearTimeout(client.pingTimeoutID)
+    client.clearAllTimers()
     // Reset the connection attempt counter so that we'll start a new
     // reconnection loop when we are back online.
     client.failedConnectionAttempts = 0
@@ -427,6 +433,11 @@ const defaultOptions = {
 const globalEventNames = ['offline', 'online']
 const socketEventNames = ['close', 'error', 'message', 'open']
 
+// `navigator.onLine` can give confusing false positives when `true`,
+// so we'll define `isDefinetelyOffline()` rather than `isOnline()` or `isOffline()`.
+// See https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine
+const isDefinetelyOffline = () => typeof navigator === 'object' && navigator.onLine === false
+
 // Parses and validates a received message.
 export const messageParser = (data: string): Message => {
   const msg = JSON.parse(data)
@@ -540,6 +551,9 @@ const publicMethods = {
 
     if (!client.shouldReconnect) {
       throw new Error('Cannot call `scheduleConnectionAttempt()` when `shouldReconnect` is false.')
+    }
+    if (client.nextConnectionAttemptDelayID) {
+      return console.warn('[pubsub] A reconnection attempt is already scheduled.')
     }
     const delay = client.getNextRandomDelay()
     const nth = client.failedConnectionAttempts + 1
