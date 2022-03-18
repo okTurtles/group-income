@@ -68,7 +68,34 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
 
     cy.getByDT('conversationWapper').within(() => {
-    	cy.get('.c-message').should('have.length', countAfter)
+      cy.get('.c-message').should('have.length', countAfter)
+    })
+  }
+
+  function sendEmoticon (nth, emojiCode, emojiCount) {
+    const emojiWrapperSelector = '.c-picker-wrapper .emoji-mart .vue-recycle-scroller__item-wrapper .vue-recycle-scroller__item-view:first-child .emoji-mart-category'
+    cy.getByDT('conversationWapper').find(`.c-message:nth-child(${nth})`).within(() => {
+      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
+      cy.get('.c-menu>.c-actions button[aria-label="Add reaction"]').click()
+    })
+    cy.get(`${emojiWrapperSelector} span[data-title="${emojiCode}"]`).eq(0).click()
+
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get(`.c-message:nth-child(${nth}) .c-emoticons-list`).should('exist')
+      cy.get(`.c-message:nth-child(${nth}) .c-emoticons-list>.c-emoticon-wrapper`).should('have.length', emojiCount + 1)
+    })
+  }
+
+  function deleteEmotion (nthMesage, nthEmoji, emojiCount) {
+    const expectedEmojiCount = !emojiCount ? 0 : emojiCount + 1
+    cy.getByDT('conversationWapper').find(`.c-message:nth-child(${nthMesage})`).within(() => {
+      cy.get('.c-emoticons-list').should('exist')
+      cy.get('.c-emoticons-list>.c-emoticon-wrapper').should('have.length', emojiCount + 2)
+      cy.get(`.c-emoticons-list>.c-emoticon-wrapper:nth-child(${nthEmoji})`).click()
+    })
+
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get(`.c-message:nth-child(${nthMesage}) .c-emoticons-list>.c-emoticon-wrapper`).should('have.length', expectedEmojiCount)
     })
   }
 
@@ -133,12 +160,12 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
   })
 
   it('user1 sees the edited message but he is not able to see the deleted message', () => {
-  	switchUser(user1)
+    switchUser(user1)
     cy.getByDT('groupChatLink').click()
 
     cy.getByDT('conversationWapper').within(() => {
-    	cy.get('.c-message').should('have.length', 4)
-      
+      cy.get('.c-message').should('have.length', 4)
+
       cy.get('.c-message').eq(0).find('.c-who > span:first-child').should('contain', user1)
       cy.get('.c-message').eq(0).find('.c-text').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
 
@@ -151,7 +178,34 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('.c-message').eq(3).find('.c-who > span:first-child').should('contain', user1)
       cy.get('.c-message').eq(3).find('.c-text').should('contain', `Hi ${user2}. I am fine thanks.`)
     })
+  })
 
-  	cy.giLogout()
+  it('user1 adds 4 emojis and removes 1 emoji', () => {
+    sendEmoticon(4, '+1', 1)
+    sendEmoticon(4, 'joy', 2)
+    sendEmoticon(4, 'grinning', 3)
+
+    sendEmoticon(5, 'joy', 1)
+
+    deleteEmotion(4, 2, 2)
+  })
+
+  it('user2 sees the emojis user1 created and adds his emoji', () => {
+    switchUser(user2)
+    cy.getByDT('groupChatLink').click()
+
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('.c-message:nth-child(4) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
+      cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 2)
+    })
+
+    sendEmoticon(5, '+1', 1)
+
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
+      cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper.is-user-emoticon').should('have.length', 1)
+    })
+
+    cy.giLogout()
   })
 })
