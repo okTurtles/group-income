@@ -11,9 +11,17 @@ export function mapObject (obj: Object, fn: Function): {[any]: any} {
   return Object.fromEntries(Object.entries(obj).map(fn))
 }
 
-export function pick (o: Object, props: string[]): {...} {
+export function pick (o: Object, props: string[]): Object {
   const x = {}
   for (const k of props) { x[k] = o[k] }
+  return x
+}
+
+export function pickWhere (o: Object, where: Function): Object {
+  const x = {}
+  for (const k in o) {
+    if (where(o[k])) { x[k] = o[k] }
+  }
   return x
 }
 

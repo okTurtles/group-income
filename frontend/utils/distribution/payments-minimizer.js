@@ -5,17 +5,17 @@ import { saferFloat } from '~/frontend/views/utils/currencies.js'
 // greedy algorithm responsible for "balancing" payments
 // such that the least number of payments are made.
 export default function minimizeTotalPaymentsCount (
-  distribution: Array<Object>,
-  groupMembers: Array<Object>,
-  payments: Array<Object>
+  distribution: Array<Object>
+  // groupMembers: Array<Object>,
+  // payments: Array<Object>
 ): Array<any | {|from: string, to: string, amount: number|}> {
   // return distribution
   const neederTotalReceived = {}
   const haverTotalHave = {}
   const haversSorted = []
   const needersSorted = []
-  const getUser = (name) => groupMembers.find(member => member.name === name)
-  let minimizedDistribution = []
+  // const getUser = (name) => groupMembers.find(member => member.name === name)
+  const minimizedDistribution = []
   for (const todo of distribution) {
     neederTotalReceived[todo.to] = (neederTotalReceived[todo.to] || 0) + todo.amount
     haverTotalHave[todo.from] = (haverTotalHave[todo.from] || 0) + todo.amount
@@ -29,6 +29,8 @@ export default function minimizeTotalPaymentsCount (
   // sort haves and needs: greatest to least
   haversSorted.sort((a, b) => b.amount - a.amount)
   needersSorted.sort((a, b) => b.amount - a.amount)
+  // TODO: only minimize payments have have connections in distribution
+  //       if there is no payment from a -> b, don't create one
   while (haversSorted.length > 0 && needersSorted.length > 0) {
     const mostHaver = haversSorted.pop()
     const mostNeeder = needersSorted.pop()
@@ -48,7 +50,7 @@ export default function minimizeTotalPaymentsCount (
       minimizedDistribution.push({ amount: mostNeeder.amount, from: mostHaver.name, to: mostNeeder.name })
     }
   }
-  if (minimizedDistribution.length > 0) {
+  /* if (minimizedDistribution.length > 0) {
     while (true) {
       let lowestSeen = minimizedDistribution[0]
       for (const todo of minimizedDistribution) {
@@ -99,8 +101,8 @@ export default function minimizeTotalPaymentsCount (
     }
     // we could do this in a loop until we can no longer do it
   }
-  return minimizedDistribution.map(todo => {
+  for (const todo of minimizedDistribution) {
     todo.amount = saferFloat(todo.amount)
-    return todo
-  })
+  } */
+  return minimizedDistribution
 }

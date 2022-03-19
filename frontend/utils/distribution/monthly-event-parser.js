@@ -1,9 +1,9 @@
 'use strict'
-import mincomeProportional from '~/frontend/utils/distribution/mincome-proportional.js'
-import minimizeTotalPaymentsCount from './payments-minimizer.js'
 import { lastDayOfMonth, dateFromMonthstamp, dateToMonthstamp } from '~/frontend/utils/time.js'
 import { cloneDeep } from '~/frontend/utils/giLodash.js'
 import { saferFloat } from '~/frontend/views/utils/currencies.js'
+import mincomeProportional from './mincome-proportional.js'
+import minimizeTotalPaymentsCount from './payments-minimizer.js'
 
 type Distribution = Array<Object>;
 
@@ -53,18 +53,16 @@ function subtractDistributions (paymentsA: Distribution, paymentsB: Distribution
 // payments.
 function parsedistributionFromEvents (
   distributionEvents: Distribution,
-  adjusted: boolean,
-  minimizeTxns: boolean,
-  latePayments?: Array<Object>
+  opts: Object
 ): Distribution {
   const distributionEventsCopy = cloneDeep(distributionEvents)
 
   const groupMembers = []
   let payments = []
-  let distribution = []
+  const { adjusted, minimizeTxns } = opts
 
   // Convenience function for retreiving a user by name:
-  const getUser = (name, members = groupMembers) => members.find(member => member.name === name)
+  const getUser = (name) => groupMembers.find(member => member.name === name)
 
   const eventHandlers = {
     haveNeedEvent (event) {
@@ -113,7 +111,7 @@ function parsedistributionFromEvents (
     }
     prevDistEvent = event.type
   }
-  const reduceField = (dir, name, field, dist) => {
+  const reduceField = (field, dir, name, dist) => {
     return dist.reduce((a, p) => {
       return p[dir] === name ? a + p[field] : a
     }, 0)
@@ -135,11 +133,18 @@ function parsedistributionFromEvents (
     for (const todo of dist) {
       if (todo.amount !== todo.total) {
         todo.totalLocked = true
+        // this is a kind of hack for dealing with certain minimization scenarios
+        // where the amount we paid results in a negative value for the unminimized
+        // but adjusted distribution
+        if (todo.amount < 0) {
+          todo.total -= todo.amount
+          // todo.amount = 0
+        }
       }
-      // todo.amount = saferFloat(todo.amount)
-      // todo.total = saferFloat(todo.total)
     }
+    return dist
   }
+  // const tinyNum = 1 / Math.pow(10, DECIMALS_MAX)
   // Principles:
   // 1. Once a payment is made, the .total between those two users is set for life
   // 2. mincomeProportional should be re-applied to the remainer of the haveNeeds,
@@ -147,206 +152,262 @@ function parsedistributionFromEvents (
   //    that already have payments between them to other todos, and then concattenating
   //    that todo list with the previous todo list, and then subtracting any new
   //    payments
-  let prevTodos
+  let distribution = []
   let prevPayments = []
-  for (const sequence of distributionSequences) {
-    console.log('\n======= LOOP!!! Sequence:', sequence, '\n')
+  // for (const sequence of distributionSequences) {
+  for (let i = 0; i < distributionSequences.length; i++) {
+    const sequence = distributionSequences[i]
+    // console.log('\n======= LOOP!!! Sequence:', sequence, '\n')
     payments = []
     for (const event of sequence) {
       eventHandlers[event.type](event)
     }
+    if (distribution.length === 0) {
+      distribution = ensureTotalSet(mincomeProportional(groupMembers))
+    }
     if (adjusted) {
-      if (prevTodos) {
-        const reserves = cloneDeep(groupMembers)
-        const lockedTodos = prevTodos.filter(todo => todo.totalLocked)
-        for (const reserver of reserves) {
-          if (reserver.haveNeed > 0) {
-            // reserver.haveNeed -= reduceField('from', reserver.name, 'amount', prevPayments)
-            reserver.haveNeed -= reduceField('from', reserver.name, 'total', lockedTodos)
-            reserver.haveNeed = Math.max(reserver.haveNeed, 0)
-          } else if (reserver.haveNeed < 0) {
-            // reserver.haveNeed += reduceField('to', reserver.name, 'amount', prevPayments)
-            reserver.haveNeed += reduceField('to', reserver.name, 'total', lockedTodos)
-            reserver.haveNeed = Math.min(reserver.haveNeed, 0)
-          }
+      const reserves = cloneDeep(groupMembers)
+      const lockedTodos = distribution.filter(todo => todo.totalLocked)
+      for (const reserver of reserves) {
+        if (reserver.haveNeed > 0) {
+          reserver.haveNeed -= reduceField('total', 'from', reserver.name, lockedTodos)
+          // reserver.haveNeed -= reduceField('amount', 'from', reserver.name, payments)
+          reserver.haveNeed = Math.max(reserver.haveNeed, 0)
+        } else if (reserver.haveNeed < 0) {
+          reserver.haveNeed += reduceField('total', 'to', reserver.name, lockedTodos)
+          // reserver.haveNeed += reduceField('amount', 'to', reserver.name, payments)
+          reserver.haveNeed = Math.min(reserver.haveNeed, 0)
         }
-        let subTodos = mincomeProportional(reserves)
-        // if (minimizeTxns) {
-        //   subTodos = minimizeTotalPaymentsCount(subTodos, reserves, prevPayments.concat(payments))
-        // }
-        subTodos = ensureTotalSet(subTodos)
-        const todosWithoutExistingPayments = {}
-        const redistributeTodoHaveNeed = {}
-        console.log({ reserves, lockedTodos, prevTodos, prevPayments })
-        for (const todo of subTodos) {
-          todosWithoutExistingPayments[todo.from] = []
-          redistributeTodoHaveNeed[todo.from] = []
-        }
-        // take any todos generated this time for user X that have a corresponding existing payment
-        // from the previous sequence and remove them, redistributing their amount to the other
-        // todos for user X that don't have existing payments
-        for (const todo of subTodos) {
-          if (todoExistsInDistribution(todo, prevPayments)) {
-            redistributeTodoHaveNeed[todo.from].push({
-              name: todo.from,
-              haveNeed: todo.amount
-            })
-          } else {
-            todosWithoutExistingPayments[todo.from].push(todo)
-            redistributeTodoHaveNeed[todo.from].push({
-              name: todo.to,
-              haveNeed: -(todo.amount)
-            })
-          }
-        }
-        // console.log('subTodos:', subTodos)
-        let redistribution
-        let redistributions = []
-        for (const name in redistributeTodoHaveNeed) {
-          redistribution = ensureTotalSet(mincomeProportional(redistributeTodoHaveNeed[name]))
-          // console.log(`redistributeTodoHaveNeed for ${name}`, redistributeTodoHaveNeed[name], 'redistribution', redistribution, 'adding to:', todosWithoutExistingPayments[name])
-          todosWithoutExistingPayments[name] = addDistributions(
-            todosWithoutExistingPayments[name], redistribution
-          )
-          // take the total amount that were increased to each "to" from this "from"
-          // and proportionally subtract them from each other inputs to this "to"
-          const totalRedistributed = redistribution.reduce((a, i) => a + i.amount, 0)
-          if (totalRedistributed > 0) {
-            redistributions = redistributions.concat(redistribution)
-          }
-        }
-        let massagedDistribution = Object.values(todosWithoutExistingPayments).reduce((a, i) => a.concat(i), [])
-        console.log({ massagedDistribution, redistributions })
-        for (redistribution of redistributions) {
-          // take the total that was redistributed and subtract it from the inputs proportionally
-          const tempHaveNeeds = [{ name: redistribution.from, haveNeed: redistribution.amount }]
-          massagedDistribution.filter(todo => {
-            return todo.to === redistribution.to && todo.from !== redistribution.from
-          }).forEach(todo => {
-            tempHaveNeeds.push({ name: todo.from, haveNeed: -(todo.amount) })
-          })
-          mincomeProportional(tempHaveNeeds).forEach(todo => {
-            const theTodo = massagedDistribution.find(i => i.from === todo.to && i.to === redistribution.to)
-            theTodo.amount -= todo.amount
-            theTodo.total -= todo.amount
-          })
-        }
-        // now find the amount remaining in each haver who still has some to give,
-        // and find the needers who still need some, and create a new list of haveNeeds based on that
-        // to create a "remainderDistribution" that we add back to our massagedDistribution
-        const remainderHaveNeeds = []
-        const reserverRemainders = {}
-        for (const reserver of reserves) {
-          if (reserver.haveNeed > 0) {
-            const remainder = reserver.haveNeed - massagedDistribution
-              .filter(todo => todo.from === reserver.name).reduce((a, i) => a + i.amount, 0)
-            // TODO: double check if this next line is necessary
-            // remainder -= payments.filter(p => p.from === reserver.name).reduce((a, i) => a + i.amount, 0)
-            if (remainder > 0) {
-              remainderHaveNeeds.push({ name: reserver.name, haveNeed: remainder })
-              reserverRemainders[reserver.name] = remainder
-            }
-          } else if (reserver.haveNeed < 0) {
-            const remainder = reserver.haveNeed + massagedDistribution
-              .filter(todo => todo.to === reserver.name).reduce((a, i) => a + i.amount, 0)
-            // remainder += payments.filter(p => p.from === reserver.name).reduce((a, i) => a + i.amount, 0)
-            if (remainder < 0) {
-              remainderHaveNeeds.push({ name: reserver.name, haveNeed: remainder })
-              reserverRemainders[reserver.name] = remainder
-            }
-          }
-        }
-        redistribution = []
-        // console.log({ remainderHaveNeeds, redistribution, prevTodos })
-        // before we add it however, we need one last check, and that is
-        // "verboten remainders". this redistribution can still contain a payment
-        // from a user to someone they already did their whole todo for, in which
-        // case we must remove it and redistribute it to the other remainders
-        const badRemainders = []
-
-        ensureTotalSet(mincomeProportional(remainderHaveNeeds)).forEach(todo => {
-          if (todoExistsInDistribution(todo, prevPayments)) {
-            badRemainders.push(todo)
-          } else {
-            redistribution.push(todo)
-          }
-        })
-        for (const badRemainder of badRemainders) {
-          const remainderRedist = [{ name: badRemainder.from, haveNeed: badRemainder.amount }]
-          for (const r of redistribution) {
-            if (r.to === badRemainder.to) {
-              // for this input, calculate how much room there is available to distribute
-              // the remainder too, subtract the room from the sum of the other remainders
-              const availableRoom = reserverRemainders[r.from] - redistribution
-                .filter(todo => todo.from === r.from)
-                .reduce((a, i) => a + i.amount, 0)
-              remainderRedist.push({ name: r.from, haveNeed: -availableRoom })
-            }
-          }
-          mincomeProportional(remainderRedist).forEach(todo => {
-            const theTodo = redistribution.find(i => i.to === badRemainder.to && i.from === todo.to)
-            theTodo.amount += todo.amount
-            theTodo.total += todo.amount
-          })
-        }
-        console.log({ finalRemainderDist: redistribution, remainderHaveNeeds })
-        massagedDistribution = addDistributions(massagedDistribution, redistribution)
-        prevTodos = prevTodos.filter(todo => todo.totalLocked)
-        // console.log('prevTodos', prevTodos, 'adding:', todosWithoutExistingPayments)
-        prevTodos = prevTodos.concat(massagedDistribution)
-        prevTodos = subtractDistributions(prevTodos, payments)
-        // lock todos that have payments this round as well
-        lockTodos(prevTodos)
-        // TODO: figure out what to do if there's a haveNeed putting the needer below the lock point
-        // TODO: apply saferFloat to the final distribution at each step
-        // console.log({ prevPayments, payments, reserves, subTodos, prevTodos })
-        prevPayments = prevPayments.concat(payments)
-        // console.log({ prevPayments, newTodos: prevTodos })
-      } else {
-        distribution = mincomeProportional(groupMembers)
-        // if (minimizeTxns) {
-        //   distribution = minimizeTotalPaymentsCount(distribution, groupMembers, payments)
-        // }
-        // TODO: here we can loop through and remove/modify TODOs based on payments made
-        //       that took out the entire haveNeed.
-        //       see scenario "Entire payment paid scenario". prefer fixing that test
-        //       since that would mean we can avoid including minimizeTotalPaymentsCount here
-        // TODO: experiment with not calling subtractDistributions(distribution, payments)
-        //       but instead lowering the .haveNeed from the start with all of the payments
-        //       before running mincomeProportional.. but note that might not be the
-        //       right way to go because subtractDistributions usefully updates .amount
-        distribution = ensureTotalSet(distribution)
-        distribution = subtractDistributions(distribution, payments) // .filter(todo => todo.amount > 0)
-        // lock the .total if a payment has been made
-        lockTodos(distribution)
-        prevTodos = distribution
-        prevPayments = payments
-        console.log({ payments, distribution })
       }
+      // TODO: figure out whether subTodos or massagedDistribution or distribution needs to be minimized
+      const subTodos = ensureTotalSet(mincomeProportional(reserves))
+      // console.log(`minimization (${minimizeTxns ? 'on' : 'off'}):`, { reserves, payments, subTodos, distribution })
+      const todosWithoutExistingPayments = {}
+      const redistributeTodoHaveNeed = {}
+      // console.log({ reserves, lockedTodos, distribution, prevPayments })
+      for (const todo of subTodos) {
+        todosWithoutExistingPayments[todo.from] = []
+        redistributeTodoHaveNeed[todo.from] = []
+      }
+      // take any todos generated this time for user X that have a corresponding existing payment
+      // from the previous sequence and remove them, redistributing their amount to the other
+      // todos for user X that don't have existing payments
+      for (const todo of subTodos) {
+        if (todoExistsInDistribution(todo, prevPayments)) {
+          redistributeTodoHaveNeed[todo.from].push({
+            name: todo.from,
+            haveNeed: todo.amount
+          })
+        } else {
+          todosWithoutExistingPayments[todo.from].push(todo)
+          redistributeTodoHaveNeed[todo.from].push({
+            name: todo.to,
+            haveNeed: -(todo.amount)
+          })
+        }
+      }
+      // console.log({ prevTodos: distribution, subTodos, reserves, prevPayments })
+      let redistribution
+      let redistributions = []
+      for (const name in redistributeTodoHaveNeed) {
+        redistribution = ensureTotalSet(mincomeProportional(redistributeTodoHaveNeed[name]))
+        // console.log(`redistributeTodoHaveNeed for ${name}`, redistributeTodoHaveNeed[name], 'redistribution', redistribution, 'adding to:', todosWithoutExistingPayments[name])
+        todosWithoutExistingPayments[name] = addDistributions(
+          todosWithoutExistingPayments[name], redistribution
+        )
+        // take the total amount that were increased to each "to" from this "from"
+        // and proportionally subtract them from each other inputs to this "to"
+        const totalRedistributed = redistribution.reduce((a, i) => a + i.amount, 0)
+        if (totalRedistributed > 0) {
+          redistributions = redistributions.concat(redistribution)
+        }
+      }
+      let massagedDistribution = Object.values(todosWithoutExistingPayments).reduce((a, i) => a.concat(i), [])
+      // console.log({ massagedDistribution, redistributions })
+      for (redistribution of redistributions) {
+        // take the total that was redistributed and subtract it from the inputs proportionally
+        const tempHaveNeeds = [{ name: redistribution.from, haveNeed: redistribution.amount }]
+        massagedDistribution.filter(todo => {
+          return todo.to === redistribution.to && todo.from !== redistribution.from
+        }).forEach(todo => {
+          tempHaveNeeds.push({ name: todo.from, haveNeed: -(todo.amount) })
+        })
+        mincomeProportional(tempHaveNeeds).forEach(todo => {
+          const theTodo = massagedDistribution.find(i => i.from === todo.to && i.to === redistribution.to)
+          theTodo.amount -= todo.amount
+          theTodo.total -= todo.amount
+        })
+      }
+      // now find the amount remaining in each haver who still has some to give,
+      // and find the needers who still need some, and create a new list of haveNeeds based on that
+      // to create a "remainderDistribution" that we add back to our massagedDistribution
+      const remainderHaveNeeds = []
+      const reserverRemainders = {}
+      for (const reserver of reserves) {
+        if (reserver.haveNeed > 0) {
+          const remainder = reserver.haveNeed - massagedDistribution
+            .filter(todo => todo.from === reserver.name).reduce((a, i) => a + i.amount, 0)
+          // TODO: next line doesn't seem necessary, remove if certain
+          // remainder -= payments.filter(p => p.from === reserver.name).reduce((a, i) => a + i.amount, 0)
+          if (remainder > 0) {
+            remainderHaveNeeds.push({ name: reserver.name, haveNeed: remainder })
+            reserverRemainders[reserver.name] = remainder
+          }
+        } else if (reserver.haveNeed < 0) {
+          const remainder = reserver.haveNeed + massagedDistribution
+            .filter(todo => todo.to === reserver.name).reduce((a, i) => a + i.amount, 0)
+          // remainder += payments.filter(p => p.from === reserver.name).reduce((a, i) => a + i.amount, 0)
+          if (remainder < 0) {
+            remainderHaveNeeds.push({ name: reserver.name, haveNeed: remainder })
+            reserverRemainders[reserver.name] = remainder
+          }
+        }
+      }
+      redistribution = []
+      // console.log({ remainderHaveNeeds, redistribution, distribution })
+      // before we add it however, we need one last check, and that is
+      // "verboten remainders". this redistribution can still contain a payment
+      // from a user to someone they already did their whole todo for, in which
+      // case we must remove it and redistribute it to the other remainders
+      const badRemainders = []
+
+      ensureTotalSet(mincomeProportional(remainderHaveNeeds)).forEach(todo => {
+        if (todoExistsInDistribution(todo, prevPayments)) {
+          badRemainders.push(todo)
+        } else {
+          redistribution.push(todo)
+        }
+      })
+      for (const badRemainder of badRemainders) {
+        const remainderRedist = [{ name: badRemainder.from, haveNeed: badRemainder.amount }]
+        for (const r of redistribution) {
+          if (r.to === badRemainder.to) {
+            // for this input, calculate how much room there is available to distribute
+            // the remainder too, subtract the room from the sum of the other remainders
+            const availableRoom = reserverRemainders[r.from] - redistribution
+              .filter(todo => todo.from === r.from)
+              .reduce((a, i) => a + i.amount, 0)
+            remainderRedist.push({ name: r.from, haveNeed: -availableRoom })
+          }
+        }
+        mincomeProportional(remainderRedist).forEach(todo => {
+          const theTodo = redistribution.find(i => i.to === badRemainder.to && i.from === todo.to)
+          theTodo.amount += todo.amount
+          theTodo.total += todo.amount
+        })
+      }
+      // console.log({ massagedDistribution, redistribution })
+      massagedDistribution = addDistributions(massagedDistribution, redistribution)
+      distribution = distribution.filter(todo => todo.totalLocked)
+      // console.log('distribution', distribution, 'adding:', massagedDistribution, 'subtracting:', payments)
+      if (minimizeTxns) {
+        massagedDistribution = ensureTotalSet(minimizeTotalPaymentsCount(massagedDistribution))
+      }
+      distribution = distribution.concat(massagedDistribution)
+      distribution = subtractDistributions(distribution, payments)
+      // lock todos that have payments this round as well
+      distribution = lockTodos(distribution)
+      // console.log({ prevPayments, payments, reserves, subTodos, distribution })
+      prevPayments = prevPayments.concat(payments)
+      // console.log({ distribution })
+      // in certain situations related to minimization we can end up with
+      // payments that are larger than any of the todos in the distribution
+      // we must remove todos that are no longer needed because of this, while
+      // "refilling" any other todos appropriately. see for example
+      // mocha test 'Entire payment paid scenario'
+      // for (const todo of distribution) {
+      //   if (todo.amount < 0) {
+      //     const fixerHaveNeed = { type: 'haveNeedEvent', data: { name: '', haveNeed: 0 } }
+      //     if (i + 1 === distributionSequences.length) {
+      //       distributionSequences.push([fixerHaveNeed])
+      //     } else {
+      //       distributionSequences[i + 1].unshift(fixerHaveNeed)
+      //     }
+      //     todo.amount = 0
+      //   }
+      // }
+/*      reserves = cloneDeep(groupMembers)
+      const refill = []
+      const save = []
+      const removeUser = {}
+      const overages = []
+      // handle 'Problematic minimization overpayment'
+      for (const todo of distribution) {
+        if (todo.amount < 0) {
+          overages.push({ amount: Math.abs(todo.amount), from: todo.from, to: todo.to })
+          todo.amount = 0
+        }
+      }
+      for (const overage of overages) {
+        const affected = distribution.filter(t => t.from === overage.from && t.amount > 0 && !t.totalLocked)
+        const affectedTotal = affected.reduce((a, i) => a + i.amount, 0)
+        for (const t of affected) {
+          const fractionalAmount = overage.amount * t.amount / affectedTotal
+          t.amount = Math.max(0, t.amount - fractionalAmount)
+        }
+      }
+      // handle 'Entire payment paid scenario'
+      for (const r of reserves) {
+        const dir = r.haveNeed > 0 ? 'from' : 'to'
+        const totalPayments = reduceField('amount', dir, r.name, prevPayments)
+        r.haveNeed -= totalPayments * Math.sign(r.haveNeed)
+        if (Math.abs(r.haveNeed) < tinyNum) {
+          removeUser[r.name] = true
+        }
+      }
+      for (const todo of distribution) {
+        if (!todo.totalLocked && removeUser[todo.to]) {
+          refill.push(todo)
+        } else if (todo.totalLocked || !removeUser[todo.from]) {
+          save.push(todo)
+        }
+      }
+      distribution = save
+      console.log({ distribution, removeUser, save, refill })
+      for (const surplus of refill) {
+        const existingTodos = distribution.filter(t => t.from === surplus.from && !t.totalLocked)
+        const totalAmount = existingTodos.reduce((a, i) => a + i.amount, 0)
+        for (const todo of existingTodos) {
+          const fractionalAmount = surplus.amount * surplus.amount / totalAmount
+          todo.amount += fractionalAmount
+          todo.total += fractionalAmount
+        }
+      } */
+      // // final hairball
+      // const remainingHeroes = distribution.filter(t => t.amount > 0 && !t.totalLocked)
+      // const heroNames = uniq(remainingHeroes.map(x => x.from))
+      // // using remainingHeroes
+      // const heroReserves = reserves.filter(x => x.haveNeed < 0 || heroNames.includes(x.name))
+      // massagedDistribution = ensureTotalSet(mincomeProportional(heroReserves))
+      // distribution = distribution.filter(x => x.totalLocked).concat(massagedDistribution)
+      // console.log({ distribution, heroReserves, reserves })
     }
   }
   if (!adjusted) {
-    distribution = mincomeProportional(groupMembers)
-  } else {
-    if (!prevTodos) return [] // empty distributionEvents
+    return mincomeProportional(groupMembers)
+  }
 
-    distribution = prevTodos.filter(todo => {
-      // pledgers who switched sides should have their todos removed
-      return todo.amount > 0 && getUser(todo.from).haveNeed > 0
-    })
+  distribution = distribution.filter(todo => {
+    // pledgers who switched sides should have their todos removed
+    return todo.amount > 0 && getUser(todo.from).haveNeed > 0
+  })
+  // distribution = distribution.filter(todo => {
+  //   // pledgers who switched sides should have their todos removed
+  //   // but keep the .totalLocked to help the minimizer
+  //   return getUser(todo.from).haveNeed > 0
+  // })
 
-    const dueDate = dateToMonthstamp(lastDayOfMonth(dateFromMonthstamp(dateToMonthstamp(distributionEvents[distributionEvents.length - 1].data.when))))
+  // console.log({ finalDistribution: distribution })
 
-    for (const todo of distribution) {
-      // TODO: this .total seems wrong, fix
-      // todo.total = todo.amount + reduceField('to', todo.to, 'amount', prevPayments.filter(p => p.from === todo.from))
-      todo.amount = saferFloat(todo.amount)
-      todo.total = saferFloat(todo.total)
-      todo.partial = todo.total !== todo.amount
-      todo.isLate = false
-      todo.dueOn = dueDate
-      delete todo.totalLocked
-    }
+  const dueDate = dateToMonthstamp(lastDayOfMonth(dateFromMonthstamp(dateToMonthstamp(distributionEvents[distributionEvents.length - 1].data.when))))
+
+  for (const todo of distribution) {
+    todo.amount = saferFloat(todo.amount)
+    todo.total = saferFloat(todo.total)
+    todo.partial = todo.total !== todo.amount
+    todo.isLate = false
+    todo.dueOn = dueDate
+    delete todo.totalLocked
   }
 
   // TODO: add in latePayments to the end of the distribution
@@ -354,9 +415,7 @@ function parsedistributionFromEvents (
   //       instead of as a separate option, and simply do the event handler
   //       for it down here instead of up above.
 
-  return minimizeTxns
-    ? minimizeTotalPaymentsCount(distribution, groupMembers, prevPayments)
-    : distribution
+  return distribution
 }
 
 export default parsedistributionFromEvents
