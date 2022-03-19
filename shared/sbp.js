@@ -84,4 +84,8 @@ const SBP_BASE_SELECTORS = {
 
 SBP_BASE_SELECTORS['sbp/selectors/register'](SBP_BASE_SELECTORS)
 
+if (typeof window !== 'undefined') {
+  window.sbp = sbp
+}
+
 export default sbp

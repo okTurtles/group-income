@@ -1,10 +1,9 @@
 'use strict'
 
 import nacl from 'tweetnacl'
-import base64 from '@stablelib/base64'
-import utf8 from '@stablelib/utf8'
 
 import sbp from '~/shared/sbp.js'
+import { bytesToB64, b64ToBuf, strToBuf } from '~/shared/functions.js'
 
 import scrypt from 'scrypt-async'
 
@@ -42,7 +41,7 @@ export default (sbp('sbp/selectors/register', {
     throw new Error('Unsupported key type')
   },
   'gi.crypto/util/generateSalt': () => {
-    return base64.encode(nacl.randomBytes(18))
+    return bytesToB64(nacl.randomBytes(18))
   },
   'gi.crypto/key/fromPassword': (type: string, password: string, salt: string) => {
     if (!['edwards25519sha512batch', 'curve25519xsalsa20poly1305', 'xsalsa20poly1305'].includes(type)) {
@@ -91,7 +90,7 @@ export default (sbp('sbp/selectors/register', {
 
         return JSON.stringify({
           type: key.type,
-          publicKey: base64.encode(key.publicKey)
+          publicKey: bytesToB64(key.publicKey)
         })
       }
 
@@ -101,7 +100,7 @@ export default (sbp('sbp/selectors/register', {
 
       return JSON.stringify({
         type: key.type,
-        secretKey: base64.encode(key.secretKey)
+        secretKey: bytesToB64(key.secretKey)
       })
     } else if (key.type === 'xsalsa20poly1305') {
       if (!savePrivKey) {
@@ -114,7 +113,7 @@ export default (sbp('sbp/selectors/register', {
 
       return JSON.stringify({
         type: key.type,
-        secretKey: base64.encode(key.secretKey)
+        secretKey: bytesToB64(key.secretKey)
       })
     }
 
@@ -129,7 +128,7 @@ export default (sbp('sbp/selectors/register', {
 
     if (keyData.type === 'edwards25519sha512batch') {
       if (keyData.secretKey) {
-        const key = nacl.sign.keyPair.fromSecretKey(base64.decode(keyData.secretKey))
+        const key = nacl.sign.keyPair.fromSecretKey(b64ToBuf(keyData.secretKey))
 
         return {
           type: keyData.type,
@@ -139,14 +138,14 @@ export default (sbp('sbp/selectors/register', {
       } else if (keyData.publicKey) {
         return {
           type: keyData.type,
-          publicKey: base64.decode(keyData.publicKey)
+          publicKey: new Uint8Array(b64ToBuf(keyData.publicKey))
         }
       }
 
       throw new Error('Missing secret or public key')
     } else if (keyData.type === 'curve25519xsalsa20poly1305') {
       if (keyData.secretKey) {
-        const key = nacl.box.keyPair.fromSecretKey(base64.decode(keyData.secretKey))
+        const key = nacl.box.keyPair.fromSecretKey(b64ToBuf(keyData.secretKey))
 
         return {
           type: keyData.type,
@@ -156,7 +155,7 @@ export default (sbp('sbp/selectors/register', {
       } else if (keyData.publicKey) {
         return {
           type: keyData.type,
-          publicKey: base64.decode(keyData.publicKey)
+          publicKey: new Uint8Array(b64ToBuf(keyData.publicKey))
         }
       }
 
@@ -168,7 +167,7 @@ export default (sbp('sbp/selectors/register', {
 
       return {
         type: keyData.type,
-        secretKey: base64.decode(keyData.secretKey)
+        secretKey: new Uint8Array(b64ToBuf(keyData.secretKey))
       }
     }
   },
@@ -181,9 +180,9 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Secret key missing')
     }
 
-    const messageUint8 = utf8.encode(data)
+    const messageUint8 = strToBuf(data)
     const signature = nacl.sign.detached(messageUint8, key.secretKey)
-    const base64Signature = base64.encode(signature)
+    const base64Signature = bytesToB64(signature)
 
     return base64Signature
   },
@@ -196,10 +195,14 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Public key missing')
     }
 
-    const decodedSignature = base64.decode(signature)
-    const messageUint8 = utf8.encode(data)
+    const decodedSignature = b64ToBuf(signature)
+    const messageUint8 = strToBuf(data)
 
-    return nacl.sign.detached.verify(messageUint8, decodedSignature, key.publicKey)
+    const result = nacl.sign.detached.verify(messageUint8, decodedSignature, key.publicKey)
+
+    if (!result) {
+      throw new Error('Invalid signature')
+    }
   },
   'gi.crypto/encrypt': (key: Key, data: string) => {
     if (key.type === 'xsalsa20poly1305') {
@@ -209,7 +212,7 @@ export default (sbp('sbp/selectors/register', {
 
       const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
 
-      const messageUint8 = utf8.encode(data)
+      const messageUint8 = strToBuf(data)
       const box = nacl.secretbox(messageUint8, nonce, key.secretKey)
 
       const fullMessage = new Uint8Array(nonce.length + box.length)
@@ -217,7 +220,7 @@ export default (sbp('sbp/selectors/register', {
       fullMessage.set(nonce)
       fullMessage.set(box, nonce.length)
 
-      const base64FullMessage = base64.encode(fullMessage)
+      const base64FullMessage = bytesToB64(fullMessage)
 
       return base64FullMessage
     } else if (key.type === 'curve25519xsalsa20poly1305') {
@@ -227,7 +230,7 @@ export default (sbp('sbp/selectors/register', {
 
       const nonce = nacl.randomBytes(nacl.box.nonceLength)
 
-      const messageUint8 = utf8.encode(data)
+      const messageUint8 = strToBuf(data)
       const box = nacl.box(messageUint8, nonce, key.publicKey, key.secretKey)
 
       const fullMessage = new Uint8Array(nonce.length + box.length)
@@ -235,7 +238,7 @@ export default (sbp('sbp/selectors/register', {
       fullMessage.set(nonce)
       fullMessage.set(box, nonce.length)
 
-      const base64FullMessage = base64.encode(fullMessage)
+      const base64FullMessage = bytesToB64(fullMessage)
 
       return base64FullMessage
     }
@@ -248,7 +251,7 @@ export default (sbp('sbp/selectors/register', {
         throw new Error('Secret key missing')
       }
 
-      const messageWithNonceAsUint8Array = base64.decode(data)
+      const messageWithNonceAsUint8Array = b64ToBuf(data)
 
       const nonce = messageWithNonceAsUint8Array.slice(0, nacl.secretbox.nonceLength)
       const message = messageWithNonceAsUint8Array.slice(
@@ -256,19 +259,19 @@ export default (sbp('sbp/selectors/register', {
         messageWithNonceAsUint8Array.length
       )
 
-      const decrypted = nacl.secretbox.open(message, nonce, key)
+      const decrypted = nacl.secretbox.open(message, nonce, key.secretKey)
 
       if (!decrypted) {
         throw new Error('Could not decrypt message')
       }
 
-      return utf8.decode(decrypted)
+      return Buffer.from(decrypted).toString('utf-8')
     } else if (key.type === 'curve25519xsalsa20poly1305') {
       if (!key.secretKey || !key.publicKey) {
         throw new Error('Keypair missing')
       }
 
-      const messageWithNonceAsUint8Array = base64.decode(data)
+      const messageWithNonceAsUint8Array = b64ToBuf(data)
 
       const nonce = messageWithNonceAsUint8Array.slice(0, nacl.box.nonceLength)
       const message = messageWithNonceAsUint8Array.slice(
@@ -282,7 +285,7 @@ export default (sbp('sbp/selectors/register', {
         throw new Error('Could not decrypt message')
       }
 
-      return utf8.decode(decrypted)
+      return Buffer.from(decrypted).toString('utf-8')
     }
 
     throw new Error('Unsupported algorithm')

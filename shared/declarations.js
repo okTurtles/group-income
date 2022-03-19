@@ -60,5 +60,3 @@ declare module '@assets/style/main.scss' { declare module.exports: any }
 // Other .js files.
 declare module '@utils/blockies.js' { declare module.exports: Object }
 declare module '~/frontend/utils/flowTyper.js' { declare module.exports: Object }
-declare module '@stablelib/utf8' { declare module.exports: any }
-declare module '@stablelib/base64' { declare module.exports: any }
