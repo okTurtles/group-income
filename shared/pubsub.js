@@ -39,6 +39,7 @@ export type PubSubClient = {
   nextConnectionAttemptDelayID: TimeoutID | void,
   +options: Object,
   +pendingSubscriptionSet: Set<string>,
+  pendingSyncSet: Set<string>,
   +pendingUnsubscriptionSet: Set<string>,
   pingTimeoutID: TimeoutID | void,
   shouldReconnect: boolean,
@@ -58,13 +59,15 @@ export type PubSubClient = {
 export type SubMessage = {
   [key: string]: JSONType,
   +type: 'sub',
-  +contractID: string
+  +contractID: string,
+  +dontBroadcast: boolean
 }
 
 export type UnsubMessage = {
   [key: string]: JSONType,
   +type: 'unsub',
-  +contractID: string
+  +contractID: string,
+  +dontBroadcast: boolean
 }
 
 // ====== Enums ====== //
@@ -100,8 +103,8 @@ export type ResponseTypeEnum = $Values<typeof RESPONSE_TYPE>
  *
  * @param {string} url - A WebSocket URL to connect to.
  * @param {Object?} options
- * {boolean?} debug
  * {object?} handlers - Custom handlers for WebSocket events.
+ * {boolean?} logPingMessages - Whether to log received pings.
  * {boolean?} manual - Whether the factory should call 'connect()' automatically.
  *   Also named 'autoConnect' or 'startClosed' in other libraries.
  * {object?} messageHandlers - Custom handlers for different message types.
@@ -128,6 +131,7 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
     options: { ...defaultOptions, ...options },
     // Requested subscriptions for which we didn't receive a response yet.
     pendingSubscriptionSet: new Set(),
+    pendingSyncSet: new Set(),
     pendingUnsubscriptionSet: new Set(),
     pingTimeoutID: undefined,
     shouldReconnect: true,
@@ -180,9 +184,9 @@ export function createMessage (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
-export function createRequest (type: RequestTypeEnum, data: JSONObject): string {
+export function createRequest (type: RequestTypeEnum, data: JSONObject, dontBroadcast: boolean = false): string {
   // Had to use Object.assign() instead of object spreading to make Flow happy.
-  return JSON.stringify(Object.assign({ type }, data))
+  return JSON.stringify(Object.assign({ type, dontBroadcast }, data))
 }
 
 // These handlers receive the PubSubClient instance through the `this` binding.
@@ -324,12 +328,18 @@ const defaultClientEventHandlers = {
         if (client.socket) client.socket.close()
       }, client.options.pingTimeout)
     }
-    // Send any pending request.
+    // We only need to handle contract resynchronization here when reconnecting.
+    // Not on initial connection, since the login code already does it.
+    if (!client.isNew) {
+      client.pendingSyncSet = new Set(client.pendingSubscriptionSet)
+    }
+    // Send any pending subscription request.
     client.pendingSubscriptionSet.forEach((contractID) => {
       if (client.socket) {
-        client.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+        client.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }, true))
       }
     })
+    // There should be no pending unsubscription since we just got connected.
   },
 
   'reconnection-attempt' (event: CustomEvent) {
@@ -355,6 +365,10 @@ const defaultClientEventHandlers = {
 
 // These handlers receive the PubSubClient instance through the `this` binding.
 const defaultMessageHandlers = {
+  [NOTIFICATION_TYPE.ENTRY] (msg) {
+    console.log('[pubsub] Received ENTRY:', msg)
+  },
+
   [NOTIFICATION_TYPE.PING] ({ data }) {
     const client = this
 
@@ -389,6 +403,24 @@ const defaultMessageHandlers = {
 
   [RESPONSE_TYPE.ERROR] ({ data: { type, contractID } }) {
     console.log(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
+    const client = this
+
+    switch (type) {
+      case REQUEST_TYPE.SUB: {
+        console.log(`[pubsub] Could not subscribe to ${contractID}`)
+        client.pendingSubscriptionSet.delete(contractID)
+        client.pendingSyncSet.delete(contractID)
+        break
+      }
+      case REQUEST_TYPE.UNSUB: {
+        console.log(`[pubsub] Could not unsubscribe from ${contractID}`)
+        client.pendingUnsubscriptionSet.delete(contractID)
+        break
+      }
+      default: {
+        console.error(`[pubsub] Malformed response: invalid request type ${type}`)
+      }
+    }
   },
 
   [RESPONSE_TYPE.SUCCESS] ({ data: { type, contractID } }) {
@@ -399,6 +431,10 @@ const defaultMessageHandlers = {
         console.log(`[pubsub] Subscribed to ${contractID}`)
         client.pendingSubscriptionSet.delete(contractID)
         client.subscriptionSet.add(contractID)
+        if (client.pendingSyncSet.has(contractID)) {
+          sbp('gi.actions/contract/sync', contractID)
+          client.pendingSyncSet.delete(contractID)
+        }
         break
       }
       case REQUEST_TYPE.UNSUB: {
@@ -567,7 +603,7 @@ const publicMethods = {
   },
 
   // Unused for now.
-  pub (contractID: string, data: JSONType) {
+  pub (contractID: string, data: JSONType, dontBroadcast = false) {
   },
 
   /**
@@ -579,17 +615,18 @@ const publicMethods = {
    * - Calling this method again before the server has responded has no effect.
    * @param contractID - The ID of the contract whose updates we want to subscribe to.
    */
-  sub (contractID: string) {
+  sub (contractID: string, dontBroadcast = false) {
     const client = this
     const { socket } = this
 
     if (!client.pendingSubscriptionSet.has(contractID)) {
+      client.pendingSubscriptionSet.add(contractID)
+      client.pendingUnsubscriptionSet.delete(contractID)
+
       if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }))
+        socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }, dontBroadcast))
       }
     }
-    client.pendingSubscriptionSet.add(contractID)
-    client.pendingUnsubscriptionSet.delete(contractID)
   },
 
   /**
@@ -601,17 +638,18 @@ const publicMethods = {
    * - Calling this method again before the server has responded has no effect.
    * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
    */
-  unsub (contractID: string) {
+  unsub (contractID: string, dontBroadcast = false) {
     const client = this
     const { socket } = this
 
     if (!client.pendingUnsubscriptionSet.has(contractID)) {
+      client.pendingSubscriptionSet.delete(contractID)
+      client.pendingUnsubscriptionSet.add(contractID)
+
       if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }))
+        socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }, dontBroadcast))
       }
     }
-    client.pendingSubscriptionSet.delete(contractID)
-    client.pendingUnsubscriptionSet.add(contractID)
   }
 }
 

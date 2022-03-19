@@ -155,7 +155,7 @@ const defaultServerHandlers = {
       socket.on(eventName, (...args) => {
         // Logging of 'message' events is handled in the default 'message' event handler.
         if (eventName !== 'message') {
-          console.log(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
+          console.log(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args.map(arg => String(arg)))
         }
         const customHandler = socket.server.customSocketEventHandlers[eventName]
         const defaultHandler = (defaultSocketEventHandlers: Object)[eventName]
@@ -203,13 +203,14 @@ const defaultSocketEventHandlers = {
     socket.subscriptions.clear()
   },
 
-  message (data: string) {
+  message (data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) {
     const socket = this
     const { server } = this
+    const text = data.toString()
     let msg: Message = { type: '' }
 
     try {
-      msg = messageParser(data)
+      msg = messageParser(text)
     } catch (error) {
       console.error(bold.red(`[pubsub] Malformed message: ${error.message}`))
       rejectMessageAndTerminateSocket(msg, socket)
@@ -217,7 +218,7 @@ const defaultSocketEventHandlers = {
     }
     // Now that we have successfully parsed the message, we can log it.
     if (msg.type !== 'pong' || server.options.logPongMessages) {
-      console.log(`[pubsub] Received '${msg.type}' on socket ${socket.id}`, data)
+      console.log(`[pubsub] Received '${msg.type}' on socket ${socket.id}`, text)
     }
     // The socket can be marked as active since it just received a message.
     socket.activeSinceLastPing = true
@@ -251,11 +252,12 @@ const defaultMessageHandlers = {
     // Currently unused.
   },
 
-  [SUB] ({ contractID, type }: SubMessage) {
+  [SUB] ({ contractID, type, dontBroadcast }: SubMessage) {
     const socket = this
     const { server, id: socketID } = this
 
     if (!socket.subscriptions.has(contractID)) {
+      console.log('Already subscribed to', contractID)
       // Add the given contract ID to our subscriptions.
       socket.subscriptions.add(contractID)
       if (!server.subscribersByContractID[contractID]) {
@@ -266,12 +268,14 @@ const defaultMessageHandlers = {
       subscribers.add(socket)
       // Broadcast a notification to every other open subscriber.
       const notification = createNotification(type, { contractID, socketID })
-      server.broadcast(notification, { to: subscribers, except: socket })
+      if (!dontBroadcast) {
+        server.broadcast(notification, { to: subscribers, except: socket })
+      }
     }
     socket.send(createResponse(SUCCESS, { type, contractID }))
   },
 
-  [UNSUB] ({ contractID, type }: UnsubMessage) {
+  [UNSUB] ({ contractID, type, dontBroadcast }: UnsubMessage) {
     const socket = this
     const { server, id: socketID } = this
 
@@ -284,7 +288,9 @@ const defaultMessageHandlers = {
         subscribers.delete(socket)
         // Broadcast a notification to every remaining open subscriber.
         const notification = createNotification(type, { contractID, socketID })
-        server.broadcast(notification, { to: subscribers, except: socket })
+        if (!dontBroadcast) {
+          server.broadcast(notification, { to: subscribers, except: socket })
+        }
       }
     }
     socket.send(createResponse(SUCCESS, { type, contractID }))
