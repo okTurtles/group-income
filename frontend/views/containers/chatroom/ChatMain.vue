@@ -261,9 +261,6 @@ export default ({
           }
         }
       })
-
-      // Alex: Not sure why this is necessary
-      // this.sendMessage(index)
     },
     updateScroll () {
       if (this.summary.title) {
@@ -275,21 +272,11 @@ export default ({
     },
     retryMessage (index) {
       // this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
-
-      // this.sendMessage(index)
       console.log('TODO $store - retry sending a message')
     },
     replyMessage (message) {
       this.ephemeral.replyingMessage = message.text
       this.ephemeral.replyingTo = this.who(message)
-    },
-    sendMessage (index) {
-      this.ephemeral.replyingMessage = null
-      this.ephemeral.replyingTo = null
-      setTimeout(() => {
-        console.log('TODO $store send message')
-        // this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
-      }, 2000)
     },
     changeDay (index) {
       const conv = this.messages
