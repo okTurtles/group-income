@@ -80,15 +80,9 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   Object.keys(defaultServerHandlers).forEach((name) => {
     server.on(name, (...args) => {
       try {
-        const customHandler = server.customServerEventHandlers[name]
-        const defaultHandler = defaultServerHandlers[name]
         // Always call the default handler first.
-        if (defaultHandler) {
-          defaultHandler.call(server, ...args)
-        }
-        if (customHandler) {
-          customHandler.call(server, ...args)
-        }
+        defaultServerHandlers[name]?.call(server, ...args)
+        server.customServerEventHandlers[name]?.call(server, ...args)
       } catch (error) {
         server.emit('error', error)
       }
@@ -157,16 +151,9 @@ const defaultServerHandlers = {
         if (eventName !== 'message') {
           console.log(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args.map(arg => String(arg)))
         }
-        const customHandler = socket.server.customSocketEventHandlers[eventName]
-        const defaultHandler = (defaultSocketEventHandlers: Object)[eventName]
-
         try {
-          if (defaultHandler) {
-            defaultHandler.call(socket, ...args)
-          }
-          if (customHandler) {
-            customHandler.call(socket, ...args)
-          }
+          (defaultSocketEventHandlers: Object)[eventName]?.call(socket, ...args)
+          socket.server.customSocketEventHandlers[eventName]?.call(socket, ...args)
         } catch (error) {
           socket.server.emit('error', error)
           socket.terminate()

@@ -152,16 +152,10 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
   // updating the client's custom event handler map.
   for (const name of Object.keys(defaultClientEventHandlers)) {
     client.listeners[name] = (event) => {
-      const customHandler = client.customEventHandlers[name]
-      const defaultHandler = defaultClientEventHandlers[name]
-      // Pass the client as the 'this' binding since we are processing client events.
       try {
-        if (defaultHandler) {
-          defaultHandler.call(client, event)
-        }
-        if (customHandler) {
-          customHandler.call(client, event)
-        }
+        // Use `.call()` to pass the client via the 'this' binding.
+        defaultClientEventHandlers[name]?.call(client, event)
+        client.customEventHandlers[name]?.call(client, event)
       } catch (error) {
         // Do not throw any error but emit an `error` event instead.
         sbp('okTurtles.events/emit', PUBSUB_ERROR, client, error.message)
@@ -292,9 +286,7 @@ const defaultClientEventHandlers = {
     // Reset the connection attempt counter so that we'll start a new
     // reconnection loop when we are back online.
     client.failedConnectionAttempts = 0
-    if (client.socket) {
-      client.socket.close()
-    }
+    client.socket?.close()
   },
 
   online (event: Event) {
@@ -325,7 +317,7 @@ const defaultClientEventHandlers = {
     // It will close the connection if we don't get any message from the server.
     if (client.options.pingTimeout > 0 && client.options.pingTimeout < Infinity) {
       client.pingTimeoutID = setTimeout(() => {
-        if (client.socket) client.socket.close()
+        client.socket?.close()
       }, client.options.pingTimeout)
     }
     // We only need to handle contract resynchronization here when reconnecting.
@@ -335,9 +327,7 @@ const defaultClientEventHandlers = {
     }
     // Send any pending subscription request.
     client.pendingSubscriptionSet.forEach((contractID) => {
-      if (client.socket) {
-        client.socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }, true))
-      }
+      client.socket?.send(createRequest(REQUEST_TYPE.SUB, { contractID }, true))
     })
     // There should be no pending unsubscription since we just got connected.
   },
@@ -376,15 +366,11 @@ const defaultMessageHandlers = {
       console.debug(`[pubsub] Ping received in ${Date.now() - Number(data)} ms`)
     }
     // Reply with a pong message using the same data.
-    if (client.socket) {
-      client.socket.send(createMessage(NOTIFICATION_TYPE.PONG, data))
-    }
+    client.socket?.send(createMessage(NOTIFICATION_TYPE.PONG, data))
     // Refresh the ping timer, waiting for the next ping.
     clearTimeout(client.pingTimeoutID)
     client.pingTimeoutID = setTimeout(() => {
-      if (client.socket) {
-        client.socket.close()
-      }
+      client.socket?.close()
     }, client.options.pingTimeout)
   },
 
@@ -519,9 +505,7 @@ const publicMethods = {
     if (client.options.timeout) {
       client.connectionTimeoutID = setTimeout(() => {
         client.connectionTimeoutID = undefined
-        if (client.socket) {
-          client.socket.close(4000, 'timeout')
-        }
+        client.socket?.close(4000, 'timeout')
       }, client.options.timeout)
     }
     // Attach WebSocket event listeners.
@@ -623,7 +607,7 @@ const publicMethods = {
       client.pendingSubscriptionSet.add(contractID)
       client.pendingUnsubscriptionSet.delete(contractID)
 
-      if (socket && socket.readyState === WebSocket.OPEN) {
+      if (socket?.readyState === WebSocket.OPEN) {
         socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }, dontBroadcast))
       }
     }
@@ -646,7 +630,7 @@ const publicMethods = {
       client.pendingSubscriptionSet.delete(contractID)
       client.pendingUnsubscriptionSet.add(contractID)
 
-      if (socket && socket.readyState === WebSocket.OPEN) {
+      if (socket?.readyState === WebSocket.OPEN) {
         socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }, dontBroadcast))
       }
     }
