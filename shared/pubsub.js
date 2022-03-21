@@ -164,9 +164,9 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
   }
   // Add global event listeners before the first connection.
   if (typeof window === 'object') {
-    globalEventNames.forEach((name) => {
+    for (const name of globalEventNames) {
       window.addEventListener(name, client.listeners[name])
-    })
+    }
   }
   if (!client.options.manual) {
     client.connect()
@@ -305,6 +305,7 @@ const defaultClientEventHandlers = {
   open (event: Event) {
     console.log('[pubsub] Event: open')
     const client = this
+    const { options } = this
 
     if (!client.isNew) {
       sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SUCCEEDED, client)
@@ -315,10 +316,10 @@ const defaultClientEventHandlers = {
     client.isNew = false
     // Setup a ping timeout if required.
     // It will close the connection if we don't get any message from the server.
-    if (client.options.pingTimeout > 0 && client.options.pingTimeout < Infinity) {
+    if (options.pingTimeout > 0 && options.pingTimeout < Infinity) {
       client.pingTimeoutID = setTimeout(() => {
         client.socket?.close()
-      }, client.options.pingTimeout)
+      }, options.pingTimeout)
     }
     // We only need to handle contract resynchronization here when reconnecting.
     // Not on initial connection, since the login code already does it.
