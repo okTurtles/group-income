@@ -46,8 +46,8 @@ export default ({
   props: {
     title: String,
     /** List of channels - shape: {
-      order: [] - see fakeStore.js - individualMessagesSorted,
-      channels: - see fakeStore.js - users or groupChannels
+      order: [] - group channels in order,
+      channels: - group channels
     }
     */
     list: Object,

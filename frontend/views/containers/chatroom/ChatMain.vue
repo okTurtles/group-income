@@ -78,7 +78,6 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
-import { fakeEvents } from '@containers/chatroom/fakeStore.js'
 import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
 import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
@@ -206,11 +205,8 @@ export default ({
       return this.currentUserAttr.username === fromId
     },
     who (message) {
-      const fromId = message.from === MESSAGE_TYPES.NOTIFICATION ? fakeEvents[message.id].from : message.from
-      const user = this.isCurrentUser(fromId) ? this.currentUserAttr : this.details.participants[fromId]
-      if (user) {
-        return user.displayName || user.username
-      }
+      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.details.participants[message.from]
+      return user.displayName || user.username || message.from
     },
     variant (message) {
       if (message.pending) {

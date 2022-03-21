@@ -26,7 +26,6 @@
 <script>
 import emoticonsMixins from './EmoticonsMixins.js'
 import Tooltip from '@components/Tooltip.vue'
-import { users } from '@containers/chatroom/fakeStore.js'
 import L from '@view-utils/translations.js'
 
 export default ({
@@ -45,10 +44,8 @@ export default ({
   methods: {
     emoticonUserList (emoticon, list) {
       const nameList = list.map(user => {
-        const userProp = users[user]
         if (user === this.currentUserId) return L('You')
-        if (userProp) return userProp.displayName || userProp.name
-        return null
+        return user
       })
 
       const data = {
