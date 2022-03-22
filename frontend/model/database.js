@@ -1,7 +1,8 @@
 'use strict'
 
-import localforage from 'localforage'
 import sbp from '~/shared/sbp.js'
+
+import localforage from 'localforage'
 import '~/shared/domains/gi/db.js'
 
 const log = localforage.createInstance({

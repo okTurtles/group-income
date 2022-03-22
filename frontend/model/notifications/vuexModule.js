@@ -95,7 +95,7 @@ const mutations = {
   [keys.REMOVE_NOTIFICATION] (state, notification: Notification) {
     const index = state.indexOf(notification)
 
-    if (~index) {
+    if (index > -1) {
       state.splice(index, 1)
     }
   },

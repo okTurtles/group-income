@@ -83,7 +83,7 @@ export function compareOnPriority (notificationA: Notification, notificationB: N
   const preferB = 1
 
   // If the given notifications are both read or both unread, then prefer the newer one.
-  if ((notificationA.read && notificationB.read) || (!notificationA.read && !notificationB.read)) {
+  if (notificationA.read === notificationB.read) {
     return age(notificationA) <= age(notificationB) ? preferA : preferB
   } else {
     // Here, one notification is read, the other is unread.
