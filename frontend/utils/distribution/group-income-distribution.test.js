@@ -275,11 +275,8 @@ describe('Test group-income-distribution.js', function () {
       { type: 'haveNeedEvent', data: { name: 'User4', haveNeed: -10 } },
       { type: 'paymentEvent', data: { from: 'User2', to: 'User4', amount: 10 } }
     ]
-    // NOTE: we cannot do the non-minimized version here because
-    //       there's a payment that would never happen in the minimized version
-    // should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: false })).eql([
-    //   { amount: 5, from: 'User1', to: 'User3', total: 5, partial: false, isLate: false, dueOn: '2021-01' }
-    // ])
+    // NOTE: we cannot test the non-minimized version here because
+    // there's a payment that would never happen in the non-minimized version
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
       { amount: 10, from: 'User1', to: 'User3', total: 10, partial: false, isLate: false, dueOn: '2021-01' }
     ])
@@ -474,7 +471,7 @@ describe('Test group-income-distribution.js', function () {
       { amount: 71.42857143, from: 'u4', to: 'u3', total: 71.42857143, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
-  it.only('partial payment + needer haveNeed change', function () {
+  it('partial payment + needer haveNeed reduced', function () {
     setup = [
       { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 100 } },
       { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -100 } },
@@ -485,7 +482,27 @@ describe('Test group-income-distribution.js', function () {
       { amount: 10, from: 'u1', to: 'u2', total: 60, partial: true, isLate: false, dueOn: '2021-01' }
     ])
   })
-  it('partial payment + haver haveNeed change', function () {
+  it('partial payment + needer haveNeed reduced past owed', function () {
+    setup = [
+      { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 100 } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -100 } },
+      { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 50 } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -40 } }
+    ]
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([])
+  })
+  it('partial payment + needer haveNeed increased', function () {
+    setup = [
+      { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 100 } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -100 } },
+      { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 50 } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -110 } }
+    ]
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
+      { amount: 50, from: 'u1', to: 'u2', total: 100, partial: true, isLate: false, dueOn: '2021-01' }
+    ])
+  })
+  it.only('partial payment + haver haveNeed reduced', function () {
     setup = [
       { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 100 } },
       { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -100 } },
@@ -493,5 +510,34 @@ describe('Test group-income-distribution.js', function () {
       { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 50 } }
     ]
     should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([])
+    // and then back up
+    setup.push({ type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 60 } })
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
+      { amount: 10, from: 'u1', to: 'u2', total: 60, partial: true, isLate: false, dueOn: '2021-01' }
+    ])
+  })
+  it('partial payment + haver haveNeed increased', function () {
+    setup = [
+      { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 100 } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -100 } },
+      { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 50 } },
+      { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 110 } }
+    ]
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
+      { amount: 50, from: 'u1', to: 'u2', total: 100, partial: true, isLate: false, dueOn: '2021-01' }
+    ])
+  })
+  it('partial payment + haver + needer haveNeed increased', function () {
+    setup = [
+      { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 100 } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -100 } },
+      { type: 'paymentEvent', data: { from: 'u1', to: 'u2', amount: 50 } },
+      { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 110 } },
+      { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -110 } }
+    ]
+    // ground must not shift beneath our feat
+    should(groupIncomeDistributionWrapper(setup, { adjusted: true, minimizeTxns: true })).eql([
+      { amount: 50, from: 'u1', to: 'u2', total: 100, partial: true, isLate: false, dueOn: '2021-01' }
+    ])
   })
 })

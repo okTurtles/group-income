@@ -1,7 +1,7 @@
 'use strict'
 import { lastDayOfMonth, dateFromMonthstamp, dateToMonthstamp } from '~/frontend/utils/time.js'
 import { cloneDeep } from '~/frontend/utils/giLodash.js'
-import { saferFloat } from '~/frontend/views/utils/currencies.js'
+import { saferFloat, DECIMALS_MAX } from '~/frontend/views/utils/currencies.js'
 import mincomeProportional from './mincome-proportional.js'
 import minimizeTotalPaymentsCount from './payments-minimizer.js'
 
@@ -68,7 +68,9 @@ function parsedistributionFromEvents (
     haveNeedEvent (event) {
       const oldUser = getUser(event.data.name)
       if (oldUser) {
+        const oldHaveNeed = oldUser.haveNeed
         oldUser.haveNeed = event.data.haveNeed
+        oldUser.oldHaveNeed = oldHaveNeed
       } else {
         groupMembers.push({
           name: event.data.name,
@@ -144,7 +146,6 @@ function parsedistributionFromEvents (
     }
     return dist
   }
-  // const tinyNum = 1 / Math.pow(10, DECIMALS_MAX)
   // Principles:
   // 1. Once a payment is made, the .total between those two users is set for life
   // 2. mincomeProportional should be re-applied to the remainer of the haveNeeds,
@@ -168,6 +169,36 @@ function parsedistributionFromEvents (
     if (adjusted) {
       const reserves = cloneDeep(groupMembers)
       const lockedTodos = distribution.filter(todo => todo.totalLocked)
+      // TODO: loop through reserves to find those with modified haveNeeds
+      //       remember to delete groupMember.oldHaveNeed afterward
+      for (const reserver of reserves) {
+        if (reserver.oldHaveNeed) {
+          // now find affected lockedTodos
+          for (const todo of lockedTodos) {
+            const totalChange = reserver.oldHaveNeed - reserver.haveNeed
+            console.log({ reserver, totalChange, todo })
+            if (Math.sign(reserver.oldHaveNeed) === Math.sign(reserver.haveNeed)) {
+              if (reserver.haveNeed < 0) {
+                // a needer has changed their need, only modify old todo if need was reduced
+                if (totalChange < 0) {
+                  todo.total += totalChange
+                  todo.amount += totalChange
+                }
+              } else {
+                // a pledger has changed their pledge, only modify old todo if pledge was reduced
+                if (totalChange > 0) {
+                  todo.total -= totalChange
+                  todo.amount -= totalChange
+                }
+              }
+            } else {
+              // handle those who've switched sides differently
+            }
+          }
+          delete getUser(reserver.name).oldHaveNeed
+        }
+      }
+      // now set the reserve haveNeeds to the actual reserves
       for (const reserver of reserves) {
         if (reserver.haveNeed > 0) {
           reserver.haveNeed -= reduceField('total', 'from', reserver.name, lockedTodos)
@@ -310,92 +341,18 @@ function parsedistributionFromEvents (
       // console.log({ prevPayments, payments, reserves, subTodos, distribution })
       prevPayments = prevPayments.concat(payments)
       // console.log({ distribution })
-      // in certain situations related to minimization we can end up with
-      // payments that are larger than any of the todos in the distribution
-      // we must remove todos that are no longer needed because of this, while
-      // "refilling" any other todos appropriately. see for example
-      // mocha test 'Entire payment paid scenario'
-      // for (const todo of distribution) {
-      //   if (todo.amount < 0) {
-      //     const fixerHaveNeed = { type: 'haveNeedEvent', data: { name: '', haveNeed: 0 } }
-      //     if (i + 1 === distributionSequences.length) {
-      //       distributionSequences.push([fixerHaveNeed])
-      //     } else {
-      //       distributionSequences[i + 1].unshift(fixerHaveNeed)
-      //     }
-      //     todo.amount = 0
-      //   }
-      // }
-/*      reserves = cloneDeep(groupMembers)
-      const refill = []
-      const save = []
-      const removeUser = {}
-      const overages = []
-      // handle 'Problematic minimization overpayment'
-      for (const todo of distribution) {
-        if (todo.amount < 0) {
-          overages.push({ amount: Math.abs(todo.amount), from: todo.from, to: todo.to })
-          todo.amount = 0
-        }
-      }
-      for (const overage of overages) {
-        const affected = distribution.filter(t => t.from === overage.from && t.amount > 0 && !t.totalLocked)
-        const affectedTotal = affected.reduce((a, i) => a + i.amount, 0)
-        for (const t of affected) {
-          const fractionalAmount = overage.amount * t.amount / affectedTotal
-          t.amount = Math.max(0, t.amount - fractionalAmount)
-        }
-      }
-      // handle 'Entire payment paid scenario'
-      for (const r of reserves) {
-        const dir = r.haveNeed > 0 ? 'from' : 'to'
-        const totalPayments = reduceField('amount', dir, r.name, prevPayments)
-        r.haveNeed -= totalPayments * Math.sign(r.haveNeed)
-        if (Math.abs(r.haveNeed) < tinyNum) {
-          removeUser[r.name] = true
-        }
-      }
-      for (const todo of distribution) {
-        if (!todo.totalLocked && removeUser[todo.to]) {
-          refill.push(todo)
-        } else if (todo.totalLocked || !removeUser[todo.from]) {
-          save.push(todo)
-        }
-      }
-      distribution = save
-      console.log({ distribution, removeUser, save, refill })
-      for (const surplus of refill) {
-        const existingTodos = distribution.filter(t => t.from === surplus.from && !t.totalLocked)
-        const totalAmount = existingTodos.reduce((a, i) => a + i.amount, 0)
-        for (const todo of existingTodos) {
-          const fractionalAmount = surplus.amount * surplus.amount / totalAmount
-          todo.amount += fractionalAmount
-          todo.total += fractionalAmount
-        }
-      } */
-      // // final hairball
-      // const remainingHeroes = distribution.filter(t => t.amount > 0 && !t.totalLocked)
-      // const heroNames = uniq(remainingHeroes.map(x => x.from))
-      // // using remainingHeroes
-      // const heroReserves = reserves.filter(x => x.haveNeed < 0 || heroNames.includes(x.name))
-      // massagedDistribution = ensureTotalSet(mincomeProportional(heroReserves))
-      // distribution = distribution.filter(x => x.totalLocked).concat(massagedDistribution)
-      // console.log({ distribution, heroReserves, reserves })
     }
   }
   if (!adjusted) {
     return mincomeProportional(groupMembers)
   }
 
+  const tinyNum = 1 / Math.pow(10, DECIMALS_MAX)
   distribution = distribution.filter(todo => {
-    // pledgers who switched sides should have their todos removed
-    return todo.amount > 0 && getUser(todo.from).haveNeed > 0
+    // remove any todos for containing miniscule amounts
+    // and pledgers who switched sides should have their todos removed
+    return todo.amount >= tinyNum && getUser(todo.from).haveNeed > 0
   })
-  // distribution = distribution.filter(todo => {
-  //   // pledgers who switched sides should have their todos removed
-  //   // but keep the .totalLocked to help the minimizer
-  //   return getUser(todo.from).haveNeed > 0
-  // })
 
   // console.log({ finalDistribution: distribution })
 
