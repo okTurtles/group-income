@@ -69,7 +69,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         .is-subtitle.c-second-section
           i18n(
             tag='h3'
-            :args='{  nbMembers: canAddMembers.length }'
+            :args='{ nbMembers: canAddMembers.length }'
           ) Others ({nbMembers})
 
       transition-group(

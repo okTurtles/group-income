@@ -1,8 +1,9 @@
 <template lang='pug'>
 .c-view-wrapper
   p.c-view-label
-    span You are viewing{{' '}}
-    b {{'#' + title}}
+    i18n(
+      :args='{title: title, ...LTags("b")}'
+    ) You are viewing {b_} # {title}{_b}
   .c-view-actions-wrapper
     button.button.is-small.is-outlined(
       @click='see'
@@ -19,6 +20,7 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapState, mapGetters } from 'vuex'
+import { LTags } from '@view-utils/translations.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default ({

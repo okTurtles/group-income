@@ -576,8 +576,14 @@
 /* views/containers/chatroom/DeleteChannelModal.vue, views/pages/GroupChat.vue */
 "Delete channel" = "Supprimer le salon";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue */
+/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/ViewArea.vue */
 "Channel description" = "Description du salon";
+
+/* views/containers/chatroom/ViewArea.vue */
+"You are viewing {b_} # {title}{_b}" = "Vous regardez {b_} # {title}{_b}";
+
+/* views/containers/chatroom/ViewArea.vue */
+"Join channel" = "Rejoignez la chaîne";
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Reached character limit." = "Limite de caractères atteinte.";

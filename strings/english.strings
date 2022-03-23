@@ -51,11 +51,17 @@
 /* views/components/graphs/Overview.vue */
 "Group members and their pledges" = "Group members and their pledges";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue */
+/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/ViewArea.vue */
 "Channel description" = "Channel description";
+
+/* views/containers/chatroom/ViewArea.vue */
+"You are viewing {b_} # {title}{_b}" = "You are viewing {b_} # {title}{_b}";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description of the channel" = "Description of the channel";
+
+/* views/containers/chatroom/ViewArea.vue */
+"Join channel" = "Join channel";
 
 /* views/containers/chatroom/DeleteChannelModal.vue, views/pages/GroupChat.vue */
 "Delete channel" = "Delete channel";
