@@ -79,23 +79,16 @@ Caught a mistake or want to contribute to the documentation? Edit this page on G
 To call a prompt with yes / no question we need to call sbp with this format:
 
 ```js
-sbp('okTurtles.events/emit', OPEN_MODAL, 'Prompt', null, {
+const boolYesOrNo = await sbp('gi.ui/prompt', {
   question: L('Would you like fresh tacos?'),
   heading: L('Update info'),
   yesButton: L('Yes'),
   noButton: L('No')
 })
-```
 
-Following by a listener to the response:
-
-```js
-sbp('okTurtles.events/on', MODAL_RESPONSE, function (response) {
-  sbp('okTurtles.events/off', MODAL_RESPONSE)
-  if (response) {
-    console.log('Yes')
-  } else {
-    console.log('No')
-  }
-})
+if (boolYesOrNo) {
+  // user said yes
+} else {
+  // user said no
+}
 ```
