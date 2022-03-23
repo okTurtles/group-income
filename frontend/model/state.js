@@ -29,6 +29,7 @@ import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
+
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 
@@ -595,13 +596,17 @@ const actions = {
   },
   // persisting the state
   async saveSettings (
-    { state }: {state: Object}
+    { commit, state }: { state: Object}
   ) {
     if (state.loggedIn) {
-      // A plain assignment is fine here assuming we are logging out.
-      state.notifications = applyStorageRules(state.notifications)
+      let stateToSave = state
+      if (!state.notifications) {
+        console.warn('saveSettings: No `state.notifications`')
+      } else {
+        stateToSave = { ...state, notifications: applyStorageRules(state.notifications) }
+      }
       // TODO: encrypt this
-      await sbp('gi.db/settings/save', state.loggedIn.username, state)
+      await sbp('gi.db/settings/save', state.loggedIn.username, stateToSave)
     }
   },
   // this function is called from ../controller/utils/pubsub.js and is the entry point
