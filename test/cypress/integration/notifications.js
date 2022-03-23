@@ -84,7 +84,10 @@ const fakePrivateNotifications = [
     }
   },
   {
-    type: 'INCOME_DETAILS_OLD'
+    type: 'INCOME_DETAILS_OLD',
+    data: {
+      months: 6
+    }
   }
 ]
 
@@ -114,6 +117,10 @@ const cyCheckDreamersBadge = (expectedCount) => {
   } else {
     cy.getByDT(`groupBadge-${dreamersGroupName}`).should('not.exist')
   }
+}
+
+const cyCheckListLength = (expectedCount) => {
+  cy.get('.c-item-content').should('have.length', expectedCount)
 }
 
 const cyCheckTurtlesBadge = (expectedCount) => {
@@ -185,7 +192,7 @@ describe('Notifications', () => {
   it('should display a placeholder in the notification list', () => {
     openNotificationCard()
     cy.getByDT('notificationCard').should('contain', 'Nothing to see here... yet!')
-    cy.get('.c-item-content').should('have.length', 0)
+    cyCheckListLength(0)
   })
 
   it('adds notifications in the first group', () => {
@@ -200,9 +207,7 @@ describe('Notifications', () => {
       cyCheckDreamersBadge(expectedCount)
       cyCheckTurtlesBadge(0)
 
-      it('should display the correct number of notifications in the list', () => {
-        cy.get('.c-item-content').should('have.length', expectedCount)
-      })
+      cyCheckListLength(expectedCount)
     })
   })
 })
@@ -290,7 +295,7 @@ describe('Notifications - category subtitles', () => {
 
     cy.window().its('sbp').then(sbp => {
       // Emit a new notification.
-      emitPrivateNotifications([{ type: 'INCOME_DETAILS_OLD' }], sbp)
+      emitPrivateNotifications([{ type: 'INCOME_DETAILS_OLD', data: { months: 3 } }], sbp)
       // Both subtitles should now be visible since "new" as well as "older" notifications are listed.
       cy.get('.is-subtitle').should('have.length', 2)
       cy.get('.is-subtitle').eq(0).should('have.text', 'NEW')

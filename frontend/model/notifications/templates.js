@@ -77,7 +77,7 @@ export default ({
   },
   NEW_PROPOSAL (data: { groupID: string, creator: string, subtype: NewProposalType }) {
     const bodyTemplateMap = {
-      ADD_MEMBER: (creator: string) => L('{member} proposed to add members to the group. Vote now!', { member: strong(creator) }),
+      ADD_MEMBER: (creator: string) => L('{member} proposed to add a member to the group. Vote now!', { member: strong(creator) }),
       CHANGE_MINCOME: (creator: string) => L('{member} proposed to change the group mincome. Vote now!', { member: strong(creator) }),
       CHANGE_VOTING_RULE: (creator: string) => L('{member} proposed to change the group voting system. Vote now!', { member: strong(creator) }),
       REMOVE_MEMBER: (creator: string) => L('{member} proposed to remove a member from the group. Vote now!', { member: strong(creator) })
