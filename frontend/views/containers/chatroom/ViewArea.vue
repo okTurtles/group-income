@@ -20,7 +20,6 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapState, mapGetters } from 'vuex'
-import { LTags } from '@view-utils/translations.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default ({
