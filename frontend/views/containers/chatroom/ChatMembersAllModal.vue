@@ -64,7 +64,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                   i18n Removed.
                   button.is-unstyled.c-action-undo(
                     @click.stop='addToChannel(username, true)'
-                  ) Undo
+                  ) {{L("Undo")}}
 
         .is-subtitle.c-second-section
           i18n(
@@ -103,7 +103,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                 i18n Added.
                 button.is-unstyled.c-action-undo(
                   @click.stop='removeMember(username, true)'
-                ) Undo
+                ) {{L("Undo")}}
 </template>
 
 <script>

@@ -655,5 +655,6 @@
   "You can change this at any time by updating your {r1}income details{r2}.": "Vous pouvez modifier ce paramètre plus tard avec la {r1}mise à jour de vos revenus{r2}.",
   "You haven’t received any payments yet": "Vous n'avez pas encore reçu de paiements",
   "{amount} in total, to {count} members": "{amount} au total, à {count} membres",
-  "\"{errorMsg}\". You can {a_}report the error{_a}.": "\"{errorMsg}\". Vous pouvez {a_}signaler l'erreur{_a}."
+  "\"{errorMsg}\". You can {a_}report the error{_a}.": "\"{errorMsg}\". Vous pouvez {a_}signaler l'erreur{_a}.",
+  "Undo": "Annuler"
 }

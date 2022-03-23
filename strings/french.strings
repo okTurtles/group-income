@@ -2114,3 +2114,6 @@
 
 /* Not currently used */
 "{{title}}" = "{{titre}}";
+
+/* views/containers/chatroom/ChatMembersAllModal.vue */
+"Undo" = "Annuler";

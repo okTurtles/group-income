@@ -1973,3 +1973,6 @@
 
 /* views/containers/dashboard/GroupPurpose.vue, views/pages/GroupSettings.vue */
 "About the group" = "About the group";
+
+/* views/containers/chatroom/ChatMembersAllModal.vue */
+"Undo" = "Undo";
