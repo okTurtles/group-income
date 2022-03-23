@@ -259,7 +259,6 @@ export default ({
 .c-link {
   color: $text_0;
   border-color: $text_0;
-  margin: 0 0.2rem;
   cursor: pointer;
   font-family: inherit;
 
@@ -284,6 +283,10 @@ export default ({
 
   @include desktop {
     display: flex;
+  }
+
+  .is-unstyled {
+    margin: 0 0.2rem;
   }
 }
 
