@@ -18,7 +18,7 @@
         li(v-for='item of list.items')
           router-link.c-item(:to='item.linkTo' :class='item.read ? "" : "unread"' @click.native='markAsRead(item)')
             span.c-thumbCircle
-              avatar-user(:username='item.username' size='md')
+              avatar-user(:username='item.avatarUsername' size='md')
               i(:class='`icon-${item.icon} ${iconBg(item.level)}`')
             span.c-item-content
               span.c-item-text(v-safe-html='item.body')

@@ -7,6 +7,8 @@ export type NewProposalType =
   | 'REMOVE_MEMBER';
 
 export type Notification = {
+  // Indicates which user avatar icon to display alongside the notification.
+  +avatarUsername: string;
   +body: string;
   // If present, indicates in which group's notification list to display the notification.
   +groupID?: string;
@@ -30,6 +32,7 @@ export type NotificationLevel = 'danger' | 'info';
 export type NotificationScope = 'group' | 'user';
 
 export type NotificationTemplate = {
+  +avatarUsername?: string;
   +body: string;
   +icon: string;
   +level: NotificationLevel;

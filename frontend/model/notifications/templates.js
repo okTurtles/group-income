@@ -40,6 +40,7 @@ export default ({
   },
   MEMBER_ADDED (data: { groupID: string, username: string }) {
     return {
+      avatarUsername: data.username,
       body: L('The group has a new member. Say hi to {name}!', {
         name: strong(data.username)
       }),
@@ -51,6 +52,7 @@ export default ({
   },
   MEMBER_LEFT (data: { groupID: string, username: string }) {
     return {
+      avatarUsername: data.username,
       body: L('{name} has left your group. Contributions were updated accordingly.', {
         name: strong(data.username)
       }),
@@ -62,6 +64,7 @@ export default ({
   },
   MEMBER_REMOVED (data: { groupID: string, username: string }) {
     return {
+      avatarUsername: data.username,
       // REVIEW @mmbotelho - Not only contributions, but also proposals.
       body: L('{name} was kicked out of the group. Contributions were updated accordingly.', {
         name: strong(data.username)
@@ -88,6 +91,7 @@ export default ({
     }
 
     return {
+      avatarUsername: data.creator,
       body: bodyTemplateMap[data.subtype](data.creator),
       creator: data.creator,
       icon: iconMap[data.subtype],
