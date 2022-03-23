@@ -596,7 +596,7 @@ const actions = {
   },
   // persisting the state
   async saveSettings (
-    { commit, state }: { state: Object}
+    { state }: { state: Object}
   ) {
     if (state.loggedIn) {
       let stateToSave = state
