@@ -10,6 +10,7 @@ import { intersection, difference, delay, randomIntFromRange } from '~/frontend/
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
+import { CHATROOM_ACTIONS_PER_PAGE } from '~/frontend/model/contracts/constants.js'
 
 // temporary identity for signing
 // const nacl = require('tweetnacl')
@@ -110,6 +111,13 @@ sbp('sbp/selectors/register', {
   //       however, note if we do that they would be processed in reverse...
   'backend/eventsSince': async (contractID: string, since: string) => {
     const events = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/events/${contractID}/${since}`)
+      .then(handleFetchResult('json'))
+    if (Array.isArray(events)) {
+      return events.reverse().map(e => b64ToStr(e))
+    }
+  },
+  'backend/eventsBefore': async (contractID: string, before: string, actions: number = CHATROOM_ACTIONS_PER_PAGE) => {
+    const events = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/eventsBefore/${contractID}?before=${before}&actions=${actions}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(e => b64ToStr(e))

@@ -11,7 +11,7 @@ import L from '~/frontend/views/utils/translations.js'
 import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
-  CHATROOM_MESSAGES_PER_PAGE,
+  CHATROOM_ACTIONS_PER_PAGE,
   MESSAGE_ACTION_TYPES,
   CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL,
@@ -82,12 +82,6 @@ export function createMessage ({ meta, data, hash, state }: {
     // TODO: Interactive message creation for proposals
   }
   return newMessage
-}
-
-export function getLatestMessages ({
-  count, messages
-}: { count: number, messages: Array<Object> }): Array<Object> {
-  return messages.slice(Math.max(messages.length - count, 0))
 }
 
 export async function leaveChatRoom ({ contractID }: {
@@ -177,11 +171,7 @@ sbp('chelonia/defineContract', {
       return getters.currentChatRoomState.users || {}
     },
     chatRoomLatestMessages (state, getters) {
-      const messages = getters.currentChatRoomState.messages || []
-      return getLatestMessages({
-        count: getters.chatRoomSettings.messagesPerPage,
-        messages
-      })
+      return getters.currentChatRoomState.messages || []
     }
   },
   actions: {
@@ -191,7 +181,7 @@ sbp('chelonia/defineContract', {
       process ({ meta, data }, { state }) {
         const initialState = merge({
           settings: {
-            messagesPerPage: CHATROOM_MESSAGES_PER_PAGE,
+            actionsPerPage: CHATROOM_ACTIONS_PER_PAGE,
             maxNameLength: CHATROOM_NAME_LIMITS_IN_CHARS,
             maxDescriptionLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
           },

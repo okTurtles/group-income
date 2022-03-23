@@ -51,6 +51,42 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
+  'backend/dv/streamEntriesBefore': async function (contractID: string, hash: string, numberOfActions: number): Promise<*> {
+    let currentHEAD = await sbp('gi.db/get', sbp('gi.db/log/logHEAD', contractID))
+    if (!currentHEAD) {
+      throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
+    }
+
+    hash = hash || currentHEAD
+    let prefix = '['
+    let metBefore = false
+    return new Readable({
+      async read (): any {
+        try {
+          const entry = await sbp('gi.db/log/getEntry', currentHEAD)
+          const json = `"${strToB64(entry.serialize())}"`
+          if (currentHEAD !== hash && metBefore) {
+            this.push(prefix + json)
+            prefix = ','
+            numberOfActions--
+          } else if (currentHEAD === hash) {
+            metBefore = true
+          }
+          if (!numberOfActions) {
+            this.push(']')
+            this.push(null)
+          }
+          currentHEAD = entry.message().previousHEAD
+        } catch (e) {
+          console.error(`read(): ${e.message}:`, e)
+          if (metBefore) {
+            this.push(']')
+          }
+          this.push(null)
+        }
+      }
+    })
+  },
   // =======================
   // wrapper methods to add / lookup names
   // =======================

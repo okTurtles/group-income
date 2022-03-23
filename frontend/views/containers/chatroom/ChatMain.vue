@@ -81,7 +81,7 @@ import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
-import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
+import { createMessage } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { cloneDeep } from '@utils/giLodash.js'
 import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
@@ -346,10 +346,7 @@ export default ({
       } else {
         this.messages = []
         sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
-          this.messages = getLatestMessages({
-            count: this.chatRoomSettings.messagesPerPage, // TODO: this.chatRoomSettings could be {}
-            messages: state.messages
-          })
+          this.messages = cloneDeep(state.messages || [])
         })
       }
     },
