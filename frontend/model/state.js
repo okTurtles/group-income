@@ -27,6 +27,10 @@ import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
+import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
+
+// Vuex modules.
+import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 
 Vue.use(Vuex)
 // let store // this is set and made the default export at the bottom of the file.
@@ -99,7 +103,8 @@ sbp('sbp/selectors/register', {
   },
   'state/vuex/state': () => store.state,
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
-  'state/vuex/dispatch': (...args) => store.dispatch(...args)
+  'state/vuex/dispatch': (...args) => store.dispatch(...args),
+  'state/vuex/getters': () => store.getters
 })
 
 // Mutations must be synchronous! Never call these directly, instead use commit()
@@ -496,15 +501,6 @@ const getters = {
   },
   isDarkTheme (state) {
     return Colors[state.theme].theme === THEME_DARK
-  },
-  notificationCount (state, getters) {
-    // TODO with real data
-    if (getters.groupMembersCount === 1) {
-      return 1
-    } else if (getters.groupMembersCount === 2) {
-      return 1
-    }
-    return 7
   }
 }
 
@@ -606,11 +602,17 @@ const actions = {
   },
   // persisting the state
   async saveSettings (
-    { state }: {state: Object}
+    { state }: { state: Object}
   ) {
     if (state.loggedIn) {
+      let stateToSave = state
+      if (!state.notifications) {
+        console.warn('saveSettings: No `state.notifications`')
+      } else {
+        stateToSave = { ...state, notifications: applyStorageRules(state.notifications) }
+      }
       // TODO: encrypt this
-      await sbp('gi.db/settings/save', state.loggedIn.username, state)
+      await sbp('gi.db/settings/save', state.loggedIn.username, stateToSave)
     }
   },
   // this function is called from ../controller/utils/pubsub.js and is the entry point
@@ -911,6 +913,9 @@ const store: any = new Vuex.Store({
   mutations,
   getters,
   actions,
+  modules: {
+    notifications: notificationModule
+  },
   strict: process.env.VUEX_STRICT === 'true'
 })
 const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)

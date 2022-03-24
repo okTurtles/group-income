@@ -102,6 +102,10 @@ async function startApp () {
       await sbp('gi.db/settings/delete', username)
     }
   }
+  if (process.env.NODE_ENV === 'development' || window.Cypress) {
+    // In development mode this makes the SBP API available in the devtools console.
+    window.sbp = sbp
+  }
   /* eslint-disable no-new */
   new Vue({
     router: router,
