@@ -28,6 +28,10 @@ import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
+import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
+
+// Vuex modules.
+import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 
 Vue.use(Vuex)
 // let store // this is set and made the default export at the bottom of the file.
@@ -392,37 +396,32 @@ const getters = {
     const pPaymentsFrom = pMonthPayments && pMonthPayments.paymentsFrom
 
     const sentInMonth = (monthlyFromPayments) => {
-      return () => {
-        const payments = []
-
-        if (monthlyFromPayments) {
-          for (const toUser in monthlyFromPayments[getters.ourUsername]) {
-            for (const paymentHash of monthlyFromPayments[getters.ourUsername][toUser]) {
-              const { data, meta } = allPayments[paymentHash]
-              payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
-            }
+      const payments = []
+      if (monthlyFromPayments) {
+        for (const toUser in monthlyFromPayments[ourUsername]) {
+          for (const paymentHash of monthlyFromPayments[ourUsername][toUser]) {
+            const { data, meta } = allPayments[paymentHash]
+            payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
           }
         }
-        return payments
       }
+      return payments
     }
     const receivedInMonth = (monthlyFromPayments) => {
-      return () => {
-        const payments = []
-        if (monthlyFromPayments) {
-          for (const fromUser in monthlyFromPayments) {
-            for (const toUser in monthlyFromPayments[fromUser]) {
-              if (toUser === getters.ourUsername) {
-                for (const paymentHash of monthlyFromPayments[fromUser][toUser]) {
-                  const { data, meta } = allPayments[paymentHash]
-                  payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
-                }
+      const payments = []
+      if (monthlyFromPayments) {
+        for (const fromUser in monthlyFromPayments) {
+          for (const toUser in monthlyFromPayments[fromUser]) {
+            if (toUser === ourUsername) {
+              for (const paymentHash of monthlyFromPayments[fromUser][toUser]) {
+                const { data, meta } = allPayments[paymentHash]
+                payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
               }
             }
           }
         }
-        return payments
       }
+      return payments
     }
 
     const todo = () => {
@@ -430,8 +429,8 @@ const getters = {
     }
 
     return {
-      sent: [...sentInMonth(paymentsFrom)(), ...sentInMonth(pPaymentsFrom)()],
-      received: [...receivedInMonth(paymentsFrom)(), ...receivedInMonth(pPaymentsFrom)()],
+      sent: [...sentInMonth(paymentsFrom), ...sentInMonth(pPaymentsFrom)],
+      received: [...receivedInMonth(paymentsFrom), ...receivedInMonth(pPaymentsFrom)],
       todo: todo()
     }
   },
@@ -516,15 +515,6 @@ const getters = {
   },
   isDarkTheme (state) {
     return Colors[state.theme].theme === THEME_DARK
-  },
-  notificationCount (state, getters) {
-    // TODO with real data
-    if (getters.groupMembersCount === 1) {
-      return 1
-    } else if (getters.groupMembersCount === 2) {
-      return 1
-    }
-    return 7
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
@@ -665,11 +655,17 @@ const actions = {
   },
   // persisting the state
   async saveSettings (
-    { state }: {state: Object}
+    { state }: { state: Object}
   ) {
     if (state.loggedIn) {
+      let stateToSave = state
+      if (!state.notifications) {
+        console.warn('saveSettings: No `state.notifications`')
+      } else {
+        stateToSave = { ...state, notifications: applyStorageRules(state.notifications) }
+      }
       // TODO: encrypt this
-      await sbp('gi.db/settings/save', state.loggedIn.username, state)
+      await sbp('gi.db/settings/save', state.loggedIn.username, stateToSave)
     }
   },
   // this function is called from ../controller/utils/pubsub.js and is the entry point
@@ -970,6 +966,9 @@ const store: any = new Vuex.Store({
   mutations,
   getters,
   actions,
+  modules: {
+    notifications: notificationModule
+  },
   strict: process.env.VUEX_STRICT === 'true'
 })
 const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)

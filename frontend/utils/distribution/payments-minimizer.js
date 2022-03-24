@@ -22,7 +22,7 @@ function minimizeTotalPaymentsCount (distribution: Array<Object>): Array<any | {
   // sort haves and needs: greatest to least
   haversSorted.sort((a, b) => b.amount - a.amount)
   needersSorted.sort((a, b) => b.amount - a.amount)
-  while (haversSorted.length > 0) {
+  while (haversSorted.length > 0 && needersSorted.length > 0) {
     const mostHaver = haversSorted.pop()
     const mostNeeder = needersSorted.pop()
     const diff = mostHaver.amount - mostNeeder.amount

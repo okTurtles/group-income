@@ -14,9 +14,16 @@ describe('timeSince', function () {
     should(humanDate).equal('May 30, 7:16 AM')
   })
 
-  it('should return "1m" when 30sec have passed', () => {
+  it('should return "<1m" when 59s have passed', () => {
     should(timeSince(
-      currentDate - MINS_MILLIS * 0.5,
+      currentDate - 59e3,
+      currentDate
+    )).equal('<1m')
+  })
+
+  it('should return "1m" when 60s have passed', () => {
+    should(timeSince(
+      currentDate - MINS_MILLIS,
       currentDate
     )).equal('1m')
   })
