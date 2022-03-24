@@ -239,7 +239,6 @@ export default ({
       this.ephemeral.bodyPaddingBottom = height
     },
     handleSendMessage (message, replyingMessage = null) {
-      console.log('sending...')
       // Consider only simple TEXT now
       // TODO: implement other types of messages later
       const data = {
