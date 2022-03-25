@@ -163,13 +163,13 @@ export default ({
         this.refreshTitle()
       })
       if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
-        if (!this.isJoinedChatRoom(chatRoomId) && !this.isPublicChatRoom(chatRoomId)) {
+        if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
           this.redirectChat('GroupChatConversation')
         } else {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
             chatRoomId: to.params.chatRoomId
           })
-          if (this.isPublicChatRoom(chatRoomId)) {
+          if (!this.isPrivateChatRoom(chatRoomId)) {
             this.loadSummaryAndDetails()
           }
         }

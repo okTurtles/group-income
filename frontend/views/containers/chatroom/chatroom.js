@@ -38,7 +38,7 @@ const chatroom: Object = {
       this.ephemeral.loadedSummary = null
       this.redirectChat('GroupChatConversation')
     } else if (!this.isJoinedChatRoom(chatRoomId)) {
-      if (!this.isPublicChatRoom(chatRoomId)) {
+      if (this.isPrivateChatRoom(chatRoomId)) {
         this.ephemeral.loadedSummary = null
         this.redirectChat('GroupChatConversation')
       } else {
@@ -60,7 +60,7 @@ const chatroom: Object = {
       'generalChatRoomId',
       'globalProfile',
       'isJoinedChatRoom',
-      'isPublicChatRoom'
+      'isPrivateChatRoom'
     ]),
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
