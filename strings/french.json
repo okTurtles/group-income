@@ -180,6 +180,8 @@
   "Create channel": "Créer le salon",
   "Only added members will have access.": "Seuls les membres du salon y auront accès.",
   "Private channel": "Salon privé",
+  "Group members only": "Membres du groupe uniquement",
+  "Public channel": "Chaîne publique",
   "Description of the channel": "Description du salon",
   "Name": "Nom",
   "This field is required": "Ce champ est requis",

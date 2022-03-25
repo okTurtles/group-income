@@ -6,7 +6,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         i18n.is-title-2.c-title(
           tag='h2'
         ) Members
-        .c-description {{ attributes.name }} ∙ {{attributes.private ? L("Private channel") : L("Public channel")}}
+        .c-description {{ attributes.name }} ∙ {{attributes.privacy}}
 
     .card.c-card
       search(
@@ -186,7 +186,12 @@ export default ({
     },
     attributes () {
       const { name, description, privacyLevel } = this.currentChatRoomState.attributes || this.details
-      return { name, description, private: privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE, privacyLevel }
+      const privacy = {
+        [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
+        [CHATROOM_PRIVACY_LEVEL.GROUP]: L('Group members only'),
+        [CHATROOM_PRIVACY_LEVEL.PUBLIC]: L('Public channel')
+      }[privacyLevel]
+      return { name, description, privacy }
     },
     isJoined () {
       return this.isJoinedChatRoom(this.currentChatRoomId)

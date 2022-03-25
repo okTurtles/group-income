@@ -543,6 +543,12 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Private channel" = "Salon privé";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Public channel" = "Chaîne publique";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Group members only" = "Membres du groupe uniquement";
+
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description of the channel" = "Description du salon";
 

@@ -147,6 +147,12 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Private channel" = "Private channel";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Public channel" = "Public channel";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Group members only" = "Group members only";
+
 /* views/containers/user-settings/Appearence.vue */
 "When enabled the amount of animations you see around are reduced." = "When enabled the amount of animations you see around are reduced.";
 

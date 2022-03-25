@@ -48,6 +48,8 @@
   "Page not found": "Page not found",
   "Failed to vote on proposal.": "Failed to vote on proposal.",
   "Private channel": "Private channel",
+  "Group members only": "Group members only",
+  "Public channel": "Public channel",
   "When enabled the amount of animations you see around are reduced.": "When enabled the amount of animations you see around are reduced.",
   "{groupName}'s avatar": "{groupName}'s avatar",
   "Other group members will be able to use this information to send you monthly contributions.": "Other group members will be able to use this information to send you monthly contributions.",
