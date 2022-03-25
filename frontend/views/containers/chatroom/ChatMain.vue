@@ -28,7 +28,7 @@
 
         component(
           :is='messageType(message)'
-          :key='messageKey(message, index)'
+          :key='message.id'
           :text='message.text'
           :notification='message.notification'
           :replyingMessage='message.replyingMessage'
@@ -170,36 +170,13 @@ export default ({
   },
   methods: {
     proximityDate,
-    messageKey (message, index) {
-      let num = 0
-      const emoticons = message.emoticons || {}
-      Object.keys(emoticons).forEach(e => {
-        num += emoticons[e].length
-      })
-      let mt = `message-${index}-${num}`
-      switch (message.from) {
-        case MESSAGE_TYPES.NOTIFICATION:
-          mt = `notification-${index}-${num}`
-          break
-
-        case MESSAGE_TYPES.INTERACTIVE:
-          mt = `interactive-${index}-${num}`
-          break
-      }
-      return mt
-    },
     messageType (message) {
-      let mt = 'message'
-      switch (message.type) {
-        case MESSAGE_TYPES.NOTIFICATION:
-          mt += '-notification'
-          break
-
-        case MESSAGE_TYPES.INTERACTIVE:
-          mt += '-interactive'
-          break
-      }
-      return mt
+      return {
+        [MESSAGE_TYPES.NOTIFICATION]: 'message-notification',
+        [MESSAGE_TYPES.INTERACTIVE]: 'message-interactive',
+        [MESSAGE_TYPES.TEXT]: 'message',
+        [MESSAGE_TYPES.POLL]: 'message-poll'
+      }[message.type]
     },
     isCurrentUser (fromId) {
       return this.currentUserAttr.username === fromId
