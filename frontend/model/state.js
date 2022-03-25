@@ -546,6 +546,9 @@ const actions = {
     const settings = await sbp('gi.db/settings/load', user.username)
     // NOTE: login can be called when no settings are saved (e.g. from Signup.vue)
     if (settings) {
+      // The retrieved local data might need to be completed in case it was originally saved
+      // under an older version of the app where fewer/other Vuex modules were implemented.
+      postUpgradeVerification(settings)
       console.debug('loadSettings:', settings)
       store.replaceState(settings)
       captureLogsStart(user.username)
@@ -905,6 +908,13 @@ const handleEvent = {
       // we really can't do much at this point since this is an exception
       // inside of the exception handler :-(
     }
+  }
+}
+
+// Note: Update this function when renaming a Vuex module or implementing a new one (except contracts).
+const postUpgradeVerification = (settings: Object) => {
+  if (!settings.notifications) {
+    settings.notifications = []
   }
 }
 
