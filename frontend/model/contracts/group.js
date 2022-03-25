@@ -603,7 +603,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta }, { state }) {
         memberLeaves(state, data.member, meta.createdDate)
       },
-      sideEffect ({ data, meta, contractID }, { state }) {
+      async sideEffect ({ data, meta, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
         const { username } = rootState.loggedIn
@@ -618,7 +618,7 @@ sbp('chelonia/defineContract', {
             chatRoomIDsToLeave = [state.generalChatRoomId]
           }
 
-          sbp('gi.actions/group/leaveChatRooms', {
+          await sbp('gi.actions/group/leaveChatRooms', {
             contractID,
             data: {},
             options: {
