@@ -147,7 +147,7 @@
 /* controller/actions/chatroom.js */
 "Failed to join chat channel.": "Échec de la connexion au canal de chat.";
 
-/* controller/actions/chatroom.js */
+/* controller/actions/chatroom.js, controller/actions/group.js */
 "Failed to rename chat channel.": "Impossible de renommer le canal de chat.";
 
 /* controller/actions/chatroom.js */

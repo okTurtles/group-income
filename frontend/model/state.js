@@ -530,6 +530,28 @@ const getters = {
       return !!state[chatRoomId]?.users?.[username]
     }
   },
+  getChatRoomIDsInSort (state, getters) {
+    const chatRooms = getters.getChatRooms.active
+    return Object.keys(chatRooms)
+      .map(chatRoomID => ({
+        name: chatRooms[chatRoomID].name,
+        privacyLevel: chatRooms[chatRoomID].privacyLevel,
+        joined: getters.isJoinedChatRoom(chatRoomID),
+        id: chatRoomID
+      })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {
+        const formerName = former.name
+        const latterName = latter.name
+        if (former.joined === latter.joined) {
+          if (formerName > latterName) {
+            return 1
+          } else if (formerName < latterName) {
+            return -1
+          }
+          return 0
+        }
+        return former.joined ? -1 : 1
+      }).map(chatRoom => chatRoom.id)
+  },
   chatRoomsInDetail (state, getters) {
     const chatRoomsInDetail = _.merge({}, getters.getChatRooms.active)
     for (const contractID in chatRoomsInDetail) {

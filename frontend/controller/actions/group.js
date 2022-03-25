@@ -195,6 +195,7 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.actions/group/joinChatRoom failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join chat channel.'))
     }
+    return true
   },
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
@@ -209,23 +210,37 @@ export default (sbp('sbp/selectors/register', {
 
     return message
   },
-  'gi.actions/group/renameChatRoom': function (params: GIActionParams) {
-    sbp('gi.actions/chatroom/rename', {
-      contractID: params.data.chatRoomID,
-      data: { name: params.data.name }
-    })
+  'gi.actions/group/renameChatRoom': async function (params: GIActionParams) {
+    try {
+      await sbp('gi.actions/chatroom/rename', {
+        contractID: params.data.chatRoomID,
+        data: { name: params.data.name }
+      })
 
-    sbp('chelonia/out/actionEncrypted', {
-      ...params,
-      hooks: { prepublish: null, postpublish: params.hooks?.postpublish },
-      action: 'gi.contracts/group/renameChatRoom'
-    })
-  },
-  'gi.actions/group/leaveChatRooms': function (params: GIActionParams) {
-    const { username, member, chatRoomIDsToLeave } = params.options || {}
-    for (const contractID of chatRoomIDsToLeave) {
-      sbp('gi.actions/chatroom/leave', { contractID, data: { username, member } })
+      await sbp('chelonia/out/actionEncrypted', {
+        ...params,
+        hooks: { prepublish: null, postpublish: params.hooks?.postpublish },
+        action: 'gi.contracts/group/renameChatRoom'
+      })
+    } catch (e) {
+      console.error('gi.actions/group/renameChatRoom failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to rename chat channel.'))
     }
+    return true
+  },
+  'gi.actions/group/leaveChatRooms': async function (params: GIActionParams) {
+    const { username, member, chatRoomIDsToLeave } = params.options || {}
+    const promises = chatRoomIDsToLeave.map(
+      contractID => sbp('gi.actions/chatroom/leave', { contractID, data: { username, member } })
+    )
+
+    try {
+      await Promise.all(promises)
+    } catch (e) {
+      console.error('gi.actions/group/leaveChatRooms failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to leave chat channel.'))
+    }
+    return chatRoomIDsToLeave
   },
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),

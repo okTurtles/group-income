@@ -1329,7 +1329,7 @@
 /* controller/actions/chatroom.js */
 "Failed to join chat channel.": "Failed to join chat channel.";
 
-/* controller/actions/chatroom.js */
+/* controller/actions/chatroom.js, controller/actions/group.js */
 "Failed to rename chat channel.": "Failed to rename chat channel.";
 
 /* controller/actions/chatroom.js */
