@@ -100,7 +100,7 @@ import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_TYPES } from '@model/contracts/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/constants.js'
 
 export default ({
   name: 'GroupChat',
@@ -121,12 +121,34 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'getChatRoomIDsInSort',
       'chatRoomsInDetail',
       'globalProfile',
       'groupProfiles',
+      'isJoinedChatRoom',
+      'getChatRooms',
       'ourUsername'
     ]),
+    getChatRoomIDsInSort () {
+      const chatRooms = this.getChatRooms.active
+      return Object.keys(chatRooms).map(chatRoomID => ({
+        name: chatRooms[chatRoomID].name,
+        privacyLevel: chatRooms[chatRoomID].privacyLevel,
+        joined: this.isJoinedChatRoom(chatRoomID),
+        id: chatRoomID
+      })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {
+        const formerName = former.name
+        const latterName = latter.name
+        if (former.joined === latter.joined) {
+          if (formerName > latterName) {
+            return 1
+          } else if (formerName < latterName) {
+            return -1
+          }
+          return 0
+        }
+        return former.joined ? -1 : 1
+      }).map(chatRoom => chatRoom.id)
+    },
     channels () {
       return {
         order: this.getChatRoomIDsInSort,
