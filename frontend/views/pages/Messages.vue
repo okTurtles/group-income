@@ -22,12 +22,64 @@ page(pageTestName='messages' pageTestHeaderName='messages')
 <script>
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
-import { chatTypes, individualMessagesSorted, users } from '@containers/chatroom/fakeStore.js'
+import { CHATROOM_TYPES } from '@model/contracts/constants.js'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'
 import GroupsShortcut from '@containers/chatroom/GroupsShortcut.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
+
+const individualMessagesSorted = ['GIBot', 555, 333, 444, 111, 222]
+const users = {
+  'GIBot': {
+    id: 'GIBot',
+    name: 'gibot',
+    displayName: 'GIBot',
+    picture: '/assets/images/group-income-icon-transparent-circle.png',
+    unreadCount: 1,
+    description: 'I’m here to keep you update while you are away'
+  },
+  '111': {
+    id: '111',
+    name: 'johnn',
+    displayName: 'John Mars',
+    picture: '/assets/images/user-avatar-default.png',
+    unreadCount: 0,
+    description: 'You and John are both part of Dreamers group'
+  },
+  '222': {
+    id: '222',
+    name: 'hlenon',
+    displayName: 'Hugo Lenon',
+    picture: '/assets/images/user-avatar-default.png',
+    unreadCount: 0,
+    description: null
+  },
+  '333': {
+    id: '333',
+    name: 'liliabt',
+    displayName: 'Lilia Bouvet',
+    picture: '/assets/images/user-avatar-default.png',
+    unreadCount: 0,
+    description: null
+  },
+  '444': {
+    id: '444',
+    name: 'rickyricky',
+    displayName: 'Rick Eggs',
+    picture: '/assets/images/user-avatar-default.png',
+    unreadCount: 0,
+    description: null
+  },
+  '555': {
+    id: '555',
+    name: 'ericrock',
+    displayName: 'Eric Rock',
+    picture: '/assets/images/user-avatar-default.png',
+    unreadCount: 1,
+    description: 'You and Eric are both part of Dreamers group'
+  }
+}
 
 export default ({
   name: 'Messages',
@@ -60,7 +112,7 @@ export default ({
       }
     },
     type () {
-      return chatTypes.INDIVIDUAL
+      return CHATROOM_TYPES.INDIVIDUAL
     }
   },
   methods: {
