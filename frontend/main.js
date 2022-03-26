@@ -75,6 +75,8 @@ async function startApp () {
   }
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, createGIPubSubClient(
     pubsubURL, {
+      // See https://github.com/okTurtles/group-income/issues/1183
+      maxRetries: Infinity,
       // This option can be enabled since we are not doing auth via web sockets.
       reconnectOnTimeout: true,
       timeout: 5000
