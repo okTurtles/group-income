@@ -167,7 +167,7 @@ async function startApp () {
             banner.show(L('Trying to reconnect...'), 'wifi')
           },
           'reconnection-failed' () {
-            banner.show(L('Cannot connect to the server.'), 'wifi')
+            banner.show(L('We could not connect to the server. Please refresh the page.'), 'wifi')
           },
           'reconnection-succeeded' () {
             banner.clean()
