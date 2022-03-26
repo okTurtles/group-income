@@ -156,6 +156,7 @@ route.GET('/file/{hash}', {
   }
 }, function (request, h) {
   const { hash } = request.params
+  console.debug(`GET /file/${hash}`)
   // Reusing the given `hash` parameter to set the ETag should be faster than
   // letting Hapi hash the file to compute an ETag itself.
   return h.file(hash, { etagMethod: false }).etag(hash)
