@@ -53,12 +53,14 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (contracts) => {
   const leaveSubscribed = intersection(subscribedIDs, currentIDs)
   const toUnsubscribe = difference(subscribedIDs, leaveSubscribed)
   const toSubscribe = difference(currentIDs, leaveSubscribed)
+  // There is currently no need to tell other clients about our sub/unsubscriptions.
+  const dontBroadcast = true
   try {
     for (const contractID of toUnsubscribe) {
-      client.unsub(contractID)
+      client.unsub(contractID, dontBroadcast)
     }
     for (const contractID of toSubscribe) {
-      client.sub(contractID)
+      client.sub(contractID, dontBroadcast)
     }
   } catch (e) {
     // TODO: handle any exceptions!

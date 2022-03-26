@@ -12,8 +12,7 @@ Cypress.on('window:before:load', (window) => {
   if (!Cypress.browser.isHeadless) {
     return
   }
-
-  // Get your app's iframe by id.
+  // Get your apps iframe by id.
   const docIframe = window.parent.document.getElementById(`Your App: '${APPLICATION_NAME}'`)
 
   if (!docIframe) {
