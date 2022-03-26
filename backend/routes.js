@@ -145,12 +145,20 @@ route.POST('/file', {
   }
 })
 
-route.GET('/file/{hash}', {}, async function (request, h) {
-  try {
-    return await sbp('backend/db/readFile', request.params.hash)
-  } catch (err) {
-    return logger(err)
+route.GET('/file/{hash}', {
+  cache: {
+    // Do not set other cache options here, to make sure the 'otherwise' option
+    // will be used so that the 'immutable' directive gets included.
+    otherwise: 'public,max-age=604800,immutable'
+  },
+  files: {
+    relativeTo: path.resolve('data')
   }
+}, function (request, h) {
+  const { hash } = request.params
+  // Reusing the given `hash` parameter to set the ETag should be faster than
+  // letting Hapi hash the file to compute an ETag itself.
+  return h.file(hash, { etagMethod: false }).etag(hash)
 })
 
 // SPA routes
