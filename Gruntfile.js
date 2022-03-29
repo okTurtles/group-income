@@ -55,6 +55,7 @@ const { resolve } = path
 const {
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
+  GI_VERSION = `v0.0.1@${new Date().toISOString()}`,
   NODE_ENV = 'development',
   VUEX_STRICT = 'true'
 } = process.env
@@ -124,6 +125,7 @@ module.exports = (grunt) => {
       define: {
         'process.env.BUILD': "'web'", // Required by Vuelidate.
         'process.env.CI': `'${CI}'`,
+        'process.env.GI_VERSION': `'${GI_VERSION}'`,
         'process.env.LIGHTWEIGHT_CLIENT': LIGHTWEIGHT_CLIENT,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
         'process.env.VUEX_STRICT': VUEX_STRICT
@@ -289,6 +291,8 @@ module.exports = (grunt) => {
     grunt.log.writeln('backend: launching...')
     // Provides Babel support for the backend files.
     require('@babel/register')
+    // Make `GI_VERSION` available via `process.env` before loading our server.
+    process.env.GI_VERSION = GI_VERSION
     require(backendIndex).then(done).catch(done)
   })
 
@@ -299,7 +303,7 @@ module.exports = (grunt) => {
     const fork2 = function () {
       grunt.log.writeln('backend: forking...')
       child = fork(backendIndex, process.argv, {
-        env: process.env,
+        env: { ...process.env, GI_VERSION },
         execArgv: ['--require', '@babel/register']
       })
       child.on('error', (err) => {

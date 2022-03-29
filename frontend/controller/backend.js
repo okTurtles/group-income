@@ -5,7 +5,7 @@ import type { JSONObject } from '~/shared/types.js'
 import sbp from '~/shared/sbp.js'
 import { sign, bufToB64, b64ToStr } from '~/shared/functions.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { CONTRACTS_MODIFIED } from '~/frontend/utils/events.js'
+import { CONTRACTS_MODIFIED, GI_UPDATE_AVAILABLE } from '~/frontend/utils/events.js'
 import { intersection, difference, delay, randomIntFromRange } from '~/frontend/utils/giLodash.js'
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
@@ -31,6 +31,9 @@ function signJSON (json, keypair) {
   }, json)
 }
 
+console.info('GroupIncome version:', process.env.GI_VERSION)
+sbp('okTurtles.data/set', 'GI_VERSION', process.env.GI_VERSION)
+
 export function createGIPubSubClient (url: string, options: Object): Object {
   return createClient(url, {
     ...options,
@@ -40,6 +43,14 @@ export function createGIPubSubClient (url: string, options: Object): Object {
         // is called AFTER any currently-running calls to syncContractWithServer().
         // Calling via SBP also makes it simple to implement 'test/backend.js'
         sbp('state/enqueueHandleEvent', GIMessage.deserialize(msg.data))
+      },
+      [NOTIFICATION_TYPE.GI_VERSION] (msg) {
+        const ourVersion = sbp('okTurtles.data/get', 'GI_VERSION')
+        const theirVersion = msg.data
+
+        if (ourVersion !== theirVersion) {
+          sbp('okTurtles.events/emit', GI_UPDATE_AVAILABLE, theirVersion)
+        }
       }
     }
   })
@@ -66,6 +77,14 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (contracts) => {
     // TODO: handle any exceptions!
     console.error('CONTRACTS_MODIFIED: error in pubsub!', e, { toUnsubscribe, toSubscribe })
   }
+})
+
+sbp('okTurtles.events/on', GI_UPDATE_AVAILABLE, (version) => {
+  console.info('New GroupIncome version available:', version)
+  const client = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+  client.destroy()
+  // TODO: allow the user to manually reload the page later.
+  window.location.reload()
 })
 
 sbp('sbp/selectors/register', {
