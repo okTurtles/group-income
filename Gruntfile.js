@@ -455,7 +455,7 @@ module.exports = (grunt) => {
           try {
             if (filePath.startsWith(serviceWorkerDir)) {
               await buildServiceWorkers.run({ fileEventName, filePath })
-            } else {
+            } else if (filePath.startsWith('frontend/') || filePath.startsWith('shared/')) {
               await buildMain.run({ fileEventName, filePath })
             }
           } catch (error) {
