@@ -72,6 +72,7 @@ const srcDir = 'frontend'
 // Only used in the callback passed to the `importer` option of the SASS plugin.
 const chompLeft = (s, what) => s.startsWith(what) ? s.slice(what.length) : s
 const development = NODE_ENV === 'development'
+const production = !development
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
@@ -138,6 +139,9 @@ module.exports = (grunt) => {
         '.woff': 'file',
         '.woff2': 'file'
       },
+      minifyIdentifiers: production,
+      minifySyntax: production,
+      minifyWhitespace: production,
       sourcemap: development,
       splitting: false, // Split mode has still a few issues so don't enable it yet.
       watch: false // Not using esbuild's own watch mode since it involves polling.
