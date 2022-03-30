@@ -47,6 +47,7 @@ const { exec, fork } = require('child_process')
 const { copyFile, readFile } = require('fs/promises')
 const path = require('path')
 const { resolve } = path
+const { version } = require('./package.json')
 
 // Not loading babel-register here since it is quite a heavy import and is not always used.
 // We will rather load it later, and only if necessary.
@@ -55,7 +56,7 @@ const { resolve } = path
 const {
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
-  GI_VERSION = `v0.0.1@${new Date().toISOString()}`,
+  GI_VERSION = `${version}@${new Date().toISOString()}`,
   NODE_ENV = 'development',
   VUEX_STRICT = 'true'
 } = process.env
