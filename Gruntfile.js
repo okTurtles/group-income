@@ -49,6 +49,8 @@ const applyPortShift = (env) => {
 
 Object.assign(process.env, applyPortShift(process.env))
 
+process.env.GI_VERSION = `${version}@${new Date().toISOString()}`
+
 // Not loading babel-register here since it is quite a heavy import and is not always used.
 // We will rather load it later, and only if necessary.
 // require('@babel/register')
@@ -56,7 +58,7 @@ Object.assign(process.env, applyPortShift(process.env))
 const {
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
-  GI_VERSION = `${version}@${new Date().toISOString()}`,
+  GI_VERSION,
   NODE_ENV = 'development',
   VUEX_STRICT = 'true'
 } = process.env
@@ -293,8 +295,6 @@ module.exports = (grunt) => {
     grunt.log.writeln('backend: launching...')
     // Provides Babel support for the backend files.
     require('@babel/register')
-    // Make `GI_VERSION` available via `process.env` before loading our server.
-    process.env.GI_VERSION = GI_VERSION
     require(backendIndex).then(done).catch(done)
   })
 
@@ -305,7 +305,7 @@ module.exports = (grunt) => {
     const fork2 = function () {
       grunt.log.writeln('backend: forking...')
       child = fork(backendIndex, process.argv, {
-        env: { ...process.env, GI_VERSION },
+        env: process.env,
         execArgv: ['--require', '@babel/register']
       })
       child.on('error', (err) => {
