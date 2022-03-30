@@ -171,33 +171,33 @@ function parsedistributionFromEvents (
       const lockedTodos = distribution.filter(todo => todo.totalLocked)
       // TODO: loop through reserves to find those with modified haveNeeds
       //       remember to delete groupMember.oldHaveNeed afterward
-      for (const reserver of reserves) {
-        if (reserver.oldHaveNeed) {
-          // now find affected lockedTodos
-          for (const todo of lockedTodos) {
-            const totalChange = reserver.oldHaveNeed - reserver.haveNeed
-            console.log({ reserver, totalChange, todo })
-            if (Math.sign(reserver.oldHaveNeed) === Math.sign(reserver.haveNeed)) {
-              if (reserver.haveNeed < 0) {
-                // a needer has changed their need, only modify old todo if need was reduced
-                if (totalChange < 0) {
-                  todo.total += totalChange
-                  todo.amount += totalChange
-                }
-              } else {
-                // a pledger has changed their pledge, only modify old todo if pledge was reduced
-                if (totalChange > 0) {
-                  todo.total -= totalChange
-                  todo.amount -= totalChange
-                }
-              }
-            } else {
-              // handle those who've switched sides differently
-            }
-          }
-          delete getUser(reserver.name).oldHaveNeed
-        }
-      }
+      // for (const reserver of reserves) {
+      //   if (reserver.oldHaveNeed) {
+      //     const totalChange = reserver.oldHaveNeed - reserver.haveNeed
+      //     // now find affected lockedTodos
+      //     for (const todo of lockedTodos) {
+      //       console.log({ reserver, totalChange, todo })
+      //       if (Math.sign(reserver.oldHaveNeed) === Math.sign(reserver.haveNeed)) {
+      //         if (reserver.haveNeed < 0) {
+      //           // a needer has changed their need, only modify old todo if need was reduced
+      //           if (totalChange < 0) {
+      //             todo.total += totalChange
+      //             todo.amount += totalChange
+      //           }
+      //         } else {
+      //           // a pledger has changed their pledge, only modify old todo if pledge was reduced
+      //           if (totalChange > 0) {
+      //             todo.total -= totalChange
+      //             todo.amount -= totalChange
+      //           }
+      //         }
+      //       } else {
+      //         // handle those who've switched sides differently
+      //       }
+      //     }
+      //     delete getUser(reserver.name).oldHaveNeed
+      //   }
+      // }
       // now set the reserve haveNeeds to the actual reserves
       for (const reserver of reserves) {
         if (reserver.haveNeed > 0) {

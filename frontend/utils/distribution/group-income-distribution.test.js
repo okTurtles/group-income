@@ -471,6 +471,8 @@ describe('Test group-income-distribution.js', function () {
       { amount: 71.42857143, from: 'u4', to: 'u3', total: 71.42857143, partial: false, isLate: false, dueOn: '2021-01' }
     ])
   })
+})
+describe.skip('Test partial payments with haveNeed changes', function () {
   it('partial payment + needer haveNeed reduced', function () {
     setup = [
       { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 100 } },
@@ -502,7 +504,7 @@ describe('Test group-income-distribution.js', function () {
       { amount: 50, from: 'u1', to: 'u2', total: 100, partial: true, isLate: false, dueOn: '2021-01' }
     ])
   })
-  it.only('partial payment + haver haveNeed reduced', function () {
+  it('partial payment + haver haveNeed reduced', function () {
     setup = [
       { type: 'haveNeedEvent', data: { name: 'u1', haveNeed: 100 } },
       { type: 'haveNeedEvent', data: { name: 'u2', haveNeed: -100 } },
