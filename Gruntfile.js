@@ -11,6 +11,14 @@
 //
 // =======================
 
+const chalk = require('chalk')
+const crypto = require('crypto')
+const { exec, fork } = require('child_process')
+const { copyFile, readFile } = require('fs/promises')
+const path = require('path')
+const { resolve } = path
+const { version } = require('./package.json')
+
 // =======================
 // Global environment variables setup
 //
@@ -40,14 +48,6 @@ const applyPortShift = (env) => {
 }
 
 Object.assign(process.env, applyPortShift(process.env))
-
-const chalk = require('chalk')
-const crypto = require('crypto')
-const { exec, fork } = require('child_process')
-const { copyFile, readFile } = require('fs/promises')
-const path = require('path')
-const { resolve } = path
-const { version } = require('./package.json')
 
 // Not loading babel-register here since it is quite a heavy import and is not always used.
 // We will rather load it later, and only if necessary.
