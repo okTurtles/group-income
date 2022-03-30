@@ -69,9 +69,6 @@ const distJS = 'dist/assets/js'
 const serviceWorkerDir = 'frontend/controller/serviceworkers'
 const srcDir = 'frontend'
 
-// Not imported but copied from '~/shared/string.js' to avoid needing Babel here.
-// Only used in the callback passed to the `importer` option of the SASS plugin.
-const chompLeft = (s, what) => s.startsWith(what) ? s.slice(what.length) : s
 const development = NODE_ENV === 'development'
 const production = !development
 
@@ -209,7 +206,7 @@ module.exports = (grunt) => {
     importer (url, previous, done) {
       // So we can write `@import '@assets/style/_variables.scss'` in the <style> section of .vue components too.
       return url.startsWith('@assets/')
-        ? { file: resolve('./frontend/assets', chompLeft(url, '@assets/')) }
+        ? { file: resolve('./frontend/assets', url.slice('@assets/'.length)) }
         : null
     }
   }
