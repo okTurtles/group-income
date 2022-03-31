@@ -6,6 +6,8 @@
 
 import 'cypress-file-upload'
 
+import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
+
 /* Get element by data-test attribute and other attributes
  ex:
  cy.getByDT('login')            //  cy.get([data-test="login"])
@@ -44,6 +46,25 @@ function cyBypassUI (action, params) {
   cy.getByDT('feedbackMsg').should('text', `${action} succeded!`)
 
   cy.getByDT('finalizeBtn').click()
+}
+
+function checkIfJoinedGeneralChannel (groupName, username) {
+  cy.getByDT('groupChatLink').click()
+  cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+
+  cy.getByDT('messageInputWrapper').within(() => {
+    cy.get('textarea').should('exist')
+  })
+
+  cy.getByDT('conversationWapper').within(() => {
+    if (username) {
+      cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', username)
+    }
+    cy.get('div.c-message:last-child .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
+  })
+
+  cy.getByDT('dashboard').click()
+  cy.getByDT('groupName').should('contain', groupName)
 }
 
 Cypress.Commands.add('giSignup', (username, {
@@ -152,10 +173,11 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     cy.getByDT('groupName').should('contain', name)
     // wait for general chatroom contract to finish syncing
-    cy.wait(500) // eslint-disable-line
+    // cy.wait(500) // eslint-disable-line
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
+    checkIfJoinedGeneralChannel(name)
     return
   }
 
@@ -199,10 +221,11 @@ Cypress.Commands.add('giCreateGroup', (name, {
   })
   cy.url().should('eq', 'http://localhost:8000/app/dashboard')
   // wait for general chatroom contract to finish syncing
-  cy.wait(500) // eslint-disable-line
+  // cy.wait(500) // eslint-disable-line
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-sync', '')
   })
+  checkIfJoinedGeneralChannel(name)
 })
 
 function inviteUser (invitee, index) {
@@ -263,13 +286,14 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     const inviteSecret = params.get('secret')
     cyBypassUI('group_join', { groupId, inviteSecret })
     // wait for general chatroom contract to finish syncing
-    cy.wait(500) // eslint-disable-line
+    // cy.wait(500) // eslint-disable-line
     cy.getByDT('app').then(([el]) => {
       if (!isLoggedIn) {
         cy.get(el).should('have.attr', 'data-logged-in', 'yes')
       }
       cy.get(el).should('have.attr', 'data-sync', '')
     })
+    checkIfJoinedGeneralChannel(groupName, username)
   } else {
     cy.visit(invitationLink)
 
@@ -287,13 +311,14 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.getByDT('toDashboardBtn').click()
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     // wait for general chatroom contract to finish syncing
-    cy.wait(500) // eslint-disable-line
+    // cy.wait(500) // eslint-disable-line
     cy.getByDT('app').then(([el]) => {
       if (!isLoggedIn) {
         cy.get(el).should('have.attr', 'data-logged-in', 'yes')
       }
       cy.get(el).should('have.attr', 'data-sync', '')
     })
+    checkIfJoinedGeneralChannel(groupName, username)
   }
 
   if (displayName) {
