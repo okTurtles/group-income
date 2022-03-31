@@ -129,10 +129,9 @@ export default ({
       'ourUsername'
     ]),
     getChatRoomIDsInSort () {
-      const chatRooms = this.getChatRooms.active
-      return Object.keys(chatRooms).map(chatRoomID => ({
-        name: chatRooms[chatRoomID].name,
-        privacyLevel: chatRooms[chatRoomID].privacyLevel,
+      return Object.keys(this.getChatRooms).map(chatRoomID => ({
+        name: this.getChatRooms[chatRoomID].name,
+        privacyLevel: this.getChatRooms[chatRoomID].privacyLevel,
         joined: this.isJoinedChatRoom(chatRoomID),
         id: chatRoomID
       })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {

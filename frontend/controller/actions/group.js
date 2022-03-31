@@ -23,6 +23,28 @@ import L, { LError } from '@view-utils/translations.js'
 import { encryptedAction } from './utils.js'
 import type { GIActionParams } from './types.js'
 
+export async function leaveAllChatRooms (groupContractID?: string, member: string) {
+  // let user leaves all the chatrooms before leaving group
+  const rootState = sbp('state/vuex/state')
+  groupContractID = groupContractID || rootState.currentGroupId
+  const chatRooms = rootState[groupContractID].chatRooms
+  const chatRoomIDsToLeave = Object.keys(chatRooms)
+    .filter(cID => chatRooms[cID].users.includes(member))
+
+  const promises = chatRoomIDsToLeave.map(
+    chatRoomID => sbp('gi.actions/group/leaveChatRoom', {
+      contractID: groupContractID,
+      data: { chatRoomID, member, leavingGroup: true }
+    })
+  )
+
+  try {
+    await Promise.all(promises)
+  } catch (e) {
+    throw new GIErrorUIRuntimeError(L('Failed to leave chat channel.'))
+  }
+}
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
     data: {
@@ -228,20 +250,32 @@ export default (sbp('sbp/selectors/register', {
     }
     return true
   },
-  'gi.actions/group/leaveChatRooms': async function (params: GIActionParams) {
-    const { username, member, chatRoomIDsToLeave } = params.options || {}
-    const promises = chatRoomIDsToLeave.map(
-      contractID => sbp('gi.actions/chatroom/leave', { contractID, data: { username, member } })
-    )
+  'gi.actions/group/removeMember': async function (params: GIActionParams) {
+    await leaveAllChatRooms(params.contractID, params.data.member)
 
     try {
-      await Promise.all(promises)
+      await sbp('chelonia/out/actionEncrypted', {
+        ...params,
+        action: 'gi.contracts/group/removeMember'
+      })
     } catch (e) {
-      console.error('gi.actions/group/leaveChatRooms failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to leave chat channel.'))
+      throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }))
     }
-    return chatRoomIDsToLeave
   },
+  'gi.actions/group/removeOurselves': async function (params: GIActionParams) {
+    const rootState = sbp('state/vuex/state')
+    await leaveAllChatRooms(params.contractID, rootState.loggedIn.username)
+
+    try {
+      await sbp('chelonia/out/actionEncrypted', {
+        ...params,
+        action: 'gi.contracts/group/removeOurselves'
+      })
+    } catch (e) {
+      throw new GIErrorUIRuntimeError(L('Failed to leave group. {codeError}', { codeError: e.message }))
+    }
+  },
+  ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
@@ -251,7 +285,5 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/proposalVote', L('Failed to vote on proposal.')),
   ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.')),
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
-  ...encryptedAction('gi.actions/group/removeMember', (params, e) => L('Failed to remove {member}: {reportError}', { member: params.member, ...LError(e) })),
-  ...encryptedAction('gi.actions/group/removeOurselves', (params, e) => L('Failed to leave group. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message }))
 }): string[])

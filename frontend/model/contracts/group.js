@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import {
   arrayOf, mapOf, objectOf, objectMaybeOf, optional,
-  string, number, object, unionOf, tupleOf
+  string, number, object, unionOf, tupleOf, boolean
 } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income/issues/603
@@ -302,16 +302,7 @@ sbp('chelonia/defineContract', {
       return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     },
     getChatRooms (state, getters) {
-      const active = {}
-      const deleted = {}
-      for (const cID in getters.currentGroupState.chatRooms) {
-        if (!getters.currentGroupState.chatRooms[cID].deletedDate) {
-          active[cID] = getters.currentGroupState.chatRooms[cID]
-        } else {
-          deleted[cID] = getters.currentGroupState.chatRooms[cID]
-        }
-      }
-      return { active, deleted, all: { ...active, ...deleted } }
+      return getters.currentGroupState.chatRooms
     },
     generalChatRoomId (state, getters) {
       return getters.currentGroupState.generalChatRoomId
@@ -603,31 +594,10 @@ sbp('chelonia/defineContract', {
       process ({ data, meta }, { state }) {
         memberLeaves(state, data.member, meta.createdDate)
       },
-      async sideEffect ({ data, meta, contractID }, { state }) {
+      sideEffect ({ data, meta, contractID }, { state, getters }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
         const { username } = rootState.loggedIn
-
-        // let user leaves all the chatrooms inside the group
-        if (meta.username === username) {
-          let chatRoomIDsToLeave = []
-          if (!sbp('okTurtles.data/get', 'JOINING_GROUP')) {
-            chatRoomIDsToLeave = Object.keys(state.chatRooms)
-              .filter(cID => rootState[cID] && rootState[cID].users[data.member]) || []
-          } else if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
-            chatRoomIDsToLeave = [state.generalChatRoomId]
-          }
-
-          await sbp('gi.actions/group/leaveChatRooms', {
-            contractID,
-            data: {},
-            options: {
-              username: meta.username,
-              member: data.member,
-              chatRoomIDsToLeave
-            }
-          })
-        }
 
         if (data.member === username) {
           // If this member is re-joining the group, ignore the rest
@@ -825,7 +795,8 @@ sbp('chelonia/defineContract', {
           name,
           type,
           privacyLevel,
-          deletedDate: null
+          deletedDate: null,
+          users: []
         })
         if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
@@ -836,12 +807,32 @@ sbp('chelonia/defineContract', {
       validate: (data, { getters, meta }) => {
         objectOf({ chatRoomID: string })(data)
 
-        if (getters.getChatRooms.active[data.chatRoomID].creator !== meta.username) {
+        if (getters.getChatRooms[data.chatRoomID].creator !== meta.username) {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       },
       process ({ data, meta }, { state }) {
-        Vue.set(state.chatRooms[data.chatRoomID], 'deletedDate', meta.createdDate)
+        Vue.delete(state.chatRooms[data.chatRoomID])
+      }
+    },
+    'gi.contracts/group/leaveChatRoom': {
+      validate: objectOf({
+        chatRoomID: string,
+        member: string,
+        leavingGroup: boolean // if kicker is exists, it means group leaving
+      }),
+      process ({ data, meta }, { state }) {
+        Vue.set(state.chatRooms[data.chatRoomID], 'users',
+          state.chatRooms[data.chatRoomID].users.filter(u => u !== data.member))
+      },
+      async sideEffect ({ meta, data }, { state }) {
+        const rootState = sbp('state/vuex/state')
+        if (meta.username === rootState.loggedIn.username && !sbp('okTurtles.data/get', 'JOINING_GROUP')) {
+          const sendingData = data.leavingGroup
+            ? { member: data.member }
+            : { member: data.member, username: meta.username }
+          await sbp('gi.actions/chatroom/leave', { contractID: data.chatRoomID, data: sendingData })
+        }
       }
     },
     'gi.contracts/group/joinChatRoom': {
@@ -849,7 +840,11 @@ sbp('chelonia/defineContract', {
         username: string,
         chatRoomID: string
       }),
-      process ({ data, meta }, { state }) {},
+      process ({ data, meta }, { state }) {
+        const username = data.username || meta.username
+        const { chatRoomID } = data
+        Vue.set(state.chatRooms[chatRoomID], 'users', state.chatRooms[chatRoomID].users.concat([username]))
+      },
       async sideEffect ({ meta, data }, { state }) {
         const rootState = sbp('state/vuex/state')
         const username = data.username || meta.username
@@ -869,7 +864,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta }, { state, getters }) {
         Vue.set(state.chatRooms, data.chatRoomID, {
-          ...getters.getChatRooms.active[data.chatRoomID],
+          ...getters.getChatRooms[data.chatRoomID],
           name: data.name
         })
       }

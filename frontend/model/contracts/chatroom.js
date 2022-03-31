@@ -268,12 +268,12 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/leave': {
       validate: objectOf({
-        username: optional(string), // coming from the gi.contracts/group/removeMember
+        username: optional(string), // coming from the gi.contracts/group/leaveChatRoom
         member: string // username to be removed
       }),
       process ({ data, meta, hash }, { state }) {
         const { member } = data
-        const isKicked = !data.username && member !== meta.username
+        const isKicked = data.username && member !== data.username
         if (!state.users[member]) {
           throw new Error(`Can not leave the chatroom which ${member} are not part of`)
         }

@@ -244,9 +244,13 @@ export default ({
         return
       }
       try {
-        await sbp('gi.actions/chatroom/leave', {
-          contractID: this.currentChatRoomId,
-          data: { member: username }
+        await sbp('gi.actions/group/leaveChatRoom', {
+          contractID: this.currentGroupId,
+          data: {
+            chatRoomID: this.currentChatRoomId,
+            member: username,
+            leavingGroup: false
+          }
         })
         if (undoing) {
           this.canAddMembers = this.canAddMembers.map(member =>
