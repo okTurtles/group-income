@@ -505,7 +505,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
-    switchUser(user2)
+    cy.giLogout()
+    cy.giLogin(user2)
+    me = user2
 
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
