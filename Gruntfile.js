@@ -332,7 +332,7 @@ module.exports = (grunt) => {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'copy', esbuild])
+      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean', 'copy', esbuild])
     }
   })
 
