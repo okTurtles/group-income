@@ -127,7 +127,7 @@ module.exports = (grunt) => {
         'process.env.BUILD': "'web'", // Required by Vuelidate.
         'process.env.CI': `'${CI}'`,
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
-        'process.env.LIGHTWEIGHT_CLIENT': LIGHTWEIGHT_CLIENT,
+        'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
         'process.env.VUEX_STRICT': VUEX_STRICT
       },
