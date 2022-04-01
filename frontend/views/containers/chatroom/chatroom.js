@@ -157,13 +157,13 @@ const chatroom: Object = {
       const participants = {}
       const members = {}
       for (const username in this.currentGroupState.profiles) {
-        const { displayName, picture, email } = this.globalProfile(username)
+        const { displayName, picture, email } = this.globalProfile(username) || {}
         participants[username] = {
           ...state.users[username],
-          username,
-          displayName,
-          picture,
-          email
+          username: username || '',
+          displayName: displayName || '',
+          picture: picture || '',
+          email: email || ''
         }
         if (state.users[username]) {
           members[username] = { username, displayName, picture, email }

@@ -45,6 +45,10 @@ function cyBypassUI (action, params) {
   cy.getByDT('actionName').should('text', action)
   cy.getByDT('feedbackMsg').should('text', `${action} succeded!`)
 
+  cy.getByDT('app').then(([el]) => {
+    cy.get(el).should('have.attr', 'data-sync', '')
+  })
+
   cy.getByDT('finalizeBtn').click()
 }
 
@@ -63,8 +67,13 @@ function checkIfJoinedGeneralChannel (groupName, username) {
     cy.get('div.c-message:last-child .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
   })
 
+  cy.getByDT('channelsList').within(() => {
+    cy.get('ul > li:first-child').should('contain', CHATROOM_GENERAL_NAME)
+    cy.get('ul > li:first-child i').should('have.class', 'icon-hashtag')
+  })
+
   cy.getByDT('dashboard').click()
-  cy.getByDT('groupName').should('contain', groupName)
+  // cy.getByDT('groupName').should('contain', groupName)
 }
 
 Cypress.Commands.add('giSignup', (username, {

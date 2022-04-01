@@ -486,11 +486,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   // TODO: can not rejoin the group by himself unless he uses the link made by proposal
   // so the scenario could be updated later when e2e protocol would be ready
   it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again`, () => {
-    cy.giLogin(user3)
-    me = user3
+    switchUser(user3)
     cy.wait(500) // eslint-disable-line
-    cy.giLogout({ hasNoGroup: true })
-    cy.giLogin(user3)
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
       groupName: groupName1,
