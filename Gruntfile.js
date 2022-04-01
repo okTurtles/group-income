@@ -139,7 +139,8 @@ module.exports = (grunt) => {
       },
       outdir: distJS,
       sourcemap: development,
-      splitting: !grunt.option('no-chunks'), // Warning: split mode has still a few issues.
+      // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
+      splitting: !grunt.option('no-chunks'),
       watch: false // Not using esbuild's own watch mode since it involves polling.
     },
     // Native options used when building the main entry point.
