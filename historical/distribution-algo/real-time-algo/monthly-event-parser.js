@@ -1,4 +1,5 @@
 'use strict'
+
 import { lastDayOfMonth, dateFromMonthstamp, dateToMonthstamp } from '~/frontend/utils/time.js'
 import { cloneDeep } from '~/frontend/utils/giLodash.js'
 import { saferFloat, DECIMALS_MAX } from '~/frontend/views/utils/currencies.js'
@@ -169,8 +170,10 @@ function parsedistributionFromEvents (
     if (adjusted) {
       const reserves = cloneDeep(groupMembers)
       const lockedTodos = distribution.filter(todo => todo.totalLocked)
-      // TODO: loop through reserves to find those with modified haveNeeds
-      //       remember to delete groupMember.oldHaveNeed afterward
+      // if we wanted to handle partial payments + haveNeed changes, it would go here
+      // and it would look something like this:
+      // // loop through reserves to find those with modified haveNeeds
+      // // remember to delete groupMember.oldHaveNeed afterward
       // for (const reserver of reserves) {
       //   if (reserver.oldHaveNeed) {
       //     const totalChange = reserver.oldHaveNeed - reserver.haveNeed

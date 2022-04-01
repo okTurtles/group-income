@@ -222,6 +222,32 @@ sbp('chelonia/defineContract', {
         }
       }
     },
+    paymentsDistributionEventsForMonth (state, getters) {
+      return (monthstamp) => {
+        const hashes = getters.paymentHashesForMonth(monthstamp)
+        if (hashes) {
+          const payments = getters.currentGroupState.payments
+          const events = []
+          for (const paymentHash of hashes) {
+            const payment = payments[paymentHash]
+            if (payment.data.status === PAYMENT_COMPLETED) {
+              events.push({
+                type: 'paymentEvent',
+                data: {
+                  from: payment.meta.username,
+                  to: payment.data.toUser,
+                  hash: paymentHash,
+                  amount: payment.data.amount,
+                  isLate: !!payment.data.isLate,
+                  when: payment.data.completedDate
+                }
+              })
+            }
+          }
+          return events
+        }
+      }
+    },
     groupMembersByUsername (state, getters) {
       return Object.keys(getters.groupProfiles)
     },
@@ -269,13 +295,13 @@ sbp('chelonia/defineContract', {
       //       bound to the UI in some location.
       return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     },
-    haveNeedsForMonth (state, getters) {
+    distributionEventsForMonth (state, getters) {
       return (monthstamp) => {
         // NOTE: if we ever switch back to the "real-time" adjusted distribution algorithm,
         //       make sure that this function also handles userExitsGroupEvent
         const groupProfiles = getters.groupProfiles
         const datestamp = dateFromMonthstamp(monthstamp).toISOString()
-        const haveNeeds = []
+        let distributionEvents = []
         for (const username in groupProfiles) {
           const { incomeDetailsType, joinedDate } = groupProfiles[username]
           if (incomeDetailsType) {
@@ -283,48 +309,19 @@ sbp('chelonia/defineContract', {
             const haveNeed = incomeDetailsType === 'incomeAmount' ? amount - getters.groupMincomeAmount : amount
             // construct 'when' this way in case we ever use a pro-rated algorithm
             const when = dateToMonthstamp(joinedDate) === monthstamp ? joinedDate : datestamp
-            haveNeeds.push({ name: username, haveNeed, when })
+            distributionEvents.push({
+              type: 'haveNeedEvent',
+              data: { name: username, haveNeed, when }
+            })
           }
         }
-        return haveNeeds
-      }
-    },
-    paymentEventsForMonth (state, getters) {
-      return (monthstamp) => {
-        const hashes = getters.paymentHashesForMonth(monthstamp)
-        const events = []
-        if (hashes && hashes.length > 0) {
-          const payments = getters.currentGroupState.payments
-          for (const paymentHash of hashes) {
-            const payment = payments[paymentHash]
-            if (payment.data.status === PAYMENT_COMPLETED) {
-              events.push({
-                type: 'paymentEvent',
-                data: {
-                  from: payment.meta.username,
-                  to: payment.data.toUser,
-                  hash: paymentHash,
-                  amount: payment.data.amount,
-                  isLate: !!payment.data.isLate,
-                  when: payment.data.completedDate
-                }
-              })
-            }
-          }
+        const paymentEvents = getters.paymentsDistributionEventsForMonth(monthstamp)
+        if (paymentEvents) {
+          distributionEvents = distributionEvents.concat(paymentEvents)
         }
-        return events
+        return distributionEvents.sort((a, b) => compareISOTimestamps(a.data.when, b.data.when))
       }
     }
-    // distributionEventsForMonth (state, getters) {
-    //   return (monthstamp) => {
-    //     // NOTE: if we ever switch back to the "real-time" adjusted distribution
-    //     // algorithm, make sure that this function also handles userExitsGroupEvent
-    //     const distributionEvents = getters.haveNeedEventsForMonth(monthstamp)
-    //     const paymentEvents = getters.paymentEventsForMonth(monthstamp)
-    //     distributionEvents.splice(distributionEvents.length, 0, paymentEvents)
-    //     return distributionEvents.sort((a, b) => compareISOTimestamps(a.data.when, b.data.when))
-    //   }
-    // }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
   //       THEY ARE NOT to farm out any further mutations through the async actions!
@@ -340,7 +337,6 @@ sbp('chelonia/defineContract', {
           sharedValues: string,
           mincomeAmount: number,
           mincomeCurrency: string,
-          distributionDate: string,
           proposals: objectOf({
             [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
             [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,

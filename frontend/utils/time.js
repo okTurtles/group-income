@@ -4,6 +4,7 @@ import L from '~/frontend/views/utils/translations.js'
 export const MINS_MILLIS = 60000
 export const HOURS_MILLIS = 60 * MINS_MILLIS
 export const DAYS_MILLIS = 24 * HOURS_MILLIS
+export const MONTHS_MILLIS = 30 * DAYS_MILLIS
 
 export function addMonthsToDate (date: string, months: number): Date {
   const now = new Date(date)
@@ -38,6 +39,12 @@ export function prevMonthstamp (monthstamp: string): string {
   return dateToMonthstamp(date)
 }
 
+export function add30DaysToDate (date: string): string {
+  const d = new Date(date)
+  d.setTime(d.getTime() + MONTHS_MILLIS)
+  return d
+}
+
 export function compareMonthstamps (monthstampA: string, monthstampB: string): number {
   const dateA = dateFromMonthstamp(monthstampA)
   const dateB = dateFromMonthstamp(monthstampB)
@@ -56,9 +63,13 @@ export function compareISOTimestamps (a: string, b: string): number {
   return A - B
 }
 
+// TODO: this should be localized properly and renamed to dateToTimestamp
+//       or timestampFromDate. There's probably some built-in thing to get
+//       the timestamp in a localized way (e.g. with AM/PM vs 24hour)
+//       for example, .toLocaleTimeString(). The only place this is currently
+//       used is in the chatroom stuff
 export function getTime (date: Date): string {
-  const t = new Date(date)
-  return `${t.getHours()}:${t.getMinutes()}`
+  return `${date.getHours()}:${date.getMinutes()}`
 }
 
 export function lastDayOfMonth (date: Date): Date {

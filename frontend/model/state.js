@@ -423,7 +423,7 @@ const getters = {
       }
       return payments
     }
-
+    // TODO: take into account payments that have been sent but not yet completed
     const todo = () => {
       return getters.groupIncomeAdjustedDistribution.filter(p => p.from === ourUsername)
     }
@@ -434,6 +434,7 @@ const getters = {
       todo: todo()
     }
   },
+  // TODO: fix all of this
   ourPaymentsSummary (state, getters) {
     const isNeeder = getters.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     const ourUsername = getters.ourUsername
@@ -442,11 +443,13 @@ const getters = {
     }
     const ourUnadjustedPayments = getters.groupIncomeDistribution.filter(isOurPayment)
     const ourAdjustedPayments = getters.groupIncomeAdjustedDistribution.filter(isOurPayment)
-    const paymentsDone = ourUnadjustedPayments.filter((p) => !p.isLate).length - ourAdjustedPayments.filter((p) => !p.isLate).length
-    const hasPartials = ourAdjustedPayments.filter((p) => p.partial).length > 0
-    const paymentsTotal = ourUnadjustedPayments.filter((p) => !p.isLate).length
-    const amountTotal = ourUnadjustedPayments.filter((p) => !p.isLate).reduce((acc, payment) => acc + payment.amount, 0)
-    const amountDone = amountTotal - ourAdjustedPayments.filter((p) => !p.isLate).reduce((acc, payment) => acc + payment.amount, 0)
+    // TODO: should be based on minimized payments
+    const paymentsTotal = ourUnadjustedPayments.length
+    const nonLateAdjusted = ourAdjustedPayments.filter((p) => !p.isLate)
+    const paymentsDone = paymentsTotal - nonLateAdjusted.length
+    const hasPartials = ourAdjustedPayments.some(p => p.partial)
+    const amountTotal = ourUnadjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
+    const amountDone = amountTotal - nonLateAdjusted.reduce((acc, payment) => acc + payment.amount, 0)
     return {
       paymentsDone,
       hasPartials,
