@@ -31,9 +31,6 @@ function signJSON (json, keypair) {
   }, json)
 }
 
-console.info('GroupIncome version:', process.env.GI_VERSION)
-sbp('okTurtles.data/set', 'GI_VERSION', process.env.GI_VERSION)
-
 export function createGIPubSubClient (url: string, options: Object): Object {
   return createClient(url, {
     ...options,
@@ -45,7 +42,7 @@ export function createGIPubSubClient (url: string, options: Object): Object {
         sbp('state/enqueueHandleEvent', GIMessage.deserialize(msg.data))
       },
       [NOTIFICATION_TYPE.GI_VERSION] (msg) {
-        const ourVersion = sbp('okTurtles.data/get', 'GI_VERSION')
+        const ourVersion = process.env.GI_VERSION
         const theirVersion = msg.data
 
         if (ourVersion !== theirVersion) {
