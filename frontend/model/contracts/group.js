@@ -14,9 +14,9 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { dateFromMonthstamp, dateToMonthstamp, ISOStringToMonthstamp, compareMonthstamps, compareISOTimestamps, DAYS_MILLIS } from '~/frontend/utils/time.js'
+import { dateFromMonthstamp, dateToMonthstamp, ISOStringToMonthstamp, compareMonthstamps, DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
-import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
+import { unadjustedDistribution, adjustedDistribution } from './distribution/distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
 import {
@@ -88,9 +88,13 @@ function initPaymentMonth ({ getters }) {
     // snapshot of adjusted distribution after each completed payment
     // yes, it is possible a payment began in one month and completed in another,
     // in which case it is added to both month's 'paymentsFrom'
-    lastAdjustedDistribution: null
+    lastAdjustedDistribution: null,
+    // snapshot of haveNeeds. made only when there are no payments
+    haveNeedsSnapshot: null
   }
 }
+
+// NOTE: do not call any of these helper functions from within a getter b/c they modify state!
 
 function clearOldPayments ({ state, getters }) {
   const sortedMonthKeys = Object.keys(state.paymentsByMonth).sort()
@@ -110,6 +114,24 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   const monthlyPayments = vueFetchInitKV(state.paymentsByMonth, monthstamp, initPaymentMonth({ getters }))
   clearOldPayments({ state, getters })
   return monthlyPayments
+}
+
+function updateDistribution ({ meta, state, getters }) {
+  const monthstamp = ISOStringToMonthstamp(meta.createdDate)
+  const thisPaymentMonth = initFetchMonthlyPayments({ meta, state, getters })
+  const noPayments = Object.keys(thisPaymentMonth.paymentsFrom).length === 0
+  if (noPayments || !thisPaymentMonth.haveNeedsSnapshot) {
+    thisPaymentMonth.haveNeedsSnapshot = getters.haveNeedsForThisMonth(monthstamp)
+  }
+  if (!noPayments) {
+    thisPaymentMonth.lastAdjustedDistribution = adjustedDistribution({
+      distribution: unadjustedDistribution({
+        haveNeeds: thisPaymentMonth.haveNeedsSnapshot, minimize: true
+      }),
+      payments: getters.paymentsForMonth(monthstamp),
+      dueOn: monthstamp
+    })
+  }
 }
 
 function memberLeaves (state, username, dateLeft) {
@@ -269,11 +291,14 @@ sbp('chelonia/defineContract', {
       //       bound to the UI in some location.
       return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     },
-    haveNeedsForMonth (state, getters) {
+    // getter is named haveNeedsForThisMonth instead of haveNeedsForMonth because it uses
+    // getters.groupProfiles - and that is always based on the most recent values. we still
+    // pass in the current monthstamp because it's used to set the "when" property
+    haveNeedsForThisMonth (state, getters) {
       return (monthstamp) => {
         // NOTE: if we ever switch back to the "real-time" adjusted distribution algorithm,
         //       make sure that this function also handles userExitsGroupEvent
-        const groupProfiles = getters.groupProfiles
+        const groupProfiles = getters.groupProfiles // TODO: these should use the haveNeeds for the specific month's distribution period
         const datestamp = dateFromMonthstamp(monthstamp).toISOString()
         const haveNeeds = []
         for (const username in groupProfiles) {
@@ -289,7 +314,7 @@ sbp('chelonia/defineContract', {
         return haveNeeds
       }
     },
-    paymentEventsForMonth (state, getters) {
+    paymentsForMonth (state, getters) {
       return (monthstamp) => {
         const hashes = getters.paymentHashesForMonth(monthstamp)
         const events = []
@@ -299,15 +324,12 @@ sbp('chelonia/defineContract', {
             const payment = payments[paymentHash]
             if (payment.data.status === PAYMENT_COMPLETED) {
               events.push({
-                type: 'paymentEvent',
-                data: {
-                  from: payment.meta.username,
-                  to: payment.data.toUser,
-                  hash: paymentHash,
-                  amount: payment.data.amount,
-                  isLate: !!payment.data.isLate,
-                  when: payment.data.completedDate
-                }
+                from: payment.meta.username,
+                to: payment.data.toUser,
+                hash: paymentHash,
+                amount: payment.data.amount,
+                isLate: !!payment.data.isLate,
+                when: payment.data.completedDate
               })
             }
           }
@@ -449,10 +471,7 @@ sbp('chelonia/defineContract', {
             const toUser = vueFetchInitKV(fromUser, data.toUser, [])
             toUser.push(data.paymentHash)
           }
-          paymentMonth.lastAdjustedDistribution = groupIncomeDistribution(
-            // TODO: decide whether or not latePayments should be passed in here as well
-            getters.distributionEventsForMonth(updateMonthstamp), { adjusted: true }
-          )
+          updateDistribution({ meta, state, getters })
         }
       }
     },
@@ -732,7 +751,7 @@ sbp('chelonia/defineContract', {
           })
         )
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta }, { state, getters }) {
         const groupProfile = state.profiles[meta.username]
         const nonMonetary = groupProfile.nonMonetaryContributions
         for (const key in data) {
@@ -750,6 +769,10 @@ sbp('chelonia/defineContract', {
             default:
               Vue.set(groupProfile, key, value)
           }
+        }
+        if (data.incomeDetailsType) {
+          // someone updated their income details, create a snapshot of the haveNeeds
+          updateDistribution({ meta, state, getters })
         }
       }
     },

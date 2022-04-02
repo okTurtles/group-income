@@ -25,7 +25,7 @@ import './contracts/mailbox.js'
 import './contracts/identity.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
-import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
+import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
 import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
@@ -373,14 +373,28 @@ const getters = {
   },
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
-    return groupIncomeDistribution(getters.distributionEventsForMonth(currentMonthstamp()))
+    return unadjustedDistribution({
+      haveNeeds: getters.haveNeedsForThisMonth(currentMonthstamp()),
+      minimize: false
+    })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
-    return groupIncomeDistribution(getters.distributionEventsForMonth(currentMonthstamp()), {
-      adjusted: true,
-      latePayments: getters.latePayments
-    })
+    // TODO: figure out how to roll over stuff properly based on 30 days after distributionDate
+    const paymentInfo = getters.thisMonthsPaymentInfo
+    if (paymentInfo && paymentInfo.lastAdjustedDistribution) {
+      return paymentInfo.lastAdjustedDistribution
+    } else {
+      const monthstamp = currentMonthstamp()
+      return adjustedDistribution({
+        distribution: unadjustedDistribution({
+          haveNeeds: getters.haveNeedsForThisMonth(monthstamp),
+          minimize: true
+        }),
+        payments: getters.paymentsForMonth(monthstamp),
+        dueOn: monthstamp
+      })
+    }
   },
   // TODO: this is insane, rewrite it and make it cleaner/better
   ourPayments (state, getters) {

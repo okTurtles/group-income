@@ -39,9 +39,9 @@ export function prevMonthstamp (monthstamp: string): string {
   return dateToMonthstamp(date)
 }
 
-export function add30DaysToDate (date: string): string {
+export function addTimeToDate (date: string, timeMillis: number): string {
   const d = new Date(date)
-  d.setTime(d.getTime() + MONTHS_MILLIS)
+  d.setTime(d.getTime() + timeMillis)
   return d
 }
 
@@ -61,15 +61,6 @@ export function compareISOTimestamps (a: string, b: string): number {
   const A = new Date(a).getTime()
   const B = new Date(b).getTime()
   return A - B
-}
-
-// TODO: this should be localized properly and renamed to dateToTimestamp
-//       or timestampFromDate. There's probably some built-in thing to get
-//       the timestamp in a localized way (e.g. with AM/PM vs 24hour)
-//       for example, .toLocaleTimeString(). The only place this is currently
-//       used is in the chatroom stuff
-export function getTime (date: Date): string {
-  return `${date.getHours()}:${date.getMinutes()}`
 }
 
 export function lastDayOfMonth (date: Date): Date {

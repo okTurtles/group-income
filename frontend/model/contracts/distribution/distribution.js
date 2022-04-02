@@ -9,22 +9,20 @@ type Distribution = Array<Object>;
 
 const tinyNum = 1 / Math.pow(10, DECIMALS_MAX)
 
-export function unadjustedDistributionFromHaveNeeds ({ haveNeeds, minimize }): Distribution {
-  let distribution = mincomeProportional(haveNeeds)
-  if (minimize) {
-    distribution = minimizeTotalPaymentsCount(distribution)
-  }
+export function unadjustedDistribution ({ haveNeeds = [], minimize = true }): Distribution {
+  const distribution = mincomeProportional(haveNeeds)
+  return minimize ? minimizeTotalPaymentsCount(distribution) : distribution
+}
+
+export function adjustedDistribution (
+  { distribution, payments, dueOn }: { distribution: Distribution, payments: Distribution, dueOn: string }
+): Distribution {
+  distribution = cloneDeep(distribution)
   // ensure the total is set because of how reduceDistribution works
   for (const todo of distribution) {
     todo.total = todo.amount
   }
-  return distribution
-}
-
-export function adjustedDistribution (
-  { unadjustedDistribution, payments, dueOn }: { unadjustedDistribution: Distribution, payments: Distribution, dueOn: string }
-): Distribution {
-  const distribution = subtractDistributions(unadjustedDistribution, payments)
+  distribution = subtractDistributions(distribution, payments)
     // remove any todos for containing miniscule amounts
     // and pledgers who switched sides should have their todos removed
     .filter(todo => todo.amount >= tinyNum)
