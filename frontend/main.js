@@ -32,7 +32,8 @@ import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import 'wicg-inert'
 
-console.log('NODE_ENV:', process.env.NODE_ENV)
+console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {
   console.error(`uncaught Vue error in ${info}:`, err)
