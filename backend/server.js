@@ -67,7 +67,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
   serverHandlers: {
     connection (socket: Object, request: Object) {
       if (process.env.NODE_ENV === 'production') {
-        socket.send(createNotification(NOTIFICATION_TYPE.GI_VERSION, process.env.GI_VERSION))
+        socket.send(createNotification(NOTIFICATION_TYPE.APP_VERSION, process.env.GI_VERSION))
       }
     }
   }
