@@ -121,6 +121,7 @@ module.exports = (grunt) => {
     // Native options that are shared between our esbuild tasks.
     default: {
       bundle: true,
+      chunkNames: '[name]-[hash]-cached',
       define: {
         'process.env.BUILD': "'web'", // Required by Vuelidate.
         'process.env.CI': `'${CI}'`,
