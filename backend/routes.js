@@ -149,7 +149,7 @@ route.GET('/file/{hash}', {
   cache: {
     // Do not set other cache options here, to make sure the 'otherwise' option
     // will be used so that the 'immutable' directive gets included.
-    otherwise: 'public,max-age=604800,immutable'
+    otherwise: 'public,max-age=31536000,immutable'
   },
   files: {
     relativeTo: path.resolve('data')
@@ -164,7 +164,7 @@ route.GET('/file/{hash}', {
 
 // SPA routes
 
-route.GET('/assets/{path*}', {
+route.GET('/assets/{subpath*}', {
   ext: {
     onPostHandler: {
       method (request, h) {
@@ -179,12 +179,25 @@ route.GET('/assets/{path*}', {
         return h.continue
       }
     }
+  },
+  files: {
+    relativeTo: path.resolve('dist/assets')
   }
-}, {
-  directory: {
-    path: path.resolve('./dist/assets'),
-    redirectToSlash: true
+}, function (request, h) {
+  const { subpath } = request.params
+  const basename = path.basename(subpath)
+  console.debug(`GET /assets/${subpath}`)
+  // In the build config we told our bundler to use the `[name]-[hash]-cached` template
+  // to name immutable assets. This is useful because `dist/assets/` currently includes
+  // a few files without hash in their name.
+  if (basename.includes('-cached')) {
+    return h.file(subpath, { etagMethod: false })
+      .etag(basename.replace('-cached', ''))
+      .header('Cache-Control', 'public,max-age=31536000,immutable')
   }
+  // Files like `main.js` or `main.css` should be revalidated before use. Se we use the default headers.
+  // This should also be suitable for serving unversioned fonts and images.
+  return h.file(subpath)
 })
 
 route.GET('/app/{path*}', {}, {
