@@ -138,13 +138,12 @@ async function startApp () {
         // Make it possible for Cypress to wait for contracts to finish syncing.
         if (isSyncing) {
           this.ephemeral.syncs.push(contractID)
-        } else {
-          this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
-        }
-        if (this.ephemeral.syncs.length > 0) {
           this.$refs.bannerGeneral.show(this.L('Loading events from server...'), 'wifi')
         } else {
-          this.$refs.bannerGeneral.clean()
+          this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
+          if (!this.ephemeral.syncs.length) {
+            this.$refs.bannerGeneral.clean()
+          }
         }
       })
       sbp('okTurtles.events/on', LOGIN, () => {
