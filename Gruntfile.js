@@ -11,6 +11,14 @@
 //
 // =======================
 
+const chalk = require('chalk')
+const crypto = require('crypto')
+const { exec, fork } = require('child_process')
+const { copyFile, readFile } = require('fs/promises')
+const path = require('path')
+const { resolve } = path
+const { version } = require('./package.json')
+
 // =======================
 // Global environment variables setup
 //
@@ -41,12 +49,7 @@ const applyPortShift = (env) => {
 
 Object.assign(process.env, applyPortShift(process.env))
 
-const chalk = require('chalk')
-const crypto = require('crypto')
-const { exec, fork } = require('child_process')
-const { copyFile, readFile } = require('fs/promises')
-const path = require('path')
-const { resolve } = path
+process.env.GI_VERSION = `${version}@${new Date().toISOString()}`
 
 // Not loading babel-register here since it is quite a heavy import and is not always used.
 // We will rather load it later, and only if necessary.
@@ -55,6 +58,7 @@ const { resolve } = path
 const {
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
+  GI_VERSION,
   NODE_ENV = 'development',
   VUEX_STRICT = 'true'
 } = process.env
@@ -67,10 +71,8 @@ const distJS = 'dist/assets/js'
 const serviceWorkerDir = 'frontend/controller/serviceworkers'
 const srcDir = 'frontend'
 
-// Not imported but copied from '~/shared/string.js' to avoid needing Babel here.
-// Only used in the callback passed to the `importer` option of the SASS plugin.
-const chompLeft = (s, what) => s.startsWith(what) ? s.slice(what.length) : s
 const development = NODE_ENV === 'development'
+const production = !development
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
@@ -121,14 +123,17 @@ module.exports = (grunt) => {
     // Native options that are shared between our esbuild tasks.
     default: {
       bundle: true,
+      chunkNames: '[name]-[hash]-cached',
       define: {
         'process.env.BUILD': "'web'", // Required by Vuelidate.
         'process.env.CI': `'${CI}'`,
-        'process.env.LIGHTWEIGHT_CLIENT': LIGHTWEIGHT_CLIENT,
+        'process.env.GI_VERSION': `'${GI_VERSION}'`,
+        'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
         'process.env.VUEX_STRICT': VUEX_STRICT
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
+      format: 'esm',
       incremental: true,
       loader: {
         '.eot': 'file',
@@ -136,22 +141,23 @@ module.exports = (grunt) => {
         '.woff': 'file',
         '.woff2': 'file'
       },
+      minifyIdentifiers: production,
+      minifySyntax: production,
+      minifyWhitespace: production,
+      outdir: distJS,
       sourcemap: development,
-      splitting: false, // Split mode has still a few issues so don't enable it yet.
+      // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
+      splitting: !grunt.option('no-chunks'),
       watch: false // Not using esbuild's own watch mode since it involves polling.
     },
     // Native options used when building the main entry point.
     main: {
       assetNames: '../css/[name]',
-      entryPoints: [`${srcDir}/main.js`],
-      format: 'esm',
-      outfile: `${distJS}/main.js`
+      entryPoints: [`${srcDir}/main.js`]
     },
     // Native options used when building our service worker(s).
     serviceWorkers: {
-      entryPoints: ['./frontend/controller/serviceworkers/primary.js'],
-      format: 'iife',
-      outdir: distJS
+      entryPoints: ['./frontend/controller/serviceworkers/primary.js']
     }
   }
 
@@ -202,7 +208,7 @@ module.exports = (grunt) => {
     importer (url, previous, done) {
       // So we can write `@import '@assets/style/_variables.scss'` in the <style> section of .vue components too.
       return url.startsWith('@assets/')
-        ? { file: resolve('./frontend/assets', chompLeft(url, '@assets/')) }
+        ? { file: resolve('./frontend/assets', url.slice('@assets/'.length)) }
         : null
     }
   }
@@ -334,7 +340,7 @@ module.exports = (grunt) => {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'copy', esbuild])
+      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean', 'copy', esbuild])
     }
   })
 
@@ -362,7 +368,7 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
   // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('dev', ['checkDependencies', 'backend:relaunch', 'build:watch', 'keepalive'])
+  grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'backend:relaunch', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
   // --------------------
@@ -455,7 +461,7 @@ module.exports = (grunt) => {
           try {
             if (filePath.startsWith(serviceWorkerDir)) {
               await buildServiceWorkers.run({ fileEventName, filePath })
-            } else {
+            } else if (filePath.startsWith('frontend/') || filePath.startsWith('shared/')) {
               await buildMain.run({ fileEventName, filePath })
             }
           } catch (error) {

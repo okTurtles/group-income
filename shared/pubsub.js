@@ -74,6 +74,7 @@ export type UnsubMessage = {
 
 export const NOTIFICATION_TYPE = Object.freeze({
   ENTRY: 'entry',
+  APP_VERSION: 'app_version',
   PING: 'ping',
   PONG: 'pong',
   PUB: 'pub',

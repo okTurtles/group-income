@@ -66,21 +66,36 @@ sbp('okTurtles.events/on', EVENTS.CONTRACT_IS_SYNCING, (contractID, isSyncing) =
 })
 
 sbp('sbp/selectors/register', {
+  // TODO: make sure every location that calls `latestContractState` can handle
+  // a 'GIErrorUnrecoverable' being thrown.
   'state/latestContractState': async (contractID: string) => {
     const events = await sbp('backend/eventsSince', contractID, contractID)
+    // Fast path. Will stop and fall back to the slower path if an error is found.
+    try {
+      const state = {}
+      for (const event of events) {
+        sbp('chelonia/in/processMessage', GIMessage.deserialize(event), state)
+      }
+      return state
+    } catch (err) {
+      if (err instanceof GIErrorUnrecoverable) {
+        throw err
+      }
+    }
+    // Slower path. More error-tolerant but clones the contract state again for every processed message.
     let state = {}
-    for (const e of events.map(e => GIMessage.deserialize(e))) {
+
+    for (const event of events) {
+      const message = GIMessage.deserialize(event)
       const stateCopy = _.cloneDeep(state)
       try {
-        sbp('chelonia/in/processMessage', e, state)
+        sbp('chelonia/in/processMessage', message, state)
       } catch (err) {
-        if (!(err instanceof GIErrorUnrecoverable)) {
-          console.warn(`latestContractState: ignoring mutation ${e.description()} because of ${err.name}`)
-          state = stateCopy
-        } else {
-          // TODO: make sure every location that calls latestContractState can handle this
+        if (err instanceof GIErrorUnrecoverable) {
           throw err
         }
+        console.warn(`latestContractState: ignoring mutation ${message.description()} because of ${err.name}`)
+        state = stateCopy
       }
     }
     return state
