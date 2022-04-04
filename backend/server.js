@@ -7,7 +7,7 @@ import GiAuth from './auth.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
-import { createMessage, createServer, NOTIFICATION_TYPE } from './pubsub.js'
+import { createMessage, createNotification, createServer, NOTIFICATION_TYPE } from './pubsub.js'
 import chalk from 'chalk'
 
 const Inert = require('@hapi/inert')
@@ -63,7 +63,15 @@ if (process.env.NODE_ENV === 'development' && !process.env.CI) {
   })
 }
 
-sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener))
+sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
+  serverHandlers: {
+    connection (socket: Object, request: Object) {
+      if (process.env.NODE_ENV === 'production') {
+        socket.send(createNotification(NOTIFICATION_TYPE.APP_VERSION, process.env.GI_VERSION))
+      }
+    }
+  }
+}))
 
 ;(async function () {
   // https://hapi.dev/tutorials/plugins

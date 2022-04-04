@@ -246,6 +246,12 @@ describe('Contributions', () => {
 
     cy.log('Verify saved payment info (bitcoin and 2 other)')
     cy.getByDT('openIncomeDetailsModal').click()
+    // <BEGIN> HACK FOR A BIZARRE HEISENBUGG!!! </BEGIN>
+    // Description: without this, sometimes the payment methods do not appear
+    // in the list for some reason, but they re-appear if we close and open the modal
+    cy.getByDT('closeModal').click()
+    cy.getByDT('openIncomeDetailsModal').click()
+    // <END> HACK FOR A BIZARRE HEISENBUGG!!! </END>
     cy.getByDT('paymentMethods').within(() => {
       cy.getByDT('fields', 'ul').children().should('have.length', 3)
       cy.getByDT('method').eq(0).within(() => {

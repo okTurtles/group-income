@@ -50,6 +50,9 @@ const shutdownFn = function (message) {
       }
     })
     pubsub.close()
+    // Since `ws` v8.0, `WebSocketServer.close()` no longer closes remaining connections.
+    // See https://github.com/websockets/ws/commit/df7de574a07115e2321fdb5fc9b2d0fea55d27e8
+    pubsub.clients.forEach(client => client.terminate())
   })
 }
 
