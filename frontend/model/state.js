@@ -27,6 +27,10 @@ import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
+import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
+
+// Vuex modules.
+import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 
 Vue.use(Vuex)
 // let store // this is set and made the default export at the bottom of the file.
@@ -60,21 +64,36 @@ sbp('okTurtles.events/on', EVENTS.CONTRACT_IS_SYNCING, (contractID, isSyncing) =
 })
 
 sbp('sbp/selectors/register', {
+  // TODO: make sure every location that calls `latestContractState` can handle
+  // a 'GIErrorUnrecoverable' being thrown.
   'state/latestContractState': async (contractID: string) => {
     const events = await sbp('backend/eventsSince', contractID, contractID)
+    // Fast path. Will stop and fall back to the slower path if an error is found.
+    try {
+      const state = {}
+      for (const event of events) {
+        sbp('chelonia/in/processMessage', GIMessage.deserialize(event), state)
+      }
+      return state
+    } catch (err) {
+      if (err instanceof GIErrorUnrecoverable) {
+        throw err
+      }
+    }
+    // Slower path. More error-tolerant but clones the contract state again for every processed message.
     let state = {}
-    for (const e of events.map(e => GIMessage.deserialize(e))) {
+
+    for (const event of events) {
+      const message = GIMessage.deserialize(event)
       const stateCopy = _.cloneDeep(state)
       try {
-        sbp('chelonia/in/processMessage', e, state)
+        sbp('chelonia/in/processMessage', message, state)
       } catch (err) {
-        if (!(err instanceof GIErrorUnrecoverable)) {
-          console.warn(`latestContractState: ignoring mutation ${e.description()} because of ${err.name}`)
-          state = stateCopy
-        } else {
-          // TODO: make sure every location that calls latestContractState can handle this
+        if (err instanceof GIErrorUnrecoverable) {
           throw err
         }
+        console.warn(`latestContractState: ignoring mutation ${message.description()} because of ${err.name}`)
+        state = stateCopy
       }
     }
     return state
@@ -99,7 +118,8 @@ sbp('sbp/selectors/register', {
   },
   'state/vuex/state': () => store.state,
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
-  'state/vuex/dispatch': (...args) => store.dispatch(...args)
+  'state/vuex/dispatch': (...args) => store.dispatch(...args),
+  'state/vuex/getters': () => store.getters
 })
 
 // Mutations must be synchronous! Never call these directly, instead use commit()
@@ -496,15 +516,6 @@ const getters = {
   },
   isDarkTheme (state) {
     return Colors[state.theme].theme === THEME_DARK
-  },
-  notificationCount (state, getters) {
-    // TODO with real data
-    if (getters.groupMembersCount === 1) {
-      return 1
-    } else if (getters.groupMembersCount === 2) {
-      return 1
-    }
-    return 7
   }
 }
 
@@ -550,6 +561,9 @@ const actions = {
     const settings = await sbp('gi.db/settings/load', user.username)
     // NOTE: login can be called when no settings are saved (e.g. from Signup.vue)
     if (settings) {
+      // The retrieved local data might need to be completed in case it was originally saved
+      // under an older version of the app where fewer/other Vuex modules were implemented.
+      postUpgradeVerification(settings)
       console.debug('loadSettings:', settings)
       store.replaceState(settings)
       captureLogsStart(user.username)
@@ -606,11 +620,17 @@ const actions = {
   },
   // persisting the state
   async saveSettings (
-    { state }: {state: Object}
+    { state }: { state: Object}
   ) {
     if (state.loggedIn) {
+      let stateToSave = state
+      if (!state.notifications) {
+        console.warn('saveSettings: No `state.notifications`')
+      } else {
+        stateToSave = { ...state, notifications: applyStorageRules(state.notifications) }
+      }
       // TODO: encrypt this
-      await sbp('gi.db/settings/save', state.loggedIn.username, state)
+      await sbp('gi.db/settings/save', state.loggedIn.username, stateToSave)
     }
   },
   // this function is called from ../controller/utils/pubsub.js and is the entry point
@@ -906,11 +926,21 @@ const handleEvent = {
   }
 }
 
+// Note: Update this function when renaming a Vuex module or implementing a new one (except contracts).
+const postUpgradeVerification = (settings: Object) => {
+  if (!settings.notifications) {
+    settings.notifications = []
+  }
+}
+
 const store: any = new Vuex.Store({
   state: _.cloneDeep(initialState),
   mutations,
   getters,
   actions,
+  modules: {
+    notifications: notificationModule
+  },
   strict: process.env.VUEX_STRICT === 'true'
 })
 const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)

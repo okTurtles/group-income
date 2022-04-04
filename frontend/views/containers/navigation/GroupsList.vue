@@ -12,6 +12,10 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
     )
       button.c-group-picture.is-unstyled(@click='handleMenuSelect(group.contractID)')
         avatar.c-avatar(:src='$store.state[group.contractID].settings.groupPicture')
+      badge(
+        v-if='unreadGroupNotificationCountFor(group.contractID)'
+        :data-test='`groupBadge-${group.groupName}`'
+      ) {{ unreadGroupNotificationCountFor(group.contractID) }}
 
   li.c-group-list-item
     tooltip(
@@ -30,6 +34,7 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
 <script>
 import { mapGetters, mapState } from 'vuex'
 import Avatar from '@components/Avatar.vue'
+import Badge from '@components/Badge.vue'
 import Tooltip from '@components/Tooltip.vue'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
@@ -38,6 +43,7 @@ export default ({
   name: 'GroupsList',
   components: {
     Avatar,
+    Badge,
     Tooltip
   },
   computed: {
@@ -45,7 +51,8 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
-      'groupsByName'
+      'groupsByName',
+      'unreadGroupNotificationCountFor'
     ])
   },
   methods: {
@@ -64,6 +71,12 @@ export default ({
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-badge {
+  top: 0;
+  right: 1px; // Prevent badges from touching the vertical edge.
+  z-index: 2; // Make badges appear above group avatars.
+}
 
 .c-group-list {
   width: 3.5rem;
