@@ -1233,7 +1233,7 @@ page(
 <script>
 import Page from '@components/Page.vue'
 import sbp from '~/shared/sbp.js'
-import '~/shared/domains/gi/ui.js'
+import '@views/utils/ui.js'
 import Badge from '@components/Badge.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
