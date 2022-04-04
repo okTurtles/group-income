@@ -121,6 +121,7 @@ module.exports = (grunt) => {
     // Native options that are shared between our esbuild tasks.
     default: {
       bundle: true,
+      chunkNames: '[name]-[hash]-cached',
       define: {
         'process.env.BUILD': "'web'", // Required by Vuelidate.
         'process.env.CI': `'${CI}'`,
@@ -129,6 +130,7 @@ module.exports = (grunt) => {
         'process.env.VUEX_STRICT': VUEX_STRICT
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
+      format: 'esm',
       incremental: true,
       loader: {
         '.eot': 'file',
@@ -136,22 +138,20 @@ module.exports = (grunt) => {
         '.woff': 'file',
         '.woff2': 'file'
       },
+      outdir: distJS,
       sourcemap: development,
-      splitting: false, // Split mode has still a few issues so don't enable it yet.
+      // Warning: split mode has still a few issues. See https://github.com/okTurtles/group-income/pull/1196
+      splitting: !grunt.option('no-chunks'),
       watch: false // Not using esbuild's own watch mode since it involves polling.
     },
     // Native options used when building the main entry point.
     main: {
       assetNames: '../css/[name]',
-      entryPoints: [`${srcDir}/main.js`],
-      format: 'esm',
-      outfile: `${distJS}/main.js`
+      entryPoints: [`${srcDir}/main.js`]
     },
     // Native options used when building our service worker(s).
     serviceWorkers: {
-      entryPoints: ['./frontend/controller/serviceworkers/primary.js'],
-      format: 'iife',
-      outdir: distJS
+      entryPoints: ['./frontend/controller/serviceworkers/primary.js']
     }
   }
 
@@ -334,7 +334,7 @@ module.exports = (grunt) => {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'copy', esbuild])
+      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean', 'copy', esbuild])
     }
   })
 
