@@ -4,7 +4,7 @@ nav.c-navigation(
   :class='{ "is-active": ephemeral.isActive }'
 )
   toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive')
-    badge.c-toggle-badge(v-if='notificationCount') {{ notificationCount }}
+    badge.c-toggle-badge(v-if='totalUnreadNotificationCount' data-test='dashboardBadge') {{ totalUnreadNotificationCount }}
   groups-list(v-if='groupsByName.length > 1' :inert='isInert')
 
   .c-navigation-wrapper(:inert='isInert')
@@ -14,7 +14,7 @@ nav.c-navigation(
       router-link(to='/home')
         img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
-      notification-bell
+      notification-bell(data-test='notificationBell')
 
     .c-navigation-body(
       @click.self='enableTimeTravel'
@@ -137,7 +137,7 @@ export default ({
       'groupsByName',
       'unreadMessageCount',
       'colors',
-      'notificationCount'
+      'totalUnreadNotificationCount'
     ]),
     activityCount () {
       // TODO: implement this? (or not?)

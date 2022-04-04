@@ -9,14 +9,14 @@ tooltip(
   slot
 
   template(slot='tooltip')
-    .card.c-card(role='dialog' :aria-label='L("Notifications")')
+    .card.c-card(role='dialog' :aria-label='L("Notifications")' data-test='notificationCard')
       .c-header
         i18n.is-title-4(tag='h2') Notifications
         i18n.link(tag='button' @click='handleSettingsClick') Settings
 
       .c-body
         notification-list(variant='compact' @select='toggleTooltip')
-      .c-footer(v-if='notificationCount')
+      .c-footer(v-if='currentNotificationCount')
         router-link.link(:to='{ query: { modal: "NotificationModal" }}' @click.native='toggleTooltip')
           i18n See all
 
@@ -52,7 +52,7 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'notificationCount'
+      'currentNotificationCount'
     ])
   }
 }
