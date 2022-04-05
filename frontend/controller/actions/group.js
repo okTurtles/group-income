@@ -31,15 +31,13 @@ export async function leaveAllChatRooms (groupContractID?: string, member: strin
   const chatRoomIDsToLeave = Object.keys(chatRooms)
     .filter(cID => chatRooms[cID].users.includes(member))
 
-  const promises = chatRoomIDsToLeave.map(
-    chatRoomID => sbp('gi.actions/group/leaveChatRoom', {
-      contractID: groupContractID,
-      data: { chatRoomID, member, leavingGroup: true }
-    })
-  )
-
   try {
-    await Promise.all(promises)
+    for (const chatRoomID of chatRoomIDsToLeave) {
+      await sbp('gi.actions/group/leaveChatRoom', {
+        contractID: groupContractID,
+        data: { chatRoomID, member, leavingGroup: true }
+      })
+    }
   } catch (e) {
     throw new GIErrorUIRuntimeError(L('Failed to leave chat channel.'))
   }
