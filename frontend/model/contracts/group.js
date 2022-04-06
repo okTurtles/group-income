@@ -20,6 +20,7 @@ import {
   dateFromMonthstamp, dateToMonthstamp, ISOStringToMonthstamp, compareMonthstamps, DAYS_MILLIS
 } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
+import { GROUP_REMOVED } from '~/frontend/utils/events.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
@@ -605,6 +606,7 @@ sbp('chelonia/defineContract', {
             return
           }
 
+          const groupName = state.settings.groupName
           const groupIdToSwitch = Object.keys(contracts)
             .find(cID => contracts[cID].type === 'gi.contracts/group' &&
               cID !== contractID && rootState[cID].settings) || null
@@ -612,6 +614,9 @@ sbp('chelonia/defineContract', {
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           sbp('state/vuex/commit', 'removeContract', contractID)
           sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
+
+          // emit event so that we can listen this event anywhere
+          sbp('okTurtles.events/emit', GROUP_REMOVED, contractID, groupName)
           // TODO - #828 remove other group members contracts if applicable
         } else {
           // TODO - #828 remove the member contract if applicable.
