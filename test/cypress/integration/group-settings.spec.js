@@ -1,5 +1,6 @@
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
+const groupName_Perc_40 = 'groupPerc_40'
 const groupMincome = 750
 const groupNewMincome = groupMincome + 100
 const sharedValues = ''
@@ -124,7 +125,7 @@ describe('Group Voting Rules', () => {
   })
 
   it('user1 creates a group with rule "percentage" of 40%', () => {
-    cy.giCreateGroup('groupPerc_40', { bypassUI: true, ruleName: 'percentage', ruleThreshold: 0.4 })
+    cy.giCreateGroup(groupName_Perc_40, { bypassUI: true, ruleName: 'percentage', ruleThreshold: 0.4 })
 
     verifyRuleSelected('percentage', {
       status: '40%',
@@ -151,7 +152,9 @@ describe('Group Voting Rules', () => {
   it('in a group with 4 members, the "disagrement" rule is adjusted from 4 to 3', () => {
     for (let i = 2; i <= 4; i++) {
       cy.giAcceptGroupInvite(invitationLinkAnyone, {
-        username: `user${i}-${userId}`, groupName, bypassUI: true
+        username: `user${i}-${userId}`,
+        groupName: groupName_Perc_40,
+        bypassUI: true
       })
     }
 
@@ -166,7 +169,9 @@ describe('Group Voting Rules', () => {
 
   it('in a group with 5 members, the "disagrement" rule of 4 is not adjusted.', () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
-      username: `user5-${userId}`, groupName, bypassUI: true
+      username: `user5-${userId}`,
+      groupName: groupName_Perc_40,
+      bypassUI: true
     })
 
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
