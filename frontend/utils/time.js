@@ -17,6 +17,11 @@ export function dateToMonthstamp (date: string | Date): string {
   return new Date(date).toISOString().slice(0, 7)
 }
 
+// should we just directly deal with Dates..? OTOH this gives us flexibility to switch to other formats
+export function dateToPeriodStamp (date: string | Date): string {
+  return new Date(date).toISOString()
+}
+
 // TODO: to prevent conflicts among user timezones, we need
 //       to use the server's time, and not our time here.
 //       https://github.com/okTurtles/group-income/issues/531
@@ -24,8 +29,43 @@ export function currentMonthstamp (): string {
   return dateToMonthstamp(new Date())
 }
 
-export function ISOStringToMonthstamp (date: string): string {
-  return dateToMonthstamp(new Date(date))
+export function periodStampGivenDate ({ recentDate, periodStart, periodLength }: {
+  recentDate: string, periodStart: string, periodLength: number
+}): string {
+  const periodStartDate = dateFromPeriodStamp(periodStart)
+  let nextPeriod = addTimeToDate(periodStartDate, periodLength)
+  const curDate = new Date(recentDate)
+  let curPeriod
+  if (curDate < nextPeriod) {
+    if (curDate >= periodStartDate) {
+      return periodStart // we're still in the same period
+    } else {
+      // we're in a period before the current one
+      curPeriod = periodStartDate
+      do {
+        curPeriod = addTimeToDate(curPeriod, -periodLength)
+      } while (curDate < curPeriod)
+    }
+  } else {
+    // we're at least a period ahead of periodStart
+    do {
+      curPeriod = nextPeriod
+      nextPeriod = addTimeToDate(nextPeriod, periodLength)
+    } while (curDate >= nextPeriod)
+  }
+  return dateToPeriodStamp(curPeriod)
+}
+
+export function dateIsWithinPeriod ({ date, periodStart, periodLength }: {
+  date: string, periodStart: string, periodLength: number
+}): boolean {
+  const dateObj = new Date(date)
+  const start = dateFromPeriodStamp(periodStart)
+  return dateObj > start && dateObj < addTimeToDate(start, periodLength)
+}
+
+export function dateFromPeriodStamp (daystamp: string): Date {
+  return new Date(daystamp)
 }
 
 export function dateFromMonthstamp (monthstamp: string): Date {
@@ -39,28 +79,25 @@ export function prevMonthstamp (monthstamp: string): string {
   return dateToMonthstamp(date)
 }
 
-export function addTimeToDate (date: string, timeMillis: number): string {
+export function addTimeToDate (date: string | Date, timeMillis: number): Date {
   const d = new Date(date)
   d.setTime(d.getTime() + timeMillis)
   return d
 }
 
 export function compareMonthstamps (monthstampA: string, monthstampB: string): number {
-  const dateA = dateFromMonthstamp(monthstampA)
-  const dateB = dateFromMonthstamp(monthstampB)
-  const A = dateA.getMonth() + dateA.getFullYear() * 12
-  const B = dateB.getMonth() + dateB.getFullYear() * 12
-  return A - B
+  return dateFromMonthstamp(monthstampA) - dateFromMonthstamp(monthstampB)
+  // const A = dateA.getMonth() + dateA.getFullYear() * 12
+  // const B = dateB.getMonth() + dateB.getFullYear() * 12
+  // return A - B
 }
 
-export function compareCycles (whenEnd: string, whenStart: string): number {
-  return compareMonthstamps(dateToMonthstamp(whenEnd), dateToMonthstamp(whenStart))
+export function comparePeriodStamps (periodA: string, periodB: string): number {
+  return dateFromPeriodStamp(periodA) - dateFromPeriodStamp(periodB)
 }
 
 export function compareISOTimestamps (a: string, b: string): number {
-  const A = new Date(a).getTime()
-  const B = new Date(b).getTime()
-  return A - B
+  return new Date(a) - new Date(b)
 }
 
 export function lastDayOfMonth (date: Date): Date {
@@ -85,16 +122,20 @@ export function humanDate (
   return new Date(datems).toLocaleDateString(locale, opts)
 }
 
-export function isFullMonthstamp (arg: any): boolean {
-  return typeof arg === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(arg)
+export function isPeriodStamp (arg: string): boolean {
+  return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg)
 }
 
-export function isMonthstamp (arg: any): boolean {
+export function isFullMonthstamp (arg: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(arg)
+}
+
+export function isMonthstamp (arg: string): boolean {
   return isShortMonthstamp(arg) || isFullMonthstamp(arg)
 }
 
-export function isShortMonthstamp (arg: any): boolean {
-  return typeof arg === 'string' && /^(0[1-9]|1[0-2])$/.test(arg)
+export function isShortMonthstamp (arg: string): boolean {
+  return /^(0[1-9]|1[0-2])$/.test(arg)
 }
 
 export function monthName (monthstamp: string): string {

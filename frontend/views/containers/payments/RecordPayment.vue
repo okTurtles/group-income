@@ -76,7 +76,7 @@ import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED, PAYMENT_TYPE_
 import L from '@view-utils/translations.js'
 import { validationMixin } from 'vuelidate'
 import SvgSuccess from '@svgs/success.svg'
-import { ISOStringToMonthstamp } from '@utils/time.js'
+import { dateToMonthstamp } from '@utils/time.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from '@containers/payments/RecordPaymentsList.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -120,7 +120,7 @@ export default ({
     ...mapGetters([
       'groupSettings',
       'groupMincomeCurrency',
-      'thisMonthsPaymentInfo',
+      'thisPeriodPaymentInfo',
       'ourPayments',
       'userDisplayName'
     ]),
@@ -141,7 +141,7 @@ export default ({
           username: data.toUser,
           displayName: this.userDisplayName(data.toUser),
           date: meta.createdDate,
-          monthstamp: ISOStringToMonthstamp(meta.createdDate),
+          monthstamp: dateToMonthstamp(meta.createdDate),
           amount: data.amount
         })
       }
@@ -194,10 +194,10 @@ export default ({
         }
 
         try {
-          // TODO: do currency conversion here using firstMonthsCurrency?
+          // TODO: do currency conversion here using initialCurrency?
           // TODO: remember when creating 'gi.contracts/group/payment' to set the payment
           //       currency using:
-          //       getters.thisMonthsPaymentInfo.firstMonthsCurrency || getters.groupMincomeCurrency
+          //       getters.thisPeriodPaymentInfo.initialCurrency || getters.groupMincomeCurrency
           const memo = this.form.memo
           const paymentInfo = {
             toUser: payment.username,

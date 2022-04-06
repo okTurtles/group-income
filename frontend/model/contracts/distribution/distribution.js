@@ -9,7 +9,9 @@ type Distribution = Array<Object>;
 
 const tinyNum = 1 / Math.pow(10, DECIMALS_MAX)
 
-export function unadjustedDistribution ({ haveNeeds = [], minimize = true }): Distribution {
+export function unadjustedDistribution ({ haveNeeds = [], minimize = true }: {
+  haveNeeds: Array<Object>, minimize?: boolean
+}): Distribution {
   const distribution = mincomeProportional(haveNeeds)
   return minimize ? minimizeTotalPaymentsCount(distribution) : distribution
 }

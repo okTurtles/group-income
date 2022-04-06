@@ -27,7 +27,8 @@ export default (sbp('sbp/selectors/register', {
       mincomeAmount,
       mincomeCurrency,
       ruleName,
-      ruleThreshold
+      ruleThreshold,
+      distributionDate
     },
     options: { sync = true } = {},
     publishOptions
@@ -67,6 +68,7 @@ export default (sbp('sbp/selectors/register', {
             sharedValues,
             mincomeAmount: +mincomeAmount,
             mincomeCurrency: mincomeCurrency,
+            distributionDate,
             proposals: {
               [PROPOSAL_GROUP_SETTING_CHANGE]: merge(
                 merge({}, proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults),
@@ -141,5 +143,8 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/removeMember', (params, e) => L('Failed to remove {member}: {reportError}', { member: params.member, ...LError(e) })),
   ...encryptedAction('gi.actions/group/removeOurselves', (params, e) => L('Failed to leave group. {codeError}', { codeError: e.message })),
-  ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message }))
+  ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
+  ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
+    ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
+  })
 }): string[])

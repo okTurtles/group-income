@@ -26,7 +26,6 @@ import './contracts/identity.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
-import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
@@ -359,61 +358,64 @@ const getters = {
       return profile.displayName || username
     }
   },
-  thisMonthsPaymentInfo (state, getters) {
-    return getters.groupMonthlyPayments[currentMonthstamp()]
+  currentPaymentPeriod (state, getters) {
+    return getters.periodStampGivenDate(new Date())
+  },
+  thisPeriodPaymentInfo (state, getters) {
+    return getters.groupPeriodPayments[getters.currentPaymentPeriod]
   },
   latePayments (state, getters) {
-    const monthlyPayments = getters.groupMonthlyPayments
-    if (Object.keys(monthlyPayments).length === 0) return
+    const periodPayments = getters.groupPeriodPayments
+    if (Object.keys(periodPayments).length === 0) return
     const ourUsername = getters.ourUsername
-    const pMonthPayments = monthlyPayments[prevMonthstamp(currentMonthstamp())]
-    if (pMonthPayments) {
-      return pMonthPayments.lastAdjustedDistribution.filter(todo => todo.from === ourUsername)
+    const pPeriod = getters.periodBeforePeriod(getters.currentPaymentPeriod)
+    const pPayments = periodPayments[pPeriod]
+    if (pPayments) {
+      return pPayments.lastAdjustedDistribution.filter(todo => todo.from === ourUsername)
     }
   },
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
     return unadjustedDistribution({
-      haveNeeds: getters.haveNeedsForThisMonth(currentMonthstamp()),
+      haveNeeds: getters.haveNeedsForThisPeriod(getters.currentPaymentPeriod),
       minimize: false
     })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
-    // TODO: figure out how to roll over stuff properly based on 30 days after distributionDate
-    const paymentInfo = getters.thisMonthsPaymentInfo
+    const paymentInfo = getters.thisPeriodPaymentInfo
     if (paymentInfo && paymentInfo.lastAdjustedDistribution) {
       return paymentInfo.lastAdjustedDistribution
     } else {
-      const monthstamp = currentMonthstamp()
+      const period = getters.currentPaymentPeriod
       return adjustedDistribution({
         distribution: unadjustedDistribution({
-          haveNeeds: getters.haveNeedsForThisMonth(monthstamp),
+          haveNeeds: getters.haveNeedsForThisPeriod(period),
           minimize: true
         }),
-        payments: getters.paymentsForMonth(monthstamp),
-        dueOn: monthstamp
+        payments: getters.paymentsForPeriod(period),
+        dueOn: getters.dueDateForPeriod(period)
       })
     }
   },
   // TODO: this is insane, rewrite it and make it cleaner/better
   ourPayments (state, getters) {
-    const monthlyPayments = getters.groupMonthlyPayments
-    if (Object.keys(monthlyPayments).length === 0) return
+    const periodPayments = getters.groupPeriodPayments
+    if (Object.keys(periodPayments).length === 0) return
     const ourUsername = getters.ourUsername
-    const cMonthstamp = currentMonthstamp()
-    const pMonthstamp = prevMonthstamp(cMonthstamp)
+    const cPeriod = getters.currentPaymentPeriod
+    const pPeriod = getters.periodBeforePeriod(cPeriod)
     const allPayments = getters.currentGroupState.payments
-    const thisMonthPayments = monthlyPayments[cMonthstamp]
-    const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
-    const pMonthPayments = monthlyPayments[pMonthstamp]
-    const pPaymentsFrom = pMonthPayments && pMonthPayments.paymentsFrom
+    const thisPeriodPayments = periodPayments[cPeriod]
+    const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
+    const pPayments = periodPayments[pPeriod]
+    const pPaymentsFrom = pPayments && pPayments.paymentsFrom
 
-    const sentInMonth = (monthlyFromPayments) => {
+    const sentInPeriod = (periodFromPayments) => {
       const payments = []
-      if (monthlyFromPayments) {
-        for (const toUser in monthlyFromPayments[ourUsername]) {
-          for (const paymentHash of monthlyFromPayments[ourUsername][toUser]) {
+      if (periodFromPayments) {
+        for (const toUser in periodFromPayments[ourUsername]) {
+          for (const paymentHash of periodFromPayments[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
             payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
           }
@@ -421,13 +423,13 @@ const getters = {
       }
       return payments
     }
-    const receivedInMonth = (monthlyFromPayments) => {
+    const receivedInPeriod = (periodFromPayments) => {
       const payments = []
-      if (monthlyFromPayments) {
-        for (const fromUser in monthlyFromPayments) {
-          for (const toUser in monthlyFromPayments[fromUser]) {
+      if (periodFromPayments) {
+        for (const fromUser in periodFromPayments) {
+          for (const toUser in periodFromPayments[fromUser]) {
             if (toUser === ourUsername) {
-              for (const paymentHash of monthlyFromPayments[fromUser][toUser]) {
+              for (const paymentHash of periodFromPayments[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
                 payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
               }
@@ -443,8 +445,8 @@ const getters = {
     }
 
     return {
-      sent: [...sentInMonth(paymentsFrom), ...sentInMonth(pPaymentsFrom)],
-      received: [...receivedInMonth(paymentsFrom), ...receivedInMonth(pPaymentsFrom)],
+      sent: [...sentInPeriod(paymentsFrom), ...sentInPeriod(pPaymentsFrom)],
+      received: [...receivedInPeriod(paymentsFrom), ...receivedInPeriod(pPaymentsFrom)],
       todo: todo()
     }
   },

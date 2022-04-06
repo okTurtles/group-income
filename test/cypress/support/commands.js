@@ -5,6 +5,7 @@
 // ***********************************************
 
 import 'cypress-file-upload'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '../../../frontend/utils/time.js'
 
 /* Get element by data-test attribute and other attributes
  ex:
@@ -137,7 +138,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
   mincome = 200,
   ruleName = 'percentage',
   ruleThreshold = 0.8,
-  bypassUI = false
+  bypassUI = false,
+  distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
 } = {}) => {
   if (bypassUI) {
     cyBypassUI('group_create', {
@@ -146,7 +148,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
       mincomeAmount: mincome,
       mincomeCurrency: 'USD',
       ruleName,
-      ruleThreshold
+      ruleThreshold,
+      distributionDate
     })
 
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')

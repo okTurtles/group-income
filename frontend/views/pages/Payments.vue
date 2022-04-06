@@ -25,7 +25,15 @@ page(
         }'
       ) You can change this at any time by updating your {r1}income details{r2}.
 
-    section(v-if='tabItems.length === 0 && paymentsListData.length === 0')
+    section(v-if='!distributionStarted')
+      .c-container-empty
+        svg-contributions.c-svg
+        i18n.c-description(
+          tag='p'
+          :args='{ startDate: distributionStart }'
+        ) The distribution period begins on: {startDate}
+
+    section(v-else-if='tabItems.length === 0 && paymentsListData.length === 0')
       .c-container-empty
         svg-contributions.c-svg
         i18n.c-description(tag='p') You haven’t received any payments yet
@@ -103,7 +111,7 @@ import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import L, { LTags } from '@view-utils/translations.js'
-import { ISOStringToMonthstamp, humanDate } from '@utils/time.js'
+import { dateToMonthstamp, humanDate } from '@utils/time.js'
 
 export default ({
   name: 'Payments',
@@ -153,6 +161,12 @@ export default ({
     },
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
+    },
+    distributionStart () {
+      return new Date(this.groupSettings.distributionDate).toLocaleString()
+    },
+    distributionStarted () {
+      return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
     },
     tabItems () {
       const items = []
@@ -235,7 +249,7 @@ export default ({
           username: data.toUser,
           displayName: this.userDisplayName(data.toUser),
           date: meta.createdDate,
-          monthstamp: ISOStringToMonthstamp(meta.createdDate),
+          monthstamp: dateToMonthstamp(meta.createdDate),
           amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate,
         })
       }

@@ -16,7 +16,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { dateFromMonthstamp, dateToMonthstamp, ISOStringToMonthstamp, compareMonthstamps, DAYS_MILLIS } from '~/frontend/utils/time.js'
+import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import { unadjustedDistribution, adjustedDistribution } from './distribution/distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
@@ -76,20 +76,20 @@ function initGroupProfile (contractID: string, joinedDate: string) {
   }
 }
 
-function initPaymentMonth ({ getters }) {
+function initPaymentPeriod ({ getters }) {
   return {
     // this saved so that it can be used when creating a new payment
-    firstMonthsCurrency: getters.groupMincomeCurrency,
-    // TODO: should we also save the first month's currency exchange rate..?
-    // all payments during the month use this to set their exchangeRate
+    initialCurrency: getters.groupMincomeCurrency,
+    // TODO: should we also save the first period's currency exchange rate..?
+    // all payments during the period use this to set their exchangeRate
     // see notes and code in groupIncomeAdjustedDistribution for details.
     // TODO: for the currency change proposal, have it update the mincomeExchangeRate
     //       using .mincomeExchangeRate *= proposal.exchangeRate
     mincomeExchangeRate: 1, // modified by proposals to change mincome currency
     paymentsFrom: {}, // fromUser => toUser => Array<paymentHash>
     // snapshot of adjusted distribution after each completed payment
-    // yes, it is possible a payment began in one month and completed in another,
-    // in which case it is added to both month's 'paymentsFrom'
+    // yes, it is possible a payment began in one period and completed in another
+    // in which case lastAdjustedDistribution for the previous period will be updated
     lastAdjustedDistribution: null,
     // snapshot of haveNeeds. made only when there are no payments
     haveNeedsSnapshot: null
@@ -99,39 +99,52 @@ function initPaymentMonth ({ getters }) {
 // NOTE: do not call any of these helper functions from within a getter b/c they modify state!
 
 function clearOldPayments ({ state, getters }) {
-  const sortedMonthKeys = Object.keys(state.paymentsByMonth).sort()
-  // save two months payments, max
-  while (sortedMonthKeys.length > 2) {
-    const monthstamp = sortedMonthKeys.shift()
-    for (const paymentHash of getters.paymentHashesForMonth(monthstamp)) {
+  const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort()
+  // save two periods worth of payments, max
+  while (sortedPeriodKeys.length > 2) {
+    const period = sortedPeriodKeys.shift()
+    for (const paymentHash of getters.paymentHashesForPeriod(period)) {
       Vue.delete(state.payments, paymentHash)
       // TODO: archive the old payments in a sideEffect, not here
     }
-    Vue.delete(state.paymentsByMonth, monthstamp)
+    Vue.delete(state.paymentsByPeriod, period)
   }
 }
 
-function initFetchMonthlyPayments ({ meta, state, getters }) {
-  const monthstamp = ISOStringToMonthstamp(meta.createdDate)
-  const monthlyPayments = vueFetchInitKV(state.paymentsByMonth, monthstamp, initPaymentMonth({ getters }))
+function initFetchPeriodPayments ({ meta, state, getters }) {
+  const period = getters.periodStampGivenDate(meta.createdDate)
+  const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }))
   clearOldPayments({ state, getters })
-  return monthlyPayments
+  return periodPayments
 }
 
-function updateDistribution ({ meta, state, getters }) {
-  const monthstamp = ISOStringToMonthstamp(meta.createdDate)
-  const thisPaymentMonth = initFetchMonthlyPayments({ meta, state, getters })
-  const noPayments = Object.keys(thisPaymentMonth.paymentsFrom).length === 0
-  if (noPayments || !thisPaymentMonth.haveNeedsSnapshot) {
-    thisPaymentMonth.haveNeedsSnapshot = getters.haveNeedsForThisMonth(monthstamp)
+// this function is called each time a payment is completed or a user adjusts their income details.
+// TODO: call also when mincome is adjusted
+function updateCurrentDistribution ({ meta, state, getters }) {
+  const curPeriodPayments = initFetchPeriodPayments({ meta, state, getters })
+  const period = getters.periodStampGivenDate(meta.createdDate)
+  const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0
+  // update distributionDate if we've passed into the next period
+  if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
+    getters.groupSettings.distributionDate = period
   }
+  // save haveNeeds if there are no payments or the haveNeeds haven't been saved yet
+  if (noPayments || !curPeriodPayments.haveNeedsSnapshot) {
+    curPeriodPayments.haveNeedsSnapshot = getters.haveNeedsForThisPeriod(period)
+  }
+  // if there are payments this period, save the adjusted distribution
   if (!noPayments) {
-    thisPaymentMonth.lastAdjustedDistribution = adjustedDistribution({
-      distribution: unadjustedDistribution({
-        haveNeeds: thisPaymentMonth.haveNeedsSnapshot, minimize: true
-      }),
-      payments: getters.paymentsForMonth(monthstamp),
-      dueOn: monthstamp
+    updateAdjustedDistribution({ period, getters })
+  }
+}
+
+function updateAdjustedDistribution ({ period, getters }) {
+  const payments = getters.groupPeriodPayments[period]
+  if (payments && payments.haveNeedsSnapshot) {
+    payments.lastAdjustedDistribution = adjustedDistribution({
+      distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize: true }),
+      payments: getters.paymentsForPeriod(period),
+      dueOn: getters.dueDateForPeriod(period)
     })
   }
 }
@@ -204,11 +217,46 @@ sbp('chelonia/defineContract', {
     groupMincomeCurrency (state, getters) {
       return getters.groupSettings.mincomeCurrency
     },
+    periodStampGivenDate (state, getters) {
+      return (recentDate: string | Date) => {
+        if (typeof recentDate !== 'string') {
+          recentDate = recentDate.toISOString()
+        }
+        const { distributionDate, distributionPeriodLength } = getters.groupSettings
+        return periodStampGivenDate({
+          recentDate,
+          periodStart: distributionDate,
+          periodLength: distributionPeriodLength
+        })
+      }
+    },
+    periodBeforePeriod (state, getters) {
+      return (periodStamp: string) => {
+        const len = getters.groupSettings.distributionPeriodLength
+        return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), -len))
+      }
+    },
+    periodAfterPeriod (state, getters) {
+      return (periodStamp: string) => {
+        const len = getters.groupSettings.distributionPeriodLength
+        return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), len))
+      }
+    },
+    dueDateForPeriod (state, getters) {
+      return (periodStamp: string) => {
+        return dateToPeriodStamp(
+          addTimeToDate(
+            dateFromPeriodStamp(getters.periodAfterPeriod(periodStamp)),
+            -DAYS_MILLIS
+          )
+        )
+      }
+    },
     paymentTotalFromUserToUser (state, getters) {
-      return (fromUser, toUser, paymentMonthstamp) => {
+      return (fromUser, toUser, periodStamp) => {
         const payments = getters.currentGroupState.payments
-        const monthlyPayments = getters.groupMonthlyPayments
-        const { paymentsFrom, mincomeExchangeRate } = monthlyPayments[paymentMonthstamp] || {}
+        const periodPayments = getters.groupPeriodPayments
+        const { paymentsFrom, mincomeExchangeRate } = periodPayments[periodStamp] || {}
         // NOTE: @babel/plugin-proposal-optional-chaining would come in super-handy
         //       here, but I couldn't get it to work with our linter. :(
         //       https://github.com/babel/babel-eslint/issues/511
@@ -218,25 +266,29 @@ sbp('chelonia/defineContract', {
           if (status !== PAYMENT_COMPLETED) {
             return a
           }
-          const paymentCreatedMonthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
-          // if this payment is from a previous month, then make sure to take into account
+          const paymentCreatedPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate)
+          // if this payment is from a previous period, then make sure to take into account
           // any proposals that passed in between the payment creation and the payment
-          // completion that modified the group currency by multiplying both month's
+          // completion that modified the group currency by multiplying both period's
           // exchange rates
-          if (paymentMonthstamp !== paymentCreatedMonthstamp) {
-            exchangeRate *= monthlyPayments[paymentCreatedMonthstamp].mincomeExchangeRate
+          if (periodStamp !== paymentCreatedPeriodStamp) {
+            if (paymentCreatedPeriodStamp !== getters.periodBeforePeriod(periodStamp)) {
+              console.warn(`paymentTotalFromUserToUser: super old payment shouldn't exist, ignoring! (curPeriod=${periodStamp})`, JSON.stringify(payment))
+              return a
+            }
+            exchangeRate *= periodPayments[paymentCreatedPeriodStamp].mincomeExchangeRate
           }
           return a + (amount * exchangeRate * mincomeExchangeRate)
         }, 0)
         return saferFloat(total)
       }
     },
-    paymentHashesForMonth (state, getters) {
-      return (monthstamp) => {
-        const monthlyPayments = getters.groupMonthlyPayments[monthstamp]
-        if (monthlyPayments) {
+    paymentHashesForPeriod (state, getters) {
+      return (periodStamp) => {
+        const periodPayments = getters.groupPeriodPayments[periodStamp]
+        if (periodPayments) {
           let hashes = []
-          const { paymentsFrom } = monthlyPayments
+          const { paymentsFrom } = periodPayments
           for (const fromUser in paymentsFrom) {
             for (const toUser in paymentsFrom[fromUser]) {
               hashes = hashes.concat(paymentsFrom[fromUser][toUser])
@@ -282,9 +334,9 @@ sbp('chelonia/defineContract', {
       const currency = currencies[getters.groupSettings.mincomeCurrency]
       return currency && currency.symbolWithCode
     },
-    groupMonthlyPayments (state, getters): Object {
+    groupPeriodPayments (state, getters): Object {
       // note: a lot of code expects this to return an object, so keep the || {} below
-      return getters.currentGroupState.paymentsByMonth || {}
+      return getters.currentGroupState.paymentsByPeriod || {}
     },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
@@ -293,15 +345,14 @@ sbp('chelonia/defineContract', {
       //       bound to the UI in some location.
       return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     },
-    // getter is named haveNeedsForThisMonth instead of haveNeedsForMonth because it uses
+    // getter is named haveNeedsForThisPeriod instead of haveNeedsForPeriod because it uses
     // getters.groupProfiles - and that is always based on the most recent values. we still
-    // pass in the current monthstamp because it's used to set the "when" property
-    haveNeedsForThisMonth (state, getters) {
-      return (monthstamp) => {
+    // pass in the current period because it's used to set the "when" property
+    haveNeedsForThisPeriod (state, getters) {
+      return (currentPeriod: string) => {
         // NOTE: if we ever switch back to the "real-time" adjusted distribution algorithm,
         //       make sure that this function also handles userExitsGroupEvent
-        const groupProfiles = getters.groupProfiles // TODO: these should use the haveNeeds for the specific month's distribution period
-        const datestamp = dateFromMonthstamp(monthstamp).toISOString()
+        const groupProfiles = getters.groupProfiles // TODO: these should use the haveNeeds for the specific period's distribution period
         const haveNeeds = []
         for (const username in groupProfiles) {
           const { incomeDetailsType, joinedDate } = groupProfiles[username]
@@ -309,16 +360,23 @@ sbp('chelonia/defineContract', {
             const amount = groupProfiles[username][incomeDetailsType]
             const haveNeed = incomeDetailsType === 'incomeAmount' ? amount - getters.groupMincomeAmount : amount
             // construct 'when' this way in case we ever use a pro-rated algorithm
-            const when = dateToMonthstamp(joinedDate) === monthstamp ? joinedDate : datestamp
+            let when = dateFromPeriodStamp(currentPeriod).toISOString()
+            if (dateIsWithinPeriod({
+              date: joinedDate,
+              periodStart: currentPeriod,
+              periodLength: getters.groupSettings.distributionPeriodLength
+            })) {
+              when = joinedDate
+            }
             haveNeeds.push({ name: username, haveNeed, when })
           }
         }
         return haveNeeds
       }
     },
-    paymentsForMonth (state, getters) {
-      return (monthstamp) => {
-        const hashes = getters.paymentHashesForMonth(monthstamp)
+    paymentsForPeriod (state, getters) {
+      return (periodStamp) => {
+        const hashes = getters.paymentHashesForPeriod(periodStamp)
         const events = []
         if (hashes && hashes.length > 0) {
           const payments = getters.currentGroupState.payments
@@ -364,7 +422,7 @@ sbp('chelonia/defineContract', {
           sharedValues: string,
           mincomeAmount: number,
           mincomeCurrency: string,
-          distributionDate: string,
+          distributionDate: isPeriodStamp,
           proposals: objectOf({
             [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
             [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
@@ -378,11 +436,12 @@ sbp('chelonia/defineContract', {
         // TODO: checkpointing: https://github.com/okTurtles/group-income/issues/354
         const initialState = merge({
           payments: {},
-          paymentsByMonth: {},
+          paymentsByPeriod: {},
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
             groupCreator: meta.username,
+            distributionPeriodLength: 30 * DAYS_MILLIS,
             inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
           },
           profiles: {
@@ -392,7 +451,7 @@ sbp('chelonia/defineContract', {
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
-        initFetchMonthlyPayments({ meta, state, getters })
+        initFetchPeriodPayments({ meta, state, getters })
       }
     },
     'gi.contracts/group/payment': {
@@ -403,8 +462,8 @@ sbp('chelonia/defineContract', {
         amount: number,
         currencyFromTo: tupleOf(string, string), // must be one of the keys in currencies.js (e.g. USD, EUR, etc.) TODO: handle old clients not having one of these keys, see OP_PROTOCOL_UPGRADE https://github.com/okTurtles/group-income/issues/603
         // multiply 'amount' by 'exchangeRate', which must always be
-        // based on the firstMonthsCurrency of the month in which this payment was created.
-        // it is then further multiplied by the month's 'mincomeExchangeRate', which
+        // based on the initialCurrency of the period in which this payment was created.
+        // it is then further multiplied by the period's 'mincomeExchangeRate', which
         // is modified if any proposals pass to change the mincomeCurrency
         exchangeRate: number,
         txid: string,
@@ -423,7 +482,7 @@ sbp('chelonia/defineContract', {
           meta,
           history: [[meta.createdDate, hash]]
         })
-        const { paymentsFrom } = initFetchMonthlyPayments({ meta, state, getters })
+        const { paymentsFrom } = initFetchPeriodPayments({ meta, state, getters })
         const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {})
         const toUser = vueFetchInitKV(fromUser, data.toUser, [])
         toUser.push(hash)
@@ -456,24 +515,17 @@ sbp('chelonia/defineContract', {
         }
         payment.history.push([meta.createdDate, hash])
         merge(payment.data, data.updatedProperties)
-        // we update "this month"'s snapshot 'lastAdjustedDistribution' on each completed payment
+        // we update "this period"'s snapshot 'lastAdjustedDistribution' on each completed payment
         if (data.updatedProperties.status === PAYMENT_COMPLETED) {
           payment.data.completedDate = meta.createdDate
-          // in case we receive a paymentUpdate in a new month (where the original payment
-          // was initiated in the previous month), we make sure that month
-          // exists by retrieving it through initFetchMonthlyPayments
-          const paymentMonth = initFetchMonthlyPayments({ meta, state, getters })
-          const updateMonthstamp = ISOStringToMonthstamp(meta.createdDate)
-          const paymentMonthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
-          // if this update is for a payment from the previous month, we need to
-          // add it to this month's paymentFrom, and do so before we create an updated
-          // lastAdjustedDistribution snapshot.
-          if (compareMonthstamps(updateMonthstamp, paymentMonthstamp) > 0) {
-            const fromUser = vueFetchInitKV(paymentMonth.paymentsFrom, meta.username, {})
-            const toUser = vueFetchInitKV(fromUser, data.toUser, [])
-            toUser.push(data.paymentHash)
+          // update the current distribution unless this update is for a payment from the previous period
+          const updatePeriodStamp = getters.periodStampGivenDate(meta.createdDate)
+          const paymentPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate)
+          if (comparePeriodStamps(updatePeriodStamp, paymentPeriodStamp) > 0) {
+            updateAdjustedDistribution({ period: paymentPeriodStamp, getters })
+          } else {
+            updateCurrentDistribution({ meta, state, getters })
           }
-          updateDistribution({ meta, state, getters })
         }
       }
     },
@@ -774,7 +826,7 @@ sbp('chelonia/defineContract', {
         }
         if (data.incomeDetailsType) {
           // someone updated their income details, create a snapshot of the haveNeeds
-          updateDistribution({ meta, state, getters })
+          updateCurrentDistribution({ meta, state, getters })
         }
       }
     },
@@ -801,7 +853,13 @@ sbp('chelonia/defineContract', {
         // }
       }
     },
-    ...(process.env.NODE_ENV === 'development' && {
+    ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
+      'gi.contracts/group/forceDistributionDate': {
+        validate: optional,
+        process ({ meta }, { state, getters }) {
+          getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate)
+        }
+      },
       'gi.contracts/group/malformedMutation': {
         validate: objectOf({ errorType: string }),
         process ({ data }, { state }) {

@@ -35,7 +35,7 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
-import { ISOStringToMonthstamp, dateFromMonthstamp, humanDate } from '@utils/time.js'
+import { dateToMonthstamp, dateFromMonthstamp, humanDate } from '@utils/time.js'
 
 export default ({
   name: 'PaymentDetail',
@@ -52,7 +52,7 @@ export default ({
     if (payment) {
       this.payment = payment
       // TODO: the payment augmentation duplication in Payment and PaymentRecord, and between todo/sent/received, needs to be resolved more thoroughly
-      this.payment.monthstamp = ISOStringToMonthstamp(this.payment.meta.createdDate)
+      this.payment.monthstamp = dateToMonthstamp(this.payment.meta.createdDate)
     } else {
       console.warn('PaymentDetail: Missing valid query "id"')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
