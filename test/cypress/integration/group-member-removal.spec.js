@@ -103,7 +103,7 @@ describe('Group - Removing a member', () => {
     // verify user2 (removed) has no group now.
     cy.giLogin(`user2-${userId}`) // [*note_1*]
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
-    
+
     // TODO: Avoid .wait() call. It waits for group/chatroom contracts
     // to be completely removed before visiting invitationLink.
     // cy.wait(2000); // eslint-disable-line
