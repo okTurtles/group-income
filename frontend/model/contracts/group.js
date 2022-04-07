@@ -606,7 +606,6 @@ sbp('chelonia/defineContract', {
             return
           }
 
-          const groupName = state.settings.groupName
           const groupIdToSwitch = Object.keys(contracts)
             .find(cID => contracts[cID].type === 'gi.contracts/group' &&
               cID !== contractID && rootState[cID].settings) || null
@@ -616,7 +615,7 @@ sbp('chelonia/defineContract', {
           sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
 
           // emit event so that we can listen this event anywhere
-          sbp('okTurtles.events/emit', GROUP_REMOVED, contractID, groupName)
+          sbp('okTurtles.events/emit', GROUP_REMOVED, contractID)
           // TODO - #828 remove other group members contracts if applicable
         } else {
           // TODO - #828 remove the member contract if applicable.

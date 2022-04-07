@@ -48,10 +48,11 @@ describe('Group - Removing a member', () => {
         break
       }
     }
+    cy.log(`Current group contract ID is ${groupContractID}.`)
     if (groupContractID) {
       await new Promise(resolve => {
-        sbp('okTurtles.events/on', GROUP_REMOVED, (contractID, name) => {
-          if (groupContractID === contractID && name === groupName) {
+        sbp('okTurtles.events/on', GROUP_REMOVED, (contractID) => {
+          if (groupContractID === contractID) {
             resolve()
           }
         })
@@ -104,12 +105,6 @@ describe('Group - Removing a member', () => {
     cy.giLogin(`user2-${userId}`) // [*note_1*]
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
 
-    // TODO: Avoid .wait() call. It waits for group/chatroom contracts
-    // to be completely removed before visiting invitationLink.
-    // cy.wait(2000); // eslint-disable-line
-    cy.visit('/').its('sbp').then(async sbp => {
-      await waitUntilGroupRemoved(sbp, groupNameA)
-    })
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
       groupName: groupNameA,
@@ -260,10 +255,7 @@ describe('Group - Removing a member', () => {
   })
 
   it('user2 rejoins the groupA', () => {
-    // TODO: Avoid .wait() call. It waits for group/chatroom contracts
-    // to be completely removed before visiting invitationLink.
-    // cy.wait(2000) // eslint-disable-line
-    cy.visit('/').its('sbp').then(async sbp => {
+    cy.window().its('sbp').then(async sbp => {
       await waitUntilGroupRemoved(sbp, groupNameA)
     })
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {

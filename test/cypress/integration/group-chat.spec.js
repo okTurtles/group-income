@@ -1,4 +1,5 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
+import { GROUP_REMOVED } from '../../../frontend/utils/events.js'
 
 const groupName1 = 'Dreamers'
 const groupName2 = 'Footballers'
@@ -176,15 +177,26 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   }
 
-  // function closeMenu (joined = true) {
-  //   // TODO: need to remove cy.wait. Dropdown menu can not closable for a few seconds
-  //   cy.wait(1000) // eslint-disable-line
-  //   cy.getByDT('messageInputWrapper').within(() => {
-  //     cy.get('textarea').should('exist')
-  //     cy.get('textarea').click()
-  //   })
-  //   cy.getByDT('notificationsSettings').should('not.exist')
-  // }
+  async function waitUntilGroupRemoved (sbp, groupName) {
+    const rootState = sbp('state/vuex/state')
+    let groupContractID = ''
+    for (const cID of Object.keys(rootState.contracts)) {
+      if (rootState.contracts[cID].type === 'gi.contracts/group' &&
+        rootState[cID].settings.groupName === groupName) {
+        groupContractID = cID
+        break
+      }
+    }
+    if (groupContractID) {
+      await new Promise(resolve => {
+        sbp('okTurtles.events/on', GROUP_REMOVED, (contractID) => {
+          if (groupContractID === contractID) {
+            resolve()
+          }
+        })
+      })
+    }
+  }
 
   it(`user1 creats '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
     cy.visit('/')
@@ -440,9 +452,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogin(user2)
     me = user2
 
-    // wait until all the chatroom contracts are removed
-    cy.wait(1000) // eslint-disable-line
-
     cy.getByDT('groupSettingsLink').click()
     cy.getByDT('leaveModalBtn').click()
 
@@ -460,8 +469,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
 
-    // wait until all the chatroom contracts are removed
-    cy.wait(1000) // eslint-disable-line
+    cy.window().its('sbp').then(async sbp => {
+      await waitUntilGroupRemoved(sbp, groupName1)
+    })
 
     cy.giLogout({ hasNoGroup: true })
   })
@@ -488,7 +498,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again`, () => {
     cy.giLogin(user3)
     me = user3
-    cy.wait(500) // eslint-disable-line
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
       groupName: groupName1,

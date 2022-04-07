@@ -29,7 +29,7 @@ export function ISOStringToMonthstamp (date: string): string {
 
 export function dateFromMonthstamp (monthstamp: string): Date {
   // this is a hack to prevent new Date('2020-01').getFullYear() => 2019
-  return new Date(`${monthstamp}-01T00:01`)
+  return new Date(`${monthstamp}-01T00:01Z`) // Note the Z indicator
 }
 
 export function prevMonthstamp (monthstamp: string): string {
