@@ -129,8 +129,6 @@ Cypress.Commands.add('giLogin', (username, {
     cy.get(el).should('have.attr', 'data-logged-in', 'yes')
     cy.get(el).should('have.attr', 'data-sync', '')
   })
-
-  cy.wait(1000) // eslint-disable-line
 })
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {

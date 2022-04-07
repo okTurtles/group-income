@@ -20,7 +20,10 @@ import {
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS
 } from './constants.js'
-import { CHATROOM_MESSAGE_ACTION, CONTRACT_IS_SYNCING } from '~/frontend/utils/events.js'
+import {
+  CHATROOM_MESSAGE_ACTION,
+  CONTRACT_IS_SYNCING
+} from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 
 export const chatRoomAttributes: any = {

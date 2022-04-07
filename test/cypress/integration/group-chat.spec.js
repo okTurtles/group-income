@@ -1,5 +1,4 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
-import { GROUP_REMOVED } from '../../../frontend/utils/events.js'
 
 const groupName1 = 'Dreamers'
 const groupName2 = 'Footballers'
@@ -175,27 +174,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('conversationWapper').within(() => {
       cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel description to: ${description}`)
     })
-  }
-
-  async function waitUntilGroupRemoved (sbp, groupName) {
-    const rootState = sbp('state/vuex/state')
-    let groupContractID = ''
-    for (const cID of Object.keys(rootState.contracts)) {
-      if (rootState.contracts[cID].type === 'gi.contracts/group' &&
-        rootState[cID].settings.groupName === groupName) {
-        groupContractID = cID
-        break
-      }
-    }
-    if (groupContractID) {
-      await new Promise(resolve => {
-        sbp('okTurtles.events/on', GROUP_REMOVED, (contractID) => {
-          if (groupContractID === contractID) {
-            resolve()
-          }
-        })
-      })
-    }
   }
 
   it(`user1 creats '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
@@ -468,10 +446,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
-
-    cy.window().its('sbp').then(async sbp => {
-      await waitUntilGroupRemoved(sbp, groupName1)
-    })
 
     cy.giLogout({ hasNoGroup: true })
   })

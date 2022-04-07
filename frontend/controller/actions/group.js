@@ -30,6 +30,7 @@ export async function leaveAllChatRooms (groupContractID?: string, member: strin
   const chatRooms = rootState[groupContractID].chatRooms
   const chatRoomIDsToLeave = Object.keys(chatRooms)
     .filter(cID => chatRooms[cID].users.includes(member))
+    .reverse() // Need to leave `General` chatroom on the last turn
 
   try {
     for (const chatRoomID of chatRoomIDsToLeave) {

@@ -1,7 +1,6 @@
 // [*note_1*] Don't use bypassUI here because this user is syncing the contract
 // and the last action (removeMember sideEffect) redirects them to / (home)
 // causing the bypassUI to fail in the middle (because it changed pages)
-import { GROUP_REMOVED } from '../../../frontend/utils/events.js'
 
 describe('Group - Removing a member', () => {
   const userId = Math.floor(Math.random() * 10000)
@@ -36,28 +35,6 @@ describe('Group - Removing a member', () => {
     })
     cy.getByDT('closeModal').should('not.exist')
     assertMembersCount(1)
-  }
-
-  async function waitUntilGroupRemoved (sbp, groupName) {
-    const rootState = sbp('state/vuex/state')
-    let groupContractID = ''
-    for (const cID of Object.keys(rootState.contracts)) {
-      if (rootState.contracts[cID].type === 'gi.contracts/group' &&
-        rootState[cID].settings.groupName === groupName) {
-        groupContractID = cID
-        break
-      }
-    }
-    cy.log(`Current group contract ID is ${groupContractID}.`)
-    if (groupContractID) {
-      await new Promise(resolve => {
-        sbp('okTurtles.events/on', GROUP_REMOVED, (contractID) => {
-          if (groupContractID === contractID) {
-            resolve()
-          }
-        })
-      })
-    }
   }
 
   // ------- Remove member that has only 1 group.
@@ -252,12 +229,14 @@ describe('Group - Removing a member', () => {
 
     // User2 is part of only one group now.
     cy.getByDT('groupName').should('contain', groupNameB)
+
+    // The client can remove contracts at any point in time.
+    // It might point to a bug in the core code
+    // Discussed here - https://okturtles.slack.com/archives/C0EH7P20Y/p1649298837056349
+    cy.wait(500) // eslint-disable-line
   })
 
   it('user2 rejoins the groupA', () => {
-    cy.window().its('sbp').then(async sbp => {
-      await waitUntilGroupRemoved(sbp, groupNameA)
-    })
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
       groupName: groupNameA,
