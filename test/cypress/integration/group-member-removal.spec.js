@@ -82,6 +82,11 @@ describe('Group - Removing a member', () => {
     cy.giLogin(`user2-${userId}`) // [*note_1*]
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
 
+    // The client can remove contracts at any point in time.
+    // It might point to a bug in the core code
+    // Discussed here - https://okturtles.slack.com/archives/C0EH7P20Y/p1649298837056349
+    cy.wait(500) // eslint-disable-line
+
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
       groupName: groupNameA,
