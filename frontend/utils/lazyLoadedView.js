@@ -48,7 +48,7 @@ such as `beforeRouteEnter`, `beforeRouteUpdate`, and `beforeRouteLeave`. If you 
 these, you must either use route-level guards instead or lazy-load the component directly, without
 handling loading state.
 */
-export function lazyPage (lazyImport: LazyImport): LazyImport {
+export function lazyPage (lazyImport: LazyImport): Function {
   const handler = asyncHandler(lazyImport, {
     loading: LoadingPage,
     error: ErrorPage
