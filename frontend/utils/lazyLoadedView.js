@@ -13,29 +13,32 @@ function asyncHandler (lazyImport, { loading, error } = {}) {
   return () => ({
     // HACK: sometimes a bundler bug makes it necessary to use
     // `.then(m => m.default ?? m)` when importing a module with `import()`.
-    component: lazyImport().then(m => m.default ?? m), loading, error
+    component: lazyImport().then(m => m.default ?? m),
+    loading,
+    error
   })
 }
 
-export function lazyComponent (name: string, lazyImport: LazyImport) {
-  Vue.component(name, asyncHandler(lazyImport, {
-    loading: LoadingPage,
-    error: ErrorPage
-  }))
+export function lazyComponent (name: string, lazyImport: LazyImport, { loading, error }: Object = {}) {
+  if (loading ?? error) {
+    Vue.component(name, asyncHandler(lazyImport, { loading, error }))
+  } else {
+    Vue.component(name, lazyImport)
+  }
 }
 
 export function lazyModal (name: string, lazyImport: LazyImport) {
-  Vue.component(name, asyncHandler(lazyImport, {
+  lazyComponent(name, lazyImport, {
     loading: LoadingModal,
     error: ErrorModal
-  }))
+  })
 }
 
 export function lazyModalFullScreen (name: string, lazyImport: LazyImport) {
-  Vue.component(name, asyncHandler(lazyImport, {
+  lazyComponent(name, lazyImport, {
     loading: LoadingModalFullScreen,
     error: ErrorModal
-  }))
+  })
 }
 
 /*
@@ -48,11 +51,12 @@ such as `beforeRouteEnter`, `beforeRouteUpdate`, and `beforeRouteLeave`. If you 
 these, you must either use route-level guards instead or lazy-load the component directly, without
 handling loading state.
 */
-export function lazyPage (lazyImport: LazyImport): Function {
-  const handler = asyncHandler(lazyImport, {
-    loading: LoadingPage,
-    error: ErrorPage
-  })
+export function lazyPage (
+  lazyImport: LazyImport,
+  { loading = LoadingPage, error = ErrorPage }: Object = {}
+): Function {
+  const handler = asyncHandler(lazyImport, { loading, error })
+
   return () => Promise.resolve({
     functional: true,
     render (h, { data, children }) {
