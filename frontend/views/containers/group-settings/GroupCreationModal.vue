@@ -120,7 +120,7 @@ export default ({
             ruleName: this.form.ruleName,
             ruleThreshold: this.form.ruleThreshold[this.form.ruleName],
             // TODO: connect this to the form data and then delete this comment!
-            distributionDate: dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS).toISOString())
+            distributionDate: dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
           }
         })
         this.next()

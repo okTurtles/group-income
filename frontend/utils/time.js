@@ -11,22 +11,18 @@ export function addMonthsToDate (date: string, months: number): Date {
   return new Date(now.setMonth(now.getMonth() + months))
 }
 
-export function dateToMonthstamp (date: string | Date): string {
-  // we could use Intl.DateTimeFormat but that doesn't support .format() on Android
-  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DateTimeFormat/format
-  return new Date(date).toISOString().slice(0, 7)
-}
-
-// should we just directly deal with Dates..? OTOH this gives us flexibility to switch to other formats
+// It might be tempting to deal directly with Dates and ISOStrings, since that's basically
+// what a period stamp is at the moment, but keeping this abstraction allows us to change
+// our mind in the future simply by editing these two functions.
+// TODO: We may want to, for example, get the time from the server instead of relying on
+// the client in case the client's clock isn't set correctly.
+// See: https://github.com/okTurtles/group-income/issues/531
 export function dateToPeriodStamp (date: string | Date): string {
   return new Date(date).toISOString()
 }
 
-// TODO: to prevent conflicts among user timezones, we need
-//       to use the server's time, and not our time here.
-//       https://github.com/okTurtles/group-income/issues/531
-export function currentMonthstamp (): string {
-  return dateToMonthstamp(new Date())
+export function dateFromPeriodStamp (daystamp: string): Date {
+  return new Date(daystamp)
 }
 
 export function periodStampGivenDate ({ recentDate, periodStart, periodLength }: {
@@ -64,13 +60,28 @@ export function dateIsWithinPeriod ({ date, periodStart, periodLength }: {
   return dateObj > start && dateObj < addTimeToDate(start, periodLength)
 }
 
-export function dateFromPeriodStamp (daystamp: string): Date {
-  return new Date(daystamp)
+export function addTimeToDate (date: string | Date, timeMillis: number): Date {
+  const d = new Date(date)
+  d.setTime(d.getTime() + timeMillis)
+  return d
+}
+
+export function dateToMonthstamp (date: string | Date): string {
+  // we could use Intl.DateTimeFormat but that doesn't support .format() on Android
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DateTimeFormat/format
+  return new Date(date).toISOString().slice(0, 7)
 }
 
 export function dateFromMonthstamp (monthstamp: string): Date {
   // this is a hack to prevent new Date('2020-01').getFullYear() => 2019
-  return new Date(`${monthstamp}-01T00:01`)
+  return new Date(`${monthstamp}-01T00:01:00.000Z`) // the Z is important
+}
+
+// TODO: to prevent conflicts among user timezones, we need
+//       to use the server's time, and not our time here.
+//       https://github.com/okTurtles/group-income/issues/531
+export function currentMonthstamp (): string {
+  return dateToMonthstamp(new Date())
 }
 
 export function prevMonthstamp (monthstamp: string): string {
@@ -79,25 +90,19 @@ export function prevMonthstamp (monthstamp: string): string {
   return dateToMonthstamp(date)
 }
 
-export function addTimeToDate (date: string | Date, timeMillis: number): Date {
-  const d = new Date(date)
-  d.setTime(d.getTime() + timeMillis)
-  return d
+export function comparePeriodStamps (periodA: string, periodB: string): number {
+  return dateFromPeriodStamp(periodA).getTime() - dateFromPeriodStamp(periodB).getTime()
 }
 
 export function compareMonthstamps (monthstampA: string, monthstampB: string): number {
-  return dateFromMonthstamp(monthstampA) - dateFromMonthstamp(monthstampB)
+  return dateFromMonthstamp(monthstampA).getTime() - dateFromMonthstamp(monthstampB).getTime()
   // const A = dateA.getMonth() + dateA.getFullYear() * 12
   // const B = dateB.getMonth() + dateB.getFullYear() * 12
   // return A - B
 }
 
-export function comparePeriodStamps (periodA: string, periodB: string): number {
-  return dateFromPeriodStamp(periodA) - dateFromPeriodStamp(periodB)
-}
-
 export function compareISOTimestamps (a: string, b: string): number {
-  return new Date(a) - new Date(b)
+  return new Date(a).getTime() - new Date(b).getTime()
 }
 
 export function lastDayOfMonth (date: Date): Date {
@@ -112,14 +117,10 @@ export function firstDayOfMonth (date: Date): Date {
 const locale = (typeof navigator === 'undefined' && 'en-US') || (navigator.languages ? navigator.languages[0] : navigator.language)
 
 export function humanDate (
-  datems: number,
-  opts: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  date: number | Date | string,
+  opts?: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
 ): string {
-  if (!datems) {
-    console.error('humanDate:: 1st arg `datems` is required')
-    return ''
-  }
-  return new Date(datems).toLocaleDateString(locale, opts)
+  return new Date(date).toLocaleDateString(locale, opts)
 }
 
 export function isPeriodStamp (arg: string): boolean {

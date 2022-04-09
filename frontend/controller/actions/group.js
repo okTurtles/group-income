@@ -14,6 +14,7 @@ import {
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import { imageUpload } from '@utils/image.js'
 import { merge } from '@utils/giLodash.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@utils/time.js'
 import L, { LError } from '@view-utils/translations.js'
 import { encryptedAction } from './utils.js'
 import type { GIActionParams } from './types.js'
@@ -53,6 +54,13 @@ export default (sbp('sbp/selectors/register', {
             threshold: +ruleThreshold // ensure this is a number
           }
         }
+      }
+      if (!distributionDate) {
+        // 3 days after group creation by default. we put this here for a kind of dumb but
+        // necessary reason: the Cypress tests do not allow us to import dateToPeriodStamp
+        // or any of these other time.js functions because thte Cypress environment can't
+        // handle Flowtype annotations, even though our .babelrc should make it work.
+        distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
       }
       const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',

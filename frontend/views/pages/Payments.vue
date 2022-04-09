@@ -199,7 +199,7 @@ export default ({
       return items
     },
     tableTitles () {
-      const firstTab = this.needsIncome ? L('Sent by') : L('Send to')
+      const firstTab = this.needsIncome ? L('Sent by') : L('Sent to')
       return this.ephemeral.activeTab === 'PaymentRowTodo'
         ? {
             one: firstTab,

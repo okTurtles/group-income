@@ -13,7 +13,7 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
       strong {{ humanDate(payment.meta.createdDate, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
     li.c-payment-list-item
       i18n.has-text-1 Relative to
-      strong {{ humanDate(dateFromMonthstamp(payment.monthstamp), { month: 'long', year: 'numeric' }) }}
+      strong {{ humanDate(payment.periodstamp, { month: 'long', year: 'numeric', day: 'numeric' }) }}
     li.c-payment-list-item
       i18n.has-text-1 Mincome at the time
       strong {{ withCurrency(payment.data.groupMincome) }}
@@ -35,7 +35,8 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
-import { dateToMonthstamp, dateFromMonthstamp, humanDate } from '@utils/time.js'
+import { humanDate } from '@utils/time.js'
+import { cloneDeep } from '@utils/giLodash.js'
 
 export default ({
   name: 'PaymentDetail',
@@ -50,9 +51,9 @@ export default ({
       sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'PaymentDetail', { id })
     }
     if (payment) {
-      this.payment = payment
+      this.payment = cloneDeep(payment)
       // TODO: the payment augmentation duplication in Payment and PaymentRecord, and between todo/sent/received, needs to be resolved more thoroughly
-      this.payment.monthstamp = dateToMonthstamp(this.payment.meta.createdDate)
+      this.payment.periodstamp = this.periodStampGivenDate(this.payment.meta.createdDate)
     } else {
       console.warn('PaymentDetail: Missing valid query "id"')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
@@ -65,10 +66,11 @@ export default ({
     ...mapGetters([
       'currentGroupState',
       'ourUsername',
-      'userDisplayName'
+      'userDisplayName',
+      'periodStampGivenDate'
     ]),
     withCurrency () {
-      return currencies[this.payment.data.currencyFromTo[0]].displayWithCurrency
+      return currencies[this.payment.data.currencyFromTo[1]].displayWithCurrency
     },
     subtitleCopy () {
       const toUser = this.payment.data.toUser
@@ -84,7 +86,6 @@ export default ({
     submit () {
       alert('TODO: Implement cancel payment')
     },
-    dateFromMonthstamp,
     humanDate
   },
   validations: {

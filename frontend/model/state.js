@@ -398,24 +398,18 @@ const getters = {
       })
     }
   },
-  // TODO: this is insane, rewrite it and make it cleaner/better
-  ourPayments (state, getters) {
-    const periodPayments = getters.groupPeriodPayments
-    if (Object.keys(periodPayments).length === 0) return
-    const ourUsername = getters.ourUsername
-    const cPeriod = getters.currentPaymentPeriod
-    const pPeriod = getters.periodBeforePeriod(cPeriod)
-    const allPayments = getters.currentGroupState.payments
-    const thisPeriodPayments = periodPayments[cPeriod]
-    const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
-    const pPayments = periodPayments[pPeriod]
-    const pPaymentsFrom = pPayments && pPayments.paymentsFrom
-
-    const sentInPeriod = (periodFromPayments) => {
+  ourPaymentsSentInPeriod (state, getters) {
+    return (period) => {
+      const periodPayments = getters.groupPeriodPayments
+      if (Object.keys(periodPayments).length === 0) return
       const payments = []
-      if (periodFromPayments) {
-        for (const toUser in periodFromPayments[ourUsername]) {
-          for (const paymentHash of periodFromPayments[ourUsername][toUser]) {
+      const thisPeriodPayments = periodPayments[period]
+      const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
+      if (paymentsFrom) {
+        const ourUsername = getters.ourUsername
+        const allPayments = getters.currentGroupState.payments
+        for (const toUser in paymentsFrom[ourUsername]) {
+          for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
             payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
           }
@@ -423,13 +417,21 @@ const getters = {
       }
       return payments
     }
-    const receivedInPeriod = (periodFromPayments) => {
+  },
+  ourPaymentsReceivedInPeriod (state, getters) {
+    return (period) => {
+      const periodPayments = getters.groupPeriodPayments
+      if (Object.keys(periodPayments).length === 0) return
       const payments = []
-      if (periodFromPayments) {
-        for (const fromUser in periodFromPayments) {
-          for (const toUser in periodFromPayments[fromUser]) {
+      const thisPeriodPayments = periodPayments[period]
+      const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
+      if (paymentsFrom) {
+        const ourUsername = getters.ourUsername
+        const allPayments = getters.currentGroupState.payments
+        for (const fromUser in paymentsFrom) {
+          for (const toUser in paymentsFrom[fromUser]) {
             if (toUser === ourUsername) {
-              for (const paymentHash of periodFromPayments[fromUser][toUser]) {
+              for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
                 payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
               }
@@ -439,33 +441,48 @@ const getters = {
       }
       return payments
     }
-    // TODO: take into account payments that have been sent but not yet completed
+  },
+  ourPayments (state, getters) {
+    const periodPayments = getters.groupPeriodPayments
+    if (Object.keys(periodPayments).length === 0) return
+    const ourUsername = getters.ourUsername
+    const cPeriod = getters.currentPaymentPeriod
+    const pPeriod = getters.periodBeforePeriod(cPeriod)
+    const currentSent = getters.ourPaymentsSentInPeriod(cPeriod)
+    const previousSent = getters.ourPaymentsSentInPeriod(pPeriod)
+    const currentReceived = getters.ourPaymentsReceivedInPeriod(cPeriod)
+    const previousReceived = getters.ourPaymentsReceivedInPeriod(pPeriod)
+
+    // TODO: take into account pending payments that have been sent but not yet completed
     const todo = () => {
       return getters.groupIncomeAdjustedDistribution.filter(p => p.from === ourUsername)
     }
 
     return {
-      sent: [...sentInPeriod(paymentsFrom), ...sentInPeriod(pPaymentsFrom)],
-      received: [...receivedInPeriod(paymentsFrom), ...receivedInPeriod(pPaymentsFrom)],
+      sent: [...currentSent, ...previousSent],
+      received: [...currentReceived, ...previousReceived],
       todo: todo()
     }
   },
-  // TODO: fix all of this
   ourPaymentsSummary (state, getters) {
     const isNeeder = getters.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     const ourUsername = getters.ourUsername
     const isOurPayment = (payment) => {
       return isNeeder ? payment.to === ourUsername : payment.from === ourUsername
     }
+    const cPeriod = getters.currentPaymentPeriod
     const ourUnadjustedPayments = getters.groupIncomeDistribution.filter(isOurPayment)
     const ourAdjustedPayments = getters.groupIncomeAdjustedDistribution.filter(isOurPayment)
-    // TODO: should be based on minimized payments
-    const paymentsTotal = ourUnadjustedPayments.length
+
+    const receivedOrSent = isNeeder
+      ? getters.ourPaymentsReceivedInPeriod(cPeriod)
+      : getters.ourPaymentsSentInPeriod(cPeriod)
+    const paymentsTotal = ourAdjustedPayments.length + receivedOrSent.length
     const nonLateAdjusted = ourAdjustedPayments.filter((p) => !p.isLate)
     const paymentsDone = paymentsTotal - nonLateAdjusted.length
     const hasPartials = ourAdjustedPayments.some(p => p.partial)
     const amountTotal = ourUnadjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
-    const amountDone = amountTotal - nonLateAdjusted.reduce((acc, payment) => acc + payment.amount, 0)
+    const amountDone = receivedOrSent.reduce((acc, payment) => acc + payment.amount, 0)
     return {
       paymentsDone,
       hasPartials,

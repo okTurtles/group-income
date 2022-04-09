@@ -209,7 +209,6 @@ export default ({
             partial: payment.partial || pRecord.amount - payment.amount > 0,
             monthstamp: payment.monthstamp,
             currencyFromTo: ['USD', groupCurrency], // TODO: this!
-            groupMincome: this.groupSettings.mincomeAmount,
             exchangeRate: 1,
             txid: '' + Math.random(),
             status: PAYMENT_PENDING,

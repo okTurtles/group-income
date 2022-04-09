@@ -2,7 +2,7 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
-  add-income-details-widget(v-if='!ourGroupProfile.incomeDetailsType')
+  add-income-details-widget(v-if='!ourGroupProfile || !ourGroupProfile.incomeDetailsType')
 
   template(v-else)
     .c-contribution-header

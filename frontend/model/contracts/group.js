@@ -165,6 +165,10 @@ sbp('chelonia/defineContract', {
     create () {
       const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
+        // TODO: We may want to get the time from the server instead of relying on
+        // the client in case the client's clock isn't set correctly.
+        // the only issue here is that it involves an async function...
+        // See: https://github.com/okTurtles/group-income/issues/531
         createdDate: new Date().toISOString(),
         username,
         identityContractID
@@ -325,14 +329,15 @@ sbp('chelonia/defineContract', {
         return getters.groupSettings.proposals[proposalType]
       }
     },
+    groupCurrency (state, getters) {
+      const mincomeCurrency = getters.groupMincomeCurrency
+      return mincomeCurrency && currencies[mincomeCurrency]
+    },
     groupMincomeFormatted (state, getters) {
-      const settings = getters.groupSettings
-      const currency = currencies[settings.mincomeCurrency]
-      return currency && currency.displayWithCurrency(settings.mincomeAmount)
+      return getters.withGroupCurrency?.(getters.groupMincomeAmount)
     },
     groupMincomeSymbolWithCode (state, getters) {
-      const currency = currencies[getters.groupSettings.mincomeCurrency]
-      return currency && currency.symbolWithCode
+      return getters.groupCurrency?.symbolWithCode
     },
     groupPeriodPayments (state, getters): Object {
       // note: a lot of code expects this to return an object, so keep the || {} below
@@ -343,7 +348,7 @@ sbp('chelonia/defineContract', {
       //       USD, then calling this function is probably an error which should be reported.
       //       Just make sure the UI doesn't break if an exception is thrown, since this is
       //       bound to the UI in some location.
-      return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
+      return getters.groupCurrency?.displayWithCurrency
     },
     // getter is named haveNeedsForThisPeriod instead of haveNeedsForPeriod because it uses
     // getters.groupProfiles - and that is always based on the most recent values. we still
@@ -478,7 +483,10 @@ sbp('chelonia/defineContract', {
           throw new Errors.GIErrorIgnoreAndBanIfGroup('payments cannot be instsantly completed!')
         }
         Vue.set(state.payments, hash, {
-          data,
+          data: {
+            ...data,
+            groupMincome: getters.groupMincomeAmount
+          },
           meta,
           history: [[meta.createdDate, hash]]
         })

@@ -5,7 +5,6 @@ import Router from 'vue-router'
 import sbp from '~/shared/sbp.js'
 import store from '@model/state.js'
 
-import BypassUI from '@pages/BypassUI.vue'
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import L from '@view-utils/translations.js'
@@ -90,12 +89,6 @@ const router: any = new Router({
       name: 'DesignSystem',
       meta: { title: L('Design System') }
       // beforeEnter: createEnterGuards(designGuard)
-    },
-    {
-      path: '/bypass-ui',
-      component: BypassUI,
-      name: BypassUI.name,
-      meta: { title: L('Cypress - BypassUI') }
     },
     {
       path: '/dashboard',
