@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import '~/shared/domains/chelonia/chelonia.js'
-import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
+import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './voting/rules.js'
@@ -141,8 +141,9 @@ function updateCurrentDistribution ({ meta, state, getters }) {
 function updateAdjustedDistribution ({ period, getters }) {
   const payments = getters.groupPeriodPayments[period]
   if (payments && payments.haveNeedsSnapshot) {
+    const minimize = getters.groupSettings.minimizeDistribution
     payments.lastAdjustedDistribution = adjustedDistribution({
-      distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize: true }),
+      distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize }),
       payments: getters.paymentsForPeriod(period),
       dueOn: getters.dueDateForPeriod(period)
     })
@@ -420,7 +421,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group': {
       validate: objectMaybeOf({
         invites: mapOf(string, inviteType),
-        settings: objectOf({
+        settings: objectMaybeOf({
           // TODO: add 'groupPubkey'
           groupName: string,
           groupPicture: string,
@@ -428,6 +429,8 @@ sbp('chelonia/defineContract', {
           mincomeAmount: number,
           mincomeCurrency: string,
           distributionDate: isPeriodStamp,
+          distributionPeriodLength: number,
+          minimizeDistribution: boolean,
           proposals: objectOf({
             [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
             [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,

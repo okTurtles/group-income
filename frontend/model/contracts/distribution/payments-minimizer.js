@@ -4,15 +4,11 @@
 // such that the least number of payments are made.
 export default function minimizeTotalPaymentsCount (
   distribution: Array<Object>
-  // groupMembers: Array<Object>,
-  // payments: Array<Object>
 ): Array<any | {|from: string, to: string, amount: number|}> {
-  // return distribution
   const neederTotalReceived = {}
   const haverTotalHave = {}
   const haversSorted = []
   const needersSorted = []
-  // const getUser = (name) => groupMembers.find(member => member.name === name)
   const minimizedDistribution = []
   for (const todo of distribution) {
     neederTotalReceived[todo.to] = (neederTotalReceived[todo.to] || 0) + todo.amount
@@ -27,8 +23,6 @@ export default function minimizeTotalPaymentsCount (
   // sort haves and needs: greatest to least
   haversSorted.sort((a, b) => b.amount - a.amount)
   needersSorted.sort((a, b) => b.amount - a.amount)
-  // TODO: only minimize payments have have connections in distribution
-  //       if there is no payment from a -> b, don't create one
   while (haversSorted.length > 0 && needersSorted.length > 0) {
     const mostHaver = haversSorted.pop()
     const mostNeeder = needersSorted.pop()

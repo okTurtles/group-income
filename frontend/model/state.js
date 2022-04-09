@@ -391,7 +391,7 @@ const getters = {
       return adjustedDistribution({
         distribution: unadjustedDistribution({
           haveNeeds: getters.haveNeedsForThisPeriod(period),
-          minimize: true
+          minimize: getters.groupSettings.minimizeDistribution
         }),
         payments: getters.paymentsForPeriod(period),
         dueOn: getters.dueDateForPeriod(period)
@@ -639,6 +639,7 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object}
   ) {
     debouncedSave.clear()
+    const username = state.loggedIn.username
     await dispatch('saveSettings')
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
     for (const contractID in state.contracts) {
@@ -650,7 +651,8 @@ const actions = {
       captureLogsPause({
         // Let's clear all stored logs to prevent someone else
         // accessing sensitve data after the user logs out.
-        wipeOut: true
+        wipeOut: true,
+        username
       })
     })
   },
