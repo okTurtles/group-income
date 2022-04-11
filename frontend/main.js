@@ -32,7 +32,8 @@ import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import 'wicg-inert'
 
-console.log('NODE_ENV:', process.env.NODE_ENV)
+console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {
   console.error(`uncaught Vue error in ${info}:`, err)
@@ -75,6 +76,8 @@ async function startApp () {
   }
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, createGIPubSubClient(
     pubsubURL, {
+      // See https://github.com/okTurtles/group-income/issues/1183
+      maxRetries: Infinity,
       // This option can be enabled since we are not doing auth via web sockets.
       reconnectOnTimeout: true,
       timeout: 5000
@@ -101,6 +104,10 @@ async function startApp () {
       //       Which doesn't mean that the lookup actually failed!
       await sbp('gi.db/settings/delete', username)
     }
+  }
+  if (process.env.NODE_ENV === 'development' || window.Cypress) {
+    // In development mode this makes the SBP API available in the devtools console.
+    window.sbp = sbp
   }
   /* eslint-disable no-new */
   new Vue({
@@ -163,7 +170,7 @@ async function startApp () {
             banner.show(L('Trying to reconnect...'), 'wifi')
           },
           'reconnection-failed' () {
-            banner.show(L('Cannot connect to the server.'), 'wifi')
+            banner.show(L('We could not connect to the server. Please refresh the page.'), 'wifi')
           },
           'reconnection-succeeded' () {
             banner.clean()

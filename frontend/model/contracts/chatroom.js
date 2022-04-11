@@ -2,6 +2,8 @@
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
+// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
+import '~/shared/domains/chelonia/chelonia.js'
 import {
   objectMaybeOf, objectOf, mapOf, arrayOf,
   string, literalOf, unionOf, number, optional
@@ -18,7 +20,10 @@ import {
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS
 } from './constants.js'
-import { CHATROOM_MESSAGE_ACTION, CONTRACT_IS_SYNCING } from '~/frontend/utils/events.js'
+import {
+  CHATROOM_MESSAGE_ACTION,
+  CONTRACT_IS_SYNCING
+} from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 
 export const chatRoomAttributes: any = {
@@ -275,12 +280,12 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/leave': {
       validate: objectOf({
-        username: optional(string), // coming from the gi.contracts/group/removeMember
+        username: optional(string), // coming from the gi.contracts/group/leaveChatRoom
         member: string // username to be removed
       }),
       process ({ data, meta, hash }, { state }) {
         const { member } = data
-        const isKicked = !data.username && member !== meta.username
+        const isKicked = data.username && member !== data.username
         if (!state.users[member]) {
           throw new Error(`Can not leave the chatroom which ${member} are not part of`)
         }

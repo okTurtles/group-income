@@ -2,6 +2,8 @@
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
+// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
+import '~/shared/domains/chelonia/chelonia.js'
 import { objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 

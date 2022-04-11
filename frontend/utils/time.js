@@ -29,7 +29,7 @@ export function ISOStringToMonthstamp (date: string): string {
 
 export function dateFromMonthstamp (monthstamp: string): Date {
   // this is a hack to prevent new Date('2020-01').getFullYear() => 2019
-  return new Date(`${monthstamp}-01T00:01`)
+  return new Date(`${monthstamp}-01T00:01Z`) // Note the Z indicator
 }
 
 export function prevMonthstamp (monthstamp: string): string {
@@ -83,6 +83,43 @@ export function humanDate (
   return new Date(datems).toLocaleDateString(locale, opts)
 }
 
+export function isFullMonthstamp (arg: any): boolean {
+  return typeof arg === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(arg)
+}
+
+export function isMonthstamp (arg: any): boolean {
+  return isShortMonthstamp(arg) || isFullMonthstamp(arg)
+}
+
+export function isShortMonthstamp (arg: any): boolean {
+  return typeof arg === 'string' && /^(0[1-9]|1[0-2])$/.test(arg)
+}
+
+export function monthName (monthstamp: string): string {
+  const monthIndex = Number.parseInt(monthstamp.slice(-2), 10)
+
+  if (!isMonthstamp(monthstamp)) {
+    console.error('monthName:: 1st arg `monthstamp` must be a valid monthstamp')
+    return ''
+  }
+  // Call the `L()` function on every individual month name directly so that the
+  // `strings` tool can discover them when analyzing this file.
+  return [
+    L('January'),
+    L('February'),
+    L('March'),
+    L('April'),
+    L('May'),
+    L('June'),
+    L('July'),
+    L('August'),
+    L('September'),
+    L('October'),
+    L('November'),
+    L('December')
+  ][monthIndex - 1]
+}
+
 export function proximityDate (date: Date): string {
   date = new Date(date)
   const today = new Date()
@@ -107,15 +144,20 @@ export function timeSince (datems: number, dateNow: number = Date.now()): string
   const interval = dateNow - datems
 
   if (interval >= DAYS_MILLIS * 2) {
-    return humanDate(datems)
+    // Make sure to replace any ordinary space character by a non-breaking one.
+    return humanDate(datems).replace(/\x32/g, '\xa0')
   }
   if (interval >= DAYS_MILLIS) {
-    return '1d'
+    return L('1d')
   }
   if (interval >= HOURS_MILLIS) {
-    return Math.floor(interval / HOURS_MILLIS) + 'h'
+    return L('{hours}h', { hours: Math.floor(interval / HOURS_MILLIS) })
   }
-  return Math.max(1, Math.floor(interval / MINS_MILLIS)) + 'm'
+  if (interval >= MINS_MILLIS) {
+    // Maybe use 'min' symbol rather than 'm'?
+    return L('{minutes}m', { minutes: Math.max(1, Math.floor(interval / MINS_MILLIS)) })
+  }
+  return L('<1m')
 }
 
 export function cycleAtDate (atDate: string | Date): number {

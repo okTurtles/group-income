@@ -28,8 +28,7 @@
 
         component(
           :is='messageType(message)'
-          :key='messageKey(message, index)'
-          :type='message.type'
+          :key='message.id'
           :text='message.text'
           :notification='message.notification'
           :replyingMessage='message.replyingMessage'
@@ -173,36 +172,13 @@ export default ({
   },
   methods: {
     proximityDate,
-    messageKey (message, index) {
-      let num = 0
-      const emoticons = message.emoticons || {}
-      Object.keys(emoticons).forEach(e => {
-        num += emoticons[e].length
-      })
-      let mt = `message-${index}-${num}`
-      switch (message.from) {
-        case MESSAGE_TYPES.NOTIFICATION:
-          mt = `notification-${index}-${num}`
-          break
-
-        case MESSAGE_TYPES.INTERACTIVE:
-          mt = `interactive-${index}-${num}`
-          break
-      }
-      return mt
-    },
     messageType (message) {
-      let mt = 'message'
-      switch (message.type) {
-        case MESSAGE_TYPES.NOTIFICATION:
-          mt += '-notification'
-          break
-
-        case MESSAGE_TYPES.INTERACTIVE:
-          mt += '-interactive'
-          break
-      }
-      return mt
+      return {
+        [MESSAGE_TYPES.NOTIFICATION]: 'message-notification',
+        [MESSAGE_TYPES.INTERACTIVE]: 'message-interactive',
+        [MESSAGE_TYPES.TEXT]: 'message',
+        [MESSAGE_TYPES.POLL]: 'message-poll'
+      }[message.type]
     },
     isCurrentUser (from) {
       return this.currentUserAttr.username === from
@@ -242,7 +218,6 @@ export default ({
       this.ephemeral.bodyPaddingBottom = height
     },
     handleSendMessage (message, replyingMessage = null) {
-      console.log('sending...')
       // Consider only simple TEXT now
       // TODO: implement other types of messages later
       const data = { type: MESSAGE_TYPES.TEXT, text: message }
@@ -263,9 +238,6 @@ export default ({
           }
         }
       })
-
-      // Alex: Not sure why this is necessary
-      // this.sendMessage(index)
     },
     updateScroll () {
       if (this.summary.title) {
@@ -277,8 +249,6 @@ export default ({
     },
     retryMessage (index) {
       // this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
-
-      // this.sendMessage(index)
       console.log('TODO $store - retry sending a message')
     },
     replyMessage (message) {

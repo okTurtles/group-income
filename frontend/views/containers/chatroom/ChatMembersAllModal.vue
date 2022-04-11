@@ -6,7 +6,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         i18n.is-title-2.c-title(
           tag='h2'
         ) Members
-        .c-description {{ attributes.name }} ∙ {{attributes.private ? L("Private channel") : L("Public channel")}}
+        .c-description {{ attributes.name }} ∙ {{attributes.privacy}}
 
     .card.c-card
       search(
@@ -64,12 +64,12 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                   i18n Removed.
                   button.is-unstyled.c-action-undo(
                     @click.stop='addToChannel(username, true)'
-                  ) Undo
+                  ) {{L("Undo")}}
 
         .is-subtitle.c-second-section
           i18n(
             tag='h3'
-            :args='{  nbMembers: canAddMembers.length }'
+            :args='{ nbMembers: canAddMembers.length }'
           ) Others ({nbMembers})
 
       transition-group(
@@ -103,7 +103,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                 i18n Added.
                 button.is-unstyled.c-action-undo(
                   @click.stop='removeMember(username, true)'
-                ) Undo
+                ) {{L("Undo")}}
 </template>
 
 <script>
@@ -186,7 +186,12 @@ export default ({
     },
     attributes () {
       const { name, description, privacyLevel } = this.currentChatRoomState.attributes || this.details
-      return { name, description, private: privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE, privacyLevel }
+      const privacy = {
+        [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
+        [CHATROOM_PRIVACY_LEVEL.GROUP]: L('Group members only'),
+        [CHATROOM_PRIVACY_LEVEL.PUBLIC]: L('Public channel')
+      }[privacyLevel]
+      return { name, description, privacy }
     },
     isJoined () {
       return this.isJoinedChatRoom(this.currentChatRoomId)
@@ -239,9 +244,13 @@ export default ({
         return
       }
       try {
-        await sbp('gi.actions/chatroom/leave', {
-          contractID: this.currentChatRoomId,
-          data: { member: username }
+        await sbp('gi.actions/group/leaveChatRoom', {
+          contractID: this.currentGroupId,
+          data: {
+            chatRoomID: this.currentChatRoomId,
+            member: username,
+            leavingGroup: false
+          }
         })
         if (undoing) {
           this.canAddMembers = this.canAddMembers.map(member =>

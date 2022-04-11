@@ -80,7 +80,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import maxLength from 'vuelidate/lib/validators/maxLength'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 
@@ -122,7 +122,7 @@ export default ({
           }
         })
       } catch (e) {
-        console.error('CreateNewChannelModal.vue submit() error:', e)
+        this.$refs.formMsg.danger(L('Failed to create chat channel. {reportError}', LError(e)))
       }
       this.close()
     },

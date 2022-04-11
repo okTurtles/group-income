@@ -4,9 +4,8 @@
 
 Make sure:
 
-- You have at least Node version 8 installed
-- You are visiting: http://localhost:8000 and **NOT** http://localhost:3000
-- You have [followed the setup instructions](Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site)
+- You have at least Node version 16 installed
+- You have [followed the setup instructions](README.md#getting-started)
 
 Try:
 
