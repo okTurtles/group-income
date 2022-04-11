@@ -141,10 +141,13 @@
 /* controller/actions/chatroom.js */
 "Failed to create chat channel.": "La création de la conversation a échouée.";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Failed to create chat channel. {reportError}": "La création de la conversation a échouée. {reportError}";
+
 /* controller/actions/chatroom.js */
 "Failed to join chat channel.": "Échec de la connexion au canal de chat.";
 
-/* controller/actions/chatroom.js */
+/* controller/actions/chatroom.js, controller/actions/group.js */
 "Failed to rename chat channel.": "Impossible de renommer le canal de chat.";
 
 /* controller/actions/chatroom.js */
@@ -549,6 +552,12 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Private channel" = "Salon privé";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Public channel" = "Chaîne publique";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Group members only" = "Membres du groupe uniquement";
+
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description of the channel" = "Description du salon";
 
@@ -582,8 +591,14 @@
 /* views/containers/chatroom/DeleteChannelModal.vue, views/pages/GroupChat.vue */
 "Delete channel" = "Supprimer le salon";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue */
+/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/ViewArea.vue */
 "Channel description" = "Description du salon";
+
+/* views/containers/chatroom/ViewArea.vue */
+"You are viewing {b_} # {title}{_b}" = "Vous regardez {b_} # {title}{_b}";
+
+/* views/containers/chatroom/ViewArea.vue */
+"Join channel" = "Rejoignez la chaîne";
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Reached character limit." = "Limite de caractères atteinte.";
@@ -2123,3 +2138,6 @@
 
 /* Not currently used */
 "{{title}}" = "{{titre}}";
+
+/* views/containers/chatroom/ChatMembersAllModal.vue */
+"Undo" = "Annuler";

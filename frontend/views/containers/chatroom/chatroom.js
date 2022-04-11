@@ -38,7 +38,7 @@ const chatroom: Object = {
       this.ephemeral.loadedSummary = null
       this.redirectChat('GroupChatConversation')
     } else if (!this.isJoinedChatRoom(chatRoomId)) {
-      if (!this.isPublicChatRoom(chatRoomId)) {
+      if (this.isPrivateChatRoom(chatRoomId)) {
         this.ephemeral.loadedSummary = null
         this.redirectChat('GroupChatConversation')
       } else {
@@ -60,7 +60,7 @@ const chatroom: Object = {
       'generalChatRoomId',
       'globalProfile',
       'isJoinedChatRoom',
-      'isPublicChatRoom'
+      'isPrivateChatRoom'
     ]),
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
@@ -157,13 +157,13 @@ const chatroom: Object = {
       const participants = {}
       const members = {}
       for (const username in this.currentGroupState.profiles) {
-        const { displayName, picture, email } = this.globalProfile(username)
+        const { displayName, picture, email } = this.globalProfile(username) || {}
         participants[username] = {
           ...state.users[username],
-          username,
-          displayName,
-          picture,
-          email
+          username: username || '',
+          displayName: displayName || '',
+          picture: picture || '',
+          email: email || ''
         }
         if (state.users[username]) {
           members[username] = { username, displayName, picture, email }

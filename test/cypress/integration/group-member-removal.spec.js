@@ -75,15 +75,18 @@ describe('Group - Removing a member', () => {
     openRemoveMemberModal('user2', 1)
     removeMemberNow('user2')
     cy.giLogout()
-
-    // verify user2 (removed) has no group now.
-    cy.giLogin(`user2-${userId}`) // [*note_1*]
-    cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
   })
 
   it('user2 rejoins groupA', () => {
-    // TODO: Avoid .wait() call. It waits for contracts to sync before visiting invitationLink.
-    cy.wait(2000); // eslint-disable-line
+    // verify user2 (removed) has no group now.
+    cy.giLogin(`user2-${userId}`) // [*note_1*]
+    cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
+
+    // The client can remove contracts at any point in time.
+    // It might point to a bug in the core code
+    // Discussed here - https://okturtles.slack.com/archives/C0EH7P20Y/p1649298837056349
+    cy.wait(500) // eslint-disable-line
+
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
       groupName: groupNameA,
@@ -135,7 +138,7 @@ describe('Group - Removing a member', () => {
   it('userBot joins groupA', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `userBot-${userId}`,
-      groupName: groupNameB,
+      groupName: groupNameA,
       bypassUI: true
     })
   })
@@ -231,11 +234,14 @@ describe('Group - Removing a member', () => {
 
     // User2 is part of only one group now.
     cy.getByDT('groupName').should('contain', groupNameB)
+
+    // The client can remove contracts at any point in time.
+    // It might point to a bug in the core code
+    // Discussed here - https://okturtles.slack.com/archives/C0EH7P20Y/p1649298837056349
+    cy.wait(500) // eslint-disable-line
   })
 
   it('user2 rejoins the groupA', () => {
-    // TODO: Avoid .wait() call. It waits for contracts to sync before visiting invitationLink.
-    cy.wait(2000) // eslint-disable-line
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
       groupName: groupNameA,

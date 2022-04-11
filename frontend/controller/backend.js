@@ -5,7 +5,7 @@ import type { JSONObject } from '~/shared/types.js'
 import sbp from '~/shared/sbp.js'
 import { sign, bufToB64, b64ToStr } from '~/shared/functions.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { CONTRACTS_MODIFIED } from '~/frontend/utils/events.js'
+import { CONTRACTS_MODIFIED, GI_UPDATE_AVAILABLE } from '~/frontend/utils/events.js'
 import { intersection, difference, delay, randomIntFromRange } from '~/frontend/utils/giLodash.js'
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
@@ -41,6 +41,14 @@ export function createGIPubSubClient (url: string, options: Object): Object {
         // is called AFTER any currently-running calls to syncContractWithServer().
         // Calling via SBP also makes it simple to implement 'test/backend.js'
         sbp('state/enqueueHandleEvent', GIMessage.deserialize(msg.data))
+      },
+      [NOTIFICATION_TYPE.APP_VERSION] (msg) {
+        const ourVersion = process.env.APP_VERSION
+        const theirVersion = msg.data
+
+        if (ourVersion !== theirVersion) {
+          sbp('okTurtles.events/emit', GI_UPDATE_AVAILABLE, theirVersion)
+        }
       }
     }
   })
@@ -54,17 +62,27 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (contracts) => {
   const leaveSubscribed = intersection(subscribedIDs, currentIDs)
   const toUnsubscribe = difference(subscribedIDs, leaveSubscribed)
   const toSubscribe = difference(currentIDs, leaveSubscribed)
+  // There is currently no need to tell other clients about our sub/unsubscriptions.
+  const dontBroadcast = true
   try {
     for (const contractID of toUnsubscribe) {
-      client.unsub(contractID)
+      client.unsub(contractID, dontBroadcast)
     }
     for (const contractID of toSubscribe) {
-      client.sub(contractID)
+      client.sub(contractID, dontBroadcast)
     }
   } catch (e) {
     // TODO: handle any exceptions!
     console.error('CONTRACTS_MODIFIED: error in pubsub!', e, { toUnsubscribe, toSubscribe })
   }
+})
+
+sbp('okTurtles.events/on', GI_UPDATE_AVAILABLE, (version) => {
+  console.info('New Group Income version available:', version)
+  const client = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
+  client.destroy()
+  // TODO: allow the user to manually reload the page later.
+  window.location.reload()
 })
 
 sbp('sbp/selectors/register', {

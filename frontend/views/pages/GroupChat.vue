@@ -100,7 +100,7 @@ import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_TYPES } from '@model/contracts/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/constants.js'
 
 export default ({
   name: 'GroupChat',
@@ -121,12 +121,33 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'getChatRoomIDsInSort',
       'chatRoomsInDetail',
       'globalProfile',
       'groupProfiles',
+      'isJoinedChatRoom',
+      'getChatRooms',
       'ourUsername'
     ]),
+    getChatRoomIDsInSort () {
+      return Object.keys(this.getChatRooms).map(chatRoomID => ({
+        name: this.getChatRooms[chatRoomID].name,
+        privacyLevel: this.getChatRooms[chatRoomID].privacyLevel,
+        joined: this.isJoinedChatRoom(chatRoomID),
+        id: chatRoomID
+      })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {
+        const formerName = former.name
+        const latterName = latter.name
+        if (former.joined === latter.joined) {
+          if (formerName > latterName) {
+            return 1
+          } else if (formerName < latterName) {
+            return -1
+          }
+          return 0
+        }
+        return former.joined ? -1 : 1
+      }).map(chatRoom => chatRoom.id)
+    },
     channels () {
       return {
         order: this.getChatRoomIDsInSort,
@@ -163,13 +184,13 @@ export default ({
         this.refreshTitle()
       })
       if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
-        if (!this.isJoinedChatRoom(chatRoomId) && !this.isPublicChatRoom(chatRoomId)) {
+        if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
           this.redirectChat('GroupChatConversation')
         } else {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
             chatRoomId: to.params.chatRoomId
           })
-          if (this.isPublicChatRoom(chatRoomId)) {
+          if (!this.isPrivateChatRoom(chatRoomId)) {
             this.loadSummaryAndDetails()
           }
         }
@@ -259,7 +280,6 @@ export default ({
 .c-link {
   color: $text_0;
   border-color: $text_0;
-  margin: 0 0.2rem;
   cursor: pointer;
   font-family: inherit;
 
@@ -284,6 +304,10 @@ export default ({
 
   @include desktop {
     display: flex;
+  }
+
+  .is-unstyled {
+    margin: 0 0.2rem;
   }
 }
 

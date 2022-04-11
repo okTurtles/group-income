@@ -22,7 +22,7 @@ page(pageTestName='messages' pageTestHeaderName='messages')
 <script>
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
-import { chatTypes, individualMessagesSorted, users } from '@containers/chatroom/fakeStore.js'
+import { CHATROOM_TYPES } from '@model/contracts/constants.js'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'
@@ -55,12 +55,12 @@ export default ({
     ]),
     messages () {
       return {
-        order: individualMessagesSorted,
-        conversations: users
+        order: [],
+        conversations: []
       }
     },
     type () {
-      return chatTypes.INDIVIDUAL
+      return CHATROOM_TYPES.INDIVIDUAL
     }
   },
   methods: {

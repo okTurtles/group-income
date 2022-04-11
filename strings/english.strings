@@ -51,11 +51,17 @@
 /* views/components/graphs/Overview.vue */
 "Group members and their pledges" = "Group members and their pledges";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue */
+/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/ViewArea.vue */
 "Channel description" = "Channel description";
+
+/* views/containers/chatroom/ViewArea.vue */
+"You are viewing {b_} # {title}{_b}" = "You are viewing {b_} # {title}{_b}";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description of the channel" = "Description of the channel";
+
+/* views/containers/chatroom/ViewArea.vue */
+"Join channel" = "Join channel";
 
 /* views/containers/chatroom/DeleteChannelModal.vue, views/pages/GroupChat.vue */
 "Delete channel" = "Delete channel";
@@ -140,6 +146,12 @@
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Private channel" = "Private channel";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Public channel" = "Public channel";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Group members only" = "Group members only";
 
 /* views/containers/user-settings/Appearence.vue */
 "When enabled the amount of animations you see around are reduced." = "When enabled the amount of animations you see around are reduced.";
@@ -1317,10 +1329,13 @@
 /* controller/actions/chatroom.js */
 "Failed to create chat channel.": "Failed to create chat channel.";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Failed to create chat channel. {reportError}": "Failed to create chat channel. {reportError}";
+
 /* controller/actions/chatroom.js */
 "Failed to join chat channel.": "Failed to join chat channel.";
 
-/* controller/actions/chatroom.js */
+/* controller/actions/chatroom.js, controller/actions/group.js */
 "Failed to rename chat channel.": "Failed to rename chat channel.";
 
 /* controller/actions/chatroom.js */
@@ -1982,3 +1997,6 @@
 
 /* views/containers/dashboard/GroupPurpose.vue, views/pages/GroupSettings.vue */
 "About the group" = "About the group";
+
+/* views/containers/chatroom/ChatMembersAllModal.vue */
+"Undo" = "Undo";

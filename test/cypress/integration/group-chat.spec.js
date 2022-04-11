@@ -176,16 +176,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
   }
 
-  // function closeMenu (joined = true) {
-  //   // TODO: need to remove cy.wait. Dropdown menu can not closable for a few seconds
-  //   cy.wait(1000) // eslint-disable-line
-  //   cy.getByDT('messageInputWrapper').within(() => {
-  //     cy.get('textarea').should('exist')
-  //     cy.get('textarea').click()
-  //   })
-  //   cy.getByDT('notificationsSettings').should('not.exist')
-  // }
-
   it(`user1 creats '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
     cy.visit('/')
     cy.giSignup(user1)
@@ -440,9 +430,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogin(user2)
     me = user2
 
-    // wait until all the chatroom contracts are removed
-    cy.wait(1000) // eslint-disable-line
-
     cy.getByDT('groupSettingsLink').click()
     cy.getByDT('leaveModalBtn').click()
 
@@ -459,9 +446,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
-
-    // wait until all the chatroom contracts are removed
-    cy.wait(1000) // eslint-disable-line
 
     cy.giLogout({ hasNoGroup: true })
   })
@@ -488,9 +472,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   it(`user3 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again`, () => {
     cy.giLogin(user3)
     me = user3
-    cy.wait(500) // eslint-disable-line
-    cy.giLogout({ hasNoGroup: true })
-    cy.giLogin(user3)
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user3,
       groupName: groupName1,
@@ -505,7 +486,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it(`user2 joins the ${groupName1} group and ${CHATROOM_GENERAL_NAME} again and logout`, () => {
-    switchUser(user2)
+    cy.giLogout()
+    cy.giLogin(user2)
+    me = user2
 
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,

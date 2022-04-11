@@ -44,47 +44,28 @@ export default ({
   computed: {
     ...mapGetters(['globalProfile']),
     message () {
-      let text = ''
-      let variant = 'simple'
       const { username, channelName, channelDescription } = this.notification.params
       const displayName = !username ? '' : this.globalProfile(username).displayName || username
-      switch (this.notification.type) {
-        case MESSAGE_NOTIFICATIONS.ADD_MEMBER:
-          text = L('Added a member to {title}: {displayName}', { displayName, title: channelName })
-          break
 
-        case MESSAGE_NOTIFICATIONS.JOIN_MEMBER:
-          text = L('Joined {title}', { title: channelName })
-          break
+      const text = {
+        [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member to {title}: {displayName}', { displayName, title: channelName }),
+        [MESSAGE_NOTIFICATIONS.JOIN_MEMBER]: L('Joined {title}', { title: channelName }),
+        [MESSAGE_NOTIFICATIONS.LEAVE_MEMBER]: L('Left {title}', { title: channelName }),
+        [MESSAGE_NOTIFICATIONS.KICK_MEMBER]: L('Kicked a member from {title}: {displayName}', { displayName, title: channelName }),
+        [MESSAGE_NOTIFICATIONS.UPDATE_NAME]: L('Updated the channel name to: {title}', { title: channelName }),
+        [MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION]: L('Updated the channel description to: {description}', { description: channelDescription }),
+        [MESSAGE_NOTIFICATIONS.DELETE_CHANNEL]: L('Deleted the channel: {title}', { title: channelName }),
+        [MESSAGE_NOTIFICATIONS.VOTE]: L('Voted on “{}”')
+      }[this.notification.type]
 
-        case MESSAGE_NOTIFICATIONS.LEAVE_MEMBER:
-          text = L('Left {title}', { title: channelName })
-          break
+      // let variant = 'simple'
+      // if (this.notification.type === MESSAGE_NOTIFICATIONS.DELETE_CHANNEL) {
+      //   variant = 'tooltip'
+      // } else if (this.notification.type === MESSAGE_NOTIFICATIONS.VOTE) {
+      //   variant = 'poll'
+      // }
 
-        case MESSAGE_NOTIFICATIONS.KICK_MEMBER:
-          text = L('Kicked a member from {title}: {displayName}', { displayName, title: channelName })
-          break
-
-        case MESSAGE_NOTIFICATIONS.UPDATE_NAME:
-          text = L('Updated the channel name to: {title}', { title: channelName })
-          break
-
-        case MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION:
-          text = L('Updated the channel description to: {description}', { description: channelDescription })
-          break
-
-        case MESSAGE_NOTIFICATIONS.DELETE_CHANNEL:
-          text = L('Deleted the channel: {title}', { title: channelName })
-          variant = 'tooltip'
-          break
-
-        case MESSAGE_NOTIFICATIONS.VOTE:
-          text = L('Voted on “{}”')
-          variant = 'poll'
-          break
-      }
-
-      return { text, variant }
+      return { text }
     }
   },
   methods: {

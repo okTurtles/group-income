@@ -150,7 +150,9 @@ export default ({
   }
 
   &.pending {
-    color: $general_0;
+    .c-text {
+      color: $general_0;
+    }
   }
 
   &.sameSender {

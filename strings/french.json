@@ -46,6 +46,7 @@
   "Failed to upload the profile picture. {codeError}": "Le chargement de l'image de profil a échoué. {codeError}",
   "Invalid username or password": "Nom d'utilisateur ou mot de passe invalide",
   "Failed to create chat channel.": "La création de la conversation a échouée.",
+  "Failed to create chat channel. {reportError}": "La création de la conversation a échouée. {reportError}",
   "Failed to join chat channel.": "Échec de la connexion au canal de chat.",
   "Failed to rename chat channel.": "Impossible de renommer le canal de chat.",
   "Failed to change chat channel description.": "Échec de la modification de la description du canal de chat.",
@@ -182,6 +183,8 @@
   "Create channel": "Créer le salon",
   "Only added members will have access.": "Seuls les membres du salon y auront accès.",
   "Private channel": "Salon privé",
+  "Group members only": "Membres du groupe uniquement",
+  "Public channel": "Chaîne publique",
   "Description of the channel": "Description du salon",
   "Name": "Nom",
   "This field is required": "Ce champ est requis",
@@ -193,7 +196,9 @@
   "Yes, I want to {strong_}delete {name} permanently{_strong}.": "Oui, je veux {strong_}supprimer « {name} » de manière permanente{_strong}.",
   "This action {strong_}cannot be undone{_strong}.": "Cette action {strong_}est irréversible{_strong}.",
   "Delete channel": "Supprimer le salon",
+  "Join channel": "Rejoignez la chaîne",
   "Channel description": "Description du salon",
+  "You are viewing {b_} # {title}{_b}": "Vous regardez {b_} # {title}{_b}",
   "Reached character limit.": "Limite de caractères atteinte.",
   "Save": "Enregistrer",
   "DELETE {GROUP_NAME}": "SUPPRIMER {GROUP_NAME}",
@@ -658,5 +663,6 @@
   "You can change this at any time by updating your {r1}income details{r2}.": "Vous pouvez modifier ce paramètre plus tard avec la {r1}mise à jour de vos revenus{r2}.",
   "You haven’t received any payments yet": "Vous n'avez pas encore reçu de paiements",
   "{amount} in total, to {count} members": "{amount} au total, à {count} membres",
-  "\"{errorMsg}\". You can {a_}report the error{_a}.": "\"{errorMsg}\". Vous pouvez {a_}signaler l'erreur{_a}."
+  "\"{errorMsg}\". You can {a_}report the error{_a}.": "\"{errorMsg}\". Vous pouvez {a_}signaler l'erreur{_a}.",
+  "Undo": "Annuler"
 }

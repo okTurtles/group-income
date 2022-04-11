@@ -25,10 +25,26 @@ import type { JSONType } from '~/shared/types.js'
 const { bold } = require('chalk')
 const WebSocket = require('ws')
 
-// ====== API ====== //
-
 const { PING, PONG, PUB, SUB, UNSUB } = NOTIFICATION_TYPE
 const { ERROR, SUCCESS } = RESPONSE_TYPE
+
+// Used to tag console output.
+const tag = '[pubsub]'
+
+// ====== Helpers ====== //
+
+const generateSocketID = (() => {
+  let counter = 0
+
+  return (debugID) => String(counter++) + (debugID ? '-' + debugID : '')
+})()
+
+const log = console.log.bind(console, tag)
+log.bold = (...args) => console.log(bold(tag, ...args))
+log.debug = console.debug.bind(console, tag)
+log.error = (...args) => console.error(bold.red(tag, ...args))
+
+// ====== API ====== //
 
 // Re-export some useful things from the shared module.
 export { createClient, createMessage, NOTIFICATION_TYPE, REQUEST_TYPE, RESPONSE_TYPE }
@@ -50,6 +66,8 @@ export function createResponse (type: ResponseTypeEnum, data: JSONType): string 
  *
  * @param {(http.Server|https.Server)} server - A Node.js HTTP/S server to attach to.
  * @param {Object?} options
+ * {boolean?} logPingRounds - Whether to log ping rounds.
+ * {boolean?} logPongMessages - Whether to log received pong messages.
  * {object?} messageHandlers - Custom handlers for different message types.
  * {object?} serverHandlers - Custom handlers for server events.
  * {object?} socketHandlers - Custom handlers for socket events.
@@ -68,8 +86,8 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
     ...{ clientTracking: true },
     server: httpServer
   })
-  server.customServerEventHandlers = options.serverHandlers || {}
-  server.customSocketEventHandlers = options.socketHandlers || {}
+  server.customServerEventHandlers = { ...options.serverHandlers }
+  server.customSocketEventHandlers = { ...options.socketHandlers }
   server.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
   server.pingIntervalID = undefined
   server.subscribersByContractID = Object.create(null)
@@ -78,15 +96,9 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   Object.keys(defaultServerHandlers).forEach((name) => {
     server.on(name, (...args) => {
       try {
-        const customHandler = server.customServerEventHandlers[name]
-        const defaultHandler = defaultServerHandlers[name]
         // Always call the default handler first.
-        if (defaultHandler) {
-          defaultHandler.call(server, ...args)
-        }
-        if (customHandler) {
-          customHandler.call(server, ...args)
-        }
+        defaultServerHandlers[name]?.call(server, ...args)
+        server.customServerEventHandlers[name]?.call(server, ...args)
       } catch (error) {
         server.emit('error', error)
       }
@@ -95,10 +107,12 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   // Setup a ping interval if required.
   if (server.options.pingInterval > 0) {
     server.pingIntervalID = setInterval(() => {
-      console.debug('[pubsub] Pinging clients')
+      if (server.clients.length && server.options.logPingRounds) {
+        log.debug('Pinging clients')
+      }
       server.clients.forEach((client) => {
         if (client.pinged && !client.activeSinceLastPing) {
-          console.log(`[pubsub] Closing irresponsive client ${client.id}`)
+          log(`Disconnecting irresponsive client ${client.id}`)
           return client.terminate()
         }
         if (client.readyState === WebSocket.OPEN) {
@@ -114,6 +128,8 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
 }
 
 const defaultOptions = {
+  logPingRounds: process.env.NODE_ENV === 'development' && !process.env.CI,
+  logPongMessages: false,
   maxPayload: 6 * 1024 * 1024,
   pingInterval: 30000
 }
@@ -122,7 +138,7 @@ const defaultOptions = {
 // The `this` binding refers to the server object.
 const defaultServerHandlers = {
   close () {
-    console.log('[pubsub] Server closed')
+    log('Server closed')
   },
   /**
    * Emitted when a connection handshake completes.
@@ -142,22 +158,18 @@ const defaultServerHandlers = {
     socket.server = server
     socket.subscriptions = new Set()
 
-    console.log(bold(`[pubsub] Socket ${socket.id} connected. Total: ${this.clients.size}`))
+    log.bold(`Socket ${socket.id} connected. Total: ${this.clients.size}`)
 
     // Add listeners for socket events, i.e. events emitted on a socket object.
     ;['close', 'error', 'message', 'ping', 'pong'].forEach((eventName) => {
       socket.on(eventName, (...args) => {
-        console.debug(`[pubsub] Event '${eventName}' on socket ${socket.id}`, ...args)
-        const customHandler = socket.server.customSocketEventHandlers[eventName]
-        const defaultHandler = (defaultSocketEventHandlers: Object)[eventName]
-
+        // Logging of 'message' events is handled in the default 'message' event handler.
+        if (eventName !== 'message') {
+          log(`Event '${eventName}' on socket ${socket.id}`, ...args.map(arg => String(arg)))
+        }
         try {
-          if (defaultHandler) {
-            defaultHandler.call(socket, ...args)
-          }
-          if (customHandler) {
-            customHandler.call(socket, ...args)
-          }
+          (defaultSocketEventHandlers: Object)[eventName]?.call(socket, ...args)
+          socket.server.customSocketEventHandlers[eventName]?.call(socket, ...args)
         } catch (error) {
           socket.server.emit('error', error)
           socket.terminate()
@@ -166,13 +178,13 @@ const defaultServerHandlers = {
     })
   },
   error (error: Error) {
-    console.log('[pubsub] Server error:', error)
+    log.error('Server error:', error)
     logger(error)
   },
   headers () {
   },
   listening () {
-    console.log('[pubsub] Server listening')
+    log('Server listening')
   }
 }
 
@@ -194,18 +206,24 @@ const defaultSocketEventHandlers = {
     socket.subscriptions.clear()
   },
 
-  message (data: string) {
+  message (data: Buffer | ArrayBuffer | Buffer[], isBinary: boolean) {
     const socket = this
     const { server } = this
+    const text = data.toString()
     let msg: Message = { type: '' }
 
     try {
-      msg = messageParser(data)
+      msg = messageParser(text)
     } catch (error) {
-      console.error(bold.red(`[pubsub] Malformed message: ${error.message}`))
-      rejectMessageAndTerminateSocket(msg, socket)
+      log.error(`Malformed message: ${error.message}`)
+      server.rejectMessageAndTerminateSocket(msg, socket)
       return
     }
+    // Now that we have successfully parsed the message, we can log it.
+    if (msg.type !== 'pong' || server.options.logPongMessages) {
+      log(`Received '${msg.type}' on socket ${socket.id}`, text)
+    }
+    // The socket can be marked as active since it just received a message.
     socket.activeSinceLastPing = true
     const handler = server.messageHandlers[msg.type]
 
@@ -215,11 +233,11 @@ const defaultSocketEventHandlers = {
       } catch (error) {
         // Log the error message and stack trace but do not send it to the client.
         logger(error)
-        rejectMessageAndTerminateSocket(msg, socket)
+        server.rejectMessageAndTerminateSocket(msg, socket)
       }
     } else {
-      console.error(`[pubsub] Unhandled message type: ${msg.type}`)
-      rejectMessageAndTerminateSocket(msg, socket)
+      log.error(`Unhandled message type: ${msg.type}`)
+      server.rejectMessageAndTerminateSocket(msg, socket)
     }
   }
 }
@@ -237,11 +255,12 @@ const defaultMessageHandlers = {
     // Currently unused.
   },
 
-  [SUB] ({ contractID, type }: SubMessage) {
+  [SUB] ({ contractID, dontBroadcast }: SubMessage) {
     const socket = this
     const { server, id: socketID } = this
 
     if (!socket.subscriptions.has(contractID)) {
+      log('Already subscribed to', contractID)
       // Add the given contract ID to our subscriptions.
       socket.subscriptions.add(contractID)
       if (!server.subscribersByContractID[contractID]) {
@@ -250,14 +269,16 @@ const defaultMessageHandlers = {
       const subscribers = server.subscribersByContractID[contractID]
       // Add this socket to the subscribers of the given contract.
       subscribers.add(socket)
-      // Broadcast a notification to every other open subscriber.
-      const notification = createNotification(type, { contractID, socketID })
-      server.broadcast(notification, { to: subscribers })
+      if (!dontBroadcast) {
+        // Broadcast a notification to every other open subscriber.
+        const notification = createNotification(SUB, { contractID, socketID })
+        server.broadcast(notification, { to: subscribers, except: socket })
+      }
     }
-    socket.send(createResponse(SUCCESS, { type, contractID }))
+    socket.send(createResponse(SUCCESS, { type: SUB, contractID }))
   },
 
-  [UNSUB] ({ contractID, type }: UnsubMessage) {
+  [UNSUB] ({ contractID, dontBroadcast }: UnsubMessage) {
     const socket = this
     const { server, id: socketID } = this
 
@@ -268,20 +289,16 @@ const defaultMessageHandlers = {
         const subscribers = server.subscribersByContractID[contractID]
         // Remove this socket from the subscribers of the given contract.
         subscribers.delete(socket)
-        // Broadcast a notification to every remaining open subscriber.
-        const notification = createNotification(type, { contractID, socketID })
-        server.broadcast(notification, { to: subscribers })
+        if (!dontBroadcast) {
+          const notification = createNotification(UNSUB, { contractID, socketID })
+          // Broadcast a notification to every other open subscriber.
+          server.broadcast(notification, { to: subscribers, except: socket })
+        }
       }
     }
-    socket.send(createResponse(SUCCESS, { type, contractID }))
+    socket.send(createResponse(SUCCESS, { type: UNSUB, contractID }))
   }
 }
-
-const generateSocketID = (() => {
-  let counter = 0
-
-  return (debugID) => String(counter++) + (debugID ? '-' + debugID : '')
-})()
 
 const publicMethods = {
   /**
@@ -311,9 +328,9 @@ const publicMethods = {
     if (contractID in server.subscribersByContractID) {
       yield * server.subscribersByContractID[contractID]
     }
-  }
-}
+  },
 
-const rejectMessageAndTerminateSocket = (request: Message, socket: Object) => {
-  socket.send(createErrorResponse({ ...request }), () => socket.terminate())
+  rejectMessageAndTerminateSocket (request: Message, socket: Object) {
+    socket.send(createErrorResponse({ ...request }), () => socket.terminate())
+  }
 }

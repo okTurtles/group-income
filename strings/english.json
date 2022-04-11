@@ -16,8 +16,10 @@
   "Log": "Log",
   "When other members pledge a monetary or non-monetary contribution, they will appear here.": "When other members pledge a monetary or non-monetary contribution, they will appear here.",
   "Group members and their pledges": "Group members and their pledges",
-  "Channel description": "Channel description",
   "Description of the channel": "Description of the channel",
+  "You are viewing {b_} # {title}{_b}": "You are viewing {b_} # {title}{_b}",
+  "Channel description": "Channel description",
+  "Join channel": "Join channel",
   "Delete channel": "Delete channel",
   "Remove member": "Remove member",
   "Oops, you entered a negative number": "Oops, you entered a negative number",
@@ -46,6 +48,8 @@
   "Page not found": "Page not found",
   "Failed to vote on proposal.": "Failed to vote on proposal.",
   "Private channel": "Private channel",
+  "Group members only": "Group members only",
+  "Public channel": "Public channel",
   "When enabled the amount of animations you see around are reduced.": "When enabled the amount of animations you see around are reduced.",
   "{groupName}'s avatar": "{groupName}'s avatar",
   "Other group members will be able to use this information to send you monthly contributions.": "Other group members will be able to use this information to send you monthly contributions.",
@@ -436,7 +440,8 @@
   "Choose...": "Choose...",
   "created for": "created for",
   "Failed to set profile attributes.": "Failed to set profile attributes.",
-  "Failed to create chat channel.": "Failed to create chat channel.",  
+  "Failed to create chat channel.": "Failed to create chat channel.",
+  "Failed to create chat channel. {reportError}": "Failed to create chat channel. {reportError}",
   "Failed to join chat channel.": "Failed to join chat channel.",
   "Failed to rename chat channel.": "Failed to rename chat channel.",
   "Failed to change chat channel description.": "Failed to change chat channel description.",
@@ -658,5 +663,6 @@
   "Write your message...": "Write your message...",
   "For now, the only way to join a group is to get an invitation. Don’t know anyone using Group Income?": "For now, the only way to join a group is to get an invitation. Don’t know anyone using Group Income?",
   "Page details": "Page details",
-  "About the group": "About the group"
+  "About the group": "About the group",
+  "Undo": "Undo"
 }
