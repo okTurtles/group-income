@@ -14,7 +14,11 @@ export default (sbp('sbp/selectors/register', {
   }): Promise<GIMessage> {
     try {
       const mailbox = await sbp('chelonia/out/registerContract', {
-        contractName: 'gi.contracts/mailbox', publishOptions, data
+        contractName: 'gi.contracts/mailbox',
+        publishOptions,
+        data,
+        // TODO add CSK, CEK
+        keys: []
       })
       if (sync) {
         await sbp('gi.actions/contract/syncAndWait', mailbox.contractID())

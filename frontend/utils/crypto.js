@@ -3,7 +3,7 @@
 import nacl from 'tweetnacl'
 
 import sbp from '~/shared/sbp.js'
-import { bytesToB64, b64ToBuf, strToBuf } from '~/shared/functions.js'
+import { blake32Hash, bytesToB64, b64ToBuf, strToBuf } from '~/shared/functions.js'
 
 import scrypt from 'scrypt-async'
 
@@ -18,24 +18,33 @@ export default (sbp('sbp/selectors/register', {
     if (type === 'edwards25519sha512batch') {
       const key = nacl.sign.keyPair()
 
-      return {
+      const res = {
         type: type,
-        secretKey: key.secretKey,
         publicKey: key.publicKey
       }
+
+      Object.defineProperty(res, 'secretKey', { value: key.secretKey })
+
+      return res
     } else if (type === 'curve25519xsalsa20poly1305') {
       const key = nacl.box.keyPair()
 
-      return {
+      const res = {
         type: type,
-        secretKey: key.secretKey,
         publicKey: key.publicKey
       }
+
+      Object.defineProperty(res, 'secretKey', { value: key.secretKey })
+
+      return res
     } else if (type === 'xsalsa20poly1305') {
-      return {
-        type: type,
-        secretKey: nacl.randomBytes(nacl.secretbox.keyLength)
+      const res = {
+        type: type
       }
+
+      Object.defineProperty(res, 'secretKey', { value: nacl.randomBytes(nacl.secretbox.keyLength) })
+
+      return res
     }
 
     throw new Error('Unsupported key type')
@@ -130,11 +139,14 @@ export default (sbp('sbp/selectors/register', {
       if (keyData.secretKey) {
         const key = nacl.sign.keyPair.fromSecretKey(b64ToBuf(keyData.secretKey))
 
-        return {
+        const res = {
           type: keyData.type,
-          secretKey: key.secretKey,
           publicKey: key.publicKey
         }
+
+        Object.defineProperty(res, 'secretKey', { value: key.secretKey })
+
+        return res
       } else if (keyData.publicKey) {
         return {
           type: keyData.type,
@@ -147,11 +159,14 @@ export default (sbp('sbp/selectors/register', {
       if (keyData.secretKey) {
         const key = nacl.box.keyPair.fromSecretKey(b64ToBuf(keyData.secretKey))
 
-        return {
+        const res = {
           type: keyData.type,
-          secretKey: key.secretKey,
           publicKey: key.publicKey
         }
+
+        Object.defineProperty(res, 'secretKey', { value: key.secretKey })
+
+        return res
       } else if (keyData.publicKey) {
         return {
           type: keyData.type,
@@ -165,11 +180,18 @@ export default (sbp('sbp/selectors/register', {
         throw new Error('Secret key missing')
       }
 
-      return {
-        type: keyData.type,
-        secretKey: new Uint8Array(b64ToBuf(keyData.secretKey))
+      const res = {
+        type: keyData.type
       }
+
+      Object.defineProperty(res, 'secretKey', { value: new Uint8Array(b64ToBuf(keyData.secretKey)) })
+
+      return res
     }
+  },
+  'gi.crypto/key/id': (key: Key) => {
+    const serializedKey = sbp('gi.crypto/key/serialize', key, !key.publicKey)
+    return blake32Hash(serializedKey)
   },
   'gi.crypto/sign': (key: Key, data: string) => {
     if (key.type !== 'edwards25519sha512batch') {

@@ -37,7 +37,7 @@ export default (sbp('sbp/selectors/register', {
           const json = `"${strToB64(entry.serialize())}"`
           if (currentHEAD !== hash) {
             this.push(prefix + json)
-            currentHEAD = entry.message().previousHEAD
+            currentHEAD = entry.head().previousHEAD
             prefix = ','
           } else {
             this.push(prefix + json + ']')

@@ -3,13 +3,15 @@
 import sbp from '~/shared/sbp.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 import { GIMessage, sanityCheck } from './GIMessage.js'
-import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
+import type { GIKey, GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
 // TODO: define ChelContractType for /defineContract
 
 export type ChelRegParams = {
   contractName: string;
   data: Object;
+  keys: GIKey[];
+  signingKey: Object;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
     prepublish?: (GIMessage) => void;
@@ -38,6 +40,16 @@ export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)
 // 3 => 'gi.contracts'
 // 4 => 'group'
 // 5 => 'payment'
+
+const signatureFnBuilder = (key) => {
+  return (data) => {
+    return {
+      type: key.type,
+      keyId: sbp('gi.crypto/key/id', key),
+      data: sbp('gi.crypto/sign', key, data)
+    }
+  }
+}
 
 sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
@@ -108,18 +120,19 @@ sbp('sbp/selectors/register', {
     }
   },
   'chelonia/out/registerContract': async function (params: ChelRegParams) {
-    const { contractName, hooks, publishOptions } = params
+    const { contractName, hooks, publishOptions, keys, signingKey } = params
     const contract = this.contracts[contractName]
     if (!contract) throw new Error(`contract not defined: ${contractName}`)
     const contractMsg = GIMessage.createV1_0(null, null, [
       GIMessage.OP_CONTRACT,
       ({
         type: contractName,
-        keyJSON: 'TODO: add group public key here'
+        keys: keys
       }: GIOpContract)
-    ])
+    ], signingKey ? signatureFnBuilder(signingKey) : undefined)
     hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
     await sbp(this.config.publishSelector, contractMsg, publishOptions)
+
     const msg = await sbp('chelonia/out/actionEncrypted', {
       action: contractName,
       contractID: contractMsg.hash(),
@@ -157,14 +170,20 @@ sbp('sbp/selectors/register', {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const contractID = message.contractID()
+    const signature = message.signature()
+    const signedPayload = message.signedPayload()
     const config = this.config
+    const contracts = this.contracts
     if (!state._vm) state._vm = {}
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
-        // TODO: shouldn't each contract have its own set of authorized keys?
-        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
-        // TODO: we probably want to be pushing the de-JSON-ified key here
-        state._vm.authorizedKeys.push({ key: v.keyJSON, context: 'owner' })
+        const { type } = v
+        if (!contracts[type]) {
+          throw new Error(`chelonia: contract not recognized: '${type}'`)
+        }
+        state._vm.authorizedKeys = v.keys
+
+        // sbp(`${type}/process`, { data, meta, hash, contractID }, state)
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing) {
@@ -199,6 +218,20 @@ sbp('sbp/selectors/register', {
     if (config.preOp) {
       processOp = config.preOp(message, state) !== false && processOp
     }
+
+    // Signature verification
+    // TODO: Temporary. Skip verifying default signatures
+    if (signature.type !== 'default') {
+      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? (opV: GIOpContract).keys : state._vm.authorizedKeys
+      const signingKey = authorizedKeys.find((k) => k.type === signature.type && k.id === signature.keyId && Array.isArray(k.perm) && k.perm.includes(opT))
+
+      if (!signingKey) {
+        throw new Error('No matching signing key was defined')
+      }
+
+      sbp('gi.crypto/verifySignature', sbp('gi.crypto/key/deserialize', signingKey.data), signedPayload, signature.data)
+    }
+
     if (config[`preOp_${opT}`]) {
       processOp = config[`preOp_${opT}`](message, state) !== false && processOp
     }

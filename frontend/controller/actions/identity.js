@@ -4,9 +4,11 @@ import sbp from '~/shared/sbp.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
 import { imageUpload } from '@utils/image.js'
+import '@utils/crypto.js'
 import './mailbox.js'
 
 import { encryptedAction } from './utils.js'
+import { GIMessage } from '../../../shared/domains/chelonia/GIMessage.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
@@ -39,6 +41,33 @@ export default (sbp('sbp/selectors/register', {
     // and do this outside of a try block so that if it throws the error just gets passed up
     const mailbox = await sbp('gi.actions/mailbox/create', { options: { sync: true } })
     const mailboxID = mailbox.contractID()
+
+    // Create the necessary keys to initialise the contract
+    const salt = sbp('gi.crypto/util/generateSalt')
+    const IPK = await sbp('gi.crypto/key/fromPassword', 'edwards25519sha512batch', password, salt)
+    const IEK = await sbp('gi.crypto/key/fromPassword', 'curve25519xsalsa20poly1305', password, salt)
+    const CSK = sbp('gi.crypto/key/gen', 'edwards25519sha512batch')
+    const CEK = sbp('gi.crypto/key/gen', 'curve25519xsalsa20poly1305')
+
+    // Key IDs
+    const IPKid = sbp('gi.crypto/key/id', IPK)
+    const IEKid = sbp('gi.crypto/key/id', IEK)
+    const CSKid = sbp('gi.crypto/key/id', CSK)
+    const CEKid = sbp('gi.crypto/key/id', CEK)
+
+    // Public keys to be stored in the contract
+    const IPKp = sbp('gi.crypto/key/serialize', IPK, false)
+    const IEKp = sbp('gi.crypto/key/serialize', IEK, false)
+    const CSKp = sbp('gi.crypto/key/serialize', CSK, false)
+    const CEKp = sbp('gi.crypto/key/serialize', CEK, false)
+
+    // Secret keys to be stored encrypted in the contract
+    const CSKs = sbp('gi.crypto/encrypt', IEK, sbp('gi.crypto/key/serialize', CSK, true))
+    const CEKs = sbp('gi.crypto/encrypt', IEK, sbp('gi.crypto/key/serialize', CEK, true))
+
+    // TODO REMOVEME
+    alert(JSON.stringify({ IPKp, CSKp, CEKp, CSKs, CEKs }))
+
     let userID
     // next create the identity contract itself and associate it with the mailbox
     try {
@@ -47,7 +76,52 @@ export default (sbp('sbp/selectors/register', {
         publishOptions,
         data: {
           attributes: { username, email, picture: finalPicture }
-        }
+        },
+        keys: [
+          {
+            id: IPKid,
+            type: IPK.type,
+            data: IPKp,
+            perm: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL],
+            meta: {
+              type: 'ipk',
+              // TODO Temporary until a PAKE implementation is done.
+              salt: salt
+            }
+          },
+          {
+            id: IEKid,
+            type: IEK.type,
+            data: IEKp,
+            perm: ['gi.contracts/identity/keymeta'],
+            meta: {
+              type: 'iek',
+              // TODO Temporary until a PAKE implementation is done.
+              salt: salt
+            }
+          },
+          {
+            id: CSKid,
+            type: CSK.type,
+            data: CSKp,
+            perm: [GIMessage.OP_ACTION, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH],
+            meta: {
+              type: 'csk',
+              private: CSKs
+            }
+          },
+          {
+            id: CEKid,
+            type: CEK.type,
+            data: CEKp,
+            perm: [GIMessage.OP_ACTION_ENCRYPTED],
+            meta: {
+              type: 'csk',
+              private: CEKs
+            }
+          }
+        ],
+        signingKey: IPK
       })
       userID = user.contractID()
       if (sync) {

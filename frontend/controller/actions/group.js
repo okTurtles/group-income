@@ -90,7 +90,9 @@ export default (sbp('sbp/selectors/register', {
               )
             }
           }
-        }
+        },
+        // TODO add CSK, CEK
+        keys: []
       })
 
       if (sync) {

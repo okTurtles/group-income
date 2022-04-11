@@ -59,7 +59,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.db/log/addEntry': async function (entry: GIMessage): Promise<string> {
     try {
-      const { previousHEAD } = entry.message()
+      const { previousHEAD } = entry.head()
       const contractID: string = entry.contractID()
       if (await sbp('gi.db/get', entry.hash())) {
         console.warn(`[addLogEntry] entry exists: ${entry.hash()}`)
