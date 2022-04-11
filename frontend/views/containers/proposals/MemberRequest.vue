@@ -1,6 +1,5 @@
 <template lang='pug'>
   callout-card(
-    v-if='!hasMemberRequest'
     :title='L("Member Requests")'
     :svg='SvgConversation'
     :isCard='true'
@@ -117,10 +116,6 @@ export default {
       'currentGroupState',
       'ourUserIdentityContract'
     ]),
-    hasMemberRequest () {
-      // return Object.keys(this.currentGroupState.request).length > 0
-      return true
-    },
     requests () {
       if (this.requestsSorted) {
         return this.requestsSorted
