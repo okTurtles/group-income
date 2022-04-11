@@ -29,6 +29,7 @@
         component(
           :is='messageType(message)'
           :key='message.id'
+          :type='message.type'
           :text='message.text'
           :notification='message.notification'
           :replyingMessage='message.replyingMessage'
