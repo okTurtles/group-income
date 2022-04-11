@@ -51,7 +51,7 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
-  'backend/dv/streamEntriesBefore': async function (contractID: string, hash: string, numberOfActions: number): Promise<*> {
+  'backend/db/streamEntriesBefore': async function (contractID: string, hash: string, numberOfActions: number): Promise<*> {
     let currentHEAD = await sbp('gi.db/get', sbp('gi.db/log/logHEAD', contractID))
     if (!currentHEAD) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
@@ -60,11 +60,13 @@ export default (sbp('sbp/selectors/register', {
     hash = hash || currentHEAD
     let prefix = '['
     let metBefore = false
+
     return new Readable({
       async read (): any {
         try {
           const entry = await sbp('gi.db/log/getEntry', currentHEAD)
           const json = `"${strToB64(entry.serialize())}"`
+
           if (currentHEAD !== hash && metBefore) {
             this.push(prefix + json)
             prefix = ','
@@ -72,11 +74,13 @@ export default (sbp('sbp/selectors/register', {
           } else if (currentHEAD === hash) {
             metBefore = true
           }
-          if (!numberOfActions) {
+
+          if (!numberOfActions || currentHEAD === contractID) {
             this.push(']')
             this.push(null)
           }
           currentHEAD = entry.message().previousHEAD
+          this.push('')
         } catch (e) {
           console.error(`read(): ${e.message}:`, e)
           if (metBefore) {

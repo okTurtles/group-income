@@ -134,8 +134,8 @@ sbp('sbp/selectors/register', {
       return events.reverse().map(e => b64ToStr(e))
     }
   },
-  'backend/eventsBefore': async (contractID: string, before: string, actions: number = CHATROOM_ACTIONS_PER_PAGE) => {
-    const events = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/eventsBefore/${contractID}?before=${before}&actions=${actions}`)
+  'backend/eventsBefore': async (contractID: string, before: string = '', howMany: number = CHATROOM_ACTIONS_PER_PAGE) => {
+    const events = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/eventsBefore/${contractID}?before=${before}&howMany=${howMany}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(e => b64ToStr(e))

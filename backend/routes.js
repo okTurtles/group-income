@@ -69,8 +69,8 @@ route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
 route.GET('/eventsBefore/{contractID}', {}, async function (request, h) {
   try {
     const { contractID } = request.params
-    const { before, actions } = request.query
-    const stream = await sbp('backend/db/streamEntriesBefore', contractID, before, actions)
+    const { before, howMany } = request.query
+    const stream = await sbp('backend/db/streamEntriesBefore', contractID, before, howMany)
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
