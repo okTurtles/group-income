@@ -30,6 +30,7 @@
           :is='messageType(message)'
           :key='message.id'
           :text='message.text'
+          :type='message.type'
           :notification='message.notification'
           :replyingMessage='message.replyingMessage'
           :from='message.from'
