@@ -1,5 +1,6 @@
 <template lang='pug'>
   callout-card(
+    v-if='!hasMemberRequest'
     :title='L("Member Requests")'
     :svg='SvgConversation'
     :isCard='true'
@@ -36,7 +37,7 @@
         :key='username'
       )
         profile-card(:username='username')
-          avatar-user(:username='username' size='sm' data-test='openMemberProfileCard')
+          avatar-user(:username='username' size='sm')
           .c-name.has-text-bold {{username}}
           .c-date.has-text-1 February 14 2021
           .c-action-container(v-if='status === "requested"')
@@ -116,6 +117,10 @@ export default {
       'currentGroupState',
       'ourUserIdentityContract'
     ]),
+    hasMemberRequest () {
+      // return Object.keys(this.currentGroupState.request).length > 0
+      return true
+    },
     requests () {
       if (this.requestsSorted) {
         return this.requestsSorted
