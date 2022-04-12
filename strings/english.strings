@@ -42,9 +42,6 @@
 /* views/containers/group-settings/GroupJoinModal.vue */
 "On Group Income, every major decision goes through a voting process. This includes adding new members." = "On Group Income, every major decision goes through a voting process. This includes adding new members.";
 
-/* utils/time.js */
-"November" = "November";
-
 /* views/containers/user-settings/AppLogs.vue */
 "Log" = "Log";
 
@@ -110,9 +107,6 @@
 
 /* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "Changes to these settings will be visible to all group members";
-
-/* utils/time.js */
-"March" = "March";
 
 /* views/pages/Home.vue */
 "Welcome to GroupIncome" = "Welcome to GroupIncome";
@@ -236,9 +230,6 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Revoke Link" = "Revoke Link";
-
-/* utils/time.js */
-"September" = "September";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
 "Share this link to grant access to your group." = "Share this link to grant access to your group.";
@@ -399,9 +390,6 @@
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Change vote." = "Change vote.";
 
-/* utils/time.js */
-"October" = "October";
-
 /* views/pages/Mailbox.vue */
 "To:" = "To:";
 
@@ -438,9 +426,6 @@
 /* views/containers/group-settings/InvitationsTable.vue */
 "{numberOfResponses}/{quantity} used" = "{numberOfResponses}/{quantity} used";
 
-/* utils/time.js */
-"July" = "July";
-
 /* views/pages/Mailbox.vue */
 "Invalid Username" = "Invalid Username";
 
@@ -461,9 +446,6 @@
 
 /* views/pages/Mailbox.vue */
 "inbox" = "inbox";
-
-/* utils/time.js */
-"August" = "August";
 
 /* views/pages/Home.vue */
 "Let’s get this party started" = "Let’s get this party started";
@@ -882,9 +864,6 @@
 /* views/pages/GroupSettings.vue */
 "Default currency" = "Default currency";
 
-/* utils/time.js */
-"January" = "January";
-
 /* views/containers/chatroom/MessageInteractive.vue */
 "The group mincome hasn't changed." = "The group mincome hasn't changed.";
 
@@ -954,9 +933,6 @@
 /* views/components/group-creation-steps/GroupPrivacy.vue */
 "Privacy Settings" = "Privacy Settings";
 
-/* utils/time.js */
-"May" = "May";
-
 /* main.js */
 "We could not connect to the server. Please refresh the page." = "We could not connect to the server. Please refresh the page.";
 
@@ -1010,9 +986,6 @@
 
 /* views/containers/contributions/ContributionsWidget.vue, views/containers/payments/MonthOverview.vue */
 "Payments sent" = "Payments sent";
-
-/* utils/time.js */
-"June" = "June";
 
 /* views/pages/Payments.vue */
 "Payments type" = "Payments type";
@@ -1767,9 +1740,6 @@
 /* views/pages/Home.vue */
 "Welcome to group income" = "Welcome to group income";
 
-/* utils/time.js */
-"April" = "April";
-
 /* views/containers/design-system/DSModalNested.vue */
 "Toggle back button" = "Toggle back button";
 
@@ -1887,9 +1857,6 @@
 /* views/components/group-creation-steps/GroupRules.vue */
 "You can change this later in your Group Settings." = "You can change this later in your Group Settings.";
 
-/* utils/time.js */
-"December" = "December";
-
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Are you sure you want to vote no?" = "Are you sure you want to vote no?";
 
@@ -1994,9 +1961,6 @@
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{count}{_b}" = "{b_}{count}{_b}";
-
-/* utils/time.js */
-"February" = "February";
 
 /* views/containers/chatroom/SendArea.vue, views/pages/GroupSettings.vue */
 "Save changes" = "Save changes";

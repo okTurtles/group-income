@@ -16,7 +16,7 @@
           :class='{ "sr-only": isSameSender }'
         )
           span.is-title-4 {{ who }}
-          span.has-text-1 {{ time.toLocaleTimeString() }}
+          span.has-text-1 {{ humanDate(time, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
         p.c-replying(if='replyingMessage') {{ replyingMessage }}
@@ -58,6 +58,7 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
+import { humanDate } from '@utils/time.js'
 
 export default ({
   name: 'MessageBase',
@@ -92,6 +93,7 @@ export default ({
     isCurrentUser: Boolean
   },
   methods: {
+    humanDate,
     edit () {
       this.isEditing = true
     },

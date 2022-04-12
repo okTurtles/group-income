@@ -6,7 +6,7 @@ message-base(v-bind='$props' @wrapperAction='action')
   template(#header='')
     .c-header
       span.c-title.is-title-5(:class='interactiveMessage.proposalSeverity') {{interactiveMessage.proposalStatus}}
-      span.has-text-1 {{ time.toLocaleTimeString() }}
+      span.has-text-1 {{ humanDate(time, { hour: 'numeric', minute: 'numeric' }) }}
   template(#body='')
     .c-text
       | {{interactiveMessage.text}}
@@ -31,6 +31,7 @@ import { fakeProposals } from '@containers/chatroom/fakeStore.js'
 import SvgHorn from '@svgs/horn.svg'
 import L from '@view-utils/translations.js'
 import chatroom from '@containers/chatroom/chatroom.js'
+import { humanDate } from '@utils/time.js'
 
 const interactiveMessage = (interaction, summary = null) => {
   return {
@@ -77,6 +78,7 @@ export default ({
     MessageBase
   },
   methods: {
+    humanDate,
     action () {
       console.log('TODO')
     }

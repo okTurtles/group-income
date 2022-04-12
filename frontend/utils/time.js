@@ -140,28 +140,7 @@ export function isShortMonthstamp (arg: string): boolean {
 }
 
 export function monthName (monthstamp: string): string {
-  const monthIndex = Number.parseInt(monthstamp.slice(-2), 10)
-
-  if (!isMonthstamp(monthstamp)) {
-    console.error('monthName:: 1st arg `monthstamp` must be a valid monthstamp')
-    return ''
-  }
-  // Call the `L()` function on every individual month name directly so that the
-  // `strings` tool can discover them when analyzing this file.
-  return [
-    L('January'),
-    L('February'),
-    L('March'),
-    L('April'),
-    L('May'),
-    L('June'),
-    L('July'),
-    L('August'),
-    L('September'),
-    L('October'),
-    L('November'),
-    L('December')
-  ][monthIndex - 1]
+  return humanDate(dateFromMonthstamp(monthstamp), { month: 'long' })
 }
 
 export function proximityDate (date: Date): string {

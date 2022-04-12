@@ -55,42 +55,6 @@
 "<1m" = "<1m";
 
 /* MISSING TRANSLATION - utils/time.js */
-"April" = "April";
-
-/* MISSING TRANSLATION - utils/time.js */
-"August" = "August";
-
-/* MISSING TRANSLATION - utils/time.js */
-"December" = "December";
-
-/* MISSING TRANSLATION - utils/time.js */
-"February" = "February";
-
-/* MISSING TRANSLATION - utils/time.js */
-"January" = "January";
-
-/* MISSING TRANSLATION - utils/time.js */
-"July" = "July";
-
-/* MISSING TRANSLATION - utils/time.js */
-"June" = "June";
-
-/* MISSING TRANSLATION - utils/time.js */
-"March" = "March";
-
-/* MISSING TRANSLATION - utils/time.js */
-"May" = "May";
-
-/* MISSING TRANSLATION - utils/time.js */
-"November" = "November";
-
-/* MISSING TRANSLATION - utils/time.js */
-"October" = "October";
-
-/* MISSING TRANSLATION - utils/time.js */
-"September" = "September";
-
-/* MISSING TRANSLATION - utils/time.js */
 "{hours}h" = "{hours}h";
 
 /* MISSING TRANSLATION - utils/time.js */
