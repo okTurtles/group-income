@@ -30,7 +30,6 @@ export async function leaveAllChatRooms (groupContractID?: string, member: strin
   const chatRooms = rootState[groupContractID].chatRooms
   const chatRoomIDsToLeave = Object.keys(chatRooms)
     .filter(cID => chatRooms[cID].users.includes(member))
-    .reverse() // Need to leave `General` chatroom on the last turn
 
   try {
     for (const chatRoomID of chatRoomIDsToLeave) {
@@ -182,7 +181,13 @@ export default (sbp('sbp/selectors/register', {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
-    const message = await sbp('gi.actions/chatroom/create', { data: params.data })
+    const message = await sbp('gi.actions/chatroom/create', {
+      data: params.data,
+      hooks: {
+        prepublish: params.hooks?.prepublish,
+        postpublish: null
+      }
+    })
 
     await sbp('chelonia/out/actionEncrypted', {
       ...params,
@@ -190,6 +195,10 @@ export default (sbp('sbp/selectors/register', {
       data: {
         ...params.data,
         chatRoomID: message.contractID()
+      },
+      hooks: {
+        prepublish: null,
+        postpublish: params.hooks?.postpublish
       }
     })
 
@@ -220,13 +229,22 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
-      ...params, hooks: { prepublish: params.hooks?.prepublish, postpublish: null }
+      ...params,
+      hooks: {
+        prepublish: params.hooks?.prepublish,
+        postpublish: null
+      }
     })
 
     await sbp('gi.actions/group/joinChatRoom', {
       ...params,
-      data: { chatRoomID: message.contractID() },
-      hooks: { prepublish: null, postpublish: params.hooks?.postpublish }
+      data: {
+        chatRoomID: message.contractID()
+      },
+      hooks: {
+        prepublish: null,
+        postpublish: params.hooks?.postpublish
+      }
     })
 
     return message

@@ -23,7 +23,7 @@ import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
-import { chatRoomAttributes } from './chatroom.js'
+import { chatRoomAttributesType } from './chatroom.js'
 import {
   INVITE_INITIAL_CREATOR,
   INVITE_STATUS,
@@ -786,7 +786,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/addChatRoom': {
       validate: objectOf({
         chatRoomID: string,
-        attributes: objectOf(chatRoomAttributes)
+        attributes: chatRoomAttributesType
       }),
       process ({ data, meta }, { state }) {
         const { name, type, privacyLevel } = data.attributes
