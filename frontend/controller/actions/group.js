@@ -210,7 +210,11 @@ export default (sbp('sbp/selectors/register', {
       const username = params.data.username || rootState.loggedIn.username
       await sbp('gi.actions/chatroom/join', {
         contractID: params.data.chatRoomID,
-        data: { username }
+        data: { username },
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
       })
 
       if (username === rootState.loggedIn.username) {
@@ -218,7 +222,11 @@ export default (sbp('sbp/selectors/register', {
       }
       await sbp('chelonia/out/actionEncrypted', {
         ...params,
-        action: 'gi.contracts/group/joinChatRoom'
+        action: 'gi.contracts/group/joinChatRoom',
+        hooks: {
+          prepublish: null,
+          postpublish: params.hooks?.postpublish
+        }
       })
       sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
     } catch (e) {
