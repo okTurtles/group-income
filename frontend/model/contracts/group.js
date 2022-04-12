@@ -842,8 +842,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta }, { state }) {
         const username = data.username || meta.username
-        const { chatRoomID } = data
-        Vue.set(state.chatRooms[chatRoomID], 'users', state.chatRooms[chatRoomID].users.concat([username]))
+        state.chatRooms[data.chatRoomID].users.push(username)
       },
       async sideEffect ({ meta, data }, { state }) {
         const rootState = sbp('state/vuex/state')
