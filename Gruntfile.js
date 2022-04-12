@@ -216,6 +216,7 @@ module.exports = (grunt) => {
   // https://github.com/stylelint/stylelint/blob/master/docs/user-guide/usage/node-api.md#options
   const stylelintOptions = {
     cache: true,
+    config: require('./package.json').stylelint,
     formatter: 'string',
     syntax: 'scss',
     throwOnError: false,

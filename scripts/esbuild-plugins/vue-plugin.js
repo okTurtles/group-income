@@ -37,7 +37,7 @@ module.exports = ({ aliases = null, cache = null, debug = false, flowtype = null
         if (debug) console.log('vue plugin: compiling', filename)
         const result = await compile({ filename, source, options: { flowtype } })
 
-        if (cache) cache.set(filename, result)
+        if (cache && result.contents) cache.set(filename, result)
         return result
       })
     }
