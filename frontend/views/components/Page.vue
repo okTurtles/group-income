@@ -206,5 +206,4 @@ $pagePaddingDesktop: 5.5rem;
     }
   }
 }
-
 </style>
