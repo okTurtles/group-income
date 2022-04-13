@@ -221,7 +221,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state, getters }) {
         const { username } = data
-        if (state.users[username] && !sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
+        if (state.users[username]) {
           throw new Error('Can not join the chatroom which you are already part of')
         }
 
