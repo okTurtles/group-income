@@ -18,15 +18,14 @@ import {
 } from '@model/contracts/voting/constants.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import { imageUpload } from '@utils/image.js'
-import { merge } from '@utils/giLodash.js'
+import { merge, omit } from '@utils/giLodash.js'
 import L, { LError } from '@view-utils/translations.js'
 import { encryptedAction } from './utils.js'
 import type { GIActionParams } from './types.js'
 
-export async function leaveAllChatRooms (groupContractID?: string, member: string) {
+export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
   const rootState = sbp('state/vuex/state')
-  groupContractID = groupContractID || rootState.currentGroupId
   const chatRooms = rootState[groupContractID].chatRooms
   const chatRoomIDsToLeave = Object.keys(chatRooms)
     .filter(cID => chatRooms[cID].users.includes(member))
@@ -150,7 +149,12 @@ export default (sbp('sbp/selectors/register', {
     try {
       // post acceptance event to the group contract
       const message = await sbp('chelonia/out/actionEncrypted', {
-        action: 'gi.contracts/group/inviteAccept', ...params
+        ...omit(params, ['options']),
+        action: 'gi.contracts/group/inviteAccept',
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
       })
       // sync the group's contract state
       await sbp('state/enqueueContractSync', params.contractID)
@@ -160,9 +164,19 @@ export default (sbp('sbp/selectors/register', {
       const generalChatRoomId = rootState[params.contractID].generalChatRoomId
       if (generalChatRoomId) {
         await sbp('gi.actions/group/joinChatRoom', {
-          contractID: params.contractID,
-          data: { chatRoomID: generalChatRoomId }
+          ...omit(params, ['options']),
+          data: {
+            chatRoomID: generalChatRoomId
+          },
+          hooks: {
+            prepublish: null,
+            postpublish: params.hooks?.postpublish
+          }
         })
+      } else {
+        throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', {
+          codeError: 'Failed in joining General chatroom. This won\'t be happened.'
+        }))
       }
 
       return message
@@ -190,7 +204,7 @@ export default (sbp('sbp/selectors/register', {
     })
 
     await sbp('chelonia/out/actionEncrypted', {
-      ...params,
+      ...omit(params, ['options']),
       action: 'gi.contracts/group/addChatRoom',
       data: {
         ...params.data,
@@ -209,6 +223,7 @@ export default (sbp('sbp/selectors/register', {
       const rootState = sbp('state/vuex/state')
       const username = params.data.username || rootState.loggedIn.username
       await sbp('gi.actions/chatroom/join', {
+        ...omit(params, ['options']),
         contractID: params.data.chatRoomID,
         data: { username },
         hooks: {
@@ -218,10 +233,18 @@ export default (sbp('sbp/selectors/register', {
       })
 
       if (username === rootState.loggedIn.username) {
+        // 'READY_TO_JOIN_CHATROOM' is necessary to identify the joining chatroom action is NEW or OLD
+        // Users join the chatroom thru group making group actions
+        // But when user joins the group, he needs to ignore all the actions about chatroom
+        // Because the user is joining group, not joining chatroom
+        // and he is going to make a new action to join 'General' chatroom AGAIN
+        // While joining group, we don't set this flag because Joining chatroom actions are all OLD ones, which needs to be ignored
+        // Joining 'General' chatroom is one of the step to join group
+        // So setting 'READY_TO_JOIN_CHATROOM' can not be out of the 'JOINING_GROUP' scope
         sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
       }
       await sbp('chelonia/out/actionEncrypted', {
-        ...params,
+        ...omit(params, ['options']),
         action: 'gi.contracts/group/joinChatRoom',
         hooks: {
           prepublish: null,
@@ -237,7 +260,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
-      ...params,
+      ...omit(params, ['options']),
       hooks: {
         prepublish: params.hooks?.prepublish,
         postpublish: null
@@ -245,7 +268,7 @@ export default (sbp('sbp/selectors/register', {
     })
 
     await sbp('gi.actions/group/joinChatRoom', {
-      ...params,
+      ...omit(params, ['options']),
       data: {
         chatRoomID: message.contractID()
       },
@@ -260,14 +283,24 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/renameChatRoom': async function (params: GIActionParams) {
     try {
       await sbp('gi.actions/chatroom/rename', {
+        ...omit(params, ['options']),
         contractID: params.data.chatRoomID,
-        data: { name: params.data.name }
+        data: {
+          name: params.data.name
+        },
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
       })
 
       await sbp('chelonia/out/actionEncrypted', {
-        ...params,
-        hooks: { prepublish: null, postpublish: params.hooks?.postpublish },
-        action: 'gi.contracts/group/renameChatRoom'
+        ...omit(params, ['options']),
+        action: 'gi.contracts/group/renameChatRoom',
+        hooks: {
+          prepublish: null,
+          postpublish: params.hooks?.postpublish
+        }
       })
     } catch (e) {
       console.error('gi.actions/group/renameChatRoom failed!', e)
@@ -280,7 +313,7 @@ export default (sbp('sbp/selectors/register', {
 
     try {
       await sbp('chelonia/out/actionEncrypted', {
-        ...params,
+        ...omit(params, ['options']),
         action: 'gi.contracts/group/removeMember'
       })
     } catch (e) {
@@ -293,7 +326,7 @@ export default (sbp('sbp/selectors/register', {
 
     try {
       await sbp('chelonia/out/actionEncrypted', {
-        ...params,
+        ...omit(params, ['options']),
         action: 'gi.contracts/group/removeOurselves'
       })
     } catch (e) {
