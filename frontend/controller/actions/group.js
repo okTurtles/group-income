@@ -251,7 +251,6 @@ export default (sbp('sbp/selectors/register', {
           postpublish: params.hooks?.postpublish
         }
       })
-      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
     } catch (e) {
       console.error('gi.actions/group/joinChatRoom failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join chat channel.'))

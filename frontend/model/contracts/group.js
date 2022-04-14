@@ -854,6 +854,7 @@ sbp('chelonia/defineContract', {
             sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
             await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
             sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
+            sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
           }
         }
       }
