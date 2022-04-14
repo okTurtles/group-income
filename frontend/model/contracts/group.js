@@ -849,6 +849,8 @@ sbp('chelonia/defineContract', {
         const username = data.username || meta.username
         if (username === rootState.loggedIn.username) {
           if (!sbp('okTurtles.data/get', 'JOINING_GROUP') || sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+            // while users are joining chatroom, they don't need to leave chatrooms
+            // this is similar to setting 'JOINING_GROUP' before joining group
             sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
             await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
             sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)

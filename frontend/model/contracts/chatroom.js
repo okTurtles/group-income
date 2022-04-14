@@ -293,11 +293,11 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ data, hash, contractID }, { state }) {
-        if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
-          return
-        }
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
+          if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
+            return
+          }
           leaveChatRoom({ contractID })
         }
         emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
