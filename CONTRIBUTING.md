@@ -52,8 +52,7 @@ Pull requests (PRs) must adhere to the following requirements (unless the Founat
 7. A PR **MUST** receive approval from at least one long-term contributor before being merged. Contributors **MAY NOT** review their own PRs, **MUST NOT** push commits to someone else's PR.
 8. A PR **MUST** receive approval from the designer when it's related to the user interface before being merged.
 9. A PR **MAY NOT** be merged if there exist unaddressed concerns from a current maintainer (via the Github "request changes" review feature). Contributors are encouraged to discuss the requested changes, and may even argue against them if there are strong reasons to do so. However, maintainers have veto power over all PRs.
-
-Only **Maintainers** may merge PRs. Maintainers should use "squash-merging" when merging to keep the `master` branch commit history clean. If there are no maintainers, further changes should happen in a fork. For this project, the maintainer(s) is/are: [@taoeffect](https://github.com/taoeffect)
+10. Only **maintainers** may merge PRs. Maintainers **SHOULD** use "squash-merging" when merging to keep the `master` branch commit history clean. If there are no maintainers, further changes should happen in a fork. For this project, the maintainer(s) is/are: [@taoeffect](https://github.com/taoeffect)
 
 ## How to help by translating
 
