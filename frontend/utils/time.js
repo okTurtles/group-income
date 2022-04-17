@@ -4,16 +4,77 @@ import L from '~/frontend/views/utils/translations.js'
 export const MINS_MILLIS = 60000
 export const HOURS_MILLIS = 60 * MINS_MILLIS
 export const DAYS_MILLIS = 24 * HOURS_MILLIS
+export const MONTHS_MILLIS = 30 * DAYS_MILLIS
 
 export function addMonthsToDate (date: string, months: number): Date {
   const now = new Date(date)
   return new Date(now.setMonth(now.getMonth() + months))
 }
 
+// It might be tempting to deal directly with Dates and ISOStrings, since that's basically
+// what a period stamp is at the moment, but keeping this abstraction allows us to change
+// our mind in the future simply by editing these two functions.
+// TODO: We may want to, for example, get the time from the server instead of relying on
+// the client in case the client's clock isn't set correctly.
+// See: https://github.com/okTurtles/group-income/issues/531
+export function dateToPeriodStamp (date: string | Date): string {
+  return new Date(date).toISOString()
+}
+
+export function dateFromPeriodStamp (daystamp: string): Date {
+  return new Date(daystamp)
+}
+
+export function periodStampGivenDate ({ recentDate, periodStart, periodLength }: {
+  recentDate: string, periodStart: string, periodLength: number
+}): string {
+  const periodStartDate = dateFromPeriodStamp(periodStart)
+  let nextPeriod = addTimeToDate(periodStartDate, periodLength)
+  const curDate = new Date(recentDate)
+  let curPeriod
+  if (curDate < nextPeriod) {
+    if (curDate >= periodStartDate) {
+      return periodStart // we're still in the same period
+    } else {
+      // we're in a period before the current one
+      curPeriod = periodStartDate
+      do {
+        curPeriod = addTimeToDate(curPeriod, -periodLength)
+      } while (curDate < curPeriod)
+    }
+  } else {
+    // we're at least a period ahead of periodStart
+    do {
+      curPeriod = nextPeriod
+      nextPeriod = addTimeToDate(nextPeriod, periodLength)
+    } while (curDate >= nextPeriod)
+  }
+  return dateToPeriodStamp(curPeriod)
+}
+
+export function dateIsWithinPeriod ({ date, periodStart, periodLength }: {
+  date: string, periodStart: string, periodLength: number
+}): boolean {
+  const dateObj = new Date(date)
+  const start = dateFromPeriodStamp(periodStart)
+  return dateObj > start && dateObj < addTimeToDate(start, periodLength)
+}
+
+export function addTimeToDate (date: string | Date, timeMillis: number): Date {
+  const d = new Date(date)
+  d.setTime(d.getTime() + timeMillis)
+  return d
+}
+
 export function dateToMonthstamp (date: string | Date): string {
   // we could use Intl.DateTimeFormat but that doesn't support .format() on Android
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DateTimeFormat/format
   return new Date(date).toISOString().slice(0, 7)
+}
+
+export function dateFromMonthstamp (monthstamp: string): Date {
+  // this is a hack to prevent new Date('2020-01').getFullYear() => 2019
+  return new Date(`${monthstamp}-01T00:01:00.000Z`) // the Z is important
 }
 
 // TODO: to prevent conflicts among user timezones, we need
@@ -23,42 +84,25 @@ export function currentMonthstamp (): string {
   return dateToMonthstamp(new Date())
 }
 
-export function ISOStringToMonthstamp (date: string): string {
-  return dateToMonthstamp(new Date(date))
-}
-
-export function dateFromMonthstamp (monthstamp: string): Date {
-  // this is a hack to prevent new Date('2020-01').getFullYear() => 2019
-  return new Date(`${monthstamp}-01T00:01`)
-}
-
 export function prevMonthstamp (monthstamp: string): string {
   const date = dateFromMonthstamp(monthstamp)
   date.setMonth(date.getMonth() - 1)
   return dateToMonthstamp(date)
 }
 
-export function compareMonthstamps (monthstampA: string, monthstampB: string): number {
-  const dateA = dateFromMonthstamp(monthstampA)
-  const dateB = dateFromMonthstamp(monthstampB)
-  const A = dateA.getMonth() + dateA.getFullYear() * 12
-  const B = dateB.getMonth() + dateB.getFullYear() * 12
-  return A - B
+export function comparePeriodStamps (periodA: string, periodB: string): number {
+  return dateFromPeriodStamp(periodA).getTime() - dateFromPeriodStamp(periodB).getTime()
 }
 
-export function compareCycles (whenEnd: string, whenStart: string): number {
-  return compareMonthstamps(dateToMonthstamp(whenEnd), dateToMonthstamp(whenStart))
+export function compareMonthstamps (monthstampA: string, monthstampB: string): number {
+  return dateFromMonthstamp(monthstampA).getTime() - dateFromMonthstamp(monthstampB).getTime()
+  // const A = dateA.getMonth() + dateA.getFullYear() * 12
+  // const B = dateB.getMonth() + dateB.getFullYear() * 12
+  // return A - B
 }
 
 export function compareISOTimestamps (a: string, b: string): number {
-  const A = new Date(a).getTime()
-  const B = new Date(b).getTime()
-  return A - B
-}
-
-export function getTime (date: Date): string {
-  const t = new Date(date)
-  return `${t.getHours()}:${t.getMinutes()}`
+  return new Date(a).getTime() - new Date(b).getTime()
 }
 
 export function lastDayOfMonth (date: Date): Date {
@@ -73,51 +117,30 @@ export function firstDayOfMonth (date: Date): Date {
 const locale = (typeof navigator === 'undefined' && 'en-US') || (navigator.languages ? navigator.languages[0] : navigator.language)
 
 export function humanDate (
-  datems: number,
-  opts: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  date: number | Date | string,
+  opts?: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
 ): string {
-  if (!datems) {
-    console.error('humanDate:: 1st arg `datems` is required')
-    return ''
-  }
-  return new Date(datems).toLocaleDateString(locale, opts)
+  return new Date(date).toLocaleDateString(locale, opts)
 }
 
-export function isFullMonthstamp (arg: any): boolean {
-  return typeof arg === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(arg)
+export function isPeriodStamp (arg: string): boolean {
+  return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg)
 }
 
-export function isMonthstamp (arg: any): boolean {
+export function isFullMonthstamp (arg: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(arg)
+}
+
+export function isMonthstamp (arg: string): boolean {
   return isShortMonthstamp(arg) || isFullMonthstamp(arg)
 }
 
-export function isShortMonthstamp (arg: any): boolean {
-  return typeof arg === 'string' && /^(0[1-9]|1[0-2])$/.test(arg)
+export function isShortMonthstamp (arg: string): boolean {
+  return /^(0[1-9]|1[0-2])$/.test(arg)
 }
 
 export function monthName (monthstamp: string): string {
-  const monthIndex = Number.parseInt(monthstamp.slice(-2), 10)
-
-  if (!isMonthstamp(monthstamp)) {
-    console.error('monthName:: 1st arg `monthstamp` must be a valid monthstamp')
-    return ''
-  }
-  // Call the `L()` function on every individual month name directly so that the
-  // `strings` tool can discover them when analyzing this file.
-  return [
-    L('January'),
-    L('February'),
-    L('March'),
-    L('April'),
-    L('May'),
-    L('June'),
-    L('July'),
-    L('August'),
-    L('September'),
-    L('October'),
-    L('November'),
-    L('December')
-  ][monthIndex - 1]
+  return humanDate(dateFromMonthstamp(monthstamp), { month: 'long' })
 }
 
 export function proximityDate (date: Date): string {

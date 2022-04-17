@@ -25,8 +25,7 @@ import './contracts/mailbox.js'
 import './contracts/identity.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
-import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
-import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
+import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
@@ -359,47 +358,58 @@ const getters = {
       return profile.displayName || username
     }
   },
-  thisMonthsPaymentInfo (state, getters) {
-    return getters.groupMonthlyPayments[currentMonthstamp()]
+  currentPaymentPeriod (state, getters) {
+    return getters.periodStampGivenDate(new Date())
+  },
+  thisPeriodPaymentInfo (state, getters) {
+    return getters.groupPeriodPayments[getters.currentPaymentPeriod]
   },
   latePayments (state, getters) {
-    const monthlyPayments = getters.groupMonthlyPayments
-    if (Object.keys(monthlyPayments).length === 0) return
+    const periodPayments = getters.groupPeriodPayments
+    if (Object.keys(periodPayments).length === 0) return
     const ourUsername = getters.ourUsername
-    const pMonthPayments = monthlyPayments[prevMonthstamp(currentMonthstamp())]
-    if (pMonthPayments) {
-      return pMonthPayments.lastAdjustedDistribution.filter(todo => todo.from === ourUsername)
+    const pPeriod = getters.periodBeforePeriod(getters.currentPaymentPeriod)
+    const pPayments = periodPayments[pPeriod]
+    if (pPayments) {
+      return pPayments.lastAdjustedDistribution.filter(todo => todo.from === ourUsername)
     }
   },
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
-    return groupIncomeDistribution(getters.distributionEventsForMonth(currentMonthstamp()))
+    return unadjustedDistribution({
+      haveNeeds: getters.haveNeedsForThisPeriod(getters.currentPaymentPeriod),
+      minimize: false
+    })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
-    return groupIncomeDistribution(getters.distributionEventsForMonth(currentMonthstamp()), {
-      adjusted: true,
-      latePayments: getters.latePayments
-    })
+    const paymentInfo = getters.thisPeriodPaymentInfo
+    if (paymentInfo && paymentInfo.lastAdjustedDistribution) {
+      return paymentInfo.lastAdjustedDistribution
+    } else {
+      const period = getters.currentPaymentPeriod
+      return adjustedDistribution({
+        distribution: unadjustedDistribution({
+          haveNeeds: getters.haveNeedsForThisPeriod(period),
+          minimize: getters.groupSettings.minimizeDistribution
+        }),
+        payments: getters.paymentsForPeriod(period),
+        dueOn: getters.dueDateForPeriod(period)
+      })
+    }
   },
-  // TODO: this is insane, rewrite it and make it cleaner/better
-  ourPayments (state, getters) {
-    const monthlyPayments = getters.groupMonthlyPayments
-    if (Object.keys(monthlyPayments).length === 0) return
-    const ourUsername = getters.ourUsername
-    const cMonthstamp = currentMonthstamp()
-    const pMonthstamp = prevMonthstamp(cMonthstamp)
-    const allPayments = getters.currentGroupState.payments
-    const thisMonthPayments = monthlyPayments[cMonthstamp]
-    const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
-    const pMonthPayments = monthlyPayments[pMonthstamp]
-    const pPaymentsFrom = pMonthPayments && pMonthPayments.paymentsFrom
-
-    const sentInMonth = (monthlyFromPayments) => {
+  ourPaymentsSentInPeriod (state, getters) {
+    return (period) => {
+      const periodPayments = getters.groupPeriodPayments
+      if (Object.keys(periodPayments).length === 0) return
       const payments = []
-      if (monthlyFromPayments) {
-        for (const toUser in monthlyFromPayments[ourUsername]) {
-          for (const paymentHash of monthlyFromPayments[ourUsername][toUser]) {
+      const thisPeriodPayments = periodPayments[period]
+      const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
+      if (paymentsFrom) {
+        const ourUsername = getters.ourUsername
+        const allPayments = getters.currentGroupState.payments
+        for (const toUser in paymentsFrom[ourUsername]) {
+          for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
             payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
           }
@@ -407,13 +417,21 @@ const getters = {
       }
       return payments
     }
-    const receivedInMonth = (monthlyFromPayments) => {
+  },
+  ourPaymentsReceivedInPeriod (state, getters) {
+    return (period) => {
+      const periodPayments = getters.groupPeriodPayments
+      if (Object.keys(periodPayments).length === 0) return
       const payments = []
-      if (monthlyFromPayments) {
-        for (const fromUser in monthlyFromPayments) {
-          for (const toUser in monthlyFromPayments[fromUser]) {
+      const thisPeriodPayments = periodPayments[period]
+      const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
+      if (paymentsFrom) {
+        const ourUsername = getters.ourUsername
+        const allPayments = getters.currentGroupState.payments
+        for (const fromUser in paymentsFrom) {
+          for (const toUser in paymentsFrom[fromUser]) {
             if (toUser === ourUsername) {
-              for (const paymentHash of monthlyFromPayments[fromUser][toUser]) {
+              for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
                 payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
               }
@@ -423,14 +441,26 @@ const getters = {
       }
       return payments
     }
+  },
+  ourPayments (state, getters) {
+    const periodPayments = getters.groupPeriodPayments
+    if (Object.keys(periodPayments).length === 0) return
+    const ourUsername = getters.ourUsername
+    const cPeriod = getters.currentPaymentPeriod
+    const pPeriod = getters.periodBeforePeriod(cPeriod)
+    const currentSent = getters.ourPaymentsSentInPeriod(cPeriod)
+    const previousSent = getters.ourPaymentsSentInPeriod(pPeriod)
+    const currentReceived = getters.ourPaymentsReceivedInPeriod(cPeriod)
+    const previousReceived = getters.ourPaymentsReceivedInPeriod(pPeriod)
 
+    // TODO: take into account pending payments that have been sent but not yet completed
     const todo = () => {
       return getters.groupIncomeAdjustedDistribution.filter(p => p.from === ourUsername)
     }
 
     return {
-      sent: [...sentInMonth(paymentsFrom), ...sentInMonth(pPaymentsFrom)],
-      received: [...receivedInMonth(paymentsFrom), ...receivedInMonth(pPaymentsFrom)],
+      sent: [...currentSent, ...previousSent],
+      received: [...currentReceived, ...previousReceived],
       todo: todo()
     }
   },
@@ -440,13 +470,19 @@ const getters = {
     const isOurPayment = (payment) => {
       return isNeeder ? payment.to === ourUsername : payment.from === ourUsername
     }
+    const cPeriod = getters.currentPaymentPeriod
     const ourUnadjustedPayments = getters.groupIncomeDistribution.filter(isOurPayment)
     const ourAdjustedPayments = getters.groupIncomeAdjustedDistribution.filter(isOurPayment)
-    const paymentsDone = ourUnadjustedPayments.filter((p) => !p.isLate).length - ourAdjustedPayments.filter((p) => !p.isLate).length
-    const hasPartials = ourAdjustedPayments.filter((p) => p.partial).length > 0
-    const paymentsTotal = ourUnadjustedPayments.filter((p) => !p.isLate).length
-    const amountTotal = ourUnadjustedPayments.filter((p) => !p.isLate).reduce((acc, payment) => acc + payment.amount, 0)
-    const amountDone = amountTotal - ourAdjustedPayments.filter((p) => !p.isLate).reduce((acc, payment) => acc + payment.amount, 0)
+
+    const receivedOrSent = isNeeder
+      ? getters.ourPaymentsReceivedInPeriod(cPeriod)
+      : getters.ourPaymentsSentInPeriod(cPeriod)
+    const paymentsTotal = ourAdjustedPayments.length + receivedOrSent.length
+    const nonLateAdjusted = ourAdjustedPayments.filter((p) => !p.isLate)
+    const paymentsDone = paymentsTotal - nonLateAdjusted.length
+    const hasPartials = ourAdjustedPayments.some(p => p.partial)
+    const amountTotal = ourUnadjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
+    const amountDone = receivedOrSent.reduce((acc, payment) => acc + payment.amount, 0)
     return {
       paymentsDone,
       hasPartials,
@@ -603,6 +639,7 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object}
   ) {
     debouncedSave.clear()
+    const username = state.loggedIn.username
     await dispatch('saveSettings')
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
     for (const contractID in state.contracts) {
@@ -614,7 +651,8 @@ const actions = {
       captureLogsPause({
         // Let's clear all stored logs to prevent someone else
         // accessing sensitve data after the user logs out.
-        wipeOut: true
+        wipeOut: true,
+        username
       })
     })
   },

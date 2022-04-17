@@ -192,7 +192,7 @@ route.GET('/assets/{subpath*}', {
   // a few files without hash in their name.
   if (basename.includes('-cached')) {
     return h.file(subpath, { etagMethod: false })
-      .etag(basename.replace('-cached', ''))
+      .etag(basename)
       .header('Cache-Control', 'public,max-age=31536000,immutable')
   }
   // Files like `main.js` or `main.css` should be revalidated before use. Se we use the default headers.

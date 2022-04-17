@@ -14,6 +14,7 @@ import {
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import { imageUpload } from '@utils/image.js'
 import { merge } from '@utils/giLodash.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@utils/time.js'
 import L, { LError } from '@view-utils/translations.js'
 import { encryptedAction } from './utils.js'
 import type { GIActionParams } from './types.js'
@@ -27,7 +28,8 @@ export default (sbp('sbp/selectors/register', {
       mincomeAmount,
       mincomeCurrency,
       ruleName,
-      ruleThreshold
+      ruleThreshold,
+      distributionDate
     },
     options: { sync = true } = {},
     publishOptions
@@ -53,6 +55,13 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       }
+      if (!distributionDate) {
+        // 3 days after group creation by default. we put this here for a kind of dumb but
+        // necessary reason: the Cypress tests do not allow us to import dateToPeriodStamp
+        // or any of these other time.js functions because thte Cypress environment can't
+        // handle Flowtype annotations, even though our .babelrc should make it work.
+        distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
+      }
       const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
         publishOptions,
@@ -67,6 +76,8 @@ export default (sbp('sbp/selectors/register', {
             sharedValues,
             mincomeAmount: +mincomeAmount,
             mincomeCurrency: mincomeCurrency,
+            distributionDate,
+            minimizeDistribution: true,
             proposals: {
               [PROPOSAL_GROUP_SETTING_CHANGE]: merge(
                 merge({}, proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults),
@@ -141,5 +152,8 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/removeMember', (params, e) => L('Failed to remove {member}: {reportError}', { member: params.member, ...LError(e) })),
   ...encryptedAction('gi.actions/group/removeOurselves', (params, e) => L('Failed to leave group. {codeError}', { codeError: e.message })),
-  ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message }))
+  ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
+  ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
+    ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
+  })
 }): string[])

@@ -16,6 +16,36 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
   return cy.get(`${otherSelector}[data-test="${element}"]`)
 })
 
+function cyBypassUI (action, params) {
+  const query = Object.keys(params).reduce((query, param) => {
+    return query + `&${param}=${params[param]}`
+  }, `?action=${action}`)
+
+  cy.log(`Bypassing UI ::: ${action}`)
+
+  // Navigate to /bypass-ui using Vue instead of cy.visit!
+  // There's some issue between cypress and forageStorage (indexedDB).
+  // If we go to a page using cy.visit a refresh is caused
+  // (because we are changing pages the old fashion way).
+  // This refresh seems to happen too soon and the indexedDB is somehow lost.
+  // On page load, when we try to auto-login the user (from the indexedDB), it fails.
+  // But if we navigate without refreshing the page (a.k.a using Vue),
+  // the state is preserved and we don't lose any data.
+  cy.getByDT('cy_bypassUI')
+    .then(([$link]) => {
+      $link.setAttribute('data-url', `/bypass-ui${query}`)
+    }).click()
+    .then(([$link]) => {
+      // Reset data-url to allow manual click while debugging cypress
+      $link.setAttribute('data-url', '')
+    })
+
+  cy.getByDT('actionName').should('text', action)
+  cy.getByDT('feedbackMsg').should('text', `${action} succeded!`)
+
+  cy.getByDT('finalizeBtn').click()
+}
+
 Cypress.Commands.add('giSignup', (username, {
   password = '123456789',
   isInvitation = false,
@@ -25,10 +55,11 @@ Cypress.Commands.add('giSignup', (username, {
   const email = `${username}@email.com`
 
   if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/identity/signupAndLogin', { data: { username, email, password } })
-      await sbp('controller/router').push({ path: '/' }).catch(e => {})
-    })
+    cyBypassUI('user_signup', { username, email, password })
+    // cy.window().its('sbp').then(async sbp => {
+    //   await sbp('gi.actions/identity/signupAndLogin', { data: { username, email, password } })
+    //   await sbp('controller/router').push({ path: '/' }).catch(e => {})
+    // })
   } else {
     if (!isInvitation) {
       cy.getByDT('signupBtn').click()
@@ -53,17 +84,18 @@ Cypress.Commands.add('giLogin', (username, {
   bypassUI
 } = {}) => {
   if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      const ourUsername = sbp('state/vuex/getters').ourUsername
-      if (ourUsername === username) {
-        throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
-      }
-      await sbp('gi.actions/identity/login', { data: { username, password } })
-      await sbp('controller/router').push({ path: '/' }).catch(e => {})
-    })
-    cy.get('nav').within(() => {
-      cy.getByDT('dashboard').click()
-    })
+    cyBypassUI('user_login', { username, password })
+    // cy.window().its('sbp').then(async sbp => {
+    //   const ourUsername = sbp('state/vuex/getters').ourUsername
+    //   if (ourUsername === username) {
+    //     throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
+    //   }
+    //   await sbp('gi.actions/identity/login', { data: { username, password } })
+    //   await sbp('controller/router').push({ path: '/' }).catch(e => {})
+    // })
+    // cy.get('nav').within(() => {
+    //   cy.getByDT('dashboard').click()
+    // })
   } else {
     cy.getByDT('loginBtn').click()
     cy.getByDT('loginName').clear().type(username)
@@ -123,19 +155,27 @@ Cypress.Commands.add('giCreateGroup', (name, {
   bypassUI = false
 } = {}) => {
   if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/group/createAndSwitch', {
-        data: {
-          name,
-          sharedValues,
-          mincomeAmount: mincome,
-          mincomeCurrency: 'USD',
-          ruleName,
-          ruleThreshold
-        }
-      })
-      await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+    cyBypassUI('group_create', {
+      name,
+      sharedValues,
+      mincomeAmount: mincome,
+      mincomeCurrency: 'USD',
+      ruleName,
+      ruleThreshold
     })
+    // cy.window().its('sbp').then(async sbp => {
+    //   await sbp('gi.actions/group/createAndSwitch', {
+    //     data: {
+    //       name,
+    //       sharedValues,
+    //       mincomeAmount: mincome,
+    //       mincomeCurrency: 'USD',
+    //       ruleName,
+    //       ruleThreshold
+    //     }
+    //   })
+    //   await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+    // })
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     cy.getByDT('groupName').should('contain', name)
     return
@@ -239,10 +279,11 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     const params = new URLSearchParams(new URL(invitationLink).search)
     const groupId = params.get('groupId')
     const inviteSecret = params.get('secret')
-    cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
-      await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
-    })
+    cyBypassUI('group_join', { groupId, inviteSecret })
+    // cy.window().its('sbp').then(async sbp => {
+    //   await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
+    //   await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+    // })
   } else {
     cy.visit(invitationLink)
 

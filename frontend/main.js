@@ -21,7 +21,6 @@ import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
-import CypressBypassUi from './views/containers/navigation/CypressBypassUI.vue'
 import './views/utils/allowedUrls.js'
 import './views/utils/translations.js'
 import './views/utils/avatar.js'
@@ -115,7 +114,6 @@ async function startApp () {
     components: {
       AppStyles,
       BannerGeneral,
-      CypressBypassUi,
       Navigation,
       Modal
     },

@@ -67,6 +67,8 @@ export default ({
       'groupShouldPropose'
     ]),
     proposalSettings () {
+      // note: a console error can happen here if we're on this page and logout
+      // because the group disappears. it's not a big deal though
       return this.groupProposalSettings()
     },
     votingRulesSorted () {

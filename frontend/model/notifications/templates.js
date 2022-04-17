@@ -4,7 +4,6 @@ import type {
 } from './types.flow.js'
 
 import L from '~/frontend/views/utils/translations.js'
-import { monthName } from '~/frontend/utils/time.js'
 
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.
@@ -13,12 +12,10 @@ const escapeForHtml = (text) => text.replace(/[<>&]/g, '\\$&')
 const strong = (text) => `<strong>${escapeForHtml(text)}</strong>`
 
 export default ({
-  CONTRIBUTION_REMINDER (data: { monthstamp: string }) {
+  CONTRIBUTION_REMINDER (data: { date: string }) {
     return {
-      // REVIEW @mmbotelho - Rename contributions to payments?
-      // TODO: Translate `month` when English is not the current language.
-      body: L('Do not forget to send your {month} contributions.', {
-        month: strong(monthName(data.monthstamp))
+      body: L('Do not forget to send your pledge by {date}.', {
+        date: strong(data.date)
       }),
       icon: 'coins',
       level: 'info',
