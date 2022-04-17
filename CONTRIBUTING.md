@@ -41,16 +41,19 @@ This contribution policy will evolve over time. For now it is based on a slightl
 
 #### Pull Request Requirements (:exclamation:)
 
-1. Only **Maintainers** may merge Pull Requests (PRs). Maintainers **SHOULD** use "squash-merging" when merging to keep the `master` commit history clean. If there are no maintainers, further changes should happen in a fork. For this project, the maintainer(s) is/are: [@taoeffect](https://github.com/taoeffect)
-2. A PR **SHOULD** be a minimal and accurate answer to exactly one identified and agreed problem.
-3. A PR **SHOULD** follow [the boy scout rule](https://github.com/okTurtles/group-income/issues/383#issuecomment-383381863): leave the code cleaner than you found it when the refactor effort is not too big.
-4. A PR **MAY NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
-5. A PR **MUST** pass all tests on at least the principle target platform.
-6. A PR **MUST** include new tests for any new functionality introduced.
-7. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/Style-Guide.md).
-8. A PR **MUST** receive approval from at least one long-term contributor before being merged. Contributors **MAY NOT** review their own PRs, **MUST NOT** push commits to someone else's PR.
-9. A PR **MUST** receive approval from the designer when it's related to the user interface before being merged.
-10. A PR **MAY NOT** be merged if there exist unaddressed concerns from a current maintainer (via the Github "request changes" review feature). Contributors are encouraged to discuss the requested changes, and may even argue against them if there are strong reasons to do so. However, maintainers have veto power over all PRs.
+Pull requests must adhere to the following requirements (unless the Founation is organizing a special hackathon, in which case, hackathon-rules apply).
+
+1. A PR **SHOULD** be a minimal and accurate answer to exactly one identified and agreed problem.
+2. A PR **SHOULD** follow [the boy scout rule](https://github.com/okTurtles/group-income/issues/383#issuecomment-383381863): leave the code cleaner than you found it when the refactor effort is not too big.
+3. A PR **MAY NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
+4. A PR **MUST** pass all tests on at least the principle target platform.
+5. A PR **MUST** include new tests for any new functionality introduced.
+6. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/Style-Guide.md).
+7. A PR **MUST** receive approval from at least one long-term contributor before being merged. Contributors **MAY NOT** review their own PRs, **MUST NOT** push commits to someone else's PR.
+8. A PR **MUST** receive approval from the designer when it's related to the user interface before being merged.
+9. A PR **MAY NOT** be merged if there exist unaddressed concerns from a current maintainer (via the Github "request changes" review feature). Contributors are encouraged to discuss the requested changes, and may even argue against them if there are strong reasons to do so. However, maintainers have veto power over all PRs.
+
+Only **Maintainers** may merge Pull Requests (PRs). Maintainers should use "squash-merging" when merging to keep the `master` branch commit history clean. If there are no maintainers, further changes should happen in a fork. For this project, the maintainer(s) is/are: [@taoeffect](https://github.com/taoeffect)
 
 ## How to help by translating
 
