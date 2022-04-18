@@ -6,8 +6,6 @@
 
 import 'cypress-file-upload'
 
-import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
-
 /* Get element by data-test attribute and other attributes
  ex:
  cy.getByDT('login')            //  cy.get([data-test="login"])
@@ -18,28 +16,34 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
   return cy.get(`${otherSelector}[data-test="${element}"]`)
 })
 
-function checkIfJoinedGeneralChannel (groupName, username) {
-  cy.getByDT('groupChatLink').click()
-  cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+function cyBypassUI (action, params) {
+  const query = Object.keys(params).reduce((query, param) => {
+    return query + `&${param}=${params[param]}`
+  }, `?action=${action}`)
 
-  cy.getByDT('messageInputWrapper').within(() => {
-    cy.get('textarea').should('exist')
-  })
+  cy.log(`Bypassing UI ::: ${action}`)
 
-  cy.getByDT('conversationWapper').within(() => {
-    if (username) {
-      cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', username)
-    }
-    cy.get('div.c-message:last-child .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
-  })
+  // Navigate to /bypass-ui using Vue instead of cy.visit!
+  // There's some issue between cypress and forageStorage (indexedDB).
+  // If we go to a page using cy.visit a refresh is caused
+  // (because we are changing pages the old fashion way).
+  // This refresh seems to happen too soon and the indexedDB is somehow lost.
+  // On page load, when we try to auto-login the user (from the indexedDB), it fails.
+  // But if we navigate without refreshing the page (a.k.a using Vue),
+  // the state is preserved and we don't lose any data.
+  cy.getByDT('cy_bypassUI')
+    .then(([$link]) => {
+      $link.setAttribute('data-url', `/bypass-ui${query}`)
+    }).click()
+    .then(([$link]) => {
+      // Reset data-url to allow manual click while debugging cypress
+      $link.setAttribute('data-url', '')
+    })
 
-  cy.getByDT('channelsList').within(() => {
-    cy.get('ul > li:first-child').should('contain', CHATROOM_GENERAL_NAME)
-    cy.get('ul > li:first-child i').should('have.class', 'icon-hashtag')
-  })
+  cy.getByDT('actionName').should('text', action)
+  cy.getByDT('feedbackMsg').should('text', `${action} succeded!`)
 
-  cy.getByDT('dashboard').click()
-  cy.getByDT('groupName').should('contain', groupName)
+  cy.getByDT('finalizeBtn').click()
 }
 
 Cypress.Commands.add('giSignup', (username, {
@@ -51,10 +55,11 @@ Cypress.Commands.add('giSignup', (username, {
   const email = `${username}@email.com`
 
   if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/identity/signupAndLogin', { data: { username, email, password } })
-      await sbp('controller/router').push({ path: '/' }).catch(e => {})
-    })
+    cyBypassUI('user_signup', { username, email, password })
+    // cy.window().its('sbp').then(async sbp => {
+    //   await sbp('gi.actions/identity/signupAndLogin', { data: { username, email, password } })
+    //   await sbp('controller/router').push({ path: '/' }).catch(e => {})
+    // })
   } else {
     if (!isInvitation) {
       cy.getByDT('signupBtn').click()
@@ -79,17 +84,18 @@ Cypress.Commands.add('giLogin', (username, {
   bypassUI
 } = {}) => {
   if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      const ourUsername = sbp('state/vuex/getters').ourUsername
-      if (ourUsername === username) {
-        throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
-      }
-      await sbp('gi.actions/identity/login', { data: { username, password } })
-      await sbp('controller/router').push({ path: '/' }).catch(e => {})
-    })
-    cy.get('nav').within(() => {
-      cy.getByDT('dashboard').click()
-    })
+    cyBypassUI('user_login', { username, password })
+    // cy.window().its('sbp').then(async sbp => {
+    //   const ourUsername = sbp('state/vuex/getters').ourUsername
+    //   if (ourUsername === username) {
+    //     throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
+    //   }
+    //   await sbp('gi.actions/identity/login', { data: { username, password } })
+    //   await sbp('controller/router').push({ path: '/' }).catch(e => {})
+    // })
+    // cy.get('nav').within(() => {
+    //   cy.getByDT('dashboard').click()
+    // })
   } else {
     cy.getByDT('loginBtn').click()
     cy.getByDT('loginName').clear().type(username)
@@ -149,27 +155,29 @@ Cypress.Commands.add('giCreateGroup', (name, {
   bypassUI = false
 } = {}) => {
   if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/group/createAndSwitch', {
-        data: {
-          name,
-          sharedValues,
-          mincomeAmount: mincome,
-          mincomeCurrency: 'USD',
-          ruleName,
-          ruleThreshold
-        }
-      })
-      await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+    cyBypassUI('group_create', {
+      name,
+      sharedValues,
+      mincomeAmount: mincome,
+      mincomeCurrency: 'USD',
+      ruleName,
+      ruleThreshold
     })
+    // cy.window().its('sbp').then(async sbp => {
+    //   await sbp('gi.actions/group/createAndSwitch', {
+    //     data: {
+    //       name,
+    //       sharedValues,
+    //       mincomeAmount: mincome,
+    //       mincomeCurrency: 'USD',
+    //       ruleName,
+    //       ruleThreshold
+    //     }
+    //   })
+    //   await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+    // })
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     cy.getByDT('groupName').should('contain', name)
-    cy.getByDT('app').then(([el]) => {
-      cy.get(el).should('have.attr', 'data-sync', '')
-    })
-
-    checkIfJoinedGeneralChannel(name)
-
     return
   }
 
@@ -178,7 +186,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
   cy.getByDT('modal').within(() => {
     cy.getByDT('groupName').type(name)
     cy.fixture(image, 'base64').then(fileContent => {
-      cy.getByDT('groupPicture').attachFile({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
+      cy.get('[data-test="groupPicture"]').attachFile({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
     })
     cy.getByDT('nextBtn').click()
 
@@ -211,12 +219,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
     cy.getByDT('toDashboardBtn').click()
   })
-  cy.url().should('eq', 'http://localhost:8000/app/dashboard')
-  cy.getByDT('app').then(([el]) => {
-    cy.get(el).should('have.attr', 'data-sync', '')
-  })
 
-  checkIfJoinedGeneralChannel(name)
+  cy.url().should('eq', 'http://localhost:8000/app/dashboard')
 })
 
 function inviteUser (invitee, index) {
@@ -275,13 +279,11 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     const params = new URLSearchParams(new URL(invitationLink).search)
     const groupId = params.get('groupId')
     const inviteSecret = params.get('secret')
-
-    cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
-      await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
-    })
-
-    checkIfJoinedGeneralChannel(groupName, username)
+    cyBypassUI('group_join', { groupId, inviteSecret })
+    // cy.window().its('sbp').then(async sbp => {
+    //   await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
+    //   await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+    // })
   } else {
     cy.visit(invitationLink)
 
@@ -298,14 +300,6 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 
     cy.getByDT('toDashboardBtn').click()
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
-    cy.getByDT('app').then(([el]) => {
-      if (!isLoggedIn) {
-        cy.get(el).should('have.attr', 'data-logged-in', 'yes')
-      }
-      cy.get(el).should('have.attr', 'data-sync', '')
-    })
-
-    checkIfJoinedGeneralChannel(groupName, username)
   }
 
   if (displayName) {
@@ -333,41 +327,6 @@ Cypress.Commands.add('giAddRandomIncome', () => {
   cy.getByDT(action).click()
   cy.getByDT('inputIncomeOrPledge').type(salary)
   cy.getByDT('submitIncome').click()
-})
-
-Cypress.Commands.add('giAddNewChatroom', (
-  name, description = '', isPrivate = false
-) => {
-  // Needs to be in 'Group Chat' page
-  cy.getByDT('newChannelButton').click()
-
-  cy.getByDT('modal').within(() => {
-    cy.get('.c-modal-header').should('contain', 'Create a channel')
-    cy.getByDT('createChannelName').clear().type(name)
-    if (description) {
-      cy.getByDT('createChannelDescription').clear().type(description)
-    } else {
-      cy.getByDT('createChannelDescription').clear()
-    }
-    if (isPrivate) {
-      cy.getByDT('createChannelPrivate').check()
-    } else {
-      cy.getByDT('createChannelPrivate').uncheck()
-    }
-    cy.getByDT('createChannelSubmit').click()
-    cy.getByDT('closeModal').should('not.exist')
-  })
-  cy.getByDT('channelName').should('contain', name)
-  cy.getByDT('conversationWapper').within(() => {
-    cy.get('.c-greetings .is-title-4').should('contain', 'Welcome!')
-    cy.get('.c-greetings p').should('contain', `This is the beginning of ${name}.`)
-    cy.get('.buttons').within(() => {
-      cy.getByDT('addMembers').should('exist')
-      if (!description) {
-        cy.getByDT('addDescription').should('exist')
-      }
-    })
-  })
 })
 
 Cypress.Commands.add('giForceDistributionDateToNow', () => {

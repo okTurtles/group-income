@@ -4,7 +4,7 @@
 
   .card
     fieldset.field
-      i18n.label What is the minimum each member should receive monthly?
+      i18n.label What is the minimum monthly income this group is trying to ensure for its members?
       .selectgroup(
         :class='{ error: $v.form.mincomeAmount.$error }'
         v-error:mincomeAmount=''

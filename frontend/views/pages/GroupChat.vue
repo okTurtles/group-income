@@ -129,7 +129,7 @@ export default ({
       'ourUsername'
     ]),
     getChatRoomIDsInSort () {
-      return Object.keys(this.getChatRooms).map(chatRoomID => ({
+      return Object.keys(this.getChatRooms || {}).map(chatRoomID => ({
         name: this.getChatRooms[chatRoomID].name,
         privacyLevel: this.getChatRooms[chatRoomID].privacyLevel,
         joined: this.isJoinedChatRoom(chatRoomID),

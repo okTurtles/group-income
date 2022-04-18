@@ -1,5 +1,5 @@
 {
-  "presets": ["@babel/preset-flow", "@babel/preset-env"],
+  "presets": [["@babel/preset-flow", { "all": true }], "@babel/preset-env"],
   "plugins": [
     "babel-plugin-root-import",
     "@babel/plugin-transform-runtime",

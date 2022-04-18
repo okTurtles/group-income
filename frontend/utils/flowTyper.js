@@ -273,15 +273,11 @@ export const objectOf = <O: TypeValidatorRecord<*>>
 }
 
 // TODO: add flow type annotations and make it use validatorError etc.
-export function objectMaybeOf (validations: Object): Object {
+export function objectMaybeOf (validations: Object, _scope?: string = 'Object'): Object {
   return function (data: any) {
     object(data)
     for (const key in data) {
-      if (validations[key]) {
-        if (!validations[key](data[key])) {
-          throw new TypeError(`${key} has bad value: ${data[key]}`)
-        }
-      }
+      validations[key]?.(data[key], `${_scope}.${key}`)
     }
     return data
   }
