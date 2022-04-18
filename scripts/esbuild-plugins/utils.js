@@ -58,7 +58,9 @@ exports.createAliasReplacer = (aliases) => {
 
     return source.replace(re, (match, capture) => {
       const resolvedPathSegment = aliases[capture]
-      const replacement = join(relativeDirPath, resolvedPathSegment).replace(/\\/g, '/')
+      const replacement = join(relativeDirPath, resolvedPathSegment)
+        // Make sure to use only forward slashes even on Windows.
+        .replace(/\\/g, '/')
 
       return match.replace(capture, replacement)
     })
