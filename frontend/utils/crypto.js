@@ -7,7 +7,7 @@ import { blake32Hash, bytesToB64, b64ToBuf, strToBuf } from '~/shared/functions.
 
 import scrypt from 'scrypt-async'
 
-type Key = {
+export type Key = {
   type: string;
   secretKey?: any;
   publicKey?: any;

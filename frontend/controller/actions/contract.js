@@ -2,14 +2,14 @@ import sbp from '~/shared/sbp.js'
 import { CONTRACT_IS_SYNCING } from '@utils/events.js'
 
 export default (sbp('sbp/selectors/register', {
-  'gi.actions/contract/sync': async function (contractIDs: string | string[]) {
+  'gi.actions/contract/sync': async function (contractIDs: string | string[], additionalKeys?: Object) {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
 
     for (const id of listOfIds) {
-      await sbp('state/enqueueContractSync', id)
+      await sbp('state/enqueueContractSync', id, additionalKeys)
     }
   },
-  'gi.actions/contract/syncAndWait': function (contractIDs: string | string[]) {
+  'gi.actions/contract/syncAndWait': function (contractIDs: string | string[], additionalKeys?: Object) {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
 
     const promises = listOfIds.map(id => new Promise((resolve, reject) => {
@@ -20,7 +20,7 @@ export default (sbp('sbp/selectors/register', {
         }
       }
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, isDoneSyncing)
-      sbp('state/enqueueContractSync', id)
+      sbp('state/enqueueContractSync', id, additionalKeys)
     }))
 
     return Promise.all(promises)

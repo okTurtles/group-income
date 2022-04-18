@@ -3,6 +3,7 @@
 import sbp from '~/shared/sbp.js'
 import localforage from 'localforage'
 import '~/shared/domains/gi/db.js'
+import type { Key } from '@utils/crypto.js'
 
 const log = localforage.createInstance({
   name: 'Group Income',
@@ -94,5 +95,35 @@ sbp('sbp/selectors/register', {
   },
   'gi.db/files/delete': function (url: string): Promise<Blob> {
     return files.removeItem(url)
+  }
+})
+
+const keys = localforage.createInstance({
+  name: 'Group Income',
+  storeName: 'Keys'
+})
+
+sbp('sbp/selectors/register', {
+  'gi.db/keys/save': async (contractID: string, key: Key): Promise<*> => {
+    const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+    const keyID = sbp('gi.crypto/key/id', key)
+    const serializedKey = sbp('gi.crypto/key/serialize', key, true)
+    const keyStorageKey = `${username}-${contractID}-${keyID}`
+    return keys.setItem(keyStorageKey, serializedKey).then(v => {
+      console.log('successfully saved:', keyStorageKey)
+    }).catch(e => {
+      console.error('error saving:', keyStorageKey, e)
+    })
+  },
+  'gi.db/keys/load': async (contractID: string, keyID: string): Promise<Key> => {
+    const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+    const keyStorageKey = `${username}-${contractID}-${keyID}`
+    const serializedKey = keys.getItem(keyStorageKey)
+    return sbp('gi.crypto/key/deserialize', serializedKey)
+  },
+  'gi.db/keys/delete': async (contractID: string, keyID: string): Promise<Key> => {
+    const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+    const keyStorageKey = `${username}-${contractID}-${keyID}`
+    return keys.removeItem(keyStorageKey)
   }
 })

@@ -11,6 +11,10 @@ import { encryptedAction } from './utils.js'
 import { GIMessage } from '../../../shared/domains/chelonia/GIMessage.js'
 
 export default (sbp('sbp/selectors/register', {
+  'gi.actions/identity/retrieveSalt': async (username: string, password: string) => {
+    // TODO RETRIEVE FROM SERVER
+    return await Promise.resolve('SALT CHANGEME')
+  },
   'gi.actions/identity/create': async function ({
     data: { username, email, password, picture },
     options: { sync = true } = {},
@@ -43,7 +47,8 @@ export default (sbp('sbp/selectors/register', {
     const mailboxID = mailbox.contractID()
 
     // Create the necessary keys to initialise the contract
-    const salt = sbp('gi.crypto/util/generateSalt')
+    // TODO: The salt needs to be dynamically generated
+    const salt = 'SALT CHANGEME' // sbp('gi.crypto/util/generateSalt')
     const IPK = await sbp('gi.crypto/key/fromPassword', 'edwards25519sha512batch', password, salt)
     const IEK = await sbp('gi.crypto/key/fromPassword', 'curve25519xsalsa20poly1305', password, salt)
     const CSK = sbp('gi.crypto/key/gen', 'edwards25519sha512batch')
@@ -74,6 +79,13 @@ export default (sbp('sbp/selectors/register', {
       const user = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/identity',
         publishOptions,
+        hooks: {
+          postpublish: async (contractMsg: GIMessage) => {
+            const contractID = contractMsg.hash()
+            await sbp('gi.db/keys/save', contractID, CSK)
+            await sbp('gi.db/keys/save', contractID, CEK)
+          }
+        },
         data: {
           attributes: { username, email, picture: finalPicture }
         },
@@ -84,9 +96,7 @@ export default (sbp('sbp/selectors/register', {
             data: IPKp,
             perm: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL],
             meta: {
-              type: 'ipk',
-              // TODO Temporary until a PAKE implementation is done.
-              salt: salt
+              type: 'ipk'
             }
           },
           {
@@ -95,19 +105,20 @@ export default (sbp('sbp/selectors/register', {
             data: IEKp,
             perm: ['gi.contracts/identity/keymeta'],
             meta: {
-              type: 'iek',
-              // TODO Temporary until a PAKE implementation is done.
-              salt: salt
+              type: 'iek'
             }
           },
           {
             id: CSKid,
             type: CSK.type,
             data: CSKp,
-            perm: [GIMessage.OP_ACTION, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH],
+            perm: [GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH],
             meta: {
               type: 'csk',
-              private: CSKs
+              private: {
+                keyId: IEKid,
+                content: CSKs
+              }
             }
           },
           {
@@ -116,8 +127,11 @@ export default (sbp('sbp/selectors/register', {
             data: CEKp,
             perm: [GIMessage.OP_ACTION_ENCRYPTED],
             meta: {
-              type: 'csk',
-              private: CEKs
+              type: 'cek',
+              private: {
+                keyId: IEKid,
+                content: CEKs
+              }
             }
           }
         ],
@@ -125,7 +139,7 @@ export default (sbp('sbp/selectors/register', {
       })
       userID = user.contractID()
       if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', userID)
+        await sbp('gi.actions/contract/syncAndWait', userID, { [IEKid]: IEK })
       }
       await sbp('gi.actions/identity/setAttributes', {
         contractID: userID, data: { mailbox: mailboxID }
@@ -171,13 +185,17 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Invalid username or password'))
     }
 
+    const salt = await sbp('gi.actions/identity/retrieveSalt', username, password)
+    const IEK = await sbp('gi.crypto/key/fromPassword', 'curve25519xsalsa20poly1305', password, salt)
+    const IEKid = sbp('gi.crypto/key/id', IEK)
+
     try {
       console.debug(`Retrieved identity ${userId}`)
       // TODO: move the login vuex action code into this function (see #804)
-      await sbp('state/vuex/dispatch', 'login', { username, identityContractID: userId })
+      await sbp('state/vuex/dispatch', 'login', { username, identityContractID: userId, additionalKeys: { [IEKid]: IEK } })
 
       if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', userId)
+        await sbp('gi.actions/contract/syncAndWait', userId, { [IEKid]: IEK })
       }
 
       return userId

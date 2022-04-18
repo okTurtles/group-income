@@ -14,6 +14,7 @@ export type ChelRegParams = {
   signingKey: Object;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
+    postpublishContract?: (GIMessage) => void;
     prepublish?: (GIMessage) => void;
     postpublish?: (GIMessage) => void;
   };
@@ -24,8 +25,10 @@ export type ChelActionParams = {
   action: string;
   contractID: string;
   data: Object;
+  // authorizedKeys?: GIKey[];
   hooks?: {
     prepublishContract?: (GIMessage) => void;
+    postpublishContract?: (GIMessage) => void;
     prepublish?: (GIMessage) => void;
     postpublish?: (GIMessage) => void;
   };
@@ -56,8 +59,23 @@ sbp('sbp/selectors/register', {
   // https://gitlab.okturtles.org/okturtles/group-income/-/wikis/E2E-Protocol/Framework.md#alt-names
   'chelonia/_init': function () {
     this.config = {
-      decryptFn: JSON.parse, // override!
-      encryptFn: JSON.stringify, // override!
+      decryptFn: (message) => JSON.parse(message), /* (message, state) => {        if (typeof message === 'string') {
+          return JSON.parse(message)
+        }
+        const key = state._volatile?.[message.keyId]
+        if (key) {
+          return JSON.parse(sbp('gi.crypto/decrypt', sbp('gi.crypto/key/deserialize', key), message))
+        }
+      } */
+      encryptFn: (message) => JSON.stringify(message), /* (message, state) => {        const key = state._vm?.authorizedKeys?.find((k) => k.type === 'curve25519xsalsa20poly1305' && Array.isArray(k.perm) && k.perm.includes(GIMessage.OP_ACTION_ENCRYPTED))
+        if (!key) {
+          return JSON.stringify(message)
+        }
+        return {
+          keyId: key.id,
+          content: sbp('gi.crypto/encrypt', sbp('gi.crypto/key/deserialize', key.data), JSON.stringify(message))
+        }
+      } */
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       latestHashSelector: 'backend/latestHash',
       publishSelector: 'backend/publishLogEntry',
@@ -130,8 +148,9 @@ sbp('sbp/selectors/register', {
         keys: keys
       }: GIOpContract)
     ], signingKey ? signatureFnBuilder(signingKey) : undefined)
-    hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
+    hooks && hooks.prepublishContract && await hooks.prepublishContract(contractMsg)
     await sbp(this.config.publishSelector, contractMsg, publishOptions)
+    hooks && hooks.postpublishContract && await hooks.postpublishContract(contractMsg)
 
     const msg = await sbp('chelonia/out/actionEncrypted', {
       action: contractName,
@@ -165,7 +184,7 @@ sbp('sbp/selectors/register', {
   'chelonia/out/propDel': async function () {
 
   },
-  'chelonia/in/processMessage': function (message: GIMessage, state: Object) {
+  'chelonia/in/processMessage': function (message: GIMessage, state: Object, additionalKeys?: Object) {
     sanityCheck(message)
     const [opT, opV] = message.op()
     const hash = message.hash()
@@ -183,11 +202,22 @@ sbp('sbp/selectors/register', {
         }
         state._vm.authorizedKeys = v.keys
 
-        // sbp(`${type}/process`, { data, meta, hash, contractID }, state)
+        for (const key of opV.keys) {
+          if (key.meta?.private) {
+            if (key.id && key.meta.private.keyId in additionalKeys && key.meta.private.content) {
+              if (!state._volatile) state._volatile = {}
+              try {
+                state._volatile[key.id] = sbp('gi.crypto/decrypt', additionalKeys[key.meta.private.keyId], key.meta.private.content)
+              } catch (e) {
+                console.error('Decryption error', e)
+              }
+            }
+          }
+        }
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing) {
-          const decrypted = message.decryptedValue(config.decryptFn)
+          const decrypted = message.decryptedValue((message) => config.decryptFn(message, state))
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
         }
       },
@@ -222,7 +252,7 @@ sbp('sbp/selectors/register', {
     // Signature verification
     // TODO: Temporary. Skip verifying default signatures
     if (signature.type !== 'default') {
-      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? (opV: GIOpContract).keys : state._vm.authorizedKeys
+      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? ((opV: any): GIOpContract).keys : state._vm.authorizedKeys
       const signingKey = authorizedKeys.find((k) => k.type === signature.type && k.id === signature.keyId && Array.isArray(k.perm) && k.perm.includes(opT))
 
       if (!signingKey) {
@@ -265,13 +295,13 @@ async function outEncryptedOrUnencryptedAction (
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
   const message = GIMessage.createV1_0(contractID, previousHEAD, [
     opType,
-    opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage)
+    opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage, state)
   ]
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
-  hooks && hooks.prepublish && hooks.prepublish(message)
+  hooks && hooks.prepublish && await hooks.prepublish(message)
   await sbp(this.config.publishSelector, message, publishOptions)
-  hooks && hooks.postpublish && hooks.postpublish(message)
+  hooks && hooks.postpublish && await hooks.postpublish(message)
   return message
 }
 

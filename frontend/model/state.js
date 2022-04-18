@@ -79,22 +79,21 @@ sbp('sbp/selectors/register', {
     }
     return state
   },
-  'state/enqueueContractSync': function (contractID: string) {
+  'state/enqueueContractSync': function (contractID: string, additionalKeys?: Object) {
     // enqueue this invocation in a serial queue to ensure
     // handleEvent does not get called on contractID while it's syncing,
     // but after it's finished. This is used in tandem with
     // 'state/enqueueHandleEvent' defined below. This is all to prevent
     // handleEvent getting called with the wrong previousHEAD for an event.
     return sbp('okTurtles.eventQueue/queueEvent', contractID, [
-      'state/vuex/dispatch', 'syncContractWithServer', contractID
-    ])
+      'state/vuex/dispatch', 'syncContractWithServer', { contractID, additionalKeys }])
   },
   'state/enqueueHandleEvent': function (event: GIMessage) {
     // make sure handleEvent is called AFTER any currently-running invocations
     // to syncContractWithServer(), to prevent gi.db from throwing
     // "bad previousHEAD" errors
     return sbp('okTurtles.eventQueue/queueEvent', event.contractID(), [
-      'state/vuex/dispatch', 'handleEvent', event
+      'state/vuex/dispatch', 'handleEvent', { event }
     ])
   },
   'state/vuex/state': () => store.state,
@@ -112,8 +111,8 @@ const mutations = {
     state.loggedIn = false
     state.currentGroupId = null
   },
-  processMessage (state, { message }) {
-    sbp('chelonia/in/processMessage', message, state)
+  processMessage (state, { message, additionalKeys }) {
+    sbp('chelonia/in/processMessage', message, state, additionalKeys)
   },
   registerContract (state, { contractID, type }) {
     const firstTimeRegistering = !state[contractID]
@@ -513,7 +512,7 @@ const actions = {
   // Used to update contracts to the current state that the server is aware of
   async syncContractWithServer (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
-    contractID: string
+    { contractID, additionalKeys }: {contractID: string, additionalKeys?: Object }
   ) {
     const latest = await sbp('backend/latestHash', contractID)
     console.log(`syncContractWithServer(): ${contractID} latestHash is: ${latest}`)
@@ -535,7 +534,7 @@ const actions = {
       state.contracts[contractID] && events.shift()
       for (let i = 0; i < events.length; i++) {
         // this must be called directly, instead of via enqueueHandleEvent
-        await dispatch('handleEvent', GIMessage.deserialize(events[i]))
+        await dispatch('handleEvent', { event: GIMessage.deserialize(events[i]), additionalKeys })
       }
     } else {
       console.debug(`Contract ${contractID} was already synchronized`)
@@ -560,7 +559,7 @@ const actions = {
       for (const contractID in contracts) {
         const { type } = contracts[contractID]
         commit('registerContract', { contractID, type })
-        await sbp('state/enqueueContractSync', contractID)
+        await sbp('state/enqueueContractSync', contractID, user.additionalKeys)
       }
       // it's insane, and I'm not sure how this can happen, but it did... and
       // the following steps actually fixed it...
@@ -617,8 +616,10 @@ const actions = {
   // for getting events into the log.
   async handleEvent (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
-    message: GIMessage
+    { event: message, additionalKeys }: { message: GIMessage,
+    additionalKeys?: Object }
   ) {
+    console.warn(JSON.stringify({ message, additionalKeys }))
     // prepare for any errors
     const cachedState = _.cloneDeep(state)
     const contractID = message.contractID()
@@ -633,7 +634,7 @@ const actions = {
       // first we make sure we save this message to the db
       await handleEvent.addMessageToDB(message)
       // process the mutation on the state (everything here must be synchronous)
-      handleEvent.processMutation(message)
+      handleEvent.processMutation(message, additionalKeys)
       // process any side-effects (these must never result in any mutation to this contract state)
       await handleEvent.processSideEffects(message)
 
@@ -741,7 +742,7 @@ const handleEvent = {
       }
     }
   },
-  processMutation (message: GIMessage) {
+  processMutation (message: GIMessage, additionalKeys?: Object) {
     try {
       const contractID = message.contractID()
       const hash = message.hash()
@@ -751,7 +752,7 @@ const handleEvent = {
         const { type } = ((message.opValue(): any): GIOpContract)
         store.commit('registerContract', { contractID, type })
       }
-      store.commit(`${contractID}/processMessage`, { message })
+      store.commit(`${contractID}/processMessage`, { message, additionalKeys })
       store.commit('setContractHEAD', { contractID, HEAD: hash })
     } catch (e) {
       console.error(`processMutation: error ${e.name}`, e)
