@@ -116,6 +116,7 @@ export default ({
             sharedValues: this.form.sharedValues,
             mincomeAmount: normalizeCurrency(this.form.mincomeAmount),
             mincomeCurrency: this.form.mincomeCurrency,
+            distributionDay: this.form.distributionDay,
             ruleName: this.form.ruleName,
             ruleThreshold: this.form.ruleThreshold[this.form.ruleName]
           }
@@ -139,6 +140,7 @@ export default ({
         ruleOrder: Math.round(Math.random()) === 1 ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE],
         mincomeAmount: '',
         mincomeCurrency: 'USD',
+        distributionDay: 1,
         ruleName: null,
         ruleThreshold: {
           [RULE_DISAGREEMENT]: proposalsSettings[RULE_DISAGREEMENT].threshold,
@@ -177,6 +179,9 @@ export default ({
       mincomeCurrency: {
         required
       },
+      distributionDay: {
+        required
+      },
       ruleName: {
         required,
         oneOf: (value) => [RULE_DISAGREEMENT, RULE_PERCENTAGE].includes(value)
@@ -205,7 +210,8 @@ export default ({
       GroupPurpose: ['form.sharedValues'],
       GroupMincome: [
         'form.mincomeAmount',
-        'form.mincomeCurrency'
+        'form.mincomeCurrency',
+        'form.distributionDay'
       ],
       GroupRules: [
         'form.changeThreshold',

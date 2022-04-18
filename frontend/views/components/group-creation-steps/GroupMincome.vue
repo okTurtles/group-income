@@ -21,7 +21,6 @@
           required=''
           :value='group.mincomeAmount'
           @input='update'
-          @keyup.enter='next'
         )
         select.select(
           :aria-label='L("Currency")'
@@ -37,6 +36,20 @@
           ) {{ currency.symbolWithCode }}
 
       i18n.helper This value can be adjusted in the future.
+
+    fieldset.field
+      i18n.label What day of the month should distribution be calculated?
+      .selectbox
+        select.select(
+          name='distributionDay'
+          :value='group.distributionDay'
+          required=''
+          @keyup.enter='next'
+        )
+          option(
+            v-for='index in 28'
+            :key='index'
+          ) {{index}}
 
     slot
 </template>

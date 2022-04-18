@@ -26,6 +26,7 @@ export default (sbp('sbp/selectors/register', {
       sharedValues,
       mincomeAmount,
       mincomeCurrency,
+      distributionDay,
       ruleName,
       ruleThreshold
     },
@@ -67,6 +68,7 @@ export default (sbp('sbp/selectors/register', {
             sharedValues,
             mincomeAmount: +mincomeAmount,
             mincomeCurrency: mincomeCurrency,
+            distributionDay: distributionDay,
             proposals: {
               [PROPOSAL_GROUP_SETTING_CHANGE]: merge(
                 merge({}, proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults),

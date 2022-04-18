@@ -339,6 +339,7 @@ sbp('chelonia/defineContract', {
           sharedValues: string,
           mincomeAmount: number,
           mincomeCurrency: string,
+          distributionDay: number,
           proposals: objectOf({
             [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
             [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
@@ -704,7 +705,8 @@ sbp('chelonia/defineContract', {
         groupPicture: x => typeof x === 'string',
         sharedValues: x => typeof x === 'string',
         mincomeAmount: x => typeof x === 'number' && x > 0,
-        mincomeCurrency: x => typeof x === 'string'
+        mincomeCurrency: x => typeof x === 'string',
+        distributionDay: x => typeof x === 'number' && x > 0
       }),
       process ({ meta, data }, { state, getters }) {
         for (const key in data) {

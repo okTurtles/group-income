@@ -359,6 +359,7 @@ export const fakeProposals = {
       proposedValue: 300,
       currentValue: 200,
       mincomeCurrency: 'USD',
+      distributionDay: 1,
       reason: 'Because why not'
     }
   },
