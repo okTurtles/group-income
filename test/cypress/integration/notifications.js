@@ -80,7 +80,7 @@ const fakePrivateNotifications = [
   {
     type: 'CONTRIBUTION_REMINDER',
     data: {
-      monthstamp: '04'
+      date: '2022-04-23'
     }
   },
   {

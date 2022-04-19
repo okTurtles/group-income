@@ -116,7 +116,7 @@ export default ({
   }
 
   &.has-background-danger-solid {
-    border-color: $danger_0;
+    border-color: $danger_3;
   }
 }
 

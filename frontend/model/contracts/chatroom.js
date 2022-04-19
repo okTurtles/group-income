@@ -26,15 +26,11 @@ import {
 } from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 
-export const chatRoomAttributes: any = {
+export const chatRoomAttributesType: any = objectOf({
   name: string,
   description: string,
   type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
   privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
-}
-
-const chatRoomType: any = objectOf({
-  attributes: objectOf(chatRoomAttributes)
 })
 
 export const messageType: any = objectMaybeOf({
@@ -192,7 +188,9 @@ sbp('chelonia/defineContract', {
   actions: {
     // This is the constructor of Chat contract
     'gi.contracts/chatroom': {
-      validate: chatRoomType,
+      validate: objectOf({
+        attributes: chatRoomAttributesType
+      }),
       process ({ meta, data }, { state }) {
         const initialState = merge({
           settings: {
@@ -230,7 +228,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state, getters }) {
         const { username } = data
-        if (state.users[username] && !sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
+        if (state.users[username]) {
           throw new Error('Can not join the chatroom which you are already part of')
         }
 
@@ -302,11 +300,11 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ data, hash, contractID }, { state }) {
-        if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
-          return
-        }
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
+          if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
+            return
+          }
           leaveChatRoom({ contractID })
         }
         emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })

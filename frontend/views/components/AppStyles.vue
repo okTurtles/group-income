@@ -19,6 +19,7 @@ v-style.
     --danger_0_1: {{lightenDarkenColor(colors.danger_0, softTone)}};
     --danger_1: {{colors.danger_1}};
     --danger_2: {{colors.danger_2}};
+    --danger_3: {{colors.danger_3}};
     --text_0: {{colors.text_0}};
     --text_1: {{colors.text_1}};
     --general_0: {{colors.general_0}};

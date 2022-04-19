@@ -21,7 +21,6 @@ import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
-import CypressBypassUi from './views/containers/navigation/CypressBypassUI.vue'
 import './views/utils/allowedUrls.js'
 import './views/utils/translations.js'
 import './views/utils/avatar.js'
@@ -115,7 +114,6 @@ async function startApp () {
     components: {
       AppStyles,
       BannerGeneral,
-      CypressBypassUi,
       Navigation,
       Modal
     },
@@ -135,11 +133,15 @@ async function startApp () {
         this.setReducedMotion(true)
       }
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
-        // make it possible for Cypress to wait for contracts to finish syncing
+        // Make it possible for Cypress to wait for contracts to finish syncing.
         if (isSyncing) {
           this.ephemeral.syncs.push(contractID)
+          this.$refs.bannerGeneral.show(this.L('Loading events from server...'), 'wifi')
         } else {
           this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
+          if (!this.ephemeral.syncs.length) {
+            this.$refs.bannerGeneral.clean()
+          }
         }
       })
       sbp('okTurtles.events/on', LOGIN, () => {

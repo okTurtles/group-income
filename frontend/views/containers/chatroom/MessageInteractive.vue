@@ -6,7 +6,7 @@ message-base(v-bind='$props' @wrapperAction='action')
   template(#header='')
     .c-header
       span.c-title.is-title-5(:class='interactiveMessage.proposalSeverity') {{interactiveMessage.proposalStatus}}
-      span.has-text-1 {{getTime(datetime)}}
+      span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
   template(#body='')
     .c-text
       | {{interactiveMessage.text}}
@@ -30,7 +30,7 @@ import MessageBase from './MessageBase.vue'
 import SvgHorn from '@svgs/horn.svg'
 import L from '@view-utils/translations.js'
 import chatroom from '@containers/chatroom/chatroom.js'
-import { getTime } from '@utils/time.js'
+import { humanDate } from '@utils/time.js'
 
 const fakeProposals = {
   inviteKattyId: {
@@ -115,7 +115,7 @@ export default ({
     MessageBase
   },
   methods: {
-    getTime,
+    humanDate,
     action () {
       console.log('TODO')
     }

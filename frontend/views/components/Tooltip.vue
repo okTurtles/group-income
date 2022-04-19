@@ -214,7 +214,7 @@ export default ({
   pointer-events: none;
   background-color: $text_0;
   opacity: 0.95;
-  color: $white;
+  color: $background_0;
 
   &.has-text-center {
     text-align: center;
