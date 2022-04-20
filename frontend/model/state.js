@@ -102,24 +102,6 @@ sbp('sbp/selectors/register', {
     }
     return state
   },
-  'state/enqueueContractSync': function (contractID: string) {
-    // enqueue this invocation in a serial queue to ensure
-    // handleEvent does not get called on contractID while it's syncing,
-    // but after it's finished. This is used in tandem with
-    // 'state/enqueueHandleEvent' defined below. This is all to prevent
-    // handleEvent getting called with the wrong previousHEAD for an event.
-    return sbp('okTurtles.eventQueue/queueEvent', contractID, [
-      'state/vuex/dispatch', 'syncContractWithServer', contractID
-    ])
-  },
-  'state/enqueueHandleEvent': function (event: GIMessage) {
-    // make sure handleEvent is called AFTER any currently-running invocations
-    // to syncContractWithServer(), to prevent gi.db from throwing
-    // "bad previousHEAD" errors
-    return sbp('okTurtles.eventQueue/queueEvent', event.contractID(), [
-      'state/vuex/dispatch', 'handleEvent', event
-    ])
-  },
   'state/vuex/state': () => store.state,
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/dispatch': (...args) => store.dispatch(...args),

@@ -61,8 +61,8 @@ const vuexState = {
 sbp('okTurtles.data/set', 'API_URL', process.env.API_URL)
 
 sbp('sbp/selectors/overwrite', {
-  // intercept 'state/enqueueHandleEvent' from backend.js
-  'state/enqueueHandleEvent': function (e) {
+  // intercept 'chelonia/in.private/enqueueHandleEvent' from backend.js
+  'chelonia/in.private/enqueueHandleEvent': function (e) {
     const contractID = e.contractID()
     if (!vuexState[contractID]) {
       vuexState[contractID] = {}
