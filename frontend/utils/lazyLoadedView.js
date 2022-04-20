@@ -20,11 +20,7 @@ function asyncHandler (lazyImport, { loading, error } = {}) {
 }
 
 export function lazyComponent (name: string, lazyImport: LazyImport, { loading, error }: Object = {}) {
-  if (loading ?? error) {
-    Vue.component(name, asyncHandler(lazyImport, { loading, error }))
-  } else {
-    Vue.component(name, lazyImport)
-  }
+  Vue.component(name, asyncHandler(lazyImport, { loading, error }))
 }
 
 export function lazyModal (name: string, lazyImport: LazyImport) {
