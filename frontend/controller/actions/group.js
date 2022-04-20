@@ -185,8 +185,8 @@ export default (sbp('sbp/selectors/register', {
           }
         })
       } else {
-        throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', {
-          codeError: 'Failed in joining General chatroom. This won\'t be happened.'
+        throw new GIErrorUIRuntimeError(L('Failed to join the group: {reportError}', {
+          reportError: `No ${CHATROOM_GENERAL_NAME} chatroom is there in the group.`
         }))
       }
 
