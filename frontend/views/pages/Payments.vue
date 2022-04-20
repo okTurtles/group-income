@@ -25,7 +25,15 @@ page(
         }'
       ) You can change this at any time by updating your {r1}income details{r2}.
 
-    section(v-if='tabItems.length === 0 && paymentsListData.length === 0')
+    section(v-if='!distributionStarted')
+      .c-container-empty
+        svg-contributions.c-svg
+        i18n.c-description(
+          tag='p'
+          :args='{ startDate: distributionStart }'
+        ) The distribution period begins on: {startDate}
+
+    section(v-else-if='tabItems.length === 0 && paymentsListData.length === 0')
       .c-container-empty
         svg-contributions.c-svg
         i18n.c-description(tag='p') You haven’t received any payments yet
@@ -87,6 +95,10 @@ page(
         .c-container-empty(v-else data-test='noPayments')
           svg-contributions.c-svg
           i18n.c-description(tag='p') There are no payments.
+          i18n.c-description(
+            tag='p'
+            :args='{ ...LTags(), date: nextDistribution }'
+          ) Next distribution period: {date}
 </template>
 
 <script>
@@ -94,7 +106,6 @@ import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import Search from '@components/Search.vue'
-import currencies from '@view-utils/currencies.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
@@ -103,7 +114,7 @@ import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import L, { LTags } from '@view-utils/translations.js'
-import { ISOStringToMonthstamp, humanDate } from '@utils/time.js'
+import { dateToMonthstamp, humanDate } from '@utils/time.js'
 
 export default ({
   name: 'Payments',
@@ -146,13 +157,22 @@ export default ({
       'ourGroupProfile',
       'groupSettings',
       'ourUsername',
-      'userDisplayName'
+      'userDisplayName',
+      'periodAfterPeriod',
+      'withGroupCurrency'
     ]),
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency]
-    },
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
+    },
+    distributionStart () {
+      return this.prettyDate(this.groupSettings.distributionDate)
+    },
+    distributionStarted () {
+      return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
+    },
+    nextDistribution () {
+      const currentPeriod = this.groupSettings.distributionDate
+      return this.prettyDate(this.periodAfterPeriod(currentPeriod))
     },
     tabItems () {
       const items = []
@@ -185,7 +205,7 @@ export default ({
       return items
     },
     tableTitles () {
-      const firstTab = this.needsIncome ? L('Sent by') : L('Send to')
+      const firstTab = this.needsIncome ? L('Sent by') : L('Sent to')
       return this.ephemeral.activeTab === 'PaymentRowTodo'
         ? {
             one: firstTab,
@@ -235,24 +255,10 @@ export default ({
           username: data.toUser,
           displayName: this.userDisplayName(data.toUser),
           date: meta.createdDate,
-          monthstamp: ISOStringToMonthstamp(meta.createdDate),
+          monthstamp: dateToMonthstamp(meta.createdDate),
           amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate,
         })
       }
-
-      // DELETE THIS BEFORE MERGE!!!
-      // Create a bunch of copies of the first payment. For pagination tests only
-      /*
-      const copies = 50
-      if (payments[0]) {
-        for (let index = 0; index < copies; index++) {
-          payments.push({
-            ...payments[0],
-            displayName: payments[0].displayName + '_copy_' + (index + 1)
-          })
-        }
-      }
-      */
 
       // TODO: implement better / more correct sorting
       return payments.sort((a, b) => a.date < b.date)
@@ -292,13 +298,16 @@ export default ({
     footerTodoStatus () {
       const amount = this.paymentsTodo.reduce((total, p) => total + p.amount, 0)
       return {
-        amount: this.currency.displayWithCurrency(amount),
+        amount: this.withGroupCurrency(amount),
         count: this.paymentsTodo.length
       }
     }
   },
   methods: {
     humanDate,
+    prettyDate (date) {
+      return humanDate(date, { year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: 'numeric' })
+    },
     setInitialActiveTab () {
       this.ephemeral.activeTab = this.needsIncome ? 'PaymentRowReceived' : 'PaymentRowTodo'
     },

@@ -50,7 +50,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
               .suffix {{ groupMincomeSymbolWithCode }}
             .helper(v-if='needsIncome && whoIsPledging.length')
               p {{ contributionMemberText }}
-            i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
+            i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.
           payment-methods.c-methods(v-if='needsIncome' ref='paymentMethods')
 
       banner-scoped(ref='formMsg')

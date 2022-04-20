@@ -2,9 +2,7 @@
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
-// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import '~/shared/domains/chelonia/chelonia.js'
-import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
+import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './voting/rules.js'
@@ -16,12 +14,11 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from '~/frontend/utils/time.js'
+import { dateFromMonthstamp, dateToMonthstamp, ISOStringToMonthstamp, compareMonthstamps, compareISOTimestamps, DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
-import { unadjustedDistribution, adjustedDistribution } from './distribution/distribution.js'
+import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
-import { chatRoomAttributesType } from './chatroom.js'
 import {
   INVITE_INITIAL_CREATOR,
   INVITE_STATUS,
@@ -77,78 +74,42 @@ function initGroupProfile (contractID: string, joinedDate: string) {
   }
 }
 
-function initPaymentPeriod ({ getters }) {
+function initPaymentMonth ({ getters }) {
   return {
     // this saved so that it can be used when creating a new payment
-    initialCurrency: getters.groupMincomeCurrency,
-    // TODO: should we also save the first period's currency exchange rate..?
-    // all payments during the period use this to set their exchangeRate
+    firstMonthsCurrency: getters.groupMincomeCurrency,
+    // TODO: should we also save the first month's currency exchange rate..?
+    // all payments during the month use this to set their exchangeRate
     // see notes and code in groupIncomeAdjustedDistribution for details.
     // TODO: for the currency change proposal, have it update the mincomeExchangeRate
     //       using .mincomeExchangeRate *= proposal.exchangeRate
     mincomeExchangeRate: 1, // modified by proposals to change mincome currency
     paymentsFrom: {}, // fromUser => toUser => Array<paymentHash>
     // snapshot of adjusted distribution after each completed payment
-    // yes, it is possible a payment began in one period and completed in another
-    // in which case lastAdjustedDistribution for the previous period will be updated
-    lastAdjustedDistribution: null,
-    // snapshot of haveNeeds. made only when there are no payments
-    haveNeedsSnapshot: null
+    // yes, it is possible a payment began in one month and completed in another,
+    // in which case it is added to both month's 'paymentsFrom'
+    lastAdjustedDistribution: null
   }
 }
 
-// NOTE: do not call any of these helper functions from within a getter b/c they modify state!
-
 function clearOldPayments ({ state, getters }) {
-  const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort()
-  // save two periods worth of payments, max
-  while (sortedPeriodKeys.length > 2) {
-    const period = sortedPeriodKeys.shift()
-    for (const paymentHash of getters.paymentHashesForPeriod(period)) {
+  const sortedMonthKeys = Object.keys(state.paymentsByMonth).sort()
+  // save two months payments, max
+  while (sortedMonthKeys.length > 2) {
+    const monthstamp = sortedMonthKeys.shift()
+    for (const paymentHash of getters.paymentHashesForMonth(monthstamp)) {
       Vue.delete(state.payments, paymentHash)
       // TODO: archive the old payments in a sideEffect, not here
     }
-    Vue.delete(state.paymentsByPeriod, period)
+    Vue.delete(state.paymentsByMonth, monthstamp)
   }
 }
 
-function initFetchPeriodPayments ({ meta, state, getters }) {
-  const period = getters.periodStampGivenDate(meta.createdDate)
-  const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }))
+function initFetchMonthlyPayments ({ meta, state, getters }) {
+  const monthstamp = ISOStringToMonthstamp(meta.createdDate)
+  const monthlyPayments = vueFetchInitKV(state.paymentsByMonth, monthstamp, initPaymentMonth({ getters }))
   clearOldPayments({ state, getters })
-  return periodPayments
-}
-
-// this function is called each time a payment is completed or a user adjusts their income details.
-// TODO: call also when mincome is adjusted
-function updateCurrentDistribution ({ meta, state, getters }) {
-  const curPeriodPayments = initFetchPeriodPayments({ meta, state, getters })
-  const period = getters.periodStampGivenDate(meta.createdDate)
-  const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0
-  // update distributionDate if we've passed into the next period
-  if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
-    getters.groupSettings.distributionDate = period
-  }
-  // save haveNeeds if there are no payments or the haveNeeds haven't been saved yet
-  if (noPayments || !curPeriodPayments.haveNeedsSnapshot) {
-    curPeriodPayments.haveNeedsSnapshot = getters.haveNeedsForThisPeriod(period)
-  }
-  // if there are payments this period, save the adjusted distribution
-  if (!noPayments) {
-    updateAdjustedDistribution({ period, getters })
-  }
-}
-
-function updateAdjustedDistribution ({ period, getters }) {
-  const payments = getters.groupPeriodPayments[period]
-  if (payments && payments.haveNeedsSnapshot) {
-    const minimize = getters.groupSettings.minimizeDistribution
-    payments.lastAdjustedDistribution = adjustedDistribution({
-      distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize }),
-      payments: getters.paymentsForPeriod(period),
-      dueOn: getters.dueDateForPeriod(period)
-    })
-  }
+  return monthlyPayments
 }
 
 function memberLeaves (state, username, dateLeft) {
@@ -167,10 +128,6 @@ sbp('chelonia/defineContract', {
     create () {
       const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
-        // TODO: We may want to get the time from the server instead of relying on
-        // the client in case the client's clock isn't set correctly.
-        // the only issue here is that it involves an async function...
-        // See: https://github.com/okTurtles/group-income/issues/531
         createdDate: new Date().toISOString(),
         username,
         identityContractID
@@ -223,46 +180,11 @@ sbp('chelonia/defineContract', {
     groupMincomeCurrency (state, getters) {
       return getters.groupSettings.mincomeCurrency
     },
-    periodStampGivenDate (state, getters) {
-      return (recentDate: string | Date) => {
-        if (typeof recentDate !== 'string') {
-          recentDate = recentDate.toISOString()
-        }
-        const { distributionDate, distributionPeriodLength } = getters.groupSettings
-        return periodStampGivenDate({
-          recentDate,
-          periodStart: distributionDate,
-          periodLength: distributionPeriodLength
-        })
-      }
-    },
-    periodBeforePeriod (state, getters) {
-      return (periodStamp: string) => {
-        const len = getters.groupSettings.distributionPeriodLength
-        return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), -len))
-      }
-    },
-    periodAfterPeriod (state, getters) {
-      return (periodStamp: string) => {
-        const len = getters.groupSettings.distributionPeriodLength
-        return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), len))
-      }
-    },
-    dueDateForPeriod (state, getters) {
-      return (periodStamp: string) => {
-        return dateToPeriodStamp(
-          addTimeToDate(
-            dateFromPeriodStamp(getters.periodAfterPeriod(periodStamp)),
-            -DAYS_MILLIS
-          )
-        )
-      }
-    },
     paymentTotalFromUserToUser (state, getters) {
-      return (fromUser, toUser, periodStamp) => {
+      return (fromUser, toUser, paymentMonthstamp) => {
         const payments = getters.currentGroupState.payments
-        const periodPayments = getters.groupPeriodPayments
-        const { paymentsFrom, mincomeExchangeRate } = periodPayments[periodStamp] || {}
+        const monthlyPayments = getters.groupMonthlyPayments
+        const { paymentsFrom, mincomeExchangeRate } = monthlyPayments[paymentMonthstamp] || {}
         // NOTE: @babel/plugin-proposal-optional-chaining would come in super-handy
         //       here, but I couldn't get it to work with our linter. :(
         //       https://github.com/babel/babel-eslint/issues/511
@@ -272,35 +194,57 @@ sbp('chelonia/defineContract', {
           if (status !== PAYMENT_COMPLETED) {
             return a
           }
-          const paymentCreatedPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate)
-          // if this payment is from a previous period, then make sure to take into account
+          const paymentCreatedMonthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
+          // if this payment is from a previous month, then make sure to take into account
           // any proposals that passed in between the payment creation and the payment
-          // completion that modified the group currency by multiplying both period's
+          // completion that modified the group currency by multiplying both month's
           // exchange rates
-          if (periodStamp !== paymentCreatedPeriodStamp) {
-            if (paymentCreatedPeriodStamp !== getters.periodBeforePeriod(periodStamp)) {
-              console.warn(`paymentTotalFromUserToUser: super old payment shouldn't exist, ignoring! (curPeriod=${periodStamp})`, JSON.stringify(payment))
-              return a
-            }
-            exchangeRate *= periodPayments[paymentCreatedPeriodStamp].mincomeExchangeRate
+          if (paymentMonthstamp !== paymentCreatedMonthstamp) {
+            exchangeRate *= monthlyPayments[paymentCreatedMonthstamp].mincomeExchangeRate
           }
           return a + (amount * exchangeRate * mincomeExchangeRate)
         }, 0)
         return saferFloat(total)
       }
     },
-    paymentHashesForPeriod (state, getters) {
-      return (periodStamp) => {
-        const periodPayments = getters.groupPeriodPayments[periodStamp]
-        if (periodPayments) {
+    paymentHashesForMonth (state, getters) {
+      return (monthstamp) => {
+        const monthlyPayments = getters.groupMonthlyPayments[monthstamp]
+        if (monthlyPayments) {
           let hashes = []
-          const { paymentsFrom } = periodPayments
+          const { paymentsFrom } = monthlyPayments
           for (const fromUser in paymentsFrom) {
             for (const toUser in paymentsFrom[fromUser]) {
               hashes = hashes.concat(paymentsFrom[fromUser][toUser])
             }
           }
           return hashes
+        }
+      }
+    },
+    paymentsDistributionEventsForMonth (state, getters) {
+      return (monthstamp) => {
+        const hashes = getters.paymentHashesForMonth(monthstamp)
+        if (hashes) {
+          const payments = getters.currentGroupState.payments
+          const events = []
+          for (const paymentHash of hashes) {
+            const payment = payments[paymentHash]
+            if (payment.data.status === PAYMENT_COMPLETED) {
+              events.push({
+                type: 'paymentEvent',
+                data: {
+                  from: payment.meta.username,
+                  to: payment.data.toUser,
+                  hash: paymentHash,
+                  amount: payment.data.amount,
+                  isLate: !!payment.data.isLate,
+                  when: payment.data.completedDate
+                }
+              })
+            }
+          }
+          return events
         }
       }
     },
@@ -331,95 +275,53 @@ sbp('chelonia/defineContract', {
         return getters.groupSettings.proposals[proposalType]
       }
     },
-    groupCurrency (state, getters) {
-      const mincomeCurrency = getters.groupMincomeCurrency
-      return mincomeCurrency && currencies[mincomeCurrency]
-    },
     groupMincomeFormatted (state, getters) {
-      return getters.withGroupCurrency?.(getters.groupMincomeAmount)
+      const settings = getters.groupSettings
+      const currency = currencies[settings.mincomeCurrency]
+      return currency && currency.displayWithCurrency(settings.mincomeAmount)
     },
     groupMincomeSymbolWithCode (state, getters) {
-      return getters.groupCurrency?.symbolWithCode
+      const currency = currencies[getters.groupSettings.mincomeCurrency]
+      return currency && currency.symbolWithCode
     },
-    groupPeriodPayments (state, getters): Object {
+    groupMonthlyPayments (state, getters): Object {
       // note: a lot of code expects this to return an object, so keep the || {} below
-      return getters.currentGroupState.paymentsByPeriod || {}
+      return getters.currentGroupState.paymentsByMonth || {}
     },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
       //       USD, then calling this function is probably an error which should be reported.
       //       Just make sure the UI doesn't break if an exception is thrown, since this is
       //       bound to the UI in some location.
-      return getters.groupCurrency?.displayWithCurrency
+      return getters.groupSettings.mincomeCurrency && currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     },
-    getChatRooms (state, getters) {
-      return getters.currentGroupState.chatRooms
-    },
-    generalChatRoomId (state, getters) {
-      return getters.currentGroupState.generalChatRoomId
-    },
-    // getter is named haveNeedsForThisPeriod instead of haveNeedsForPeriod because it uses
-    // getters.groupProfiles - and that is always based on the most recent values. we still
-    // pass in the current period because it's used to set the "when" property
-    haveNeedsForThisPeriod (state, getters) {
-      return (currentPeriod: string) => {
+    distributionEventsForMonth (state, getters) {
+      return (monthstamp) => {
         // NOTE: if we ever switch back to the "real-time" adjusted distribution algorithm,
         //       make sure that this function also handles userExitsGroupEvent
-        const groupProfiles = getters.groupProfiles // TODO: these should use the haveNeeds for the specific period's distribution period
-        const haveNeeds = []
+        const groupProfiles = getters.groupProfiles
+        const datestamp = dateFromMonthstamp(monthstamp).toISOString()
+        let distributionEvents = []
         for (const username in groupProfiles) {
           const { incomeDetailsType, joinedDate } = groupProfiles[username]
           if (incomeDetailsType) {
             const amount = groupProfiles[username][incomeDetailsType]
             const haveNeed = incomeDetailsType === 'incomeAmount' ? amount - getters.groupMincomeAmount : amount
             // construct 'when' this way in case we ever use a pro-rated algorithm
-            let when = dateFromPeriodStamp(currentPeriod).toISOString()
-            if (dateIsWithinPeriod({
-              date: joinedDate,
-              periodStart: currentPeriod,
-              periodLength: getters.groupSettings.distributionPeriodLength
-            })) {
-              when = joinedDate
-            }
-            haveNeeds.push({ name: username, haveNeed, when })
+            const when = dateToMonthstamp(joinedDate) === monthstamp ? joinedDate : datestamp
+            distributionEvents.push({
+              type: 'haveNeedEvent',
+              data: { name: username, haveNeed, when }
+            })
           }
         }
-        return haveNeeds
-      }
-    },
-    paymentsForPeriod (state, getters) {
-      return (periodStamp) => {
-        const hashes = getters.paymentHashesForPeriod(periodStamp)
-        const events = []
-        if (hashes && hashes.length > 0) {
-          const payments = getters.currentGroupState.payments
-          for (const paymentHash of hashes) {
-            const payment = payments[paymentHash]
-            if (payment.data.status === PAYMENT_COMPLETED) {
-              events.push({
-                from: payment.meta.username,
-                to: payment.data.toUser,
-                hash: paymentHash,
-                amount: payment.data.amount,
-                isLate: !!payment.data.isLate,
-                when: payment.data.completedDate
-              })
-            }
-          }
+        const paymentEvents = getters.paymentsDistributionEventsForMonth(monthstamp)
+        if (paymentEvents) {
+          distributionEvents = distributionEvents.concat(paymentEvents)
         }
-        return events
+        return distributionEvents.sort((a, b) => compareISOTimestamps(a.data.when, b.data.when))
       }
     }
-    // distributionEventsForMonth (state, getters) {
-    //   return (monthstamp) => {
-    //     // NOTE: if we ever switch back to the "real-time" adjusted distribution
-    //     // algorithm, make sure that this function also handles userExitsGroupEvent
-    //     const distributionEvents = getters.haveNeedEventsForMonth(monthstamp)
-    //     const paymentEvents = getters.paymentEventsForMonth(monthstamp)
-    //     distributionEvents.splice(distributionEvents.length, 0, paymentEvents)
-    //     return distributionEvents.sort((a, b) => compareISOTimestamps(a.data.when, b.data.when))
-    //   }
-    // }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
   //       THEY ARE NOT to farm out any further mutations through the async actions!
@@ -428,16 +330,13 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group': {
       validate: objectMaybeOf({
         invites: mapOf(string, inviteType),
-        settings: objectMaybeOf({
+        settings: objectOf({
           // TODO: add 'groupPubkey'
           groupName: string,
           groupPicture: string,
           sharedValues: string,
           mincomeAmount: number,
           mincomeCurrency: string,
-          distributionDate: isPeriodStamp,
-          distributionPeriodLength: number,
-          minimizeDistribution: boolean,
           proposals: objectOf({
             [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
             [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
@@ -451,23 +350,21 @@ sbp('chelonia/defineContract', {
         // TODO: checkpointing: https://github.com/okTurtles/group-income/issues/354
         const initialState = merge({
           payments: {},
-          paymentsByPeriod: {},
+          paymentsByMonth: {},
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
             groupCreator: meta.username,
-            distributionPeriodLength: 30 * DAYS_MILLIS,
             inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
           },
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
-          },
-          chatRooms: {}
+          }
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
-        initFetchPeriodPayments({ meta, state, getters })
+        initFetchMonthlyPayments({ meta, state, getters })
       }
     },
     'gi.contracts/group/payment': {
@@ -478,8 +375,8 @@ sbp('chelonia/defineContract', {
         amount: number,
         currencyFromTo: tupleOf(string, string), // must be one of the keys in currencies.js (e.g. USD, EUR, etc.) TODO: handle old clients not having one of these keys, see OP_PROTOCOL_UPGRADE https://github.com/okTurtles/group-income/issues/603
         // multiply 'amount' by 'exchangeRate', which must always be
-        // based on the initialCurrency of the period in which this payment was created.
-        // it is then further multiplied by the period's 'mincomeExchangeRate', which
+        // based on the firstMonthsCurrency of the month in which this payment was created.
+        // it is then further multiplied by the month's 'mincomeExchangeRate', which
         // is modified if any proposals pass to change the mincomeCurrency
         exchangeRate: number,
         txid: string,
@@ -494,14 +391,11 @@ sbp('chelonia/defineContract', {
           throw new Errors.GIErrorIgnoreAndBanIfGroup('payments cannot be instsantly completed!')
         }
         Vue.set(state.payments, hash, {
-          data: {
-            ...data,
-            groupMincome: getters.groupMincomeAmount
-          },
+          data,
           meta,
           history: [[meta.createdDate, hash]]
         })
-        const { paymentsFrom } = initFetchPeriodPayments({ meta, state, getters })
+        const { paymentsFrom } = initFetchMonthlyPayments({ meta, state, getters })
         const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {})
         const toUser = vueFetchInitKV(fromUser, data.toUser, [])
         toUser.push(hash)
@@ -534,17 +428,27 @@ sbp('chelonia/defineContract', {
         }
         payment.history.push([meta.createdDate, hash])
         merge(payment.data, data.updatedProperties)
-        // we update "this period"'s snapshot 'lastAdjustedDistribution' on each completed payment
+        // we update "this month"'s snapshot 'lastAdjustedDistribution' on each completed payment
         if (data.updatedProperties.status === PAYMENT_COMPLETED) {
           payment.data.completedDate = meta.createdDate
-          // update the current distribution unless this update is for a payment from the previous period
-          const updatePeriodStamp = getters.periodStampGivenDate(meta.createdDate)
-          const paymentPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate)
-          if (comparePeriodStamps(updatePeriodStamp, paymentPeriodStamp) > 0) {
-            updateAdjustedDistribution({ period: paymentPeriodStamp, getters })
-          } else {
-            updateCurrentDistribution({ meta, state, getters })
+          // in case we receive a paymentUpdate in a new month (where the original payment
+          // was initiated in the previous month), we make sure that month
+          // exists by retrieving it through initFetchMonthlyPayments
+          const paymentMonth = initFetchMonthlyPayments({ meta, state, getters })
+          const updateMonthstamp = ISOStringToMonthstamp(meta.createdDate)
+          const paymentMonthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
+          // if this update is for a payment from the previous month, we need to
+          // add it to this month's paymentFrom, and do so before we create an updated
+          // lastAdjustedDistribution snapshot.
+          if (compareMonthstamps(updateMonthstamp, paymentMonthstamp) > 0) {
+            const fromUser = vueFetchInitKV(paymentMonth.paymentsFrom, meta.username, {})
+            const toUser = vueFetchInitKV(fromUser, data.toUser, [])
+            toUser.push(data.paymentHash)
           }
+          paymentMonth.lastAdjustedDistribution = groupIncomeDistribution(
+            // TODO: decide whether or not latePayments should be passed in here as well
+            getters.distributionEventsForMonth(updateMonthstamp), { adjusted: true }
+          )
         }
       }
     },
@@ -676,15 +580,14 @@ sbp('chelonia/defineContract', {
           }
         }
       },
-      process ({ data, meta }, { state }) {
+      process ({ data, meta }, { state, getters }) {
         memberLeaves(state, data.member, meta.createdDate)
       },
-      sideEffect ({ data, meta, contractID }, { state, getters }) {
+      sideEffect ({ data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
-        const { username } = rootState.loggedIn
 
-        if (data.member === username) {
+        if (data.member === rootState.loggedIn.username) {
           // If this member is re-joining the group, ignore the rest
           // so the member doesn't remove themself again.
           if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
@@ -693,12 +596,12 @@ sbp('chelonia/defineContract', {
 
           const groupIdToSwitch = Object.keys(contracts)
             .find(cID => contracts[cID].type === 'gi.contracts/group' &&
-              cID !== contractID && rootState[cID].settings) || null
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
+                  cID !== contractID &&
+                  rootState[cID].settings) || null
+
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           sbp('state/vuex/commit', 'removeContract', contractID)
           sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
-
           // TODO - #828 remove other group members contracts if applicable
         } else {
           // TODO - #828 remove the member contract if applicable.
@@ -711,7 +614,7 @@ sbp('chelonia/defineContract', {
       validate: objectMaybeOf({
         reason: string
       }),
-      process ({ data, meta, contractID }, { state }) {
+      process ({ data, meta, contractID }, { state, getters }) {
         memberLeaves(state, meta.username, meta.createdDate)
         sbp('gi.contracts/group/pushSideEffect', contractID,
           ['gi.contracts/group/removeMember/sideEffect', {
@@ -732,7 +635,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta }, { state, getters }) {
         console.debug('inviteAccept:', data, state.invites)
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== INVITE_STATUS.VALID) {
@@ -757,7 +660,7 @@ sbp('chelonia/defineContract', {
       // They MUST NOT call 'commit'!
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      async sideEffect ({ meta }, { state }) {
+      async sideEffect ({ meta, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
@@ -777,7 +680,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/inviteRevoke': {
-      validate: (data, { state, meta }) => {
+      validate: (data, { state, getters, meta }) => {
         objectOf({
           inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
         })(data)
@@ -786,7 +689,7 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('The link does not exist.'))
         }
       },
-      process ({ data, meta }, { state }) {
+      process ({ data, meta }, { state, getters }) {
         const invite = state.invites[data.inviteSecret]
         Vue.set(invite, 'status', INVITE_STATUS.REVOKED)
       }
@@ -801,7 +704,7 @@ sbp('chelonia/defineContract', {
         mincomeAmount: x => typeof x === 'number' && x > 0,
         mincomeCurrency: x => typeof x === 'string'
       }),
-      process ({ meta, data }, { state }) {
+      process ({ meta, data }, { state, getters }) {
         for (const key in data) {
           Vue.set(state.settings, key, data[key])
         }
@@ -825,7 +728,7 @@ sbp('chelonia/defineContract', {
           })
         )
       }),
-      process ({ data, meta }, { state, getters }) {
+      process ({ data, meta }, { state }) {
         const groupProfile = state.profiles[meta.username]
         const nonMonetary = groupProfile.nonMonetaryContributions
         for (const key in data) {
@@ -843,10 +746,6 @@ sbp('chelonia/defineContract', {
             default:
               Vue.set(groupProfile, key, value)
           }
-        }
-        if (data.incomeDetailsType) {
-          // someone updated their income details, create a snapshot of the haveNeeds
-          updateCurrentDistribution({ meta, state, getters })
         }
       }
     },
@@ -873,101 +772,7 @@ sbp('chelonia/defineContract', {
         // }
       }
     },
-    'gi.contracts/group/addChatRoom': {
-      validate: objectOf({
-        chatRoomID: string,
-        attributes: chatRoomAttributesType
-      }),
-      process ({ data, meta }, { state }) {
-        const { name, type, privacyLevel } = data.attributes
-        Vue.set(state.chatRooms, data.chatRoomID, {
-          creator: meta.username,
-          name,
-          type,
-          privacyLevel,
-          deletedDate: null,
-          users: []
-        })
-        if (!state.generalChatRoomId) {
-          Vue.set(state, 'generalChatRoomId', data.chatRoomID)
-        }
-      }
-    },
-    'gi.contracts/group/deleteChatRoom': {
-      validate: (data, { getters, meta }) => {
-        objectOf({ chatRoomID: string })(data)
-
-        if (getters.getChatRooms[data.chatRoomID].creator !== meta.username) {
-          throw new TypeError(L('Only the channel creator can delete channel.'))
-        }
-      },
-      process ({ data, meta }, { state }) {
-        Vue.delete(state.chatRooms[data.chatRoomID])
-      }
-    },
-    'gi.contracts/group/leaveChatRoom': {
-      validate: objectOf({
-        chatRoomID: string,
-        member: string,
-        leavingGroup: boolean // if kicker is exists, it means group leaving
-      }),
-      process ({ data, meta }, { state }) {
-        Vue.set(state.chatRooms[data.chatRoomID], 'users',
-          state.chatRooms[data.chatRoomID].users.filter(u => u !== data.member))
-      },
-      async sideEffect ({ meta, data }, { state }) {
-        const rootState = sbp('state/vuex/state')
-        if (meta.username === rootState.loggedIn.username && !sbp('okTurtles.data/get', 'JOINING_GROUP')) {
-          const sendingData = data.leavingGroup
-            ? { member: data.member }
-            : { member: data.member, username: meta.username }
-          await sbp('gi.actions/chatroom/leave', { contractID: data.chatRoomID, data: sendingData })
-        }
-      }
-    },
-    'gi.contracts/group/joinChatRoom': {
-      validate: objectMaybeOf({
-        username: string,
-        chatRoomID: string
-      }),
-      process ({ data, meta }, { state }) {
-        const username = data.username || meta.username
-        state.chatRooms[data.chatRoomID].users.push(username)
-      },
-      async sideEffect ({ meta, data }, { state }) {
-        const rootState = sbp('state/vuex/state')
-        const username = data.username || meta.username
-        if (username === rootState.loggedIn.username) {
-          if (!sbp('okTurtles.data/get', 'JOINING_GROUP') || sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
-            // while users are joining chatroom, they don't need to leave chatrooms
-            // this is similar to setting 'JOINING_GROUP' before joining group
-            sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
-            await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
-            sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
-            sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
-          }
-        }
-      }
-    },
-    'gi.contracts/group/renameChatRoom': {
-      validate: objectOf({
-        chatRoomID: string,
-        name: string
-      }),
-      process ({ data, meta }, { state, getters }) {
-        Vue.set(state.chatRooms, data.chatRoomID, {
-          ...getters.getChatRooms[data.chatRoomID],
-          name: data.name
-        })
-      }
-    },
-    ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
-      'gi.contracts/group/forceDistributionDate': {
-        validate: optional,
-        process ({ meta }, { state, getters }) {
-          getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate)
-        }
-      },
+    ...(process.env.NODE_ENV === 'development' && {
       'gi.contracts/group/malformedMutation': {
         validate: objectOf({ errorType: string }),
         process ({ data }, { state }) {

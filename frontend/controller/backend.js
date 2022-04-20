@@ -43,7 +43,7 @@ export function createGIPubSubClient (url: string, options: Object): Object {
         sbp('state/enqueueHandleEvent', GIMessage.deserialize(msg.data))
       },
       [NOTIFICATION_TYPE.APP_VERSION] (msg) {
-        const ourVersion = process.env.APP_VERSION
+        const ourVersion = process.env.GI_VERSION
         const theirVersion = msg.data
 
         if (ourVersion !== theirVersion) {
@@ -79,8 +79,8 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, (contracts) => {
 
 sbp('okTurtles.events/on', GI_UPDATE_AVAILABLE, (version) => {
   console.info('New Group Income version available:', version)
-  const client = sbp('okTurtles.data/get', PUBSUB_INSTANCE)
-  client.destroy()
+  // Prevent the client from trying to reconnect when the page starts unloading.
+  sbp('okTurtles.data/get', PUBSUB_INSTANCE).destroy()
   // TODO: allow the user to manually reload the page later.
   window.location.reload()
 })

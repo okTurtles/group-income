@@ -33,7 +33,6 @@ describe('Large group', () => {
         }
       })
     }
-
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
     cy.giAddRandomIncome()
     cy.get('.graph-bar')

@@ -2,15 +2,16 @@
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
+import { omit } from '~/frontend/utils/giLodash.js'
 import { encryptedAction } from './utils.js'
-import type { GIActionParams } from './types.js'
+import type { GIRegParams } from './types.js'
 
 export default (sbp('sbp/selectors/register', {
-  'gi.actions/chatroom/create': async function (params: GIActionParams) {
+  'gi.actions/chatroom/create': async function (params: GIRegParams) {
     try {
       return await sbp('chelonia/out/registerContract', {
-        contractName: 'gi.contracts/chatroom',
-        data: params.data
+        ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
+        contractName: 'gi.contracts/chatroom'
       })
     } catch (e) {
       console.error('gi.actions/chatroom/register failed!', e)

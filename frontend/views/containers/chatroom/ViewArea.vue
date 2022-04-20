@@ -42,6 +42,7 @@ export default ({
           data: { chatRoomID: this.currentChatRoomId }
         })
       } catch (e) {
+        alert(e.message)
         console.error('ViewArea join() error:', e)
       }
     },

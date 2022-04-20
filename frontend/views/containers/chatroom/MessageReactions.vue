@@ -25,13 +25,11 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import emoticonsMixins from './EmoticonsMixins.js'
 import Tooltip from '@components/Tooltip.vue'
 import L from '@view-utils/translations.js'
 
 export default ({
   name: 'MessageReactions',
-  mixins: [emoticonsMixins],
   components: {
     Tooltip
   },
