@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template(:fullscreen='true' :a11yTitle='L("Create Group")')
+modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle='L("Create Group")')
   .steps(v-if='currentStep + 1 < config.steps.length')
     button.step(
       v-for='(step, index) in config.steps'

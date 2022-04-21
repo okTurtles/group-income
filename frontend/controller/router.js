@@ -8,21 +8,22 @@ import store from '@model/state.js'
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import L from '@view-utils/translations.js'
-import lazyLoadView from '@utils/lazyLoadedView.js'
+import { lazyPage } from '@utils/lazyLoadedView.js'
 
 /*
-  Lazy load all the pages that are not necessary at initial loading off the app
-  lazyLoadView function by default use the generic LoadingPage, but can be
-  over written to show specific loading layout (same for the error page not yet implented)
-*/
-const GroupDashboard = lazyLoadView({ component: import('@pages/GroupDashboard.vue').then(m => m.default) })
-const Messages = lazyLoadView({ component: import('@pages/Messages.vue').then(m => m.default) })
-const Contributions = lazyLoadView({ component: import('@pages/Contributions.vue').then(m => m.default) })
-const Payments = lazyLoadView({ component: import('@pages/Payments.vue').then(m => m.default) })
-const GroupChat = lazyLoadView({ component: import('@pages/GroupChat.vue').then(m => m.default) })
-const Mailbox = lazyLoadView({ component: import('@pages/Mailbox.vue').then(m => m.default) })
-const GroupSettings = lazyLoadView({ component: import('@pages/GroupSettings.vue').then(m => m.default) })
-const DesignSystem = lazyLoadView({ component: import('@pages/DesignSystem.vue').then(m => m.default) })
+ * Lazy load all the pages that are not necessary at initial loading of the app.
+ *
+ * By default `lazyPage()` will use the generic `LoadingPage` and `ErrorPage` components,
+ * but other components can be specified using the `loading` and `error` options.
+ */
+const lazyContributions = lazyPage(() => import('@pages/Contributions.vue'))
+const lazyDesignSystem = lazyPage(() => import('@pages/DesignSystem.vue'))
+const lazyGroupChat = lazyPage(() => import('@pages/GroupChat.vue'))
+const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
+const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
+const lazyMessages = lazyPage(() => import('@pages/Messages.vue'))
+const lazyMailbox = lazyPage(() => import('@pages/Mailbox.vue'))
+const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
 
 Vue.use(Router)
 
@@ -86,28 +87,28 @@ const router: any = new Router({
     },
     {
       path: '/design-system',
-      component: () => DesignSystem,
+      component: lazyDesignSystem,
       name: 'DesignSystem',
       meta: { title: L('Design System') }
       // beforeEnter: createEnterGuards(designGuard)
     },
     {
       path: '/dashboard',
-      component: () => GroupDashboard,
+      component: lazyGroupDashboard,
       name: 'GroupDashboard',
       meta: { title: L('Group Dashboard') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/contributions',
-      component: () => Contributions,
+      component: lazyContributions,
       name: 'Contributions',
       meta: { title: L('Contributions') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/payments',
-      component: () => Payments,
+      component: lazyPayments,
       name: 'Payments',
       meta: { title: L('Payments') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
@@ -115,21 +116,21 @@ const router: any = new Router({
     /* Guards need to be created for any route that should not be directly accessed by url */
     {
       path: '/mailbox',
-      component: () => Mailbox,
+      component: lazyMailbox,
       name: 'Mailbox',
       meta: { title: L('Mailbox') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/messages',
-      component: () => Messages,
+      component: lazyMessages,
       name: 'Messages',
       meta: { title: L('Messages') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/messages/:chatName',
-      component: () => Messages,
+      component: lazyMessages,
       name: 'MessagesConversation',
       beforeEnter: createEnterGuards(loginGuard)
       // BUG/REVIEW "CANNOT GET /:username" when username has "." in it
@@ -138,21 +139,21 @@ const router: any = new Router({
     },
     {
       path: '/group-chat',
-      component: () => GroupChat,
+      component: lazyGroupChat,
       name: 'GroupChat',
       meta: { title: L('Group Chat') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/group-settings',
-      component: () => GroupSettings,
+      component: lazyGroupSettings,
       name: 'GroupSettings',
       meta: { title: L('Group Settings') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/group-chat/:chatRoomId',
-      component: () => GroupChat,
+      component: lazyGroupChat,
       name: 'GroupChatConversation',
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
