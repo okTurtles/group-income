@@ -1,14 +1,15 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/events.js'
-import '~/shared/domains/okTurtles/eventQueue.js'
+import sbp from '@sbp/spb'
+import '@sbp/okturtles.events'
+import '@sbp/okturtles.eventqueue'
+import { CONTRACT_IS_SYNCING } from './internals.js'
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
-import { b64ToStr } from '~/shared/functions.js'
-import { merge, randomHexString } from '~/frontend/utils/giLodash.js'
-import { GIMessage, sanityCheck } from './GIMessage.js'
-import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
+import { merge, cloneDeep, randomHexString } from '~/frontend/utils/giLodash.js'
+import { ChelErrorUnrecoverable } from './errors.js'
+// TODO: rename this to ChelMessage
+import { GIMessage } from './GIMessage.js'
+import type { GIOpContract, GIOpActionUnencrypted } from './GIMessage.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -35,7 +36,7 @@ export type ChelActionParams = {
   publishOptions?: { maxAttempts: number };
 }
 
-export const CONTRACT_IS_SYNCING = 'contract-is-syncing'
+export { CONTRACT_IS_SYNCING }
 
 export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)\w*/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
@@ -53,14 +54,18 @@ sbp('sbp/selectors/register', {
     this.config = {
       decryptFn: JSON.parse, // override!
       encryptFn: JSON.stringify, // override!
-      stateFn: () => this.state, // can override to integrate with, for example, vuex
+      stateSelector: 'chelonia/state', // can override to integrate with, for example, vuex
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
-      publishSelector: 'backend/publishLogEntry',
+      reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
+      reactiveDel: (obj, key) => { delete obj[key] },
       skipActionProcessing: false,
       connectionOptions: {
         maxRetries: Infinity, // See https://github.com/okTurtles/group-income/issues/1183
         reconnectOnTimeout: true, // can be enabled since we are not doing auth via web sockets
         timeout: 5000
+      },
+      hooks: {
+        preHandleEvent: null // async (message: GIMessage) => {}
       }
     }
     this.state = {
@@ -81,6 +86,9 @@ sbp('sbp/selectors/register', {
   'chelonia/configure': function (config: Object) {
     merge(this.config, config)
   },
+  'chelonia/state': function (): Object {
+    return this.state
+  },
   'chelonia/connect': function (): Object {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')
     if (!this.config.connectionOptions) throw new Error('config.connectionOptions missing')
@@ -97,11 +105,11 @@ sbp('sbp/selectors/register', {
       ...this.config.connectionOptions,
       messageHandlers: {
         [NOTIFICATION_TYPE.ENTRY] (msg) {
-          // We MUST use 'chelonia/in.private/enqueueHandleEvent' to ensure handleEvent()
+          // We MUST use 'chelonia/private/in/enqueueHandleEvent' to ensure handleEvent()
           // is called AFTER any currently-running calls to syncContractWithServer()
           // to prevent gi.db from throwing "bad previousHEAD" errors.
           // Calling via SBP also makes it simple to implement 'test/backend.js'
-          sbp('chelonia/in.private/enqueueHandleEvent', GIMessage.deserialize(msg.data))
+          sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data))
         },
         [NOTIFICATION_TYPE.APP_VERSION] (msg) {
           const ourVersion = process.env.GI_VERSION
@@ -120,6 +128,7 @@ sbp('sbp/selectors/register', {
     if (!ACTION_REGEX.exec(contract.name)) throw new Error(`bad contract name: ${contract.name}`)
     if (!contract.metadata) contract.metadata = { validate () {}, create: () => ({}) }
     if (!contract.getters) contract.getters = {}
+    if (!contract.state) contract.state = (contractID) => sbp(this.stateSelector)[contractID]
     this.contracts[contract.name] = contract
     sbp('sbp/selectors/register', {
       // expose getters for Vuex integration and other conveniences
@@ -158,6 +167,40 @@ sbp('sbp/selectors/register', {
       })
     }
   },
+  // make sure every location that calls `latestContractState` can handle the ChelErrorUnrecoverable
+  'chelonia/latestContractState': async (contractID: string) => {
+    const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
+    // Fast path. Will stop and fall back to the slower path if an error is found.
+    try {
+      const state = {}
+      for (const event of events) {
+        sbp('chelonia/in/processMessage', GIMessage.deserialize(event), state)
+      }
+      return state
+    } catch (err) {
+      if (err instanceof ChelErrorUnrecoverable) {
+        throw err
+      }
+    }
+    // Slower path. More error-tolerant but clones the contract state again for every processed message.
+    let state = {}
+
+    for (const event of events) {
+      const message = GIMessage.deserialize(event)
+      const stateCopy = cloneDeep(state)
+      try {
+        sbp('chelonia/in/processMessage', message, state)
+      } catch (err) {
+        if (err instanceof ChelErrorUnrecoverable) {
+          throw err
+        }
+        console.error(`latestContractState: ignoring mutation ${message.description()} because of ${err.name}: ${err.message}`, err)
+        state = stateCopy
+      }
+    }
+    return state
+  },
+  // 'chelonia/out' - selectors that send data out to the server
   'chelonia/out/registerContract': async function (params: ChelRegParams) {
     const { contractName, hooks, publishOptions } = params
     const contract = this.contracts[contractName]
@@ -170,7 +213,7 @@ sbp('sbp/selectors/register', {
       }: GIOpContract)
     ])
     hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
-    await sbp(this.config.publishSelector, contractMsg, publishOptions)
+    await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions)
     const msg = await sbp('chelonia/out/actionEncrypted', {
       action: contractName,
       contractID: contractMsg.hash(),
@@ -181,7 +224,7 @@ sbp('sbp/selectors/register', {
     return msg
   },
   // all of these functions will do both the creation of the GIMessage
-  // and the sending of it via this.config.publishSelector
+  // and the sending of it via 'chelonia/private/out/publishEvent'
   'chelonia/out/actionEncrypted': function (params: ChelActionParams): Promise<GIMessage> {
     return outEncryptedOrUnencryptedAction.call(this, GIMessage.OP_ACTION_ENCRYPTED, params)
   },
@@ -203,143 +246,21 @@ sbp('sbp/selectors/register', {
   'chelonia/out/propDel': async function () {
 
   },
-  // TODO: make this private
-  'chelonia/in/processMessage': function (message: GIMessage, state: Object) {
-    sanityCheck(message)
-    const [opT, opV] = message.op()
-    const hash = message.hash()
-    const contractID = message.contractID()
-    const config = this.config
-    if (!state._vm) state._vm = {}
-    const opFns: { [GIOpType]: (any) => void } = {
-      [GIMessage.OP_CONTRACT] (v: GIOpContract) {
-        // TODO: shouldn't each contract have its own set of authorized keys?
-        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
-        // TODO: we probably want to be pushing the de-JSON-ified key here
-        state._vm.authorizedKeys.push({ key: v.keyJSON, context: 'owner' })
-      },
-      [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
-        if (!config.skipActionProcessing) {
-          const decrypted = message.decryptedValue(config.decryptFn)
-          opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
-        }
-      },
-      [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
-        if (!config.skipActionProcessing) {
-          const { data, meta, action } = v
-          if (!config.whitelisted(action)) {
-            throw new Error(`chelonia: action not whitelisted: '${action}'`)
-          }
-          sbp(`${action}/process`, { data, meta, hash, contractID }, state)
-        }
-      },
-      [GIMessage.OP_PROP_DEL]: notImplemented,
-      [GIMessage.OP_PROP_SET] (v: GIOpPropSet) {
-        if (!state._vm.props) state._vm.props = {}
-        state._vm.props[v.key] = v.value
-      },
-      [GIMessage.OP_KEY_ADD] (v: GIOpKeyAdd) {
-        // TODO: implement this. consider creating a function so that
-        //       we're not duplicating code in [GIMessage.OP_CONTRACT]
-        // if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
-        // state._vm.authorizedKeys.push(v)
-      },
-      [GIMessage.OP_KEY_DEL]: notImplemented,
-      [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
-    }
-    let processOp = true
-    if (config.preOp) {
-      processOp = config.preOp(message, state) !== false && processOp
-    }
-    if (config[`preOp_${opT}`]) {
-      processOp = config[`preOp_${opT}`](message, state) !== false && processOp
-    }
-    if (processOp && !config.skipProcessing) {
-      opFns[opT](opV)
-      config.postOp && config.postOp(message, state)
-      config[`postOp_${opT}`] && config[`postOp_${opT}`](message, state)
-    }
-  },
+  // 'chelonia/in' - selectors that inject data from the server and update our internal state
   'chelonia/in/sync': function (contractIDs: string | string[]) {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
       // enqueue this invocation in a serial queue to ensure
       // handleEvent does not get called on contractID while it's syncing,
       // but after it's finished. This is used in tandem with
-      // queuing the 'chelonia/in.private/handleEvent' selector, defined below.
+      // queuing the 'chelonia/private/in/handleEvent' selector, defined below.
       // This prevents handleEvent getting called with the wrong previousHEAD for an event.
       return sbp('okTurtles.eventQueue/queueEvent', contractID, [
-        'chelonia/in.private/syncContract', contractID
+        'chelonia/private/in/syncContract', contractID
       ])
     }))
-  },
-  // --------- BEGIN PRIVATE SELECTORS --------------------
-  //     DO NOT CALL ANY OF THESE YOURSELF!
-  'chelonia/in.private/enqueueHandleEvent': function (event: GIMessage) {
-    // make sure handleEvent is called AFTER any currently-running invocations
-    // to syncContractWithServer(), to prevent gi.db from throwing
-    // "bad previousHEAD" errors
-    return sbp('okTurtles.eventQueue/queueEvent', event.contractID(), [
-      'chelonia/in.private/handleEvent', event
-    ])
-  },
-  'chelonia/in.private/syncContract': async function (contractID: string) {
-    const state = this.config.stateFn()
-    const latest = await sbp('chelonia/out.private/latestHash', contractID)
-    console.debug(`syncContract: ${contractID} latestHash is: ${latest}`)
-    // there is a chance two users are logged in to the same machine and must check their contracts before syncing
-    let recent
-    if (state.contracts[contractID]) {
-      recent = state.contracts[contractID].HEAD
-    } else {
-      // we're syncing a contract for the first time, make sure to add to pending
-      // so that handleEvents knows to expect events from this contract
-      if (!state.contracts[contractID] && !state.pending.includes(contractID)) {
-        state.pending.push(contractID)
-      }
-    }
-    if (latest !== recent) {
-      console.debug(`Now Synchronizing Contract: ${contractID} its most recent was ${recent || 'undefined'} but the latest is ${latest}`)
-      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
-      // TODO: fetch events from localStorage instead of server if we have them
-      const events = await sbp('chelonia/out.private/eventsSince', contractID, recent || contractID)
-      // remove the first element in cases where we are not getting the contract for the first time
-      state.contracts[contractID] && events.shift()
-      for (let i = 0; i < events.length; i++) {
-        // this must be called directly, instead of via enqueueHandleEvent
-        await sbp('chelonia/in.private/handleEvent', GIMessage.deserialize(events[i]))
-      }
-    } else {
-      console.debug(`Contract ${contractID} was already synchronized`)
-    }
-    sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
-  },
-  'chelonia/in.private/handleEvent': function () {
-    const contractID = e.contractID()
-    if (!vuexState[contractID]) {
-      vuexState[contractID] = {}
-    }
-    // TODO: we should be able to avoid caring about store.registerModule
-    //       the one thing we need to figure out how to do is deal with Vue.set
-    sbp('chelonia/in/processMessage', e, vuexState[contractID])
-    sbp('okTurtles.events/emit', e.hash(), e)
-  },
-  'chelonia/out.private/latestHash': (contractID: string) => {
-    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/latestHash/${contractID}`)
-      .then(handleFetchResult('text'))
-  },
-  // TODO: r.body is a stream.Transform, should we use a callback to process
-  //       the events one-by-one instead of converting to giant json object?
-  //       however, note if we do that they would be processed in reverse...
-  'chelonia/out.private/eventsSince': async (contractID: string, since: string) => {
-    const events = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/events/${contractID}/${since}`)
-      .then(handleFetchResult('json'))
-    if (Array.isArray(events)) {
-      return events.reverse().map(b64ToStr)
-    }
   }
 })
-
 
 function contractFromAction (contracts: Object, action: string): Object {
   const regexResult = ACTION_REGEX.exec(action)
@@ -355,7 +276,7 @@ async function outEncryptedOrUnencryptedAction (
   const { action, contractID, data, hooks, publishOptions } = params
   const contract = contractFromAction(this.contracts, action)
   const state = contract.state(contractID)
-  const previousHEAD = await sbp('chelonia/out.private/latestHash', contractID)
+  const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
   const meta = contract.metadata.create()
   const gProxy = gettersProxy(state, contract.getters)
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
@@ -368,13 +289,9 @@ async function outEncryptedOrUnencryptedAction (
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
   hooks && hooks.prepublish && hooks.prepublish(message)
-  await sbp(this.config.publishSelector, message, publishOptions)
+  await sbp('chelonia/private/out/publishEvent', message, publishOptions)
   hooks && hooks.postpublish && hooks.postpublish(message)
   return message
-}
-
-const notImplemented = (v) => {
-  throw new Error(`chelonia: action not implemented to handle: ${JSON.stringify(v)}.`)
 }
 
 // The gettersProxy is what makes Vue-like getters possible. In other words,

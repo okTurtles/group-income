@@ -5,7 +5,7 @@
 
 import type { GIOpContract } from '~/shared/domains/chelonia/GIMessage.js'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import Vue from 'vue'
 import Vuex from 'vuex'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
@@ -647,7 +647,7 @@ const actions = {
       for (const contractID in contracts) {
         const { type } = contracts[contractID]
         commit('registerContract', { contractID, type })
-        await sbp('state/enqueueContractSync', contractID)
+        await sbp('chelonia/in/sync', contractID)
       }
       // it's insane, and I'm not sure how this can happen, but it did... and
       // the following steps actually fixed it...
@@ -658,12 +658,12 @@ const actions = {
       const currentGroupId = store.state.currentGroupId
       if (currentGroupId && !contracts[currentGroupId]) {
         console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
-        await sbp('state/enqueueContractSync', currentGroupId)
+        await sbp('chelonia/in/sync', currentGroupId)
       }
       // TODO: resync for the chatroom contract, because current chatroom contract id could be what the user is not part of
       if (!contracts[user.identityContractID]) {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
-        await sbp('state/enqueueContractSync', user.identityContractID)
+        await sbp('chelonia/in/sync', user.identityContractID)
       }
     } else {
       captureLogsStart(user.username)
@@ -817,7 +817,7 @@ const handleEvent = {
           setTimeout(() => {
             // re-enable message processing
             dropAllMessagesUntilRefresh = false
-            sbp('state/enqueueContractSync', message.contractID())
+            sbp('chelonia/in/sync', message.contractID())
           }, 1000)
         } else {
           console.error(`addMessageToDB: already attempted to re-process ${attemptToReprocessMessageID} ${message.description()}, will not attempt again!`)

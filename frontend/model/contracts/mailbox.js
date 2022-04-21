@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import Vue from 'vue'
 import { objectOf, string, object, unionOf, literalOf, optional } from '~/frontend/utils/flowTyper.js'
 
@@ -21,9 +21,6 @@ sbp('chelonia/defineContract', {
         createdDate: new Date().toISOString()
       }
     }
-  },
-  state (contractID) {
-    return sbp('state/vuex/state')[contractID]
   },
   actions: {
     'gi.contracts/mailbox': {

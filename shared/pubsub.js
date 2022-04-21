@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 
 // ====== Event name constants ====== //
@@ -420,7 +420,7 @@ const defaultMessageHandlers = {
         client.pendingSubscriptionSet.delete(contractID)
         client.subscriptionSet.add(contractID)
         if (client.pendingSyncSet.has(contractID)) {
-          sbp('gi.actions/contract/sync', contractID)
+          sbp('chelonia/in/sync', contractID)
           client.pendingSyncSet.delete(contractID)
         }
         break

@@ -32,11 +32,11 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
 </template>
 
 <script>
+import sbp from '@sbp/spb'
 import { mapGetters, mapState } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Badge from '@components/Badge.vue'
 import Tooltip from '@components/Tooltip.vue'
-import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({

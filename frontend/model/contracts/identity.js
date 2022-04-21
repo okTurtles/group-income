@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import Vue from 'vue'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import '~/shared/domains/chelonia/chelonia.js'
@@ -9,9 +9,6 @@ import { merge } from '~/frontend/utils/giLodash.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
-  state (contractID) {
-    return sbp('state/vuex/state')[contractID]
-  },
   actions: {
     'gi.contracts/identity': {
       validate: objectMaybeOf({

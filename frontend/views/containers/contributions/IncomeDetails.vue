@@ -70,11 +70,11 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
 </template>
 
 <script>
+import sbp from '@sbp/spb'
 import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import currencies, { normalizeCurrency } from '@view-utils/currencies.js'
-import sbp from '~/shared/sbp.js'
 import PaymentMethods from './PaymentMethods.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
 import Tooltip from '@components/Tooltip.vue'

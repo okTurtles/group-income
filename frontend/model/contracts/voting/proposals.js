@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { objectOf, literalOf, unionOf, number } from '~/frontend/utils/flowTyper.js'
 import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'

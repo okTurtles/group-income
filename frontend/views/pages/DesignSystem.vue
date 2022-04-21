@@ -1201,7 +1201,7 @@ page(
 
 <script>
 import Page from '@components/Page.vue'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import Badge from '@components/Badge.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'

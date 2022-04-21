@@ -22,7 +22,7 @@ page
       a.button(@click='sendMalformedMutationOfType') Send
 </template>
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import { EVENT_HANDLED } from '@utils/events.js'

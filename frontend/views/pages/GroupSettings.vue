@@ -91,7 +91,7 @@ page.c-page
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { validationMixin } from 'vuelidate'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { mapState, mapGetters } from 'vuex'

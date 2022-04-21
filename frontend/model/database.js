@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 
 import localforage from 'localforage'
 import '~/shared/domains/gi/db.js'

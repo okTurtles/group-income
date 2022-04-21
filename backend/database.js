@@ -1,12 +1,12 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
 import fs from 'fs'
 import util from 'util'
 import path from 'path'
-import '~/shared/domains/okTurtles/data.js'
+import '@sbp/okturtles.data'
 import '~/shared/domains/gi/db.js'
 
 const Boom = require('@hapi/boom')

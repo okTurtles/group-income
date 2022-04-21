@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
 import { imageUpload } from '@utils/image.js'
@@ -51,7 +51,7 @@ export default (sbp('sbp/selectors/register', {
       })
       userID = user.contractID()
       if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', userID)
+        await sbp('chelonia/in/sync', userID)
       }
       await sbp('gi.actions/identity/setAttributes', {
         contractID: userID, data: { mailbox: mailboxID }
@@ -103,7 +103,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('state/vuex/dispatch', 'login', { username, identityContractID: userId })
 
       if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', userId)
+        await sbp('chelonia/in/sync', userId)
       }
 
       return userId

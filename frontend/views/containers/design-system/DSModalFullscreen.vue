@@ -29,8 +29,8 @@ modal-base-template(:class='{ "has-background": background }' :a11yTitle='L("Mod
 </template>
 
 <script>
+import sbp from '@sbp/spb'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({

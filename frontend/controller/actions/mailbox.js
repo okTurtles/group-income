@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
 import { encryptedAction } from './utils.js'
@@ -17,7 +17,7 @@ export default (sbp('sbp/selectors/register', {
         contractName: 'gi.contracts/mailbox', publishOptions, data
       })
       if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', mailbox.contractID())
+        await sbp('chelonia/in/sync', mailbox.contractID())
       }
       return mailbox
     } catch (e) {

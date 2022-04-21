@@ -1,9 +1,9 @@
 'use strict'
 
+import sbp from '@sbp/spb'
 import { defaultConfig as defaultDompurifyConfig } from '~/frontend/views/utils/vSafeHtml.js'
 import dompurify from 'dompurify'
 import Vue from 'vue'
-import sbp from '~/shared/sbp.js'
 import template from '~/frontend/utils/stringTemplate.js'
 
 Vue.prototype.L = L

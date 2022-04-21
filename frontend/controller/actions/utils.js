@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import type { GIActionParams } from './types.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import { LError } from '@view-utils/translations.js'

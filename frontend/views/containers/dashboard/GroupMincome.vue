@@ -12,7 +12,7 @@ div(data-test='groupMincome')
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 

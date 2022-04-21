@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import './database.js'
 import Hapi from '@hapi/hapi'
 import GiAuth from './auth.js'

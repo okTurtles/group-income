@@ -1,4 +1,4 @@
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 
 /*

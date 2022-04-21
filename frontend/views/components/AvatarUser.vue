@@ -7,8 +7,8 @@
 </template>
 
 <script>
+import sbp from '@sbp/spb'
 import { mapGetters } from 'vuex'
-import sbp from '~/shared/sbp.js'
 import Avatar from '@components/Avatar.vue'
 
 export default ({

@@ -22,6 +22,7 @@ export class GIErrorDropAndReprocess extends Error {
   }
 }
 
+// TODO: delete this and replace with ChelErrorUnrecoverable
 export class GIErrorUnrecoverable extends Error {
   constructor (...params: any[]) {
     super(...params)

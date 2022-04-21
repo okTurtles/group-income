@@ -11,7 +11,7 @@
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 
 export default ({

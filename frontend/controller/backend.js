@@ -2,7 +2,7 @@
 
 import type { JSONObject } from '~/shared/types.js'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { sign, bufToB64, b64ToStr } from '~/shared/functions.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { CONTRACTS_MODIFIED, GI_UPDATE_AVAILABLE } from '~/frontend/utils/events.js'

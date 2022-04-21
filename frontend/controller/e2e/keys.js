@@ -2,7 +2,7 @@
 
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { blake32Hash, bytesToB64 } from '~/shared/functions.js'
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'

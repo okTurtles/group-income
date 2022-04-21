@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { mapGetters } from 'vuex'
 import { humanDate } from '@utils/time.js'
 import { MenuItem } from '@components/menu/index.js'

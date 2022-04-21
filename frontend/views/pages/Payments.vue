@@ -102,7 +102,7 @@ page(
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import Search from '@components/Search.vue'

@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import VueSlider from 'vue-slider-component'
 import store from '@model/state.js'
 import { REPLACED_STATE } from '@utils/events.js'
@@ -16,8 +16,8 @@ import { cloneDeep } from '@utils/giLodash.js'
 // since we are lazyily loaded outside of main.js, we must re-register these selectors
 // otherwise, for reasons beyond me (having to with how System.js works), we will get
 // "TypeError: selectors[selector] is not a function" getting thrown from line 27 of sbp.js...
-import '~/shared/domains/okTurtles/data.js'
-import '~/shared/domains/okTurtles/events.js'
+import '@sbp/okturtles.data'
+import '@sbp/okturtles.events'
 const disableTimeTravel = false
 export default ({
   name: 'TimeTravel',

@@ -1,15 +1,13 @@
 /* eslint-env mocha */
 
-import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/events.js'
-import '~/shared/domains/okTurtles/eventQueue.js'
+import sbp from '@sbp/spb'
+import '@sbp/okturtles.events'
+import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 // import * as _ from '~/frontend/utils/giLodash.js'
 import { createGIPubSubClient } from '~/frontend/controller/backend.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-// import { blake2bInit, blake2bUpdate, blake2bFinal } from 'blakejs'
-// import multihash from 'multihashes'
 import { blake32Hash } from '~/shared/functions.js'
 import proposals from '~/frontend/model/contracts/voting/proposals.js'
 import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/voting/constants.js'
@@ -18,7 +16,7 @@ import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts
 import { INVITE_INITIAL_CREATOR } from '~/frontend/model/contracts/constants.js'
 import { createInvite } from '~/frontend/model/contracts/group.js'
 // import '~/frontend/model/contracts/identity.js'
-import '~/frontend/model/state.js'
+// import '~/frontend/model/state.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
@@ -60,9 +58,16 @@ const vuexState = {
 // this is to ensure compatibility between frontend and test/backend.test.js
 sbp('okTurtles.data/set', 'API_URL', process.env.API_URL)
 
+sbp('chelonia/configure', {
+  connectionURL: process.env.API_URL,
+  stateSelector: 'state/vuex/state'
+})
+
+/*
+// TODO: delete this, should no longer be necessary
 sbp('sbp/selectors/overwrite', {
-  // intercept 'chelonia/in.private/enqueueHandleEvent' from backend.js
-  'chelonia/in.private/enqueueHandleEvent': function (e) {
+  // intercept 'chelonia/private/in/enqueueHandleEvent' from backend.js
+  'chelonia/private/in/enqueueHandleEvent': function (e) {
     const contractID = e.contractID()
     if (!vuexState[contractID]) {
       vuexState[contractID] = {}
@@ -75,18 +80,19 @@ sbp('sbp/selectors/overwrite', {
     return vuexState
   }
 })
+*/
 
 sbp('sbp/selectors/register', {
+  // for handling the loggedIn metadata() in Contracts.js
+  'state/vuex/state': () => {
+    return vuexState
+  },
   'backend.tests/postEntry': async function (entry) {
     console.log(bold.yellow('sending entry with hash:'), entry.hash())
     const res = await sbp('backend/publishLogEntry', entry)
     should(res).equal(entry.hash())
     return res
   }
-})
-
-sbp('chelonia/configure', {
-  publishSelector: 'backend.tests/postEntry'
 })
 
 // uncomment this to help with debugging:

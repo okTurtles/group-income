@@ -1,6 +1,8 @@
+'use strict'
+
 import type { Notification, NotificationData } from './types.flow.js'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import * as keys from './mutationKeys.js'
 import templates from './templates.js'
 

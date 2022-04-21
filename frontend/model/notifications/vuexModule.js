@@ -1,6 +1,8 @@
+'use strict'
+
 import type { Notification } from './types.flow.js'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 
 import './selectors.js'
 import { age, isNew, isOlder } from './utils.js'

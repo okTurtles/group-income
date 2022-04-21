@@ -68,7 +68,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'

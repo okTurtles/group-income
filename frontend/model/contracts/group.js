@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import Vue from 'vue'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import '~/shared/domains/chelonia/chelonia.js'
@@ -176,12 +176,6 @@ sbp('chelonia/defineContract', {
         identityContractID
       }
     }
-  },
-  // This function defines how the contract locates the state of a specific contractID.
-  // It is required. We can do cool things, like overriding 'state/vuex/state' in
-  // 'test/backend.test.js' to simplify and speed up testing by bypassing Vuex.
-  state (contractID) {
-    return sbp('state/vuex/state')[contractID]
   },
   // These getters are restricted only to the contract's state.
   // Do not access state outside the contract state inside of them.
@@ -766,13 +760,13 @@ sbp('chelonia/defineContract', {
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name in state.profiles) {
             if (name !== rootState.loggedIn.username) {
-              await sbp('state/enqueueContractSync', state.profiles[name].contractID)
+              await sbp('chelonia/in/sync', state.profiles[name].contractID)
             }
           }
         } else {
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
-          await sbp('state/enqueueContractSync', meta.identityContractID)
+          await sbp('chelonia/in/sync', meta.identityContractID)
         }
       }
     },

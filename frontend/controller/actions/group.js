@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/spb'
 import { createInvite } from '@model/contracts/group.js'
 import {
   INVITE_INITIAL_CREATOR,
@@ -130,7 +130,7 @@ export default (sbp('sbp/selectors/register', {
       })
 
       if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', message.contractID())
+        await sbp('chelonia/in/sync', message.contractID())
       }
 
       // create a 'General' chatroom contract and let the creator join
@@ -169,7 +169,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
       // sync the group's contract state
-      await sbp('state/enqueueContractSync', params.contractID)
+      await sbp('chelonia/in/sync', params.contractID)
 
       // join the 'General' chatroom by default
       const rootState = sbp('state/vuex/state')

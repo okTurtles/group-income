@@ -1,10 +1,10 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
-import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/data.js'
-import '~/shared/domains/okTurtles/events.js'
-import '~/shared/domains/okTurtles/eventQueue.js'
+import sbp from '@sbp/spb'
+import '@sbp/okturtles.data'
+import '@sbp/okturtles.events'
+import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
@@ -54,7 +54,9 @@ async function startApp () {
     const selBlacklist = [
       'gi.db/get',
       'gi.db/log/logHEAD',
-      'gi.db/set'
+      'gi.db/set',
+      'state/vuex/state',
+      'state/vuex/getters'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selBlacklist[selector]) return
