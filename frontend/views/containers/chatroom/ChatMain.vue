@@ -10,19 +10,19 @@
 
     .c-body-conversation(ref='conversation' v-else='' data-test='conversationWapper')
 
+      infinite-loading(
+        direction='top'
+        slot='append'
+        @infinite='infiniteHandler'
+        force-use-infinite-wrapper='.c-body-conversation'
+      )
+
       conversation-greetings(
         :members='details.numberOfParticipants'
         :creator='summary.creator'
         :type='type'
         :name='summary.title'
         :description='summary.description'
-      )
-
-      infinite-loading(
-        direction='top'
-        slot='append'
-        @infinite='infiniteHandler'
-        force-use-infinite-wrapper='.c-body-conversation'
       )
 
       template(v-for='(message, index) in messages')
@@ -400,12 +400,13 @@ export default ({
       document.documentElement.style.setProperty('--vh', `${vh}px`)
     },
     infiniteHandler ($state) {
-      console.log('--------------', $state)
-      // const clonedMessages = cloneDeep(this.messages)
-      // clonedMessages.map(m => ({ ...m, id: m.id + new Date().getTime() }))
-      // this.messages.unshift(...clonedMessages)
-      // $state.loaded()
-      // this.$forceUpdate()
+      const clonedMessages = cloneDeep(this.messages.slice(-10))
+      this.messages.unshift(
+        ...clonedMessages.map(m => ({ ...m, id: `${m.id}-${parseInt(new Date().getTime() * Math.random())}` }))
+      )
+      $state.loaded()
+      this.$forceUpdate()
+      // $state.complete()
     }
   },
   watch: {
