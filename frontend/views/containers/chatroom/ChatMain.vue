@@ -9,12 +9,20 @@
           - this should be done only after knowing exactly how server gets each conversation data
 
     .c-body-conversation(ref='conversation' v-else='' data-test='conversationWapper')
+
       conversation-greetings(
         :members='details.numberOfParticipants'
         :creator='summary.creator'
         :type='type'
         :name='summary.title'
         :description='summary.description'
+      )
+
+      infinite-loading(
+        direction='top'
+        slot='append'
+        @infinite='infiniteHandler'
+        force-use-infinite-wrapper='.c-body-conversation'
       )
 
       template(v-for='(message, index) in messages')
@@ -73,6 +81,7 @@ import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
+import InfiniteLoading from 'vue-infinite-loading'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
@@ -93,6 +102,7 @@ export default ({
     Avatar,
     Emoticons,
     Loading,
+    InfiniteLoading,
     Message,
     MessageInteractive,
     MessageNotification,
@@ -388,6 +398,14 @@ export default ({
     resizeEventHandler () {
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
+    },
+    infiniteHandler ($state) {
+      console.log('--------------', $state)
+      // const clonedMessages = cloneDeep(this.messages)
+      // clonedMessages.map(m => ({ ...m, id: m.id + new Date().getTime() }))
+      // this.messages.unshift(...clonedMessages)
+      // $state.loaded()
+      // this.$forceUpdate()
     }
   },
   watch: {
@@ -490,5 +508,4 @@ export default ({
     font-weight: bold;
   }
 }
-
 </style>
