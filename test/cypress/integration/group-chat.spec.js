@@ -253,7 +253,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     }
   })
 
-  it('user2 invites user1 to several channels he created', () => {
+  it('user2 invites user1 and user3 to several channels he created', () => {
     for (const cn of channelsOf2For1) {
       addMemberToChannel(cn, user1)
     }
