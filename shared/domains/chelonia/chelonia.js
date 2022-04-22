@@ -54,7 +54,7 @@ sbp('sbp/selectors/register', {
     this.config = {
       decryptFn: JSON.parse, // override!
       encryptFn: JSON.stringify, // override!
-      stateSelector: 'chelonia/state', // can override to integrate with, for example, vuex
+      stateSelector: 'chelonia/private/state', // override to integrate with, for example, vuex
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
       reactiveDel: (obj, key) => { delete obj[key] },
@@ -65,7 +65,10 @@ sbp('sbp/selectors/register', {
         timeout: 5000
       },
       hooks: {
-        preHandleEvent: null // async (message: GIMessage) => {}
+        preHandleEvent: null, // async (message: GIMessage) => {}
+        postHandleEvent: null, // async (message: GIMessage) => {}
+        handleEventError: null, // (e: Error, message: GIMessage) => {}
+        syncContractError: null // (e: Error, contractID: string) => {}
       }
     }
     this.state = {
@@ -85,9 +88,6 @@ sbp('sbp/selectors/register', {
   },
   'chelonia/configure': function (config: Object) {
     merge(this.config, config)
-  },
-  'chelonia/state': function (): Object {
-    return this.state
   },
   'chelonia/connect': function (): Object {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')
@@ -128,12 +128,11 @@ sbp('sbp/selectors/register', {
     if (!ACTION_REGEX.exec(contract.name)) throw new Error(`bad contract name: ${contract.name}`)
     if (!contract.metadata) contract.metadata = { validate () {}, create: () => ({}) }
     if (!contract.getters) contract.getters = {}
-    if (!contract.state) contract.state = (contractID) => sbp(this.stateSelector)[contractID]
+    contract.state = (contractID) => sbp(this.stateSelector)[contractID]
     this.contracts[contract.name] = contract
     sbp('sbp/selectors/register', {
       // expose getters for Vuex integration and other conveniences
       [`${contract.name}/getters`]: () => contract.getters,
-      [`${contract.name}/state`]: contract.state,
       // 2 ways to cause sideEffects to happen: by defining a sideEffect function in the
       // contract, or by calling /pushSideEffect w/async SBP call. Can also do both.
       [`${contract.name}/pushSideEffect`]: (contractID: string, asyncSbpCall: Array<*>) => {
@@ -143,6 +142,12 @@ sbp('sbp/selectors/register', {
     for (const action in contract.actions) {
       contractFromAction(this.contracts, action) // ensure actions are appropriately named
       this.whitelistedActions[action] = true
+      // TODO: automatically generate creation actions here using `${action}/create`
+      //       allow the specification of:
+      //       - the optype (e.g. OP_ACTION_(UN)ENCRYPTED)
+      //       - a localized error message
+      //       - whatever keys should be passed in as well
+      //       base it off of the design of encryptedAction()
       sbp('sbp/selectors/register', {
         [`${action}/process`]: (message: Object, state: Object) => {
           const { meta, data, contractID } = message
@@ -156,7 +161,14 @@ sbp('sbp/selectors/register', {
         [`${action}/sideEffect`]: async (message: Object, state: ?Object) => {
           const sideEffects = this.sideEffectStack(message.contractID)
           while (sideEffects.length > 0) {
-            await sbp(...sideEffects.shift())
+            const sideEffect = sideEffects.shift()
+            try {
+              await sbp(...sideEffect)
+            } catch (e) {
+              console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${message.description()}:`, sideEffect)
+              this.sideEffectStacks[message.contractID()] = [] // clear the side effects
+              throw e
+            }
           }
           if (contract.actions[action].sideEffect) {
             state = state || contract.state(message.contractID)
@@ -167,36 +179,35 @@ sbp('sbp/selectors/register', {
       })
     }
   },
-  // make sure every location that calls `latestContractState` can handle the ChelErrorUnrecoverable
+  // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
+  'chelonia/contract/sync': function (contractIDs: string | string[]): Promise<*> {
+    const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    return Promise.all(listOfIds.map(contractID => {
+      // enqueue this invocation in a serial queue to ensure
+      // handleEvent does not get called on contractID while it's syncing,
+      // but after it's finished. This is used in tandem with
+      // queuing the 'chelonia/private/in/handleEvent' selector, defined below.
+      // This prevents handleEvent getting called with the wrong previousHEAD for an event.
+      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
+        'chelonia/private/in/syncContract', contractID
+      ])
+    }))
+  },
+  // TODO: this
+  'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
+    const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    return Promise.all(listOfIds.map(contractID => {
+      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
+        'chelonia/private/contract/remove', contractID
+      ])
+    }))
+  },
+  // TODO: bring in the CONTRACTS_MODIFIED listener from backend.js
   'chelonia/latestContractState': async (contractID: string) => {
     const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
-    // Fast path. Will stop and fall back to the slower path if an error is found.
-    try {
-      const state = {}
-      for (const event of events) {
-        sbp('chelonia/in/processMessage', GIMessage.deserialize(event), state)
-      }
-      return state
-    } catch (err) {
-      if (err instanceof ChelErrorUnrecoverable) {
-        throw err
-      }
-    }
-    // Slower path. More error-tolerant but clones the contract state again for every processed message.
-    let state = {}
-
+    const state = {}
     for (const event of events) {
-      const message = GIMessage.deserialize(event)
-      const stateCopy = cloneDeep(state)
-      try {
-        sbp('chelonia/in/processMessage', message, state)
-      } catch (err) {
-        if (err instanceof ChelErrorUnrecoverable) {
-          throw err
-        }
-        console.error(`latestContractState: ignoring mutation ${message.description()} because of ${err.name}: ${err.message}`, err)
-        state = stateCopy
-      }
+      sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
     }
     return state
   },
@@ -245,20 +256,6 @@ sbp('sbp/selectors/register', {
   },
   'chelonia/out/propDel': async function () {
 
-  },
-  // 'chelonia/in' - selectors that inject data from the server and update our internal state
-  'chelonia/in/sync': function (contractIDs: string | string[]) {
-    const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
-    return Promise.all(listOfIds.map(contractID => {
-      // enqueue this invocation in a serial queue to ensure
-      // handleEvent does not get called on contractID while it's syncing,
-      // but after it's finished. This is used in tandem with
-      // queuing the 'chelonia/private/in/handleEvent' selector, defined below.
-      // This prevents handleEvent getting called with the wrong previousHEAD for an event.
-      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
-        'chelonia/private/in/syncContract', contractID
-      ])
-    }))
   }
 })
 

@@ -51,7 +51,7 @@ export default (sbp('sbp/selectors/register', {
       })
       userID = user.contractID()
       if (sync) {
-        await sbp('chelonia/in/sync', userID)
+        await sbp('chelonia/contract/sync', userID)
       }
       await sbp('gi.actions/identity/setAttributes', {
         contractID: userID, data: { mailbox: mailboxID }
@@ -103,7 +103,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('state/vuex/dispatch', 'login', { username, identityContractID: userId })
 
       if (sync) {
-        await sbp('chelonia/in/sync', userId)
+        await sbp('chelonia/contract/sync', userId)
       }
 
       return userId

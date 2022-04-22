@@ -1,20 +1,25 @@
 'use strict'
 
 import sbp from '@sbp/spb'
-import { GIMessage, sanityCheck } from './GIMessage.js'
+import { GIMessage } from './GIMessage.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr } from '~/shared/functions.js'
-import { randomIntFromRange, delay } from '~/frontend/utils/giLodash.js'
+import { randomIntFromRange, delay, cloneDeep, debounce } from '~/frontend/utils/giLodash.js'
+import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
 export const CONTRACT_IS_SYNCING = 'contract-is-syncing'
+export const CONTRACTS_MODIFIED = 'contracts-modified'
+export const EVENT_HANDLED = 'event-handled'
 
 sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
+  'chelonia/private/state': function () {
+    return this.state
+  },
   // TODO: make this private
-  'chelonia/in/processMessage': function (message: GIMessage, state: Object) {
-    sanityCheck(message)
+  'chelonia/private/in/processMessage': function (message: GIMessage, state: Object) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const contractID = message.contractID()
@@ -92,44 +97,64 @@ sbp('sbp/selectors/register', {
         state.pending.push(contractID)
       }
     }
-    if (latest !== recent) {
-      console.debug(`Now Synchronizing Contract: ${contractID} its most recent was ${recent || 'undefined'} but the latest is ${latest}`)
-      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
-      // TODO: fetch events from localStorage instead of server if we have them
-      const events = await sbp('chelonia/private/out/eventsSince', contractID, recent || contractID)
-      // remove the first element in cases where we are not getting the contract for the first time
-      state.contracts[contractID] && events.shift()
-      for (let i = 0; i < events.length; i++) {
-        // this must be called directly, instead of via enqueueHandleEvent
-        await sbp('chelonia/private/in/handleEvent', GIMessage.deserialize(events[i]))
+    try {
+      if (latest !== recent) {
+        console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
+        sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
+        // TODO: fetch events from localStorage instead of server if we have them
+        const events = await sbp('chelonia/private/out/eventsSince', contractID, recent || contractID)
+        // remove the first element in cases where we are not getting the contract for the first time
+        state.contracts[contractID] && events.shift()
+        for (let i = 0; i < events.length; i++) {
+          // this must be called directly, instead of via enqueueHandleEvent
+          await sbp('chelonia/private/in/handleEvent', GIMessage.deserialize(events[i]))
+        }
+      } else {
+        console.debug(`[chelonia] contract ${contractID} was already synchronized`)
       }
-    } else {
-      console.debug(`Contract ${contractID} was already synchronized`)
+      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
+    } catch (e) {
+      console.error(`[chelonia] syncContract error: ${e.message}`, e)
+      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
+      this.config.hooks.syncContractError?.(e, contractID)
+      throw e
     }
-    sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
   },
   'chelonia/private/in/handleEvent': async function (message: GIMessage) {
     const state = sbp(this.config.stateSelector)
     const contractID = message.contractID()
+    const { preHandleEvent, postHandleEvent, handleEventError } = this.config.hooks
     try {
-      if (!state[contractID]) {
-        this.config.reactiveSet(state, contractID, {})
+      preHandleEvent && await preHandleEvent(message)
+      // verify we're expecting to hear from this contract
+      if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
+        console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
+        throw new ChelErrorUnexpected()
       }
-      if (this.config.preHandleEvent) {
-        await this.config.preHandleEvent(message)
+      // the order the following actions are done is critically important!
+      // first we make sure we save this message to the db
+      await handleEvent.addMessageToDB(message)
+      // process the mutation on the state (everything here must be synchronous)
+      handleEvent.processMutation.call(this, message, state)
+      // process any side-effects (these must never result in any mutation to this contract state)
+      if (!this.config.skipActionProcessing) {
+        await handleEvent.processSideEffects.call(this, message)
       }
-      // TODO: we should be able to avoid caring about store.registerModule
-      if (message.isFirstMessage()) {
-        // Flow doesn't understand that a first message must be a contract,
-        // so we have to help it a bit in order to acces the 'type' property.
-        const { type } = ((message.opValue(): any): GIOpContract)
-        store.commit('registerContract', { contractID, type })
+      // remove any events that were added to eventsToReprocess if we reprocessed them
+      const reprocessIdx = eventsToReprocess.indexOf(message.hash())
+      if (reprocessIdx !== -1) {
+        console.warn(`[chelonia] WARN: successfully reprocessed ${message.description()}`)
+        eventsToReprocess.splice(reprocessIdx, 1)
       }
-      sbp('chelonia/in/processMessage', message, state[contractID])
-      store.commit('setContractHEAD', { contractID, HEAD: hash })
-      sbp('okTurtles.events/emit', message.hash(), message)
-    } catch (e) {
+      postHandleEvent && await postHandleEvent(message)
 
+      // let any listening components know that we've received, processed, and stored the event
+      sbp('okTurtles.events/emit', message.hash(), contractID, message)
+      sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
+    } catch (e) {
+      console.error(`[chelonia] ERROR in handleEvent: ${e.message}`, e)
+      handleEventError?.(e, message)
+      throw e
     }
   },
   'chelonia/private/out/publishEvent': async (entry: GIMessage, { maxAttempts = 2 } = {}) => {
@@ -138,7 +163,7 @@ sbp('sbp/selectors/register', {
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income/issues/608
     while (true) {
-      const r = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/event`, {
+      const r = await fetch(`${this.config.connectionURL}/event`, {
         method: 'POST',
         body: entry.serialize(),
         headers: {
@@ -151,40 +176,119 @@ sbp('sbp/selectors/register', {
       }
       if (r.status === 409) {
         if (attempt + 1 > maxAttempts) {
-          console.error(`publishLogEntry: failed to publish ${entry.description()} after ${attempt} attempts`, entry)
+          console.error(`[chelonia] failed to publish ${entry.description()} after ${attempt} attempts`, entry)
           throw new Error(`publishLogEntry: ${r.status} - ${r.statusText}. attempt ${attempt}`)
         }
         // create new entry
         const randDelay = randomIntFromRange(0, 1500)
-        console.warn(`publishLogEntry: attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
+        console.warn(`[chelonia] publish attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
         attempt += 1
         await delay(randDelay) // wait half a second before sending it again
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
-          const previousHEAD = await sbp('backend/latestHash', contractID)
+          const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
           entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op())
         }
       } else {
-        console.error(`publishLogEntry: ${r.status} - ${r.statusText}, failed to publish ${entry.description()}:`, entry)
+        console.error(`[chelonia] ERROR: failed to publish ${entry.description()}: ${r.status} - ${r.statusText}`, entry)
         throw new Error(`publishLogEntry: ${r.status} - ${r.statusText}`)
       }
     }
   },
   'chelonia/private/out/latestHash': (contractID: string) => {
-    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/latestHash/${contractID}`)
+    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`)
       .then(handleFetchResult('text'))
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
   'chelonia/private/out/eventsSince': async (contractID: string, since: string) => {
-    const events = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/events/${contractID}/${since}`)
+    const events = await fetch(`${this.config.connectionURL}/events/${contractID}/${since}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
     }
   }
 })
+
+const eventsToReprocess = []
+const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID), 1000)
+
+const handleEvent = {
+  async addMessageToDB (message: GIMessage) {
+    const contractID = message.contractID()
+    try {
+      await sbp('chelonia/db/addEntry', message)
+    } catch (e) {
+      if (e instanceof ChelErrorDBBadPreviousHEAD) {
+        // sometimes we simply miss messages, it's not clear why, but it happens
+        // in rare cases. So we attempt to re-sync this contract once
+        if (eventsToReprocess.length > 100) {
+          throw new ChelErrorUnrecoverable('more than 100 bad previousHEAD errors')
+        }
+        if (!eventsToReprocess.includes(message.hash())) {
+          console.warn(`[chelonia] WARN bad previousHEAD for ${message.description()}, will attempt to re-sync contract ${contractID}`)
+          eventsToReprocess.push(message.hash())
+          reprocessDebounced(contractID)
+        } else {
+          console.error(`[chelonia] ERROR already attempted to re-process ${message.description()}, will not attempt again!`)
+        }
+      }
+      throw e
+    }
+  },
+  processMutation (message: GIMessage, state: Object) {
+    const contractID = message.contractID()
+    const hash = message.hash()
+    let stateCopy
+    try {
+      if (message.isFirstMessage()) {
+        // Flow doesn't understand that a first message must be a contract,
+        // so we have to help it a bit in order to acces the 'type' property.
+        const { type } = ((message.opValue(): any): GIOpContract)
+        if (!state[contractID]) {
+          this.config.reactiveSet(state, contractID, {})
+          this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID })
+        }
+        // we've successfully received it back, so remove it from expectation pending
+        const index = state.pending.indexOf(contractID)
+        index !== -1 && state.pending.splice(index, 1)
+        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
+      }
+      stateCopy = cloneDeep(state[contractID])
+      sbp('chelonia/private/in/processMessage', message, state[contractID])
+      state.contracts[contractID].HEAD = hash
+    } catch (e) {
+      console.error(`[chelonia] ERROR '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
+      // TODO: this is wrong - everywhere we have GIErrorIgnoreAndBanIfGroup this shouldn't be done
+      //       however, maybe we shouldn't be throwing exceptions in the contract at all, only
+      //       reporting errors via console.error and 'gi.notifications/emit'
+      if (stateCopy) {
+        console.warn(`[chelonia] WARN reverting contract state for ${contractID}`)
+        state[contractID] = stateCopy // undo any changes that were done
+      }
+      throw e
+    }
+  },
+  async processSideEffects (message: GIMessage) {
+    try {
+      if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) {
+        const contractID = message.contractID()
+        const hash = message.hash()
+        const { action, data, meta } = message.decryptedValue()
+        const mutation = { data, meta, hash, contractID }
+        await sbp(`${action}/sideEffect`, mutation)
+      }
+    } catch (e) {
+      console.error(`[chelonia] ERROR '${e.name}' in processSideEffects for ${message.description()}: ${e.message}`, e, message.serialize())
+      // TODO: figure out what to do. the state is currently only restored if processMessage fails
+      //       maybe we should restore it if either the mutation or sideEffect fails, and drop
+      //       the message entirely / pause processing since some sideEffects are kinda significant
+      //       (e.g. joining people to the group, etc.)
+      // throw e
+    }
+  }
+}
 
 const notImplemented = (v) => {
   throw new Error(`chelonia: action not implemented to handle: ${JSON.stringify(v)}.`)

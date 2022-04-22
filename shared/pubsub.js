@@ -420,7 +420,7 @@ const defaultMessageHandlers = {
         client.pendingSubscriptionSet.delete(contractID)
         client.subscriptionSet.add(contractID)
         if (client.pendingSyncSet.has(contractID)) {
-          sbp('chelonia/in/sync', contractID)
+          sbp('chelonia/contract/sync', contractID)
           client.pendingSyncSet.delete(contractID)
         }
         break

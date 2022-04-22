@@ -597,7 +597,7 @@ sbp('chelonia/defineContract', {
         Vue.set(proposal.votes, meta.username, data.vote)
         // TODO: handle vote pass/fail
         // check if proposal is expired, if so, ignore (but log vote)
-        if (Date.now() > proposal.data.expires_date_ms) {
+        if (new Date(meta.createdDate).getTime() > proposal.data.expires_date_ms) {
           console.warn('proposalVote: vote on expired proposal!', { proposal, data, meta })
           // TODO: display warning or something
           return
@@ -760,13 +760,13 @@ sbp('chelonia/defineContract', {
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name in state.profiles) {
             if (name !== rootState.loggedIn.username) {
-              await sbp('chelonia/in/sync', state.profiles[name].contractID)
+              await sbp('chelonia/contract/sync', state.profiles[name].contractID)
             }
           }
         } else {
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
-          await sbp('chelonia/in/sync', meta.identityContractID)
+          await sbp('chelonia/contract/sync', meta.identityContractID)
         }
       }
     },

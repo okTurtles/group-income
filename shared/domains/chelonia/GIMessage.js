@@ -46,8 +46,7 @@ export class GIMessage {
     op: GIOp,
     signatureFn?: Function = defaultSignatureFn
   ): this {
-    const instance = new this()
-    instance._message = {
+    const message = {
       version: 1.00,
       previousHEAD,
       contractID,
@@ -60,26 +59,41 @@ export class GIMessage {
     //       do not ever regenerate this message using the contructor.
     //       instead store it using serialize() and restore it using
     //       deserialize().
-    const messageJSON = JSON.stringify(instance._message)
+    const messageJSON = JSON.stringify(message)
     const value = JSON.stringify({
       message: messageJSON,
       sig: signatureFn(messageJSON)
     })
-    instance._mapping = {
-      key: blake32Hash(value),
-      value
-    }
-    sanityCheck(instance)
-    return instance
+    return new this({
+      mapping: { key: blake32Hash(value), value },
+      message
+    })
   }
 
   // TODO: we need signature verification upon decryption somewhere...
   static deserialize (value: string): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
-    const instance = new this()
-    instance._mapping = { key: blake32Hash(value), value }
-    instance._message = JSON.parse(JSON.parse(value).message)
-    return instance
+    return new this({
+      mapping: { key: blake32Hash(value), value },
+      message: JSON.parse(JSON.parse(value).message)
+    })
+  }
+
+  constructor ({ mapping, message }) {
+    this._mapping = mapping
+    this._message = message
+    // perform basic sanity check
+    const [type] = this.message().op
+    switch (type) {
+      case GIMessage.OP_CONTRACT:
+        if (!this.isFirstMessage()) throw new Error('OP_CONTRACT: must be first message')
+        break
+      case GIMessage.OP_ACTION_ENCRYPTED:
+        // nothing for now
+        break
+      default:
+        throw new Error(`unsupported op: ${type}`)
+    }
   }
 
   decryptedValue (fn?: Function): any {
@@ -131,19 +145,5 @@ function defaultSignatureFn (data: string) {
   return {
     type: 'default',
     sig: blake32Hash(data)
-  }
-}
-
-export function sanityCheck (msg: GIMessage) {
-  const [type] = msg.message().op
-  switch (type) {
-    case GIMessage.OP_CONTRACT:
-      if (!msg.isFirstMessage()) throw new Error('OP_CONTRACT: must be first message')
-      break
-    case GIMessage.OP_ACTION_ENCRYPTED:
-      // nothing for now
-      break
-    default:
-      throw new Error(`unsupported op: ${type}`)
   }
 }

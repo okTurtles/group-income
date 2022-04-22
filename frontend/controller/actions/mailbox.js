@@ -17,7 +17,7 @@ export default (sbp('sbp/selectors/register', {
         contractName: 'gi.contracts/mailbox', publishOptions, data
       })
       if (sync) {
-        await sbp('chelonia/in/sync', mailbox.contractID())
+        await sbp('chelonia/contract/sync', mailbox.contractID())
       }
       return mailbox
     } catch (e) {

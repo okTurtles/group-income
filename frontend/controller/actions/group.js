@@ -130,7 +130,7 @@ export default (sbp('sbp/selectors/register', {
       })
 
       if (sync) {
-        await sbp('chelonia/in/sync', message.contractID())
+        await sbp('chelonia/contract/sync', message.contractID())
       }
 
       // create a 'General' chatroom contract and let the creator join
@@ -169,7 +169,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
       // sync the group's contract state
-      await sbp('chelonia/in/sync', params.contractID)
+      await sbp('chelonia/contract/sync', params.contractID)
 
       // join the 'General' chatroom by default
       const rootState = sbp('state/vuex/state')

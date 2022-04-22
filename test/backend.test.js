@@ -72,7 +72,7 @@ sbp('sbp/selectors/overwrite', {
     if (!vuexState[contractID]) {
       vuexState[contractID] = {}
     }
-    sbp('chelonia/in/processMessage', e, vuexState[contractID])
+    sbp('chelonia/private/in/processMessage', e, vuexState[contractID])
     sbp('okTurtles.events/emit', e.hash(), e)
   },
   // for handling the loggedIn metadata() in Contracts.js
@@ -282,7 +282,7 @@ describe('Full walkthrough', function () {
       // raw-objects to instances, the hash check failed and I caught several bugs!
       const state = {}
       for (const e of events.map(e => GIMessage.deserialize(e))) {
-        sbp('chelonia/in/processMessage', e, state)
+        sbp('chelonia/private/in/processMessage', e, state)
       }
       console.log(bold.red('FINAL STATE:'), state)
       // 3. get bob's mailbox contractID from his identity contract attributes

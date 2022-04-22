@@ -7,7 +7,7 @@ import fs from 'fs'
 import util from 'util'
 import path from 'path'
 import '@sbp/okturtles.data'
-import '~/shared/domains/gi/db.js'
+import '~/shared/domains/chelonia/db.js'
 
 const Boom = require('@hapi/boom')
 
@@ -23,7 +23,7 @@ const production = process.env.NODE_ENV === 'production'
 
 export default (sbp('sbp/selectors/register', {
   'backend/db/streamEntriesSince': async function (contractID: string, hash: string): Promise<*> {
-    let currentHEAD = await sbp('gi.db/get', sbp('gi.db/log/logHEAD', contractID))
+    let currentHEAD = await sbp('chelonia/db/get', sbp('chelonia/db/logHEAD', contractID))
     if (!currentHEAD) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
@@ -33,7 +33,7 @@ export default (sbp('sbp/selectors/register', {
     return new Readable({
       async read (): any {
         try {
-          const entry = await sbp('gi.db/log/getEntry', currentHEAD)
+          const entry = await sbp('chelonia/db/getEntry', currentHEAD)
           const json = `"${strToB64(entry.serialize())}"`
           if (currentHEAD !== hash) {
             this.push(prefix + json)
@@ -64,11 +64,11 @@ export default (sbp('sbp/selectors/register', {
       }
       // otherwise it is a Boom.notFound(), proceed ahead
     }
-    await sbp('gi.db/set', namespaceKey(name), value)
+    await sbp('chelonia/db/set', namespaceKey(name), value)
     return { name, value }
   },
   'backend/db/lookupName': async function (name: string): Promise<*> {
-    const value = await sbp('gi.db/get', namespaceKey(name))
+    const value = await sbp('chelonia/db/get', namespaceKey(name))
     return value || Boom.notFound()
   },
   // =======================
@@ -114,13 +114,14 @@ function throwIfFileOutsideDataDir (filename: string): string {
 
 if (production || process.env.GI_PERSIST) {
   sbp('sbp/selectors/overwrite', {
-    // we cannot simply map this to readFile, because 'gi.db/log/getEntry'
+    // we cannot simply map this to readFile, because 'chelonia/db/getEntry'
     // calls this and expects a string, not a Buffer
-    // 'gi.db/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
-    'gi.db/get': async function (filename: string) {
+    // 'chelonia/db/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
+    'chelonia/db/get': async function (filename: string) {
       const value = await sbp('backend/db/readFile', filename)
       return Boom.isBoom(value) ? null : value.toString('utf8')
     },
-    'gi.db/set': sbp('sbp/selectors/fn', 'backend/db/writeFile')
+    'chelonia/db/set': sbp('sbp/selectors/fn', 'backend/db/writeFile')
   })
+  sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
 }

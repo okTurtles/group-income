@@ -49,7 +49,7 @@ sbp('sbp/selectors/register', {
     await pubsub.broadcast(pubsubMessage, { to: subscribers })
   },
   'backend/server/handleEntry': async function (entry: GIMessage) {
-    await sbp('gi.db/log/addEntry', entry)
+    await sbp('chelonia/db/addEntry', entry)
     await sbp('backend/server/broadcastEntry', entry)
   },
   'backend/server/stop': function () {

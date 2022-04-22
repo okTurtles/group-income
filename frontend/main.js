@@ -11,16 +11,16 @@ import './controller/actions/index.js'
 import Vue from 'vue'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
-import { createGIPubSubClient } from './controller/backend.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
-import { randomHexString } from './utils/giLodash.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
+
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
+import L, { LError } from '@view-utils/translations.js'
 import './views/utils/allowedUrls.js'
 import './views/utils/translations.js'
 import './views/utils/avatar.js'
@@ -52,9 +52,9 @@ async function startApp () {
       'okTurtles.data'
     ].reduce(reducer, {})
     const selBlacklist = [
-      'gi.db/get',
-      'gi.db/log/logHEAD',
-      'gi.db/set',
+      'chelonia/db/get',
+      'chelonia/db/logHEAD',
+      'chelonia/db/set',
       'state/vuex/state',
       'state/vuex/getters'
     ].reduce(reducer, {})
@@ -66,24 +66,16 @@ async function startApp () {
 
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
-
-  // URL used to connect to the pubsub server. May include query parameters.
-  let pubsubURL = sbp('okTurtles.data/get', 'API_URL')
-
-  if (process.env.NODE_ENV === 'development') {
-    // This is temporarily used in development mode to help the server improve
-    // its console output until we have a better solution. Do not use for auth.
-    pubsubURL += `?debugID=${randomHexString(6)}`
-  }
-  sbp('okTurtles.data/set', PUBSUB_INSTANCE, createGIPubSubClient(
-    pubsubURL, {
-      // See https://github.com/okTurtles/group-income/issues/1183
-      maxRetries: Infinity,
-      // This option can be enabled since we are not doing auth via web sockets.
-      reconnectOnTimeout: true,
-      timeout: 5000
+  sbp('chelonia/configure', {
+    connectionURL: sbp('okTurtles.data/get', 'API_URL'),
+    hooks: {
+      handleEventError: (e: Error, contractID: string) => {
+        sbp('okTurtles.data/get', 'BANNER')
+          .danger(L('Fatal error: {reportError}', LError(e)), 'exclamation-triangle')
+      }
     }
-  ))
+  })
+  sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
 
   await sbp('translations/init', navigator.language)
 
@@ -138,7 +130,7 @@ async function startApp () {
         // Make it possible for Cypress to wait for contracts to finish syncing.
         if (isSyncing) {
           this.ephemeral.syncs.push(contractID)
-          this.$refs.bannerGeneral.show(this.L('Loading events from server...'), 'wifi')
+          this.$refs.bannerGeneral.show(L('Loading events from server...'), 'wifi')
         } else {
           this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
           if (!this.ephemeral.syncs.length) {

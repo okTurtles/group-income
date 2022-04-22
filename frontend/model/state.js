@@ -13,7 +13,6 @@ import '~/shared/domains/chelonia/chelonia.js'
 import L from '~/frontend/views/utils/translations.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
-import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
 import Colors from './colors.js'
 import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
@@ -76,7 +75,7 @@ sbp('sbp/selectors/register', {
     try {
       const state = {}
       for (const event of events) {
-        sbp('chelonia/in/processMessage', GIMessage.deserialize(event), state)
+        sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
       }
       return state
     } catch (err) {
@@ -91,7 +90,7 @@ sbp('sbp/selectors/register', {
       const message = GIMessage.deserialize(event)
       const stateCopy = _.cloneDeep(state)
       try {
-        sbp('chelonia/in/processMessage', message, state)
+        sbp('chelonia/private/in/processMessage', message, state)
       } catch (err) {
         if (err instanceof GIErrorUnrecoverable) {
           throw err
@@ -119,7 +118,7 @@ const mutations = {
     state.currentGroupId = null
   },
   processMessage (state, { message }) {
-    sbp('chelonia/in/processMessage', message, state)
+    sbp('chelonia/private/in/processMessage', message, state)
   },
   registerContract (state, { contractID, type }) {
     const firstTimeRegistering = !state[contractID]
@@ -647,7 +646,7 @@ const actions = {
       for (const contractID in contracts) {
         const { type } = contracts[contractID]
         commit('registerContract', { contractID, type })
-        await sbp('chelonia/in/sync', contractID)
+        await sbp('chelonia/contract/sync', contractID)
       }
       // it's insane, and I'm not sure how this can happen, but it did... and
       // the following steps actually fixed it...
@@ -658,12 +657,12 @@ const actions = {
       const currentGroupId = store.state.currentGroupId
       if (currentGroupId && !contracts[currentGroupId]) {
         console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
-        await sbp('chelonia/in/sync', currentGroupId)
+        await sbp('chelonia/contract/sync', currentGroupId)
       }
       // TODO: resync for the chatroom contract, because current chatroom contract id could be what the user is not part of
       if (!contracts[user.identityContractID]) {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
-        await sbp('chelonia/in/sync', user.identityContractID)
+        await sbp('chelonia/contract/sync', user.identityContractID)
       }
     } else {
       captureLogsStart(user.username)
@@ -804,7 +803,7 @@ const handleEvent = {
       throw new GIErrorDropAndReprocess(`ignoring message until page refresh: ${message.description()}`)
     }
     try {
-      return await sbp('gi.db/log/addEntry', message)
+      return await sbp('chelonia/db/addEntry', message)
     } catch (e) {
       if (e instanceof ErrorDBBadPreviousHEAD) {
         // sometimes we simply miss messages, it's not clear why, but it happens
@@ -817,7 +816,7 @@ const handleEvent = {
           setTimeout(() => {
             // re-enable message processing
             dropAllMessagesUntilRefresh = false
-            sbp('chelonia/in/sync', message.contractID())
+            sbp('chelonia/contract/sync', message.contractID())
           }, 1000)
         } else {
           console.error(`addMessageToDB: already attempted to re-process ${attemptToReprocessMessageID} ${message.description()}, will not attempt again!`)
