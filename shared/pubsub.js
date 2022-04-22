@@ -308,10 +308,9 @@ const defaultClientEventHandlers = {
     const client = this
     const { options } = this
 
-    if (!client.isNew) {
-      sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SUCCEEDED, client)
-    }
     client.clearAllTimers()
+    sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SUCCEEDED, client)
+
     // Set it to -1 so that it becomes 0 on the next `close` event.
     client.failedConnectionAttempts = -1
     client.isNew = false
