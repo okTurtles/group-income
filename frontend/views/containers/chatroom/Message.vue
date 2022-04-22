@@ -9,12 +9,7 @@ message-base(
 
 <script>
 import MessageBase from './MessageBase.vue'
-
-const variants = {
-  SENT: 'sent',
-  RECEIVED: 'received',
-  FAILED: 'failed'
-}
+import { MESSAGE_VARIANTS } from '@model/contracts/constants.js'
 
 export default ({
   name: 'Message',
@@ -26,14 +21,14 @@ export default ({
     who: String,
     currentUserId: String,
     avatar: String,
-    time: {
+    datetime: {
       type: Date,
       required: true
     },
     variant: {
       type: String,
       validator (value) {
-        return [variants.SENT, variants.RECEIVED, variants.FAILED].indexOf(value) !== -1
+        return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
     emoticonsList: {
@@ -45,7 +40,7 @@ export default ({
     replyingMessage: null
   },
   constants: Object.freeze({
-    variants
+    variants: MESSAGE_VARIANTS
   }),
   methods: {
     edit () {

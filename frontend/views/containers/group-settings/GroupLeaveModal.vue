@@ -3,7 +3,7 @@
     template(slot='title')
       i18n Leave group
 
-    form(novalidate @submit.prevent='submit' data-test='leaveGroup')
+    form(novalidate @submit.prevent='' data-test='leaveGroup')
       i18n(
         tag='p'
         :args='LTags("strong")'
@@ -101,7 +101,6 @@ export default ({
     },
     async submit () {
       if (this.$v.form.$invalid) { return }
-
       try {
         await sbp('gi.actions/group/removeOurselves', { contractID: this.currentGroupId, data: {} })
       } catch (e) {

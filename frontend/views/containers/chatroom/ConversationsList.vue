@@ -1,10 +1,10 @@
 <template lang='pug'>
-.c-conversation-list
+.c-conversation-list(data-test='channelsList')
   .c-group-members-header
     h3.is-title-4 {{title}}
 
     button.button.is-small.is-outlined(
-      data-test='inviteButton'
+      data-test='newChannelButton'
       @click='openModal("CreateNewChannelModal")'
     )
       i.icon-plus.is-prefix
@@ -16,17 +16,18 @@
       :key='id'
       tag='router-link'
       variant='solid'
+      :data-test='getChannelTestData(id)'
       :icon='getIcon(id)'
-      :badgeCount='list.conversations[id].unreadCount'
+      :badgeCount='list.channels[id].unreadCount'
       :to='buildUrl(id)'
     )
       avatar(
-        v-if='list.conversations[id].picture'
-        :src='list.conversations[id].picture'
+        v-if='list.channels[id].picture'
+        :src='list.channels[id].picture'
         size='sm'
       )
 
-      span {{list.conversations[id].displayName || list.conversations[id].name}}
+      span {{list.channels[id].displayName || list.channels[id].name}}
 </template>
 
 <script>
@@ -34,6 +35,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 
 export default ({
   name: 'ConversationsList',
@@ -43,32 +45,30 @@ export default ({
   },
   props: {
     title: String,
-    /** List of conversations - shape: {
-      order: [] - see fakeStore.js - individualMessagesSorted,
-      conversations: - see fakeStore.js - users or groupChannels
+    /** List of channels - shape: {
+      order: [] - group channels in order,
+      channels: - group channels
     }
     */
     list: Object,
-    routeName: String,
-    type: String
+    routeName: String
   },
   methods: {
-    getIcon (id) {
-      const isPrivate = this.list.conversations[id].private
-      return isPrivate === undefined ? '' : (isPrivate ? 'lock' : 'hashtag')
+    getChannelTestData (id) {
+      const prefix = `channel-${this.list.channels[id].name}`
+      return prefix + (this.list.channels[id].joined ? '-in' : '-out')
     },
-    buildUrl (id) {
-      const { list, routeName, type } = this
-      const { name } = list.conversations[id] || {}
-
+    getIcon (id) {
+      const isPrivate = this.list.channels[id].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+      const isJoined = this.list.channels[id].joined
+      return isPrivate ? 'lock' : (isJoined ? 'hashtag' : 'plus')
+    },
+    buildUrl (chatRoomId) {
       // NOTE - This should be $store responsability
       // ...but for now I've used the $route params just for mocked layout purposes
       return {
-        name: routeName,
-        params: {
-          chatName: name,
-          currentConversation: { type, id }
-        }
+        name: this.routeName,
+        params: { chatRoomId }
       }
 
       // ... once $store is implement, we can just pass the following:

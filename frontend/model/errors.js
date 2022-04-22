@@ -32,8 +32,6 @@ export class GIErrorUnrecoverable extends Error {
   }
 }
 
-// -----------------------
-
 // Used to throw human readable errors on UI.
 export class GIErrorUIRuntimeError extends Error {
   constructor (...params: any[]) {

@@ -1,13 +1,13 @@
 <template lang='pug'>
-  modal-template(ref='modal' :a11yTitle='L("Leave group")')
+  modal-template(ref='modal' :a11yTitle='L("Leave Channel")')
     template(slot='title')
-      i18n Leave group
+      i18n Leave Channel
 
-    form(novalidate @submit.prevent='submit' data-test='leaveGroup')
+    form(novalidate @submit.prevent='' data-test='leaveChannel')
       i18n(
         tag='strong'
-        :args='{ groupName: groupSettings.groupName }'
-      ) Are you sure you want to leave {groupName}?
+        :args='{ channelName: currentChatRoomState.attributes.name }'
+      ) Are you sure you want to leave {channelName}?
 
       i18n(
         tag='p'
@@ -17,14 +17,15 @@
         i18n.is-outlined(tag='button' @click='close') Cancel
         button-submit.is-danger(
           @click='submit'
-          data-test='btnSubmit'
+          data-test='leaveChannelSubmit'
         ) {{ L('Leave Channel') }}
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 
 export default ({
   name: 'ChannelLeaveModal',
@@ -33,17 +34,26 @@ export default ({
     ButtonSubmit
   },
   computed: {
-    ...mapGetters([
-      'groupSettings'
-    ])
+    ...mapGetters(['currentChatRoomId', 'currentChatRoomState']),
+    ...mapState(['loggedIn', 'currentGroupId'])
   },
   methods: {
     close () {
       this.$refs.modal.close()
     },
-    submit () {
-      this.close()
-      console.log('Todo')
+    async submit () {
+      try {
+        await sbp('gi.actions/group/leaveChatRoom', {
+          contractID: this.currentGroupId,
+          data: {
+            chatRoomID: this.currentChatRoomId,
+            member: this.loggedIn.username,
+            leavingGroup: false
+          }
+        })
+      } catch (e) {
+        console.error('LeaveChannelModal submit() error:', e)
+      }
     }
   }
 }: Object)

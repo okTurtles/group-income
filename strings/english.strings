@@ -51,11 +51,17 @@
 /* views/components/graphs/Overview.vue */
 "Group members and their pledges" = "Group members and their pledges";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue */
+/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/ViewArea.vue */
 "Channel description" = "Channel description";
+
+/* views/containers/chatroom/ViewArea.vue */
+"You are viewing {b_} # {title}{_b}" = "You are viewing {b_} # {title}{_b}";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description of the channel" = "Description of the channel";
+
+/* views/containers/chatroom/ViewArea.vue */
+"Join channel" = "Join channel";
 
 /* views/containers/chatroom/DeleteChannelModal.vue, views/pages/GroupChat.vue */
 "Delete channel" = "Delete channel";
@@ -141,6 +147,12 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Private channel" = "Private channel";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Public channel" = "Public channel";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Group members only" = "Group members only";
+
 /* views/containers/user-settings/Appearence.vue */
 "When enabled the amount of animations you see around are reduced." = "When enabled the amount of animations you see around are reduced.";
 
@@ -221,6 +233,12 @@
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Left {title}";
+
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
+"Kicked a member from {title}: {displayName}" = "Kicked a member from {title}: {displayName}";
+
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
+"Joined {title}" = "Joined {title}";
 
 /* views/containers/payments/RecordPayment.vue */
 "Please support the development of Group Income by {r1}sending a donation{r2}!" = "Please support the development of Group Income by {r1}sending a donation{r2}!";
@@ -618,6 +636,12 @@
 /* views/containers/dashboard/GroupMembersAllModal.vue */
 "Channel members ({nbMembers})" = "Channel members ({nbMembers})";
 
+/* views/containers/dashboard/ChatMembersAllModal.vue */
+"Channel members ({nbMembers})" = "Channel members ({nbMembers})";
+
+/* views/containers/dashboard/ChatMembersAllModal.vue */
+"Channel members" = "Channel members";
+
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "no" = "no";
 
@@ -685,7 +709,7 @@
 "Notifications" = "Notifications";
 
 /* views/containers/chatroom/MessageNotification.vue */
-"Added members to this channel: {displayName}" = "Added members to this channel: {displayName}";
+"Added a member to {title}: {displayName}" = "Added a member to {title}: {displayName}";
 
 /* views/components/modal/ModalClose.vue */
 "close modal" = "close modal";
@@ -1180,7 +1204,7 @@
 "Proposal Accepted" = "Proposal Accepted";
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue */
-"The description is limited to 280 characters" = "The description is limited to 280 characters";
+"Reached character limit." = "Reached character limit.";
 
 /* views/pages/Contributions.vue */
 "Giving" = "Giving";
@@ -1205,6 +1229,9 @@
 
 /* model/contracts/group.js */
 "Only the group creator can remove members." = "Only the group creator can remove members.";
+
+/* model/contracts/chatroom.js */
+"Only the channel creator can delete channel." = "Only the channel creator can delete channel.";
 
 /* views/containers/contributions/PaymentMethods.vue */
 "Payment value" = "Payment value";
@@ -1337,6 +1364,30 @@
 
 /* controller/actions/identity.js */
 "Failed to set profile attributes." = "Failed to set profile attributes.";
+
+/* controller/actions/chatroom.js */
+"Failed to create chat channel.": "Failed to create chat channel.";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Failed to create chat channel. {reportError}": "Failed to create chat channel. {reportError}";
+
+/* controller/actions/chatroom.js */
+"Failed to join chat channel.": "Failed to join chat channel.";
+
+/* controller/actions/chatroom.js, controller/actions/group.js */
+"Failed to rename chat channel.": "Failed to rename chat channel.";
+
+/* controller/actions/chatroom.js */
+"Failed to change chat channel description.": "Failed to change chat channel description.";
+
+/* controller/actions/chatroom.js */
+"Failed to leave chat channel.": "Failed to leave chat channel.";
+
+/* controller/actions/chatroom.js, controller/actions/group.js */
+"Failed to delete chat channel.": "Failed to delete chat channel.";
+
+/* controller/actions/chatroom.js */
+"Failed to add message.": "Failed to add message.";
 
 /* views/containers/payments/RecordPaymentsList.vue, views/pages/Payments.vue */
 "Sent to" = "Sent to";
@@ -1998,3 +2049,5 @@
 /* views/containers/dashboard/GroupPurpose.vue, views/pages/GroupSettings.vue */
 "About the group" = "About the group";
 
+/* views/containers/chatroom/ChatMembersAllModal.vue */
+"Undo" = "Undo";

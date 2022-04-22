@@ -8,8 +8,10 @@
           TODO later - Design a cool skeleton loading
           - this should be done only after knowing exactly how server gets each conversation data
 
-    .c-body-conversation(ref='conversation' v-else='')
+    .c-body-conversation(ref='conversation' v-else='' data-test='conversationWapper')
       conversation-greetings(
+        :members='details.numberOfParticipants'
+        :creator='summary.creator'
         :type='type'
         :name='summary.title'
         :description='summary.description'
@@ -21,21 +23,22 @@
           :class='{"is-new": isNew(index)}'
           :key='`date-${index}`'
         )
-          span(v-if='changeDay(index)') {{proximityDate(message.time)}}
+          span(v-if='changeDay(index)') {{proximityDate(message.datetime)}}
           i18n.c-new(v-if='isNew(index)' :class='{"is-new-date": changeDay(index)}') New
 
         component(
           :is='messageType(message)'
-          :key='messageKey(message, index)'
-          :id='message.id'
+          :key='message.id'
           :text='message.text'
+          :type='message.type'
+          :notification='message.notification'
           :replyingMessage='message.replyingMessage'
           :from='message.from'
-          :time='message.time'
+          :datetime='time(message.datetime)'
           :emoticonsList='message.emoticons'
           :who='who(message)'
           :currentUserId='currentUserAttr.id'
-          :avatar='avatar(isCurrentUser, message.from)'
+          :avatar='avatar(message.from)'
           :variant='variant(message)'
           :isSameSender='isSameSender(index)'
           :isCurrentUser='isCurrentUser(message.from)'
@@ -48,6 +51,7 @@
 
   .c-footer
     send-area(
+      v-if='summary.joined'
       :title='summary.title'
       @send='handleSendMessage'
       @height-update='updateSendAreaHeight'
@@ -57,9 +61,15 @@
       :replying-to='ephemeral.replyingTo'
       @stop-replying='ephemeral.replyingMessage = null'
     )
+    view-area(
+      v-else
+      :title='summary.title'
+    )
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
+import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
@@ -67,9 +77,13 @@ import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
+import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
-import { currentUserId, messageTypes, fakeEvents } from '@containers/chatroom/fakeStore.js'
-import { proximityDate } from '@utils/time.js'
+import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
+import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
+import { proximityDate, MINS_MILLIS } from '@utils/time.js'
+import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
+import { CONTRACT_IS_SYNCING } from '@utils/events.js'
 
 export default ({
   name: 'ChatMain',
@@ -81,7 +95,8 @@ export default ({
     MessageInteractive,
     MessageNotification,
     ConversationGreetings,
-    SendArea
+    SendArea,
+    ViewArea
   },
   props: {
     summary: {
@@ -89,7 +104,7 @@ export default ({
       default () { return {} }
     },
     details: {
-      type: Object, // { isLoading: Bool, conversation: Array, participants: Object }
+      type: Object, // { isLoading: Bool, participants: Object }
       default () { return {} }
     },
     type: {
@@ -98,14 +113,12 @@ export default ({
   },
   data () {
     return {
-      messageTypes: messageTypes,
       config: {
         isPhone: null
       },
+      messages: [],
       ephemeral: {
         bodyPaddingBottom: '',
-        conversationIsLoading: false,
-        pendingMessages: [],
         replyingMessage: null,
         replyingTo: null
       }
@@ -117,102 +130,114 @@ export default ({
     this.config.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
   },
+  mounted () {
+    this.setMessageEventListener({ force: true })
+    this.setInitMessages()
+    window.addEventListener('resize', this.resizeEventHandler)
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
+    window.removeEventListener('resize', this.resizeEventHandler)
+  },
   updated () {
     this.updateScroll()
   },
   computed: {
-    messages () {
-      return { ...this.details.conversation, ...this.ephemeral.pendingMessages }
-    },
-    messageVariants () {
-      return Message.constants.variants
-    },
+    ...mapGetters([
+      'currentChatRoomId',
+      'chatRoomSettings',
+      'chatRoomLatestMessages',
+      'ourIdentityContractId',
+      'ourUserIdentityContract',
+      'isJoinedChatRoom'
+    ]),
     bodyStyles () {
-      return this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      const unjoinedStyles =
+        this.summary.joined
+          ? {}
+          : { height: !this.config.isPhone ? 'calc(var(--vh, 1vh) * 100 - 18rem)' : 'calc(var(--vh, 1vh) * 100 - 16rem)' }
+      return { ...phoneStyles, ...unjoinedStyles }
     },
     startedUnreadIndex () {
-      return this.details.conversation.findIndex(message => message.unread === true)
+      return this.messages.findIndex(message => message.unread === true)
     },
     currentUserAttr () {
       return {
-        ...this.$store.getters.ourUserIdentityContract.attributes,
-        id: currentUserId
+        ...this.ourUserIdentityContract.attributes,
+        id: this.ourIdentityContractId
       }
     }
   },
   methods: {
     proximityDate,
-    messageKey (message, index) {
-      let num = 0
-      const emoticons = message.emoticons || {}
-      Object.keys(emoticons).forEach(e => {
-        num += emoticons[e].length
-      })
-      let mt = `message-${index}-${num}`
-      switch (message.from) {
-        case messageTypes.NOTIFICATION:
-          mt = `notification-${index}-${num}`
-          break
-
-        case messageTypes.INTERACTIVE:
-          mt = `interactive-${index}-${num}`
-          break
-      }
-      return mt
-    },
     messageType (message) {
-      let mt = 'message'
-      switch (message.from) {
-        case messageTypes.NOTIFICATION:
-          mt += '-notification'
-          break
-
-        case messageTypes.INTERACTIVE:
-          mt += '-interactive'
-          break
-      }
-      return mt
+      return {
+        [MESSAGE_TYPES.NOTIFICATION]: 'message-notification',
+        [MESSAGE_TYPES.INTERACTIVE]: 'message-interactive',
+        [MESSAGE_TYPES.TEXT]: 'message',
+        [MESSAGE_TYPES.POLL]: 'message-poll'
+      }[message.type]
     },
     isCurrentUser (fromId) {
-      return this.currentUserAttr.id === fromId
+      return this.currentUserAttr.username === fromId
     },
     who (message) {
-      const fromId = message.from === messageTypes.NOTIFICATION ? fakeEvents[message.id].from : message.from
-      const user = this.isCurrentUser(fromId) ? this.currentUserAttr : this.details.participants[fromId]
-      if (user) {
-        return user.displayName || user.username
-      }
+      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.details.participants[message.from]
+      return user.displayName || user.username || message.from
     },
     variant (message) {
-      if (message.hasFailed) {
-        return this.messageVariants.FAILED
+      if (message.pending) {
+        return MESSAGE_VARIANTS.PENDING
+      } else if (message.hasFailed) {
+        return MESSAGE_VARIANTS.FAILED
       } else {
-        return this.isCurrentUser(message.from) ? this.messageVariants.SENT : this.messageVariants.RECEIVED
+        return this.isCurrentUser(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
     },
-    avatar (isCurrentUser, fromId) {
-      return isCurrentUser ? this.currentUserAttr.picture : this.details.participants[fromId].picture
+    time (strTime) {
+      return new Date(strTime)
+    },
+    avatar (fromId) {
+      if (fromId === MESSAGE_TYPES.NOTIFICATION || fromId === MESSAGE_TYPES.INTERACTIVE) {
+        return this.currentUserAttr.picture
+      }
+      return this.details.participants[fromId].picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
+      if (this.messages[index].type !== MESSAGE_TYPES.TEXT) { return false }
+      if (this.messages[index].type !== this.messages[index - 1].type) { return false }
+      const timeBetween = new Date(this.messages[index].datetime).getTime() -
+        new Date(this.messages[index - 1].datetime).getTime()
+      if (timeBetween > MINS_MILLIS * 10) { return false }
       return this.messages[index].from === this.messages[index - 1].from
     },
-
     updateSendAreaHeight (height) {
       this.ephemeral.bodyPaddingBottom = height
     },
-    handleSendMessage (message, replyingMessage = false) {
-      console.log('sending...')
-      const index = Object.keys(this.messages).length + 1
-      const newMessage = {
-        from: this.currentUserAttr.id,
-        time: new Date(),
+    handleSendMessage (message, replyingMessage = null) {
+      // Consider only simple TEXT now
+      // TODO: implement other types of messages later
+      const data = {
+        type: MESSAGE_TYPES.TEXT,
         text: message
       }
-      if (replyingMessage) newMessage.replyingMessage = replyingMessage
-      this.$set(this.ephemeral.pendingMessages, index, newMessage)
 
-      this.sendMessage(index)
+      sbp('gi.actions/chatroom/addMessage', {
+        contractID: this.currentChatRoomId,
+        data: !replyingMessage ? data : { ...data, replyingMessage },
+        hooks: {
+          prepublish: (message) => {
+            const msgValue = JSON.parse(message.opValue())
+            const { meta, data } = msgValue
+            this.messages.push({
+              ...createMessage({ meta, data, hash: message.hash() }),
+              pending: true
+            })
+          }
+        }
+      })
     },
     updateScroll () {
       if (this.summary.title) {
@@ -223,28 +248,18 @@ export default ({
       }
     },
     retryMessage (index) {
-      this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
-
-      this.sendMessage(index)
+      // this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
       console.log('TODO $store - retry sending a message')
     },
     replyMessage (message) {
       this.ephemeral.replyingMessage = message.text
       this.ephemeral.replyingTo = this.who(message)
     },
-    sendMessage (index) {
-      this.ephemeral.replyingMessage = null
-      this.ephemeral.replyingTo = null
-      setTimeout(() => {
-        console.log('TODO $store send message')
-        this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
-      }, 2000)
-    },
     changeDay (index) {
       const conv = this.messages
       if (index > 0 && index <= conv.length) {
-        const prev = new Date(conv[index - 1].time)
-        const current = new Date(conv[index].time)
+        const prev = new Date(conv[index - 1].datetime)
+        const current = new Date(conv[index].datetime)
         return prev.getDay() !== current.getDay()
       } else return false
     },
@@ -254,7 +269,7 @@ export default ({
     addEmoticon (index, emoticon) {
       // Todo replace with  deep merge
       const userId = this.currentUserAttr.id
-      const emoticons = this.details.conversation[index].emoticons || {}
+      const emoticons = this.messages[index].emoticons || {}
       if (emoticons[emoticon]) {
         const alreadyAdded = emoticons[emoticon].indexOf(userId)
         if (alreadyAdded >= 0) {
@@ -262,7 +277,7 @@ export default ({
           if (emoticons[emoticon].length === 0) {
             delete this.messages[emoticon]
             if (Object.keys(emoticons).length === 0) {
-              delete this.details.conversation[index].emoticons
+              delete this.messages[index].emoticons
               return false
             }
           }
@@ -272,17 +287,92 @@ export default ({
         emoticons[emoticon].push(userId)
       }
 
-      this.$set(this.details.conversation[index], 'emoticons', emoticons)
+      this.$set(this.messages[index], 'emoticons', emoticons)
       this.$forceUpdate()
     },
     deleteMessage (index) {
       // TODO replace by store action
-      this.$set(this.details.conversation[index], 'delete', true)
+      this.$set(this.messages[index], 'delete', true)
       setTimeout(() => {
         delete this.messages[index]
         this.$forceUpdate()
       }, 1000)
       this.$forceUpdate()
+    },
+    setInitMessages () {
+      if (this.isJoinedChatRoom(this.currentChatRoomId)) {
+        this.messages = this.chatRoomLatestMessages
+      } else {
+        this.messages = []
+        sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
+          this.messages = getLatestMessages({
+            count: this.chatRoomSettings.messagesPerPage, // TODO: this.chatRoomSettings could be {}
+            messages: state.messages
+          })
+        })
+      }
+    },
+    setMessageEventListener ({ force = false, from, to }) {
+      if (from) {
+        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)
+      }
+      if (force) {
+        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)
+      } else {
+        if (this.isJoinedChatRoom(to)) {
+          sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
+        }
+      }
+    },
+    listenChatRoomActions ({ type, data }) {
+      const addIfNotExist = (msg) => {
+        let m = null
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+          if (this.messages[i].id === msg.id) {
+            m = this.messages[i]
+            break
+          }
+        }
+        if (m) {
+          delete m.pending
+        } else {
+          this.messages.push(msg)
+        }
+      }
+      if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE) {
+        const { message } = data
+        if (message.type === MESSAGE_TYPES.TEXT) {
+          if (this.isCurrentUser(message.from)) {
+            addIfNotExist(message)
+          } else {
+            this.messages.push(message)
+          }
+        } else if (message.type === MESSAGE_TYPES.NOTIFICATION) {
+          this.messages.push(message)
+        }
+      }
+      this.$forceUpdate()
+    },
+    resizeEventHandler () {
+      const vh = window.innerHeight * 0.01
+      document.documentElement.style.setProperty('--vh', `${vh}px`)
+    }
+  },
+  watch: {
+    currentChatRoomId (to, from) {
+      const force = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
+      this.setMessageEventListener({ from, to, force })
+      this.setInitMessages()
+    },
+    'summary.joined' (to, from) {
+      if (to) {
+        sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
+          if (contractID === this.currentChatRoomId && isSyncing === false) {
+            this.setInitMessages()
+            this.setMessageEventListener({ force: true })
+          }
+        })
+      }
     }
   }
 }: Object)
@@ -296,6 +386,7 @@ export default ({
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-radius: 10px;
 }
 
 .c-body {
@@ -303,7 +394,7 @@ export default ({
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
-  height: calc(100vh - 14rem);
+  height: calc(var(--vh, 1vh) * 100 - 14rem);
   width: calc(100% + 1rem);
   position: relative;
 

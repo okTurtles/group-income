@@ -8,6 +8,8 @@ import type { GIOpContract } from '~/shared/domains/chelonia/GIMessage.js'
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
+// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
+import '~/shared/domains/chelonia/chelonia.js'
 import L from '~/frontend/views/utils/translations.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
@@ -16,13 +18,15 @@ import Colors from './colors.js'
 import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from './contracts/constants.js'
 // import { PAYMENT_COMPLETED } from '~/frontend/model/contracts/payments/index.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
 import * as _ from '~/frontend/utils/giLodash.js'
 import * as EVENTS from '~/frontend/utils/events.js'
-import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
+import './contracts/chatroom.js'
+import './contracts/group.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
@@ -46,6 +50,7 @@ if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(
 
 const initialState = {
   currentGroupId: null,
+  currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
@@ -194,7 +199,7 @@ const mutations = {
   },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
-    state.currentGroupId = currentGroupId
+    Vue.set(state, 'currentGroupId', currentGroupId)
   },
   pending (state, contractID) {
     if (!state.contracts[contractID] && !state.pending.includes(contractID)) {
@@ -222,6 +227,15 @@ const mutations = {
   },
   setAppLogsFilters (state, filters) {
     state.appLogsFilter = filters
+  },
+  setCurrentChatRoomId (state, { groupId, chatRoomId }) {
+    if (chatRoomId) {
+      Vue.set(state.currentChatRoomIDs, state.currentGroupId, chatRoomId)
+    } else if (groupId && state[groupId]) {
+      Vue.set(state.currentChatRoomIDs, state.currentGroupId, state[groupId].generalChatRoomId || null)
+    } else {
+      Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
+    }
   }
 }
 
@@ -251,8 +265,12 @@ const getters = {
   // library, we can simply import them here, while excluding the getter for
   // `currentGroupState`, and redefining it here based on the Vuex rootState.
   ..._.omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
+  ..._.omit(sbp('gi.contracts/chatroom/getters'), ['currentChatRoomState']),
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
+  },
+  currentChatRoomState (state, getters) {
+    return state[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
   },
   mailboxContract (state, getters) {
     const contract = getters.ourUserIdentityContract
@@ -502,7 +520,7 @@ const getters = {
   },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
-    if (!profiles) return
+    if (!profiles) return []
     const weJoinedMs = new Date(profiles[getters.ourUsername].joinedDate).getTime()
     const isNewMember = (username) => {
       if (username === getters.ourUsername) { return false }
@@ -543,7 +561,6 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
-
   colors (state) {
     return Colors[state.theme]
   },
@@ -552,6 +569,44 @@ const getters = {
   },
   isDarkTheme (state) {
     return Colors[state.theme].theme === THEME_DARK
+  },
+  currentChatRoomId (state, getters) {
+    return state.currentChatRoomIDs[state.currentGroupId] || null
+  },
+  isPrivateChatRoom (state, getters) {
+    return (chatRoomId: string) => {
+      return state[chatRoomId]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+    }
+  },
+  isJoinedChatRoom (state, getters) {
+    return (chatRoomId: string, username?: string) => {
+      username = username || state.loggedIn.username
+      return !!state[chatRoomId]?.users?.[username]
+    }
+  },
+  chatRoomsInDetail (state, getters) {
+    const chatRoomsInDetail = _.merge({}, getters.getChatRooms)
+    for (const contractID in chatRoomsInDetail) {
+      const chatRoom = state[contractID]
+      if (chatRoom && chatRoom.attributes &&
+        chatRoom.users[state.loggedIn.username]) {
+        chatRoomsInDetail[contractID] = {
+          ...chatRoom.attributes,
+          id: contractID,
+          unreadCount: 0, // TODO: need to implement
+          joined: true
+        }
+      } else {
+        const { name, privacyLevel } = chatRoomsInDetail[contractID]
+        chatRoomsInDetail[contractID] = { id: contractID, name, privacyLevel, joined: false }
+      }
+    }
+    return chatRoomsInDetail
+  },
+  chatRoomUsersInSort (state, getters) {
+    return getters.groupMembersSorted
+      .map(member => ({ username: member.username, displayName: member.displayName }))
+      .filter(member => !!getters.chatRoomUsers[member.username]) || []
   }
 }
 
@@ -623,6 +678,7 @@ const actions = {
         console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
         await sbp('state/enqueueContractSync', currentGroupId)
       }
+      // TODO: resync for the chatroom contract, because current chatroom contract id could be what the user is not part of
       if (!contracts[user.identityContractID]) {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
         await sbp('state/enqueueContractSync', user.identityContractID)

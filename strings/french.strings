@@ -216,6 +216,30 @@
 /* controller/actions/identity.js */
 "Invalid username or password" = "Nom d'utilisateur ou mot de passe invalide";
 
+/* controller/actions/chatroom.js */
+"Failed to create chat channel.": "La création de la conversation a échouée.";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Failed to create chat channel. {reportError}": "La création de la conversation a échouée. {reportError}";
+
+/* controller/actions/chatroom.js */
+"Failed to join chat channel.": "Impossible de joindre la conversation.";
+
+/* controller/actions/chatroom.js, controller/actions/group.js */
+"Failed to rename chat channel.": "Impossible de renommer la conversation.";
+
+/* controller/actions/chatroom.js */
+"Failed to change chat channel description.": "Impossible de modifier la description de la conversation.";
+
+/* controller/actions/chatroom.js */
+"Failed to leave chat channel.": "Impossible de quitter la conversation.";
+
+/* controller/actions/chatroom.js, controller/actions/group.js */
+"Failed to delete chat channel.": "Impossible de supprimer la conversation.";
+
+/* controller/actions/chatroom.js */
+"Failed to add message.": "Échec de l'ajout du message.";
+
 /* controller/actions/mailbox.js */
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
 
@@ -260,6 +284,9 @@
 
 /* model/contracts/group.js */
 "Only the group creator can remove members." = "Seul le fondateur du groupe peut exclure des membres.";
+
+/* model/contracts/chatroom.js */
+"Only the channel creator can delete channel." = "Seul le créateur peut supprimer sa conversation.";
 
 /* model/contracts/group.js */
 "The link does not exist." = "Le lien n'existe pas.";
@@ -588,6 +615,12 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Private channel" = "Salon privé";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Public channel" = "Chaîne publique";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Group members only" = "Membres du groupe uniquement";
+
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description of the channel" = "Description du salon";
 
@@ -621,11 +654,17 @@
 /* views/containers/chatroom/DeleteChannelModal.vue, views/pages/GroupChat.vue */
 "Delete channel" = "Supprimer le salon";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue */
+/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/ViewArea.vue */
 "Channel description" = "Description du salon";
 
+/* views/containers/chatroom/ViewArea.vue */
+"You are viewing {b_} # {title}{_b}" = "Vous regardez {b_} # {title}{_b}";
+
+/* views/containers/chatroom/ViewArea.vue */
+"Join channel" = "Rejoignez la chaîne";
+
 /* views/containers/chatroom/EditChannelDescriptionModal.vue */
-"The description is limited to 280 characters" = "La description est limitée à 280 caractères";
+"Reached character limit." = "Limite de caractères atteinte.";
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Enregistrer";
@@ -762,11 +801,17 @@
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Restantes {title}";
 
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
+"Kicked a member from {title}: {displayName}" = "Membre expulsé de {title}: {displayName}";
+
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
+"Joined {title}" = "Joint {title}";
+
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/ProposalTemplate.vue */
 "New proposal" = "Nouvelle proposition";
 
 /* views/containers/chatroom/MessageNotification.vue */
-"Added members to this channel: {displayName}" = "Membres ajoutés au salon : {displayName}";
+"Added a member to {title}: {displayName}" = "Membre ajoutés au {title}: {displayName}";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Deleted the channel: {title}" = "Le salon {title} a été supprimé";
@@ -1044,8 +1089,11 @@
 /* views/containers/dashboard/GroupMembersAllModal.vue */
 "Add {span_} to channel{_span}" = "Ajouter {span_} au salon{_span}";
 
-/* views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/dashboard/ChatMembersAllModal.vue */
 "Channel members ({nbMembers})" = "Membres du salon ({nbMembers})";
+
+/* views/containers/dashboard/ChatMembersAllModal.vue */
+"Channel members" = "Membres du salon";
 
 /* views/containers/dashboard/GroupMembersAllModal.vue */
 "Others ({nbMembers})" = "Autres ({nbMembers})";
@@ -2160,3 +2208,5 @@
 /* Not currently used */
 "{{title}}" = "{{titre}}";
 
+/* views/containers/chatroom/ChatMembersAllModal.vue */
+"Undo" = "Annuler";

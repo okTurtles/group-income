@@ -6,6 +6,8 @@
 
 import 'cypress-file-upload'
 
+import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
+
 /* Get element by data-test attribute and other attributes
  ex:
  cy.getByDT('login')            //  cy.get([data-test="login"])
@@ -15,6 +17,30 @@ import 'cypress-file-upload'
 Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
   return cy.get(`${otherSelector}[data-test="${element}"]`)
 })
+
+function checkIfJoinedGeneralChannel (groupName, username) {
+  cy.getByDT('groupChatLink').click()
+  cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+
+  cy.getByDT('messageInputWrapper').within(() => {
+    cy.get('textarea').should('exist')
+  })
+
+  cy.getByDT('conversationWapper').within(() => {
+    if (username) {
+      cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', username)
+    }
+    cy.get('div.c-message:last-child .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
+  })
+
+  cy.getByDT('channelsList').within(() => {
+    cy.get('ul > li:first-child').should('contain', CHATROOM_GENERAL_NAME)
+    cy.get('ul > li:first-child i').should('have.class', 'icon-hashtag')
+  })
+
+  cy.getByDT('dashboard').click()
+  cy.getByDT('groupName').should('contain', groupName)
+}
 
 Cypress.Commands.add('giSignup', (username, {
   password = '123456789',
@@ -138,6 +164,12 @@ Cypress.Commands.add('giCreateGroup', (name, {
     })
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     cy.getByDT('groupName').should('contain', name)
+    cy.getByDT('app').then(([el]) => {
+      cy.get(el).should('have.attr', 'data-sync', '')
+    })
+
+    checkIfJoinedGeneralChannel(name)
+
     return
   }
 
@@ -146,7 +178,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
   cy.getByDT('groupCreationModal').within(() => {
     cy.getByDT('groupName').type(name)
     cy.fixture(image, 'base64').then(fileContent => {
-      cy.get('[data-test="groupPicture"]').attachFile({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
+      cy.getByDT('groupPicture').attachFile({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
     })
     cy.getByDT('nextBtn').click()
 
@@ -179,8 +211,12 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
     cy.getByDT('toDashboardBtn').click()
   })
-
   cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+  cy.getByDT('app').then(([el]) => {
+    cy.get(el).should('have.attr', 'data-sync', '')
+  })
+
+  checkIfJoinedGeneralChannel(name)
 })
 
 function inviteUser (invitee, index) {
@@ -239,10 +275,13 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     const params = new URLSearchParams(new URL(invitationLink).search)
     const groupId = params.get('groupId')
     const inviteSecret = params.get('secret')
+
     cy.window().its('sbp').then(async sbp => {
       await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
       await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
     })
+
+    checkIfJoinedGeneralChannel(groupName, username)
   } else {
     cy.visit(invitationLink)
 
@@ -259,6 +298,14 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 
     cy.getByDT('toDashboardBtn').click()
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+    cy.getByDT('app').then(([el]) => {
+      if (!isLoggedIn) {
+        cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+      }
+      cy.get(el).should('have.attr', 'data-sync', '')
+    })
+
+    checkIfJoinedGeneralChannel(groupName, username)
   }
 
   if (displayName) {
@@ -286,6 +333,41 @@ Cypress.Commands.add('giAddRandomIncome', () => {
   cy.getByDT(action).click()
   cy.getByDT('inputIncomeOrPledge').type(salary)
   cy.getByDT('submitIncome').click()
+})
+
+Cypress.Commands.add('giAddNewChatroom', (
+  name, description = '', isPrivate = false
+) => {
+  // Needs to be in 'Group Chat' page
+  cy.getByDT('newChannelButton').click()
+
+  cy.getByDT('modal').within(() => {
+    cy.get('.c-modal-header').should('contain', 'Create a channel')
+    cy.getByDT('createChannelName').clear().type(name)
+    if (description) {
+      cy.getByDT('createChannelDescription').clear().type(description)
+    } else {
+      cy.getByDT('createChannelDescription').clear()
+    }
+    if (isPrivate) {
+      cy.getByDT('createChannelPrivate').check()
+    } else {
+      cy.getByDT('createChannelPrivate').uncheck()
+    }
+    cy.getByDT('createChannelSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+  })
+  cy.getByDT('channelName').should('contain', name)
+  cy.getByDT('conversationWapper').within(() => {
+    cy.get('.c-greetings .is-title-4').should('contain', 'Welcome!')
+    cy.get('.c-greetings p').should('contain', `This is the beginning of ${name}.`)
+    cy.get('.buttons').within(() => {
+      cy.getByDT('addMembers').should('exist')
+      if (!description) {
+        cy.getByDT('addDescription').should('exist')
+      }
+    })
+  })
 })
 
 Cypress.Commands.add('giForceDistributionDateToNow', () => {

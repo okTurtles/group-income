@@ -16,7 +16,7 @@
           :class='{ "sr-only": isSameSender }'
         )
           span.is-title-4 {{ who }}
-          span.has-text-1 {{ humanDate(time, { hour: 'numeric', minute: 'numeric' }) }}
+          span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
         p.c-replying(if='replyingMessage') {{ replyingMessage }}
@@ -80,10 +80,12 @@ export default ({
     who: String,
     currentUserId: String,
     avatar: String,
-    time: {
+    datetime: {
       type: Date,
       required: true
     },
+    notification: Object,
+    type: String,
     emoticonsList: {
       type: Object,
       default: null
@@ -142,6 +144,12 @@ export default ({
     background-color: $danger_2;
     opacity: 0;
     transition: opacity 0.7s ease-in-out 0.3s, background-color 0.3s ease-in;
+  }
+
+  &.pending {
+    .c-text {
+      color: $general_0;
+    }
   }
 
   &.sameSender {
