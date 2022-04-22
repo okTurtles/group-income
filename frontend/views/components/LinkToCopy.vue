@@ -52,7 +52,7 @@ export default ({
       if (navigator.share) {
         navigator.share({
           title: this.L('Your invite'),
-          url: this.textToCopy
+          url: this.link
         })
         return
       }
