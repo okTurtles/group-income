@@ -276,22 +276,22 @@ export default (sbp('sbp/selectors/register', {
       }
     })
 
-    const joiningMessage = await sbp('gi.actions/group/joinChatRoom', {
+    await sbp('gi.actions/group/joinChatRoom', {
       ...omit(params, ['options']),
       data: {
         chatRoomID: message.contractID()
       },
       hooks: {
-        prepublish: null,
+        prepublish: (msg) => {
+          sbp('okTurtles.events/once', msg.hash(), (cId, m) => {
+            sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: cId })
+          })
+        },
         postpublish: params.hooks?.postpublish
       }
     })
 
-    sbp('okTurtles.events/once', joiningMessage.hash(), (cId, msg) => {
-      sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: cId })
-    })
-
-    return joiningMessage
+    return message
   },
   'gi.actions/group/renameChatRoom': async function (params: GIActionParams) {
     try {
