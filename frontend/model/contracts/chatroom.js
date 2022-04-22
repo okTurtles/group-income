@@ -20,10 +20,7 @@ import {
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS
 } from './constants.js'
-import {
-  CHATROOM_MESSAGE_ACTION,
-  CONTRACT_IS_SYNCING
-} from '~/frontend/utils/events.js'
+import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 
 export const chatRoomAttributesType: any = objectOf({
@@ -208,17 +205,6 @@ sbp('chelonia/defineContract', {
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
-        }
-      },
-      sideEffect ({ contractID, meta }) {
-        const rootState = sbp('state/vuex/state')
-        // this condition makes users redirect to the newly-created channel only after they created a new channel
-        if (meta.username === rootState.loggedIn.username) {
-          sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (cID, isSyncing) => {
-            if (cID === contractID && !isSyncing) {
-              sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: contractID })
-            }
-          })
         }
       }
     },

@@ -39,6 +39,7 @@ export async function leaveAllChatRooms (groupContractID: string, member: string
       })
     }
   } catch (e) {
+    console.error(`leaveAllChatRooms: ${e.name}: ${e.message}`, e)
     throw new GIErrorUIRuntimeError(L('Failed to leave chat channel.'))
   }
 }
@@ -231,7 +232,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       const rootState = sbp('state/vuex/state')
       const username = params.data.username || rootState.loggedIn.username
-      await sbp('gi.actions/chatroom/join', {
+      const message = await sbp('gi.actions/chatroom/join', {
         ...omit(params, ['options']),
         contractID: params.data.chatRoomID,
         data: { username },
@@ -260,11 +261,11 @@ export default (sbp('sbp/selectors/register', {
           postpublish: params.hooks?.postpublish
         }
       })
+      return message
     } catch (e) {
       console.error('gi.actions/group/joinChatRoom failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join chat channel.'))
     }
-    return true
   },
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
@@ -281,7 +282,11 @@ export default (sbp('sbp/selectors/register', {
         chatRoomID: message.contractID()
       },
       hooks: {
-        prepublish: null,
+        prepublish: (msg) => {
+          sbp('okTurtles.events/once', msg.hash(), (cId, m) => {
+            sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId: cId })
+          })
+        },
         postpublish: params.hooks?.postpublish
       }
     })
@@ -302,7 +307,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
-      await sbp('chelonia/out/actionEncrypted', {
+      return await sbp('chelonia/out/actionEncrypted', {
         ...omit(params, ['options']),
         action: 'gi.contracts/group/renameChatRoom',
         hooks: {
@@ -314,13 +319,12 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.actions/group/renameChatRoom failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to rename chat channel.'))
     }
-    return true
   },
   'gi.actions/group/removeMember': async function (params: GIActionParams) {
     await leaveAllChatRooms(params.contractID, params.data.member)
 
     try {
-      await sbp('chelonia/out/actionEncrypted', {
+      return await sbp('chelonia/out/actionEncrypted', {
         ...omit(params, ['options']),
         action: 'gi.contracts/group/removeMember'
       })
@@ -333,7 +337,7 @@ export default (sbp('sbp/selectors/register', {
     await leaveAllChatRooms(params.contractID, rootState.loggedIn.username)
 
     try {
-      await sbp('chelonia/out/actionEncrypted', {
+      return await sbp('chelonia/out/actionEncrypted', {
         ...omit(params, ['options']),
         action: 'gi.contracts/group/removeOurselves'
       })
