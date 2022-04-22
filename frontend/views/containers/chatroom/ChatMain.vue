@@ -186,7 +186,7 @@ export default ({
     },
     who (message) {
       const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.details.participants[message.from]
-      return user.displayName || user.username || message.from
+      return user?.displayName || user?.username || message.from
     },
     variant (message) {
       if (message.pending) {
