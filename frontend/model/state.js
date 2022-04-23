@@ -1025,6 +1025,9 @@ const postUpgradeVerification = (settings: Object) => {
   if (!settings.notifications) {
     settings.notifications = []
   }
+  if (!settings.currentChatRoomIDs) {
+    settings.currentChatRoomIDs = {}
+  }
 }
 
 const store: any = new Vuex.Store({
