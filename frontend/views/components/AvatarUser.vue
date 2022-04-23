@@ -8,7 +8,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import Avatar from '@components/Avatar.vue'
 
 export default ({

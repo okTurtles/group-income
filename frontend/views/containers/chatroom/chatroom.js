@@ -1,5 +1,5 @@
 import { mapGetters } from 'vuex'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 import { CHATROOM_STATE_LOADED, CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'

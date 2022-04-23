@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files

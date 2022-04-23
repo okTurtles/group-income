@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import Vue from 'vue'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import '~/shared/domains/chelonia/chelonia.js'

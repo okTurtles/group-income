@@ -40,7 +40,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'
 import ProgressBar from '@components/graphs/Progress.vue'

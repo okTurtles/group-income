@@ -1,5 +1,5 @@
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 
 // From https://markus.oberlehner.net/blog/transition-to-height-auto-with-vue/
 export default ({

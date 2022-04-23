@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { merge } from '~/frontend/utils/giLodash.js'
 import { GIMessage, sanityCheck } from './GIMessage.js'
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'

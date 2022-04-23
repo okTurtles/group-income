@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import { objectOf, string, object, unionOf, literalOf, optional } from '~/frontend/utils/flowTyper.js'
 

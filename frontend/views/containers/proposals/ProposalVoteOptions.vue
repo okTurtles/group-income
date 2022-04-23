@@ -24,7 +24,7 @@
 
 <script>
 import { mapGetters, mapState } from 'vuex'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
 import { oneVoteToPass } from '@model/contracts/voting/proposals.js'

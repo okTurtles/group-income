@@ -46,7 +46,7 @@ div
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
 import SignupForm from '@containers/access/SignupForm.vue'

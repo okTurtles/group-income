@@ -1,4 +1,4 @@
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { blake32Hash } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 

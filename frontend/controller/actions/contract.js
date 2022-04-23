@@ -1,4 +1,4 @@
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { CONTRACT_IS_SYNCING } from '@utils/events.js'
 
 export default (sbp('sbp/selectors/register', {

@@ -30,7 +30,7 @@ form(data-test='login' @submit.prevent='')
 <script>
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { nonWhitespace } from '@views/utils/validators.js'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'

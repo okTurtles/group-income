@@ -1,7 +1,7 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/data.js'
+import sbp from '@sbp/sbp'
+import '@sbp/okturtles.data'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
 const headSuffix = '-HEAD'
@@ -31,6 +31,13 @@ export class ErrorDBConnection extends Error {
     }
   }
 }
+
+const overritableSelectors = [
+  'gi.db/set',
+  'gi.db/get',
+  'gi.db/delete'
+]
+sbp('sbp/selectors/unsafe', overritableSelectors) // make these selectors overritable before registering
 
 export default (sbp('sbp/selectors/register', {
   'gi.db/get': function (key: string): Promise<*> {

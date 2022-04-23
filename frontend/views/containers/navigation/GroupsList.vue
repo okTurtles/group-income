@@ -36,7 +36,7 @@ import { mapGetters, mapState } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Badge from '@components/Badge.vue'
 import Tooltip from '@components/Tooltip.vue'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({

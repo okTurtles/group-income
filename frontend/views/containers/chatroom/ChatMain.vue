@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'

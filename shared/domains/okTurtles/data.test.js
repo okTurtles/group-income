@@ -2,8 +2,8 @@
 
 import should from 'should'
 import sinon from 'sinon'
-import sbp from '~/shared/sbp.js'
-import './data.js'
+import sbp from '@sbp/sbp'
+import '@sbp/okturtles.data'
 
 require('should-sinon')
 

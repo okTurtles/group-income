@@ -5,7 +5,7 @@
 
 import type { GIOpContract } from '~/shared/domains/chelonia/GIMessage.js'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import Vuex from 'vuex'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
@@ -66,6 +66,15 @@ const initialState = {
 sbp('okTurtles.events/on', EVENTS.CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
   contractIsSyncing[contractID] = isSyncing
 })
+
+const isInMochaTest = typeof globalThis.it === 'function'
+
+if (isInMochaTest) {
+  sbp('sbp/selectors/unsafe', [
+    'state/enqueueHandleEvent',
+    'state/vuex/state'
+  ])
+}
 
 sbp('sbp/selectors/register', {
   // TODO: make sure every location that calls `latestContractState` can handle

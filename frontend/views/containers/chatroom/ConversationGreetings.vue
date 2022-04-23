@@ -26,7 +26,7 @@ import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
 import L from '@view-utils/translations.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 
 export default ({
   name: 'ConversationGreetings',

@@ -1,10 +1,10 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
-import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/data.js'
-import '~/shared/domains/okTurtles/events.js'
-import '~/shared/domains/okTurtles/eventQueue.js'
+import sbp from '@sbp/sbp'
+import '@sbp/okturtles.data'
+import '@sbp/okturtles.events'
+import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'

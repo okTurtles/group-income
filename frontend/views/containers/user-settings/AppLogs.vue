@@ -37,7 +37,7 @@
 <script>
 import { mapState, mapMutations, mapActions } from 'vuex'
 import safeLinkTag from '@views/utils/safeLinkTag.js'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { downloadLogs, getLog } from '@model/captureLogs.js'
 

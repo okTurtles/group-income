@@ -19,7 +19,7 @@ From anywhere in the App we can open any modal by using the `sbp` event `OPEN_MO
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
 
 openLoginModal () {

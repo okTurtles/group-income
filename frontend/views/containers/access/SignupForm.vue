@@ -40,7 +40,7 @@ form(data-test='signup' @submit.prevent='')
 <script>
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'

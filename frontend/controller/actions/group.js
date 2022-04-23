@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { createInvite } from '@model/contracts/group.js'
 import {
   INVITE_INITIAL_CREATOR,

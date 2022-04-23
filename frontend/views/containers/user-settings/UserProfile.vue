@@ -85,7 +85,7 @@ import { mapGetters } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import L from '@view-utils/translations.js'
 
 export default ({

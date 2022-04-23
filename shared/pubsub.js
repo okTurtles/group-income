@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 
 // ====== Event name constants ====== //

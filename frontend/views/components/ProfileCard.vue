@@ -87,7 +87,7 @@ import UserName from '@components/UserName.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 import { OPEN_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { PROFILE_STATUS } from '~/frontend/model/contracts/constants.js'
 

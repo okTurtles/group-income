@@ -48,7 +48,7 @@
 import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/constants.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 

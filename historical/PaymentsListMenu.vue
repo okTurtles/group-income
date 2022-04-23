@@ -43,7 +43,7 @@ menu-parent
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import { PAYMENT_CANCELLED } from '@model/contracts/payments/index.js'

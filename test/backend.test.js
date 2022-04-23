@@ -1,8 +1,8 @@
 /* eslint-env mocha */
 
-import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/events.js'
-import '~/shared/domains/okTurtles/eventQueue.js'
+import sbp from '@sbp/sbp'
+import '@sbp/okturtles.events'
+import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 // import * as _ from '~/frontend/utils/giLodash.js'

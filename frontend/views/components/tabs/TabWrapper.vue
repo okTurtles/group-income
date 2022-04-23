@@ -31,7 +31,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import TabItem from '@components/tabs/TabItem.vue'
 import { logExceptNavigationDuplicated } from '@controller/utils/misc.js'
 

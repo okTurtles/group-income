@@ -14,7 +14,7 @@
 
 <script>
 import { REPLACE_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SignupForm from '@containers/access/SignupForm.vue'
 import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'

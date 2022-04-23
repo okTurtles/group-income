@@ -1,8 +1,8 @@
 /* eslint-env mocha */
 
 import sinon from 'sinon'
-import sbp from '~/shared/sbp.js'
-import './events.js'
+import sbp from '@sbp/sbp'
+import '@sbp/okturtles.events'
 
 require('should-sinon')
 

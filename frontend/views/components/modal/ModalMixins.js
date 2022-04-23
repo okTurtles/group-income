@@ -1,4 +1,4 @@
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { CLOSE_MODAL } from '~/frontend/utils/events.js'
 import { mapMutations } from 'vuex'
 import ModalClose from './ModalClose.vue'
