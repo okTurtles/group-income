@@ -208,7 +208,9 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state, getters }) {
         const { username } = data
         if (state.users[username]) {
-          throw new Error('Can not join the chatroom which you are already part of')
+          // throw new Error('Can not join the chatroom which you are already part of')
+          // TODO: restore exception and delete line below:
+          return console.error('Can not join the chatroom which you are already part of')
         }
 
         const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER
