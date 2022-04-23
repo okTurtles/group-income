@@ -15,12 +15,12 @@ import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
-
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
-import L, { LError } from '@view-utils/translations.js'
+import L, { LError, LTags } from '@view-utils/translations.js'
 import './views/utils/allowedUrls.js'
 import './views/utils/translations.js'
 import './views/utils/avatar.js'
@@ -66,13 +66,33 @@ async function startApp () {
 
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
+  function notificationError (errType: string) {
+    return function (e: Error, message: GIMessage) {
+      const contractID = message.contractID()
+      const [opType] = message.op()
+      const { action, meta } = message.decryptedValue()
+      sbp('gi.notifications/emit', 'ERROR', {
+        ...LTags('b'),
+        message: L("{errType}: Error in '{action}' from {b_}{who}{_b} to '{contract}': {err}", {
+          errType,
+          action: action || opType,
+          who: meta?.username || 'TODO: signing keyID',
+          contract: sbp('state/vuex/state').contracts[contractID]?.type || contractID,
+          err: e.message || "'?'"
+        })
+      })
+    }
+  }
   sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
     hooks: {
-      handleEventError: (e: Error, contractID: string) => {
+      handleEventError: (e: Error, message: GIMessage) => {
         sbp('okTurtles.data/get', 'BANNER')
           .danger(L('Fatal error: {reportError}', LError(e)), 'exclamation-triangle')
-      }
+        notificationError('handleEvent')(e, message)
+      },
+      processError: notificationError('process'),
+      sideEffectError: notificationError('sideEffect')
     }
   })
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))

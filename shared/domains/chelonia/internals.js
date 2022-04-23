@@ -19,7 +19,7 @@ sbp('sbp/selectors/register', {
     return this.state
   },
   // TODO: make this private
-  'chelonia/private/in/processMessage': function (message: GIMessage, state: Object) {
+  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const contractID = message.contractID()
@@ -134,23 +134,30 @@ sbp('sbp/selectors/register', {
       // the order the following actions are done is critically important!
       // first we make sure we save this message to the db
       await handleEvent.addMessageToDB(message)
-      // process the mutation on the state (everything here must be synchronous)
-      handleEvent.processMutation.call(this, message, state)
-      // process any side-effects (these must never result in any mutation to this contract state)
-      if (!this.config.skipActionProcessing) {
-        await handleEvent.processSideEffects.call(this, message)
-      }
-      // remove any events that were added to eventsToReprocess if we reprocessed them
-      const reprocessIdx = eventsToReprocess.indexOf(message.hash())
-      if (reprocessIdx !== -1) {
-        console.warn(`[chelonia] WARN: successfully reprocessed ${message.description()}`)
-        eventsToReprocess.splice(reprocessIdx, 1)
-      }
-      postHandleEvent && await postHandleEvent(message)
 
-      // let any listening components know that we've received, processed, and stored the event
-      sbp('okTurtles.events/emit', message.hash(), contractID, message)
-      sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
+      const stateCopy = cloneDeep(state[contractID])
+      try {
+        // process the mutation on the state (everything here must be synchronous)
+        await handleEvent.processMutation.call(this, message, state)
+        // process any side-effects (these must never result in any mutation to this contract state)
+        if (!this.config.skipActionProcessing) {
+          await handleEvent.processSideEffects.call(this, message)
+          // TODO: reset head here on error
+        }
+        // remove any events that were added to eventsToReprocess if we reprocessed them
+        const reprocessIdx = eventsToReprocess.indexOf(message.hash())
+        if (reprocessIdx !== -1) {
+          console.warn(`[chelonia] WARN: successfully reprocessed ${message.description()}`)
+          eventsToReprocess.splice(reprocessIdx, 1)
+        }
+        postHandleEvent && await postHandleEvent(message)
+
+        // let any listening components know that we've received, processed, and stored the event
+        sbp('okTurtles.events/emit', message.hash(), contractID, message)
+        sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
+      } catch (e) {
+        state[contractID] = stateCopy
+      }
     } catch (e) {
       console.error(`[chelonia] ERROR in handleEvent: ${e.message}`, e)
       handleEventError?.(e, message)
@@ -237,7 +244,7 @@ const handleEvent = {
       throw e
     }
   },
-  processMutation (message: GIMessage, state: Object) {
+  async processMutation (message: GIMessage, state: Object) {
     const contractID = message.contractID()
     const hash = message.hash()
     let stateCopy
@@ -256,13 +263,26 @@ const handleEvent = {
         sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
       }
       stateCopy = cloneDeep(state[contractID])
-      sbp('chelonia/private/in/processMessage', message, state[contractID])
+      await sbp('chelonia/private/in/processMessage', message, state[contractID])
       state.contracts[contractID].HEAD = hash
     } catch (e) {
       console.error(`[chelonia] ERROR '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
+      this.config.hooks.processError?.(e, message)
       // TODO: this is wrong - everywhere we have GIErrorIgnoreAndBanIfGroup this shouldn't be done
       //       however, maybe we shouldn't be throwing exceptions in the contract at all, only
       //       reporting errors via console.error and 'gi.notifications/emit'
+      // TODO: but someone could also send a purposefully malformed message that triggers
+      //       an exception due to a bug, thereby permanently bringing the contract to a halt.
+      //       we should therefore just ignore/skip messages that trigger exceptions, at least
+      //       for mutations. while still reporting an error to the caller somehow
+      //       so that the app can know to display an error/warning of some sort (or trigger autoban)
+      // TODO: we should have consistent behavior whenever an exception is thrown (e.g. reversion
+      //       of state). Figure out consistent behavior for sideEffect exceptions too.
+      //       And we should definitely implement #1214 so that we don't have the following situation:
+      //       a bugfix is made that prevents an exception from occurring, those who
+      //       alreadye experienced the exception will not process the message state update.
+      //       Those who join afterward won't experience the exception and therefore will process
+      //       the message state update, resulting in inconsistent state.
       if (stateCopy) {
         console.warn(`[chelonia] WARN reverting contract state for ${contractID}`)
         state[contractID] = stateCopy // undo any changes that were done

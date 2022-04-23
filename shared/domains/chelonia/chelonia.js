@@ -67,6 +67,8 @@ sbp('sbp/selectors/register', {
       hooks: {
         preHandleEvent: null, // async (message: GIMessage) => {}
         postHandleEvent: null, // async (message: GIMessage) => {}
+        processError: null, // (e: Error, message: GIMessage) => {}
+        sideEffectError: null, // (e: Error, message: GIMessage) => {}
         handleEventError: null, // (e: Error, message: GIMessage) => {}
         syncContractError: null // (e: Error, contractID: string) => {}
       }
@@ -205,9 +207,15 @@ sbp('sbp/selectors/register', {
   // TODO: bring in the CONTRACTS_MODIFIED listener from backend.js
   'chelonia/latestContractState': async (contractID: string) => {
     const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
-    const state = {}
+    let state = {}
     for (const event of events) {
-      sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
+      const stateCopy = cloneDeep(state)
+      try {
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
+      } catch (e) {
+        console.error(`[chelonia] latestContractState: '${e.name}': ${e.message} processing:`, event.serialize())
+        state = stateCopy
+      }
     }
     return state
   },
