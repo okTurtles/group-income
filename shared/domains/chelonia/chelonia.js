@@ -233,6 +233,7 @@ sbp('sbp/selectors/register', {
   },
   'chelonia/contract/removeImmediately': function (contractID: string) {
     const state = sbp(this.config.stateSelector)
+    this.config.reactiveDel(state.contracts, contractID)
     this.config.reactiveDel(state, contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)

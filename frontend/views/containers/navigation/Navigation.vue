@@ -68,7 +68,7 @@ nav.c-navigation(
 
     .c-navigation-footer(v-if='groupsByName.length')
       profile
-  component(:is='ephemeral.timeTravelComponentName')
+  //- component(:is='ephemeral.timeTravelComponentName')
 </template>
 
 <script>

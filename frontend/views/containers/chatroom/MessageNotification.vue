@@ -42,10 +42,10 @@ export default ({
     isCurrentUser: Boolean
   },
   computed: {
-    ...mapGetters(['globalProfile']),
+    ...mapGetters(['userDisplayName']),
     message () {
       const { username, channelName, channelDescription } = this.notification.params
-      const displayName = !username ? '' : this.globalProfile(username).displayName || username
+      const displayName = this.userDisplayName(username)
 
       const text = {
         [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member to {title}: {displayName}', { displayName, title: channelName }),

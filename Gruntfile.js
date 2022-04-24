@@ -200,7 +200,7 @@ module.exports = (grunt) => {
     cache: false, // Enabling it causes an error: "Cannot read property 'resolveDir' of undefined".
     sourceMap: development, // This option has currently no effect.
     outputStyle: development ? 'expanded' : 'compressed',
-    includePaths: [
+    loadPaths: [
       resolve('./node_modules'), // So we can write `@import 'vue-slider-component/lib/theme/default.scss';` in .vue <style>.
       resolve('./frontend/assets/style') // So we can write `@import '_variables.scss';` in .vue <style> section.
     ],
