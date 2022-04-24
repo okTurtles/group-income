@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { CHATROOM_TYPES } from '@model/contracts/constants.js'
 import MessageNotification from './MessageNotification.vue'

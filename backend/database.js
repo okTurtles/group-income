@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
 import fs from 'fs'

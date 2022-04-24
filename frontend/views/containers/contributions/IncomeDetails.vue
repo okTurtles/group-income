@@ -70,7 +70,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'

@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import { OPEN_MODAL } from '@utils/events.js'

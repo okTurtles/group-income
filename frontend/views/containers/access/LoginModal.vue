@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { REPLACE_MODAL } from '@utils/events.js'
 import LoginForm from '@containers/access/LoginForm.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'

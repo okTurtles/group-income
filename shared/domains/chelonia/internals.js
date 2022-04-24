@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { GIMessage } from './GIMessage.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr } from '~/shared/functions.js'
@@ -18,7 +18,7 @@ sbp('sbp/selectors/register', {
   'chelonia/private/state': function () {
     return this.state
   },
-  'chelonia/private/out/publishEvent': async (entry: GIMessage, { maxAttempts = 2 } = {}) => {
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 2 } = {}) {
     const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
@@ -56,14 +56,14 @@ sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/private/out/latestHash': (contractID: string) => {
+  'chelonia/private/out/latestHash': function (contractID: string) {
     return fetch(`${this.config.connectionURL}/latestHash/${contractID}`)
       .then(handleFetchResult('text'))
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
-  'chelonia/private/out/eventsSince': async (contractID: string, since: string) => {
+  'chelonia/private/out/eventsSince': async function (contractID: string, since: string) {
     const events = await fetch(`${this.config.connectionURL}/events/${contractID}/${since}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {

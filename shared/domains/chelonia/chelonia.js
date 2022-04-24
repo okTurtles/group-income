@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './internals.js'

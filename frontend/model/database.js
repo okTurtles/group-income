@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import localforage from 'localforage'
 import '~/shared/domains/chelonia/db.js'
 

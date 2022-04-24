@@ -79,7 +79,7 @@ export class GIMessage {
     })
   }
 
-  constructor ({ mapping, message }) {
+  constructor ({ mapping, message }: { mapping: Object, message: Object }) {
     this._mapping = mapping
     this._message = message
     // perform basic sanity check

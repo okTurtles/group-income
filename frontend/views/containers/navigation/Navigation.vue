@@ -80,7 +80,7 @@ nav.c-navigation(
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import Badge from '@components/Badge.vue'
 import NotificationBell from '@containers/notifications/NotificationBell.vue'
 import GroupsList from './GroupsList.vue'

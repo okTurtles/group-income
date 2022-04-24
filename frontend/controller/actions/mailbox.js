@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
 import { encryptedAction } from './utils.js'

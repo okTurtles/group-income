@@ -29,7 +29,7 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'

@@ -12,7 +12,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import NotificationList from './NotificationList.vue'

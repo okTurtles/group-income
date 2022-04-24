@@ -4,7 +4,7 @@
     component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 
 export default ({

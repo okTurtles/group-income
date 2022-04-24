@@ -22,7 +22,7 @@ page
       a.button(@click='sendMalformedMutationOfType') Send
 </template>
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/chelonia.js'

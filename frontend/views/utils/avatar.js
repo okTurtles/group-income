@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import blockies from '@utils/blockies.js'
 import Colors from '@model/colors.js'
 import { randomFromArray } from '~/frontend/utils/giLodash.js'

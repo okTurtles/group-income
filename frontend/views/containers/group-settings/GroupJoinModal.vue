@@ -36,7 +36,7 @@ modal-base-template(:fullscreen='true' :a11yTitle='L("How to join a group")')
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import { REPLACE_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'

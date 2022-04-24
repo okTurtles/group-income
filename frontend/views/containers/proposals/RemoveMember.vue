@@ -17,7 +17,7 @@ proposal-template(
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import Avatar from '@components/Avatar.vue'

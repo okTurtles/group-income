@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'

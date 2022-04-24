@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'

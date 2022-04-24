@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import VueSlider from 'vue-slider-component'
 import store from '@model/state.js'
 import { REPLACED_STATE } from '@utils/events.js'

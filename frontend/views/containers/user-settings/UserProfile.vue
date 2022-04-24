@@ -76,7 +76,7 @@
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { required, email } from 'vuelidate/lib/validators'

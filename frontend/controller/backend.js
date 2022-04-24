@@ -2,7 +2,7 @@
 
 import type { JSONObject } from '~/shared/types.js'
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'

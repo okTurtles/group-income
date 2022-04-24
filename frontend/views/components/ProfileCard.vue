@@ -82,7 +82,7 @@ tooltip(
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import AvatarUser from '@components/AvatarUser.vue'
 import UserName from '@components/UserName.vue'
 import Tooltip from '@components/Tooltip.vue'

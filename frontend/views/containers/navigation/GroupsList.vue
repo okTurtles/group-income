@@ -32,7 +32,7 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Badge from '@components/Badge.vue'

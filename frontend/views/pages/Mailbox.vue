@@ -158,7 +158,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 </template>
 
 <script>
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
 import Page from '@components/Page.vue'

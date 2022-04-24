@@ -2,7 +2,7 @@
 
 import type { Notification, NotificationData } from './types.flow.js'
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import * as keys from './mutationKeys.js'
 import templates from './templates.js'
 

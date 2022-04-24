@@ -2,7 +2,7 @@
 
 import type { Notification } from './types.flow.js'
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 
 import './selectors.js'
 import { age, isNew, isOlder } from './utils.js'

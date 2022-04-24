@@ -3,7 +3,7 @@
 // This file handles application-level state (as opposed to component-level
 // state) per: http://vuex.vuejs.org/en/intro.html
 
-import sbp from '@sbp/spb'
+import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import Vuex from 'vuex'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
@@ -21,6 +21,7 @@ import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
+import { CONTRACTS_MODIFIED } from '~/shared/domains/chelonia/chelonia.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
@@ -94,7 +95,7 @@ const mutations = {
     const index = state.pending.indexOf(contractID)
     index !== -1 && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', EVENTS.CONTRACTS_MODIFIED, state.contracts)
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
   setContractHEAD (state, { contractID, HEAD }) {
     const contract = state.contracts[contractID]
@@ -114,7 +115,7 @@ const mutations = {
       console.warn(`removeContract: ${e.name} attempting to remove ${contractID}:`, e.message)
     }
     // calling this will make pubsub unsubscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', EVENTS.CONTRACTS_MODIFIED, state.contracts)
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
   deleteMessage (state, hash) {
     const mailboxContract = store.getters.mailboxContract
