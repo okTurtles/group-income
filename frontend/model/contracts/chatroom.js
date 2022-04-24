@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import { CONTRACTS_MODIFIED } from '~/shared/domains/chelonia/chelonia.js'
+import '~/shared/domains/chelonia/chelonia.js'
 import {
   objectMaybeOf, objectOf, mapOf, arrayOf,
   string, literalOf, unionOf, number, optional
@@ -24,7 +24,7 @@ import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-console.debug('esbuild import hack:', CONTRACTS_MODIFIED)
+// console.debug('esbuild import hack:', CONTRACTS_MODIFIED)
 
 export const chatRoomAttributesType: any = objectOf({
   name: string,
