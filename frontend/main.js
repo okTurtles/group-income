@@ -92,6 +92,8 @@ async function startApp () {
   sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
     stateSelector: 'state/vuex/state',
+    reactiveSet: Vue.set,
+    reactiveDel: Vue.delete,
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {
         if (e.name === 'ChelErrorUnrecoverable') {
