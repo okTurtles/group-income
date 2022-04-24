@@ -209,9 +209,9 @@ sbp('sbp/selectors/register', {
     }
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
-  'chelonia/contract/sync': function (contractIDs: string | string[]): Promise<*> {
+  'chelonia/contract/sync': async function (contractIDs: string | string[]) {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
-    return Promise.all(listOfIds.map(contractID => {
+    await Promise.all(listOfIds.map(contractID => {
       // enqueue this invocation in a serial queue to ensure
       // handleEvent does not get called on contractID while it's syncing,
       // but after it's finished. This is used in tandem with
@@ -221,6 +221,10 @@ sbp('sbp/selectors/register', {
         'chelonia/private/in/syncContract', contractID
       ])
     }))
+    // as a convenience, in case the user replaced the state prior to calling this
+    // selector (e.g. upon login), re-subscribe to any unsubscribed contracts
+    const state = sbp(this.config.stateSelector)
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
   // safer version of removeImmediately that waits to finish processing events for contractIDs
   'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
@@ -238,7 +242,7 @@ sbp('sbp/selectors/register', {
     // calling this will make pubsub unsubscribe for events on `contractID`
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
-  'chelonia/latestContractState': async (contractID: string) => {
+  'chelonia/latestContractState': async function (contractID: string) {
     const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
     let state = {}
     // fast-path
