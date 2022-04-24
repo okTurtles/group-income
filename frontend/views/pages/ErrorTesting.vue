@@ -6,18 +6,18 @@ page
     p Enable side effect error type on handleEvent:&nbsp;
       select(v-model='form.sideEffectErrorType')
         option(value='none') None
-        option(value='GIErrorIgnoreAndBanIfGroup') GIErrorIgnoreAndBanIfGroup
-        option(value='GIErrorDropAndReprocess') GIErrorDropAndReprocess
-        option(value='GIErrorUnrecoverable') GIErrorUnrecoverable
+        option(value='GIErrorIgnoreAndBan') GIErrorIgnoreAndBan
+        option(value='GIErrorUIRuntimeError') GIErrorUIRuntimeError
+        option(value='ChelErrorDBBadPreviousHEAD') ChelErrorDBBadPreviousHEAD
         option(value='unknown') Unknown
   page-section
     a.button(@click='sendMalformedMessage') Send malformed message
   page-section
     p Send malformed mutation of type:&nbsp;
       select(v-model='form.mutationErrorType')
-        option(value='GIErrorIgnoreAndBanIfGroup') GIErrorIgnoreAndBanIfGroup
-        option(value='GIErrorDropAndReprocess') GIErrorDropAndReprocess
-        option(value='GIErrorUnrecoverable') GIErrorUnrecoverable
+        option(value='GIErrorIgnoreAndBan') GIErrorIgnoreAndBan
+        option(value='GIErrorUIRuntimeError') GIErrorUIRuntimeError
+        option(value='ChelErrorDBBadPreviousHEAD') ChelErrorDBBadPreviousHEAD
         option(value='unknownType') unknownType
       a.button(@click='sendMalformedMutationOfType') Send
 </template>
@@ -25,8 +25,11 @@ page
 import sbp from '@sbp/spb'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
-import { EVENT_HANDLED } from '@utils/events.js'
-import * as Errors from '@model/errors.js'
+import { EVENT_HANDLED } from '~/shared/domains/chelonia/chelonia.js'
+import { ChelErrorDBBadPreviousHEAD } from '~/shared/domains/chelonia/errors.js'
+import { GIErrorIgnoreAndBan, GIErrorUIRuntimeError } from '@model/errors.js'
+
+const Errors = { ChelErrorDBBadPreviousHEAD, GIErrorIgnoreAndBan, GIErrorUIRuntimeError }
 
 export default ({
   name: 'ErrorTesting',
@@ -38,7 +41,7 @@ export default ({
     return {
       form: {
         sideEffectErrorType: 'none',
-        mutationErrorType: 'GIErrorIgnoreAndBanIfGroup'
+        mutationErrorType: 'GIErrorIgnoreAndBan'
       }
     }
   },

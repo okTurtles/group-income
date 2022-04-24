@@ -3,12 +3,12 @@
 import sbp from '@sbp/spb'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
-import { CONTRACT_IS_SYNCING } from './internals.js'
+import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './internals.js'
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
-import { merge, cloneDeep, randomHexString } from '~/frontend/utils/giLodash.js'
-import { ChelErrorUnrecoverable } from './errors.js'
+import { merge, cloneDeep, randomHexString, intersection, difference } from '~/frontend/utils/giLodash.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
+import { ChelErrorUnrecoverable } from './errors.js'
 import type { GIOpContract, GIOpActionUnencrypted } from './GIMessage.js'
 
 // TODO: define ChelContractType for /defineContract
@@ -36,7 +36,8 @@ export type ChelActionParams = {
   publishOptions?: { maxAttempts: number };
 }
 
-export { CONTRACT_IS_SYNCING }
+// TODO: include pubsub events here too?
+export { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED }
 
 export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)\w*/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
@@ -70,7 +71,8 @@ sbp('sbp/selectors/register', {
         processError: null, // (e: Error, message: GIMessage) => {}
         sideEffectError: null, // (e: Error, message: GIMessage) => {}
         handleEventError: null, // (e: Error, message: GIMessage) => {}
-        syncContractError: null // (e: Error, contractID: string) => {}
+        syncContractError: null, // (e: Error, contractID: string) => {}
+        pubsubError: null // (e:Error, socket: Socket)
       }
     }
     this.state = {
@@ -108,7 +110,7 @@ sbp('sbp/selectors/register', {
       messageHandlers: {
         [NOTIFICATION_TYPE.ENTRY] (msg) {
           // We MUST use 'chelonia/private/in/enqueueHandleEvent' to ensure handleEvent()
-          // is called AFTER any currently-running calls to syncContractWithServer()
+          // is called AFTER any currently-running calls to 'chelonia/contract/sync'
           // to prevent gi.db from throwing "bad previousHEAD" errors.
           // Calling via SBP also makes it simple to implement 'test/backend.js'
           sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data))
@@ -118,12 +120,36 @@ sbp('sbp/selectors/register', {
           const theirVersion = msg.data
 
           if (ourVersion !== theirVersion) {
-            // TODO: replace all instances of GI_UPDATE_AVAILABLE with NOTIFICATION_TYPE.APP_VERSION
             sbp('okTurtles.events/emit', NOTIFICATION_TYPE.APP_VERSION, theirVersion)
           }
         }
       }
     })
+    if (!this.contractsModifiedListener) {
+      // Keep pubsub in sync (logged into the right "rooms") with 'state.contracts'
+      this.contractsModifiedListener = (contracts) => {
+        const client = this.socket
+        const subscribedIDs = [...client.subscriptionSet]
+        const currentIDs = Object.keys(contracts)
+        const leaveSubscribed = intersection(subscribedIDs, currentIDs)
+        const toUnsubscribe = difference(subscribedIDs, leaveSubscribed)
+        const toSubscribe = difference(currentIDs, leaveSubscribed)
+        // There is currently no need to tell other clients about our sub/unsubscriptions.
+        const dontBroadcast = true
+        try {
+          for (const contractID of toUnsubscribe) {
+            client.unsub(contractID, dontBroadcast)
+          }
+          for (const contractID of toSubscribe) {
+            client.sub(contractID, dontBroadcast)
+          }
+        } catch (e) {
+          console.error(`[chelonia] CONTRACTS_MODIFIED: error ${e.name} in pubsub: ${e.message}`, { toUnsubscribe, toSubscribe }, e)
+          this.config.hooks.pubsubError?.(e, client)
+        }
+      }
+      sbp('okTurtles.events/on', CONTRACTS_MODIFIED, this.contractsModifiedListener)
+    }
     return this.socket
   },
   'chelonia/defineContract': function (contract: Object) {
@@ -144,7 +170,7 @@ sbp('sbp/selectors/register', {
     for (const action in contract.actions) {
       contractFromAction(this.contracts, action) // ensure actions are appropriately named
       this.whitelistedActions[action] = true
-      // TODO: automatically generate creation actions here using `${action}/create`
+      // TODO: automatically generate send actions here using `${action}/send`
       //       allow the specification of:
       //       - the optype (e.g. OP_ACTION_(UN)ENCRYPTED)
       //       - a localized error message
@@ -168,7 +194,7 @@ sbp('sbp/selectors/register', {
               await sbp(...sideEffect)
             } catch (e) {
               console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${message.description()}:`, sideEffect)
-              this.sideEffectStacks[message.contractID()] = [] // clear the side effects
+              this.sideEffectStacks[message.contractID] = [] // clear the side effects
               throw e
             }
           }
@@ -195,25 +221,42 @@ sbp('sbp/selectors/register', {
       ])
     }))
   },
-  // TODO: this
+  // safer version of removeImmediately that waits to finish processing events for contractIDs
   'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
       return sbp('okTurtles.eventQueue/queueEvent', contractID, [
-        'chelonia/private/contract/remove', contractID
+        'chelonia/contract/removeImmediately', contractID
       ])
     }))
   },
-  // TODO: bring in the CONTRACTS_MODIFIED listener from backend.js
+  'chelonia/contract/removeImmediately': function (contractID: string) {
+    const state = sbp(this.stateSelector)
+    this.config.reactiveDel(state, contractID)
+    // calling this will make pubsub unsubscribe for events on `contractID`
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
+  },
   'chelonia/latestContractState': async (contractID: string) => {
     const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
     let state = {}
+    // fast-path
+    try {
+      for (const event of events) {
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
+      }
+      return state
+    } catch (e) {
+      console.warn(`[chelonia] latestContractState(${contractID}): fast-path failed due to ${e.name}: ${e.message}`)
+      state = {}
+    }
+    // more error-tolerant but slower due to cloning state on each message
     for (const event of events) {
       const stateCopy = cloneDeep(state)
       try {
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
       } catch (e) {
-        console.error(`[chelonia] latestContractState: '${e.name}': ${e.message} processing:`, event.serialize())
+        console.warn(`[chelonia] latestContractState: '${e.name}': ${e.message} processing:`, event)
+        if (e instanceof ChelErrorUnrecoverable) throw e
         state = stateCopy
       }
     }

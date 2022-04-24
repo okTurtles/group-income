@@ -9,10 +9,7 @@ import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, bool
 //       https://github.com/okTurtles/group-income/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './voting/proposals.js'
-import {
-  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
-  STATUS_OPEN, STATUS_CANCELLED
-} from './voting/constants.js'
+import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
@@ -22,12 +19,8 @@ import { unadjustedDistribution, adjustedDistribution } from './distribution/dis
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
 import { chatRoomAttributesType } from './chatroom.js'
-import {
-  INVITE_INITIAL_CREATOR,
-  INVITE_STATUS,
-  PROFILE_STATUS,
-  INVITE_EXPIRES_IN_DAYS
-} from './constants.js'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS } from './constants.js'
+import { ChelErrorDBBadPreviousHEAD } from '~/shared/domains/chelonia/errors.js'
 
 export const inviteType: any = objectOf({
   inviteSecret: string,
@@ -485,7 +478,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state, getters }) {
         if (data.status === PAYMENT_COMPLETED) {
           console.error(`payment: payment ${hash} cannot have status = 'completed'!`, { data, meta, hash })
-          throw new Errors.GIErrorIgnoreAndBanIfGroup('payments cannot be instsantly completed!')
+          throw new Errors.GIErrorIgnoreAndBan('payments cannot be instantly completed!')
         }
         Vue.set(state.payments, hash, {
           data: {
@@ -519,12 +512,12 @@ sbp('chelonia/defineContract', {
         //       that they can be done before sending as well as upon receiving
         if (!payment) {
           console.error(`paymentUpdate: no payment ${data.paymentHash}`, { data, meta, hash })
-          throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate without existing payment')
+          throw new Errors.GIErrorIgnoreAndBan('paymentUpdate without existing payment')
         }
         // if the payment is being modified by someone other than the person who sent or received it, throw an exception
         if (meta.username !== payment.meta.username && meta.username !== payment.data.toUser) {
           console.error(`paymentUpdate: bad username ${meta.username} != ${payment.meta.username} != ${payment.data.username}`, { data, meta, hash })
-          throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate from bad user!')
+          throw new Errors.GIErrorIgnoreAndBan('paymentUpdate from bad user!')
         }
         payment.history.push([meta.createdDate, hash])
         merge(payment.data, data.updatedProperties)
@@ -592,7 +585,7 @@ sbp('chelonia/defineContract', {
         if (!proposal) {
           // https://github.com/okTurtles/group-income/issues/602
           console.error(`proposalVote: no proposal for ${data.proposalHash}!`, { data, meta, hash })
-          throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalVote without existing proposal')
+          throw new Errors.GIErrorIgnoreAndBan('proposalVote without existing proposal')
         }
         Vue.set(proposal.votes, meta.username, data.vote)
         // TODO: handle vote pass/fail
@@ -619,10 +612,10 @@ sbp('chelonia/defineContract', {
         if (!proposal) {
           // https://github.com/okTurtles/group-income/issues/602
           console.error(`proposalCancel: no proposal for ${data.proposalHash}!`, { data, meta })
-          throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalVote without existing proposal')
+          throw new Errors.GIErrorIgnoreAndBan('proposalVote without existing proposal')
         } else if (proposal.meta.username !== meta.username) {
           console.error(`proposalCancel: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`, { data, meta })
-          throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalWithdraw for wrong user!')
+          throw new Errors.GIErrorIgnoreAndBan('proposalWithdraw for wrong user!')
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
         archiveProposal(state, data.proposalHash)
@@ -690,13 +683,13 @@ sbp('chelonia/defineContract', {
               cID !== contractID && rootState[cID].settings) || null
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
-          sbp('state/vuex/commit', 'removeContract', contractID)
+          sbp('chelonia/contract/removeImmediately', contractID)
           sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
 
           // TODO - #828 remove other group members contracts if applicable
         } else {
           // TODO - #828 remove the member contract if applicable.
-          // sbp('state/vuex/commit', 'removeContract', getters.groupProfile(data.member).contractID)
+          // sbp('chelonia/contract/removeImmediately', getters.groupProfile(data.member).contractID)
         }
         // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }
@@ -965,7 +958,8 @@ sbp('chelonia/defineContract', {
       'gi.contracts/group/malformedMutation': {
         validate: objectOf({ errorType: string }),
         process ({ data }, { state }) {
-          const ErrorType = Errors[data.errorType]
+          const ErrorsTypes = { ChelErrorDBBadPreviousHEAD, ...Errors }
+          const ErrorType = ErrorsTypes[data.errorType]
           if (ErrorType) {
             throw new ErrorType('malformedMutation!')
           } else {

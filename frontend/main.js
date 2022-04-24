@@ -66,33 +66,51 @@ async function startApp () {
 
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
-  function notificationError (errType: string) {
+  function notificationError (activity: string) {
     return function (e: Error, message: GIMessage) {
       const contractID = message.contractID()
       const [opType] = message.op()
       const { action, meta } = message.decryptedValue()
       sbp('gi.notifications/emit', 'ERROR', {
         ...LTags('b'),
-        message: L("{errType}: Error in '{action}' from {b_}{who}{_b} to '{contract}': {err}", {
-          errType,
+        message: L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", {
+          errName: e.name,
+          activity,
           action: action || opType,
           who: meta?.username || 'TODO: signing keyID',
           contract: sbp('state/vuex/state').contracts[contractID]?.type || contractID,
-          err: e.message || "'?'"
+          errMsg: e.message || '?'
         })
       })
     }
   }
+  function displaySeriousErrorBanner (e: Error) {
+    sbp('okTurtles.data/get', 'BANNER').danger(
+      L('Fatal error: {reportError}', LError(e)), 'exclamation-triangle'
+    )
+  }
   sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
+    stateSelector: 'state/vuex/state',
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {
-        sbp('okTurtles.data/get', 'BANNER')
-          .danger(L('Fatal error: {reportError}', LError(e)), 'exclamation-triangle')
+        if (e.name === 'ChelErrorUnrecoverable') {
+          displaySeriousErrorBanner(e)
+        }
         notificationError('handleEvent')(e, message)
       },
-      processError: notificationError('process'),
-      sideEffectError: notificationError('sideEffect')
+      processError: (e: Error, message: GIMessage) => {
+        if (e.name === 'GIErrorIgnoreAndBan') {
+          sbp('okTurtles.eventQueue/queueEvent', message.contractID(), [
+            'gi.actions/group/autobanUser', message, e
+          ])
+        }
+        notificationError('process')
+      },
+      sideEffectError: (e: Error, message: GIMessage) => {
+        displaySeriousErrorBanner(e)
+        notificationError('sideEffect')
+      }
     }
   })
   sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))

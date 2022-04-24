@@ -14,14 +14,17 @@ import {
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
-  PROPOSAL_GENERIC
+  PROPOSAL_GENERIC,
+  STATUS_OPEN
 } from '@model/contracts/voting/constants.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import { imageUpload } from '@utils/image.js'
-import { merge, omit } from '@utils/giLodash.js'
+import { merge, omit, randomIntFromRange } from '@utils/giLodash.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@utils/time.js'
 import L, { LError } from '@view-utils/translations.js'
 import { encryptedAction } from './utils.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
 import type { GIActionParams } from './types.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
@@ -343,6 +346,80 @@ export default (sbp('sbp/selectors/register', {
       })
     } catch (e) {
       throw new GIErrorUIRuntimeError(L('Failed to leave group. {codeError}', { codeError: e.message }))
+    }
+  },
+  'gi.actions/group/autobanUser': async function (message: GIMessage, error: Object, attempt = 1) {
+    try {
+      // If we just joined, we're likely witnessing an old error that was handled
+      // by the existing members, so we shouldn't attempt to participate in voting
+      // in a proposal that has long since passed.
+      //
+      // NOTE: we cast to 'any' to work around flow errors
+      //       see: https://stackoverflow.com/a/41329247/1781435
+      const meta: Object = (message.opValue(): any).meta
+      const username = meta && meta.username
+      const groupID = message.contractID()
+      const contractState = sbp('state/vuex/state')[groupID]
+      const getters = sbp('state/vuex/getters')
+
+      if (username && getters.groupProfile(username)) {
+        console.warn(`autoBanSenderOfMessage: autobanning ${username} from ${groupID}`)
+        let proposal
+        let proposalHash
+        // find existing proposal if it exists
+        for (const hash in contractState.proposals) {
+          const prop = contractState.proposals[hash]
+          if (prop.status === STATUS_OPEN &&
+            prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
+            prop.data.proposalData.member === username
+          ) {
+            proposal = prop
+            proposalHash = hash
+            break
+          }
+        }
+        if (proposal) {
+          // cast our vote if we haven't already cast it
+          if (!proposal.votes[getters.ourUsername]) {
+            await sbp('gi.actions/group/proposalVote', {
+              contractID: groupID,
+              data: { proposalHash, vote: VOTE_FOR },
+              publishOptions: { maxAttempts: 3 }
+            })
+          }
+        } else {
+          // create our proposal to ban the user
+          try {
+            proposal = await sbp('gi.actions/group/proposal', {
+              contractID: groupID,
+              data: {
+                proposalType: PROPOSAL_REMOVE_MEMBER,
+                proposalData: {
+                  member: username,
+                  reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
+                },
+                votingRule: contractState.settings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
+                expires_date_ms: Date.now() + contractState.settings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+              },
+              publishOptions: { maxAttempts: 1 }
+            })
+          } catch (e) {
+            if (attempt > 2) {
+              console.error(`autoBanSenderOfMessage: max attempts reached. Error ${e.message} attempting to ban ${username}`, message, e)
+            } else {
+              const randDelay = randomIntFromRange(0, 1500)
+              console.warn(`autoBanSenderOfMessage: ${e.message} attempting to ban ${username}, retrying in ${randDelay} ms...`, e)
+              setTimeout(() => {
+                sbp('gi.actions/group/autobanUser', message, error, attempt + 1)
+              }, randDelay)
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error(`${e.name} during autoBanSenderOfMessage!`, message, e)
+      // we really can't do much at this point since this is an exception
+      // inside of the exception handler :-(
     }
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
