@@ -499,6 +499,7 @@ const actions = {
       console.debug('loadSettings:', settings)
       store.replaceState(settings)
       captureLogsStart(user.username)
+      sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
       // This may seem unintuitive to use the store.state from the global store object
       // but the state object in scope is a copy that becomes stale if something modifies it
       // like an outside dispatch

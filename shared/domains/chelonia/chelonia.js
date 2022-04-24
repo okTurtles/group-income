@@ -128,27 +128,7 @@ sbp('sbp/selectors/register', {
     })
     if (!this.contractsModifiedListener) {
       // Keep pubsub in sync (logged into the right "rooms") with 'state.contracts'
-      this.contractsModifiedListener = (contracts) => {
-        const client = this.socket
-        const subscribedIDs = [...client.subscriptionSet]
-        const currentIDs = Object.keys(contracts)
-        const leaveSubscribed = intersection(subscribedIDs, currentIDs)
-        const toUnsubscribe = difference(subscribedIDs, leaveSubscribed)
-        const toSubscribe = difference(currentIDs, leaveSubscribed)
-        // There is currently no need to tell other clients about our sub/unsubscriptions.
-        const dontBroadcast = true
-        try {
-          for (const contractID of toUnsubscribe) {
-            client.unsub(contractID, dontBroadcast)
-          }
-          for (const contractID of toSubscribe) {
-            client.sub(contractID, dontBroadcast)
-          }
-        } catch (e) {
-          console.error(`[chelonia] CONTRACTS_MODIFIED: error ${e.name} in pubsub: ${e.message}`, { toUnsubscribe, toSubscribe }, e)
-          this.config.hooks.pubsubError?.(e, client)
-        }
-      }
+      this.contractsModifiedListener = () => sbp('chelonia/pubsub/update')
       sbp('okTurtles.events/on', CONTRACTS_MODIFIED, this.contractsModifiedListener)
     }
     return this.socket
@@ -208,10 +188,34 @@ sbp('sbp/selectors/register', {
       })
     }
   },
+  // call this manually to resubscribe/unsubscribe from contracts as needed
+  // if you are using a custom stateSelector and reload the state (e.g. upon login)
+  'chelonia/pubsub/update': function () {
+    const { contracts } = sbp(this.config.stateSelector)
+    const client = this.socket
+    const subscribedIDs = [...client.subscriptionSet]
+    const currentIDs = Object.keys(contracts)
+    const leaveSubscribed = intersection(subscribedIDs, currentIDs)
+    const toUnsubscribe = difference(subscribedIDs, leaveSubscribed)
+    const toSubscribe = difference(currentIDs, leaveSubscribed)
+    // There is currently no need to tell other clients about our sub/unsubscriptions.
+    const dontBroadcast = true
+    try {
+      for (const contractID of toUnsubscribe) {
+        client.unsub(contractID, dontBroadcast)
+      }
+      for (const contractID of toSubscribe) {
+        client.sub(contractID, dontBroadcast)
+      }
+    } catch (e) {
+      console.error(`[chelonia] pubsub/update: error ${e.name}: ${e.message}`, { toUnsubscribe, toSubscribe }, e)
+      this.config.hooks.pubsubError?.(e, client)
+    }
+  },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
-  'chelonia/contract/sync': async function (contractIDs: string | string[]) {
+  'chelonia/contract/sync': function (contractIDs: string | string[]): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
-    await Promise.all(listOfIds.map(contractID => {
+    return Promise.all(listOfIds.map(contractID => {
       // enqueue this invocation in a serial queue to ensure
       // handleEvent does not get called on contractID while it's syncing,
       // but after it's finished. This is used in tandem with
@@ -221,10 +225,6 @@ sbp('sbp/selectors/register', {
         'chelonia/private/in/syncContract', contractID
       ])
     }))
-    // as a convenience, in case the user replaced the state prior to calling this
-    // selector (e.g. upon login), re-subscribe to any unsubscribed contracts
-    const state = sbp(this.config.stateSelector)
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
   // safer version of removeImmediately that waits to finish processing events for contractIDs
   'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
