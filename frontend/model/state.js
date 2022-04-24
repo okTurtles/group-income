@@ -586,6 +586,8 @@ const store: any = new Vuex.Store({
   strict: process.env.VUEX_STRICT === 'true'
 })
 const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)
+store.subscribe(debouncedSave) // for e.g saving notifications that are markedAsRead
+// since Chelonia updates do not pass through calls to 'commit', also save upon EVENT_HANDLED
 sbp('okTurtles.events/on', EVENT_HANDLED, debouncedSave)
 
 export default store

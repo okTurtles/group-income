@@ -93,6 +93,9 @@ sbp('sbp/selectors/register', {
   },
   'chelonia/configure': function (config: Object) {
     merge(this.config, config)
+    // merge will strip the hooks off of config.hooks when merging from the root of the object
+    // because they are functions and cloneDeep doesn't clone functions
+    merge(this.config.hooks, config.hooks || {})
   },
   'chelonia/connect': function (): Object {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')

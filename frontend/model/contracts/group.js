@@ -956,15 +956,23 @@ sbp('chelonia/defineContract', {
         }
       },
       'gi.contracts/group/malformedMutation': {
-        validate: objectOf({ errorType: string }),
-        process ({ data }, { state }) {
+        validate: objectOf({ errorType: string, sideEffect: optional(boolean) }),
+        process ({ data }) {
           const ErrorsTypes = { ChelErrorDBBadPreviousHEAD, ...Errors }
           const ErrorType = ErrorsTypes[data.errorType]
+          if (data.sideEffect) return
           if (ErrorType) {
             throw new ErrorType('malformedMutation!')
           } else {
             throw new Error(`unknown error type: ${data.errorType}`)
           }
+        },
+        sideEffect (message, { state }) {
+          if (!message.data.sideEffect) return
+          sbp('gi.contracts/group/malformedMutation/process', {
+            ...message,
+            data: omit(message.data, ['sideEffect'])
+          }, state)
         }
       }
     })

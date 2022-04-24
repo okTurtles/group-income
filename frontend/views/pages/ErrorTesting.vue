@@ -10,8 +10,7 @@ page
         option(value='GIErrorUIRuntimeError') GIErrorUIRuntimeError
         option(value='ChelErrorDBBadPreviousHEAD') ChelErrorDBBadPreviousHEAD
         option(value='unknown') Unknown
-  page-section
-    a.button(@click='sendMalformedMessage') Send malformed message
+      a.button(@click='sendMalformedSideEffect') Send malformed sideEffect
   page-section
     p Send malformed mutation of type:&nbsp;
       select(v-model='form.mutationErrorType')
@@ -19,7 +18,7 @@ page
         option(value='GIErrorUIRuntimeError') GIErrorUIRuntimeError
         option(value='ChelErrorDBBadPreviousHEAD') ChelErrorDBBadPreviousHEAD
         option(value='unknownType') unknownType
-      a.button(@click='sendMalformedMutationOfType') Send
+      a.button(@click='sendMalformedMutationOfType') Send malformed mutation
 </template>
 <script>
 import sbp from '@sbp/sbp'
@@ -59,10 +58,10 @@ export default ({
     })
   },
   methods: {
-    async sendMalformedMessage () {
+    async sendMalformedSideEffect () {
       await sbp('chelonia/out/actionEncrypted', {
-        action: 'gi.contracts/group/inviteAccept',
-        data: { inviteSecret: 'poop!' },
+        action: 'gi.contracts/group/malformedMutation',
+        data: { errorType: this.form.mutationErrorType, sideEffect: true },
         contractID: this.$store.state.currentGroupId
       })
     },

@@ -72,8 +72,8 @@ async function startApp () {
       const [opType] = message.op()
       const { action, meta } = message.decryptedValue()
       sbp('gi.notifications/emit', 'ERROR', {
-        ...LTags('b'),
         message: L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", {
+          ...LTags('b'),
           errName: e.name,
           activity,
           action: action || opType,
@@ -99,7 +99,10 @@ async function startApp () {
         if (e.name === 'ChelErrorUnrecoverable') {
           displaySeriousErrorBanner(e)
         }
-        notificationError('handleEvent')(e, message)
+        if (sbp('okTurtles.data/get', 'sideEffectError') !== message.hash()) {
+          // avoid duplicate notifications for the same message
+          notificationError('handleEvent')(e, message)
+        }
       },
       processError: (e: Error, message: GIMessage) => {
         if (e.name === 'GIErrorIgnoreAndBan') {
@@ -107,37 +110,18 @@ async function startApp () {
             'gi.actions/group/autobanUser', message, e
           ])
         }
-        notificationError('process')
+        notificationError('process')(e, message)
       },
       sideEffectError: (e: Error, message: GIMessage) => {
         displaySeriousErrorBanner(e)
-        notificationError('sideEffect')
+        sbp('okTurtles.data/set', 'sideEffectError', message.hash())
+        notificationError('sideEffect')(e, message)
       }
     }
   })
-  sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
 
   await sbp('translations/init', navigator.language)
 
-  const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
-  if (username) {
-    const identityContractID = await sbp('namespace/lookup', username)
-    if (identityContractID) {
-      await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
-    } else {
-      await sbp('state/vuex/dispatch', 'logout')
-      console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-      // TODO: do not delete the username like this! handle this better!
-      //       because of how await works, this exception handler can be triggered
-      //       even by random errors from Vue.js, example:
-      //
-      //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
-      //         memberUsernames state.js:231
-      //
-      //       Which doesn't mean that the lookup actually failed!
-      await sbp('gi.db/settings/delete', username)
-    }
-  }
   if (process.env.NODE_ENV === 'development' || window.Cypress) {
     // In development mode this makes the SBP API available in the devtools console.
     window.sbp = sbp
@@ -162,6 +146,7 @@ async function startApp () {
       }
     },
     mounted () {
+      sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
@@ -228,6 +213,28 @@ async function startApp () {
           'times-circle'
         )
       }
+      // TODO: move this into gi.actions/identity/login or something
+      (async function () {
+        const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+        if (username) {
+          const identityContractID = await sbp('namespace/lookup', username)
+          if (identityContractID) {
+            await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
+          } else {
+            await sbp('state/vuex/dispatch', 'logout')
+            console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+            // TODO: do not delete the username like this! handle this better!
+            //       because of how await works, this exception handler can be triggered
+            //       even by random errors from Vue.js, example:
+            //
+            //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
+            //         memberUsernames state.js:231
+            //
+            //       Which doesn't mean that the lookup actually failed!
+            await sbp('gi.db/settings/delete', username)
+          }
+        }
+      })()
     },
     computed: {
       showNav () {
