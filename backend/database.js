@@ -23,7 +23,7 @@ const production = process.env.NODE_ENV === 'production'
 
 export default (sbp('sbp/selectors/register', {
   'backend/db/streamEntriesSince': async function (contractID: string, hash: string): Promise<*> {
-    let currentHEAD = await sbp('chelonia/db/get', sbp('chelonia/db/logHEAD', contractID))
+    let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
     if (!currentHEAD) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }

@@ -7,12 +7,9 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr } from '~/shared/functions.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
 import { ChelErrorDBBadPreviousHEAD, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
 
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
-
-export const CONTRACT_IS_SYNCING = 'contract-is-syncing'
-export const CONTRACTS_MODIFIED = 'contracts-modified'
-export const EVENT_HANDLED = 'event-handled'
 
 sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
@@ -209,6 +206,8 @@ sbp('sbp/selectors/register', {
         handleEvent.revertProcess.call(this, { message, state, contractID, contractStateCopy })
         processingErrored = true
         this.config.hooks.processError?.(e, message)
+        // special error that prevents the head from being updated, effectively killing the contract
+        if (e.name === 'ChelErrorUnrecoverable') throw e
       }
       // whether or not there was an exception, we proceed ahead with updating the head
       // you can prevent this by throwing an exception in the processError hook

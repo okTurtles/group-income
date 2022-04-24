@@ -92,8 +92,8 @@ route.GET('/name/{name}', {}, async function (request, h) {
 
 route.GET('/latestHash/{contractID}', {}, async function (request, h) {
   try {
-    const entry = await sbp('chelonia/db/lastEntry', request.params.contractID)
-    return entry ? entry.hash() : Boom.notFound()
+    const hash = await sbp('chelonia/db/latestHash', request.params.contractID)
+    return hash || Boom.notFound()
   } catch (err) {
     return logger(err)
   }

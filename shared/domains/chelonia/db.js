@@ -41,6 +41,9 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/db/contractIdFromLogHEAD': function (key: string): ?string {
     return key.endsWith(headSuffix) ? key.slice(0, -headSuffix.length) : null
   },
+  'chelonia/db/latestHash': function (contractID: string): Promise<string> {
+    return sbp('chelonia/db/get', sbp('chelonia/db/logHEAD', contractID))
+  },
   'chelonia/db/getEntry': async function (hash: string): Promise<GIMessage> {
     try {
       const value: string = await sbp('chelonia/db/get', hash)
@@ -58,7 +61,7 @@ export default (sbp('sbp/selectors/register', {
         console.warn(`[chelonia.db] entry exists: ${entry.hash()}`)
         return entry.hash()
       }
-      const HEAD = await sbp('chelonia/db/get', sbp('chelonia/db/logHEAD', contractID))
+      const HEAD = await sbp('chelonia/db/latestHash', contractID)
       if (!entry.isFirstMessage() && previousHEAD !== HEAD) {
         console.error(`[chelonia.db] bad previousHEAD: ${previousHEAD}! Expected: ${HEAD} for contractID: ${contractID}`)
         throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${previousHEAD}`)
@@ -76,7 +79,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/db/lastEntry': async function (contractID: string): Promise<GIMessage> {
     try {
-      const hash = await sbp('chelonia/db/get', sbp('chelonia/db/logHEAD', contractID))
+      const hash = await sbp('chelonia/db/latestHash', contractID)
       if (!hash) throw new Error(`contract ${contractID} has no latest hash!`)
       return sbp('chelonia/db/getEntry', hash)
     } catch (e) {

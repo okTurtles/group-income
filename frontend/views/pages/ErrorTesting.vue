@@ -24,7 +24,7 @@ page
 import sbp from '@sbp/sbp'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
-import { EVENT_HANDLED } from '~/shared/domains/chelonia/chelonia.js'
+import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { ChelErrorDBBadPreviousHEAD } from '~/shared/domains/chelonia/errors.js'
 import { GIErrorIgnoreAndBan, GIErrorUIRuntimeError } from '@model/errors.js'
 

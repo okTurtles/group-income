@@ -3,7 +3,8 @@
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
-import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './internals.js'
+import './internals.js'
+import { CONTRACTS_MODIFIED } from './events.js'
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { merge, cloneDeep, randomHexString, intersection, difference } from '~/frontend/utils/giLodash.js'
 // TODO: rename this to ChelMessage
@@ -36,8 +37,7 @@ export type ChelActionParams = {
   publishOptions?: { maxAttempts: number };
 }
 
-// TODO: include pubsub events here too?
-export { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED, GIMessage }
+export { GIMessage }
 
 export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)\w*/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
@@ -100,8 +100,8 @@ sbp('sbp/selectors/register', {
   'chelonia/connect': function (): Object {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')
     if (!this.config.connectionOptions) throw new Error('config.connectionOptions missing')
-    if (this.socket) {
-      this.socket.destroy()
+    if (this.pubsub) {
+      this.pubsub.destroy()
     }
     let pubsubURL = this.config.connectionURL
     if (process.env.NODE_ENV === 'development') {
@@ -109,7 +109,7 @@ sbp('sbp/selectors/register', {
       // its console output until we have a better solution. Do not use for auth.
       pubsubURL += `?debugID=${randomHexString(6)}`
     }
-    this.socket = createClient(pubsubURL, {
+    this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       messageHandlers: {
         [NOTIFICATION_TYPE.ENTRY] (msg) {
@@ -134,7 +134,7 @@ sbp('sbp/selectors/register', {
       this.contractsModifiedListener = () => sbp('chelonia/pubsub/update')
       sbp('okTurtles.events/on', CONTRACTS_MODIFIED, this.contractsModifiedListener)
     }
-    return this.socket
+    return this.pubsub
   },
   'chelonia/defineContract': function (contract: Object) {
     if (!ACTION_REGEX.exec(contract.name)) throw new Error(`bad contract name: ${contract.name}`)
@@ -195,7 +195,7 @@ sbp('sbp/selectors/register', {
   // if you are using a custom stateSelector and reload the state (e.g. upon login)
   'chelonia/pubsub/update': function () {
     const { contracts } = sbp(this.config.stateSelector)
-    const client = this.socket
+    const client = this.pubsub
     const subscribedIDs = [...client.subscriptionSet]
     const currentIDs = Object.keys(contracts)
     const leaveSubscribed = intersection(subscribedIDs, currentIDs)

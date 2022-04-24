@@ -7,7 +7,7 @@ import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import Vuex from 'vuex'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import { EVENT_HANDLED } from '~/shared/domains/chelonia/chelonia.js'
+import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import Colors from './colors.js'
 import { CHATROOM_PRIVACY_LEVEL } from './contracts/constants.js'

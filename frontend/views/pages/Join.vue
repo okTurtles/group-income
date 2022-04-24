@@ -49,6 +49,7 @@ div
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
+import { VUE_LOADED } from '@utils/events.js'
 import SignupForm from '@containers/access/SignupForm.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import Loading from '@components/Loading.vue'
@@ -88,60 +89,63 @@ export default ({
       }
     }
   },
-  async mounted () {
-    try {
-      if (this.ourUsername) {
-        if (this.$store.state.contracts[this.$route.query.groupId]) {
-          this.$router.push({ path: '/dashboard' })
-          return
-        } else {
-          await this.accept()
-          return
-        }
-      }
-      const state = await sbp('chelonia/latestContractState', this.$route.query.groupId)
-      const invite = state.invites[this.$route.query.secret]
-      if (!invite || invite.status !== INVITE_STATUS.VALID) {
-        console.error('Join.vue error: Link is not valid.')
-        this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
-        this.pageStatus = 'INVALID'
-        return
-      } else if (invite.expires < Date.now()) {
-        console.log('Join.vue error: Link is already expired.')
-        this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
-        this.pageStatus = 'EXPIRED'
-        return
-      }
-      let creator = null
-      let creatorPicture = null
-      let message = null
-
-      if (invite.creator === INVITE_INITIAL_CREATOR) {
-        message = L('You were invited to join')
-      } else {
-        const identityContractID = await sbp('namespace/lookup', invite.creator)
-        const userState = await sbp('chelonia/latestContractState', identityContractID)
-        const userDisplayName = userState.attributes.displayName || userState.attributes.username
-        message = L('{who} invited you to join their group!', { who: userDisplayName })
-        creator = userDisplayName
-        creatorPicture = userState.attributes.picture
-      }
-
-      this.ephemeral.invitation = {
-        groupName: state.settings.groupName,
-        groupPicture: state.settings.groupPicture,
-        creator,
-        creatorPicture,
-        message
-      }
-      this.pageStatus = 'SIGNING'
-    } catch (e) {
-      console.error(e)
-      this.ephemeral.errorMsg = `${L('Something went wrong. Please, try again.')} ${e.message}`
-      this.pageStatus = 'INVALID'
-    }
+  created () {
+    sbp('okTurtles.events/on', VUE_LOADED, this.initialize)
   },
   methods: {
+    async initialize () {
+      try {
+        if (this.ourUsername) {
+          if (this.$store.state.contracts[this.$route.query.groupId]) {
+            this.$router.push({ path: '/dashboard' })
+            return
+          } else {
+            await this.accept()
+            return
+          }
+        }
+        const state = await sbp('chelonia/latestContractState', this.$route.query.groupId)
+        const invite = state.invites[this.$route.query.secret]
+        if (!invite || invite.status !== INVITE_STATUS.VALID) {
+          console.error('Join.vue error: Link is not valid.')
+          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+          this.pageStatus = 'INVALID'
+          return
+        } else if (invite.expires < Date.now()) {
+          console.log('Join.vue error: Link is already expired.')
+          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+          this.pageStatus = 'EXPIRED'
+          return
+        }
+        let creator = null
+        let creatorPicture = null
+        let message = null
+
+        if (invite.creator === INVITE_INITIAL_CREATOR) {
+          message = L('You were invited to join')
+        } else {
+          const identityContractID = await sbp('namespace/lookup', invite.creator)
+          const userState = await sbp('chelonia/latestContractState', identityContractID)
+          const userDisplayName = userState.attributes.displayName || userState.attributes.username
+          message = L('{who} invited you to join their group!', { who: userDisplayName })
+          creator = userDisplayName
+          creatorPicture = userState.attributes.picture
+        }
+
+        this.ephemeral.invitation = {
+          groupName: state.settings.groupName,
+          groupPicture: state.settings.groupPicture,
+          creator,
+          creatorPicture,
+          message
+        }
+        this.pageStatus = 'SIGNING'
+      } catch (e) {
+        console.error(e)
+        this.ephemeral.errorMsg = `${L('Something went wrong. Please, try again.')} ${e.message}`
+        this.pageStatus = 'INVALID'
+      }
+    },
     isStatus (status) {
       return this.pageStatus === status
     },

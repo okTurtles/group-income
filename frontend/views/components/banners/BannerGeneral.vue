@@ -42,6 +42,9 @@ export default ({
       this.ephemeral.message = message
       this.ephemeral.icon = icon
       this.ephemeral.severity = 'danger'
+    },
+    severity () {
+      return this.ephemeral.severity
     }
   }
 }: Object)

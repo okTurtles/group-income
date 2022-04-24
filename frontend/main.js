@@ -5,7 +5,8 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
-import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/chelonia.js'
+import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import Vue from 'vue'
@@ -14,13 +15,13 @@ import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
-import { LOGIN, LOGOUT } from './utils/events.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { LOGIN, LOGOUT, VUE_LOADED } from './utils/events.js'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
 import L, { LError, LTags } from '@view-utils/translations.js'
+import { debounce } from '@utils/giLodash.js'
 import './views/utils/allowedUrls.js'
 import './views/utils/translations.js'
 import './views/utils/avatar.js'
@@ -145,22 +146,41 @@ async function startApp () {
         }
       }
     },
-    mounted () {
+    async mounted () {
       sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
       }
+      const { bannerGeneral } = this.$refs
+      sbp('okTurtles.data/set', 'BANNER', bannerGeneral) // make it globally accessible
+      // display a self-clearing banner that shows up after we've take 2 or more seconds
+      // to sync a contract. The banner will remain visible for a minimum of 2.5 seconds
+      let clearBannerTimer
+      const debouncedSyncBanner = debounce((cID) => {
+        const clearBanner = () => {
+          if (!this.ephemeral.syncs.length) {
+            if (bannerGeneral.severity() !== 'danger') {
+              bannerGeneral.clean()
+            }
+            clearBannerTimer = undefined
+          } else {
+            // after first 2 seconds, check every half a second for sync to finish
+            setTimeout(clearBanner, 500)
+          }
+        }
+        if (!clearBannerTimer && this.ephemeral.syncs.length) {
+          bannerGeneral.show(L('Loading events from server...'), 'wifi')
+          clearBannerTimer = setTimeout(clearBanner, 2000)
+        }
+      }, 2000)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
         // Make it possible for Cypress to wait for contracts to finish syncing.
         if (isSyncing) {
           this.ephemeral.syncs.push(contractID)
-          this.$refs.bannerGeneral.show(L('Loading events from server...'), 'wifi')
+          debouncedSyncBanner(contractID)
         } else {
           this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
-          if (!this.ephemeral.syncs.length) {
-            this.$refs.bannerGeneral.clean()
-          }
         }
       })
       sbp('okTurtles.events/on', LOGIN, () => {
@@ -170,17 +190,16 @@ async function startApp () {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
-      sbp('okTurtles.data/set', 'BANNER', this.$refs.bannerGeneral)
       // call from anywhere in the app:
       // sbp('okTurtles.data/get', 'BANNER').show(L('Trying to reconnect...'), 'wifi')
       // sbp('okTurtles.data/get', 'BANNER').danger(L('message'), 'icon-type')
       // sbp('okTurtles.data/get', 'BANNER').clean()
-      sbp('okTurtles.data/apply', PUBSUB_INSTANCE, (instance) => {
+      sbp('okTurtles.data/apply', PUBSUB_INSTANCE, (pubsub) => {
         const banner = this.$refs.bannerGeneral
         // Allow to access `L` inside event handlers.
         const L = this.L.bind(this)
 
-        Object.assign(instance.customEventHandlers, {
+        Object.assign(pubsub.customEventHandlers, {
           offline () {
             banner.show(L('Your device appears to be offline.'), 'wifi')
           },
@@ -214,27 +233,28 @@ async function startApp () {
         )
       }
       // TODO: move this into gi.actions/identity/login or something
-      (async function () {
-        const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
-        if (username) {
-          const identityContractID = await sbp('namespace/lookup', username)
-          if (identityContractID) {
-            await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
-          } else {
-            await sbp('state/vuex/dispatch', 'logout')
-            console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-            // TODO: do not delete the username like this! handle this better!
-            //       because of how await works, this exception handler can be triggered
-            //       even by random errors from Vue.js, example:
-            //
-            //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
-            //         memberUsernames state.js:231
-            //
-            //       Which doesn't mean that the lookup actually failed!
-            await sbp('gi.db/settings/delete', username)
-          }
+      const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+      if (username) {
+        const identityContractID = await sbp('namespace/lookup', username)
+        if (identityContractID) {
+          await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
+        } else {
+          await sbp('state/vuex/dispatch', 'logout')
+          console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+          // TODO: do not delete the username like this! handle this better!
+          //       because of how await works, this exception handler can be triggered
+          //       even by random errors from Vue.js, example:
+          //
+          //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
+          //         memberUsernames state.js:231
+          //
+          //       Which doesn't mean that the lookup actually failed!
+          await sbp('gi.db/settings/delete', username)
         }
-      })()
+        // useful to delay the initialization of various pages like Join.vue until
+        // we have finished setting up and logging in
+        sbp('okTurtles.events/emit', VUE_LOADED)
+      }
     },
     computed: {
       showNav () {

@@ -83,7 +83,7 @@ import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/co
 import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
-import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/chelonia.js'
+import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
   name: 'ChatMain',
@@ -458,5 +458,4 @@ export default ({
     font-weight: bold;
   }
 }
-
 </style>

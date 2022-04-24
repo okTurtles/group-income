@@ -47,7 +47,7 @@ export class GIMessage {
     signatureFn?: Function = defaultSignatureFn
   ): this {
     const message = {
-      version: 1.00,
+      version: '1.0.0',
       previousHEAD,
       contractID,
       op,
