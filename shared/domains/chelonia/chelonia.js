@@ -37,7 +37,7 @@ export type ChelActionParams = {
 }
 
 // TODO: include pubsub events here too?
-export { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED }
+export { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED, GIMessage }
 
 export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)\w*/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
@@ -60,6 +60,7 @@ sbp('sbp/selectors/register', {
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
       reactiveDel: (obj, key) => { delete obj[key] },
       skipActionProcessing: false,
+      skipSideEffects: false,
       connectionOptions: {
         maxRetries: Infinity, // See https://github.com/okTurtles/group-income/issues/1183
         reconnectOnTimeout: true, // can be enabled since we are not doing auth via web sockets

@@ -7,7 +7,7 @@ import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import Vuex from 'vuex'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import { CONTRACTS_MODIFIED } from '~/shared/domains/chelonia/chelonia.js'
+import { EVENT_HANDLED } from '~/shared/domains/chelonia/chelonia.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import Colors from './colors.js'
 import { CHATROOM_PRIVACY_LEVEL } from './contracts/constants.js'
@@ -65,57 +65,6 @@ const mutations = {
     state.loggedIn = false
     state.currentGroupId = null
   },
-  processMessage (state, { message }) {
-    sbp('chelonia/private/in/processMessage', message, state)
-  },
-  registerContract (state, { contractID, type }) {
-    const firstTimeRegistering = !state[contractID]
-    const vuexModule = {
-      // vuex module namespaced under this contract's hash
-      // see details: https://vuex.vuejs.org/en/modules.html
-      namespaced: true,
-      state: {},
-      mutations: { processMessage: mutations.processMessage }
-    }
-    // we set preserveState because 'login' action does 'replaceState'
-    store.registerModule(contractID, vuexModule, { preserveState: !firstTimeRegistering })
-    // NOTE: we modify state.contracts __AFTER__ calling registerModule, to
-    //       ensure that any reactive Vue components that depend on
-    //       `state.contracts` for their reactivity (e.g. `groupsByName` getter)
-    //       will not result in errors like "state[contractID] is undefined"
-    // 'Mutations Follow Vue's Reactivity Rules' - important for modifying objects
-    // See: https://vuex.vuejs.org/en/mutations.html
-    if (firstTimeRegistering) {
-      // this if block will get called when we first subscribe to a contract
-      // and won't get called upon login (becase replaceState will have been called)
-      Vue.set(state.contracts, contractID, { type, HEAD: contractID })
-    }
-    // we've successfully received it back, so remove it from expectation pending
-    const index = state.pending.indexOf(contractID)
-    index !== -1 && state.pending.splice(index, 1)
-    // calling this will make pubsub subscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
-  },
-  setContractHEAD (state, { contractID, HEAD }) {
-    const contract = state.contracts[contractID]
-    if (!contract) {
-      console.error(`This contract ${contractID} doesn't exist anymore. Probably you left the group just now.`)
-      return
-    }
-    state.contracts[contractID].HEAD = HEAD
-  },
-  removeContract (state, contractID) {
-    try {
-      store.unregisterModule(contractID)
-      Vue.delete(state.contracts, contractID)
-    } catch (e) {
-      // it's possible this could get triggered if 'removeContract' gets called multiple times
-      // with the same contractID
-      console.warn(`removeContract: ${e.name} attempting to remove ${contractID}:`, e.message)
-    }
-    // calling this will make pubsub unsubscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
-  },
   deleteMessage (state, hash) {
     const mailboxContract = store.getters.mailboxContract
     const index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
@@ -129,11 +78,6 @@ const mutations = {
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
-  },
-  pending (state, contractID) {
-    if (!state.contracts[contractID] && !state.pending.includes(contractID)) {
-      state.pending.push(contractID)
-    }
   },
   setTheme (state, color) {
     state.theme = color
@@ -641,6 +585,6 @@ const store: any = new Vuex.Store({
   strict: process.env.VUEX_STRICT === 'true'
 })
 const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)
-store.subscribe(debouncedSave)
+sbp('okTurtles.events/on', EVENT_HANDLED, debouncedSave)
 
 export default store

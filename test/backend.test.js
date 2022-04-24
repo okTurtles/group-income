@@ -58,7 +58,8 @@ const vuexState = {
 sbp('okTurtles.data/set', 'API_URL', process.env.API_URL)
 sbp('chelonia/configure', {
   connectionURL: process.env.API_URL,
-  stateSelector: 'state/vuex/state'
+  stateSelector: 'state/vuex/state',
+  skipSideEffects: true
 })
 sbp('sbp/selectors/register', {
   // for handling the loggedIn metadata() in Contracts.js

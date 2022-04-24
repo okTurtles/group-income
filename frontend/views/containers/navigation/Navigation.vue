@@ -32,14 +32,6 @@ nav.c-navigation(
             i18n Chat
           list-item(tag='router-link' icon='cog' to='/group-settings' data-test='groupSettingsLink')
             i18n Group Settings
-          list-item(
-            tag='router-link'
-            to='/mailbox'
-            icon='envelope'
-            data-test='mailboxLink'
-            :badgeCount='unreadMessageCount || activityCount'
-          )
-            i18n Inbox (deprecated)
 
         .c-navigation-separator(v-if='groupsByName.length < 2')
           button(
@@ -135,14 +127,9 @@ export default ({
   computed: {
     ...mapGetters([
       'groupsByName',
-      'unreadMessageCount',
       'colors',
       'totalUnreadNotificationCount'
     ]),
-    activityCount () {
-      // TODO: implement this? (or not?)
-      return 0 + this.unreadMessageCount
-    },
     logo () {
       const name = this.colors.theme === 'dark' ? '-white' : ''
       return `/assets/images/logo-transparent${name}.png`

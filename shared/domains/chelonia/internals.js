@@ -216,7 +216,7 @@ sbp('sbp/selectors/register', {
       // process any side-effects (these must never result in any mutation to the contract state!)
       if (!processingErrored) {
         try {
-          if (!this.config.skipActionProcessing) {
+          if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
             await handleEvent.processSideEffects.call(this, message)
           }
           postHandleEvent && await postHandleEvent(message)
