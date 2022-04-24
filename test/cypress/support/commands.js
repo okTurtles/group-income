@@ -167,9 +167,6 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
-
-    checkIfJoinedGeneralChannel(name)
-
     return
   }
 

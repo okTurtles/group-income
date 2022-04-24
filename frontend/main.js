@@ -154,8 +154,8 @@ async function startApp () {
       }
       const { bannerGeneral } = this.$refs
       sbp('okTurtles.data/set', 'BANNER', bannerGeneral) // make it globally accessible
-      // display a self-clearing banner that shows up after we've take 2 or more seconds
-      // to sync a contract. The banner will remain visible for a minimum of 2.5 seconds
+      // display a self-clearing banner that shows up after we've taken 2 or more seconds
+      // to sync a contract.
       let clearBannerTimer
       const debouncedSyncBanner = debounce((cID) => {
         const clearBanner = () => {
@@ -251,10 +251,10 @@ async function startApp () {
           //       Which doesn't mean that the lookup actually failed!
           await sbp('gi.db/settings/delete', username)
         }
-        // useful to delay the initialization of various pages like Join.vue until
-        // we have finished setting up and logging in
-        sbp('okTurtles.events/emit', VUE_LOADED)
       }
+      // useful to delay the initialization of various pages like Join.vue until
+      // we have finished setting up and logging in
+      sbp('okTurtles.events/emit', VUE_LOADED)
     },
     computed: {
       showNav () {

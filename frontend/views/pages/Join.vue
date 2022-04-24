@@ -58,6 +58,9 @@ import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import L from '@view-utils/translations.js'
 
+let vueLoaded = false
+sbp('okTurtles.events/once', VUE_LOADED, () => { vueLoaded = true })
+
 export default ({
   name: 'Join',
   components: {
@@ -89,8 +92,13 @@ export default ({
       }
     }
   },
-  created () {
-    sbp('okTurtles.events/on', VUE_LOADED, this.initialize)
+  mounted () {
+    // this is kind weird looking I know, but trust me, it needs to be this way
+    if (vueLoaded) {
+      this.initialize()
+    } else {
+      sbp('okTurtles.events/once', VUE_LOADED, this.initialize)
+    }
   },
   methods: {
     async initialize () {
