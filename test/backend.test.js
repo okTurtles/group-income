@@ -59,7 +59,13 @@ sbp('okTurtles.data/set', 'API_URL', process.env.API_URL)
 sbp('chelonia/configure', {
   connectionURL: process.env.API_URL,
   stateSelector: 'state/vuex/state',
-  skipSideEffects: true
+  skipSideEffects: true,
+  connectionOptions: {
+    reconnectOnDisconnection: false,
+    reconnectOnOnline: false,
+    reconnectOnTimeout: false,
+    timeout: 3000
+  }
 })
 sbp('sbp/selectors/register', {
   // for handling the loggedIn metadata() in Contracts.js
@@ -93,30 +99,6 @@ describe('Full walkthrough', function () {
       username: user.decryptedValue().data.attributes.username,
       identityContractID: user.contractID()
     }
-  }
-
-  function createSocket () {
-    sbp('chelonia/configure', {
-      connectionOptions: {
-        reconnectOnDisconnection: false,
-        reconnectOnOnline: false,
-        reconnectOnTimeout: false,
-        timeout: 3000
-      }
-    })
-    return sbp('chelonia/connect')
-    // return new Promise((resolve, reject) => {
-    //   createGIPubSubClient(process.env.API_URL, {
-    //     handlers: {
-    //       error (event) { reject(event) },
-    //       open (event) { resolve(this) }
-    //     },
-    //     reconnectOnDisconnection: false,
-    //     reconnectOnOnline: false,
-    //     reconnectOnTimeout: false,
-    //     timeout: 3000
-    //   })
-    // })
   }
 
   async function createIdentity (username, email, testFn) {
@@ -224,8 +206,8 @@ describe('Full walkthrough', function () {
       should(contractID).equal(null)
     })
 
-    it('Should open sockets for Alice', async function () {
-      users.alice.socket = await createSocket()
+    it('Should open socket for Alice', async function () {
+      users.alice.socket = await sbp('chelonia/connect')
     })
 
     it('Should create mailboxes for Alice and Bob and subscribe', async function () {
