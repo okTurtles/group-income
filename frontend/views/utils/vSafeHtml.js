@@ -18,6 +18,7 @@
 
 import dompurify from 'dompurify'
 import Vue from 'vue'
+import { cloneDeep } from '~/frontend/utils/giLodash.js'
 
 // See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
 export const defaultConfig = {
@@ -29,8 +30,12 @@ export const defaultConfig = {
 
 const transform = (el, binding) => {
   if (binding.oldValue !== binding.value) {
-    const config = { ...defaultConfig, ...(binding.arg || {}) }
-
+    let config = defaultConfig
+    if (binding.arg === 'a') {
+      config = cloneDeep(config)
+      config.ALLOWED_ATTR.splice(config.ALLOWED_ATTR.length, 0, 'href', 'target')
+      config.ALLOWED_TAGS.push('a')
+    }
     el.textContent = ''
     el.appendChild(dompurify.sanitize(binding.value, config))
   }

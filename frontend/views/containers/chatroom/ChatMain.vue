@@ -68,7 +68,7 @@
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
@@ -83,7 +83,7 @@ import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/co
 import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
-import { CONTRACT_IS_SYNCING } from '@utils/events.js'
+import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/chelonia.js'
 
 export default ({
   name: 'ChatMain',

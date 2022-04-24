@@ -1,6 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import '@sbp/okturtles.events'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 
 // ====== Event name constants ====== //

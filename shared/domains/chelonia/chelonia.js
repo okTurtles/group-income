@@ -156,7 +156,7 @@ sbp('sbp/selectors/register', {
     if (!ACTION_REGEX.exec(contract.name)) throw new Error(`bad contract name: ${contract.name}`)
     if (!contract.metadata) contract.metadata = { validate () {}, create: () => ({}) }
     if (!contract.getters) contract.getters = {}
-    contract.state = (contractID) => sbp(this.stateSelector)[contractID]
+    contract.state = (contractID) => sbp(this.config.stateSelector)[contractID]
     this.contracts[contract.name] = contract
     sbp('sbp/selectors/register', {
       // expose getters for Vuex integration and other conveniences
@@ -231,7 +231,7 @@ sbp('sbp/selectors/register', {
     }))
   },
   'chelonia/contract/removeImmediately': function (contractID: string) {
-    const state = sbp(this.stateSelector)
+    const state = sbp(this.config.stateSelector)
     this.config.reactiveDel(state, contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)

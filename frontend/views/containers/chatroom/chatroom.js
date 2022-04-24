@@ -1,7 +1,7 @@
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import sbp from '~/shared/sbp.js'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
-import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { CHATROOM_STATE_LOADED, CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'
 
 const initChatChannelDetails = {
@@ -139,7 +139,7 @@ const chatroom: Object = {
     async loadSummaryAndDetails (): Promise<void> {
       this.ephemeral.loadedDetails = initChatChannelDetails
       const { chatRoomId } = this.$route.params
-      const state = await sbp('state/latestContractState', chatRoomId)
+      const state = await sbp('chelonia/latestContractState', chatRoomId)
       const { name, type, description, picture, creator, privacyLevel } = state.attributes
 
       this.ephemeral.loadedSummary = {

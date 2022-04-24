@@ -242,7 +242,7 @@ export default ({
         for (let i = 0; i < this.ephemeral.recipients.length; i++) {
           const recipient = this.ephemeral.recipients[i]
           // TODO:: latestContractState is inefficient
-          const state = await sbp('state/latestContractState', recipient.contractID)
+          const state = await sbp('chelonia/latestContractState', recipient.contractID)
           await sbp('gi.actions/mailbox/postMessage', {
             contractID: state.attributes.mailbox,
             data: {

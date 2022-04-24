@@ -27,7 +27,7 @@ form(data-test='signup' @submit.prevent='')
 
   password-form(:label='L("Password")' name='password' :$v='$v')
 
-  banner-scoped(ref='formMsg')
+  banner-scoped(ref='formMsg' allow-a)
 
   .buttons.is-centered
     button-submit(

@@ -7,7 +7,7 @@ import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import Vuex from 'vuex'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import '~/shared/domains/chelonia/chelonia.js'
+import { CONTRACTS_MODIFIED } from '~/shared/domains/chelonia/chelonia.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import Colors from './colors.js'
 import { CHATROOM_PRIVACY_LEVEL } from './contracts/constants.js'
@@ -21,7 +21,6 @@ import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
-import { CONTRACTS_MODIFIED } from '~/shared/domains/chelonia/chelonia.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'

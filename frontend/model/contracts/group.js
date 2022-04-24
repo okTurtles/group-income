@@ -683,7 +683,7 @@ sbp('chelonia/defineContract', {
               cID !== contractID && rootState[cID].settings) || null
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
-          sbp('chelonia/contract/removeImmediately', contractID)
+          sbp('chelonia/contract/remove', contractID)
           sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
 
           // TODO - #828 remove other group members contracts if applicable
@@ -929,7 +929,7 @@ sbp('chelonia/defineContract', {
             // while users are joining chatroom, they don't need to leave chatrooms
             // this is similar to setting 'JOINING_GROUP' before joining group
             sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
-            await sbp('gi.actions/contract/syncAndWait', data.chatRoomID)
+            await sbp('chelonia/contract/sync', data.chatRoomID)
             sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
             sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
           }

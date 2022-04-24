@@ -99,7 +99,7 @@ export default ({
           return
         }
       }
-      const state = await sbp('state/latestContractState', this.$route.query.groupId)
+      const state = await sbp('chelonia/latestContractState', this.$route.query.groupId)
       const invite = state.invites[this.$route.query.secret]
       if (!invite || invite.status !== INVITE_STATUS.VALID) {
         console.error('Join.vue error: Link is not valid.')
@@ -120,7 +120,7 @@ export default ({
         message = L('You were invited to join')
       } else {
         const identityContractID = await sbp('namespace/lookup', invite.creator)
-        const userState = await sbp('state/latestContractState', identityContractID)
+        const userState = await sbp('chelonia/latestContractState', identityContractID)
         const userDisplayName = userState.attributes.displayName || userState.attributes.username
         message = L('{who} invited you to join their group!', { who: userDisplayName })
         creator = userDisplayName

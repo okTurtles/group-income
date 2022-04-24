@@ -84,7 +84,12 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       await sbp('gi.actions/identity/logout') // TODO: should this be here?
       console.error('gi.actions/identity/signup failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', LError(e)))
+      const message = LError(e)
+      if (e.name === 'GIErrorUIRuntimeError') {
+        // 'gi.actions/identity/create' also sets reportError
+        message.reportError = e.message
+      }
+      throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', message))
     }
   },
   'gi.actions/identity/login': async function ({

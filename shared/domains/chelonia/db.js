@@ -16,7 +16,7 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
       'chelonia/db/get': function (key): Promise<*> {
         const id = sbp('chelonia/db/contractIdFromLogHEAD', key)
-        return Promise.resolve(id ? sbp(this.stateSelector).contracts[id]?.HEAD : null)
+        return Promise.resolve(id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : null)
       },
       'chelonia/db/set': function (key, value): Promise<void> { return Promise.resolve(value) },
       'chelonia/db/delete': function (): Promise<void> { return Promise.resolve() }
@@ -68,7 +68,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('chelonia/db/set', entry.hash(), entry.serialize())
       return entry.hash()
     } catch (e) {
-      if (e.name.indexOf('ErrorDB') === 0) {
+      if (e.name.includes('ErrorDB')) {
         throw e // throw the specific type of ErrorDB instance
       }
       throw new ChelErrorDBConnection(`${e.name} during addEntry: ${e.message}`)

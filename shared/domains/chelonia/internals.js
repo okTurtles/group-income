@@ -1,6 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import './db.js'
 import { GIMessage } from './GIMessage.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr } from '~/shared/functions.js'
@@ -38,7 +39,7 @@ sbp('sbp/selectors/register', {
       if (r.status === 409) {
         if (attempt + 1 > maxAttempts) {
           console.error(`[chelonia] failed to publish ${entry.description()} after ${attempt} attempts`, entry)
-          throw new Error(`publishLogEntry: ${r.status} - ${r.statusText}. attempt ${attempt}`)
+          throw new Error(`publishEvent: ${r.status} - ${r.statusText}. attempt ${attempt}`)
         }
         // create new entry
         const randDelay = randomIntFromRange(0, 1500)
@@ -51,8 +52,9 @@ sbp('sbp/selectors/register', {
           entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op())
         }
       } else {
-        console.error(`[chelonia] ERROR: failed to publish ${entry.description()}: ${r.status} - ${r.statusText}`, entry)
-        throw new Error(`publishLogEntry: ${r.status} - ${r.statusText}`)
+        const message = (await r.json())?.message
+        console.error(`[chelonia] ERROR: failed to publish ${entry.description()}: ${r.status} - ${r.statusText}: ${message}`, entry)
+        throw new Error(`publishEvent: ${r.status} - ${r.statusText}: ${message}`)
       }
     }
   },
