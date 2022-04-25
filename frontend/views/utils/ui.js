@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL, MODAL_RESPONSE } from '@utils/events.js'
 
 export default (sbp('sbp/selectors/register', {
-  'gi.ui/prompt': function (params: object): Promise<*> {
+  'gi.ui/prompt': function (params: Object): Promise<*> {
     sbp('okTurtles.events/emit', OPEN_MODAL, 'Prompt', null, params)
 
     return new Promise((resolve, reject) => {
