@@ -154,7 +154,9 @@ export default ({
       'isJoinedChatRoom'
     ]),
     bodyStyles () {
-      const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      // Not sure what `bodyPaddingBottom` means, I delete it now
+      // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      const phoneStyles = {}
       const unjoinedStyles =
         this.summary.joined
           ? {}
