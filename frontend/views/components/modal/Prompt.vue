@@ -13,11 +13,11 @@ modal-template(ref='modal' :a11yTitle='$attrs.heading' :modalForceAction='true')
           | {{ $attrs.question }}
 
       .buttons
-        button.is-outlined(type='button' @click='closeModal') {{ $attrs.noButton || L('No')}}
-        button-submit.is-success(
+        button-submit.is-outlined(
           @click='submit'
           data-test='submitPrompt'
         ) {{ $attrs.yesButton || L('Yes')}}
+        button.is-outlined(type='button' @click='closeModal') {{ $attrs.noButton || L('No')}}
 </template>
 
 <script>
@@ -55,5 +55,11 @@ export default ({
 
 .c-container {
   width: 100%;
+  text-align: center;
+
+  .buttons {
+    justify-content: center;
+  }
 }
+
 </style>
