@@ -6,7 +6,7 @@
     :isCard='true'
   )
 
-    i18n(tag='p') In group income, you can use a invitation link to add members to the group and invite up to 60 people. Once someone uses that link to join the group, they’ll need to be approved by a member of the group with member approval permissions.
+    i18n(tag='p') In Group Income, you can use an invitation link to add members to the group and invite up to 60 people. Once someone uses that link to join the group, they’ll need to be approved by a member of the group with member approval permissions.
     i18n.has-text-1(tag='p') There are no open requests right now.
 
     i18n.c-all-requests.button.is-outlined.is-small(
@@ -32,14 +32,14 @@
 
     ul.c-group-list
       li.c-group-member(
-        v-for='{username, displayName, status} in requestsSorted'
+        v-for='{username, displayName, status, date} in requestsSorted'
         :data-test='username'
         :key='username'
       )
         profile-card(:username='username')
           avatar-user(:username='username' size='sm')
           .c-name.has-text-bold {{username}}
-          .c-date.has-text-1 February 14 2021
+          .c-date.has-text-1 {{ humanDate(date, { month: 'long', day: 'numeric', year: 'numeric' }) }}
           .c-action-container(v-if='status === "requested"')
             i18n.button.is-outlined.is-small(
               tag='span'
@@ -78,6 +78,7 @@ import PageSection from '@components/PageSection.vue'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
+import { humanDate } from '@utils/time.js'
 
 export default {
   name: 'ProposalsWidget',
@@ -96,16 +97,19 @@ export default {
       requestsSorted: [
         {
           username: 'Pierre',
+          date: new Date().toISOString(),
           displayName: 'Pierre',
           status: 'requested'
         },
         {
           username: 'Pierre',
+          date: new Date().toISOString(),
           displayName: 'Pierre',
           status: 'rejected'
         },
         {
           username: 'Greg',
+          date: new Date().toISOString(),
           displayName: 'Greg',
           status: 'approuved'
         }
@@ -118,8 +122,7 @@ export default {
       'ourUserIdentityContract'
     ]),
     hasMemberRequest () {
-      // return Object.keys(this.currentGroupState.request).length > 0
-      return true
+      return Object.keys(this.currentGroupState.request).length > 0
     },
     requests () {
       if (this.requestsSorted) {
@@ -129,6 +132,7 @@ export default {
     }
   },
   methods: {
+    humanDate,
     approve (request) {
       return true
     },
