@@ -17,6 +17,7 @@ import { REPLACE_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SignupForm from '@containers/access/SignupForm.vue'
+import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
 
 export default ({
   name: 'Signup',
@@ -32,7 +33,7 @@ export default ({
           this.$router.push({ path: this.$route.query.next })
         }, 1000)
       } else {
-        this.$router.push({ path: '/' })
+        this.$router.push({ path: '/' }).catch(logExceptNavigationDuplicated)
       }
       this.$refs.modal.close()
     },

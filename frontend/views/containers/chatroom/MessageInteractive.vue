@@ -6,7 +6,7 @@ message-base(v-bind='$props' @wrapperAction='action')
   template(#header='')
     .c-header
       span.c-title.is-title-5(:class='interactiveMessage.proposalSeverity') {{interactiveMessage.proposalStatus}}
-      span.has-text-1 {{getTime(time)}}
+      span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
   template(#body='')
     .c-text
       | {{interactiveMessage.text}}
@@ -27,11 +27,48 @@ import {
 } from '@model/contracts/voting/constants.js'
 
 import MessageBase from './MessageBase.vue'
-import { fakeProposals } from '@containers/chatroom/fakeStore.js'
 import SvgHorn from '@svgs/horn.svg'
 import L from '@view-utils/translations.js'
 import chatroom from '@containers/chatroom/chatroom.js'
-import { getTime } from '@utils/time.js'
+import { humanDate } from '@utils/time.js'
+
+const fakeProposals = {
+  inviteKattyId: {
+    proposalType: PROPOSAL_INVITE_MEMBER,
+    proposalData: {
+      member: 'Katty',
+      reason: 'She\'s cool'
+    },
+    status: STATUS_FAILED,
+    from: '555',
+    to: '444'
+  },
+  changeMincomeId: {
+    proposalType: PROPOSAL_GROUP_SETTING_CHANGE,
+    status: STATUS_PASSED,
+    proposalData: {
+      setting: 'mincomeAmount',
+      proposedValue: 300,
+      currentValue: 200,
+      mincomeCurrency: 'USD',
+      reason: 'Because why not'
+    }
+  },
+  changeVotingRuleId: {
+    proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
+    status: STATUS_EXPIRED,
+    proposalData: {
+      setting: 'votingRule'
+    }
+  },
+  changeVotingSystemId: {
+    proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
+    status: STATUS_CANCELLED,
+    proposalData: {
+      setting: 'votingSystem'
+    }
+  }
+}
 
 const interactiveMessage = (interaction, summary = null) => {
   return {
@@ -71,14 +108,14 @@ export default ({
   name: 'MessageInteractive',
   props: {
     id: String,
-    time: Date
+    datetime: Date
   },
   components: {
     SvgHorn,
     MessageBase
   },
   methods: {
-    getTime,
+    humanDate,
     action () {
       console.log('TODO')
     }

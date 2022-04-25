@@ -4,14 +4,15 @@
   p {{text}}
   .buttons
     i18n.button.is-outlined.is-small.is-primary(
+      v-if='members < 2'
       tag='button'
-      @click='openModal("GroupMembersAllModal", {addMemberTo: name})'
+      @click='openModal("ChatMembersAllModal")'
       data-test='addMembers'
     ) Add members
 
     i18n.button.is-outlined.is-small(
       tag='button'
-      v-if='!description'
+      v-if='!description && creator === ourUsername'
       @click.prevent='openModal("EditChannelDescriptionModal")'
       data-test='addDescription'
     ) Add a description
@@ -19,7 +20,8 @@
 </template>
 
 <script>
-import { chatTypes } from './fakeStore.js'
+import { mapGetters } from 'vuex'
+import { CHATROOM_TYPES } from '@model/contracts/constants.js'
 import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
 import L from '@view-utils/translations.js'
@@ -33,6 +35,12 @@ export default ({
     Avatar
   },
   props: {
+    members: {
+      type: Number
+    },
+    creator: {
+      type: String
+    },
     type: {
       type: String
     },
@@ -44,11 +52,12 @@ export default ({
     }
   },
   computed: {
+    ...mapGetters(['ourUsername']),
     text () {
       return {
         GIBot: L('I’m here to keep you update while you are away.'),
-        [chatTypes.INDIVIDUAL]: L('You and {name} can chat in private here.', { name: this.name }),
-        [chatTypes.GROUP]: L('This is the beginning of {name}.', { name: this.name })
+        [CHATROOM_TYPES.INDIVIDUAL]: L('You and {name} can chat in private here.', { name: this.name }),
+        [CHATROOM_TYPES.GROUP]: L('This is the beginning of {name}.', { name: this.name })
       }[this.type]
     }
   },

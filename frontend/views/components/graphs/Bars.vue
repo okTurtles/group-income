@@ -289,7 +289,7 @@ export default ({
   pointer-events: none;
   border-radius: 3px;
   text-align: center;
-  color: $danger_0;
+  color: $danger_3;
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
@@ -343,7 +343,7 @@ export default ({
 }
 
 .g-needed {
-  fill: $danger_0;
+  fill: $danger_3;
 }
 
 .g-animate {

@@ -3,10 +3,10 @@
     template(slot='title')
       i18n Delete channel
 
-    form(novalidate @submit.prevent='submit' data-test='deleteGroup')
+    form(novalidate @submit.prevent='' data-test='deleteGroup')
       i18n(
         tag='strong'
-        :args='{ name: groupSettings.groupName }'
+        :args='{ name: chatRoomAttributes.name }'
       ) Are you sure you want to delete {name}?
 
       ul.c-list
@@ -19,9 +19,9 @@
           :args='LTags("strong")'
         ) This action {strong_}cannot be undone{_strong}.
 
-      label.checkbox
+      label.checkbox(data-test='deleteChannelConfirmation')
         input.input(type='checkbox' name='confirmation' v-model='form.confirmation')
-        i18n(:args='{ name: groupSettings.groupName, ...LTags("strong") }') Yes, I want to {strong_}delete {name} permanently{_strong}.
+        i18n(:args='{ name: chatRoomAttributes.name, ...LTags("strong") }') Yes, I want to {strong_}delete {name} permanently{_strong}.
 
       banner-scoped(ref='formMsg')
 
@@ -30,20 +30,24 @@
         button-submit.is-danger(
           @click='submit'
           :disabled='$v.form.$invalid'
-          data-test='btnSubmit'
+          data-test='deleteChannelSubmit'
           ) {{ L('Delete channel') }}
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import L from '@view-utils/translations.js'
+import {
+  MESSAGE_TYPES,
+  MESSAGE_NOTIFICATIONS
+} from '@model/contracts/constants.js'
 
 export default ({
   name: 'DeleteChannelModal',
@@ -56,16 +60,14 @@ export default ({
   },
   data () {
     return {
-      channelId: this.$route.query.channel,
       form: {
         confirmation: false
       }
     }
   },
   computed: {
-    ...mapGetters([
-      'groupSettings'
-    ])
+    ...mapGetters(['currentChatRoomId', 'chatRoomAttributes', 'generalChatRoomId']),
+    ...mapState(['currentGroupId'])
   },
   methods: {
     close () {
@@ -75,8 +77,26 @@ export default ({
       if (this.$v.form.$invalid) { return }
 
       try {
-        // TODO
-        await sbp('gi.actions/channel/removeChannel', this.channelId)
+        await sbp('gi.actions/group/deleteChatRoom', {
+          contractID: this.currentGroupId,
+          data: { chatRoomID: this.currentChatRoomId },
+          hooks: {
+            postpublish: (message) => {
+              sbp('gi.actions/chatroom/addMessage', {
+                contractID: this.generalChatRoomId,
+                data: {
+                  type: MESSAGE_TYPES.NOTIFICATION,
+                  notification: {
+                    type: MESSAGE_NOTIFICATIONS.DELETE_CHANNEL,
+                    channelName: this.chatRoomAttributes.name,
+                    channelDescription: this.chatRoomAttributes.description
+                  }
+                }
+              })
+              sbp('gi.actions/chatroom/delete', { contractID: this.currentChatRoomId, data: {} })
+            }
+          }
+        })
       } catch (e) {
         console.error('RemoveChannelModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)

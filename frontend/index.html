@@ -30,7 +30,8 @@
       <navigation v-if="showNav" class="l-navigation"></navigation>
       <router-view class="l-page"></router-view>
       <modal class="l-modal"></modal>
-      <cypress-bypass-ui v-if="isInCypress"></cypress-bypass-ui>
+      <!-- we no longer use cypress-bypass-ui -->
+      <!-- <cypress-bypass-ui v-if="isInCypress"></cypress-bypass-ui> -->
     </div>
     <script type="module" src="/assets/js/main.js"></script>
     <!-- <script src="/assets/js/s.min.js"></script>

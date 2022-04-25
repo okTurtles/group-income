@@ -154,6 +154,8 @@ describe('Full walkthrough', function () {
           sharedValues: 'our values',
           mincomeAmount: 1000,
           mincomeCurrency: 'USD',
+          distributionDate: new Date().toISOString(),
+          minimizeDistribution: true,
           proposals: {
             [PROPOSAL_GROUP_SETTING_CHANGE]: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
             [PROPOSAL_INVITE_MEMBER]: proposals[PROPOSAL_INVITE_MEMBER].defaults,

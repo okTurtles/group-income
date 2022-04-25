@@ -31,6 +31,7 @@ import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
 import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
 import { createInvite } from '@model/contracts/group.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import { leaveAllChatRooms } from '@controller/actions/group.js'
 
 export default ({
   name: 'Vote',
@@ -115,6 +116,7 @@ export default ({
             passPayload = {
               secret: `${parseInt(Math.random() * 10000)}` // TODO: this
             }
+            await leaveAllChatRooms(this.currentGroupId, this.data.member)
           }
         }
         await sbp('gi.actions/group/proposalVote', {

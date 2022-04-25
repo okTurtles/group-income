@@ -8,6 +8,8 @@ import type { GIOpContract } from '~/shared/domains/chelonia/GIMessage.js'
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
+// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
+import '~/shared/domains/chelonia/chelonia.js'
 import L from '~/frontend/views/utils/translations.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
@@ -16,17 +18,18 @@ import Colors from './colors.js'
 import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from './contracts/constants.js'
 // import { PAYMENT_COMPLETED } from '~/frontend/model/contracts/payments/index.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
 import * as _ from '~/frontend/utils/giLodash.js'
 import * as EVENTS from '~/frontend/utils/events.js'
-import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
+import './contracts/chatroom.js'
+import './contracts/group.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
-import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
-import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
+import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
@@ -47,6 +50,7 @@ if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(
 
 const initialState = {
   currentGroupId: null,
+  currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
@@ -195,7 +199,7 @@ const mutations = {
   },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
-    state.currentGroupId = currentGroupId
+    Vue.set(state, 'currentGroupId', currentGroupId)
   },
   pending (state, contractID) {
     if (!state.contracts[contractID] && !state.pending.includes(contractID)) {
@@ -223,6 +227,15 @@ const mutations = {
   },
   setAppLogsFilters (state, filters) {
     state.appLogsFilter = filters
+  },
+  setCurrentChatRoomId (state, { groupId, chatRoomId }) {
+    if (chatRoomId) {
+      Vue.set(state.currentChatRoomIDs, state.currentGroupId, chatRoomId)
+    } else if (groupId && state[groupId]) {
+      Vue.set(state.currentChatRoomIDs, state.currentGroupId, state[groupId].generalChatRoomId || null)
+    } else {
+      Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
+    }
   }
 }
 
@@ -252,8 +265,12 @@ const getters = {
   // library, we can simply import them here, while excluding the getter for
   // `currentGroupState`, and redefining it here based on the Vuex rootState.
   ..._.omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
+  ..._.omit(sbp('gi.contracts/chatroom/getters'), ['currentChatRoomState']),
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
+  },
+  currentChatRoomState (state, getters) {
+    return state[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
   },
   mailboxContract (state, getters) {
     const contract = getters.ourUserIdentityContract
@@ -359,47 +376,58 @@ const getters = {
       return profile.displayName || username
     }
   },
-  thisMonthsPaymentInfo (state, getters) {
-    return getters.groupMonthlyPayments[currentMonthstamp()]
+  currentPaymentPeriod (state, getters) {
+    return getters.periodStampGivenDate(new Date())
+  },
+  thisPeriodPaymentInfo (state, getters) {
+    return getters.groupPeriodPayments[getters.currentPaymentPeriod]
   },
   latePayments (state, getters) {
-    const monthlyPayments = getters.groupMonthlyPayments
-    if (Object.keys(monthlyPayments).length === 0) return
+    const periodPayments = getters.groupPeriodPayments
+    if (Object.keys(periodPayments).length === 0) return
     const ourUsername = getters.ourUsername
-    const pMonthPayments = monthlyPayments[prevMonthstamp(currentMonthstamp())]
-    if (pMonthPayments) {
-      return pMonthPayments.lastAdjustedDistribution.filter(todo => todo.from === ourUsername)
+    const pPeriod = getters.periodBeforePeriod(getters.currentPaymentPeriod)
+    const pPayments = periodPayments[pPeriod]
+    if (pPayments) {
+      return pPayments.lastAdjustedDistribution.filter(todo => todo.from === ourUsername)
     }
   },
   // used with graphs like those in the dashboard and in the income details modal
   groupIncomeDistribution (state, getters) {
-    return groupIncomeDistribution(getters.distributionEventsForMonth(currentMonthstamp()))
+    return unadjustedDistribution({
+      haveNeeds: getters.haveNeedsForThisPeriod(getters.currentPaymentPeriod),
+      minimize: false
+    })
   },
   // adjusted version of groupIncomeDistribution, used by the payments system
   groupIncomeAdjustedDistribution (state, getters) {
-    return groupIncomeDistribution(getters.distributionEventsForMonth(currentMonthstamp()), {
-      adjusted: true,
-      latePayments: getters.latePayments
-    })
+    const paymentInfo = getters.thisPeriodPaymentInfo
+    if (paymentInfo && paymentInfo.lastAdjustedDistribution) {
+      return paymentInfo.lastAdjustedDistribution
+    } else {
+      const period = getters.currentPaymentPeriod
+      return adjustedDistribution({
+        distribution: unadjustedDistribution({
+          haveNeeds: getters.haveNeedsForThisPeriod(period),
+          minimize: getters.groupSettings.minimizeDistribution
+        }),
+        payments: getters.paymentsForPeriod(period),
+        dueOn: getters.dueDateForPeriod(period)
+      })
+    }
   },
-  // TODO: this is insane, rewrite it and make it cleaner/better
-  ourPayments (state, getters) {
-    const monthlyPayments = getters.groupMonthlyPayments
-    if (Object.keys(monthlyPayments).length === 0) return
-    const ourUsername = getters.ourUsername
-    const cMonthstamp = currentMonthstamp()
-    const pMonthstamp = prevMonthstamp(cMonthstamp)
-    const allPayments = getters.currentGroupState.payments
-    const thisMonthPayments = monthlyPayments[cMonthstamp]
-    const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
-    const pMonthPayments = monthlyPayments[pMonthstamp]
-    const pPaymentsFrom = pMonthPayments && pMonthPayments.paymentsFrom
-
-    const sentInMonth = (monthlyFromPayments) => {
+  ourPaymentsSentInPeriod (state, getters) {
+    return (period) => {
+      const periodPayments = getters.groupPeriodPayments
+      if (Object.keys(periodPayments).length === 0) return
       const payments = []
-      if (monthlyFromPayments) {
-        for (const toUser in monthlyFromPayments[ourUsername]) {
-          for (const paymentHash of monthlyFromPayments[ourUsername][toUser]) {
+      const thisPeriodPayments = periodPayments[period]
+      const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
+      if (paymentsFrom) {
+        const ourUsername = getters.ourUsername
+        const allPayments = getters.currentGroupState.payments
+        for (const toUser in paymentsFrom[ourUsername]) {
+          for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
             payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
           }
@@ -407,13 +435,21 @@ const getters = {
       }
       return payments
     }
-    const receivedInMonth = (monthlyFromPayments) => {
+  },
+  ourPaymentsReceivedInPeriod (state, getters) {
+    return (period) => {
+      const periodPayments = getters.groupPeriodPayments
+      if (Object.keys(periodPayments).length === 0) return
       const payments = []
-      if (monthlyFromPayments) {
-        for (const fromUser in monthlyFromPayments) {
-          for (const toUser in monthlyFromPayments[fromUser]) {
+      const thisPeriodPayments = periodPayments[period]
+      const paymentsFrom = thisPeriodPayments && thisPeriodPayments.paymentsFrom
+      if (paymentsFrom) {
+        const ourUsername = getters.ourUsername
+        const allPayments = getters.currentGroupState.payments
+        for (const fromUser in paymentsFrom) {
+          for (const toUser in paymentsFrom[fromUser]) {
             if (toUser === ourUsername) {
-              for (const paymentHash of monthlyFromPayments[fromUser][toUser]) {
+              for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
                 payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
               }
@@ -423,14 +459,26 @@ const getters = {
       }
       return payments
     }
+  },
+  ourPayments (state, getters) {
+    const periodPayments = getters.groupPeriodPayments
+    if (Object.keys(periodPayments).length === 0) return
+    const ourUsername = getters.ourUsername
+    const cPeriod = getters.currentPaymentPeriod
+    const pPeriod = getters.periodBeforePeriod(cPeriod)
+    const currentSent = getters.ourPaymentsSentInPeriod(cPeriod)
+    const previousSent = getters.ourPaymentsSentInPeriod(pPeriod)
+    const currentReceived = getters.ourPaymentsReceivedInPeriod(cPeriod)
+    const previousReceived = getters.ourPaymentsReceivedInPeriod(pPeriod)
 
+    // TODO: take into account pending payments that have been sent but not yet completed
     const todo = () => {
       return getters.groupIncomeAdjustedDistribution.filter(p => p.from === ourUsername)
     }
 
     return {
-      sent: [...sentInMonth(paymentsFrom), ...sentInMonth(pPaymentsFrom)],
-      received: [...receivedInMonth(paymentsFrom), ...receivedInMonth(pPaymentsFrom)],
+      sent: [...currentSent, ...previousSent],
+      received: [...currentReceived, ...previousReceived],
       todo: todo()
     }
   },
@@ -440,13 +488,19 @@ const getters = {
     const isOurPayment = (payment) => {
       return isNeeder ? payment.to === ourUsername : payment.from === ourUsername
     }
+    const cPeriod = getters.currentPaymentPeriod
     const ourUnadjustedPayments = getters.groupIncomeDistribution.filter(isOurPayment)
     const ourAdjustedPayments = getters.groupIncomeAdjustedDistribution.filter(isOurPayment)
-    const paymentsDone = ourUnadjustedPayments.filter((p) => !p.isLate).length - ourAdjustedPayments.filter((p) => !p.isLate).length
-    const hasPartials = ourAdjustedPayments.filter((p) => p.partial).length > 0
-    const paymentsTotal = ourUnadjustedPayments.filter((p) => !p.isLate).length
-    const amountTotal = ourUnadjustedPayments.filter((p) => !p.isLate).reduce((acc, payment) => acc + payment.amount, 0)
-    const amountDone = amountTotal - ourAdjustedPayments.filter((p) => !p.isLate).reduce((acc, payment) => acc + payment.amount, 0)
+
+    const receivedOrSent = isNeeder
+      ? getters.ourPaymentsReceivedInPeriod(cPeriod)
+      : getters.ourPaymentsSentInPeriod(cPeriod)
+    const paymentsTotal = ourAdjustedPayments.length + receivedOrSent.length
+    const nonLateAdjusted = ourAdjustedPayments.filter((p) => !p.isLate)
+    const paymentsDone = paymentsTotal - nonLateAdjusted.length
+    const hasPartials = ourAdjustedPayments.some(p => p.partial)
+    const amountTotal = ourUnadjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
+    const amountDone = receivedOrSent.reduce((acc, payment) => acc + payment.amount, 0)
     return {
       paymentsDone,
       hasPartials,
@@ -466,7 +520,7 @@ const getters = {
   },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
-    if (!profiles) return
+    if (!profiles) return []
     const weJoinedMs = new Date(profiles[getters.ourUsername].joinedDate).getTime()
     const isNewMember = (username) => {
       if (username === getters.ourUsername) { return false }
@@ -507,7 +561,6 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
-
   colors (state) {
     return Colors[state.theme]
   },
@@ -516,6 +569,44 @@ const getters = {
   },
   isDarkTheme (state) {
     return Colors[state.theme].theme === THEME_DARK
+  },
+  currentChatRoomId (state, getters) {
+    return state.currentChatRoomIDs[state.currentGroupId] || null
+  },
+  isPrivateChatRoom (state, getters) {
+    return (chatRoomId: string) => {
+      return state[chatRoomId]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+    }
+  },
+  isJoinedChatRoom (state, getters) {
+    return (chatRoomId: string, username?: string) => {
+      username = username || state.loggedIn.username
+      return !!state[chatRoomId]?.users?.[username]
+    }
+  },
+  chatRoomsInDetail (state, getters) {
+    const chatRoomsInDetail = _.merge({}, getters.getChatRooms)
+    for (const contractID in chatRoomsInDetail) {
+      const chatRoom = state[contractID]
+      if (chatRoom && chatRoom.attributes &&
+        chatRoom.users[state.loggedIn.username]) {
+        chatRoomsInDetail[contractID] = {
+          ...chatRoom.attributes,
+          id: contractID,
+          unreadCount: 0, // TODO: need to implement
+          joined: true
+        }
+      } else {
+        const { name, privacyLevel } = chatRoomsInDetail[contractID]
+        chatRoomsInDetail[contractID] = { id: contractID, name, privacyLevel, joined: false }
+      }
+    }
+    return chatRoomsInDetail
+  },
+  chatRoomUsersInSort (state, getters) {
+    return getters.groupMembersSorted
+      .map(member => ({ username: member.username, displayName: member.displayName }))
+      .filter(member => !!getters.chatRoomUsers[member.username]) || []
   }
 }
 
@@ -587,6 +678,7 @@ const actions = {
         console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
         await sbp('state/enqueueContractSync', currentGroupId)
       }
+      // TODO: resync for the chatroom contract, because current chatroom contract id could be what the user is not part of
       if (!contracts[user.identityContractID]) {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
         await sbp('state/enqueueContractSync', user.identityContractID)
@@ -603,6 +695,7 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object}
   ) {
     debouncedSave.clear()
+    const username = state.loggedIn.username
     await dispatch('saveSettings')
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
     for (const contractID in state.contracts) {
@@ -614,7 +707,8 @@ const actions = {
       captureLogsPause({
         // Let's clear all stored logs to prevent someone else
         // accessing sensitve data after the user logs out.
-        wipeOut: true
+        wipeOut: true,
+        username
       })
     })
   },
@@ -930,6 +1024,9 @@ const handleEvent = {
 const postUpgradeVerification = (settings: Object) => {
   if (!settings.notifications) {
     settings.notifications = []
+  }
+  if (!settings.currentChatRoomIDs) {
+    settings.currentChatRoomIDs = {}
   }
 }
 
