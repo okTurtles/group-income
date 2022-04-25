@@ -1,5 +1,5 @@
 <template lang='pug'>
-page(pageTestName='dashboard' pageTestHeaderName='groupName')
+page(pageTestName='groupChat' pageTestHeaderName='channelName')
   template(#title='')
     .c-header
       i(
@@ -7,7 +7,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
       )
       | {{summary.title}}
-      menu-parent
+      menu-parent(v-if='summary.joined')
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
 
@@ -16,37 +16,56 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
             i18n Channel Options
 
           ul
-            menu-item(@click='openModal("EditChannelNameModal")')
+            menu-item(
+              v-if='!summary.general && ourUsername === summary.creator'
+              @click='openModal("EditChannelNameModal")'
+              data-test='renameChannel'
+            )
               i18n Rename
-            menu-item(@click='openModal("GroupMembersAllModal", {name: summary.title})')
+            menu-item(@click='openModal("ChatMembersAllModal")')
               i18n Members
-            menu-item.c-separator(@click='openModal("UserSettingsModal", {section: "notifications"})')
+            menu-item(
+              :class='`${!summary.general ? "c-separator" : ""}`'
+              @click='openModal("UserSettingsModal", {section: "notifications"})'
+              data-test='notificationsSettings'
+            )
               i18n Notifications settings
-            menu-item(@click='openModal("LeaveChannelModal")')
-              i18n(:args='{ groupName: summary.title }') Leave {groupName}
-            menu-item.has-text-danger(@click='openModal("DeleteChannelModal")')
+            menu-item(
+              v-if='!summary.general'
+              @click='openModal("LeaveChannelModal")'
+              data-test='leaveChannel'
+            )
+              i18n(:args='{ channelName: summary.title }') Leave {channelName}
+            menu-item.has-text-danger(
+              v-if='!summary.general && ourUsername === summary.creator'
+              @click='openModal("DeleteChannelModal")'
+              data-test='deleteChannel'
+            )
               i18n Delete channel
 
   template(#description='')
     .c-header-description
       i18n.is-unstyled.c-link(
         tag='button'
-        @click='openModal("GroupMembersAllModal")'
+        @click='openModal("ChatMembersAllModal")'
         :args='{ numMembers: members.size  }'
+        data-test='channelMembers'
       ) {numMembers} members
       | ∙
-      .is-unstyled.c-link(
-        tag='button'
+      .is-unstyled(
+        :class='{"c-link": ourUsername === summary.creator}'
         v-if='summary.description'
-        @click='openModal("EditChannelDescriptionModal")'
+        data-test='updateDescription'
+        @click='editDescription'
       )
         | {{ summary.description }}
         i.icon-pencil-alt
 
-      i18n.is-unstyled.c-link(
-        tag='button'
+      i18n.is-unstyled(
         v-else
-        @click='openModal("EditChannelDescriptionModal")'
+        :class='{"c-link": ourUsername === summary.creator}'
+        data-test='updateDescription'
+        @click='editDescription'
       ) Add description
 
   template(#sidebar='')
@@ -58,7 +77,6 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         routepath='/group-chat/'
         :list='channels'
         route-name='GroupChatConversation'
-        :type='type.groups'
       )
 
       group-members(:title='L("Direct Messages")' action='chat')
@@ -74,7 +92,6 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 <script>
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
-import { chatTypes, users, groupA } from '@containers/chatroom/fakeStore.js'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
@@ -83,6 +100,7 @@ import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/constants.js'
 
 export default ({
   name: 'GroupChat',
@@ -103,31 +121,80 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupsByName'
+      'chatRoomsInDetail',
+      'globalProfile',
+      'groupProfiles',
+      'isJoinedChatRoom',
+      'getChatRooms',
+      'ourUsername'
     ]),
+    getChatRoomIDsInSort () {
+      return Object.keys(this.getChatRooms || {}).map(chatRoomID => ({
+        name: this.getChatRooms[chatRoomID].name,
+        privacyLevel: this.getChatRooms[chatRoomID].privacyLevel,
+        joined: this.isJoinedChatRoom(chatRoomID),
+        id: chatRoomID
+      })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {
+        const formerName = former.name
+        const latterName = latter.name
+        if (former.joined === latter.joined) {
+          if (formerName > latterName) {
+            return 1
+          } else if (formerName < latterName) {
+            return -1
+          }
+          return 0
+        }
+        return former.joined ? -1 : 1
+      }).map(chatRoom => chatRoom.id)
+    },
     channels () {
       return {
-        order: groupA.channelsSorted,
-        conversations: groupA.channels
+        order: this.getChatRoomIDsInSort,
+        channels: this.chatRoomsInDetail
       }
     },
     members () {
       return {
-        order: groupA.members,
-        conversations: users,
-        size: groupA.members.length
+        users: this.details.participants,
+        size: this.details.numberOfParticipants
       }
     },
     type () {
       return {
-        members: chatTypes.INDIVIDUAL,
-        groups: chatTypes.GROUP
+        members: CHATROOM_TYPES.INDIVIDUAL,
+        groups: CHATROOM_TYPES.GROUP
       }
     }
   },
   methods: {
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    },
+    editDescription () {
+      if (this.ourUsername === this.summary.creator) {
+        this.openModal('EditChannelDescriptionModal')
+      }
+    }
+  },
+  watch: {
+    '$route' (to: Object, from: Object) {
+      const { chatRoomId } = to.params
+      this.$nextTick(() => {
+        this.refreshTitle()
+      })
+      if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+        if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
+          this.redirectChat('GroupChatConversation')
+        } else {
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+            chatRoomId: to.params.chatRoomId
+          })
+          if (!this.isPrivateChatRoom(chatRoomId)) {
+            this.loadSummaryAndDetails()
+          }
+        }
+      }
     }
   }
 }: Object)
@@ -138,7 +205,7 @@ export default ({
 
 .c-card {
   margin-top: -1.5rem;
-  padding: 0 0 1.5rem 0;
+  padding: 0;
 
   @include tablet {
     margin-top: 1.5rem;
@@ -213,7 +280,6 @@ export default ({
 .c-link {
   color: $text_0;
   border-color: $text_0;
-  margin: 0 0.2rem;
   cursor: pointer;
   font-family: inherit;
 
@@ -238,6 +304,10 @@ export default ({
 
   @include desktop {
     display: flex;
+  }
+
+  .is-unstyled {
+    margin: 0 0.2rem;
   }
 }
 

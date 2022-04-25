@@ -4,6 +4,7 @@
 const { dirname, join, relative } = require('path')
 
 const chalk = require('chalk')
+const vueTemplateCompiler = require('vue-template-compiler')
 
 const chalkFileEvent = (eventName, filePath) => {
   return chalk`{green file event:} '${eventName}' {green detected on} ${filePath}`
@@ -19,6 +20,15 @@ const chalkLintingTime = (dt, linters, filePaths) => {
 
 const escapeForRegExp = (string) => {
   return string.replace(/[.*+?^${}()|\\[\]]/g, '\\$&')
+}
+
+const extractStyleBlocks = (vueSource) => {
+  const options = {
+    deindent: false,
+    outputSourceRange: false,
+    pad: false // false || 'line' || 'space'
+  }
+  return vueTemplateCompiler.parseComponent(vueSource, options).styles.map(style => style.content)
 }
 
 const formatElapsedTime = (dt) => (dt / 1e3).toFixed(1)
@@ -49,6 +59,8 @@ exports.createAliasReplacer = (aliases) => {
     return source.replace(re, (match, capture) => {
       const resolvedPathSegment = aliases[capture]
       const replacement = join(relativeDirPath, resolvedPathSegment)
+        // Make sure to use only forward slashes even on Windows.
+        .replace(/\\/g, '/')
 
       return match.replace(capture, replacement)
     })
@@ -151,7 +163,12 @@ exports.createStylelinter = (options = {}) => {
      *
      * @param {string} code
      */
-    async lintCode (code) {
+    async lintCode (code, filename = '') {
+      if (filename.endsWith('.vue')) {
+        const codes = extractStyleBlocks(code)
+        await Promise.all(codes.map((code, i) => this.lintCode(code, `${filename} (style block ${i + 1})`)))
+        return
+      }
       // https://github.com/stylelint/stylelint/blob/master/docs/user-guide/usage/node-api.md
       await stylelint.lint({ ...options, code }).then(({
         errored,
@@ -176,6 +193,7 @@ exports.createStylelinter = (options = {}) => {
   }
 }
 
+exports.extractStyleBlocks = extractStyleBlocks
 exports.formatElapsedTime = formatElapsedTime
 exports.chalkFileEvent = chalkFileEvent
 exports.chalkLintingTime = chalkLintingTime

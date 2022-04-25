@@ -120,7 +120,10 @@ export default ({
         },
         'group_join': {
           actionFn: async ({ groupId, inviteSecret }) => {
-            await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
+            await sbp('gi.actions/group/joinAndSwitch', {
+              contractID: groupId,
+              data: { inviteSecret }
+            })
           },
           finalize: () => {
             this.$router.push({ path: '/dashboard' }) // eslint-disable-line

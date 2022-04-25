@@ -6,10 +6,10 @@ message-base(v-bind='$props' @addEmoticon='addEmoticon($event)')
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
-import { interactionType, fakeEvents, users } from '@containers/chatroom/fakeStore.js'
-import chatroom from '@containers/chatroom/chatroom.js'
 import L from '@view-utils/translations.js'
+import { MESSAGE_NOTIFICATIONS, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
 
 export default ({
   name: 'MessageNotification',
@@ -18,11 +18,13 @@ export default ({
   },
   props: {
     id: String,
+    type: String,
     text: String,
+    notification: Object, // { type, params }
     who: String,
     currentUserId: String,
     avatar: String,
-    time: {
+    datetime: {
       type: Date,
       required: true
     },
@@ -30,48 +32,40 @@ export default ({
       type: Object,
       default: null
     },
+    variant: {
+      type: String,
+      validator (value) {
+        return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
+      }
+    },
     isSameSender: Boolean,
     isCurrentUser: Boolean
   },
   computed: {
+    ...mapGetters(['globalProfile']),
     message () {
-      const summary = chatroom.summary
-      let text = ''
-      let variant = 'simple'
-      const event = fakeEvents[this.id]
+      const { username, channelName, channelDescription } = this.notification.params
+      const displayName = !username ? '' : this.globalProfile(username).displayName || username
 
-      switch (event.interactionType) {
-        case interactionType.CHAT_NEW_MEMBER:
-          text = L('Added members to this channel: {displayName}', users[event.to])
-          break
+      const text = {
+        [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member to {title}: {displayName}', { displayName, title: channelName }),
+        [MESSAGE_NOTIFICATIONS.JOIN_MEMBER]: L('Joined {title}', { title: channelName }),
+        [MESSAGE_NOTIFICATIONS.LEAVE_MEMBER]: L('Left {title}', { title: channelName }),
+        [MESSAGE_NOTIFICATIONS.KICK_MEMBER]: L('Kicked a member from {title}: {displayName}', { displayName, title: channelName }),
+        [MESSAGE_NOTIFICATIONS.UPDATE_NAME]: L('Updated the channel name to: {title}', { title: channelName }),
+        [MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION]: L('Updated the channel description to: {description}', { description: channelDescription }),
+        [MESSAGE_NOTIFICATIONS.DELETE_CHANNEL]: L('Deleted the channel: {title}', { title: channelName }),
+        [MESSAGE_NOTIFICATIONS.VOTE]: L('Voted on “{}”')
+      }[this.notification.type]
 
-        case interactionType.CHAT_REMOVE_MEMBER:
-          text = L('Left {title}', summary)
-          break
+      // let variant = 'simple'
+      // if (this.notification.type === MESSAGE_NOTIFICATIONS.DELETE_CHANNEL) {
+      //   variant = 'tooltip'
+      // } else if (this.notification.type === MESSAGE_NOTIFICATIONS.VOTE) {
+      //   variant = 'poll'
+      // }
 
-        case interactionType.CHAT_NAME_UPDATE:
-          text = L('Updated the channel name to: {title}', summary)
-          break
-
-        case interactionType.CHAT_DESCRIPTION_UPDATE:
-          text = L('Updated the channel description to: {title}', summary)
-          break
-
-        case interactionType.CHAT_DELETE:
-          text = L('Deleted the channel: {title}', summary)
-          variant = 'tooltip'
-          break
-
-        case interactionType.VOTED:
-          text = L('Voted on “{}”')
-          variant = 'poll'
-          break
-      }
-
-      return {
-        text,
-        variant
-      }
+      return { text }
     }
   },
   methods: {

@@ -3,24 +3,25 @@
     template(slot='title')
       i18n Channel description
 
-    form(novalidate @submit.prevent='submit')
+    form(novalidate @submit.prevent='')
       label.field
         .c-label-group
           i18n.label Description
           .limit(
             v-if='form.description'
-            :class='{"is-danger": form.description.length >= 280}'
-          ) {{ 280 - form.description.length }}
+            :class='{"is-danger": form.description.length >= maxDescriptionCharacters}'
+          ) {{ maxDescriptionCharacters - form.description.length }}
 
         textarea.textarea(
           name='description'
           :placeholder='L("Description of the channel")'
-          maxlength='280'
+          maxlength='maxDescriptionCharacters'
           :class='{ error: $v.form.description.$error }'
           v-model='form.description'
           @input='debounceField("description")'
           @blur='updateField("description")'
           v-error:description=''
+          data-test='updateChannelDescription'
         )
         i18n.helper This is optional.
 
@@ -32,10 +33,12 @@
           tag='button'
           @click='submit'
           :disabled='$v.form.$invalid'
+          data-test='updateChannelDescriptionSubmit'
         ) Save
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
@@ -60,26 +63,41 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters([
-      'groupSettings'
-    ]),
+    ...mapGetters(['currentChatRoomId', 'groupSettings', 'currentChatRoomState']),
+    maxDescriptionCharacters () {
+      return this.currentChatRoomState.settings.maxDescriptionLength
+    },
     code () {
       return L('DELETE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })
     }
+  },
+  created () {
+    this.form.description = this.currentChatRoomState.attributes.description
   },
   methods: {
     close () {
       this.$refs.modal.close()
     },
-    submit () {
-      alert('TODO implement this')
+    async submit () {
+      try {
+        await sbp('gi.actions/chatroom/changeDescription', {
+          contractID: this.currentChatRoomId,
+          data: {
+            description: this.form.description
+          }
+        })
+      } catch (e) {
+        console.error('ChangeChannelDescriptionModal submit() error:', e)
+        this.$refs.formMsg.danger(e.message)
+      }
+      this.close()
     }
   },
   validations: {
     form: {
       description: {
-        [L('The description is limited to 280 characters')]: function (value) {
-          return value ? Number(value.length) <= 280 : false
+        [L('Reached character limit.')]: function (value) {
+          return value ? Number(value.length) <= this.maxDescriptionCharacters : false
         }
       }
     }

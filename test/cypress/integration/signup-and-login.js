@@ -24,7 +24,7 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('settingsBtn').click()
 
     cy.fixture(profilePicture, 'base64').then(fileContent => {
-      cy.get('[data-test="avatar"]').attachFile({ fileContent, fileName: profilePicture, mimeType: 'image/png' }, { subjectType: 'input' })
+      cy.getByDT('avatar').attachFile({ fileContent, fileName: profilePicture, mimeType: 'image/png' }, { subjectType: 'input' })
     })
 
     cy.getByDT('avatarMsg').should('contain', 'Avatar updated!')

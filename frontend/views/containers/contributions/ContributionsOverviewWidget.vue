@@ -3,10 +3,10 @@ page-section(v-if='showHistory' :title='L("Support History")')
   i18n.support-history.button.is-outlined.is-small(
     tag='span'
     @click='toggleHistory'
-  ) This month's overview
+  ) This period's overview
   support-history
 
-page-section(v-else :title='L("This months overview")')
+page-section(v-else :title='L("This period overview")')
   i18n.support-history.button.is-outlined.is-small(
     tag='span'
     @click='toggleHistory'

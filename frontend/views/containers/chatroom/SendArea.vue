@@ -1,5 +1,8 @@
 <template lang='pug'>
-.c-send.inputgroup(:class='{"is-editing": isEditing}')
+.c-send.inputgroup(
+  :class='{"is-editing": isEditing}'
+  data-test='messageInputWrapper'
+)
   .c-replying(v-if='replyingMessage')
     i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
     button.c-clear.is-icon-small(
@@ -75,7 +78,7 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import Tooltip from '@components/Tooltip.vue'
 
 export default ({
-  name: 'Chatroom',
+  name: 'SendArea',
   mixins: [emoticonsMixins],
   components: {
     Tooltip
@@ -226,7 +229,7 @@ $initialHeight: 43px;
   position: relative;
   margin: 0 1.5rem;
   display: block;
-  padding-bottom: 0.1rem;
+  padding: 1rem 0 2rem 0;
 
   @include tablet {
     margin: 0 2.5rem;
@@ -262,7 +265,7 @@ $initialHeight: 43px;
 
   &-actions {
     position: absolute;
-    bottom: 0;
+    bottom: 2rem;
     right: 0;
     height: $initialHeight;
   }
@@ -282,10 +285,12 @@ $initialHeight: 43px;
 
   &.is-editing {
     margin: 0;
+    padding: 0;
 
     .c-send-actions {
       position: relative;
       margin-top: 0.5rem;
+      bottom: 0;
       height: auto;
     }
 

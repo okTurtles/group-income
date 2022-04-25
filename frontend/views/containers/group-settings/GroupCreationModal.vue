@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template(:fullscreen='true' :a11yTitle='L("Create Group")')
+modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle='L("Create Group")')
   .steps(v-if='currentStep + 1 < config.steps.length')
     button.step(
       v-for='(step, index) in config.steps'
@@ -57,6 +57,7 @@ import proposals from '@model/contracts/voting/proposals.js'
 import { PROPOSAL_GENERIC } from '@model/contracts/voting/constants.js'
 import currencies, { mincomePositive, normalizeCurrency } from '@view-utils/currencies.js'
 import L from '@view-utils/translations.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '~/frontend/utils/time.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
@@ -117,7 +118,9 @@ export default ({
             mincomeAmount: normalizeCurrency(this.form.mincomeAmount),
             mincomeCurrency: this.form.mincomeCurrency,
             ruleName: this.form.ruleName,
-            ruleThreshold: this.form.ruleThreshold[this.form.ruleName]
+            ruleThreshold: this.form.ruleThreshold[this.form.ruleName],
+            // TODO: connect this to the form data and then delete this comment!
+            distributionDate: dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
           }
         })
         this.next()

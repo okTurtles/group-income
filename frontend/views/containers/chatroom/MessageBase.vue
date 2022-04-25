@@ -15,11 +15,11 @@
           v-if='!isEditing'
           :class='{ "sr-only": isSameSender }'
         )
-          span.is-title-4 {{who}}
-          span.has-text-1 {{getTime(time)}}
+          span.is-title-4 {{ who }}
+          span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
-        p.c-replying(if='replyingMessage') {{replyingMessage}}
+        p.c-replying(if='replyingMessage') {{ replyingMessage }}
         send-area(
           v-if='isEditing'
           title=''
@@ -28,7 +28,7 @@
           @cancelEdit='cancelEdit'
         )
 
-        p.c-text(v-else-if='text') {{text}}
+        p.c-text(v-else-if='text') {{ text }}
 
   message-reactions(
     v-if='!isEditing'
@@ -54,11 +54,11 @@
 
 <script>
 import Avatar from '@components/Avatar.vue'
-import { getTime } from '@utils/time.js'
 import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
+import { humanDate } from '@utils/time.js'
 
 export default ({
   name: 'MessageBase',
@@ -80,10 +80,12 @@ export default ({
     who: String,
     currentUserId: String,
     avatar: String,
-    time: {
+    datetime: {
       type: Date,
       required: true
     },
+    notification: Object,
+    type: String,
     emoticonsList: {
       type: Object,
       default: null
@@ -93,7 +95,7 @@ export default ({
     isCurrentUser: Boolean
   },
   methods: {
-    getTime,
+    humanDate,
     edit () {
       this.isEditing = true
     },
@@ -142,6 +144,12 @@ export default ({
     background-color: $danger_2;
     opacity: 0;
     transition: opacity 0.7s ease-in-out 0.3s, background-color 0.3s ease-in;
+  }
+
+  &.pending {
+    .c-text {
+      color: $general_0;
+    }
   }
 
   &.sameSender {

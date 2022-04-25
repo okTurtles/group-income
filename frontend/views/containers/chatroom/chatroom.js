@@ -1,13 +1,25 @@
-import { chatTypes, individualMessagesSorted, users, individualConversations, groupA } from './fakeStore.js'
+import { mapGetters } from 'vuex'
+import sbp from '~/shared/sbp.js'
+import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
+import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
+import { CHATROOM_STATE_LOADED, CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'
 
-const chatroom = {
+const initChatChannelDetails = {
+  isLoading: true,
+  numberOfParticipants: 0,
+  participants: []
+}
+
+const chatroom: Object = {
   data (): Object {
     return {
       config: {
         isPhone: null
       },
       ephemeral: {
-        isLoading: true
+        isLoading: true,
+        loadedSummary: null,
+        loadedDetails: initChatChannelDetails
       }
     }
   },
@@ -16,102 +28,90 @@ const chatroom = {
     const mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
     this.config.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
+
+    /**
+     * TODO
+     * show toast or dialog that the chatRoomId in URL is not incorrect or that is not-yet-joined chatRoomId
+    **/
+    const { chatRoomId } = this.$route.params
+    if (!chatRoomId) {
+      this.ephemeral.loadedSummary = null
+      this.redirectChat('GroupChatConversation')
+    } else if (!this.isJoinedChatRoom(chatRoomId)) {
+      if (this.isPrivateChatRoom(chatRoomId)) {
+        this.ephemeral.loadedSummary = null
+        this.redirectChat('GroupChatConversation')
+      } else {
+        this.loadSummaryAndDetails()
+      }
+    } else {
+      this.refreshTitle()
+    }
+  },
+  mounted () {
+    this.setGroupChatDetailsAsGlobal()
   },
   computed: {
-    currentConversation (): Object {
-      // NOTE - This should be $store responsability but for now
-      // I've used the $route just for static mocked layout purposes
-      if (this.$route.params.currentConversation) {
-        return this.$route.params.currentConversation
-      }
-
-      let currentId = null
-      let shouldRefresh = true
-
-      switch (this.$route.name) {
-        case 'Messages':
-          // Open by default the first conversation without unread messages
-          for (let i = 0, l = individualMessagesSorted.length; i < l; i++) {
-            if (users[individualMessagesSorted[i]].unreadCount === 0) {
-              currentId = individualMessagesSorted[i]
-              break
-            }
-          }
-          shouldRefresh = false
-          // fall through
-        case 'MessagesConversation':
-          currentId = currentId || this.findUserId()
-          this.redirectChat('MessagesConversation', users[currentId].name, chatTypes.INDIVIDUAL, currentId, shouldRefresh)
-          break
-        case 'GroupChat': {
-          // Open by default the lounge channel id
-          currentId = 'c0'
-          shouldRefresh = false
-          const chatName = groupA.channels[currentId].name
-          const chatType = chatTypes.GROUP
-
-          this.redirectChat('GroupChatConversation', chatName, chatType, currentId, shouldRefresh)
-          break
-        }
-        case 'GroupChatConversation': {
-          const groupId = currentId || this.findGroupId()
-          currentId = groupId || this.findUserId()
-          const newChatName = groupId ? groupA.channels[currentId].name : users[currentId].name
-          const chatType = groupId ? chatTypes.GROUP : chatTypes.INDIVIDUAL
-
-          this.redirectChat('GroupChatConversation', newChatName, chatType, currentId, shouldRefresh)
-          break
-        }
-        default:
-          break
-      }
-
-      return this.$route.params.currentConversation || {}
-    },
+    ...mapGetters([
+      'currentChatRoomId',
+      'currentChatRoomState',
+      'currentGroupState',
+      'chatRoomUsers',
+      'generalChatRoomId',
+      'globalProfile',
+      'isJoinedChatRoom',
+      'isPrivateChatRoom'
+    ]),
     summary (): Object {
-      const { type, id } = this.currentConversation
+      if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
+        const joiningChatRoom = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
+        return joiningChatRoom ? { ...this.ephemeral.loadedSummary, joined: true } : this.ephemeral.loadedSummary || {}
+      }
 
-      if (!type || !id) { return {} }
-
-      const chatList = type === chatTypes.INDIVIDUAL ? users : groupA.channels
-      const routerBack = type === chatTypes.INDIVIDUAL ? '/messages' : '/group-chat'
-      const title = chatList[id].displayName || chatList[id].name
-
-      // BUG/REVIEW - Can I set the title with vue-router? There's a small time interval
-      // between when the route changes (title undefined) and update it with the actual title
-      document.title = title
+      const { name, type, description, creator, picture, privacyLevel } = this.currentChatRoomState.attributes
 
       return {
         type,
-        title,
-        description: chatList[id].description,
-        routerBack,
-        private: chatList[id].private,
-        picture: chatList[id].picture
+        title: name,
+        description,
+        routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
+        private: this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
+        privacyLevel,
+        general: this.generalChatRoomId === this.currentChatRoomId,
+        joined: true,
+        creator,
+        picture
       }
     },
     details (): Object {
-      const { id, type } = this.currentConversation
-      const conversation = type === chatTypes.INDIVIDUAL ? individualConversations : groupA.conversations
-      const participants = type === chatTypes.INDIVIDUAL
-        ? { [id]: users[id] }
-        : users // NOTE/TODO - filter by users of this group only
-
+      // participants should be the members who joined at least once, even they have leaved at the moment
+      if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
+        return this.ephemeral.loadedDetails || {}
+      }
+      const participants = {}
+      for (const username in this.currentGroupState.profiles) {
+        // need to consider the time when someone is joining
+        // here, his identity contract is not synced yet,
+        // but `General` chatroom contract is already synced,
+        // that's why need to init with empty json object
+        const { displayName, picture, email } = this.globalProfile(username) || {}
+        participants[username] = {
+          ...this.chatRoomUsers[username],
+          username: username || '',
+          displayName: displayName || '',
+          picture: picture || '',
+          email: email || ''
+        }
+      }
       return {
         isLoading: false,
-        conversation: conversation[id],
+        numberOfParticipants: Object.keys(this.chatRoomUsers).length,
         participants
       }
     }
   },
   methods: {
-    findUserId (): string | void {
-      return Object.keys(users).find(user => users[user].name === this.$route.params.chatName)
-    },
-    findGroupId (): string | void {
-      return Object.keys(groupA.channels).find(user => groupA.channels[user].name === this.$route.params.chatName)
-    },
-    redirectChat (name: string, chatName: string, type: string, id: string, shouldReload: boolean) {
+    redirectChat (name: string, chatRoomId: string, shouldReload: boolean) {
       // NOTE: Vue re-renders the components when the query changes
       // Force to do it too again after each consecutive reload
       const query = {
@@ -119,14 +119,87 @@ const chatroom = {
       }
       const reload = Number(this.$route.query.reload)
       if (shouldReload) query.reload = reload ? reload + 1 : 1
+
+      // Temporarily blocked the chatrooms which the user is not part of
+      // Need to open it later and display messages just like Slack
+      chatRoomId = chatRoomId || (this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.generalChatRoomId)
+
       this.$router.push({
         name,
-        params: {
-          chatName,
-          currentConversation: { type, id }
-        },
+        params: { chatRoomId },
         query
-      })
+      }).catch(logExceptNavigationDuplicated)
+    },
+    refreshTitle (title?: string): void {
+      title = title || this.currentChatRoomState.attributes?.name
+      if (title) {
+        document.title = title
+      }
+    },
+    async loadSummaryAndDetails (): Promise<void> {
+      this.ephemeral.loadedDetails = initChatChannelDetails
+      const { chatRoomId } = this.$route.params
+      const state = await sbp('state/latestContractState', chatRoomId)
+      const { name, type, description, picture, creator, privacyLevel } = state.attributes
+
+      this.ephemeral.loadedSummary = {
+        type,
+        title: name,
+        description,
+        routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
+        private: state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
+        privacyLevel,
+        joined: false,
+        picture,
+        creator
+      }
+
+      const participants = {}
+      const members = {}
+      for (const username in this.currentGroupState.profiles) {
+        const { displayName, picture, email } = this.globalProfile(username) || {}
+        participants[username] = {
+          ...state.users[username],
+          username: username || '',
+          displayName: displayName || '',
+          picture: picture || '',
+          email: email || ''
+        }
+        if (state.users[username]) {
+          members[username] = { username, displayName, picture, email }
+        }
+      }
+      this.ephemeral.loadedDetails = {
+        isLoading: false,
+        numberOfParticipants: Object.keys(state.users).length,
+        participants,
+        members
+      }
+      sbp('okTurtles.events/emit', `${CHATROOM_STATE_LOADED}-${chatRoomId}`, state)
+      this.refreshTitle(name)
+      this.setGroupChatDetailsAsGlobal()
+    },
+    setGroupChatDetailsAsGlobal () {
+      if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
+        sbp('okTurtles.data/set', 'GROUPCHAT_DETAILS', {
+          participants: Object.keys(this.details.members || {})
+            .map(un => ({ username: un, displayName: this.details.members[un].displayName })),
+          name: this.summary.title,
+          description: this.summary.description,
+          privacyLevel: this.summary.privacyLevel
+        })
+        sbp('okTurtles.events/emit', CHATROOM_DETAILS_UPDATED)
+      }
+    }
+  },
+  watch: {
+    'currentChatRoomId' (to: string, from: string) {
+      if (to) {
+        this.redirectChat('GroupChatConversation', to)
+        this.$nextTick(() => {
+          this.setGroupChatDetailsAsGlobal()
+        })
+      }
     }
   }
 }
