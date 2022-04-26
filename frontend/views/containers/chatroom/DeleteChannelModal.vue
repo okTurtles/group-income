@@ -35,7 +35,7 @@
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import { mapGetters, mapState } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'

@@ -13,11 +13,11 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { REPLACE_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SignupForm from '@containers/access/SignupForm.vue'
-import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'Signup',

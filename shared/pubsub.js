@@ -1,6 +1,7 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
+import '@sbp/okturtles.events'
 import type { JSONObject, JSONType } from '~/shared/types.js'
 
 // ====== Event name constants ====== //
@@ -190,7 +191,7 @@ const defaultClientEventHandlers = {
   close (event: CloseEvent) {
     const client = this
 
-    console.log('[pubsub] Event: close', event.code, event.reason)
+    console.debug('[pubsub] Event: close', event.code, event.reason)
     client.failedConnectionAttempts++
 
     if (client.socket) {
@@ -242,8 +243,9 @@ const defaultClientEventHandlers = {
   // The socket will be closed automatically by the engine if necessary.
   error (event: Event) {
     const client = this
-
-    console.log('[pubsub] Event: error', event)
+    // Not all error events should be logged with console.error, for example every
+    // failed connection attempt generates one such event.
+    console.warn('[pubsub] Event: error', event)
     clearTimeout(client.pingTimeoutID)
   },
 
@@ -280,7 +282,7 @@ const defaultClientEventHandlers = {
   },
 
   offline (event: Event) {
-    console.log('[pubsub] Event: offline')
+    console.info('[pubsub] Event: offline')
     const client = this
 
     client.clearAllTimers()
@@ -291,7 +293,7 @@ const defaultClientEventHandlers = {
   },
 
   online (event: Event) {
-    console.log('[pubsub] Event: online')
+    console.info('[pubsub] Event: online')
     const client = this
 
     if (client.options.reconnectOnOnline && client.shouldReconnect) {
@@ -304,7 +306,7 @@ const defaultClientEventHandlers = {
 
   // Emitted when the connection is established.
   open (event: Event) {
-    console.log('[pubsub] Event: open')
+    console.debug('[pubsub] Event: open')
     const client = this
     const { options } = this
 
@@ -334,15 +336,15 @@ const defaultClientEventHandlers = {
   },
 
   'reconnection-attempt' (event: CustomEvent) {
-    console.log('[pubsub] Trying to reconnect...')
+    console.info('[pubsub] Trying to reconnect...')
   },
 
   'reconnection-succeeded' (event: CustomEvent) {
-    console.log('[pubsub] Connection re-established')
+    console.info('[pubsub] Connection re-established')
   },
 
   'reconnection-failed' (event: CustomEvent) {
-    console.log('[pubsub] Reconnection failed')
+    console.warn('[pubsub] Reconnection failed')
     const client = this
 
     client.destroy()
@@ -350,14 +352,14 @@ const defaultClientEventHandlers = {
 
   'reconnection-scheduled' (event: CustomEvent) {
     const { delay, nth } = event.detail
-    console.log(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
+    console.info(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
   }
 }
 
 // These handlers receive the PubSubClient instance through the `this` binding.
 const defaultMessageHandlers = {
   [NOTIFICATION_TYPE.ENTRY] (msg) {
-    console.log('[pubsub] Received ENTRY:', msg)
+    console.debug('[pubsub] Received ENTRY:', msg)
   },
 
   [NOTIFICATION_TYPE.PING] ({ data }) {
@@ -377,30 +379,30 @@ const defaultMessageHandlers = {
 
   // PUB can be used to send ephemeral messages outside of any contract log.
   [NOTIFICATION_TYPE.PUB] (msg) {
-    console.warn(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
+    console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
   [NOTIFICATION_TYPE.SUB] (msg) {
-    console.warn(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
+    console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
   [NOTIFICATION_TYPE.UNSUB] (msg) {
-    console.warn(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
+    console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
   [RESPONSE_TYPE.ERROR] ({ data: { type, contractID } }) {
-    console.log(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
+    console.warn(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
     const client = this
 
     switch (type) {
       case REQUEST_TYPE.SUB: {
-        console.log(`[pubsub] Could not subscribe to ${contractID}`)
+        console.warn(`[pubsub] Could not subscribe to ${contractID}`)
         client.pendingSubscriptionSet.delete(contractID)
         client.pendingSyncSet.delete(contractID)
         break
       }
       case REQUEST_TYPE.UNSUB: {
-        console.log(`[pubsub] Could not unsubscribe from ${contractID}`)
+        console.warn(`[pubsub] Could not unsubscribe from ${contractID}`)
         client.pendingUnsubscriptionSet.delete(contractID)
         break
       }
@@ -415,17 +417,17 @@ const defaultMessageHandlers = {
 
     switch (type) {
       case REQUEST_TYPE.SUB: {
-        console.log(`[pubsub] Subscribed to ${contractID}`)
+        console.debug(`[pubsub] Subscribed to ${contractID}`)
         client.pendingSubscriptionSet.delete(contractID)
         client.subscriptionSet.add(contractID)
         if (client.pendingSyncSet.has(contractID)) {
-          sbp('gi.actions/contract/sync', contractID)
+          sbp('chelonia/contract/sync', contractID)
           client.pendingSyncSet.delete(contractID)
         }
         break
       }
       case REQUEST_TYPE.UNSUB: {
-        console.log(`[pubsub] Unsubscribed from ${contractID}`)
+        console.debug(`[pubsub] Unsubscribed from ${contractID}`)
         client.pendingUnsubscriptionSet.delete(contractID)
         client.subscriptionSet.delete(contractID)
         break

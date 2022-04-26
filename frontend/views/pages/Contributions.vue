@@ -130,7 +130,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import CalloutCard from '@components/CalloutCard.vue'

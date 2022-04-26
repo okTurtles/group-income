@@ -7,8 +7,8 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import sbp from '~/shared/sbp.js'
 import Avatar from '@components/Avatar.vue'
 
 export default ({
@@ -41,7 +41,7 @@ export default ({
         console.warn(`AvatarUser: ${this.username} doesn't exist!`)
         return
       }
-      const state = await sbp('state/latestContractState', userContractId) || {}
+      const state = await sbp('chelonia/latestContractState', userContractId) || {}
       this.ephemeral.url = state.attributes && state.attributes.picture
     }
   },

@@ -1,31 +1,11 @@
 'use strict'
 
-export class GIErrorIgnoreAndBanIfGroup extends Error {
+export class GIErrorIgnoreAndBan extends Error {
   // ugly boilerplate because JavaScript is stupid
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
   constructor (...params: any[]) {
     super(...params)
-    this.name = this.constructor.name
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor)
-    }
-  }
-}
-
-export class GIErrorDropAndReprocess extends Error {
-  constructor (...params: any[]) {
-    super(...params)
-    this.name = this.constructor.name
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor)
-    }
-  }
-}
-
-export class GIErrorUnrecoverable extends Error {
-  constructor (...params: any[]) {
-    super(...params)
-    this.name = this.constructor.name
+    this.name = 'GIErrorIgnoreAndBan'
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor)
     }
@@ -36,7 +16,8 @@ export class GIErrorUnrecoverable extends Error {
 export class GIErrorUIRuntimeError extends Error {
   constructor (...params: any[]) {
     super(...params)
-    this.name = this.constructor.name
+    // this.name = this.constructor.name
+    this.name = 'GIErrorUIRuntimeError' // string literal so minifier doesn't overwrite
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor)
     }

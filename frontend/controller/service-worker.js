@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 
 // NOTE: this file is currently unused. I messed around with it just enough
 // to get it working at the most primitive level and decide that I need to

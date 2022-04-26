@@ -183,7 +183,7 @@ describe('Group - Removing a member', () => {
       cy.getByDT('typeDescription').should('contain', `Remove userBot-${userId} from the group.`)
       cy.getByDT('voteFor').click()
       cy.getByDT('statusDescription')
-        .should('contain', 'Proposal accepted!')
+        .should('contain', 'Proposal accepted')
     })
 
     // Verify the group has 2 members only again

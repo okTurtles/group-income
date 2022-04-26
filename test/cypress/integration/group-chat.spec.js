@@ -404,7 +404,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.getByDT('typeDescription').should('contain', `Remove ${user3} from the group.`)
       cy.getByDT('voteFor').click()
       cy.getByDT('statusDescription')
-        .should('contain', 'Proposal accepted!')
+        .should('contain', 'Proposal accepted')
     })
 
     cy.getByDT('groupChatLink').click()
