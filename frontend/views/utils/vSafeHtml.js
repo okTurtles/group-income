@@ -33,7 +33,7 @@ const transform = (el, binding) => {
     let config = defaultConfig
     if (binding.arg === 'a') {
       config = cloneDeep(config)
-      config.ALLOWED_ATTR.splice(config.ALLOWED_ATTR.length, 0, 'href', 'target')
+      config.ALLOWED_ATTR.push('href', 'target')
       config.ALLOWED_TAGS.push('a')
     }
     el.textContent = ''

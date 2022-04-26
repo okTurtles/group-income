@@ -350,40 +350,40 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/autobanUser': async function (message: GIMessage, error: Object, attempt = 1) {
     try {
+      if (attempt === 1) {
+        // to decrease likelihood of multiple proposals being created at the same time, wait
+        // a random amount of time on the first call
+        setTimeout(() => {
+          sbp('gi.actions/group/autobanUser', message, error, attempt + 1)
+        }, randomIntFromRange(0, 5000))
+        return
+      }
       // If we just joined, we're likely witnessing an old error that was handled
       // by the existing members, so we shouldn't attempt to participate in voting
       // in a proposal that has long since passed.
       //
       // NOTE: we cast to 'any' to work around flow errors
       //       see: https://stackoverflow.com/a/41329247/1781435
-      const meta: Object = (message.opValue(): any).meta
+      const { meta } = message.decryptedValue()
       const username = meta && meta.username
       const groupID = message.contractID()
       const contractState = sbp('state/vuex/state')[groupID]
       const getters = sbp('state/vuex/getters')
-
       if (username && getters.groupProfile(username)) {
         console.warn(`autoBanSenderOfMessage: autobanning ${username} from ${groupID}`)
-        let proposal
-        let proposalHash
         // find existing proposal if it exists
-        for (const hash in contractState.proposals) {
-          const prop = contractState.proposals[hash]
-          if (prop.status === STATUS_OPEN &&
+        let [proposalHash, proposal]: [string, ?Object] = Object.entries(contractState.proposals)
+          .find(([hash, prop]: [string, Object]) => (
+            prop.status === STATUS_OPEN &&
             prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
             prop.data.proposalData.member === username
-          ) {
-            proposal = prop
-            proposalHash = hash
-            break
-          }
-        }
+          )) ?? ['', undefined]
         if (proposal) {
           // cast our vote if we haven't already cast it
           if (!proposal.votes[getters.ourUsername]) {
             await sbp('gi.actions/group/proposalVote', {
               contractID: groupID,
-              data: { proposalHash, vote: VOTE_FOR },
+              data: { proposalHash, vote: VOTE_FOR, passPayload: { secret: '' } },
               publishOptions: { maxAttempts: 3 }
             })
           }
@@ -404,7 +404,7 @@ export default (sbp('sbp/selectors/register', {
               publishOptions: { maxAttempts: 1 }
             })
           } catch (e) {
-            if (attempt > 2) {
+            if (attempt > 3) {
               console.error(`autoBanSenderOfMessage: max attempts reached. Error ${e.message} attempting to ban ${username}`, message, e)
             } else {
               const randDelay = randomIntFromRange(0, 1500)

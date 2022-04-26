@@ -21,7 +21,6 @@ import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
 import L, { LError, LTags } from '@view-utils/translations.js'
-import { debounce } from '@utils/giLodash.js'
 import './views/utils/allowedUrls.js'
 import './views/utils/translations.js'
 import './views/utils/avatar.js'
@@ -146,7 +145,7 @@ async function startApp () {
         }
       }
     },
-    async mounted () {
+    mounted () {
       sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
@@ -156,35 +155,26 @@ async function startApp () {
       sbp('okTurtles.data/set', 'BANNER', bannerGeneral) // make it globally accessible
       // display a self-clearing banner that shows up after we've taken 2 or more seconds
       // to sync a contract.
-      let clearBannerTimer
-      const debouncedSyncBanner = debounce((cID) => {
-        const clearBanner = () => {
-          if (!this.ephemeral.syncs.length) {
-            if (bannerGeneral.severity() !== 'danger') {
-              bannerGeneral.clean()
-            }
-            clearBannerTimer = undefined
-          } else {
-            // after first 2 seconds, check every half a second for sync to finish
-            setTimeout(clearBanner, 500)
-          }
-        }
-        if (!clearBannerTimer && this.ephemeral.syncs.length) {
-          bannerGeneral.show(L('Loading events from server...'), 'wifi')
-          clearBannerTimer = setTimeout(clearBanner, 2000)
-        }
-      }, 2000)
+      const debouncedSyncBanner = bannerGeneral.debouncedShow({
+        message: L('Loading events from server...'),
+        icon: 'wifi',
+        seconds: 2,
+        clearWhen: () => !this.ephemeral.syncs.length
+      })
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
         // Make it possible for Cypress to wait for contracts to finish syncing.
         if (isSyncing) {
           this.ephemeral.syncs.push(contractID)
-          debouncedSyncBanner(contractID)
+          debouncedSyncBanner()
         } else {
           this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
         }
       })
       sbp('okTurtles.events/on', LOGIN, () => {
         this.ephemeral.finishedLogin = 'yes'
+        if (this.$store.getters.ourUsername) {
+          router.currentRoute.path === '/' && router.push({ path: '/dashboard' }).catch(console.error)
+        }
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
@@ -219,13 +209,11 @@ async function startApp () {
       })
       // Useful in case the app is started in offline mode.
       if (navigator.onLine === false) {
-        this.$refs.bannerGeneral.show(
-          this.L('Your device appears to be offline.'), 'wifi'
-        )
+        this.$refs.bannerGeneral.show(L('Your device appears to be offline.'), 'wifi')
       }
       if (this.ephemeral.isCorrupted) {
         this.$refs.bannerGeneral.danger(
-          this.L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
+          L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
             'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&section=troubleshooting">`,
             '_a': '</a>'
           }),
@@ -233,28 +221,30 @@ async function startApp () {
         )
       }
       // TODO: move this into gi.actions/identity/login or something
-      const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
-      if (username) {
-        const identityContractID = await sbp('namespace/lookup', username)
-        if (identityContractID) {
-          await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
-        } else {
-          await sbp('state/vuex/dispatch', 'logout')
-          console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-          // TODO: do not delete the username like this! handle this better!
-          //       because of how await works, this exception handler can be triggered
-          //       even by random errors from Vue.js, example:
-          //
-          //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
-          //         memberUsernames state.js:231
-          //
-          //       Which doesn't mean that the lookup actually failed!
-          await sbp('gi.db/settings/delete', username)
+      (async function () {
+        const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+        if (username) {
+          const identityContractID = await sbp('namespace/lookup', username)
+          if (identityContractID) {
+            await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
+          } else {
+            await sbp('state/vuex/dispatch', 'logout')
+            console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+            // TODO: do not delete the username like this! handle this better!
+            //       because of how await works, this exception handler can be triggered
+            //       even by random errors from Vue.js, example:
+            //
+            //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
+            //         memberUsernames state.js:231
+            //
+            //       Which doesn't mean that the lookup actually failed!
+            await sbp('gi.db/settings/delete', username)
+          }
         }
-      }
-      // useful to delay the initialization of various pages like Join.vue until
-      // we have finished setting up and logging in
-      sbp('okTurtles.events/emit', VUE_LOADED)
+        // useful to delay the initialization of various pages like Join.vue until
+        // we have finished setting up and logging in
+        sbp('okTurtles.events/emit', VUE_LOADED)
+      })()
     },
     computed: {
       showNav () {

@@ -31,6 +31,9 @@
 "We could not connect to the server. Please refresh the page." = "We could not connect to the server. Please refresh the page.";
 
 /* MISSING TRANSLATION - main.js */
+"Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}" = "Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}";
+
+/* MISSING TRANSLATION - main.js */
 "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
@@ -152,6 +155,12 @@
 
 /* MISSING TRANSLATION - views/containers/payments/PaymentDetail.vue */
 "Notes" = "Notes";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
+"Proposal accepted with {yay} in favor out of {total} total votes." = "Proposal accepted with {yay} in favor out of {total} total votes.";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
+"Proposal refused with {nay} against out of {total} total votes." = "Proposal refused with {nay} against out of {total} total votes.";
 
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
 "Troubleshooting" = "Troubleshooting";
@@ -1264,10 +1273,10 @@
 "Change to this system" = "Choisir ce système";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
-"Maximum number of \"no\" votes:" = "Nombre maximal de votes négatifs :";
+"Maximum number of \"no\" votes:" = "Nombre maximal de votes négatifs:";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
-"Percentage of members that need to agree:" = "Pourcentage de votes positifs requis :";
+"Percentage of members that need to agree:" = "Pourcentage de votes positifs requis:";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Proposals are accepted when the required percentage of members agree to the proposal." = "Une proposition sera acceptée si le pourcentage des votes favorables est suffisant.";
@@ -1489,7 +1498,7 @@
 "Show per page" = "Afficher par page";
 
 /* views/containers/payments/PaymentsPagination.vue */
-"Show:" = "Afficher :";
+"Show:" = "Afficher:";
 
 /* views/containers/payments/PaymentsPagination.vue */
 "per page" = "par page";
@@ -1600,16 +1609,16 @@
 "Read more" = "Lire la suite";
 
 /* views/containers/proposals/ProposalBox.vue */
-"{strong_}You{_strong} are proposing:" = "{strong_}Vous{_strong} proposez :";
+"{strong_}You{_strong} are proposing:" = "{strong_}Vous{_strong} proposez:";
 
 /* views/containers/proposals/ProposalBox.vue */
-"{strong_}You{_strong} proposed:" = "{strong_}Vous{_strong} avez proposé :";
+"{strong_}You{_strong} proposed:" = "{strong_}Vous{_strong} avez proposé:";
 
 /* views/containers/proposals/ProposalBox.vue */
-"{username} is proposing:" = "{username} propose :";
+"{username} is proposing:" = "{username} propose:";
 
 /* views/containers/proposals/ProposalBox.vue */
-"{username} proposed:" = "{username} a proposé :";
+"{username} proposed:" = "{username} a proposé:";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Add {user} to group." = "Ajouter {user} au groupe.";
@@ -1630,16 +1639,10 @@
 "Change {setting} from {currentValue} to {proposedValue}" = "Changer {setting} de {currentValue} à {proposedValue}";
 
 /* views/containers/proposals/ProposalItem.vue */
-"Please send the following link to {user} so they can join the group:" = "Veuillez envoyer le lien suivant à {user} afin qu'il/elle puisse rejoindre le groupe :";
-
-/* views/containers/proposals/ProposalItem.vue */
-"Proposal accepted!" = "Proposition acceptée !";
+"Please send the following link to {user} so they can join the group:" = "Veuillez envoyer le lien suivant à {user} afin qu'il/elle puisse rejoindre le groupe:";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Proposal cancelled." = "Proposition annulée.";
-
-/* views/containers/proposals/ProposalItem.vue */
-"Proposal refused." = "Proposition refusée.";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Remove {user} (you) from the group." = "Exclure {user} (vous) du groupe.";
@@ -1786,7 +1789,7 @@
 "Last touches..." = "Dernières touches...";
 
 /* views/containers/user-settings/Troubleshooting.vue */
-"Please use the re-sync option below to restore functionality." = "Afin de restaurer les fonctionnalités, utilisez l'option suivante :";
+"Please use the re-sync option below to restore functionality." = "Afin de restaurer les fonctionnalités, utilisez l'option suivante.";
 
 /* views/containers/user-settings/Troubleshooting.vue */
 "Re-sync and rebuild data" = "Actualiser et reconstruire les données";
@@ -2056,7 +2059,7 @@
 "Change voting [xxxx]" = "Changer le vote [xxxx]";
 
 /* Not currently used */
-"Compose:" = "Composer :";
+"Compose:" = "Composer:";
 
 /* Not currently used */
 "Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given." = "Indiquez le montant maximal que vous souhaitez contribuer mensuellement. Seulement le minimum nécessaire sera utilisé.";
@@ -2152,6 +2155,12 @@
 "Payments completed" = "Paiements complétés";
 
 /* Not currently used */
+"Proposal accepted!" = "Proposition acceptée!";
+
+/* Not currently used */
+"Proposal refused." = "Proposition refusée.";
+
+/* Not currently used */
 "Propose changing to this voting system" = "Proposer d'adopter ce système de vote";
 
 /* Not currently used */
@@ -2200,7 +2209,7 @@
 "This months overview" = "Résumé de ce mois";
 
 /* Not currently used */
-"To:" = "À :";
+"To:" = "À:";
 
 /* Not currently used */
 "Updated the channel description to: {title}" = "La description du salon a été mise à jour : {title}";

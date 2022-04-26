@@ -35,7 +35,25 @@ Cypress.on('window:before:load', (window) => {
       // you make to keep track of the logs
       // Use JSON.stringify to avoid [object, object] in the output
       // logs += JSON.stringify(args.join(' ')) + '\n'
-      logs += JSON.stringify([consoleProperty, ...args]) + ',\n'
+      try {
+        logs += JSON.stringify([consoleProperty, ...args]) + ',\n'
+      } catch (e) {
+        // sometimes stringify will fail because of a circular reference
+        const argsCopy = []
+        for (const arg of args) {
+          try {
+            argsCopy.push(JSON.stringify(arg))
+          } catch (e) {
+            argsCopy.push('[circular reference]')
+          }
+        }
+        logs += JSON.stringify([
+          'ERROR(CYPRESS)',
+          `couldn't stringify ${consoleProperty} message in app test due to ${e.name}: '${e.message}'`,
+          'original message (with cycle removed):',
+          ...argsCopy
+        ]) + ',\n'
+      }
     }
   })
 })

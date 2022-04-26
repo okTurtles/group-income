@@ -93,6 +93,9 @@
 /* views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
 "Leave Group" = "Leave Group";
 
+/* views/containers/proposals/ProposalItem.vue */
+"Proposal refused with {nay} against out of {total} total votes." = "Proposal refused with {nay} against out of {total} total votes.";
+
 /* views/pages/Contributions.vue */
 "Add members to group" = "Add members to group";
 
@@ -174,6 +177,9 @@
 /* views/components/Search.vue */
 "Clear search" = "Clear search";
 
+/* views/containers/proposals/ProposalItem.vue */
+"Proposal accepted with {yay} in favor out of {total} total votes." = "Proposal accepted with {yay} in favor out of {total} total votes.";
+
 /* views/containers/payments/PaymentsHistoryModal.vue */
 "Payments History" = "Payments History";
 
@@ -197,9 +203,6 @@
 
 /* views/containers/proposals/ProposalItem.vue */
 "Remove {user} from the group." = "Remove {user} from the group.";
-
-/* views/containers/proposals/ProposalItem.vue */
-"Proposal refused." = "Proposal refused.";
 
 /* controller/actions/group.js */
 "Failed to upload the group picture. {codeError}" = "Failed to upload the group picture. {codeError}";
@@ -719,6 +722,9 @@
 
 /* views/pages/DesignSystem.vue */
 "Open Modal \"John\"" = "Open Modal \"John\"";
+
+/* main.js */
+"Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}" = "Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}";
 
 /* views/containers/payments/PaymentsPagination.vue */
 "Next page" = "Next page";
@@ -1493,9 +1499,6 @@
 
 /* views/components/group-creation-steps/GroupName.vue */
 "The group picture must be a valid url" = "The group picture must be a valid url";
-
-/* views/containers/proposals/ProposalItem.vue */
-"Proposal accepted!" = "Proposal accepted!";
 
 /* views/components/banners/BannerScoped.vue */
 "Dismiss message" = "Dismiss message";

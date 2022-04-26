@@ -7,11 +7,12 @@
       aria-live='polite'
     )
       i(:class='`icon-${ephemeral.icon} is-prefix`')
-      span(v-safe-html='ephemeral.message')
+      span(v-safe-html:a='ephemeral.message')
 </template>
 
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
+import { debounce } from '@utils/giLodash.js'
 
 export default ({
   name: 'BannerGeneral',
@@ -45,6 +46,28 @@ export default ({
     },
     severity () {
       return this.ephemeral.severity
+    },
+    debouncedShow ({ message, icon, seconds, clearWhen }: {
+      message: string, icon: string, seconds: number, clearWhen: Function
+    }) {
+      let clearBannerTimer
+      return debounce(() => {
+        const clearBanner = () => {
+          if (clearWhen()) {
+            if (this.severity() !== 'danger') {
+              this.clean()
+            }
+            clearBannerTimer = undefined
+          } else {
+            // after first n seconds, check every half a second for clearWhen to change
+            setTimeout(clearBanner, 500)
+          }
+        }
+        if (!clearBannerTimer && !clearWhen()) {
+          this.show(message, icon)
+          clearBannerTimer = setTimeout(clearBanner, 1000 * seconds)
+        }
+      }, 1000 * seconds)
     }
   }
 }: Object)

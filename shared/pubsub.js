@@ -243,8 +243,9 @@ const defaultClientEventHandlers = {
   // The socket will be closed automatically by the engine if necessary.
   error (event: Event) {
     const client = this
-
-    console.error('[pubsub] Event: error', event)
+    // Not all error events should be logged with console.error, for example every
+    // failed connection attempt generates one such event.
+    console.warn('[pubsub] Event: error', event)
     clearTimeout(client.pingTimeoutID)
   },
 
