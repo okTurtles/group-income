@@ -28,10 +28,7 @@ export default ({
   methods: {
     submit () {
       if (this.$route.query.next) {
-        // TODO: get rid of this timeout and fix/update tests accordingly
-        setTimeout(() => {
-          this.$router.push({ path: this.$route.query.next })
-        }, 1000)
+        this.$router.push({ path: this.$route.query.next }).catch(logExceptNavigationDuplicated)
       } else {
         this.$router.push({ path: '/' }).catch(logExceptNavigationDuplicated)
       }

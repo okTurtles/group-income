@@ -172,9 +172,6 @@ async function startApp () {
       })
       sbp('okTurtles.events/on', LOGIN, () => {
         this.ephemeral.finishedLogin = 'yes'
-        if (this.$store.getters.ourUsername) {
-          router.currentRoute.path === '/' && router.push({ path: '/dashboard' }).catch(console.error)
-        }
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
