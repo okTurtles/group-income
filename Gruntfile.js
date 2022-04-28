@@ -60,7 +60,8 @@ const {
   LIGHTWEIGHT_CLIENT = 'true',
   GI_VERSION,
   NODE_ENV = 'development',
-  VUEX_STRICT = 'true'
+  VUEX_STRICT = '',
+  EXPOSE_SBP = ''
 } = process.env
 
 const backendIndex = './backend/index.js'
@@ -130,7 +131,8 @@ module.exports = (grunt) => {
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
-        'process.env.VUEX_STRICT': VUEX_STRICT
+        'process.env.VUEX_STRICT': `'${VUEX_STRICT}'`,
+        'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
       format: 'esm',
