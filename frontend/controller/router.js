@@ -56,10 +56,6 @@ const groupGuard = {
 }
 
 // TODO: add state machine guard and redirect to critical error page if necessary
-// var mailGuard = {
-//   guard: (to, from) => from.name !== Mailbox.name,
-//   redirect: (to, from) => ({ path: '/mailbox' })
-// }
 function createEnterGuards (...guards) {
   return function (to, from, next) {
     for (const current of guards) {
@@ -70,6 +66,7 @@ function createEnterGuards (...guards) {
     next()
   }
 }
+
 const router: any = new Router({
   mode: 'history',
   base: '/app',

@@ -15,12 +15,13 @@ import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
-import { LOGIN, LOGOUT, VUE_LOADED } from './utils/events.js'
+import { LOGIN, LOGOUT } from './utils/events.js'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
 import L, { LError, LTags } from '@view-utils/translations.js'
+import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import './views/utils/allowedUrls.js'
 import './views/utils/translations.js'
 import './views/utils/avatar.js'
@@ -120,12 +121,48 @@ async function startApp () {
     }
   })
 
-  await sbp('translations/init', navigator.language)
-
-  if (process.env.NODE_ENV === 'development' || window.Cypress) {
+  // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
+  //       actions that they shouldn't be generating, which can lead to bugs or trigger the automated
+  //       ban system. Only enable it if you know what you're doing and don't mind the risk.
+  if (process.env.NODE_ENV === 'development' || window.Cypress || process.env.EXPOSE_SBP === 'true') {
     // In development mode this makes the SBP API available in the devtools console.
     window.sbp = sbp
   }
+
+  try {
+    // must create the connection before we call login
+    sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
+    await sbp('translations/init', navigator.language)
+
+    // TODO: move this into gi.actions/identity/login or something
+    // NOTE: important to do this before setting up Vue.js because a lot of that relies
+    //       on the router stuff which has guards that expect the contracts to be loaded
+    const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+    if (username) {
+      const identityContractID = await sbp('namespace/lookup', username)
+      if (identityContractID) {
+        await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
+      } else {
+        await sbp('state/vuex/dispatch', 'logout')
+        console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+        // TODO: do not delete the username like this! handle this better!
+        //       because of how await works, this exception handler can be triggered
+        //       even by random errors from Vue.js, example:
+        //
+        //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
+        //         memberUsernames state.js:231
+        //
+        //       Which doesn't mean that the lookup actually failed!
+        await sbp('gi.db/settings/delete', username)
+      }
+    }
+  } catch (e) {
+    const errMsg = `Fatal error${e.name} initializing Group Income: ${e.message}\n\nPlease report this bug here: ${ALLOWED_URLS.ISSUE_PAGE}`
+    console.error(errMsg, e)
+    alert(errMsg)
+    return
+  }
+
   /* eslint-disable no-new */
   new Vue({
     router: router,
@@ -146,7 +183,6 @@ async function startApp () {
       }
     },
     mounted () {
-      sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
@@ -172,9 +208,6 @@ async function startApp () {
       })
       sbp('okTurtles.events/on', LOGIN, () => {
         this.ephemeral.finishedLogin = 'yes'
-        if (this.$store.getters.ourUsername) {
-          router.currentRoute.path === '/' && router.push({ path: '/dashboard' }).catch(console.error)
-        }
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
@@ -220,31 +253,6 @@ async function startApp () {
           'times-circle'
         )
       }
-      // TODO: move this into gi.actions/identity/login or something
-      (async function () {
-        const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
-        if (username) {
-          const identityContractID = await sbp('namespace/lookup', username)
-          if (identityContractID) {
-            await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
-          } else {
-            await sbp('state/vuex/dispatch', 'logout')
-            console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-            // TODO: do not delete the username like this! handle this better!
-            //       because of how await works, this exception handler can be triggered
-            //       even by random errors from Vue.js, example:
-            //
-            //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
-            //         memberUsernames state.js:231
-            //
-            //       Which doesn't mean that the lookup actually failed!
-            await sbp('gi.db/settings/delete', username)
-          }
-        }
-        // useful to delay the initialization of various pages like Join.vue until
-        // we have finished setting up and logging in
-        sbp('okTurtles.events/emit', VUE_LOADED)
-      })()
     },
     computed: {
       showNav () {

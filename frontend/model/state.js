@@ -504,7 +504,9 @@ const actions = {
       // but the state object in scope is a copy that becomes stale if something modifies it
       // like an outside dispatch
       const contracts = store.state.contracts
-      await sbp('chelonia/contract/sync', Object.keys(contracts))
+      // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
+      //            loading the website instead of stalling out.
+      sbp('chelonia/contract/sync', Object.keys(contracts))
       // it's insane, and I'm not sure how this can happen, but it did... and
       // the following steps actually fixed it...
       // TODO: figure out what happened and prevent it from happening again
@@ -514,12 +516,12 @@ const actions = {
       const currentGroupId = store.state.currentGroupId
       if (currentGroupId && !contracts[currentGroupId]) {
         console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
-        await sbp('chelonia/contract/sync', currentGroupId)
+        sbp('chelonia/contract/sync', currentGroupId) // again, make sure not to use 'await'
       }
       // TODO: resync for the chatroom contract, because current chatroom contract id could be what the user is not part of
       if (!contracts[user.identityContractID]) {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
-        await sbp('chelonia/contract/sync', user.identityContractID)
+        sbp('chelonia/contract/sync', user.identityContractID)
       }
     } else {
       captureLogsStart(user.username)

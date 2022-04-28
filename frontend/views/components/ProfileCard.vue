@@ -139,15 +139,15 @@ export default ({
       return this.groupProfiles[this.username]
     },
     isActiveGroupMember () {
-      return this.userGroupProfile.status === PROFILE_STATUS.ACTIVE
+      return this.userGroupProfile?.status === PROFILE_STATUS.ACTIVE
     },
 
     paymentMethods () {
-      return this.userGroupProfile.paymentMethods
+      return this.userGroupProfile?.paymentMethods
     },
 
     hasIncomeDetails () {
-      return !!this.userGroupProfile.incomeDetailsType
+      return !!this.userGroupProfile?.incomeDetailsType
     },
 
     receivingMonetary () {
