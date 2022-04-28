@@ -8,9 +8,7 @@ import store from '@model/state.js'
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import L from '@view-utils/translations.js'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { lazyPage } from '@utils/lazyLoadedView.js'
-import { VUE_LOADED } from '@utils/events.js'
 
 /*
  * Lazy load all the pages that are not necessary at initial loading of the app.
@@ -68,131 +66,112 @@ function createEnterGuards (...guards) {
     next()
   }
 }
-const routes = [
-  {
-    path: '/',
-    component: Home,
-    name: 'home',
-    meta: { title: L('Group Income') }, // page title. see issue #45
-    beforeEnter: createEnterGuards(homeGuard)
-  },
-  {
-    path: '/design-system',
-    component: lazyDesignSystem,
-    name: 'DesignSystem',
-    meta: { title: L('Design System') }
-    // beforeEnter: createEnterGuards(designGuard)
-  },
-  {
-    path: '/dashboard',
-    component: lazyGroupDashboard,
-    name: 'GroupDashboard',
-    meta: { title: L('Group Dashboard') },
-    beforeEnter: createEnterGuards(loginGuard, groupGuard)
-  },
-  {
-    path: '/contributions',
-    component: lazyContributions,
-    name: 'Contributions',
-    meta: { title: L('Contributions') },
-    beforeEnter: createEnterGuards(loginGuard, groupGuard)
-  },
-  {
-    path: '/payments',
-    component: lazyPayments,
-    name: 'Payments',
-    meta: { title: L('Payments') },
-    beforeEnter: createEnterGuards(loginGuard, groupGuard)
-  },
-  /* Guards need to be created for any route that should not be directly accessed by url */
-  {
-    path: '/messages',
-    component: lazyMessages,
-    name: 'Messages',
-    meta: { title: L('Messages') },
-    beforeEnter: createEnterGuards(loginGuard)
-  },
-  {
-    path: '/messages/:chatName',
-    component: lazyMessages,
-    name: 'MessagesConversation',
-    beforeEnter: createEnterGuards(loginGuard)
-    // BUG/REVIEW "CANNOT GET /:username" when username has "." in it
-    // ex: messages/joe.kim doesnt work but messages/joekim works fine.
-    // Possible Solution: https://router.vuejs.org/guide/essentials/history-mode.html#example-server-configurations
-  },
-  {
-    path: '/group-chat',
-    component: lazyGroupChat,
-    name: 'GroupChat',
-    meta: { title: L('Group Chat') },
-    beforeEnter: createEnterGuards(loginGuard, groupGuard)
-  },
-  {
-    path: '/group-settings',
-    component: lazyGroupSettings,
-    name: 'GroupSettings',
-    meta: { title: L('Group Settings') },
-    beforeEnter: createEnterGuards(loginGuard, groupGuard)
-  },
-  {
-    path: '/group-chat/:chatRoomId',
-    component: lazyGroupChat,
-    name: 'GroupChatConversation',
-    beforeEnter: createEnterGuards(loginGuard, groupGuard)
-  },
-  {
-    path: '/join',
-    name: Join.name,
-    component: Join,
-    meta: { title: L('Join a Group') },
-    // beforeEnter: createEnterGuards(loginGuard, mailGuard)
-    beforeEnter: createEnterGuards(inviteGuard)
-  },
-  ...(process.env.NODE_ENV === 'development'
-    ? [{
-        path: '/error-testing',
-        name: 'ErrorTesting',
-        component: () => import('../views/pages/ErrorTesting.vue'),
-        meta: { title: L('Error Testing') }
-      }]
-    : []),
-  {
-    path: '*',
-    redirect: '/'
-  }
-]
+
 const router: any = new Router({
   mode: 'history',
   base: '/app',
-  routes,
   scrollBehavior (to, from, savedPosition) {
     return { x: 0, y: 0 }
-  }
+  },
+  routes: [
+    {
+      path: '/',
+      component: Home,
+      name: 'home',
+      meta: { title: L('Group Income') }, // page title. see issue #45
+      beforeEnter: createEnterGuards(homeGuard)
+    },
+    {
+      path: '/design-system',
+      component: lazyDesignSystem,
+      name: 'DesignSystem',
+      meta: { title: L('Design System') }
+      // beforeEnter: createEnterGuards(designGuard)
+    },
+    {
+      path: '/dashboard',
+      component: lazyGroupDashboard,
+      name: 'GroupDashboard',
+      meta: { title: L('Group Dashboard') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+    },
+    {
+      path: '/contributions',
+      component: lazyContributions,
+      name: 'Contributions',
+      meta: { title: L('Contributions') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+    },
+    {
+      path: '/payments',
+      component: lazyPayments,
+      name: 'Payments',
+      meta: { title: L('Payments') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+    },
+    /* Guards need to be created for any route that should not be directly accessed by url */
+    {
+      path: '/messages',
+      component: lazyMessages,
+      name: 'Messages',
+      meta: { title: L('Messages') },
+      beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      path: '/messages/:chatName',
+      component: lazyMessages,
+      name: 'MessagesConversation',
+      beforeEnter: createEnterGuards(loginGuard)
+      // BUG/REVIEW "CANNOT GET /:username" when username has "." in it
+      // ex: messages/joe.kim doesnt work but messages/joekim works fine.
+      // Possible Solution: https://router.vuejs.org/guide/essentials/history-mode.html#example-server-configurations
+    },
+    {
+      path: '/group-chat',
+      component: lazyGroupChat,
+      name: 'GroupChat',
+      meta: { title: L('Group Chat') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+    },
+    {
+      path: '/group-settings',
+      component: lazyGroupSettings,
+      name: 'GroupSettings',
+      meta: { title: L('Group Settings') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+    },
+    {
+      path: '/group-chat/:chatRoomId',
+      component: lazyGroupChat,
+      name: 'GroupChatConversation',
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+    },
+    {
+      path: '/join',
+      name: Join.name,
+      component: Join,
+      meta: { title: L('Join a Group') },
+      // beforeEnter: createEnterGuards(loginGuard, mailGuard)
+      beforeEnter: createEnterGuards(inviteGuard)
+    },
+    ...(process.env.NODE_ENV === 'development'
+      ? [{
+          path: '/error-testing',
+          name: 'ErrorTesting',
+          component: () => import('../views/pages/ErrorTesting.vue'),
+          meta: { title: L('Error Testing') }
+        }]
+      : []),
+    {
+      path: '*',
+      redirect: '/'
+    }
+  ]
 })
 
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title
   next()
-})
-
-let startRoute
-router.beforeResolve((to, from, next) => {
-  if (!startRoute) startRoute = to
-  // console.warn(`beforeResolve to: ${to.path} from: ${from.path}`)
-  next()
-})
-
-// Sometimes beforeEnter will get triggered too early b/c of fix for #1192
-// and store.state isn't loaded yet, so we run it again after VUE_LOADED
-sbp('okTurtles.events/once', VUE_LOADED, function () {
-  const route = routes.find(r => r.path === startRoute.path)
-  // $FlowFixMe
-  const next = route?.beforeEnter?.(startRoute, null, (next) => next)
-  // console.warn(`started at ${startRoute.path} and got next of ${JSON.stringify(next)}`)
-  if (next) {
-    router.push(next).catch(logExceptNavigationDuplicated)
-  }
 })
 
 sbp('sbp/selectors/register', {
