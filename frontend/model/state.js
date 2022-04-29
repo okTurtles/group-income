@@ -127,7 +127,9 @@ const mutations = {
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
     }
   },
-  updateVuexExtensionState () {}
+  // Since Chelonia directly modifies contract state without using 'commit', we
+  // need this hack to tell the vuex developer tool it needs to refresh the state
+  noop () {}
 }
 
 // https://vuex.vuejs.org/en/getters.html
@@ -508,7 +510,7 @@ const store: any = new Vuex.Store({
   modules: {
     notifications: notificationModule
   },
-  strict: process.env.VUEX_STRICT === 'true'
+  strict: false // we're intentionally modifying state outside of commits
 })
 
 // save the state each time it's modified, but debounce it to avoid saving too frequently
@@ -521,10 +523,10 @@ sbp('sbp/filters/selector/add', 'gi.actions/identity/logout', function () {
   debouncedSave.clear()
 })
 // Since Chelonia directly modifies contract state without using 'commit', we
-// need this hack to tell the vuex extension that it needs to refresh the state
+// need this hack to tell the vuex developer tool it needs to refresh the state
 if (process.env.NODE_ENV === 'development') {
   sbp('okTurtles.events/on', EVENT_HANDLED, _.debounce(() => {
-    store.commit('updateVuexExtensionState')
+    store.commit('noop')
   }, 500))
 }
 

@@ -1279,10 +1279,10 @@
 "Change to this system" = "Choisir ce système";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
-"Maximum number of \"no\" votes:" = "Nombre maximal de votes négatifs:";
+"Maximum number of \"no\" votes:" = "Nombre maximal de votes négatifs :";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
-"Percentage of members that need to agree:" = "Pourcentage de votes positifs requis:";
+"Percentage of members that need to agree:" = "Pourcentage de votes positifs requis :";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Proposals are accepted when the required percentage of members agree to the proposal." = "Une proposition sera acceptée si le pourcentage des votes favorables est suffisant.";
@@ -1504,7 +1504,7 @@
 "Show per page" = "Afficher par page";
 
 /* views/containers/payments/PaymentsPagination.vue */
-"Show:" = "Afficher:";
+"Show:" = "Afficher :";
 
 /* views/containers/payments/PaymentsPagination.vue */
 "per page" = "par page";
@@ -1615,16 +1615,16 @@
 "Read more" = "Lire la suite";
 
 /* views/containers/proposals/ProposalBox.vue */
-"{strong_}You{_strong} are proposing:" = "{strong_}Vous{_strong} proposez:";
+"{strong_}You{_strong} are proposing:" = "{strong_}Vous{_strong} proposez :";
 
 /* views/containers/proposals/ProposalBox.vue */
-"{strong_}You{_strong} proposed:" = "{strong_}Vous{_strong} avez proposé:";
+"{strong_}You{_strong} proposed:" = "{strong_}Vous{_strong} avez proposé :";
 
 /* views/containers/proposals/ProposalBox.vue */
-"{username} is proposing:" = "{username} propose:";
+"{username} is proposing:" = "{username} propose :";
 
 /* views/containers/proposals/ProposalBox.vue */
-"{username} proposed:" = "{username} a proposé:";
+"{username} proposed:" = "{username} a proposé :";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Add {user} to group." = "Ajouter {user} au groupe.";
@@ -1645,7 +1645,7 @@
 "Change {setting} from {currentValue} to {proposedValue}" = "Changer {setting} de {currentValue} à {proposedValue}";
 
 /* views/containers/proposals/ProposalItem.vue */
-"Please send the following link to {user} so they can join the group:" = "Veuillez envoyer le lien suivant à {user} afin qu'il/elle puisse rejoindre le groupe:";
+"Please send the following link to {user} so they can join the group:" = "Veuillez envoyer le lien suivant à {user} afin qu'il/elle puisse rejoindre le groupe :";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Proposal cancelled." = "Proposition annulée.";
@@ -2065,7 +2065,7 @@
 "Change voting [xxxx]" = "Changer le vote [xxxx]";
 
 /* Not currently used */
-"Compose:" = "Composer:";
+"Compose:" = "Composer :";
 
 /* Not currently used */
 "Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given." = "Indiquez le montant maximal que vous souhaitez contribuer mensuellement. Seulement le minimum nécessaire sera utilisé.";
@@ -2215,7 +2215,7 @@
 "This months overview" = "Résumé de ce mois";
 
 /* Not currently used */
-"To:" = "À:";
+"To:" = "À :";
 
 /* Not currently used */
 "Updated the channel description to: {title}" = "La description du salon a été mise à jour : {title}";
