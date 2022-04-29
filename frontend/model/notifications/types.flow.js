@@ -29,7 +29,7 @@ export type NotificationData = {
 
 export type NotificationLevel = 'danger' | 'info';
 
-export type NotificationScope = 'group' | 'user';
+export type NotificationScope = 'group' | 'user' | 'app';
 
 export type NotificationTemplate = {
   +avatarUsername?: string;

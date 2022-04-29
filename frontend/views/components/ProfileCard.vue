@@ -82,12 +82,12 @@ tooltip(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import AvatarUser from '@components/AvatarUser.vue'
 import UserName from '@components/UserName.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 import { OPEN_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import { PROFILE_STATUS } from '~/frontend/model/contracts/constants.js'
 
@@ -139,15 +139,15 @@ export default ({
       return this.groupProfiles[this.username]
     },
     isActiveGroupMember () {
-      return this.userGroupProfile.status === PROFILE_STATUS.ACTIVE
+      return this.userGroupProfile?.status === PROFILE_STATUS.ACTIVE
     },
 
     paymentMethods () {
-      return this.userGroupProfile.paymentMethods
+      return this.userGroupProfile?.paymentMethods
     },
 
     hasIncomeDetails () {
-      return !!this.userGroupProfile.incomeDetailsType
+      return !!this.userGroupProfile?.incomeDetailsType
     },
 
     receivingMonetary () {

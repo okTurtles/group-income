@@ -1231,9 +1231,9 @@ page(
 </template>
 
 <script>
-import Page from '@components/Page.vue'
-import sbp from '~/shared/sbp.js'
 import '@views/utils/ui.js'
+import Page from '@components/Page.vue'
+import sbp from '@sbp/sbp'
 import Badge from '@components/Badge.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'

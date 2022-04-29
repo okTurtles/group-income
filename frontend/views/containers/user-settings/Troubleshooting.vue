@@ -37,7 +37,7 @@
 </template>
 
 <script>
-// import sbp from '~/shared/sbp.js'
+// import sbp from '@sbp/sbp'
 import { mapState } from 'vuex'
 import L, { LError } from '@view-utils/translations.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'

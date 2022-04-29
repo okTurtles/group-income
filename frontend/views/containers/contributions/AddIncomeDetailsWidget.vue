@@ -14,7 +14,7 @@ callout-card(
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import CalloutCard from '@components/CalloutCard.vue'

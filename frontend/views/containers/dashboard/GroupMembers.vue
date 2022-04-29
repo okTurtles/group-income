@@ -38,9 +38,9 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'

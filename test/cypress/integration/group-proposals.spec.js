@@ -161,7 +161,7 @@ describe('Proposals - Add members', () => {
         cy.getByDT('voteAgainst').click()
 
         cy.getByDT('statusDescription')
-          .should('contain', 'Proposal refused.')
+          .should('contain', 'Proposal refused')
       })
     })
   })
@@ -182,7 +182,7 @@ describe('Proposals - Add members', () => {
           cy.getByDT('voteFor').click()
           //  Proposal gets accepted and invitation is created!
           cy.getByDT('statusDescription')
-            .should('contain', 'Proposal accepted!')
+            .should('contain', 'Proposal accepted')
           cy.getByDT('voted').should('not.exist')
           cy.get('@title').should('contain', `user1-${userId} proposed:`)
           cy.getByDT('sendLink').should('not.exist') // Only visible to who created the proposal
@@ -259,7 +259,7 @@ describe('Proposals - Add members', () => {
         cy.getByDT('voteFor').click()
         //  Proposal gets accepted and mincome is updated on the sidebar!
         cy.getByDT('statusDescription')
-          .should('contain', 'Proposal accepted!')
+          .should('contain', 'Proposal accepted')
         cy.get('@title').should('contain', `user2-${userId} proposed:`)
       })
     })
@@ -346,13 +346,13 @@ describe('Proposals - Add members', () => {
 
       cy.getByDT('proposalItem').eq(0).within(() => {
         cy.getByDT('statusDescription')
-          .should('contain', 'Proposal accepted!')
+          .should('contain', 'Proposal accepted')
         cy.getByDT('sendLink').should('not.exist') // Because it was already used
       })
 
       cy.getByDT('proposalItem').eq(1).within(() => {
         cy.getByDT('statusDescription')
-          .should('contain', 'Proposal refused.')
+          .should('contain', 'Proposal refused')
       })
     })
 
@@ -361,7 +361,7 @@ describe('Proposals - Add members', () => {
 
       cy.getByDT('proposalItem').eq(0).within(() => {
         cy.getByDT('statusDescription')
-          .should('contain', 'Proposal accepted!')
+          .should('contain', 'Proposal accepted')
         cy.getByDT('sendLink').should('not.exist')
       })
     })
@@ -379,7 +379,7 @@ describe('Proposals - Add members', () => {
 
       cy.getByDT('proposalItem').eq(0).within(() => {
         cy.getByDT('statusDescription')
-          .should('contain', 'Proposal accepted!')
+          .should('contain', 'Proposal accepted')
       })
     })
 
