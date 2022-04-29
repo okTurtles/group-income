@@ -31,8 +31,8 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { OPEN_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'

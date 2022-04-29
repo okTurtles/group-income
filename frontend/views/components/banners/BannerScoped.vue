@@ -3,7 +3,8 @@
     .c-container(v-if='ephemeral.text')
       banner-simple(class='c-banner' :severity='ephemeral.severity')
         .c-inner
-          .c-inner-text(:data-test='dataTest' role='alert' v-safe-html='ephemeral.text')
+          .c-inner-text(v-if='allowA' :data-test='dataTest' role='alert' v-safe-html:a='ephemeral.text')
+          .c-inner-text(v-else :data-test='dataTest' role='alert' v-safe-html='ephemeral.text')
           button.is-icon-small.c-button(
             type='button'
             :class='`is-${ephemeral.severity}`'
@@ -27,6 +28,10 @@ export default ({
     dataTest: {
       type: String,
       default: 'feedbackMsg'
+    },
+    allowA: {
+      type: Boolean,
+      default: false
     }
   },
   data: () => ({

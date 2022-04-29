@@ -265,12 +265,12 @@ describe('RULE_DISAGREEMENT - 1 - 3 members - propose to remove member', functio
 })
 
 describe('RULE_PERCENTAGE - 80% - 3 members - propose to remove member', function () {
-  const state = buildState(3, RULE_PERCENTAGE, 1, { proposalType: PROPOSAL_REMOVE_MEMBER })
+  const state = buildState(3, RULE_PERCENTAGE, 0.8, { proposalType: PROPOSAL_REMOVE_MEMBER })
   it('1VA returns undecided', () => {
     const result = rules[RULE_PERCENTAGE](state, PROPOSAL_REMOVE_MEMBER, {
       u1: VOTE_AGAINST
     })
-    should(result).equal(VOTE_UNDECIDED)
+    should(result).equal(VOTE_AGAINST)
   })
 
   it('2VA returns against', () => {

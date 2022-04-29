@@ -21,7 +21,7 @@
       banner-scoped.c-formMsg(ref='formMsg' data-test='avatarMsg')
 </template>
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { imageUpload } from '@utils/image.js'
 import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'

@@ -191,9 +191,9 @@ describe('Group Voting Rules', () => {
 
       if (opts.decisive) {
         if (opts.decisive === 'rejected') {
-          cy.getByDT('statusDescription').should('contain', 'Proposal refused.')
+          cy.getByDT('statusDescription').should('contain', 'Proposal refused')
         } else if (opts.decisive === 'approved') {
-          cy.getByDT('statusDescription').should('contain', 'Proposal accepted!')
+          cy.getByDT('statusDescription').should('contain', 'Proposal accepted')
         }
         cy.getByDT('voted').should('not.exist')
       } else {

@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
 import { imageUpload } from '@utils/image.js'
@@ -51,7 +51,7 @@ export default (sbp('sbp/selectors/register', {
       })
       userID = user.contractID()
       if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', userID)
+        await sbp('chelonia/contract/sync', userID)
       }
       await sbp('gi.actions/identity/setAttributes', {
         contractID: userID, data: { mailbox: mailboxID }
@@ -84,7 +84,12 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       await sbp('gi.actions/identity/logout') // TODO: should this be here?
       console.error('gi.actions/identity/signup failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', LError(e)))
+      const message = LError(e)
+      if (e.name === 'GIErrorUIRuntimeError') {
+        // 'gi.actions/identity/create' also sets reportError
+        message.reportError = e.message
+      }
+      throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', message))
     }
   },
   'gi.actions/identity/login': async function ({
@@ -103,7 +108,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('state/vuex/dispatch', 'login', { username, identityContractID: userId })
 
       if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', userId)
+        await sbp('chelonia/contract/sync', userId)
       }
 
       return userId

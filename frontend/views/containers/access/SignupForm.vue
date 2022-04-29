@@ -27,7 +27,7 @@ form(data-test='signup' @submit.prevent='')
 
   password-form(:label='L("Password")' name='password' :$v='$v')
 
-  banner-scoped(ref='formMsg')
+  banner-scoped(ref='formMsg' allow-a)
 
   .buttons.is-centered
     button-submit(
@@ -38,9 +38,9 @@ form(data-test='signup' @submit.prevent='')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
-import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'

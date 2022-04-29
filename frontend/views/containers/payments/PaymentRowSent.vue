@@ -26,7 +26,7 @@
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import { OPEN_MODAL } from '@utils/events.js'

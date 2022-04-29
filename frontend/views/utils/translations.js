@@ -1,9 +1,9 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
 import { defaultConfig as defaultDompurifyConfig } from '~/frontend/views/utils/vSafeHtml.js'
 import dompurify from 'dompurify'
 import Vue from 'vue'
-import sbp from '~/shared/sbp.js'
 import template from '~/frontend/utils/stringTemplate.js'
 
 Vue.prototype.L = L
@@ -129,10 +129,14 @@ export default function L (
 }
 
 export function LError (error: Error): {|reportError: any|} {
+  let url = `/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(error.message)}`
+  if (!sbp('state/vuex/state').loggedIn) {
+    url = 'https://github.com/okTurtles/group-income/issues'
+  }
   return {
     reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', {
       errorMsg: error.message,
-      'a_': `<a class="link" target="_blank" href="/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(error.message)}">`,
+      'a_': `<a class="link" target="_blank" href="${url}">`,
       '_a': '</a>'
     })
   }

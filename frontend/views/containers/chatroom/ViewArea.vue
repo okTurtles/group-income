@@ -18,7 +18,7 @@
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 

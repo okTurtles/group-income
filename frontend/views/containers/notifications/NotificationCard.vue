@@ -24,8 +24,8 @@ tooltip(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import ModalClose from '@components/modal/ModalClose.vue'
 import Tooltip from '@components/Tooltip.vue'

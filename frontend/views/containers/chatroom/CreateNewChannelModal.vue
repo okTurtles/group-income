@@ -75,7 +75,7 @@
 <script>
 import { validationMixin } from 'vuelidate'
 import { mapState } from 'vuex'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import maxLength from 'vuelidate/lib/validators/maxLength'
