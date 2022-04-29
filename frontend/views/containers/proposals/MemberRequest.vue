@@ -122,7 +122,7 @@ export default {
       'ourUserIdentityContract'
     ]),
     hasMemberRequest () {
-      return this.request
+      return this.requests
     },
     requests () {
       if (this.requestsSorted) {
