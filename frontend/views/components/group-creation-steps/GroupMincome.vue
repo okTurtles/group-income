@@ -60,7 +60,7 @@
             v-for='(item, index) in ephemeral.distributionDayRange'
             :key='index'
             :value='item'
-          ) {{ humanDate(item, , { month: 'long', year: 'numeric', day: 'numeric' }) }}
+          ) {{ humanDate(item, { month: 'long', year: 'numeric', day: 'numeric' }) }}
 
       i18n.helper Payment distribution will be calculated every 30 days.
     slot
