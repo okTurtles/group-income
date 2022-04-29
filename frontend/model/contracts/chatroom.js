@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import Vue from 'vue'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import '~/shared/domains/chelonia/chelonia.js'
@@ -21,7 +21,10 @@ import {
   MESSAGE_NOTIFICATIONS
 } from './constants.js'
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
-import { logExceptNavigationDuplicated } from '~/frontend/controller/utils/misc.js'
+import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
+
+// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
+// console.debug('esbuild import hack', GIMessage && '')
 
 export const chatRoomAttributesType: any = objectOf({
   name: string,
@@ -104,7 +107,7 @@ export async function leaveChatRoom ({ contractID }: {
         .catch(logExceptNavigationDuplicated)
     }
   }
-  sbp('state/vuex/commit', 'removeContract', contractID)
+  sbp('chelonia/contract/remove', contractID)
 }
 
 function createNotificationData (
@@ -150,9 +153,6 @@ sbp('chelonia/defineContract', {
         identityContractID
       }
     }
-  },
-  state (contractID) {
-    return sbp('state/vuex/state')[contractID]
   },
   getters: {
     currentChatRoomState (state) {

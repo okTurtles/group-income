@@ -10,3 +10,7 @@ export function vueFetchInitKV (obj: Object, key: string, initialValue: any): an
   }
   return value
 }
+
+export function logExceptNavigationDuplicated (err: Object) {
+  err.name !== 'NavigationDuplicated' && console.error(err)
+}

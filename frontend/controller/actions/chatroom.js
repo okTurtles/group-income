@@ -1,5 +1,5 @@
 'use strict'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import L from '@view-utils/translations.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import { omit } from '~/frontend/utils/giLodash.js'

@@ -101,4 +101,4 @@ lazyComponent('UserProfile', () => import('../views/containers/user-settings/Use
 lazyComponent('DSModalFullscreen', () => import('../views/containers/design-system/DSModalFullscreen.vue'))
 lazyComponent('DSModalNested', () => import('../views/containers/design-system/DSModalNested.vue'))
 lazyComponent('DSModalQuery', () => import('../views/containers/design-system/DSModalQuery.vue'))
-lazyComponent('TimeTravel', () => import('../views/containers/navigation/TimeTravel.vue'))
+// lazyComponent('TimeTravel', () => import('../views/containers/navigation/TimeTravel.vue'))

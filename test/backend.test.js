@@ -1,15 +1,12 @@
 /* eslint-env mocha */
 
-import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/events.js'
-import '~/shared/domains/okTurtles/eventQueue.js'
+import sbp from '@sbp/sbp'
+import '@sbp/okturtles.events'
+import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 // import * as _ from '~/frontend/utils/giLodash.js'
-import { createGIPubSubClient } from '~/frontend/controller/backend.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-// import { blake2bInit, blake2bUpdate, blake2bFinal } from 'blakejs'
-// import multihash from 'multihashes'
 import { blake32Hash } from '~/shared/functions.js'
 import proposals from '~/frontend/model/contracts/voting/proposals.js'
 import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/voting/constants.js'
@@ -17,8 +14,8 @@ import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/payments/index.js'
 import { INVITE_INITIAL_CREATOR } from '~/frontend/model/contracts/constants.js'
 import { createInvite } from '~/frontend/model/contracts/group.js'
-// import '~/frontend/model/contracts/identity.js'
-import '~/frontend/model/state.js'
+import '~/frontend/model/contracts/identity.js'
+// import '~/frontend/model/state.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
@@ -59,17 +56,18 @@ const vuexState = {
 
 // this is to ensure compatibility between frontend and test/backend.test.js
 sbp('okTurtles.data/set', 'API_URL', process.env.API_URL)
-
-sbp('sbp/selectors/overwrite', {
-  // intercept 'state/enqueueHandleEvent' from backend.js
-  'state/enqueueHandleEvent': function (e) {
-    const contractID = e.contractID()
-    if (!vuexState[contractID]) {
-      vuexState[contractID] = {}
-    }
-    sbp('chelonia/in/processMessage', e, vuexState[contractID])
-    sbp('okTurtles.events/emit', e.hash(), e)
-  },
+sbp('chelonia/configure', {
+  connectionURL: process.env.API_URL,
+  stateSelector: 'state/vuex/state',
+  skipSideEffects: true,
+  connectionOptions: {
+    reconnectOnDisconnection: false,
+    reconnectOnOnline: false,
+    reconnectOnTimeout: false,
+    timeout: 3000
+  }
+})
+sbp('sbp/selectors/register', {
   // for handling the loggedIn metadata() in Contracts.js
   'state/vuex/state': () => {
     return vuexState
@@ -79,14 +77,10 @@ sbp('sbp/selectors/overwrite', {
 sbp('sbp/selectors/register', {
   'backend.tests/postEntry': async function (entry) {
     console.log(bold.yellow('sending entry with hash:'), entry.hash())
-    const res = await sbp('backend/publishLogEntry', entry)
+    const res = await sbp('chelonia/private/out/publishEvent', entry)
     should(res).equal(entry.hash())
     return res
   }
-})
-
-sbp('chelonia/configure', {
-  publishSelector: 'backend.tests/postEntry'
 })
 
 // uncomment this to help with debugging:
@@ -107,21 +101,6 @@ describe('Full walkthrough', function () {
     }
   }
 
-  function createSocket () {
-    return new Promise((resolve, reject) => {
-      createGIPubSubClient(process.env.API_URL, {
-        handlers: {
-          error (event) { reject(event) },
-          open (event) { resolve(this) }
-        },
-        reconnectOnDisconnection: false,
-        reconnectOnOnline: false,
-        reconnectOnTimeout: false,
-        timeout: 3000
-      })
-    })
-  }
-
   async function createIdentity (username, email, testFn) {
     // append random id to username to prevent conflict across runs
     // when GI_PERSIST environment variable is defined
@@ -139,7 +118,7 @@ describe('Full walkthrough', function () {
     })
     return msg
   }
-  function createGroup (name, hooks): Promise {
+  function createGroup (name: string, hooks: Object = {}): Promise {
     const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
     return sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/group',
@@ -186,12 +165,7 @@ describe('Full walkthrough', function () {
   async function createMailboxFor (user) {
     const mailbox = await sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/mailbox',
-      data: {
-        // authorizations: [Events.CanModifyAuths.dummyAuth(user.contractID())]
-      },
-      hooks: {
-        prepublishContract (message) { user.socket.sub(message.contractID()) }
-      }
+      data: {}
     })
     await sbp('chelonia/out/actionEncrypted', {
       action: 'gi.contracts/identity/setAttributes',
@@ -199,6 +173,8 @@ describe('Full walkthrough', function () {
       contractID: user.contractID()
     })
     user.mailbox = mailbox
+    await sbp('chelonia/contract/sync', mailbox.contractID())
+    return mailbox
   }
 
   describe('Identity tests', function () {
@@ -230,10 +206,8 @@ describe('Full walkthrough', function () {
       should(contractID).equal(null)
     })
 
-    it('Should open sockets for Alice and Bob', async function () {
-      for (const user in users) {
-        users[user].socket = await createSocket()
-      }
+    it('Should open socket for Alice', async function () {
+      users.alice.socket = await sbp('chelonia/connect')
     })
 
     it('Should create mailboxes for Alice and Bob and subscribe', async function () {
@@ -247,11 +221,8 @@ describe('Full walkthrough', function () {
     it('Should create a group & subscribe Alice', async function () {
       // set user Alice as being logged in so that metadata on messages is properly set
       login(users.alice)
-      groups.group1 = await createGroup('group1', {
-        prepublishContract (message) {
-          users.alice.socket.sub(message.contractID())
-        }
-      })
+      groups.group1 = await createGroup('group1')
+      await sbp('chelonia/contract/sync', groups.group1.contractID())
     })
 
     // NOTE: The frontend needs to use the `fetch` API instead of superagent because
@@ -265,25 +236,13 @@ describe('Full walkthrough', function () {
       const bobsContractId = await sbp('namespace/lookup', bobsName)
       should(bobsContractId).equal(bob.contractID())
       // 2. fetch all events for his identity contract to get latest state for it
-      const events = await sbp('backend/eventsSince', bobsContractId, bobsContractId)
-      should(events).be.an.instanceof(Array)
-      console.log(bold.red('EVENTS:'), events)
-      // NOTE: even though we could avoid creating instances out of these events,
-      //       we do it anyways even in these tests just to remind the reader
-      //       that .fromObject must be called on the input data, so that the
-      //       hash-based ingrity check is done.
-      // Illustraiting its importance: when converting the code below from
-      // raw-objects to instances, the hash check failed and I caught several bugs!
-      const state = {}
-      for (const e of events.map(e => GIMessage.deserialize(e))) {
-        sbp('chelonia/in/processMessage', e, state)
-      }
+      const state = await sbp('chelonia/latestContractState', bobsContractId)
       console.log(bold.red('FINAL STATE:'), state)
       // 3. get bob's mailbox contractID from his identity contract attributes
       should(state.attributes.mailbox).equal(bob.mailbox.contractID())
       // 4. fetch the latest hash for bob's mailbox.
       //    we don't need latest state for it just latest hash
-      const res = await sbp('backend/latestHash', state.attributes.mailbox)
+      const res = await sbp('chelonia/private/out/latestHash', state.attributes.mailbox)
       should(res).equal(bob.mailbox.hash())
     })
 
@@ -299,7 +258,7 @@ describe('Full walkthrough', function () {
         contractID: mailbox.contractID(),
         hooks: {
           prepublish (invite: GIMessage) {
-            sbp('okTurtles.events/once', invite.hash(), (entry: GIMessage) => {
+            sbp('okTurtles.events/once', invite.hash(), (contractID: string, entry: GIMessage) => {
               console.debug('Bob successfully got invite!')
               should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
               done()
@@ -311,6 +270,11 @@ describe('Full walkthrough', function () {
 
     it('Should post an event', function () {
       return createPaymentTo(users.bob, 100, groups.group1.contractID())
+    })
+
+    it('Should sync group and verify payments in state', async function () {
+      await sbp('chelonia/contract/sync', groups.group1.contractID())
+      should(Object.keys(vuexState[groups.group1.contractID()].payments).length).equal(1)
     })
 
     it('Should fail with wrong contractID', async function () {

@@ -51,7 +51,7 @@ import {
   STATUS_EXPIRED,
   STATUS_CANCELLED
 } from '@model/contracts/voting/constants.js'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/voting/rules.js'
+import { VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/voting/rules.js'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
@@ -149,23 +149,27 @@ export default ({
       }[this.proposalType]()
     },
     statusDescription () {
+      const votes = Object.values(this.proposal.votes)
+      const yay = votes.filter(v => v === VOTE_FOR).length
+      const nay = votes.filter(v => v === VOTE_AGAINST).length
+      const total = yay + nay
       switch (this.proposal.status) {
         case STATUS_OPEN: {
           const excludeVotes = this.proposalType === PROPOSAL_REMOVE_MEMBER ? 1 : 0
 
           return L('{count} out of {total} members voted.', {
-            count: Object.keys(this.proposal.votes).length,
+            count: votes.length,
             total: this.groupMembersCount - excludeVotes
           })
         }
         case STATUS_FAILED: {
-          return L('Proposal refused.')
+          return L('Proposal refused with {nay} against out of {total} total votes.', { nay, total })
         }
         case STATUS_CANCELLED: {
           return L('Proposal cancelled.')
         }
         case STATUS_PASSED: {
-          return L('Proposal accepted!')
+          return L('Proposal accepted with {yay} in favor out of {total} total votes.', { yay, total })
         }
         default:
           return `TODO status: ${this.proposal.status}`

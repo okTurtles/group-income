@@ -3,30 +3,26 @@
 page
   template(#title='') Error Testing
   page-section
-    p Enable side effect error type on handleEvent:&nbsp;
-      select(v-model='form.sideEffectErrorType')
-        option(value='none') None
-        option(value='GIErrorIgnoreAndBanIfGroup') GIErrorIgnoreAndBanIfGroup
-        option(value='GIErrorDropAndReprocess') GIErrorDropAndReprocess
-        option(value='GIErrorUnrecoverable') GIErrorUnrecoverable
-        option(value='unknown') Unknown
-  page-section
-    a.button(@click='sendMalformedMessage') Send malformed message
-  page-section
     p Send malformed mutation of type:&nbsp;
       select(v-model='form.mutationErrorType')
-        option(value='GIErrorIgnoreAndBanIfGroup') GIErrorIgnoreAndBanIfGroup
-        option(value='GIErrorDropAndReprocess') GIErrorDropAndReprocess
-        option(value='GIErrorUnrecoverable') GIErrorUnrecoverable
+        option(value='GIErrorIgnoreAndBan') GIErrorIgnoreAndBan
+        option(value='GIErrorUIRuntimeError') GIErrorUIRuntimeError
+        option(value='ChelErrorDBBadPreviousHEAD') ChelErrorDBBadPreviousHEAD
         option(value='unknownType') unknownType
-      a.button(@click='sendMalformedMutationOfType') Send
+      a.button(@click='sendMalformedMutationOfType') Send malformed mutation
+  page-section
+    p Enable side effect error type on handleEvent:&nbsp;
+      select(v-model='form.sideEffectErrorType')
+        option(value='GIErrorIgnoreAndBan') GIErrorIgnoreAndBan
+        option(value='GIErrorUIRuntimeError') GIErrorUIRuntimeError
+        option(value='ChelErrorDBBadPreviousHEAD') ChelErrorDBBadPreviousHEAD
+        option(value='unknown') Unknown
+      a.button(@click='sendMalformedSideEffect') Send malformed sideEffect
 </template>
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
-import { EVENT_HANDLED } from '@utils/events.js'
-import * as Errors from '@model/errors.js'
 
 export default ({
   name: 'ErrorTesting',
@@ -37,29 +33,16 @@ export default ({
   data () {
     return {
       form: {
-        sideEffectErrorType: 'none',
-        mutationErrorType: 'GIErrorIgnoreAndBanIfGroup'
+        mutationErrorType: 'GIErrorIgnoreAndBan',
+        sideEffectErrorType: 'GIErrorUIRuntimeError'
       }
     }
   },
-  mounted () {
-    sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
-      if (this.form.sideEffectErrorType !== 'none') {
-        console.debug(`ErrorTesting page EVENT_HANDLED callback about to throw '${this.form.sideEffectErrorType}' error`)
-        const ErrorType = Errors[this.form.sideEffectErrorType]
-        if (ErrorType) {
-          throw new ErrorType('blah!')
-        } else {
-          throw new Error('unknown error')
-        }
-      }
-    })
-  },
   methods: {
-    async sendMalformedMessage () {
+    async sendMalformedSideEffect () {
       await sbp('chelonia/out/actionEncrypted', {
-        action: 'gi.contracts/group/inviteAccept',
-        data: { inviteSecret: 'poop!' },
+        action: 'gi.contracts/group/malformedMutation',
+        data: { errorType: this.form.mutationErrorType, sideEffect: true },
         contractID: this.$store.state.currentGroupId
       })
     },
