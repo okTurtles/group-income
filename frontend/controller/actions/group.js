@@ -47,6 +47,14 @@ export async function leaveAllChatRooms (groupContractID: string, member: string
   }
 }
 
+async function saveLoginState (action: string, contractID: string) {
+  try {
+    await sbp('gi.actions/identity/saveOurLoginState')
+  } catch (e) {
+    console.error(`${e.name} trying to save our login state when ${action} group: ${contractID}: ${e.message}`, e)
+  }
+}
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
     data: {
@@ -59,7 +67,6 @@ export default (sbp('sbp/selectors/register', {
       ruleThreshold,
       distributionDate
     },
-    options: { sync = true } = {},
     publishOptions
   }) {
     let finalPicture = `${window.location.origin}/assets/images/group-avatar-default.png`
@@ -132,9 +139,8 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
-      if (sync) {
-        await sbp('chelonia/contract/sync', message.contractID())
-      }
+      await sbp('chelonia/contract/sync', message.contractID())
+      saveLoginState('creating', message.contractID())
 
       // create a 'General' chatroom contract and let the creator join
       await sbp('gi.actions/group/addAndJoinChatRoom', {
@@ -162,15 +168,18 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/join': async function (params: $Exact<GIActionParams>) {
     try {
-      // post acceptance event to the group contract
-      const message = await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options']),
-        action: 'gi.contracts/group/inviteAccept',
-        hooks: {
-          prepublish: params.hooks?.prepublish,
-          postpublish: null
-        }
-      })
+      // post acceptance event to the group contract, unless this is being called
+      // by the loginState synchronization via the identity contract
+      if (!params.options?.skipInviteAccept) {
+        await sbp('chelonia/out/actionEncrypted', {
+          ...omit(params, ['options']),
+          action: 'gi.contracts/group/inviteAccept',
+          hooks: {
+            prepublish: params.hooks?.prepublish,
+            postpublish: null
+          }
+        })
+      }
       // sync the group's contract state
       await sbp('chelonia/contract/sync', params.contractID)
 
@@ -192,20 +201,22 @@ export default (sbp('sbp/selectors/register', {
         alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
       }
 
-      return message
+      if (!params.options?.skipInviteAccept) {
+        saveLoginState('joining', params.contractID)
+      }
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     }
   },
   'gi.actions/group/joinAndSwitch': async function (params: GIActionParams) {
-    const message = await sbp('gi.actions/group/join', params)
+    await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
-    sbp('gi.actions/group/switch', message.contractID())
-    return message
+    sbp('gi.actions/group/switch', params.contractID)
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
+    sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/chatroom/create', {
@@ -348,6 +359,17 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to leave group. {codeError}', { codeError: e.message }))
     }
   },
+  // 'gi.actions/group/leaveGroup': function ({ contractID }: { contractID: string }) {
+  //   const state = sbp('state/vuex/state')
+  //   const contracts = state.contracts || {}
+  //   const groupIdToSwitch = Object.keys(contracts)
+  //     .find(cID => contracts[cID].type === 'gi.contracts/group' &&
+  //       cID !== contractID && state[cID].settings) || null
+  //   sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
+  //   sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+  //   sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
+  //   return sbp('chelonia/contract/remove', contractID)
+  // },
   'gi.actions/group/autobanUser': async function (message: GIMessage, error: Object, attempt = 1) {
     try {
       if (attempt === 1) {

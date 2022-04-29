@@ -4,8 +4,9 @@ import sbp from '@sbp/sbp'
 import Vue from 'vue'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import '~/shared/domains/chelonia/chelonia.js'
-import { objectOf, objectMaybeOf, arrayOf, string, object, mapOf } from '~/frontend/utils/flowTyper.js'
+import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
+import L from '@view-utils/translations.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
@@ -62,13 +63,22 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/setLoginState': {
       validate: objectOf({
-        currentGroupId: string,
-        currentChatRoomIDs: mapOf(string, string),
-        groupIds: arrayOf(string),
-        chatroomIds: arrayOf(string)
+        groupIds: arrayOf(string)
       }),
       process ({ data }, { state }) {
         Vue.set(state, 'loginState', data)
+      },
+      async sideEffect () {
+        try {
+          await sbp('gi.actions/identity/updateLoginStateUponLogin')
+        } catch (e) {
+          sbp('gi.notifications/emit', 'ERROR', {
+            message: L("Failed to groups we're part of with other computer. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
+              errName: e.name,
+              errMsg: e.message || '?'
+            })
+          })
+        }
       }
     }
   }

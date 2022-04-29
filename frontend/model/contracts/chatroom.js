@@ -208,7 +208,9 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state, getters }) {
         const { username } = data
         if (state.users[username]) {
-          throw new Error('Can not join the chatroom which you are already part of')
+          // this can happen when we're logging in on another machine, and also in other circumstances
+          console.warn('Can not join the chatroom which you are already part of')
+          return
         }
 
         const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER
@@ -221,8 +223,10 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
       },
-      sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+      sideEffect ({ data, contractID, hash }, { state }) {
+        if (!state.users[data.username]) {
+          emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+        }
       }
     },
     'gi.contracts/chatroom/rename': {

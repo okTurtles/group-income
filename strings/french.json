@@ -1,6 +1,7 @@
 {
   "Couldn't join the #{chatroomName} in the group. Doesn't exist.": "Couldn't join the #{chatroomName} in the group. Doesn't exist.",
   "Failed to force distribution date.": "Failed to force distribution date.",
+  "Failed to set login state.": "Failed to set login state.",
   "Design System": "Design System",
   "Error Testing": "Error Testing",
   "Group Income": "Group Income",
@@ -11,6 +12,7 @@
   "We could not connect to the server. Please refresh the page.": "We could not connect to the server. Please refresh the page.",
   "Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}": "Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}",
   "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'": "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'",
+  "Failed to groups we're part of with other computer. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'": "Failed to groups we're part of with other computer. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'",
   "Do not forget to send your pledge by {date}.": "Do not forget to send your pledge by {date}.",
   "The group has a new member. Say hi to {name}!": "The group has a new member. Say hi to {name}!",
   "You haven't updated your income details in more than {months} months. Would you like to review them now?": "You haven't updated your income details in more than {months} months. Would you like to review them now?",

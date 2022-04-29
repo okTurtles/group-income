@@ -966,6 +966,9 @@
 /* main.js */
 "Your device appears to be offline." = "Your device appears to be offline.";
 
+/* controller/actions/identity.js */
+"Failed to set login state." = "Failed to set login state.";
+
 /* views/components/group-creation-steps/GroupPrivacy.vue */
 "Privacy Settings" = "Privacy Settings";
 
@@ -1742,6 +1745,9 @@
 
 /* views/containers/design-system/DSModalNested.vue */
 "Toggle subtitle" = "Toggle subtitle";
+
+/* model/contracts/identity.js */
+"Failed to groups we're part of with other computer. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to groups we're part of with other computer. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
 "This is the beginning of {name}." = "This is the beginning of {name}.";
