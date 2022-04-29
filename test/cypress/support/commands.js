@@ -25,7 +25,6 @@ function checkIfJoinedGeneralChannel (groupName, username) {
   cy.getByDT('messageInputWrapper').within(() => {
     cy.get('textarea').should('exist')
   })
-
   cy.getByDT('conversationWapper').within(() => {
     if (username) {
       cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', username)
@@ -277,8 +276,6 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
       await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
     })
-
-    checkIfJoinedGeneralChannel(groupName, username)
   } else {
     cy.visit(invitationLink)
 
@@ -337,10 +334,10 @@ Cypress.Commands.add('giAddNewChatroom', (
 ) => {
   // Needs to be in 'Group Chat' page
   cy.getByDT('newChannelButton').click()
-
+  cy.getByDT('modal') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
   cy.getByDT('modal').within(() => {
-    cy.get('.c-modal-header') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
-    cy.get('.c-modal-header h1').should('contain', 'Create a channel')
+    // cy.get('.c-modal-header h1').should('contain', 'Create a channel')
+    cy.getByDT('modal-header-title').should('contain', 'Create a channel')
     cy.getByDT('createChannelName').clear().type(name)
     if (description) {
       cy.getByDT('createChannelDescription').clear().type(description)

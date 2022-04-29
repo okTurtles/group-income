@@ -1,6 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import Vue from 'vue'
 import { createInvite } from '@model/contracts/group.js'
 import {
   INVITE_INITIAL_CREATOR,
@@ -216,7 +217,12 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
-    sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+    Vue.nextTick(() => {
+      const router = sbp('controller/router')
+      if (router.currentRoute.path === '/') {
+        router.push({ path: '/dashboard' }).catch(e => {})
+      }
+    })
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/chatroom/create', {
@@ -359,17 +365,6 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to leave group. {codeError}', { codeError: e.message }))
     }
   },
-  // 'gi.actions/group/leaveGroup': function ({ contractID }: { contractID: string }) {
-  //   const state = sbp('state/vuex/state')
-  //   const contracts = state.contracts || {}
-  //   const groupIdToSwitch = Object.keys(contracts)
-  //     .find(cID => contracts[cID].type === 'gi.contracts/group' &&
-  //       cID !== contractID && state[cID].settings) || null
-  //   sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
-  //   sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
-  //   sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
-  //   return sbp('chelonia/contract/remove', contractID)
-  // },
   'gi.actions/group/autobanUser': async function (message: GIMessage, error: Object, attempt = 1) {
     try {
       if (attempt === 1) {

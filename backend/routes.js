@@ -38,8 +38,8 @@ route.POST('/event', {
     await sbp('backend/server/handleEntry', entry)
     return entry.hash()
   } catch (err) {
-    if (err.name === 'ErrorDBBadPreviousHEAD') {
-      console.error(chalk.bold.yellow('ErrorDBBadPreviousHEAD'), err)
+    if (err.name === 'ChelErrorDBBadPreviousHEAD') {
+      console.error(chalk.bold.yellow('ChelErrorDBBadPreviousHEAD'), err)
       return Boom.conflict(err.message)
     }
     return logger(err)

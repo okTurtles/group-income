@@ -224,9 +224,7 @@ sbp('chelonia/defineContract', {
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
       },
       sideEffect ({ data, contractID, hash }, { state }) {
-        if (!state.users[data.username]) {
-          emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
-        }
+        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
     'gi.contracts/chatroom/rename': {

@@ -6,7 +6,7 @@ import Vue from 'vue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
-import L from '@view-utils/translations.js'
+import L from '~/frontend/views/utils/translations.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',

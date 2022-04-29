@@ -99,11 +99,12 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/identity/saveOurLoginState': function () {
-    const getters = sbp('state/vuex/getters')
-    return sbp('gi.contracts/identity/setLoginState', {
-      contractID: getters.ourIdentityContractId,
-      data: generatedLoginState()
-    })
+    const contractID = sbp('state/vuex/getters').ourIdentityContractId
+    if (contractID) {
+      return sbp('gi.contracts/identity/setLoginState', {
+        contractID, data: generatedLoginState()
+      })
+    }
   },
   'gi.actions/identity/updateLoginStateUponLogin': async function () {
     const getters = sbp('state/vuex/getters')
@@ -173,7 +174,6 @@ export default (sbp('sbp/selectors/register', {
       })
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, username)
       sbp('state/vuex/commit', 'login', { username, identityContractID })
-      // Vue.nextTick(() => sbp('okTurtles.events/emit', EVENTS.LOGIN, user))
       sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
       return identityContractID
     } catch (e) {

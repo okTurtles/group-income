@@ -684,7 +684,7 @@ sbp('chelonia/defineContract', {
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           sbp('chelonia/contract/remove', contractID)
-          sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
+          sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' }).catch(console.warn)
 
           // TODO - #828 remove other group members contracts if applicable
         } else {
