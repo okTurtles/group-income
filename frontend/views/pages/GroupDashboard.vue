@@ -2,6 +2,9 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
+  banner-simple(severity='warning' class='c-banner' v-if='!hasIncomeDetails && isCloseToDistributionTime')
+    p Next distribution date in on {{ humanDate(groupSettings.distributionDate, { month: 'long', day: 'numeric' })}}. Make sure to update your income details by then.
+
   add-income-details-widget(v-if='!hasIncomeDetails' :welcomeMessage='true')
 
   template(v-else)
@@ -34,7 +37,9 @@ import ProposalsWidget from '@containers/proposals/ProposalsWidget.vue'
 import GroupMincome from '@containers/dashboard/GroupMincome.vue'
 import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
+import BannerSimple from '@components/banners/BannerSimple.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
+import { addTimeToDate, DAYS_MILLIS, humanDate } from '~/frontend/utils/time.js'
 
 export default ({
   name: 'GroupDashboard',
@@ -59,7 +64,14 @@ export default ({
     },
     hasProposals () {
       return Object.keys(this.currentGroupState.proposals).length > 0
+    },
+    isCloseToDistributionTime () {
+      const warningDate = addTimeToDate(new Date(this.groupSettings.distributionDate), -7 * DAYS_MILLIS)
+      return Date.now() >= new Date(warningDate).getTime()
     }
+  },
+  methods: {
+    humanDate
   },
   components: {
     Page,
@@ -70,8 +82,15 @@ export default ({
     ProposalsWidget,
     GroupMincome,
     GroupMembers,
-    GroupPurpose
+    GroupPurpose,
+    BannerSimple
     // GroupSettings
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+.c-banner {
+  margin-bottom: 1rem;
+}
+</style>
