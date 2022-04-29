@@ -45,22 +45,22 @@
           span.button.is-icon-small
             i.icon-question-circle
           template(slot='tooltip')
-            i18n(tag='p') Select which day of the month should the distribution be calculated. Every group member will need to update their mincome details before this date to ensure that the algorythm can fairly distribute available funds between group members.
+            i18n(tag='p') Select which day of the month should the distribution be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members.
 
       .selectbox
         select.select(
           :aria-label='L("Choose day")'
           name='distributionDate'
           required=''
-          :value='group.distributionDate.toString()'
+          :value='group.distributionDate'
           @change='update'
         )
-          i18n(tag='option' disabled value='') Choose day
+          i18n(tag='option' disabled value='') Choose your group's distribution date
           option(
             v-for='(item, index) in ephemeral.distributionDayRange'
             :key='index'
             :value='item'
-          ) {{ new Date(item).getDate() }}
+          ) {{ humanDate(item, , { month: 'long', year: 'numeric', day: 'numeric' }) }}
 
       i18n.helper Payment distribution will be calculated every 30 days.
     slot
@@ -69,7 +69,7 @@
 <script>
 import currencies from '@view-utils/currencies.js'
 import Tooltip from '@components/Tooltip.vue'
-import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '~/frontend/utils/time.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate } from '~/frontend/utils/time.js'
 
 export default ({
   name: 'GroupMincome',
@@ -97,6 +97,7 @@ export default ({
     this.$refs.mincome.focus()
   },
   methods: {
+    humanDate,
     update (e) {
       this.$v.form[e.target.name].$touch()
       this.$emit('input', {
