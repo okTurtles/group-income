@@ -21,9 +21,9 @@ modal-template(ref='modal' :a11yTitle='$attrs.heading' :modalForceAction='true')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import L from '@view-utils/translations.js'
 import { MODAL_RESPONSE } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
@@ -59,6 +59,9 @@ export default ({
 
   .buttons {
     justify-content: center;
+    button:not(:last-child) {
+      margin-right: 1.375rem;
+    }
   }
 }
 
