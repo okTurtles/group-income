@@ -58,7 +58,7 @@ export default ({
       'groupSettings',
       'currentGroupState',
       'groupProfiles',
-      'ourUserIdentityContract',
+      'currentIdentityState',
       'ourUsername',
       'ourGroupProfile',
       'ourContributionSummary',

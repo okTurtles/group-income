@@ -52,7 +52,7 @@ Cypress.Commands.add('giSignup', (username, {
 
   if (bypassUI) {
     cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/identity/signupAndLogin', { data: { username, email, password } })
+      await sbp('gi.actions/identity/signupAndLogin', { username, email, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
     })
   } else {
@@ -84,7 +84,7 @@ Cypress.Commands.add('giLogin', (username, {
       if (ourUsername === username) {
         throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
       }
-      await sbp('gi.actions/identity/login', { data: { username, password } })
+      await sbp('gi.actions/identity/login', { username, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
     })
     cy.get('nav').within(() => {
@@ -339,6 +339,7 @@ Cypress.Commands.add('giAddNewChatroom', (
   cy.getByDT('newChannelButton').click()
 
   cy.getByDT('modal').within(() => {
+    cy.get('.c-modal-header') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
     cy.get('.c-modal-header h1').should('contain', 'Create a channel')
     cy.getByDT('createChannelName').clear().type(name)
     if (description) {

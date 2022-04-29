@@ -25,7 +25,7 @@
 "Fatal error: {reportError}" = "Fatal error: {reportError}";
 
 /* MISSING TRANSLATION - main.js */
-"Loading events from server..." = "Loading events from server...";
+"Loading events for '{contract}' from server..." = "Loading events for '{contract}' from server...";
 
 /* MISSING TRANSLATION - main.js */
 "We could not connect to the server. Please refresh the page." = "We could not connect to the server. Please refresh the page.";

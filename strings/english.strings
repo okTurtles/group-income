@@ -1344,9 +1344,6 @@
 /* views/containers/chatroom/ConversationGreetings.vue */
 "You and {name} can chat in private here." = "You and {name} can chat in private here.";
 
-/* main.js */
-"Loading events from server..." = "Loading events from server...";
-
 /* controller/router.js, views/pages/Messages.vue */
 "Messages" = "Messages";
 
@@ -1622,6 +1619,9 @@
 
 /* views/containers/chatroom/MessageActions.vue */
 "Delete message" = "Delete message";
+
+/* main.js */
+"Loading events for '{contract}' from server..." = "Loading events for '{contract}' from server...";
 
 /* views/containers/payments/PaymentRowTodo.vue */
 "{partial_amount} out of {partial_total}" = "{partial_amount} out of {partial_total}";

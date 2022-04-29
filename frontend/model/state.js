@@ -8,16 +8,13 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import { SETTING_CURRENT_USER } from './database.js'
 import Colors from './colors.js'
 import { CHATROOM_PRIVACY_LEVEL } from './contracts/constants.js'
 import * as _ from '~/frontend/utils/giLodash.js'
-import * as EVENTS from '~/frontend/utils/events.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
 import './contracts/chatroom.js'
 import './contracts/group.js'
-import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -50,9 +47,29 @@ const initialState = {
 sbp('sbp/selectors/register', {
   // 'state' is the Vuex state object, and it can only store JSON-like data
   'state/vuex/state': () => store.state,
+  'state/vuex/replace': (state) => store.replaceState(state),
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
-  'state/vuex/dispatch': (...args) => store.dispatch(...args),
-  'state/vuex/getters': () => store.getters
+  'state/vuex/getters': () => store.getters,
+  'state/vuex/postUpgradeVerification': function (state: Object) {
+    // Note: Update this function when renaming a Vuex module, or implementing a new one,
+    // or adding new settings to the initialState above
+    if (!state.notifications) {
+      state.notifications = []
+    }
+    if (!state.currentChatRoomIDs) {
+      state.currentChatRoomIDs = {}
+    }
+  },
+  'state/vuex/save': async function () {
+    const state = store.state
+    // IMPORTANT! DO NOT CALL VUEX commit() in here in any way shape or form!
+    //            Doing so will cause an infinite loop because of store.subscribe below!
+    if (state.loggedIn) {
+      state.notifications = applyStorageRules(state.notifications || [])
+      // TODO: encrypt this
+      await sbp('gi.db/settings/save', state.loggedIn.username, state)
+    }
+  }
 })
 
 // Mutations must be synchronous! Never call these directly, instead use commit()
@@ -109,7 +126,8 @@ const mutations = {
     } else {
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
     }
-  }
+  },
+  updateVuexExtensionState () {}
 }
 
 // https://vuex.vuejs.org/en/getters.html
@@ -138,15 +156,19 @@ const getters = {
   // library, we can simply import them here, while excluding the getter for
   // `currentGroupState`, and redefining it here based on the Vuex rootState.
   ..._.omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
+  ..._.omit(sbp('gi.contracts/identity/getters'), ['currentIdentityState']),
   ..._.omit(sbp('gi.contracts/chatroom/getters'), ['currentChatRoomState']),
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
+  },
+  currentIdentityState (state) {
+    return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
   },
   currentChatRoomState (state, getters) {
     return state[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
   },
   mailboxContract (state, getters) {
-    const contract = getters.ourUserIdentityContract
+    const contract = getters.currentIdentityState
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
   },
   mailboxMessages (state, getters) {
@@ -164,15 +186,11 @@ const getters = {
   },
   ourUserDisplayName (state, getters) {
     // TODO - refactor Profile and Welcome and any other component that needs this
-    const userContract = getters.ourUserIdentityContract || {}
+    const userContract = getters.currentIdentityState || {}
     return (userContract.attributes && userContract.attributes.displayName) || getters.ourUsername
   },
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
-  },
-  // Logged In user's identity contract
-  ourUserIdentityContract (state) {
-    return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
   },
   // NOTE: since this getter is written using `getters.ourUsername`, which is based
   //       on vuexState.loggedIn (a user preference), we cannot use this getter
@@ -483,113 +501,31 @@ const getters = {
   }
 }
 
-// TODO: convert all these to SBP... and/or call dispatch through SBP only!
-const actions = {
-  // TODO: Move this into controller/actions/identity? See #804
-  async login (
-    { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
-    user: Object
-  ) {
-    const settings = await sbp('gi.db/settings/load', user.username)
-    // NOTE: login can be called when no settings are saved (e.g. from Signup.vue)
-    if (settings) {
-      // The retrieved local data might need to be completed in case it was originally saved
-      // under an older version of the app where fewer/other Vuex modules were implemented.
-      postUpgradeVerification(settings)
-      console.debug('loadSettings:', settings)
-      store.replaceState(settings)
-      captureLogsStart(user.username)
-      sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
-      // This may seem unintuitive to use the store.state from the global store object
-      // but the state object in scope is a copy that becomes stale if something modifies it
-      // like an outside dispatch
-      const contracts = store.state.contracts
-      // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
-      //            loading the website instead of stalling out.
-      sbp('chelonia/contract/sync', Object.keys(contracts))
-      // it's insane, and I'm not sure how this can happen, but it did... and
-      // the following steps actually fixed it...
-      // TODO: figure out what happened and prevent it from happening again
-      //       maybe move this recovery stuff to a recovery page and redirect
-      //       us there instead of doing it here.
-      // TODO: fetch events from localStorage instead of server if we have them
-      const currentGroupId = store.state.currentGroupId
-      if (currentGroupId && !contracts[currentGroupId]) {
-        console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
-        sbp('chelonia/contract/sync', currentGroupId) // again, make sure not to use 'await'
-      }
-      // TODO: resync for the chatroom contract, because current chatroom contract id could be what the user is not part of
-      if (!contracts[user.identityContractID]) {
-        console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
-        sbp('chelonia/contract/sync', user.identityContractID)
-      }
-    } else {
-      captureLogsStart(user.username)
-    }
-    await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
-    commit('login', user)
-    Vue.nextTick(() => sbp('okTurtles.events/emit', EVENTS.LOGIN, user))
-  },
-  // TODO: Move this into controller/actions/identity? See #804
-  async logout (
-    { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object}
-  ) {
-    debouncedSave.clear()
-    const username = state.loggedIn.username
-    await dispatch('saveSettings')
-    await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
-    await sbp('chelonia/contract/remove', Object.keys(state.contracts))
-    commit('logout')
-    Vue.nextTick(() => {
-      sbp('okTurtles.events/emit', EVENTS.LOGOUT)
-      captureLogsPause({
-        // Let's clear all stored logs to prevent someone else
-        // accessing sensitve data after the user logs out.
-        wipeOut: true,
-        username
-      })
-    })
-  },
-  // persisting the state
-  async saveSettings (
-    { state }: { state: Object}
-  ) {
-    if (state.loggedIn) {
-      let stateToSave = state
-      if (!state.notifications) {
-        console.warn('saveSettings: No `state.notifications`')
-      } else {
-        stateToSave = { ...state, notifications: applyStorageRules(state.notifications) }
-      }
-      // TODO: encrypt this
-      await sbp('gi.db/settings/save', state.loggedIn.username, stateToSave)
-    }
-  }
-}
-
-// Note: Update this function when renaming a Vuex module or implementing a new one (except contracts).
-const postUpgradeVerification = (settings: Object) => {
-  if (!settings.notifications) {
-    settings.notifications = []
-  }
-  if (!settings.currentChatRoomIDs) {
-    settings.currentChatRoomIDs = {}
-  }
-}
-
 const store: any = new Vuex.Store({
   state: _.cloneDeep(initialState),
   mutations,
   getters,
-  actions,
   modules: {
     notifications: notificationModule
   },
   strict: process.env.VUEX_STRICT === 'true'
 })
-const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)
+
+// save the state each time it's modified, but debounce it to avoid saving too frequently
+const debouncedSave = _.debounce(() => sbp('state/vuex/save'), 500)
 store.subscribe(debouncedSave) // for e.g saving notifications that are markedAsRead
 // since Chelonia updates do not pass through calls to 'commit', also save upon EVENT_HANDLED
 sbp('okTurtles.events/on', EVENT_HANDLED, debouncedSave)
+// logout will call 'state/vuex/save', so we clear any debounced calls to it before it gets run
+sbp('sbp/filters/selector/add', 'gi.actions/identity/logout', function () {
+  debouncedSave.clear()
+})
+// Since Chelonia directly modifies contract state without using 'commit', we
+// need this hack to tell the vuex extension that it needs to refresh the state
+if (process.env.NODE_ENV === 'development') {
+  sbp('okTurtles.events/on', EVENT_HANDLED, _.debounce(() => {
+    store.commit('updateVuexExtensionState')
+  }, 500))
+}
 
 export default store

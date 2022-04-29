@@ -65,6 +65,10 @@ async function startApp () {
     })
   }
 
+  function contractName (contractID: string): string {
+    return sbp('state/vuex/state').contracts[contractID]?.type || contractID
+  }
+
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
   function notificationError (activity: string) {
@@ -79,7 +83,7 @@ async function startApp () {
           activity,
           action: action || opType,
           who: meta?.username || 'TODO: signing keyID',
-          contract: sbp('state/vuex/state').contracts[contractID]?.type || contractID,
+          contract: contractName(contractID),
           errMsg: e.message || '?'
         })
       })
@@ -133,28 +137,19 @@ async function startApp () {
     // must create the connection before we call login
     sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
     await sbp('translations/init', navigator.language)
-
-    // TODO: move this into gi.actions/identity/login or something
     // NOTE: important to do this before setting up Vue.js because a lot of that relies
     //       on the router stuff which has guards that expect the contracts to be loaded
     const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
-    if (username) {
-      const identityContractID = await sbp('namespace/lookup', username)
-      if (identityContractID) {
-        await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
-      } else {
-        await sbp('state/vuex/dispatch', 'logout')
-        console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-        // TODO: do not delete the username like this! handle this better!
-        //       because of how await works, this exception handler can be triggered
-        //       even by random errors from Vue.js, example:
-        //
-        //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
-        //         memberUsernames state.js:231
-        //
-        //       Which doesn't mean that the lookup actually failed!
-        await sbp('gi.db/settings/delete', username)
+    try {
+      if (username) {
+        await sbp('gi.actions/identity/login', { username })
       }
+    } catch (e) {
+      console.error(`caught ${e.name} while logging in: ${e.message}`, e)
+      await sbp('gi.actions/identity/logout')
+      console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+      // TODO: handle this better
+      await sbp('gi.db/settings/delete', username)
     }
   } catch (e) {
     const errMsg = `Fatal error${e.name} initializing Group Income: ${e.message}\n\nPlease report this bug here: ${ALLOWED_URLS.ISSUE_PAGE}`
@@ -192,7 +187,9 @@ async function startApp () {
       // display a self-clearing banner that shows up after we've taken 2 or more seconds
       // to sync a contract.
       const debouncedSyncBanner = bannerGeneral.debouncedShow({
-        message: L('Loading events from server...'),
+        message: (cID) => {
+          return L("Loading events for '{contract}' from server...", { contract: contractName(cID) })
+        },
         icon: 'wifi',
         seconds: 2,
         clearWhen: () => !this.ephemeral.syncs.length
@@ -201,7 +198,7 @@ async function startApp () {
         // Make it possible for Cypress to wait for contracts to finish syncing.
         if (isSyncing) {
           this.ephemeral.syncs.push(contractID)
-          debouncedSyncBanner()
+          debouncedSyncBanner(contractID)
         } else {
           this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
         }

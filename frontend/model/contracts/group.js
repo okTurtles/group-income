@@ -689,7 +689,9 @@ sbp('chelonia/defineContract', {
           // TODO - #828 remove other group members contracts if applicable
         } else {
           // TODO - #828 remove the member contract if applicable.
-          // sbp('chelonia/contract/removeImmediately', getters.groupProfile(data.member).contractID)
+          // problem is, if they're in another group we're also a part of, or if we
+          // have a DM with them, we don't want to do this. may need to use manual reference counting
+          // sbp('chelonia/contract/release', getters.groupProfile(data.member).contractID)
         }
         // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }

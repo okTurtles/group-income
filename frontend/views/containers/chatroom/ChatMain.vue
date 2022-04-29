@@ -148,7 +148,7 @@ export default ({
       'chatRoomSettings',
       'chatRoomLatestMessages',
       'ourIdentityContractId',
-      'ourUserIdentityContract',
+      'currentIdentityState',
       'isJoinedChatRoom'
     ]),
     bodyStyles () {
@@ -164,7 +164,7 @@ export default ({
     },
     currentUserAttr () {
       return {
-        ...this.ourUserIdentityContract.attributes,
+        ...this.currentIdentityState.attributes,
         id: this.ourIdentityContractId
       }
     }

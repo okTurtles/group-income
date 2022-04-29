@@ -71,10 +71,8 @@ export default ({
         this.$refs.formMsg.clean()
 
         await sbp('gi.actions/identity/login', {
-          data: {
-            username: this.form.username,
-            password: this.form.password
-          }
+          username: this.form.username,
+          password: this.form.password
         })
         this.$emit('submit-succeeded')
       } catch (e) {

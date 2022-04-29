@@ -4,11 +4,19 @@ import sbp from '@sbp/sbp'
 import Vue from 'vue'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import '~/shared/domains/chelonia/chelonia.js'
-import { objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
+import { objectOf, objectMaybeOf, arrayOf, string, object, mapOf } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
+  getters: {
+    currentIdentityState (state) {
+      return state
+    },
+    loginState (state, getters) {
+      return getters.currentIdentityState.loginState
+    }
+  },
   actions: {
     'gi.contracts/identity': {
       validate: objectMaybeOf({
@@ -50,6 +58,17 @@ sbp('chelonia/defineContract', {
         for (const key in data) {
           Vue.set(state.settings, key, data[key])
         }
+      }
+    },
+    'gi.contracts/identity/setLoginState': {
+      validate: objectOf({
+        currentGroupId: string,
+        currentChatRoomIDs: mapOf(string, string),
+        groupIds: arrayOf(string),
+        chatroomIds: arrayOf(string)
+      }),
+      process ({ data }, { state }) {
+        Vue.set(state, 'loginState', data)
       }
     }
   }

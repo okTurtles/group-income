@@ -216,6 +216,7 @@ sbp('sbp/selectors/register', {
     }
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
+  // TODO: add an optional parameter to "retain" the contract (see #828)
   'chelonia/contract/sync': function (contractIDs: string | string[]): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
@@ -229,6 +230,7 @@ sbp('sbp/selectors/register', {
       ])
     }))
   },
+  // TODO: implement 'chelonia/contract/release' (see #828)
   // safer version of removeImmediately that waits to finish processing events for contractIDs
   'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs

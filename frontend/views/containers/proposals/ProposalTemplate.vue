@@ -150,7 +150,7 @@ export default ({
         },
         [RULE_PERCENTAGE]: () => {
           return L('Your proposal will pass if {b_}{value} out of {total} members{_b} agree.', {
-            value: getCountOutOfMembers(this.groupMembersCount, this.threshold),
+            value: this.fixedCount(),
             total: this.groupMembersCount,
             ...LTags('b')
           })
@@ -168,7 +168,7 @@ export default ({
         },
         [RULE_PERCENTAGE]: () => {
           return L('You need {b_}{n} yes votes{_b} for your proposal to be accepted.', {
-            n: getCountOutOfMembers(this.groupMembersCount, this.threshold),
+            n: this.fixedCount(),
             ...LTags('b')
           })
         }
@@ -201,6 +201,13 @@ export default ({
       } else {
         this.close()
       }
+    },
+    fixedCount () {
+      let n = getCountOutOfMembers(this.groupMembersCount, this.threshold)
+      if (this.variant === 'removeMember' && n === this.groupMembersCount) {
+        n -= 1 // don't include the member to-be-removed in the count
+      }
+      return n
     },
     async submit () {
       const form = this.groupShouldPropose ? { reason: this.$refs.reason.value } : null

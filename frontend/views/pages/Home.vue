@@ -89,7 +89,7 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
     logout () {
-      sbp('state/vuex/dispatch', 'logout')
+      sbp('gi.actions/identity/logout')
     }
   }
 }: Object)
