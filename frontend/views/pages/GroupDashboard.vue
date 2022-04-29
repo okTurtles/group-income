@@ -64,8 +64,7 @@ export default ({
       return Object.keys(this.currentGroupState.proposals).length > 0
     },
     hasMemberRequest () {
-      // return Object.keys(this.currentGroupState.requests).length > 0
-      return true
+      return this.requests
     }
   },
   components: {

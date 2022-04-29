@@ -122,7 +122,7 @@ export default {
       'ourUserIdentityContract'
     ]),
     hasMemberRequest () {
-      return Object.keys(this.currentGroupState.request).length > 0
+      return this.request
     },
     requests () {
       if (this.requestsSorted) {
@@ -143,6 +143,9 @@ export default {
       return true
     },
     rejectAll () {
+      return true
+    },
+    undo () {
       return true
     }
   }
