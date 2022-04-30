@@ -7,7 +7,6 @@ import { imageUpload } from '@utils/image.js'
 import { pickWhere, difference } from '@utils/giLodash.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-import { objectOf, arrayOf, literalOf } from '~/frontend/utils/flowTyper.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import './mailbox.js'
 
@@ -22,15 +21,11 @@ function generatedLoginState () {
   }
 }
 
-function diffLoginStates (s1: Object, s2: Object) {
-  try {
-    objectOf({
-      groupIds: arrayOf(s1.groupIds.map(v => literalOf(v)))
-    })(s2)
-    return false
-  } catch (e) {
-    return true
-  }
+function diffLoginStates (s1: ?Object, s2: ?Object) {
+  if (typeof s1 !== 'object' || typeof s2 !== 'object') return true
+  const [g1, g2] = [(s1: Object).groupIds, (s2: Object).groupIds]
+  if (!g1 || !g2) return true
+  return (g1.length > g2.length ? difference(g1, g2) : difference(g2, g1)).length > 0
 }
 
 export default (sbp('sbp/selectors/register', {
@@ -116,7 +111,7 @@ export default (sbp('sbp/selectors/register', {
     const contractLoginState = getters.loginState
     if (contractID && diffLoginStates(ourLoginState, contractLoginState)) {
       return sbp('gi.contracts/identity/setLoginState', {
-        contractID, data: generatedLoginState()
+        contractID, data: ourLoginState
       })
     }
   },
@@ -154,7 +149,13 @@ export default (sbp('sbp/selectors/register', {
         if (!state.currentGroupId) {
           const { contracts } = state
           const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
-          gId && sbp('gi.actions/group/switch', gId)
+          if (gId) {
+            sbp('gi.actions/group/switch', gId)
+            const router = sbp('controller/router')
+            if (router.currentRoute.path === '/') {
+              router.push({ path: '/dashboard' }).catch(e => {})
+            }
+          }
         }
       }
     } catch (e) {

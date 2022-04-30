@@ -169,6 +169,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/join': async function (params: $Exact<GIActionParams>) {
     try {
       sbp('okTurtles.data/set', 'JOINING_GROUP', true)
+      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
       // post acceptance event to the group contract, unless this is being called
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {
@@ -206,8 +207,10 @@ export default (sbp('sbp/selectors/register', {
         saveLoginState('joining', params.contractID)
       }
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
+      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
     } catch (e) {
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
+      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     }
