@@ -59,6 +59,7 @@ export default ({
 
   .buttons {
     justify-content: center;
+
     button:not(:last-child) {
       margin-right: 1.375rem;
     }
