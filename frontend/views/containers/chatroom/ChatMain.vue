@@ -275,7 +275,7 @@ export default ({
         if (alreadyAdded >= 0) {
           emoticons[emoticon].splice(alreadyAdded, 1)
           if (emoticons[emoticon].length === 0) {
-            delete this.messages[emoticon]
+            delete this.messages[index].emoticons[emoticon]
             if (Object.keys(emoticons).length === 0) {
               delete this.messages[index].emoticons
               return false
