@@ -235,7 +235,7 @@ sbp('sbp/selectors/register', {
       return sbp('okTurtles.eventQueue/queueEvent', contractID, [
         'chelonia/private/in/syncContract', contractID
       ]).catch((err) => {
-        console.err(`[chelonia] failed to sync ${contractID}:`, err)
+        console.error(`[chelonia] failed to sync ${contractID}:`, err)
         throw err // re-throw the error
       })
     }))
