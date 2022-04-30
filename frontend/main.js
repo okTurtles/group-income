@@ -57,11 +57,15 @@ async function startApp () {
       'chelonia/db/logHEAD',
       'chelonia/db/set',
       'state/vuex/state',
-      'state/vuex/getters'
+      'state/vuex/getters',
+      'gi.db/settings/save'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selBlacklist[selector]) return
       console.debug(`[sbp] ${selector}`, data)
+    })
+    sbp('sbp/filters/selector/add', 'gi.db/settings/save', (domain, selector, data) => {
+      console.debug("[sbp] 'gi.db/settings/save'", data[0])
     })
   }
 
@@ -132,7 +136,20 @@ async function startApp () {
     // In development mode this makes the SBP API available in the devtools console.
     window.sbp = sbp
   }
-
+  // this is definitely very hacky, but we put it here since CONTRACT_IS_SYNCING can
+  // be called before the main App component is loaded (just after we call login)
+  // and we don't yet have access to the component's 'this'
+  const initialSyncs = { ephemeral: { debouncedSyncBanner (c) {}, syncs: [] } }
+  const syncFn = function (contractID, isSyncing) {
+    // Make it possible for Cypress to wait for contracts to finish syncing.
+    if (isSyncing) {
+      this.ephemeral.syncs.push(contractID)
+      this.ephemeral.debouncedSyncBanner(contractID)
+    } else if (this.ephemeral.syncs.includes(contractID)) {
+      this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
+    }
+  }
+  const initialSyncFn = syncFn.bind(initialSyncs)
   try {
     // must create the connection before we call login
     sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
@@ -142,6 +159,7 @@ async function startApp () {
     const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
     try {
       if (username) {
+        sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, initialSyncFn)
         await sbp('gi.actions/identity/login', { username })
       }
     } catch (e) {
@@ -173,11 +191,17 @@ async function startApp () {
           syncs: [],
           // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
           finishedLogin: 'no',
+          debouncedSyncBanner: null,
           isCorrupted: false // TODO #761
         }
       }
     },
     mounted () {
+      if (sbp('okTurtles.data/get', 'BANNER')) {
+        // mounted gets called each time we logout, so return immediately if we've already initialized
+        return
+      }
+
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
@@ -186,7 +210,7 @@ async function startApp () {
       sbp('okTurtles.data/set', 'BANNER', bannerGeneral) // make it globally accessible
       // display a self-clearing banner that shows up after we've taken 2 or more seconds
       // to sync a contract.
-      const debouncedSyncBanner = bannerGeneral.debouncedShow({
+      this.ephemeral.debouncedSyncBanner = bannerGeneral.debouncedShow({
         message: (cID) => {
           return L("Loading events for '{contract}' from server...", { contract: contractName(cID) })
         },
@@ -194,15 +218,12 @@ async function startApp () {
         seconds: 2,
         clearWhen: () => !this.ephemeral.syncs.length
       })
-      sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
-        // Make it possible for Cypress to wait for contracts to finish syncing.
-        if (isSyncing) {
-          this.ephemeral.syncs.push(contractID)
-          debouncedSyncBanner(contractID)
-        } else {
-          this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
-        }
-      })
+      this.ephemeral.syncs = initialSyncs.ephemeral.syncs
+      if (this.ephemeral.syncs.length) {
+        this.ephemeral.debouncedSyncBanner(this.ephemeral.syncs[0])
+      }
+      sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
+      sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGIN, () => {
         this.ephemeral.finishedLogin = 'yes'
       })

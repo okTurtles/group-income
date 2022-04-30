@@ -215,6 +215,13 @@ sbp('sbp/selectors/register', {
       this.config.hooks.pubsubError?.(e, client)
     }
   },
+  // resolves when all pending actions for these contractID(s) finish
+  'chelonia/contract/wait': function (contractIDs: string | string[]): Promise<*> {
+    const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+    return Promise.all(listOfIds.map(cID => {
+      return sbp('okTurtles.eventQueue/queueEvent', cID, ['chelonia/private/noop'])
+    }))
+  },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
   // TODO: add an optional parameter to "retain" the contract (see #828)
   'chelonia/contract/sync': function (contractIDs: string | string[]): Promise<*> {
@@ -227,7 +234,10 @@ sbp('sbp/selectors/register', {
       // This prevents handleEvent getting called with the wrong previousHEAD for an event.
       return sbp('okTurtles.eventQueue/queueEvent', contractID, [
         'chelonia/private/in/syncContract', contractID
-      ])
+      ]).catch((err) => {
+        console.err(`[chelonia] failed to sync ${contractID}:`, err)
+        throw err // re-throw the error
+      })
     }))
   },
   // TODO: implement 'chelonia/contract/release' (see #828)

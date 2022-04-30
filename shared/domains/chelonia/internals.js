@@ -16,7 +16,9 @@ sbp('sbp/selectors/register', {
   'chelonia/private/state': function () {
     return this.state
   },
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 2 } = {}) {
+  // used by, e.g. 'chelonia/contract/wait'
+  'chelonia/private/noop': function () {},
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 3 } = {}) {
     const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
@@ -147,10 +149,10 @@ sbp('sbp/selectors/register', {
         state.pending.push(contractID)
       }
     }
+    sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     try {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
-        sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
         // TODO: fetch events from localStorage instead of server if we have them
         const events = await sbp('chelonia/private/out/eventsSince', contractID, recent || contractID)
         // remove the first element in cases where we are not getting the contract for the first time

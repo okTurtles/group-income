@@ -683,9 +683,17 @@ sbp('chelonia/defineContract', {
               cID !== contractID && rootState[cID].settings) || null
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
-          sbp('chelonia/contract/remove', contractID)
-          sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' }).catch(console.warn)
-
+          // we actually can't await on this in here, because it will
+          // cause a deadlock, since Chelonia processes this sideEffect
+          // on the eventqueue for this contractID, and /remove also
+          // uses that same eventqueue
+          sbp('chelonia/contract/remove', contractID).then(function () {
+            const router = sbp('controller/router')
+            sbp('gi.actions/identity/saveOurLoginState') // prevent ourselves from rejoining upon login
+            if (router.currentRoute.path !== '/join') {
+              router.push({ path: groupIdToSwitch ? '/dashboard' : '/' }).catch(console.warn)
+            }
+          })
           // TODO - #828 remove other group members contracts if applicable
         } else {
           // TODO - #828 remove the member contract if applicable.

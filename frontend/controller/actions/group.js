@@ -1,7 +1,6 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import Vue from 'vue'
 import { createInvite } from '@model/contracts/group.js'
 import {
   INVITE_INITIAL_CREATOR,
@@ -169,6 +168,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/join': async function (params: $Exact<GIActionParams>) {
     try {
+      sbp('okTurtles.data/set', 'JOINING_GROUP', true)
       // post acceptance event to the group contract, unless this is being called
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {
@@ -205,7 +205,9 @@ export default (sbp('sbp/selectors/register', {
       if (!params.options?.skipInviteAccept) {
         saveLoginState('joining', params.contractID)
       }
+      sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     } catch (e) {
+      sbp('okTurtles.data/set', 'JOINING_GROUP', false)
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     }
@@ -217,12 +219,6 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
-    Vue.nextTick(() => {
-      const router = sbp('controller/router')
-      if (router.currentRoute.path === '/') {
-        router.push({ path: '/dashboard' }).catch(e => {})
-      }
-    })
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/chatroom/create', {

@@ -107,6 +107,9 @@ export async function leaveChatRoom ({ contractID }: {
         .catch(logExceptNavigationDuplicated)
     }
   }
+  // NOTE: make sure *not* to await on this, since that can cause
+  //       a potential deadlock. See same warning in sideEffect for
+  //       'gi.contracts/group/removeMember'
   sbp('chelonia/contract/remove', contractID)
 }
 

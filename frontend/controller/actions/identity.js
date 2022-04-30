@@ -22,6 +22,17 @@ function generatedLoginState () {
   }
 }
 
+function diffLoginStates (s1: Object, s2: Object) {
+  try {
+    objectOf({
+      groupIds: arrayOf(s1.groupIds.map(v => literalOf(v)))
+    })(s2)
+    return false
+  } catch (e) {
+    return true
+  }
+}
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
     data: { username, email, password, picture },
@@ -99,8 +110,11 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/identity/saveOurLoginState': function () {
-    const contractID = sbp('state/vuex/getters').ourIdentityContractId
-    if (contractID) {
+    const getters = sbp('state/vuex/getters')
+    const contractID = getters.ourIdentityContractId
+    const ourLoginState = generatedLoginState()
+    const contractLoginState = getters.loginState
+    if (contractID && diffLoginStates(ourLoginState, contractLoginState)) {
       return sbp('gi.contracts/identity/setLoginState', {
         contractID, data: generatedLoginState()
       })
@@ -115,28 +129,32 @@ export default (sbp('sbp/selectors/register', {
       if (!contractLoginState) {
         console.info('no login state detected in identity contract, will set it')
         await sbp('gi.actions/identity/saveOurLoginState')
-      } else {
-        try {
-          objectOf({
-            groupIds: arrayOf(ourLoginState.groupIds.map(v => literalOf(v)))
-          })(contractLoginState)
-        } catch (e) {
-          // there's a difference upon login, meaning we need to update ourselves to it
-          // mainly we are only interested if the contractLoginState contains groupIds
-          // that we don't have, and if so, join those groups
-          const groupsJoined = difference(contractLoginState.groupIds, ourLoginState.groupIds)
-          const groupsLeft = difference(ourLoginState.groupIds, contractLoginState.groupIds)
-          console.info('synchronizing login state:', { groupsJoined, groupsLeft })
-          for (const contractID of groupsJoined) {
-            await sbp('gi.actions/group/join', {
-              contractID, options: { skipInviteAccept: true }
-            })
+      } else if (diffLoginStates(ourLoginState, contractLoginState)) {
+        // we need to update ourselves to it
+        // mainly we are only interested if the contractLoginState contains groupIds
+        // that we don't have, and if so, join those groups
+        const groupsJoined = difference(contractLoginState.groupIds, ourLoginState.groupIds)
+        console.info('synchronizing login state:', { groupsJoined })
+        for (const contractID of groupsJoined) {
+          try {
+            await sbp('gi.actions/group/join', { contractID, options: { skipInviteAccept: true } })
+          } catch (e) {
+            console.error(`updateLoginStateUponLogin: ${e.name} attempting to join group ${contractID}`, e)
+            if (state.contracts[contractID] || state[contractID]) {
+              console.warn(`updateLoginStateUponLogin: removing ${contractID} b/c of failed join`)
+              try {
+                await sbp('chelonia/contract/remove', contractID)
+              } catch (e2) {
+                console.error(`failed to remove ${contractID} too!`, e2)
+              }
+            }
           }
-          // AFAIK the leaving part should happen automatically on our side because
-          // we'll sync the removeOurselves message
-          if (!state.currentGroupId && groupsJoined.length > 0) {
-            sbp('gi.actions/group/switch', groupsJoined[0])
-          }
+        }
+        // note: leaving groups will happen when we sync the removeOurselves message
+        if (!state.currentGroupId) {
+          const { contracts } = state
+          const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
+          gId && sbp('gi.actions/group/switch', gId)
         }
       }
     } catch (e) {
@@ -167,18 +185,25 @@ export default (sbp('sbp/selectors/register', {
       if (!contractIDs.includes(identityContractID)) {
         contractIDs.push(identityContractID)
       }
-      // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
-      //            loading the website instead of stalling out.
-      sbp('chelonia/contract/sync', contractIDs).then(function () {
-        sbp('gi.actions/identity/updateLoginStateUponLogin')
-      })
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, username)
       sbp('state/vuex/commit', 'login', { username, identityContractID })
-      sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
+      // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
+      //            loading the website instead of stalling out.
+      sbp('chelonia/contract/sync', contractIDs).then(async function () {
+        // contract sync might've triggered an async call to /remove, so wait before proceeding
+        await sbp('chelonia/contract/wait', contractIDs)
+        await sbp('gi.actions/identity/updateLoginStateUponLogin')
+        // will only update it if it's different
+        await sbp('gi.actions/identity/saveOurLoginState')
+        sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
+      })
       return identityContractID
     } catch (e) {
       console.error('gi.actions/identity/login failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to login: {reportError}', LError(e)))
+      const humanErr = L('Failed to login: {reportError}', LError(e))
+      alert(humanErr)
+      sbp('gi.actions/identity/logout')
+      throw new GIErrorUIRuntimeError(humanErr)
     }
   },
   'gi.actions/identity/signupAndLogin': async function ({ username, email, password }) {
@@ -188,16 +213,16 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/identity/logout': async function () {
     const state = sbp('state/vuex/state')
-    await sbp('state/vuex/save')
-    await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
-    await sbp('chelonia/contract/remove', Object.keys(state.contracts))
+    try {
+      await sbp('state/vuex/save')
+      await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
+      await sbp('chelonia/contract/remove', Object.keys(state.contracts))
+    } catch (e) {
+      console.error(`${e.name} during logout: ${e.message}`, e)
+    }
     sbp('state/vuex/commit', 'logout')
     sbp('okTurtles.events/emit', LOGOUT)
-    captureLogsPause({
-      // Let's clear all stored logs to prevent someone else
-      // accessing sensitve data after the user logs out.
-      wipeOut: true
-    })
+    captureLogsPause({ wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.')),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
