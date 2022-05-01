@@ -3,8 +3,6 @@
 const assert = require('assert')
 const { copyFile } = require('fs/promises')
 
-const fetch = require('node-fetch')
-
 describe('avatar file serving', function () {
   const apiURL = process.env.API_URL
   const hash = '21XWnNX5exusmJoJNWNNqjhWPqxGURryWbkUhYVsGT5NFtSGKs'
