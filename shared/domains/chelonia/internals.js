@@ -143,7 +143,7 @@ sbp('sbp/selectors/register', {
       const authorizedKeys = opT === GIMessage.OP_CONTRACT ? ((opV: any): GIOpContract).keys : state._vm.authorizedKeys
       const signingKey = authorizedKeys?.find((k) => k.id === signature.keyId && Array.isArray(k.perm) && k.perm.includes(opT))
 
-      if (!si gningKey) {
+      if (!signingKey) {
         throw new Error('No matching signing key was defined')
       }
 
