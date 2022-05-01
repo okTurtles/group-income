@@ -8,6 +8,7 @@ import { b64ToStr } from '~/shared/functions.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
 import { ChelErrorDBBadPreviousHEAD, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
+import { decrypt, verifySignature } from '@utils/crypto.js'
 
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
@@ -16,7 +17,7 @@ sbp('sbp/selectors/register', {
   'chelonia/private/state': function () {
     return this.state
   },
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 2 } = {}) {
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 2 } = {}, signatureFn?: Function) {
     const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
@@ -46,7 +47,7 @@ sbp('sbp/selectors/register', {
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
           const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
-          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op())
+          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op(), signatureFn)
         }
       } else {
         const message = (await r.json())?.message
@@ -74,17 +75,37 @@ sbp('sbp/selectors/register', {
     const hash = message.hash()
     const contractID = message.contractID()
     const config = this.config
+    const contracts = this.contracts
+    const signature = message.signature()
+    const signedPayload = message.signedPayload()
+    const env = this.env
+    const self = this
     if (!state._vm) state._vm = {}
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
-        // TODO: shouldn't each contract have its own set of authorized keys?
-        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
-        // TODO: we probably want to be pushing the de-JSON-ified key here
-        state._vm.authorizedKeys.push({ key: v.keyJSON, context: 'owner' })
+        const keys = { ...env.additionalKeys, ...state._volatile?.keys }
+        const { type } = v
+        if (!contracts[type]) {
+          throw new Error(`chelonia: contract not recognized: '${type}'`)
+        }
+        state._vm.authorizedKeys = v.keys
+
+        for (const key of v.keys) {
+          if (key.meta?.private) {
+            if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
+              if (!state._volatile) state._volatile = { keys: {} }
+              try {
+                state._volatile.keys[key.id] = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
+              } catch (e) {
+                console.error('Decryption error', e)
+              }
+            }
+          }
+        }
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing) {
-          const decrypted = message.decryptedValue(config.decryptFn)
+          const decrypted = config.decryptFn.call(self, message.opValue(), state)
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
         }
       },
@@ -115,6 +136,20 @@ sbp('sbp/selectors/register', {
     if (config.preOp) {
       processOp = config.preOp(message, state) !== false && processOp
     }
+
+    // Signature verification
+    // TODO: Temporary. Skip verifying default signatures
+    if (signature.type !== 'default') {
+      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? ((opV: any): GIOpContract).keys : state._vm.authorizedKeys
+      const signingKey = authorizedKeys?.find((k) => k.id === signature.keyId && Array.isArray(k.perm) && k.perm.includes(opT))
+
+      if (!si gningKey) {
+        throw new Error('No matching signing key was defined')
+      }
+
+      verifySignature(signingKey.data, signedPayload, signature.data)
+    }
+
     if (config[`preOp_${opT}`]) {
       processOp = config[`preOp_${opT}`](message, state) !== false && processOp
     }
@@ -216,7 +251,7 @@ sbp('sbp/selectors/register', {
       if (!processingErrored) {
         try {
           if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
-            await handleEvent.processSideEffects.call(this, message)
+            await handleEvent.processSideEffects.call(this, message, state[contractID])
           }
           postHandleEvent && await postHandleEvent(message)
           sbp('okTurtles.events/emit', hash, contractID, message)
@@ -287,11 +322,11 @@ const handleEvent = {
     await Promise.resolve() // TODO: load any unloaded contract code
     sbp('chelonia/private/in/processMessage', message, state[contractID])
   },
-  async processSideEffects (message: GIMessage) {
+  async processSideEffects (message: GIMessage, state: Object) {
     if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) {
       const contractID = message.contractID()
       const hash = message.hash()
-      const { action, data, meta } = message.decryptedValue()
+      const { action, data, meta } = this.config.decryptFn.call(this, message.opValue(), state)
       const mutation = { data, meta, hash, contractID }
       await sbp(`${action}/sideEffect`, mutation)
     }

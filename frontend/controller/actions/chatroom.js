@@ -11,6 +11,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       return await sbp('chelonia/out/registerContract', {
         ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
+        keys: [],
         contractName: 'gi.contracts/chatroom'
       })
     } catch (e) {

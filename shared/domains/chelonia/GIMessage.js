@@ -5,16 +5,18 @@
 import { blake32Hash } from '~/shared/functions.js'
 import type { JSONType, JSONObject } from '~/shared/types.js'
 
-export type GIKeyType = ''
+export type GIKeyType = 'edwards25519sha512batch' | 'curve25519xsalsa20poly1305' | 'xsalsa20poly1305'
 
 export type GIKey = {
+  id: string;
   type: GIKeyType;
-  data: Object; // based on GIKeyType this will change
+  data: string;
+  perm: string[];
   meta: Object;
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
-export type GIOpContract = { type: string; keyJSON: string, parentContract?: string }
+export type GIOpContract = { type: string; keys: GIKey[], parentContract?: string }
 export type GIOpActionEncrypted = string // encrypted version of GIOpActionUnencrypted
 export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
 export type GIOpKeyAdd = { keyHash: string, keyJSON: ?string, context: string }
@@ -28,7 +30,10 @@ export class GIMessage {
   // flow type annotations to make flow happy
   _decrypted: GIOpValue
   _mapping: Object
+  _head: Object
   _message: Object
+  _signature: string
+  _signedPayload: string
 
   static OP_CONTRACT: 'c' = 'c'
   static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
@@ -38,6 +43,9 @@ export class GIMessage {
   static OP_PROTOCOL_UPGRADE: 'pu' = 'pu'
   static OP_PROP_SET: 'ps' = 'ps' // set a public key/value pair
   static OP_PROP_DEL: 'pd' = 'pd' // delete a public key/value pair
+  static OP_CONTRACT_AUTH: 'ca' = 'ca' // authorize a contract
+  static OP_CONTRACT_DEAUTH: 'cd' = 'cd' // deauthorize a contract
+  static OP_ATOMIC: 'at' = 'at' // atomic op
 
   // eslint-disable-next-line camelcase
   static createV1_0 (
@@ -46,44 +54,57 @@ export class GIMessage {
     op: GIOp,
     signatureFn?: Function = defaultSignatureFn
   ): this {
-    const message = {
+    const head = {
       version: '1.0.0',
       previousHEAD,
       contractID,
-      op,
-      // the nonce makes it difficult to predict message contents
-      // and makes it easier to prevent conflicts during development
-      nonce: Math.random()
+      op: op[0]
     }
+    console.log('createV1_0', { op, head })
+    const message = op[1]
     // NOTE: the JSON strings generated here must be preserved forever.
     //       do not ever regenerate this message using the contructor.
     //       instead store it using serialize() and restore it using
     //       deserialize().
+    const headJSON = JSON.stringify(head)
     const messageJSON = JSON.stringify(message)
+    const signedPayload = blake32Hash(`${blake32Hash(headJSON)}${blake32Hash(messageJSON)}`)
+    const signature = signatureFn(signedPayload)
     const value = JSON.stringify({
+      head: headJSON,
       message: messageJSON,
-      sig: signatureFn(messageJSON)
+      sig: signature
     })
     return new this({
       mapping: { key: blake32Hash(value), value },
-      message
+      head,
+      message,
+      signature,
+      signedPayload
     })
   }
 
   // TODO: we need signature verification upon decryption somewhere...
   static deserialize (value: string): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
+    const parsedValue = JSON.parse(value)
     return new this({
       mapping: { key: blake32Hash(value), value },
-      message: JSON.parse(JSON.parse(value).message)
+      head: JSON.parse(parsedValue.head),
+      message: JSON.parse(parsedValue.message),
+      signature: parsedValue.sig,
+      signedPayload: blake32Hash(`${blake32Hash(parsedValue.head)}${blake32Hash(parsedValue.message)}`)
     })
   }
 
-  constructor ({ mapping, message }: { mapping: Object, message: Object }) {
+  constructor ({ mapping, head, message, signature, signedPayload }: { mapping: Object, head: Object, message: Object, signature: string, signedPayload: string }) {
     this._mapping = mapping
+    this._head = head
     this._message = message
+    this._signature = signature
+    this._signedPayload = signedPayload
     // perform basic sanity check
-    const [type] = this.message().op
+    const type = this.opType()
     switch (type) {
       case GIMessage.OP_CONTRACT:
         if (!this.isFirstMessage()) throw new Error('OP_CONTRACT: must be first message')
@@ -107,13 +128,19 @@ export class GIMessage {
     return this._decrypted
   }
 
+  head (): Object { return this._head }
+
   message (): Object { return this._message }
 
-  op (): GIOp { return this.message().op }
+  op (): GIOp { return [this.head().op, this.message()] }
 
-  opType (): GIOpType { return this.op()[0] }
+  opType (): GIOpType { return this.head().op }
 
-  opValue (): GIOpValue { return this.op()[1] }
+  opValue (): GIOpValue { return this.message() }
+
+  signature (): Object { return this._signature }
+
+  signedPayload (): string { return this._signedPayload }
 
   description (): string {
     const type = this.opType()
@@ -132,9 +159,9 @@ export class GIMessage {
     return `${desc}|${this.hash()} of ${this.contractID()}>`
   }
 
-  isFirstMessage (): boolean { return !this.message().previousHEAD }
+  isFirstMessage (): boolean { return !this.head().previousHEAD }
 
-  contractID (): string { return this.message().contractID || this.hash() }
+  contractID (): string { return this.head().contractID || this.hash() }
 
   serialize (): string { return this._mapping.value }
 

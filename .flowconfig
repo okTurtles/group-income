@@ -11,7 +11,7 @@
 .*/frontend/assets/.*
 .*/frontend/controller/service-worker.js
 .*/frontend/utils/blockies.js
-.*/frontend/utils/crypto.js
+#.*/frontend/utils/crypto.js
 .*/frontend/utils/flowTyper.js
 .*/frontend/utils/vuexQueue.js
 .*/historical/.*

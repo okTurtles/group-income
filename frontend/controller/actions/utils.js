@@ -9,8 +9,12 @@ export function encryptedAction (action: string, humanError: string | Function):
   return {
     [action]: async function (params: GIActionParams) {
       try {
+        const state = await sbp('chelonia/latestContractState', params.contractID)
         return await sbp('chelonia/out/actionEncrypted', {
-          ...params, action: action.replace('gi.actions', 'gi.contracts')
+          signingKeyId: (state?._vm?.authorizedKeys?.find((k) => k.meta?.type === 'csk')?.id: ?string),
+          encryptionKeyId: (state?._vm?.authorizedKeys?.find((k) => k.meta?.type === 'cek')?.id: ?string),
+          ...params,
+          action: action.replace('gi.actions', 'gi.contracts')
         })
       } catch (e) {
         console.error(`${action} failed!`, e)

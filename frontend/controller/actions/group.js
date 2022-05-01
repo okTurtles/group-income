@@ -93,6 +93,7 @@ export default (sbp('sbp/selectors/register', {
       const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
         publishOptions,
+        keys: [],
         data: {
           invites: {
             [initialInvite.inviteSecret]: initialInvite
