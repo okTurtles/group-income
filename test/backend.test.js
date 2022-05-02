@@ -5,7 +5,6 @@ import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-// import * as _ from '~/frontend/utils/giLodash.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { blake32Hash } from '~/shared/functions.js'
 import proposals from '~/frontend/model/contracts/voting/proposals.js'
@@ -15,16 +14,16 @@ import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts
 import { INVITE_INITIAL_CREATOR } from '~/frontend/model/contracts/constants.js'
 import { createInvite } from '~/frontend/model/contracts/group.js'
 import '~/frontend/model/contracts/identity.js'
-// import '~/frontend/model/state.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
 
-global.fetch = require('node-fetch')
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
 global.WebSocket = require('ws')
 const should = require('should') // eslint-disable-line
-const FormData = require('form-data')
+
+// Remove this when dropping support for Node versions lower than v18.
+const Blob = require('buffer').Blob
 const fs = require('fs')
 const path = require('path')
 // const { PassThrough, Readable } = require('stream')
@@ -46,11 +45,14 @@ const { bold } = chalk
 
 const vuexState = {
   currentGroupId: null,
+  currentChatRoomIDs: {},
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: THEME_LIGHT,
   fontSize: 1,
+  increasedContrast: false,
+  reducedMotion: false,
   appLogsFilter: ['error', 'info', 'warn']
 }
 
@@ -326,14 +328,7 @@ describe('Full walkthrough', function () {
       const hash = blake32Hash(buffer)
       console.log(`hash for ${path.basename(filepath)}: ${hash}`)
       form.append('hash', hash)
-      form.append('data', buffer, {
-        filename: 'a file name hack' // hack to make sure the contentDisposition header is set
-        // otherwise the backend will treat 'data' as a string
-        // instead of a buffer for some reason, resulting in the
-        // wrong file hash.
-        // The filename is ignored by the backend so it doesn't
-        // matter what we call it.
-      })
+      form.append('data', new Blob([buffer]), path.basename(filepath))
       await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
         .then(handleFetchResult('text'))
         .then(r => should(r).equal(`/file/${hash}`))
