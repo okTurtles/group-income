@@ -74,3 +74,21 @@ A full-width Modal with just `transition` as wrapper. Note that this Modal has "
 ---
 
 Caught a mistake or want to contribute to the documentation? Edit this page on GitHub!
+
+### The `Prompt`
+To call a prompt with yes / no question we need to call sbp with this format:
+
+```js
+const boolYesOrNo = await sbp('gi.ui/prompt', {
+  question: L('Would you like fresh tacos?'),
+  heading: L('Update info'),
+  yesButton: L('Yes'),
+  noButton: L('No')
+})
+
+if (boolYesOrNo) {
+  // user said yes
+} else {
+  // user said no
+}
+```
