@@ -9,6 +9,7 @@ import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
+import './controller/backend.js'
 import Vue from 'vue'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
@@ -22,7 +23,6 @@ import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
 import L, { LError, LTags } from '@view-utils/translations.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
-import './views/utils/allowedUrls.js'
 import './views/utils/translations.js'
 import './views/utils/avatar.js'
 import './views/utils/vFocus.js'
@@ -157,7 +157,7 @@ async function startApp () {
       }
     }
   } catch (e) {
-    const errMsg = `Fatal error${e.name} initializing Group Income: ${e.message}\n\nPlease report this bug here: ${ALLOWED_URLS.ISSUE_PAGE}`
+    const errMsg = `Fatal error while initializing Group Income: ${e.name} - ${e.message}\n\nPlease report this bug here: ${ALLOWED_URLS.ISSUE_PAGE}`
     console.error(errMsg, e)
     alert(errMsg)
     return
