@@ -28,7 +28,7 @@
 
         component(
           :is='messageType(message)'
-          :key='message.id'
+          :key='message.id + Math.random()'
           :text='message.text'
           :type='message.type'
           :notification='message.notification'
