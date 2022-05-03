@@ -1954,16 +1954,10 @@
 "Enter an existing group using your username." = "Rejoignez un groupe existant via votre nom d’utilisateur.";
 
 /* views/pages/Home.vue */
-"Inbox" = "Boîte de réception";
-
-/* views/pages/Home.vue */
 "Join" = "Rejoindre";
 
 /* views/pages/Home.vue */
 "Let’s get this party started" = "Que la fête commence";
-
-/* views/pages/Home.vue */
-"Logout" = "Déconnexion";
 
 /* views/pages/Home.vue */
 "Signup" = "Créer un compte";
@@ -2122,6 +2116,9 @@
 "Inbox (deprecated)" = "Boîte de réception (obsolète)";
 
 /* Not currently used */
+"Inbox" = "Boîte de réception";
+
+/* Not currently used */
 "Invalid Username" = "Nom d’utilisateur invalide";
 
 /* Not currently used */
@@ -2132,6 +2129,9 @@
 
 /* Not currently used */
 "Leave {groupName}" = "Quitter {groupName}";
+
+/* Not currently used */
+"Logout" = "Déconnexion";
 
 /* Not currently used */
 "Mailbox" = "Boîte de réception";

@@ -111,7 +111,7 @@ Cypress.Commands.add('giLogin', (username, {
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   if (hasNoGroup) {
-    cy.window().its('sbp').then(sbp => sbp('state/vuex/dispatch', 'logout'))
+    cy.window().its('sbp').then(sbp => sbp('gi.actions/identity/logout'))
   } else {
     cy.getByDT('settingsBtn').click()
     cy.getByDT('link-logout').click()

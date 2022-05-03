@@ -3,9 +3,6 @@
 /* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Kicked a member from {title}: {displayName}";
 
-/* views/pages/Home.vue */
-"Logout" = "Logout";
-
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{percent}{_b}" = "{b_}{percent}{_b}";
 
@@ -116,9 +113,6 @@
 
 /* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "Changes to these settings will be visible to all group members";
-
-/* views/pages/Home.vue */
-"Welcome to Group Income" = "Welcome to Group Income";
 
 /* views/containers/contributions/Contribution.vue */
 "Your contribution" = "Your contribution";
@@ -720,9 +714,6 @@
 /* views/containers/design-system/DSModalQuery.vue */
 "Hello" = "Hello";
 
-/* views/pages/Home.vue */
-"Inbox" = "Inbox";
-
 /* model/notifications/templates.js */
 "{name} was kicked out of the group. Contributions were updated accordingly." = "{name} was kicked out of the group. Contributions were updated accordingly.";
 
@@ -1055,6 +1046,9 @@
 
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
 "Add income details" = "Add income details";
+
+/* views/pages/Home.vue */
+"Welcome to Group Income" = "Welcome to Group Income";
 
 /* views/containers/payments/payment-row/PaymentRow.vue */
 "Due {date}" = "Due {date}";
