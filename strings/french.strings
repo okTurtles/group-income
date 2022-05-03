@@ -1963,10 +1963,7 @@
 "Signup" = "Créer un compte";
 
 /* views/pages/Home.vue */
-"Welcome to GroupIncome" = "Bienvenue sur GroupIncome";
-
-/* views/pages/Home.vue */
-"Welcome to group income" = "Bienvenue sur Group Income";
+"Welcome to Group Income" = "Bienvenue sur Group Income";
 
 /* views/pages/Join.vue */
 "Oh no! {br_}This invite is not valid" = "Oh non ! {br_}Cette invitation n’est pas valide";
@@ -2216,9 +2213,6 @@
 
 /* Not currently used */
 "We couldn’t register your vote. {reportError}" = "Nous n’avons pas pu enregistrer votre vote. {reportError}";
-
-/* Not currently used */
-"Welcome to Group Income" = "Bienvenue sur Group Income";
 
 /* Not currently used */
 "What is the minimum each member should receive monthly?" = "Quel est le montant mensuel minimum pour chaque membre ?";

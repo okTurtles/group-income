@@ -112,14 +112,14 @@ Cypress.Commands.add('giLogin', (username, {
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   if (hasNoGroup) {
-    cy.getByDT('logout').click()
+    cy.window().its('sbp').then(sbp => sbp('state/vuex/dispatch', 'logout'))
   } else {
     cy.getByDT('settingsBtn').click()
     cy.getByDT('link-logout').click()
     cy.getByDT('closeModal').should('not.exist')
   }
   cy.url().should('eq', 'http://localhost:8000/app/')
-  cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+  cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
 })
 
 Cypress.Commands.add('giSwitchUser', (user) => {
