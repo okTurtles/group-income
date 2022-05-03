@@ -321,7 +321,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
     cy.get('button').click()
     cy.url().should('eq', 'http://localhost:8000/app/')
-    cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+    cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
   })
 
   it('an invalid invitation link cannot be used', () => {
@@ -332,7 +332,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('helperText').should('contain', 'Something went wrong. Please, try again. 404: Not Found')
     cy.get('button').click()
     cy.url().should('eq', 'http://localhost:8000/app/')
-    cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+    cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
   })
 
   it('user1 logins and sees all 5 proposals correctly and the new members', () => {

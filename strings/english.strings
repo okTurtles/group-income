@@ -118,7 +118,7 @@
 "Changes to these settings will be visible to all group members" = "Changes to these settings will be visible to all group members";
 
 /* views/pages/Home.vue */
-"Welcome to GroupIncome" = "Welcome to GroupIncome";
+"Welcome to Group Income" = "Welcome to Group Income";
 
 /* views/containers/contributions/Contribution.vue */
 "Your contribution" = "Your contribution";
@@ -1781,9 +1781,6 @@
 
 /* views/containers/payments/RecordPayment.vue */
 "Who did you send money to?" = "Who did you send money to?";
-
-/* views/pages/Home.vue */
-"Welcome to group income" = "Welcome to group income";
 
 /* views/containers/design-system/DSModalNested.vue */
 "Toggle back button" = "Toggle back button";

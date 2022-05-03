@@ -4,11 +4,11 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
   //-       and the other showing the create/join group buttons!
   header(v-if='!$store.state.loggedIn' key='title-login')
     img.logo(src='/assets/images/group-income-icon-transparent.png')
-    i18n.is-title-1(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
+    i18n.is-title-1(tag='h1' data-test='welcomeHome') Welcome to Group Income
 
   header(v-else key='title-not-login')
     img.logo-2(src='/assets/images/logo-transparent.png')
-    i18n.is-subtitle(tag='p') Welcome to group income
+    i18n.is-subtitle(tag='p') Welcome to Group Income
     i18n.is-title-1(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
 
   .buttons(v-if='!$store.state.loggedIn' key='body-loggin')
@@ -50,21 +50,6 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
         @click='openModal("GroupJoinModal")'
         data-test='joinGroup'
       ) Join a Group
-
-    .temp
-      i18n(
-        tag='button'
-        @click='logout'
-        data-test='logout'
-      ) Logout
-
-      router-link(
-        to='/mailbox'
-        icon='envelope'
-        data-test='mailboxLink'
-        class='button'
-      )
-        i18n Inbox
 </template>
 
 <script>
@@ -87,9 +72,6 @@ export default ({
   methods: {
     openModal (mode) {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
-    },
-    logout () {
-      sbp('gi.actions/identity/logout')
     }
   }
 }: Object)
@@ -182,17 +164,6 @@ export default ({
     @include tablet {
       margin-bottom: 1rem;
     }
-  }
-}
-
-.temp {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  display: flex;
-
-  > * {
-    margin: 0.5rem;
   }
 }
 </style>
