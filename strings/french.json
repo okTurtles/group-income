@@ -7,7 +7,7 @@
   "Messages": "Messages",
   "Loading events for '{contract}' from server...": "Loading events for '{contract}' from server...",
   "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'": "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'",
-  "Failed to groups we're part of with other computer. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'": "Failed to groups we're part of with other computer. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'",
+  "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'": "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'",
   "1d": "1d",
   "<1m": "<1m",
   "{hours}h": "{hours}h",

@@ -25,7 +25,7 @@
 "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'";
 
 /* MISSING TRANSLATION - model/contracts/identity.js */
-"Failed to groups we're part of with other computer. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to groups we're part of with other computer. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
+"Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
 
 /* MISSING TRANSLATION - utils/time.js */
 "1d" = "1d";

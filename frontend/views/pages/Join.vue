@@ -170,7 +170,6 @@ export default ({
           contractID: groupId,
           data: { inviteSecret: secret }
         })
-        console.warn('setting WELCOME')
         this.pageStatus = 'WELCOME'
       } catch (e) {
         console.error('Join.vue accept() error:', e)

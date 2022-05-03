@@ -73,7 +73,7 @@ sbp('chelonia/defineContract', {
           await sbp('gi.actions/identity/updateLoginStateUponLogin')
         } catch (e) {
           sbp('gi.notifications/emit', 'ERROR', {
-            message: L("Failed to groups we're part of with other computer. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
+            message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
               errName: e.name,
               errMsg: e.message || '?'
             })

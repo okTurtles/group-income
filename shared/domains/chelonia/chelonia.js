@@ -252,6 +252,7 @@ sbp('sbp/selectors/register', {
       ])
     }))
   },
+  // Warning: avoid using this unless you know what you're doing. Prefer using /remove.
   'chelonia/contract/removeImmediately': function (contractID: string) {
     const state = sbp(this.config.stateSelector)
     this.config.reactiveDel(state.contracts, contractID)
