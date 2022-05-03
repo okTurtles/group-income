@@ -203,15 +203,6 @@ const defaultClientEventHandlers = {
     client.socket = null
     client.clearAllTimers()
 
-    // See "Status Codes" https://tools.ietf.org/html/rfc6455#section-7.4
-    switch (event.code) {
-      // TODO: verify that this list of codes is correct.
-      case 1000: case 1002: case 1003: case 1007: case 1008: {
-        client.shouldReconnect = false
-        break
-      }
-      default: break
-    }
     // If we should reconnect then consider our current subscriptions as pending again,
     // waiting to be restored upon reconnection.
     if (client.shouldReconnect) {
