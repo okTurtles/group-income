@@ -189,6 +189,9 @@
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/proposals/Mincome.vue */
 "Oops, you entered 0 or a negative number" = "Oops, you entered 0 or a negative number";
 
+/* views/components/modal/Prompt.vue */
+"No" = "No";
+
 /* views/containers/chatroom/MessageInteractive.vue */
 "No members were removed." = "No members were removed.";
 
@@ -887,6 +890,9 @@
 
 /* controller/actions/group.js */
 "Failed to cancel proposal." = "Failed to cancel proposal.";
+
+/* views/pages/DesignSystem.vue */
+"Open Prompt" = "Open Prompt";
 
 /* controller/actions/group.js */
 "Failed to update voting rules. {codeError}" = "Failed to update voting rules. {codeError}";
@@ -1808,6 +1814,9 @@
 
 /* views/containers/payments/MonthOverview.vue */
 "There was a problem with {nr} of your payments." = "There was a problem with {nr} of your payments.";
+
+/* views/components/modal/Prompt.vue */
+"Yes" = "Yes";
 
 /* views/pages/GroupSettings.vue */
 "Group name" = "Group name";
