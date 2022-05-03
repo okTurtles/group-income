@@ -216,8 +216,10 @@ sbp('sbp/selectors/register', {
     }
   },
   // resolves when all pending actions for these contractID(s) finish
-  'chelonia/contract/wait': function (contractIDs: string | string[]): Promise<*> {
-    const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
+  'chelonia/contract/wait': function (contractIDs?: string | string[]): Promise<*> {
+    const listOfIds = contractIDs
+      ? (typeof contractIDs === 'string' ? [contractIDs] : contractIDs)
+      : Object.keys(sbp(this.config.stateSelector).contracts)
     return Promise.all(listOfIds.map(cID => {
       return sbp('okTurtles.eventQueue/queueEvent', cID, ['chelonia/private/noop'])
     }))

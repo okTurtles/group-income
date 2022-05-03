@@ -193,9 +193,12 @@ export default (sbp('sbp/selectors/register', {
       sbp('chelonia/contract/sync', contractIDs).then(async function () {
         // contract sync might've triggered an async call to /remove, so wait before proceeding
         await sbp('chelonia/contract/wait', contractIDs)
+        // similarly, since removeMember may have triggered saveOurLoginState asynchronously,
+        // we must re-sync our identity contract again to ensure we don't rejoin a group we
+        // were just kicked out of
+        await sbp('chelonia/contract/sync', identityContractID)
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
-        // will only update it if it's different
-        await sbp('gi.actions/identity/saveOurLoginState')
+        await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
       })
       return identityContractID
@@ -215,9 +218,13 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/logout': async function () {
     const state = sbp('state/vuex/state')
     try {
+      // wait for any pending sync operations to finish before saving
+      console.info('logging out, waiting for any events to finish...')
+      await sbp('chelonia/contract/wait')
       await sbp('state/vuex/save')
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
       await sbp('chelonia/contract/remove', Object.keys(state.contracts))
+      console.info('successfully logged out')
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)
     }

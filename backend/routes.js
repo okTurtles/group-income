@@ -90,7 +90,9 @@ route.GET('/name/{name}', {}, async function (request, h) {
   }
 })
 
-route.GET('/latestHash/{contractID}', {}, async function (request, h) {
+route.GET('/latestHash/{contractID}', {
+  cache: { otherwise: 'no-store' }
+}, async function (request, h) {
   try {
     const { contractID } = request.params
     const hash = await sbp('chelonia/db/latestHash', contractID)

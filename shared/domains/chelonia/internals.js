@@ -58,8 +58,9 @@ sbp('sbp/selectors/register', {
     }
   },
   'chelonia/private/out/latestHash': function (contractID: string) {
-    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`)
-      .then(handleFetchResult('text'))
+    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`, {
+      cache: 'no-store'
+    }).then(handleFetchResult('text'))
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?

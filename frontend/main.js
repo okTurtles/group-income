@@ -197,11 +197,6 @@ async function startApp () {
       }
     },
     mounted () {
-      if (sbp('okTurtles.data/get', 'BANNER')) {
-        // mounted gets called each time we logout, so return immediately if we've already initialized
-        return
-      }
-
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
