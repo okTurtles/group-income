@@ -685,7 +685,9 @@ sbp('chelonia/defineContract', {
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           // we can't await on this in here, because it will cause a deadlock, since Chelonia processes
           // this sideEffect on the eventqueue for this contractID, and /remove uses that same eventqueue
-          sbp('chelonia/contract/remove', contractID)
+          sbp('chelonia/contract/remove', contractID).catch(e => {
+            console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e)
+          })
           // this looks crazy, but doing this was necessary to fix a race condition in the
           // group-member-removal Cypress tests where due to the ordering of asynchronous events
           // we were getting the same latestHash upon re-logging in for test "user2 rejoins groupA".
@@ -699,6 +701,8 @@ sbp('chelonia/defineContract', {
               if (switchFrom !== '/join' && switchFrom !== switchTo) {
                 router.push({ path: switchTo }).catch(console.warn)
               }
+            }).catch(e => {
+              console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e)
             })
           // TODO - #828 remove other group members contracts if applicable
         } else {

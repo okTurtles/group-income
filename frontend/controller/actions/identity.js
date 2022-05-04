@@ -200,6 +200,10 @@ export default (sbp('sbp/selectors/register', {
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
+      }).catch((err) => {
+        const errMsg = L('Error during login contract sync: {err}', { err: err.message })
+        console.error(errMsg, err)
+        alert(errMsg)
       })
       return identityContractID
     } catch (e) {
