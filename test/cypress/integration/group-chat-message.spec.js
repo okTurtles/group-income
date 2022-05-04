@@ -52,7 +52,6 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       })
       cy.get('.c-text').should('contain', message)
     })
-    cy.getByDT('conversationWapper').find(`.c-message.pending:nth-child(${nth})`).should('exist')
     cy.getByDT('conversationWapper').find(`.c-message.sent:nth-child(${nth})`).should('exist')
   }
 

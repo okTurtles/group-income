@@ -348,14 +348,14 @@ export default ({
         if (m) {
           delete m.pending
         } else {
-          this.messages.push(msg)
+          this.messages.push(cloneDeep(msg))
         }
       }
 
       const updateIfExist = (msg) => {
         for (let i = this.messages.length - 1; i >= 0; i--) {
           if (this.messages[i].id === msg.id) {
-            this.messages.splice(i, 1, msg)
+            this.messages.splice(i, 1, cloneDeep(msg))
             break
           }
         }

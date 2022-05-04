@@ -64,3 +64,7 @@ declare module '@assets/style/main.scss' { declare module.exports: any }
 // Other .js files.
 declare module '@utils/blockies.js' { declare module.exports: Object }
 declare module '~/frontend/utils/flowTyper.js' { declare module.exports: Object }
+// HACK: declared three files below but not sure why it's necessary
+declare module '~/shared/domains/chelonia/events.js' { declare module.exports: Object }
+declare module '~/shared/domains/chelonia/errors.js' { declare module.exports: Object }
+declare module '~/shared/domains/chelonia/internals.js' { declare module.exports: Object }
