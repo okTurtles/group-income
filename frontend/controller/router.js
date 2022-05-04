@@ -2,7 +2,7 @@
 
 import Vue from 'vue'
 import Router from 'vue-router'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import store from '@model/state.js'
 
 import Home from '@pages/Home.vue'
@@ -22,7 +22,6 @@ const lazyGroupChat = lazyPage(() => import('@pages/GroupChat.vue'))
 const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
 const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
 const lazyMessages = lazyPage(() => import('@pages/Messages.vue'))
-const lazyMailbox = lazyPage(() => import('@pages/Mailbox.vue'))
 const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
 
 Vue.use(Router)
@@ -57,10 +56,6 @@ const groupGuard = {
 }
 
 // TODO: add state machine guard and redirect to critical error page if necessary
-// var mailGuard = {
-//   guard: (to, from) => from.name !== Mailbox.name,
-//   redirect: (to, from) => ({ path: '/mailbox' })
-// }
 function createEnterGuards (...guards) {
   return function (to, from, next) {
     for (const current of guards) {
@@ -71,6 +66,7 @@ function createEnterGuards (...guards) {
     next()
   }
 }
+
 const router: any = new Router({
   mode: 'history',
   base: '/app',
@@ -114,13 +110,6 @@ const router: any = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     /* Guards need to be created for any route that should not be directly accessed by url */
-    {
-      path: '/mailbox',
-      component: lazyMailbox,
-      name: 'Mailbox',
-      meta: { title: L('Mailbox') },
-      beforeEnter: createEnterGuards(loginGuard)
-    },
     {
       path: '/messages',
       component: lazyMessages,

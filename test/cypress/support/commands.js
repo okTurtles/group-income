@@ -112,14 +112,14 @@ Cypress.Commands.add('giLogin', (username, {
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   if (hasNoGroup) {
-    cy.getByDT('logout').click()
+    cy.window().its('sbp').then(sbp => sbp('state/vuex/dispatch', 'logout'))
   } else {
     cy.getByDT('settingsBtn').click()
     cy.getByDT('link-logout').click()
     cy.getByDT('closeModal').should('not.exist')
   }
   cy.url().should('eq', 'http://localhost:8000/app/')
-  cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+  cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
 })
 
 Cypress.Commands.add('giSwitchUser', (user) => {
@@ -167,7 +167,6 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
-
     return
   }
 
@@ -338,7 +337,7 @@ Cypress.Commands.add('giAddNewChatroom', (
   cy.getByDT('newChannelButton').click()
 
   cy.getByDT('modal').within(() => {
-    cy.get('.c-modal-header').should('contain', 'Create a channel')
+    cy.get('.c-modal-header h1').should('contain', 'Create a channel')
     cy.getByDT('createChannelName').clear().type(name)
     if (description) {
       cy.getByDT('createChannelDescription').clear().type(description)

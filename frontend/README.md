@@ -1,4 +1,4 @@
-# Group Income Simple
+# Group Income
 
 This is the application itself.
 

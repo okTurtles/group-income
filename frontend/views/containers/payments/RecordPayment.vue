@@ -69,8 +69,8 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import Vue from 'vue'
-import sbp from '~/shared/sbp.js'
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED, PAYMENT_TYPE_MANUAL } from '@model/contracts/payments/index.js'
 import L from '@view-utils/translations.js'

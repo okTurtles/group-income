@@ -7,7 +7,7 @@
     v-focus=''
   )
     transition(name='fade' appear)
-      .c-modal-background(@click='close' v-if='modalIsActive')
+      .c-modal-background(@click='closeModal' v-if='modalIsActive')
 
     transition(name='slide-left' appear @after-leave='unload')
       .c-modal-content(ref='card' v-if='modalIsActive')
@@ -15,7 +15,7 @@
           :class='{ "has-subtitle": $scopedSlots.subtitle }'
           v-if='$scopedSlots.title || $scopedSlots.subtitle'
         )
-          modal-close(@close='close' :back-on-mobile='backOnMobile')
+          modal-close(@close='close' :back-on-mobile='backOnMobile' v-if='!modalForceAction')
           h2.is-subtitle(v-if='$scopedSlots.subtitle')
             slot(name='subtitle')
           h1.is-title-1(v-if='$scopedSlots.title')
@@ -34,7 +34,14 @@ import trapFocus from '@utils/trapFocus.js'
 
 export default ({
   name: 'ModalTemplate',
-  mixins: [modalMixins, trapFocus]
+  mixins: [modalMixins, trapFocus],
+  methods: {
+    closeModal () {
+      if (!this.modalForceAction) {
+        this.close()
+      }
+    }
+  }
 }: Object)
 </script>
 

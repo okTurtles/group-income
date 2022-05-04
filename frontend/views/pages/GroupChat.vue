@@ -98,7 +98,7 @@ import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'
 import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/constants.js'
 

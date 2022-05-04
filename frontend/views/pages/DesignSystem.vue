@@ -1164,6 +1164,37 @@ page(
               button.is-outlined(@click='openModal("DSModalQuery", { name: "Kate"})')
                 i18n Open Modal "Kate"
 
+  article#prompts
+    section.card
+      h2.is-title-2.card-header Prompts
+      p To call a prompt with yes / no question we need to call sbp with this format:
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            code
+              | const boolYesOrNo =
+              br
+              | await sbp('gi.ui/prompt', {
+              br
+              | &nbsp question: 'Tacos?',
+              br
+              | &nbsp  heading: 'Update info',
+              br
+              | &nbsp  yesButton: 'Yes',
+              br
+              | &nbsp  noButton: 'No'
+              br
+              | })
+          td
+            button.is-outlined(@click='openPrompt()')
+              i18n Open Prompt
+
+      p *yesButton and noButton parameters are optional
+
   article#Illustrations
     section.card
       h2.is-title-2.card-header Illustrations (SVGs)
@@ -1200,8 +1231,9 @@ page(
 </template>
 
 <script>
+import '@views/utils/ui.js'
 import Page from '@components/Page.vue'
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import Badge from '@components/Badge.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -1389,6 +1421,14 @@ export default ({
     },
     openModal (name, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, queries)
+    },
+    async openPrompt () {
+      const boolYesOrNo = await sbp('gi.ui/prompt', {
+        question: 'Would you like fresh tacos?',
+        heading: 'Update info'
+      })
+
+      alert(`User said ${boolYesOrNo ? 'yes' : 'no'}`)
     },
     handleScroll (e) {
       const top = e.target.scrollTop

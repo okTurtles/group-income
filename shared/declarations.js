@@ -54,6 +54,10 @@ declare module 'vuex' { declare module.exports: any }
 declare module 'vue2-touch-events' { declare module.exports: any }
 declare module 'wicg-inert' { declare module.exports: any }
 declare module 'ws' { declare module.exports: any }
+declare module '@sbp/sbp' { declare module.exports: any }
+declare module '@sbp/okturtles.data' { declare module.exports: any }
+declare module '@sbp/okturtles.eventqueue' { declare module.exports: any }
+declare module '@sbp/okturtles.events' { declare module.exports: any }
 
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }
