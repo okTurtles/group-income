@@ -52,7 +52,7 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'ourUserIdentityContract'
+      'currentIdentityState'
     ]),
     hasProposals () {
       return Object.keys(this.currentGroupState.proposals).length > 0
@@ -103,7 +103,7 @@ export default ({
   },
   methods: {
     hadVoted (proposal) {
-      return proposal.votes[this.ourUserIdentityContract.attributes.username] || proposal.status !== STATUS_OPEN
+      return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
     }
   }
 }: Object)

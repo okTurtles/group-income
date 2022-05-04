@@ -38,8 +38,8 @@ route.POST('/event', {
     await sbp('backend/server/handleEntry', entry)
     return entry.hash()
   } catch (err) {
-    if (err.name === 'ErrorDBBadPreviousHEAD') {
-      console.error(chalk.bold.yellow('ErrorDBBadPreviousHEAD'), err)
+    if (err.name === 'ChelErrorDBBadPreviousHEAD') {
+      console.error(chalk.bold.yellow('ChelErrorDBBadPreviousHEAD'), err)
       return Boom.conflict(err.message)
     }
     return logger(err)
@@ -90,10 +90,17 @@ route.GET('/name/{name}', {}, async function (request, h) {
   }
 })
 
-route.GET('/latestHash/{contractID}', {}, async function (request, h) {
+route.GET('/latestHash/{contractID}', {
+  cache: { otherwise: 'no-store' }
+}, async function (request, h) {
   try {
-    const hash = await sbp('chelonia/db/latestHash', request.params.contractID)
-    return hash || Boom.notFound()
+    const { contractID } = request.params
+    const hash = await sbp('chelonia/db/latestHash', contractID)
+    if (!hash) {
+      console.warn(`[backend] latestHash not found for ${contractID}`)
+      return Boom.notFound()
+    }
+    return hash
   } catch (err) {
     return logger(err)
   }

@@ -228,7 +228,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       bypassUI: true
     })
     me = user2
-
+    cy.getByDT('dashboard').click()
     cy.getByDT('groupChatLink').click()
 
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)

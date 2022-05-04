@@ -99,7 +99,7 @@ export default ({
   data () {
     // create a copy of the attributes to avoid any Vue.js reactivity weirdness
     // so that we do not directly modify the values in the store
-    const attrsCopy = cloneDeep(this.$store.getters.ourUserIdentityContract.attributes || {})
+    const attrsCopy = cloneDeep(this.$store.getters.currentIdentityState.attributes || {})
     return {
       form: {
         displayName: attrsCopy.displayName,
@@ -121,7 +121,7 @@ export default ({
       'ourUsername'
     ]),
     attributes () {
-      return this.$store.getters.ourUserIdentityContract.attributes || {}
+      return this.$store.getters.currentIdentityState.attributes || {}
     },
     sbpParams () {
       return {

@@ -36,7 +36,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapState, mapMutations, mapActions } from 'vuex'
+import { mapState, mapMutations } from 'vuex'
 import safeLinkTag from '@views/utils/safeLinkTag.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { downloadLogs, getLog } from '@model/captureLogs.js'
@@ -104,9 +104,6 @@ export default ({
   methods: {
     ...mapMutations([
       'setAppLogsFilters'
-    ]),
-    ...mapActions([
-      'saveSettings'
     ]),
     addLog (logHash) {
       const entry = JSON.parse(getLog(logHash))

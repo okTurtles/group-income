@@ -1,6 +1,5 @@
 export const LOGIN = 'login'
 export const LOGOUT = 'logout'
-export const VUE_LOADED = 'vue-loaded'
 
 export const REPLACED_STATE = 'replaced-state'
 

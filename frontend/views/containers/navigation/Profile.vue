@@ -41,7 +41,7 @@ export default ({
       'ourUsername'
     ]),
     userDisplayName () {
-      const userContract = this.$store.getters.ourUserIdentityContract
+      const userContract = this.$store.getters.currentIdentityState
       return userContract && userContract.attributes && userContract.attributes.displayName
     }
   },
