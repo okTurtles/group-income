@@ -168,8 +168,6 @@ Cypress.Commands.add('giCreateGroup', (name, {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
 
-    checkIfJoinedGeneralChannel(name)
-
     return
   }
 
@@ -280,8 +278,6 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
       await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
     })
-
-    checkIfJoinedGeneralChannel(groupName, username)
   } else {
     cy.visit(invitationLink)
 

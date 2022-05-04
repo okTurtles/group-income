@@ -332,10 +332,8 @@ export default ({
       }
       if (force) {
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)
-      } else {
-        if (this.isJoinedChatRoom(to)) {
-          sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
-        }
+      } else if (this.isJoinedChatRoom(to)) {
+        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
     listenChatRoomActions ({ type, data }) {
