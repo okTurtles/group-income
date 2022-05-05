@@ -151,9 +151,6 @@ export default ({
     sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
   },
-  updated () {
-    this.updateScroll()
-  },
   computed: {
     ...mapGetters([
       'currentChatRoomId',
@@ -251,6 +248,7 @@ export default ({
           }
         }
       })
+      this.updateScroll()
     },
     updateScroll () {
       if (this.summary.title) {
@@ -414,6 +412,7 @@ export default ({
       const force = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
       this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
+      this.$nextTick(() => this.updateScroll())
     },
     'summary.joined' (to, from) {
       if (to) {
