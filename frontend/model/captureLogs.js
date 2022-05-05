@@ -172,12 +172,11 @@ export function captureLogsStart (userLogged: string) {
   console.log(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', appLogsFilter)
 }
 
-export function captureLogsPause ({ wipeOut, username }: { wipeOut: boolean, username: ?string }): void {
+export function captureLogsPause ({ wipeOut }: { wipeOut: boolean }): void {
   if (wipeOut) { clearLogs() }
-
   isCapturing = false
   sbp('okTurtles.events/off', SET_APP_LOGS_FILTER)
-  console.log('captureLogs paused to:', username)
+  console.log('captureLogs paused')
 }
 
 export const getLog = giLSget

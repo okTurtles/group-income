@@ -683,13 +683,33 @@ sbp('chelonia/defineContract', {
               cID !== contractID && rootState[cID].settings) || null
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {})
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
-          sbp('chelonia/contract/remove', contractID)
-          sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
-
+          // we can't await on this in here, because it will cause a deadlock, since Chelonia processes
+          // this sideEffect on the eventqueue for this contractID, and /remove uses that same eventqueue
+          sbp('chelonia/contract/remove', contractID).catch(e => {
+            console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e)
+          })
+          // this looks crazy, but doing this was necessary to fix a race condition in the
+          // group-member-removal Cypress tests where due to the ordering of asynchronous events
+          // we were getting the same latestHash upon re-logging in for test "user2 rejoins groupA".
+          // We add it to the same queue as '/remove' above gets run on so that it is run after
+          // contractID is removed. See also comments in 'gi.actions/identity/login'.
+          sbp('okTurtles.eventQueue/queueEvent', contractID, ['gi.actions/identity/saveOurLoginState'])
+            .then(function () {
+              const router = sbp('controller/router')
+              const switchFrom = router.currentRoute.path
+              const switchTo = groupIdToSwitch ? '/dashboard' : '/'
+              if (switchFrom !== '/join' && switchFrom !== switchTo) {
+                router.push({ path: switchTo }).catch(console.warn)
+              }
+            }).catch(e => {
+              console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e)
+            })
           // TODO - #828 remove other group members contracts if applicable
         } else {
           // TODO - #828 remove the member contract if applicable.
-          // sbp('chelonia/contract/removeImmediately', getters.groupProfile(data.member).contractID)
+          // problem is, if they're in another group we're also a part of, or if we
+          // have a DM with them, we don't want to do this. may need to use manual reference counting
+          // sbp('chelonia/contract/release', getters.groupProfile(data.member).contractID)
         }
         // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }

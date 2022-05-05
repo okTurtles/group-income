@@ -56,7 +56,7 @@ export default ({
       'ourUsername',
       'currentGroupState',
       'groupSettings',
-      'ourUserIdentityContract'
+      'currentIdentityState'
     ]),
     proposal () {
       return this.currentGroupState.proposals[this.proposalHash]

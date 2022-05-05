@@ -48,10 +48,10 @@ export default ({
       return this.ephemeral.severity
     },
     debouncedShow ({ message, icon, seconds, clearWhen }: {
-      message: string, icon: string, seconds: number, clearWhen: Function
+      message: Function, icon: string, seconds: number, clearWhen: Function
     }) {
       let clearBannerTimer
-      return debounce(() => {
+      return debounce((...args) => {
         const clearBanner = () => {
           if (clearWhen()) {
             if (this.severity() !== 'danger') {
@@ -64,7 +64,7 @@ export default ({
           }
         }
         if (!clearBannerTimer && !clearWhen()) {
-          this.show(message, icon)
+          this.show(message(...args), icon)
           clearBannerTimer = setTimeout(clearBanner, 1000 * seconds)
         }
       }, 1000 * seconds)

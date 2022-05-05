@@ -174,6 +174,9 @@
 /* views/containers/proposals/ProposalItem.vue */
 "Proposal accepted with {yay} in favor out of {total} total votes." = "Proposal accepted with {yay} in favor out of {total} total votes.";
 
+/* model/contracts/identity.js */
+"Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
+
 /* views/containers/payments/PaymentsHistoryModal.vue */
 "Payments History" = "Payments History";
 
@@ -966,6 +969,9 @@
 /* main.js */
 "Your device appears to be offline." = "Your device appears to be offline.";
 
+/* controller/actions/identity.js */
+"Failed to set login state." = "Failed to set login state.";
+
 /* views/components/group-creation-steps/GroupPrivacy.vue */
 "Privacy Settings" = "Privacy Settings";
 
@@ -1350,9 +1356,6 @@
 /* views/containers/chatroom/ConversationGreetings.vue */
 "You and {name} can chat in private here." = "You and {name} can chat in private here.";
 
-/* main.js */
-"Loading events from server..." = "Loading events from server...";
-
 /* controller/router.js, views/pages/Messages.vue */
 "Messages" = "Messages";
 
@@ -1628,6 +1631,9 @@
 
 /* views/containers/chatroom/MessageActions.vue */
 "Delete message" = "Delete message";
+
+/* main.js */
+"Loading events for '{contract}' from server..." = "Loading events for '{contract}' from server...";
 
 /* views/containers/payments/PaymentRowTodo.vue */
 "{partial_amount} out of {partial_total}" = "{partial_amount} out of {partial_total}";
