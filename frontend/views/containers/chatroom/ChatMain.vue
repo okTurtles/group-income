@@ -248,6 +248,7 @@ export default ({
           }
         }
       })
+      // need to scroll to the bottom
       this.updateScroll()
     },
     updateScroll () {
@@ -412,6 +413,7 @@ export default ({
       const force = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
       this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
+      // need to scroll to the saved position
       this.$nextTick(() => this.updateScroll())
     },
     'summary.joined' (to, from) {
