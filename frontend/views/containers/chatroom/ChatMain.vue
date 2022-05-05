@@ -77,7 +77,7 @@
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
@@ -94,7 +94,7 @@ import { createMessage } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { cloneDeep } from '@utils/giLodash.js'
 import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
-import { CONTRACT_IS_SYNCING } from '@utils/events.js'
+import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
   name: 'ChatMain',
@@ -160,11 +160,13 @@ export default ({
       'chatRoomSettings',
       'chatRoomLatestMessages',
       'ourIdentityContractId',
-      'ourUserIdentityContract',
+      'currentIdentityState',
       'isJoinedChatRoom'
     ]),
     bodyStyles () {
-      const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      // Not sure what `bodyPaddingBottom` means, I delete it now
+      // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      const phoneStyles = {}
       const unjoinedStyles =
         this.summary.joined
           ? {}
@@ -176,7 +178,7 @@ export default ({
     },
     currentUserAttr () {
       return {
-        ...this.ourUserIdentityContract.attributes,
+        ...this.currentIdentityState.attributes,
         id: this.ourIdentityContractId
       }
     }
@@ -337,10 +339,8 @@ export default ({
       }
       if (force) {
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)
-      } else {
-        if (this.isJoinedChatRoom(to)) {
-          sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
-        }
+      } else if (this.isJoinedChatRoom(to)) {
+        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
     listenChatRoomActions ({ type, data }) {
@@ -355,14 +355,14 @@ export default ({
         if (m) {
           delete m.pending
         } else {
-          this.messages.push(msg)
+          this.messages.push(cloneDeep(msg))
         }
       }
 
       const updateIfExist = (msg) => {
         for (let i = this.messages.length - 1; i >= 0; i--) {
           if (this.messages[i].id === msg.id) {
-            this.messages.splice(i, 1, msg)
+            this.messages.splice(i, 1, cloneDeep(msg))
             break
           }
         }

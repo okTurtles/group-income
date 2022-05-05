@@ -12,6 +12,33 @@ const escapeForHtml = (text) => text.replace(/[<>&]/g, '\\$&')
 const strong = (text) => `<strong>${escapeForHtml(text)}</strong>`
 
 export default ({
+  GENERAL (data: { contractID: string, message: string }) {
+    return {
+      body: data.message,
+      icon: 'cog',
+      level: 'info',
+      linkTo: '',
+      scope: 'app'
+    }
+  },
+  WARNING (data: { contractID: string, message: string }) {
+    return {
+      body: data.message,
+      icon: 'exclamation-triangle',
+      level: 'danger',
+      linkTo: '',
+      scope: 'app'
+    }
+  },
+  ERROR (data: { contractID: string, message: string }) {
+    return {
+      body: data.message,
+      icon: 'exclamation-triangle',
+      level: 'danger',
+      linkTo: `/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(data.message)}`,
+      scope: 'app'
+    }
+  },
   CONTRIBUTION_REMINDER (data: { date: string }) {
     return {
       body: L('Do not forget to send your pledge by {date}.', {

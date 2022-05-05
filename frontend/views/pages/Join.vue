@@ -46,9 +46,10 @@ div
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
-import { mapGetters } from 'vuex'
+import sbp from '@sbp/sbp'
+import { mapGetters, mapState } from 'vuex'
 import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
+import { LOGIN } from '@utils/events.js'
 import SignupForm from '@containers/access/SignupForm.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import Loading from '@components/Loading.vue'
@@ -56,6 +57,9 @@ import Avatar from '@components/Avatar.vue'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import L from '@view-utils/translations.js'
+
+let syncFinished = false
+sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })
 
 export default ({
   name: 'Join',
@@ -71,12 +75,14 @@ export default ({
     return {
       ephemeral: {
         pageStatus: 'LOADING',
-        invitation: {}
+        invitation: {},
+        query: null
       }
     }
   },
   computed: {
     ...mapGetters(['ourUsername']),
+    ...mapState(['currentGroupId']),
     pageStatus: {
       get () { return this.ephemeral.pageStatus },
       set (status) {
@@ -88,60 +94,68 @@ export default ({
       }
     }
   },
-  async mounted () {
-    try {
-      if (this.ourUsername) {
-        if (this.$store.state.contracts[this.$route.query.groupId]) {
-          this.$router.push({ path: '/dashboard' })
-          return
-        } else {
-          await this.accept()
-          return
-        }
-      }
-      const state = await sbp('state/latestContractState', this.$route.query.groupId)
-      const invite = state.invites[this.$route.query.secret]
-      if (!invite || invite.status !== INVITE_STATUS.VALID) {
-        console.error('Join.vue error: Link is not valid.')
-        this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
-        this.pageStatus = 'INVALID'
-        return
-      } else if (invite.expires < Date.now()) {
-        console.log('Join.vue error: Link is already expired.')
-        this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
-        this.pageStatus = 'EXPIRED'
-        return
-      }
-      let creator = null
-      let creatorPicture = null
-      let message = null
-
-      if (invite.creator === INVITE_INITIAL_CREATOR) {
-        message = L('You were invited to join')
-      } else {
-        const identityContractID = await sbp('namespace/lookup', invite.creator)
-        const userState = await sbp('state/latestContractState', identityContractID)
-        const userDisplayName = userState.attributes.displayName || userState.attributes.username
-        message = L('{who} invited you to join their group!', { who: userDisplayName })
-        creator = userDisplayName
-        creatorPicture = userState.attributes.picture
-      }
-
-      this.ephemeral.invitation = {
-        groupName: state.settings.groupName,
-        groupPicture: state.settings.groupPicture,
-        creator,
-        creatorPicture,
-        message
-      }
-      this.pageStatus = 'SIGNING'
-    } catch (e) {
-      console.error(e)
-      this.ephemeral.errorMsg = `${L('Something went wrong. Please, try again.')} ${e.message}`
-      this.pageStatus = 'INVALID'
+  mounted () {
+    // For some reason in some Cypress tests it loses the route query when initialized is called
+    this.ephemeral.query = this.$route.query
+    if (syncFinished || !this.ourUsername) {
+      this.initialize()
+    } else {
+      sbp('okTurtles.events/once', LOGIN, () => this.initialize())
     }
   },
   methods: {
+    async initialize () {
+      try {
+        if (this.ourUsername) {
+          if (this.currentGroupId && this.$store.state.contracts[this.ephemeral.query.groupId]) {
+            this.$router.push({ path: '/dashboard' })
+          } else {
+            await this.accept()
+          }
+          return
+        }
+        const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
+        const invite = state.invites[this.ephemeral.query.secret]
+        if (!invite || invite.status !== INVITE_STATUS.VALID) {
+          console.error('Join.vue error: Link is not valid.')
+          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+          this.pageStatus = 'INVALID'
+          return
+        } else if (invite.expires < Date.now()) {
+          console.log('Join.vue error: Link is already expired.')
+          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+          this.pageStatus = 'EXPIRED'
+          return
+        }
+        let creator = null
+        let creatorPicture = null
+        let message = null
+
+        if (invite.creator === INVITE_INITIAL_CREATOR) {
+          message = L('You were invited to join')
+        } else {
+          const identityContractID = await sbp('namespace/lookup', invite.creator)
+          const userState = await sbp('chelonia/latestContractState', identityContractID)
+          const userDisplayName = userState.attributes.displayName || userState.attributes.username
+          message = L('{who} invited you to join their group!', { who: userDisplayName })
+          creator = userDisplayName
+          creatorPicture = userState.attributes.picture
+        }
+
+        this.ephemeral.invitation = {
+          groupName: state.settings.groupName,
+          groupPicture: state.settings.groupPicture,
+          creator,
+          creatorPicture,
+          message
+        }
+        this.pageStatus = 'SIGNING'
+      } catch (e) {
+        console.error(e)
+        this.ephemeral.errorMsg = `${L('Something went wrong. Please, try again.')} ${e.message}`
+        this.pageStatus = 'INVALID'
+      }
+    },
     isStatus (status) {
       return this.pageStatus === status
     },
@@ -150,10 +164,8 @@ export default ({
     },
     async accept () {
       this.ephemeral.errorMsg = null
-      const { groupId, secret } = this.$route.query || {}
-
-      sbp('okTurtles.data/set', 'JOINING_GROUP', true)
       try {
+        const { groupId, secret } = this.ephemeral.query
         await sbp('gi.actions/group/joinAndSwitch', {
           contractID: groupId,
           data: { inviteSecret: secret }
@@ -164,7 +176,6 @@ export default ({
         this.ephemeral.errorMsg = e.message
         this.pageStatus = 'INVALID'
       }
-      sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     }
   }
 }: Object)

@@ -61,6 +61,7 @@
             i.icon-smile-beam
 
       i18n.c-send-button(
+        id='mobileSendButton'
         v-if='showSendButton'
         tag='button'
         :class='{ isActive, showSendButton }'
@@ -152,8 +153,20 @@ export default ({
       this.$emit('start-typing')
       if (this.ephemeral.isPhone) this.ephemeral.showButtons = false
     },
-    textAreaBlur () {
-      if (this.ephemeral.isPhone) this.ephemeral.showButtons = true
+    checkIfMobileSendButton (objElement) {
+      if (!objElement) {
+        return false
+      }
+      return objElement.id === 'mobileSendButton'
+    },
+    textAreaBlur (event) {
+      if (this.ephemeral.isPhone) {
+        if (this.checkIfMobileSendButton(event.relatedTarget)) {
+          this.sendMessage()
+        } else {
+          this.ephemeral.showButtons = true
+        }
+      }
     },
     isNextLine (e) {
       const enterKey = e.keyCode === 13
@@ -201,7 +214,7 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      console.log('send')
+      console.log('send', this.$refs.textarea.value)
       if (!this.$refs.textarea.value) {
         return false
       }
@@ -258,7 +271,7 @@ $initialHeight: 43px;
 
   &-mask {
     position: absolute;
-    top: 0;
+    top: 1rem;
     left: 0;
     opacity: 0;
     pointer-events: none;

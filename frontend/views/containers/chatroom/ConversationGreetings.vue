@@ -20,13 +20,13 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { CHATROOM_TYPES } from '@model/contracts/constants.js'
 import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
 import L from '@view-utils/translations.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 
 export default ({
   name: 'ConversationGreetings',
@@ -87,6 +87,8 @@ export default ({
   .button {
     @include phone {
       width: calc(100% - 1rem);
+      margin-top: 0.2rem;
+      margin-bottom: 0.2rem;
     }
   }
 }

@@ -24,9 +24,9 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
-import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 
@@ -41,7 +41,7 @@ export default ({
       'ourUsername'
     ]),
     userDisplayName () {
-      const userContract = this.$store.getters.ourUserIdentityContract
+      const userContract = this.$store.getters.currentIdentityState
       return userContract && userContract.attributes && userContract.attributes.displayName
     }
   },

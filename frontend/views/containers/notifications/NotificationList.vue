@@ -26,8 +26,8 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-
 import { timeSince } from '@utils/time.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import L from '@view-utils/translations.js'
@@ -82,7 +82,7 @@ export default ({
       }[level]
     },
     markAsRead (item: Object): void {
-      item.read = true
+      sbp('gi.notifications/markAsRead', item)
     }
   }
 }: Object)

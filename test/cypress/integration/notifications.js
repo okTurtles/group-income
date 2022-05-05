@@ -350,10 +350,12 @@ describe('Notifications - markAsUnread and markAllAsUnread', () => {
     cy.window().its('sbp').then(sbp => {
       switchGroup(turtlesGroupName, sbp)
       sbp('gi.notifications/markAllAsRead')
+      cy.getByDT('closeProfileCard').click()
 
       cyCheckBellsBadge(0)
       cyCheckDreamersBadge(0)
       cyCheckTurtlesBadge(0)
+      cy.giLogout()
     })
   })
 })

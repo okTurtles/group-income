@@ -1,4 +1,6 @@
-import sbp from '~/shared/sbp.js'
+'use strict'
+
+import sbp from '@sbp/sbp'
 import { CLOSE_MODAL } from '~/frontend/utils/events.js'
 import { mapMutations } from 'vuex'
 import ModalClose from './ModalClose.vue'
@@ -10,6 +12,10 @@ const modaMixins = {
       required: true
     },
     backOnMobile: {
+      type: Boolean,
+      default: false
+    },
+    modalForceAction: {
       type: Boolean,
       default: false
     },

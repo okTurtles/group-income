@@ -1,10 +1,10 @@
 <template lang='pug'>
   div
-    component(:is='content' ref='content')
+    component(:is='content' ref='content' v-bind='childData')
     component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 
 export default ({
@@ -16,6 +16,7 @@ export default ({
       queries: { // Queries to be used by modals
         // [modalName]: { queryKey: queryValue }
       },
+      childData: null,
       replacement: null, // Replace the modal once the first one is close without updating the url
       lastFocus: null // Record element that open the modal
     }
@@ -103,7 +104,7 @@ export default ({
         this.$router.push({ rQueries }).catch(console.error)
       }
     },
-    openModal (componentName, queries = {}) {
+    openModal (componentName, queries = {}, childData = {}) {
       // Don't open the same kind of modal twice.
       if (this.content === componentName) return
 
@@ -115,6 +116,7 @@ export default ({
       }
       this.queries[componentName] = queries
       this.updateUrl()
+      this.childData = childData
     },
     unloadModal () {
       if (this.subcontent.length) {

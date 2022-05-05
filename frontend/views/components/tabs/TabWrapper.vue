@@ -30,10 +30,10 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import sbp from '~/shared/sbp.js'
 import TabItem from '@components/tabs/TabItem.vue'
-import { logExceptNavigationDuplicated } from '@controller/utils/misc.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'TabWrapper',
@@ -98,7 +98,7 @@ export default ({
         this.$router.push({ query })
         this.changeTab(tabItem.index)
       } else {
-        sbp('state/vuex/dispatch', tabItem.action)
+        sbp(tabItem.action)
         this.$emit('close')
       }
     }

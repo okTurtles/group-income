@@ -28,9 +28,9 @@ form(data-test='login' @submit.prevent='')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -71,10 +71,8 @@ export default ({
         this.$refs.formMsg.clean()
 
         await sbp('gi.actions/identity/login', {
-          data: {
-            username: this.form.username,
-            password: this.form.password
-          }
+          username: this.form.username,
+          password: this.form.password
         })
         this.$emit('submit-succeeded')
       } catch (e) {

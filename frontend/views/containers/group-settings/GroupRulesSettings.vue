@@ -34,7 +34,7 @@
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers, getPercentFromDecimal } from '@model/contracts/voting/rules.js'
 import { OPEN_MODAL } from '@utils/events.js'

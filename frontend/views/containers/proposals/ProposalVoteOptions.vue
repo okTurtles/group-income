@@ -23,8 +23,8 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
 import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
@@ -56,7 +56,7 @@ export default ({
       'ourUsername',
       'currentGroupState',
       'groupSettings',
-      'ourUserIdentityContract'
+      'currentIdentityState'
     ]),
     proposal () {
       return this.currentGroupState.proposals[this.proposalHash]
