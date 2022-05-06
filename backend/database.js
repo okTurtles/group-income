@@ -52,7 +52,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'backend/db/streamEntriesBefore': async function (contractID: string, hash: string, numberOfActions: number): Promise<*> {
-    let currentHEAD = await sbp('gi.db/get', sbp('gi.db/log/logHEAD', contractID))
+    let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
     if (!currentHEAD) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
@@ -64,7 +64,7 @@ export default (sbp('sbp/selectors/register', {
     return new Readable({
       async read (): any {
         try {
-          const entry = await sbp('gi.db/log/getEntry', currentHEAD)
+          const entry = await sbp('chelonia/db/getEntry', currentHEAD)
           const json = `"${strToB64(entry.serialize())}"`
 
           if (currentHEAD !== hash && metBefore) {
@@ -78,9 +78,10 @@ export default (sbp('sbp/selectors/register', {
           if (!numberOfActions || currentHEAD === contractID) {
             this.push(']')
             this.push(null)
+          } else {
+            currentHEAD = entry.message().previousHEAD
+            this.push('')
           }
-          currentHEAD = entry.message().previousHEAD
-          this.push('')
         } catch (e) {
           console.error(`read(): ${e.message}:`, e)
           if (metBefore) {

@@ -15,6 +15,7 @@ export const CHATROOM_GENERAL_NAME = 'General'
 export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
 export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
 export const CHATROOM_ACTIONS_PER_PAGE = 40
+export const CHATROOM_MESSAGES_PER_PAGE = 20
 
 export const CHATROOM_TYPES = {
   INDIVIDUAL: 'individual',

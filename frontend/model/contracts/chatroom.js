@@ -14,6 +14,7 @@ import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_ACTIONS_PER_PAGE,
+  CHATROOM_MESSAGES_PER_PAGE,
   MESSAGE_ACTION_TYPES,
   CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL,
@@ -187,6 +188,7 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           settings: {
             actionsPerPage: CHATROOM_ACTIONS_PER_PAGE,
+            messagesPerPage: CHATROOM_MESSAGES_PER_PAGE,
             maxNameLength: CHATROOM_NAME_LIMITS_IN_CHARS,
             maxDescriptionLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
           },

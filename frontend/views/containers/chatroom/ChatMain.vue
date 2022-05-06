@@ -128,6 +128,7 @@ export default ({
       config: {
         isPhone: null
       },
+      latestHashes: [],
       messages: [],
       ephemeral: {
         bodyPaddingBottom: '',
@@ -322,7 +323,9 @@ export default ({
         }
       })
     },
-    setInitMessages () {
+    async setInitMessages () {
+      // const hashes = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, '', 0)
+      // console.log('Latest Hashes are', hashes)
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
         this.messages = cloneDeep(this.chatRoomLatestMessages)
       } else {
