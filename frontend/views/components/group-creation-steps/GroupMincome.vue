@@ -45,7 +45,7 @@
           span.button.is-icon-small
             i.icon-question-circle
           template(slot='tooltip')
-            i18n(tag='p') Select which day of the month should the distribution be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members.
+            i18n(tag='p') Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members.
 
       .selectbox
         select.select(
