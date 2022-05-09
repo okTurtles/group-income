@@ -40,7 +40,7 @@
 
     fieldset.field
       .label.c-label-tooltip
-        i18n In what day should the first payment distribution be calculated?
+        i18n On what day should the first payment distribution be calculated?
         tooltip(direction='bottom-end')
           span.button.is-icon-small
             i.icon-question-circle
