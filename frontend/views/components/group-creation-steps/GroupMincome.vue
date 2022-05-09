@@ -49,7 +49,7 @@
 
       .selectbox
         select.select(
-          :aria-label='L("Choose day")'
+          :aria-label='L("Choose your group\'s distribution date")'
           name='distributionDate'
           required=''
           :value='group.distributionDate'
@@ -89,7 +89,7 @@ export default ({
     }
   },
   beforeMount () {
-    for (let index = 0; index < 30; index++) {
+    for (let index = 1; index <= 30; index++) {
       this.ephemeral.distributionDayRange.push(dateToPeriodStamp(addTimeToDate(new Date().setUTCHours(0, 0, 0, 0), index * DAYS_MILLIS)))
     }
   },
