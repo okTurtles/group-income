@@ -2,8 +2,18 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
-  banner-simple(severity='warning' class='c-banner' v-if='!hasIncomeDetails && isCloseToDistributionTime')
-    p Next distribution date in on {{ humanDate(groupSettings.distributionDate, { month: 'long', day: 'numeric' })}}. Make sure to update your income details by then.
+  banner-simple(severity='warning' class='c-banner' v-if='showBanner')
+    i18n(
+      @click='handleIncomeClick'
+      :args='{ \
+        r1: `<button class="link js-btnInvite" data-test="openIncomeDetailsModal">`, \
+        r2: "</button>", \
+        date: humanDate(groupSettings.distributionDate, { month: "long", day: "numeric" }) \
+      }'
+    ) Next distribution date in on {date}. Make sure to update your {r1}income details{r2} by then.
+
+    button.is-unstyled(@click='closeBanner')
+      i.icon-times
 
   add-income-details-widget(v-if='!hasIncomeDetails' :welcomeMessage='true')
 
@@ -27,7 +37,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
 <script>
 import { mapGetters, mapState } from 'vuex'
-
+import sbp from '@sbp/sbp'
+import { OPEN_MODAL } from '@utils/events.js'
 import Page from '@components/Page.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import StartInvitingWidget from '@containers/dashboard/StartInvitingWidget.vue'
@@ -43,6 +54,19 @@ import { addTimeToDate, DAYS_MILLIS, humanDate } from '~/frontend/utils/time.js'
 
 export default ({
   name: 'GroupDashboard',
+  beforeMount () {
+    if (!this.isCloseToDistributionTime) {
+      localStorage.setItem('giHideDistributionWarning', false)
+    }
+    this.ephemeral.hideBanner = localStorage.getItem('giHideDistributionWarning')
+  },
+  data () {
+    return {
+      ephemeral: {
+        hideBanner: false
+      }
+    }
+  },
   computed: {
     ...mapState([
       'currentGroupId'
@@ -68,10 +92,20 @@ export default ({
     isCloseToDistributionTime () {
       const warningDate = addTimeToDate(new Date(this.groupSettings.distributionDate), -7 * DAYS_MILLIS)
       return Date.now() >= new Date(warningDate).getTime()
+    },
+    showBanner () {
+      return !this.hasIncomeDetails && this.isCloseToDistributionTime && !this.ephemeral.hideBanner
     }
   },
   methods: {
-    humanDate
+    humanDate,
+    handleIncomeClick (e) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
+    },
+    closeBanner () {
+      localStorage.setItem('giHideDistributionWarning', true)
+      this.ephemeral.hideBanner = true
+    }
   },
   components: {
     Page,
@@ -90,7 +124,21 @@ export default ({
 </script>
 
 <style lang="scss" scoped>
-.c-banner {
+.c-banner.c-message {
   margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+
+  button {
+    float: right;
+    margin-left: 0.5rem;
+    margin-top: 0.2rem;
+  }
+
+  ::v-deep .c-body {
+    display: flex;
+    align-content: center;
+    justify-content: space-between;
+  }
 }
 </style>
