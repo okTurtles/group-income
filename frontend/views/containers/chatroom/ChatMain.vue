@@ -128,7 +128,7 @@ export default ({
       config: {
         isPhone: null
       },
-      latestHashes: [],
+      latestEvents: [],
       messages: [],
       ephemeral: {
         bodyPaddingBottom: '',
@@ -323,15 +323,26 @@ export default ({
         }
       })
     },
-    async setInitMessages () {
-      // const hashes = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, '', 0)
-      // console.log('Latest Hashes are', hashes)
+    async getLatestEvents (pageIndex = 0) {
+      // const newEvents = await sbp('chelonia/contractEventsBefore',
+      //   this.currentChatRoomId, '', this.chatRoomSettings.actionsPerPage)
+      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, '', 40)
+      if (!pageIndex) {
+        this.latestEvents = newEvents
+      } else {
+        this.latestEvents = newEvents.concat(this.latestEvents)
+      }
+      console.log('Latest Events are', this.latestEvents)
+    },
+    setInitMessages () {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
         this.messages = cloneDeep(this.chatRoomLatestMessages)
+        this.getLatestEvents(0)
       } else {
         this.messages = []
         sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
           this.messages = cloneDeep(state.messages || [])
+          this.getLatestEvents(0)
         })
       }
     },

@@ -59,6 +59,11 @@ export default (sbp('sbp/selectors/register', {
 
     hash = hash || currentHEAD
     let prefix = '['
+    if (hash === currentHEAD) {
+      const entry = await sbp('chelonia/db/getEntry', currentHEAD)
+      prefix = `["${strToB64(entry.serialize())}",`
+      numberOfActions--
+    }
     let metBefore = false
 
     return new Readable({
