@@ -75,6 +75,11 @@ export default ({
 .c-greetings {
   padding: 0.5rem 1rem;
 
+  h3,
+  p {
+    text-align: left;
+  }
+
   @include tablet {
     padding: 0 2.5rem 2rem 2.5rem;
   }

@@ -16,14 +16,22 @@
         @infinite='infiniteHandler'
         force-use-infinite-wrapper='.c-body-conversation'
       )
-
-      conversation-greetings(
-        :members='details.numberOfParticipants'
-        :creator='summary.creator'
-        :type='type'
-        :name='summary.title'
-        :description='summary.description'
-      )
+        div(slot='no-more')
+          conversation-greetings(
+            :members='details.numberOfParticipants'
+            :creator='summary.creator'
+            :type='type'
+            :name='summary.title'
+            :description='summary.description'
+          )
+        div(slot='no-results')
+          conversation-greetings(
+            :members='details.numberOfParticipants'
+            :creator='summary.creator'
+            :type='type'
+            :name='summary.title'
+            :description='summary.description'
+          )
 
       template(v-for='(message, index) in messages')
         .c-divider(
@@ -440,7 +448,6 @@ export default ({
       this.getLatestEvents(this.refreshMessages).then(completed => {
         completed ? $state.complete() : $state.loaded()
         this.refreshMessages = false
-        // this.$nextTick(() => this.updateScroll())
       })
     }
   },
