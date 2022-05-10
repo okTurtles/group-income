@@ -1,8 +1,5 @@
-'use strict'
-
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
-import type { JSONObject, JSONType } from '~/shared/types.js'
 
 // ====== Event name constants ====== //
 
@@ -24,29 +21,29 @@ export const PUBSUB_RECONNECTION_SUCCEEDED = 'pubsub-reconnection-succeeded'
  *   used as the return type of the core setTimeout() function.
  */
 
-export type Message = {
+type Message = {
   [key: string]: JSONType,
-  +type: string
+  type: string
 }
 
-export type PubSubClient = {
+type PubSubClient = {
   connectionTimeoutID: TimeoutID | void,
-  +customEventHandlers: Object,
+  customEventHandlers: Object,
   failedConnectionAttempts: number,
-  +isLocal: boolean,
+  isLocal: boolean,
   isNew: boolean,
-  +listeners: Object,
-  +messageHandlers: Object,
+  listeners: Object,
+  messageHandlers: Object,
   nextConnectionAttemptDelayID: TimeoutID | void,
-  +options: Object,
-  +pendingSubscriptionSet: Set<string>,
+  options: Object,
+  pendingSubscriptionSet: Set<string>,
   pendingSyncSet: Set<string>,
-  +pendingUnsubscriptionSet: Set<string>,
+  pendingUnsubscriptionSet: Set<string>,
   pingTimeoutID: TimeoutID | void,
   shouldReconnect: boolean,
   socket: WebSocket | null,
-  +subscriptionSet: Set<string>,
-  +url: string,
+  subscriptionSet: Set<string>,
+  url: string,
   // Methods
   clearAllTimers(): void,
   connect(): void,
@@ -57,18 +54,18 @@ export type PubSubClient = {
   unsub(contractID: string): void
 }
 
-export type SubMessage = {
+type SubMessage = {
   [key: string]: JSONType,
-  +type: 'sub',
-  +contractID: string,
-  +dontBroadcast: boolean
+  type: 'sub',
+  contractID: string,
+  dontBroadcast: boolean
 }
 
-export type UnsubMessage = {
+type UnsubMessage = {
   [key: string]: JSONType,
-  +type: 'unsub',
-  +contractID: string,
-  +dontBroadcast: boolean
+  type: 'unsub',
+  contractID: string,
+  dontBroadcast: boolean
 }
 
 // ====== Enums ====== //
@@ -177,6 +174,10 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
 }
 
 export function createMessage (type: string, data: JSONType): string {
+  return JSON.stringify({ type, data })
+}
+
+export function createNotification (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
@@ -289,7 +290,7 @@ const defaultClientEventHandlers = {
     // Reset the connection attempt counter so that we'll start a new
     // reconnection loop when we are back online.
     client.failedConnectionAttempts = 0
-    client.socket?.close(4002, 'offline')
+    client.socket?.close()
   },
 
   online (event: Event) {
@@ -320,8 +321,7 @@ const defaultClientEventHandlers = {
     // It will close the connection if we don't get any message from the server.
     if (options.pingTimeout > 0 && options.pingTimeout < Infinity) {
       client.pingTimeoutID = setTimeout(() => {
-        console.debug('[pubsub] Closing the connection because of ping timeout')
-        client.socket?.close(4000, 'timeout')
+        client.socket?.close()
       }, options.pingTimeout)
     }
     // We only need to handle contract resynchronization here when reconnecting.
@@ -374,7 +374,7 @@ const defaultMessageHandlers = {
     // Refresh the ping timer, waiting for the next ping.
     clearTimeout(client.pingTimeoutID)
     client.pingTimeoutID = setTimeout(() => {
-      client.socket?.close(4000, 'timeout')
+      client.socket?.close()
     }, client.options.pingTimeout)
   },
 
@@ -442,7 +442,7 @@ const defaultMessageHandlers = {
 
 // TODO: verify these are good defaults
 const defaultOptions = {
-  logPingMessages: process.env.NODE_ENV === 'development' && !process.env.CI,
+  logPingMessages: Deno.env.get('NODE_ENV') !== 'production' && !Deno.env.get('CI'),
   pingTimeout: 45000,
   maxReconnectionDelay: 60000,
   maxRetries: 10,
@@ -546,7 +546,7 @@ const publicMethods = {
       for (const name of socketEventNames) {
         client.socket.removeEventListener(name, client.listeners[name])
       }
-      client.socket.close(4001, 'destroy')
+      client.socket.close()
     }
     client.listeners = {}
     client.socket = null

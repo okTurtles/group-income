@@ -1,15 +1,18 @@
-'use strict'
-
 import sbp from '@sbp/sbp'
-import './db.js'
-import { GIMessage } from './GIMessage.js'
-import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { b64ToStr } from '~/shared/functions.js'
-import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
-import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
-import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
+import './db.ts'
+import { GIMessage } from './GIMessage.ts'
+import { b64ToStr } from '~/shared/functions.ts'
+import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.ts'
+import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.ts'
 
-import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
+import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/shared/giLodash.ts'
+
+function handleFetchResult (type: string) {
+  return function (r: Object) {
+    if (!r.ok) throw new Error(`${r.status}: ${r.statusText}`)
+    return r[type]()
+  }
+}
 
 sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
@@ -68,11 +71,9 @@ sbp('sbp/selectors/register', {
   'chelonia/private/out/eventsSince': async function (contractID: string, since: string) {
     const events = await fetch(`${this.config.connectionURL}/events/${contractID}/${since}`)
       .then(handleFetchResult('json'))
-    // console.log('fetched events:', events)
+    // console.log('eventsSince:', events)
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
-    } else {
-      throw new Error('eventsSince: `events` is not Array')
     }
   },
   'chelonia/private/in/processMessage': function (message: GIMessage, state: Object) {

@@ -63,6 +63,7 @@ sbp('chelonia/configure', {
   stateSelector: 'state/vuex/state',
   skipSideEffects: true,
   connectionOptions: {
+    pingTimeout: 0,
     reconnectOnDisconnection: false,
     reconnectOnOnline: false,
     reconnectOnTimeout: false,
@@ -328,7 +329,9 @@ describe('Full walkthrough', function () {
       const hash = blake32Hash(buffer)
       console.log(`hash for ${path.basename(filepath)}: ${hash}`)
       form.append('hash', hash)
-      form.append('data', new Blob([buffer]), path.basename(filepath))
+      const blob = new Blob([buffer])
+      console.log(blob);
+      form.append('data', blob, path.basename(filepath))
       await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
         .then(handleFetchResult('text'))
         .then(r => should(r).equal(`/file/${hash}`))

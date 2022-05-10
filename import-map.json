@@ -1,0 +1,17 @@
+{
+  "imports": {
+    "~/backend/": "./deno-backend/",
+    "~/shared/": "./deno-shared/",
+    "~/": "./",
+    "@sbp/": "https://cdn.skypack.dev/@sbp/",
+
+    "fmt/": "https://deno.land/std@0.138.0/fmt/",
+    "path": "https://deno.land/std@0.138.0/path/mod.ts",
+
+    "blakejs": "https://cdn.skypack.dev/blakejs",
+    "buffer": "https://cdn.skypack.dev/buffer",
+    "multihashes": "https://esm.sh/multihashes",
+    "pogo/": "../pogo/",
+    "tweetnacl": "https://cdn.skypack.dev/tweetnacl"
+  }
+}
