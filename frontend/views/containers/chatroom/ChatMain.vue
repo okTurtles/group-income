@@ -78,6 +78,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Loading from '@components/Loading.vue'
@@ -131,6 +132,8 @@ export default ({
       latestEvents: [],
       messages: [],
       ephemeral: {
+        refreshMessages: true,
+        infiniteLoading: null,
         bodyPaddingBottom: '',
         replyingMessage: null,
         replyingTo: null
@@ -156,6 +159,8 @@ export default ({
     ...mapGetters([
       'currentChatRoomId',
       'chatRoomSettings',
+      'chatRoomAttributes',
+      'chatRoomUsers',
       'chatRoomLatestMessages',
       'ourIdentityContractId',
       'currentIdentityState',
@@ -323,27 +328,45 @@ export default ({
         }
       })
     },
-    async getLatestEvents (pageIndex = 0) {
-      // const newEvents = await sbp('chelonia/contractEventsBefore',
-      //   this.currentChatRoomId, '', this.chatRoomSettings.actionsPerPage)
-      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, '', 40)
-      if (!pageIndex) {
-        this.latestEvents = newEvents
+    async getLatestEvents (refresh = false) {
+      const beforeActionHash = refresh || !this.latestEvents.length ? '' : GIMessage.deserialize(this.latestEvents[0]).hash()
+      const newEvents = await sbp('chelonia/contractEventsBefore',
+        this.currentChatRoomId, beforeActionHash, this.chatRoomSettings.actionsPerPage)
+      if (refresh) {
+        this.latestEvents = cloneDeep(newEvents)
       } else {
         this.latestEvents = newEvents.concat(this.latestEvents)
       }
-      console.log('Latest Events are', this.latestEvents)
+      const state = {
+        settings: cloneDeep(this.chatRoomSettings),
+        attributes: Object.assign({
+          simulation: true // IMPORTANT: To skip some conditional checking inside process function
+        }, this.chatRoomAttributes),
+        users: cloneDeep(this.chatRoomUsers),
+        messages: []
+      }
+      for (const event of this.latestEvents) {
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
+      }
+      this.messages = cloneDeep(state.messages)
+      this.$forceUpdate()
+
+      return newEvents.length < this.chatRoomSettings.actionsPerPage
     },
     setInitMessages () {
+      this.refreshMessages = true
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        this.messages = cloneDeep(this.chatRoomLatestMessages)
-        this.getLatestEvents(0)
+        // this.messages = cloneDeep(this.chatRoomLatestMessages)
+        this.messages = []
       } else {
         this.messages = []
         sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
-          this.messages = cloneDeep(state.messages || [])
-          this.getLatestEvents(0)
+          // this.messages = cloneDeep(state.messages || [])
+          this.messages = []
         })
+      }
+      if (this.ephemeral.infiniteLoading) {
+        this.ephemeral.infiniteLoading.reset()
       }
     },
     setMessageEventListener ({ force = false, from, to }) {
@@ -413,13 +436,12 @@ export default ({
       document.documentElement.style.setProperty('--vh', `${vh}px`)
     },
     infiniteHandler ($state) {
-      const clonedMessages = cloneDeep(this.messages.slice(-10))
-      this.messages.unshift(
-        ...clonedMessages.map(m => ({ ...m, id: `${m.id}-${parseInt(new Date().getTime() * Math.random())}` }))
-      )
-      $state.loaded()
-      this.$forceUpdate()
-      // $state.complete()
+      this.ephemeral.infiniteLoading = $state
+      this.getLatestEvents(this.refreshMessages).then(completed => {
+        completed ? $state.complete() : $state.loaded()
+        this.refreshMessages = false
+        // this.$nextTick(() => this.updateScroll())
+      })
     }
   },
   watch: {

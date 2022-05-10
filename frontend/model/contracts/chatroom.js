@@ -211,7 +211,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state, getters }) {
         const { username } = data
-        if (state.users[username]) {
+        if (!state.attributes.simulation && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
           console.warn('Can not join the chatroom which you are already part of')
           return
@@ -269,7 +269,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
-        if (!state.users[member]) {
+        if (!state.attributes.simulation && !state.users[member]) {
           throw new Error(`Can not leave the chatroom which ${member} are not part of`)
         }
         Vue.delete(state.users, member)
@@ -286,7 +286,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, hash, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
-        if (data.member === rootState.loggedIn.username) {
+        if (!state.attributes.simulation && data.member === rootState.loggedIn.username) {
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return
           }
@@ -308,7 +308,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ meta, contractID }, { state }) {
-        if (state.attributes.creator === meta.username) { // Not sure this condition is necessary
+        if (!state.attributes.simulation && state.attributes.creator === meta.username) { // Not sure this condition is necessary
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return
           }
