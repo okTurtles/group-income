@@ -2,7 +2,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
-import { CHATROOM_STATE_LOADED, CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'
+import { CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'
 
 const initChatChannelDetails = {
   isLoading: true,
@@ -175,7 +175,6 @@ const chatroom: Object = {
         participants,
         members
       }
-      sbp('okTurtles.events/emit', `${CHATROOM_STATE_LOADED}-${chatRoomId}`, state)
       this.refreshTitle(name)
       this.setGroupChatDetailsAsGlobal()
     },

@@ -102,7 +102,7 @@ import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/co
 import { createMessage } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { cloneDeep } from '@utils/giLodash.js'
-import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
+import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
@@ -169,7 +169,6 @@ export default ({
       'chatRoomSettings',
       'chatRoomAttributes',
       'chatRoomUsers',
-      'chatRoomLatestMessages',
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom'
@@ -363,16 +362,7 @@ export default ({
     },
     setInitMessages () {
       this.refreshMessages = true
-      if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        // this.messages = cloneDeep(this.chatRoomLatestMessages)
-        this.messages = []
-      } else {
-        this.messages = []
-        sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
-          // this.messages = cloneDeep(state.messages || [])
-          this.messages = []
-        })
-      }
+      this.messages = []
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
       }
