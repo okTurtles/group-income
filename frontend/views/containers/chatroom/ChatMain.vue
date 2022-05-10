@@ -259,7 +259,6 @@ export default ({
       this.ephemeral.replyingTo = this.who(message)
     },
     editMessage (message, newMessage) {
-      console.log('updating...')
       sbp('gi.actions/chatroom/editMessage', {
         contractID: this.currentChatRoomId,
         data: { id: message.id, text: newMessage },
@@ -272,7 +271,6 @@ export default ({
       })
     },
     deleteMessage (message) {
-      console.log('deleting...')
       sbp('gi.actions/chatroom/deleteMessage', {
         contractID: this.currentChatRoomId,
         data: { id: message.id },
@@ -282,14 +280,6 @@ export default ({
           }
         }
       })
-    },
-    sendMessage (index) {
-      this.ephemeral.replyingMessage = null
-      this.ephemeral.replyingTo = null
-      setTimeout(() => {
-        console.log('TODO $store send message')
-        // this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
-      }, 2000)
     },
     changeDay (index) {
       const conv = this.messages
