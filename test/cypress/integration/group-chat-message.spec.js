@@ -98,6 +98,13 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
   }
 
+  function checkMessageBySender (index, sender, message) {
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('.c-message').eq(index).find('.c-who > span:first-child').should('contain', sender)
+      cy.get('.c-message').eq(index).find('.c-text').should('contain', message)
+    })
+  }
+
   it(`user1 creats '${groupName}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
     cy.visit('/')
     cy.giSignup(user1)
@@ -164,19 +171,12 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
     cy.getByDT('conversationWapper').within(() => {
       cy.get('.c-message').should('have.length', 4)
-
-      cy.get('.c-message').eq(0).find('.c-who > span:first-child').should('contain', user1)
-      cy.get('.c-message').eq(0).find('.c-text').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
-
-      cy.get('.c-message').eq(1).find('.c-who > span:first-child').should('contain', user2)
-      cy.get('.c-message').eq(1).find('.c-text').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
-
-      cy.get('.c-message').eq(2).find('.c-who > span:first-child').should('contain', user2)
-      cy.get('.c-message').eq(2).find('.c-text').should('contain', 'Can we have a meeting this evening?')
-
-      cy.get('.c-message').eq(3).find('.c-who > span:first-child').should('contain', user1)
-      cy.get('.c-message').eq(3).find('.c-text').should('contain', `Hi ${user2}. I am fine thanks.`)
     })
+
+    checkMessageBySender(0, user1, `Joined ${CHATROOM_GENERAL_NAME}`)
+    checkMessageBySender(1, user2, `Joined ${CHATROOM_GENERAL_NAME}`)
+    checkMessageBySender(2, user2, 'Can we have a meeting this evening?')
+    checkMessageBySender(3, user1, `Hi ${user2}. I am fine thanks.`)
   })
 
   it('user1 adds 4 emojis and removes 1 emoji', () => {
