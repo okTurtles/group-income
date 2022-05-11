@@ -98,7 +98,7 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
-import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/constants.js'
 import { createMessage } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { cloneDeep } from '@utils/giLodash.js'
@@ -335,30 +335,40 @@ export default ({
         }
       })
     },
-    async getLatestEvents (refresh = false) {
-      const beforeActionHash = refresh || !this.latestEvents.length ? '' : GIMessage.deserialize(this.latestEvents[0]).hash()
-      const newEvents = await sbp('chelonia/contractEventsBefore',
-        this.currentChatRoomId, beforeActionHash, this.chatRoomSettings.actionsPerPage)
-      if (refresh) {
-        this.latestEvents = cloneDeep(newEvents)
-      } else {
-        this.latestEvents = newEvents.concat(this.latestEvents)
-      }
-      const state = {
+    getSimulatedState (initialize = true) {
+      return {
         settings: cloneDeep(this.chatRoomSettings),
         attributes: Object.assign({
           simulation: true // IMPORTANT: To skip some conditional checking inside process function
         }, this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
-        messages: []
+        messages: initialize ? [] : this.messages
       }
+    },
+    async getLatestEvents (refresh = false) {
+      const eventsPerPage = this.chatRoomSettings
+        ? this.chatRoomSettings.actionsPerPage
+        : CHATROOM_ACTIONS_PER_PAGE
+      const beforeActionHash = refresh || !this.latestEvents.length
+        ? ''
+        : GIMessage.deserialize(this.latestEvents[0]).hash()
+
+      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, beforeActionHash, eventsPerPage)
+
+      if (refresh) {
+        this.latestEvents = cloneDeep(newEvents)
+      } else {
+        this.latestEvents = newEvents.concat(this.latestEvents)
+      }
+
+      const state = this.getSimulatedState(true)
       for (const event of this.latestEvents) {
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
       }
       this.messages = cloneDeep(state.messages)
       this.$forceUpdate()
 
-      return newEvents.length < this.chatRoomSettings.actionsPerPage
+      return newEvents.length < eventsPerPage
     },
     setInitMessages () {
       this.refreshMessages = true
@@ -377,57 +387,14 @@ export default ({
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
-    listenChatRoomActions ({ type, data }) {
-      const addIfNotExist = (msg) => {
-        let m = null
-        for (let i = this.messages.length - 1; i >= 0; i--) {
-          if (this.messages[i].id === msg.id) {
-            m = this.messages[i]
-            break
-          }
-        }
-        if (m) {
-          delete m.pending
-        } else {
-          this.messages.push(cloneDeep(msg))
-        }
-      }
+    listenChatRoomActions ({ hash }) {
+      sbp('okTurtles.events/once', hash, async (contractID, message) => {
+        const state = this.getSimulatedState(false)
+        await sbp('chelonia/private/in/processMessage', message, state)
+        this.latestEvents.push(message.serialize())
 
-      const updateIfExist = (msg) => {
-        for (let i = this.messages.length - 1; i >= 0; i--) {
-          if (this.messages[i].id === msg.id) {
-            this.messages.splice(i, 1, cloneDeep(msg))
-            break
-          }
-        }
-      }
-
-      const deleteIfExist = (id) => {
-        for (let i = this.messages.length - 1; i >= 0; i--) {
-          if (this.messages[i].id === id) {
-            this.messages.splice(i, 1)
-            break
-          }
-        }
-      }
-
-      const { message, id } = data
-      if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE && message) {
-        if (message.type === MESSAGE_TYPES.TEXT) {
-          if (this.isCurrentUser(message.from)) {
-            addIfNotExist(message)
-          } else {
-            this.messages.push(message)
-          }
-        } else if (message.type === MESSAGE_TYPES.NOTIFICATION) {
-          this.messages.push(message)
-        }
-      } else if (type === MESSAGE_ACTION_TYPES.EDIT_MESSAGE && message) {
-        updateIfExist(message)
-      } else if (type === MESSAGE_ACTION_TYPES.DELETE_MESSAGE && id) {
-        deleteIfExist(id)
-      }
-      this.$forceUpdate()
+        this.$forceUpdate()
+      })
     },
     resizeEventHandler () {
       const vh = window.innerHeight * 0.01

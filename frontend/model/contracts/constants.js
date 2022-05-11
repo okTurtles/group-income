@@ -40,12 +40,6 @@ export const INVITE_EXPIRES_IN_DAYS = {
   PROPOSAL: 7
 }
 
-export const MESSAGE_ACTION_TYPES = {
-  ADD_MESSAGE: 'message-action-add-message',
-  EDIT_MESSAGE: 'message-action-edit-message',
-  DELETE_MESSAGE: 'message-action-delete-message'
-}
-
 export const MESSAGE_NOTIFICATIONS = {
   ADD_MEMBER: 'add-member',
   JOIN_MEMBER: 'join-member',

@@ -8,14 +8,13 @@ import {
   objectMaybeOf, objectOf, mapOf, arrayOf,
   string, literalOf, unionOf, number, optional
 } from '~/frontend/utils/flowTyper.js'
-import { merge } from '~/frontend/utils/giLodash.js'
+import { merge, cloneDeep } from '~/frontend/utils/giLodash.js'
 import L from '~/frontend/views/utils/translations.js'
 import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MESSAGES_PER_PAGE,
-  MESSAGE_ACTION_TYPES,
   CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL,
   MESSAGE_TYPES,
@@ -123,25 +122,11 @@ function createNotificationData (
   }
 }
 
-function emitMessageEvent ({ type, contractID, hash, state }: {
-  type: string,
+function emitMessageEvent ({ contractID, hash }: {
   contractID: string,
-  hash: string,
-  state?: Object
+  hash: string
 }): void {
-  let data = {}
-  if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE || type === MESSAGE_ACTION_TYPES.EDIT_MESSAGE) {
-    const messagesCount = state?.messages.length || 0
-    for (let i = messagesCount - 1; i >= 0; i--) {
-      if (state?.messages[i].id === hash) {
-        data = { message: { ...state?.messages[i] } }
-        break
-      }
-    }
-  } else if (type === MESSAGE_ACTION_TYPES.DELETE_MESSAGE) {
-    data = { id: hash }
-  }
-  sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { type, data })
+  sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash })
 }
 
 sbp('chelonia/defineContract', {
@@ -227,8 +212,8 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
       },
-      sideEffect ({ data, contractID, hash }, { state }) {
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/rename': {
@@ -241,8 +226,8 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/changeDescription': {
@@ -257,8 +242,8 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/leave': {
@@ -292,7 +277,7 @@ sbp('chelonia/defineContract', {
           }
           leaveChatRoom({ contractID })
         }
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/delete': {
@@ -320,10 +305,19 @@ sbp('chelonia/defineContract', {
       validate: messageType,
       process ({ data, meta, hash }, { state }) {
         const newMessage = createMessage({ meta, data, hash, state })
-        state.messages.push(newMessage)
+        if (state.attributes.simulation) {
+          const pendingMsg = state.messages.find(msg => msg.id === hash && msg.pending)
+          if (pendingMsg) {
+            delete pendingMsg.pending
+          } else {
+            state.messages.push(newMessage)
+          }
+        } else {
+          state.messages.push(newMessage)
+        }
       },
-      sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/editMessage': {
@@ -339,17 +333,15 @@ sbp('chelonia/defineContract', {
           if (state.messages[i].id === data.id) {
             state.messages[i].text = data.text
             state.messages[i].updatedDate = meta.createdDate
+            if (state.attributes.simulation && state.messages[i].pending) {
+              delete state.messages[i].pending
+            }
             break
           }
         }
       },
-      sideEffect ({ contractID, data }, { state }) {
-        emitMessageEvent({
-          type: MESSAGE_ACTION_TYPES.EDIT_MESSAGE,
-          contractID,
-          hash: data.id,
-          state
-        })
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/deleteMessage': {
@@ -364,13 +356,8 @@ sbp('chelonia/defineContract', {
           }
         }
       },
-      sideEffect ({ contractID, data }, { state }) {
-        emitMessageEvent({
-          type: MESSAGE_ACTION_TYPES.DELETE_MESSAGE,
-          contractID,
-          hash: data.id,
-          state
-        })
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/makeEmotion': {
@@ -382,7 +369,7 @@ sbp('chelonia/defineContract', {
         const { id, emoticon } = data
         for (let i = state.messages.length - 1; i >= 0; i--) {
           if (state.messages[i].id === id) {
-            let emoticons = state.messages[i].emoticons || {}
+            let emoticons = cloneDeep(state.messages[i].emoticons || {})
             if (emoticons[emoticon]) {
               const alreadyAdded = emoticons[emoticon].indexOf(meta.username)
               if (alreadyAdded >= 0) {
@@ -407,13 +394,9 @@ sbp('chelonia/defineContract', {
             break
           }
         }
-        sbp('gi.contracts/chatroom/pushSideEffect', contractID,
-          ['gi.contracts/chatroom/editMessage/sideEffect', {
-            meta,
-            data: { id: data.id },
-            contractID
-          }]
-        )
+      },
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     }
   }
