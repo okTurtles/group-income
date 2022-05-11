@@ -338,11 +338,10 @@ export default ({
     getSimulatedState (initialize = true) {
       return {
         settings: cloneDeep(this.chatRoomSettings),
-        attributes: Object.assign({
-          simulation: true // IMPORTANT: To skip some conditional checking inside process function
-        }, this.chatRoomAttributes),
+        attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
-        messages: initialize ? [] : this.messages
+        messages: initialize ? [] : this.messages,
+        simulation: true
       }
     },
     async getLatestEvents (refresh = false) {

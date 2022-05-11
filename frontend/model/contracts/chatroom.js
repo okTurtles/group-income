@@ -196,9 +196,15 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state, getters }) {
         const { username } = data
-        if (!state.attributes.simulation && state.users[username]) {
+        if (!state.simulation && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
           console.warn('Can not join the chatroom which you are already part of')
+          return
+        }
+
+        Vue.set(state.users, username, { joinedDate: meta.createdDate })
+
+        if (!state.simulation) {
           return
         }
 
@@ -209,8 +215,6 @@ sbp('chelonia/defineContract', {
         )
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
-
-        Vue.set(state.users, username, { joinedDate: meta.createdDate })
       },
       sideEffect ({ contractID, hash }) {
         emitMessageEvent({ contractID, hash })
@@ -222,6 +226,11 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
+
+        if (!state.simulation) {
+          return
+        }
+
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {})
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
@@ -236,6 +245,11 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
+
+        if (!state.simulation) {
+          return
+        }
+
         const notificationData = createNotificationData(
           MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {}
         )
@@ -254,10 +268,14 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
-        if (!state.attributes.simulation && !state.users[member]) {
+        if (!state.simulation && !state.users[member]) {
           throw new Error(`Can not leave the chatroom which ${member} are not part of`)
         }
         Vue.delete(state.users, member)
+
+        if (!state.simulation) {
+          return
+        }
 
         const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
         const notificationData = createNotificationData(notificationType, isKicked ? { username: member } : {})
@@ -271,7 +289,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, hash, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
-        if (!state.attributes.simulation && data.member === rootState.loggedIn.username) {
+        if (!state.simulation && data.member === rootState.loggedIn.username) {
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return
           }
@@ -293,7 +311,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ meta, contractID }, { state }) {
-        if (!state.attributes.simulation && state.attributes.creator === meta.username) { // Not sure this condition is necessary
+        if (!state.simulation && state.attributes.creator === meta.username) { // Not sure this condition is necessary
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return
           }
@@ -305,13 +323,12 @@ sbp('chelonia/defineContract', {
       validate: messageType,
       process ({ data, meta, hash }, { state }) {
         const newMessage = createMessage({ meta, data, hash, state })
-        if (state.attributes.simulation) {
-          const pendingMsg = state.messages.find(msg => msg.id === hash && msg.pending)
-          if (pendingMsg) {
-            delete pendingMsg.pending
-          } else {
-            state.messages.push(newMessage)
-          }
+        if (!state.simulation) {
+          return
+        }
+        const pendingMsg = state.messages.find(msg => msg.id === hash && msg.pending)
+        if (pendingMsg) {
+          delete pendingMsg.pending
         } else {
           state.messages.push(newMessage)
         }
@@ -329,11 +346,14 @@ sbp('chelonia/defineContract', {
         // TODO: need to check if the meta.username === message.from
       },
       process ({ data, meta }, { state }) {
+        if (!state.simulation) {
+          return
+        }
         for (let i = state.messages.length - 1; i >= 0; i--) {
           if (state.messages[i].id === data.id) {
             state.messages[i].text = data.text
             state.messages[i].updatedDate = meta.createdDate
-            if (state.attributes.simulation && state.messages[i].pending) {
+            if (state.simulation && state.messages[i].pending) {
               delete state.messages[i].pending
             }
             break
@@ -349,6 +369,9 @@ sbp('chelonia/defineContract', {
         id: string
       }),
       process ({ data, meta }, { state }) {
+        if (!state.simulation) {
+          return
+        }
         for (let i = state.messages.length - 1; i >= 0; i--) {
           if (state.messages[i].id === data.id) {
             state.messages.splice(i, 1)
@@ -366,6 +389,9 @@ sbp('chelonia/defineContract', {
         emoticon: string
       }),
       process ({ data, meta, contractID }, { state }) {
+        if (!state.simulation) {
+          return
+        }
         const { id, emoticon } = data
         for (let i = state.messages.length - 1; i >= 0; i--) {
           if (state.messages[i].id === id) {
