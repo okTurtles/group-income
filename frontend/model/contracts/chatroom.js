@@ -132,11 +132,11 @@ function emitMessageEvent ({ type, contractID, hash, state }: {
   type: string,
   contractID: string,
   hash: string,
-  state?: Object
+  state: Object
 }): void {
   let data = {}
   if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE || type === MESSAGE_ACTION_TYPES.EDIT_MESSAGE) {
-    const messagesCount = state?.messages.length || 0
+    const messagesCount = state.messages.length || 0
     for (let i = messagesCount - 1; i >= 0; i--) {
       if (state?.messages[i].id === hash) {
         data = { message: { ...state?.messages[i] } }
