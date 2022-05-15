@@ -119,8 +119,7 @@ export default ({
             mincomeCurrency: this.form.mincomeCurrency,
             ruleName: this.form.ruleName,
             ruleThreshold: this.form.ruleThreshold[this.form.ruleName],
-            // TODO: connect this to the form data and then delete this comment!
-            distributionDate: dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
+            distributionDate: this.form.distributionDate
           }
         })
         this.next()
@@ -142,6 +141,7 @@ export default ({
         ruleOrder: Math.round(Math.random()) === 1 ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE],
         mincomeAmount: '',
         mincomeCurrency: 'USD',
+        distributionDate: dateToPeriodStamp(addTimeToDate(new Date().setUTCHours(0, 0, 0, 0), 3 * DAYS_MILLIS)),
         ruleName: null,
         ruleThreshold: {
           [RULE_DISAGREEMENT]: proposalsSettings[RULE_DISAGREEMENT].threshold,
@@ -178,6 +178,9 @@ export default ({
         }
       },
       mincomeCurrency: {
+        required
+      },
+      distributionDate: {
         required
       },
       ruleName: {
