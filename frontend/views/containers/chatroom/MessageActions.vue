@@ -12,7 +12,7 @@ menu-parent(ref='menu')
         i.icon-smile-beam
 
     tooltip(
-      v-if='isCurrentUser && isEditable'
+      v-if='isEditable'
       direction='top'
       :text='L("Edit")'
     )
@@ -57,7 +57,7 @@ menu-parent(ref='menu')
         i18n Add reaction
 
       menu-item.hide-desktop.is-icon-small(tag='button'
-        v-if='isCurrentUser && isEditable'
+        v-if='isEditable'
         @click='action("editMessage")'
       )
         i.icon-pencil-alt
@@ -112,10 +112,7 @@ export default ({
   },
   computed: {
     isEditable (): Boolean {
-      if (this.type === MESSAGE_TYPES.TEXT) {
-        return true
-      }
-      return false
+      return this.isCurrentUser && this.type === MESSAGE_TYPES.TEXT
     }
   },
   methods: {

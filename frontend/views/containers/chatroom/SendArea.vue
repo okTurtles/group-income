@@ -153,19 +153,15 @@ export default ({
       this.$emit('start-typing')
       if (this.ephemeral.isPhone) this.ephemeral.showButtons = false
     },
-    checkIfMobileSendButton (objElement) {
-      if (!objElement) {
-        return false
-      }
-      return objElement.id === 'mobileSendButton'
-    },
     textAreaBlur (event) {
-      if (this.ephemeral.isPhone) {
-        if (this.checkIfMobileSendButton(event.relatedTarget)) {
-          this.sendMessage()
-        } else {
-          this.ephemeral.showButtons = true
-        }
+      if (!this.ephemeral.isPhone) {
+        return
+      }
+
+      if (event?.relatedTarget?.id === 'mobileSendButton') {
+        this.sendMessage()
+      } else {
+        this.ephemeral.showButtons = true
       }
     },
     isNextLine (e) {
@@ -214,7 +210,6 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      console.log('send', this.$refs.textarea.value)
       if (!this.$refs.textarea.value) {
         return false
       }
