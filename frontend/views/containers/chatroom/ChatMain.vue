@@ -335,9 +335,7 @@ export default ({
       }
     },
     async getLatestEvents (refresh = false) {
-      const eventsPerPage = this.chatRoomSettings
-        ? this.chatRoomSettings.actionsPerPage
-        : CHATROOM_ACTIONS_PER_PAGE
+      const eventsPerPage = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       const beforeActionHash = refresh || !this.latestEvents.length
         ? ''
         : GIMessage.deserialize(this.latestEvents[0]).hash()
