@@ -10,8 +10,8 @@ import { merge, cloneDeep, randomHexString, intersection, difference } from '~/f
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import { ChelErrorUnrecoverable } from './errors.js'
-import type { GIKey, GIOpContract, GIOpActionUnencrypted } from './GIMessage.js'
-import { keyId, sign, encrypt, decrypt } from '@utils/crypto.js'
+import type { GIKey, GIOpContract, GIOpActionUnencrypted, GIOpKeyAdd, GIOpKeyDel } from './GIMessage.js'
+import { keyId, sign, encrypt, decrypt, generateSalt } from './crypto.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -44,6 +44,32 @@ export type ChelActionParams = {
   publishOptions?: { maxAttempts: number };
 }
 
+export type ChelKeyAddParams = {
+  contractName: string;
+  contractID: string;
+  data: GIOpKeyAdd;
+  signingKeyId: string;
+  hooks?: {
+    prepublishContract?: (GIMessage) => void;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
+  };
+  publishOptions?: { maxAttempts: number };
+}
+
+export type ChelKeyDelParams = {
+  contractName: string;
+  contractID: string;
+  data: GIOpKeyDel;
+  signingKeyId: string;
+  hooks?: {
+    prepublishContract?: (GIMessage) => void;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
+  };
+  publishOptions?: { maxAttempts: number };
+}
+
 export { GIMessage }
 
 export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)\w*/
@@ -65,33 +91,41 @@ const signatureFnBuilder = (key) => {
   }
 }
 
+const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
+  const key = this.env.additionalKeys?.[eKeyId] || state?._volatile?.keys?.[eKeyId]
+
+  if (!key) {
+    return JSON.stringify(message)
+  }
+
+  return {
+    keyId: keyId(key),
+    content: encrypt(key, JSON.stringify(message))
+  }
+}
+
+const decryptFn = function (message: Object, state: ?Object) {
+  if (typeof message === 'string') {
+    return JSON.parse(message)
+  }
+
+  const keyId = message.keyId
+  const key = this.env.additionalKeys?.[keyId] || state?._volatile?.keys?.[keyId]
+
+  if (!key) {
+    throw new Error(`Key ${keyId} not found`)
+  }
+
+  return JSON.parse(decrypt(key, message.content))
+}
+
 sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
   // https://gitlab.okturtles.org/okturtles/group-income/-/wikis/E2E-Protocol/Framework.md#alt-names
   'chelonia/_init': function () {
     this.config = {
-      decryptFn: function (message: Object, state: ?Object) {
-        if (Object(message) instanceof String) {
-          return JSON.parse(message)
-        }
-
-        const keyId = message.keyId
-        const key = this.env.additionalKeys?.[keyId] || state?._volatile?.keys?.[keyId]
-
-        return JSON.parse(decrypt(key, message.content))
-      },
-      encryptFn: function (message: Object, eKeyId: string, state: ?Object) {
-        const key = this.env.additionalKeys?.[eKeyId] || state?._volatile?.keys?.[eKeyId]
-
-        if (!key) {
-          return JSON.stringify(message)
-        }
-
-        return {
-          keyId: keyId(key),
-          content: encrypt(key, JSON.stringify(message))
-        }
-      },
+      decryptFn: decryptFn,
+      encryptFn: encryptFn,
       stateSelector: 'chelonia/private/state', // override to integrate with, for example, vuex
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
@@ -132,9 +166,11 @@ sbp('sbp/selectors/register', {
   'chelonia/with-env': async function (contractID: string, env: Object, sbpInvocation: Array<*>) {
     const savedEnv = this.env
     this.env = env
-    const res = await sbp('okTurtles.eventQueue/queueEvent', `chelonia/env/${contractID}`, sbpInvocation)
-    this.env = savedEnv
-    return res
+    try {
+      return await sbp('okTurtles.eventQueue/queueEvent', `chelonia/env/${contractID}`, sbpInvocation)
+    } finally {
+      this.env = savedEnv
+    }
   },
   'chelonia/configure': function (config: Object) {
     merge(this.config, config)
@@ -260,7 +296,17 @@ sbp('sbp/selectors/register', {
       this.config.hooks.pubsubError?.(e, client)
     }
   },
+  // resolves when all pending actions for these contractID(s) finish
+  'chelonia/contract/wait': function (contractIDs?: string | string[]): Promise<*> {
+    const listOfIds = contractIDs
+      ? (typeof contractIDs === 'string' ? [contractIDs] : contractIDs)
+      : Object.keys(sbp(this.config.stateSelector).contracts)
+    return Promise.all(listOfIds.map(cID => {
+      return sbp('okTurtles.eventQueue/queueEvent', cID, ['chelonia/private/noop'])
+    }))
+  },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
+  // TODO: add an optional parameter to "retain" the contract (see #828)
   'chelonia/contract/sync': function (contractIDs: string | string[]): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
@@ -271,9 +317,13 @@ sbp('sbp/selectors/register', {
       // This prevents handleEvent getting called with the wrong previousHEAD for an event.
       return sbp('okTurtles.eventQueue/queueEvent', `chelonia/${contractID}`, [
         'chelonia/private/in/syncContract', contractID
-      ])
+      ]).catch((err) => {
+        console.error(`[chelonia] failed to sync ${contractID}:`, err)
+        throw err // re-throw the error
+      })
     }))
   },
+  // TODO: implement 'chelonia/contract/release' (see #828)
   // safer version of removeImmediately that waits to finish processing events for contractIDs
   'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
@@ -283,6 +333,7 @@ sbp('sbp/selectors/register', {
       ])
     }))
   },
+  // Warning: avoid using this unless you know what you're doing. Prefer using /remove.
   'chelonia/contract/removeImmediately': function (contractID: string) {
     const state = sbp(this.config.stateSelector)
     this.config.reactiveDel(state.contracts, contractID)
@@ -292,7 +343,7 @@ sbp('sbp/selectors/register', {
   },
   'chelonia/latestContractState': async function (contractID: string) {
     const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
-    let state = {}
+    let state = cloneDeep(sbp(this.config.stateSelector)[contractID] || {})
     // fast-path
     try {
       for (const event of events) {
@@ -300,8 +351,8 @@ sbp('sbp/selectors/register', {
       }
       return state
     } catch (e) {
-      console.warn(`[chelonia] latestContractState(${contractID}): fast-path failed due to ${e.name}: ${e.message}`)
-      state = {}
+      console.warn(`[chelonia] latestContractState(${contractID}): fast-path failed due to ${e.name}: ${e.message}`, e.stack)
+      state = cloneDeep(sbp(this.config.stateSelector)[contractID] || {})
     }
     // more error-tolerant but slower due to cloning state on each message
     for (const event of events) {
@@ -309,7 +360,7 @@ sbp('sbp/selectors/register', {
       try {
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
       } catch (e) {
-        console.warn(`[chelonia] latestContractState: '${e.name}': ${e.message} processing:`, event)
+        console.warn(`[chelonia] latestContractState: '${e.name}': ${e.message} processing:`, event, e.stack)
         if (e instanceof ChelErrorUnrecoverable) throw e
         state = stateCopy
       }
@@ -327,7 +378,8 @@ sbp('sbp/selectors/register', {
       GIMessage.OP_CONTRACT,
       ({
         type: contractName,
-        keys: keys
+        keys: keys,
+        nonce: generateSalt()
       }: GIOpContract)
     ], signingFn)
     hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
@@ -352,11 +404,51 @@ sbp('sbp/selectors/register', {
   'chelonia/out/actionUnencrypted': function (params: ChelActionParams): Promise<GIMessage> {
     return outEncryptedOrUnencryptedAction.call(this, GIMessage.OP_ACTION_UNENCRYPTED, params)
   },
-  'chelonia/out/keyAdd': async function () {
-
+  'chelonia/out/keyAdd': async function (params: ChelKeyAddParams): Promise<GIMessage> {
+    const { contractID, contractName, data, hooks, publishOptions } = params
+    const contract = this.contracts[contractName]
+    if (!contract) {
+      throw new Error('Contract name not found')
+    }
+    const state = contract.state(contractID)
+    const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+    const meta = contract.metadata.create()
+    const gProxy = gettersProxy(state, contract.getters)
+    contract.metadata.validate(meta, { state, ...gProxy, contractID })
+    const payload = (data: GIOpKeyAdd)
+    const signingKey = this.env.additionalKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+    const msg = GIMessage.createV1_0(contractID, previousHEAD, [
+      GIMessage.OP_KEY_ADD,
+      payload
+    ], signingKey ? signatureFnBuilder(signingKey) : undefined
+    )
+    hooks && hooks.prepublish && hooks.prepublish(msg)
+    await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
+    hooks && hooks.postpublish && hooks.postpublish(msg)
+    return msg
   },
-  'chelonia/out/keyDel': async function () {
-
+  'chelonia/out/keyDel': async function (params: ChelKeyDelParams): Promise<GIMessage> {
+    const { contractID, contractName, data, hooks, publishOptions } = params
+    const contract = this.contracts[contractName]
+    if (!contract) {
+      throw new Error('Contract name not found')
+    }
+    const state = contract.state(contractID)
+    const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+    const meta = contract.metadata.create()
+    const gProxy = gettersProxy(state, contract.getters)
+    contract.metadata.validate(meta, { state, ...gProxy, contractID })
+    const payload = (data: GIOpKeyDel)
+    const signingKey = this.env.additionalKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+    const msg = GIMessage.createV1_0(contractID, previousHEAD, [
+      GIMessage.OP_KEY_DEL,
+      payload
+    ], signingKey ? signatureFnBuilder(signingKey) : undefined
+    )
+    hooks && hooks.prepublish && hooks.prepublish(msg)
+    await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
+    hooks && hooks.postpublish && hooks.postpublish(msg)
+    return msg
   },
   'chelonia/out/protocolUpgrade': async function () {
 

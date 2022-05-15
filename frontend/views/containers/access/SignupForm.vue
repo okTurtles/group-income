@@ -83,11 +83,9 @@ export default ({
       }
       try {
         await sbp('gi.actions/identity/signupAndLogin', {
-          data: {
-            username: this.form.username,
-            email: this.form.email,
-            password: this.form.password
-          }
+          username: this.form.username,
+          email: this.form.email,
+          password: this.form.password
         })
         this.$emit('submit-succeeded')
       } catch (e) {

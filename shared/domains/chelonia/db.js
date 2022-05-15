@@ -66,9 +66,9 @@ export default (sbp('sbp/selectors/register', {
         console.error(`[chelonia.db] bad previousHEAD: ${previousHEAD}! Expected: ${HEAD} for contractID: ${contractID}`)
         throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${previousHEAD}`)
       }
+      await sbp('chelonia/db/set', entry.hash(), entry.serialize())
       await sbp('chelonia/db/set', sbp('chelonia/db/logHEAD', contractID), entry.hash())
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
-      await sbp('chelonia/db/set', entry.hash(), entry.serialize())
       return entry.hash()
     } catch (e) {
       if (e.name.includes('ErrorDB')) {

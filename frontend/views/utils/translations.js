@@ -126,6 +126,8 @@ export default function L (
   args: Array<*> | Object | void
 ): string {
   return template(currentTranslationTable[key] || key, args)
+    // Avoid inopportune linebreaks before certain punctuations.
+    .replace(/\s(?=[;:?!])/g, '&nbsp;')
 }
 
 export function LError (error: Error): {|reportError: any|} {

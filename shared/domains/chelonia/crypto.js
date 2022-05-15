@@ -6,6 +6,10 @@ import { blake32Hash, bytesToB64, b64ToBuf, strToBuf } from '~/shared/functions.
 
 import scrypt from 'scrypt-async'
 
+export const EDWARDS25519SHA512BATCH = 'edwards25519sha512batch'
+export const CURVE25519XSALSA20POLY1305 = 'curve25519xsalsa20poly1305'
+export const XSALSA20POLY1305 = 'xsalsa20poly1305'
+
 export type Key = {
   type: string;
   secretKey?: any;
@@ -13,7 +17,7 @@ export type Key = {
 }
 
 export const keygen = (type: string): Key => {
-  if (type === 'edwards25519sha512batch') {
+  if (type === EDWARDS25519SHA512BATCH) {
     const key = nacl.sign.keyPair()
 
     const res: Key = {
@@ -24,7 +28,7 @@ export const keygen = (type: string): Key => {
     Object.defineProperty(res, 'secretKey', { value: key.secretKey })
 
     return res
-  } else if (type === 'curve25519xsalsa20poly1305') {
+  } else if (type === CURVE25519XSALSA20POLY1305) {
     const key = nacl.box.keyPair()
 
     const res: Key = {
@@ -35,7 +39,7 @@ export const keygen = (type: string): Key => {
     Object.defineProperty(res, 'secretKey', { value: key.secretKey })
 
     return res
-  } else if (type === 'xsalsa20poly1305') {
+  } else if (type === XSALSA20POLY1305) {
     const res: Key = {
       type: type
     }
@@ -51,7 +55,7 @@ export const generateSalt = (): string => {
   return bytesToB64(nacl.randomBytes(18))
 }
 export const deriveKeyFromPassword = (type: string, password: string, salt: string): Promise<Key> => {
-  if (!['edwards25519sha512batch', 'curve25519xsalsa20poly1305', 'xsalsa20poly1305'].includes(type)) {
+  if (![EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305].includes(type)) {
     return Promise.reject(new Error('Unsupported type'))
   }
 
@@ -60,10 +64,10 @@ export const deriveKeyFromPassword = (type: string, password: string, salt: stri
       N: 16384,
       r: 8,
       p: 1,
-      dkLen: type === 'edwards25519sha512batch' ? nacl.sign.keyLength : type === 'curve25519xsalsa20poly1305' ? nacl.box.keyLength : type === 'xsalsa20poly1305' ? nacl.secretbox.keyLength : 0,
+      dkLen: type === EDWARDS25519SHA512BATCH ? nacl.sign.keyLength : type === CURVE25519XSALSA20POLY1305 ? nacl.box.keyLength : type === XSALSA20POLY1305 ? nacl.secretbox.keyLength : 0,
       encoding: 'binary'
     }, (derivedKey) => {
-      if (type === 'edwards25519sha512batch') {
+      if (type === EDWARDS25519SHA512BATCH) {
         const key = nacl.sign.keyPair.fromSeed(derivedKey)
 
         resolve({
@@ -71,7 +75,7 @@ export const deriveKeyFromPassword = (type: string, password: string, salt: stri
           secretKey: key.secretKey,
           publicKey: key.publicKey
         })
-      } else if (type === 'curve25519xsalsa20poly1305') {
+      } else if (type === CURVE25519XSALSA20POLY1305) {
         const key = nacl.box.keyPair.fromSecretKey(derivedKey)
 
         resolve({
@@ -79,7 +83,7 @@ export const deriveKeyFromPassword = (type: string, password: string, salt: stri
           secretKey: key.secretKey,
           publicKey: key.publicKey
         })
-      } else if (type === 'xsalsa20poly1305') {
+      } else if (type === XSALSA20POLY1305) {
         resolve({
           type: type,
           secretKey: derivedKey
@@ -88,9 +92,9 @@ export const deriveKeyFromPassword = (type: string, password: string, salt: stri
     })
   })
 }
-export const serializeKey = (key: Key, savePrivKey: boolean): string => {
-  if (key.type === 'edwards25519sha512batch' || key.type === 'curve25519xsalsa20poly1305') {
-    if (!savePrivKey) {
+export const serializeKey = (key: Key, saveSecretKey: boolean): string => {
+  if (key.type === EDWARDS25519SHA512BATCH || key.type === CURVE25519XSALSA20POLY1305) {
+    if (!saveSecretKey) {
       if (!key.publicKey) {
         throw new Error('Unsupported operation: no public key to export')
       }
@@ -109,8 +113,8 @@ export const serializeKey = (key: Key, savePrivKey: boolean): string => {
       type: key.type,
       secretKey: bytesToB64(key.secretKey)
     })
-  } else if (key.type === 'xsalsa20poly1305') {
-    if (!savePrivKey) {
+  } else if (key.type === XSALSA20POLY1305) {
+    if (!saveSecretKey) {
       throw new Error('Unsupported operation: no public key to export')
     }
 
@@ -133,7 +137,7 @@ export const deserializeKey = (data: string): Key => {
     throw new Error('Invalid key object')
   }
 
-  if (keyData.type === 'edwards25519sha512batch') {
+  if (keyData.type === EDWARDS25519SHA512BATCH) {
     if (keyData.secretKey) {
       const key = nacl.sign.keyPair.fromSecretKey(b64ToBuf(keyData.secretKey))
 
@@ -153,7 +157,7 @@ export const deserializeKey = (data: string): Key => {
     }
 
     throw new Error('Missing secret or public key')
-  } else if (keyData.type === 'curve25519xsalsa20poly1305') {
+  } else if (keyData.type === CURVE25519XSALSA20POLY1305) {
     if (keyData.secretKey) {
       const key = nacl.box.keyPair.fromSecretKey(b64ToBuf(keyData.secretKey))
 
@@ -173,7 +177,7 @@ export const deserializeKey = (data: string): Key => {
     }
 
     throw new Error('Missing secret or public key')
-  } else if (keyData.type === 'xsalsa20poly1305') {
+  } else if (keyData.type === XSALSA20POLY1305) {
     if (!keyData.secretKey) {
       throw new Error('Secret key missing')
     }
@@ -198,7 +202,7 @@ export const keyId = (inKey: Key | string): string => {
 export const sign = (inKey: Key | string, data: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
-  if (key.type !== 'edwards25519sha512batch') {
+  if (key.type !== EDWARDS25519SHA512BATCH) {
     throw new Error('Unsupported algorithm')
   }
 
@@ -215,7 +219,7 @@ export const sign = (inKey: Key | string, data: string): string => {
 export const verifySignature = (inKey: Key | string, data: string, signature: string): void => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
-  if (key.type !== 'edwards25519sha512batch') {
+  if (key.type !== EDWARDS25519SHA512BATCH) {
     throw new Error('Unsupported algorithm')
   }
 
@@ -235,7 +239,7 @@ export const verifySignature = (inKey: Key | string, data: string, signature: st
 export const encrypt = (inKey: Key | string, data: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
-  if (key.type === 'xsalsa20poly1305') {
+  if (key.type === XSALSA20POLY1305) {
     if (!key.secretKey) {
       throw new Error('Secret key missing')
     }
@@ -253,7 +257,7 @@ export const encrypt = (inKey: Key | string, data: string): string => {
     const base64FullMessage = bytesToB64(fullMessage)
 
     return base64FullMessage
-  } else if (key.type === 'curve25519xsalsa20poly1305') {
+  } else if (key.type === CURVE25519XSALSA20POLY1305) {
     if (!key.secretKey || !key.publicKey) {
       throw new Error('Keypair missing')
     }
@@ -278,7 +282,7 @@ export const encrypt = (inKey: Key | string, data: string): string => {
 export const decrypt = (inKey: Key | string, data: string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 
-  if (key.type === 'xsalsa20poly1305') {
+  if (key.type === XSALSA20POLY1305) {
     if (!key.secretKey) {
       throw new Error('Secret key missing')
     }
@@ -298,7 +302,7 @@ export const decrypt = (inKey: Key | string, data: string): string => {
     }
 
     return Buffer.from(decrypted).toString('utf-8')
-  } else if (key.type === 'curve25519xsalsa20poly1305') {
+  } else if (key.type === CURVE25519XSALSA20POLY1305) {
     if (!key.secretKey || !key.publicKey) {
       throw new Error('Keypair missing')
     }

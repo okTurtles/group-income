@@ -1,30 +1,91 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey, encrypt } from '~/shared/domains/chelonia/crypto.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
 import { encryptedAction } from './utils.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
 export default (sbp('sbp/selectors/register', {
-  'gi.actions/mailbox/create': async function ({
-    data = {},
-    options: { sync = true } = {},
-    publishOptions
+  '_gi.actions/mailbox/create': async function ({
+    data = {}, options: { sync = true } = {}, publishOptions
   }): Promise<GIMessage> {
     try {
-      const mailbox = await sbp('chelonia/out/registerContract', {
-        contractName: 'gi.contracts/mailbox', publishOptions, keys: [], data
-      })
+      // Create the necessary keys to initialise the contract
+      // eslint-disable-next-line camelcase
+      const CSK = keygen(EDWARDS25519SHA512BATCH)
+      const CEK = keygen(CURVE25519XSALSA20POLY1305)
+
+      // Key IDs
+      const CSKid = keyId(CSK)
+      const CEKid = keyId(CEK)
+
+      // Public keys to be stored in the contract
+      const CSKp = serializeKey(CSK, false)
+      const CEKp = serializeKey(CEK, false)
+
+      // Secret keys to be stored encrypted in the contract
+      const CSKs = encrypt(CEK, serializeKey(CSK, true))
+      const CEKs = encrypt(CEK, serializeKey(CEK, true))
+
+      const mailbox = await sbp('chelonia/with-env', '', {
+        additionalKeys: {
+          [CSKid]: CSK,
+          [CEKid]: CEK
+        }
+      }, ['chelonia/out/registerContract', {
+        contractName: 'gi.contracts/mailbox',
+        publishOptions,
+        signingKeyId: CSKid,
+        actionSigningKeyId: CSKid,
+        actionEncryptionKeyId: CEKid,
+        keys: [
+          {
+            id: CSKid,
+            type: CSK.type,
+            data: CSKp,
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH],
+            meta: {
+              type: 'csk',
+              private: {
+                keyId: CEKid,
+                content: CSKs
+              }
+            }
+          },
+          {
+            id: CEKid,
+            type: CEK.type,
+            data: CEKp,
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            meta: {
+              type: 'cek',
+              private: {
+                keyId: CEKid,
+                content: CEKs
+              }
+            }
+          }
+        ],
+        data
+      }])
       console.log('gi.actions/mailbox/create', { mailbox })
+      const contractID = mailbox.contractID()
       if (sync) {
-        await sbp('chelonia/contract/sync', mailbox.contractID())
+        await sbp('chelonia/with-env', contractID, { additionalKeys: { [CEKid]: CEK } }, ['chelonia/contract/sync', contractID])
       }
       return mailbox
     } catch (e) {
       console.error('gi.actions/mailbox/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create mailbox: {reportError}', LError(e)))
     }
+  },
+  get 'gi.actions/mailbox/create' () {
+    return this['_gi.actions/mailbox/create']
+  },
+  set 'gi.actions/mailbox/create' (value) {
+    this['_gi.actions/mailbox/create'] = value
   },
   ...encryptedAction('gi.actions/mailbox/postMessage', L('Failed to post message to mailbox.'))
 }): string[])

@@ -47,9 +47,9 @@ div
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
-import { VUE_LOADED } from '@utils/events.js'
+import { LOGIN } from '@utils/events.js'
 import SignupForm from '@containers/access/SignupForm.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import Loading from '@components/Loading.vue'
@@ -58,8 +58,8 @@ import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import L from '@view-utils/translations.js'
 
-let vueLoaded = false
-sbp('okTurtles.events/once', VUE_LOADED, () => { vueLoaded = true })
+let syncFinished = false
+sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })
 
 export default ({
   name: 'Join',
@@ -75,12 +75,14 @@ export default ({
     return {
       ephemeral: {
         pageStatus: 'LOADING',
-        invitation: {}
+        invitation: {},
+        query: null
       }
     }
   },
   computed: {
     ...mapGetters(['ourUsername']),
+    ...mapState(['currentGroupId']),
     pageStatus: {
       get () { return this.ephemeral.pageStatus },
       set (status) {
@@ -93,27 +95,27 @@ export default ({
     }
   },
   mounted () {
-    // this is kind weird looking I know, but trust me, it needs to be this way
-    if (vueLoaded) {
+    // For some reason in some Cypress tests it loses the route query when initialized is called
+    this.ephemeral.query = this.$route.query
+    if (syncFinished || !this.ourUsername) {
       this.initialize()
     } else {
-      sbp('okTurtles.events/once', VUE_LOADED, this.initialize)
+      sbp('okTurtles.events/once', LOGIN, () => this.initialize())
     }
   },
   methods: {
     async initialize () {
       try {
         if (this.ourUsername) {
-          if (this.$store.state.contracts[this.$route.query.groupId]) {
+          if (this.currentGroupId && this.$store.state.contracts[this.ephemeral.query.groupId]) {
             this.$router.push({ path: '/dashboard' })
-            return
           } else {
             await this.accept()
-            return
           }
+          return
         }
-        const state = await sbp('chelonia/latestContractState', this.$route.query.groupId)
-        const invite = state.invites[this.$route.query.secret]
+        const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
+        const invite = state.invites[this.ephemeral.query.secret]
         if (!invite || invite.status !== INVITE_STATUS.VALID) {
           console.error('Join.vue error: Link is not valid.')
           this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
@@ -162,10 +164,8 @@ export default ({
     },
     async accept () {
       this.ephemeral.errorMsg = null
-      const { groupId, secret } = this.$route.query || {}
-
-      sbp('okTurtles.data/set', 'JOINING_GROUP', true)
       try {
+        const { groupId, secret } = this.ephemeral.query
         await sbp('gi.actions/group/joinAndSwitch', {
           contractID: groupId,
           data: { inviteSecret: secret }
@@ -176,7 +176,6 @@ export default ({
         this.ephemeral.errorMsg = e.message
         this.pageStatus = 'INVALID'
       }
-      sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     }
   }
 }: Object)

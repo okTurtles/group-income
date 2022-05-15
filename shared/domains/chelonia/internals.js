@@ -6,18 +6,24 @@ import { GIMessage } from './GIMessage.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr } from '~/shared/functions.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
-import { ChelErrorDBBadPreviousHEAD, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
-import { decrypt, verifySignature } from '@utils/crypto.js'
+import { decrypt, verifySignature } from './crypto.js'
 
-import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
+import type { GIKey, GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd, GIOpKeyDel } from './GIMessage.js'
+
+const keysToMap = (keys: GIKey[]): Object => {
+  return Object.fromEntries(keys.map(key => [key.id, key]))
+}
 
 sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
   'chelonia/private/state': function () {
     return this.state
   },
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 2 } = {}, signatureFn?: Function) {
+  // used by, e.g. 'chelonia/contract/wait'
+  'chelonia/private/noop': function () {},
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 3 } = {}, signatureFn?: Function) {
     const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
@@ -57,8 +63,9 @@ sbp('sbp/selectors/register', {
     }
   },
   'chelonia/private/out/latestHash': function (contractID: string) {
-    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`)
-      .then(handleFetchResult('text'))
+    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`, {
+      cache: 'no-store'
+    }).then(handleFetchResult('text'))
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
@@ -88,7 +95,7 @@ sbp('sbp/selectors/register', {
         if (!contracts[type]) {
           throw new Error(`chelonia: contract not recognized: '${type}'`)
         }
-        state._vm.authorizedKeys = v.keys
+        state._vm.authorizedKeys = keysToMap(v.keys)
 
         for (const key of v.keys) {
           if (key.meta?.private) {
@@ -124,12 +131,31 @@ sbp('sbp/selectors/register', {
         state._vm.props[v.key] = v.value
       },
       [GIMessage.OP_KEY_ADD] (v: GIOpKeyAdd) {
-        // TODO: implement this. consider creating a function so that
-        //       we're not duplicating code in [GIMessage.OP_CONTRACT]
-        // if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
-        // state._vm.authorizedKeys.push(v)
+        const keys = { ...env.additionalKeys, ...state._volatile?.keys }
+        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = {}
+        // Order is so that KEY_ADD doesn't overwrite existing keys
+        state._vm.authorizedKeys = { ...keysToMap(v), ...state._vm.authorizedKeys }
+        // TODO: Move to different function, as this is implemented in OP_CONTRACT as well
+        for (const key of v) {
+          if (key.meta?.private) {
+            if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
+              if (!state._volatile) state._volatile = { keys: {} }
+              try {
+                state._volatile.keys[key.id] = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
+              } catch (e) {
+                console.error('Decryption error', e)
+              }
+            }
+          }
+        }
       },
-      [GIMessage.OP_KEY_DEL]: notImplemented,
+      [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
+        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = {}
+        v.forEach(key => {
+          delete state._vm.authorizedKeys[v]
+          if (state._volatile?.keys) { delete state._volatile.keys[v] }
+        })
+      },
       [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
     }
     let processOp = true
@@ -140,10 +166,10 @@ sbp('sbp/selectors/register', {
     // Signature verification
     // TODO: Temporary. Skip verifying default signatures
     if (signature.type !== 'default') {
-      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? ((opV: any): GIOpContract).keys : state._vm.authorizedKeys
-      const signingKey = authorizedKeys?.find((k) => k.id === signature.keyId && Array.isArray(k.perm) && k.perm.includes(opT))
+      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys) : state._vm.authorizedKeys
+      const signingKey = authorizedKeys?.[signature.keyId]
 
-      if (!signingKey) {
+      if (!signingKey || !Array.isArray(signingKey.permissions) || !signingKey.permissions.includes(opT)) {
         throw new Error('No matching signing key was defined')
       }
 
@@ -182,10 +208,10 @@ sbp('sbp/selectors/register', {
         state.pending.push(contractID)
       }
     }
+    sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     try {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
-        sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
         // TODO: fetch events from localStorage instead of server if we have them
         const events = await sbp('chelonia/private/out/eventsSince', contractID, recent || contractID)
         // remove the first element in cases where we are not getting the contract for the first time
@@ -224,7 +250,8 @@ sbp('sbp/selectors/register', {
       // first we make sure we save this message to the db
       // if an exception is thrown here we do not need to revert the state
       // because nothing has been processed yet
-      await handleEvent.addMessageToDB(message)
+      const proceed = await handleEvent.addMessageToDB(message)
+      if (proceed === false) return
 
       const contractStateCopy = cloneDeep(state[contractID] || null)
       const stateCopy = cloneDeep(pick(state, ['pending', 'contracts']))
@@ -287,7 +314,7 @@ const handleEvent = {
         eventsToReinjest.splice(reprocessIdx, 1)
       }
     } catch (e) {
-      if (e instanceof ChelErrorDBBadPreviousHEAD) {
+      if (e.name === 'ChelErrorDBBadPreviousHEAD') {
         // sometimes we simply miss messages, it's not clear why, but it happens
         // in rare cases. So we attempt to re-sync this contract once
         if (eventsToReinjest.length > 100) {
@@ -297,6 +324,7 @@ const handleEvent = {
           console.warn(`[chelonia] WARN bad previousHEAD for ${message.description()}, will attempt to re-sync contract to reinjest message`)
           eventsToReinjest.push(hash)
           reprocessDebounced(contractID)
+          return false // ignore the error for now
         } else {
           console.error(`[chelonia] ERROR already attempted to reinjest ${message.description()}, will not attempt again!`)
         }
@@ -311,6 +339,7 @@ const handleEvent = {
       // so we have to help it a bit in order to acces the 'type' property.
       const { type } = ((message.opValue(): any): GIOpContract)
       if (!state[contractID]) {
+        console.debug(`contract ${type} registered for ${contractID}`)
         this.config.reactiveSet(state, contractID, {})
         this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID })
       }

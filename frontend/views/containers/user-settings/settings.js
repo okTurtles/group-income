@@ -54,7 +54,7 @@ export default {
       {
         title: (L('Log Out'): string),
         url: 'logout',
-        action: 'logout'
+        action: 'gi.actions/identity/logout'
       }
     ]
   }]

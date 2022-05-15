@@ -3,9 +3,6 @@
 /* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Kicked a member from {title}: {displayName}";
 
-/* views/pages/Home.vue */
-"Logout" = "Logout";
-
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{percent}{_b}" = "{b_}{percent}{_b}";
 
@@ -117,9 +114,6 @@
 /* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "Changes to these settings will be visible to all group members";
 
-/* views/pages/Home.vue */
-"Welcome to GroupIncome" = "Welcome to GroupIncome";
-
 /* views/containers/contributions/Contribution.vue */
 "Your contribution" = "Your contribution";
 
@@ -180,6 +174,9 @@
 /* views/containers/proposals/ProposalItem.vue */
 "Proposal accepted with {yay} in favor out of {total} total votes." = "Proposal accepted with {yay} in favor out of {total} total votes.";
 
+/* model/contracts/identity.js */
+"Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
+
 /* views/containers/payments/PaymentsHistoryModal.vue */
 "Payments History" = "Payments History";
 
@@ -188,6 +185,9 @@
 
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/proposals/Mincome.vue */
 "Oops, you entered 0 or a negative number" = "Oops, you entered 0 or a negative number";
+
+/* views/components/modal/Prompt.vue */
+"No" = "No";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "No members were removed." = "No members were removed.";
@@ -714,9 +714,6 @@
 /* views/containers/design-system/DSModalQuery.vue */
 "Hello" = "Hello";
 
-/* views/pages/Home.vue */
-"Inbox" = "Inbox";
-
 /* model/notifications/templates.js */
 "{name} was kicked out of the group. Contributions were updated accordingly." = "{name} was kicked out of the group. Contributions were updated accordingly.";
 
@@ -888,6 +885,9 @@
 /* controller/actions/group.js */
 "Failed to cancel proposal." = "Failed to cancel proposal.";
 
+/* views/pages/DesignSystem.vue */
+"Open Prompt" = "Open Prompt";
+
 /* controller/actions/group.js */
 "Failed to update voting rules. {codeError}" = "Failed to update voting rules. {codeError}";
 
@@ -966,6 +966,9 @@
 /* main.js */
 "Your device appears to be offline." = "Your device appears to be offline.";
 
+/* controller/actions/identity.js */
+"Failed to set login state." = "Failed to set login state.";
+
 /* views/components/group-creation-steps/GroupPrivacy.vue */
 "Privacy Settings" = "Privacy Settings";
 
@@ -1043,6 +1046,9 @@
 
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
 "Add income details" = "Add income details";
+
+/* views/pages/Home.vue */
+"Welcome to Group Income" = "Welcome to Group Income";
 
 /* views/containers/payments/payment-row/PaymentRow.vue */
 "Due {date}" = "Due {date}";
@@ -1344,9 +1350,6 @@
 /* views/containers/chatroom/ConversationGreetings.vue */
 "You and {name} can chat in private here." = "You and {name} can chat in private here.";
 
-/* main.js */
-"Loading events from server..." = "Loading events from server...";
-
 /* controller/router.js, views/pages/Messages.vue */
 "Messages" = "Messages";
 
@@ -1623,6 +1626,9 @@
 /* views/containers/chatroom/MessageActions.vue */
 "Delete message" = "Delete message";
 
+/* main.js */
+"Loading events for '{contract}' from server..." = "Loading events for '{contract}' from server...";
+
 /* views/containers/payments/PaymentRowTodo.vue */
 "{partial_amount} out of {partial_total}" = "{partial_amount} out of {partial_total}";
 
@@ -1770,9 +1776,6 @@
 /* views/containers/payments/RecordPayment.vue */
 "Who did you send money to?" = "Who did you send money to?";
 
-/* views/pages/Home.vue */
-"Welcome to group income" = "Welcome to group income";
-
 /* views/containers/design-system/DSModalNested.vue */
 "Toggle back button" = "Toggle back button";
 
@@ -1802,6 +1805,9 @@
 
 /* views/containers/payments/MonthOverview.vue */
 "There was a problem with {nr} of your payments." = "There was a problem with {nr} of your payments.";
+
+/* views/components/modal/Prompt.vue */
+"Yes" = "Yes";
 
 /* views/pages/GroupSettings.vue */
 "Group name" = "Group name";

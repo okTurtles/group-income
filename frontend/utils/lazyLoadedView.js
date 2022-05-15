@@ -74,7 +74,7 @@ lazyModal('LoginModal', () => import('../views/containers/access/LoginModal.vue'
 lazyModal('NotificationModal', () => import('../views/containers/notifications/NotificationModal.vue'))
 lazyModal('PasswordModal', () => import('../views/containers/access/PasswordModal.vue'))
 lazyModal('SignupModal', () => import('../views/containers/access/SignupModal.vue'))
-
+lazyModal('Prompt', () => import('../views/components/modal/Prompt.vue'))
 lazyModalFullScreen('GroupCreationModal', () => import('../views/containers/group-settings/GroupCreationModal.vue'))
 lazyModalFullScreen('GroupJoinModal', () => import('../views/containers/group-settings/GroupJoinModal.vue'))
 lazyModalFullScreen('GroupMembersAllModal', () => import('../views/containers/dashboard/GroupMembersAllModal.vue'))

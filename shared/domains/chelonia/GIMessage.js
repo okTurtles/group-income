@@ -2,28 +2,30 @@
 
 // TODO: rename GIMessage to CMessage or something similar
 
+import { EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305 } from './crypto.js'
 import { blake32Hash } from '~/shared/functions.js'
 import type { JSONType, JSONObject } from '~/shared/types.js'
 
-export type GIKeyType = 'edwards25519sha512batch' | 'curve25519xsalsa20poly1305' | 'xsalsa20poly1305'
+export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
 export type GIKey = {
   id: string;
   type: GIKeyType;
   data: string;
-  perm: string[];
+  permissions: string[];
   meta: Object;
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
-export type GIOpContract = { type: string; keys: GIKey[], parentContract?: string }
+export type GIOpContract = { type: string; keys: GIKey[], nonce: string, parentContract?: string }
 export type GIOpActionEncrypted = string // encrypted version of GIOpActionUnencrypted
 export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
-export type GIOpKeyAdd = { keyHash: string, keyJSON: ?string, context: string }
+export type GIOpKeyAdd = GIKey[]
+export type GIOpKeyDel = string[]
 export type GIOpPropSet = { key: string, value: JSONType }
 
 export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd'
-export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpPropSet
+export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet
 export type GIOp = [GIOpType, GIOpValue]
 
 export class GIMessage {

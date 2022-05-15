@@ -25,7 +25,6 @@ function checkIfJoinedGeneralChannel (groupName, username) {
   cy.getByDT('messageInputWrapper').within(() => {
     cy.get('textarea').should('exist')
   })
-
   cy.getByDT('conversationWapper').within(() => {
     if (username) {
       cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', username)
@@ -52,7 +51,7 @@ Cypress.Commands.add('giSignup', (username, {
 
   if (bypassUI) {
     cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/identity/signupAndLogin', { data: { username, email, password } })
+      await sbp('gi.actions/identity/signupAndLogin', { username, email, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
     })
   } else {
@@ -84,7 +83,7 @@ Cypress.Commands.add('giLogin', (username, {
       if (ourUsername === username) {
         throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
       }
-      await sbp('gi.actions/identity/login', { data: { username, password } })
+      await sbp('gi.actions/identity/login', { username, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
     })
     cy.get('nav').within(() => {
@@ -112,14 +111,14 @@ Cypress.Commands.add('giLogin', (username, {
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   if (hasNoGroup) {
-    cy.getByDT('logout').click()
+    cy.window().its('sbp').then(sbp => sbp('gi.actions/identity/logout'))
   } else {
     cy.getByDT('settingsBtn').click()
     cy.getByDT('link-logout').click()
     cy.getByDT('closeModal').should('not.exist')
   }
   cy.url().should('eq', 'http://localhost:8000/app/')
-  cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+  cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
 })
 
 Cypress.Commands.add('giSwitchUser', (user) => {
@@ -277,8 +276,6 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
       await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
     })
-
-    checkIfJoinedGeneralChannel(groupName, username)
   } else {
     cy.visit(invitationLink)
 
@@ -337,9 +334,10 @@ Cypress.Commands.add('giAddNewChatroom', (
 ) => {
   // Needs to be in 'Group Chat' page
   cy.getByDT('newChannelButton').click()
-
+  cy.getByDT('modal') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
   cy.getByDT('modal').within(() => {
-    cy.get('.c-modal-header h1').should('contain', 'Create a channel')
+    // cy.get('.c-modal-header h1').should('contain', 'Create a channel')
+    cy.getByDT('modal-header-title').should('contain', 'Create a channel')
     cy.getByDT('createChannelName').clear().type(name)
     if (description) {
       cy.getByDT('createChannelDescription').clear().type(description)

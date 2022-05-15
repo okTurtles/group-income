@@ -2,11 +2,11 @@
 
 import should from 'should'
 import 'should-sinon'
-import { keygen, deriveKeyFromPassword, generateSalt, serializeKey, deserializeKey, encrypt, decrypt, sign, verifySignature } from './crypto.js'
+import { EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305, keygen, deriveKeyFromPassword, generateSalt, serializeKey, deserializeKey, encrypt, decrypt, sign, verifySignature } from './crypto.js'
 
 describe('Crypto suite', () => {
   it('should deserialize to the same contents as when serializing', () => {
-    for (const type of ['edwards25519sha512batch', 'curve25519xsalsa20poly1305', 'xsalsa20poly1305']) {
+    for (const type of [EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305]) {
       const key = keygen(type)
       const serializedKey = serializeKey(key, true)
       const deserializedKey = deserializeKey(serializedKey)
@@ -15,18 +15,21 @@ describe('Crypto suite', () => {
   })
 
   it('should deserialize to the same contents as when serializing (public)', () => {
-    for (const type of ['edwards25519sha512batch', 'curve25519xsalsa20poly1305']) {
+    for (const type of [EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305]) {
       const key = keygen(type)
       const serializedKey = serializeKey(key, false)
-      delete key.secretKey
+      const publicKey = { type: key.type, publicKey: key.publicKey }
       const deserializedKey = deserializeKey(serializedKey)
-      should(key).deepEqual(deserializedKey)
+      should(publicKey).deepEqual(deserializedKey)
     }
   })
 
   it('should derive the same key for the same password/salt combination', async () => {
-    for (const type of ['edwards25519sha512batch', 'curve25519xsalsa20poly1305', 'xsalsa20poly1305']) {
+    for (const type of [EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305]) {
       const salt = generateSalt()
+
+      should(salt).not.be.empty()
+
       const invocation1 = await deriveKeyFromPassword(type, 'password123', salt)
       const invocation2 = await deriveKeyFromPassword(type, 'password123', salt)
 
@@ -38,7 +41,7 @@ describe('Crypto suite', () => {
     const salt1 = 'salt1'
     const salt2 = 'salt2'
 
-    for (const type of ['edwards25519sha512batch', 'curve25519xsalsa20poly1305', 'xsalsa20poly1305']) {
+    for (const type of [EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305]) {
       const invocation1 = await deriveKeyFromPassword(type, 'password123', salt1)
       const invocation2 = await deriveKeyFromPassword(type, 'password123', salt2)
       const invocation3 = await deriveKeyFromPassword(type, 'p4ssw0rd321', salt1)
@@ -50,7 +53,7 @@ describe('Crypto suite', () => {
   })
 
   it('should correctly sign and verify messages', () => {
-    const key = keygen('edwards25519sha512batch')
+    const key = keygen(EDWARDS25519SHA512BATCH)
     const data = 'data'
 
     const signature = sign(key, data)
@@ -59,8 +62,8 @@ describe('Crypto suite', () => {
   })
 
   it('should not verify signatures made with a different key', () => {
-    const key1 = keygen('edwards25519sha512batch')
-    const key2 = keygen('edwards25519sha512batch')
+    const key1 = keygen(EDWARDS25519SHA512BATCH)
+    const key2 = keygen(EDWARDS25519SHA512BATCH)
     const data = 'data'
 
     const signature = sign(key1, data)
@@ -69,7 +72,7 @@ describe('Crypto suite', () => {
   })
 
   it('should not verify signatures made with different data', () => {
-    const key = keygen('edwards25519sha512batch')
+    const key = keygen(EDWARDS25519SHA512BATCH)
     const data1 = 'data1'
     const data2 = 'data2'
 
@@ -79,7 +82,7 @@ describe('Crypto suite', () => {
   })
 
   it('should not verify invalid signatures', () => {
-    const key = keygen('edwards25519sha512batch')
+    const key = keygen(EDWARDS25519SHA512BATCH)
     const data = 'data'
 
     should(() => verifySignature(key, data, 'INVALID SIGNATURE')).throw()
@@ -88,7 +91,7 @@ describe('Crypto suite', () => {
   it('should correctly encrypt and decrypt messages', () => {
     const data = 'data'
 
-    for (const type of ['curve25519xsalsa20poly1305', 'xsalsa20poly1305']) {
+    for (const type of [CURVE25519XSALSA20POLY1305, XSALSA20POLY1305]) {
       const key = keygen(type)
       const encryptedMessage = encrypt(key, data)
 
@@ -103,7 +106,7 @@ describe('Crypto suite', () => {
   it('should not decrypt messages encrypted with a different key', () => {
     const data = 'data'
 
-    for (const type of ['curve25519xsalsa20poly1305', 'xsalsa20poly1305']) {
+    for (const type of [CURVE25519XSALSA20POLY1305, XSALSA20POLY1305]) {
       const key1 = keygen(type)
       const key2 = keygen(type)
       const encryptedMessage = encrypt(key1, data)
@@ -115,7 +118,7 @@ describe('Crypto suite', () => {
   })
 
   it('should not decrypt invalid messages', () => {
-    for (const type of ['curve25519xsalsa20poly1305', 'xsalsa20poly1305']) {
+    for (const type of [CURVE25519XSALSA20POLY1305, XSALSA20POLY1305]) {
       const key = keygen(type)
       should(() => decrypt(key, 'Invalid message')).throw()
     }
