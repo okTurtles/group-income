@@ -115,6 +115,15 @@ export async function leaveChatRoom ({ contractID }: {
   })
 }
 
+export function findMessageIdx (id: string, messages: Array<Object>): number {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].id === id) {
+      return i
+    }
+  }
+  return -1
+}
+
 function createNotificationData (
   notificationType: string,
   moreParams: Object = {}
@@ -129,17 +138,24 @@ function createNotificationData (
 }
 
 function emitMessageEvent ({ type, contractID, hash, state }: {
-  type: string, contractID: string, hash: string, state: Object
+  type: string,
+  contractID: string,
+  hash: string,
+  state: Object
 }): void {
-  for (let i = state.messages.length - 1; i >= 0; i--) {
-    if (state.messages[i].id === hash) {
-      sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, {
-        type,
-        data: { message: state.messages[i] }
-      })
-      break
+  let data = {}
+  if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE || type === MESSAGE_ACTION_TYPES.EDIT_MESSAGE) {
+    const messagesCount = state.messages.length || 0
+    for (let i = messagesCount - 1; i >= 0; i--) {
+      if (state?.messages[i].id === hash) {
+        data = { message: { ...state?.messages[i] } }
+        break
+      }
     }
+  } else if (type === MESSAGE_ACTION_TYPES.DELETE_MESSAGE) {
+    data = { id: hash }
   }
+  sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { type, data })
 }
 
 sbp('chelonia/defineContract', {
@@ -327,36 +343,80 @@ sbp('chelonia/defineContract', {
         emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
       }
     },
-    'gi.contracts/chatroom/deleteMessage': {
-      validate: objectMaybeOf({
-
-      }),
-      process ({ data, meta }, { state }) {
-
-      }
-    },
     'gi.contracts/chatroom/editMessage': {
-      validate: objectMaybeOf({
-
-      }),
+      validate: (data, { state, meta }) => {
+        objectOf({
+          id: string,
+          text: string
+        })(data)
+        // TODO: need to check if the meta.username === message.from
+      },
       process ({ data, meta }, { state }) {
-
+        const msgIndex = findMessageIdx(data.id, state.messages)
+        if (msgIndex >= 0) {
+          state.messages[msgIndex].text = data.text
+          state.messages[msgIndex].updatedDate = meta.createdDate
+        }
+      },
+      sideEffect ({ contractID, data }, { state }) {
+        emitMessageEvent({
+          type: MESSAGE_ACTION_TYPES.EDIT_MESSAGE,
+          contractID,
+          hash: data.id,
+          state
+        })
       }
     },
-    'gi.contracts/chatroom/addEmoticon': {
-      validate: objectMaybeOf({
-
+    'gi.contracts/chatroom/deleteMessage': {
+      validate: objectOf({
+        id: string
       }),
       process ({ data, meta }, { state }) {
-
+        const msgIndex = findMessageIdx(data.id, state.messages)
+        if (msgIndex >= 0) {
+          state.messages.splice(msgIndex, 1)
+        }
+      },
+      sideEffect ({ contractID, data }, { state }) {
+        emitMessageEvent({
+          type: MESSAGE_ACTION_TYPES.DELETE_MESSAGE,
+          contractID,
+          hash: data.id,
+          state
+        })
       }
     },
-    'gi.contracts/chatroom/deleteEmoticon': {
-      validate: objectMaybeOf({
-
+    'gi.contracts/chatroom/makeEmotion': {
+      validate: objectOf({
+        id: string,
+        emoticon: string
       }),
-      process ({ data, meta }, { state }) {
-
+      process ({ data, meta, contractID }, { state }) {
+        const { id, emoticon } = data
+        const msgIndex = findMessageIdx(id, state.messages)
+        if (msgIndex >= 0) {
+          const emoticons = state.messages[msgIndex].emoticons || {}
+          if (emoticons[emoticon]) {
+            const alreadyAdded = emoticons[emoticon].indexOf(meta.username)
+            if (alreadyAdded >= 0) {
+              emoticons[emoticon].splice(alreadyAdded, 1)
+            } else {
+              emoticons[emoticon].push(meta.username)
+            }
+          } else {
+            emoticons[emoticon] = [meta.username]
+          }
+          if (emoticons) {
+            Vue.set(state.messages[msgIndex], 'emoticons', emoticons)
+          }
+          sbp('gi.contracts/chatroom/pushSideEffect', contractID,
+            ['gi.contracts/chatroom/editMessage/sideEffect', {
+              meta,
+              data: { id },
+              contractID
+            }]
+          )
+        }
       }
     }
   }

@@ -37,7 +37,7 @@
           :datetime='time(message.datetime)'
           :emoticonsList='message.emoticons'
           :who='who(message)'
-          :currentUserId='currentUserAttr.id'
+          :currentUsername='currentUserAttr.username'
           :avatar='avatar(message.from)'
           :variant='variant(message)'
           :isSameSender='isSameSender(index)'
@@ -45,8 +45,9 @@
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
-          @add-emoticon='addEmoticon(index, $event)'
-          @delete-message='deleteMessage(index)'
+          @edit-message='(newMessage) => editMessage(message, newMessage)'
+          @delete-message='deleteMessage(message)'
+          @add-emoticon='addEmoticon(message, $event)'
         )
 
   .c-footer
@@ -80,8 +81,9 @@ import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
-import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
+import { createMessage, getLatestMessages, findMessageIdx } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
+import { cloneDeep } from '@utils/giLodash.js'
 import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
@@ -152,7 +154,9 @@ export default ({
       'isJoinedChatRoom'
     ]),
     bodyStyles () {
-      const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      // Not sure what `bodyPaddingBottom` means, I delete it now
+      // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      const phoneStyles = {}
       const unjoinedStyles =
         this.summary.joined
           ? {}
@@ -179,12 +183,12 @@ export default ({
         [MESSAGE_TYPES.POLL]: 'message-poll'
       }[message.type]
     },
-    isCurrentUser (fromId) {
-      return this.currentUserAttr.username === fromId
+    isCurrentUser (from) {
+      return this.currentUserAttr.username === from
     },
     who (message) {
       const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.details.participants[message.from]
-      return user.displayName || user.username || message.from
+      return user?.displayName || user?.username || message.from
     },
     variant (message) {
       if (message.pending) {
@@ -198,11 +202,11 @@ export default ({
     time (strTime) {
       return new Date(strTime)
     },
-    avatar (fromId) {
-      if (fromId === MESSAGE_TYPES.NOTIFICATION || fromId === MESSAGE_TYPES.INTERACTIVE) {
+    avatar (from) {
+      if (from === MESSAGE_TYPES.NOTIFICATION || from === MESSAGE_TYPES.INTERACTIVE) {
         return this.currentUserAttr.picture
       }
-      return this.details.participants[fromId].picture
+      return this.details.participants[from].picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
@@ -219,10 +223,7 @@ export default ({
     handleSendMessage (message, replyingMessage = null) {
       // Consider only simple TEXT now
       // TODO: implement other types of messages later
-      const data = {
-        type: MESSAGE_TYPES.TEXT,
-        text: message
-      }
+      const data = { type: MESSAGE_TYPES.TEXT, text: message }
 
       sbp('gi.actions/chatroom/addMessage', {
         contractID: this.currentChatRoomId,
@@ -233,6 +234,8 @@ export default ({
             const { meta, data } = msgValue
             this.messages.push({
               ...createMessage({ meta, data, hash: message.hash() }),
+              // TODO: pending is useful to turn the message gray meaning failed (just like Slack)
+              // when we don't get event after a certain period
               pending: true
             })
           }
@@ -255,6 +258,29 @@ export default ({
       this.ephemeral.replyingMessage = message.text
       this.ephemeral.replyingTo = this.who(message)
     },
+    editMessage (message, newMessage) {
+      sbp('gi.actions/chatroom/editMessage', {
+        contractID: this.currentChatRoomId,
+        data: { id: message.id, text: newMessage },
+        hooks: {
+          prepublish: (msg) => {
+            message.text = newMessage
+            message.pending = true
+          }
+        }
+      })
+    },
+    deleteMessage (message) {
+      sbp('gi.actions/chatroom/deleteMessage', {
+        contractID: this.currentChatRoomId,
+        data: { id: message.id },
+        hooks: {
+          prepublish: (msg) => {
+            // need to do something
+          }
+        }
+      })
+    },
     changeDay (index) {
       const conv = this.messages
       if (index > 0 && index <= conv.length) {
@@ -266,42 +292,20 @@ export default ({
     isNew (index) {
       return this.startedUnreadIndex === index
     },
-    addEmoticon (index, emoticon) {
-      // Todo replace with  deep merge
-      const userId = this.currentUserAttr.id
-      const emoticons = this.messages[index].emoticons || {}
-      if (emoticons[emoticon]) {
-        const alreadyAdded = emoticons[emoticon].indexOf(userId)
-        if (alreadyAdded >= 0) {
-          emoticons[emoticon].splice(alreadyAdded, 1)
-          if (emoticons[emoticon].length === 0) {
-            delete this.messages[emoticon]
-            if (Object.keys(emoticons).length === 0) {
-              delete this.messages[index].emoticons
-              return false
-            }
+    addEmoticon (message, emoticon) {
+      sbp('gi.actions/chatroom/makeEmotion', {
+        contractID: this.currentChatRoomId,
+        data: { id: message.id, emoticon },
+        hooks: {
+          prepublish: (msg) => {
+            // need to do something
           }
-        } else emoticons[emoticon].push(userId)
-      } else {
-        if (!emoticons[emoticon]) emoticons[emoticon] = []
-        emoticons[emoticon].push(userId)
-      }
-
-      this.$set(this.messages[index], 'emoticons', emoticons)
-      this.$forceUpdate()
-    },
-    deleteMessage (index) {
-      // TODO replace by store action
-      this.$set(this.messages[index], 'delete', true)
-      setTimeout(() => {
-        delete this.messages[index]
-        this.$forceUpdate()
-      }, 1000)
-      this.$forceUpdate()
+        }
+      })
     },
     setInitMessages () {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        this.messages = this.chatRoomLatestMessages
+        this.messages = cloneDeep(this.chatRoomLatestMessages)
       } else {
         this.messages = []
         sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
@@ -318,29 +322,38 @@ export default ({
       }
       if (force) {
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)
-      } else {
-        if (this.isJoinedChatRoom(to)) {
-          sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
-        }
+      } else if (this.isJoinedChatRoom(to)) {
+        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
     listenChatRoomActions ({ type, data }) {
       const addIfNotExist = (msg) => {
-        let m = null
-        for (let i = this.messages.length - 1; i >= 0; i--) {
-          if (this.messages[i].id === msg.id) {
-            m = this.messages[i]
-            break
-          }
-        }
+        const msgIndex = findMessageIdx(msg.id, this.messages)
+        const m = msgIndex >= 0 ? this.messages[msgIndex] : null
+
         if (m) {
           delete m.pending
         } else {
-          this.messages.push(msg)
+          this.messages.push(cloneDeep(msg))
         }
       }
-      if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE) {
-        const { message } = data
+
+      const updateIfExist = (msg) => {
+        const msgIndex = findMessageIdx(msg.id, this.messages)
+        if (msgIndex >= 0) {
+          this.messages.splice(msgIndex, 1, cloneDeep(msg))
+        }
+      }
+
+      const deleteIfExist = (id) => {
+        const msgIndex = findMessageIdx(id, this.messages)
+        if (msgIndex >= 0) {
+          this.messages.splice(msgIndex, 1)
+        }
+      }
+
+      const { message, id } = data
+      if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE && message) {
         if (message.type === MESSAGE_TYPES.TEXT) {
           if (this.isCurrentUser(message.from)) {
             addIfNotExist(message)
@@ -350,6 +363,10 @@ export default ({
         } else if (message.type === MESSAGE_TYPES.NOTIFICATION) {
           this.messages.push(message)
         }
+      } else if (type === MESSAGE_ACTION_TYPES.EDIT_MESSAGE && message) {
+        updateIfExist(message)
+      } else if (type === MESSAGE_ACTION_TYPES.DELETE_MESSAGE && id) {
+        deleteIfExist(id)
       }
       this.$forceUpdate()
     },

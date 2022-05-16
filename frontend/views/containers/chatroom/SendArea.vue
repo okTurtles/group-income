@@ -61,6 +61,7 @@
             i.icon-smile-beam
 
       i18n.c-send-button(
+        id='mobileSendButton'
         v-if='showSendButton'
         tag='button'
         :class='{ isActive, showSendButton }'
@@ -85,6 +86,7 @@ export default ({
   },
   props: {
     title: String,
+    defaultText: String,
     searchPlaceholder: String,
     loading: {
       type: Boolean,
@@ -120,6 +122,7 @@ export default ({
     mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
   },
   mounted () {
+    this.$refs.textarea.value = this.defaultText || ''
     // Get actionsWidth to add a dynamic padding to textarea,
     // so those actions don't be above the textarea's value
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
@@ -150,8 +153,16 @@ export default ({
       this.$emit('start-typing')
       if (this.ephemeral.isPhone) this.ephemeral.showButtons = false
     },
-    textAreaBlur () {
-      if (this.ephemeral.isPhone) this.ephemeral.showButtons = true
+    textAreaBlur (event) {
+      if (!this.ephemeral.isPhone) {
+        return
+      }
+
+      if (event?.relatedTarget?.id === 'mobileSendButton') {
+        this.sendMessage()
+      } else {
+        this.ephemeral.showButtons = true
+      }
     },
     isNextLine (e) {
       const enterKey = e.keyCode === 13
@@ -199,7 +210,6 @@ export default ({
       this.$emit('stop-replying')
     },
     sendMessage () {
-      console.log('send')
       if (!this.$refs.textarea.value) {
         return false
       }
@@ -256,7 +266,7 @@ $initialHeight: 43px;
 
   &-mask {
     position: absolute;
-    top: 0;
+    top: 1rem;
     left: 0;
     opacity: 0;
     pointer-events: none;

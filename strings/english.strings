@@ -270,6 +270,9 @@
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Percentage of members that need to agree:" = "Percentage of members that need to agree:";
 
+/* views/components/group-creation-steps/GroupMincome.vue */
+"Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members." = "Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members.";
+
 /* utils/time.js */
 "Yesterday" = "Yesterday";
 
@@ -432,6 +435,9 @@
 /* views/containers/design-system/DSModalFullscreen.vue, views/containers/design-system/DSModalNested.vue */
 "Toggle background" = "Toggle background";
 
+/* views/components/group-creation-steps/GroupMincome.vue */
+"On what day should the first payment distribution be calculated?" = "On what day should the first payment distribution be calculated?";
+
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to remove members from the group." = "{from} wants to remove members from the group.";
 
@@ -440,6 +446,9 @@
 
 /* views/components/group-creation-steps/GroupMincome.vue */
 "Currency" = "Currency";
+
+/* views/components/group-creation-steps/GroupMincome.vue */
+"Payment distribution will be calculated every 30 days." = "Payment distribution will be calculated every 30 days.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "{numberOfResponses}/{quantity} used" = "{numberOfResponses}/{quantity} used";
@@ -578,6 +587,9 @@
 
 /* views/containers/proposals/ProposalItem.vue */
 "TODO: Change [generic] from [current] to [new-value]" = "TODO: Change [generic] from [current] to [new-value]";
+
+/* controller/actions/chatroom.js */
+"Failed to delete message." = "Failed to delete message.";
 
 /* views/containers/proposals/ProposalTemplate.vue */
 "Members of your group will now be asked to vote." = "Members of your group will now be asked to vote.";
@@ -734,6 +746,9 @@
 
 /* views/containers/user-settings/UserProfile.vue */
 "Delete account" = "Delete account";
+
+/* views/components/group-creation-steps/GroupMincome.vue */
+"Choose your group's distribution date" = "Choose your group's distribution date";
 
 /* views/containers/dashboard/GroupMembersTooltipPending.vue */
 "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy}." = "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy}.";
@@ -917,6 +932,9 @@
 
 /* views/containers/proposals/ProposalTemplate.vue */
 "Your proposal was created" = "Your proposal was created";
+
+/* controller/actions/identity.js */
+"Error during login contract sync: {err}" = "Error during login contract sync: {err}";
 
 /* views/components/ProfileCard.vue */
 "Show profile" = "Show profile";
@@ -1208,6 +1226,9 @@
 
 /* views/containers/dashboard/GroupMembers.vue */
 "See all {groupMembersCount} members" = "See all {groupMembersCount} members";
+
+/* controller/actions/chatroom.js */
+"Failed to edit message." = "Failed to edit message.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "Proposal Accepted" = "Proposal Accepted";
@@ -1697,6 +1718,9 @@
 
 /* views/containers/proposals/ProposalTemplate.vue */
 "You need {b_}{n} yes votes{_b} for your proposal to be accepted." = "You need {b_}{n} yes votes{_b} for your proposal to be accepted.";
+
+/* controller/actions/chatroom.js */
+"Failed to make emotion." = "Failed to make emotion.";
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "You are contributing." = "You are contributing.";

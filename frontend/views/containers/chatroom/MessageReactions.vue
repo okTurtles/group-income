@@ -3,7 +3,7 @@
   .c-emoticon-wrapper(
     v-for='(list, emoticon, index) in emoticonsList'
     :key='index'
-    :class='{"is-user-emoticon": list.includes(currentUserId)}'
+    :class='{"is-user-emoticon": list.includes(currentUsername)}'
     @click='$emit("selectEmoticon", emoticon)'
     v-if='list.length'
   )
@@ -24,34 +24,46 @@
 </template>
 
 <script>
-import emoticonsMixins from './EmoticonsMixins.js'
+import { mapGetters } from 'vuex'
 import Tooltip from '@components/Tooltip.vue'
 import L from '@view-utils/translations.js'
 
 export default ({
   name: 'MessageReactions',
-  mixins: [emoticonsMixins],
   components: {
     Tooltip
   },
   props: {
-    currentUserId: String,
+    currentUsername: String,
     emoticonsList: {
       type: Object,
       default: null
     }
   },
+  computed: {
+    ...mapGetters(['globalProfile'])
+  },
   methods: {
     emoticonUserList (emoticon, list) {
-      const nameList = list.map(user => {
-        if (user === this.currentUserId) return L('You')
-        return user
+      const you = L('You')
+      const nameList = list.map(username => {
+        const userProp = this.globalProfile(username)
+        if (username === this.currentUsername) return you
+        if (userProp) return userProp.displayName || userProp.username
+        return null
       })
-
-      const data = {
-        userList: nameList.join(', '),
-        emotiName: emoticon
+      const alreadyMade = nameList.indexOf(you)
+      if (alreadyMade >= 0) {
+        nameList.splice(alreadyMade, 1)
+        nameList.push(you)
       }
+      let userList = nameList.join(', ')
+      const andIndex = userList.lastIndexOf(', ')
+      if (andIndex > 0) {
+        userList = userList.slice(0, andIndex) + ' and' + userList.slice(andIndex + 1)
+      }
+
+      const data = { userList, emotiName: emoticon }
       return L('{userList} reacted with {emotiName}', data)
     }
   }

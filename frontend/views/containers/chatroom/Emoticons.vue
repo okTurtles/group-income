@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-picker(:class='{ "is-active": isActive }' @click='isActive = false')
+.c-picker(:class='{ "is-active": isActive }' @click='clickBackDrop')
   .c-picker-wrapper(:style='position')
     picker(@select='select' :data='emoji' :show-preview='false')
 </template>
@@ -23,20 +23,19 @@ export default ({
       pos_x: Number,
       pos_y: Number,
       isActive: false,
-      lastFocus: null, // Record element that open the modal
-      ephemeral: {}
+      lastFocus: null // Record element that open the modal
     }
   },
   created () {
     sbp('okTurtles.events/on', OPEN_EMOTICON, this.openEmoticon)
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
-    window.addEventListener('resize', this.closeEmoticon)
+    window.addEventListener('resize', this.closeEmoticonDlg)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_EMOTICON)
     window.removeEventListener('keyup', this.handleKeyUp)
-    window.removeEventListener('resize', this.closeEmoticon)
+    window.removeEventListener('resize', this.closeEmoticonDlg)
   },
   computed: {
     position () {
@@ -68,7 +67,7 @@ export default ({
     handleKeyUp (e) {
       if (this.content && e.key === 'Escape') {
         e.preventDefault()
-        this.closeEmoticon()
+        this.closeEmoticonDlg()
       }
     },
     openEmoticon (e) {
@@ -81,8 +80,15 @@ export default ({
     },
     select (emoticon) {
       sbp('okTurtles.events/emit', SELECT_EMOTICON, emoticon)
+      this.closeEmoticonDlg()
     },
-    closeEmoticon () {
+    clickBackDrop (e) {
+      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-picker-wrapper')
+      if (!element) {
+        this.closeEmoticonDlg()
+      }
+    },
+    closeEmoticonDlg () {
       this.isActive = false
       sbp('okTurtles.events/emit', CLOSE_EMOTICON)
     }

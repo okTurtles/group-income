@@ -22,9 +22,9 @@
         p.c-replying(if='replyingMessage') {{ replyingMessage }}
         send-area(
           v-if='isEditing'
-          title=''
+          :defaultText='text'
           :isEditing='true'
-          @send='sendEdit'
+          @send='onMessageEdited'
           @cancelEdit='cancelEdit'
         )
 
@@ -33,7 +33,7 @@
   message-reactions(
     v-if='!isEditing'
     :emoticonsList='emoticonsList'
-    :currentUserId='currentUserId'
+    :currentUsername='currentUsername'
     @selectEmoticon='selectEmoticon($event)'
     @openEmoticon='openEmoticon($event)'
   )
@@ -41,14 +41,15 @@
   message-actions(
     v-if='!isEditing'
     :variant='variant'
+    :type='type'
     :isCurrentUser='isCurrentUser'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
-    @edit='edit'
+    @editMessage='editMessage'
+    @deleteMessage='deleteMessage'
     @reply='reply'
     @retry='retry'
     @copyToClipBoard='copyToClipBoard'
-    @deleteMessage='deleteMessage'
   )
 </template>
 
@@ -78,7 +79,7 @@ export default ({
     text: String,
     replyingMessage: String,
     who: String,
-    currentUserId: String,
+    currentUsername: String,
     avatar: String,
     datetime: {
       type: Date,
@@ -96,12 +97,17 @@ export default ({
   },
   methods: {
     humanDate,
-    edit () {
+    editMessage () {
       this.isEditing = true
     },
-    sendEdit (newMessage) {
+    onMessageEdited (newMessage) {
       this.isEditing = false
-      this.$emit('edit', newMessage)
+      if (this.text !== newMessage) {
+        this.$emit('message-edited', newMessage)
+      }
+    },
+    deleteMessage () {
+      this.$emit('delete-message')
     },
     cancelEdit () {
       this.isEditing = false
@@ -117,9 +123,6 @@ export default ({
     },
     retry () {
       this.$emit('retry')
-    },
-    deleteMessage () {
-      this.$emit('delete-message')
     },
     openMenu () {
       this.$refs.messageAction.$refs.menu.handleTrigger()
