@@ -329,7 +329,7 @@ export default ({
     listenChatRoomActions ({ type, data }) {
       const addIfNotExist = (msg) => {
         const msgIndex = findMessageIdx(msg.id, this.messages)
-        let m = msgIndex >= 0 ? this.messages[msgIndex] : null
+        const m = msgIndex >= 0 ? this.messages[msgIndex] : null
 
         if (m) {
           delete m.pending
