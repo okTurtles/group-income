@@ -26,6 +26,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   proposals-widget(v-if='hasProposals')
 
+  member-request(v-if='hasMemberRequest')
+
   //- page-section(title='Group Settings')
   //-   group-settings-widget
 
@@ -45,6 +47,7 @@ import StartInvitingWidget from '@containers/dashboard/StartInvitingWidget.vue'
 import ContributionsOverviewWidget from '@containers/contributions/ContributionsOverviewWidget.vue'
 import ContributionsSummaryWidget from '@containers/contributions/ContributionsWidget.vue'
 import ProposalsWidget from '@containers/proposals/ProposalsWidget.vue'
+import MemberRequest from '@containers/proposals/MemberRequest.vue'
 import GroupMincome from '@containers/dashboard/GroupMincome.vue'
 import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
@@ -105,6 +108,8 @@ export default ({
     closeBanner () {
       localStorage.setItem('giHideDistributionWarning', true)
       this.ephemeral.hideBanner = true
+    hasMemberRequest () {
+      return this.requests
     }
   },
   components: {
@@ -114,6 +119,7 @@ export default ({
     ContributionsOverviewWidget,
     ContributionsSummaryWidget,
     ProposalsWidget,
+    MemberRequest,
     GroupMincome,
     GroupMembers,
     GroupPurpose,

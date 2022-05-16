@@ -6,7 +6,7 @@ import { GIMessage } from './GIMessage.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr } from '~/shared/functions.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
-import { ChelErrorDBBadPreviousHEAD, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
 
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
@@ -16,7 +16,9 @@ sbp('sbp/selectors/register', {
   'chelonia/private/state': function () {
     return this.state
   },
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 2 } = {}) {
+  // used by, e.g. 'chelonia/contract/wait'
+  'chelonia/private/noop': function () {},
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 3 } = {}) {
     const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
@@ -56,8 +58,9 @@ sbp('sbp/selectors/register', {
     }
   },
   'chelonia/private/out/latestHash': function (contractID: string) {
-    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`)
-      .then(handleFetchResult('text'))
+    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`, {
+      cache: 'no-store'
+    }).then(handleFetchResult('text'))
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
@@ -147,10 +150,10 @@ sbp('sbp/selectors/register', {
         state.pending.push(contractID)
       }
     }
+    sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     try {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
-        sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
         // TODO: fetch events from localStorage instead of server if we have them
         const events = await sbp('chelonia/private/out/eventsSince', contractID, recent || contractID)
         // remove the first element in cases where we are not getting the contract for the first time
@@ -189,7 +192,8 @@ sbp('sbp/selectors/register', {
       // first we make sure we save this message to the db
       // if an exception is thrown here we do not need to revert the state
       // because nothing has been processed yet
-      await handleEvent.addMessageToDB(message)
+      const proceed = await handleEvent.addMessageToDB(message)
+      if (proceed === false) return
 
       const contractStateCopy = cloneDeep(state[contractID] || null)
       const stateCopy = cloneDeep(pick(state, ['pending', 'contracts']))
@@ -252,7 +256,7 @@ const handleEvent = {
         eventsToReinjest.splice(reprocessIdx, 1)
       }
     } catch (e) {
-      if (e instanceof ChelErrorDBBadPreviousHEAD) {
+      if (e.name === 'ChelErrorDBBadPreviousHEAD') {
         // sometimes we simply miss messages, it's not clear why, but it happens
         // in rare cases. So we attempt to re-sync this contract once
         if (eventsToReinjest.length > 100) {
@@ -262,6 +266,7 @@ const handleEvent = {
           console.warn(`[chelonia] WARN bad previousHEAD for ${message.description()}, will attempt to re-sync contract to reinjest message`)
           eventsToReinjest.push(hash)
           reprocessDebounced(contractID)
+          return false // ignore the error for now
         } else {
           console.error(`[chelonia] ERROR already attempted to reinjest ${message.description()}, will not attempt again!`)
         }
@@ -276,6 +281,7 @@ const handleEvent = {
       // so we have to help it a bit in order to acces the 'type' property.
       const { type } = ((message.opValue(): any): GIOpContract)
       if (!state[contractID]) {
+        console.debug(`contract ${type} registered for ${contractID}`)
         this.config.reactiveSet(state, contractID, {})
         this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID })
       }

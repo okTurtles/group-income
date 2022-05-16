@@ -96,7 +96,7 @@
     "@hapi/inert": "6.0.3",
     "@hapi/joi": "17.1.1",
     "@sbp/okturtles.data": "0.1.5",
-    "@sbp/okturtles.eventqueue": "0.1.5",
+    "@sbp/okturtles.eventqueue": "1.0.0",
     "@sbp/okturtles.events": "0.1.5",
     "@sbp/sbp": "2.2.0",
     "blakejs": "1.1.0",

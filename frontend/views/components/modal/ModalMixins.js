@@ -15,6 +15,10 @@ const modaMixins = {
       type: Boolean,
       default: false
     },
+    modalForceAction: {
+      type: Boolean,
+      default: false
+    },
     loading: {
       type: Boolean,
       default: false

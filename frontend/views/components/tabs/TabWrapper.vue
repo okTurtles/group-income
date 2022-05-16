@@ -98,7 +98,7 @@ export default ({
         this.$router.push({ query })
         this.changeTab(tabItem.index)
       } else {
-        sbp('state/vuex/dispatch', tabItem.action)
+        sbp(tabItem.action)
         this.$emit('close')
       }
     }

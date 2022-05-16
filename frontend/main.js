@@ -9,6 +9,7 @@ import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
+import './controller/backend.js'
 import Vue from 'vue'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
@@ -22,7 +23,6 @@ import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
 import L, { LError, LTags } from '@view-utils/translations.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
-import './views/utils/allowedUrls.js'
 import './views/utils/translations.js'
 import './views/utils/avatar.js'
 import './views/utils/vFocus.js'
@@ -57,12 +57,20 @@ async function startApp () {
       'chelonia/db/logHEAD',
       'chelonia/db/set',
       'state/vuex/state',
-      'state/vuex/getters'
+      'state/vuex/getters',
+      'gi.db/settings/save'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selBlacklist[selector]) return
       console.debug(`[sbp] ${selector}`, data)
     })
+    sbp('sbp/filters/selector/add', 'gi.db/settings/save', (domain, selector, data) => {
+      console.debug("[sbp] 'gi.db/settings/save'", data[0])
+    })
+  }
+
+  function contractName (contractID: string): string {
+    return sbp('state/vuex/state').contracts[contractID]?.type || contractID
   }
 
   // this is to ensure compatibility between frontend and test/backend.test.js
@@ -79,7 +87,7 @@ async function startApp () {
           activity,
           action: action || opType,
           who: meta?.username || 'TODO: signing keyID',
-          contract: sbp('state/vuex/state').contracts[contractID]?.type || contractID,
+          contract: contractName(contractID),
           errMsg: e.message || '?'
         })
       })
@@ -128,36 +136,41 @@ async function startApp () {
     // In development mode this makes the SBP API available in the devtools console.
     window.sbp = sbp
   }
-
+  // this is definitely very hacky, but we put it here since CONTRACT_IS_SYNCING can
+  // be called before the main App component is loaded (just after we call login)
+  // and we don't yet have access to the component's 'this'
+  const initialSyncs = { ephemeral: { debouncedSyncBanner (c) {}, syncs: [] } }
+  const syncFn = function (contractID, isSyncing) {
+    // Make it possible for Cypress to wait for contracts to finish syncing.
+    if (isSyncing) {
+      this.ephemeral.syncs.push(contractID)
+      this.ephemeral.debouncedSyncBanner(contractID)
+    } else if (this.ephemeral.syncs.includes(contractID)) {
+      this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
+    }
+  }
+  const initialSyncFn = syncFn.bind(initialSyncs)
   try {
     // must create the connection before we call login
     sbp('okTurtles.data/set', PUBSUB_INSTANCE, sbp('chelonia/connect'))
     await sbp('translations/init', navigator.language)
-
-    // TODO: move this into gi.actions/identity/login or something
     // NOTE: important to do this before setting up Vue.js because a lot of that relies
     //       on the router stuff which has guards that expect the contracts to be loaded
     const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
-    if (username) {
-      const identityContractID = await sbp('namespace/lookup', username)
-      if (identityContractID) {
-        await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
-      } else {
-        await sbp('state/vuex/dispatch', 'logout')
-        console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-        // TODO: do not delete the username like this! handle this better!
-        //       because of how await works, this exception handler can be triggered
-        //       even by random errors from Vue.js, example:
-        //
-        //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
-        //         memberUsernames state.js:231
-        //
-        //       Which doesn't mean that the lookup actually failed!
-        await sbp('gi.db/settings/delete', username)
+    try {
+      if (username) {
+        sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, initialSyncFn)
+        await sbp('gi.actions/identity/login', { username })
       }
+    } catch (e) {
+      console.error(`caught ${e.name} while logging in: ${e.message}`, e)
+      await sbp('gi.actions/identity/logout')
+      console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+      // TODO: handle this better
+      await sbp('gi.db/settings/delete', username)
     }
   } catch (e) {
-    const errMsg = `Fatal error${e.name} initializing Group Income: ${e.message}\n\nPlease report this bug here: ${ALLOWED_URLS.ISSUE_PAGE}`
+    const errMsg = `Fatal error while initializing Group Income: ${e.name} - ${e.message}\n\nPlease report this bug here: ${ALLOWED_URLS.ISSUE_PAGE}`
     console.error(errMsg, e)
     alert(errMsg)
     return
@@ -178,6 +191,7 @@ async function startApp () {
           syncs: [],
           // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
           finishedLogin: 'no',
+          debouncedSyncBanner: null,
           isCorrupted: false // TODO #761
         }
       }
@@ -191,21 +205,20 @@ async function startApp () {
       sbp('okTurtles.data/set', 'BANNER', bannerGeneral) // make it globally accessible
       // display a self-clearing banner that shows up after we've taken 2 or more seconds
       // to sync a contract.
-      const debouncedSyncBanner = bannerGeneral.debouncedShow({
-        message: L('Loading events from server...'),
+      this.ephemeral.debouncedSyncBanner = bannerGeneral.debouncedShow({
+        message: (cID) => {
+          return L("Loading events for '{contract}' from server...", { contract: contractName(cID) })
+        },
         icon: 'wifi',
         seconds: 2,
         clearWhen: () => !this.ephemeral.syncs.length
       })
-      sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
-        // Make it possible for Cypress to wait for contracts to finish syncing.
-        if (isSyncing) {
-          this.ephemeral.syncs.push(contractID)
-          debouncedSyncBanner()
-        } else {
-          this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
-        }
-      })
+      this.ephemeral.syncs = initialSyncs.ephemeral.syncs
+      if (this.ephemeral.syncs.length) {
+        this.ephemeral.debouncedSyncBanner(this.ephemeral.syncs[0])
+      }
+      sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
+      sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGIN, () => {
         this.ephemeral.finishedLogin = 'yes'
       })

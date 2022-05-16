@@ -1,6 +1,5 @@
 export const LOGIN = 'login'
 export const LOGOUT = 'logout'
-export const VUE_LOADED = 'vue-loaded'
 
 export const REPLACED_STATE = 'replaced-state'
 
@@ -8,6 +7,7 @@ export const OPEN_MODAL = 'open-modal'
 export const CLOSE_MODAL = 'close-modal'
 export const REPLACE_MODAL = 'replace-modal'
 export const SET_MODAL_QUERIES = 'set-modal-queries'
+export const MODAL_RESPONSE = 'modal-response'
 
 export const OPEN_EMOTICON = 'open-emoticon'
 export const CLOSE_EMOTICON = 'close-emoticon'
