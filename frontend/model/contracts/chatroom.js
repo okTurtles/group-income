@@ -395,7 +395,7 @@ sbp('chelonia/defineContract', {
         const { id, emoticon } = data
         const msgIndex = findMessageIdx(id, state.messages)
         if (msgIndex >= 0) {
-          let emoticons = state.messages[msgIndex].emoticons || {}
+          const emoticons = state.messages[msgIndex].emoticons || {}
           if (emoticons[emoticon]) {
             const alreadyAdded = emoticons[emoticon].indexOf(meta.username)
             if (alreadyAdded >= 0) {
