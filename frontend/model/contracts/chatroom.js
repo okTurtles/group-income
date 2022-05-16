@@ -109,6 +109,15 @@ export async function leaveChatRoom ({ contractID }: {
   })
 }
 
+export function findMessageIdx (id: string, messages: Array<Object>): number {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].id === id) {
+      return i
+    }
+  }
+  return -1
+}
+
 function createNotificationData (
   notificationType: string,
   moreParams: Object = {}
@@ -349,14 +358,12 @@ sbp('chelonia/defineContract', {
         if (!state.simulation) {
           return
         }
-        for (let i = state.messages.length - 1; i >= 0; i--) {
-          if (state.messages[i].id === data.id) {
-            state.messages[i].text = data.text
-            state.messages[i].updatedDate = meta.createdDate
-            if (state.simulation && state.messages[i].pending) {
-              delete state.messages[i].pending
-            }
-            break
+        const msgIndex = findMessageIdx(data.id, state.messages)
+        if (msgIndex >= 0) {
+          state.messages[msgIndex].text = data.text
+          state.messages[msgIndex].updatedDate = meta.createdDate
+          if (state.simulation && state.messages[msgIndex].pending) {
+            delete state.messages[msgIndex].pending
           }
         }
       },
@@ -372,11 +379,9 @@ sbp('chelonia/defineContract', {
         if (!state.simulation) {
           return
         }
-        for (let i = state.messages.length - 1; i >= 0; i--) {
-          if (state.messages[i].id === data.id) {
-            state.messages.splice(i, 1)
-            break
-          }
+        const msgIndex = findMessageIdx(data.id, state.messages)
+        if (msgIndex >= 0) {
+          state.messages.splice(msgIndex, 1)
         }
       },
       sideEffect ({ contractID, hash }) {
@@ -393,31 +398,29 @@ sbp('chelonia/defineContract', {
           return
         }
         const { id, emoticon } = data
-        for (let i = state.messages.length - 1; i >= 0; i--) {
-          if (state.messages[i].id === id) {
-            let emoticons = cloneDeep(state.messages[i].emoticons || {})
-            if (emoticons[emoticon]) {
-              const alreadyAdded = emoticons[emoticon].indexOf(meta.username)
-              if (alreadyAdded >= 0) {
-                emoticons[emoticon].splice(alreadyAdded, 1)
-                if (!emoticons[emoticon].length) {
-                  delete emoticons[emoticon]
-                  if (!Object.keys(emoticons).length) {
-                    emoticons = null
-                  }
+        const msgIndex = findMessageIdx(id, state.messages)
+        if (msgIndex >= 0) {
+          let emoticons = cloneDeep(state.messages[msgIndex].emoticons || {})
+          if (emoticons[emoticon]) {
+            const alreadyAdded = emoticons[emoticon].indexOf(meta.username)
+            if (alreadyAdded >= 0) {
+              emoticons[emoticon].splice(alreadyAdded, 1)
+              if (!emoticons[emoticon].length) {
+                delete emoticons[emoticon]
+                if (!Object.keys(emoticons).length) {
+                  emoticons = null
                 }
-              } else {
-                emoticons[emoticon].push(meta.username)
               }
             } else {
-              emoticons[emoticon] = [meta.username]
+              emoticons[emoticon].push(meta.username)
             }
-            if (emoticons) {
-              Vue.set(state.messages[i], 'emoticons', emoticons)
-            } else {
-              Vue.delete(state.messages[i], 'emoticons')
-            }
-            break
+          } else {
+            emoticons[emoticon] = [meta.username]
+          }
+          if (emoticons) {
+            Vue.set(state.messages[msgIndex], 'emoticons', emoticons)
+          } else {
+            Vue.delete(state.messages[msgIndex], 'emoticons')
           }
         }
       },
