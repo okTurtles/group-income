@@ -115,6 +115,15 @@ export async function leaveChatRoom ({ contractID }: {
   })
 }
 
+export function findMessageIdx (id: string, messages: Array<Object>): number {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].id === id) {
+      return i
+    }
+  }
+  return -1
+}
+
 function createNotificationData (
   notificationType: string,
   moreParams: Object = {}
@@ -343,12 +352,10 @@ sbp('chelonia/defineContract', {
         // TODO: need to check if the meta.username === message.from
       },
       process ({ data, meta }, { state }) {
-        for (let i = state.messages.length - 1; i >= 0; i--) {
-          if (state.messages[i].id === data.id) {
-            state.messages[i].text = data.text
-            state.messages[i].updatedDate = meta.createdDate
-            break
-          }
+        const msgIndex = findMessageIdx(data.id, state.messages)
+        if (msgIndex >= 0) {
+          state.messages[msgIndex].text = data.text
+          state.messages[msgIndex].updatedDate = meta.createdDate
         }
       },
       sideEffect ({ contractID, data }, { state }) {
@@ -365,11 +372,9 @@ sbp('chelonia/defineContract', {
         id: string
       }),
       process ({ data, meta }, { state }) {
-        for (let i = state.messages.length - 1; i >= 0; i--) {
-          if (state.messages[i].id === data.id) {
-            state.messages.splice(i, 1)
-            break
-          }
+        const msgIndex = findMessageIdx(data.id, state.messages)
+        if (msgIndex >= 0) {
+          state.messages.splice(msgIndex, 1)
         }
       },
       sideEffect ({ contractID, data }, { state }) {
@@ -388,40 +393,38 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, contractID }, { state }) {
         const { id, emoticon } = data
-        for (let i = state.messages.length - 1; i >= 0; i--) {
-          if (state.messages[i].id === id) {
-            let emoticons = state.messages[i].emoticons || {}
-            if (emoticons[emoticon]) {
-              const alreadyAdded = emoticons[emoticon].indexOf(meta.username)
-              if (alreadyAdded >= 0) {
-                emoticons[emoticon].splice(alreadyAdded, 1)
-                if (!emoticons[emoticon].length) {
-                  delete emoticons[emoticon]
-                  if (!Object.keys(emoticons).length) {
-                    emoticons = null
-                  }
+        const msgIndex = findMessageIdx(id, state.messages)
+        if (msgIndex >= 0) {
+          let emoticons = state.messages[msgIndex].emoticons || {}
+          if (emoticons[emoticon]) {
+            const alreadyAdded = emoticons[emoticon].indexOf(meta.username)
+            if (alreadyAdded >= 0) {
+              emoticons[emoticon].splice(alreadyAdded, 1)
+              if (!emoticons[emoticon].length) {
+                delete emoticons[emoticon]
+                if (!Object.keys(emoticons).length) {
+                  emoticons = null
                 }
-              } else {
-                emoticons[emoticon].push(meta.username)
               }
             } else {
-              emoticons[emoticon] = [meta.username]
+              emoticons[emoticon].push(meta.username)
             }
-            if (emoticons) {
-              Vue.set(state.messages[i], 'emoticons', emoticons)
-            } else {
-              Vue.delete(state.messages[i], 'emoticons')
-            }
-            break
+          } else {
+            emoticons[emoticon] = [meta.username]
           }
+          if (emoticons) {
+            Vue.set(state.messages[msgIndex], 'emoticons', emoticons)
+          } else {
+            Vue.delete(state.messages[msgIndex], 'emoticons')
+          }
+          sbp('gi.contracts/chatroom/pushSideEffect', contractID,
+            ['gi.contracts/chatroom/editMessage/sideEffect', {
+              meta,
+              data: { id },
+              contractID
+            }]
+          )
         }
-        sbp('gi.contracts/chatroom/pushSideEffect', contractID,
-          ['gi.contracts/chatroom/editMessage/sideEffect', {
-            meta,
-            data: { id: data.id },
-            contractID
-          }]
-        )
       }
     }
   }

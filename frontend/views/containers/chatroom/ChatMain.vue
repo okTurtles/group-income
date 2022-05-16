@@ -81,7 +81,7 @@ import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
-import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
+import { createMessage, getLatestMessages, findMessageIdx } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { cloneDeep } from '@utils/giLodash.js'
 import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
@@ -328,13 +328,9 @@ export default ({
     },
     listenChatRoomActions ({ type, data }) {
       const addIfNotExist = (msg) => {
-        let m = null
-        for (let i = this.messages.length - 1; i >= 0; i--) {
-          if (this.messages[i].id === msg.id) {
-            m = this.messages[i]
-            break
-          }
-        }
+        const msgIndex = findMessageIdx(msg.id, this.messages)
+        let m = msgIndex >= 0 ? this.messages[msgIndex] : null
+
         if (m) {
           delete m.pending
         } else {
@@ -343,20 +339,16 @@ export default ({
       }
 
       const updateIfExist = (msg) => {
-        for (let i = this.messages.length - 1; i >= 0; i--) {
-          if (this.messages[i].id === msg.id) {
-            this.messages.splice(i, 1, cloneDeep(msg))
-            break
-          }
+        const msgIndex = findMessageIdx(msg.id, this.messages)
+        if (msgIndex >= 0) {
+          this.messages.splice(msgIndex, 1, cloneDeep(msg))
         }
       }
 
       const deleteIfExist = (id) => {
-        for (let i = this.messages.length - 1; i >= 0; i--) {
-          if (this.messages[i].id === id) {
-            this.messages.splice(i, 1)
-            break
-          }
+        const msgIndex = findMessageIdx(id, this.messages)
+        if (msgIndex >= 0) {
+          this.messages.splice(msgIndex, 1)
         }
       }
 
