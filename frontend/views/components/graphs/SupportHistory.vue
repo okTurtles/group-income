@@ -7,41 +7,57 @@ div
 
   .history(v-else='')
     .months(
-      v-for='(percentage, index) in history'
+      v-for='(distributed, index) in history'
       :key='`percentage-${index}`'
     )
-      div(:class='["period", getResult(percentage)]')
-        p.period-title {{ months[index] }}
-        p.period-txt {{ percentage | toPercent }}
-        span.period-progress(:style='{height: getPercentage(percentage)}')
+      div(:class='["period", getResult(distributed.total)]')
+        .period-progress(
+          :style='{height: getPercentage(distributed.total)}'
+          :class='{ isLow: isLow(distributed.total) }'
+        )
+          h4.period-title {{ distributed.month }}
+          p.period-txt {{ distributed.total | toPercent }}
 </template>
 
 <script>
 import { toPercent } from '@view-utils/filters.js'
+import { humanDate } from '@utils/time.js'
+import { mapGetters } from 'vuex'
 
 export default ({
   name: 'GroupSupportHistory',
-  props: {
-    history: {
-      type: Array,
-      default: () => []
-    }
-  },
   data () {
     return {
-      months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+      history: []
+    }
+  },
+  created () {
+    // Todo replace history with real data
+    // const payments = Object.values(this.currentGroupState.payments)
+    const testNumber = 5
+    for (let i = 1; i <= testNumber; i++) {
+      const date = new Date()
+      date.setMonth(date.getMonth() - i)
+      this.history.push({
+        total: 1 / testNumber * i,
+        month: humanDate(date, { month: 'long' })
+      })
     }
   },
   computed: {
+    ...mapGetters(['currentGroupState'])
   },
   methods: {
     getPercentage (percentage) {
       return percentage >= 1 ? '100%' : `${Math.floor(percentage * 100)}%`
     },
     getResult (percentage) {
-      if (percentage < 0.6) return 'has-background-danger'
-      if (percentage < 1) return 'has-background-warning'
-      return 'has-background-success'
+      if (percentage < 0.6) return 'has-background-danger-solid'
+      if (percentage < 1) return 'has-background-warning-solid'
+      return 'has-background-success-solid'
+    },
+    isLow (percentage) {
+      return percentage <= 0.2
     }
   },
   filters: {
@@ -55,18 +71,21 @@ export default ({
 
 .history {
   display: flex;
-  margin: 0.5rem;
+  margin: 1rem 0;
+  gap: 1rem;
+  overflow: auto;
 }
 
 .months {
-  padding: 0.5rem;
+  max-width: 6.25rem;
+  width: 100%;
 }
 
 .period {
   position: relative;
   width: 100%;
   display: inline-block;
-  padding: 2rem 0;
+  min-height: 12.5rem;
   color: $background_0;
   text-align: center;
   font-size: $size_1;
@@ -94,16 +113,14 @@ export default ({
   &-title,
   &-txt {
     position: relative;
+    font-size: 0.875rem;
+    color: $white;
     z-index: 2;
   }
 
   &-title {
     font-weight: 600;
-    margin-bottom: 0.3rem;
-  }
-
-  &-txt {
-    font-size: 0.7rem;
+    padding: 0.5rem 0.3rem 0.2rem 0.3rem;
   }
 
   &-progress {
@@ -113,6 +130,17 @@ export default ({
     width: 100%;
     background-color: inherit;
     opacity: 0.8;
+  }
+}
+
+.isLow {
+  .period-title,
+  .period-txt {
+    color: var(--danger_0);
+  }
+
+  .period-title {
+    margin-top: -3.3rem;
   }
 }
 </style>
