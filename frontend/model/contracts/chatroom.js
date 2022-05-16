@@ -400,11 +400,17 @@ sbp('chelonia/defineContract', {
         const { id, emoticon } = data
         const msgIndex = findMessageIdx(id, state.messages)
         if (msgIndex >= 0) {
-          const emoticons = cloneDeep(state.messages[msgIndex].emoticons || {})
+          let emoticons = cloneDeep(state.messages[msgIndex].emoticons || {})
           if (emoticons[emoticon]) {
             const alreadyAdded = emoticons[emoticon].indexOf(meta.username)
             if (alreadyAdded >= 0) {
               emoticons[emoticon].splice(alreadyAdded, 1)
+              if (!emoticons[emoticon].length) {
+                delete emoticons[emoticon]
+                if (!Object.keys(emoticons).length) {
+                  emoticons = null
+                }
+              }
             } else {
               emoticons[emoticon].push(meta.username)
             }
@@ -413,6 +419,8 @@ sbp('chelonia/defineContract', {
           }
           if (emoticons) {
             Vue.set(state.messages[msgIndex], 'emoticons', emoticons)
+          } else {
+            Vue.delete(state.messages[msgIndex], 'emoticons')
           }
         }
       },
