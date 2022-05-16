@@ -194,6 +194,7 @@ export default ({
 .c-thumbCircle {
   position: relative;
   display: inline-block;
+  flex-shrink: 0;
 
   i {
     position: absolute;
