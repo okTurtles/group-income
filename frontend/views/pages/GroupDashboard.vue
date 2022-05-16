@@ -6,7 +6,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
     i18n(
       @click='handleIncomeClick'
       :args='{ \
-        r1: `<button class="link js-btnInvite" data-test="openIncomeDetailsModal">`, \
+        r1: `<button class="link js-btnInvite" data-test="openWarningIncomeDetailsModal">`, \
         r2: "</button>", \
         date: humanDate(groupSettings.distributionDate, { month: "long", day: "numeric" }) \
       }'
