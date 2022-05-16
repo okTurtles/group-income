@@ -33,7 +33,7 @@
     ul.c-group-list
       li.c-group-member(
         v-for='{username, displayName, status, date} in requestsSorted'
-        :data-test='username'
+        :data-test='`request-${username}`'
         :key='username'
       )
         profile-card(:username='username')
@@ -81,7 +81,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import { humanDate } from '@utils/time.js'
 
 export default {
-  name: 'ProposalsWidget',
+  name: 'MemberRequest',
   components: {
     ProposalBox,
     CalloutCard,
