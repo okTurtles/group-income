@@ -34,7 +34,7 @@ export default ({
   created () {
     // Todo replace history with real data
     // const payments = Object.values(this.currentGroupState.payments)
-    const testNumber = 5
+    const testNumber = 6
     for (let i = 1; i <= testNumber; i++) {
       const date = new Date()
       date.setMonth(date.getMonth() - i)
@@ -77,7 +77,6 @@ export default ({
 }
 
 .months {
-  max-width: 6.25rem;
   width: 100%;
 }
 
