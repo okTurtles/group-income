@@ -28,6 +28,7 @@ export default ({
       type: Date,
       required: true
     },
+    edited: Boolean,
     variant: {
       type: String,
       validator (value) {

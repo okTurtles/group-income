@@ -29,6 +29,7 @@
         )
 
         p.c-text(v-else-if='text') {{ text }}
+          span.c-edited {{edited ? '(edited)' : ''}}
 
   message-reactions(
     v-if='!isEditing'
@@ -85,6 +86,7 @@ export default ({
       type: Date,
       required: true
     },
+    edited: Boolean,
     notification: Object,
     type: String,
     emoticonsList: {
@@ -218,5 +220,11 @@ export default ({
   color: var(--text_1);
   font-style: italic;
   padding-left: 0.25rem;
+}
+
+.c-edited {
+  margin-left: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--text_1);
 }
 </style>
