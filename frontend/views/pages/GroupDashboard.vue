@@ -10,7 +10,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         r2: "</button>", \
         date: humanDate(groupSettings.distributionDate, { month: "long", day: "numeric" }) \
       }'
-    ) Next distribution date in on {date}. Make sure to update your {r1}income details{r2} by then.
+    ) Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.
 
     button.is-unstyled(@click='closeBanner')
       i.icon-times
