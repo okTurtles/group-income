@@ -10,13 +10,13 @@ div
       v-for='(distributed, index) in history'
       :key='`percentage-${index}`'
     )
-      div(:class='["period", getResult(distributed.total)]')
+      div(:class='["period", `has-background-${getResult(distributed.total)}`]')
         .period-progress(
           :style='{height: getPercentage(distributed.total)}'
-          :class='{ isLow: isLow(distributed.total) }'
+          :class='[{ isLow: isLow(distributed.total) }, `has-background-${getResult(distributed.total)}-solid`]'
         )
           h4.period-title {{ distributed.month }}
-          p.period-txt {{ distributed.total | toPercent }}
+          p.period-txt {{ distributed.total | toPercent }}%
 </template>
 
 <script>
@@ -52,9 +52,9 @@ export default ({
       return percentage >= 1 ? '100%' : `${Math.floor(percentage * 100)}%`
     },
     getResult (percentage) {
-      if (percentage < 0.6) return 'has-background-danger-solid'
-      if (percentage < 1) return 'has-background-warning-solid'
-      return 'has-background-success-solid'
+      if (percentage < 0.6) return 'danger'
+      if (percentage < 1) return 'warning'
+      return 'success'
     },
     isLow (percentage) {
       return percentage <= 0.2
@@ -128,8 +128,6 @@ export default ({
     left: 0;
     bottom: 0;
     width: 100%;
-    background-color: inherit;
-    opacity: 0.8;
   }
 }
 
