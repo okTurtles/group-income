@@ -98,6 +98,9 @@ export default ({
     },
     showBanner () {
       return !this.hasIncomeDetails && this.isCloseToDistributionTime && !this.ephemeral.hideBanner
+    },
+    hasMemberRequest () {
+      return this.requests
     }
   },
   methods: {
@@ -108,8 +111,6 @@ export default ({
     closeBanner () {
       localStorage.setItem('giHideDistributionWarning', true)
       this.ephemeral.hideBanner = true
-    hasMemberRequest () {
-      return this.requests
     }
   },
   components: {
