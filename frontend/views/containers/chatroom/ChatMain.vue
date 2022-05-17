@@ -102,7 +102,7 @@ import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/constants.js'
-import { createMessage } from '@model/contracts/chatroom.js'
+import { createMessage, findMessageIdx } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { cloneDeep } from '@utils/giLodash.js'
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
@@ -284,7 +284,16 @@ export default ({
       if (!messageId) {
         return
       }
-      console.log(messageId)
+      const msgIndex = findMessageIdx(messageId, this.messages)
+      if (msgIndex >= 0) {
+        console.log(messageId, msgIndex)
+        const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]
+        eleMessage.scrollIntoView({ behavior: 'smooth' })
+        eleMessage.classList.add('c-focused')
+        setTimeout(() => {
+          eleMessage.classList.remove('c-focused')
+        }, 1500)
+      }
     },
     updateScroll () {
       if (this.summary.title) {

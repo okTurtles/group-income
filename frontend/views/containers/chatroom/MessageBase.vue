@@ -221,6 +221,10 @@ export default ({
   }
 }
 
+.c-focused {
+  animation: focused 1s linear 0.5s;
+}
+
 .c-replying {
   font-size: 0.75rem;
   color: var(--text_1);
