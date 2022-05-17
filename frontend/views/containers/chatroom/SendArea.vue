@@ -93,6 +93,7 @@ export default ({
       default: false
     },
     replyingMessage: String,
+    replyingMessageId: String,
     replyingTo: String,
     isEditing: {
       type: Boolean,
@@ -206,7 +207,6 @@ export default ({
       this.updateTextArea()
     },
     stopReplying () {
-      this.ephemeral.replyingMessage = null
       this.$emit('stop-replying')
     },
     sendMessage () {
@@ -214,7 +214,7 @@ export default ({
         return false
       }
 
-      this.$emit('send', this.$refs.textarea.value, this.replyingMessage) // TODO remove first / last empty lines
+      this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
     },

@@ -19,7 +19,10 @@
           span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
-        p.c-replying(if='replyingMessage') {{ replyingMessage }}
+        p.c-replying(
+          if='replyingMessage'
+          @click='onReplyMessageClicked'
+        ) {{ replyingMessage }}
         send-area(
           v-if='isEditing'
           :defaultText='text'
@@ -101,6 +104,9 @@ export default ({
     humanDate,
     editMessage () {
       this.isEditing = true
+    },
+    onReplyMessageClicked () {
+      this.$emit('reply-message-clicked')
     },
     onMessageEdited (newMessage) {
       this.isEditing = false
@@ -220,6 +226,11 @@ export default ({
   color: var(--text_1);
   font-style: italic;
   padding-left: 0.25rem;
+
+  &:hover {
+    cursor: pointer;
+    color: var(--text_2);
+  }
 }
 
 .c-edited {

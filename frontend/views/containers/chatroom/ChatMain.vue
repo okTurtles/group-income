@@ -48,7 +48,7 @@
           :text='message.text'
           :type='message.type'
           :notification='message.notification'
-          :replyingMessage='message.replyingMessage'
+          :replyingMessage='replyingMessage(message)'
           :from='message.from'
           :datetime='time(message.datetime)'
           :edited='!!message.updatedDate'
@@ -62,6 +62,7 @@
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
+          @scroll-to-replying-message='scrollToMessage(message.replying.id)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @delete-message='deleteMessage(message)'
           @add-emoticon='addEmoticon(message, $event)'
@@ -76,8 +77,9 @@
       @start-typing='updateScroll'
       :loading='details.isLoading'
       :replying-message='ephemeral.replyingMessage'
+      :replying-message-id='ephemeral.replyingMessageId'
       :replying-to='ephemeral.replyingTo'
-      @stop-replying='ephemeral.replyingMessage = null'
+      @stop-replying='stopReplying'
     )
     view-area(
       v-else
@@ -145,6 +147,7 @@ export default ({
         infiniteLoading: null,
         bodyPaddingBottom: '',
         replyingMessage: null,
+        replyingMessageId: null,
         replyingTo: null
       }
     }
@@ -220,6 +223,9 @@ export default ({
         return this.isCurrentUser(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
     },
+    replyingMessage (message) {
+      return message.replying ? message.replying.text : ''
+    },
     time (strTime) {
       return new Date(strTime)
     },
@@ -241,14 +247,22 @@ export default ({
     updateSendAreaHeight (height) {
       this.ephemeral.bodyPaddingBottom = height
     },
-    handleSendMessage (message, replyingMessage = null) {
+    stopReplying () {
+      this.ephemeral.replyingMessage = null
+      this.ephemeral.replyingMessageId = null
+      this.ephemeral.replyingTo = null
+    },
+    handleSendMessage (message) {
+      const replying = this.ephemeral.replyingMessageId
+        ? { id: this.ephemeral.replyingMessageId, text: this.ephemeral.replyingMessage }
+        : null
       // Consider only simple TEXT now
       // TODO: implement other types of messages later
       const data = { type: MESSAGE_TYPES.TEXT, text: message }
 
       sbp('gi.actions/chatroom/addMessage', {
         contractID: this.currentChatRoomId,
-        data: !replyingMessage ? data : { ...data, replyingMessage },
+        data: !replying ? data : { ...data, replying },
         hooks: {
           prepublish: (message) => {
             const msgValue = JSON.parse(message.opValue())
@@ -259,11 +273,18 @@ export default ({
               // when we don't get event after a certain period
               pending: true
             })
+            this.stopReplying()
           }
         }
       })
       // need to scroll to the bottom
       this.updateScroll()
+    },
+    scrollToMessage (messageId) {
+      if (!messageId) {
+        return
+      }
+      console.log(messageId)
     },
     updateScroll () {
       if (this.summary.title) {
@@ -279,6 +300,7 @@ export default ({
     },
     replyMessage (message) {
       this.ephemeral.replyingMessage = message.text
+      this.ephemeral.replyingMessageId = message.id
       this.ephemeral.replyingTo = this.who(message)
     },
     editMessage (message, newMessage) {
@@ -382,6 +404,7 @@ export default ({
         this.latestEvents.push(message.serialize())
 
         this.$forceUpdate()
+        console.log(this.messages, '********')
       })
     },
     resizeEventHandler () {
