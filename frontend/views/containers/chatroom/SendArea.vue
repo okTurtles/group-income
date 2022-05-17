@@ -346,7 +346,7 @@ $initialHeight: 43px;
 .c-clear {
   position: absolute;
   right: 0.2rem;
-  top: 0.4rem;
+  top: 1.2rem;
 }
 
 .c-send-button {
