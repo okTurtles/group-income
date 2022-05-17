@@ -6,7 +6,7 @@ import Vue from 'vue'
 import '~/shared/domains/chelonia/chelonia.js'
 import {
   objectMaybeOf, objectOf, mapOf, arrayOf,
-  string, literalOf, unionOf, number, optional
+  string, literalOf, unionOf, optional
 } from '~/frontend/utils/flowTyper.js'
 import { merge, cloneDeep } from '~/frontend/utils/giLodash.js'
 import L from '~/frontend/views/utils/translations.js'
@@ -40,10 +40,8 @@ export const messageType: any = objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
     params: mapOf(string, string) // { username }
   }),
-  replyingMessage: objectOf({
+  replying: objectOf({
     id: string, // scroll to the original message and highlight
-    index: number, // index of the list of messages
-    username: string, // display username
     text: string // display text(if too long, truncate)
   }),
   emoticons: mapOf(string, arrayOf(string)), // mapping of emoticons and usernames
@@ -54,7 +52,7 @@ export const messageType: any = objectMaybeOf({
 export function createMessage ({ meta, data, hash, state }: {
   meta: Object, data: Object, hash: string, state?: Object
 }): Object {
-  const { type, text, replyingMessage } = data
+  const { type, text, replying } = data
   const { createdDate } = meta
 
   let newMessage = {
@@ -65,7 +63,7 @@ export function createMessage ({ meta, data, hash, state }: {
   }
 
   if (type === MESSAGE_TYPES.TEXT) {
-    newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
+    newMessage = !replying ? { ...newMessage, text } : { ...newMessage, text, replying }
   } else if (type === MESSAGE_TYPES.POLL) {
     // TODO: Poll message creation
   } else if (type === MESSAGE_TYPES.NOTIFICATION) {
