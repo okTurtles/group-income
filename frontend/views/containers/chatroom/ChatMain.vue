@@ -92,8 +92,8 @@ import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
-import Loading from '@components/Loading.vue'
 import InfiniteLoading from 'vue-infinite-loading'
+import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
@@ -367,11 +367,11 @@ export default ({
     },
     async getLatestEvents (refresh = false) {
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-      const beforeActionHash = refresh || !this.latestEvents.length
+      const before = refresh || !this.latestEvents.length
         ? ''
         : GIMessage.deserialize(this.latestEvents[0]).hash()
 
-      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, beforeActionHash, limit)
+      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, before, limit)
 
       if (refresh) {
         this.latestEvents = cloneDeep(newEvents)
