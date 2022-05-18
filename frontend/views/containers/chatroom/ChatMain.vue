@@ -112,13 +112,13 @@ export default ({
   name: 'ChatMain',
   components: {
     Avatar,
+    ConversationGreetings,
     Emoticons,
-    Loading,
     InfiniteLoading,
+    Loading,
     Message,
     MessageInteractive,
     MessageNotification,
-    ConversationGreetings,
     SendArea,
     ViewArea
   },
@@ -143,9 +143,9 @@ export default ({
       latestEvents: [],
       messages: [],
       ephemeral: {
-        refreshMessages: true,
-        infiniteLoading: null,
         bodyPaddingBottom: '',
+        infiniteLoading: null,
+        refreshMessages: true,
         replyingMessage: null,
         replyingMessageId: null,
         replyingTo: null
@@ -286,7 +286,6 @@ export default ({
       }
       const msgIndex = findMessageIdx(messageId, this.messages)
       if (msgIndex >= 0) {
-        console.log(messageId, msgIndex)
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]
         eleMessage.scrollIntoView({ behavior: 'smooth' })
         eleMessage.classList.add('c-focused')
@@ -367,12 +366,12 @@ export default ({
       }
     },
     async getLatestEvents (refresh = false) {
-      const eventsPerPage = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+      const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       const beforeActionHash = refresh || !this.latestEvents.length
         ? ''
         : GIMessage.deserialize(this.latestEvents[0]).hash()
 
-      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, beforeActionHash, eventsPerPage)
+      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, beforeActionHash, limit)
 
       if (refresh) {
         this.latestEvents = cloneDeep(newEvents)
@@ -387,7 +386,7 @@ export default ({
       this.messages = cloneDeep(state.messages)
       this.$forceUpdate()
 
-      return newEvents.length < eventsPerPage
+      return newEvents.length < limit
     },
     setInitMessages () {
       this.refreshMessages = true

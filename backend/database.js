@@ -51,18 +51,18 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
-  'backend/db/streamEntriesBefore': async function (contractID: string, hash: string, numberOfActions: number): Promise<*> {
+  'backend/db/streamEntriesBefore': async function (contractID: string, before: string, limit: number): Promise<*> {
     let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
     if (!currentHEAD) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
 
-    hash = hash || currentHEAD
+    const hash = before || currentHEAD
     let prefix = '['
     if (hash === currentHEAD) {
       const entry = await sbp('chelonia/db/getEntry', currentHEAD)
       prefix = `["${strToB64(entry.serialize())}",`
-      numberOfActions--
+      limit--
     }
     let metBefore = false
 
@@ -75,12 +75,12 @@ export default (sbp('sbp/selectors/register', {
           if (currentHEAD !== hash && metBefore) {
             this.push(prefix + json)
             prefix = ','
-            numberOfActions--
+            limit--
           } else if (currentHEAD === hash) {
             metBefore = true
           }
 
-          if (!numberOfActions || currentHEAD === contractID) {
+          if (!limit || currentHEAD === contractID) {
             this.push(']')
             this.push(null)
           } else {

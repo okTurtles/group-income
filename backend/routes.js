@@ -69,8 +69,12 @@ route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
 route.GET('/eventsBefore/{contractID}', {}, async function (request, h) {
   try {
     const { contractID } = request.params
-    const { before, howMany } = request.query
-    const stream = await sbp('backend/db/streamEntriesBefore', contractID, before, howMany)
+    const { before, limit } = request.query
+
+    if (!limit || limit <= 0) return Boom.badRequest('missing or incorrect limit')
+    if (!before) return Boom.badRequest('missing before')
+
+    const stream = await sbp('backend/db/streamEntriesBefore', contractID, before, limit)
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {

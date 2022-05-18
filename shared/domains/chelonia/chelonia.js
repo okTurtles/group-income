@@ -260,12 +260,12 @@ sbp('sbp/selectors/register', {
     // calling this will make pubsub unsubscribe for events on `contractID`
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
-  'chelonia/contractEventsBefore': async function (contractID: string, before: string, howMany: number) {
-    if (howMany <= 0) {
-      console.error('[chelonia] invalid params error: "howMany" needs to be positive integer')
+  'chelonia/contractEventsBefore': async function (contractID: string, before: string, limit: number) {
+    if (limit <= 0) {
+      console.error('[chelonia] invalid params error: "limit" needs to be positive integer')
       return
     }
-    return await sbp('chelonia/private/out/eventsBefore', contractID, before || '', howMany)
+    return await sbp('chelonia/private/out/eventsBefore', contractID, before || '', limit)
   },
   'chelonia/latestContractState': async function (contractID: string) {
     const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)

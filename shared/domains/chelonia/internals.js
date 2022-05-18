@@ -72,8 +72,8 @@ sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
-  'chelonia/private/out/eventsBefore': async function (contractID: string, before: string, howMany: number) {
-    const events = await fetch(`${this.config.connectionURL}/eventsBefore/${contractID}?before=${before}&howMany=${howMany}`)
+  'chelonia/private/out/eventsBefore': async function (contractID: string, before: string, limit: number) {
+    const events = await fetch(`${this.config.connectionURL}/eventsBefore/${contractID}?before=${before}&limit=${limit}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
