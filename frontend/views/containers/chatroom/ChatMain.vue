@@ -336,12 +336,12 @@ export default ({
       }
     },
     async getLatestEvents (refresh = false) {
-      const eventsPerPage = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-      const beforeActionHash = refresh || !this.latestEvents.length
+      const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+      const before = refresh || !this.latestEvents.length
         ? ''
         : GIMessage.deserialize(this.latestEvents[0]).hash()
 
-      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, beforeActionHash, eventsPerPage)
+      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, before, limit)
 
       if (refresh) {
         this.latestEvents = cloneDeep(newEvents)
@@ -356,7 +356,7 @@ export default ({
       this.messages = cloneDeep(state.messages)
       this.$forceUpdate()
 
-      return newEvents.length < eventsPerPage
+      return newEvents.length < limit
     },
     setInitMessages () {
       this.refreshMessages = true
