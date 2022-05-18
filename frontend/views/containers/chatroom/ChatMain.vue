@@ -90,8 +90,8 @@ import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
-import Loading from '@components/Loading.vue'
 import InfiniteLoading from 'vue-infinite-loading'
+import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
@@ -111,12 +111,12 @@ export default ({
   components: {
     Avatar,
     Emoticons,
-    Loading,
+    ConversationGreetings,
     InfiniteLoading,
+    Loading,
     Message,
     MessageInteractive,
     MessageNotification,
-    ConversationGreetings,
     SendArea,
     ViewArea
   },
