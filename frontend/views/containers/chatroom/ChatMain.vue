@@ -344,9 +344,9 @@ export default ({
       const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, before, limit)
 
       if (refresh) {
-        this.latestEvents = cloneDeep(newEvents)
+        this.latestEvents = newEvents
       } else {
-        this.latestEvents = newEvents.concat(this.latestEvents)
+        this.latestEvents.splice(0, 0, ...newEvents)
       }
 
       const state = this.getSimulatedState(true)
