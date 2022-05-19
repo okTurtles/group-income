@@ -280,18 +280,35 @@ export default ({
       // need to scroll to the bottom
       this.updateScroll()
     },
-    scrollToMessage (messageId) {
+    async scrollToMessage (messageId) {
       if (!messageId) {
         return
       }
-      const msgIndex = findMessageIdx(messageId, this.messages)
-      if (msgIndex >= 0) {
-        const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]
+
+      const scrollAndHighlight = (index) => {
+        const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
         eleMessage.scrollIntoView({ behavior: 'smooth' })
         eleMessage.classList.add('c-focused')
         setTimeout(() => {
           eleMessage.classList.remove('c-focused')
         }, 1500)
+      }
+
+      const msgIndex = findMessageIdx(messageId, this.messages)
+      if (msgIndex >= 0) {
+        scrollAndHighlight(msgIndex)
+      } else {
+        //  TODO: retrieve pages of events until the page contains messageId
+        const events = await sbp('chelonia/private/out/eventsSince', this.currentChatRoomId, messageId)
+        if (events && events.length) {
+          this.latestEvents = events
+          await this.rerenderEvents()
+
+          const msgIndex = findMessageIdx(messageId, this.messages)
+          if (msgIndex >= 0) {
+            scrollAndHighlight(msgIndex)
+          }
+        }
       }
     },
     updateScroll () {
@@ -379,14 +396,17 @@ export default ({
         this.latestEvents.splice(0, 0, ...newEvents)
       }
 
+      await this.rerenderEvents()
+
+      return newEvents.length < limit
+    },
+    async rerenderEvents () {
       const state = this.getSimulatedState(true)
       for (const event of this.latestEvents) {
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
       }
       this.messages = cloneDeep(state.messages)
       this.$forceUpdate()
-
-      return newEvents.length < limit
     },
     setInitMessages () {
       this.refreshMessages = true
@@ -412,7 +432,6 @@ export default ({
         this.latestEvents.push(message.serialize())
 
         this.$forceUpdate()
-        console.log(this.messages, '********')
       })
     },
     resizeEventHandler () {
