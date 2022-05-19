@@ -301,8 +301,7 @@ export default ({
         //  TODO: retrieve pages of events until the page contains messageId
         const events = await sbp('chelonia/private/out/eventsSince', this.currentChatRoomId, messageId)
         if (events && events.length) {
-          this.latestEvents = events
-          await this.rerenderEvents()
+          await this.rerenderEvents(events, true)
 
           const msgIndex = findMessageIdx(messageId, this.messages)
           if (msgIndex >= 0) {
@@ -388,19 +387,19 @@ export default ({
         ? ''
         : GIMessage.deserialize(this.latestEvents[0]).hash()
 
-      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, before, limit)
+      const events = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, before, limit)
 
+      await this.rerenderEvents(events, refresh)
+
+      return events.length < limit
+    },
+    async rerenderEvents (events, refresh) {
       if (refresh) {
-        this.latestEvents = newEvents
+        this.latestEvents = events
       } else {
-        this.latestEvents.splice(0, 0, ...newEvents)
+        this.latestEvents.splice(0, 0, ...events)
       }
 
-      await this.rerenderEvents()
-
-      return newEvents.length < limit
-    },
-    async rerenderEvents () {
       const state = this.getSimulatedState(true)
       for (const event of this.latestEvents) {
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
