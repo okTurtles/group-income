@@ -267,6 +267,7 @@ export default ({
   display: flex;
   flex-wrap: wrap;
   position: relative;
+  min-height: 160px;
 }
 
 .c-tag {

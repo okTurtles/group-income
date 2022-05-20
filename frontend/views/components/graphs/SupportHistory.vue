@@ -1,5 +1,5 @@
 <template lang='pug'>
-div
+div(:class='isReady ? "" : "c-ready"')
   i18n(tag='p') Percentage of the goal reached by the group.
 
   p(v-if='history.length === 0')
@@ -12,7 +12,7 @@ div
     )
       div(:class='["period", `has-background-${getResult(distributed.total)}`]')
         .period-progress(
-          :style='{height: getPercentage(distributed.total)}'
+          :style='{height: getPercentage(distributed.total), width: getPercentage(distributed.total)}'
           :class='[{ isLow: isLow(distributed.total) }, `has-background-${getResult(distributed.total)}-solid`]'
         )
           h4.period-title {{ distributed.month }}
@@ -28,8 +28,12 @@ export default ({
   name: 'GroupSupportHistory',
   data () {
     return {
+      isReady: false,
       history: []
     }
+  },
+  mounted () {
+    setTimeout(() => { this.isReady = true }, 0)
   },
   created () {
     // Todo replace history with real data
@@ -73,7 +77,11 @@ export default ({
   display: flex;
   margin: 1rem 0;
   gap: 1rem;
-  overflow: auto;
+  overflow: hidden;
+
+  @include phone {
+    flex-direction: column;
+  }
 }
 
 .months {
@@ -89,6 +97,11 @@ export default ({
   text-align: center;
   font-size: $size_1;
   line-height: 1.2;
+
+  @include phone {
+    display: block;
+    min-height: 2.5rem;
+  }
 
   &:first-child {
     border-left: 0;
@@ -115,18 +128,41 @@ export default ({
     font-size: 0.875rem;
     color: $white;
     z-index: 2;
+
+    @include phone {
+      position: absolute;
+      right: 0.625rem;
+      top: 50%;
+    }
   }
 
   &-title {
     font-weight: 600;
-    padding: 0.5rem 0.3rem 0.2rem 0.3rem;
+
+    @include from($tablet) {
+      padding: 0.5rem 0.3rem 0.2rem 0.3rem;
+    }
+
+    @include phone {
+      top: 10%;
+    }
   }
 
   &-progress {
+    transition: width 0.7s ease-out, height 0.7s ease-out;
     position: absolute;
     left: 0;
     bottom: 0;
     width: 100%;
+
+    @include from($tablet) {
+      width: 100% !important;
+    }
+
+    @include phone {
+      height: 100% !important;
+      display: flex;
+    }
   }
 }
 
@@ -134,10 +170,29 @@ export default ({
   .period-title,
   .period-txt {
     color: var(--danger_0);
+
+    @include phone {
+      left: calc(100% + 0.5rem);
+    }
   }
 
   .period-title {
-    margin-top: -3.3rem;
+
+    @include from($tablet) {
+      margin-top: -3.3rem;
+    }
+  }
+}
+
+.c-ready {
+  .period-progress {
+    @include from($tablet) {
+      height: 0% !important;
+    }
+
+    @include phone {
+      width: 0% !important;
+    }
   }
 }
 </style>
