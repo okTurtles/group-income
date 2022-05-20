@@ -40,7 +40,7 @@ export const messageType: any = objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
     params: mapOf(string, string) // { username }
   }),
-  replying: objectOf({
+  replyingMessage: objectOf({
     id: string, // scroll to the original message and highlight
     text: string // display text(if too long, truncate)
   }),
@@ -52,7 +52,7 @@ export const messageType: any = objectMaybeOf({
 export function createMessage ({ meta, data, hash, state }: {
   meta: Object, data: Object, hash: string, state?: Object
 }): Object {
-  const { type, text, replying } = data
+  const { type, text, replyingMessage } = data
   const { createdDate } = meta
 
   let newMessage = {
@@ -63,7 +63,7 @@ export function createMessage ({ meta, data, hash, state }: {
   }
 
   if (type === MESSAGE_TYPES.TEXT) {
-    newMessage = !replying ? { ...newMessage, text } : { ...newMessage, text, replying }
+    newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
   } else if (type === MESSAGE_TYPES.POLL) {
     // TODO: Poll message creation
   } else if (type === MESSAGE_TYPES.NOTIFICATION) {
@@ -350,14 +350,16 @@ sbp('chelonia/defineContract', {
           id: string,
           text: string
         })(data)
-        // TODO: need to check if the meta.username === message.from
+        // TODO: Actually NOT SURE it's needed to check if the meta.username === message.from
+        // there is no messagess in vuex state
+        // to check if the meta.username is creator seems like too heavy
       },
       process ({ data, meta }, { state }) {
         if (!state.simulation) {
           return
         }
         const msgIndex = findMessageIdx(data.id, state.messages)
-        if (msgIndex >= 0) {
+        if (msgIndex >= 0 && meta.username === state.messages[msgIndex].from) {
           state.messages[msgIndex].text = data.text
           state.messages[msgIndex].updatedDate = meta.createdDate
           if (state.simulation && state.messages[msgIndex].pending) {
