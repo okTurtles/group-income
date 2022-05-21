@@ -39,11 +39,11 @@ export default ({
     // Todo replace history with real data
     // const payments = Object.values(this.currentGroupState.payments)
     const testNumber = 6
-    for (let i = 1; i <= testNumber; i++) {
+    for (let i = testNumber; i > 0; i--) {
       const date = new Date()
       date.setMonth(date.getMonth() - i)
       this.history.push({
-        total: 1 / testNumber * i,
+        total: 1 / testNumber * (testNumber - i + 1),
         month: humanDate(date, { month: 'long' })
       })
     }
@@ -80,7 +80,7 @@ export default ({
   overflow: hidden;
 
   @include phone {
-    flex-direction: column;
+    flex-direction: column-reverse;
   }
 }
 
