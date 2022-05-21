@@ -1,5 +1,5 @@
 <template lang='pug'>
-div
+div(:class='isReady ? "" : "c-ready"')
   i18n(tag='p') Percentage of the goal reached by the group.
 
   p(v-if='history.length === 0')
@@ -7,41 +7,61 @@ div
 
   .history(v-else='')
     .months(
-      v-for='(percentage, index) in history'
+      v-for='(distributed, index) in history'
       :key='`percentage-${index}`'
     )
-      div(:class='["period", getResult(percentage)]')
-        p.period-title {{ months[index] }}
-        p.period-txt {{ percentage | toPercent }}
-        span.period-progress(:style='{height: getPercentage(percentage)}')
+      div(:class='["period", `has-background-${getResult(distributed.total)}`]')
+        .period-progress(
+          :style='{height: getPercentage(distributed.total), width: getPercentage(distributed.total)}'
+          :class='[{ isLow: isLow(distributed.total) }, `has-background-${getResult(distributed.total)}-solid`]'
+        )
+          h4.period-title {{ distributed.month }}
+          p.period-txt {{ distributed.total | toPercent }}%
 </template>
 
 <script>
 import { toPercent } from '@view-utils/filters.js'
+import { humanDate } from '@utils/time.js'
+import { mapGetters } from 'vuex'
 
 export default ({
   name: 'GroupSupportHistory',
-  props: {
-    history: {
-      type: Array,
-      default: () => []
-    }
-  },
   data () {
     return {
-      months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+      isReady: false,
+      history: []
+    }
+  },
+  mounted () {
+    setTimeout(() => { this.isReady = true }, 0)
+  },
+  created () {
+    // Todo replace history with real data
+    // const payments = Object.values(this.currentGroupState.payments)
+    const testNumber = 6
+    for (let i = testNumber; i > 0; i--) {
+      const date = new Date()
+      date.setMonth(date.getMonth() - i)
+      this.history.push({
+        total: 1 / testNumber * (testNumber - i + 1),
+        month: humanDate(date, { month: 'long' })
+      })
     }
   },
   computed: {
+    ...mapGetters(['currentGroupState'])
   },
   methods: {
     getPercentage (percentage) {
       return percentage >= 1 ? '100%' : `${Math.floor(percentage * 100)}%`
     },
     getResult (percentage) {
-      if (percentage < 0.6) return 'has-background-danger'
-      if (percentage < 1) return 'has-background-warning'
-      return 'has-background-success'
+      if (percentage < 0.6) return 'danger'
+      if (percentage < 1) return 'warning'
+      return 'success'
+    },
+    isLow (percentage) {
+      return percentage <= 0.2
     }
   },
   filters: {
@@ -55,22 +75,33 @@ export default ({
 
 .history {
   display: flex;
-  margin: 0.5rem;
+  margin: 1rem 0;
+  gap: 1rem;
+  overflow: hidden;
+
+  @include phone {
+    flex-direction: column-reverse;
+  }
 }
 
 .months {
-  padding: 0.5rem;
+  width: 100%;
 }
 
 .period {
   position: relative;
   width: 100%;
   display: inline-block;
-  padding: 2rem 0;
+  min-height: 12.5rem;
   color: $background_0;
   text-align: center;
   font-size: $size_1;
   line-height: 1.2;
+
+  @include phone {
+    display: block;
+    min-height: 2.5rem;
+  }
 
   &:first-child {
     border-left: 0;
@@ -94,25 +125,74 @@ export default ({
   &-title,
   &-txt {
     position: relative;
+    font-size: 0.875rem;
+    color: $white;
     z-index: 2;
+
+    @include phone {
+      position: absolute;
+      right: 0.625rem;
+      top: 50%;
+    }
   }
 
   &-title {
     font-weight: 600;
-    margin-bottom: 0.3rem;
-  }
 
-  &-txt {
-    font-size: 0.7rem;
+    @include from($tablet) {
+      padding: 0.5rem 0.3rem 0.2rem 0.3rem;
+    }
+
+    @include phone {
+      top: 10%;
+    }
   }
 
   &-progress {
+    transition: width 0.7s ease-out, height 0.7s ease-out;
     position: absolute;
     left: 0;
     bottom: 0;
     width: 100%;
-    background-color: inherit;
-    opacity: 0.8;
+
+    @include from($tablet) {
+      width: 100% !important;
+    }
+
+    @include phone {
+      height: 100% !important;
+      display: flex;
+    }
+  }
+}
+
+.isLow {
+  .period-title,
+  .period-txt {
+    color: var(--danger_0);
+
+    @include phone {
+      left: calc(100% + 0.5rem);
+    }
+  }
+
+  .period-title {
+
+    @include from($tablet) {
+      margin-top: -3.3rem;
+    }
+  }
+}
+
+.c-ready {
+  .period-progress {
+    @include from($tablet) {
+      height: 0% !important;
+    }
+
+    @include phone {
+      width: 0% !important;
+    }
   }
 }
 </style>
