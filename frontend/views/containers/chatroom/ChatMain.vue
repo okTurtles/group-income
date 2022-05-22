@@ -168,8 +168,7 @@ export default ({
     ...mapGetters([
       'currentChatRoomId',
       'chatRoomSettings',
-      'chatRoomAttributes',
-      'chatRoomUsers',
+      'currentChatRoomState',
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom'
@@ -328,9 +327,7 @@ export default ({
     },
     getSimulatedState (initialize = true) {
       return {
-        settings: cloneDeep(this.chatRoomSettings),
-        attributes: cloneDeep(this.chatRoomAttributes),
-        users: cloneDeep(this.chatRoomUsers),
+        ...cloneDeep(this.currentChatRoomState),
         messages: initialize ? [] : this.messages,
         saveMessage: true
       }
