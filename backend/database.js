@@ -52,46 +52,38 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'backend/db/streamEntriesBefore': async function (contractID: string, before: string, limit: number): Promise<*> {
-    let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
-    if (!currentHEAD) {
+    const latestHash = await sbp('chelonia/db/latestHash', contractID)
+    if (!latestHash) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
 
-    const hash = before || currentHEAD
+    let currentHEAD = before || latestHash
     let prefix = '['
-    if (hash === currentHEAD) {
-      const entry = await sbp('chelonia/db/getEntry', currentHEAD)
-      prefix = `["${strToB64(entry.serialize())}",`
-      limit--
+    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
+    if (!entry) {
+      throw Boom.notFound(`entry ${currentHEAD} doesn't exist!`)
+    } else if (currentHEAD !== latestHash) {
+      currentHEAD = entry.message().previousHEAD
     }
-    let metBefore = false
 
     return new Readable({
       async read (): any {
         try {
-          const entry = await sbp('chelonia/db/getEntry', currentHEAD)
-          const json = `"${strToB64(entry.serialize())}"`
-
-          if (currentHEAD !== hash && metBefore) {
-            this.push(prefix + json)
-            prefix = ','
-            limit--
-          } else if (currentHEAD === hash) {
-            metBefore = true
-          }
-
-          if (!limit || currentHEAD === contractID) {
+          if (!currentHEAD || !limit) {
             this.push(']')
             this.push(null)
           } else {
+            entry = await sbp('chelonia/db/getEntry', currentHEAD)
+            const json = `"${strToB64(entry.serialize())}"`
+            this.push(prefix + json)
+            prefix = ','
+
+            limit--
             currentHEAD = entry.message().previousHEAD
-            this.push('')
           }
         } catch (e) {
           console.error(`read(): ${e.message}:`, e)
-          if (metBefore) {
-            this.push(']')
-          }
+          this.push(']')
           this.push(null)
         }
       }
