@@ -65,7 +65,8 @@ export default (sbp('sbp/selectors/register', {
     } else if (currentHEAD !== latestHash) {
       currentHEAD = entry.message().previousHEAD
     }
-
+    // NOTE: if this ever stops working you can also try Readable.from():
+    // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     return new Readable({
       async read (): any {
         try {

@@ -168,7 +168,8 @@ export default ({
     ...mapGetters([
       'currentChatRoomId',
       'chatRoomSettings',
-      'currentChatRoomState',
+      'chatRoomAttributes',
+      'chatRoomUsers',
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom'
@@ -327,7 +328,9 @@ export default ({
     },
     getSimulatedState (initialize = true) {
       return {
-        ...cloneDeep(this.currentChatRoomState),
+        settings: cloneDeep(this.chatRoomSettings),
+        attributes: cloneDeep(this.chatRoomAttributes),
+        users: cloneDeep(this.chatRoomUsers),
         messages: initialize ? [] : this.messages,
         saveMessage: true
       }
@@ -338,7 +341,7 @@ export default ({
         ? ''
         : GIMessage.deserialize(this.latestEvents[0]).hash()
 
-      const newEvents = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, before, limit)
+      const newEvents = await sbp('chelonia/out/eventsBefore', this.currentChatRoomId, before, limit)
 
       if (refresh) {
         this.latestEvents = newEvents
