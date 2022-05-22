@@ -332,7 +332,7 @@ export default ({
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
         messages: initialize ? [] : this.messages,
-        simulation: true
+        saveMessage: true
       }
     },
     async getLatestEvents (refresh = false) {
@@ -346,14 +346,14 @@ export default ({
       if (refresh) {
         this.latestEvents = newEvents
       } else {
-        this.latestEvents.splice(0, 0, ...newEvents)
+        this.latestEvents.unshift(...newEvents)
       }
 
       const state = this.getSimulatedState(true)
       for (const event of this.latestEvents) {
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
       }
-      this.messages = cloneDeep(state.messages)
+      this.messages = state.messages
       this.$forceUpdate()
 
       return newEvents.length < limit

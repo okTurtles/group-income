@@ -203,7 +203,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state, getters }) {
         const { username } = data
-        if (!state.simulation && state.users[username]) {
+        if (!state.saveMessage && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
           console.warn('Can not join the chatroom which you are already part of')
           return
@@ -211,7 +211,7 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
-        if (!state.simulation) {
+        if (!state.saveMessage) {
           return
         }
 
@@ -234,7 +234,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
 
-        if (!state.simulation) {
+        if (!state.saveMessage) {
           return
         }
 
@@ -253,7 +253,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
 
-        if (!state.simulation) {
+        if (!state.saveMessage) {
           return
         }
 
@@ -275,12 +275,12 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
-        if (!state.simulation && !state.users[member]) {
+        if (!state.saveMessage && !state.users[member]) {
           throw new Error(`Can not leave the chatroom which ${member} are not part of`)
         }
         Vue.delete(state.users, member)
 
-        if (!state.simulation) {
+        if (!state.saveMessage) {
           return
         }
 
@@ -296,7 +296,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, hash, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
-        if (!state.simulation && data.member === rootState.loggedIn.username) {
+        if (!state.saveMessage && data.member === rootState.loggedIn.username) {
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return
           }
@@ -318,7 +318,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ meta, contractID }, { state }) {
-        if (!state.simulation && state.attributes.creator === meta.username) { // Not sure this condition is necessary
+        if (!state.saveMessage && state.attributes.creator === meta.username) { // Not sure this condition is necessary
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return
           }
@@ -330,7 +330,7 @@ sbp('chelonia/defineContract', {
       validate: messageType,
       process ({ data, meta, hash }, { state }) {
         const newMessage = createMessage({ meta, data, hash, state })
-        if (!state.simulation) {
+        if (!state.saveMessage) {
           return
         }
         const pendingMsg = state.messages.find(msg => msg.id === hash && msg.pending)
@@ -355,14 +355,14 @@ sbp('chelonia/defineContract', {
         // to check if the meta.username is creator seems like too heavy
       },
       process ({ data, meta }, { state }) {
-        if (!state.simulation) {
+        if (!state.saveMessage) {
           return
         }
         const msgIndex = findMessageIdx(data.id, state.messages)
         if (msgIndex >= 0 && meta.username === state.messages[msgIndex].from) {
           state.messages[msgIndex].text = data.text
           state.messages[msgIndex].updatedDate = meta.createdDate
-          if (state.simulation && state.messages[msgIndex].pending) {
+          if (state.saveMessage && state.messages[msgIndex].pending) {
             delete state.messages[msgIndex].pending
           }
         }
@@ -376,7 +376,7 @@ sbp('chelonia/defineContract', {
         id: string
       }),
       process ({ data, meta }, { state }) {
-        if (!state.simulation) {
+        if (!state.saveMessage) {
           return
         }
         const msgIndex = findMessageIdx(data.id, state.messages)
@@ -394,7 +394,7 @@ sbp('chelonia/defineContract', {
         emoticon: string
       }),
       process ({ data, meta, contractID }, { state }) {
-        if (!state.simulation) {
+        if (!state.saveMessage) {
           return
         }
         const { id, emoticon } = data
