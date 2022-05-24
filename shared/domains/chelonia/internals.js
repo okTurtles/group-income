@@ -46,7 +46,7 @@ sbp('sbp/selectors/register', {
         await delay(randDelay) // wait half a second before sending it again
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
-          const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+          const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
           entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op())
         }
       } else {
@@ -55,11 +55,6 @@ sbp('sbp/selectors/register', {
         throw new Error(`publishEvent: ${r.status} - ${r.statusText}: ${message}`)
       }
     }
-  },
-  'chelonia/private/out/latestHash': function (contractID: string) {
-    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`, {
-      cache: 'no-store'
-    }).then(handleFetchResult('text'))
   },
   'chelonia/private/in/processMessage': function (message: GIMessage, state: Object) {
     const [opT, opV] = message.op()
@@ -126,7 +121,7 @@ sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string) {
     const state = sbp(this.config.stateSelector)
-    const latest = await sbp('chelonia/private/out/latestHash', contractID)
+    const latest = await sbp('chelonia/out/latestHash', contractID)
     console.debug(`syncContract: ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     let recent
