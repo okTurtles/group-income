@@ -66,14 +66,15 @@ route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
   }
 })
 
-route.GET('/eventsBefore/{contractID}', {}, async function (request, h) {
+route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
   try {
-    const { contractID } = request.params
-    const { before, limit } = request.query
+    const { before, limit } = request.params
 
-    if (!limit || limit <= 0) return Boom.badRequest('missing or incorrect limit')
+    if (!before) return Boom.badRequest('missing before')
+    if (!limit) return Boom.badRequest('missing limit')
+    if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return Boom.badRequest('invalid limit')
 
-    const stream = await sbp('backend/db/streamEntriesBefore', contractID, before, limit)
+    const stream = await sbp('backend/db/streamEntriesBefore', before, limit)
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {

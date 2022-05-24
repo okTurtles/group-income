@@ -378,16 +378,15 @@ export default ({
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
         messages: initialize ? [] : this.messages,
-        simulation: true
+        saveMessage: true
       }
     },
     async getLatestEvents (refresh = false) {
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       const before = refresh || !this.latestEvents.length
-        ? ''
+        ? await sbp('chelonia/private/out/latestHash', this.currentChatRoomId)
         : GIMessage.deserialize(this.latestEvents[0]).hash()
-
-      const events = await sbp('chelonia/contractEventsBefore', this.currentChatRoomId, before, limit)
+      const events = await sbp('chelonia/contractEventsBefore', before, limit)
 
       await this.rerenderEvents(events, refresh)
 
@@ -397,14 +396,15 @@ export default ({
       if (refresh) {
         this.latestEvents = events
       } else {
-        this.latestEvents.splice(0, 0, ...events)
+        newEvents.pop() // remove duplication
+        this.latestEvents.unshift(...newEvents)
       }
 
       const state = this.getSimulatedState(true)
       for (const event of this.latestEvents) {
         await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
       }
-      this.messages = cloneDeep(state.messages)
+      this.messages = state.messages
       this.$forceUpdate()
     },
     setInitMessages () {

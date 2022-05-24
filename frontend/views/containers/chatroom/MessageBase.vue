@@ -32,7 +32,7 @@
         )
 
         p.c-text(v-else-if='text') {{ text }}
-          span.c-edited(v-if='edited') (edited)
+          i18n.c-edited(v-if='edited') (edited)
 
   message-reactions(
     v-if='!isEditing'
