@@ -272,6 +272,11 @@ sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
+  'chelonia/out/latestHash': function (contractID: string) {
+    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`, {
+      cache: 'no-store'
+    }).then(handleFetchResult('text'))
+  },
   'chelonia/out/eventsBefore': async function (before: string, limit: number) {
     if (limit <= 0) {
       console.error('[chelonia] invalid params error: "limit" needs to be positive integer')
@@ -372,7 +377,7 @@ async function outEncryptedOrUnencryptedAction (
   const { action, contractID, data, hooks, publishOptions } = params
   const contract = contractFromAction(this.contracts, action)
   const state = contract.state(contractID)
-  const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+  const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
   const meta = contract.metadata.create()
   const gProxy = gettersProxy(state, contract.getters)
   contract.metadata.validate(meta, { state, ...gProxy, contractID })

@@ -384,7 +384,7 @@ export default ({
     async getLatestEvents (refresh = false) {
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       const before = refresh || !this.latestEvents.length
-        ? await sbp('chelonia/private/out/latestHash', this.currentChatRoomId)
+        ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
         : GIMessage.deserialize(this.latestEvents[0]).hash()
       const events = await sbp('chelonia/contractEventsBefore', before, limit)
 
