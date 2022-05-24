@@ -51,20 +51,14 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
-  'backend/db/streamEntriesBefore': async function (contractID: string, before: string, limit: number): Promise<*> {
-    const latestHash = await sbp('chelonia/db/latestHash', contractID)
-    if (!latestHash) {
-      throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
-    }
-
-    let currentHEAD = before || latestHash
+  'backend/db/streamEntriesBefore': async function (before: string, limit: number): Promise<*> {
     let prefix = '['
+    let currentHEAD = before
     let entry = await sbp('chelonia/db/getEntry', currentHEAD)
     if (!entry) {
       throw Boom.notFound(`entry ${currentHEAD} doesn't exist!`)
-    } else if (currentHEAD !== latestHash) {
-      currentHEAD = entry.message().previousHEAD
     }
+    limit++ // to return `before` apart from the `limit` number of events
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     return new Readable({

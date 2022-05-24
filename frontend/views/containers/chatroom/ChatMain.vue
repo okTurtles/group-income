@@ -337,15 +337,17 @@ export default ({
     },
     async getLatestEvents (refresh = false) {
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-      const before = refresh || !this.latestEvents.length
-        ? ''
+      const fromLatest = refresh || !this.latestEvents.length
+      const before = fromLatest
+        ? await sbp('chelonia/private/out/latestHash', this.currentChatRoomId)
         : GIMessage.deserialize(this.latestEvents[0]).hash()
 
-      const newEvents = await sbp('chelonia/out/eventsBefore', this.currentChatRoomId, before, limit)
+      const newEvents = await sbp('chelonia/out/eventsBefore', before, limit)
 
-      if (refresh) {
+      if (fromLatest) {
         this.latestEvents = newEvents
       } else {
+        newEvents.pop() // remove duplication
         this.latestEvents.unshift(...newEvents)
       }
 

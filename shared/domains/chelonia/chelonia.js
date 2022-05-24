@@ -272,13 +272,13 @@ sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
-  'chelonia/out/eventsBefore': async function (contractID: string, before: string, limit: number) {
+  'chelonia/out/eventsBefore': async function (before: string, limit: number) {
     if (limit <= 0) {
       console.error('[chelonia] invalid params error: "limit" needs to be positive integer')
       return
     }
 
-    const events = await fetch(`${this.config.connectionURL}/eventsBefore/${contractID}?before=${before || ''}&limit=${limit}`)
+    const events = await fetch(`${this.config.connectionURL}/eventsBefore/${before}/${limit}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
