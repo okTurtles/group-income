@@ -8,7 +8,12 @@
           TODO later - Design a cool skeleton loading
           - this should be done only after knowing exactly how server gets each conversation data
 
-    .c-body-conversation(ref='conversation' v-else='' data-test='conversationWapper')
+    .c-body-conversation(
+      v-else
+      ref='conversation'
+      data-test='conversationWapper'
+      @scroll='onChatScroll'
+    )
 
       infinite-loading(
         direction='top'
@@ -62,7 +67,7 @@
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
-          @scroll-to-replying-message='scrollToMessage(message.replying.id)'
+          @scroll-to-replying-message='scrollToMessage(message.replyingMessage.id)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @delete-message='deleteMessage(message)'
           @add-emoticon='addEmoticon(message, $event)'
@@ -71,14 +76,15 @@
   .c-footer
     send-area(
       v-if='summary.joined'
-      :title='summary.title'
-      @send='handleSendMessage'
-      @height-update='updateSendAreaHeight'
-      @start-typing='updateScroll'
       :loading='details.isLoading'
       :replying-message='ephemeral.replyingMessage'
       :replying-message-id='ephemeral.replyingMessageId'
       :replying-to='ephemeral.replyingTo'
+      :title='summary.title'
+      :scrolledUp='isScrolledUp'
+      @send='handleSendMessage'
+      @height-update='updateSendAreaHeight'
+      @jump-to-latest='updateScroll'
       @stop-replying='stopReplying'
     )
     view-area(
@@ -104,7 +110,7 @@ import Emoticons from './Emoticons.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/constants.js'
 import { createMessage, findMessageIdx } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
-import { cloneDeep } from '@utils/giLodash.js'
+import { cloneDeep, debounce } from '@utils/giLodash.js'
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
@@ -143,6 +149,7 @@ export default ({
       latestEvents: [],
       messages: [],
       ephemeral: {
+        scrolledDistance: 0,
         bodyPaddingBottom: '',
         infiniteLoading: null,
         refreshMessages: true,
@@ -195,6 +202,12 @@ export default ({
         ...this.currentIdentityState.attributes,
         id: this.ourIdentityContractId
       }
+    },
+    isScrolledUp () {
+      if (!this.ephemeral.scrolledDistance) {
+        return false
+      }
+      return this.ephemeral.scrolledDistance > 500
     }
   },
   methods: {
@@ -224,7 +237,7 @@ export default ({
       }
     },
     replyingMessage (message) {
-      return message.replying ? message.replying.text : ''
+      return message.replyingMessage ? message.replyingMessage.text : ''
     },
     time (strTime) {
       return new Date(strTime)
@@ -253,7 +266,7 @@ export default ({
       this.ephemeral.replyingTo = null
     },
     handleSendMessage (message) {
-      const replying = this.ephemeral.replyingMessageId
+      const replyingMessage = this.ephemeral.replyingMessageId
         ? { id: this.ephemeral.replyingMessageId, text: this.ephemeral.replyingMessage }
         : null
       // Consider only simple TEXT now
@@ -262,7 +275,7 @@ export default ({
 
       sbp('gi.actions/chatroom/addMessage', {
         contractID: this.currentChatRoomId,
-        data: !replying ? data : { ...data, replying },
+        data: !replyingMessage ? data : { ...data, replyingMessage },
         hooks: {
           prepublish: (message) => {
             const msgValue = JSON.parse(message.opValue())
@@ -285,6 +298,8 @@ export default ({
         return
       }
 
+      console.log(this.$refs.conversation)
+
       const scrollAndHighlight = (index) => {
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
         eleMessage.scrollIntoView({ behavior: 'smooth' })
@@ -299,7 +314,7 @@ export default ({
         scrollAndHighlight(msgIndex)
       } else {
         //  TODO: retrieve pages of events until the page contains messageId
-        const events = await sbp('chelonia/private/out/eventsSince', this.currentChatRoomId, messageId)
+        const events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, messageId)
         if (events && events.length) {
           await this.rerenderEvents(events, true)
 
@@ -312,10 +327,19 @@ export default ({
     },
     updateScroll () {
       if (this.summary.title) {
-        // force conversation viewport to be at the bottom (most recent messages)
-        setTimeout(() => {
-          this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
-        }, 500)
+        this.$refs.conversation && this.$refs.conversation.scroll({
+          left: 0,
+          top: this.$refs.conversation.scrollHeight,
+          behavior: 'smooth'
+        })
+        // // force conversation viewport to be at the bottom (most recent messages)
+        // setTimeout(() => {
+        //   this.$refs.conversation && this.$refs.conversation.scroll({
+        //     left: 0,
+        //     top: this.$refs.conversation.scrollHeight,
+        //     behavior: 'smooth'
+        //   })
+        // }, 500)
       }
     },
     retryMessage (index) {
@@ -443,7 +467,14 @@ export default ({
         completed ? $state.complete() : $state.loaded()
         this.refreshMessages = false
       })
-    }
+    },
+    onChatScroll: debounce(function () {
+      if (!this.$refs.conversation) {
+        this.ephemeral.scrolledDistance = 0
+      } else {
+        this.ephemeral.scrolledDistance = this.$refs.conversation.scrollTopMax - this.$refs.conversation.scrollTop
+      }
+    })
   },
   watch: {
     currentChatRoomId (to, from) {

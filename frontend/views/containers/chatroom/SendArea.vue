@@ -3,6 +3,14 @@
   :class='{"is-editing": isEditing}'
   data-test='messageInputWrapper'
 )
+  .c-jump-to-latest(
+    v-if='scrolledUp'
+    @click='$emit("jump-to-latest")'
+  )
+    i18n To the latest message
+    button.is-icon-small
+      i.icon-arrow-down
+
   .c-replying(v-if='replyingMessage')
     i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
     button.c-clear.is-icon-small(
@@ -88,6 +96,7 @@ export default ({
     title: String,
     defaultText: String,
     searchPlaceholder: String,
+    scrolledUp: Boolean,
     loading: {
       type: Boolean,
       default: false
@@ -151,7 +160,7 @@ export default ({
   },
   methods: {
     textAreaFocus () {
-      this.$emit('start-typing')
+      // this.$emit('jump-to-latest')
       if (this.ephemeral.isPhone) this.ephemeral.showButtons = false
     },
     textAreaBlur (event) {
@@ -341,6 +350,19 @@ $initialHeight: 43px;
   font-size: 0.75rem;
   font-size: $size_5;
   color: $text_1;
+}
+
+.c-jump-to-latest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $general_2;
+  padding: 0.2rem;
+  border-radius: 0.3rem 0.3rem 0 0;
+  font-size: $size_5;
+  color: $text_1;
+  text-align: center;
+  cursor: pointer;
 }
 
 .c-clear {
