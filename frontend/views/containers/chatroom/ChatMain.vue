@@ -396,8 +396,8 @@ export default ({
       if (refresh) {
         this.latestEvents = events
       } else {
-        newEvents.pop() // remove duplication
-        this.latestEvents.unshift(...newEvents)
+        events.pop() // remove duplication
+        this.latestEvents.unshift(...events)
       }
 
       const state = this.getSimulatedState(true)
