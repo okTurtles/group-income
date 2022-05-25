@@ -72,11 +72,11 @@ export default (sbp('sbp/selectors/register', {
             const json = `"${strToB64(entry.serialize())}"`
             this.push(prefix + json)
             prefix = ','
-
             limit--
             currentHEAD = entry.message().previousHEAD
           }
         } catch (e) {
+          // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
           console.error(`read(): ${e.message}:`, e)
           this.push(']')
           this.push(null)
