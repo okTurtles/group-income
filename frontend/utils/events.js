@@ -19,5 +19,4 @@ export const CAPTURED_LOGS = 'captured-logs'
 export const SET_APP_LOGS_FILTER = 'set-app-logs-filter'
 
 export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
-export const CHATROOM_STATE_LOADED = 'chatroom-state-loaded'
 export const CHATROOM_DETAILS_UPDATED = 'chatroom-details-updated'

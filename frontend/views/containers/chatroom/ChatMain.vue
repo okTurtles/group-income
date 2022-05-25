@@ -9,13 +9,29 @@
           - this should be done only after knowing exactly how server gets each conversation data
 
     .c-body-conversation(ref='conversation' v-else='' data-test='conversationWapper')
-      conversation-greetings(
-        :members='details.numberOfParticipants'
-        :creator='summary.creator'
-        :type='type'
-        :name='summary.title'
-        :description='summary.description'
+
+      infinite-loading(
+        direction='top'
+        slot='append'
+        @infinite='infiniteHandler'
+        force-use-infinite-wrapper='.c-body-conversation'
       )
+        div(slot='no-more')
+          conversation-greetings(
+            :members='details.numberOfParticipants'
+            :creator='summary.creator'
+            :type='type'
+            :name='summary.title'
+            :description='summary.description'
+          )
+        div(slot='no-results')
+          conversation-greetings(
+            :members='details.numberOfParticipants'
+            :creator='summary.creator'
+            :type='type'
+            :name='summary.title'
+            :description='summary.description'
+          )
 
       template(v-for='(message, index) in messages')
         .c-divider(
@@ -35,6 +51,7 @@
           :replyingMessage='message.replyingMessage'
           :from='message.from'
           :datetime='time(message.datetime)'
+          :edited='!!message.updatedDate'
           :emoticonsList='message.emoticons'
           :who='who(message)'
           :currentUsername='currentUserAttr.username'
@@ -70,8 +87,10 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
+import InfiniteLoading from 'vue-infinite-loading'
 import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
@@ -80,11 +99,11 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
-import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
-import { createMessage, getLatestMessages, findMessageIdx } from '@model/contracts/chatroom.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/constants.js'
+import { createMessage } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { cloneDeep } from '@utils/giLodash.js'
-import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
+import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
@@ -92,11 +111,12 @@ export default ({
   components: {
     Avatar,
     Emoticons,
+    ConversationGreetings,
+    InfiniteLoading,
     Loading,
     Message,
     MessageInteractive,
     MessageNotification,
-    ConversationGreetings,
     SendArea,
     ViewArea
   },
@@ -118,8 +138,11 @@ export default ({
       config: {
         isPhone: null
       },
+      latestEvents: [],
       messages: [],
       ephemeral: {
+        refreshMessages: true,
+        infiniteLoading: null,
         bodyPaddingBottom: '',
         replyingMessage: null,
         replyingTo: null
@@ -141,14 +164,12 @@ export default ({
     sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
   },
-  updated () {
-    this.updateScroll()
-  },
   computed: {
     ...mapGetters([
       'currentChatRoomId',
       'chatRoomSettings',
-      'chatRoomLatestMessages',
+      'chatRoomAttributes',
+      'chatRoomUsers',
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom'
@@ -241,6 +262,8 @@ export default ({
           }
         }
       })
+      // need to scroll to the bottom
+      this.updateScroll()
     },
     updateScroll () {
       if (this.summary.title) {
@@ -303,17 +326,45 @@ export default ({
         }
       })
     },
-    setInitMessages () {
-      if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        this.messages = cloneDeep(this.chatRoomLatestMessages)
+    getSimulatedState (initialize = true) {
+      return {
+        settings: cloneDeep(this.chatRoomSettings),
+        attributes: cloneDeep(this.chatRoomAttributes),
+        users: cloneDeep(this.chatRoomUsers),
+        messages: initialize ? [] : this.messages,
+        saveMessage: true
+      }
+    },
+    async getLatestEvents (refresh = false) {
+      const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+      const fromLatest = refresh || !this.latestEvents.length
+      const before = fromLatest
+        ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
+        : GIMessage.deserialize(this.latestEvents[0]).hash()
+
+      const newEvents = await sbp('chelonia/out/eventsBefore', before, limit)
+
+      if (fromLatest) {
+        this.latestEvents = newEvents
       } else {
-        this.messages = []
-        sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
-          this.messages = getLatestMessages({
-            count: this.chatRoomSettings.messagesPerPage, // TODO: this.chatRoomSettings could be {}
-            messages: state.messages
-          })
-        })
+        newEvents.pop() // remove duplication
+        this.latestEvents.unshift(...newEvents)
+      }
+
+      const state = this.getSimulatedState(true)
+      for (const event of this.latestEvents) {
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
+      }
+      this.messages = state.messages
+      this.$forceUpdate()
+
+      return newEvents.length < limit
+    },
+    setInitMessages () {
+      this.refreshMessages = true
+      this.messages = []
+      if (this.ephemeral.infiniteLoading) {
+        this.ephemeral.infiniteLoading.reset()
       }
     },
     setMessageEventListener ({ force = false, from, to }) {
@@ -326,53 +377,25 @@ export default ({
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
-    listenChatRoomActions ({ type, data }) {
-      const addIfNotExist = (msg) => {
-        const msgIndex = findMessageIdx(msg.id, this.messages)
-        const m = msgIndex >= 0 ? this.messages[msgIndex] : null
+    listenChatRoomActions ({ hash }) {
+      sbp('okTurtles.events/once', hash, async (contractID, message) => {
+        const state = this.getSimulatedState(false)
+        await sbp('chelonia/private/in/processMessage', message, state)
+        this.latestEvents.push(message.serialize())
 
-        if (m) {
-          delete m.pending
-        } else {
-          this.messages.push(cloneDeep(msg))
-        }
-      }
-
-      const updateIfExist = (msg) => {
-        const msgIndex = findMessageIdx(msg.id, this.messages)
-        if (msgIndex >= 0) {
-          this.messages.splice(msgIndex, 1, cloneDeep(msg))
-        }
-      }
-
-      const deleteIfExist = (id) => {
-        const msgIndex = findMessageIdx(id, this.messages)
-        if (msgIndex >= 0) {
-          this.messages.splice(msgIndex, 1)
-        }
-      }
-
-      const { message, id } = data
-      if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE && message) {
-        if (message.type === MESSAGE_TYPES.TEXT) {
-          if (this.isCurrentUser(message.from)) {
-            addIfNotExist(message)
-          } else {
-            this.messages.push(message)
-          }
-        } else if (message.type === MESSAGE_TYPES.NOTIFICATION) {
-          this.messages.push(message)
-        }
-      } else if (type === MESSAGE_ACTION_TYPES.EDIT_MESSAGE && message) {
-        updateIfExist(message)
-      } else if (type === MESSAGE_ACTION_TYPES.DELETE_MESSAGE && id) {
-        deleteIfExist(id)
-      }
-      this.$forceUpdate()
+        this.$forceUpdate()
+      })
     },
     resizeEventHandler () {
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
+    },
+    infiniteHandler ($state) {
+      this.ephemeral.infiniteLoading = $state
+      this.getLatestEvents(this.refreshMessages).then(completed => {
+        completed ? $state.complete() : $state.loaded()
+        this.refreshMessages = false
+      })
     }
   },
   watch: {
@@ -380,6 +403,8 @@ export default ({
       const force = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
       this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
+      // need to scroll to the saved position
+      this.$nextTick(() => this.updateScroll())
     },
     'summary.joined' (to, from) {
       if (to) {

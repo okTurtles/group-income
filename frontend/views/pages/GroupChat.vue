@@ -190,7 +190,7 @@ export default ({
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
             chatRoomId: to.params.chatRoomId
           })
-          if (!this.isPrivateChatRoom(chatRoomId)) {
+          if (!this.isJoinedChatRoom(chatRoomId)) {
             this.loadSummaryAndDetails()
           }
         }

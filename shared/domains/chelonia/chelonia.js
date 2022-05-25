@@ -7,6 +7,8 @@ import './internals.js'
 import { CONTRACTS_MODIFIED } from './events.js'
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { merge, cloneDeep, randomHexString, intersection, difference } from '~/frontend/utils/giLodash.js'
+import { b64ToStr } from '~/shared/functions.js'
+import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import { ChelErrorUnrecoverable } from './errors.js'
@@ -260,8 +262,35 @@ sbp('sbp/selectors/register', {
     // calling this will make pubsub unsubscribe for events on `contractID`
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
+  // TODO: r.body is a stream.Transform, should we use a callback to process
+  //       the events one-by-one instead of converting to giant json object?
+  //       however, note if we do that they would be processed in reverse...
+  'chelonia/out/eventsSince': async function (contractID: string, since: string) {
+    const events = await fetch(`${this.config.connectionURL}/events/${contractID}/${since}`)
+      .then(handleFetchResult('json'))
+    if (Array.isArray(events)) {
+      return events.reverse().map(b64ToStr)
+    }
+  },
+  'chelonia/out/latestHash': function (contractID: string) {
+    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`, {
+      cache: 'no-store'
+    }).then(handleFetchResult('text'))
+  },
+  'chelonia/out/eventsBefore': async function (before: string, limit: number) {
+    if (limit <= 0) {
+      console.error('[chelonia] invalid params error: "limit" needs to be positive integer')
+      return
+    }
+
+    const events = await fetch(`${this.config.connectionURL}/eventsBefore/${before}/${limit}`)
+      .then(handleFetchResult('json'))
+    if (Array.isArray(events)) {
+      return events.reverse().map(b64ToStr)
+    }
+  },
   'chelonia/latestContractState': async function (contractID: string) {
-    const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
+    const events = await sbp('chelonia/out/eventsSince', contractID, contractID)
     let state = {}
     // fast-path
     try {
@@ -348,7 +377,7 @@ async function outEncryptedOrUnencryptedAction (
   const { action, contractID, data, hooks, publishOptions } = params
   const contract = contractFromAction(this.contracts, action)
   const state = contract.state(contractID)
-  const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+  const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
   const meta = contract.metadata.create()
   const gProxy = gettersProxy(state, contract.getters)
   contract.metadata.validate(meta, { state, ...gProxy, contractID })

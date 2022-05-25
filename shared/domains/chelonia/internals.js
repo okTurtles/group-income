@@ -3,8 +3,6 @@
 import sbp from '@sbp/sbp'
 import './db.js'
 import { GIMessage } from './GIMessage.js'
-import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { b64ToStr } from '~/shared/functions.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
@@ -47,7 +45,7 @@ sbp('sbp/selectors/register', {
         await delay(randDelay) // wait half a second before sending it again
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
-          const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+          const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
           entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op())
         }
       } else {
@@ -55,21 +53,6 @@ sbp('sbp/selectors/register', {
         console.error(`[chelonia] ERROR: failed to publish ${entry.description()}: ${r.status} - ${r.statusText}: ${message}`, entry)
         throw new Error(`publishEvent: ${r.status} - ${r.statusText}: ${message}`)
       }
-    }
-  },
-  'chelonia/private/out/latestHash': function (contractID: string) {
-    return fetch(`${this.config.connectionURL}/latestHash/${contractID}`, {
-      cache: 'no-store'
-    }).then(handleFetchResult('text'))
-  },
-  // TODO: r.body is a stream.Transform, should we use a callback to process
-  //       the events one-by-one instead of converting to giant json object?
-  //       however, note if we do that they would be processed in reverse...
-  'chelonia/private/out/eventsSince': async function (contractID: string, since: string) {
-    const events = await fetch(`${this.config.connectionURL}/events/${contractID}/${since}`)
-      .then(handleFetchResult('json'))
-    if (Array.isArray(events)) {
-      return events.reverse().map(b64ToStr)
     }
   },
   'chelonia/private/in/processMessage': function (message: GIMessage, state: Object) {
@@ -137,7 +120,7 @@ sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string) {
     const state = sbp(this.config.stateSelector)
-    const latest = await sbp('chelonia/private/out/latestHash', contractID)
+    const latest = await sbp('chelonia/out/latestHash', contractID)
     console.debug(`syncContract: ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     let recent
@@ -155,7 +138,7 @@ sbp('sbp/selectors/register', {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
         // TODO: fetch events from localStorage instead of server if we have them
-        const events = await sbp('chelonia/private/out/eventsSince', contractID, recent || contractID)
+        const events = await sbp('chelonia/out/eventsSince', contractID, recent || contractID)
         // remove the first element in cases where we are not getting the contract for the first time
         state.contracts[contractID] && events.shift()
         for (let i = 0; i < events.length; i++) {
