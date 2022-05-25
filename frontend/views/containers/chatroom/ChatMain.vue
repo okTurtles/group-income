@@ -386,7 +386,7 @@ export default ({
       const before = refresh || !this.latestEvents.length
         ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
         : GIMessage.deserialize(this.latestEvents[0]).hash()
-      const events = await sbp('chelonia/contractEventsBefore', before, limit)
+      const events = await sbp('chelonia/out/eventsBefore', before, limit)
 
       await this.rerenderEvents(events, refresh)
 
