@@ -3,7 +3,6 @@
 import sbp from '@sbp/sbp'
 import './db.js'
 import { GIMessage } from './GIMessage.js'
-import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
