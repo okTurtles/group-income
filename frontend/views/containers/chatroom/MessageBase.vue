@@ -242,4 +242,10 @@ export default ({
   font-size: 0.7rem;
   color: var(--text_1);
 }
+
+.c-edited {
+  margin-left: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--text_1);
+}
 </style>

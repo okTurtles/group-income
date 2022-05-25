@@ -19,7 +19,10 @@
               input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
               i18n Debug
             label.checkbox
-              input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
+              input.input(type='checkbox' name='filter' v-model='form.filter' value='info' checked)
+              i18n Info
+            label.checkbox
+              input.input(type='checkbox' name='filter' v-model='form.filter' value='log' checked)
               i18n Log
 
         button.is-small.c-download(@click='downloadLogs')
