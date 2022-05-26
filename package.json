@@ -148,7 +148,7 @@
     "eslint-plugin-vue": "7.20.0",
     "flow-bin": "0.154.0",
     "flow-remove-types": "2.153.0",
-    "grunt": "1.5.2",
+    "grunt": "1.5.3",
     "grunt-check-dependencies": "1.0.0",
     "grunt-contrib-clean": "2.0.0",
     "grunt-contrib-copy": "1.0.0",
