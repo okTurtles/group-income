@@ -1,9 +1,11 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  randomFromArray
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import blockies from '@utils/blockies.js'
-import Colors from '@model/colors.js'
-import { randomFromArray } from '~/frontend/utils/giLodash.js'
+import Colors from '~/frontend/model/colors.js'
 import { imageDataURItoBlob } from '@utils/image.js'
 
 const colorOptions = ['primary', 'warning', 'danger', 'success']

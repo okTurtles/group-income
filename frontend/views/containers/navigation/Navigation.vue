@@ -72,7 +72,11 @@ nav.c-navigation(
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  OPEN_MODAL,
+  debounce
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import Badge from '@components/Badge.vue'
 import NotificationBell from '@containers/notifications/NotificationBell.vue'
 import GroupsList from './GroupsList.vue'
@@ -80,9 +84,7 @@ import Profile from './Profile.vue'
 import Toggle from '@components/Toggle.vue'
 import ListItem from '@components/ListItem.vue'
 import { mapGetters } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
-import { debounce } from '@utils/giLodash.js'
 
 export default ({
   name: 'Navigation',

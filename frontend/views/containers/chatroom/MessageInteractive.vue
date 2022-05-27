@@ -23,14 +23,14 @@ import {
   STATUS_PASSED,
   STATUS_EXPIRED,
   STATUS_FAILED,
-  STATUS_CANCELLED
-} from '@model/contracts/voting/constants.js'
+  STATUS_CANCELLED,
+  L,
+  humanDate
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 import MessageBase from './MessageBase.vue'
 import SvgHorn from '@svgs/horn.svg'
-import L from '@view-utils/translations.js'
 import chatroom from '@containers/chatroom/chatroom.js'
-import { humanDate } from '@utils/time.js'
 
 const fakeProposals = {
   inviteKattyId: {

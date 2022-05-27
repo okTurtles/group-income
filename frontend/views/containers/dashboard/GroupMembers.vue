@@ -38,14 +38,16 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  OPEN_MODAL,
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
-import L from '@view-utils/translations.js'
 
 export default ({
   name: 'GroupMembers',

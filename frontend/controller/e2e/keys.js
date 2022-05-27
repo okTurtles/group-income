@@ -2,8 +2,10 @@
 
 'use strict'
 
-import sbp from '@sbp/sbp'
-import { blake32Hash, bytesToB64 } from '~/shared/functions.js'
+import {
+  sbp,
+  blake32Hash, bytesToB64
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
 

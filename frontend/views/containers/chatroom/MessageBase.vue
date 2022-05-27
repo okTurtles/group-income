@@ -60,7 +60,9 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
-import { humanDate } from '@utils/time.js'
+import {
+  humanDate
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'MessageBase',

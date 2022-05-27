@@ -14,11 +14,13 @@ modal-template(ref='modal' :a11yTitle='L("Add new members")')
     ) Awesome
 </template>
 <script>
+import {
+  INVITE_INITIAL_CREATOR,
+  buildInvitationUrl
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/constants.js'
-import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 
 export default ({
   name: 'InvitationLinkModal',

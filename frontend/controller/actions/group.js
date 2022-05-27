@@ -1,31 +1,24 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
-import { createInvite } from '@model/contracts/group.js'
 import {
+  sbp,
+  createInvite,
   INVITE_INITIAL_CREATOR,
   CHATROOM_GENERAL_NAME,
   CHATROOM_TYPES,
-  CHATROOM_PRIVACY_LEVEL
-} from '@model/contracts/constants.js'
-import proposals from '@model/contracts/voting/proposals.js'
-import {
-  PROPOSAL_INVITE_MEMBER,
-  PROPOSAL_REMOVE_MEMBER,
-  PROPOSAL_GROUP_SETTING_CHANGE,
-  PROPOSAL_PROPOSAL_SETTING_CHANGE,
-  PROPOSAL_GENERIC,
-  STATUS_OPEN
-} from '@model/contracts/voting/constants.js'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
+  CHATROOM_PRIVACY_LEVEL,
+  proposals,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN,
+  GIErrorUIRuntimeError,
+  merge, omit, randomIntFromRange,
+  dateToPeriodStamp, addTimeToDate, DAYS_MILLIS,
+  L, LError,
+  VOTE_FOR
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { imageUpload } from '@utils/image.js'
-import { merge, omit, randomIntFromRange } from '@utils/giLodash.js'
-import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@utils/time.js'
-import L, { LError } from '@view-utils/translations.js'
 import { encryptedAction } from './utils.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
 import type { GIActionParams } from './types.js'
+import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group

@@ -23,13 +23,15 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  L,
+  VOTE_FOR, VOTE_AGAINST,
+  oneVoteToPass,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER,
+  createInvite
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters, mapState } from 'vuex'
-import L from '@view-utils/translations.js'
-import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
-import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
-import { createInvite } from '@model/contracts/group.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { leaveAllChatRooms } from '@controller/actions/group.js'
 

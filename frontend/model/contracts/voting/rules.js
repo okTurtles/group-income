@@ -3,7 +3,7 @@
 import { literalOf, unionOf } from '~/frontend/utils/flowTyper.js'
 
 import { PROPOSAL_REMOVE_MEMBER } from './constants.js'
-import { PROFILE_STATUS } from '../constants.js'
+import { PROFILE_STATUS } from '../shared/constants.js'
 
 export const VOTE_AGAINST = ':against'
 export const VOTE_INDIFFERENT = ':indifferent'

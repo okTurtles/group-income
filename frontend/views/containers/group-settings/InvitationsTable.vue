@@ -105,18 +105,20 @@ page-section.c-section(:title='L("Invite links")')
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.js'
+import {
+  sbp,
+  OPEN_MODAL,
+  INVITE_INITIAL_CREATOR, INVITE_STATUS,
+  buildInvitationUrl,
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
 import { mapGetters, mapState } from 'vuex'
-import L from '@view-utils/translations.js'
 
 export default ({
   name: 'InvitationsTable',

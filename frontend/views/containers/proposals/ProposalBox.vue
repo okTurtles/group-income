@@ -18,11 +18,13 @@ li.c-wrapper
 </template>
 
 <script>
+import {
+  L, LTags,
+  STATUS_OPEN
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
-import L, { LTags } from '@view-utils/translations.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProposalItem from './ProposalItem.vue'
-import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 
 export default ({

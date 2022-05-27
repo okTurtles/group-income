@@ -1,5 +1,7 @@
 import { confettiComponents, confettiNames } from './confettiComponents/index.js'
-import { randomIntFromRange } from '@utils/giLodash.js'
+import {
+  randomIntFromRange
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 const canvas = {
   width: null, height: null

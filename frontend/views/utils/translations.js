@@ -1,5 +1,6 @@
 'use strict'
 
+// since this file is loaded by common.js, we avoid circular imports and directly import
 import sbp from '@sbp/sbp'
 import { defaultConfig as defaultDompurifyConfig } from '~/frontend/views/utils/vSafeHtml.js'
 import dompurify from 'dompurify'

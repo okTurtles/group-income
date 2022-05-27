@@ -26,13 +26,15 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  OPEN_MODAL,
+  PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED,
+  humanDate
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
-import { OPEN_MODAL } from '@utils/events.js'
 import { MenuItem } from '@components/menu/index.js'
-import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
-import { humanDate } from '@utils/time.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'

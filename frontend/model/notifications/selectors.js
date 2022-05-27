@@ -2,7 +2,9 @@
 
 import type { Notification, NotificationData } from './types.flow.js'
 
-import sbp from '@sbp/sbp'
+import {
+  sbp
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import * as keys from './mutationKeys.js'
 import templates from './templates.js'
 

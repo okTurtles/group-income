@@ -47,6 +47,12 @@ const applyPortShift = (env) => {
   return { ...env, API_PORT, API_URL }
 }
 
+function pick (o, props) {
+  const x = {}
+  for (const k of props) { x[k] = o[k] }
+  return x
+}
+
 Object.assign(process.env, applyPortShift(process.env))
 
 process.env.GI_VERSION = `${version}@${new Date().toISOString()}`
@@ -70,6 +76,7 @@ const distDir = 'dist'
 const distJS = 'dist/assets/js'
 const serviceWorkerDir = 'frontend/controller/serviceworkers'
 const srcDir = 'frontend'
+const contractsDir = 'frontend/model/contracts'
 
 const development = NODE_ENV === 'development'
 const production = !development
@@ -84,7 +91,6 @@ module.exports = (grunt) => {
       '@components': './frontend/views/components',
       '@containers': './frontend/views/containers',
       '@controller': './frontend/controller',
-      '@model': './frontend/model',
       '@pages': './frontend/views/pages',
       '@svgs': './frontend/assets/svgs',
       '@utils': './frontend/utils',
@@ -153,13 +159,33 @@ module.exports = (grunt) => {
     // Native options used when building the main entry point.
     main: {
       assetNames: '../css/[name]',
-      entryPoints: [`${srcDir}/main.js`]
+      entryPoints: [`${srcDir}/main.js`],
+      external: ['/assets/js/common.js']
     },
     // Native options used when building our service worker(s).
     serviceWorkers: {
       entryPoints: ['./frontend/controller/serviceworkers/primary.js']
     }
   }
+  esbuildOptionBags.common = {
+    ...pick(esbuildOptionBags.default, [
+      'format', 'sourcemap', 'outdir',
+      'bundle', 'incremental', 'define', 'watch',
+      'minifyIdentifiers', 'minifySyntax', 'minifyWhitespace'
+    ]),
+    splitting: false,
+    entryPoints: [`${srcDir}/common.js`]
+  }
+  esbuildOptionBags.contracts = {
+    ...pick(esbuildOptionBags.default, ['format', 'define', 'bundle', 'watch']),
+    splitting: false,
+    outdir: 'frontend/assets/contracts',
+    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`],
+    external: ['@sbp/sbp']
+  }
+  esbuildOptionBags.contractsSlim = JSON.parse(JSON.stringify(esbuildOptionBags.contracts))
+  esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
+  esbuildOptionBags.contractsSlim.external = ['/assets/js/common.js']
 
   // Additional options which are not part of the esbuild API.
   const esbuildOtherOptionBags = {
@@ -278,7 +304,7 @@ module.exports = (grunt) => {
       // - anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.
       // The `--require @babel/register` flags ensure Babel support in our test files.
       test: {
-        cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require @babel/register --exit -R spec --bail "{./{,!(node_modules|ignored|dist|historical|test)/**/}*.test.js,./test/*.js}"',
+        cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require @babel/register --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: process.env }
       }
     }
@@ -378,26 +404,45 @@ module.exports = (grunt) => {
 
   grunt.registerTask('esbuild', async function () {
     const done = this.async()
-    const aliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')(aliasPluginOptions)
+    const createAliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')
+    const aliasPlugin = createAliasPlugin(aliasPluginOptions)
     const flowRemoveTypesPlugin = require('./scripts/esbuild-plugins/flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
     const svgPlugin = require('./scripts/esbuild-plugins/vue-inline-svg-plugin.js')(svgInlineVuePluginOptions)
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
+    const defaultPlugins = [aliasPlugin, flowRemoveTypesPlugin]
 
     const buildMain = createEsbuildTask({
       ...esbuildOptionBags.default,
       ...esbuildOptionBags.main,
-      plugins: [aliasPlugin, flowRemoveTypesPlugin, sassPlugin, svgPlugin, vuePlugin]
+      plugins: [...defaultPlugins, sassPlugin, svgPlugin, vuePlugin]
     }, esbuildOtherOptionBags.main)
 
     const buildServiceWorkers = createEsbuildTask({
       ...esbuildOptionBags.default,
       ...esbuildOptionBags.serviceWorkers,
-      plugins: [aliasPlugin, flowRemoveTypesPlugin]
+      plugins: defaultPlugins
+    })
+    const buildCommon = createEsbuildTask({
+      ...esbuildOptionBags.common, plugins: defaultPlugins
+    })
+    const buildContracts = createEsbuildTask({
+      ...esbuildOptionBags.contracts,
+      plugins: [
+        ...defaultPlugins,
+        createAliasPlugin({ // special alias plugin so that common.js gets inlined
+          entries: {
+            '/assets/js/common.js': './frontend/common.js'
+          }
+        })
+      ]
+    })
+    const buildContractsSlim = createEsbuildTask({
+      ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
 
-    await Promise.all([buildMain.run(), buildServiceWorkers.run()]).catch(error => {
+    await Promise.all([buildMain.run(), buildServiceWorkers.run(), buildCommon.run(), buildContracts.run(), buildContractsSlim.run()]).catch(error => {
       grunt.log.error(error.message)
       process.exit(1)
     })

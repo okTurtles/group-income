@@ -36,9 +36,11 @@ modal-base-template(:fullscreen='true' :a11yTitle='L("How to join a group")')
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  REPLACE_MODAL
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import { REPLACE_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
 import SvgInvitation from '@svgs/invitation.svg'
 import SvgProposal from '@svgs/proposal.svg'

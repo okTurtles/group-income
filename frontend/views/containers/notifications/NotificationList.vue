@@ -26,11 +26,13 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  timeSince,
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
-import { timeSince } from '@utils/time.js'
 import AvatarUser from '@components/AvatarUser.vue'
-import L from '@view-utils/translations.js'
 
 export default ({
   name: 'NotificationList',

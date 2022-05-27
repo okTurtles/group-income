@@ -90,6 +90,11 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
 </template>
 
 <script>
+import {
+  sbp,
+  OPEN_MODAL,
+  CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
@@ -97,10 +102,7 @@ import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'
 import GroupMembers from '@containers/dashboard/GroupMembers.vue'
-import { OPEN_MODAL } from '@utils/events.js'
-import sbp from '@sbp/sbp'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/constants.js'
 
 export default ({
   name: 'GroupChat',

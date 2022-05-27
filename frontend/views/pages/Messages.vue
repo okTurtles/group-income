@@ -20,9 +20,11 @@ page(pageTestName='messages' pageTestHeaderName='messages')
 </template>
 
 <script>
+import {
+  CHATROOM_TYPES
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
-import { CHATROOM_TYPES } from '@model/contracts/constants.js'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'

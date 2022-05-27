@@ -45,11 +45,13 @@
 </template>
 
 <script>
+import {
+  currencies,
+  mincomeProportional
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
-import currencies from '@view-utils/currencies.js'
-import mincomeProportional from '@model/contracts/distribution/mincome-proportional.js'
 
 export default ({
   name: 'GroupPledgesGraph',

@@ -12,7 +12,9 @@
 
 <script>
 import TransitionExpand from '@components/TransitionExpand.vue'
-import { debounce } from '@utils/giLodash.js'
+import {
+  debounce
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'BannerGeneral',

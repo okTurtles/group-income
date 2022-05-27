@@ -1,120 +1,17 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
-import Vue from 'vue'
-// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import '~/shared/domains/chelonia/chelonia.js'
 import {
-  objectMaybeOf, objectOf, mapOf, arrayOf,
-  string, literalOf, unionOf, optional
-} from '~/frontend/utils/flowTyper.js'
-import { merge, cloneDeep } from '~/frontend/utils/giLodash.js'
-import L from '~/frontend/views/utils/translations.js'
-import {
-  CHATROOM_NAME_LIMITS_IN_CHARS,
-  CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
-  CHATROOM_ACTIONS_PER_PAGE,
-  CHATROOM_MESSAGES_PER_PAGE,
-  CHATROOM_TYPES,
-  CHATROOM_PRIVACY_LEVEL,
-  MESSAGE_TYPES,
-  MESSAGE_NOTIFICATIONS
-} from './constants.js'
-import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
-import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
-
-// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-// console.debug('esbuild import hack', GIMessage && '')
-
-export const chatRoomAttributesType: any = objectOf({
-  name: string,
-  description: string,
-  type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
-  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
-})
-
-export const messageType: any = objectMaybeOf({
-  type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
-  text: string, // message text | proposalId when type is INTERACTIVE | notificationType when type if NOTIFICATION
-  notification: objectMaybeOf({
-    type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
-    params: mapOf(string, string) // { username }
-  }),
-  replyingMessage: objectOf({
-    id: string, // scroll to the original message and highlight
-    text: string // display text(if too long, truncate)
-  }),
-  emoticons: mapOf(string, arrayOf(string)), // mapping of emoticons and usernames
-  onlyVisibleTo: arrayOf(string) // list of usernames, only necessary when type is NOTIFICATION
-  // TODO: need to consider POLL and add more down here
-})
-
-export function createMessage ({ meta, data, hash, state }: {
-  meta: Object, data: Object, hash: string, state?: Object
-}): Object {
-  const { type, text, replyingMessage } = data
-  const { createdDate } = meta
-
-  let newMessage = {
-    type,
-    datetime: new Date(createdDate).toISOString(),
-    id: hash,
-    from: meta.username
-  }
-
-  if (type === MESSAGE_TYPES.TEXT) {
-    newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
-  } else if (type === MESSAGE_TYPES.POLL) {
-    // TODO: Poll message creation
-  } else if (type === MESSAGE_TYPES.NOTIFICATION) {
-    const params = {
-      channelName: state?.attributes.name,
-      channelDescription: state?.attributes.description,
-      ...data.notification
-    }
-    delete params.type
-    newMessage = {
-      ...newMessage,
-      notification: { type: data.notification.type, params }
-    }
-  } else if (type === MESSAGE_TYPES.INTERACTIVE) {
-    // TODO: Interactive message creation for proposals
-  }
-  return newMessage
-}
-
-export async function leaveChatRoom ({ contractID }: {
-  contractID: string
-}) {
-  const rootState = sbp('state/vuex/state')
-  const rootGetters = sbp('state/vuex/getters')
-  if (contractID === rootGetters.currentChatRoomId) {
-    sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-      groupId: rootState.currentGroupId
-    })
-    const curRouteName = sbp('controller/router').history.current.name
-    if (curRouteName === 'GroupChat' || curRouteName === 'GroupChatConversation') {
-      await sbp('controller/router')
-        .push({ name: 'GroupChatConversation', params: { chatRoomId: rootGetters.currentChatRoomId } })
-        .catch(logExceptNavigationDuplicated)
-    }
-  }
-  // NOTE: make sure *not* to await on this, since that can cause
-  //       a potential deadlock. See same warning in sideEffect for
-  //       'gi.contracts/group/removeMember'
-  sbp('chelonia/contract/remove', contractID).catch(e => {
-    console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e)
-  })
-}
-
-export function findMessageIdx (id: string, messages: Array<Object>): number {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].id === id) {
-      return i
-    }
-  }
-  return -1
-}
+  // imports from the same underlying files are grouped together on the same line
+  sbp,
+  Vue,
+  objectOf, string, optional,
+  merge, cloneDeep,
+  L,
+  CHATROOM_NAME_LIMITS_IN_CHARS, CHATROOM_DESCRIPTION_LIMITS_IN_CHARS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_MESSAGES_PER_PAGE, MESSAGE_TYPES, MESSAGE_NOTIFICATIONS,
+  CHATROOM_MESSAGE_ACTION,
+  chatRoomAttributesType, messageType,
+  createMessage, leaveChatRoom, findMessageIdx
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 function createNotificationData (
   notificationType: string,

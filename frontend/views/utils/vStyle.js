@@ -1,4 +1,6 @@
-import Vue from 'vue'
+import {
+  Vue
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 /*
 * Style tag overload because Vue is trying to compile
 * the content inside the tag otherwise

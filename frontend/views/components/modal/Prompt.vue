@@ -21,9 +21,11 @@ modal-template(ref='modal' :a11yTitle='$attrs.heading' :modalForceAction='true')
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import L from '@view-utils/translations.js'
-import { MODAL_RESPONSE } from '@utils/events.js'
+import {
+  sbp,
+  L,
+  MODAL_RESPONSE
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 

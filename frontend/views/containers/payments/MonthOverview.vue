@@ -31,12 +31,14 @@
 </template>
 
 <script>
-import currencies from '@view-utils/currencies.js'
+import {
+  currencies,
+  L,
+  PAYMENT_NOT_RECEIVED,
+  humanDate
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import ProgressBar from '@components/graphs/Progress.vue'
-import L from '@view-utils/translations.js'
-import { humanDate } from '@utils/time.js'
 
 export default ({
   name: 'MonthOverview',

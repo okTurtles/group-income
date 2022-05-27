@@ -26,13 +26,15 @@ proposal-template(
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  CLOSE_MODAL, SET_MODAL_QUERIES,
+  L, LTags,
+  proposalDefaults,
+  RULE_PERCENTAGE, RULE_DISAGREEMENT,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters, mapState } from 'vuex'
-import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
-import L, { LTags } from '@view-utils/translations.js'
-import { proposalDefaults } from '@model/contracts/voting/proposals.js'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
-import { PROPOSAL_PROPOSAL_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 import VotingRulesInput from '@components/VotingRulesInput.vue'

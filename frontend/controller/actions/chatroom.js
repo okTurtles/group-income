@@ -1,8 +1,10 @@
 'use strict'
-import sbp from '@sbp/sbp'
-import L from '@view-utils/translations.js'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
-import { omit } from '~/frontend/utils/giLodash.js'
+import {
+  sbp,
+  L,
+  GIErrorUIRuntimeError,
+  omit
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { encryptedAction } from './utils.js'
 import type { GIRegParams } from './types.js'
 

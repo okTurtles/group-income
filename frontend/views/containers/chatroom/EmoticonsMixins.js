@@ -1,5 +1,7 @@
-import { OPEN_EMOTICON, SELECT_EMOTICON, CLOSE_EMOTICON } from '@utils/events.js'
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  OPEN_EMOTICON, SELECT_EMOTICON, CLOSE_EMOTICON
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 const emoticonsMixins = {
   methods: {

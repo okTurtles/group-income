@@ -30,7 +30,9 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
 import TabItem from '@components/tabs/TabItem.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'

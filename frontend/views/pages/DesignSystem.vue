@@ -1231,9 +1231,12 @@ page(
 </template>
 
 <script>
+import {
+  sbp,
+  OPEN_MODAL
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import '@views/utils/ui.js'
 import Page from '@components/Page.vue'
-import sbp from '@sbp/sbp'
 import Badge from '@components/Badge.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -1244,7 +1247,6 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu
 import Tooltip from '@components/Tooltip.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import Search from '@components/Search.vue'
-import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
 import SvgBitcoin from '@svgs/bitcoin.svg'
 import SvgBrokenLink from '@svgs/broken-link.svg'

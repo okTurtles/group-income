@@ -73,16 +73,18 @@
 </template>
 
 <script>
+import {
+  sbp,
+  L, LError,
+  CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { validationMixin } from 'vuelidate'
 import { mapState } from 'vuex'
-import sbp from '@sbp/sbp'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import maxLength from 'vuelidate/lib/validators/maxLength'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import L, { LError } from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 
 export default ({
   name: 'CreateNewChannelModal',

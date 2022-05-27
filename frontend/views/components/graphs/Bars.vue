@@ -61,9 +61,11 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { debounce } from '@utils/giLodash.js'
 import { TABLET } from '@view-utils/breakpoints.js'
-import currencies from '@view-utils/currencies.js'
+import {
+  debounce,
+  currencies
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'Bars',

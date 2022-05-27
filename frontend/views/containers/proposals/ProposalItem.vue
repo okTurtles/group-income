@@ -35,11 +35,8 @@
 </template>
 
 <script>
-import { mapGetters, mapState } from 'vuex'
-import L from '@view-utils/translations.js'
-import currencies from '~/frontend/views/utils/currencies.js'
-import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import {
+  L,
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_GROUP_SETTING_CHANGE,
@@ -49,14 +46,17 @@ import {
   STATUS_PASSED,
   STATUS_FAILED,
   STATUS_EXPIRED,
-  STATUS_CANCELLED
-} from '@model/contracts/voting/constants.js'
-import { VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/voting/rules.js'
+  STATUS_CANCELLED,
+  currencies,
+  buildInvitationUrl,
+  VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal,
+  INVITE_STATUS
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { mapGetters, mapState } from 'vuex'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { INVITE_STATUS } from '@model/contracts/constants.js'
 
 export default ({
   name: 'ProposalItem',

@@ -7,7 +7,9 @@
 </template>
 
 <script>
-import { humanDate } from '@utils/time.js'
+import {
+  humanDate
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'CypressBypassUI',

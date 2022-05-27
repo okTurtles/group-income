@@ -1,4 +1,6 @@
-import Vue from 'vue'
+import {
+  Vue
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 // Register a global custom directive called `v-error`
 // to automatically display vuelidate error messages

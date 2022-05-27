@@ -10,8 +10,10 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import { OPEN_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
+import {
+  sbp,
+  OPEN_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import LoginForm from '@containers/access/LoginForm.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 

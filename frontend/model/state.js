@@ -3,20 +3,23 @@
 // This file handles application-level state (as opposed to component-level
 // state) per: http://vuex.vuejs.org/en/intro.html
 
-import sbp from '@sbp/sbp'
-import Vue from 'vue'
+import {
+  // imports from the same underlying files are grouped together on the same line
+  sbp,
+  Vue,
+  EVENT_HANDLED,
+  CHATROOM_PRIVACY_LEVEL,
+  _,
+  unadjustedDistribution, adjustedDistribution
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+
 import Vuex from 'vuex'
-// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import Colors from './colors.js'
-import { CHATROOM_PRIVACY_LEVEL } from './contracts/constants.js'
-import * as _ from '~/frontend/utils/giLodash.js'
-import './contracts/mailbox.js'
-import './contracts/identity.js'
-import './contracts/chatroom.js'
-import './contracts/group.js'
+// import './contracts/mailbox.js'
+// import './contracts/identity.js'
+// import './contracts/chatroom.js'
+// import './contracts/group.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
-import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.

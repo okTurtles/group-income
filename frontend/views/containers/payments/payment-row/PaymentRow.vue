@@ -22,8 +22,10 @@
 
 <script>
 import AvatarUser from '@components/AvatarUser.vue'
-import { humanDate } from '@utils/time.js'
-import L from '@view-utils/translations.js'
+import {
+  L,
+  humanDate
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'PaymentRowSent',

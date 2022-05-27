@@ -1,10 +1,12 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
-import L, { LError } from '@view-utils/translations.js'
+import {
+  sbp,
+  GIErrorUIRuntimeError,
+  L, LError
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { encryptedAction } from './utils.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/mailbox/create': async function ({

@@ -1,5 +1,6 @@
 'use strict'
 
+// this file is loaded by common.js, so we import Vue directly
 import Vue from 'vue'
 
 export function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {

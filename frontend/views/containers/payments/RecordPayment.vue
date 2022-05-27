@@ -69,14 +69,16 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import Vue from 'vue'
+import {
+  sbp,
+  Vue,
+  PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED, PAYMENT_TYPE_MANUAL,
+  L,
+  dateToMonthstamp
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapState, mapGetters } from 'vuex'
-import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED, PAYMENT_TYPE_MANUAL } from '@model/contracts/payments/index.js'
-import L from '@view-utils/translations.js'
 import { validationMixin } from 'vuelidate'
 import SvgSuccess from '@svgs/success.svg'
-import { dateToMonthstamp } from '@utils/time.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from '@containers/payments/RecordPaymentsList.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'

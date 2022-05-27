@@ -1,12 +1,13 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
-import Vue from 'vue'
-// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import '~/shared/domains/chelonia/chelonia.js'
-import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
-import { merge } from '~/frontend/utils/giLodash.js'
-import L from '~/frontend/views/utils/translations.js'
+import {
+  // imports from the same underlying files are grouped together on the same line
+  sbp,
+  Vue,
+  objectOf, objectMaybeOf, arrayOf, string, object,
+  merge,
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',

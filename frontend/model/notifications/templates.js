@@ -3,7 +3,9 @@ import type {
   NotificationTemplate
 } from './types.flow.js'
 
-import L from '~/frontend/views/utils/translations.js'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.

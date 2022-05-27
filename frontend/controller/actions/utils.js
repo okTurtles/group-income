@@ -1,9 +1,11 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  GIErrorUIRuntimeError,
+  LError
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import type { GIActionParams } from './types.js'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
-import { LError } from '@view-utils/translations.js'
 
 export function encryptedAction (action: string, humanError: string | Function): Object {
   return {

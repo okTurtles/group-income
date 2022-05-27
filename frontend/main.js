@@ -1,33 +1,33 @@
 'use strict'
 
-// import SBP stuff before anything else so that domains register themselves before called
-import sbp from '@sbp/sbp'
-import '@sbp/okturtles.data'
-import '@sbp/okturtles.events'
-import '@sbp/okturtles.eventqueue'
-import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
+import {
+  // imports from the same underlying files are grouped together on the same line
+  sbp,
+  Vue,
+  CONTRACT_IS_SYNCING,
+  LOGIN, LOGOUT,
+  L, LError, LTags
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+
+import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
-import Vue from 'vue'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
-import { LOGIN, LOGOUT } from './utils/events.js'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
-import L, { LError, LTags } from '@view-utils/translations.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
-import './views/utils/translations.js'
 import './views/utils/avatar.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
-import './views/utils/vSafeHtml.js'
+// import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import 'wicg-inert'

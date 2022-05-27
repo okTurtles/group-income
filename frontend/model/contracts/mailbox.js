@@ -1,13 +1,13 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
-import Vue from 'vue'
-import { objectOf, string, object, unionOf, literalOf, optional } from '~/frontend/utils/flowTyper.js'
-
-export const TYPE_MESSAGE = 'message'
-export const TYPE_FRIEND_REQ = 'friend-request'
-
-export const messageType: any = unionOf(...[TYPE_MESSAGE, TYPE_FRIEND_REQ].map(k => literalOf(k)))
+import {
+  // imports from the same underlying files are grouped together on the same line
+  sbp,
+  Vue,
+  objectOf, string, object, optional,
+  mailType
+// eslint-disable-next-line import/no-absolute-path
+} from '/assets/js/common.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/mailbox',
@@ -34,7 +34,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/mailbox/postMessage': {
       validate: objectOf({
-        messageType: messageType,
+        messageType: mailType,
         from: string,
         subject: optional(string),
         message: optional(string),

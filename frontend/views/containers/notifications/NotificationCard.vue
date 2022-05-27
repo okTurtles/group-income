@@ -24,9 +24,11 @@ tooltip(
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  OPEN_MODAL
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
 import ModalClose from '@components/modal/ModalClose.vue'
 import Tooltip from '@components/Tooltip.vue'
 import NotificationList from './NotificationList.vue'

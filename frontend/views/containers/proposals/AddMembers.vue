@@ -45,11 +45,13 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import Vue from 'vue'
+import {
+  sbp,
+  Vue,
+  PROPOSAL_INVITE_MEMBER
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
-import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/constants.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 
 export default ({

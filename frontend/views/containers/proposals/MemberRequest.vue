@@ -78,7 +78,9 @@ import PageSection from '@components/PageSection.vue'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
-import { humanDate } from '@utils/time.js'
+import {
+  humanDate
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default {
   name: 'MemberRequest',

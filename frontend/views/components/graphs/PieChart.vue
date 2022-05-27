@@ -34,7 +34,9 @@
 // Learn more about SVG & PieCharts
 // -> https://hackernoon.com/a-simple-pie-chart-in-svg-dbdd653b6936
 
-import { debounce } from '@utils/giLodash.js'
+import {
+  debounce
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'PieChart',

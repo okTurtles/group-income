@@ -11,7 +11,9 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 
 export default ({

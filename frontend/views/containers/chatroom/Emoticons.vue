@@ -5,12 +5,14 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 // TODO: find out how to load the emoji picker at runtime only when the user clicks the emoji button
 import { Picker, EmojiIndex } from 'emoji-mart-vue-fast'
 import data from 'emoji-mart-vue-fast/data/apple.json'
 import { TABLET, DESKTOP } from '@view-utils/breakpoints.js'
-import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
 
 export default ({
   name: 'Chatroom',

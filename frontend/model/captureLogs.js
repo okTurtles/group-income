@@ -1,5 +1,7 @@
-import sbp from '@sbp/sbp'
-import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
+import {
+  sbp,
+  CAPTURED_LOGS, SET_APP_LOGS_FILTER
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 /*
   - giConsole/[username]/limit - the limit of entries.

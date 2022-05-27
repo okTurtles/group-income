@@ -28,14 +28,16 @@ form(data-test='login' @submit.prevent='')
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { nonWhitespace } from '@views/utils/validators.js'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default ({

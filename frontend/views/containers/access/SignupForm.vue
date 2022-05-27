@@ -38,7 +38,10 @@ form(data-test='signup' @submit.prevent='')
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import { nonWhitespace } from '@views/utils/validators.js'
@@ -46,7 +49,6 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default ({

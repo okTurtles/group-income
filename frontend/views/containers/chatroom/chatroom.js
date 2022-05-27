@@ -1,8 +1,10 @@
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL,
+  CHATROOM_DETAILS_UPDATED
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
-import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
-import { CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'
 
 const initChatChannelDetails = {
   isLoading: true,

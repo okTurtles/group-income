@@ -7,7 +7,9 @@
 </template>
 
 <script>
-import L from '@view-utils/translations.js'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 export default ({
   name: 'Loading',
   props: {

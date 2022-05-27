@@ -1,4 +1,6 @@
-import { DAYS_MILLIS } from '~/frontend/utils/time.js'
+import {
+  DAYS_MILLIS
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 // The maximum allowed age of read (resp. unread) stored notifications.
 // Not to be confused with maximum storage duration.

@@ -31,11 +31,13 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.js'
+import {
+  sbp,
+  OPEN_MODAL,
+  CHATROOM_PRIVACY_LEVEL
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
 
 export default ({
   name: 'ConversationsList',

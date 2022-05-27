@@ -32,12 +32,14 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  OPEN_MODAL
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters, mapState } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Badge from '@components/Badge.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({
   name: 'GroupsList',

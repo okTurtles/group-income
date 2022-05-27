@@ -26,7 +26,9 @@
 <script>
 import { mapGetters } from 'vuex'
 import Tooltip from '@components/Tooltip.vue'
-import L from '@view-utils/translations.js'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'MessageReactions',

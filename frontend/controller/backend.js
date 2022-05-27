@@ -2,7 +2,9 @@
 
 import type { JSONObject } from '~/shared/types.js'
 
-import sbp from '@sbp/sbp'
+import {
+  sbp
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'

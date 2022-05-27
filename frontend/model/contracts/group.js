@@ -1,63 +1,24 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
-import Vue from 'vue'
-// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import '~/shared/domains/chelonia/chelonia.js'
-import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
-// TODO: use protocol versioning to load these (and other) files
-//       https://github.com/okTurtles/group-income/issues/603
-import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './voting/rules.js'
-import proposals, { proposalType, proposalSettingsType, archiveProposal } from './voting/proposals.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/constants.js'
-import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
-import * as Errors from '../errors.js'
-import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from '~/frontend/utils/time.js'
-import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
-import { unadjustedDistribution, adjustedDistribution } from './distribution/distribution.js'
-import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
-import L from '~/frontend/views/utils/translations.js'
-import { chatRoomAttributesType } from './chatroom.js'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS } from './constants.js'
-import { ChelErrorDBBadPreviousHEAD } from '~/shared/domains/chelonia/errors.js'
-
-export const inviteType: any = objectOf({
-  inviteSecret: string,
-  quantity: number,
-  creator: string,
-  invitee: optional(string),
-  status: string,
-  responses: mapOf(string, string),
-  expires: number
-})
-
-export function createInvite (
-  {
-    quantity = 1,
-    creator,
-    expires,
-    invitee
-  }: { quantity: number, creator: string, expires?: number, invitee?: string }
-): {|
-  creator: string,
-  expires: number,
-  inviteSecret: string,
-  invitee: void | string,
-  quantity: number,
-  responses: {...},
-  status: string,
-|} {
-  return {
-    inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
-    quantity,
-    creator,
-    invitee,
-    status: INVITE_STATUS.VALID,
-    responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: Date.now() + DAYS_MILLIS * (expires || INVITE_EXPIRES_IN_DAYS.INITIAL)
-  }
-}
+import {
+  // imports from the same underlying files are grouped together on the same line
+  sbp, Vue,
+  arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf,
+  votingRules, ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT,
+  proposals, proposalType, proposalSettingsType, archiveProposal,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED,
+  paymentStatusType, paymentType, PAYMENT_COMPLETED,
+  Errors,
+  merge, deepEqualJSONType, omit,
+  addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS,
+  vueFetchInitKV,
+  unadjustedDistribution, adjustedDistribution,
+  currencies, saferFloat,
+  L,
+  inviteType, chatRoomAttributesType,
+  INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS,
+  ChelErrorDBBadPreviousHEAD
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 function initGroupProfile (contractID: string, joinedDate: string) {
   return {

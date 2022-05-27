@@ -20,13 +20,15 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  CHATROOM_TYPES,
+  L,
+  OPEN_MODAL
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
-import { CHATROOM_TYPES } from '@model/contracts/constants.js'
 import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
-import L from '@view-utils/translations.js'
-import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({
   name: 'ConversationGreetings',

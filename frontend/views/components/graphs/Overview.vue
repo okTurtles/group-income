@@ -33,8 +33,10 @@ div
 </template>
 
 <script>
+import {
+  currencies
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
-import currencies from '@view-utils/currencies.js'
 import { GraphLegendItem, Bars } from '@components/graphs/index.js'
 
 export default ({

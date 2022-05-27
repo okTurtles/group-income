@@ -18,7 +18,9 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapState, mapGetters } from 'vuex'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 

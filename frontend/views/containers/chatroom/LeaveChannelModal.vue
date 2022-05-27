@@ -22,7 +22,9 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { mapState, mapGetters } from 'vuex'

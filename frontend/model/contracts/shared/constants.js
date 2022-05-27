@@ -1,5 +1,7 @@
 'use strict'
 
+// group.js related
+
 export const INVITE_INITIAL_CREATOR = 'invite-initial-creator'
 export const INVITE_STATUS = {
   REVOKED: 'revoked',
@@ -7,9 +9,12 @@ export const INVITE_STATUS = {
   USED: 'used'
 }
 export const PROFILE_STATUS = {
-  ACTIVE: 'active',
+  ACTIVE: 'active', // confirmed group join
+  PENDING: 'pending', // shortly after being approved to join the group
   REMOVED: 'removed'
 }
+
+// chatroom.js related
 
 export const CHATROOM_GENERAL_NAME = 'General'
 export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
@@ -57,3 +62,8 @@ export const MESSAGE_VARIANTS = {
   RECEIVED: 'received',
   FAILED: 'failed'
 }
+
+// mailbox.js related
+
+export const MAIL_TYPE_MESSAGE = 'message'
+export const MAIL_TYPE_FRIEND_REQ = 'friend-request'

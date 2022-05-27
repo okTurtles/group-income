@@ -1,6 +1,9 @@
 import type { Notification } from './types.flow.js'
 
-import { DAYS_MILLIS as ONE_DAY, HOURS_MILLIS as ONE_HOUR } from '~/frontend/utils/time.js'
+import {
+  DAYS_MILLIS as ONE_DAY,
+  HOURS_MILLIS as ONE_HOUR
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 import {
   MAX_AGE_READ,

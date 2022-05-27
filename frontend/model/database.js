@@ -1,8 +1,9 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
+import {
+  sbp
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import localforage from 'localforage'
-import '~/shared/domains/chelonia/db.js'
 
 if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
   const log = localforage.createInstance({

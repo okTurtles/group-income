@@ -47,8 +47,10 @@ fieldset(data-test='paymentMethods')
 
 <script>
 import { mapGetters } from 'vuex'
-import Vue from 'vue'
-import L from '@view-utils/translations.js'
+import {
+  Vue,
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'PaymentMethods',

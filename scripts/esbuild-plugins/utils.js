@@ -79,9 +79,10 @@ exports.createAliasReplacer = (aliases) => {
  * @returns {RegExp}
  */
 exports.createFilterRegExpFromAliases = (aliases) => {
-  if (aliases.some(alias => alias.includes('/'))) {
-    throw new Error('Path aliases may not include slash characters.')
-  }
+  // TODO: why was this added?
+  // if (aliases.some(alias => alias.includes('/'))) {
+  //   throw new Error('Path aliases may not include slash characters.')
+  // }
   return new RegExp(`^(${aliases.map(escapeForRegExp).sort().reverse().join('|')})(/|$)`)
 }
 

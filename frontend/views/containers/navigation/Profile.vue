@@ -24,10 +24,12 @@
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
+import {
+  sbp,
+  OPEN_MODAL
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
-import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 
 export default ({
