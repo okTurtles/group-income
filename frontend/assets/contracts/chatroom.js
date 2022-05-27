@@ -16464,7 +16464,7 @@ sbp7("sbp/selectors/register", {
           sbp7("chelonia/private/in/enqueueHandleEvent", GIMessage.deserialize(msg.data));
         },
         [NOTIFICATION_TYPE.APP_VERSION](msg) {
-          const ourVersion = "0.0.1@2022-05-27T02:55:33.368Z";
+          const ourVersion = "0.0.1@2022-05-27T03:15:41.087Z";
           const theirVersion = msg.data;
           if (ourVersion !== theirVersion) {
             sbp7("okTurtles.events/emit", NOTIFICATION_TYPE.APP_VERSION, theirVersion);
