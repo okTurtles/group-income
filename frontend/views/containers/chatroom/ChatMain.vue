@@ -182,7 +182,8 @@ export default ({
       'chatRoomUsers',
       'ourIdentityContractId',
       'currentIdentityState',
-      'isJoinedChatRoom'
+      'isJoinedChatRoom',
+      'setChatRoomScrollPosition'
     ]),
     bodyStyles () {
       const defaultHeightInRem = 14
@@ -477,10 +478,27 @@ export default ({
       })
     },
     onChatScroll: debounce(function () {
+      const curScrollTop = this.$refs.conversation.scrollTop
       if (!this.$refs.conversation) {
         this.ephemeral.scrolledDistance = 0
       } else {
-        this.ephemeral.scrolledDistance = this.$refs.conversation.scrollTopMax - this.$refs.conversation.scrollTop
+        this.ephemeral.scrolledDistance = this.$refs.conversation.scrollTopMax - curScrollTop
+      }
+
+      if (!this.summary.joined) {
+        return
+      }
+
+      // Save the current scroll position per each chatroom
+      const allElements = document.querySelectorAll('.c-body-conversation > .c-message')
+      for (let i = allElements.length - 1; i >= 0; i--) {
+        if (allElements[i].offsetTop - allElements[i].offsetParent.offsetTop < curScrollTop) {
+          sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+            chatRoomId: this.currentChatRoomId,
+            messageId: this.messages[i].id
+          })
+          break
+        }
       }
     })
   },
