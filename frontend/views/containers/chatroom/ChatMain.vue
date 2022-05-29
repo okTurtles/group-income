@@ -185,14 +185,24 @@ export default ({
       'isJoinedChatRoom'
     ]),
     bodyStyles () {
+      const defaultHeightInRem = 14
+      let heightDiscountInRem = 0
+      if (!this.summary.joined) {
+        heightDiscountInRem += 2
+      } else {
+        if (this.ephemeral.replyingMessage) {
+          heightDiscountInRem += 2
+        } else if (this.isScrolledUp) {
+          heightDiscountInRem += 2
+        }
+      }
       // Not sure what `bodyPaddingBottom` means, I delete it now
       // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
       const phoneStyles = {}
-      const unjoinedStyles =
-        this.summary.joined
-          ? {}
-          : { height: !this.config.isPhone ? 'calc(var(--vh, 1vh) * 100 - 18rem)' : 'calc(var(--vh, 1vh) * 100 - 16rem)' }
-      return { ...phoneStyles, ...unjoinedStyles }
+      const responsiveStyles = {
+        height: `calc(var(--vh, 1vh) * 100 - ${defaultHeightInRem + heightDiscountInRem}rem)`
+      }
+      return { ...phoneStyles, ...responsiveStyles }
     },
     startedUnreadIndex () {
       return this.messages.findIndex(message => message.unread === true)

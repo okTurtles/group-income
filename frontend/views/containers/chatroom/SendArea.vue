@@ -4,7 +4,7 @@
   data-test='messageInputWrapper'
 )
   .c-jump-to-latest(
-    v-if='scrolledUp'
+    v-if='scrolledUp && !replyingMessage'
     @click='$emit("jump-to-latest")'
   )
     i18n To the latest message
