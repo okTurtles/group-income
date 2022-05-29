@@ -296,18 +296,15 @@ export default ({
               pending: true
             })
             this.stopReplying()
+            this.updateScroll()
           }
         }
       })
-      // need to scroll to the bottom
-      this.updateScroll()
     },
     async scrollToMessage (messageId) {
       if (!messageId) {
         return
       }
-
-      console.log(this.$refs.conversation)
 
       const scrollAndHighlight = (index) => {
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
@@ -337,11 +334,13 @@ export default ({
     updateScroll () {
       if (this.summary.title) {
         // force conversation viewport to be at the bottom (most recent messages)
-        this.$refs.conversation && this.$refs.conversation.scroll({
-          left: 0,
-          top: this.$refs.conversation.scrollHeight,
-          behavior: 'smooth'
-        })
+        setTimeout(() => {
+          this.$refs.conversation && this.$refs.conversation.scroll({
+            left: 0,
+            top: this.$refs.conversation.scrollTopMax,
+            behavior: 'smooth'
+          })
+        }, 100)
       }
     },
     retryMessage (index) {

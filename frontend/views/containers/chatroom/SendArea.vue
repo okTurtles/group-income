@@ -10,14 +10,14 @@
     i18n To the latest message
     button.is-icon-small
       i.icon-arrow-down
-
-  .c-replying(v-if='replyingMessage')
-    i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
-    button.c-clear.is-icon-small(
-      :aria-label='L("Stop replying")'
-      @click='stopReplying'
-    )
-      i.icon-times
+  .c-replying-wrapper
+    .c-replying(v-if='replyingMessage')
+      i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
+      button.c-clear.is-icon-small(
+        :aria-label='L("Stop replying")'
+        @click='stopReplying'
+      )
+        i.icon-times
 
   textarea.textarea.c-send-textarea(
     ref='textarea'
@@ -338,7 +338,14 @@ $initialHeight: 43px;
   box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 }
 
+.c-replying-wrapper {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+}
+
 .c-replying {
+  display: table-cell;
   background-color: $general_2;
   padding: 0.5rem 2rem 0.7rem 0.5rem;
   border-radius: 0.3rem 0.3rem 0 0;
