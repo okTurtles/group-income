@@ -189,12 +189,10 @@ export default ({
       let heightDiscountInRem = 0
       if (!this.summary.joined) {
         heightDiscountInRem += 2
-      } else {
-        if (this.ephemeral.replyingMessage) {
-          heightDiscountInRem += 2
-        } else if (this.isScrolledUp) {
-          heightDiscountInRem += 2
-        }
+      } else if (this.ephemeral.replyingMessage) {
+        heightDiscountInRem += 2
+      } else if (this.isScrolledUp) {
+        heightDiscountInRem += 2
       }
       // Not sure what `bodyPaddingBottom` means, I delete it now
       // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
