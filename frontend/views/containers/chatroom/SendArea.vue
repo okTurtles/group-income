@@ -160,7 +160,6 @@ export default ({
   },
   methods: {
     textAreaFocus () {
-      // this.$emit('jump-to-latest')
       if (this.ephemeral.isPhone) this.ephemeral.showButtons = false
     },
     textAreaBlur (event) {

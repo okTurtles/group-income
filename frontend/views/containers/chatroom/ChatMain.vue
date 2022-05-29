@@ -336,19 +336,12 @@ export default ({
     },
     updateScroll () {
       if (this.summary.title) {
+        // force conversation viewport to be at the bottom (most recent messages)
         this.$refs.conversation && this.$refs.conversation.scroll({
           left: 0,
           top: this.$refs.conversation.scrollHeight,
           behavior: 'smooth'
         })
-        // // force conversation viewport to be at the bottom (most recent messages)
-        // setTimeout(() => {
-        //   this.$refs.conversation && this.$refs.conversation.scroll({
-        //     left: 0,
-        //     top: this.$refs.conversation.scrollHeight,
-        //     behavior: 'smooth'
-        //   })
-        // }, 500)
       }
     },
     retryMessage (index) {
