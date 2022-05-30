@@ -492,7 +492,7 @@ export default ({
           break
         }
       }
-    })
+    }, 500)
   },
   watch: {
     currentChatRoomId (to, from) {
