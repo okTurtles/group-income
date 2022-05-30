@@ -24,10 +24,14 @@ import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 
 Vue.use(Vuex)
 
-let defaultTheme = THEME_LIGHT
-if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-  defaultTheme = THEME_DARK
+const checkSystemColor = () => {
+  let theme = THEME_LIGHT
+  if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    theme = THEME_DARK
+  }
+  return theme
 }
+const defaultTheme = checkSystemColor()
 
 const initialState = {
   currentGroupId: null,
@@ -455,13 +459,16 @@ const getters = {
     }
   },
   colors (state) {
-    return Colors[state.theme]
+    return Colors[state.theme === 'system' ? checkSystemColor() : state.theme]
   },
   fontSize (state) {
     return state.fontSize
   },
+  theme (state) {
+    return state.theme
+  },
   isDarkTheme (state) {
-    return Colors[state.theme].theme === THEME_DARK
+    return Colors[state.theme === 'system' ? checkSystemColor() : state.theme].theme === THEME_DARK
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
