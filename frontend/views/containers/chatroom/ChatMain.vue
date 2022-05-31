@@ -152,7 +152,7 @@ export default ({
         scrolledDistance: 0,
         bodyPaddingBottom: '',
         infiniteLoading: null,
-        refreshMessages: true,
+        shouldRefreshMessages: true,
         replyingMessage: null,
         replyingMessageId: null,
         replyingTo: null
@@ -183,7 +183,8 @@ export default ({
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom',
-      'setChatRoomScrollPosition'
+      'setChatRoomScrollPosition',
+      'currentChatRoomScrollPosition'
     ]),
     bodyStyles () {
       const defaultHeightInRem = 14
@@ -301,7 +302,7 @@ export default ({
         }
       })
     },
-    async scrollToMessage (messageId) {
+    async scrollToMessage (messageId, focus = true) {
       if (!messageId) {
         return
       }
@@ -309,10 +310,12 @@ export default ({
       const scrollAndHighlight = (index) => {
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
         eleMessage.scrollIntoView({ behavior: 'smooth' })
-        eleMessage.classList.add('c-focused')
-        setTimeout(() => {
-          eleMessage.classList.remove('c-focused')
-        }, 1500)
+        if (focus) {
+          eleMessage.classList.add('c-focused')
+          setTimeout(() => {
+            eleMessage.classList.remove('c-focused')
+          }, 1500)
+        }
       }
 
       const msgIndex = findMessageIdx(messageId, this.messages)
@@ -331,15 +334,19 @@ export default ({
         }
       }
     },
-    updateScroll () {
+    updateScroll (toSavedPosition = false) {
       if (this.summary.title) {
         // force conversation viewport to be at the bottom (most recent messages)
         setTimeout(() => {
-          this.$refs.conversation && this.$refs.conversation.scroll({
-            left: 0,
-            top: this.$refs.conversation.scrollTopMax,
-            behavior: 'smooth'
-          })
+          if (toSavedPosition && this.currentChatRoomScrollPosition) {
+            this.scrollToMessage(this.currentChatRoomScrollPosition, false)
+          } else {
+            this.$refs.conversation && this.$refs.conversation.scroll({
+              left: 0,
+              top: this.$refs.conversation.scrollTopMax,
+              behavior: 'smooth'
+            })
+          }
         }, 100)
       }
     },
@@ -406,14 +413,24 @@ export default ({
         saveMessage: true
       }
     },
-    async getLatestEvents (refresh = false) {
+    async renderMoreMessages (refresh = false) {
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       const before = refresh || !this.latestEvents.length
         ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
         : GIMessage.deserialize(this.latestEvents[0]).hash()
-      const events = await sbp('chelonia/out/eventsBefore', before, limit)
+      let events = null
+      if (refresh && this.currentChatRoomScrollPosition) {
+        events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, this.currentChatRoomScrollPosition)
+      } else {
+        events = await sbp('chelonia/out/eventsBefore', before, limit)
+      }
 
       await this.rerenderEvents(events, refresh)
+
+      if (refresh) {
+        this.updateScroll(true)
+        return false
+      }
 
       return events.length < limit
     },
@@ -433,7 +450,7 @@ export default ({
       this.$forceUpdate()
     },
     setInitMessages () {
-      this.refreshMessages = true
+      this.shouldRefreshMessages = true
       this.messages = []
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
@@ -464,9 +481,9 @@ export default ({
     },
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
-      this.getLatestEvents(this.refreshMessages).then(completed => {
+      this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
         completed ? $state.complete() : $state.loaded()
-        this.refreshMessages = false
+        this.shouldRefreshMessages = false
       })
     },
     onChatScroll: debounce(function () {
@@ -481,15 +498,22 @@ export default ({
         return
       }
 
-      // Save the current scroll position per each chatroom
-      const allElements = document.querySelectorAll('.c-body-conversation > .c-message')
-      for (let i = allElements.length - 1; i >= 0; i--) {
-        if (allElements[i].offsetTop - allElements[i].offsetParent.offsetTop < curScrollTop) {
-          sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-            chatRoomId: this.currentChatRoomId,
-            messageId: this.messages[i].id
-          })
-          break
+      if (this.ephemeral.scrolledDistance <= 500) {
+        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+          chatRoomId: this.currentChatRoomId,
+          messageId: null
+        })
+      } else {
+        // Save the current scroll position per each chatroom
+        const allElements = document.querySelectorAll('.c-body-conversation > .c-message')
+        for (let i = allElements.length - 1; i >= 0; i--) {
+          if (allElements[i].offsetTop - allElements[i].offsetParent.offsetTop < curScrollTop) {
+            sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+              chatRoomId: this.currentChatRoomId,
+              messageId: this.messages[i].id
+            })
+            break
+          }
         }
       }
     }, 500)
@@ -499,8 +523,6 @@ export default ({
       const force = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
       this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
-      // need to scroll to the saved position
-      this.$nextTick(() => this.updateScroll())
     },
     'summary.joined' (to, from) {
       if (to) {
