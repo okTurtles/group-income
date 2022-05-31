@@ -185,7 +185,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giGetInvitationAnyone().then(url => {
       invitationLinkAnyone = url
     })
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     cy.getByDT('channelsList').within(() => {
       cy.get('ul').children().should('have.length', 1)
@@ -209,7 +209,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       bypassUI: true
     })
     me = user3
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     checkIfJoined(CHATROOM_GENERAL_NAME)
@@ -229,7 +229,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
     me = user2
     cy.getByDT('dashboard').click()
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     checkIfJoined(CHATROOM_GENERAL_NAME)
@@ -264,7 +264,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it('user1 checks the visibilities, sort order and permissions', () => {
     switchUser(user1)
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
     cy.log('ssers can update details(name, description) of the channels they created.')
     const undetailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && !c.description)[0]
     const detailedChannel = chatRooms.filter(c => c.name.startsWith('Channel1') && c.description)[0]
@@ -342,7 +342,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   it('user1 sees that each group has it\'s current chatroom state individually', () => {
     cy.giCreateGroup(groupName2, { bypassUI: true })
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     cy.getByDT('channelsList').within(() => {
       cy.get('ul').children().should('have.length', 1)
@@ -372,7 +372,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     // Leave channel by himself
     switchUser(user2)
 
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
     leaveChannel(leavingChannels[1])
   })
 
@@ -407,7 +407,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         .should('contain', 'Proposal accepted')
     })
 
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     switchChannel(CHATROOM_GENERAL_NAME)
     checkIfLeaved(CHATROOM_GENERAL_NAME, user3, user3)
@@ -454,7 +454,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giLogin(user1, { bypassUI: true })
     me = user1
 
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     switchChannel(CHATROOM_GENERAL_NAME)
     cy.getByDT('channelMembers').should('contain', '1 members')
@@ -479,7 +479,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       isLoggedIn: true
     })
 
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     checkIfJoined(CHATROOM_GENERAL_NAME)
     cy.getByDT('channelMembers').should('contain', '2 members')
@@ -497,7 +497,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       isLoggedIn: true
     })
 
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     checkIfJoined(CHATROOM_GENERAL_NAME)
     cy.getByDT('channelMembers').should('contain', '3 members')
