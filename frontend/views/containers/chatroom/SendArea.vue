@@ -342,6 +342,8 @@ $initialHeight: 43px;
   display: table;
   table-layout: fixed;
   width: 100%;
+  position: absolute;
+  top: -1.5rem;
 }
 
 .c-replying {
@@ -369,12 +371,16 @@ $initialHeight: 43px;
   color: $text_1;
   text-align: center;
   cursor: pointer;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1rem;
 }
 
 .c-clear {
   position: absolute;
   right: 0.2rem;
-  top: 1.2rem;
+  top: 0.4rem;
 }
 
 .c-send-button {

@@ -191,10 +191,6 @@ export default ({
       let heightDiscountInRem = 0
       if (!this.summary.joined) {
         heightDiscountInRem += 2
-      } else if (this.ephemeral.replyingMessage) {
-        heightDiscountInRem += 2
-      } else if (this.isScrolledUp) {
-        heightDiscountInRem += 2
       }
       // Not sure what `bodyPaddingBottom` means, I delete it now
       // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
@@ -507,7 +503,7 @@ export default ({
         // Save the current scroll position per each chatroom
         const allElements = document.querySelectorAll('.c-body-conversation > .c-message')
         for (let i = allElements.length - 1; i >= 0; i--) {
-          if (allElements[i].offsetTop - allElements[i].offsetParent.offsetTop < curScrollTop) {
+          if (allElements[i].offsetTop - allElements[i].offsetParent.offsetTop <= curScrollTop) {
             sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
               chatRoomId: this.currentChatRoomId,
               messageId: this.messages[i].id
