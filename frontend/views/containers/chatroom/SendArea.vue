@@ -343,13 +343,13 @@ $initialHeight: 43px;
   table-layout: fixed;
   width: 100%;
   position: absolute;
-  top: -1.5rem;
+  top: -1rem;
 }
 
 .c-replying {
   display: table-cell;
   background-color: $general_2;
-  padding: 0.5rem 2rem 0.7rem 0.5rem;
+  padding: 0.4rem 2rem 0.5rem 0.5rem;
   border-radius: 0.3rem 0.3rem 0 0;
   margin-bottom: -0.2rem;
   white-space: nowrap;
@@ -380,7 +380,7 @@ $initialHeight: 43px;
 .c-clear {
   position: absolute;
   right: 0.2rem;
-  top: 0.4rem;
+  top: 0.2rem;
 }
 
 .c-send-button {
