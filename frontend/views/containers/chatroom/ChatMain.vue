@@ -509,7 +509,7 @@ export default ({
             break
           }
         }
-      } else if (this.setChatRoomScrollPosition) {
+      } else if (this.currentChatRoomScrollPosition) {
         sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
           chatRoomId: this.currentChatRoomId,
           messageId: null
