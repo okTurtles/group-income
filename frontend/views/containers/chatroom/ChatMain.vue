@@ -483,6 +483,9 @@ export default ({
       })
     },
     onChatScroll: debounce(function () {
+      if (!this.$refs.conversation) {
+        return
+      }
       const curScrollTop = this.$refs.conversation.scrollTop
       if (!this.$refs.conversation) {
         this.ephemeral.scrolledDistance = 0
