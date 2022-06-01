@@ -2,6 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
+import '@sbp/okturtles.eventqueue'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
 
@@ -53,7 +54,15 @@ export default (sbp('sbp/selectors/register', {
       throw new ChelErrorDBConnection(`${e.name} during getEntry: ${e.message}`)
     }
   },
-  'chelonia/db/addEntry': async function (entry: GIMessage): Promise<string> {
+  'chelonia/db/addEntry': function (entry: GIMessage): Promise<string> {
+    // because addEntry contains multiple awaits - we want to make sure it gets executed
+    // "atomically" to minimize the chance of a contract fork
+    return sbp('okTurtles.eventQueue/queueEvent', 'chelonia/db', [
+      'chelonia/private/db/addEntry', entry
+    ])
+  },
+  // NEVER call this directly yourself! _always_ call 'chelonia/db/addEntry' instead
+  'chelonia/private/db/addEntry': async function (entry: GIMessage): Promise<string> {
     try {
       const { previousHEAD } = entry.message()
       const contractID: string = entry.contractID()
@@ -64,7 +73,7 @@ export default (sbp('sbp/selectors/register', {
       const HEAD = await sbp('chelonia/db/latestHash', contractID)
       if (!entry.isFirstMessage() && previousHEAD !== HEAD) {
         console.error(`[chelonia.db] bad previousHEAD: ${previousHEAD}! Expected: ${HEAD} for contractID: ${contractID}`)
-        throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${previousHEAD}`)
+        throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${previousHEAD}. Expected ${HEAD} for contractID: ${contractID}`)
       }
       await sbp('chelonia/db/set', entry.hash(), entry.serialize())
       await sbp('chelonia/db/set', sbp('chelonia/db/logHEAD', contractID), entry.hash())
