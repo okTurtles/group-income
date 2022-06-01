@@ -497,12 +497,7 @@ export default ({
         return
       }
 
-      if (this.ephemeral.scrolledDistance <= 500) {
-        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-          chatRoomId: this.currentChatRoomId,
-          messageId: null
-        })
-      } else {
+      if (this.ephemeral.scrolledDistance > 500) {
         // Save the current scroll position per each chatroom
         const allElements = document.querySelectorAll('.c-body-conversation > .c-message')
         for (let i = allElements.length - 1; i >= 0; i--) {
@@ -514,6 +509,11 @@ export default ({
             break
           }
         }
+      } else if (this.setChatRoomScrollPosition) {
+        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+          chatRoomId: this.currentChatRoomId,
+          messageId: null
+        })
       }
     }, 500)
   },
