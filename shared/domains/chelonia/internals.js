@@ -6,13 +6,20 @@ import { GIMessage } from './GIMessage.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
+import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
+import 'ses'
 
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
-sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
   'chelonia/private/state': function () {
     return this.state
+  },
+  'chelonia/private/loadManifest': async function (manifestURL: string) {
+    // TODO: load manifests in such a way that it also works with remote contracts that are named the same
+    const manifest = await fetch(manifestURL).then(handleFetchResult('text'))
+    console.log('got manifest:', manifest)
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
@@ -46,7 +53,7 @@ sbp('sbp/selectors/register', {
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
           const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op())
+          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op(), entry.message().manifest)
         }
       } else {
         const message = (await r.json())?.message
@@ -222,7 +229,7 @@ sbp('sbp/selectors/register', {
       throw e
     }
   }
-})
+}): string[])
 
 const eventsToReinjest = []
 const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID), 1000)

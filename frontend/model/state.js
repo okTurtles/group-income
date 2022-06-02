@@ -7,12 +7,11 @@ import {
   // imports from the same underlying files are grouped together on the same line
   sbp,
   Vue,
-  EVENT_HANDLED,
   CHATROOM_PRIVACY_LEVEL,
   _,
   unadjustedDistribution, adjustedDistribution
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
-
+import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
 import Colors from './colors.js'
 // import './contracts/mailbox.js'
@@ -160,9 +159,9 @@ const getters = {
   // Since the getter functions are compatible between Vuex and our contract chain
   // library, we can simply import them here, while excluding the getter for
   // `currentGroupState`, and redefining it here based on the Vuex rootState.
-  ..._.omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
-  ..._.omit(sbp('gi.contracts/identity/getters'), ['currentIdentityState']),
-  ..._.omit(sbp('gi.contracts/chatroom/getters'), ['currentChatRoomState']),
+  // ..._.omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
+  // ..._.omit(sbp('gi.contracts/identity/getters'), ['currentIdentityState']),
+  // ..._.omit(sbp('gi.contracts/chatroom/getters'), ['currentChatRoomState']),
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },

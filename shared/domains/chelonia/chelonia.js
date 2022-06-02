@@ -50,14 +50,16 @@ export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)
 // 4 => 'group'
 // 5 => 'payment'
 
-sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
   // https://gitlab.okturtles.org/okturtles/group-income/-/wikis/E2E-Protocol/Framework.md#alt-names
   'chelonia/_init': function () {
     this.config = {
+      connectionURL: null, // override!
       decryptFn: JSON.parse, // override!
       encryptFn: JSON.stringify, // override!
       stateSelector: 'chelonia/private/state', // override to integrate with, for example, vuex
+      contractManifests: {}, // override! contract names => manifest hashes
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
       reactiveDel: (obj, key) => { delete obj[key] },
@@ -93,11 +95,18 @@ sbp('sbp/selectors/register', {
       return stack
     }
   },
-  'chelonia/configure': function (config: Object) {
+  'chelonia/configure': async function (config: Object) {
     merge(this.config, config)
     // merge will strip the hooks off of config.hooks when merging from the root of the object
     // because they are functions and cloneDeep doesn't clone functions
     merge(this.config.hooks, config.hooks || {})
+    for (const contractName in config.contractCodeMap) {
+      let manifestURL = this.config.contractCodeMap[contractName]
+      if (!manifestURL.startsWith('http')) {
+        manifestURL = `${this.config.connectionURL}/file/${manifestURL}`
+      }
+      await sbp('chelonia/private/loadManifest', manifestURL)
+    }
   },
   'chelonia/connect': function (): Object {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')
@@ -320,13 +329,16 @@ sbp('sbp/selectors/register', {
     const { contractName, hooks, publishOptions } = params
     const contract = this.contracts[contractName]
     if (!contract) throw new Error(`contract not defined: ${contractName}`)
-    const contractMsg = GIMessage.createV1_0(null, null, [
-      GIMessage.OP_CONTRACT,
-      ({
-        type: contractName,
-        keyJSON: 'TODO: add group public key here'
-      }: GIOpContract)
-    ])
+    const contractMsg = GIMessage.createV1_0(null, null,
+      [
+        GIMessage.OP_CONTRACT,
+        ({
+          type: contractName,
+          keyJSON: 'TODO: add group public key here'
+        }: GIOpContract)
+      ],
+      this.config.contractManifests[contractName]
+    )
     hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions)
     const msg = await sbp('chelonia/out/actionEncrypted', {
@@ -361,7 +373,7 @@ sbp('sbp/selectors/register', {
   'chelonia/out/propDel': async function () {
 
   }
-})
+}): string[])
 
 function contractFromAction (contracts: Object, action: string): Object {
   const regexResult = ACTION_REGEX.exec(action)
@@ -383,10 +395,12 @@ async function outEncryptedOrUnencryptedAction (
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
-  const message = GIMessage.createV1_0(contractID, previousHEAD, [
-    opType,
-    opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage)
-  ]
+  const message = GIMessage.createV1_0(contractID, previousHEAD,
+    [
+      opType,
+      opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage)
+    ],
+    this.config.contractManifests[contract.name]
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
   hooks && hooks.prepublish && hooks.prepublish(message)

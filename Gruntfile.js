@@ -53,6 +53,8 @@ function pick (o, props) {
   return x
 }
 
+const clone = o => JSON.parse(JSON.stringify(o))
+
 Object.assign(process.env, applyPortShift(process.env))
 
 process.env.GI_VERSION = `${version}@${new Date().toISOString()}`
@@ -159,7 +161,7 @@ module.exports = (grunt) => {
     // Native options used when building the main entry point.
     main: {
       assetNames: '../css/[name]',
-      entryPoints: [`${srcDir}/main.js`],
+      entryPoints: [`${srcDir}/main.js`, `${srcDir}/main-sbp.js`],
       external: ['/assets/js/common.js']
     },
     // Native options used when building our service worker(s).
@@ -177,13 +179,14 @@ module.exports = (grunt) => {
     entryPoints: [`${srcDir}/common.js`]
   }
   esbuildOptionBags.contracts = {
-    ...pick(esbuildOptionBags.default, ['format', 'define', 'bundle', 'watch']),
+    ...pick(clone(esbuildOptionBags.default), ['format', 'define', 'bundle', 'watch']),
     splitting: false,
     outdir: 'frontend/assets/contracts',
-    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`],
-    external: ['@sbp/sbp']
+    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`]
   }
-  esbuildOptionBags.contractsSlim = JSON.parse(JSON.stringify(esbuildOptionBags.contracts))
+  // prevent contract hash from changing each time we build them
+  esbuildOptionBags.contracts.define['process.env.GI_VERSION'] = "'x.x.x'"
+  esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
   esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
   esbuildOptionBags.contractsSlim.external = ['/assets/js/common.js']
 
@@ -412,6 +415,9 @@ module.exports = (grunt) => {
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
     const defaultPlugins = [aliasPlugin, flowRemoveTypesPlugin]
+    const sbpAliasPlugin = createAliasPlugin({
+      entries: { '@sbp/sbp': './frontend/common-sbp.js' }
+    })
 
     const buildMain = createEsbuildTask({
       ...esbuildOptionBags.default,
@@ -425,21 +431,20 @@ module.exports = (grunt) => {
       plugins: defaultPlugins
     })
     const buildCommon = createEsbuildTask({
-      ...esbuildOptionBags.common, plugins: defaultPlugins
+      ...esbuildOptionBags.common, plugins: [...defaultPlugins, sbpAliasPlugin]
     })
     const buildContracts = createEsbuildTask({
       ...esbuildOptionBags.contracts,
       plugins: [
         ...defaultPlugins,
+        sbpAliasPlugin,
         createAliasPlugin({ // special alias plugin so that common.js gets inlined
-          entries: {
-            '/assets/js/common.js': './frontend/common.js'
-          }
+          entries: { '/assets/js/common.js': './frontend/common.js' }
         })
       ]
     })
     const buildContractsSlim = createEsbuildTask({
-      ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
+      ...esbuildOptionBags.contractsSlim, plugins: [...defaultPlugins, sbpAliasPlugin]
     })
 
     await Promise.all([buildMain.run(), buildServiceWorkers.run(), buildCommon.run(), buildContracts.run(), buildContractsSlim.run()]).catch(error => {
@@ -508,6 +513,7 @@ module.exports = (grunt) => {
             if (filePath.startsWith(serviceWorkerDir)) {
               await buildServiceWorkers.run({ fileEventName, filePath })
             } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
+              // TODO: build appropriate other files
               await buildMain.run({ fileEventName, filePath })
             }
           } catch (error) {

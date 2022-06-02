@@ -58,8 +58,7 @@ import {
   INVITE_INITIAL_CREATOR,
   INVITE_STATUS,
   PROFILE_STATUS,
-  INVITE_EXPIRES_IN_DAYS,
-  ChelErrorDBBadPreviousHEAD
+  INVITE_EXPIRES_IN_DAYS
 } from "/assets/js/common.js";
 function initGroupProfile(contractID, joinedDate) {
   return {
@@ -801,8 +800,7 @@ sbp("chelonia/defineContract", {
       "gi.contracts/group/malformedMutation": {
         validate: objectOf({ errorType: string, sideEffect: optional(boolean) }),
         process({ data }) {
-          const ErrorsTypes = { ChelErrorDBBadPreviousHEAD, ...Errors };
-          const ErrorType = ErrorsTypes[data.errorType];
+          const ErrorType = Errors[data.errorType];
           if (data.sideEffect)
             return;
           if (ErrorType) {

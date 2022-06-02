@@ -44,6 +44,7 @@ export class GIMessage {
     contractID: string | null = null,
     previousHEAD: string | null = null,
     op: GIOp,
+    manifest: string,
     signatureFn?: Function = defaultSignatureFn
   ): this {
     const message = {
@@ -51,6 +52,7 @@ export class GIMessage {
       previousHEAD,
       contractID,
       op,
+      manifest,
       // the nonce makes it difficult to predict message contents
       // and makes it easier to prevent conflicts during development
       nonce: Math.random()

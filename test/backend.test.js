@@ -58,17 +58,6 @@ const vuexState = {
 
 // this is to ensure compatibility between frontend and test/backend.test.js
 sbp('okTurtles.data/set', 'API_URL', process.env.API_URL)
-sbp('chelonia/configure', {
-  connectionURL: process.env.API_URL,
-  stateSelector: 'state/vuex/state',
-  skipSideEffects: true,
-  connectionOptions: {
-    reconnectOnDisconnection: false,
-    reconnectOnOnline: false,
-    reconnectOnTimeout: false,
-    timeout: 3000
-  }
-})
 sbp('sbp/selectors/register', {
   // for handling the loggedIn metadata() in Contracts.js
   'state/vuex/state': () => {
@@ -90,9 +79,27 @@ sbp('sbp/selectors/register', {
 //   console.log(`[sbp] ${selector}:`, data)
 // })
 
-describe('Full walkthrough', function () {
+describe('Full walkthrough', async function () {
   const users = {}
   const groups = {}
+
+  await sbp('chelonia/configure', {
+    connectionURL: process.env.API_URL,
+    stateSelector: 'state/vuex/state',
+    skipSideEffects: true,
+    connectionOptions: {
+      reconnectOnDisconnection: false,
+      reconnectOnOnline: false,
+      reconnectOnTimeout: false,
+      timeout: 3000
+    },
+    contractManifests: {
+      'gi.contracts/group': '21XWnNGiDmojtom5o8sEpqX3D77Y6b8WomwoiCBMnemCmv2Nu1',
+      'gi.contracts/identity': '21XWnNPUsrWNi5G616adpkXfrBrAvcxzWEPSQ4XCbV1g2mxR43',
+      'gi.contracts/mailbox': '21XWnNFWAMRm9ua6kHs9zdpqWi2UfL1Sihg5N4fWj9PsbK2uaW',
+      'gi.contracts/chatroom': '21XWnNXfkRhksK4AYHRmthbQwwhyuLpebmJoT3mBv8uYEUdQry'
+    }
+  })
 
   function login (user) {
     // we set this so that the metadata on subsequent messages is properly filled in

@@ -31,15 +31,11 @@
 
 // import SBP stuff before anything else so that domains register themselves before called
 import sbp from '@sbp/sbp'
-import '@sbp/okturtles.data'
-import '@sbp/okturtles.events'
-import '@sbp/okturtles.eventqueue'
+// import '@sbp/okturtles.data'
+// import '@sbp/okturtles.events'
+// import '@sbp/okturtles.eventqueue'
 export { sbp }
 export { default as Vue } from 'vue'
-// export { default as nacl } from 'nacl' // TODO: double-check if this is really needed here
-export * from '~/shared/domains/chelonia/chelonia.js'
-export * from '~/shared/domains/chelonia/events.js'
-export * from '~/shared/domains/chelonia/errors.js'
 export * from '~/shared/functions.js'
 export * from './utils/flowTyper.js'
 export * as _ from './utils/giLodash.js'
@@ -53,6 +49,7 @@ export * from './views/utils/translations.js'
 export { default as L } from './views/utils/translations.js'
 export * from './model/errors.js'
 export * as Errors from './model/errors.js'
+// TODO: we probably don't want these "shared" files below to be part of the common file...
 export * from './model/contracts/shared/types.js'
 export * from './model/contracts/shared/functions.js'
 export * from './model/contracts/shared/constants.js'

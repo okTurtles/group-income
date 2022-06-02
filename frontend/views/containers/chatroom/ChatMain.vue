@@ -88,14 +88,14 @@
 <script>
 import {
   sbp,
-  GIMessage,
   MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE,
   createMessage,
   proximityDate, MINS_MILLIS,
   cloneDeep,
-  CHATROOM_MESSAGE_ACTION,
-  CONTRACT_IS_SYNCING
+  CHATROOM_MESSAGE_ACTION
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
