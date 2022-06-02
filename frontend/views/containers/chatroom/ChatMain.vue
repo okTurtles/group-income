@@ -339,7 +339,7 @@ export default ({
           } else {
             this.$refs.conversation && this.$refs.conversation.scroll({
               left: 0,
-              top: this.$refs.conversation.scrollTopMax,
+              top: this.$refs.conversation.scrollHeight,
               behavior: 'smooth'
             })
           }
