@@ -490,7 +490,8 @@ export default ({
       if (!this.$refs.conversation) {
         this.ephemeral.scrolledDistance = 0
       } else {
-        this.ephemeral.scrolledDistance = this.$refs.conversation.scrollTopMax - curScrollTop
+        const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
+        this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
       }
 
       if (!this.summary.joined) {
