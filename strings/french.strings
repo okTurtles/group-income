@@ -78,9 +78,6 @@
 /* MISSING TRANSLATION - views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description" = "Description";
 
-/* MISSING TRANSLATION - views/containers/chatroom/SendArea.vue */
-"Jump to latest message" = "Jump to latest message";
-
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed." = "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.";
 
@@ -917,6 +914,9 @@
 
 /* views/containers/chatroom/SendArea.vue */
 "Create poll" = "Créer un sondage";
+
+/* views/containers/chatroom/SendArea.vue */
+"Jump to latest message" = "Aller au dernier message";
 
 /* views/containers/chatroom/SendArea.vue */
 "Replying to {replyingTo}: \"{replyingMessage}\"" = "Répondre à {replyingTo} : \"{replyingMessage}\"";
