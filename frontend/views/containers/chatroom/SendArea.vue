@@ -7,7 +7,7 @@
     v-if='scrolledUp && !replyingMessage'
     @click='$emit("jump-to-latest")'
   )
-    i18n To the latest message
+    i18n Jump to latest message
     button.is-icon-small
       i.icon-arrow-down
   .c-replying-wrapper

@@ -226,6 +226,9 @@ export default ({
 }
 
 .c-replying {
+  border-left: 2px;
+  border-color: #dbdbdb; // var(--text_1);
+  border-style: none none none solid;
   font-size: 0.75rem;
   color: var(--text_1);
   font-style: italic;
@@ -234,6 +237,7 @@ export default ({
   &:hover {
     cursor: pointer;
     color: var(--text_2);
+    border-color: var(--text_1); // var(--text_2);
   }
 }
 

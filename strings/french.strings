@@ -78,6 +78,9 @@
 /* MISSING TRANSLATION - views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description" = "Description";
 
+/* MISSING TRANSLATION - views/containers/chatroom/SendArea.vue */
+"Jump to latest message" = "Jump to latest message";
+
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed." = "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.";
 
@@ -143,6 +146,9 @@
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "Proposal refused with {nay} against out of {total} total votes." = "Proposal refused with {nay} against out of {total} total votes.";
+
+/* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
+"Info" = "Info";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Appearence.vue */
 "Animations" = "Animations";
