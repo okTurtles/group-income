@@ -571,7 +571,7 @@ export default ({
 .c-body-conversation {
   margin-right: 1.5rem;
   padding: 2rem 0;
-  overflow-y: scroll;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
