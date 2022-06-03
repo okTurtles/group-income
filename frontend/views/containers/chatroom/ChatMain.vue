@@ -339,7 +339,7 @@ export default ({
           } else {
             this.$refs.conversation && this.$refs.conversation.scroll({
               left: 0,
-              top: this.$refs.conversation.scrollTopMax,
+              top: this.$refs.conversation.scrollHeight,
               behavior: 'smooth'
             })
           }
@@ -490,7 +490,8 @@ export default ({
       if (!this.$refs.conversation) {
         this.ephemeral.scrolledDistance = 0
       } else {
-        this.ephemeral.scrolledDistance = this.$refs.conversation.scrollTopMax - curScrollTop
+        const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
+        this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
       }
 
       if (!this.summary.joined) {
@@ -571,7 +572,7 @@ export default ({
 .c-body-conversation {
   margin-right: 1.5rem;
   padding: 2rem 0;
-  overflow-y: scroll;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
