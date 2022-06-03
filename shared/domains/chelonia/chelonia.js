@@ -28,6 +28,7 @@ export type ChelRegParams = {
 }
 
 export type ChelActionParams = {
+  // TODO: allow specifying destination server here
   action: string;
   contractID: string;
   data: Object;
@@ -55,11 +56,19 @@ export default (sbp('sbp/selectors/register', {
   // https://gitlab.okturtles.org/okturtles/group-income/-/wikis/E2E-Protocol/Framework.md#alt-names
   'chelonia/_init': function () {
     this.config = {
+      // TODO: handle connecting to multiple servers for federation
       connectionURL: null, // override!
       decryptFn: JSON.parse, // override!
       encryptFn: JSON.stringify, // override!
       stateSelector: 'chelonia/private/state', // override to integrate with, for example, vuex
-      contractManifests: {}, // override! contract names => manifest hashes
+      contracts: {
+        defaults: {
+          exposedGlobals: {},
+          preferSlim: false
+        },
+        overrides: {}, // override default values per-contract
+        manifests: {} // override! contract names => manifest hashes
+      },
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
       reactiveDel: (obj, key) => { delete obj[key] },
@@ -100,14 +109,12 @@ export default (sbp('sbp/selectors/register', {
     // merge will strip the hooks off of config.hooks when merging from the root of the object
     // because they are functions and cloneDeep doesn't clone functions
     merge(this.config.hooks, config.hooks || {})
-    for (const contractName in config.contractCodeMap) {
-      let manifestURL = this.config.contractCodeMap[contractName]
-      if (!manifestURL.startsWith('http')) {
-        manifestURL = `${this.config.connectionURL}/file/${manifestURL}`
-      }
-      await sbp('chelonia/private/loadManifest', manifestURL)
+    const manifests = this.config.contracts.manifests
+    for (const contractName in manifests) {
+      await sbp('chelonia/private/loadManifest', manifests[contractName])
     }
   },
+  // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (): Object {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')
     if (!this.config.connectionOptions) throw new Error('config.connectionOptions missing')

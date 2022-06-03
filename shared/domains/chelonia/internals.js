@@ -11,17 +11,35 @@ import 'ses'
 
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
+const currentlyLoadedContracts = {}
+
 export default (sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
   'chelonia/private/state': function () {
     return this.state
   },
-  'chelonia/private/loadManifest': async function (manifestURL: string) {
+  'chelonia/private/loadManifest': async function (manifestHash: string) {
+    const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
     // TODO: load manifests in such a way that it also works with remote contracts that are named the same
-    const manifest = await fetch(manifestURL).then(handleFetchResult('text'))
+    const manifest = await fetch(manifestURL).then(handleFetchResult('json'))
     console.log('got manifest:', manifest)
+    const body = JSON.parse(manifest.body)
+    const contractInfo = this.config.contracts.defaults.preferSlim ? body.contractSlim : body.contract
     // PLAN: when a new contract version is encountered, unregister the selectors that
     //       were previously registered, and re-register the new ones.
+    let loadContract = false
+    if (!currentlyLoadedContracts[contractInfo.file]) {
+      currentlyLoadedContracts[contractInfo.file] = {
+        hash: contractInfo.hash
+      }
+      loadContract = true
+    } else if (currentlyLoadedContracts[contractInfo.file].hash !== contractInfo.hash) {
+      // TODO: unload/unregister previous contract
+      loadContract = true
+    }
+    if (loadContract) {
+      
+    }
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},

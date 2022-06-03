@@ -102,11 +102,17 @@ async function startApp () {
     stateSelector: 'state/vuex/state',
     reactiveSet: Vue.set,
     reactiveDel: Vue.delete,
-    contractManifests: {
-      'gi.contracts/group': '21XWnNG5h1M8dkT9HaKpeZugeXXzaAEdqCY1nTKAKtYBVsBW7F',
-      'gi.contracts/identity': '21XWnNRqsN4vhWiJHaQnhCTwnWddmJUH7iMcM2NbLBXze8dYB5',
-      'gi.contracts/mailbox': '21XWnNNwXEJErrZNtoHPe91BKg8egFWsn8kea4FTeCFXvUWu72',
-      'gi.contracts/chatroom': '21XWnNV4d2tzFGuBrQLSAvyNQLQY45xaVqk1kxKjbYLjud3d95'
+    contracts: {
+      defaults: {
+        exposedGlobals: { sbp },
+        preferSlim: true
+      },
+      manifests: {
+        'gi.contracts/group': '21XWnNG5h1M8dkT9HaKpeZugeXXzaAEdqCY1nTKAKtYBVsBW7F',
+        'gi.contracts/identity': '21XWnNRqsN4vhWiJHaQnhCTwnWddmJUH7iMcM2NbLBXze8dYB5',
+        'gi.contracts/mailbox': '21XWnNNwXEJErrZNtoHPe91BKg8egFWsn8kea4FTeCFXvUWu72',
+        'gi.contracts/chatroom': '21XWnNV4d2tzFGuBrQLSAvyNQLQY45xaVqk1kxKjbYLjud3d95'
+      }
     },
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {
