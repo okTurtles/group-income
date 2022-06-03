@@ -36,9 +36,23 @@ export default (sbp('sbp/selectors/register', {
     } else if (currentlyLoadedContracts[contractInfo.file].hash !== contractInfo.hash) {
       // TODO: unload/unregister previous contract
       loadContract = true
+      currentlyLoadedContracts[contractInfo.file].hash = contractInfo.hash
     }
     if (loadContract) {
-      
+      const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`)
+        .then(handleFetchResult('text'))
+      console.debug('loading', contractInfo.file)
+      // TODO: this !!!! https://github.com/evanw/esbuild/issues/1944
+      //       and if it works then see if it also works with iife => esm again
+      // eslint-disable-next-line no-new-func
+      new Function(source)()
+      // eslint-disable-next-line no-undef
+      // const vm = new Compartment({
+      //   ...this.config.contracts.defaults.exposedGlobals,
+      //   console
+      // })
+      // vm.evaluate(source)
+      // currentlyLoadedContracts[contractInfo.file].vm = vm
     }
   },
   // used by, e.g. 'chelonia/contract/wait'

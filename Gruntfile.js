@@ -182,8 +182,9 @@ module.exports = (grunt) => {
   }
   esbuildOptionBags.contracts = {
     ...pick(clone(esbuildOptionBags.default), [
-      'format', 'define', 'bundle', 'watch', 'incremental'
+      'define', 'bundle', 'watch', 'incremental'
     ]),
+    format: 'iife',
     splitting: false,
     outdir: 'frontend/assets/contracts',
     entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`]
