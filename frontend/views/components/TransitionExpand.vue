@@ -1,7 +1,5 @@
 <script>
-import {
-  sbp
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 
 // From https://markus.oberlehner.net/blog/transition-to-height-auto-with-vue/
 export default ({

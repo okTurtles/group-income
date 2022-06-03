@@ -26,18 +26,18 @@
 </template>
 
 <script>
-import {
-  sbp,
-  OPEN_MODAL,
-  PAYMENT_NOT_RECEIVED,
-  humanDate,
-  L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
 import { MenuItem } from '@components/menu/index.js'
+import { OPEN_MODAL } from '@utils/events.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
+import { humanDate } from '@model/contracts/shared/time.js'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 // TODO: handle showing PAYMENT_CANCELLED ?
 

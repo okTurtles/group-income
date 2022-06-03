@@ -9,10 +9,8 @@
 </template>
 
 <script>
-import {
-  sbp,
-  OPEN_MODAL
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
+import { OPEN_MODAL } from '@utils/events.js'
 import CalloutCard from '@components/CalloutCard.vue'
 import SvgConversation from '@svgs/conversation.svg'
 

@@ -130,15 +130,13 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 </template>
 
 <script>
-import {
-  sbp,
-  OPEN_MODAL,
-  currencies
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
+import { OPEN_MODAL } from '@utils/events.js'
 import CalloutCard from '@components/CalloutCard.vue'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
+import currencies from '@model/contracts/shared/currencies.js'
 import Contribution from '@containers/contributions/Contribution.vue'
 import ContributionItem from '@containers/contributions/ContributionItem.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'

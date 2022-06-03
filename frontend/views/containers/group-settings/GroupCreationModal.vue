@@ -49,17 +49,17 @@ modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle
 </template>
 
 <script>
-import {
-  sbp,
-  RULE_PERCENTAGE, RULE_DISAGREEMENT,
-  proposals,
-  PROPOSAL_GENERIC,
-  currencies, mincomePositive, normalizeCurrency,
-  L,
-  dateToPeriodStamp, addTimeToDate, DAYS_MILLIS
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
+import proposals from '@model/contracts/shared/voting/proposals.js'
+import { PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
+import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'

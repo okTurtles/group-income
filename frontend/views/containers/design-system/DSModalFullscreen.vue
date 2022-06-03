@@ -29,11 +29,9 @@ modal-base-template(:class='{ "has-background": background }' :a11yTitle='L("Mod
 </template>
 
 <script>
-import {
-  sbp,
-  OPEN_MODAL
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({
   name: 'ModalDSNestedExample',

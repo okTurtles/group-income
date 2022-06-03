@@ -4,10 +4,8 @@
     component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
-import {
-  sbp,
-  OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
+import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 
 export default ({
   name: 'Modal',

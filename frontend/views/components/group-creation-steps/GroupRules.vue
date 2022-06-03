@@ -31,9 +31,9 @@
 
 <script>
 import {
-  RULE_PERCENTAGE, RULE_DISAGREEMENT,
   L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import VotingRulesInput from '@components/VotingRulesInput.vue'
 

@@ -3,22 +3,17 @@
 // This file handles application-level state (as opposed to component-level
 // state) per: http://vuex.vuejs.org/en/intro.html
 
+import sbp from '@sbp/sbp'
 import {
-  // imports from the same underlying files are grouped together on the same line
-  sbp,
-  Vue,
-  CHATROOM_PRIVACY_LEVEL,
-  _,
-  unadjustedDistribution, adjustedDistribution
+  Vue
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
 import Colors from './colors.js'
-// import './contracts/mailbox.js'
-// import './contracts/identity.js'
-// import './contracts/chatroom.js'
-// import './contracts/group.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
+import { unadjustedDistribution, adjustedDistribution } from './contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
@@ -159,9 +154,9 @@ const getters = {
   // Since the getter functions are compatible between Vuex and our contract chain
   // library, we can simply import them here, while excluding the getter for
   // `currentGroupState`, and redefining it here based on the Vuex rootState.
-  // ..._.omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
-  // ..._.omit(sbp('gi.contracts/identity/getters'), ['currentIdentityState']),
-  // ..._.omit(sbp('gi.contracts/chatroom/getters'), ['currentChatRoomState']),
+  // ...omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
+  // ...omit(sbp('gi.contracts/identity/getters'), ['currentIdentityState']),
+  // ...omit(sbp('gi.contracts/chatroom/getters'), ['currentChatRoomState']),
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },
@@ -480,7 +475,7 @@ const getters = {
     }
   },
   chatRoomsInDetail (state, getters) {
-    const chatRoomsInDetail = _.merge({}, getters.getChatRooms)
+    const chatRoomsInDetail = merge({}, getters.getChatRooms)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&
@@ -506,7 +501,7 @@ const getters = {
 }
 
 const store: any = new Vuex.Store({
-  state: _.cloneDeep(initialState),
+  state: cloneDeep(initialState),
   mutations,
   getters,
   modules: {
@@ -516,7 +511,7 @@ const store: any = new Vuex.Store({
 })
 
 // save the state each time it's modified, but debounce it to avoid saving too frequently
-const debouncedSave = _.debounce(() => sbp('state/vuex/save'), 500)
+const debouncedSave = debounce(() => sbp('state/vuex/save'), 500)
 store.subscribe(debouncedSave) // for e.g saving notifications that are markedAsRead
 // since Chelonia updates do not pass through calls to 'commit', also save upon EVENT_HANDLED
 sbp('okTurtles.events/on', EVENT_HANDLED, debouncedSave)
@@ -527,7 +522,7 @@ sbp('sbp/filters/selector/add', 'gi.actions/identity/logout', function () {
 // Since Chelonia directly modifies contract state without using 'commit', we
 // need this hack to tell the vuex developer tool it needs to refresh the state
 if (process.env.NODE_ENV === 'development') {
-  sbp('okTurtles.events/on', EVENT_HANDLED, _.debounce(() => {
+  sbp('okTurtles.events/on', EVENT_HANDLED, debounce(() => {
     store.commit('noop')
   }, 500))
 }

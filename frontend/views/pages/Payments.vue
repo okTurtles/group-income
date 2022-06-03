@@ -102,21 +102,21 @@ page(
 </template>
 
 <script>
-import {
-  sbp,
-  OPEN_MODAL,
-  PAYMENT_NOT_RECEIVED,
-  L, LTags,
-  dateToMonthstamp, humanDate
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import Search from '@components/Search.vue'
+import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
+import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
+import {
+  L, LTags
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'Payments',

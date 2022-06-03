@@ -1,13 +1,9 @@
 'use strict'
 
-// NOTE: within the files being imported in common.js (such as this one)
-//       we can and *must* import these values directly from the files
-//       as opposed to through '/assets/js/common.js', as otherwise it
-//       would result in a circular import
 import {
   objectOf, objectMaybeOf, arrayOf, unionOf,
   string, number, optional, mapOf, literalOf
-} from '~/frontend/utils/flowTyper.js'
+} from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL,
   MESSAGE_TYPES, MESSAGE_NOTIFICATIONS,

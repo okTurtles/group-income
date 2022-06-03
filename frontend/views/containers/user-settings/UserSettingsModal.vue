@@ -10,10 +10,8 @@ modal-base-template(class='has-background' :a11yTitle='L("Settings")')
 </template>
 
 <script>
-import {
-  sbp,
-  SET_MODAL_QUERIES
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
+import { SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import TabWrapper from '@components/tabs/TabWrapper.vue'
 import settings from './settings.js'

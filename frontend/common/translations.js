@@ -2,10 +2,10 @@
 
 // since this file is loaded by common.js, we avoid circular imports and directly import
 import sbp from '@sbp/sbp'
-import { defaultConfig as defaultDompurifyConfig } from '~/frontend/views/utils/vSafeHtml.js'
+import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.js'
 import dompurify from 'dompurify'
 import Vue from 'vue'
-import template from '~/frontend/utils/stringTemplate.js'
+import template from './stringTemplate.js'
 
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags

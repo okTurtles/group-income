@@ -14,15 +14,15 @@ callout-card(
 </template>
 
 <script>
-import {
-  sbp,
-  OPEN_MODAL,
-  L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
+import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import CalloutCard from '@components/CalloutCard.vue'
 import SvgHello from '@svgs/hello.svg'
 import SvgContributions from '@svgs/contributions.svg'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'AddIncomeDetailsWidget',

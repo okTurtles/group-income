@@ -107,11 +107,9 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import {
-  sbp,
-  L, LTags,
-  CHATROOM_PRIVACY_LEVEL,
-  CHATROOM_DETAILS_UPDATED
+  L, LTags
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters, mapState } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
@@ -119,6 +117,7 @@ import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
 
 const initDetails = {
   name: '',

@@ -13,10 +13,8 @@
 </template>
 
 <script>
-import {
-  sbp,
-  REPLACE_MODAL
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
+import { REPLACE_MODAL } from '@utils/events.js'
 import LoginForm from '@containers/access/LoginForm.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 

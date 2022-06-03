@@ -91,16 +91,13 @@ page.c-page
 </template>
 
 <script>
-import {
-  sbp,
-  OPEN_MODAL,
-  currencies,
-  L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { mapState, mapGetters } from 'vuex'
+import { OPEN_MODAL } from '@utils/events.js'
 import { required } from 'vuelidate/lib/validators'
+import currencies from '@model/contracts/shared/currencies.js'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
@@ -108,6 +105,9 @@ import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
 import GroupRulesSettings from '@containers/group-settings/GroupRulesSettings.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'GroupSettings',

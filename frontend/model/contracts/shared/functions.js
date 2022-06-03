@@ -1,12 +1,8 @@
 'use strict'
 
-// NOTE: within the files being imported in common.js (such as this one)
-//       we can and *must* import these values directly from the files
-//       as opposed to through '/assets/js/common.js', as otherwise it
-//       would result in a circular import
 import sbp from '@sbp/sbp'
 import { INVITE_STATUS, INVITE_EXPIRES_IN_DAYS, MESSAGE_TYPES } from './constants.js'
-import { DAYS_MILLIS } from '~/frontend/utils/time.js'
+import { DAYS_MILLIS } from './time.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // !!!!!!!!!!!!!!!

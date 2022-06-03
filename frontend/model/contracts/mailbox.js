@@ -1,13 +1,11 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
 import {
-  // imports from the same underlying files are grouped together on the same line
-  sbp,
-  Vue,
-  objectOf, string, object, optional,
-  mailType
-// eslint-disable-next-line import/no-absolute-path
-} from '/assets/js/common.js'
+  Vue
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { mailType } from './shared/types.js'
+import { objectOf, string, object, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/mailbox',

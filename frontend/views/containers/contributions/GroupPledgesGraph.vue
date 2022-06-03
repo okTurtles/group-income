@@ -45,10 +45,8 @@
 </template>
 
 <script>
-import {
-  currencies,
-  mincomeProportional
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import currencies from '@model/contracts/shared/currencies.js'
+import mincomeProportional from '@model/contracts/shared/distribution/mincome-proportional.js'
 import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'

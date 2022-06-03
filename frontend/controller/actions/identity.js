@@ -1,16 +1,15 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
 import {
-  sbp,
   GIErrorUIRuntimeError,
-  L, LError,
-  pickWhere, difference,
-  LOGIN, LOGOUT
+  L, LError
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { imageUpload } from '@utils/image.js'
+import { pickWhere, difference } from '@model/contracts/shared/giLodash.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
-
+import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { encryptedAction } from './utils.js'
 
 function generatedLoginState () {

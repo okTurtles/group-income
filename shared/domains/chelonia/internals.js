@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import './db.js'
 import { GIMessage } from './GIMessage.js'
-import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
+import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/model/contracts/shared/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
@@ -20,6 +20,8 @@ export default (sbp('sbp/selectors/register', {
     // TODO: load manifests in such a way that it also works with remote contracts that are named the same
     const manifest = await fetch(manifestURL).then(handleFetchResult('text'))
     console.log('got manifest:', manifest)
+    // PLAN: when a new contract version is encountered, unregister the selectors that
+    //       were previously registered, and re-register the new ones.
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},

@@ -36,8 +36,8 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import {
-  sbp,
   L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapState, mapGetters } from 'vuex'

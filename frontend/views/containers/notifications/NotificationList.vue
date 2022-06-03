@@ -26,13 +26,13 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
+import { timeSince } from '@model/contracts/shared/time.js'
+import AvatarUser from '@components/AvatarUser.vue'
 import {
-  sbp,
-  timeSince,
   L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
-import { mapGetters } from 'vuex'
-import AvatarUser from '@components/AvatarUser.vue'
 
 export default ({
   name: 'NotificationList',

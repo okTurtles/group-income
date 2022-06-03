@@ -34,13 +34,13 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import {
-  sbp,
-  RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers, getPercentFromDecimal,
-  OPEN_MODAL,
   L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
-import { mapGetters } from 'vuex'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 
 export default ({

@@ -27,17 +27,17 @@
 </template>
 
 <script>
-import {
-  sbp,
-  currencies, mincomePositive, normalizeCurrency,
-  L,
-  PROPOSAL_GROUP_SETTING_CHANGE
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
+import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'MincomeProposal',

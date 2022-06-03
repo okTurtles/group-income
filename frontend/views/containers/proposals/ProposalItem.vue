@@ -35,8 +35,13 @@
 </template>
 
 <script>
+import { mapGetters, mapState } from 'vuex'
 import {
-  L,
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import currencies from '@model/contracts/shared/currencies.js'
+import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
+import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_GROUP_SETTING_CHANGE,
@@ -47,12 +52,9 @@ import {
   STATUS_FAILED,
   STATUS_EXPIRED,
   STATUS_CANCELLED,
-  currencies,
-  buildInvitationUrl,
-  VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal,
   INVITE_STATUS
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
-import { mapGetters, mapState } from 'vuex'
+} from '@model/contracts/shared/constants.js'
+import { VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'

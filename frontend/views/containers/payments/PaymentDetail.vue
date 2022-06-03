@@ -29,16 +29,16 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
 </template>
 
 <script>
-import {
-  sbp,
-  L,
-  CLOSE_MODAL, SET_MODAL_QUERIES,
-  currencies,
-  humanDate,
-  cloneDeep
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
+import currencies from '@model/contracts/shared/currencies.js'
+import { humanDate } from '@model/contracts/shared/time.js'
+import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'PaymentDetail',

@@ -15,6 +15,9 @@ message-base(v-bind='$props' @wrapperAction='action')
 
 <script>
 import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import {
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
@@ -23,14 +26,13 @@ import {
   STATUS_PASSED,
   STATUS_EXPIRED,
   STATUS_FAILED,
-  STATUS_CANCELLED,
-  L,
-  humanDate
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+  STATUS_CANCELLED
+} from '@model/contracts/shared/constants.js'
 
 import MessageBase from './MessageBase.vue'
 import SvgHorn from '@svgs/horn.svg'
 import chatroom from '@containers/chatroom/chatroom.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 
 const fakeProposals = {
   inviteKattyId: {

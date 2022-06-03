@@ -1,23 +1,33 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
 import {
-  // imports from the same underlying files are grouped together on the same line
-  sbp, Vue,
-  arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf,
-  votingRules, ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT,
-  proposals, proposalType, proposalSettingsType, archiveProposal,
-  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED,
-  paymentStatusType, paymentType, PAYMENT_COMPLETED,
+  Vue,
   Errors,
-  merge, deepEqualJSONType, omit,
-  addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS,
-  vueFetchInitKV,
-  unadjustedDistribution, adjustedDistribution,
-  currencies, saferFloat,
-  L,
-  inviteType, chatRoomAttributesType,
-  INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
+  L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './shared/voting/rules.js'
+import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
+import {
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED,
+  INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
+} from './shared/constants.js'
+import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
+import { merge, deepEqualJSONType, omit } from './shared/giLodash.js'
+import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
+import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
+import currencies, { saferFloat } from './shared/currencies.js'
+import { inviteType, chatRoomAttributesType } from './shared/types.js'
+import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+
+function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
+  let value = obj[key]
+  if (!value) {
+    Vue.set(obj, key, initialValue)
+    value = obj[key]
+  }
+  return value
+}
 
 function initGroupProfile (contractID: string, joinedDate: string) {
   return {

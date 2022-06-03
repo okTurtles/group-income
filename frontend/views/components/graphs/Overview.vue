@@ -33,9 +33,7 @@ div
 </template>
 
 <script>
-import {
-  currencies
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import currencies from '@model/contracts/shared/currencies.js'
 import { mapGetters } from 'vuex'
 import { GraphLegendItem, Bars } from '@components/graphs/index.js'
 

@@ -10,10 +10,8 @@ message-base(
 </template>
 
 <script>
-import {
-  MESSAGE_VARIANTS
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import MessageBase from './MessageBase.vue'
+import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'Message',

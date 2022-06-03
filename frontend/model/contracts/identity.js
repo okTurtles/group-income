@@ -1,13 +1,12 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
 import {
-  // imports from the same underlying files are grouped together on the same line
-  sbp,
   Vue,
-  objectOf, objectMaybeOf, arrayOf, string, object,
-  merge,
   L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { merge } from './shared/giLodash.js'
+import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/model/contracts/misc/flowTyper.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',

@@ -6,7 +6,7 @@ import '@sbp/okturtles.eventqueue'
 import './internals.js'
 import { CONTRACTS_MODIFIED } from './events.js'
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
-import { merge, cloneDeep, randomHexString, intersection, difference } from '~/frontend/utils/giLodash.js'
+import { merge, cloneDeep, randomHexString, intersection, difference } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // TODO: rename this to ChelMessage

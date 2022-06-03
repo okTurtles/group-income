@@ -38,8 +38,8 @@ form(data-test='signup' @submit.prevent='')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import {
-  sbp,
   L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { required, minLength, email } from 'vuelidate/lib/validators'

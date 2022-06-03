@@ -86,16 +86,8 @@
 </template>
 
 <script>
-import {
-  sbp,
-  MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE,
-  createMessage,
-  proximityDate, MINS_MILLIS,
-  cloneDeep,
-  CHATROOM_MESSAGE_ACTION
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
@@ -107,6 +99,11 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_MESSAGE_ACTION } from '@model/contracts/shared/constants.js'
+import { createMessage } from '@model/contracts/shared/functions.js'
+import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
+import { cloneDeep } from '@model/contracts/shared/giLodash.js'
+import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
   name: 'ChatMain',

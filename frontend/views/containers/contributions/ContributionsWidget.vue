@@ -39,15 +39,15 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import {
-  sbp,
-  OPEN_MODAL,
-  L, LTags,
-  currencies
+  L, LTags
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { mapGetters } from 'vuex'
+import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'
 import ProgressBar from '@components/graphs/Progress.vue'
+import currencies from '@model/contracts/shared/currencies.js'
 
 export default ({
   name: 'ContributionsWidget',

@@ -21,6 +21,9 @@
 // contracts or within the main app, and they will all point to the
 // same sbp function, with the same selectors registered.
 
+// NOTE: potentially useful issue for dealing with "import sbp" in contracts:
+//       https://github.com/evanw/esbuild/issues/1616
+
 import sbp from '@sbp/sbp'
 
 window.sbp = sbp

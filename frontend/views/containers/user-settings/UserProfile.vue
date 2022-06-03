@@ -76,19 +76,19 @@
 </template>
 
 <script>
-import {
-  sbp,
-  OPEN_MODAL,
-  cloneDeep,
-  L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { required, email } from 'vuelidate/lib/validators'
+import { OPEN_MODAL } from '@utils/events.js'
+import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { mapGetters } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'UserProfile',

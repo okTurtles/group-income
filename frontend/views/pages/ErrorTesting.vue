@@ -18,9 +18,7 @@ page
       a.button(@click='sendMalformedSideEffect') Send malformed sideEffect
 </template>
 <script>
-import {
-  sbp
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 

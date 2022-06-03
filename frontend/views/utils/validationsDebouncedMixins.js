@@ -1,6 +1,4 @@
-import {
-  debounce
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { debounce } from '@model/contracts/shared/giLodash.js'
 
 /**
 Methods to debounce vuelidate validations.

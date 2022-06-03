@@ -1,7 +1,7 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
 import {
-  sbp,
   Vue,
   L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path

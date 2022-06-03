@@ -1,5 +1,7 @@
 'use strict'
-import L from '~/frontend/views/utils/translations.js'
+
+// eslint-disable-next-line import/no-absolute-path
+import { L } from '/assets/js/common.js'
 
 export const MINS_MILLIS = 60000
 export const HOURS_MILLIS = 60 * MINS_MILLIS

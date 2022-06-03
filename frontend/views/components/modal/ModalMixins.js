@@ -1,9 +1,7 @@
 'use strict'
 
-import {
-  sbp,
-  CLOSE_MODAL
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
+import { CLOSE_MODAL } from '@utils/events.js'
 import { mapMutations } from 'vuex'
 import ModalClose from './ModalClose.vue'
 

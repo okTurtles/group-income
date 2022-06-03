@@ -35,10 +35,9 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import {
-  sbp,
-  L,
-  MESSAGE_TYPES, MESSAGE_NOTIFICATIONS
+  L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { validationMixin } from 'vuelidate'
 import { mapGetters, mapState } from 'vuex'
@@ -47,6 +46,7 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { MESSAGE_TYPES, MESSAGE_NOTIFICATIONS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'DeleteChannelModal',

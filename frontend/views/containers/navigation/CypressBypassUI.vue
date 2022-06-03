@@ -7,9 +7,7 @@
 </template>
 
 <script>
-import {
-  humanDate
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'CypressBypassUI',

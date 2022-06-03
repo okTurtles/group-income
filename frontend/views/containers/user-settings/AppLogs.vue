@@ -38,12 +38,10 @@
 </template>
 
 <script>
-import {
-  sbp,
-  CAPTURED_LOGS, SET_APP_LOGS_FILTER
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { mapState, mapMutations } from 'vuex'
 import safeLinkTag from '@views/utils/safeLinkTag.js'
+import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { downloadLogs, getLog } from '~/frontend/model/captureLogs.js'
 
 export default ({

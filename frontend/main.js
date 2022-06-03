@@ -1,15 +1,15 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import {
   // imports from the same underlying files are grouped together on the same line
-  sbp,
   Vue,
-  LOGIN, LOGOUT,
   L, LError, LTags
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { LOGIN, LOGOUT } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
@@ -39,13 +39,6 @@ Vue.config.errorHandler = function (err, vm, info) {
 }
 
 async function startApp () {
-  // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
-  //       actions that they shouldn't be generating, which can lead to bugs or trigger the automated
-  //       ban system. Only enable it if you know what you're doing and don't mind the risk.
-  if (process.env.NODE_ENV === 'development' || window.Cypress || process.env.EXPOSE_SBP === 'true') {
-    // In development mode this makes the SBP API available in the devtools console.
-    window.sbp = sbp
-  }
   // NOTE: we setup this global SBP filter and domain regs here
   //       to get logging for all subsequent SBP calls.
   //       In the future we might move it elsewhere.
@@ -110,10 +103,10 @@ async function startApp () {
     reactiveSet: Vue.set,
     reactiveDel: Vue.delete,
     contractManifests: {
-      'gi.contracts/group': '21XWnNTGK3B7b2hKGxhPQ485DjHf8e5gV3wo3B6RCANKuRepUq',
-      'gi.contracts/identity': '21XWnNUjPqfeR3Gckbkk78J5cHf9ho82KBmukJ7kXcdpQ25rWR',
-      'gi.contracts/mailbox': '21XWnNF1ct3uTJYe8fBegCWDGDkYRjoARrVeW5zKyfZDAXHCH2',
-      'gi.contracts/chatroom': '21XWnNT2QVu1Q3VSrBLeybhoMXhzYtyjh7FvX5yeyYpqXoNVce'
+      'gi.contracts/group': '21XWnNG5h1M8dkT9HaKpeZugeXXzaAEdqCY1nTKAKtYBVsBW7F',
+      'gi.contracts/identity': '21XWnNRqsN4vhWiJHaQnhCTwnWddmJUH7iMcM2NbLBXze8dYB5',
+      'gi.contracts/mailbox': '21XWnNNwXEJErrZNtoHPe91BKg8egFWsn8kea4FTeCFXvUWu72',
+      'gi.contracts/chatroom': '21XWnNV4d2tzFGuBrQLSAvyNQLQY45xaVqk1kxKjbYLjud3d95'
     },
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {

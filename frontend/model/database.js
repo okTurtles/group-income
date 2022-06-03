@@ -1,8 +1,6 @@
 'use strict'
 
-import {
-  sbp
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import localforage from 'localforage'
 
 if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {

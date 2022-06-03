@@ -70,14 +70,11 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
 </template>
 
 <script>
-import {
-  sbp,
-  currencies, normalizeCurrency,
-  L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
+import currencies, { normalizeCurrency } from '@model/contracts/shared/currencies.js'
 import PaymentMethods from './PaymentMethods.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -85,6 +82,9 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
+import {
+  L
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 
 export default ({
   name: 'IncomeDetails',

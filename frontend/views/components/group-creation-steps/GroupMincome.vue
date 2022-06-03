@@ -68,10 +68,8 @@
 
 <script>
 import Tooltip from '@components/Tooltip.vue'
-import {
-  currencies,
-  dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import currencies from '@model/contracts/shared/currencies.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'GroupMincome',

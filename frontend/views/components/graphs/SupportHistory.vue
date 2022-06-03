@@ -20,9 +20,7 @@ div(:class='isReady ? "" : "c-ready"')
 </template>
 
 <script>
-import {
-  humanDate
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { humanDate } from '@model/contracts/shared/time.js'
 import { toPercent } from '@view-utils/filters.js'
 import { mapGetters } from 'vuex'
 

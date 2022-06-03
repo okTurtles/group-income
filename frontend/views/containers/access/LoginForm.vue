@@ -28,8 +28,8 @@ form(data-test='login' @submit.prevent='')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import {
-  sbp,
   L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { validationMixin } from 'vuelidate'

@@ -1,28 +1,354 @@
 "use strict";
 
+// frontend/common/common-sbp.js
+var sbp = typeof globalThis !== "undefined" && globalThis.sbp || typeof window !== "undefined" && window.sbp || typeof global !== "undefined" && global.sbp;
+var common_sbp_default = sbp;
+
 // frontend/model/contracts/chatroom.js
 import {
-  sbp,
   Vue,
-  objectOf,
-  string,
-  optional,
-  merge,
-  cloneDeep,
-  L,
-  CHATROOM_NAME_LIMITS_IN_CHARS,
-  CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
-  CHATROOM_ACTIONS_PER_PAGE,
-  CHATROOM_MESSAGES_PER_PAGE,
-  MESSAGE_TYPES,
-  MESSAGE_NOTIFICATIONS,
-  CHATROOM_MESSAGE_ACTION,
-  chatRoomAttributesType,
-  messageType,
-  createMessage,
-  leaveChatRoom,
-  findMessageIdx
+  L as L2
 } from "/assets/js/common.js";
+
+// frontend/model/contracts/shared/giLodash.js
+function cloneDeep(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+function isMergeableObject(val) {
+  const nonNullObject = val && typeof val === "object";
+  return nonNullObject && Object.prototype.toString.call(val) !== "[object RegExp]" && Object.prototype.toString.call(val) !== "[object Date]";
+}
+function merge(obj, src) {
+  for (const key in src) {
+    const clone = isMergeableObject(src[key]) ? cloneDeep(src[key]) : void 0;
+    if (clone && isMergeableObject(obj[key])) {
+      merge(obj[key], clone);
+      continue;
+    }
+    obj[key] = clone || src[key];
+  }
+  return obj;
+}
+
+// frontend/model/contracts/shared/constants.js
+var CHATROOM_NAME_LIMITS_IN_CHARS = 50;
+var CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280;
+var CHATROOM_ACTIONS_PER_PAGE = 40;
+var CHATROOM_MESSAGES_PER_PAGE = 20;
+var CHATROOM_MESSAGE_ACTION = "chatroom-message-action";
+var CHATROOM_TYPES = {
+  INDIVIDUAL: "individual",
+  GROUP: "group"
+};
+var CHATROOM_PRIVACY_LEVEL = {
+  GROUP: "chatroom-privacy-level-group",
+  PRIVATE: "chatroom-privacy-level-private",
+  PUBLIC: "chatroom-privacy-level-public"
+};
+var MESSAGE_TYPES = {
+  POLL: "message-poll",
+  TEXT: "message-text",
+  INTERACTIVE: "message-interactive",
+  NOTIFICATION: "message-notification"
+};
+var MESSAGE_NOTIFICATIONS = {
+  ADD_MEMBER: "add-member",
+  JOIN_MEMBER: "join-member",
+  LEAVE_MEMBER: "leave-member",
+  KICK_MEMBER: "kick-member",
+  UPDATE_DESCRIPTION: "update-description",
+  UPDATE_NAME: "update-name",
+  DELETE_CHANNEL: "delete-channel",
+  VOTE: "vote"
+};
+var MAIL_TYPE_MESSAGE = "message";
+var MAIL_TYPE_FRIEND_REQ = "friend-request";
+
+// frontend/model/contracts/misc/flowTyper.js
+var EMPTY_VALUE = Symbol("@@empty");
+var isEmpty = (v) => v === EMPTY_VALUE;
+var isNil = (v) => v === null;
+var isUndef = (v) => typeof v === "undefined";
+var isBoolean = (v) => typeof v === "boolean";
+var isNumber = (v) => typeof v === "number";
+var isString = (v) => typeof v === "string";
+var isObject = (v) => !isNil(v) && typeof v === "object";
+var isFunction = (v) => typeof v === "function";
+var getType = (typeFn, _options) => {
+  if (isFunction(typeFn.type))
+    return typeFn.type(_options);
+  return typeFn.name || "?";
+};
+var TypeValidatorError = class extends Error {
+  expectedType;
+  valueType;
+  value;
+  typeScope;
+  sourceFile;
+  constructor(message, expectedType, valueType, value, typeName = "", typeScope = "") {
+    const errMessage = message || `invalid "${valueType}" value type; ${typeName || expectedType} type expected`;
+    super(errMessage);
+    this.expectedType = expectedType;
+    this.valueType = valueType;
+    this.value = value;
+    this.typeScope = typeScope || "";
+    this.sourceFile = this.getSourceFile();
+    this.message = `${errMessage}
+${this.getErrorInfo()}`;
+    this.name = this.constructor.name;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, TypeValidatorError);
+    }
+  }
+  getSourceFile() {
+    const fileNames = this.stack.match(/(\/[\w_\-.]+)+(\.\w+:\d+:\d+)/g) || [];
+    return fileNames.find((fileName) => fileName.indexOf("/flowTyper-js/dist/") === -1) || "";
+  }
+  getErrorInfo() {
+    return `
+    file     ${this.sourceFile}
+    scope    ${this.typeScope}
+    expected ${this.expectedType.replace(/\n/g, "")}
+    type     ${this.valueType}
+    value    ${this.value}
+`;
+  }
+};
+var validatorError = (typeFn, value, scope, message, expectedType, valueType) => {
+  return new TypeValidatorError(message, expectedType || getType(typeFn), valueType || typeof value, JSON.stringify(value), typeFn.name, scope);
+};
+var arrayOf = (typeFn, _scope = "Array") => {
+  function array(value) {
+    if (isEmpty(value))
+      return [typeFn(value)];
+    if (Array.isArray(value)) {
+      let index = 0;
+      return value.map((v) => typeFn(v, `${_scope}[${index++}]`));
+    }
+    throw validatorError(array, value, _scope);
+  }
+  array.type = () => `Array<${getType(typeFn)}>`;
+  return array;
+};
+var literalOf = (primitive) => {
+  function literal(value, _scope = "") {
+    if (isEmpty(value) || value === primitive)
+      return primitive;
+    throw validatorError(literal, value, _scope);
+  }
+  literal.type = () => {
+    if (isBoolean(primitive))
+      return `${primitive ? "true" : "false"}`;
+    else
+      return `"${primitive}"`;
+  };
+  return literal;
+};
+var mapOf = (keyTypeFn, typeFn) => {
+  function mapOf2(value) {
+    if (isEmpty(value))
+      return {};
+    const o = object(value);
+    const reducer = (acc, key) => Object.assign(acc, {
+      [keyTypeFn(key, "Map[_]")]: typeFn(o[key], `Map.${key}`)
+    });
+    return Object.keys(o).reduce(reducer, {});
+  }
+  mapOf2.type = () => `{ [_:${getType(keyTypeFn)}]: ${getType(typeFn)} }`;
+  return mapOf2;
+};
+var object = function(value) {
+  if (isEmpty(value))
+    return {};
+  if (isObject(value) && !Array.isArray(value)) {
+    return Object.assign({}, value);
+  }
+  throw validatorError(object, value);
+};
+var objectOf = (typeObj, _scope = "Object") => {
+  function object2(value) {
+    const o = object(value);
+    const typeAttrs = Object.keys(typeObj);
+    const unknownAttr = Object.keys(o).find((attr) => !typeAttrs.includes(attr));
+    if (unknownAttr) {
+      throw validatorError(object2, value, _scope, `missing object property '${unknownAttr}' in ${_scope} type`);
+    }
+    const undefAttr = typeAttrs.find((property) => {
+      const propertyTypeFn = typeObj[property];
+      return propertyTypeFn.name === "maybe" && !o.hasOwnProperty(property);
+    });
+    if (undefAttr) {
+      throw validatorError(object2, o[undefAttr], `${_scope}.${undefAttr}`, `empty object property '${undefAttr}' for ${_scope} type`, `void | null | ${getType(typeObj[undefAttr]).substr(1)}`, "-");
+    }
+    const reducer = isEmpty(value) ? (acc, key) => Object.assign(acc, { [key]: typeObj[key](value) }) : (acc, key) => {
+      const typeFn = typeObj[key];
+      if (typeFn.name === "optional" && !o.hasOwnProperty(key)) {
+        return Object.assign(acc, {});
+      } else {
+        return Object.assign(acc, { [key]: typeFn(o[key], `${_scope}.${key}`) });
+      }
+    };
+    return typeAttrs.reduce(reducer, {});
+  }
+  object2.type = () => {
+    const props = Object.keys(typeObj).map((key) => typeObj[key].name === "optional" ? `${key}?: ${getType(typeObj[key], { noVoid: true })}` : `${key}: ${getType(typeObj[key])}`);
+    return `{|
+ ${props.join(",\n  ")} 
+|}`;
+  };
+  return object2;
+};
+function objectMaybeOf(validations, _scope = "Object") {
+  return function(data) {
+    object(data);
+    for (const key in data) {
+      validations[key]?.(data[key], `${_scope}.${key}`);
+    }
+    return data;
+  };
+}
+var optional = (typeFn) => {
+  const unionFn = unionOf(typeFn, undef);
+  function optional2(v) {
+    return unionFn(v);
+  }
+  optional2.type = ({ noVoid }) => !noVoid ? getType(unionFn) : getType(typeFn);
+  return optional2;
+};
+function undef(value, _scope = "") {
+  if (isEmpty(value) || isUndef(value))
+    return void 0;
+  throw validatorError(undef, value, _scope);
+}
+undef.type = () => "void";
+var number = function number2(value, _scope = "") {
+  if (isEmpty(value))
+    return 0;
+  if (isNumber(value))
+    return value;
+  throw validatorError(number2, value, _scope);
+};
+var string = function string2(value, _scope = "") {
+  if (isEmpty(value))
+    return "";
+  if (isString(value))
+    return value;
+  throw validatorError(string2, value, _scope);
+};
+function unionOf_(...typeFuncs) {
+  function union(value, _scope = "") {
+    for (const typeFn of typeFuncs) {
+      try {
+        return typeFn(value, _scope);
+      } catch (_) {
+      }
+    }
+    throw validatorError(union, value, _scope);
+  }
+  union.type = () => `(${typeFuncs.map((fn) => getType(fn)).join(" | ")})`;
+  return union;
+}
+var unionOf = unionOf_;
+
+// frontend/model/contracts/shared/types.js
+var inviteType = objectOf({
+  inviteSecret: string,
+  quantity: number,
+  creator: string,
+  invitee: optional(string),
+  status: string,
+  responses: mapOf(string, string),
+  expires: number
+});
+var chatRoomAttributesType = objectOf({
+  name: string,
+  description: string,
+  type: unionOf(...Object.values(CHATROOM_TYPES).map((v) => literalOf(v))),
+  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v)))
+});
+var messageType = objectMaybeOf({
+  type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
+  text: string,
+  notification: objectMaybeOf({
+    type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
+    params: mapOf(string, string)
+  }),
+  replyingMessage: objectOf({
+    id: string,
+    text: string
+  }),
+  emoticons: mapOf(string, arrayOf(string)),
+  onlyVisibleTo: arrayOf(string)
+});
+var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
+
+// frontend/model/contracts/shared/time.js
+import { L } from "/assets/js/common.js";
+var MINS_MILLIS = 6e4;
+var HOURS_MILLIS = 60 * MINS_MILLIS;
+var DAYS_MILLIS = 24 * HOURS_MILLIS;
+var MONTHS_MILLIS = 30 * DAYS_MILLIS;
+var locale = typeof navigator === "undefined" && "en-US" || (navigator.languages ? navigator.languages[0] : navigator.language);
+
+// frontend/views/utils/misc.js
+function logExceptNavigationDuplicated(err) {
+  err.name !== "NavigationDuplicated" && console.error(err);
+}
+
+// frontend/model/contracts/shared/functions.js
+function createMessage({ meta, data, hash, state }) {
+  const { type, text, replyingMessage } = data;
+  const { createdDate } = meta;
+  let newMessage = {
+    type,
+    datetime: new Date(createdDate).toISOString(),
+    id: hash,
+    from: meta.username
+  };
+  if (type === MESSAGE_TYPES.TEXT) {
+    newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage };
+  } else if (type === MESSAGE_TYPES.POLL) {
+  } else if (type === MESSAGE_TYPES.NOTIFICATION) {
+    const params = {
+      channelName: state?.attributes.name,
+      channelDescription: state?.attributes.description,
+      ...data.notification
+    };
+    delete params.type;
+    newMessage = {
+      ...newMessage,
+      notification: { type: data.notification.type, params }
+    };
+  } else if (type === MESSAGE_TYPES.INTERACTIVE) {
+  }
+  return newMessage;
+}
+async function leaveChatRoom({ contractID }) {
+  const rootState = common_sbp_default("state/vuex/state");
+  const rootGetters = common_sbp_default("state/vuex/getters");
+  if (contractID === rootGetters.currentChatRoomId) {
+    common_sbp_default("state/vuex/commit", "setCurrentChatRoomId", {
+      groupId: rootState.currentGroupId
+    });
+    const curRouteName = common_sbp_default("controller/router").history.current.name;
+    if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
+      await common_sbp_default("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
+    }
+  }
+  common_sbp_default("chelonia/contract/remove", contractID).catch((e) => {
+    console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
+  });
+}
+function findMessageIdx(id, messages) {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].id === id) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+// frontend/model/contracts/chatroom.js
 function createNotificationData(notificationType, moreParams = {}) {
   return {
     type: MESSAGE_TYPES.NOTIFICATION,
@@ -33,9 +359,9 @@ function createNotificationData(notificationType, moreParams = {}) {
   };
 }
 function emitMessageEvent({ contractID, hash }) {
-  sbp("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
+  common_sbp_default("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
 }
-sbp("chelonia/defineContract", {
+common_sbp_default("chelonia/defineContract", {
   name: "gi.contracts/chatroom",
   metadata: {
     validate: objectOf({
@@ -44,7 +370,7 @@ sbp("chelonia/defineContract", {
       identityContractID: string
     }),
     create() {
-      const { username, identityContractID } = sbp("state/vuex/state").loggedIn;
+      const { username, identityContractID } = common_sbp_default("state/vuex/state").loggedIn;
       return {
         createdDate: new Date().toISOString(),
         username,
@@ -178,9 +504,9 @@ sbp("chelonia/defineContract", {
         state.messages.push(newMessage);
       },
       sideEffect({ data, hash, contractID }, { state }) {
-        const rootState = sbp("state/vuex/state");
+        const rootState = common_sbp_default("state/vuex/state");
         if (!state.saveMessage && data.member === rootState.loggedIn.username) {
-          if (sbp("okTurtles.data/get", "JOINING_CHATROOM")) {
+          if (common_sbp_default("okTurtles.data/get", "JOINING_CHATROOM")) {
             return;
           }
           leaveChatRoom({ contractID });
@@ -191,7 +517,7 @@ sbp("chelonia/defineContract", {
     "gi.contracts/chatroom/delete": {
       validate: (data, { state, getters, meta }) => {
         if (state.attributes.creator !== meta.username) {
-          throw new TypeError(L("Only the channel creator can delete channel."));
+          throw new TypeError(L2("Only the channel creator can delete channel."));
         }
       },
       process({ data, meta }, { state, rootState }) {
@@ -202,7 +528,7 @@ sbp("chelonia/defineContract", {
       },
       sideEffect({ meta, contractID }, { state }) {
         if (!state.saveMessage && state.attributes.creator === meta.username) {
-          if (sbp("okTurtles.data/get", "JOINING_CHATROOM")) {
+          if (common_sbp_default("okTurtles.data/get", "JOINING_CHATROOM")) {
             return;
           }
           leaveChatRoom({ contractID });

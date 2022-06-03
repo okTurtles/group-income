@@ -2,9 +2,7 @@
 
 import type { Notification } from './types.flow.js'
 
-import {
-  sbp
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
 
 import './selectors.js'
 import { age, isNew, isOlder } from './utils.js'

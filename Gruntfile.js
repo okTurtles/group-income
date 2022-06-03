@@ -78,6 +78,7 @@ const distDir = 'dist'
 const distJS = 'dist/assets/js'
 const serviceWorkerDir = 'frontend/controller/serviceworkers'
 const srcDir = 'frontend'
+const commonDir = 'frontend/common'
 const contractsDir = 'frontend/model/contracts'
 
 const development = NODE_ENV === 'development'
@@ -93,6 +94,7 @@ module.exports = (grunt) => {
       '@components': './frontend/views/components',
       '@containers': './frontend/views/containers',
       '@controller': './frontend/controller',
+      '@model': './frontend/model',
       '@pages': './frontend/views/pages',
       '@svgs': './frontend/assets/svgs',
       '@utils': './frontend/utils',
@@ -176,10 +178,12 @@ module.exports = (grunt) => {
       'minifyIdentifiers', 'minifySyntax', 'minifyWhitespace'
     ]),
     splitting: false,
-    entryPoints: [`${srcDir}/common.js`]
+    entryPoints: [`${commonDir}/common.js`]
   }
   esbuildOptionBags.contracts = {
-    ...pick(clone(esbuildOptionBags.default), ['format', 'define', 'bundle', 'watch']),
+    ...pick(clone(esbuildOptionBags.default), [
+      'format', 'define', 'bundle', 'watch', 'incremental'
+    ]),
     splitting: false,
     outdir: 'frontend/assets/contracts',
     entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`]
@@ -415,8 +419,9 @@ module.exports = (grunt) => {
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
     const defaultPlugins = [aliasPlugin, flowRemoveTypesPlugin]
+    // this ensures that SBP is accessed via the global variable
     const sbpAliasPlugin = createAliasPlugin({
-      entries: { '@sbp/sbp': './frontend/common-sbp.js' }
+      entries: { '@sbp/sbp': `./${commonDir}/common-sbp.js` }
     })
 
     const buildMain = createEsbuildTask({
@@ -439,7 +444,7 @@ module.exports = (grunt) => {
         ...defaultPlugins,
         sbpAliasPlugin,
         createAliasPlugin({ // special alias plugin so that common.js gets inlined
-          entries: { '/assets/js/common.js': './frontend/common.js' }
+          entries: { '/assets/js/common.js': `./${commonDir}/common.js` }
         })
       ]
     })
@@ -512,8 +517,13 @@ module.exports = (grunt) => {
           try {
             if (filePath.startsWith(serviceWorkerDir)) {
               await buildServiceWorkers.run({ fileEventName, filePath })
+            } else if (filePath.startsWith(commonDir)) {
+              await buildCommon.run({ fileEventName, filePath })
+            } else if (filePath.startsWith(contractsDir)) {
+              await buildContracts.run({ fileEventName, filePath })
+              await buildContractsSlim.run({ fileEventName, filePath })
+              await buildMain.run({ fileEventName, filePath })
             } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
-              // TODO: build appropriate other files
               await buildMain.run({ fileEventName, filePath })
             }
           } catch (error) {

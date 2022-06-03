@@ -14,6 +14,19 @@ export const PROFILE_STATUS = {
   REMOVED: 'removed'
 }
 
+export const PROPOSAL_RESULT = 'proposal-result'
+export const PROPOSAL_INVITE_MEMBER = 'invite-member'
+export const PROPOSAL_REMOVE_MEMBER = 'remove-member'
+export const PROPOSAL_GROUP_SETTING_CHANGE = 'group-setting-change'
+export const PROPOSAL_PROPOSAL_SETTING_CHANGE = 'proposal-setting-change'
+export const PROPOSAL_GENERIC = 'generic'
+
+export const STATUS_OPEN = 'open'
+export const STATUS_PASSED = 'passed'
+export const STATUS_FAILED = 'failed'
+export const STATUS_EXPIRED = 'expired'
+export const STATUS_CANCELLED = 'cancelled'
+
 // chatroom.js related
 
 export const CHATROOM_GENERAL_NAME = 'General'
@@ -21,6 +34,10 @@ export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
 export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
 export const CHATROOM_ACTIONS_PER_PAGE = 40
 export const CHATROOM_MESSAGES_PER_PAGE = 20
+
+// chatroom events
+export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
+export const CHATROOM_DETAILS_UPDATED = 'chatroom-details-updated'
 
 export const CHATROOM_TYPES = {
   INDIVIDUAL: 'individual',

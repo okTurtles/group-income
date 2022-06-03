@@ -22,9 +22,9 @@
 
 <script>
 import {
-  L,
-  RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal
+  L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'

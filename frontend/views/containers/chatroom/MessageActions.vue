@@ -92,11 +92,9 @@ menu-parent(ref='menu')
 </template>
 
 <script>
-import {
-  MESSAGE_TYPES
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'MessageActions',

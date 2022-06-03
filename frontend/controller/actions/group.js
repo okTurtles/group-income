@@ -1,22 +1,29 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
 import {
-  sbp,
-  createInvite,
+  GIErrorUIRuntimeError,
+  L, LError
+} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { createInvite } from '@model/contracts/shared/functions.js'
+import {
   INVITE_INITIAL_CREATOR,
   CHATROOM_GENERAL_NAME,
   CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL,
-  proposals,
-  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN,
-  GIErrorUIRuntimeError,
-  merge, omit, randomIntFromRange,
-  dateToPeriodStamp, addTimeToDate, DAYS_MILLIS,
-  L, LError,
-  VOTE_FOR
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+  PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_REMOVE_MEMBER,
+  PROPOSAL_GROUP_SETTING_CHANGE,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  PROPOSAL_GENERIC,
+  STATUS_OPEN
+} from '@model/contracts/shared/constants.js'
+import proposals from '@model/contracts/shared/voting/proposals.js'
 import { imageUpload } from '@utils/image.js'
+import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { encryptedAction } from './utils.js'
+import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 

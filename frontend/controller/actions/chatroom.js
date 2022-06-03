@@ -1,10 +1,10 @@
 'use strict'
+import sbp from '@sbp/sbp'
 import {
-  sbp,
   L,
-  GIErrorUIRuntimeError,
-  omit
+  GIErrorUIRuntimeError
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { omit } from '@model/contracts/shared/giLodash.js'
 import { encryptedAction } from './utils.js'
 import type { GIRegParams } from './types.js'
 

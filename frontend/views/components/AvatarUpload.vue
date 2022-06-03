@@ -21,8 +21,8 @@
       banner-scoped.c-formMsg(ref='formMsg' data-test='avatarMsg')
 </template>
 <script>
+import sbp from '@sbp/sbp'
 import {
-  sbp,
   L, LError
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
 import { imageUpload } from '@utils/image.js'

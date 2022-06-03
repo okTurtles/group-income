@@ -1,17 +1,23 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
 import {
-  // imports from the same underlying files are grouped together on the same line
-  sbp,
   Vue,
-  objectOf, string, optional,
-  merge, cloneDeep,
-  L,
-  CHATROOM_NAME_LIMITS_IN_CHARS, CHATROOM_DESCRIPTION_LIMITS_IN_CHARS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_MESSAGES_PER_PAGE, MESSAGE_TYPES, MESSAGE_NOTIFICATIONS,
-  CHATROOM_MESSAGE_ACTION,
-  chatRoomAttributesType, messageType,
-  createMessage, leaveChatRoom, findMessageIdx
+  L
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import { merge, cloneDeep } from './shared/giLodash.js'
+import {
+  CHATROOM_NAME_LIMITS_IN_CHARS,
+  CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
+  CHATROOM_ACTIONS_PER_PAGE,
+  CHATROOM_MESSAGES_PER_PAGE,
+  MESSAGE_TYPES,
+  MESSAGE_NOTIFICATIONS,
+  CHATROOM_MESSAGE_ACTION
+} from './shared/constants.js'
+import { chatRoomAttributesType, messageType } from './shared/types.js'
+import { createMessage, leaveChatRoom, findMessageIdx } from './shared/functions.js'
+import { objectOf, string, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 
 function createNotificationData (
   notificationType: string,

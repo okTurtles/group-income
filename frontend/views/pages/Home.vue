@@ -53,10 +53,8 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
 </template>
 
 <script>
-import {
-  sbp,
-  OPEN_MODAL
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+import sbp from '@sbp/sbp'
+import { OPEN_MODAL } from '@utils/events.js'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
 
