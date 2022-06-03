@@ -330,12 +330,12 @@ export default ({
         }
       }
     },
-    updateScroll (toSavedPosition = false) {
+    updateScroll (scrollTargetMessage = null) {
       if (this.summary.title) {
         // force conversation viewport to be at the bottom (most recent messages)
         setTimeout(() => {
-          if (toSavedPosition && this.currentChatRoomScrollPosition) {
-            this.scrollToMessage(this.currentChatRoomScrollPosition, false)
+          if (scrollTargetMessage) {
+            this.scrollToMessage(scrollTargetMessage, false)
           } else {
             this.$refs.conversation && this.$refs.conversation.scroll({
               left: 0,
@@ -411,12 +411,13 @@ export default ({
     },
     async renderMoreMessages (refresh = false) {
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+      const lastScrollPosition = this.currentChatRoomScrollPosition
       const before = refresh || !this.latestEvents.length
         ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
         : GIMessage.deserialize(this.latestEvents[0]).hash()
       let events = null
-      if (refresh && this.currentChatRoomScrollPosition) {
-        events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, this.currentChatRoomScrollPosition)
+      if (refresh && lastScrollPosition) {
+        events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, lastScrollPosition)
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
@@ -424,7 +425,10 @@ export default ({
       await this.rerenderEvents(events, refresh)
 
       if (refresh) {
-        this.updateScroll(true)
+        const scrollTargetMessage = refresh && lastScrollPosition
+          ? lastScrollPosition
+          : null
+        this.updateScroll(scrollTargetMessage)
         return false
       }
 
@@ -502,7 +506,7 @@ export default ({
         // Save the current scroll position per each chatroom
         const allElements = document.querySelectorAll('.c-body-conversation > .c-message')
         for (let i = allElements.length - 1; i >= 0; i--) {
-          if (allElements[i].offsetTop - allElements[i].offsetParent.offsetTop <= curScrollTop) {
+          if ((allElements[i].offsetTop - allElements[i].offsetParent.offsetTop <= curScrollTop) || i === 0) {
             sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
               chatRoomId: this.currentChatRoomId,
               messageId: this.messages[i].id
