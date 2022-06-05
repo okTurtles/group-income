@@ -460,7 +460,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelMembers').should('contain', '1 members')
   })
 
-  it('user1 delete a channel and logout', () => {
+  it('user1 deletes a channel and logout', () => {
     const channel = chatRooms.filter(c => c.name.startsWith('Channel1')).map(c => c.name)[0]
     deleteChannel(channel)
 

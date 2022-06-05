@@ -45,6 +45,9 @@
 /* views/containers/user-settings/AppLogs.vue */
 "Log" = "Log";
 
+/* views/containers/proposals/MemberRequest.vue */
+"Request Approved." = "Request Approved.";
+
 /* views/pages/Contributions.vue */
 "When other members pledge a monetary or non-monetary contribution, they will appear here." = "When other members pledge a monetary or non-monetary contribution, they will appear here.";
 
@@ -113,6 +116,9 @@
 
 /* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "Changes to these settings will be visible to all group members";
+
+/* views/containers/proposals/MemberRequest.vue */
+"See all requests" = "See all requests";
 
 /* views/containers/contributions/Contribution.vue */
 "Your contribution" = "Your contribution";
@@ -270,6 +276,9 @@
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Percentage of members that need to agree:" = "Percentage of members that need to agree:";
 
+/* views/components/group-creation-steps/GroupMincome.vue */
+"Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members." = "Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members.";
+
 /* utils/time.js */
 "Yesterday" = "Yesterday";
 
@@ -420,6 +429,9 @@
 /* views/containers/dashboard/StartInvitingWidget.vue */
 "Invite members to your group" = "Invite members to your group";
 
+/* views/containers/proposals/MemberRequest.vue */
+"Reject" = "Reject";
+
 /* views/components/group-creation-steps/GroupPrivacy.vue */
 "This step is to be designed. What group privacy settings would you feel more comfortable having control over? Let us know at dunno@groupincome.org!" = "This step is to be designed. What group privacy settings would you feel more comfortable having control over? Let us know at dunno@groupincome.org!";
 
@@ -432,6 +444,9 @@
 /* views/containers/design-system/DSModalFullscreen.vue, views/containers/design-system/DSModalNested.vue */
 "Toggle background" = "Toggle background";
 
+/* views/components/group-creation-steps/GroupMincome.vue */
+"On what day should the first payment distribution be calculated?" = "On what day should the first payment distribution be calculated?";
+
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to remove members from the group." = "{from} wants to remove members from the group.";
 
@@ -440,6 +455,9 @@
 
 /* views/components/group-creation-steps/GroupMincome.vue */
 "Currency" = "Currency";
+
+/* views/components/group-creation-steps/GroupMincome.vue */
+"Payment distribution will be calculated every 30 days." = "Payment distribution will be calculated every 30 days.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "{numberOfResponses}/{quantity} used" = "{numberOfResponses}/{quantity} used";
@@ -470,6 +488,9 @@
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "{amount} will be used." = "{amount} will be used.";
+
+/* views/containers/proposals/MemberRequest.vue */
+"Approve All" = "Approve All";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Change {setting} from {currentValue} to {proposedValue}" = "Change {setting} from {currentValue} to {proposedValue}";
@@ -503,6 +524,9 @@
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Save";
+
+/* views/containers/chatroom/MessageBase.vue */
+"(edited)" = "(edited)";
 
 /* views/containers/contributions/Contribution.vue */
 "Cooking" = "Cooking";
@@ -579,6 +603,9 @@
 /* views/containers/proposals/ProposalItem.vue */
 "TODO: Change [generic] from [current] to [new-value]" = "TODO: Change [generic] from [current] to [new-value]";
 
+/* controller/actions/chatroom.js */
+"Failed to delete message." = "Failed to delete message.";
+
 /* views/containers/proposals/ProposalTemplate.vue */
 "Members of your group will now be asked to vote." = "Members of your group will now be asked to vote.";
 
@@ -608,6 +635,9 @@
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Failed to create chat channel. {reportError}" = "Failed to create chat channel. {reportError}";
+
+/* views/containers/proposals/MemberRequest.vue */
+"Request Rejected." = "Request Rejected.";
 
 /* views/components/ProfileCard.vue */
 "Edit bio" = "Edit bio";
@@ -735,6 +765,9 @@
 /* views/containers/user-settings/UserProfile.vue */
 "Delete account" = "Delete account";
 
+/* views/components/group-creation-steps/GroupMincome.vue */
+"Choose your group's distribution date" = "Choose your group's distribution date";
+
 /* views/containers/dashboard/GroupMembersTooltipPending.vue */
 "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy}." = "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy}.";
 
@@ -768,7 +801,7 @@
 /* views/containers/contributions/IncomeDetails.vue */
 "The method \"{methodName}\" is incomplete." = "The method \"{methodName}\" is incomplete.";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/proposals/MemberRequest.vue */
 "Undo" = "Undo";
 
 /* views/containers/payments/PaymentsPagination.vue */
@@ -918,6 +951,9 @@
 /* views/containers/proposals/ProposalTemplate.vue */
 "Your proposal was created" = "Your proposal was created";
 
+/* controller/actions/identity.js */
+"Error during login contract sync: {err}" = "Error during login contract sync: {err}";
+
 /* views/components/ProfileCard.vue */
 "Show profile" = "Show profile";
 
@@ -1058,6 +1094,9 @@
 
 /* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
 "Group members" = "Group members";
+
+/* views/containers/proposals/MemberRequest.vue */
+"Reject All" = "Reject All";
 
 /* views/components/AvatarUpload.vue */
 "Failed to save avatar. {reportError}" = "Failed to save avatar. {reportError}";
@@ -1208,6 +1247,9 @@
 
 /* views/containers/dashboard/GroupMembers.vue */
 "See all {groupMembersCount} members" = "See all {groupMembersCount} members";
+
+/* controller/actions/chatroom.js */
+"Failed to edit message." = "Failed to edit message.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "Proposal Accepted" = "Proposal Accepted";
@@ -1382,6 +1424,9 @@
 
 /* views/pages/Home.vue */
 "Create" = "Create";
+
+/* views/pages/GroupDashboard.vue */
+"Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then." = "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.";
 
 /* main.js */
 "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'";
@@ -1626,6 +1671,9 @@
 /* views/containers/chatroom/MessageActions.vue */
 "Delete message" = "Delete message";
 
+/* views/containers/proposals/MemberRequest.vue */
+"There are no open requests right now." = "There are no open requests right now.";
+
 /* main.js */
 "Loading events for '{contract}' from server..." = "Loading events for '{contract}' from server...";
 
@@ -1680,6 +1728,9 @@
 /* model/notifications/templates.js */
 "{member} proposed to change the group voting system. Vote now!" = "{member} proposed to change the group voting system. Vote now!";
 
+/* views/containers/proposals/MemberRequest.vue */
+"In Group Income, you can use an invitation link to add members to the group and invite up to 60 people. Once someone uses that link to join the group, they’ll need to be approved by a member of the group with member approval permissions." = "In Group Income, you can use an invitation link to add members to the group and invite up to 60 people. Once someone uses that link to join the group, they’ll need to be approved by a member of the group with member approval permissions.";
+
 /* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search..." = "Search...";
 
@@ -1698,6 +1749,9 @@
 /* views/containers/proposals/ProposalTemplate.vue */
 "You need {b_}{n} yes votes{_b} for your proposal to be accepted." = "You need {b_}{n} yes votes{_b} for your proposal to be accepted.";
 
+/* controller/actions/chatroom.js */
+"Failed to make emotion." = "Failed to make emotion.";
+
 /* views/containers/contributions/ContributionsWidget.vue */
 "You are contributing." = "You are contributing.";
 
@@ -1706,6 +1760,9 @@
 
 /* views/containers/navigation/Navigation.vue */
 "Main" = "Main";
+
+/* views/containers/proposals/MemberRequest.vue */
+"Approve" = "Approve";
 
 /* views/pages/GroupSettings.vue */
 "This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement." = "This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement.";
@@ -1751,6 +1808,9 @@
 
 /* views/containers/chatroom/ConversationGreetings.vue */
 "This is the beginning of {name}." = "This is the beginning of {name}.";
+
+/* views/containers/proposals/MemberRequest.vue */
+"Member Requests" = "Member Requests";
 
 /* views/containers/contributions/Contribution.vue */
 "Portuguese classes" = "Portuguese classes";

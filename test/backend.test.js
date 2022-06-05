@@ -247,7 +247,7 @@ describe('Full walkthrough', function () {
       should(state.attributes.mailbox).equal(bob.mailbox.contractID())
       // 4. fetch the latest hash for bob's mailbox.
       //    we don't need latest state for it just latest hash
-      const res = await sbp('chelonia/private/out/latestHash', state.attributes.mailbox)
+      const res = await sbp('chelonia/out/latestHash', state.attributes.mailbox)
       should(res).equal(bob.mailbox.hash())
     })
 

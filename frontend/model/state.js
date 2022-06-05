@@ -40,8 +40,8 @@ const initialState = {
   increasedContrast: false,
   fontSize: 16,
   appLogsFilter: process.env.NODE_ENV === 'development'
-    ? ['error', 'warn', 'debug', 'log']
-    : ['error', 'warn']
+    ? ['error', 'warn', 'info', 'debug', 'log']
+    : ['error', 'warn', 'info']
 }
 
 sbp('sbp/selectors/register', {

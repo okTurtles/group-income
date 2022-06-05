@@ -3,6 +3,8 @@ message-base(
   v-bind='$props'
   @add-emoticon='addEmoticon($event)'
   @reply='reply'
+  @message-edited='editMessage'
+  @delete-message='deleteMessage'
 )
 
 </template>
@@ -17,14 +19,16 @@ export default ({
     MessageBase
   },
   props: {
+    type: String,
     text: String,
     who: String,
-    currentUserId: String,
+    currentUsername: String,
     avatar: String,
     datetime: {
       type: Date,
       required: true
     },
+    edited: Boolean,
     variant: {
       type: String,
       validator (value) {
@@ -43,8 +47,11 @@ export default ({
     variants: MESSAGE_VARIANTS
   }),
   methods: {
-    edit () {
-      this.$emit('edit')
+    editMessage (newMessage) {
+      this.$emit('edit-message', newMessage)
+    },
+    deleteMessage () {
+      this.$emit('delete-message')
     },
     reply () {
       this.$emit('reply')

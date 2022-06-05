@@ -75,6 +75,11 @@ export default ({
 .c-greetings {
   padding: 0.5rem 1rem;
 
+  h3,
+  p {
+    text-align: left;
+  }
+
   @include tablet {
     padding: 0 2.5rem 2rem 2.5rem;
   }
@@ -87,6 +92,8 @@ export default ({
   .button {
     @include phone {
       width: calc(100% - 1rem);
+      margin-top: 0.2rem;
+      margin-bottom: 0.2rem;
     }
   }
 }

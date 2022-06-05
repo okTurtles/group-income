@@ -6,15 +6,15 @@ import Vue from 'vue'
 import '~/shared/domains/chelonia/chelonia.js'
 import {
   objectMaybeOf, objectOf, mapOf, arrayOf,
-  string, literalOf, unionOf, number, optional
+  string, literalOf, unionOf, optional
 } from '~/frontend/utils/flowTyper.js'
-import { merge } from '~/frontend/utils/giLodash.js'
+import { merge, cloneDeep } from '~/frontend/utils/giLodash.js'
 import L from '~/frontend/views/utils/translations.js'
 import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
+  CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MESSAGES_PER_PAGE,
-  MESSAGE_ACTION_TYPES,
   CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL,
   MESSAGE_TYPES,
@@ -42,8 +42,6 @@ export const messageType: any = objectMaybeOf({
   }),
   replyingMessage: objectOf({
     id: string, // scroll to the original message and highlight
-    index: number, // index of the list of messages
-    username: string, // display username
     text: string // display text(if too long, truncate)
   }),
   emoticons: mapOf(string, arrayOf(string)), // mapping of emoticons and usernames
@@ -85,12 +83,6 @@ export function createMessage ({ meta, data, hash, state }: {
   return newMessage
 }
 
-export function getLatestMessages ({
-  count, messages
-}: { count: number, messages: Array<Object> }): Array<Object> {
-  return messages.slice(Math.max(messages.length - count, 0))
-}
-
 export async function leaveChatRoom ({ contractID }: {
   contractID: string
 }) {
@@ -115,6 +107,15 @@ export async function leaveChatRoom ({ contractID }: {
   })
 }
 
+export function findMessageIdx (id: string, messages: Array<Object>): number {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].id === id) {
+      return i
+    }
+  }
+  return -1
+}
+
 function createNotificationData (
   notificationType: string,
   moreParams: Object = {}
@@ -128,18 +129,11 @@ function createNotificationData (
   }
 }
 
-function emitMessageEvent ({ type, contractID, hash, state }: {
-  type: string, contractID: string, hash: string, state: Object
+function emitMessageEvent ({ contractID, hash }: {
+  contractID: string,
+  hash: string
 }): void {
-  for (let i = state.messages.length - 1; i >= 0; i--) {
-    if (state.messages[i].id === hash) {
-      sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, {
-        type,
-        data: { message: state.messages[i] }
-      })
-      break
-    }
-  }
+  sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash })
 }
 
 sbp('chelonia/defineContract', {
@@ -173,11 +167,7 @@ sbp('chelonia/defineContract', {
       return getters.currentChatRoomState.users || {}
     },
     chatRoomLatestMessages (state, getters) {
-      const messages = getters.currentChatRoomState.messages || []
-      return getLatestMessages({
-        count: getters.chatRoomSettings.messagesPerPage,
-        messages
-      })
+      return getters.currentChatRoomState.messages || []
     }
   },
   actions: {
@@ -189,6 +179,7 @@ sbp('chelonia/defineContract', {
       process ({ meta, data }, { state }) {
         const initialState = merge({
           settings: {
+            actionsPerPage: CHATROOM_ACTIONS_PER_PAGE,
             messagesPerPage: CHATROOM_MESSAGES_PER_PAGE,
             maxNameLength: CHATROOM_NAME_LIMITS_IN_CHARS,
             maxDescriptionLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
@@ -212,9 +203,15 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state, getters }) {
         const { username } = data
-        if (state.users[username]) {
+        if (!state.saveMessage && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
           console.warn('Can not join the chatroom which you are already part of')
+          return
+        }
+
+        Vue.set(state.users, username, { joinedDate: meta.createdDate })
+
+        if (!state.saveMessage) {
           return
         }
 
@@ -225,11 +222,9 @@ sbp('chelonia/defineContract', {
         )
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
-
-        Vue.set(state.users, username, { joinedDate: meta.createdDate })
       },
-      sideEffect ({ data, contractID, hash }, { state }) {
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/rename': {
@@ -238,12 +233,17 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
+
+        if (!state.saveMessage) {
+          return
+        }
+
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {})
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/changeDescription': {
@@ -252,14 +252,19 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
+
+        if (!state.saveMessage) {
+          return
+        }
+
         const notificationData = createNotificationData(
           MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {}
         )
         const newMessage = createMessage({ meta, hash, data: notificationData, state })
         state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/leave': {
@@ -270,10 +275,14 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
-        if (!state.users[member]) {
+        if (!state.saveMessage && !state.users[member]) {
           throw new Error(`Can not leave the chatroom which ${member} are not part of`)
         }
         Vue.delete(state.users, member)
+
+        if (!state.saveMessage) {
+          return
+        }
 
         const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER
         const notificationData = createNotificationData(notificationType, isKicked ? { username: member } : {})
@@ -287,13 +296,13 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, hash, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
-        if (data.member === rootState.loggedIn.username) {
+        if (!state.saveMessage && data.member === rootState.loggedIn.username) {
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return
           }
           leaveChatRoom({ contractID })
         }
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/delete': {
@@ -309,7 +318,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ meta, contractID }, { state }) {
-        if (state.attributes.creator === meta.username) { // Not sure this condition is necessary
+        if (!state.saveMessage && state.attributes.creator === meta.username) { // Not sure this condition is necessary
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return
           }
@@ -321,42 +330,102 @@ sbp('chelonia/defineContract', {
       validate: messageType,
       process ({ data, meta, hash }, { state }) {
         const newMessage = createMessage({ meta, data, hash, state })
-        state.messages.push(newMessage)
+        if (!state.saveMessage) {
+          return
+        }
+        const pendingMsg = state.messages.find(msg => msg.id === hash && msg.pending)
+        if (pendingMsg) {
+          delete pendingMsg.pending
+        } else {
+          state.messages.push(newMessage)
+        }
       },
-      sideEffect ({ contractID, hash }, { state }) {
-        emitMessageEvent({ type: MESSAGE_ACTION_TYPES.ADD_MESSAGE, contractID, hash, state })
-      }
-    },
-    'gi.contracts/chatroom/deleteMessage': {
-      validate: objectMaybeOf({
-
-      }),
-      process ({ data, meta }, { state }) {
-
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/editMessage': {
-      validate: objectMaybeOf({
-
-      }),
+      validate: (data, { state, meta }) => {
+        objectOf({
+          id: string,
+          text: string
+        })(data)
+        // TODO: Actually NOT SURE it's needed to check if the meta.username === message.from
+        // there is no messagess in vuex state
+        // to check if the meta.username is creator seems like too heavy
+      },
       process ({ data, meta }, { state }) {
-
+        if (!state.saveMessage) {
+          return
+        }
+        const msgIndex = findMessageIdx(data.id, state.messages)
+        if (msgIndex >= 0 && meta.username === state.messages[msgIndex].from) {
+          state.messages[msgIndex].text = data.text
+          state.messages[msgIndex].updatedDate = meta.createdDate
+          if (state.saveMessage && state.messages[msgIndex].pending) {
+            delete state.messages[msgIndex].pending
+          }
+        }
+      },
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
-    'gi.contracts/chatroom/addEmoticon': {
-      validate: objectMaybeOf({
-
+    'gi.contracts/chatroom/deleteMessage': {
+      validate: objectOf({
+        id: string
       }),
       process ({ data, meta }, { state }) {
-
+        if (!state.saveMessage) {
+          return
+        }
+        const msgIndex = findMessageIdx(data.id, state.messages)
+        if (msgIndex >= 0) {
+          state.messages.splice(msgIndex, 1)
+        }
+      },
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     },
-    'gi.contracts/chatroom/deleteEmoticon': {
-      validate: objectMaybeOf({
-
+    'gi.contracts/chatroom/makeEmotion': {
+      validate: objectOf({
+        id: string,
+        emoticon: string
       }),
-      process ({ data, meta }, { state }) {
-
+      process ({ data, meta, contractID }, { state }) {
+        if (!state.saveMessage) {
+          return
+        }
+        const { id, emoticon } = data
+        const msgIndex = findMessageIdx(id, state.messages)
+        if (msgIndex >= 0) {
+          let emoticons = cloneDeep(state.messages[msgIndex].emoticons || {})
+          if (emoticons[emoticon]) {
+            const alreadyAdded = emoticons[emoticon].indexOf(meta.username)
+            if (alreadyAdded >= 0) {
+              emoticons[emoticon].splice(alreadyAdded, 1)
+              if (!emoticons[emoticon].length) {
+                delete emoticons[emoticon]
+                if (!Object.keys(emoticons).length) {
+                  emoticons = null
+                }
+              }
+            } else {
+              emoticons[emoticon].push(meta.username)
+            }
+          } else {
+            emoticons[emoticon] = [meta.username]
+          }
+          if (emoticons) {
+            Vue.set(state.messages[msgIndex], 'emoticons', emoticons)
+          } else {
+            Vue.delete(state.messages[msgIndex], 'emoticons')
+          }
+        }
+      },
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     }
   }

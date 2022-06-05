@@ -22,18 +22,19 @@
         p.c-replying(if='replyingMessage') {{ replyingMessage }}
         send-area(
           v-if='isEditing'
-          title=''
+          :defaultText='text'
           :isEditing='true'
-          @send='sendEdit'
+          @send='onMessageEdited'
           @cancelEdit='cancelEdit'
         )
 
         p.c-text(v-else-if='text') {{ text }}
+          i18n.c-edited(v-if='edited') (edited)
 
   message-reactions(
     v-if='!isEditing'
     :emoticonsList='emoticonsList'
-    :currentUserId='currentUserId'
+    :currentUsername='currentUsername'
     @selectEmoticon='selectEmoticon($event)'
     @openEmoticon='openEmoticon($event)'
   )
@@ -41,14 +42,15 @@
   message-actions(
     v-if='!isEditing'
     :variant='variant'
+    :type='type'
     :isCurrentUser='isCurrentUser'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
-    @edit='edit'
+    @editMessage='editMessage'
+    @deleteMessage='deleteMessage'
     @reply='reply'
     @retry='retry'
     @copyToClipBoard='copyToClipBoard'
-    @deleteMessage='deleteMessage'
   )
 </template>
 
@@ -78,12 +80,13 @@ export default ({
     text: String,
     replyingMessage: String,
     who: String,
-    currentUserId: String,
+    currentUsername: String,
     avatar: String,
     datetime: {
       type: Date,
       required: true
     },
+    edited: Boolean,
     notification: Object,
     type: String,
     emoticonsList: {
@@ -96,12 +99,17 @@ export default ({
   },
   methods: {
     humanDate,
-    edit () {
+    editMessage () {
       this.isEditing = true
     },
-    sendEdit (newMessage) {
+    onMessageEdited (newMessage) {
       this.isEditing = false
-      this.$emit('edit', newMessage)
+      if (this.text !== newMessage) {
+        this.$emit('message-edited', newMessage)
+      }
+    },
+    deleteMessage () {
+      this.$emit('delete-message')
     },
     cancelEdit () {
       this.isEditing = false
@@ -117,9 +125,6 @@ export default ({
     },
     retry () {
       this.$emit('retry')
-    },
-    deleteMessage () {
-      this.$emit('delete-message')
     },
     openMenu () {
       this.$refs.messageAction.$refs.menu.handleTrigger()
@@ -215,5 +220,11 @@ export default ({
   color: var(--text_1);
   font-style: italic;
   padding-left: 0.25rem;
+}
+
+.c-edited {
+  margin-left: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--text_1);
 }
 </style>

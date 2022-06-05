@@ -14,6 +14,7 @@ export const PROFILE_STATUS = {
 export const CHATROOM_GENERAL_NAME = 'General'
 export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
 export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
+export const CHATROOM_ACTIONS_PER_PAGE = 40
 export const CHATROOM_MESSAGES_PER_PAGE = 20
 
 export const CHATROOM_TYPES = {
@@ -37,12 +38,6 @@ export const MESSAGE_TYPES = {
 export const INVITE_EXPIRES_IN_DAYS = {
   INITIAL: 30,
   PROPOSAL: 7
-}
-
-export const MESSAGE_ACTION_TYPES = {
-  ADD_MESSAGE: 'message-action-add-message',
-  EDIT_MESSAGE: 'message-action-edit-message',
-  DELETE_MESSAGE: 'message-action-delete-message'
 }
 
 export const MESSAGE_NOTIFICATIONS = {

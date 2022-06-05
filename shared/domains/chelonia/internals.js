@@ -237,7 +237,7 @@ sbp('sbp/selectors/register', {
   },
   'chelonia/private/in/syncContract': async function (contractID: string) {
     const state = sbp(this.config.stateSelector)
-    const latest = await sbp('chelonia/private/out/latestHash', contractID)
+    const latest = await sbp('chelonia/out/latestHash', contractID)
     console.debug(`syncContract: ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     let recent
@@ -255,7 +255,7 @@ sbp('sbp/selectors/register', {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
         // TODO: fetch events from localStorage instead of server if we have them
-        const events = await sbp('chelonia/private/out/eventsSince', contractID, recent || contractID)
+        const events = await sbp('chelonia/out/eventsSince', contractID, recent || contractID)
         // remove the first element in cases where we are not getting the contract for the first time
         state.contracts[contractID] && events.shift()
         for (let i = 0; i < events.length; i++) {

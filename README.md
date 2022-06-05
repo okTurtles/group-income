@@ -3,9 +3,7 @@
     <br />
     <br />
     <a title="Gitter" href="https://gitter.im/okTurtles/group-income"><img src="https://badges.gitter.im/okTurtles/group-income.svg"></a>
-    <a title="Build Status" href="https://travis-ci.org/okTurtles/group-income"><img src="https://img.shields.io/travis/okTurtles/group-income/master.svg"></a>
-    <a title="Deps" href="https://david-dm.org/okTurtles/group-income/#info=dependencies"><img src="https://david-dm.org/okTurtles/group-income.svg"></a>
-    <a title="Dev Deps" href="https://david-dm.org/okTurtles/group-income/#info=devDependencies"><img src="https://david-dm.org/okTurtles/group-income/dev-status.svg"></a>
+    <a title="Build Status" href="https://app.travis-ci.com/github/okTurtles/group-income"><img src="https://app.travis-ci.com/okTurtles/group-income.svg?branch=master"></a>
     <a title="Visual Source" href="https://www.visualsource.net/repo/github.com/okTurtles/group-income"><img src="https://img.shields.io/badge/visual-source-orange"></a>
     <a title="Donate" href="https://okturtles.org/donate/"><img src="https://img.shields.io/badge/donate%20-%3D%E2%9D%A4-blue.svg"></a>
 </p>

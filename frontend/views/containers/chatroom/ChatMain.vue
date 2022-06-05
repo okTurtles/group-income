@@ -9,13 +9,29 @@
           - this should be done only after knowing exactly how server gets each conversation data
 
     .c-body-conversation(ref='conversation' v-else='' data-test='conversationWapper')
-      conversation-greetings(
-        :members='details.numberOfParticipants'
-        :creator='summary.creator'
-        :type='type'
-        :name='summary.title'
-        :description='summary.description'
+
+      infinite-loading(
+        direction='top'
+        slot='append'
+        @infinite='infiniteHandler'
+        force-use-infinite-wrapper='.c-body-conversation'
       )
+        div(slot='no-more')
+          conversation-greetings(
+            :members='details.numberOfParticipants'
+            :creator='summary.creator'
+            :type='type'
+            :name='summary.title'
+            :description='summary.description'
+          )
+        div(slot='no-results')
+          conversation-greetings(
+            :members='details.numberOfParticipants'
+            :creator='summary.creator'
+            :type='type'
+            :name='summary.title'
+            :description='summary.description'
+          )
 
       template(v-for='(message, index) in messages')
         .c-divider(
@@ -35,9 +51,10 @@
           :replyingMessage='message.replyingMessage'
           :from='message.from'
           :datetime='time(message.datetime)'
+          :edited='!!message.updatedDate'
           :emoticonsList='message.emoticons'
           :who='who(message)'
-          :currentUserId='currentUserAttr.id'
+          :currentUsername='currentUserAttr.username'
           :avatar='avatar(message.from)'
           :variant='variant(message)'
           :isSameSender='isSameSender(index)'
@@ -45,8 +62,9 @@
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
-          @add-emoticon='addEmoticon(index, $event)'
-          @delete-message='deleteMessage(index)'
+          @edit-message='(newMessage) => editMessage(message, newMessage)'
+          @delete-message='deleteMessage(message)'
+          @add-emoticon='addEmoticon(message, $event)'
         )
 
   .c-footer
@@ -69,8 +87,10 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
+import InfiniteLoading from 'vue-infinite-loading'
 import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
@@ -79,10 +99,11 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
-import { MESSAGE_TYPES, MESSAGE_ACTION_TYPES, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
-import { createMessage, getLatestMessages } from '@model/contracts/chatroom.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/constants.js'
+import { createMessage } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
-import { CHATROOM_MESSAGE_ACTION, CHATROOM_STATE_LOADED } from '~/frontend/utils/events.js'
+import { cloneDeep } from '@utils/giLodash.js'
+import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
@@ -90,11 +111,12 @@ export default ({
   components: {
     Avatar,
     Emoticons,
+    ConversationGreetings,
+    InfiniteLoading,
     Loading,
     Message,
     MessageInteractive,
     MessageNotification,
-    ConversationGreetings,
     SendArea,
     ViewArea
   },
@@ -116,8 +138,11 @@ export default ({
       config: {
         isPhone: null
       },
+      latestEvents: [],
       messages: [],
       ephemeral: {
+        refreshMessages: true,
+        infiniteLoading: null,
         bodyPaddingBottom: '',
         replyingMessage: null,
         replyingTo: null
@@ -139,20 +164,20 @@ export default ({
     sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
   },
-  updated () {
-    this.updateScroll()
-  },
   computed: {
     ...mapGetters([
       'currentChatRoomId',
       'chatRoomSettings',
-      'chatRoomLatestMessages',
+      'chatRoomAttributes',
+      'chatRoomUsers',
       'ourIdentityContractId',
       'currentIdentityState',
       'isJoinedChatRoom'
     ]),
     bodyStyles () {
-      const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      // Not sure what `bodyPaddingBottom` means, I delete it now
+      // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
+      const phoneStyles = {}
       const unjoinedStyles =
         this.summary.joined
           ? {}
@@ -179,12 +204,12 @@ export default ({
         [MESSAGE_TYPES.POLL]: 'message-poll'
       }[message.type]
     },
-    isCurrentUser (fromId) {
-      return this.currentUserAttr.username === fromId
+    isCurrentUser (from) {
+      return this.currentUserAttr.username === from
     },
     who (message) {
       const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.details.participants[message.from]
-      return user.displayName || user.username || message.from
+      return user?.displayName || user?.username || message.from
     },
     variant (message) {
       if (message.pending) {
@@ -198,11 +223,11 @@ export default ({
     time (strTime) {
       return new Date(strTime)
     },
-    avatar (fromId) {
-      if (fromId === MESSAGE_TYPES.NOTIFICATION || fromId === MESSAGE_TYPES.INTERACTIVE) {
+    avatar (from) {
+      if (from === MESSAGE_TYPES.NOTIFICATION || from === MESSAGE_TYPES.INTERACTIVE) {
         return this.currentUserAttr.picture
       }
-      return this.details.participants[fromId].picture
+      return this.details.participants[from].picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
@@ -219,10 +244,7 @@ export default ({
     handleSendMessage (message, replyingMessage = null) {
       // Consider only simple TEXT now
       // TODO: implement other types of messages later
-      const data = {
-        type: MESSAGE_TYPES.TEXT,
-        text: message
-      }
+      const data = { type: MESSAGE_TYPES.TEXT, text: message }
 
       sbp('gi.actions/chatroom/addMessage', {
         contractID: this.currentChatRoomId,
@@ -233,11 +255,15 @@ export default ({
             const { meta, data } = msgValue
             this.messages.push({
               ...createMessage({ meta, data, hash: message.hash() }),
+              // TODO: pending is useful to turn the message gray meaning failed (just like Slack)
+              // when we don't get event after a certain period
               pending: true
             })
           }
         }
       })
+      // need to scroll to the bottom
+      this.updateScroll()
     },
     updateScroll () {
       if (this.summary.title) {
@@ -255,6 +281,29 @@ export default ({
       this.ephemeral.replyingMessage = message.text
       this.ephemeral.replyingTo = this.who(message)
     },
+    editMessage (message, newMessage) {
+      sbp('gi.actions/chatroom/editMessage', {
+        contractID: this.currentChatRoomId,
+        data: { id: message.id, text: newMessage },
+        hooks: {
+          prepublish: (msg) => {
+            message.text = newMessage
+            message.pending = true
+          }
+        }
+      })
+    },
+    deleteMessage (message) {
+      sbp('gi.actions/chatroom/deleteMessage', {
+        contractID: this.currentChatRoomId,
+        data: { id: message.id },
+        hooks: {
+          prepublish: (msg) => {
+            // need to do something
+          }
+        }
+      })
+    },
     changeDay (index) {
       const conv = this.messages
       if (index > 0 && index <= conv.length) {
@@ -266,50 +315,56 @@ export default ({
     isNew (index) {
       return this.startedUnreadIndex === index
     },
-    addEmoticon (index, emoticon) {
-      // Todo replace with  deep merge
-      const userId = this.currentUserAttr.id
-      const emoticons = this.messages[index].emoticons || {}
-      if (emoticons[emoticon]) {
-        const alreadyAdded = emoticons[emoticon].indexOf(userId)
-        if (alreadyAdded >= 0) {
-          emoticons[emoticon].splice(alreadyAdded, 1)
-          if (emoticons[emoticon].length === 0) {
-            delete this.messages[emoticon]
-            if (Object.keys(emoticons).length === 0) {
-              delete this.messages[index].emoticons
-              return false
-            }
+    addEmoticon (message, emoticon) {
+      sbp('gi.actions/chatroom/makeEmotion', {
+        contractID: this.currentChatRoomId,
+        data: { id: message.id, emoticon },
+        hooks: {
+          prepublish: (msg) => {
+            // need to do something
           }
-        } else emoticons[emoticon].push(userId)
+        }
+      })
+    },
+    getSimulatedState (initialize = true) {
+      return {
+        settings: cloneDeep(this.chatRoomSettings),
+        attributes: cloneDeep(this.chatRoomAttributes),
+        users: cloneDeep(this.chatRoomUsers),
+        messages: initialize ? [] : this.messages,
+        saveMessage: true
+      }
+    },
+    async getLatestEvents (refresh = false) {
+      const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+      const fromLatest = refresh || !this.latestEvents.length
+      const before = fromLatest
+        ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
+        : GIMessage.deserialize(this.latestEvents[0]).hash()
+
+      const newEvents = await sbp('chelonia/out/eventsBefore', before, limit)
+
+      if (fromLatest) {
+        this.latestEvents = newEvents
       } else {
-        if (!emoticons[emoticon]) emoticons[emoticon] = []
-        emoticons[emoticon].push(userId)
+        newEvents.pop() // remove duplication
+        this.latestEvents.unshift(...newEvents)
       }
 
-      this.$set(this.messages[index], 'emoticons', emoticons)
+      const state = this.getSimulatedState(true)
+      for (const event of this.latestEvents) {
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
+      }
+      this.messages = state.messages
       this.$forceUpdate()
-    },
-    deleteMessage (index) {
-      // TODO replace by store action
-      this.$set(this.messages[index], 'delete', true)
-      setTimeout(() => {
-        delete this.messages[index]
-        this.$forceUpdate()
-      }, 1000)
-      this.$forceUpdate()
+
+      return newEvents.length < limit
     },
     setInitMessages () {
-      if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        this.messages = this.chatRoomLatestMessages
-      } else {
-        this.messages = []
-        sbp('okTurtles.events/once', `${CHATROOM_STATE_LOADED}-${this.currentChatRoomId}`, (state) => {
-          this.messages = getLatestMessages({
-            count: this.chatRoomSettings.messagesPerPage, // TODO: this.chatRoomSettings could be {}
-            messages: state.messages
-          })
-        })
+      this.refreshMessages = true
+      this.messages = []
+      if (this.ephemeral.infiniteLoading) {
+        this.ephemeral.infiniteLoading.reset()
       }
     },
     setMessageEventListener ({ force = false, from, to }) {
@@ -318,44 +373,29 @@ export default ({
       }
       if (force) {
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)
-      } else {
-        if (this.isJoinedChatRoom(to)) {
-          sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
-        }
+      } else if (this.isJoinedChatRoom(to)) {
+        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
-    listenChatRoomActions ({ type, data }) {
-      const addIfNotExist = (msg) => {
-        let m = null
-        for (let i = this.messages.length - 1; i >= 0; i--) {
-          if (this.messages[i].id === msg.id) {
-            m = this.messages[i]
-            break
-          }
-        }
-        if (m) {
-          delete m.pending
-        } else {
-          this.messages.push(msg)
-        }
-      }
-      if (type === MESSAGE_ACTION_TYPES.ADD_MESSAGE) {
-        const { message } = data
-        if (message.type === MESSAGE_TYPES.TEXT) {
-          if (this.isCurrentUser(message.from)) {
-            addIfNotExist(message)
-          } else {
-            this.messages.push(message)
-          }
-        } else if (message.type === MESSAGE_TYPES.NOTIFICATION) {
-          this.messages.push(message)
-        }
-      }
-      this.$forceUpdate()
+    listenChatRoomActions ({ hash }) {
+      sbp('okTurtles.events/once', hash, async (contractID, message) => {
+        const state = this.getSimulatedState(false)
+        await sbp('chelonia/private/in/processMessage', message, state)
+        this.latestEvents.push(message.serialize())
+
+        this.$forceUpdate()
+      })
     },
     resizeEventHandler () {
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
+    },
+    infiniteHandler ($state) {
+      this.ephemeral.infiniteLoading = $state
+      this.getLatestEvents(this.refreshMessages).then(completed => {
+        completed ? $state.complete() : $state.loaded()
+        this.refreshMessages = false
+      })
     }
   },
   watch: {
@@ -363,6 +403,8 @@ export default ({
       const force = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
       this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
+      // need to scroll to the saved position
+      this.$nextTick(() => this.updateScroll())
     },
     'summary.joined' (to, from) {
       if (to) {

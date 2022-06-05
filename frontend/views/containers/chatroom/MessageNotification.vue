@@ -22,7 +22,7 @@ export default ({
     text: String,
     notification: Object, // { type, params }
     who: String,
-    currentUserId: String,
+    currentUsername: String,
     avatar: String,
     datetime: {
       type: Date,
