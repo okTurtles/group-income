@@ -1,16 +1,15 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import './db.js'
-import { GIMessage } from './GIMessage.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
+import { cloneDeep, debounce, delay, pick, randomIntFromRange } from '~/frontend/utils/giLodash.js'
 import { b64ToStr } from '~/shared/functions.js'
-import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
-import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
-import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
 import { decrypt, verifySignature } from './crypto.js'
-
-import type { GIKey, GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd, GIOpKeyDel } from './GIMessage.js'
+import './db.js'
+import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { CONTRACTS_MODIFIED, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
+import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpPropSet, GIOpType } from './GIMessage.js'
+import { GIMessage } from './GIMessage.js'
 
 const keysToMap = (keys: GIKey[]): Object => {
   return Object.fromEntries(keys.map(key => [key.id, key]))
@@ -53,7 +52,7 @@ sbp('sbp/selectors/register', {
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
           const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
-          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op(), signatureFn)
+          entry = GIMessage.createV1_0({ contractID, previousHEAD, op: entry.op(), signatureFn })
         }
       } else {
         const message = (await r.json())?.message
@@ -77,7 +76,7 @@ sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
-  'chelonia/private/in/processMessage': function (message: GIMessage, state: Object) {
+  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const contractID = message.contractID()
@@ -125,6 +124,33 @@ sbp('sbp/selectors/register', {
           sbp(`${action}/process`, { data, meta, hash, contractID }, state)
         }
       },
+      [GIMessage.OP_KEYSHARE] (v: GIOpKeyShare) {
+        if (message.originatingContractID() !== contractID && v.contractID !== message.originatingContractID()) {
+          throw new Error('External contracts can only set keys for themselves')
+        }
+
+        const cheloniaState = sbp(self.config.stateSelector)
+
+        if (!cheloniaState[v.contractID]) {
+          cheloniaState[v.contractID] = Object.create(null)
+        }
+        const targetState = cheloniaState[v.contractID]
+
+        const keys = { ...env.additionalKeys, ...state._volatile?.keys }
+
+        for (const key of v.keys) {
+          if (key.meta?.private) {
+            if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
+              if (!targetState._volatile) targetState._volatile = { keys: {} }
+              try {
+                targetState._volatile.keys[key.id] = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
+              } catch (e) {
+                console.error('Decryption error', e)
+              }
+            }
+          }
+        }
+      },
       [GIMessage.OP_PROP_DEL]: notImplemented,
       [GIMessage.OP_PROP_SET] (v: GIOpPropSet) {
         if (!state._vm.props) state._vm.props = {}
@@ -166,7 +192,23 @@ sbp('sbp/selectors/register', {
     // Signature verification
     // TODO: Temporary. Skip verifying default signatures
     if (signature.type !== 'default') {
-      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys) : state._vm.authorizedKeys
+      // This sync code has potential issues
+      // The first issue is that it can deadlock if there are circular references
+      // The second issue is that it doesn't handle key rotation. If the key used for signing is invalidated / removed from the originating contract, we won't have it in the state
+      // Both of these issues can be resolved by introducing a parameter with the message ID the state is based on. This requires implementing a separate, ephemeral, state container for operations that refer to a different contract.
+      // The difficulty of this is how to securely determine the message ID to use.
+      // The server can assist with this.
+      if (message.originatingContractID() !== message.contractID()) {
+        await sbp('okTurtles.eventQueue/queueEvent', `chelonia/${message.originatingContractID()}`, [
+          'chelonia/private/in/syncContract', message.originatingContractID()
+        ])
+      }
+
+      const contractState = message.originatingContractID() === message.contractID()
+        ? state
+        : sbp(this.config.stateSelector).contracts[message.originatingContractID()]
+
+      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys) : contractState._vm.authorizedKeys
       const signingKey = authorizedKeys?.[signature.keyId]
 
       if (!signingKey || !Array.isArray(signingKey.permissions) || !signingKey.permissions.includes(opT)) {
@@ -273,6 +315,9 @@ sbp('sbp/selectors/register', {
       }
       // whether or not there was an exception, we proceed ahead with updating the head
       // you can prevent this by throwing an exception in the processError hook
+      if (!state.contracts[contractID]) {
+        state.contracts[contractID] = Object.create(null)
+      }
       state.contracts[contractID].HEAD = hash
       // process any side-effects (these must never result in any mutation to the contract state!)
       if (!processingErrored) {

@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, deriveKeyFromPassword, serializeKey, encrypt } from '~/shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, deriveKeyFromPassword, deserializeKey, serializeKey, encrypt } from '~/shared/domains/chelonia/crypto.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
 import { imageUpload } from '@utils/image.js'
@@ -13,6 +13,7 @@ import './mailbox.js'
 
 import { encryptedAction } from './utils.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 
 // eslint-disable-next-line camelcase
 const salt_TODO_CHANGEME_NEEDS_TO_BE_DYNAMIC = 'SALT CHANGEME'
@@ -134,7 +135,7 @@ export default (sbp('sbp/selectors/register', {
             id: CSKid,
             type: CSK.type,
             data: CSKp,
-            permissions: [GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH],
+            permissions: [GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEYSHARE],
             meta: {
               type: 'csk',
               private: {
@@ -147,7 +148,7 @@ export default (sbp('sbp/selectors/register', {
             id: CEKid,
             type: CEK.type,
             data: CEKp,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEYSHARE],
             meta: {
               type: 'cek',
               private: {
@@ -168,11 +169,46 @@ export default (sbp('sbp/selectors/register', {
         signingKeyId: CSKid,
         encryptionKeyId: CEKid
       }])
+
+      await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID: mailboxID })
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
     }
     return [userID, mailboxID]
+  },
+  'gi.actions/identity/shareKeysWithSelf': async function ({ userID, contractID }) {
+    if (userID === contractID) {
+      return
+    }
+
+    const contractState = await sbp('chelonia/latestContractState', contractID)
+
+    if (contractState?._volatile?.keys) {
+      const state = await sbp('chelonia/latestContractState', userID)
+
+      const CEKid = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'cek')?.id: ?string)
+      const CSKid = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)
+      const CEK = deserializeKey(state?._volatile?.keys?.[CEKid])
+
+      await sbp('chelonia/out/keyShare', {
+        destinationContractID: userID,
+        destinationContractName: 'gi.contracts/identity',
+        data: {
+          contractID: contractID,
+          keys: Object.entries(contractState._volatile.keys).map(([keyId, key]: [string, mixed]) => ({
+            id: keyId,
+            meta: {
+              private: {
+                keyId: CEKid,
+                content: encrypt(CEK, (key: any))
+              }
+            }
+          }))
+        },
+        signingKeyId: CSKid
+      })
+    }
   },
   'gi.actions/identity/signup': async function ({ username, email, password }, publishOptions) {
     try {

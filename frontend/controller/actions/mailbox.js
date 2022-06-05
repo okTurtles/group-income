@@ -8,7 +8,7 @@ import { encryptedAction } from './utils.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
 export default (sbp('sbp/selectors/register', {
-  '_gi.actions/mailbox/create': async function ({
+  'gi.actions/mailbox/create': async function ({
     data = {}, options: { sync = true } = {}, publishOptions
   }): Promise<GIMessage> {
     try {
@@ -80,12 +80,6 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.actions/mailbox/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create mailbox: {reportError}', LError(e)))
     }
-  },
-  get 'gi.actions/mailbox/create' () {
-    return this['_gi.actions/mailbox/create']
-  },
-  set 'gi.actions/mailbox/create' (value) {
-    this['_gi.actions/mailbox/create'] = value
   },
   ...encryptedAction('gi.actions/mailbox/postMessage', L('Failed to post message to mailbox.'))
 }): string[])

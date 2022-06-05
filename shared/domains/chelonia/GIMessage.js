@@ -23,9 +23,10 @@ export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSON
 export type GIOpKeyAdd = GIKey[]
 export type GIOpKeyDel = string[]
 export type GIOpPropSet = { key: string, value: JSONType }
+export type GIOpKeyShare = { contractID: string, keys: GIKey[] }
 
-export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd'
-export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet
+export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd' | 'ks'
+export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare
 export type GIOp = [GIOpType, GIOpValue]
 
 export class GIMessage {
@@ -48,18 +49,29 @@ export class GIMessage {
   static OP_CONTRACT_AUTH: 'ca' = 'ca' // authorize a contract
   static OP_CONTRACT_DEAUTH: 'cd' = 'cd' // deauthorize a contract
   static OP_ATOMIC: 'at' = 'at' // atomic op
+  static OP_KEYSHARE: 'ks' = 'ks' // key share
 
   // eslint-disable-next-line camelcase
   static createV1_0 (
-    contractID: string | null = null,
-    previousHEAD: string | null = null,
-    op: GIOp,
-    signatureFn?: Function = defaultSignatureFn
+    {
+      contractID,
+      originatingContractID,
+      previousHEAD = null,
+      op,
+      signatureFn = defaultSignatureFn
+    }: {
+      contractID: string | null,
+      originatingContractID?: string,
+      previousHEAD?: string | null,
+      op: GIOp,
+      signatureFn?: Function
+    }
   ): this {
     const head = {
       version: '1.0.0',
       previousHEAD,
       contractID,
+      originatingContractID,
       op: op[0]
     }
     console.log('createV1_0', { op, head })
@@ -111,6 +123,7 @@ export class GIMessage {
       case GIMessage.OP_CONTRACT:
         if (!this.isFirstMessage()) throw new Error('OP_CONTRACT: must be first message')
         break
+      case GIMessage.OP_KEYSHARE:
       case GIMessage.OP_ACTION_ENCRYPTED:
         // nothing for now
         break
@@ -164,6 +177,8 @@ export class GIMessage {
   isFirstMessage (): boolean { return !this.head().previousHEAD }
 
   contractID (): string { return this.head().contractID || this.hash() }
+
+  originatingContractID (): string { return this.head().originatingContractID || this.contractID() }
 
   serialize (): string { return this._mapping.value }
 

@@ -28,6 +28,8 @@ export default (sbp('sbp/selectors/register', {
       const CSKs = encrypt(CEK, serializeKey(CSK, true))
       const CEKs = encrypt(CEK, serializeKey(CEK, true))
 
+      const rootState = sbp('state/vuex/state')
+
       const chatroom = await sbp('chelonia/with-env', '', {
         additionalKeys: {
           [CSKid]: CSK,
@@ -72,6 +74,9 @@ export default (sbp('sbp/selectors/register', {
       const contractID = chatroom.contractID()
 
       await sbp('chelonia/with-env', contractID, { additionalKeys: { [CEKid]: CEK } }, ['chelonia/contract/sync', contractID])
+
+      const userID = rootState.loggedIn.identityContractID
+      await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID })
 
       return chatroom
     } catch (e) {

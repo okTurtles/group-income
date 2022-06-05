@@ -98,6 +98,8 @@ export default (sbp('sbp/selectors/register', {
     const CSKs = encrypt(CEK, serializeKey(CSK, true))
     const CEKs = encrypt(CEK, serializeKey(CEK, true))
 
+    const rootState = sbp('state/vuex/state')
+
     try {
       const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
       const proposalSettings = {
@@ -144,7 +146,7 @@ export default (sbp('sbp/selectors/register', {
             id: CEKid,
             type: CEK.type,
             data: CEKp,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEYSHARE],
             meta: {
               type: 'cek',
               private: {
@@ -212,6 +214,9 @@ export default (sbp('sbp/selectors/register', {
         signingKeyId: CSKid,
         encryptionKeyId: CEKid
       }])
+
+      const userID = rootState.loggedIn.identityContractID
+      await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID })
 
       return message
     } catch (e) {
