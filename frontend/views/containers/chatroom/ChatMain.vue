@@ -323,8 +323,8 @@ export default ({
       if (msgIndex >= 0) {
         scrollAndHighlight(msgIndex)
       } else {
-        //  TODO: retrieve pages of events until the page contains messageId
-        const events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, messageId)
+        const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+        const events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, messageId, limit / 2)
         if (events && events.length) {
           await this.rerenderEvents(events, true)
 
