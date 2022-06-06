@@ -306,15 +306,16 @@ export default ({
 
       const scrollAndHighlight = (index) => {
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
+        const eleTarget = document.querySelectorAll('.c-body-conversation > .c-message')[Math.max(0, index - 1)]
 
         if (effect) {
-          eleMessage.scrollIntoView({ behavior: 'smooth' })
+          eleTarget.scrollIntoView({ behavior: 'smooth' })
           eleMessage.classList.add('c-focused')
           setTimeout(() => {
             eleMessage.classList.remove('c-focused')
           }, 1500)
         } else {
-          eleMessage.scrollIntoView()
+          eleTarget.scrollIntoView()
         }
       }
 
