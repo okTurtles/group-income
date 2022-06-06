@@ -299,19 +299,22 @@ export default ({
         }
       })
     },
-    async scrollToMessage (messageId, focus = true) {
+    async scrollToMessage (messageId, effect = true) {
       if (!messageId) {
         return
       }
 
       const scrollAndHighlight = (index) => {
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
-        eleMessage.scrollIntoView({ behavior: 'smooth' })
-        if (focus) {
+
+        if (effect) {
+          eleMessage.scrollIntoView({ behavior: 'smooth' })
           eleMessage.classList.add('c-focused')
           setTimeout(() => {
             eleMessage.classList.remove('c-focused')
           }, 1500)
+        } else {
+          eleMessage.scrollIntoView()
         }
       }
 
@@ -418,7 +421,7 @@ export default ({
         : GIMessage.deserialize(this.latestEvents[0]).hash()
       let events = null
       if (refresh && lastScrollPosition) {
-        events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, lastScrollPosition)
+        events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, lastScrollPosition, limit / 2)
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
