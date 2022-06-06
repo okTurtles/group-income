@@ -49,6 +49,7 @@
 
         component(
           :is='messageType(message)'
+          :ref='message.id'
           :key='message.id'
           :text='message.text'
           :type='message.type'
@@ -298,19 +299,22 @@ export default ({
         }
       })
     },
-    async scrollToMessage (messageId, focus = true) {
+    async scrollToMessage (messageId, effect = true) {
       if (!messageId) {
         return
       }
 
       const scrollAndHighlight = (index) => {
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
-        eleMessage.scrollIntoView({ behavior: 'smooth' })
-        if (focus) {
+
+        if (effect) {
+          eleMessage.scrollIntoView({ behavior: 'smooth' })
           eleMessage.classList.add('c-focused')
           setTimeout(() => {
             eleMessage.classList.remove('c-focused')
           }, 1500)
+        } else {
+          eleMessage.scrollIntoView()
         }
       }
 
@@ -417,7 +421,7 @@ export default ({
         : GIMessage.deserialize(this.latestEvents[0]).hash()
       let events = null
       if (refresh && lastScrollPosition) {
-        events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, lastScrollPosition)
+        events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, lastScrollPosition, limit / 2)
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
@@ -504,12 +508,14 @@ export default ({
 
       if (this.ephemeral.scrolledDistance > 500) {
         // Save the current scroll position per each chatroom
-        const allElements = document.querySelectorAll('.c-body-conversation > .c-message')
-        for (let i = allElements.length - 1; i >= 0; i--) {
-          if ((allElements[i].offsetTop - allElements[i].offsetParent.offsetTop <= curScrollTop) || i === 0) {
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+          const msg = this.messages[i]
+          const offsetTop = this.$refs[msg.id][0].$el.offsetTop
+          const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
+          if ((offsetTop - parentOffsetTop <= curScrollTop) || i === 0) {
             sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
               chatRoomId: this.currentChatRoomId,
-              messageId: this.messages[i].id
+              messageId: msg.id
             })
             break
           }

@@ -60,6 +60,9 @@ sbp('sbp/selectors/register', {
     if (!state.currentChatRoomIDs) {
       state.currentChatRoomIDs = {}
     }
+    if (!state.chatRoomScrollPosition) {
+      state.chatRoomScrollPosition = {}
+    }
   },
   'state/vuex/save': async function () {
     const state = store.state
