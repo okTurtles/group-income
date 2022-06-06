@@ -191,7 +191,7 @@ export default ({
       const defaultHeightInRem = 14
       let heightDiscountInRem = 0
       if (!this.summary.joined) {
-        heightDiscountInRem += 2
+        heightDiscountInRem += 4
       }
       // Not sure what `bodyPaddingBottom` means, I delete it now
       // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
