@@ -265,7 +265,7 @@ sbp('sbp/selectors/register', {
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
-  'chelonia/out/eventsSince': async function (contractID: string, since: string, offset?: number) {
+  'chelonia/out/eventsSince': async function (contractID: string, since: string, offset: number = 0) {
     const events = await fetch(`${this.config.connectionURL}/events/${contractID}/${since}?offset=${offset}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
