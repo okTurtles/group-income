@@ -49,6 +49,7 @@
 
         component(
           :is='messageType(message)'
+          :ref='message.id'
           :key='message.id'
           :text='message.text'
           :type='message.type'
@@ -504,12 +505,14 @@ export default ({
 
       if (this.ephemeral.scrolledDistance > 500) {
         // Save the current scroll position per each chatroom
-        const allElements = document.querySelectorAll('.c-body-conversation > .c-message')
-        for (let i = allElements.length - 1; i >= 0; i--) {
-          if ((allElements[i].offsetTop - allElements[i].offsetParent.offsetTop <= curScrollTop) || i === 0) {
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+          const msg = this.messages[i]
+          const offsetTop = this.$refs[msg.id][0].$el.offsetTop
+          const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
+          if ((offsetTop - parentOffsetTop <= curScrollTop) || i === 0) {
             sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
               chatRoomId: this.currentChatRoomId,
-              messageId: this.messages[i].id
+              messageId: msg.id
             })
             break
           }
