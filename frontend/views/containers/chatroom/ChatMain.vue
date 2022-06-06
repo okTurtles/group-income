@@ -306,15 +306,16 @@ export default ({
 
       const scrollAndHighlight = (index) => {
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
+        const eleTarget = document.querySelectorAll('.c-body-conversation > .c-message')[Math.max(0, index - 1)]
 
         if (effect) {
-          eleMessage.scrollIntoView({ behavior: 'smooth' })
+          eleTarget.scrollIntoView({ behavior: 'smooth' })
           eleMessage.classList.add('c-focused')
           setTimeout(() => {
             eleMessage.classList.remove('c-focused')
           }, 1500)
         } else {
-          eleMessage.scrollIntoView()
+          eleTarget.scrollIntoView()
         }
       }
 
@@ -322,8 +323,8 @@ export default ({
       if (msgIndex >= 0) {
         scrollAndHighlight(msgIndex)
       } else {
-        //  TODO: retrieve pages of events until the page contains messageId
-        const events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, messageId)
+        const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+        const events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, messageId, limit / 2)
         if (events && events.length) {
           await this.rerenderEvents(events, true)
 
