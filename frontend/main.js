@@ -108,6 +108,17 @@ async function startApp () {
         preferSlim: true
       },
       manifests: {
+        // esm w/out banner
+        // 'gi.contracts/group': '21XWnNG5h1M8dkT9HaKpeZugeXXzaAEdqCY1nTKAKtYBVsBW7F',
+        // 'gi.contracts/identity': '21XWnNRqsN4vhWiJHaQnhCTwnWddmJUH7iMcM2NbLBXze8dYB5',
+        // 'gi.contracts/mailbox': '21XWnNNwXEJErrZNtoHPe91BKg8egFWsn8kea4FTeCFXvUWu72',
+        // 'gi.contracts/chatroom': '21XWnNV4d2tzFGuBrQLSAvyNQLQY45xaVqk1kxKjbYLjud3d95'
+        // iife w/top-level import-require banner
+        // 'gi.contracts/group': '21XWnNV4WRUrZitwzdBxNzrYjTNTTFeTU4yrBFqmEK4p1skXFt',
+        // 'gi.contracts/identity': '21XWnNF78vfcYcBCzDKCHDrR1k8ULzkZiBFGrzQuDaRo5rpptB',
+        // 'gi.contracts/mailbox': '21XWnNXFteQs35ereJqQ4cKRXt7HoZfzYxVpRXJgndjgWWuo3W',
+        // 'gi.contracts/chatroom': '21XWnNN7z148sVkN8GFdDRYBFnu7ojGLmRr4dyfWz85KHJuQ1L'
+        // iife w/out top-level import-require
         'gi.contracts/group': '21XWnNL8ZFdJp474N3buKvCum6WHbiDqmTtFzRBFxLynb4nB2U',
         'gi.contracts/identity': '21XWnNJcRbr9ky8tJffCqqNmcUp6FsafbnsayD6ZLmwkS2W2rz',
         'gi.contracts/mailbox': '21XWnNVstNeekqC3N7QBhyTF8G2GR3D4eoU7F5rv5pc9xXwmq5',

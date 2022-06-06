@@ -19,6 +19,8 @@
 declare function logger(err: Error): void
 // Nodejs globals.
 declare var process: any
+// Third-party globals
+declare var Compartment: Function
 
 // =======================
 // Fix "Required module not found" in a hackish way.

@@ -173,10 +173,11 @@ module.exports = (grunt) => {
   }
   esbuildOptionBags.common = {
     ...pick(esbuildOptionBags.default, [
-      'format', 'sourcemap', 'outdir',
+      'sourcemap', 'outdir',
       'bundle', 'incremental', 'define', 'watch',
       'minifyIdentifiers', 'minifySyntax', 'minifyWhitespace'
     ]),
+    format: 'esm',
     splitting: false,
     entryPoints: [`${commonDir}/common.js`]
   }
@@ -184,7 +185,11 @@ module.exports = (grunt) => {
     ...pick(clone(esbuildOptionBags.default), [
       'define', 'bundle', 'watch', 'incremental'
     ]),
+    // format: 'esm',
     format: 'iife',
+    // banner: {
+    //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
+    // },
     splitting: false,
     outdir: 'frontend/assets/contracts',
     entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`]

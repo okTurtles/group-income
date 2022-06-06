@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import './internals.js'
-import { CONTRACTS_MODIFIED } from './events.js'
+import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
 import { merge, cloneDeep, randomHexString, intersection, difference } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr } from '~/shared/functions.js'
@@ -18,6 +18,7 @@ import type { GIOpContract, GIOpActionUnencrypted } from './GIMessage.js'
 
 export type ChelRegParams = {
   contractName: string;
+  server?: string; // TODO: implement!
   data: Object;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
@@ -28,8 +29,8 @@ export type ChelRegParams = {
 }
 
 export type ChelActionParams = {
-  // TODO: allow specifying destination server here
   action: string;
+  server?: string; // TODO: implement!
   contractID: string;
   data: Object;
   hooks?: {
@@ -110,7 +111,9 @@ export default (sbp('sbp/selectors/register', {
     // because they are functions and cloneDeep doesn't clone functions
     merge(this.config.hooks, config.hooks || {})
     const manifests = this.config.contracts.manifests
+    console.log('preloading manifests:', Object.keys(manifests))
     for (const contractName in manifests) {
+      console.debug('loading contract:', contractName)
       await sbp('chelonia/private/loadManifest', manifests[contractName])
     }
   },
@@ -208,6 +211,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
     }
+    sbp('okTurtles.events/emit', CONTRACT_REGISTERED, contract)
   },
   // call this manually to resubscribe/unsubscribe from contracts as needed
   // if you are using a custom stateSelector and reload the state (e.g. upon login)
@@ -344,7 +348,7 @@ export default (sbp('sbp/selectors/register', {
           keyJSON: 'TODO: add group public key here'
         }: GIOpContract)
       ],
-      this.config.contractManifests[contractName]
+      this.config.contracts.manifests[contractName]
     )
     hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions)
@@ -407,7 +411,7 @@ async function outEncryptedOrUnencryptedAction (
       opType,
       opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage)
     ],
-    this.config.contractManifests[contract.name]
+    this.config.contracts.manifests[contract.name]
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
   hooks && hooks.prepublish && hooks.prepublish(message)

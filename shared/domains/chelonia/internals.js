@@ -7,11 +7,13 @@ import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import 'ses'
+import { blake32Hash } from '~/shared/functions.js'
+// import 'ses'
 
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
 const currentlyLoadedContracts = {}
+const modules = {}
 
 export default (sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
@@ -22,7 +24,7 @@ export default (sbp('sbp/selectors/register', {
     const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
     // TODO: load manifests in such a way that it also works with remote contracts that are named the same
     const manifest = await fetch(manifestURL).then(handleFetchResult('json'))
-    console.log('got manifest:', manifest)
+    console.debug('got manifest:', manifest)
     const body = JSON.parse(manifest.body)
     const contractInfo = this.config.contracts.defaults.preferSlim ? body.contractSlim : body.contract
     // PLAN: when a new contract version is encountered, unregister the selectors that
@@ -39,20 +41,32 @@ export default (sbp('sbp/selectors/register', {
       currentlyLoadedContracts[contractInfo.file].hash = contractInfo.hash
     }
     if (loadContract) {
+      console.debug('loading', contractInfo.file)
       const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`)
         .then(handleFetchResult('text'))
-      console.debug('loading', contractInfo.file)
-      // TODO: this !!!! https://github.com/evanw/esbuild/issues/1944
-      //       and if it works then see if it also works with iife => esm again
+      const sourceHash = blake32Hash(source)
+      if (sourceHash !== contractInfo.hash) {
+        throw new Error(`bad hash ${sourceHash} for contract '${contractInfo.file}'! Should be: ${contractInfo.hash}`)
+      }
+      const imports = []
+      // finds all the dependencies, and ignores most of those that are commented out
+      source.replace(/\/\*.*require\s*\([^)]+\).*\*\/|\/\/.*require\s*\([^)]+\)|(?:require\s*\(\s*["']([^"']+)["']\s*\))/g, (_, id) => {
+        id && imports.push(id)
+      })
+      for (const dep of imports) {
+        // TODO: verify that 'dep' is on the list of approved/allowed imports
+        if (!modules[dep]) {
+          await import(dep).then(x => {
+            console.debug('imported:', Object.keys(x))
+            modules[dep] = x
+          })
+        }
+      }
       // eslint-disable-next-line no-new-func
-      new Function(source)()
-      // eslint-disable-next-line no-undef
-      // const vm = new Compartment({
-      //   ...this.config.contracts.defaults.exposedGlobals,
-      //   console
-      // })
-      // vm.evaluate(source)
-      // currentlyLoadedContracts[contractInfo.file].vm = vm
+      new Function('require', `'use strict'
+        ${source}
+        console.debug('loaded ${contractInfo.file}!')
+      `)((dep) => modules[dep])
     }
   },
   // used by, e.g. 'chelonia/contract/wait'
@@ -349,4 +363,101 @@ const handleEvent = {
 
 const notImplemented = (v) => {
   throw new Error(`chelonia: action not implemented to handle: ${JSON.stringify(v)}.`)
+}
+
+// https://2ality.com/2019/10/eval-via-import.html
+// Example: await import(esm`${source}`)
+// const esm = ({ raw }, ...vals) => {
+//   return URL.createObjectURL(new Blob([String.raw({ raw }, ...vals)], { type: 'text/javascript' }))
+// }
+
+// await loadScript.call(this, contractInfo.file, source, contractInfo.hash)
+//   .then(x => {
+//     console.debug(`loaded ${contractInfo.file}`)
+//     return x
+//   })
+// eslint-disable-next-line no-unused-vars
+function loadScript (file, source, hash) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    // script.type = 'application/javascript'
+    script.type = 'module'
+    // problem with this is that scripts will step on each other's feet
+    script.innerHTML = source
+    // NOTE: this will work if the file route adds .header('Content-Type', 'application/javascript')
+    // script.src = `${this.config.connectionURL}/file/${hash}`
+    // this results in: "SyntaxError: import declarations may only appear at top level of a module"
+    // script.innerHTML = `(function () {
+    //   ${source}
+    // })()`
+    script.onload = () => resolve(script)
+    script.onerror = (err) => reject(new Error(`${err || 'Error'} trying to load: ${file}`))
+    document.getElementsByTagName('head')[0].appendChild(script)
+  })
+}
+
+// This code is cobbled together based on:
+// https://github.com/endojs/endo/blob/master/packages/ses/test/test-import-cjs.js
+// https://github.com/endojs/endo/blob/master/packages/ses/test/test-import.js
+//   const vm = await sesImportVM.call(this, `${this.config.connectionURL}/file/${contractInfo.hash}`)
+//   currentlyLoadedContracts[contractInfo.file].vm = vm
+// eslint-disable-next-line no-unused-vars
+function sesImportVM (url): Promise<Object> {
+  // eslint-disable-next-line no-undef
+  const vm = new Compartment(
+    {
+      ...this.config.contracts.defaults.exposedGlobals,
+      console
+    },
+    {}, // module map
+    {
+      resolveHook (spec, referrer) {
+        console.debug('resolveHook', { spec, referrer })
+        return spec
+      },
+      // eslint-disable-next-line require-await
+      async importHook (moduleSpecifier: string, ...args) {
+        const source = await fetch(moduleSpecifier).then(handleFetchResult('text'))
+        console.debug('importHook', { fetch: moduleSpecifier, args, source })
+        const execute = (moduleExports, compartment, resolvedImports) => {
+          console.debug('execute called with:', { moduleExports, resolvedImports })
+          const functor = compartment.evaluate(
+            `(function (require, exports, module, __filename, __dirname) { ${source} })`
+            // this doesn't seem to help with: https://github.com/endojs/endo/issues/1207
+            // { __evadeHtmlCommentTest__: false, __rejectSomeDirectEvalExpressions__: false }
+          )
+          const require_ = (importSpecifier) => {
+            console.debug('in-source require called with:', importSpecifier, 'keying:', resolvedImports)
+            const namespace = compartment.importNow(resolvedImports[importSpecifier])
+            console.debug('got namespace:', namespace)
+            return namespace.default === undefined ? namespace : namespace.default
+          }
+          const module_ = {
+            get exports () {
+              return moduleExports
+            },
+            set exports (newModuleExports) {
+              moduleExports.default = newModuleExports
+            }
+          }
+          functor(require_, moduleExports, module_, moduleSpecifier)
+        }
+        if (moduleSpecifier === '/assets/js/common.js') {
+          return {
+            imports: [],
+            exports: ['Vue', 'L'],
+            execute
+          }
+        } else {
+          return {
+            imports: ['/assets/js/common.js'],
+            exports: [],
+            execute
+          }
+        }
+      }
+    }
+  )
+  // vm.evaluate(source)
+  return vm.import(url)
 }

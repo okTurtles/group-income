@@ -7,11 +7,11 @@ import sbp from '@sbp/sbp'
 import {
   Vue
 } from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
-import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
+import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
 import Colors from './colors.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
+import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from './contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -526,5 +526,18 @@ if (process.env.NODE_ENV === 'development') {
     store.commit('noop')
   }, 500))
 }
+
+// handle contracts being registered
+const omitGetters = {
+  'gi.contracts/group': ['currentGroupState'],
+  'gi.contracts/identity': ['currentIdentityState'],
+  'gi.contracts/chatroom': ['currentChatRoomState']
+}
+sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
+  console.log('registering getters for:', contract.name)
+  store.registerModule(contract.name, {
+    getters: omit(contract.getters, omitGetters[contract.name] || [])
+  })
+})
 
 export default store
