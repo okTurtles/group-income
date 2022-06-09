@@ -109,7 +109,7 @@ import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/constants.js'
-import { createMessage, findMessageIdx } from '@model/contracts/chatroom.js'
+import { createMessage, findMessageIdx, isAddedNewMessage } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { cloneDeep, debounce } from '@utils/giLodash.js'
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
@@ -341,8 +341,8 @@ export default ({
         setTimeout(() => {
           if (scrollTargetMessage) {
             this.scrollToMessage(scrollTargetMessage, false)
-          } else {
-            this.$refs.conversation && this.$refs.conversation.scroll({
+          } else if (this.$refs.conversation) {
+            this.$refs.conversation.scroll({
               left: 0,
               top: this.$refs.conversation.scrollHeight,
               behavior: 'smooth'
@@ -479,6 +479,11 @@ export default ({
         this.latestEvents.push(message.serialize())
 
         this.$forceUpdate()
+
+        // TODO: Need to scroll to the bottom only when new message is ADDED by ANOTHER
+        if (this.ephemeral.scrolledDistance < 50 && isAddedNewMessage(message)) {
+          this.updateScroll()
+        }
       })
     },
     resizeEventHandler () {

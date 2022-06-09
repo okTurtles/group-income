@@ -22,6 +22,7 @@ import {
 } from './constants.js'
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 // console.debug('esbuild import hack', GIMessage && '')
@@ -114,6 +115,23 @@ export function findMessageIdx (id: string, messages: Array<Object>): number {
     }
   }
   return -1
+}
+
+export function isAddedNewMessage (message: GIMessage): Object {
+  const { action, meta } = message.decryptedValue()
+  const rootState = sbp('state/vuex/state')
+  const me = rootState.loggedIn.username
+
+  if (action.endsWith('addMessage') ||
+    action.endsWith('join') ||
+    action.endsWith('rename') ||
+    action.endsWith('changeDescription') ||
+    action.endsWith('leave')) {
+    // we add new pending message in 'handleSendMessage' function in ChatMain.vue
+    return me !== meta.username
+  }
+
+  return false
 }
 
 function createNotificationData (
