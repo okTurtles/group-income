@@ -341,8 +341,8 @@ export default ({
         setTimeout(() => {
           if (scrollTargetMessage) {
             this.scrollToMessage(scrollTargetMessage, false)
-          } else {
-            this.$refs.conversation && this.$refs.conversation.scroll({
+          } else if (this.$refs.conversation) {
+            this.$refs.conversation.scroll({
               left: 0,
               top: this.$refs.conversation.scrollHeight,
               behavior: 'smooth'
@@ -479,6 +479,11 @@ export default ({
         this.latestEvents.push(message.serialize())
 
         this.$forceUpdate()
+
+        if (this.ephemeral.scrolledDistance < 50) {
+          // TODO: Need to scroll to the bottom only when new message is ADDED by ANOTHER
+          this.updateScroll()
+        }
       })
     },
     resizeEventHandler () {
