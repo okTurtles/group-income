@@ -127,7 +127,7 @@ export function isAddedNewMessage (message: GIMessage): Object {
     action.endsWith('rename') ||
     action.endsWith('changeDescription') ||
     action.endsWith('leave')) {
-    // handleSendMessage
+    // we add new pending message in 'handleSendMessage' function in ChatMain.vue
     return me !== meta.username
   }
 
