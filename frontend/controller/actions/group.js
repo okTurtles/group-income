@@ -250,7 +250,14 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
     try {
       const rootState = sbp('state/vuex/state')
-      const username = params.data.username || rootState.loggedIn.username
+      const rootGetters = sbp('state/vuex/getters')
+      const me = rootState.loggedIn.username
+      const username = params.data.username || me
+
+      if (!rootGetters.isJoinedChatRoom(params.data.chatRoomID) && username !== me) {
+        throw new GIErrorUIRuntimeError(L('Failed to join chat channel.'))
+      }
+
       const message = await sbp('gi.actions/chatroom/join', {
         ...omit(params, ['options']),
         contractID: params.data.chatRoomID,
@@ -261,7 +268,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
-      if (username === rootState.loggedIn.username) {
+      if (username === me) {
         // 'READY_TO_JOIN_CHATROOM' is necessary to identify the joining chatroom action is NEW or OLD
         // Users join the chatroom thru group making group actions
         // But when user joins the group, he needs to ignore all the actions about chatroom
