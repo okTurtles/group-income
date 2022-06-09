@@ -22,12 +22,11 @@ if (!fs.existsSync(dataFolder)) {
 const production = process.env.NODE_ENV === 'production'
 
 export default (sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesSince': async function (contractID: string, hash: string, offset: number): Promise<*> {
+  'backend/db/streamEntriesSince': async function (contractID: string, hash: string): Promise<*> {
     let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
     if (!currentHEAD) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
     }
-    let isMet = false
     let prefix = '['
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
@@ -36,19 +35,12 @@ export default (sbp('sbp/selectors/register', {
         try {
           const entry = await sbp('chelonia/db/getEntry', currentHEAD)
           const json = `"${strToB64(entry.serialize())}"`
-
-          if (currentHEAD === hash) {
-            isMet = true
-          } else if (isMet) {
-            offset--
-          }
-
-          this.push(prefix + json)
-          currentHEAD = entry.message().previousHEAD
-          prefix = ','
-
-          if (isMet && offset <= 0) {
-            this.push(']')
+          if (currentHEAD !== hash) {
+            this.push(prefix + json)
+            currentHEAD = entry.message().previousHEAD
+            prefix = ','
+          } else {
+            this.push(prefix + json + ']')
             this.push(null)
           }
         } catch (e) {
@@ -81,6 +73,47 @@ export default (sbp('sbp/selectors/register', {
             this.push(prefix + json)
             prefix = ','
             limit--
+            currentHEAD = entry.message().previousHEAD
+          }
+        } catch (e) {
+          // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
+          console.error(`read(): ${e.message}:`, e)
+          this.push(']')
+          this.push(null)
+        }
+      }
+    })
+  },
+  'backend/db/streamEntriesBetween': async function (startHash: string, endHash: string, offset: number): Promise<*> {
+    offset = parseInt(offset) === isNaN ? 0 : Math.max(0, parseInt(offset))
+
+    let prefix = '['
+    let isMet = false
+    let currentHEAD = endHash
+    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
+    if (!entry) {
+      throw Boom.notFound(`entry ${currentHEAD} doesn't exist!`)
+    }
+    // NOTE: if this ever stops working you can also try Readable.from():
+    // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
+    return new Readable({
+      async read (): any {
+        try {
+          entry = await sbp('chelonia/db/getEntry', currentHEAD)
+          const json = `"${strToB64(entry.serialize())}"`
+          this.push(prefix + json)
+          prefix = ','
+
+          if (currentHEAD === startHash) {
+            isMet = true
+          } else if (isMet) {
+            offset--
+          }
+
+          if (!currentHEAD || (isMet && !offset)) {
+            this.push(']')
+            this.push(null)
+          } else {
             currentHEAD = entry.message().previousHEAD
           }
         } catch (e) {

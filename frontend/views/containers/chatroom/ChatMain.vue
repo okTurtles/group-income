@@ -324,9 +324,9 @@ export default ({
         scrollAndHighlight(msgIndex)
       } else {
         const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-        const events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, messageId, limit / 2)
+        const events = await sbp('chelonia/out/eventsBetween', messageId, this.messages[0].id, limit / 2)
         if (events && events.length) {
-          await this.rerenderEvents(events, true)
+          await this.rerenderEvents(events, false)
 
           const msgIndex = findMessageIdx(messageId, this.messages)
           if (msgIndex >= 0) {
@@ -422,7 +422,8 @@ export default ({
         : GIMessage.deserialize(this.latestEvents[0]).hash()
       let events = null
       if (refresh && lastScrollPosition) {
-        events = await sbp('chelonia/out/eventsSince', this.currentChatRoomId, lastScrollPosition, limit / 2)
+        const latestHash = await sbp('chelonia/out/latestHash', this.currentChatRoomId)
+        events = await sbp('chelonia/out/eventsBetween', lastScrollPosition, latestHash, limit / 2)
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }

@@ -265,8 +265,8 @@ sbp('sbp/selectors/register', {
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
-  'chelonia/out/eventsSince': async function (contractID: string, since: string, offset: number = 0) {
-    const events = await fetch(`${this.config.connectionURL}/events/${contractID}/${since}?offset=${offset}`)
+  'chelonia/out/eventsSince': async function (contractID: string, since: string) {
+    const events = await fetch(`${this.config.connectionURL}/eventsSince/${contractID}/${since}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
@@ -284,6 +284,18 @@ sbp('sbp/selectors/register', {
     }
 
     const events = await fetch(`${this.config.connectionURL}/eventsBefore/${before}/${limit}`)
+      .then(handleFetchResult('json'))
+    if (Array.isArray(events)) {
+      return events.reverse().map(b64ToStr)
+    }
+  },
+  'chelonia/out/eventsBetween': async function (startHash: string, endHash: string, offset: number = 0) {
+    if (offset < 0) {
+      console.error('[chelonia] invalid params error: "offset" needs to be positive integer or zero')
+      return
+    }
+
+    const events = await fetch(`${this.config.connectionURL}/eventsBetween/${startHash}/${endHash}?offset=${offset}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
