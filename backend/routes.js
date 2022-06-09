@@ -74,7 +74,7 @@ route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
     if (!limit) return Boom.badRequest('missing limit')
     if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return Boom.badRequest('invalid limit')
 
-    const stream = await sbp('backend/db/streamEntriesBefore', before, limit)
+    const stream = await sbp('backend/db/streamEntriesBefore', before, parseInt(limit))
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
@@ -89,8 +89,9 @@ route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h
 
     if (!startHash) return Boom.badRequest('missing startHash')
     if (!endHash) return Boom.badRequest('missing endHash')
+    if (isNaN(parseInt(offset)) || parseInt(offset) < 0) return Boom.badRequest('invalid offset')
 
-    const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, offset)
+    const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, parseInt(offset))
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
