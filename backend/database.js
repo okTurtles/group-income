@@ -85,7 +85,7 @@ export default (sbp('sbp/selectors/register', {
     })
   },
   'backend/db/streamEntriesBetween': async function (startHash: string, endHash: string, offset: number): Promise<*> {
-    offset = parseInt(offset) === isNaN ? 0 : Math.max(0, parseInt(offset))
+    offset = isNaN(parseInt(offset)) ? 0 : Math.max(0, parseInt(offset))
 
     let prefix = '['
     let isMet = false
