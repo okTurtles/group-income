@@ -46,11 +46,10 @@ route.POST('/event', {
   }
 })
 
-route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
+route.GET('/eventsSince/{contractID}/{since}', {}, async function (request, h) {
   try {
     const { contractID, since } = request.params
-    const offset = parseInt(request.query.offset || 0)
-    const stream = await sbp('backend/db/streamEntriesSince', contractID, since, offset)
+    const stream = await sbp('backend/db/streamEntriesSince', contractID, since)
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
@@ -76,6 +75,22 @@ route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
     if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return Boom.badRequest('invalid limit')
 
     const stream = await sbp('backend/db/streamEntriesBefore', before, limit)
+    request.events.once('disconnect', stream.destroy.bind(stream))
+    return stream
+  } catch (err) {
+    return logger(err)
+  }
+})
+
+route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h) {
+  try {
+    const { startHash, endHash } = request.params
+    const { offset } = request.query
+
+    if (!startHash) return Boom.badRequest('missing startHash')
+    if (!endHash) return Boom.badRequest('missing endHash')
+
+    const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, offset)
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
