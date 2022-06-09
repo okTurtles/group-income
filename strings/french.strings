@@ -2140,6 +2140,9 @@
 "Delete" = "Effacer";
 
 /* Not currently used */
+"Duplicated channel name" = "Nom de canal dupliqué";
+
+/* Not currently used */
 "Failed to Send Message" = "L’envoi du message a échoué";
 
 /* Not currently used */

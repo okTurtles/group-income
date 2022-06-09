@@ -134,7 +134,16 @@ export default ({
     form: {
       name: {
         [L('This field is required')]: required,
-        maxLength: maxLength(50)
+        maxLength: maxLength(50),
+        [L('Duplicated channel name')]: (name) => {
+          const rootGetters = sbp('state/vuex/getters')
+          for (const contractId in rootGetters.getChatRooms) {
+            if (name.toUpperCase() === rootGetters.getChatRooms[contractId].name.toUpperCase()) {
+              return false
+            }
+          }
+          return true
+        }
       },
       description: {
         maxLength: maxLength(150)
