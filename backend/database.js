@@ -110,11 +110,12 @@ export default (sbp('sbp/selectors/register', {
             offset--
           }
 
-          if (!currentHEAD || (isMet && !offset)) {
+          const previousHEAD = entry.message().previousHEAD
+          if (!currentHEAD || !previousHEAD || (isMet && !offset)) {
             this.push(']')
             this.push(null)
           } else {
-            currentHEAD = entry.message().previousHEAD
+            currentHEAD = previousHEAD
           }
         } catch (e) {
           // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
