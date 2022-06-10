@@ -224,9 +224,9 @@ export default (sbp('sbp/selectors/register', {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
-    const rootGetters = sbp('state/vuex/getters')
-    for (const contractId in rootGetters.getChatRooms) {
-      if (params.data.name.toUpperCase() === rootGetters.getChatRooms[contractId].name.toUpperCase()) {
+    const contractState = sbp('state/vuex/state')[params.contractID]
+    for (const contractId in contractState.chatRooms) {
+      if (params.data.attributes.name.toUpperCase() === contractState.chatRooms[contractId].name.toUpperCase()) {
         throw new GIErrorUIRuntimeError(L('Duplicated channel name'))
       }
     }
