@@ -74,7 +74,7 @@
 
 <script>
 import { validationMixin } from 'vuelidate'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import sbp from '@sbp/sbp'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
@@ -92,16 +92,22 @@ export default ({
     BannerScoped
   },
   computed: {
-    ...mapState(['currentGroupId'])
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['getChatRooms'])
   },
   data () {
     return {
       form: {
         name: '',
         description: '',
-        private: false
+        private: false,
+        existingNames: []
       }
     }
+  },
+  created () {
+    this.form.existingNames = Object.keys(this.getChatRooms)
+      .map(cId => this.getChatRooms[cId].name)
   },
   methods: {
     close () {
@@ -135,10 +141,9 @@ export default ({
       name: {
         [L('This field is required')]: required,
         maxLength: maxLength(50),
-        [L('Duplicated channel name')]: (name) => {
-          const rootGetters = sbp('state/vuex/getters')
-          for (const contractId in rootGetters.getChatRooms) {
-            if (name.toUpperCase() === rootGetters.getChatRooms[contractId].name.toUpperCase()) {
+        [L('Duplicated channel name')]: (name, siblings) => {
+          for (const existingName of siblings.existingNames) {
+            if (name.toUpperCase() === existingName.toUpperCase()) {
               return false
             }
           }
