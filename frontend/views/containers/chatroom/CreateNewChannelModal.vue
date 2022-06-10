@@ -106,6 +106,8 @@ export default ({
     }
   },
   created () {
+    // HACK: using rootGetters inside validator makes `Duplicated channel name` error
+    // as soon as a new channel is created
     this.form.existingNames = Object.keys(this.getChatRooms)
       .map(cId => this.getChatRooms[cId].name)
   },
