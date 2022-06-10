@@ -94,7 +94,7 @@ export default ({
     code () {
       return L('LEAVE {GROUP_NAME}', {
         // HACK: this.groupSettings is empty object {} when user leaved the group but not left this modal yet
-        GROUP_NAME: this.groupSettings.groupName ? this.groupSettings.groupName.toUpperCase() : ''
+        GROUP_NAME: (this.groupSettings.groupName || '').toUpperCase()
       })
     }
   },
