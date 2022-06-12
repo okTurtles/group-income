@@ -32,14 +32,9 @@ export const inviteType: any = objectOf({
   expires: number
 })
 
-export function createInvite (
-  {
-    quantity = 1,
-    creator,
-    expires,
-    invitee
-  }: { quantity: number, creator: string, expires?: number, invitee?: string }
-): {|
+export function createInvite ({ quantity = 1, creator, expires, invitee }: {
+  quantity: number, creator: string, expires: number, invitee?: string
+}): {|
   creator: string,
   expires: number,
   inviteSecret: string,
@@ -55,7 +50,7 @@ export function createInvite (
     invitee,
     status: INVITE_STATUS.VALID,
     responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: Date.now() + DAYS_MILLIS * (expires || INVITE_EXPIRES_IN_DAYS.INITIAL)
+    expires: Date.now() + DAYS_MILLIS * expires
   }
 }
 
@@ -302,7 +297,11 @@ sbp('chelonia/defineContract', {
       const pendingMembers = {}
       for (const inviteId in invites) {
         const invite = invites[inviteId]
-        if (invite.status === INVITE_STATUS.VALID && invite.creator !== INVITE_INITIAL_CREATOR) {
+        if (
+          invite.status === INVITE_STATUS.VALID &&
+          invite.creator !== INVITE_INITIAL_CREATOR &&
+          invite.expires >= Date.now()
+        ) {
           pendingMembers[invites[inviteId].invitee] = {
             invitedBy: invites[inviteId].creator
           }
@@ -444,6 +443,7 @@ sbp('chelonia/defineContract', {
           settings: {
             groupCreator: meta.username,
             distributionPeriodLength: 30 * DAYS_MILLIS,
+            inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
             inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
           },
           profiles: {

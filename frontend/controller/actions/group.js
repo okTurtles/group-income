@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { createInvite } from '@model/contracts/group.js'
 import {
   INVITE_INITIAL_CREATOR,
+  INVITE_EXPIRES_IN_DAYS,
   CHATROOM_GENERAL_NAME,
   CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL
@@ -81,7 +82,11 @@ export default (sbp('sbp/selectors/register', {
     }
 
     try {
-      const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
+      const initialInvite = createInvite({
+        quantity: 60,
+        creator: INVITE_INITIAL_CREATOR,
+        expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+      })
       const proposalSettings = {
         rule: ruleName,
         ruleSettings: {
