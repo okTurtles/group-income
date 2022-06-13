@@ -64,6 +64,7 @@ export default (sbp('sbp/selectors/register', {
       stateSelector: 'chelonia/private/state', // override to integrate with, for example, vuex
       contracts: {
         defaults: {
+          modules: {}, // '<module name>' => resolved module import
           exposedGlobals: {},
           preferSlim: false
         },
@@ -94,7 +95,7 @@ export default (sbp('sbp/selectors/register', {
       contracts: {}, // contractIDs => { type, HEAD } (contracts we've subscribed to)
       pending: [] // prevents processing unexpected data from a malicious server
     }
-    this.contracts = {}
+    this.contracts = {} // TODO: these can no longer be based on name... since multiple versions
     this.whitelistedActions = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
     this.sideEffectStack = (contractID: string): Array<*> => {
@@ -109,7 +110,9 @@ export default (sbp('sbp/selectors/register', {
     merge(this.config, config)
     // merge will strip the hooks off of config.hooks when merging from the root of the object
     // because they are functions and cloneDeep doesn't clone functions
-    merge(this.config.hooks, config.hooks || {})
+    Object.assign(this.config.hooks, config.hooks || {})
+    // using Object.assign here instead of merge to avoid stripping away imported modules
+    Object.assign(this.config.contracts.defaults, config.contracts.defaults || {})
     const manifests = this.config.contracts.manifests
     console.log('preloading manifests:', Object.keys(manifests))
     for (const contractName in manifests) {

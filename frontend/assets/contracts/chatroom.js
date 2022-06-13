@@ -6,7 +6,14 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __commonJS = (cb, mod) => function __require() {
+  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+  }) : x)(function(x) {
+    if (typeof require !== "undefined")
+      return require.apply(this, arguments);
+    throw new Error('Dynamic require of "' + x + '" is not supported');
+  });
+  var __commonJS = (cb, mod) => function __require2() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
   var __copyProps = (to, from, except, desc) => {
@@ -782,9 +789,8 @@
     }
   });
 
-  // frontend/common/common-sbp.js
-  var sbp = typeof globalThis !== "undefined" && globalThis.sbp || typeof window !== "undefined" && window.sbp || typeof global !== "undefined" && global.sbp;
-  var common_sbp_default = sbp;
+  // frontend/model/contracts/chatroom.js
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
 
   // node_modules/vue/dist/vue.esm.js
   var emptyObject = Object.freeze({});
@@ -8975,6 +8981,9 @@
   Vue.compile = compileToFunctions;
   var vue_esm_default = Vue;
 
+  // frontend/common/translations.js
+  var import_sbp = __toESM(__require("@sbp/sbp"));
+
   // frontend/common/vSafeHtml.js
   var import_dompurify = __toESM(require_purify());
 
@@ -9056,7 +9065,7 @@
   var currentLanguage = defaultLanguage;
   var currentLanguageCode = defaultLanguage.split("-")[0];
   var currentTranslationTable = defaultTranslationTable;
-  common_sbp_default("sbp/selectors/register", {
+  (0, import_sbp.default)("sbp/selectors/register", {
     "translations/init": async function init2(language) {
       const [languageCode] = language.toLowerCase().split("-");
       if (language.toLowerCase() === currentLanguage.toLowerCase())
@@ -9070,7 +9079,7 @@
         return;
       }
       try {
-        currentTranslationTable = await common_sbp_default("backend/translations/get", language);
+        currentTranslationTable = await (0, import_sbp.default)("backend/translations/get", language);
         currentLanguage = language;
         currentLanguageCode = languageCode;
       } catch (error) {
@@ -9387,6 +9396,9 @@ ${this.getErrorInfo()}`;
   });
   var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
 
+  // frontend/model/contracts/shared/functions.js
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+
   // frontend/model/contracts/shared/time.js
   var MINS_MILLIS = 6e4;
   var HOURS_MILLIS = 60 * MINS_MILLIS;
@@ -9428,18 +9440,18 @@ ${this.getErrorInfo()}`;
     return newMessage;
   }
   async function leaveChatRoom({ contractID }) {
-    const rootState = common_sbp_default("state/vuex/state");
-    const rootGetters = common_sbp_default("state/vuex/getters");
+    const rootState = (0, import_sbp2.default)("state/vuex/state");
+    const rootGetters = (0, import_sbp2.default)("state/vuex/getters");
     if (contractID === rootGetters.currentChatRoomId) {
-      common_sbp_default("state/vuex/commit", "setCurrentChatRoomId", {
+      (0, import_sbp2.default)("state/vuex/commit", "setCurrentChatRoomId", {
         groupId: rootState.currentGroupId
       });
-      const curRouteName = common_sbp_default("controller/router").history.current.name;
+      const curRouteName = (0, import_sbp2.default)("controller/router").history.current.name;
       if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
-        await common_sbp_default("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
+        await (0, import_sbp2.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
       }
     }
-    common_sbp_default("chelonia/contract/remove", contractID).catch((e) => {
+    (0, import_sbp2.default)("chelonia/contract/remove", contractID).catch((e) => {
       console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
     });
   }
@@ -9463,9 +9475,9 @@ ${this.getErrorInfo()}`;
     };
   }
   function emitMessageEvent({ contractID, hash: hash2 }) {
-    common_sbp_default("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash: hash2 });
+    (0, import_sbp3.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash: hash2 });
   }
-  common_sbp_default("chelonia/defineContract", {
+  (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/chatroom",
     metadata: {
       validate: objectOf({
@@ -9474,7 +9486,7 @@ ${this.getErrorInfo()}`;
         identityContractID: string
       }),
       create() {
-        const { username, identityContractID } = common_sbp_default("state/vuex/state").loggedIn;
+        const { username, identityContractID } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
         return {
           createdDate: new Date().toISOString(),
           username,
@@ -9608,9 +9620,9 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         sideEffect({ data, hash: hash2, contractID }, { state }) {
-          const rootState = common_sbp_default("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           if (!state.saveMessage && data.member === rootState.loggedIn.username) {
-            if (common_sbp_default("okTurtles.data/get", "JOINING_CHATROOM")) {
+            if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM")) {
               return;
             }
             leaveChatRoom({ contractID });
@@ -9632,7 +9644,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ meta, contractID }, { state }) {
           if (!state.saveMessage && state.attributes.creator === meta.username) {
-            if (common_sbp_default("okTurtles.data/get", "JOINING_CHATROOM")) {
+            if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM")) {
               return;
             }
             leaveChatRoom({ contractID });

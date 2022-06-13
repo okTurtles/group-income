@@ -47,7 +47,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 
 export default ({
   name: 'GroupMembers',

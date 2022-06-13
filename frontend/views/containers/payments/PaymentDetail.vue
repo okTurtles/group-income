@@ -33,7 +33,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@model/contracts/shared/currencies.js'

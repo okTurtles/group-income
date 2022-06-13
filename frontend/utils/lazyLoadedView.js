@@ -1,6 +1,6 @@
 import {
   Vue
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import ErrorModal from '@views/containers/loading-error/ErrorModal.vue'
 import ErrorPage from '@views/containers/loading-error/ErrorPage.vue'
 import LoadingModal from '@views/containers/loading-error/LoadingModal.vue'

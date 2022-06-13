@@ -41,7 +41,7 @@ form(data-test='signup' @submit.prevent='')
 import sbp from '@sbp/sbp'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import { nonWhitespace } from '@views/utils/validators.js'

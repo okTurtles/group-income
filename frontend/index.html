@@ -33,29 +33,7 @@
       <!-- we no longer use cypress-bypass-ui -->
       <!-- <cypress-bypass-ui v-if="isInCypress"></cypress-bypass-ui> -->
     </div>
-    <script type="module" src="/assets/js/main-sbp.js"></script>
     <script type="module" src="/assets/js/main.js"></script>
-    <!-- <script src="/assets/js/s.min.js"></script>
-    <script type="text/javascript">
-      System.import('/assets/js/main.js')
-    </script> -->
-    <!-- https://github.com/rollup/rollup-starter-code-splitting -->
-    <!-- TODO:
-    <script type="text/javascript">
-      import('/assets/js/main.js')
-      window.supportsDynamicImport = true
-    </script>
-    <script>
-      if (!window.supportsDynamicImport) {
-        const systemJsLoaderTag = document.createElement('script')
-        systemJsLoaderTag.src = '/assets/js/s.min.js'
-        systemJsLoaderTag.addEventListener('load', function () {
-          System.import('/assets/js/main-systemjs.js')
-        })
-        document.head.appendChild(systemJsLoaderTag)
-      }
-    </script>
-    -->
     <noscript>
       <section class="hero is-fullheight">
         <div class="hero-body">

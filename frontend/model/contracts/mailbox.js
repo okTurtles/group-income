@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import {
   Vue
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { mailType } from './shared/types.js'
 import { objectOf, string, object, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 

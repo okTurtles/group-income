@@ -13,7 +13,6 @@ import { blake32Hash } from '~/shared/functions.js'
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
 const currentlyLoadedContracts = {}
-const modules = {}
 
 export default (sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
@@ -48,25 +47,42 @@ export default (sbp('sbp/selectors/register', {
       if (sourceHash !== contractInfo.hash) {
         throw new Error(`bad hash ${sourceHash} for contract '${contractInfo.file}'! Should be: ${contractInfo.hash}`)
       }
-      const imports = []
-      // finds all the dependencies, and ignores most of those that are commented out
-      source.replace(/\/\*.*require\s*\([^)]+\).*\*\/|\/\/.*require\s*\([^)]+\)|(?:require\s*\(\s*["']([^"']+)["']\s*\))/g, (_, id) => {
-        id && imports.push(id)
-      })
-      for (const dep of imports) {
-        // TODO: verify that 'dep' is on the list of approved/allowed imports
-        if (!modules[dep]) {
-          await import(dep).then(x => {
-            console.debug('imported:', Object.keys(x))
-            modules[dep] = x
-          })
-        }
+      // TODO: pass in our custom "firewalled" SBP function
+      // TODO: figure out how latestContractState can be safely called on a remote contract
+      //       while we are also processing handleEvent on a contract with thes same name
+      //       but different version. figure out how that works with registering/unregistering getters
+      //       and selectors. might need to prefix the selectors with the manifestHash...
+      //
+      //       We may be able to solve both of the above TODOs by passing in a special SBP
+      //       function that prefixes all contract-related selectors with the manifestHash,
+      //       and then only allows other selectors that are on a whitelist. We create a
+      //       new such SBP function per registered contract (including each version of the
+      //       same contract).
+      const contractSBP = (selector: string, ...args) => {
+        console.debug('CONTRACT_SBP called with:', selector)
+        // TODO: do selector translation here, prefix the manifestHash
+        // TODO: also check whitelisted selectors that were passed in via config
+        return sbp(selector, ...args)
       }
       // eslint-disable-next-line no-new-func
-      new Function('require', `'use strict'
-        ${source}
-        console.debug('loaded ${contractInfo.file}!')
-      `)((dep) => modules[dep])
+      const saferEval: Function = new Function(`
+        return function (require, globals) {
+          with (globals) {
+            ${source}
+          }
+          console.debug('loaded ${contractInfo.file}!')
+        }
+      `)()
+      this.contractSelectorPrefix = manifestHash
+      saferEval((dep) => {
+        return dep === '@sbp/sbp'
+          ? contractSBP
+          : this.config.contracts.defaults.modules[dep]
+      }, {
+        ...this.config.contracts.defaults.exposedGlobals,
+        sbp: contractSBP
+      })
+      this.contractSelectorPrefix = null
     }
   },
   // used by, e.g. 'chelonia/contract/wait'
@@ -442,7 +458,7 @@ function sesImportVM (url): Promise<Object> {
           }
           functor(require_, moduleExports, module_, moduleSpecifier)
         }
-        if (moduleSpecifier === '/assets/js/common.js') {
+        if (moduleSpecifier === '@common/common.js') {
           return {
             imports: [],
             exports: ['Vue', 'L'],
@@ -450,7 +466,7 @@ function sesImportVM (url): Promise<Object> {
           }
         } else {
           return {
-            imports: ['/assets/js/common.js'],
+            imports: ['@common/common.js'],
             exports: [],
             execute
           }

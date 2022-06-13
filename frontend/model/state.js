@@ -6,7 +6,7 @@
 import sbp from '@sbp/sbp'
 import {
   Vue
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
 import Colors from './colors.js'

@@ -42,7 +42,7 @@
 import sbp from '@sbp/sbp'
 import {
   L, LTags
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'

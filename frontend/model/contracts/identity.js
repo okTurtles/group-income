@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import {
   Vue,
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { merge } from './shared/giLodash.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/model/contracts/misc/flowTyper.js'
 

@@ -5,7 +5,7 @@ import {
   Vue,
   Errors,
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './shared/voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
 import {

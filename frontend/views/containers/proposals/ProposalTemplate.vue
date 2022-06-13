@@ -90,7 +90,7 @@
 import { mapGetters } from 'vuex'
 import {
   L, LTags
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers } from '@model/contracts/shared/voting/rules.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'

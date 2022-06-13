@@ -23,7 +23,7 @@
 import sbp from '@sbp/sbp'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { mapGetters } from 'vuex'
 import { CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
 import MessageNotification from './MessageNotification.vue'

@@ -66,7 +66,7 @@ transition(name='replace-list')
 <script>
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ButtonSubmit from '@components/ButtonSubmit.vue'

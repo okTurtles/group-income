@@ -11,7 +11,7 @@ import { mapGetters } from 'vuex'
 import Tooltip from '@components/Tooltip.vue'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 
 export default ({
   name: 'GroupMembersTooltipPending',

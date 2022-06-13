@@ -58,7 +58,7 @@ import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 
 let syncFinished = false
 sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })

@@ -9,7 +9,7 @@
 <script>
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 export default ({
   name: 'Loading',
   props: {

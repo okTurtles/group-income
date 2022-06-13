@@ -69,7 +69,7 @@ import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 
 export default ({
   name: 'PasswordModal',

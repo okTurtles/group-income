@@ -61,7 +61,7 @@ modal-base-template.has-background(
 <script>
 import {
   L, LTags
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'

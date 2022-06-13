@@ -48,7 +48,7 @@
 import sbp from '@sbp/sbp'
 import {
   Vue
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/shared/constants.js'

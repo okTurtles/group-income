@@ -41,7 +41,7 @@
 import sbp from '@sbp/sbp'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'

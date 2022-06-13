@@ -25,7 +25,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 
 export default ({
   name: 'PaymentRowSent',

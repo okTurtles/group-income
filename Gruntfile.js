@@ -78,7 +78,6 @@ const distDir = 'dist'
 const distJS = 'dist/assets/js'
 const serviceWorkerDir = 'frontend/controller/serviceworkers'
 const srcDir = 'frontend'
-const commonDir = 'frontend/common'
 const contractsDir = 'frontend/model/contracts'
 
 const development = NODE_ENV === 'development'
@@ -91,6 +90,7 @@ module.exports = (grunt) => {
   const aliasPluginOptions = {
     entries: {
       '@assets': './frontend/assets',
+      '@common': './frontend/common',
       '@components': './frontend/views/components',
       '@containers': './frontend/views/containers',
       '@controller': './frontend/controller',
@@ -163,23 +163,12 @@ module.exports = (grunt) => {
     // Native options used when building the main entry point.
     main: {
       assetNames: '../css/[name]',
-      entryPoints: [`${srcDir}/main.js`, `${srcDir}/main-sbp.js`],
-      external: ['/assets/js/common.js']
+      entryPoints: [`${srcDir}/main.js`]
     },
     // Native options used when building our service worker(s).
     serviceWorkers: {
       entryPoints: ['./frontend/controller/serviceworkers/primary.js']
     }
-  }
-  esbuildOptionBags.common = {
-    ...pick(esbuildOptionBags.default, [
-      'sourcemap', 'outdir',
-      'bundle', 'incremental', 'define', 'watch',
-      'minifyIdentifiers', 'minifySyntax', 'minifyWhitespace'
-    ]),
-    format: 'esm',
-    splitting: false,
-    entryPoints: [`${commonDir}/common.js`]
   }
   esbuildOptionBags.contracts = {
     ...pick(clone(esbuildOptionBags.default), [
@@ -192,13 +181,14 @@ module.exports = (grunt) => {
     // },
     splitting: false,
     outdir: 'frontend/assets/contracts',
-    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`]
+    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`],
+    external: ['@sbp/sbp']
   }
   // prevent contract hash from changing each time we build them
   esbuildOptionBags.contracts.define['process.env.GI_VERSION'] = "'x.x.x'"
   esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
   esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
-  esbuildOptionBags.contractsSlim.external = ['/assets/js/common.js']
+  esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
 
   // Additional options which are not part of the esbuild API.
   const esbuildOtherOptionBags = {
@@ -425,10 +415,6 @@ module.exports = (grunt) => {
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
     const defaultPlugins = [aliasPlugin, flowRemoveTypesPlugin]
-    // this ensures that SBP is accessed via the global variable
-    const sbpAliasPlugin = createAliasPlugin({
-      entries: { '@sbp/sbp': `./${commonDir}/common-sbp.js` }
-    })
 
     const buildMain = createEsbuildTask({
       ...esbuildOptionBags.default,
@@ -441,24 +427,14 @@ module.exports = (grunt) => {
       ...esbuildOptionBags.serviceWorkers,
       plugins: defaultPlugins
     })
-    const buildCommon = createEsbuildTask({
-      ...esbuildOptionBags.common, plugins: [...defaultPlugins, sbpAliasPlugin]
-    })
     const buildContracts = createEsbuildTask({
-      ...esbuildOptionBags.contracts,
-      plugins: [
-        ...defaultPlugins,
-        sbpAliasPlugin,
-        createAliasPlugin({ // special alias plugin so that common.js gets inlined
-          entries: { '/assets/js/common.js': `./${commonDir}/common.js` }
-        })
-      ]
+      ...esbuildOptionBags.contracts, plugins: defaultPlugins
     })
     const buildContractsSlim = createEsbuildTask({
-      ...esbuildOptionBags.contractsSlim, plugins: [...defaultPlugins, sbpAliasPlugin]
+      ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
 
-    await Promise.all([buildMain.run(), buildServiceWorkers.run(), buildCommon.run(), buildContracts.run(), buildContractsSlim.run()]).catch(error => {
+    await Promise.all([buildMain.run(), buildServiceWorkers.run(), buildContracts.run(), buildContractsSlim.run()]).catch(error => {
       grunt.log.error(error.message)
       process.exit(1)
     })
@@ -523,14 +499,14 @@ module.exports = (grunt) => {
           try {
             if (filePath.startsWith(serviceWorkerDir)) {
               await buildServiceWorkers.run({ fileEventName, filePath })
-            } else if (filePath.startsWith(commonDir)) {
-              await buildCommon.run({ fileEventName, filePath })
             } else if (filePath.startsWith(contractsDir)) {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
               await buildMain.run({ fileEventName, filePath })
             } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
               await buildMain.run({ fileEventName, filePath })
+            } else {
+              grunt.log.error('no builder defined for path:', filePath)
             }
           } catch (error) {
             grunt.log.error(error.message)

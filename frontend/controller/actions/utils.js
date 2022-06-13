@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import {
   GIErrorUIRuntimeError,
   LError
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import type { GIActionParams } from './types.js'
 
 export function encryptedAction (action: string, humanError: string | Function): Object {

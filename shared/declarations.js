@@ -71,4 +71,4 @@ declare module '~/frontend/model/contracts/misc/flowTyper.js' { declare module.e
 declare module '~/shared/domains/chelonia/events.js' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/errors.js' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/internals.js' { declare module.exports: Object }
-declare module '/assets/js/common.js' { declare module.exports: any }
+declare module '@common/common.js' { declare module.exports: any }

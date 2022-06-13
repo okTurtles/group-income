@@ -8,7 +8,7 @@
  */
 'use strict'
 
-const { resolve, relative } = require('path')
+const { resolve } = require('path')
 
 const { createFilterRegExpFromAliases } = require('./utils.js')
 
@@ -26,26 +26,25 @@ module.exports = ({ entries = {} } = {}) => {
           return new RegExp(s.replace('.', '\\.').replace('*', '.*'))
         })
         const namespace = path.endsWith('.scss') ? 'sass' : 'file'
-        let result
+        // if this alias is marked as external for this build, don't resolve it
+        if (external?.some(x => x.test(path))) {
+          return { external: true }
+        }
         // Was the whole path matched ?
         if (typeof entries[path] === 'string') {
           const alias = path
-          result = {
+          return {
             namespace,
             path: resolve(entries[alias])
           }
         } else {
           // Otherwise, only the first path segment was matched.
           const [alias, ...rest] = path.split('/')
-          result = {
+          return {
             namespace,
             path: resolve(entries[alias], ...rest)
           }
         }
-        if (external?.some(x => x.test('./' + relative('.', result.path)))) {
-          result.external = true
-        }
-        return result
       })
     }
   }

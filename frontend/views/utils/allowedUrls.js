@@ -1,6 +1,6 @@
 import {
   Vue
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 
 /**
  * Table of all well-known safe URLs used in the app UI.

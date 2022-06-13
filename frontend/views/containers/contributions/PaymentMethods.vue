@@ -50,7 +50,7 @@ import { mapGetters } from 'vuex'
 import {
   Vue,
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 
 export default ({
   name: 'PaymentMethods',

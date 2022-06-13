@@ -21,7 +21,7 @@ li.c-wrapper
 import { mapGetters } from 'vuex'
 import {
   L, LTags
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProposalItem from './ProposalItem.vue'
 import { STATUS_OPEN } from '@model/contracts/shared/constants.js'

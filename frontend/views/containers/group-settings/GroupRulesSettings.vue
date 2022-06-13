@@ -40,7 +40,7 @@ import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOf
 import { OPEN_MODAL } from '@utils/events.js'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 
 export default ({

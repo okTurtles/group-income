@@ -1,5 +1,11 @@
 "use strict";
 (() => {
+  var __create = Object.create;
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getProtoOf = Object.getPrototypeOf;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
     get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
   }) : x)(function(x) {
@@ -7,13 +13,19 @@
       return require.apply(this, arguments);
     throw new Error('Dynamic require of "' + x + '" is not supported');
   });
-
-  // frontend/common/common-sbp.js
-  var sbp = typeof globalThis !== "undefined" && globalThis.sbp || typeof window !== "undefined" && window.sbp || typeof global !== "undefined" && global.sbp;
-  var common_sbp_default = sbp;
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
 
   // frontend/model/contracts/identity.js
-  var import_common = __require("/assets/js/common.js");
+  var import_sbp = __toESM(__require("@sbp/sbp"));
+  var import_common = __require("@common/common.js");
 
   // frontend/model/contracts/shared/giLodash.js
   function cloneDeep(obj) {
@@ -164,7 +176,7 @@ ${this.getErrorInfo()}`;
   };
 
   // frontend/model/contracts/identity.js
-  common_sbp_default("chelonia/defineContract", {
+  (0, import_sbp.default)("chelonia/defineContract", {
     name: "gi.contracts/identity",
     getters: {
       currentIdentityState(state) {
@@ -226,9 +238,9 @@ ${this.getErrorInfo()}`;
         },
         async sideEffect() {
           try {
-            await common_sbp_default("gi.actions/identity/updateLoginStateUponLogin");
+            await (0, import_sbp.default)("gi.actions/identity/updateLoginStateUponLogin");
           } catch (e) {
-            common_sbp_default("gi.notifications/emit", "ERROR", {
+            (0, import_sbp.default)("gi.notifications/emit", "ERROR", {
               message: (0, import_common.L)("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
                 errName: e.name,
                 errMsg: e.message || "?"

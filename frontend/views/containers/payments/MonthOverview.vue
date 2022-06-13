@@ -37,7 +37,7 @@ import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import ProgressBar from '@components/graphs/Progress.vue'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({

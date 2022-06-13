@@ -118,7 +118,7 @@ import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/c
 import { mapGetters, mapState } from 'vuex'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 
 export default ({
   name: 'InvitationsTable',

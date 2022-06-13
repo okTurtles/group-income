@@ -84,7 +84,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 
 export default ({
   name: 'IncomeDetails',

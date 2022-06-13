@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import {
   GIErrorUIRuntimeError,
   L, LError
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { imageUpload } from '@utils/image.js'
 import { pickWhere, difference } from '@model/contracts/shared/giLodash.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'

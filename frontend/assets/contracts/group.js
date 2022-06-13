@@ -6,7 +6,14 @@
   var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __commonJS = (cb, mod) => function __require() {
+  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+  }) : x)(function(x) {
+    if (typeof require !== "undefined")
+      return require.apply(this, arguments);
+    throw new Error('Dynamic require of "' + x + '" is not supported');
+  });
+  var __commonJS = (cb, mod) => function __require2() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
   var __export = (target2, all) => {
@@ -786,9 +793,8 @@
     }
   });
 
-  // frontend/common/common-sbp.js
-  var sbp = typeof globalThis !== "undefined" && globalThis.sbp || typeof window !== "undefined" && window.sbp || typeof global !== "undefined" && global.sbp;
-  var common_sbp_default = sbp;
+  // frontend/model/contracts/group.js
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
 
   // node_modules/vue/dist/vue.esm.js
   var emptyObject = Object.freeze({});
@@ -8979,6 +8985,9 @@
   Vue.compile = compileToFunctions;
   var vue_esm_default = Vue;
 
+  // frontend/common/translations.js
+  var import_sbp = __toESM(__require("@sbp/sbp"));
+
   // frontend/common/vSafeHtml.js
   var import_dompurify = __toESM(require_purify());
 
@@ -9088,7 +9097,7 @@
   var currentLanguage = defaultLanguage;
   var currentLanguageCode = defaultLanguage.split("-")[0];
   var currentTranslationTable = defaultTranslationTable;
-  common_sbp_default("sbp/selectors/register", {
+  (0, import_sbp.default)("sbp/selectors/register", {
     "translations/init": async function init2(language) {
       const [languageCode] = language.toLowerCase().split("-");
       if (language.toLowerCase() === currentLanguage.toLowerCase())
@@ -9102,7 +9111,7 @@
         return;
       }
       try {
-        currentTranslationTable = await common_sbp_default("backend/translations/get", language);
+        currentTranslationTable = await (0, import_sbp.default)("backend/translations/get", language);
         currentLanguage = language;
         currentLanguageCode = languageCode;
       } catch (error) {
@@ -9522,6 +9531,9 @@ ${this.getErrorInfo()}`;
     }[rule]();
   };
 
+  // frontend/model/contracts/shared/voting/proposals.js
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+
   // frontend/model/contracts/shared/time.js
   var MINS_MILLIS = 6e4;
   var HOURS_MILLIS = 60 * MINS_MILLIS;
@@ -9590,7 +9602,7 @@ ${this.getErrorInfo()}`;
     const proposal = state.proposals[proposalHash];
     proposal.status = STATUS_FAILED;
     archiveProposal(state, proposalHash);
-    common_sbp_default("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_AGAINST, data);
+    (0, import_sbp2.default)("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_AGAINST, data);
   }
   var proposalDefaults = {
     rule: RULE_PERCENTAGE,
@@ -9608,8 +9620,8 @@ ${this.getErrorInfo()}`;
         proposal.payload = data.passPayload;
         proposal.status = STATUS_PASSED;
         const message = { meta, data: data.passPayload, contractID };
-        common_sbp_default("gi.contracts/group/invite/process", message, state);
-        common_sbp_default("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_FOR, data);
+        (0, import_sbp2.default)("gi.contracts/group/invite/process", message, state);
+        (0, import_sbp2.default)("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_FOR, data);
       },
       [VOTE_AGAINST]: voteAgainst
     },
@@ -9626,8 +9638,8 @@ ${this.getErrorInfo()}`;
           proposalPayload: passPayload
         };
         const message = { data: messageData, meta, contractID };
-        common_sbp_default("gi.contracts/group/removeMember/process", message, state);
-        common_sbp_default("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", message]);
+        (0, import_sbp2.default)("gi.contracts/group/removeMember/process", message, state);
+        (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", message]);
       },
       [VOTE_AGAINST]: voteAgainst
     },
@@ -9642,7 +9654,7 @@ ${this.getErrorInfo()}`;
           data: { [setting]: proposedValue },
           contractID
         };
-        common_sbp_default("gi.contracts/group/updateSettings/process", message, state);
+        (0, import_sbp2.default)("gi.contracts/group/updateSettings/process", message, state);
       },
       [VOTE_AGAINST]: voteAgainst
     },
@@ -9656,7 +9668,7 @@ ${this.getErrorInfo()}`;
           data: proposal.data.proposalData,
           contractID
         };
-        common_sbp_default("gi.contracts/group/updateAllVotingRules/process", message, state);
+        (0, import_sbp2.default)("gi.contracts/group/updateAllVotingRules/process", message, state);
       },
       [VOTE_AGAINST]: voteAgainst
     },
@@ -9961,7 +9973,7 @@ ${this.getErrorInfo()}`;
     state.profiles[username].status = PROFILE_STATUS.REMOVED;
     state.profiles[username].departedDate = dateLeft;
   }
-  common_sbp_default("chelonia/defineContract", {
+  (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/group",
     metadata: {
       validate: objectOf({
@@ -9970,7 +9982,7 @@ ${this.getErrorInfo()}`;
         identityContractID: string
       }),
       create() {
-        const { username, identityContractID } = common_sbp_default("state/vuex/state").loggedIn;
+        const { username, identityContractID } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
         return {
           createdDate: new Date().toISOString(),
           username,
@@ -10386,21 +10398,21 @@ ${this.getErrorInfo()}`;
           memberLeaves(state, data.member, meta.createdDate);
         },
         sideEffect({ data, meta, contractID }, { state, getters }) {
-          const rootState = common_sbp_default("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           const contracts = rootState.contracts || {};
           const { username } = rootState.loggedIn;
           if (data.member === username) {
-            if (common_sbp_default("okTurtles.data/get", "JOINING_GROUP")) {
+            if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP")) {
               return;
             }
             const groupIdToSwitch = Object.keys(contracts).find((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID && rootState[cID].settings) || null;
-            common_sbp_default("state/vuex/commit", "setCurrentChatRoomId", {});
-            common_sbp_default("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
-            common_sbp_default("chelonia/contract/remove", contractID).catch((e) => {
+            (0, import_sbp3.default)("state/vuex/commit", "setCurrentChatRoomId", {});
+            (0, import_sbp3.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
+            (0, import_sbp3.default)("chelonia/contract/remove", contractID).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
             });
-            common_sbp_default("okTurtles.eventQueue/queueEvent", contractID, ["gi.actions/identity/saveOurLoginState"]).then(function() {
-              const router = common_sbp_default("controller/router");
+            (0, import_sbp3.default)("okTurtles.eventQueue/queueEvent", contractID, ["gi.actions/identity/saveOurLoginState"]).then(function() {
+              const router = (0, import_sbp3.default)("controller/router");
               const switchFrom = router.currentRoute.path;
               const switchTo = groupIdToSwitch ? "/dashboard" : "/";
               if (switchFrom !== "/join" && switchFrom !== switchTo) {
@@ -10419,7 +10431,7 @@ ${this.getErrorInfo()}`;
         }),
         process({ data, meta, contractID }, { state }) {
           memberLeaves(state, meta.username, meta.createdDate);
-          common_sbp_default("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", {
+          (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", {
             meta,
             data: { member: meta.username, reason: data.reason || "" },
             contractID
@@ -10450,15 +10462,15 @@ ${this.getErrorInfo()}`;
           vue_esm_default.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate));
         },
         async sideEffect({ meta }, { state }) {
-          const rootState = common_sbp_default("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           if (meta.username === rootState.loggedIn.username) {
             for (const name in state.profiles) {
               if (name !== rootState.loggedIn.username) {
-                await common_sbp_default("chelonia/contract/sync", state.profiles[name].contractID);
+                await (0, import_sbp3.default)("chelonia/contract/sync", state.profiles[name].contractID);
               }
             }
           } else {
-            await common_sbp_default("chelonia/contract/sync", meta.identityContractID);
+            await (0, import_sbp3.default)("chelonia/contract/sync", meta.identityContractID);
           }
         }
       },
@@ -10586,10 +10598,10 @@ ${this.getErrorInfo()}`;
           vue_esm_default.set(state.chatRooms[data.chatRoomID], "users", state.chatRooms[data.chatRoomID].users.filter((u) => u !== data.member));
         },
         async sideEffect({ meta, data }, { state }) {
-          const rootState = common_sbp_default("state/vuex/state");
-          if (meta.username === rootState.loggedIn.username && !common_sbp_default("okTurtles.data/get", "JOINING_GROUP")) {
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
+          if (meta.username === rootState.loggedIn.username && !(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP")) {
             const sendingData = data.leavingGroup ? { member: data.member } : { member: data.member, username: meta.username };
-            await common_sbp_default("gi.actions/chatroom/leave", { contractID: data.chatRoomID, data: sendingData });
+            await (0, import_sbp3.default)("gi.actions/chatroom/leave", { contractID: data.chatRoomID, data: sendingData });
           }
         }
       },
@@ -10603,14 +10615,14 @@ ${this.getErrorInfo()}`;
           state.chatRooms[data.chatRoomID].users.push(username);
         },
         async sideEffect({ meta, data }, { state }) {
-          const rootState = common_sbp_default("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           const username = data.username || meta.username;
           if (username === rootState.loggedIn.username) {
-            if (!common_sbp_default("okTurtles.data/get", "JOINING_GROUP") || common_sbp_default("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
-              common_sbp_default("okTurtles.data/set", "JOINING_CHATROOM", true);
-              await common_sbp_default("chelonia/contract/sync", data.chatRoomID);
-              common_sbp_default("okTurtles.data/set", "JOINING_CHATROOM", false);
-              common_sbp_default("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
+            if (!(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOM", true);
+              await (0, import_sbp3.default)("chelonia/contract/sync", data.chatRoomID);
+              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOM", false);
+              (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
             }
           }
         }
@@ -10649,7 +10661,7 @@ ${this.getErrorInfo()}`;
           sideEffect(message, { state }) {
             if (!message.data.sideEffect)
               return;
-            common_sbp_default("gi.contracts/group/malformedMutation/process", {
+            (0, import_sbp3.default)("gi.contracts/group/malformedMutation/process", {
               ...message,
               data: omit(message.data, ["sideEffect"])
             }, state);

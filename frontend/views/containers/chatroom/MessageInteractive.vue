@@ -16,7 +16,7 @@ message-base(v-bind='$props' @wrapperAction='action')
 <script>
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import {
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_INVITE_MEMBER,

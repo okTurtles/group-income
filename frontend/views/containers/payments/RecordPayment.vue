@@ -73,7 +73,7 @@ import sbp from '@sbp/sbp'
 import {
   Vue,
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED, PAYMENT_TYPE_MANUAL } from '@model/contracts/shared/payments/index.js'
 import { validationMixin } from 'vuelidate'

@@ -58,7 +58,7 @@ import { PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
 import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'

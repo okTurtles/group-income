@@ -8,7 +8,7 @@ message-base(v-bind='$props' @addEmoticon='addEmoticon($event)')
 <script>
 import {
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
 import { MESSAGE_NOTIFICATIONS, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'

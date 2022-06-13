@@ -4,11 +4,11 @@ import sbp from '@sbp/sbp'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
+import * as Common from '@common/common.js'
 import {
-  // imports from the same underlying files are grouped together on the same line
   Vue,
   L, LError, LTags
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { LOGIN, LOGOUT } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
@@ -104,7 +104,7 @@ async function startApp () {
     reactiveDel: Vue.delete,
     contracts: {
       defaults: {
-        exposedGlobals: { sbp },
+        modules: { '@common/common.js': Common },
         preferSlim: true
       },
       manifests: {
@@ -119,10 +119,15 @@ async function startApp () {
         // 'gi.contracts/mailbox': '21XWnNXFteQs35ereJqQ4cKRXt7HoZfzYxVpRXJgndjgWWuo3W',
         // 'gi.contracts/chatroom': '21XWnNN7z148sVkN8GFdDRYBFnu7ojGLmRr4dyfWz85KHJuQ1L'
         // iife w/out top-level import-require
-        'gi.contracts/group': '21XWnNL8ZFdJp474N3buKvCum6WHbiDqmTtFzRBFxLynb4nB2U',
-        'gi.contracts/identity': '21XWnNJcRbr9ky8tJffCqqNmcUp6FsafbnsayD6ZLmwkS2W2rz',
-        'gi.contracts/mailbox': '21XWnNVstNeekqC3N7QBhyTF8G2GR3D4eoU7F5rv5pc9xXwmq5',
-        'gi.contracts/chatroom': '21XWnNQamiPx3rCR5RrK6Bi2UfSi29iwo3PMhb9PMcyAPVTD6M'
+        // 'gi.contracts/group': '21XWnNL8ZFdJp474N3buKvCum6WHbiDqmTtFzRBFxLynb4nB2U',
+        // 'gi.contracts/identity': '21XWnNJcRbr9ky8tJffCqqNmcUp6FsafbnsayD6ZLmwkS2W2rz',
+        // 'gi.contracts/mailbox': '21XWnNVstNeekqC3N7QBhyTF8G2GR3D4eoU7F5rv5pc9xXwmq5',
+        // 'gi.contracts/chatroom': '21XWnNQamiPx3rCR5RrK6Bi2UfSi29iwo3PMhb9PMcyAPVTD6M'
+        // iife w/out top-level import-require & w/import @sbp/sbp extern
+        'gi.contracts/group': '21XWnNMgjRathmA92wxxiCnsaDX4uJ1jeZcZoFjDrEq3GSPu6f',
+        'gi.contracts/identity': '21XWnNGuvR3ADkhBNZHsECiu1tBB66xtJbGrPA21GxtSatrS2D',
+        'gi.contracts/mailbox': '21XWnNV8JgXD2kFgS3GQb2rooa9FGmeKNMJTF8a82PQFofUnyx',
+        'gi.contracts/chatroom': '21XWnNSEBG67oKHJ6uytKcvEzFkckhk9YT43kEzdEsst1BXEEd'
       }
     },
     hooks: {

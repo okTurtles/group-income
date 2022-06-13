@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import {
   Vue,
   L
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import Router from 'vue-router'
 import store from '~/frontend/model/state.js'
 import Home from '@pages/Home.vue'

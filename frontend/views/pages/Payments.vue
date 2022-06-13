@@ -116,7 +116,7 @@ import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
 import {
   L, LTags
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 
 export default ({
   name: 'Payments',

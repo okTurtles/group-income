@@ -110,7 +110,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 import sbp from '@sbp/sbp'
 import {
   L, LTags
-} from '/assets/js/common.js' // eslint-disable-line import/no-absolute-path
+} from '@common/common.js'
 import { mapGetters, mapState } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
