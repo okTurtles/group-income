@@ -185,7 +185,8 @@ export default ({
       'currentIdentityState',
       'isJoinedChatRoom',
       'setChatRoomScrollPosition',
-      'currentChatRoomScrollPosition'
+      'currentChatRoomScrollPosition',
+      'currentChatRoomUnreadPosition'
     ]),
     bodyStyles () {
       const defaultHeightInRem = 14
@@ -501,7 +502,10 @@ export default ({
       if (!this.$refs.conversation) {
         return
       }
+      // Because of infinite-scroll this is not calculated in scrollheight
+      const topOffset = 117
       const curScrollTop = this.$refs.conversation.scrollTop
+      const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
       if (!this.$refs.conversation) {
         this.ephemeral.scrolledDistance = 0
       } else {
@@ -513,16 +517,34 @@ export default ({
         return
       }
 
+      for (let i = this.messages.length - 1; i >= 0; i--) {
+        const msg = this.messages[i]
+        const offsetTop = this.$refs[msg.id][0].$el.offsetTop
+        const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
+        if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
+          const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
+          const latestMessageCreatedAt = this.currentChatRoomUnreadPosition?.createdDate
+          if (!latestMessageCreatedAt || latestMessageCreatedAt <= bottomMessageCreatedAt) {
+            sbp('state/vuex/commit', 'setChatRoomUnreadPosition', {
+              chatRoomId: this.currentChatRoomId,
+              messageId: msg.id,
+              createdDate: new Date(msg.datetime).getTime()
+            })
+          }
+          break
+        }
+      }
+
       if (this.ephemeral.scrolledDistance > 500) {
         // Save the current scroll position per each chatroom
-        for (let i = this.messages.length - 1; i >= 0; i--) {
+        for (let i = 0; i < this.messages.length - 1; i++) {
           const msg = this.messages[i]
           const offsetTop = this.$refs[msg.id][0].$el.offsetTop
           const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
-          if ((offsetTop - parentOffsetTop <= curScrollTop) || i === 0) {
+          if (offsetTop - parentOffsetTop + topOffset >= curScrollTop) {
             sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
               chatRoomId: this.currentChatRoomId,
-              messageId: msg.id
+              messageId: this.messages[i + 1].id // Left one message at the front by default for better seeing
             })
             break
           }
