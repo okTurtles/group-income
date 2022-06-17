@@ -40,12 +40,12 @@
 
       template(v-for='(message, index) in messages')
         .c-divider(
-          v-if='changeDay(index) || isNew(index)'
-          :class='{"is-new": isNew(index)}'
+          v-if='changeDay(index) || isNew(message.id)'
+          :class='{"is-new": isNew(message.id)}'
           :key='`date-${index}`'
         )
           span(v-if='changeDay(index)') {{proximityDate(message.datetime)}}
-          i18n.c-new(v-if='isNew(index)' :class='{"is-new-date": changeDay(index)}') New
+          i18n.c-new(v-else-if='isNew(message.id)' :class='{"is-new-date": changeDay(index)}') New
 
         component(
           :is='messageType(message)'
@@ -150,6 +150,7 @@ export default ({
       latestEvents: [],
       messages: [],
       ephemeral: {
+        startedUnreadMessageId: null,
         scrolledDistance: 0,
         bodyPaddingBottom: '',
         infiniteLoading: null,
@@ -201,9 +202,6 @@ export default ({
         height: `calc(var(--vh, 1vh) * 100 - ${defaultHeightInRem + heightDiscountInRem}rem)`
       }
       return { ...phoneStyles, ...responsiveStyles }
-    },
-    startedUnreadIndex () {
-      return this.messages.findIndex(message => message.unread === true)
     },
     currentUserAttr () {
       return {
@@ -392,8 +390,8 @@ export default ({
         return prev.getDay() !== current.getDay()
       } else return false
     },
-    isNew (index) {
-      return this.startedUnreadIndex === index
+    isNew (msgId) {
+      return this.ephemeral.startedUnreadMessageId === msgId
     },
     addEmoticon (message, emoticon) {
       sbp('gi.actions/chatroom/makeEmotion', {
@@ -432,6 +430,7 @@ export default ({
       await this.rerenderEvents(events, refresh)
 
       if (refresh) {
+        this.setStartNewMessageIndex()
         const scrollTargetMessage = refresh && lastScrollPosition
           ? lastScrollPosition
           : null
@@ -461,6 +460,16 @@ export default ({
       this.messages = []
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
+      }
+    },
+    setStartNewMessageIndex () {
+      this.ephemeral.startedUnreadMessageId = null
+      if (this.currentChatRoomUnreadPosition) {
+        const startUnreadMessage = this.messages
+          .find(msg => new Date(msg.datetime).getTime() > this.currentChatRoomUnreadPosition.createdDate)
+        if (startUnreadMessage) {
+          this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
+        }
       }
     },
     setMessageEventListener ({ force = false, from, to }) {
