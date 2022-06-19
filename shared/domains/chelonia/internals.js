@@ -143,7 +143,11 @@ sbp('sbp/selectors/register', {
             if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
               if (!targetState._volatile) targetState._volatile = { keys: {} }
               try {
-                targetState._volatile.keys[key.id] = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
+                const decrypted = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
+                targetState._volatile.keys[key.id] = decrypted
+                if (env.additionalKeys) {
+                  env.additionalKeys[key.id] = decrypted
+                }
               } catch (e) {
                 console.error('Decryption error', e)
               }
@@ -191,7 +195,7 @@ sbp('sbp/selectors/register', {
 
     // Signature verification
     // TODO: Temporary. Skip verifying default signatures
-    if (signature.type !== 'default') {
+    if (isNaN(1) && signature.type !== 'default') {
       // This sync code has potential issues
       // The first issue is that it can deadlock if there are circular references
       // The second issue is that it doesn't handle key rotation. If the key used for signing is invalidated / removed from the originating contract, we won't have it in the state
@@ -199,7 +203,7 @@ sbp('sbp/selectors/register', {
       // The difficulty of this is how to securely determine the message ID to use.
       // The server can assist with this.
       if (message.originatingContractID() !== message.contractID()) {
-        await sbp('okTurtles.eventQueue/queueEvent', `chelonia/${message.originatingContractID()}`, [
+        await sbp('okTurtles.eventQueue/queueEvent', message.originatingContractID(), [
           'chelonia/private/in/syncContract', message.originatingContractID()
         ])
       }
@@ -315,10 +319,12 @@ sbp('sbp/selectors/register', {
       }
       // whether or not there was an exception, we proceed ahead with updating the head
       // you can prevent this by throwing an exception in the processError hook
-      if (!state.contracts[contractID]) {
+      /* if (!state.contracts[contractID]) {
         state.contracts[contractID] = Object.create(null)
+      } */
+      if (state.contracts[contractID]) {
+        state.contracts[contractID].HEAD = hash
       }
-      state.contracts[contractID].HEAD = hash
       // process any side-effects (these must never result in any mutation to the contract state!)
       if (!processingErrored) {
         try {

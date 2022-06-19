@@ -130,6 +130,7 @@ const decryptFn = function (message: Object, state: ?Object) {
   const key = this.env.additionalKeys?.[keyId] || state?._volatile?.keys?.[keyId]
 
   if (!key) {
+    console.log({ message, state, keyId, env: this.env })
     throw new Error(`Key ${keyId} not found`)
   }
 
@@ -184,7 +185,7 @@ sbp('sbp/selectors/register', {
     const savedEnv = this.env
     this.env = env
     try {
-      return await sbp('okTurtles.eventQueue/queueEvent', `chelonia/env/${contractID}`, sbpInvocation)
+      return await sbp('okTurtles.eventQueue/queueEvent', `chelonia/with-env/${contractID}`, sbpInvocation)
     } finally {
       this.env = savedEnv
     }
@@ -332,7 +333,7 @@ sbp('sbp/selectors/register', {
       // but after it's finished. This is used in tandem with
       // queuing the 'chelonia/private/in/handleEvent' selector, defined below.
       // This prevents handleEvent getting called with the wrong previousHEAD for an event.
-      return sbp('okTurtles.eventQueue/queueEvent', `chelonia/${contractID}`, [
+      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
         'chelonia/private/in/syncContract', contractID
       ]).catch((err) => {
         console.error(`[chelonia] failed to sync ${contractID}:`, err)
@@ -345,7 +346,7 @@ sbp('sbp/selectors/register', {
   'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
-      return sbp('okTurtles.eventQueue/queueEvent', `chelonia/${contractID}`, [
+      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
         'chelonia/contract/removeImmediately', contractID
       ])
     }))
@@ -413,6 +414,7 @@ sbp('sbp/selectors/register', {
   },
   // 'chelonia/out' - selectors that send data out to the server
   'chelonia/out/registerContract': async function (params: ChelRegParams) {
+    console.log('Register contract', { params })
     const { contractName, keys, hooks, publishOptions, signingKeyId, actionSigningKeyId, actionEncryptionKeyId } = params
     const contract = this.contracts[contractName]
     if (!contract) throw new Error(`contract not defined: ${contractName}`)
@@ -434,6 +436,18 @@ sbp('sbp/selectors/register', {
     hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions, signatureFn)
     const contractID = contractMsg.hash()
+    console.log('Register contract, sednig action', {
+      params,
+      xx: {
+        action: contractName,
+        contractID,
+        data: params.data,
+        signingKeyId: actionSigningKeyId,
+        encryptionKeyId: actionEncryptionKeyId,
+        hooks,
+        publishOptions
+      }
+    })
     const msg = await sbp('chelonia/out/actionEncrypted', {
       action: contractName,
       contractID,
@@ -582,6 +596,7 @@ async function outEncryptedOrUnencryptedAction (
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
   const signingKey = this.env.additionalKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
   const payload = opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn.call(this, unencMessage, params.encryptionKeyId, state)
+  console.log({ unencMessage, ekid: params.encryptionKeyId, state, payload })
   const message = GIMessage.createV1_0({
     contractID,
     previousHEAD,

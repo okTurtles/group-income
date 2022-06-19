@@ -258,19 +258,22 @@ export const encrypt = (inKey: Key | string, data: string): string => {
 
     return base64FullMessage
   } else if (key.type === CURVE25519XSALSA20POLY1305) {
-    if (!key.secretKey || !key.publicKey) {
-      throw new Error('Keypair missing')
+    if (!key.publicKey) {
+      throw new Error('Public key missing')
     }
 
     const nonce = nacl.randomBytes(nacl.box.nonceLength)
 
     const messageUint8 = strToBuf(data)
-    const box = nacl.box(messageUint8, nonce, key.publicKey, key.secretKey)
+    const ephemeralKey = nacl.box.keyPair()
+    const box = nacl.box(messageUint8, nonce, key.publicKey, ephemeralKey.secretKey)
+    ephemeralKey.secretKey.fill(0)
 
-    const fullMessage = new Uint8Array(nonce.length + box.length)
+    const fullMessage = new Uint8Array(nacl.box.publicKeyLength + nonce.length + box.length)
 
-    fullMessage.set(nonce)
-    fullMessage.set(box, nonce.length)
+    fullMessage.set(ephemeralKey.publicKey)
+    fullMessage.set(nonce, nacl.box.publicKeyLength)
+    fullMessage.set(box, nacl.box.publicKeyLength + nonce.length)
 
     const base64FullMessage = bytesToB64(fullMessage)
 
@@ -303,19 +306,19 @@ export const decrypt = (inKey: Key | string, data: string): string => {
 
     return Buffer.from(decrypted).toString('utf-8')
   } else if (key.type === CURVE25519XSALSA20POLY1305) {
-    if (!key.secretKey || !key.publicKey) {
-      throw new Error('Keypair missing')
+    if (!key.secretKey) {
+      throw new Error('Secret key missing')
     }
 
     const messageWithNonceAsUint8Array = b64ToBuf(data)
 
-    const nonce = messageWithNonceAsUint8Array.slice(0, nacl.box.nonceLength)
+    const ephemeralPublicKey = messageWithNonceAsUint8Array.slice(0, nacl.box.publicKeyLength)
+    const nonce = messageWithNonceAsUint8Array.slice(nacl.box.publicKeyLength, nacl.box.publicKeyLength + nacl.box.nonceLength)
     const message = messageWithNonceAsUint8Array.slice(
-      nacl.box.nonceLength,
-      messageWithNonceAsUint8Array.length
+      nacl.box.publicKeyLength + nacl.box.nonceLength
     )
 
-    const decrypted = nacl.box.open(message, nonce, key.publicKey, key.secretKey)
+    const decrypted = nacl.box.open(message, nonce, ephemeralPublicKey, key.secretKey)
 
     if (!decrypted) {
       throw new Error('Could not decrypt message')

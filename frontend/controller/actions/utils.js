@@ -12,9 +12,9 @@ export function encryptedAction (action: string, humanError: string | Function):
       try {
         const state = await sbp('chelonia/latestContractState', params.contractID)
         return await sbp('chelonia/out/actionEncrypted', {
+          ...params,
           signingKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string),
           encryptionKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'cek')?.id: ?string),
-          ...params,
           action: action.replace('gi.actions', 'gi.contracts')
         })
       } catch (e) {

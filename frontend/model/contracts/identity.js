@@ -6,7 +6,7 @@ import Vue from 'vue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
-import L from '~/frontend/views/utils/translations.js'
+// import L from '~/frontend/views/utils/translations.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
@@ -69,8 +69,8 @@ sbp('chelonia/defineContract', {
         Vue.set(state, 'loginState', data)
       },
       async sideEffect () {
-        try {
-          await sbp('gi.actions/identity/updateLoginStateUponLogin')
+        /* try {
+          sbp('okTurtles.eventQueue/queueEvent', , ['gi.actions/identity/updateLoginStateUponLogin'])
         } catch (e) {
           sbp('gi.notifications/emit', 'ERROR', {
             message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
@@ -78,7 +78,7 @@ sbp('chelonia/defineContract', {
               errMsg: e.message || '?'
             })
           })
-        }
+        } */
       }
     }
   }

@@ -30,6 +30,42 @@ export default (sbp('sbp/selectors/register', {
 
       const rootState = sbp('state/vuex/state')
 
+      console.log('Chatroom create', {
+        ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
+        signingKeyId: CSKid,
+        actionSigningKeyId: CSKid,
+        actionEncryptionKeyId: CEKid,
+        keys: [
+          {
+            id: CSKid,
+            type: CSK.type,
+            data: CSKp,
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH],
+            meta: {
+              type: 'csk',
+              private: {
+                keyId: CEKid,
+                content: CSKs
+              }
+            }
+          },
+          {
+            id: CEKid,
+            type: CEK.type,
+            data: CEKp,
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            meta: {
+              type: 'cek',
+              private: {
+                keyId: CEKid,
+                content: CEKs
+              }
+            }
+          }
+        ],
+        contractName: 'gi.contracts/chatroom'
+      })
+
       const chatroom = await sbp('chelonia/with-env', '', {
         additionalKeys: {
           [CSKid]: CSK,
