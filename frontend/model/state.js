@@ -516,8 +516,9 @@ const store: any = new Vuex.Store({
 // save the state each time it's modified, but debounce it to avoid saving too frequently
 const debouncedSave = _.debounce(() => sbp('state/vuex/save'), 500)
 store.subscribe((commit) => {
-  if (commit.type !== 'noop')
+  if (commit.type !== 'noop') {
     debouncedSave()
+  }
 }) // for e.g saving notifications that are markedAsRead
 // since Chelonia updates do not pass through calls to 'commit', also save upon EVENT_HANDLED
 sbp('okTurtles.events/on', EVENT_HANDLED, debouncedSave)
