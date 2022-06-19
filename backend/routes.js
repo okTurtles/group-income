@@ -85,13 +85,13 @@ route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
 route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h) {
   try {
     const { startHash, endHash } = request.params
-    const { offset } = request.query
+    const offset = parseInt(request.query.offset || '0')
 
     if (!startHash) return Boom.badRequest('missing startHash')
     if (!endHash) return Boom.badRequest('missing endHash')
-    if (offset && (isNaN(parseInt(offset)) || parseInt(offset) < 0)) return Boom.badRequest('invalid offset')
+    if (isNaN(offset) || offset < 0) return Boom.badRequest('invalid offset')
 
-    const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, parseInt(offset || 0))
+    const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, offset)
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
