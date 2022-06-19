@@ -109,7 +109,7 @@ export default (sbp('sbp/selectors/register', {
           }
 
           const previousHEAD = entry.message().previousHEAD
-          if (!currentHEAD || !previousHEAD || (isMet && !offset)) {
+          if (!previousHEAD || (isMet && !offset)) {
             this.push(']')
             this.push(null)
           } else {
