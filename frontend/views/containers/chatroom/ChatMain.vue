@@ -44,8 +44,8 @@
           :class='{"is-new": isNew(message.id)}'
           :key='`date-${index}`'
         )
-          span(v-if='changeDay(index)') {{proximityDate(message.datetime)}}
-          i18n.c-new(v-else-if='isNew(message.id)' :class='{"is-new-date": changeDay(index)}') New
+          i18n.c-new(v-if='isNew(message.id)' :class='{"is-new-date": changeDay(index)}') New
+          span(v-else-if='changeDay(index)') {{proximityDate(message.datetime)}}
 
         component(
           :is='messageType(message)'
