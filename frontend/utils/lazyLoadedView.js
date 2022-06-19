@@ -9,7 +9,7 @@ import LoadingPage from '@views/containers/loading-error/LoadingPage.vue'
 
 type LazyImport = () => Promise<Object>;
 
-// See https://v2.vuejs.org/v2/guide/components-dynamic-lazy.html#Async-Components
+// See https://v2.vuejs.org/v2/guide/components-dynamic-async.html#Async-Components
 function asyncHandler (lazyImport, { loading, error } = {}) {
   return () => ({
     // HACK: sometimes a bundler bug makes it necessary to use
