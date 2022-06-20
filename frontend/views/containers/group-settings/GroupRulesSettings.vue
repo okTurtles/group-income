@@ -69,7 +69,7 @@ export default ({
     proposalSettings () {
       // note: a console error can happen here if we're on this page and logout
       // because the group disappears. it's not a big deal though
-      return this.groupProposalSettings()
+      return this.groupProposalSettings() || {}
     },
     votingRulesSorted () {
       return this.proposalSettings.rule === RULE_DISAGREEMENT ? [RULE_DISAGREEMENT, RULE_PERCENTAGE] : [RULE_PERCENTAGE, RULE_DISAGREEMENT]

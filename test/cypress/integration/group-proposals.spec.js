@@ -5,7 +5,7 @@ const groupName = 'Dreamers'
 const groupMincome = 250
 const groupNewMincome = 500
 const groupInviteLinkExpiry = {
-  anyone: INVITE_EXPIRES_IN_DAYS.INITIAL,
+  anyone: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
   proposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
 }
 

@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { createInvite } from '@model/contracts/group.js'
 import {
   INVITE_INITIAL_CREATOR,
+  INVITE_EXPIRES_IN_DAYS,
   CHATROOM_GENERAL_NAME,
   CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL
@@ -81,7 +82,11 @@ export default (sbp('sbp/selectors/register', {
     }
 
     try {
-      const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
+      const initialInvite = createInvite({
+        quantity: 60,
+        creator: INVITE_INITIAL_CREATOR,
+        expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+      })
       const proposalSettings = {
         rule: ruleName,
         ruleSettings: {
@@ -224,6 +229,13 @@ export default (sbp('sbp/selectors/register', {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
+    const contractState = sbp('state/vuex/state')[params.contractID]
+    for (const contractId in contractState.chatRooms) {
+      if (params.data.attributes.name.toUpperCase() === contractState.chatRooms[contractId].name.toUpperCase()) {
+        throw new GIErrorUIRuntimeError(L('Duplicated channel name'))
+      }
+    }
+
     const message = await sbp('gi.actions/chatroom/create', {
       data: params.data,
       hooks: {
@@ -250,7 +262,14 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
     try {
       const rootState = sbp('state/vuex/state')
-      const username = params.data.username || rootState.loggedIn.username
+      const rootGetters = sbp('state/vuex/getters')
+      const me = rootState.loggedIn.username
+      const username = params.data.username || me
+
+      if (!rootGetters.isJoinedChatRoom(params.data.chatRoomID) && username !== me) {
+        throw new GIErrorUIRuntimeError(L('Failed to join chat channel.'))
+      }
+
       const message = await sbp('gi.actions/chatroom/join', {
         ...omit(params, ['options']),
         contractID: params.data.chatRoomID,
@@ -261,7 +280,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
-      if (username === rootState.loggedIn.username) {
+      if (username === me) {
         // 'READY_TO_JOIN_CHATROOM' is necessary to identify the joining chatroom action is NEW or OLD
         // Users join the chatroom thru group making group actions
         // But when user joins the group, he needs to ignore all the actions about chatroom
