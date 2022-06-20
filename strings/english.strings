@@ -1752,7 +1752,7 @@
 /* views/containers/design-system/DSModalFullscreen.vue */
 "Modal title" = "Modal title";
 
-/* views/containers/group-settings/InvitationsTable.vue */
+/* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
 "Expired" = "Expired";
 
 /* views/containers/proposals/ProposalTemplate.vue */

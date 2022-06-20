@@ -1384,9 +1384,6 @@
 "Are you sure you want to revoke this link? This action cannot be undone." = "Êtes-vous sûr(e) de vouloir révoquer ce lien ? Cette action ne pourra pas être annulée.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
-"Expired" = "Expirée";
-
-/* views/containers/group-settings/InvitationsTable.vue */
 "Filter links" = "Filtrer les liens";
 
 /* views/containers/group-settings/InvitationsTable.vue */
@@ -1445,6 +1442,9 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "{numberOfResponses}/{quantity} used" = "{numberOfResponses}/{quantity} utilisées";
+
+/* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
+"Expired" = "Expirée";
 
 /* views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/ErrorPage.vue */
 "Page not found" = "Page introuvable";
