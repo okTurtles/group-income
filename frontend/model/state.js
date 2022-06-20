@@ -123,11 +123,13 @@ const mutations = {
     state.appLogsFilter = filters
   },
   setCurrentChatRoomId (state, { groupId, chatRoomId }) {
-    if (chatRoomId) {
+    if (groupId && state[groupId] && chatRoomId) { // useful when initialize when syncing in another device
+      Vue.set(state.currentChatRoomIDs, groupId, chatRoomId)
+    } else if (chatRoomId) { // set chatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, chatRoomId)
-    } else if (groupId && state[groupId]) {
+    } else if (groupId && state[groupId]) { // set defaultChatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, state[groupId].generalChatRoomId || null)
-    } else {
+    } else { // reset
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
     }
   },

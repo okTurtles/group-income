@@ -218,6 +218,10 @@ export default (sbp('sbp/selectors/register', {
         for (const cId of chatRoomIds) {
           await sbp('chelonia/contract/sync', cId)
         }
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+          groupId: params.contractID,
+          chatRoomId: rootState[params.contractID].generalChatRoomId
+        })
       }
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
       sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
