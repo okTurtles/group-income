@@ -190,26 +190,34 @@ export default (sbp('sbp/selectors/register', {
       // sync the group's contract state
       await sbp('chelonia/contract/sync', params.contractID)
 
-      // join the 'General' chatroom by default
-      const rootState = sbp('state/vuex/state')
-      const generalChatRoomId = rootState[params.contractID].generalChatRoomId
-      if (generalChatRoomId) {
-        await sbp('gi.actions/group/joinChatRoom', {
-          ...omit(params, ['options']),
-          data: {
-            chatRoomID: generalChatRoomId
-          },
-          hooks: {
-            prepublish: null,
-            postpublish: params.hooks?.postpublish
-          }
-        })
-      } else {
-        alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
-      }
-
       if (!params.options?.skipInviteAccept) {
+        // join the 'General' chatroom by default
+        const rootState = sbp('state/vuex/state')
+        const generalChatRoomId = rootState[params.contractID].generalChatRoomId
+        if (generalChatRoomId) {
+          await sbp('gi.actions/group/joinChatRoom', {
+            ...omit(params, ['options']),
+            data: {
+              chatRoomID: generalChatRoomId
+            },
+            hooks: {
+              prepublish: null,
+              postpublish: params.hooks?.postpublish
+            }
+          })
+        } else {
+          alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
+        }
+
         saveLoginState('joining', params.contractID)
+      } else {
+        // sync all chatroom contracts
+        const rootState = sbp('state/vuex/state')
+        const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms)
+
+        for (const cId of chatRoomIds) {
+          await sbp('chelonia/contract/sync', cId)
+        }
       }
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
       sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
