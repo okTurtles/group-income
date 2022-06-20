@@ -383,6 +383,11 @@ const notImplemented = (v) => {
   throw new Error(`chelonia: action not implemented to handle: ${JSON.stringify(v)}.`)
 }
 
+// The code below represents different ways to dynamically load code at runtime,
+// and the SES example shows how to sandbox runtime loaded code (although it doesn't
+// work, see https://github.com/endojs/endo/issues/1207 for details). It's also not
+// super important since we're loaded signed contracts.
+/*
 // https://2ality.com/2019/10/eval-via-import.html
 // Example: await import(esm`${source}`)
 // const esm = ({ raw }, ...vals) => {
@@ -478,3 +483,4 @@ function sesImportVM (url): Promise<Object> {
   // vm.evaluate(source)
   return vm.import(url)
 }
+*/

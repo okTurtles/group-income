@@ -107,7 +107,6 @@
     "localforage": "1.9.0",
     "multihashes": "0.4.15",
     "scrypt-async": "2.0.1",
-    "ses": "0.15.15",
     "tweetnacl": "1.0.3",
     "tweetnacl-util": "0.15.1",
     "vue": "2.6.12",
