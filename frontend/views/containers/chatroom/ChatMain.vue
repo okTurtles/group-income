@@ -112,7 +112,7 @@ import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/constants.js'
-import { createMessage, findMessageIdx, isAddedNewMessage } from '@model/contracts/chatroom.js'
+import { createMessage, findMessageIdx } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { cloneDeep, debounce } from '@utils/giLodash.js'
 import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
@@ -476,6 +476,19 @@ export default ({
       }
     },
     listenChatRoomActions ({ hash }) {
+      const isAddedNewMessage = (message: GIMessage): boolean => {
+        const { action, meta } = message.decryptedValue()
+        const rootState = sbp('state/vuex/state')
+        const me = rootState.loggedIn.username
+
+        if (/.*(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
+          // we add new pending message in 'handleSendMessage' function
+          return me !== meta.username
+        }
+
+        return false
+      }
+
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
         const state = this.getSimulatedState(false)
         await sbp('chelonia/private/in/processMessage', message, state)
