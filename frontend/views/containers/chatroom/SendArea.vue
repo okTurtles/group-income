@@ -3,13 +3,21 @@
   :class='{"is-editing": isEditing}'
   data-test='messageInputWrapper'
 )
-  .c-replying(v-if='replyingMessage')
-    i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
-    button.c-clear.is-icon-small(
-      :aria-label='L("Stop replying")'
-      @click='stopReplying'
-    )
-      i.icon-times
+  .c-jump-to-latest(
+    v-if='scrolledUp && !replyingMessage'
+    @click='$emit("jump-to-latest")'
+  )
+    i18n Jump to latest message
+    button.is-icon-small
+      i.icon-arrow-down
+  .c-replying-wrapper
+    .c-replying(v-if='replyingMessage')
+      i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
+      button.c-clear.is-icon-small(
+        :aria-label='L("Stop replying")'
+        @click='stopReplying'
+      )
+        i.icon-times
 
   textarea.textarea.c-send-textarea(
     ref='textarea'
@@ -88,11 +96,13 @@ export default ({
     title: String,
     defaultText: String,
     searchPlaceholder: String,
+    scrolledUp: Boolean,
     loading: {
       type: Boolean,
       default: false
     },
     replyingMessage: String,
+    replyingMessageId: String,
     replyingTo: String,
     isEditing: {
       type: Boolean,
@@ -150,7 +160,6 @@ export default ({
   },
   methods: {
     textAreaFocus () {
-      this.$emit('start-typing')
       if (this.ephemeral.isPhone) this.ephemeral.showButtons = false
     },
     textAreaBlur (event) {
@@ -206,7 +215,6 @@ export default ({
       this.updateTextArea()
     },
     stopReplying () {
-      this.ephemeral.replyingMessage = null
       this.$emit('stop-replying')
     },
     sendMessage () {
@@ -214,7 +222,7 @@ export default ({
         return false
       }
 
-      this.$emit('send', this.$refs.textarea.value, this.replyingMessage) // TODO remove first / last empty lines
+      this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
     },
@@ -330,9 +338,18 @@ $initialHeight: 43px;
   box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 }
 
+.c-replying-wrapper {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+  position: absolute;
+  top: -1rem;
+}
+
 .c-replying {
+  display: table-cell;
   background-color: $general_2;
-  padding: 0.5rem 2rem 0.7rem 0.5rem;
+  padding: 0.4rem 2rem 0.5rem 0.5rem;
   border-radius: 0.3rem 0.3rem 0 0;
   margin-bottom: -0.2rem;
   white-space: nowrap;
@@ -343,10 +360,27 @@ $initialHeight: 43px;
   color: $text_1;
 }
 
+.c-jump-to-latest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $general_2;
+  padding: 0.2rem;
+  border-radius: 0.3rem 0.3rem 0 0;
+  font-size: $size_5;
+  color: $text_1;
+  text-align: center;
+  cursor: pointer;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1rem;
+}
+
 .c-clear {
   position: absolute;
   right: 0.2rem;
-  top: 0.4rem;
+  top: 0.2rem;
 }
 
 .c-send-button {

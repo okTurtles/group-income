@@ -19,7 +19,7 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
 })
 
 function checkIfJoinedGeneralChannel (groupName, username) {
-  cy.getByDT('groupChatLink').click()
+  cy.giRedirectToGroupChat()
   cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
 
   cy.getByDT('messageInputWrapper').within(() => {
@@ -380,5 +380,14 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
         }
       })
     })
+  })
+})
+
+Cypress.Commands.add('giRedirectToGroupChat', () => {
+  cy.getByDT('groupChatLink').click()
+  cy.getByDT('conversationWapper').within(() => {
+    cy.get('.infinite-status-prompt:first-child')
+      .invoke('attr', 'style')
+      .should('include', 'display: none')
   })
 })

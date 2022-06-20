@@ -173,3 +173,17 @@
     animation: none !important;
   }
 }
+
+@keyframes focused {
+  0% {
+    background-color: transparent;
+  }
+
+  50% {
+    background-color: $primary_2;
+  }
+
+  100% {
+    background-color: transparent;
+  }
+}

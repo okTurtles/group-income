@@ -144,6 +144,9 @@
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "Proposal refused with {nay} against out of {total} total votes." = "Proposal refused with {nay} against out of {total} total votes.";
 
+/* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
+"Info" = "Info";
+
 /* MISSING TRANSLATION - views/containers/user-settings/Appearence.vue */
 "Animations" = "Animations";
 
@@ -911,6 +914,9 @@
 
 /* views/containers/chatroom/SendArea.vue */
 "Create poll" = "Créer un sondage";
+
+/* views/containers/chatroom/SendArea.vue */
+"Jump to latest message" = "Aller au dernier message";
 
 /* views/containers/chatroom/SendArea.vue */
 "Replying to {replyingTo}: \"{replyingMessage}\"" = "Répondre à {replyingTo} : \"{replyingMessage}\"";
@@ -2279,6 +2285,9 @@
 
 /* Not currently used */
 "This months overview" = "Résumé de ce mois";
+
+/* Not currently used */
+"To the latest message" = "Vers le dernier message";
 
 /* Not currently used */
 "To:" = "À :";

@@ -8,7 +8,12 @@
           TODO later - Design a cool skeleton loading
           - this should be done only after knowing exactly how server gets each conversation data
 
-    .c-body-conversation(ref='conversation' v-else='' data-test='conversationWapper')
+    .c-body-conversation(
+      v-else
+      ref='conversation'
+      data-test='conversationWapper'
+      @scroll='onChatScroll'
+    )
 
       infinite-loading(
         direction='top'
@@ -44,11 +49,12 @@
 
         component(
           :is='messageType(message)'
+          :ref='message.id'
           :key='message.id'
           :text='message.text'
           :type='message.type'
           :notification='message.notification'
-          :replyingMessage='message.replyingMessage'
+          :replyingMessage='replyingMessage(message)'
           :from='message.from'
           :datetime='time(message.datetime)'
           :edited='!!message.updatedDate'
@@ -62,6 +68,7 @@
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
+          @scroll-to-replying-message='scrollToMessage(message.replyingMessage.id)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @delete-message='deleteMessage(message)'
           @add-emoticon='addEmoticon(message, $event)'
@@ -70,14 +77,16 @@
   .c-footer
     send-area(
       v-if='summary.joined'
-      :title='summary.title'
-      @send='handleSendMessage'
-      @height-update='updateSendAreaHeight'
-      @start-typing='updateScroll'
       :loading='details.isLoading'
       :replying-message='ephemeral.replyingMessage'
+      :replying-message-id='ephemeral.replyingMessageId'
       :replying-to='ephemeral.replyingTo'
-      @stop-replying='ephemeral.replyingMessage = null'
+      :title='summary.title'
+      :scrolledUp='isScrolledUp'
+      @send='handleSendMessage'
+      @height-update='updateSendAreaHeight'
+      @jump-to-latest='updateScroll'
+      @stop-replying='stopReplying'
     )
     view-area(
       v-else
@@ -100,17 +109,17 @@ import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
 import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_MESSAGE_ACTION } from '@model/contracts/shared/constants.js'
-import { createMessage } from '@model/contracts/shared/functions.js'
+import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
-import { cloneDeep } from '@model/contracts/shared/giLodash.js'
+import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
   name: 'ChatMain',
   components: {
     Avatar,
-    Emoticons,
     ConversationGreetings,
+    Emoticons,
     InfiniteLoading,
     Loading,
     Message,
@@ -140,10 +149,12 @@ export default ({
       latestEvents: [],
       messages: [],
       ephemeral: {
-        refreshMessages: true,
-        infiniteLoading: null,
+        scrolledDistance: 0,
         bodyPaddingBottom: '',
+        infiniteLoading: null,
+        shouldRefreshMessages: true,
         replyingMessage: null,
+        replyingMessageId: null,
         replyingTo: null
       }
     }
@@ -171,17 +182,23 @@ export default ({
       'chatRoomUsers',
       'ourIdentityContractId',
       'currentIdentityState',
-      'isJoinedChatRoom'
+      'isJoinedChatRoom',
+      'setChatRoomScrollPosition',
+      'currentChatRoomScrollPosition'
     ]),
     bodyStyles () {
+      const defaultHeightInRem = 14
+      let heightDiscountInRem = 0
+      if (!this.summary.joined) {
+        heightDiscountInRem += 2
+      }
       // Not sure what `bodyPaddingBottom` means, I delete it now
       // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
       const phoneStyles = {}
-      const unjoinedStyles =
-        this.summary.joined
-          ? {}
-          : { height: !this.config.isPhone ? 'calc(var(--vh, 1vh) * 100 - 18rem)' : 'calc(var(--vh, 1vh) * 100 - 16rem)' }
-      return { ...phoneStyles, ...unjoinedStyles }
+      const responsiveStyles = {
+        height: `calc(var(--vh, 1vh) * 100 - ${defaultHeightInRem + heightDiscountInRem}rem)`
+      }
+      return { ...phoneStyles, ...responsiveStyles }
     },
     startedUnreadIndex () {
       return this.messages.findIndex(message => message.unread === true)
@@ -191,6 +208,12 @@ export default ({
         ...this.currentIdentityState.attributes,
         id: this.ourIdentityContractId
       }
+    },
+    isScrolledUp () {
+      if (!this.ephemeral.scrolledDistance) {
+        return false
+      }
+      return this.ephemeral.scrolledDistance > 500
     }
   },
   methods: {
@@ -219,6 +242,9 @@ export default ({
         return this.isCurrentUser(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
     },
+    replyingMessage (message) {
+      return message.replyingMessage ? message.replyingMessage.text : ''
+    },
     time (strTime) {
       return new Date(strTime)
     },
@@ -240,7 +266,15 @@ export default ({
     updateSendAreaHeight (height) {
       this.ephemeral.bodyPaddingBottom = height
     },
-    handleSendMessage (message, replyingMessage = null) {
+    stopReplying () {
+      this.ephemeral.replyingMessage = null
+      this.ephemeral.replyingMessageId = null
+      this.ephemeral.replyingTo = null
+    },
+    handleSendMessage (message) {
+      const replyingMessage = this.ephemeral.replyingMessageId
+        ? { id: this.ephemeral.replyingMessageId, text: this.ephemeral.replyingMessage }
+        : null
       // Consider only simple TEXT now
       // TODO: implement other types of messages later
       const data = { type: MESSAGE_TYPES.TEXT, text: message }
@@ -258,18 +292,62 @@ export default ({
               // when we don't get event after a certain period
               pending: true
             })
+            this.stopReplying()
+            this.updateScroll()
           }
         }
       })
-      // need to scroll to the bottom
-      this.updateScroll()
     },
-    updateScroll () {
+    async scrollToMessage (messageId, effect = true) {
+      if (!messageId) {
+        return
+      }
+
+      const scrollAndHighlight = (index) => {
+        const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
+        const eleTarget = document.querySelectorAll('.c-body-conversation > .c-message')[Math.max(0, index - 1)]
+
+        if (effect) {
+          eleTarget.scrollIntoView({ behavior: 'smooth' })
+          eleMessage.classList.add('c-focused')
+          setTimeout(() => {
+            eleMessage.classList.remove('c-focused')
+          }, 1500)
+        } else {
+          eleTarget.scrollIntoView()
+        }
+      }
+
+      const msgIndex = findMessageIdx(messageId, this.messages)
+      if (msgIndex >= 0) {
+        scrollAndHighlight(msgIndex)
+      } else {
+        const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+        const events = await sbp('chelonia/out/eventsBetween', messageId, this.messages[0].id, limit / 2)
+        if (events && events.length) {
+          await this.rerenderEvents(events, false)
+
+          const msgIndex = findMessageIdx(messageId, this.messages)
+          if (msgIndex >= 0) {
+            scrollAndHighlight(msgIndex)
+          }
+        }
+      }
+    },
+    updateScroll (scrollTargetMessage = null) {
       if (this.summary.title) {
         // force conversation viewport to be at the bottom (most recent messages)
         setTimeout(() => {
-          this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
-        }, 500)
+          if (scrollTargetMessage) {
+            this.scrollToMessage(scrollTargetMessage, false)
+          } else if (this.$refs.conversation) {
+            this.$refs.conversation.scroll({
+              left: 0,
+              top: this.$refs.conversation.scrollHeight,
+              behavior: 'smooth'
+            })
+          }
+        }, 100)
       }
     },
     retryMessage (index) {
@@ -278,6 +356,7 @@ export default ({
     },
     replyMessage (message) {
       this.ephemeral.replyingMessage = message.text
+      this.ephemeral.replyingMessageId = message.id
       this.ephemeral.replyingTo = this.who(message)
     },
     editMessage (message, newMessage) {
@@ -334,20 +413,38 @@ export default ({
         saveMessage: true
       }
     },
-    async getLatestEvents (refresh = false) {
+    async renderMoreMessages (refresh = false) {
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-      const fromLatest = refresh || !this.latestEvents.length
-      const before = fromLatest
+      const lastScrollPosition = this.currentChatRoomScrollPosition
+      const before = refresh || !this.latestEvents.length
         ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
         : GIMessage.deserialize(this.latestEvents[0]).hash()
-
-      const newEvents = await sbp('chelonia/out/eventsBefore', before, limit)
-
-      if (fromLatest) {
-        this.latestEvents = newEvents
+      let events = null
+      if (refresh && lastScrollPosition) {
+        const latestHash = await sbp('chelonia/out/latestHash', this.currentChatRoomId)
+        events = await sbp('chelonia/out/eventsBetween', lastScrollPosition, latestHash, limit / 2)
       } else {
-        newEvents.pop() // remove duplication
-        this.latestEvents.unshift(...newEvents)
+        events = await sbp('chelonia/out/eventsBefore', before, limit)
+      }
+
+      await this.rerenderEvents(events, refresh)
+
+      if (refresh) {
+        const scrollTargetMessage = refresh && lastScrollPosition
+          ? lastScrollPosition
+          : null
+        this.updateScroll(scrollTargetMessage)
+        return false
+      }
+
+      return events.length < limit
+    },
+    async rerenderEvents (events, refresh) {
+      if (refresh) {
+        this.latestEvents = events
+      } else {
+        events.pop() // remove duplication
+        this.latestEvents.unshift(...events)
       }
 
       const state = this.getSimulatedState(true)
@@ -356,11 +453,9 @@ export default ({
       }
       this.messages = state.messages
       this.$forceUpdate()
-
-      return newEvents.length < limit
     },
     setInitMessages () {
-      this.refreshMessages = true
+      this.shouldRefreshMessages = true
       this.messages = []
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
@@ -377,12 +472,30 @@ export default ({
       }
     },
     listenChatRoomActions ({ hash }) {
+      const isAddedNewMessage = (message: GIMessage): boolean => {
+        const { action, meta } = message.decryptedValue()
+        const rootState = sbp('state/vuex/state')
+        const me = rootState.loggedIn.username
+
+        if (/.*(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
+          // we add new pending message in 'handleSendMessage' function so we skip when I added a new message
+          return me !== meta.username
+        }
+
+        return false
+      }
+
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
         const state = this.getSimulatedState(false)
         await sbp('chelonia/private/in/processMessage', message, state)
         this.latestEvents.push(message.serialize())
 
         this.$forceUpdate()
+
+        // TODO: Need to scroll to the bottom only when new message is ADDED by ANOTHER
+        if (this.ephemeral.scrolledDistance < 50 && isAddedNewMessage(message)) {
+          this.updateScroll()
+        }
       })
     },
     resizeEventHandler () {
@@ -391,19 +504,54 @@ export default ({
     },
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
-      this.getLatestEvents(this.refreshMessages).then(completed => {
+      this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
         completed ? $state.complete() : $state.loaded()
-        this.refreshMessages = false
+        this.shouldRefreshMessages = false
       })
-    }
+    },
+    onChatScroll: debounce(function () {
+      if (!this.$refs.conversation) {
+        return
+      }
+      const curScrollTop = this.$refs.conversation.scrollTop
+      if (!this.$refs.conversation) {
+        this.ephemeral.scrolledDistance = 0
+      } else {
+        const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
+        this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
+      }
+
+      if (!this.summary.joined) {
+        return
+      }
+
+      if (this.ephemeral.scrolledDistance > 500) {
+        // Save the current scroll position per each chatroom
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+          const msg = this.messages[i]
+          const offsetTop = this.$refs[msg.id][0].$el.offsetTop
+          const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
+          if ((offsetTop - parentOffsetTop <= curScrollTop) || i === 0) {
+            sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+              chatRoomId: this.currentChatRoomId,
+              messageId: msg.id
+            })
+            break
+          }
+        }
+      } else if (this.currentChatRoomScrollPosition) {
+        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+          chatRoomId: this.currentChatRoomId,
+          messageId: null
+        })
+      }
+    }, 500)
   },
   watch: {
     currentChatRoomId (to, from) {
       const force = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
       this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
-      // need to scroll to the saved position
-      this.$nextTick(() => this.updateScroll())
     },
     'summary.joined' (to, from) {
       if (to) {
@@ -451,8 +599,9 @@ export default ({
 }
 
 .c-body-conversation {
+  margin-right: 1.5rem;
   padding: 2rem 0;
-  overflow-y: scroll;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
