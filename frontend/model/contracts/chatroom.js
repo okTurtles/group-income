@@ -384,7 +384,14 @@ sbp('chelonia/defineContract', {
           state.messages.splice(msgIndex, 1)
         }
       },
-      sideEffect ({ contractID, hash }) {
+      sideEffect ({ data, contractID, hash }) {
+        const rootState = sbp('state/vuex/state')
+        if (rootState.chatRoomScrollPosition[contractID] === data.id) {
+          sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+            chatRoomId: contractID, messageId: null
+          })
+        }
+
         emitMessageEvent({ contractID, hash })
       }
     },

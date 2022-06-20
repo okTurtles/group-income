@@ -1125,6 +1125,9 @@
 /* views/containers/user-settings/settings.js */
 "Log Out" = "Log Out";
 
+/* views/containers/user-settings/AppLogs.vue */
+"Info" = "Info";
+
 /* views/containers/user-settings/AppLogs.vue, views/containers/user-settings/settings.js */
 "Troubleshooting" = "Troubleshooting";
 
@@ -1538,6 +1541,9 @@
 
 /* views/containers/contributions/IncomeDetails.vue */
 "The method name for \"{methodValue}\" is missing." = "The method name for \"{methodValue}\" is missing.";
+
+/* views/containers/chatroom/SendArea.vue */
+"Jump to latest message" = "Jump to latest message";
 
 /* views/components/group-creation-steps/GroupRules.vue */
 "Define the percentage of members who will need to agree to a proposal." = "Define the percentage of members who will need to agree to a proposal.";
