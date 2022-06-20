@@ -299,11 +299,11 @@ sbp('chelonia/defineContract', {
         const invite = invites[inviteId]
         if (
           invite.status === INVITE_STATUS.VALID &&
-          invite.creator !== INVITE_INITIAL_CREATOR &&
-          invite.expires >= Date.now()
+          invite.creator !== INVITE_INITIAL_CREATOR
         ) {
           pendingMembers[invites[inviteId].invitee] = {
-            invitedBy: invites[inviteId].creator
+            invitedBy: invites[inviteId].creator,
+            expires: invite.expires
           }
         }
       }

@@ -437,6 +437,8 @@ const getters = {
     }
 
     return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
+      .filter(username => getters.groupProfiles[username] ||
+         getters.groupMembersPending[username].expires >= Date.now())
       .map(username => {
         const { displayName } = getters.globalProfile(username) || {}
         return {
