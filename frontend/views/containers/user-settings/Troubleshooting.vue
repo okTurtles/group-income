@@ -37,9 +37,7 @@
 </template>
 
 <script>
-import {
-  L, LError
-} from '@common/common.js'
+import { L, LError } from '@common/common.js'
 import { mapState } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'

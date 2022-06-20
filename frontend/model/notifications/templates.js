@@ -3,9 +3,7 @@ import type {
   NotificationTemplate
 } from './types.flow.js'
 
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.

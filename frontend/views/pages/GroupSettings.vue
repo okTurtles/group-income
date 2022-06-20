@@ -105,9 +105,7 @@ import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
 import GroupRulesSettings from '@containers/group-settings/GroupRulesSettings.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'GroupSettings',

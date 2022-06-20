@@ -22,9 +22,7 @@
 </template>
 <script>
 import sbp from '@sbp/sbp'
-import {
-  L, LError
-} from '@common/common.js'
+import { L, LError } from '@common/common.js'
 import { imageUpload } from '@utils/image.js'
 import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'

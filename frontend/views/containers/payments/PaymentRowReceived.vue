@@ -35,9 +35,7 @@ import { MenuItem } from '@components/menu/index.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { humanDate } from '@model/contracts/shared/time.js'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 
 // TODO: handle showing PAYMENT_CANCELLED ?
 

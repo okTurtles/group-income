@@ -21,9 +21,7 @@
 </template>
 
 <script>
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'

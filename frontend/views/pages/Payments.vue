@@ -114,9 +114,7 @@ import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
-import {
-  L, LTags
-} from '@common/common.js'
+import { L, LTags } from '@common/common.js'
 
 export default ({
   name: 'Payments',

@@ -70,10 +70,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
 
 <script>
 import sbp from '@sbp/sbp'
-import {
-  Vue,
-  L
-} from '@common/common.js'
+import { Vue, L } from '@common/common.js'
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED, PAYMENT_TYPE_MANUAL } from '@model/contracts/shared/payments/index.js'
 import { validationMixin } from 'vuelidate'

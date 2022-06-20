@@ -39,9 +39,7 @@ form(data-test='signup' @submit.prevent='')
 
 <script>
 import sbp from '@sbp/sbp'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import { nonWhitespace } from '@views/utils/validators.js'

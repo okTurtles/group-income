@@ -29,9 +29,7 @@ proposal-template(
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
-import {
-  L, LTags
-} from '@common/common.js'
+import { L, LTags } from '@common/common.js'
 import { proposalDefaults } from '@model/contracts/shared/voting/proposals.js'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
 import { PROPOSAL_PROPOSAL_SETTING_CHANGE } from '@model/contracts/shared/constants.js'

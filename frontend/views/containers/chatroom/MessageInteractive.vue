@@ -14,9 +14,7 @@ message-base(v-bind='$props' @wrapperAction='action')
 </template>
 
 <script>
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 import {
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_INVITE_MEMBER,

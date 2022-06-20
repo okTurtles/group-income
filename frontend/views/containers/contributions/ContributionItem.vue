@@ -30,9 +30,7 @@
 </template>
 
 <script>
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'ContributionItem',

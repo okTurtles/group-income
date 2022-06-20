@@ -21,9 +21,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import { CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
 import MessageNotification from './MessageNotification.vue'

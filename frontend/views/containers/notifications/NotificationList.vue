@@ -30,9 +30,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { timeSince } from '@model/contracts/shared/time.js'
 import AvatarUser from '@components/AvatarUser.vue'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'NotificationList',

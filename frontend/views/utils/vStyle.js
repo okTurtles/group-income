@@ -1,6 +1,4 @@
-import {
-  Vue
-} from '@common/common.js'
+import { Vue } from '@common/common.js'
 /*
 * Style tag overload because Vue is trying to compile
 * the content inside the tag otherwise

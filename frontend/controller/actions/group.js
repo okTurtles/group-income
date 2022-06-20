@@ -1,10 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import {
-  GIErrorUIRuntimeError,
-  L, LError
-} from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { createInvite } from '@model/contracts/shared/functions.js'
 import {
   INVITE_INITIAL_CREATOR,

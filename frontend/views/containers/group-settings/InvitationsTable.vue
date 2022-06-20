@@ -116,9 +116,7 @@ import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
 import { mapGetters, mapState } from 'vuex'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'InvitationsTable',

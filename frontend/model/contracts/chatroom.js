@@ -1,10 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import {
-  Vue,
-  L
-} from '@common/common.js'
+import { Vue, L } from '@common/common.js'
 import { merge, cloneDeep } from './shared/giLodash.js'
 import {
   CHATROOM_NAME_LIMITS_IN_CHARS,

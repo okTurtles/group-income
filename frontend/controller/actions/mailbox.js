@@ -1,10 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import {
-  GIErrorUIRuntimeError,
-  L, LError
-} from '@common/common.js'
+import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { encryptedAction } from './utils.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 

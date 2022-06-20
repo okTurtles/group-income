@@ -19,9 +19,7 @@ li.c-wrapper
 
 <script>
 import { mapGetters } from 'vuex'
-import {
-  L, LTags
-} from '@common/common.js'
+import { L, LTags } from '@common/common.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProposalItem from './ProposalItem.vue'
 import { STATUS_OPEN } from '@model/contracts/shared/constants.js'

@@ -1,9 +1,6 @@
 'use strict'
 import sbp from '@sbp/sbp'
-import {
-  L,
-  GIErrorUIRuntimeError
-} from '@common/common.js'
+import { L, GIErrorUIRuntimeError } from '@common/common.js'
 import { omit } from '@model/contracts/shared/giLodash.js'
 import { encryptedAction } from './utils.js'
 import type { GIRegParams } from './types.js'

@@ -31,9 +31,7 @@ import { mapGetters } from 'vuex'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { MenuItem } from '@components/menu/index.js'
 import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
 import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'

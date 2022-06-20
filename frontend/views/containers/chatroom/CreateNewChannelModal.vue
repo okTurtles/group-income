@@ -74,9 +74,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import {
-  L, LError
-} from '@common/common.js'
+import { L, LError } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { mapState } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'

@@ -22,9 +22,7 @@ modal-template(ref='modal' :a11yTitle='$attrs.heading' :modalForceAction='true')
 
 <script>
 import sbp from '@sbp/sbp'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 import { MODAL_RESPONSE } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'

@@ -86,9 +86,7 @@ import { mapGetters } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'UserProfile',

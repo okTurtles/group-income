@@ -40,9 +40,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import {
-  L, LTags
-} from '@common/common.js'
+import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'

@@ -20,9 +20,7 @@ import { mapGetters } from 'vuex'
 import CalloutCard from '@components/CalloutCard.vue'
 import SvgHello from '@svgs/hello.svg'
 import SvgContributions from '@svgs/contributions.svg'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'AddIncomeDetailsWidget',

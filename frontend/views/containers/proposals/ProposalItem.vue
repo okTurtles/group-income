@@ -36,9 +36,7 @@
 
 <script>
 import { mapGetters, mapState } from 'vuex'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 import currencies from '@model/contracts/shared/currencies.js'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import {

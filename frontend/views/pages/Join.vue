@@ -56,9 +56,7 @@ import Loading from '@components/Loading.vue'
 import Avatar from '@components/Avatar.vue'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgBrokenLink from '@svgs/broken-link.svg'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 
 let syncFinished = false
 sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })

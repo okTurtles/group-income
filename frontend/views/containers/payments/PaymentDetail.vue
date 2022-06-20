@@ -31,9 +31,7 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import {
-  L
-} from '@common/common.js'
+import { L } from '@common/common.js'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@model/contracts/shared/currencies.js'
