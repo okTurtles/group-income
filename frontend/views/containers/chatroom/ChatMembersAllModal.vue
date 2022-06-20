@@ -209,7 +209,7 @@ export default ({
       const members = this.isJoined ? this.chatRoomUsersInSort : this.details.participants
       this.addedMembers = members.map(member => ({ ...member, departedDate: null }))
       this.canAddMembers = this.groupMembersSorted
-        .filter(member => !this.addedMembers.find(mb => mb.username === member.username))
+        .filter(member => !this.addedMembers.find(mb => mb.username === member.username) && !member.invitedBy)
         .map(member => ({
           username: member.username,
           displayName: member.displayName,
