@@ -482,7 +482,7 @@ export default ({
         const me = rootState.loggedIn.username
 
         if (/.*(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
-          // we add new pending message in 'handleSendMessage' function
+          // we add new pending message in 'handleSendMessage' function so we skip when I added a new message
           return me !== meta.username
         }
 
