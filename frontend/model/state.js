@@ -127,11 +127,13 @@ const mutations = {
     state.appLogsFilter = filters
   },
   setCurrentChatRoomId (state, { groupId, chatRoomId }) {
-    if (chatRoomId) {
+    if (groupId && state[groupId] && chatRoomId) { // useful when initialize when syncing in another device
+      Vue.set(state.currentChatRoomIDs, groupId, chatRoomId)
+    } else if (chatRoomId) { // set chatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, chatRoomId)
-    } else if (groupId && state[groupId]) {
+    } else if (groupId && state[groupId]) { // set defaultChatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, state[groupId].generalChatRoomId || null)
-    } else {
+    } else { // reset
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
     }
   },
@@ -441,6 +443,8 @@ const getters = {
     }
 
     return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
+      .filter(username => getters.groupProfiles[username] ||
+         getters.groupMembersPending[username].expires >= Date.now())
       .map(username => {
         const { displayName } = getters.globalProfile(username) || {}
         return {
@@ -537,7 +541,11 @@ const store: any = new Vuex.Store({
 
 // save the state each time it's modified, but debounce it to avoid saving too frequently
 const debouncedSave = _.debounce(() => sbp('state/vuex/save'), 500)
-store.subscribe(debouncedSave) // for e.g saving notifications that are markedAsRead
+store.subscribe((commit) => {
+  if (commit.type !== 'noop') {
+    debouncedSave()
+  }
+}) // for e.g saving notifications that are markedAsRead
 // since Chelonia updates do not pass through calls to 'commit', also save upon EVENT_HANDLED
 sbp('okTurtles.events/on', EVENT_HANDLED, debouncedSave)
 // logout will call 'state/vuex/save', so we clear any debounced calls to it before it gets run

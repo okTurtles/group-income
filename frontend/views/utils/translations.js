@@ -59,7 +59,7 @@ sbp('sbp/selectors/register', {
       return
     }
     try {
-      currentTranslationTable = await sbp('backend/translations/get', language)
+      currentTranslationTable = (await sbp('backend/translations/get', language)) || defaultTranslationTable
 
       // Only set `currentLanguage` if there was no error fetching the ressource.
       currentLanguage = language
