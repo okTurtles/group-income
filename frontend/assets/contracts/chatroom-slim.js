@@ -610,7 +610,14 @@ ${this.getErrorInfo()}`;
             state.messages.splice(msgIndex, 1);
           }
         },
-        sideEffect({ contractID, hash }) {
+        sideEffect({ data, contractID, hash }) {
+          const rootState = (0, import_sbp2.default)("state/vuex/state");
+          if (rootState.chatRoomScrollPosition[contractID] === data.id) {
+            (0, import_sbp2.default)("state/vuex/commit", "setChatRoomScrollPosition", {
+              chatRoomId: contractID,
+              messageId: null
+            });
+          }
           emitMessageEvent({ contractID, hash });
         }
       },

@@ -50,9 +50,6 @@ Cypress.Commands.add('giSignup', (username, {
   const email = `${username}@email.com`
 
   if (bypassUI) {
-    // this is a hack to wait for main.js to finish loading before we begin to use sbp,
-    // as main needs to finish loading contracts before we can use it
-    cy.getByDT('signupBtn').should('exist')
     cy.window().its('sbp').then(async sbp => {
       await sbp('gi.actions/identity/signupAndLogin', { username, email, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
