@@ -5,10 +5,6 @@ import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import * as Common from '@common/common.js'
-import {
-  Vue,
-  L, LError, LTags
-} from '@common/common.js'
 import { LOGIN, LOGOUT } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
@@ -30,6 +26,8 @@ import './views/utils/vError.js'
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import 'wicg-inert'
+
+const { Vue, L, LError, LTags } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)
@@ -66,6 +64,13 @@ async function startApp () {
     sbp('sbp/filters/selector/add', 'gi.db/settings/save', (domain, selector, data) => {
       console.debug("[sbp] 'gi.db/settings/save'", data[0])
     })
+  }
+  // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
+  //       actions that they shouldn't be generating, which can lead to bugs or trigger the automated
+  //       ban system. Only enable it if you know what you're doing and don't mind the risk.
+  if (process.env.NODE_ENV === 'development' || window.Cypress || process.env.EXPOSE_SBP === 'true') {
+    // In development mode this makes the SBP API available in the devtools console.
+    window.sbp = sbp
   }
 
   function contractName (contractID: string): string {
@@ -105,25 +110,16 @@ async function startApp () {
     contracts: {
       defaults: {
         modules: { '@common/common.js': Common },
+        allowedSelectors: [
+          'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
+          'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
+          'gi.actions/identity/updateLoginStateUponLogin',
+          'gi.actions/chatroom/leave', 'gi.notifications/emit'
+        ],
+        allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],
         preferSlim: true
       },
       manifests: {
-        // esm w/out banner
-        // 'gi.contracts/group': '21XWnNG5h1M8dkT9HaKpeZugeXXzaAEdqCY1nTKAKtYBVsBW7F',
-        // 'gi.contracts/identity': '21XWnNRqsN4vhWiJHaQnhCTwnWddmJUH7iMcM2NbLBXze8dYB5',
-        // 'gi.contracts/mailbox': '21XWnNNwXEJErrZNtoHPe91BKg8egFWsn8kea4FTeCFXvUWu72',
-        // 'gi.contracts/chatroom': '21XWnNV4d2tzFGuBrQLSAvyNQLQY45xaVqk1kxKjbYLjud3d95'
-        // iife w/top-level import-require banner
-        // 'gi.contracts/group': '21XWnNV4WRUrZitwzdBxNzrYjTNTTFeTU4yrBFqmEK4p1skXFt',
-        // 'gi.contracts/identity': '21XWnNF78vfcYcBCzDKCHDrR1k8ULzkZiBFGrzQuDaRo5rpptB',
-        // 'gi.contracts/mailbox': '21XWnNXFteQs35ereJqQ4cKRXt7HoZfzYxVpRXJgndjgWWuo3W',
-        // 'gi.contracts/chatroom': '21XWnNN7z148sVkN8GFdDRYBFnu7ojGLmRr4dyfWz85KHJuQ1L'
-        // iife w/out top-level import-require
-        // 'gi.contracts/group': '21XWnNL8ZFdJp474N3buKvCum6WHbiDqmTtFzRBFxLynb4nB2U',
-        // 'gi.contracts/identity': '21XWnNJcRbr9ky8tJffCqqNmcUp6FsafbnsayD6ZLmwkS2W2rz',
-        // 'gi.contracts/mailbox': '21XWnNVstNeekqC3N7QBhyTF8G2GR3D4eoU7F5rv5pc9xXwmq5',
-        // 'gi.contracts/chatroom': '21XWnNQamiPx3rCR5RrK6Bi2UfSi29iwo3PMhb9PMcyAPVTD6M'
-        // iife w/out top-level import-require & w/import @sbp/sbp extern
         'gi.contracts/group': '21XWnNMgjRathmA92wxxiCnsaDX4uJ1jeZcZoFjDrEq3GSPu6f',
         'gi.contracts/identity': '21XWnNGuvR3ADkhBNZHsECiu1tBB66xtJbGrPA21GxtSatrS2D',
         'gi.contracts/mailbox': '21XWnNV8JgXD2kFgS3GQb2rooa9FGmeKNMJTF8a82PQFofUnyx',

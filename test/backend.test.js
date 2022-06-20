@@ -7,13 +7,11 @@ import '~/shared/domains/chelonia/chelonia.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { blake32Hash } from '~/shared/functions.js'
-import proposals from '~/frontend/model/contracts/voting/proposals.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/voting/constants.js'
-import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
-import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/payments/index.js'
-import { INVITE_INITIAL_CREATOR } from '~/frontend/model/contracts/constants.js'
-import { createInvite } from '~/frontend/model/contracts/group.js'
-import '~/frontend/model/contracts/identity.js'
+import * as Common from '@common/common.js'
+import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
+import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
+import { INVITE_INITIAL_CREATOR, MAIL_TYPE_MESSAGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
+import { createInvite } from '~/frontend/model/contracts/shared/functions.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
@@ -93,11 +91,24 @@ describe('Full walkthrough', async function () {
       reconnectOnTimeout: false,
       timeout: 3000
     },
-    contractManifests: {
-      'gi.contracts/group': '21XWnNGiDmojtom5o8sEpqX3D77Y6b8WomwoiCBMnemCmv2Nu1',
-      'gi.contracts/identity': '21XWnNPUsrWNi5G616adpkXfrBrAvcxzWEPSQ4XCbV1g2mxR43',
-      'gi.contracts/mailbox': '21XWnNFWAMRm9ua6kHs9zdpqWi2UfL1Sihg5N4fWj9PsbK2uaW',
-      'gi.contracts/chatroom': '21XWnNXfkRhksK4AYHRmthbQwwhyuLpebmJoT3mBv8uYEUdQry'
+    contracts: {
+      defaults: {
+        modules: { '@common/common.js': Common },
+        allowedSelectors: [
+          'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
+          'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
+          'gi.actions/identity/updateLoginStateUponLogin',
+          'gi.actions/chatroom/leave', 'gi.notifications/emit'
+        ],
+        allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],
+        preferSlim: true
+      },
+      manifests: {
+        'gi.contracts/group': '21XWnNMgjRathmA92wxxiCnsaDX4uJ1jeZcZoFjDrEq3GSPu6f',
+        'gi.contracts/identity': '21XWnNGuvR3ADkhBNZHsECiu1tBB66xtJbGrPA21GxtSatrS2D',
+        'gi.contracts/mailbox': '21XWnNV8JgXD2kFgS3GQb2rooa9FGmeKNMJTF8a82PQFofUnyx',
+        'gi.contracts/chatroom': '21XWnNSEBG67oKHJ6uytKcvEzFkckhk9YT43kEzdEsst1BXEEd'
+      }
     }
   })
 
@@ -261,7 +272,7 @@ describe('Full walkthrough', async function () {
         action: 'gi.contracts/mailbox/postMessage',
         data: {
           from: users.bob.decryptedValue().data.attributes.username,
-          messageType: TYPE_MESSAGE,
+          messageType: MAIL_TYPE_MESSAGE,
           message: groups.group1.contractID()
         },
         contractID: mailbox.contractID(),

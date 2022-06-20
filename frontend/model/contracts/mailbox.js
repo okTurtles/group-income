@@ -1,9 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import {
-  Vue
-} from '@common/common.js'
+import { Vue } from '@common/common.js'
 import { mailType } from './shared/types.js'
 import { objectOf, string, object, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 

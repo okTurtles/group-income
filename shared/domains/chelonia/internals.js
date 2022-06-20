@@ -1,6 +1,6 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
+import sbp, { domainFromSelector } from '@sbp/sbp'
 import './db.js'
 import { GIMessage } from './GIMessage.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/model/contracts/shared/giLodash.js'
@@ -12,77 +12,75 @@ import { blake32Hash } from '~/shared/functions.js'
 
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
-const currentlyLoadedContracts = {}
-
 export default (sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
   'chelonia/private/state': function () {
     return this.state
   },
   'chelonia/private/loadManifest': async function (manifestHash: string) {
+    if (this.manifestToContract[manifestHash]) {
+      console.warn('[chelonia]: already loaded manifest', manifestHash)
+      return
+    }
     const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
-    // TODO: load manifests in such a way that it also works with remote contracts that are named the same
     const manifest = await fetch(manifestURL).then(handleFetchResult('json'))
     console.debug('got manifest:', manifest)
     const body = JSON.parse(manifest.body)
-    const contractInfo = this.config.contracts.defaults.preferSlim ? body.contractSlim : body.contract
-    // PLAN: when a new contract version is encountered, unregister the selectors that
-    //       were previously registered, and re-register the new ones.
-    let loadContract = false
-    if (!currentlyLoadedContracts[contractInfo.file]) {
-      currentlyLoadedContracts[contractInfo.file] = {
-        hash: contractInfo.hash
-      }
-      loadContract = true
-    } else if (currentlyLoadedContracts[contractInfo.file].hash !== contractInfo.hash) {
-      // TODO: unload/unregister previous contract
-      loadContract = true
-      currentlyLoadedContracts[contractInfo.file].hash = contractInfo.hash
+    const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
+    console.debug('loading', contractInfo.file)
+    const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`)
+      .then(handleFetchResult('text'))
+    const sourceHash = blake32Hash(source)
+    if (sourceHash !== contractInfo.hash) {
+      throw new Error(`bad hash ${sourceHash} for contract '${contractInfo.file}'! Should be: ${contractInfo.hash}`)
     }
-    if (loadContract) {
-      console.debug('loading', contractInfo.file)
-      const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`)
-        .then(handleFetchResult('text'))
-      const sourceHash = blake32Hash(source)
-      if (sourceHash !== contractInfo.hash) {
-        throw new Error(`bad hash ${sourceHash} for contract '${contractInfo.file}'! Should be: ${contractInfo.hash}`)
+    function reduceAllow (acc, v) { acc[v] = true; return acc }
+    const allowedSels = ['okTurtles.events/on', 'chelonia/defineContract']
+      .concat(this.config.contracts.defaults.allowedSelectors)
+      .reduce(reduceAllow, {})
+    const allowedDoms = this.config.contracts.defaults.allowedDomains
+      .reduce(reduceAllow, {})
+    let contractName: string // eslint-disable-line prefer-const
+    const contractSBP = (selector: string, ...args) => {
+      const domain = domainFromSelector(selector)
+      if (selector.startsWith(contractName)) {
+        selector = `${manifestHash}/${selector}`
       }
-      // TODO: pass in our custom "firewalled" SBP function
-      // TODO: figure out how latestContractState can be safely called on a remote contract
-      //       while we are also processing handleEvent on a contract with thes same name
-      //       but different version. figure out how that works with registering/unregistering getters
-      //       and selectors. might need to prefix the selectors with the manifestHash...
-      //
-      //       We may be able to solve both of the above TODOs by passing in a special SBP
-      //       function that prefixes all contract-related selectors with the manifestHash,
-      //       and then only allows other selectors that are on a whitelist. We create a
-      //       new such SBP function per registered contract (including each version of the
-      //       same contract).
-      const contractSBP = (selector: string, ...args) => {
-        console.debug('CONTRACT_SBP called with:', selector)
-        // TODO: do selector translation here, prefix the manifestHash
-        // TODO: also check whitelisted selectors that were passed in via config
+      if (allowedSels[selector] || allowedDoms[domain]) {
         return sbp(selector, ...args)
+      } else {
+        throw new Error(`[chelonia] selector not on allowlist: '${selector}'`)
       }
-      // eslint-disable-next-line no-new-func
-      const saferEval: Function = new Function(`
-        return function (require, globals) {
-          with (globals) {
-            ${source}
-          }
-          console.debug('loaded ${contractInfo.file}!')
+    }
+    // eslint-disable-next-line no-new-func
+    const saferEval: Function = new Function(`
+      return function (require, globals) {
+        with (globals) {
+          ${source}
         }
-      `)()
-      this.contractSelectorPrefix = manifestHash
-      saferEval((dep) => {
-        return dep === '@sbp/sbp'
-          ? contractSBP
-          : this.config.contracts.defaults.modules[dep]
-      }, {
-        ...this.config.contracts.defaults.exposedGlobals,
-        sbp: contractSBP
-      })
-      this.contractSelectorPrefix = null
+        console.debug('loaded ${contractInfo.file}!')
+      }
+    `)()
+    this.defContractSBP = contractSBP
+    this.defContractManifest = manifestHash
+    saferEval((dep) => {
+      return dep === '@sbp/sbp'
+        ? contractSBP
+        : this.config.contracts.defaults.modules[dep]
+    }, {
+      fetch: null,
+      XMLHttpRequest: null,
+      // TODO: add other possible global overrides here.
+      //       Although again, the contracts are signed so not that big of a deal
+      ...this.config.contracts.defaults.exposedGlobals,
+      sbp: contractSBP
+    })
+    contractName = this.defContract.name
+    this.defContractSelectors.forEach(s => { allowedSels[s] = true })
+    this.manifestToContract[manifestHash] = {
+      slim: contractInfo === body.contractSlim,
+      info: contractInfo,
+      contract: this.defContract
     }
   },
   // used by, e.g. 'chelonia/contract/wait'
@@ -126,10 +124,11 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/private/in/processMessage': function (message: GIMessage, state: Object) {
+  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const contractID = message.contractID()
+    const manifestHash = message.manifest()
     const config = this.config
     if (!state._vm) state._vm = {}
     const opFns: { [GIOpType]: (any) => void } = {
@@ -151,7 +150,7 @@ export default (sbp('sbp/selectors/register', {
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
-          sbp(`${action}/process`, { data, meta, hash, contractID }, state)
+          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, contractID }, state)
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -167,6 +166,9 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_KEY_DEL]: notImplemented,
       [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
+    }
+    if (!this.manifestToContract[manifestHash]) {
+      await sbp('chelonia/private/loadManifest', manifestHash)
     }
     let processOp = true
     if (config.preOp) {
@@ -344,16 +346,16 @@ const handleEvent = {
       index !== -1 && state.pending.splice(index, 1)
       sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
     }
-    await Promise.resolve() // TODO: load any unloaded contract code
-    sbp('chelonia/private/in/processMessage', message, state[contractID])
+    await sbp('chelonia/private/in/processMessage', message, state[contractID])
   },
   async processSideEffects (message: GIMessage) {
     if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) {
       const contractID = message.contractID()
+      const manifestHash = message.manifest()
       const hash = message.hash()
       const { action, data, meta } = message.decryptedValue()
       const mutation = { data, meta, hash, contractID }
-      await sbp(`${action}/sideEffect`, mutation)
+      await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }
   },
   revertProcess ({ message, state, contractID, contractStateCopy }) {
@@ -416,7 +418,6 @@ function loadScript (file, source, hash) {
 // https://github.com/endojs/endo/blob/master/packages/ses/test/test-import-cjs.js
 // https://github.com/endojs/endo/blob/master/packages/ses/test/test-import.js
 //   const vm = await sesImportVM.call(this, `${this.config.connectionURL}/file/${contractInfo.hash}`)
-//   currentlyLoadedContracts[contractInfo.file].vm = vm
 // eslint-disable-next-line no-unused-vars
 function sesImportVM (url): Promise<Object> {
   // eslint-disable-next-line no-undef

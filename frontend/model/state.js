@@ -132,29 +132,30 @@ const mutations = {
 const getters = {
   // !!  IMPORTANT  !!
   //
+  // We register pure Vuex getters here, but later on at the bottom of this file,
+  // we will also import into Vuex the contract getters so that they can be reused
+  // without having to be redefined. This is possible because Chelonia contract getters
+  // are designed to be compatible with Vuex getters.
+  //
+  // We will use the getters 'currentGroupState', 'currentIdentityState', and
+  // 'currentChatRoomState' as a "bridge" between the contract getters and Vuex.
+  //
+  // This makes it possible for the getters inside of contracts to refer to each
+  // specific contractID instance, while the Vuex version of those getters that
+  // are imported at the bottom of this file (in the listener for CONTRACT_REGISTERED
+  // will reference the state for the specific contractID for either the current group,
+  // the current user identity contract, or the current chatroom we're looking at.
+  //
   // For getters that get data from only contract state, write them
-  // under the 'getters' key of the object passed to DefineContract.
+  // under the 'getters' key of the object passed to 'chelonia/defineContract'.
   // See for example: frontend/model/contracts/group.js
   //
-  // For convenience, we've defined the same getter, `currentGroupState`,
+  // Again, for convenience, we've defined the same getter, `currentGroupState`,
   // twice, so that we can reuse the same getter definitions both here with Vuex,
   // and inside of the contracts (e.g. in group.js).
   //
-  // The one here is based off the value of `state.currentGroupId` — a user
-  // preference that does not exist in the group contract state.
-  //
-  // The getters in DefineContract are designed to be compatible with Vuex!
-  // When they're used in the context of DefineContract, their 'state' always refers
-  // to the state of the contract whose messages are being processed, regardless
-  // of what group we're in. That is why the definition of 'currentGroupState' in
-  // group.js simply returns the state.
-  //
-  // Since the getter functions are compatible between Vuex and our contract chain
-  // library, we can simply import them here, while excluding the getter for
-  // `currentGroupState`, and redefining it here based on the Vuex rootState.
-  // ...omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
-  // ...omit(sbp('gi.contracts/identity/getters'), ['currentIdentityState']),
-  // ...omit(sbp('gi.contracts/chatroom/getters'), ['currentChatRoomState']),
+  // The 'currentGroupState' here is based off the value of `state.currentGroupId`,
+  // a user preference that does not exist in the group contract state.
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },
@@ -529,6 +530,7 @@ if (process.env.NODE_ENV === 'development') {
   }, 500))
 }
 
+// See the "IMPORTANT" comment above where the Vuex getters are defined for details.
 // handle contracts being registered
 const omitGetters = {
   'gi.contracts/group': ['currentGroupState'],
@@ -536,10 +538,15 @@ const omitGetters = {
   'gi.contracts/chatroom': ['currentChatRoomState']
 }
 sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
-  console.log('registering getters for:', contract.name)
-  store.registerModule(contract.name, {
-    getters: omit(contract.getters, omitGetters[contract.name] || [])
-  })
+  const { contracts: { manifests } } = sbp('chelonia/config')
+  // check to make sure we're only loading the getters for the version of the contract
+  // that this build of GI was compiled with
+  if (manifests[contract.name] === contract.manifest) {
+    console.debug('registering getters for:', contract.name)
+    store.registerModule(contract.name, {
+      getters: omit(contract.getters, omitGetters[contract.name] || [])
+    })
+  }
 })
 
 export default store

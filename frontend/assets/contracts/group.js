@@ -9111,7 +9111,7 @@
         return;
       }
       try {
-        currentTranslationTable = await (0, import_sbp.default)("backend/translations/get", language);
+        currentTranslationTable = await (0, import_sbp.default)("backend/translations/get", language) || defaultTranslationTable;
         currentLanguage = language;
         currentLanguageCode = languageCode;
       } catch (error) {
@@ -9608,7 +9608,7 @@ ${this.getErrorInfo()}`;
     rule: RULE_PERCENTAGE,
     expires_ms: 14 * DAYS_MILLIS,
     ruleSettings: {
-      [RULE_PERCENTAGE]: { threshold: 0.75 },
+      [RULE_PERCENTAGE]: { threshold: 0.67 },
       [RULE_DISAGREEMENT]: { threshold: 1 }
     }
   };

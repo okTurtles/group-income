@@ -1,11 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import {
-  Vue,
-  Errors,
-  L
-} from '@common/common.js'
+import { Vue, Errors, L } from '@common/common.js'
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './shared/voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
 import {

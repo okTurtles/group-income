@@ -117,6 +117,8 @@ export class GIMessage {
 
   opValue (): GIOpValue { return this.op()[1] }
 
+  manifest (): string { return this.message().manifest }
+
   description (): string {
     const type = this.opType()
     let desc = `<op_${type}`

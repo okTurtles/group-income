@@ -9064,7 +9064,7 @@
         return;
       }
       try {
-        currentTranslationTable = await (0, import_sbp.default)("backend/translations/get", language);
+        currentTranslationTable = await (0, import_sbp.default)("backend/translations/get", language) || defaultTranslationTable;
         currentLanguage = language;
         currentLanguageCode = languageCode;
       } catch (error) {

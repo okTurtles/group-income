@@ -66,6 +66,8 @@ export default (sbp('sbp/selectors/register', {
         defaults: {
           modules: {}, // '<module name>' => resolved module import
           exposedGlobals: {},
+          allowedDomains: [],
+          allowedSelectors: [],
           preferSlim: false
         },
         overrides: {}, // override default values per-contract
@@ -95,7 +97,7 @@ export default (sbp('sbp/selectors/register', {
       contracts: {}, // contractIDs => { type, HEAD } (contracts we've subscribed to)
       pending: [] // prevents processing unexpected data from a malicious server
     }
-    this.contracts = {} // TODO: these can no longer be based on name... since multiple versions
+    this.manifestToContract = {}
     this.whitelistedActions = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
     this.sideEffectStack = (contractID: string): Array<*> => {
@@ -106,6 +108,9 @@ export default (sbp('sbp/selectors/register', {
       return stack
     }
   },
+  'chelonia/config': function () {
+    return cloneDeep(this.config)
+  },
   'chelonia/configure': async function (config: Object) {
     merge(this.config, config)
     // merge will strip the hooks off of config.hooks when merging from the root of the object
@@ -114,7 +119,7 @@ export default (sbp('sbp/selectors/register', {
     // using Object.assign here instead of merge to avoid stripping away imported modules
     Object.assign(this.config.contracts.defaults, config.contracts.defaults || {})
     const manifests = this.config.contracts.manifests
-    console.log('preloading manifests:', Object.keys(manifests))
+    console.info('preloading manifests:', Object.keys(manifests))
     for (const contractName in manifests) {
       console.debug('loading contract:', contractName)
       await sbp('chelonia/private/loadManifest', manifests[contractName])
@@ -165,18 +170,27 @@ export default (sbp('sbp/selectors/register', {
     if (!contract.metadata) contract.metadata = { validate () {}, create: () => ({}) }
     if (!contract.getters) contract.getters = {}
     contract.state = (contractID) => sbp(this.config.stateSelector)[contractID]
-    this.contracts[contract.name] = contract
-    sbp('sbp/selectors/register', {
+    contract.manifest = this.defContractManifest
+    contract.sbp = this.defContractSBP
+    this.defContractSelectors = []
+    this.defContract = contract
+    this.defContractSelectors.push(...sbp('sbp/selectors/register', {
       // expose getters for Vuex integration and other conveniences
-      [`${contract.name}/getters`]: () => contract.getters,
+      [`${contract.manifest}/${contract.name}/getters`]: () => contract.getters,
       // 2 ways to cause sideEffects to happen: by defining a sideEffect function in the
       // contract, or by calling /pushSideEffect w/async SBP call. Can also do both.
-      [`${contract.name}/pushSideEffect`]: (contractID: string, asyncSbpCall: Array<*>) => {
+      [`${contract.manifest}/${contract.name}/pushSideEffect`]: (contractID: string, asyncSbpCall: Array<*>) => {
+        // if this version of the contract is pushing a sideEffect to a function defined by the
+        // contract itself, make sure that it calls the same version of the sideEffect
+        const [sel] = asyncSbpCall
+        if (sel.startsWith(contract.name)) {
+          asyncSbpCall[0] = `${contract.manifest}/${sel}`
+        }
         this.sideEffectStack(contractID).push(asyncSbpCall)
       }
-    })
+    }))
     for (const action in contract.actions) {
-      contractFromAction(this.contracts, action) // ensure actions are appropriately named
+      contractNameFromAction(action) // ensure actions are appropriately named
       this.whitelistedActions[action] = true
       // TODO: automatically generate send actions here using `${action}/send`
       //       allow the specification of:
@@ -184,8 +198,8 @@ export default (sbp('sbp/selectors/register', {
       //       - a localized error message
       //       - whatever keys should be passed in as well
       //       base it off of the design of encryptedAction()
-      sbp('sbp/selectors/register', {
-        [`${action}/process`]: (message: Object, state: Object) => {
+      this.defContractSelectors.push(...sbp('sbp/selectors/register', {
+        [`${contract.manifest}/${action}/process`]: (message: Object, state: Object) => {
           const { meta, data, contractID } = message
           // TODO: optimize so that you're creating a proxy object only when needed
           const gProxy = gettersProxy(state, contract.getters)
@@ -194,12 +208,12 @@ export default (sbp('sbp/selectors/register', {
           contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
           contract.actions[action].process(message, { state, ...gProxy })
         },
-        [`${action}/sideEffect`]: async (message: Object, state: ?Object) => {
+        [`${contract.manifest}/${action}/sideEffect`]: async (message: Object, state: ?Object) => {
           const sideEffects = this.sideEffectStack(message.contractID)
           while (sideEffects.length > 0) {
             const sideEffect = sideEffects.shift()
             try {
-              await sbp(...sideEffect)
+              await contract.sbp(...sideEffect)
             } catch (e) {
               console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${message.description()}:`, sideEffect)
               this.sideEffectStacks[message.contractID] = [] // clear the side effects
@@ -212,7 +226,7 @@ export default (sbp('sbp/selectors/register', {
             await contract.actions[action].sideEffect(message, { state, ...gProxy })
           }
         }
-      })
+      }))
     }
     sbp('okTurtles.events/emit', CONTRACT_REGISTERED, contract)
   },
@@ -341,8 +355,9 @@ export default (sbp('sbp/selectors/register', {
   // 'chelonia/out' - selectors that send data out to the server
   'chelonia/out/registerContract': async function (params: ChelRegParams) {
     const { contractName, hooks, publishOptions } = params
-    const contract = this.contracts[contractName]
-    if (!contract) throw new Error(`contract not defined: ${contractName}`)
+    const manifestHash = this.config.contracts.manifests[contractName]
+    const contractInfo = this.manifestToContract[manifestHash]
+    if (!contractInfo) throw new Error(`contract not defined: ${contractName}`)
     const contractMsg = GIMessage.createV1_0(null, null,
       [
         GIMessage.OP_CONTRACT,
@@ -351,7 +366,7 @@ export default (sbp('sbp/selectors/register', {
           keyJSON: 'TODO: add group public key here'
         }: GIOpContract)
       ],
-      this.config.contracts.manifests[contractName]
+      manifestHash
     )
     hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions)
@@ -389,11 +404,11 @@ export default (sbp('sbp/selectors/register', {
   }
 }): string[])
 
-function contractFromAction (contracts: Object, action: string): Object {
+function contractNameFromAction (action: string): string {
   const regexResult = ACTION_REGEX.exec(action)
-  const contract = contracts[(regexResult && regexResult[2]) || null]
-  if (!contract) throw new Error(`no contract for action named: ${action}`)
-  return contract
+  const contractName = regexResult && regexResult[2]
+  if (!contractName) throw new Error(`Poorly named action '${action}': missing contract name.`)
+  return contractName
 }
 
 async function outEncryptedOrUnencryptedAction (
@@ -401,7 +416,9 @@ async function outEncryptedOrUnencryptedAction (
   params: ChelActionParams
 ) {
   const { action, contractID, data, hooks, publishOptions } = params
-  const contract = contractFromAction(this.contracts, action)
+  const contractName = contractNameFromAction(action)
+  const manifestHash = this.config.contracts.manifests[contractName]
+  const { contract } = this.manifestToContract[manifestHash]
   const state = contract.state(contractID)
   const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
   const meta = contract.metadata.create()
@@ -414,7 +431,7 @@ async function outEncryptedOrUnencryptedAction (
       opType,
       opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage)
     ],
-    this.config.contracts.manifests[contract.name]
+    manifestHash
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
   hooks && hooks.prepublish && hooks.prepublish(message)
