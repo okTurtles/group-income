@@ -277,7 +277,7 @@ describe('Proposals - Add members', () => {
     })
   })
 
-  it(`invitee can not join the group with the expired invitation link`, () => {
+  it('invitee can not join the group with the expired invitation link', () => {
     // Try to join with expired link
     cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
     cy.visit(invitationLinks.user6)
