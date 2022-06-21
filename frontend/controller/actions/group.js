@@ -250,7 +250,7 @@ export default (sbp('sbp/selectors/register', {
     const contractState = sbp('state/vuex/state')[params.contractID]
     for (const contractId in contractState.chatRooms) {
       if (params.data.attributes.name.toUpperCase() === contractState.chatRooms[contractId].name.toUpperCase()) {
-        throw new GIErrorUIRuntimeError(L('Duplicated channel name'))
+        throw new GIErrorUIRuntimeError(L('Duplicate channel name'))
       }
     }
 
