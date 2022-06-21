@@ -285,11 +285,10 @@ describe('Proposals - Add members', () => {
       .invoke('text')
       .should('contain', 'Oh no! This invite is already expired')
     cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
-
-    // Expiry check in Group Settings page
-   })
+  })
 
   it(`proposal-based invitation link has ${groupInviteLinkExpiry.proposal} days of expiry`, () => {
+    // Expiry check in Group Settings page and Dashboard
     cy.visit('/')
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
