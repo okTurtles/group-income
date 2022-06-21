@@ -211,9 +211,15 @@ export default (sbp('sbp/selectors/register', {
 
         saveLoginState('joining', params.contractID)
       } else {
-        // sync all chatroom contracts
+        /**
+         * Sync chatroom contracts he already joined
+         * if he tries to login in another device, he should skip to make any actions
+         * but he should sync all the contracts he was syncing in the previous device
+         */
         const rootState = sbp('state/vuex/state')
+        const me = rootState.loggedIn.username
         const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms)
+          .filter(cId => rootState[params.contractID].chatRooms[cId].users.includes(me))
 
         for (const cId of chatRoomIds) {
           await sbp('chelonia/contract/sync', cId)
@@ -279,7 +285,7 @@ export default (sbp('sbp/selectors/register', {
       const username = params.data.username || me
 
       if (!rootGetters.isJoinedChatRoom(params.data.chatRoomID) && username !== me) {
-        throw new GIErrorUIRuntimeError(L('Failed to join chat channel.'))
+        throw new GIErrorUIRuntimeError(L('Only channel members can invite others to join.'))
       }
 
       const message = await sbp('gi.actions/chatroom/join', {
