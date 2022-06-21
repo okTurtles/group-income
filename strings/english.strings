@@ -102,6 +102,9 @@
 /* views/containers/payments/PaymentDetail.vue */
 "Date & Time" = "Date & Time";
 
+/* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue */
+"Duplicate channel name" = "Duplicate channel name";
+
 /* controller/actions/group.js */
 "Failed to revoke invite." = "Failed to revoke invite.";
 
@@ -1452,6 +1455,9 @@
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "Yes, I want to {strong_}delete {name} permanently{_strong}." = "Yes, I want to {strong_}delete {name} permanently{_strong}.";
 
+/* controller/actions/group.js */
+"Only channel members can invite others to join." = "Only channel members can invite others to join.";
+
 /* views/containers/contributions/ContributionsWidget.vue */
 "You are pledging {br_}{amount}" = "You are pledging {br_}{amount}";
 
@@ -1799,9 +1805,6 @@
 
 /* views/containers/payments/MonthOverview.vue, views/containers/payments/RecordPaymentsList.vue */
 "Amount sent" = "Amount sent";
-
-/* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue */
-"Duplicate channel name" = "Duplicate channel name";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "All group members will be added to this channel." = "All group members will be added to this channel.";
