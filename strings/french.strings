@@ -2230,6 +2230,9 @@
 "Oh no! {br_}Your link has expired." = "Oh non ! {br_}Votre lien a expiré.";
 
 /* Not currently used */
+"Only channel members can invite others to join." = "Seuls les membres de la chaîne peuvent inviter d'autres personnes à la rejoindre.";
+
+/* Not currently used */
 "Payments Received" = "Paiements Reçus";
 
 /* Not currently used */
