@@ -253,7 +253,7 @@
 "Failed to vote on proposal." = "Une erreur est survenue lors du vote.";
 
 /* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue */
-"Duplicated channel name" = "Nom de canal dupliqué";
+"Duplicate channel name" = "Nom de canal dupliqué";
 
 /* controller/actions/identity.js */
 "Failed to create user identity: {reportError}" = "La création du profil utilisateur a échoué : {reportError}";

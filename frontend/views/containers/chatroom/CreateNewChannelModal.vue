@@ -106,7 +106,7 @@ export default ({
     }
   },
   created () {
-    // HACK: using rootGetters inside validator makes `Duplicated channel name` error
+    // HACK: using rootGetters inside validator makes `Duplicate channel name` error
     // as soon as a new channel is created
     this.form.existingNames = Object.keys(this.getChatRooms)
       .map(cId => this.getChatRooms[cId].name)
@@ -143,7 +143,7 @@ export default ({
       name: {
         [L('This field is required')]: required,
         maxLength: maxLength(50),
-        [L('Duplicated channel name')]: (name, siblings) => {
+        [L('Duplicate channel name')]: (name, siblings) => {
           for (const existingName of siblings.existingNames) {
             if (name.toUpperCase() === existingName.toUpperCase()) {
               return false

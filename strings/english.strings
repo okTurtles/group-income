@@ -1801,7 +1801,7 @@
 "Amount sent" = "Amount sent";
 
 /* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue */
-"Duplicated channel name" = "Duplicated channel name";
+"Duplicate channel name" = "Duplicate channel name";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "All group members will be added to this channel." = "All group members will be added to this channel.";
