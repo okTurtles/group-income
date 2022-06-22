@@ -190,9 +190,9 @@ export default (sbp('sbp/selectors/register', {
       // sync the group's contract state
       await sbp('chelonia/contract/sync', params.contractID)
 
+      const rootState = sbp('state/vuex/state')
       if (!params.options?.skipInviteAccept) {
         // join the 'General' chatroom by default
-        const rootState = sbp('state/vuex/state')
         const generalChatRoomId = rootState[params.contractID].generalChatRoomId
         if (generalChatRoomId) {
           await sbp('gi.actions/group/joinChatRoom', {
@@ -216,14 +216,12 @@ export default (sbp('sbp/selectors/register', {
          * if he tries to login in another device, he should skip to make any actions
          * but he should sync all the contracts he was syncing in the previous device
          */
-        const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
         const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms)
           .filter(cId => rootState[params.contractID].chatRooms[cId].users.includes(me))
 
-        for (const cId of chatRoomIds) {
-          await sbp('chelonia/contract/sync', cId)
-        }
+        await sbp('chelonia/contract/sync', chatRoomIds)
+
         sbp('state/vuex/commit', 'setCurrentChatRoomId', {
           groupId: params.contractID,
           chatRoomId: rootState[params.contractID].generalChatRoomId
