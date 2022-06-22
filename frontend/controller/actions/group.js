@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { createInvite } from '@model/contracts/group.js'
 import {
   INVITE_INITIAL_CREATOR,
+  INVITE_EXPIRES_IN_DAYS,
   CHATROOM_GENERAL_NAME,
   CHATROOM_TYPES,
   CHATROOM_PRIVACY_LEVEL
@@ -81,7 +82,11 @@ export default (sbp('sbp/selectors/register', {
     }
 
     try {
-      const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
+      const initialInvite = createInvite({
+        quantity: 60,
+        creator: INVITE_INITIAL_CREATOR,
+        expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+      })
       const proposalSettings = {
         rule: ruleName,
         ruleSettings: {
@@ -185,26 +190,44 @@ export default (sbp('sbp/selectors/register', {
       // sync the group's contract state
       await sbp('chelonia/contract/sync', params.contractID)
 
-      // join the 'General' chatroom by default
-      const rootState = sbp('state/vuex/state')
-      const generalChatRoomId = rootState[params.contractID].generalChatRoomId
-      if (generalChatRoomId) {
-        await sbp('gi.actions/group/joinChatRoom', {
-          ...omit(params, ['options']),
-          data: {
-            chatRoomID: generalChatRoomId
-          },
-          hooks: {
-            prepublish: null,
-            postpublish: params.hooks?.postpublish
-          }
-        })
-      } else {
-        alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
-      }
-
       if (!params.options?.skipInviteAccept) {
+        // join the 'General' chatroom by default
+        const rootState = sbp('state/vuex/state')
+        const generalChatRoomId = rootState[params.contractID].generalChatRoomId
+        if (generalChatRoomId) {
+          await sbp('gi.actions/group/joinChatRoom', {
+            ...omit(params, ['options']),
+            data: {
+              chatRoomID: generalChatRoomId
+            },
+            hooks: {
+              prepublish: null,
+              postpublish: params.hooks?.postpublish
+            }
+          })
+        } else {
+          alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
+        }
+
         saveLoginState('joining', params.contractID)
+      } else {
+        /**
+         * Sync chatroom contracts he already joined
+         * if he tries to login in another device, he should skip to make any actions
+         * but he should sync all the contracts he was syncing in the previous device
+         */
+        const rootState = sbp('state/vuex/state')
+        const me = rootState.loggedIn.username
+        const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms)
+          .filter(cId => rootState[params.contractID].chatRooms[cId].users.includes(me))
+
+        for (const cId of chatRoomIds) {
+          await sbp('chelonia/contract/sync', cId)
+        }
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+          groupId: params.contractID,
+          chatRoomId: rootState[params.contractID].generalChatRoomId
+        })
       }
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
       sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
@@ -224,6 +247,13 @@ export default (sbp('sbp/selectors/register', {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
+    const contractState = sbp('state/vuex/state')[params.contractID]
+    for (const contractId in contractState.chatRooms) {
+      if (params.data.attributes.name.toUpperCase() === contractState.chatRooms[contractId].name.toUpperCase()) {
+        throw new GIErrorUIRuntimeError(L('Duplicate channel name'))
+      }
+    }
+
     const message = await sbp('gi.actions/chatroom/create', {
       data: params.data,
       hooks: {
@@ -250,7 +280,14 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
     try {
       const rootState = sbp('state/vuex/state')
-      const username = params.data.username || rootState.loggedIn.username
+      const rootGetters = sbp('state/vuex/getters')
+      const me = rootState.loggedIn.username
+      const username = params.data.username || me
+
+      if (!rootGetters.isJoinedChatRoom(params.data.chatRoomID) && username !== me) {
+        throw new GIErrorUIRuntimeError(L('Only channel members can invite others to join.'))
+      }
+
       const message = await sbp('gi.actions/chatroom/join', {
         ...omit(params, ['options']),
         contractID: params.data.chatRoomID,
@@ -261,7 +298,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
-      if (username === rootState.loggedIn.username) {
+      if (username === me) {
         // 'READY_TO_JOIN_CHATROOM' is necessary to identify the joining chatroom action is NEW or OLD
         // Users join the chatroom thru group making group actions
         // But when user joins the group, he needs to ignore all the actions about chatroom

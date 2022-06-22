@@ -102,6 +102,9 @@
 /* views/containers/payments/PaymentDetail.vue */
 "Date & Time" = "Date & Time";
 
+/* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue */
+"Duplicate channel name" = "Duplicate channel name";
+
 /* controller/actions/group.js */
 "Failed to revoke invite." = "Failed to revoke invite.";
 
@@ -1311,6 +1314,9 @@
 /* views/containers/access/PasswordModal.vue */
 "Change password" = "Change password";
 
+/* views/containers/group-settings/InvitationsTable.vue */
+"See original proposal" = "See original proposal";
+
 /* views/containers/proposals/ProposalBox.vue */
 "{strong_}You{_strong} proposed:" = "{strong_}You{_strong} proposed:";
 
@@ -1448,6 +1454,9 @@
 
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "Yes, I want to {strong_}delete {name} permanently{_strong}." = "Yes, I want to {strong_}delete {name} permanently{_strong}.";
+
+/* controller/actions/group.js */
+"Only channel members can invite others to join." = "Only channel members can invite others to join.";
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "You are pledging {br_}{amount}" = "You are pledging {br_}{amount}";
@@ -1749,7 +1758,7 @@
 /* views/containers/design-system/DSModalFullscreen.vue */
 "Modal title" = "Modal title";
 
-/* views/containers/group-settings/InvitationsTable.vue */
+/* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
 "Expired" = "Expired";
 
 /* views/containers/proposals/ProposalTemplate.vue */

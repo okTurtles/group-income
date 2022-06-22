@@ -26,6 +26,7 @@
             :members='details.numberOfParticipants'
             :creator='summary.creator'
             :type='type'
+            :joined='summary.joined'
             :name='summary.title'
             :description='summary.description'
           )
@@ -34,6 +35,7 @@
             :members='details.numberOfParticipants'
             :creator='summary.creator'
             :type='type'
+            :joined='summary.joined'
             :name='summary.title'
             :description='summary.description'
           )
@@ -90,6 +92,7 @@
     )
     view-area(
       v-else
+      :joined='summary.joined'
       :title='summary.title'
     )
 </template>
