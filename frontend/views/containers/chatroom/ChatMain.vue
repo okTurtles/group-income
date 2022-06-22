@@ -42,12 +42,12 @@
 
       template(v-for='(message, index) in messages')
         .c-divider(
-          v-if='changeDay(index) || isNew(index)'
-          :class='{"is-new": isNew(index)}'
+          v-if='changeDay(index) || isNew(message.id)'
+          :class='{"is-new": isNew(message.id)}'
           :key='`date-${index}`'
         )
-          span(v-if='changeDay(index)') {{proximityDate(message.datetime)}}
-          i18n.c-new(v-if='isNew(index)' :class='{"is-new-date": changeDay(index)}') New
+          i18n.c-new(v-if='isNew(message.id)' :class='{"is-new-date": changeDay(index)}') New
+          span(v-else-if='changeDay(index)') {{proximityDate(message.datetime)}}
 
         component(
           :is='messageType(message)'
@@ -153,6 +153,7 @@ export default ({
       latestEvents: [],
       messages: [],
       ephemeral: {
+        startedUnreadMessageId: null,
         scrolledDistance: 0,
         bodyPaddingBottom: '',
         infiniteLoading: null,
@@ -188,13 +189,14 @@ export default ({
       'currentIdentityState',
       'isJoinedChatRoom',
       'setChatRoomScrollPosition',
-      'currentChatRoomScrollPosition'
+      'currentChatRoomScrollPosition',
+      'currentChatRoomUnreadPosition'
     ]),
     bodyStyles () {
       const defaultHeightInRem = 14
       let heightDiscountInRem = 0
       if (!this.summary.joined) {
-        heightDiscountInRem += 2
+        heightDiscountInRem += 4
       }
       // Not sure what `bodyPaddingBottom` means, I delete it now
       // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
@@ -203,9 +205,6 @@ export default ({
         height: `calc(var(--vh, 1vh) * 100 - ${defaultHeightInRem + heightDiscountInRem}rem)`
       }
       return { ...phoneStyles, ...responsiveStyles }
-    },
-    startedUnreadIndex () {
-      return this.messages.findIndex(message => message.unread === true)
     },
     currentUserAttr () {
       return {
@@ -394,8 +393,8 @@ export default ({
         return prev.getDay() !== current.getDay()
       } else return false
     },
-    isNew (index) {
-      return this.startedUnreadIndex === index
+    isNew (msgId) {
+      return this.ephemeral.startedUnreadMessageId === msgId
     },
     addEmoticon (message, emoticon) {
       sbp('gi.actions/chatroom/makeEmotion', {
@@ -434,6 +433,7 @@ export default ({
       await this.rerenderEvents(events, refresh)
 
       if (refresh) {
+        this.setStartNewMessageIndex()
         const scrollTargetMessage = refresh && lastScrollPosition
           ? lastScrollPosition
           : null
@@ -463,6 +463,16 @@ export default ({
       this.messages = []
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
+      }
+    },
+    setStartNewMessageIndex () {
+      this.ephemeral.startedUnreadMessageId = null
+      if (this.currentChatRoomUnreadPosition) {
+        const startUnreadMessage = this.messages
+          .find(msg => new Date(msg.datetime).getTime() > this.currentChatRoomUnreadPosition.createdDate)
+        if (startUnreadMessage) {
+          this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
+        }
       }
     },
     setMessageEventListener ({ force = false, from, to }) {
@@ -517,7 +527,10 @@ export default ({
       if (!this.$refs.conversation) {
         return
       }
+      // Because of infinite-scroll this is not calculated in scrollheight
+      const topOffset = 117
       const curScrollTop = this.$refs.conversation.scrollTop
+      const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
       if (!this.$refs.conversation) {
         this.ephemeral.scrolledDistance = 0
       } else {
@@ -529,16 +542,34 @@ export default ({
         return
       }
 
+      for (let i = this.messages.length - 1; i >= 0; i--) {
+        const msg = this.messages[i]
+        const offsetTop = this.$refs[msg.id][0].$el.offsetTop
+        const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
+        if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
+          const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
+          const latestMessageCreatedAt = this.currentChatRoomUnreadPosition?.createdDate
+          if (!latestMessageCreatedAt || latestMessageCreatedAt <= bottomMessageCreatedAt) {
+            sbp('state/vuex/commit', 'setChatRoomUnreadPosition', {
+              chatRoomId: this.currentChatRoomId,
+              messageId: msg.id,
+              createdDate: new Date(msg.datetime).getTime()
+            })
+          }
+          break
+        }
+      }
+
       if (this.ephemeral.scrolledDistance > 500) {
         // Save the current scroll position per each chatroom
-        for (let i = this.messages.length - 1; i >= 0; i--) {
+        for (let i = 0; i < this.messages.length - 1; i++) {
           const msg = this.messages[i]
           const offsetTop = this.$refs[msg.id][0].$el.offsetTop
           const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
-          if ((offsetTop - parentOffsetTop <= curScrollTop) || i === 0) {
+          if (offsetTop - parentOffsetTop + topOffset >= curScrollTop) {
             sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
               chatRoomId: this.currentChatRoomId,
-              messageId: msg.id
+              messageId: this.messages[i + 1].id // Left one message at the front by default for better seeing
             })
             break
           }

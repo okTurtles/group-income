@@ -44,6 +44,18 @@
         @click='sendMessage'
       ) Save changes
 
+    div(v-if='isEditing')
+      .addons.addons-editing
+        tooltip(
+          v-if='ephemeral.showButtons'
+          direction='top'
+          :text='L("Add reaction")'
+        )
+          button.is-icon(
+            :aria-label='L("Add reaction")'
+            @click='openEmoticon'
+          )
+            i.icon-smile-beam
     div(v-else)
       .addons
         tooltip(
@@ -56,7 +68,6 @@
             @click='createPool'
           )
             i.icon-poll
-
         tooltip(
           v-if='ephemeral.showButtons'
           direction='top'
@@ -318,6 +329,10 @@ $initialHeight: 43px;
   }
 }
 
+.inputgroup.is-editing .c-send-mask {
+  top: 0;
+}
+
 .inputgroup .addons button.is-icon:focus {
   box-shadow: none;
   border: none;
@@ -325,6 +340,10 @@ $initialHeight: 43px;
 
 .inputgroup .addons button.is-icon:first-child:last-child {
   width: 2rem;
+}
+
+.inputgroup .addons.addons-editing {
+  top: -2.7rem;
 }
 
 .icon-smile-beam::before {
