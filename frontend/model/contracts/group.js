@@ -268,9 +268,13 @@ sbp('chelonia/defineContract', {
       const pendingMembers = {}
       for (const inviteId in invites) {
         const invite = invites[inviteId]
-        if (invite.status === INVITE_STATUS.VALID && invite.creator !== INVITE_INITIAL_CREATOR) {
+        if (
+          invite.status === INVITE_STATUS.VALID &&
+          invite.creator !== INVITE_INITIAL_CREATOR
+        ) {
           pendingMembers[invites[inviteId].invitee] = {
-            invitedBy: invites[inviteId].creator
+            invitedBy: invites[inviteId].creator,
+            expires: invite.expires
           }
         }
       }
@@ -410,6 +414,7 @@ sbp('chelonia/defineContract', {
           settings: {
             groupCreator: meta.username,
             distributionPeriodLength: 30 * DAYS_MILLIS,
+            inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
             inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
           },
           profiles: {

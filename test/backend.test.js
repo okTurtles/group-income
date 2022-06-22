@@ -10,7 +10,7 @@ import { blake32Hash } from '~/shared/functions.js'
 import * as Common from '@common/common.js'
 import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
-import { INVITE_INITIAL_CREATOR, MAIL_TYPE_MESSAGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
+import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS, MAIL_TYPE_MESSAGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
 import { createInvite } from '~/frontend/model/contracts/shared/functions.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
@@ -104,10 +104,10 @@ describe('Full walkthrough', async function () {
         preferSlim: true
       },
       manifests: {
-        'gi.contracts/group': '21XWnNMgjRathmA92wxxiCnsaDX4uJ1jeZcZoFjDrEq3GSPu6f',
-        'gi.contracts/identity': '21XWnNGuvR3ADkhBNZHsECiu1tBB66xtJbGrPA21GxtSatrS2D',
-        'gi.contracts/mailbox': '21XWnNV8JgXD2kFgS3GQb2rooa9FGmeKNMJTF8a82PQFofUnyx',
-        'gi.contracts/chatroom': '21XWnNSEBG67oKHJ6uytKcvEzFkckhk9YT43kEzdEsst1BXEEd'
+        'gi.contracts/group': '21XWnNSvpY5yEStZoZjwZSj9K9mLqbtsYhoHFSm5Q4eCjvSp1v',
+        'gi.contracts/identity': '21XWnNKdt1qC7YYFt7EvFs6NaHY2GVXu9bNuyWSNp8b2AGDZKG',
+        'gi.contracts/mailbox': '21XWnNK1jB31VbHm7EfXtNKrXmXKaPLefGdezAXVQJbxGhQ23w',
+        'gi.contracts/chatroom': '21XWnNXW9wM51LQo4feWSh9co2shHB6ogpFLRwmVhwTAX5hqKS'
       }
     }
   })
@@ -139,7 +139,11 @@ describe('Full walkthrough', async function () {
     return msg
   }
   function createGroup (name: string, hooks: Object = {}): Promise {
-    const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
+    const initialInvite = createInvite({
+      quantity: 60,
+      creator: INVITE_INITIAL_CREATOR,
+      expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+    })
     return sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/group',
       data: {

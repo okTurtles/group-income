@@ -28,6 +28,7 @@ const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageId
+  chatRoomUnreadPosition: {}, // [chatRoomId]: { messageId, createdDate }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
@@ -57,6 +58,9 @@ sbp('sbp/selectors/register', {
     }
     if (!state.chatRoomScrollPosition) {
       state.chatRoomScrollPosition = {}
+    }
+    if (!state.chatRoomUnreadPosition) {
+      state.chatRoomUnreadPosition = {}
     }
   },
   'state/vuex/save': async function () {
@@ -118,19 +122,23 @@ const mutations = {
     state.appLogsFilter = filters
   },
   setCurrentChatRoomId (state, { groupId, chatRoomId }) {
-    if (chatRoomId) {
+    if (groupId && state[groupId] && chatRoomId) { // useful when initialize when syncing in another device
+      Vue.set(state.currentChatRoomIDs, groupId, chatRoomId)
+    } else if (chatRoomId) { // set chatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, chatRoomId)
-    } else if (groupId && state[groupId]) {
+    } else if (groupId && state[groupId]) { // set defaultChatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, state[groupId].generalChatRoomId || null)
-    } else {
+    } else { // reset
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
     }
   },
   setChatRoomScrollPosition (state, { chatRoomId, messageId }) {
     Vue.set(state.chatRoomScrollPosition, chatRoomId, messageId)
   },
-  deleteChatRoomScrollPosition (state, chatRoomId) {
-    Vue.delete(state.chatRoomScrollPosition, chatRoomId)
+  setChatRoomUnreadPosition (state, { chatRoomId, messageId, createdDate }) {
+    Vue.set(state.chatRoomUnreadPosition, chatRoomId, {
+      messageId, createdDate
+    })
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
@@ -431,6 +439,8 @@ const getters = {
     }
 
     return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
+      .filter(username => getters.groupProfiles[username] ||
+         getters.groupMembersPending[username].expires >= Date.now())
       .map(username => {
         const { displayName } = getters.globalProfile(username) || {}
         return {
@@ -474,6 +484,9 @@ const getters = {
   },
   currentChatRoomScrollPosition (state, getters) {
     return state.chatRoomScrollPosition[getters.currentChatRoomId] // undefined means to the latest
+  },
+  currentChatRoomUnreadPosition (state, getters) {
+    return state.chatRoomUnreadPosition[getters.currentChatRoomId] // undefined means to the latest
   },
   isPrivateChatRoom (state, getters) {
     return (chatRoomId: string) => {

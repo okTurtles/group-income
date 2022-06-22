@@ -76,7 +76,7 @@
 import sbp from '@sbp/sbp'
 import { L, LError } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import maxLength from 'vuelidate/lib/validators/maxLength'
@@ -92,16 +92,24 @@ export default ({
     BannerScoped
   },
   computed: {
-    ...mapState(['currentGroupId'])
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['getChatRooms'])
   },
   data () {
     return {
       form: {
         name: '',
         description: '',
-        private: false
+        private: false,
+        existingNames: []
       }
     }
+  },
+  created () {
+    // HACK: using rootGetters inside validator makes `Duplicate channel name` error
+    // as soon as a new channel is created
+    this.form.existingNames = Object.keys(this.getChatRooms)
+      .map(cId => this.getChatRooms[cId].name)
   },
   methods: {
     close () {
@@ -134,7 +142,15 @@ export default ({
     form: {
       name: {
         [L('This field is required')]: required,
-        maxLength: maxLength(50)
+        maxLength: maxLength(50),
+        [L('Duplicate channel name')]: (name, siblings) => {
+          for (const existingName of siblings.existingNames) {
+            if (name.toUpperCase() === existingName.toUpperCase()) {
+              return false
+            }
+          }
+          return true
+        }
       },
       description: {
         maxLength: maxLength(150)

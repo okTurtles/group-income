@@ -32,6 +32,9 @@
         :link='invitationLink'
         tag='p'
       )
+      i18n.has-text-danger(
+        v-if='isExpiredInvitationLink'
+      ) Expired
 </template>
 
 <script>
@@ -206,6 +209,19 @@ export default ({
         const secret = this.proposal.payload.inviteSecret
         if (this.currentGroupState.invites[secret].status === INVITE_STATUS.VALID) {
           return buildInvitationUrl(this.currentGroupId, this.proposal.payload.inviteSecret)
+        }
+      }
+      return false
+    },
+    isExpiredInvitationLink () {
+      if (this.proposalType === PROPOSAL_INVITE_MEMBER &&
+        this.proposal.status === STATUS_PASSED &&
+        this.isOurProposal
+      ) {
+        const secret = this.proposal.payload.inviteSecret
+        if (this.currentGroupState.invites[secret].status === INVITE_STATUS.VALID &&
+          this.proposal.payload.expires < Date.now()) {
+          return true
         }
       }
       return false

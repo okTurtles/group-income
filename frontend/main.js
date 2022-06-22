@@ -113,10 +113,10 @@ async function startApp () {
         preferSlim: true
       },
       manifests: {
-        'gi.contracts/group': '21XWnNMgjRathmA92wxxiCnsaDX4uJ1jeZcZoFjDrEq3GSPu6f',
-        'gi.contracts/identity': '21XWnNGuvR3ADkhBNZHsECiu1tBB66xtJbGrPA21GxtSatrS2D',
-        'gi.contracts/mailbox': '21XWnNV8JgXD2kFgS3GQb2rooa9FGmeKNMJTF8a82PQFofUnyx',
-        'gi.contracts/chatroom': '21XWnNSEBG67oKHJ6uytKcvEzFkckhk9YT43kEzdEsst1BXEEd'
+        'gi.contracts/group': '21XWnNSvpY5yEStZoZjwZSj9K9mLqbtsYhoHFSm5Q4eCjvSp1v',
+        'gi.contracts/identity': '21XWnNKdt1qC7YYFt7EvFs6NaHY2GVXu9bNuyWSNp8b2AGDZKG',
+        'gi.contracts/mailbox': '21XWnNK1jB31VbHm7EfXtNKrXmXKaPLefGdezAXVQJbxGhQ23w',
+        'gi.contracts/chatroom': '21XWnNXW9wM51LQo4feWSh9co2shHB6ogpFLRwmVhwTAX5hqKS'
       }
     },
     hooks: {

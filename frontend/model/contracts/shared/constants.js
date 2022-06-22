@@ -58,7 +58,7 @@ export const MESSAGE_TYPES = {
 }
 
 export const INVITE_EXPIRES_IN_DAYS = {
-  INITIAL: 30,
+  ON_BOARDING: 30,
   PROPOSAL: 7
 }
 

@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { INVITE_STATUS, INVITE_EXPIRES_IN_DAYS, MESSAGE_TYPES } from './constants.js'
+import { INVITE_STATUS, MESSAGE_TYPES } from './constants.js'
 import { DAYS_MILLIS } from './time.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
@@ -22,14 +22,9 @@ import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // group.js related
 
-export function createInvite (
-  {
-    quantity = 1,
-    creator,
-    expires,
-    invitee
-  }: { quantity: number, creator: string, expires?: number, invitee?: string }
-): {|
+export function createInvite ({ quantity = 1, creator, expires, invitee }: {
+  quantity: number, creator: string, expires: number, invitee?: string
+}): {|
   creator: string,
   expires: number,
   inviteSecret: string,
@@ -45,7 +40,7 @@ export function createInvite (
     invitee,
     status: INVITE_STATUS.VALID,
     responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: Date.now() + DAYS_MILLIS * (expires || INVITE_EXPIRES_IN_DAYS.INITIAL)
+    expires: Date.now() + DAYS_MILLIS * expires
   }
 }
 

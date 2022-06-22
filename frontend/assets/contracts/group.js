@@ -9450,7 +9450,7 @@ ${this.getErrorInfo()}`;
     NOTIFICATION: "message-notification"
   };
   var INVITE_EXPIRES_IN_DAYS = {
-    INITIAL: 30,
+    ON_BOARDING: 30,
     PROPOSAL: 7
   };
   var MESSAGE_NOTIFICATIONS = {
@@ -10101,7 +10101,8 @@ ${this.getErrorInfo()}`;
           const invite = invites[inviteId];
           if (invite.status === INVITE_STATUS.VALID && invite.creator !== INVITE_INITIAL_CREATOR) {
             pendingMembers[invites[inviteId].invitee] = {
-              invitedBy: invites[inviteId].creator
+              invitedBy: invites[inviteId].creator,
+              expires: invite.expires
             };
           }
         }
@@ -10215,6 +10216,7 @@ ${this.getErrorInfo()}`;
             settings: {
               groupCreator: meta.username,
               distributionPeriodLength: 30 * DAYS_MILLIS,
+              inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
               inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
             },
             profiles: {
