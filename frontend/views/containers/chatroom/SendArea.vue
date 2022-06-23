@@ -5,9 +5,11 @@
 )
   .c-mentionings(
     v-if='ephemeral.mentioning.options.length'
+    ref='mentioningWrapper'
   )
     template(v-for='(user, index) in ephemeral.mentioning.options')
       .c-mentioning-user(
+        ref='mentioning'
         :class='{"is-selected": index === ephemeral.mentioning.index}'
         @click='addSelectedMention(index)'
       )
@@ -257,7 +259,18 @@ export default ({
         if (nChoices &&
           (e.keyCode === caretKeyCodes.ArrowUp || e.keyCode === caretKeyCodes.ArrowDown)) {
           const offset = e.keyCode === caretKeyCodes.ArrowUp ? -1 : 1
-          this.ephemeral.mentioning.index = (this.ephemeral.mentioning.index + offset + nChoices) % nChoices
+          const newIndex = (this.ephemeral.mentioning.index + offset + nChoices) % nChoices
+          this.ephemeral.mentioning.index = newIndex
+
+          const { clientHeight, scrollHeight } = this.$refs.mentioningWrapper
+          if (scrollHeight !== clientHeight) {
+            const offsetTop = this.$refs.mentioning[newIndex].offsetTop + this.$refs.mentioning[newIndex].clientHeight
+
+            this.$refs.mentioningWrapper.scrollTo({
+              left: 0, top: Math.max(0, offsetTop - clientHeight)
+            })
+          }
+
           e.preventDefault()
         } else {
           this.endMentioning()
@@ -339,7 +352,7 @@ export default ({
     },
     startMentioning (keyword, position) {
       this.ephemeral.mentioning.options = this.users.concat([{
-        // TODO: use group picture here
+        // TODO: use group picture here or broadcast icon
         username: 'here', displayName: 'here', picture: ''
       }]).filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
@@ -505,7 +518,6 @@ $initialHeight: 43px;
 
 .c-mentionings {
   background-color: $white;
-  padding: 0.2rem 0;
   border: 1px solid var(--general_0);
   border-radius: 0.3rem 0.3rem 0 0;
   position: absolute;
