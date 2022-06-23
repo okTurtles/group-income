@@ -7,7 +7,12 @@
     v-if='ephemeral.mentioning.options.length'
   )
     template(v-for='(user, index) in ephemeral.mentioning.options')
-      p {{user.displayName}}
+      .c-mentioning-user(
+        :class='{"is-selected": index === ephemeral.mentioning.index}'
+        @click='addSelectedMention(index)'
+      )
+        avatar(:src='user.picture' size='xs')
+        .c-username {{user.displayName}}
 
   .c-jump-to-latest(
     v-if='scrolledUp && !replyingMessage'
@@ -32,8 +37,9 @@
     :style='textareaStyles'
     @focus='textAreaFocus'
     @blur='textAreaBlur'
-    @keydown.enter.exact.prevent='sendMessage'
+    @keydown.enter.exact.prevent='handleKeyDownEnter'
     @keydown.ctrl='isNextLine'
+    @keydown='handleKeydown'
     @keyup='handleKeyup'
     v-bind='$attrs'
   )
@@ -102,12 +108,24 @@
 <script>
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
+import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
+
+const functionalKeyCodes = {
+  ArrowLeft: 37,
+  ArrowUp: 38,
+  ArrowRight: 39,
+  ArrowDown: 40,
+  Esc: 27,
+  End: 35,
+  Home: 36
+}
 
 export default ({
   name: 'SendArea',
   mixins: [emoticonsMixins],
   components: {
+    Avatar,
     Tooltip
   },
   props: {
@@ -137,7 +155,8 @@ export default ({
         isPhone: false,
         mentioning: {
           position: -1,
-          options: []
+          options: [],
+          index: -1
         }
       }
     }
@@ -165,10 +184,14 @@ export default ({
     ...mapGetters(['chatRoomUsers', 'globalProfile']),
     users () {
       return Object.keys(this.chatRoomUsers)
-        .map(username => ({
-          username,
-          displayName: this.globalProfile(username).displayName || username
-        }))
+        .map(username => {
+          const { displayName, picture } = this.globalProfile(username)
+          return {
+            username,
+            displayName: displayName || username,
+            picture
+          }
+        })
     },
     textareaStyles () {
       return {
@@ -210,9 +233,10 @@ export default ({
       }
     },
     updateMentioningKeyword () {
+      console.log('-----------------')
       let value = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart)
       const lastIndex = value.lastIndexOf('@')
-      const regExWordStart = /(\s|\n)/g
+      const regExWordStart = /(\s|\n)/g // Space of Enter
       if (lastIndex === -1 || (lastIndex > 0 && !regExWordStart.test(value[lastIndex - 1]))) {
         return this.endMentioning()
       }
@@ -222,10 +246,38 @@ export default ({
       }
       this.startMentioning(value, lastIndex)
     },
+    handleKeydown (e) {
+      if (Object.values(functionalKeyCodes).includes(e.keyCode)) {
+        const nChoices = this.ephemeral.mentioning.options.length
+        if (nChoices &&
+          (e.keyCode === functionalKeyCodes.ArrowUp || e.keyCode === functionalKeyCodes.ArrowDown)) {
+          const offset = e.keyCode === functionalKeyCodes.ArrowUp ? -1 : 1
+          this.ephemeral.mentioning.index = (this.ephemeral.mentioning.index + offset + nChoices) % nChoices
+          e.preventDefault()
+        } else {
+          this.endMentioning()
+        }
+      }
+    },
+    handleKeyDownEnter () {
+      if (this.ephemeral.mentioning.options.length) {
+        this.addSelectedMention(this.ephemeral.mentioning.index)
+      } else {
+        this.sendMessage()
+      }
+    },
     handleKeyup (e) {
-      this.updateMentioningKeyword()
       if (e.keyCode === 13) e.preventDefault()
       else this.updateTextArea()
+
+      if (!Object.values(functionalKeyCodes).includes(e.keyCode)) {
+        this.updateMentioningKeyword()
+      }
+    },
+    addSelectedMention (index) {
+      // TODO: add username here
+      console.log('Add username here', index)
+      this.endMentioning()
     },
     updateTextWithLines () {
       const newValue = this.$refs.textarea.value
@@ -281,14 +333,17 @@ export default ({
     },
     startMentioning (keyword, position) {
       this.ephemeral.mentioning.options = this.users.concat([{
-        username: 'here', displayName: 'here'
+        // TODO: use group picture here
+        username: 'here', displayName: 'here', picture: ''
       }]).filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
         user.displayName.toUpperCase().includes(keyword.toUpperCase()))
       this.ephemeral.mentioning.position = position
+      this.ephemeral.mentioning.index = 0
     },
     endMentioning () {
       this.ephemeral.mentioning.position = -1
+      this.ephemeral.mentioning.index = -1
       this.ephemeral.mentioning.options = []
     }
   }
@@ -445,11 +500,30 @@ $initialHeight: 43px;
 .c-mentionings {
   background-color: $white;
   padding: 0.2rem 0;
+  border: 1px solid var(--general_0);
   border-radius: 0.3rem 0.3rem 0 0;
   position: absolute;
   left: 0;
   right: 0;
   bottom: 5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 12rem;
+}
+
+.c-mentionings .c-mentioning-user {
+  display: flex;
+  align-items: center;
+  padding: 0.2rem;
+  cursor: pointer;
+}
+
+.c-mentionings .c-mentioning-user.is-selected {
+  background-color: $primary_2;
+}
+
+.c-mentionings .c-mentioning-user .c-username {
+  margin-left: 0.3rem;
 }
 
 .c-clear {
