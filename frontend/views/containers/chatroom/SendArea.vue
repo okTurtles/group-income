@@ -3,6 +3,12 @@
   :class='{"is-editing": isEditing}'
   data-test='messageInputWrapper'
 )
+  .c-mentionings(
+    v-if='ephemeral.mentioning.options.length'
+  )
+    template(v-for='(user, index) in ephemeral.mentioning.options')
+      p {{user.displayName}}
+
   .c-jump-to-latest(
     v-if='scrolledUp && !replyingMessage'
     @click='$emit("jump-to-latest")'
@@ -94,6 +100,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
 import Tooltip from '@components/Tooltip.vue'
 
@@ -127,7 +134,11 @@ export default ({
         maskHeight: '',
         textWithLines: '',
         showButtons: true,
-        isPhone: false
+        isPhone: false,
+        mentioning: {
+          position: -1,
+          options: []
+        }
       }
     }
   },
@@ -151,6 +162,14 @@ export default ({
     if (!this.ephemeral.isPhone) this.$refs.textarea.focus()
   },
   computed: {
+    ...mapGetters(['chatRoomUsers', 'globalProfile']),
+    users () {
+      return Object.keys(this.chatRoomUsers)
+        .map(username => ({
+          username,
+          displayName: this.globalProfile(username).displayName || username
+        }))
+    },
     textareaStyles () {
       return {
         paddingRight: this.ephemeral.actionsWidth + 'px',
@@ -190,7 +209,21 @@ export default ({
         return this.createNewLine()
       }
     },
+    updateMentioningKeyword () {
+      let value = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart)
+      const lastIndex = value.lastIndexOf('@')
+      const regExWordStart = /(\s|\n)/g
+      if (lastIndex === -1 || (lastIndex > 0 && !regExWordStart.test(value[lastIndex - 1]))) {
+        return this.endMentioning()
+      }
+      value = value.slice(lastIndex + 1)
+      if (regExWordStart.test(value)) {
+        return this.endMentioning()
+      }
+      this.startMentioning(value, lastIndex)
+    },
     handleKeyup (e) {
+      this.updateMentioningKeyword()
       if (e.keyCode === 13) e.preventDefault()
       else this.updateTextArea()
     },
@@ -236,6 +269,7 @@ export default ({
       this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
+      this.endMentioning()
     },
     createPool () {
       console.log('TODO')
@@ -244,6 +278,18 @@ export default ({
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
       this.closeEmoticon()
       this.updateTextWithLines()
+    },
+    startMentioning (keyword, position) {
+      this.ephemeral.mentioning.options = this.users.concat([{
+        username: 'here', displayName: 'here'
+      }]).filter(user =>
+        user.username.toUpperCase().includes(keyword.toUpperCase()) ||
+        user.displayName.toUpperCase().includes(keyword.toUpperCase()))
+      this.ephemeral.mentioning.position = position
+    },
+    endMentioning () {
+      this.ephemeral.mentioning.position = -1
+      this.ephemeral.mentioning.options = []
     }
   }
 }: Object)
@@ -394,6 +440,16 @@ $initialHeight: 43px;
   left: 0;
   right: 0;
   top: -1rem;
+}
+
+.c-mentionings {
+  background-color: $white;
+  padding: 0.2rem 0;
+  border-radius: 0.3rem 0.3rem 0 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 5rem;
 }
 
 .c-clear {
