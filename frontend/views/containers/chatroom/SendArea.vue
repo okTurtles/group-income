@@ -111,7 +111,7 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 
-const functionalKeyCodes = {
+const caretKeyCodes = {
   ArrowLeft: 37,
   ArrowUp: 38,
   ArrowRight: 39,
@@ -119,6 +119,12 @@ const functionalKeyCodes = {
   Esc: 27,
   End: 35,
   Home: 36
+}
+const functionalKeyCodes = {
+  Shift: 16,
+  Ctrl: 17,
+  Alt: 18,
+  CapsLock: 20
 }
 
 export default ({
@@ -233,7 +239,6 @@ export default ({
       }
     },
     updateMentioningKeyword () {
-      console.log('-----------------')
       let value = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart)
       const lastIndex = value.lastIndexOf('@')
       const regExWordStart = /(\s|\n)/g // Space of Enter
@@ -247,11 +252,11 @@ export default ({
       this.startMentioning(value, lastIndex)
     },
     handleKeydown (e) {
-      if (Object.values(functionalKeyCodes).includes(e.keyCode)) {
+      if (Object.values(caretKeyCodes).includes(e.keyCode)) {
         const nChoices = this.ephemeral.mentioning.options.length
         if (nChoices &&
-          (e.keyCode === functionalKeyCodes.ArrowUp || e.keyCode === functionalKeyCodes.ArrowDown)) {
-          const offset = e.keyCode === functionalKeyCodes.ArrowUp ? -1 : 1
+          (e.keyCode === caretKeyCodes.ArrowUp || e.keyCode === caretKeyCodes.ArrowDown)) {
+          const offset = e.keyCode === caretKeyCodes.ArrowUp ? -1 : 1
           this.ephemeral.mentioning.index = (this.ephemeral.mentioning.index + offset + nChoices) % nChoices
           e.preventDefault()
         } else {
@@ -270,7 +275,8 @@ export default ({
       if (e.keyCode === 13) e.preventDefault()
       else this.updateTextArea()
 
-      if (!Object.values(functionalKeyCodes).includes(e.keyCode)) {
+      if (!Object.values(caretKeyCodes).includes(e.keyCode) &&
+        !Object.values(functionalKeyCodes).includes(e.keyCode)) {
         this.updateMentioningKeyword()
       }
     },
