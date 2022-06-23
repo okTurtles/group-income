@@ -298,9 +298,12 @@ export default ({
       const curValue = this.$refs.textarea.value
       const curPosition = this.$refs.textarea.selectionStart
 
+      const mention = `@${this.ephemeral.mentioning.options[index].username}`
       const value = curValue.slice(0, this.ephemeral.mentioning.position) +
-        `@${this.ephemeral.mentioning.options[index].username}` + curValue.slice(curPosition)
+         mention + curValue.slice(curPosition)
       this.$refs.textarea.value = value
+      const selectionStart = this.ephemeral.mentioning.position + mention.length
+      this.$refs.textarea.setSelectionRange(selectionStart, selectionStart)
       this.endMentioning()
     },
     updateTextWithLines () {
