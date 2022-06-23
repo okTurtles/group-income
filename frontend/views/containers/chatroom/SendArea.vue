@@ -126,7 +126,8 @@ const functionalKeyCodes = {
   Shift: 16,
   Ctrl: 17,
   Alt: 18,
-  CapsLock: 20
+  CapsLock: 20,
+  Enter: 13
 }
 
 export default ({
@@ -294,8 +295,12 @@ export default ({
       }
     },
     addSelectedMention (index) {
-      // TODO: add username here
-      console.log('Add username here', index)
+      const curValue = this.$refs.textarea.value
+      const curPosition = this.$refs.textarea.selectionStart
+
+      const value = curValue.slice(0, this.ephemeral.mentioning.position) +
+        `@${this.ephemeral.mentioning.options[index].username}` + curValue.slice(curPosition)
+      this.$refs.textarea.value = value
       this.endMentioning()
     },
     updateTextWithLines () {
