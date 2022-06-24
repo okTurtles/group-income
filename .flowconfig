@@ -8,6 +8,7 @@
 # - https://flowtype.org/docs/functions.html
 .*/Gruntfile.js
 .*/dist/.*
+.*/contracts/.*
 .*/frontend/assets/.*
 .*/frontend/controller/service-worker.js
 .*/frontend/utils/blockies.js

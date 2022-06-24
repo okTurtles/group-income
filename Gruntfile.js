@@ -11,10 +11,13 @@
 //
 // =======================
 
+const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
+const execP = util.promisify(exec)
 const { copyFile, readFile } = require('fs/promises')
+const fs = require('fs')
 const path = require('path')
 const { resolve } = path
 const { version } = require('./package.json')
@@ -55,6 +58,44 @@ function pick (o, props) {
 
 const clone = o => JSON.parse(JSON.stringify(o))
 
+function triggerEveryN (n, fn) {
+  let i = 0
+  return function (...args) {
+    if (++i % n === 0) {
+      return fn(...args)
+    }
+  }
+}
+
+async function execWithErrMsg (cmd, errMsg) {
+  const { stdout, stderr } = await execP(cmd)
+  if (stderr) {
+    console.error(chalk`{red ${errMsg}:}`, stderr)
+    throw new Error(errMsg)
+  }
+  return { stdout }
+}
+
+async function generateManifests (contractsDir, version = 'x') {
+  const { stdout } = await execWithErrMsg(`ls ${contractsDir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${contractsDir}/{}-slim.js key.json ${contractsDir}/{}.js`, 'error generating manifests')
+  console.log('generated manifests:')
+  console.log(stdout)
+}
+
+async function deployAndUpdateMainSrc (manifestDir) {
+  const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
+  console.log('deployed to data folder:')
+  console.log(stdout)
+  const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
+  const hashMap = Object.fromEntries(Array.from(stdout.matchAll(r), x => [x[1], x[2]]))
+  const mainTxt = fs.readFileSync(mainSrc, 'utf8')
+  const mainTxt2 = mainTxt.replaceAll(/'gi.contracts\/([^']+)': '21[^']+'/g, (...args) => {
+    return `'gi.contracts/${args[1]}': '${hashMap[args[1]]}'`
+  })
+  fs.writeFileSync(mainSrc, mainTxt2, 'utf8')
+  console.log(chalk.green('updated contract hashes in:'), mainSrc)
+}
+
 Object.assign(process.env, applyPortShift(process.env))
 
 process.env.GI_VERSION = `${version}@${new Date().toISOString()}`
@@ -75,11 +116,12 @@ const backendIndex = './backend/index.js'
 const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
 const distDir = 'dist'
-// const distContracts = 'dist/contracts'
+const distContracts = 'dist/contracts'
 const distJS = 'dist/assets/js'
 const serviceWorkerDir = 'frontend/controller/serviceworkers'
 const srcDir = 'frontend'
 const contractsDir = 'frontend/model/contracts'
+const mainSrc = path.join(srcDir, 'main.js')
 
 const development = NODE_ENV === 'development'
 const production = !development
@@ -164,7 +206,7 @@ module.exports = (grunt) => {
     // Native options used when building the main entry point.
     main: {
       assetNames: '../css/[name]',
-      entryPoints: [`${srcDir}/main.js`]
+      entryPoints: [mainSrc]
     },
     // Native options used when building our service worker(s).
     serviceWorkers: {
@@ -181,7 +223,7 @@ module.exports = (grunt) => {
     //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
     // },
     splitting: false,
-    outdir: 'frontend/assets/contracts',
+    outdir: distContracts,
     entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`],
     external: ['@sbp/sbp']
   }
@@ -208,7 +250,17 @@ module.exports = (grunt) => {
       }
     }
   }
-
+  const esbuildOtherContractOptions = {
+    // since two builds get triggered each time any contract file is modified
+    // and either build might get triggered first, we run the postoperation on
+    // each build, with triggerEveryN it gets called every other time, ensuring
+    // it's called once per build
+    postoperation: triggerEveryN(2, async ({ fileEventName, filePath }) => {
+      grunt.log.writeln(chalk.underline('\nRunning contracts "postoperation"'))
+      await generateManifests(distContracts)
+      await deployAndUpdateMainSrc(distContracts)
+    })
+  }
   // https://github.com/rollup/plugins/tree/master/packages/eslint#options
   const eslintOptions = {
     format: 'stylish',
@@ -310,7 +362,8 @@ module.exports = (grunt) => {
       test: {
         cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: process.env }
-      }
+      },
+      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs ./node_modules/.bin/chel deploy ./data'
     }
   })
 
@@ -397,9 +450,26 @@ module.exports = (grunt) => {
     cypress[command](options).then(r => done(r.totalFailed === 0)).catch(done)
   })
 
+  grunt.registerTask('pin', async function (version) {
+    if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
+    const done = this.async()
+    const dirPath = `contracts/${version}`
+    if (fs.existsSync(dirPath)) {
+      throw new Error(`already exists: ${dirPath}`)
+    }
+    // since the copied manifest files don't have the correct version (they have version 'x')
+    // we need to delete the old ones and regenerate them
+    await execWithErrMsg(`rm -f ${distContracts}/*.x.manifest.json`)
+    await generateManifests(distContracts, version)
+    await deployAndUpdateMainSrc(distContracts)
+    await execWithErrMsg(`cp -r ${distContracts} ${dirPath}`, 'error copying contracts')
+    console.log(chalk`{green Version} {bold ${version}} {green pinned to:} ${dirPath}`)
+    done()
+  })
+
   grunt.registerTask('default', ['dev'])
   // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
   // --------------------
@@ -430,10 +500,10 @@ module.exports = (grunt) => {
     })
     const buildContracts = createEsbuildTask({
       ...esbuildOptionBags.contracts, plugins: defaultPlugins
-    })
+    }, esbuildOtherContractOptions)
     const buildContractsSlim = createEsbuildTask({
       ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
-    })
+    }, esbuildOtherContractOptions)
 
     await Promise.all([buildMain.run(), buildServiceWorkers.run(), buildContracts.run(), buildContractsSlim.run()]).catch(error => {
       grunt.log.error(error.message)
@@ -503,7 +573,9 @@ module.exports = (grunt) => {
             } else if (filePath.startsWith(contractsDir)) {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
-              await buildMain.run({ fileEventName, filePath })
+              // this will get triggered automatically because the contracts
+              // will update mainSrc with the new manifest hashes
+              // await buildMain.run({ fileEventName, filePath })
             } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
               await buildMain.run({ fileEventName, filePath })
             } else {
@@ -532,7 +604,7 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'backend:launch', 'exec:test', 'cypress'])
+  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'backend:launch', 'exec:test', 'cypress'])
   grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
 
   // -------------------------------------------------------------------------

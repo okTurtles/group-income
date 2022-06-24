@@ -11,7 +11,7 @@ import Colors from './colors.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
-import { unadjustedDistribution, adjustedDistribution } from './contracts/shared/distribution/distribution.js'
+import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
