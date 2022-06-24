@@ -20,7 +20,7 @@ const { copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
 const path = require('path')
 const { resolve } = path
-const { version } = require('./package.json')
+const packageJSON = require('./package.json')
 
 // =======================
 // Global environment variables setup
@@ -76,7 +76,7 @@ async function execWithErrMsg (cmd, errMsg) {
   return { stdout }
 }
 
-async function generateManifests (contractsDir, version = 'x') {
+async function generateManifests (contractsDir, version) {
   const { stdout } = await execWithErrMsg(`ls ${contractsDir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${contractsDir}/{}-slim.js key.json ${contractsDir}/{}.js`, 'error generating manifests')
   console.log('generated manifests:')
   console.log(stdout)
@@ -103,7 +103,7 @@ function replaceManifestsInFile (filepath, hashMap) {
 
 Object.assign(process.env, applyPortShift(process.env))
 
-process.env.GI_VERSION = `${version}@${new Date().toISOString()}`
+process.env.GI_VERSION = `${packageJSON.version}@${new Date().toISOString()}`
 
 // Not loading babel-register here since it is quite a heavy import and is not always used.
 // We will rather load it later, and only if necessary.
@@ -262,7 +262,7 @@ module.exports = (grunt) => {
     // it's called once per build
     postoperation: triggerEveryN(2, async ({ fileEventName, filePath }) => {
       grunt.log.writeln(chalk.underline('\nRunning contracts "postoperation"'))
-      await generateManifests(distContracts)
+      await generateManifests(distContracts, packageJSON.version)
       await deployAndUpdateMainSrc(distContracts)
     })
   }
@@ -462,13 +462,16 @@ module.exports = (grunt) => {
     if (fs.existsSync(dirPath)) {
       throw new Error(`already exists: ${dirPath}`)
     }
-    // since the copied manifest files don't have the correct version (they have version 'x')
+    // since the copied manifest files might not have the correct version on them
     // we need to delete the old ones and regenerate them
-    await execWithErrMsg(`rm -f ${distContracts}/*.x.manifest.json`)
+    await execWithErrMsg(`rm -f ${distContracts}/*.manifest.json`)
     await generateManifests(distContracts, version)
     await deployAndUpdateMainSrc(distContracts)
     await execWithErrMsg(`cp -r ${distContracts} ${dirPath}`, 'error copying contracts')
     console.log(chalk`{green Version} {bold ${version}} {green pinned to:} ${dirPath}`)
+    packageJSON.version = version
+    fs.writeFileSync('package.json', JSON.stringify(packageJSON, null, 2) + '\n', 'utf8')
+    console.log(chalk.green('updated package.json to version:'), version)
     done()
   })
 
