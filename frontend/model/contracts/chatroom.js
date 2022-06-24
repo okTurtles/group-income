@@ -136,6 +136,13 @@ function emitMessageEvent ({ contractID, hash }: {
   sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash })
 }
 
+export function makeMentionFromUsername (username) {
+  return {
+    me: `@${username}`,
+    all: '@here'
+  }
+}
+
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/chatroom',
   metadata: {
@@ -329,7 +336,6 @@ sbp('chelonia/defineContract', {
     'gi.contracts/chatroom/addMessage': {
       validate: messageType,
       process ({ data, meta, hash }, { state }) {
-        const newMessage = createMessage({ meta, data, hash, state })
         if (!state.saveMessage) {
           return
         }
@@ -337,11 +343,23 @@ sbp('chelonia/defineContract', {
         if (pendingMsg) {
           delete pendingMsg.pending
         } else {
-          state.messages.push(newMessage)
+          state.messages.push(createMessage({ meta, data, hash, state }))
         }
       },
-      sideEffect ({ contractID, hash }) {
+      sideEffect ({ contractID, hash, meta, data }, { state }) {
         emitMessageEvent({ contractID, hash })
+
+        const rootState = sbp('state/vuex/state')
+        const me = rootState.loggedIn.username
+        const newMessage = createMessage({ meta, data, hash, state })
+        const mentions = makeMentionFromUsername(me)
+        if (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all)) {
+          sbp('state/vuex/commit', 'addChatRoomUnreadMentioning', {
+            chatRoomId: contractID,
+            messageId: newMessage.id,
+            createdDate: new Date(newMessage.datetime).getTime()
+          })
+        }
       }
     },
     'gi.contracts/chatroom/editMessage': {
@@ -367,8 +385,26 @@ sbp('chelonia/defineContract', {
           }
         }
       },
-      sideEffect ({ contractID, hash }) {
+      sideEffect ({ contractID, hash, meta, data }) {
         emitMessageEvent({ contractID, hash })
+
+        const rootState = sbp('state/vuex/state')
+        const me = rootState.loggedIn.username
+        const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentionings.find(m => m.messageId === data.id)
+        const mentions = makeMentionFromUsername(me)
+        const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all)
+        if (!isAlreadyAdded && isIncludeMention) {
+          sbp('state/vuex/commit', 'addChatRoomUnreadMentioning', {
+            chatRoomId: contractID,
+            messageId: data.id,
+            createdDate: new Date(meta.createdDate).getTime() // TODO: Not sure this should be this way
+          })
+        } else if (isAlreadyAdded && !isIncludeMention) {
+          sbp('state/vuex/commit', 'deleteChatRoomUnreadMentioning', {
+            chatRoomId: contractID,
+            messageId: data.id
+          })
+        }
       }
     },
     'gi.contracts/chatroom/deleteMessage': {
@@ -389,6 +425,12 @@ sbp('chelonia/defineContract', {
         if (rootState.chatRoomScrollPosition[contractID] === data.id) {
           sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
             chatRoomId: contractID, messageId: null
+          })
+        }
+        if (rootState.chatRoomUnread[contractID].mentionings.find(m => m.messageId === data.id)) {
+          sbp('state/vuex/commit', 'deleteChatRoomUnreadMentioning', {
+            chatRoomId: contractID,
+            messageId: data.id
           })
         }
 

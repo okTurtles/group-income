@@ -112,6 +112,7 @@ import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
+import { makeMentionFromUsername } from '@model/contracts/chatroom.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -298,7 +299,7 @@ export default ({
       const curValue = this.$refs.textarea.value
       const curPosition = this.$refs.textarea.selectionStart
 
-      const mention = `@${this.ephemeral.mentioning.options[index].username}`
+      const mention = makeMentionFromUsername(this.ephemeral.mentioning.options[index].username).me
       const value = curValue.slice(0, this.ephemeral.mentioning.position) +
          mention + curValue.slice(curPosition)
       this.$refs.textarea.value = value

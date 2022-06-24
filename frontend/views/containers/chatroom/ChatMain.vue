@@ -190,7 +190,7 @@ export default ({
       'isJoinedChatRoom',
       'setChatRoomScrollPosition',
       'currentChatRoomScrollPosition',
-      'currentChatRoomUnreadPosition'
+      'currentChatRoomUnreadSince'
     ]),
     bodyStyles () {
       const defaultHeightInRem = 14
@@ -467,9 +467,9 @@ export default ({
     },
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageId = null
-      if (this.currentChatRoomUnreadPosition) {
+      if (this.currentChatRoomUnreadSince) {
         const startUnreadMessage = this.messages
-          .find(msg => new Date(msg.datetime).getTime() > this.currentChatRoomUnreadPosition.createdDate)
+          .find(msg => new Date(msg.datetime).getTime() > this.currentChatRoomUnreadSince.createdDate)
         if (startUnreadMessage) {
           this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
         }
@@ -493,10 +493,10 @@ export default ({
 
         if (/.*(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
           // we add new pending message in 'handleSendMessage' function so we skip when I added a new message
-          return me !== meta.username
+          return { added: true, self: me === meta.username }
         }
 
-        return false
+        return { added: false, self: false }
       }
 
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
@@ -507,8 +507,21 @@ export default ({
         this.$forceUpdate()
 
         // TODO: Need to scroll to the bottom only when new message is ADDED by ANOTHER
-        if (this.ephemeral.scrolledDistance < 50 && isAddedNewMessage(message)) {
-          this.updateScroll()
+        if (this.ephemeral.scrolledDistance < 50) {
+          const { added, self } = isAddedNewMessage(message)
+          if (added) {
+            const isScrollable = this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
+            if (!self && isScrollable) {
+              this.updateScroll()
+            } else if (!isScrollable) {
+              const msg = this.messages[this.messages.length - 1]
+              sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
+                chatRoomId: this.currentChatRoomId,
+                messageId: msg.id,
+                createdDate: new Date(msg.datetime).getTime()
+              })
+            }
+          }
         }
       })
     },
@@ -519,7 +532,19 @@ export default ({
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
-        completed ? $state.complete() : $state.loaded()
+        if (completed) {
+          $state.complete()
+          if (this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
+            const msg = this.messages[this.messages.length - 1]
+            sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
+              chatRoomId: this.currentChatRoomId,
+              messageId: msg.id,
+              createdDate: new Date(msg.datetime).getTime()
+            })
+          }
+        } else {
+          $state.loaded()
+        }
         this.shouldRefreshMessages = false
       })
     },
@@ -548,9 +573,9 @@ export default ({
         const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
         if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
-          const latestMessageCreatedAt = this.currentChatRoomUnreadPosition?.createdDate
+          const latestMessageCreatedAt = this.currentChatRoomUnreadSince?.createdDate
           if (!latestMessageCreatedAt || latestMessageCreatedAt <= bottomMessageCreatedAt) {
-            sbp('state/vuex/commit', 'setChatRoomUnreadPosition', {
+            sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
               chatRoomId: this.currentChatRoomId,
               messageId: msg.id,
               createdDate: new Date(msg.datetime).getTime()
