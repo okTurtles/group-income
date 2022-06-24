@@ -24,10 +24,9 @@ export default (sbp('sbp/selectors/register', {
     }
     const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
     const manifest = await fetch(manifestURL).then(handleFetchResult('json'))
-    console.debug('got manifest:', manifest)
     const body = JSON.parse(manifest.body)
     const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
-    console.debug('loading', contractInfo.file)
+    console.debug('[chelonia] loading contract', contractInfo.file, 'from manifest:', manifestHash)
     const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`)
       .then(handleFetchResult('text'))
     const sourceHash = blake32Hash(source)
@@ -58,7 +57,6 @@ export default (sbp('sbp/selectors/register', {
         with (globals) {
           ${source}
         }
-        console.debug('loaded ${contractInfo.file}!')
       }
     `)()
     this.defContractSBP = contractSBP
@@ -194,7 +192,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/in/syncContract': async function (contractID: string) {
     const state = sbp(this.config.stateSelector)
     const latest = await sbp('chelonia/out/latestHash', contractID)
-    console.debug(`syncContract: ${contractID} latestHash is: ${latest}`)
+    console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     let recent
     if (state.contracts[contractID]) {

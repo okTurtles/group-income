@@ -88,12 +88,17 @@ async function deployAndUpdateMainSrc (manifestDir) {
   console.log(stdout)
   const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
   const hashMap = Object.fromEntries(Array.from(stdout.matchAll(r), x => [x[1], x[2]]))
-  const mainTxt = fs.readFileSync(mainSrc, 'utf8')
-  const mainTxt2 = mainTxt.replaceAll(/'gi.contracts\/([^']+)': '21[^']+'/g, (...args) => {
+  replaceManifestsInFile(mainSrc, hashMap)
+  replaceManifestsInFile('test/backend.test.js', hashMap)
+}
+
+function replaceManifestsInFile (filepath, hashMap) {
+  const txt = fs.readFileSync(filepath, 'utf8')
+  const txt2 = txt.replaceAll(/'gi.contracts\/([^']+)': '21[^']+'/g, (...args) => {
     return `'gi.contracts/${args[1]}': '${hashMap[args[1]]}'`
   })
-  fs.writeFileSync(mainSrc, mainTxt2, 'utf8')
-  console.log(chalk.green('updated contract hashes in:'), mainSrc)
+  fs.writeFileSync(filepath, txt2, 'utf8')
+  console.log(chalk.green('updated contract hashes in:'), filepath)
 }
 
 Object.assign(process.env, applyPortShift(process.env))

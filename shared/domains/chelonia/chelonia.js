@@ -119,9 +119,8 @@ export default (sbp('sbp/selectors/register', {
     // using Object.assign here instead of merge to avoid stripping away imported modules
     Object.assign(this.config.contracts.defaults, config.contracts.defaults || {})
     const manifests = this.config.contracts.manifests
-    console.info('preloading manifests:', Object.keys(manifests))
+    console.debug('[chelonia] preloading manifests:', Object.keys(manifests))
     for (const contractName in manifests) {
-      console.debug('loading contract:', contractName)
       await sbp('chelonia/private/loadManifest', manifests[contractName])
     }
   },
