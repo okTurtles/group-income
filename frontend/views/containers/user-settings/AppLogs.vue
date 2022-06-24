@@ -42,7 +42,7 @@ import sbp from '@sbp/sbp'
 import { mapState, mapMutations } from 'vuex'
 import safeLinkTag from '@views/utils/safeLinkTag.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
-import { downloadLogs, getLog } from '@model/captureLogs.js'
+import { downloadLogs, getLogger } from '@model/captureLogs.js'
 
 export default ({
   name: 'AppLogs',
@@ -60,15 +60,8 @@ export default ({
     this.form.filter = this.appLogsFilter
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
 
-    const logs = []
-    let lastEntry = getLog('lastEntry')
-    do {
-      const entry = JSON.parse(getLog(lastEntry))
-      if (!entry) break
-      logs.push(entry)
-      lastEntry = entry.prev
-    } while (lastEntry)
-    this.ephemeral.logs = logs.reverse() // chronological order (oldest to most recent)
+    // Log entries in chronological order (oldest to most recent).
+    this.ephemeral.logs = getLogger().entries.toArray()
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', CAPTURED_LOGS)
@@ -81,7 +74,7 @@ export default ({
     prettyLogs () {
       this.$nextTick(() => {
         if (this.$refs.textarea) {
-          // Automatically scroll textarea to the bottom
+          // Automatically scroll the textarea to the bottom.
           this.$refs.textarea.scrollTop = this.$refs.textarea.scrollHeight
         }
       })
@@ -108,8 +101,7 @@ export default ({
     ...mapMutations([
       'setAppLogsFilters'
     ]),
-    addLog (logHash) {
-      const entry = JSON.parse(getLog(logHash))
+    addLog (entry: Object) {
       if (entry) {
         this.ephemeral.logs.push(entry)
       }

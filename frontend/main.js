@@ -91,6 +91,7 @@ async function startApp () {
           errMsg: e.message || '?'
         })
       })
+      sbp('logging/flush')
     }
   }
   function displaySeriousErrorBanner (e: Error) {
