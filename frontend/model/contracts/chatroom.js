@@ -99,6 +99,10 @@ export async function leaveChatRoom ({ contractID }: {
         .catch(logExceptNavigationDuplicated)
     }
   }
+
+  sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomId: contractID })
+  sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomId: contractID })
+
   // NOTE: make sure *not* to await on this, since that can cause
   //       a potential deadlock. See same warning in sideEffect for
   //       'gi.contracts/group/removeMember'
@@ -136,7 +140,9 @@ function emitMessageEvent ({ contractID, hash }: {
   sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash })
 }
 
-export function makeMentionFromUsername (username) {
+export function makeMentionFromUsername (username: string): {
+  me: string, all: string
+} {
   return {
     me: `@${username}`,
     all: '@here'
@@ -303,7 +309,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, hash, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
-        if (!state.saveMessage && data.member === rootState.loggedIn.username) {
+        if (data.member === rootState.loggedIn.username) {
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return
           }
@@ -325,7 +331,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ meta, contractID }, { state }) {
-        if (!state.saveMessage && state.attributes.creator === meta.username) { // Not sure this condition is necessary
+        if (state.attributes.creator === meta.username) { // Not sure this condition is necessary
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
             return
           }
@@ -353,7 +359,8 @@ sbp('chelonia/defineContract', {
         const me = rootState.loggedIn.username
         const newMessage = createMessage({ meta, data, hash, state })
         const mentions = makeMentionFromUsername(me)
-        if (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all)) {
+        if (data.type === MESSAGE_TYPES.TEXT &&
+          (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))) {
           sbp('state/vuex/commit', 'addChatRoomUnreadMentioning', {
             chatRoomId: contractID,
             messageId: newMessage.id,

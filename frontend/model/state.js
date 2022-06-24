@@ -140,6 +140,9 @@ const mutations = {
   setChatRoomScrollPosition (state, { chatRoomId, messageId }) {
     Vue.set(state.chatRoomScrollPosition, chatRoomId, messageId)
   },
+  deleteChatRoomScrollPosition (state, { chatRoomId }) {
+    Vue.delete(state.chatRoomScrollPosition, chatRoomId)
+  },
   setChatRoomUnreadSince (state, { chatRoomId, messageId, createdDate }) {
     const prevMentionings = state.chatRoomUnread[chatRoomId] ? state.chatRoomUnread[chatRoomId].mentionings : []
     Vue.set(state.chatRoomUnread, chatRoomId, {
@@ -166,6 +169,9 @@ const mutations = {
       ...prevUnread,
       mentionings: prevUnread.mentionings.filter(m => m.messageId !== messageId)
     })
+  },
+  deleteChatRoomUnread (state, { chatRoomId }) {
+    Vue.delete(state.chatRoomUnread, chatRoomId)
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state

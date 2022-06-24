@@ -510,7 +510,8 @@ export default ({
         if (this.ephemeral.scrolledDistance < 50) {
           const { added, self } = isAddedNewMessage(message)
           if (added) {
-            const isScrollable = this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
+            const isScrollable = this.$refs.conversation &&
+              this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
             if (!self && isScrollable) {
               this.updateScroll()
             } else if (!isScrollable) {
@@ -534,7 +535,8 @@ export default ({
       this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
         if (completed) {
           $state.complete()
-          if (this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
+          if (!this.$refs.conversation ||
+            this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
             const msg = this.messages[this.messages.length - 1]
             sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
               chatRoomId: this.currentChatRoomId,
