@@ -175,6 +175,18 @@ function deleteMentioning ({ contractID, messageId }: {
   contractID: string, messageId: string
 }): void {
   sbp('state/vuex/commit', 'deleteChatRoomUnreadMentioning', { chatRoomId: contractID, messageId })
+
+  const rootState = sbp('state/vuex/state')
+  if (!rootState.chatRoomUnread[contractID] ||
+    !rootState.chatRoomUnread[contractID].mentionings.length) {
+    const rootGetters = sbp('state/vuex/getters')
+    const notification = rootGetters.currentGroupNotifications.find(n =>
+      n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${contractID}`
+    )
+    if (notification) {
+      sbp('gi.notifications/remove', notification)
+    }
+  }
 }
 
 sbp('chelonia/defineContract', {
