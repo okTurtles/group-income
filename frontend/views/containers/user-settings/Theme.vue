@@ -8,7 +8,7 @@
 
       .radio
         input.input(type='radio' name='theme' value='system' id='system' v-model='theme')
-        span Use system settings
+        i18n(tag='span') Use system settings
 
   fieldset.theme(v-for='(color, label) in themes' :key='label' @click='setTheme(label)')
     label(:for='label')
