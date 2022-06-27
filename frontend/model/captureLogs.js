@@ -15,12 +15,12 @@ const noop = () => undefined
 const originalConsole = console
 
 // These are initialized in `captureLogsStart()`.
-let appLogsFilter = []
-let logger = null
-let username = ''
+let appLogsFilter: string[] = []
+let logger: Object = null
+let username: string = ''
 
 // A default storage backend using `localStorage`.
-const getItem = (key: string): string | null => localStorage.getItem(`giConsole/${username}/${key}`)
+const getItem = (key: string): ?string => localStorage.getItem(`giConsole/${username}/${key}`)
 const removeItem = (key: string): void => localStorage.removeItem(`giConsole/${username}/${key}`)
 const setItem = (key: string, value: any): void => {
   localStorage.setItem(`giConsole/${username}/${key}`, typeof value === 'string' ? value : JSON.stringify(value))
@@ -43,7 +43,7 @@ function createCircularList (capacity: number, defaultValue = ''): Object {
       }
       offset = (offset + 1) % capacity
     },
-    addAll (entries: Array) {
+    addAll (entries: Array<*>) {
       for (const entry of entries) {
         this.add(entry)
       }
@@ -53,7 +53,7 @@ function createCircularList (capacity: number, defaultValue = ''): Object {
       isFull = false
       offset = 0
     },
-    toArray (): Array {
+    toArray (): Array<*> {
       return (
         isFull
           ? [...buffer.slice(offset), ...buffer.slice(0, offset)]
@@ -122,7 +122,7 @@ function captureLogsStart (userLogged: string) {
 
   // Set a new visit or session - useful to understand logs through time.
   // NEW_SESSION -> The user opened a new browser or tab.
-  // NEW_VISIT -> The user comes from an ongoing session (refresh or login)
+  // NEW_VISIT -> The user comes from an ongoing session (refresh or login).
   const isNewSession = !sessionStorage.getItem('NEW_SESSION')
   if (isNewSession) { sessionStorage.setItem('NEW_SESSION', '1') }
   console.log(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', appLogsFilter)
@@ -173,14 +173,14 @@ function downloadLogs (elLink: Object): void {
 function getLogger (): Object {
   if (!logger) {
     logger = createLogger(config)
-    const previousEntries = JSON.parse(getItem('entries'))
+    const previousEntries = JSON.parse(getItem('entries') ?? '[]')
 
     // If `maxEntries` is changed in a release, this will discard oldest logs as necessary.
-    if (config.maxEntries < previousEntries?.length) {
+    if (config.maxEntries < previousEntries.length) {
       previousEntries.splice(0, previousEntries.length - config.maxEntries)
     }
     // Load the previous entries to sync the in-memory array with the local storage.
-    if (previousEntries?.length) {
+    if (previousEntries.length) {
       logger.entries.addAll(previousEntries)
     }
   }
@@ -193,13 +193,12 @@ function setAppLogsFilter (filter: Array<string>) {
   // console.log() doesnt include stack trace, so when logged, we can't access
   // where the log came from (file name), which} difficults debugging if needed.
   for (const level of loggingLevels) {
+    // $FlowFixMe
     consoleCopy[level] = appLogsFilter.includes(level) ? logger[level] : noop
   }
 }
 
-window.addEventListener('beforeunload', event => {
-  sbp('appLogs/save')
-})
+window.addEventListener('beforeunload', event => sbp('appLogs/save'))
 
 sbp('sbp/selectors/register', {
   'appLogs/download' (elLink) { downloadLogs(elLink) },

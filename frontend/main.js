@@ -33,7 +33,6 @@ import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import 'wicg-inert'
 
-
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
