@@ -526,7 +526,7 @@ $initialHeight: 43px;
 }
 
 .c-mentionings {
-  background-color: $white;
+  background-color: $general_2;
   border: 1px solid var(--general_0);
   border-radius: 0.3rem 0.3rem 0 0;
   position: absolute;
