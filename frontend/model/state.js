@@ -568,7 +568,7 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
   // check to make sure we're only loading the getters for the version of the contract
   // that this build of GI was compiled with
   if (manifests[contract.name] === contract.manifest) {
-    console.debug('registering getters for:', contract.name)
+    console.debug(`registering getters for '${contract.name}' (${contract.manifest})`)
     store.registerModule(contract.name, {
       getters: omit(contract.getters, omitGetters[contract.name] || [])
     })

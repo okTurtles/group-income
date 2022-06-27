@@ -50,57 +50,6 @@ const applyPortShift = (env) => {
   return { ...env, API_PORT, API_URL }
 }
 
-function pick (o, props) {
-  const x = {}
-  for (const k of props) { x[k] = o[k] }
-  return x
-}
-
-const clone = o => JSON.parse(JSON.stringify(o))
-
-function triggerEveryN (n, fn) {
-  let i = 0
-  return function (...args) {
-    if (++i % n === 0) {
-      return fn(...args)
-    }
-  }
-}
-
-async function execWithErrMsg (cmd, errMsg) {
-  const { stdout, stderr } = await execP(cmd)
-  if (stderr) {
-    console.error(chalk`{red ${errMsg}:}`, stderr)
-    throw new Error(errMsg)
-  }
-  return { stdout }
-}
-
-async function generateManifests (contractsDir, version) {
-  const { stdout } = await execWithErrMsg(`ls ${contractsDir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${contractsDir}/{}-slim.js key.json ${contractsDir}/{}.js`, 'error generating manifests')
-  console.log('generated manifests:')
-  console.log(stdout)
-}
-
-async function deployAndUpdateMainSrc (manifestDir) {
-  const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
-  console.log('deployed to data folder:')
-  console.log(stdout)
-  const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
-  const hashMap = Object.fromEntries(Array.from(stdout.matchAll(r), x => [x[1], x[2]]))
-  replaceManifestsInFile(mainSrc, hashMap)
-  replaceManifestsInFile('test/backend.test.js', hashMap)
-}
-
-function replaceManifestsInFile (filepath, hashMap) {
-  const txt = fs.readFileSync(filepath, 'utf8')
-  const txt2 = txt.replaceAll(/'gi.contracts\/([^']+)': '21[^']+'/g, (...args) => {
-    return `'gi.contracts/${args[1]}': '${hashMap[args[1]]}'`
-  })
-  fs.writeFileSync(filepath, txt2, 'utf8')
-  console.log(chalk.green('updated contract hashes in:'), filepath)
-}
-
 Object.assign(process.env, applyPortShift(process.env))
 
 process.env.GI_VERSION = `${packageJSON.version}@${new Date().toISOString()}`
@@ -133,6 +82,56 @@ const production = !development
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
+
+  // Helper functions
+
+  function pick (o, props) {
+    const x = {}
+    for (const k of props) { x[k] = o[k] }
+    return x
+  }
+
+  const clone = o => JSON.parse(JSON.stringify(o))
+
+  async function execWithErrMsg (cmd, errMsg) {
+    const { stdout, stderr } = await execP(cmd)
+    if (stderr) {
+      console.error(chalk`{red ${errMsg}:}`, stderr)
+      throw new Error(errMsg)
+    }
+    return { stdout }
+  }
+
+  async function generateManifests (contractsDir, version) {
+    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
+    // TODO: do this with JS instead of POSIX commands for Windows support
+    const { stdout } = await execWithErrMsg(`ls ${contractsDir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${contractsDir}/{}-slim.js key.json ${contractsDir}/{}.js`, 'error generating manifests')
+    console.log(stdout)
+  }
+
+  async function deployAndUpdateMainSrc (manifestDir) {
+    grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
+    const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
+    console.log(stdout)
+    const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
+    const hashMap = Object.fromEntries(Array.from(stdout.matchAll(r), x => [x[1], x[2]]))
+    replaceManifestsInFile(mainSrc, hashMap)
+    replaceManifestsInFile('test/backend.test.js', hashMap)
+  }
+
+  function replaceManifestsInFile (filepath, hashMap) {
+    const txt = fs.readFileSync(filepath, 'utf8')
+    const txt2 = txt.replaceAll(/'gi.contracts\/([^']+)': '21[^']+'/g, (...args) => {
+      return `'gi.contracts/${args[1]}': '${hashMap[args[1]]}'`
+    })
+    fs.writeFileSync(filepath, txt2, 'utf8')
+    console.log(chalk.green('updated contract hashes in:'), filepath)
+  }
+
+  async function genManifestsAndDeploy (contractsDir, version) {
+    await generateManifests(contractsDir, version)
+    await deployAndUpdateMainSrc(contractsDir)
+  }
 
   // Used by both the alias plugin and the Vue plugin.
   const aliasPluginOptions = {
@@ -255,17 +254,7 @@ module.exports = (grunt) => {
       }
     }
   }
-  const esbuildOtherContractOptions = {
-    // since two builds get triggered each time any contract file is modified
-    // and either build might get triggered first, we run the postoperation on
-    // each build, with triggerEveryN it gets called every other time, ensuring
-    // it's called once per build
-    postoperation: triggerEveryN(2, async ({ fileEventName, filePath }) => {
-      grunt.log.writeln(chalk.underline('\nRunning contracts "postoperation"'))
-      await generateManifests(distContracts, packageJSON.version)
-      await deployAndUpdateMainSrc(distContracts)
-    })
-  }
+
   // https://github.com/rollup/plugins/tree/master/packages/eslint#options
   const eslintOptions = {
     format: 'stylish',
@@ -329,6 +318,8 @@ module.exports = (grunt) => {
     debug: false,
     flowtype: flowRemoveTypesPluginOptions
   }
+
+  // Helper functions
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
@@ -465,13 +456,14 @@ module.exports = (grunt) => {
     // since the copied manifest files might not have the correct version on them
     // we need to delete the old ones and regenerate them
     await execWithErrMsg(`rm -f ${distContracts}/*.manifest.json`)
-    await generateManifests(distContracts, version)
-    await deployAndUpdateMainSrc(distContracts)
+    await genManifestsAndDeploy(distContracts, version)
     await execWithErrMsg(`cp -r ${distContracts} ${dirPath}`, 'error copying contracts')
     console.log(chalk`{green Version} {bold ${version}} {green pinned to:} ${dirPath}`)
-    packageJSON.version = version
+    // it's possible for the UI to get updated without the contracts getting updated,
+    // so we keep their version numbers separate.
+    packageJSON.contractsVersion = version
     fs.writeFileSync('package.json', JSON.stringify(packageJSON, null, 2) + '\n', 'utf8')
-    console.log(chalk.green('updated package.json to version:'), version)
+    console.log(chalk.green('updated package.json "contractsVersion" to:'), version)
     done()
   })
 
@@ -508,15 +500,16 @@ module.exports = (grunt) => {
     })
     const buildContracts = createEsbuildTask({
       ...esbuildOptionBags.contracts, plugins: defaultPlugins
-    }, esbuildOtherContractOptions)
+    })
     const buildContractsSlim = createEsbuildTask({
       ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
-    }, esbuildOtherContractOptions)
+    })
 
     await Promise.all([buildMain.run(), buildServiceWorkers.run(), buildContracts.run(), buildContractsSlim.run()]).catch(error => {
       grunt.log.error(error.message)
       process.exit(1)
     })
+    await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion)
 
     if (!this.flags.watch) {
       return done()
@@ -581,9 +574,9 @@ module.exports = (grunt) => {
             } else if (filePath.startsWith(contractsDir)) {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
-              // this will get triggered automatically because the contracts
+              await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion)
+              // buildMain.run() will get triggered automatically because genManifestsAndDeploy
               // will update mainSrc with the new manifest hashes
-              // await buildMain.run({ fileEventName, filePath })
             } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
               await buildMain.run({ fileEventName, filePath })
             } else {

@@ -148,8 +148,8 @@ async function startApp () {
   // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
   //       actions that they shouldn't be generating, which can lead to bugs or trigger the automated
   //       ban system. Only enable it if you know what you're doing and don't mind the risk.
-  // IMMPORTANT: setting 'window.sbp' must come *after* 'chelonia/configure' so that the Cypress
-  //             tests don't attempt to use the contracts before they're ready!
+  // IMPORTANT: setting 'window.sbp' must come *after* 'chelonia/configure' so that the Cypress
+  //            tests don't attempt to use the contracts before they're ready!
   if (process.env.NODE_ENV === 'development' || window.Cypress || process.env.EXPOSE_SBP === 'true') {
     // In development mode this makes the SBP API available in the devtools console.
     window.sbp = sbp

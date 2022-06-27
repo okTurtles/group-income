@@ -26,7 +26,7 @@ export default (sbp('sbp/selectors/register', {
     const manifest = await fetch(manifestURL).then(handleFetchResult('json'))
     const body = JSON.parse(manifest.body)
     const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
-    console.debug('[chelonia] loading contract', contractInfo.file, 'from manifest:', manifestHash)
+    console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
     const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`)
       .then(handleFetchResult('text'))
     const sourceHash = blake32Hash(source)
@@ -54,6 +54,7 @@ export default (sbp('sbp/selectors/register', {
     // eslint-disable-next-line no-new-func
     const saferEval: Function = new Function(`
       return function (require, globals) {
+        // not a real sandbox, can't stop: (() => this)().fetch b/c JS is ridiculous
         with (globals) {
           ${source}
         }
@@ -66,10 +67,21 @@ export default (sbp('sbp/selectors/register', {
         ? contractSBP
         : this.config.contracts.defaults.modules[dep]
     }, {
-      fetch: null,
-      XMLHttpRequest: null,
-      // TODO: add other possible global overrides here.
-      //       Although again, the contracts are signed so not that big of a deal
+      // TODO: not a real sandbox, use webworkers, SES (see bottom of file), or something else
+      // thankfully contracts are signed, so that removes some of the potential trouble
+      window: undefined,
+      self: undefined, // alias for window
+      top: undefined, // alias for window
+      parent: undefined, // alias for window
+      document: undefined,
+      globalThis: undefined,
+      fetch: undefined,
+      XMLHttpRequest: undefined,
+      // preserve these however, they're useful
+      setTimeout,
+      clearTimeout,
+      setInterval,
+      clearInterval,
       ...this.config.contracts.defaults.exposedGlobals,
       sbp: contractSBP
     })
@@ -113,7 +125,7 @@ export default (sbp('sbp/selectors/register', {
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
           const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op(), entry.message().manifest)
+          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op(), entry.manifest())
         }
       } else {
         const message = (await r.json())?.message
