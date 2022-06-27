@@ -9,7 +9,10 @@ import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 const config = {
   maxEntries: 2000
 }
-const originalConsoleMethods = { ...console }
+const consoleCopy = { ...console }
+const loggingLevels = ['debug', 'error', 'info', 'log', 'warn']
+const noop = () => undefined
+const originalConsole = console
 
 // These are initialized in `captureLogsStart()`.
 let appLogsFilter = []
@@ -62,10 +65,10 @@ function createCircularList (capacity: number, defaultValue = ''): Object {
 
 function createLogger (config: Object): Object {
   const entries = createCircularList(config.maxEntries)
-  const methods = ['debug', 'error', 'info', 'log', 'warn'].reduce(
+  const methods = loggingLevels.reduce(
     (acc, name) => {
       acc[name] = (...args) => {
-        originalConsoleMethods[name](...args)
+        originalConsole[name](...args)
         captureLogEntry(name, ...args)
       }
       return acc
@@ -114,6 +117,9 @@ export function captureLogsStart (userLogged: string) {
   // Subscribe to `appLogsFilter` changes.
   sbp('okTurtles.events/on', SET_APP_LOGS_FILTER, setAppLogsFilter)
 
+  // Overwrite the original console.
+  window.console = consoleCopy
+
   // Set a new visit or session - useful to understand logs through time.
   // NEW_SESSION -> The user opened a new browser or tab.
   // NEW_VISIT -> The user comes from an ongoing session (refresh or login)
@@ -127,7 +133,7 @@ export function captureLogsPause ({ wipeOut }: { wipeOut: boolean }): void {
   sbp('okTurtles.events/off', SET_APP_LOGS_FILTER)
   console.log('captureLogs paused')
   // Restore original console behavior.
-  Object.assign(console, originalConsoleMethods)
+  window.console = originalConsole
 }
 
 function clearLogs () {
@@ -186,11 +192,8 @@ function setAppLogsFilter (filter: Array<string>) {
   // NOTE: Find a way to capture logs without messing up with log file location.
   // console.log() doesnt include stack trace, so when logged, we can't access
   // where the log came from (file name), which} difficults debugging if needed.
-  for (const methodName of appLogsFilter) {
-    console[methodName] = logger[methodName]
-    if (console[methodName] !== logger[methodName]) {
-      throw new Error(`could not overwrite console method ${methodName}`)
-    }
+  for (const level of loggingLevels) {
+    consoleCopy[level] = appLogsFilter.includes(level) ? logger[level] : noop
   }
 }
 
