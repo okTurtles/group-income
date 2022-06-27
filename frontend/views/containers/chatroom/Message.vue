@@ -3,6 +3,7 @@ message-base(
   v-bind='$props'
   @add-emoticon='addEmoticon($event)'
   @reply='reply'
+  @reply-message-clicked='scrollToReplyMessage'
   @message-edited='editMessage'
   @delete-message='deleteMessage'
 )
@@ -55,6 +56,9 @@ export default ({
     },
     reply () {
       this.$emit('reply')
+    },
+    scrollToReplyMessage () {
+      this.$emit('scroll-to-replying-message')
     },
     moreOptions () {
       console.log('TODO MORE OPTIONS')

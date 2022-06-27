@@ -92,7 +92,9 @@ export default ({
       'ourUsername'
     ]),
     code () {
-      return L('LEAVE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })
+      return L('LEAVE {GROUP_NAME}', {
+        GROUP_NAME: this.groupSettings.groupName.toUpperCase()
+      })
     }
   },
   methods: {
