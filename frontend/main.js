@@ -5,6 +5,7 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
+import '@model/captureLogs.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import './controller/namespace.js'
@@ -31,6 +32,7 @@ import './views/utils/vSafeHtml.js'
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import 'wicg-inert'
+
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)

@@ -198,13 +198,13 @@ function setAppLogsFilter (filter: Array<string>) {
 }
 
 window.addEventListener('beforeunload', event => {
-  setItem('entries', getLogger().entries.toArray())
+  sbp('appLogs/save')
 })
 
 sbp('sbp/selectors/register', {
   'appLogs/download' (elLink) { downloadLogs(elLink) },
-  'appLogs/flush' () { getLogger().save() },
   'appLogs/get' () { return getLogger()?.entries?.toArray() ?? [] },
+  'appLogs/save' () { getLogger()?.save() },
   'appLogs/pauseCapture' ({ wipeOut }) { captureLogsPause({ wipeOut }) },
   'appLogs/startCapture' (username) { captureLogsStart(username) }
 })

@@ -42,7 +42,6 @@ import sbp from '@sbp/sbp'
 import { mapState, mapMutations } from 'vuex'
 import safeLinkTag from '@views/utils/safeLinkTag.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
-import '@model/captureLogs.js'
 
 export default ({
   name: 'AppLogs',
