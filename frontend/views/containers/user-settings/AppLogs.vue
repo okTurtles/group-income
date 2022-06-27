@@ -42,7 +42,7 @@ import sbp from '@sbp/sbp'
 import { mapState, mapMutations } from 'vuex'
 import safeLinkTag from '@views/utils/safeLinkTag.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
-import { downloadLogs, getLogger } from '@model/captureLogs.js'
+import '@model/captureLogs.js'
 
 export default ({
   name: 'AppLogs',
@@ -61,7 +61,7 @@ export default ({
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
 
     // Log entries in chronological order (oldest to most recent).
-    this.ephemeral.logs = getLogger().entries.toArray()
+    this.ephemeral.logs = sbp('appLogs/get')
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', CAPTURED_LOGS)
@@ -115,7 +115,7 @@ export default ({
       })
     },
     downloadLogs () {
-      downloadLogs(this.$refs.linkDownload)
+      sbp('appLogs/download', this.$refs.linkDownload)
     }
   }
 }: Object)

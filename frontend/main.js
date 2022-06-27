@@ -91,7 +91,8 @@ async function startApp () {
           errMsg: e.message || '?'
         })
       })
-      sbp('logging/flush')
+      // Since a runtime error just occured, we likely want to persist app logs to local storage now.
+      sbp('appLogs/save')
     }
   }
   function displaySeriousErrorBanner (e: Error) {

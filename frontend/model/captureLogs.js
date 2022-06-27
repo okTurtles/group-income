@@ -104,7 +104,7 @@ function captureLogEntry (type, ...args) {
   sbp('sbp/selectors/fn', 'okTurtles.events/emit')(CAPTURED_LOGS, entry)
 }
 
-export function captureLogsStart (userLogged: string) {
+function captureLogsStart (userLogged: string) {
   username = userLogged
 
   logger = getLogger()
@@ -128,7 +128,7 @@ export function captureLogsStart (userLogged: string) {
   console.log(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', appLogsFilter)
 }
 
-export function captureLogsPause ({ wipeOut }: { wipeOut: boolean }): void {
+function captureLogsPause ({ wipeOut }: { wipeOut: boolean }): void {
   if (wipeOut) { clearLogs() }
   sbp('okTurtles.events/off', SET_APP_LOGS_FILTER)
   console.log('captureLogs paused')
@@ -142,7 +142,7 @@ function clearLogs () {
 }
 
 // Util to download all stored logs so far.
-export function downloadLogs (elLink: Object): void {
+function downloadLogs (elLink: Object): void {
   const filename = 'gi_logs.json'
 
   const file = new Blob([JSON.stringify({
@@ -170,7 +170,7 @@ export function downloadLogs (elLink: Object): void {
   }
 }
 
-export function getLogger (): Object {
+function getLogger (): Object {
   if (!logger) {
     logger = createLogger(config)
     const previousEntries = JSON.parse(getItem('entries'))
@@ -202,6 +202,9 @@ window.addEventListener('beforeunload', event => {
 })
 
 sbp('sbp/selectors/register', {
-  'logging/getLogger' () { return getLogger() },
-  'logging/flush' () { getLogger().save() }
+  'appLogs/download' (elLink) { downloadLogs(elLink) },
+  'appLogs/flush' () { getLogger().save() },
+  'appLogs/get' () { return getLogger()?.entries?.toArray() ?? [] },
+  'appLogs/pauseCapture' ({ wipeOut }) { captureLogsPause({ wipeOut }) },
+  'appLogs/startCapture' (username) { captureLogsStart(username) }
 })
