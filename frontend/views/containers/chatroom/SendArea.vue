@@ -40,6 +40,7 @@
     @focus='textAreaFocus'
     @blur='textAreaBlur'
     @keydown.enter.exact.prevent='handleKeyDownEnter'
+    @keydown.tab.exact='handleKeyDownTab'
     @keydown.ctrl='isNextLine'
     @keydown='handleKeydown'
     @keyup='handleKeyup'
@@ -286,6 +287,12 @@ export default ({
         this.sendMessage()
       }
     },
+    handleKeyDownTab (e) {
+      if (this.ephemeral.mentioning.options.length) {
+        this.addSelectedMention(this.ephemeral.mentioning.index)
+        e.preventDefault()
+      }
+    },
     handleKeyup (e) {
       if (e.keyCode === 13) e.preventDefault()
       else this.updateTextArea()
@@ -301,9 +308,9 @@ export default ({
 
       const mention = makeMentionFromUsername(this.ephemeral.mentioning.options[index].username).me
       const value = curValue.slice(0, this.ephemeral.mentioning.position) +
-         mention + curValue.slice(curPosition)
+         mention + ' ' + curValue.slice(curPosition)
       this.$refs.textarea.value = value
-      const selectionStart = this.ephemeral.mentioning.position + mention.length
+      const selectionStart = this.ephemeral.mentioning.position + mention.length + 1
       this.$refs.textarea.setSelectionRange(selectionStart, selectionStart)
       this.endMentioning()
     },

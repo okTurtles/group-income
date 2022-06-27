@@ -385,6 +385,10 @@ sbp('chelonia/defineContract', {
 
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
+
+        if (me === meta.username) {
+          return
+        }
         const newMessage = createMessage({ meta, data, hash, state })
         const mentions = makeMentionFromUsername(me)
         if (data.type === MESSAGE_TYPES.TEXT &&
@@ -421,6 +425,10 @@ sbp('chelonia/defineContract', {
 
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
+
+        if (me === meta.username) {
+          return
+        }
         const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentionings.find(m => m.messageId === data.id)
         const mentions = makeMentionFromUsername(me)
         const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all)
@@ -445,12 +453,19 @@ sbp('chelonia/defineContract', {
           state.messages.splice(msgIndex, 1)
         }
       },
-      sideEffect ({ data, contractID, hash }) {
+      sideEffect ({ data, contractID, hash, meta }) {
+        emitMessageEvent({ contractID, hash })
+
         const rootState = sbp('state/vuex/state')
+        const me = rootState.loggedIn.username
+
         if (rootState.chatRoomScrollPosition[contractID] === data.id) {
           sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
             chatRoomId: contractID, messageId: null
           })
+        }
+        if (me === meta.username) {
+          return
         }
         if (rootState.chatRoomUnread[contractID].mentionings.find(m => m.messageId === data.id)) {
           deleteMentioning({ contractID, messageId: data.id })
