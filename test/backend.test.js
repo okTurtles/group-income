@@ -11,7 +11,7 @@ import proposals from '~/frontend/model/contracts/voting/proposals.js'
 import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/voting/constants.js'
 import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/payments/index.js'
-import { INVITE_INITIAL_CREATOR } from '~/frontend/model/contracts/constants.js'
+import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS } from '~/frontend/model/contracts/constants.js'
 import { createInvite } from '~/frontend/model/contracts/group.js'
 import '~/frontend/model/contracts/identity.js'
 import '~/frontend/controller/namespace.js'
@@ -121,7 +121,11 @@ describe('Full walkthrough', function () {
     return msg
   }
   function createGroup (name: string, hooks: Object = {}): Promise {
-    const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
+    const initialInvite = createInvite({
+      quantity: 60,
+      creator: INVITE_INITIAL_CREATOR,
+      expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+    })
     return sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/group',
       data: {
