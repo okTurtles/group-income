@@ -99,6 +99,16 @@ export default ({
       scope: 'group'
     }
   },
+  MENTION_ADDED (data: { username: string, groupID: string, chatRoomId: string }) {
+    return {
+      avatarUsername: data.username,
+      body: L('You have unread mentionings.'),
+      icon: 'comment',
+      level: 'danger',
+      linkTo: `/group-chat/${data.chatRoomId}`,
+      scope: 'group'
+    }
+  },
   NEW_PROPOSAL (data: { groupID: string, creator: string, subtype: NewProposalType }) {
     const bodyTemplateMap = {
       ADD_MEMBER: (creator: string) => L('{member} proposed to add a member to the group. Vote now!', { member: strong(creator) }),

@@ -38,5 +38,9 @@ sbp('sbp/selectors/register', {
 
   'gi.notifications/markAllAsRead' (groupID: string) {
     sbp('state/vuex/commit', keys.MARK_ALL_NOTIFICATIONS_AS_READ, groupID)
+  },
+
+  'gi.notifications/remove' (notification: Notification) {
+    sbp('state/vuex/commit', keys.REMOVE_NOTIFICATION, notification)
   }
 })

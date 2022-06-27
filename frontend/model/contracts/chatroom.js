@@ -149,6 +149,34 @@ export function makeMentionFromUsername (username: string): {
   }
 }
 
+function addMentioning ({ contractID, messageId, datetime }: {
+  contractID: string, messageId: string, datetime: string
+}): void {
+  sbp('state/vuex/commit', 'addChatRoomUnreadMentioning', {
+    chatRoomId: contractID,
+    messageId,
+    createdDate: new Date(datetime).getTime()
+  })
+  const rootGetters = sbp('state/vuex/getters')
+  const isExist = rootGetters.currentGroupNotifications.find(n =>
+    n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${contractID}`
+  )
+  if (!isExist) {
+    const rootState = sbp('state/vuex/state')
+    sbp('gi.notifications/emit', 'MENTION_ADDED', {
+      groupID: rootState.currentGroupId,
+      chatRoomId: contractID,
+      username: rootState.loggedIn.username
+    })
+  }
+}
+
+function deleteMentioning ({ contractID, messageId }: {
+  contractID: string, messageId: string
+}): void {
+  sbp('state/vuex/commit', 'deleteChatRoomUnreadMentioning', { chatRoomId: contractID, messageId })
+}
+
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/chatroom',
   metadata: {
@@ -310,7 +338,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, hash, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
-          if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
+          if (sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')) {
             return
           }
           leaveChatRoom({ contractID })
@@ -332,7 +360,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ meta, contractID }, { state }) {
         if (state.attributes.creator === meta.username) { // Not sure this condition is necessary
-          if (sbp('okTurtles.data/get', 'JOINING_CHATROOM')) {
+          if (sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')) {
             return
           }
           leaveChatRoom({ contractID })
@@ -361,11 +389,7 @@ sbp('chelonia/defineContract', {
         const mentions = makeMentionFromUsername(me)
         if (data.type === MESSAGE_TYPES.TEXT &&
           (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))) {
-          sbp('state/vuex/commit', 'addChatRoomUnreadMentioning', {
-            chatRoomId: contractID,
-            messageId: newMessage.id,
-            createdDate: new Date(newMessage.datetime).getTime()
-          })
+          addMentioning({ contractID, messageId: newMessage.id, datetime: newMessage.datetime })
         }
       }
     },
@@ -401,16 +425,10 @@ sbp('chelonia/defineContract', {
         const mentions = makeMentionFromUsername(me)
         const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all)
         if (!isAlreadyAdded && isIncludeMention) {
-          sbp('state/vuex/commit', 'addChatRoomUnreadMentioning', {
-            chatRoomId: contractID,
-            messageId: data.id,
-            createdDate: new Date(meta.createdDate).getTime() // TODO: Not sure this should be this way
-          })
+          // TODO: Not sure createdDate should be this way
+          addMentioning({ contractID, messageId: data.id, datetime: meta.createdDate })
         } else if (isAlreadyAdded && !isIncludeMention) {
-          sbp('state/vuex/commit', 'deleteChatRoomUnreadMentioning', {
-            chatRoomId: contractID,
-            messageId: data.id
-          })
+          deleteMentioning({ contractID, messageId: data.id })
         }
       }
     },
@@ -435,10 +453,7 @@ sbp('chelonia/defineContract', {
           })
         }
         if (rootState.chatRoomUnread[contractID].mentionings.find(m => m.messageId === data.id)) {
-          sbp('state/vuex/commit', 'deleteChatRoomUnreadMentioning', {
-            chatRoomId: contractID,
-            messageId: data.id
-          })
+          deleteMentioning({ contractID, messageId: data.id })
         }
 
         emitMessageEvent({ contractID, hash })

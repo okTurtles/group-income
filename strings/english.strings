@@ -1386,6 +1386,9 @@
 /* views/containers/user-settings/settings.js */
 "Appearance" = "Appearance";
 
+/* model/notifications/templates.js */
+"You have unread mentionings." = "You have unread mentionings.";
+
 /* controller/actions/group.js */
 "Couldn't join the #{chatroomName} in the group. Doesn't exist." = "Couldn't join the #{chatroomName} in the group. Doesn't exist.";
 

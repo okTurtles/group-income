@@ -520,6 +520,9 @@ const getters = {
   currentChatRoomUnreadSince (state, getters) {
     return state.chatRoomUnread[getters.currentChatRoomId]?.since // undefined means to the latest
   },
+  currentChatRoomUnreadMentionings (state, getters) {
+    return state.chatRoomUnread[getters.currentChatRoomId]?.mentionings || []
+  },
   isPrivateChatRoom (state, getters) {
     return (chatRoomId: string) => {
       return state[chatRoomId]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE

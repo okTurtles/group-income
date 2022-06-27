@@ -190,7 +190,9 @@ export default ({
       'isJoinedChatRoom',
       'setChatRoomScrollPosition',
       'currentChatRoomScrollPosition',
-      'currentChatRoomUnreadSince'
+      'currentChatRoomUnreadSince',
+      'currentGroupNotifications',
+      'currentChatRoomUnreadMentionings'
     ]),
     bodyStyles () {
       const defaultHeightInRem = 14
@@ -485,6 +487,15 @@ export default ({
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
+    updateUnreadPosition ({ messageId, createdDate }) {
+      if (this.isJoinedChatRoom(this.currentChatRoomId)) {
+        sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
+          chatRoomId: this.currentChatRoomId,
+          messageId,
+          createdDate
+        })
+      }
+    },
     listenChatRoomActions ({ hash }) {
       const isAddedNewMessage = (message: GIMessage): boolean => {
         const { action, meta } = message.decryptedValue()
@@ -500,27 +511,28 @@ export default ({
       }
 
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
-        const state = this.getSimulatedState(false)
-        await sbp('chelonia/private/in/processMessage', message, state)
-        this.latestEvents.push(message.serialize())
+        if (contractID === this.currentChatRoomId) {
+          const state = this.getSimulatedState(false)
+          await sbp('chelonia/private/in/processMessage', message, state)
+          this.latestEvents.push(message.serialize())
 
-        this.$forceUpdate()
+          this.$forceUpdate()
 
-        // TODO: Need to scroll to the bottom only when new message is ADDED by ANOTHER
-        if (this.ephemeral.scrolledDistance < 50) {
-          const { added, self } = isAddedNewMessage(message)
-          if (added) {
-            const isScrollable = this.$refs.conversation &&
-              this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
-            if (!self && isScrollable) {
-              this.updateScroll()
-            } else if (!isScrollable) {
-              const msg = this.messages[this.messages.length - 1]
-              sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
-                chatRoomId: this.currentChatRoomId,
-                messageId: msg.id,
-                createdDate: new Date(msg.datetime).getTime()
-              })
+          // TODO: Need to scroll to the bottom only when new message is ADDED by ANOTHER
+          if (this.ephemeral.scrolledDistance < 50) {
+            const { added, self } = isAddedNewMessage(message)
+            if (added) {
+              const isScrollable = this.$refs.conversation &&
+                this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
+              if (!self && isScrollable) {
+                this.updateScroll()
+              } else if (!isScrollable) {
+                const msg = this.messages[this.messages.length - 1]
+                this.updateUnreadPosition({
+                  messageId: msg.id,
+                  createdDate: new Date(msg.datetime).getTime()
+                })
+              }
             }
           }
         }
@@ -538,8 +550,7 @@ export default ({
           if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
             const msg = this.messages[this.messages.length - 1]
-            sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
-              chatRoomId: this.currentChatRoomId,
+            this.updateUnreadPosition({
               messageId: msg.id,
               createdDate: new Date(msg.datetime).getTime()
             })
@@ -555,6 +566,7 @@ export default ({
         return
       }
       // Because of infinite-scroll this is not calculated in scrollheight
+      // 117 is the height of `conversation-greetings` component
       const topOffset = 117
       const curScrollTop = this.$refs.conversation.scrollTop
       const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
@@ -577,8 +589,7 @@ export default ({
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
           const latestMessageCreatedAt = this.currentChatRoomUnreadSince?.createdDate
           if (!latestMessageCreatedAt || latestMessageCreatedAt <= bottomMessageCreatedAt) {
-            sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
-              chatRoomId: this.currentChatRoomId,
+            this.updateUnreadPosition({
               messageId: msg.id,
               createdDate: new Date(msg.datetime).getTime()
             })
@@ -596,7 +607,7 @@ export default ({
           if (offsetTop - parentOffsetTop + topOffset >= curScrollTop) {
             sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
               chatRoomId: this.currentChatRoomId,
-              messageId: this.messages[i + 1].id // Left one message at the front by default for better seeing
+              messageId: this.messages[i + 1].id // Leave one(+1) message at the front by default for better seeing
             })
             break
           }
@@ -611,7 +622,7 @@ export default ({
   },
   watch: {
     currentChatRoomId (to, from) {
-      const force = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
+      const force = !!sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')
       this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
     },
@@ -623,6 +634,16 @@ export default ({
             this.setMessageEventListener({ force: true })
           }
         })
+      }
+    },
+    'currentChatRoomUnreadMentionings' (to, from) {
+      if (Array.isArray(to) && !to.length) {
+        const notification = this.currentGroupNotifications.find(n =>
+          n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${this.currentChatRoomId}`
+        )
+        if (notification) {
+          sbp('gi.notifications/remove', notification)
+        }
       }
     }
   }

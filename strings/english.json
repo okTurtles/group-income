@@ -461,6 +461,7 @@
   "{month} overview": "{month} overview",
   "Showing {strong_}1 result{_strong} for \"{searchTerm}\"": "Showing {strong_}1 result{_strong} for \"{searchTerm}\"",
   "Appearance": "Appearance",
+  "You have unread mentionings.": "You have unread mentionings.",
   "Couldn't join the #{chatroomName} in the group. Doesn't exist.": "Couldn't join the #{chatroomName} in the group. Doesn't exist.",
   "Please enter a valid email.": "Please enter a valid email.",
   "Previous page": "Previous page",
