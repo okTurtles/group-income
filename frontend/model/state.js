@@ -523,6 +523,11 @@ const getters = {
   currentChatRoomUnreadMentionings (state, getters) {
     return state.chatRoomUnread[getters.currentChatRoomId]?.mentionings || []
   },
+  chatRoomUnreadMentionings (state, getters) {
+    return (chatRoomId: string) => {
+      return state.chatRoomUnread[chatRoomId]?.mentionings || []
+    }
+  },
   isPrivateChatRoom (state, getters) {
     return (chatRoomId: string) => {
       return state[chatRoomId]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE

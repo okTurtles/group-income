@@ -28,7 +28,13 @@ nav.c-navigation(
             i18n Contributions
           list-item(tag='router-link' icon='tag' to='/payments' data-test='paymentsLink')
             i18n Payments
-          list-item(tag='router-link' icon='comments' to='/group-chat' :badgeCount='3' data-test='groupChatLink')
+          list-item(
+            tag='router-link'
+            icon='comments'
+            to='/group-chat'
+            :badgeCount='currentGroupUnreadMentioningsCount'
+            data-test='groupChatLink'
+          )
             i18n Chat
           list-item(tag='router-link' icon='cog' to='/group-settings' data-test='groupSettingsLink')
             i18n Group Settings
@@ -128,8 +134,15 @@ export default ({
     ...mapGetters([
       'groupsByName',
       'colors',
-      'totalUnreadNotificationCount'
+      'totalUnreadNotificationCount',
+      'getChatRooms',
+      'chatRoomUnreadMentionings'
     ]),
+    currentGroupUnreadMentioningsCount () {
+      return Object.keys(this.getChatRooms)
+        .map(cId => this.chatRoomUnreadMentionings(cId).length)
+        .reduce((a, b) => a + b, 0)
+    },
     logo () {
       const name = this.colors.theme === 'dark' ? '-white' : ''
       return `/assets/images/logo-transparent${name}.png`
