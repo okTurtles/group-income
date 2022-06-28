@@ -31,7 +31,13 @@
           @cancelEdit='cancelEdit'
         )
 
-        p.c-text(v-else-if='text') {{ text }}
+        p.c-text(v-else-if='text')
+          template(v-for='(objText, index) in textObjects')
+            span(v-if='isText(objText)') {{ objText.text }}
+            span.c-mention(
+              v-else-if='isMention(objText)'
+              :class='{"c-mention-to-me": objText.toMe}'
+            ) {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
   message-reactions(
@@ -58,13 +64,16 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
 import { humanDate } from '@utils/time.js'
+import { makeMentionFromUsername } from '@model/contracts/chatroom.js'
 
+const textObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
@@ -100,6 +109,58 @@ export default ({
     isSameSender: Boolean,
     isCurrentUser: Boolean
   },
+  computed: {
+    ...mapGetters(['chatRoomUsers', 'ourUsername']),
+    textObjects () {
+      if (!this.text.includes('@')) {
+        return [{ type: textObjectType.Text, text: this.text }]
+      }
+      const ableMentionings = [
+        ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
+        makeMentionFromUsername('').all
+      ]
+
+      let count = (this.text.match(/@/g)).length
+      const splitByMentionings = (objTexts, mentionings) => {
+        if (!mentionings.length || !count) {
+          return objTexts
+        }
+
+        const curMention = mentionings.pop()
+
+        objTexts = objTexts.map(o => {
+          if (o.type === textObjectType.Mention) {
+            return o
+          } else {
+            if (!o.text.includes(curMention)) {
+              return o
+            } else {
+              return o.text.split(curMention).map((text, i) => {
+                if (!i) {
+                  return { type: textObjectType.Text, text }
+                } else {
+                  count--
+                  const myMention = makeMentionFromUsername(this.ourUsername)
+                  return [
+                    {
+                      type: textObjectType.Mention,
+                      text: curMention,
+                      toMe: curMention === myMention.me || curMention === myMention.all
+                    },
+                    { type: textObjectType.Text, text }
+                  ]
+                }
+              }).flat()
+            }
+          }
+        }).flat()
+
+        return splitByMentionings(objTexts, mentionings)
+      }
+
+      return splitByMentionings([{ type: textObjectType.Text, text: this.text }], ableMentionings)
+    }
+  },
   methods: {
     humanDate,
     editMessage () {
@@ -134,6 +195,12 @@ export default ({
     },
     openMenu () {
       this.$refs.messageAction.$refs.menu.handleTrigger()
+    },
+    isText (o) {
+      return o.type === textObjectType.Text
+    },
+    isMention (o) {
+      return o.type === textObjectType.Mention
     }
   }
 }: Object)
@@ -245,5 +312,16 @@ export default ({
   margin-left: 0.2rem;
   font-size: 0.7rem;
   color: var(--text_1);
+}
+
+.c-mention {
+  background-color: $primary_2;
+  color: $primary_0;
+  padding: 0 0.1rem;
+}
+
+.c-mention.c-mention-to-me {
+  background-color: $warning_1;
+  // background-color: #f2c74466;
 }
 </style>
