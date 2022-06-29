@@ -139,7 +139,7 @@ export default ({
       'chatRoomUnreadMentionings'
     ]),
     currentGroupUnreadMentioningsCount () {
-      return Object.keys(this.getChatRooms)
+      return Object.keys(this.getChatRooms || {})
         .map(cId => this.chatRoomUnreadMentionings(cId).length)
         .reduce((a, b) => a + b, 0)
     },
