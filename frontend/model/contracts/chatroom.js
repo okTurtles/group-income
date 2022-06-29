@@ -9,6 +9,7 @@ import {
   string, literalOf, unionOf, optional
 } from '~/frontend/utils/flowTyper.js'
 import { merge, cloneDeep } from '~/frontend/utils/giLodash.js'
+import { makeNotification } from '~/frontend/utils/notification.js'
 import L from '~/frontend/views/utils/translations.js'
 import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
@@ -149,14 +150,20 @@ export function makeMentionFromUsername (username: string): {
   }
 }
 
-function addMentioning ({ contractID, messageId, datetime }: {
-  contractID: string, messageId: string, datetime: string
+function addMentioning ({ contractID, messageId, datetime, text, username, chatRoomName }: {
+  contractID: string,
+  messageId: string,
+  datetime: string,
+  text: string,
+  username: string,
+  chatRoomName: string
 }): void {
   sbp('state/vuex/commit', 'addChatRoomUnreadMentioning', {
     chatRoomId: contractID,
     messageId,
     createdDate: new Date(datetime).getTime()
   })
+
   const rootGetters = sbp('state/vuex/getters')
   const isExist = rootGetters.currentGroupNotifications.find(n =>
     n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${contractID}`
@@ -169,6 +176,12 @@ function addMentioning ({ contractID, messageId, datetime }: {
       username: rootState.loggedIn.username
     })
   }
+
+  makeNotification({
+    title: `# ${chatRoomName}`,
+    body: text,
+    icon: rootGetters.globalProfile(username).picture
+  })
 }
 
 function deleteMentioning ({ contractID, messageId }: {
@@ -254,7 +267,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         username: string // username of joining member
       }),
-      process ({ data, meta, hash }, { state, getters }) {
+      process ({ data, meta, hash }, { state }) {
         const { username } = data
         if (!state.saveMessage && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
@@ -359,7 +372,7 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/delete': {
-      validate: (data, { state, getters, meta }) => {
+      validate: (data, { state, meta }) => {
         if (state.attributes.creator !== meta.username) {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
@@ -392,7 +405,7 @@ sbp('chelonia/defineContract', {
           state.messages.push(createMessage({ meta, data, hash, state }))
         }
       },
-      sideEffect ({ contractID, hash, meta, data }, { state }) {
+      sideEffect ({ contractID, hash, meta, data }, { state, getters }) {
         emitMessageEvent({ contractID, hash })
 
         const rootState = sbp('state/vuex/state')
@@ -405,7 +418,14 @@ sbp('chelonia/defineContract', {
         const mentions = makeMentionFromUsername(me)
         if (data.type === MESSAGE_TYPES.TEXT &&
           (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))) {
-          addMentioning({ contractID, messageId: newMessage.id, datetime: newMessage.datetime })
+          addMentioning({
+            contractID,
+            messageId: newMessage.id,
+            datetime: newMessage.datetime,
+            text: newMessage.text,
+            username: meta.username,
+            chatRoomName: getters.chatRoomAttributes.name
+          })
         }
       }
     },
@@ -432,7 +452,7 @@ sbp('chelonia/defineContract', {
           }
         }
       },
-      sideEffect ({ contractID, hash, meta, data }) {
+      sideEffect ({ contractID, hash, meta, data }, { getters }) {
         emitMessageEvent({ contractID, hash })
 
         const rootState = sbp('state/vuex/state')
@@ -446,7 +466,14 @@ sbp('chelonia/defineContract', {
         const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all)
         if (!isAlreadyAdded && isIncludeMention) {
           // TODO: Not sure createdDate should be this way
-          addMentioning({ contractID, messageId: data.id, datetime: meta.createdDate })
+          addMentioning({
+            contractID,
+            messageId: data.id,
+            datetime: meta.createdDate,
+            text: data.text,
+            username: meta.username,
+            chatRoomName: getters.chatRoomAttributes.name
+          })
         } else if (isAlreadyAdded && !isIncludeMention) {
           deleteMentioning({ contractID, messageId: data.id })
         }
