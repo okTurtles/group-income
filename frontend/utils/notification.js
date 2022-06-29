@@ -1,4 +1,7 @@
-export function checkNotification () {
+import sbp from '@sbp/sbp'
+import { MESSAGE_RECEIVE } from '@utils/events.js'
+
+export function checkNotification (): void {
   return !!window.Notification
 }
 
@@ -18,5 +21,7 @@ export function makeNotification ({ title, body, icon }: {
     return
   }
   const notification = new Notification(title, { body, icon })
-  // notification.show()
+  notification.close()
+
+  sbp('okTurtles.events/emit', `${MESSAGE_RECEIVE}`, {})
 }

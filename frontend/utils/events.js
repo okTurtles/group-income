@@ -20,3 +20,6 @@ export const SET_APP_LOGS_FILTER = 'set-app-logs-filter'
 
 export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
 export const CHATROOM_DETAILS_UPDATED = 'chatroom-details-updated'
+
+export const MESSAGE_RECEIVE = 'message-receive'
+export const MESSAGE_SEND = 'message-send'

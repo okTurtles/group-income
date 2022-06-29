@@ -17,6 +17,7 @@ import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT } from './utils/events.js'
+import BackgroundSounds from './views/components/sounds/Background.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
@@ -181,6 +182,7 @@ async function startApp () {
     router: router,
     components: {
       AppStyles,
+      BackgroundSounds,
       BannerGeneral,
       Navigation,
       Modal
