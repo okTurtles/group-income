@@ -115,7 +115,7 @@ import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@mod
 import { createMessage, findMessageIdx } from '@model/contracts/chatroom.js'
 import { proximityDate, MINS_MILLIS } from '@utils/time.js'
 import { cloneDeep, debounce } from '@utils/giLodash.js'
-import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
+import { CHATROOM_MESSAGE_ACTION, MESSAGE_SEND } from '~/frontend/utils/events.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
@@ -299,6 +299,8 @@ export default ({
             })
             this.stopReplying()
             this.updateScroll()
+
+            sbp('okTurtles.events/emit', `${MESSAGE_SEND}`, {})
           }
         }
       })
