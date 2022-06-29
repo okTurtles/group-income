@@ -91,6 +91,7 @@ lazyComponent('PaymentDetail', () => import('../views/containers/payments/Paymen
 lazyComponent('RecordPayment', () => import('../views/containers/payments/RecordPayment.vue'))
 
 lazyComponent('Appearence', () => import('../views/containers/user-settings/Appearence.vue'))
+lazyComponent('NotificationSettings', () => import('../views/containers/user-settings/Notification.vue'))
 lazyComponent('AppLogs', () => import('../views/containers/user-settings/AppLogs.vue'))
 lazyComponent('GroupMembersDirectMessages', () => import('../views/containers/chatroom/GroupMembersDirectMessages.vue'))
 lazyComponent('Placeholder', () => import('../views/containers/user-settings/Placeholder.vue'))
