@@ -545,10 +545,11 @@ const getters = {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&
         chatRoom.users[state.loggedIn.username]) {
+        const unreadMentioningsCount = getters.chatRoomUnreadMentionings(contractID).length
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
-          unreadCount: 0, // TODO: need to implement
+          unreadMentioningsCount,
           joined: true
         }
       } else {
