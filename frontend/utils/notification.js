@@ -21,7 +21,8 @@ export function makeNotification ({ title, body, icon }: {
     return
   }
   const notification = new Notification(title, { body, icon })
-  notification.close()
+  // HACK: need to use variable (ERROR: assigned and never used)
+  console.log('Unread message', notification)
 
   sbp('okTurtles.events/emit', `${MESSAGE_RECEIVE}`, {})
 }
