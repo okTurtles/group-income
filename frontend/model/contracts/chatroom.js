@@ -21,7 +21,7 @@ import {
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS
 } from './constants.js'
-import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
+import { CHATROOM_MESSAGE_ACTION, MESSAGE_RECEIVE } from '~/frontend/utils/events.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
@@ -182,6 +182,8 @@ function addMentioning ({ contractID, messageId, datetime, text, username, chatR
     body: text,
     icon: rootGetters.globalProfile(username).picture
   })
+
+  sbp('okTurtles.events/emit', `${MESSAGE_RECEIVE}`, {})
 }
 
 function deleteMentioning ({ contractID, messageId }: {

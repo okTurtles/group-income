@@ -1,6 +1,3 @@
-import sbp from '@sbp/sbp'
-import { MESSAGE_RECEIVE } from '@utils/events.js'
-
 export function checkNotification (): void {
   return !!window.Notification
 }
@@ -23,6 +20,4 @@ export function makeNotification ({ title, body, icon }: {
   const notification = new Notification(title, { body, icon })
   // HACK: need to use variable (ERROR: assigned and never used)
   console.log('Unread message', notification)
-
-  sbp('okTurtles.events/emit', `${MESSAGE_RECEIVE}`, {})
 }
