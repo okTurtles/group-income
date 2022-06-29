@@ -217,7 +217,7 @@ describe('Group Payments', () => {
 
     assertMonthOverview([
       ['Payments received', '0 out of 0'],
-      ['Amount received', '$0 out of $12.50']
+      ['Amount received', '$0 out of $0']
     ])
   })
 
