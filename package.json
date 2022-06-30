@@ -134,7 +134,7 @@
     "acorn": "8.0.4",
     "babel-plugin-root-import": "6.6.0",
     "browser-sync": "2.27.7",
-    "cypress": "10.3.0",
+    "cypress": "7.7.0",
     "cypress-file-upload": "5.0.8",
     "esbuild": "0.14.38",
     "esbuild-sass-plugin": "2.2.6",
