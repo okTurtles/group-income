@@ -307,7 +307,8 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
 
-        if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+        if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM') || // Join by himself or Login in another device
+          sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID') === contractID) { // Be added by another
           sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
             chatRoomId: contractID,
             messageId: hash,
