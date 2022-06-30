@@ -304,7 +304,7 @@ export default ({
       })
     },
     async scrollToMessage (messageId, effect = true) {
-      if (!messageId) {
+      if (!messageId || !this.messages.length) {
         return
       }
 
