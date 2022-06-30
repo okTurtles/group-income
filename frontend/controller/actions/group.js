@@ -174,7 +174,6 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/join': async function (params: $Exact<GIActionParams>) {
     try {
       sbp('okTurtles.data/set', 'JOINING_GROUP', true)
-      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
       // post acceptance event to the group contract, unless this is being called
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {
@@ -220,7 +219,14 @@ export default (sbp('sbp/selectors/register', {
         const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms)
           .filter(cId => rootState[params.contractID].chatRooms[cId].users.includes(me))
 
+        /**
+         * flag READY_TO_JOIN_CHATROOM is not necessary to sync actually
+         * But just this is only for checking if syncing chatrooms or not
+         * Especially inside addMentioning in model/contracts/chatroom.js
+         */
+        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
         await sbp('chelonia/contract/sync', chatRoomIds)
+        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
 
         sbp('state/vuex/commit', 'setCurrentChatRoomId', {
           groupId: params.contractID,
@@ -228,10 +234,8 @@ export default (sbp('sbp/selectors/register', {
         })
       }
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
-      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
     } catch (e) {
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
-      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     }

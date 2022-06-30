@@ -165,25 +165,31 @@ function addMentioning ({ contractID, messageId, datetime, text, username, chatR
   })
 
   const rootGetters = sbp('state/vuex/getters')
-  const isExist = rootGetters.currentGroupNotifications.find(n =>
-    n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${contractID}`
-  )
-  if (!isExist) {
-    const rootState = sbp('state/vuex/state')
-    sbp('gi.notifications/emit', 'MENTION_ADDED', {
-      groupID: rootState.currentGroupId,
-      chatRoomId: contractID,
-      username: rootState.loggedIn.username
+  // Commented to make notification for mentions
+  // const isExist = rootGetters.currentGroupNotifications.find(n =>
+  //   n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${contractID}`
+  // )
+  // if (!isExist) {
+  //   const rootState = sbp('state/vuex/state')
+  //   const groupID = Object.keys(rootState.contracts)
+  //     .find(cID => rootState.contracts[cID].type === 'gi.contracts/group' &&
+  //       Object.keys(rootState[cID].chatRooms).includes(contractID)
+  //     )
+  //   sbp('gi.notifications/emit', 'MENTION_ADDED', {
+  //     groupID: groupID,
+  //     chatRoomId: contractID,
+  //     username: rootState.loggedIn.username
+  //   })
+  // }
+  if (!sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+    makeNotification({
+      title: `# ${chatRoomName}`,
+      body: text,
+      icon: rootGetters.globalProfile(username).picture
     })
+
+    sbp('okTurtles.events/emit', `${MESSAGE_RECEIVE}`, {})
   }
-
-  makeNotification({
-    title: `# ${chatRoomName}`,
-    body: text,
-    icon: rootGetters.globalProfile(username).picture
-  })
-
-  sbp('okTurtles.events/emit', `${MESSAGE_RECEIVE}`, {})
 }
 
 function deleteMentioning ({ contractID, messageId }: {
@@ -191,17 +197,18 @@ function deleteMentioning ({ contractID, messageId }: {
 }): void {
   sbp('state/vuex/commit', 'deleteChatRoomUnreadMentioning', { chatRoomId: contractID, messageId })
 
-  const rootState = sbp('state/vuex/state')
-  if (!rootState.chatRoomUnread[contractID] ||
-    !rootState.chatRoomUnread[contractID].mentionings.length) {
-    const rootGetters = sbp('state/vuex/getters')
-    const notification = rootGetters.currentGroupNotifications.find(n =>
-      n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${contractID}`
-    )
-    if (notification) {
-      sbp('gi.notifications/remove', notification)
-    }
-  }
+  // Commented to delete notification for mentions
+  // const rootState = sbp('state/vuex/state')
+  // if (!rootState.chatRoomUnread[contractID] ||
+  //   !rootState.chatRoomUnread[contractID].mentionings.length) {
+  //   const rootGetters = sbp('state/vuex/getters')
+  //   const notification = rootGetters.currentGroupNotifications.find(n =>
+  //     n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${contractID}`
+  //   )
+  //   if (notification) {
+  //     sbp('gi.notifications/remove', notification)
+  //   }
+  // }
 }
 
 sbp('chelonia/defineContract', {
