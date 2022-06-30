@@ -12,12 +12,12 @@ import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
 import Vue from 'vue'
-import { mapMutations } from 'vuex'
+import { mapMutations, mapGetters, mapState } from 'vuex'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
-import { LOGIN, LOGOUT, SET_BADGE_ON_TAB } from './utils/events.js'
+import { LOGIN, LOGOUT } from './utils/events.js'
 import BackgroundSounds from './views/components/sounds/Background.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
@@ -257,15 +257,6 @@ async function startApp () {
         })
       })
 
-      // set badge in the browser tab
-      sbp('okTurtles.events/on', SET_BADGE_ON_TAB, (value) => {
-        if (!window.favicon) {
-          window.favicon = new Favico({
-            position: 'up'
-          })
-        }
-        window.favicon.badge(value)
-      })
       // Useful in case the app is started in offline mode.
       if (navigator.onLine === false) {
         this.$refs.bannerGeneral.show(L('Your device appears to be offline.'), 'wifi')
@@ -279,8 +270,26 @@ async function startApp () {
           'times-circle'
         )
       }
+
+      this.setBadgeOnTab()
     },
     computed: {
+      ...mapGetters(['ourUnreadMessages', 'unreadGroupNotificationCountFor']),
+      ...mapState(['contracts']),
+      ourUnreadMessagesCount () {
+        return Object.keys(this.ourUnreadMessages)
+          .map(cId => this.ourUnreadMessages[cId].mentionings.length)
+          .reduce((a, b) => a + b, 0)
+      },
+      ourNotificationsCount () {
+        return Object.keys(this.contracts)
+          .filter(cId => this.contracts[cId].type === 'gi.contracts/group')
+          .map(gId => this.unreadGroupNotificationCountFor(gId))
+          .reduce((a, b) => a + b, 0)
+      },
+      shouldSetBadge () {
+        return this.ourUnreadMessagesCount + this.ourNotificationsCount > 0
+      },
       showNav () {
         return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
       },
@@ -299,7 +308,20 @@ async function startApp () {
     methods: {
       ...mapMutations([
         'setReducedMotion'
-      ])
+      ]),
+      setBadgeOnTab () {
+        if (!window.favicon) {
+          window.favicon = new Favico({
+            textColor: '#d00'
+          })
+        }
+        window.favicon.badge(this.shouldSetBadge > 0 ? 1 : 0)
+      }
+    },
+    watch: {
+      shouldSetBadge (to, from) {
+        this.setBadgeOnTab()
+      }
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')

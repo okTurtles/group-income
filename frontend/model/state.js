@@ -517,15 +517,18 @@ const getters = {
   currentChatRoomScrollPosition (state, getters) {
     return state.chatRoomScrollPosition[getters.currentChatRoomId] // undefined means to the latest
   },
+  ourUnreadMessages (state, getters) {
+    return state.chatRoomUnread
+  },
   currentChatRoomUnreadSince (state, getters) {
-    return state.chatRoomUnread[getters.currentChatRoomId]?.since // undefined means to the latest
+    return getters.ourUnreadMessages[getters.currentChatRoomId]?.since // undefined means to the latest
   },
   currentChatRoomUnreadMentionings (state, getters) {
-    return state.chatRoomUnread[getters.currentChatRoomId]?.mentionings || []
+    return getters.ourUnreadMessages[getters.currentChatRoomId]?.mentionings || []
   },
   chatRoomUnreadMentionings (state, getters) {
     return (chatRoomId: string) => {
-      return state.chatRoomUnread[chatRoomId]?.mentionings || []
+      return getters.ourUnreadMessages[chatRoomId]?.mentionings || []
     }
   },
   isPrivateChatRoom (state, getters) {

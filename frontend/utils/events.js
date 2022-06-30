@@ -23,5 +23,3 @@ export const CHATROOM_DETAILS_UPDATED = 'chatroom-details-updated'
 
 export const MESSAGE_RECEIVE = 'message-receive'
 export const MESSAGE_SEND = 'message-send'
-
-export const SET_BADGE_ON_TAB = 'set-badge-on-tab'

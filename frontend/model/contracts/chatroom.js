@@ -158,6 +158,13 @@ function addMentioning ({ contractID, messageId, datetime, text, username, chatR
   username: string,
   chatRoomName: string
 }): void {
+  /**
+   * If 'READY_TO_JOIN_CHATROOM' is false, it means not syncing chatroom
+  */
+  if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+    return
+  }
+
   sbp('state/vuex/commit', 'addChatRoomUnreadMentioning', {
     chatRoomId: contractID,
     messageId,
@@ -181,15 +188,14 @@ function addMentioning ({ contractID, messageId, datetime, text, username, chatR
   //     username: rootState.loggedIn.username
   //   })
   // }
-  if (!sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
-    makeNotification({
-      title: `# ${chatRoomName}`,
-      body: text,
-      icon: rootGetters.globalProfile(username).picture
-    })
 
-    sbp('okTurtles.events/emit', `${MESSAGE_RECEIVE}`, {})
-  }
+  makeNotification({
+    title: `# ${chatRoomName}`,
+    body: text,
+    icon: rootGetters.globalProfile(username).picture
+  })
+
+  sbp('okTurtles.events/emit', MESSAGE_RECEIVE, {})
 }
 
 function deleteMentioning ({ contractID, messageId }: {
