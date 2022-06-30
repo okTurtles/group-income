@@ -2,13 +2,16 @@ export function checkNotification (): void {
   return !!window.Notification
 }
 
-export function requestNotificationPermission () {
+export async function requestNotificationPermission () {
   if (!checkNotification() || Notification.permission !== 'default') {
-    return
+    return null
   }
-  Notification.requestPermission().then(function (permission) {
-    console.log(permission)
-  })
+
+  try {
+    return await Notification.requestPermission()
+  } catch (e) {
+    return null
+  }
 }
 
 export function makeNotification ({ title, body, icon }: {
