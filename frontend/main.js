@@ -1,6 +1,7 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
+import Favico from 'favico.js'
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
@@ -16,7 +17,7 @@ import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
-import { LOGIN, LOGOUT } from './utils/events.js'
+import { LOGIN, LOGOUT, SET_BADGE_ON_TAB } from './utils/events.js'
 import BackgroundSounds from './views/components/sounds/Background.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
@@ -254,6 +255,16 @@ async function startApp () {
             banner.clean()
           }
         })
+      })
+
+      // set badge in the browser tab
+      sbp('okTurtles.events/on', SET_BADGE_ON_TAB, (value) => {
+        if (!window.favicon) {
+          window.favicon = new Favico({
+            position: 'up'
+          })
+        }
+        window.favicon.badge(value)
       })
       // Useful in case the app is started in offline mode.
       if (navigator.onLine === false) {

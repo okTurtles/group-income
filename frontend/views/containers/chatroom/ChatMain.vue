@@ -257,7 +257,7 @@ export default ({
       if (from === MESSAGE_TYPES.NOTIFICATION || from === MESSAGE_TYPES.INTERACTIVE) {
         return this.currentUserAttr.picture
       }
-      return this.details.participants[from].picture
+      return this.details.participants[from]?.picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
@@ -487,7 +487,7 @@ export default ({
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
-    updateUnreadPosition ({ messageId, createdDate }) {
+    updateUnreadMessageId ({ messageId, createdDate }) {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
         sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
           chatRoomId: this.currentChatRoomId,
@@ -528,7 +528,7 @@ export default ({
                 this.updateScroll()
               } else if (!isScrollable) {
                 const msg = this.messages[this.messages.length - 1]
-                this.updateUnreadPosition({
+                this.updateUnreadMessageId({
                   messageId: msg.id,
                   createdDate: new Date(msg.datetime).getTime()
                 })
@@ -550,7 +550,7 @@ export default ({
           if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
             const msg = this.messages[this.messages.length - 1]
-            this.updateUnreadPosition({
+            this.updateUnreadMessageId({
               messageId: msg.id,
               createdDate: new Date(msg.datetime).getTime()
             })
@@ -589,7 +589,7 @@ export default ({
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
           const latestMessageCreatedAt = this.currentChatRoomUnreadSince?.createdDate
           if (!latestMessageCreatedAt || latestMessageCreatedAt <= bottomMessageCreatedAt) {
-            this.updateUnreadPosition({
+            this.updateUnreadMessageId({
               messageId: msg.id,
               createdDate: new Date(msg.datetime).getTime()
             })
