@@ -2,7 +2,7 @@ export function checkNotification (): void {
   return !!window.Notification
 }
 
-export async function requestNotificationPermission () {
+export async function requestNotificationPermission (): Promise<null | string> {
   if (!checkNotification() || Notification.permission !== 'default') {
     return null
   }
