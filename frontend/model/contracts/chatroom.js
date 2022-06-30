@@ -559,7 +559,12 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        // TODO: CONSIDER when chatRoomUnread[contractID].since.messageId === data.id
+        if (rootState.chatRoomUnread[contractID].since.messageId === data.id) {
+          sbp('state/vuex/commit', 'deleteChatRoomUnreadSince', {
+            chatRoomId: contractID,
+            deletedDate: new Date(meta.createdDate).getTime()
+          })
+        }
 
         if (me === meta.username) {
           return

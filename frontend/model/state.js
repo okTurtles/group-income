@@ -146,8 +146,14 @@ const mutations = {
   setChatRoomUnreadSince (state, { chatRoomId, messageId, createdDate }) {
     const prevMentionings = state.chatRoomUnread[chatRoomId] ? state.chatRoomUnread[chatRoomId].mentionings : []
     Vue.set(state.chatRoomUnread, chatRoomId, {
-      since: { messageId, createdDate },
+      since: { messageId, createdDate, deletedDate: null },
       mentionings: prevMentionings.filter(m => m.createdDate > createdDate) // TODO: in model/contracts/chatroom.js
+    })
+  },
+  deleteChatRoomUnreadSince (state, { chatRoomId, deletedDate }) {
+    Vue.set(state.chatRoomUnread[chatRoomId], 'since', {
+      ...state.chatRoomUnread[chatRoomId].since,
+      deletedDate
     })
   },
   addChatRoomUnreadMentioning (state, { chatRoomId, messageId, createdDate }) {

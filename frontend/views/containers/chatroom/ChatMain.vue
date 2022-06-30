@@ -420,7 +420,22 @@ export default ({
     },
     async renderMoreMessages (refresh = false) {
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-      const lastScrollPosition = this.currentChatRoomScrollPosition || this.currentChatRoomUnreadSince?.messageId
+      /***
+       * if the removed message was the starting position of unread messages
+       * we can load message of that hash(messageId) but not scroll
+       * because it doesn't exist in this.messages
+       * So in this case, we will load messages until the first unread mention
+       * and scroll to that message
+       */
+      let unreadPosition = null
+      if (this.currentChatRoomUnreadSince) {
+        if (!this.currentChatRoomUnreadSince.deletedDate) {
+          unreadPosition = this.currentChatRoomUnreadSince.messageId
+        } else if (this.currentChatRoomUnreadMentionings.length) {
+          unreadPosition = this.currentChatRoomUnreadMentionings[0].messageId
+        }
+      }
+      const lastScrollPosition = this.currentChatRoomScrollPosition || unreadPosition
       const before = refresh || !this.latestEvents.length
         ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
         : GIMessage.deserialize(this.latestEvents[0]).hash()
