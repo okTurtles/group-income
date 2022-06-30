@@ -420,7 +420,7 @@ export default ({
     },
     async renderMoreMessages (refresh = false) {
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-      const lastScrollPosition = this.currentChatRoomScrollPosition
+      const lastScrollPosition = this.currentChatRoomScrollPosition || this.currentChatRoomUnreadSince.messageId
       const before = refresh || !this.latestEvents.length
         ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
         : GIMessage.deserialize(this.latestEvents[0]).hash()
