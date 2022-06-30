@@ -558,6 +558,9 @@ sbp('chelonia/defineContract', {
             chatRoomId: contractID, messageId: null
           })
         }
+
+        // TODO: CONSIDER when chatRoomUnread[contractID].since.messageId === data.id
+
         if (me === meta.username) {
           return
         }
