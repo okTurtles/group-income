@@ -318,7 +318,7 @@ async function startApp () {
             textColor: '#d00'
           })
         }
-        window.favicon.badge(this.shouldSetBadge > 0 ? 1 : 0)
+        window.favicon.badge(this.shouldSetBadge ? 1 : 0)
       },
       async requestPermissions () {
         await requestNotificationPermission()
