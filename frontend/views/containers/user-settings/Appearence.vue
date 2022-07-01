@@ -33,6 +33,20 @@
             :checked='$store.state.reducedMotion'
             @change='handleReducedMotion'
           )
+
+      i18n.is-title-2.c-title(tag='h2') Mute chat
+      .c-subcontent
+        .c-text-content
+          i18n.c-smaller-title(tag='h3') Blablablabla
+          i18n.help(tag='p') Blablabla blablabla blablabla blablabla blablabla
+        label
+          i18n.sr-only Blablablabla
+          input.switch(
+            type='checkbox'
+            name='switch'
+            :checked='$store.state.mute'
+            @change='handleToggleMuteChat'
+          )
 </template>
 
 <script>
@@ -49,8 +63,12 @@ export default ({
   methods: {
     ...mapMutations([
       'setReducedMotion',
-      'setIncreasedContrast'
+      'setIncreasedContrast',
+      'setMuteNotification'
     ]),
+    handleToggleMuteChat (e) {
+      this.setMuteNotification(e.target.checked)
+    },
     handleIncreasedContrast (e) {
       this.setIncreasesContrast(e.target.checked)
     },

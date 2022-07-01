@@ -1854,6 +1854,9 @@
 /* views/containers/user-settings/Appearence.vue */
 "When enabled the amount of animations you see around are reduced." = "Ceci réduit le nombre d’animations affichées.";
 
+/* views/containers/user-settings/Notification.vue */
+"Request Permission" = "Demander la permission";
+
 /* views/containers/user-settings/Troubleshooting.vue */
 "All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information." = "Toutes vos données sont stockées localement, sur votre appareil personnel, et cryptées lors de tout envoi {via le réseau, à d’autres membres du groupe}. L’actualisation téléchargera la plus récente version des informations relatives au groupe.";
 

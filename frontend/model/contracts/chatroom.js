@@ -178,10 +178,7 @@ function addMentioning ({ contractID, messageId, datetime, text, username, chatR
   // )
   // if (!isExist) {
   //   const rootState = sbp('state/vuex/state')
-  //   const groupID = Object.keys(rootState.contracts)
-  //     .find(cID => rootState.contracts[cID].type === 'gi.contracts/group' &&
-  //       Object.keys(rootState[cID].chatRooms).includes(contractID)
-  //     )
+  //   const groupID = rootGetters.groupIdFromChatRoomId(contractID)
   //   sbp('gi.notifications/emit', 'MENTION_ADDED', {
   //     groupID: groupID,
   //     chatRoomId: contractID,
@@ -189,10 +186,11 @@ function addMentioning ({ contractID, messageId, datetime, text, username, chatR
   //   })
   // }
 
+  const groupID = rootGetters.groupIdFromChatRoomId(contractID)
   makeNotification({
     title: `# ${chatRoomName}`,
     body: text,
-    icon: rootGetters.globalProfile(username).picture
+    icon: rootGetters.globalProfile2(groupID, username).picture
   })
 
   sbp('okTurtles.events/emit', MESSAGE_RECEIVE, {})
@@ -268,7 +266,7 @@ sbp('chelonia/defineContract', {
           attributes: {
             creator: meta.username,
             deletedDate: null,
-            archievedDate: null
+            archivedDate: null
           },
           users: {},
           messages: []

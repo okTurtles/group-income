@@ -40,6 +40,7 @@ const initialState = {
   theme: defaultTheme,
   reducedMotion: false,
   increasedContrast: false,
+  muteNotification: false,
   fontSize: 16,
   appLogsFilter: process.env.NODE_ENV === 'development'
     ? ['error', 'warn', 'info', 'debug', 'log']
@@ -119,6 +120,9 @@ const mutations = {
   },
   setIncreasedContrast (state, isChecked) {
     state.increasedContrast = isChecked
+  },
+  setMuteNotification (state, isMuted) {
+    state.muteNotification = isMuted
   },
   setFontSize (state, fontSize) {
     state.fontSize = fontSize
@@ -508,6 +512,13 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
+  globalProfile2 (state, getters) {
+    return (groupID, username) => {
+      const groupProfile = state[groupID]?.profiles[username]
+      const identityState = groupProfile && state[groupProfile.contractID]
+      return identityState && identityState.attributes
+    }
+  },
   colors (state) {
     return Colors[state.theme]
   },
@@ -536,6 +547,11 @@ const getters = {
     return (chatRoomId: string) => {
       return getters.ourUnreadMessages[chatRoomId]?.mentionings || []
     }
+  },
+  groupIdFromChatRoomId (state, getters) {
+    return (chatRoomId: string) => Object.keys(state.contracts)
+      .find(cId => state.contracts[cId].type === 'gi.contracts/group' &&
+        Object.keys(state[cId].chatRooms).includes(chatRoomId))
   },
   isPrivateChatRoom (state, getters) {
     return (chatRoomId: string) => {
