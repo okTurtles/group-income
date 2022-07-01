@@ -435,14 +435,14 @@ export default ({
           unreadPosition = this.currentChatRoomUnreadMentionings[0].messageId
         }
       }
-      const lastScrollPosition = this.currentChatRoomScrollPosition || unreadPosition
+      const messageIdToScroll = this.currentChatRoomScrollPosition || unreadPosition
+      const latestHash = await sbp('chelonia/out/latestHash', this.currentChatRoomId)
       const before = refresh || !this.latestEvents.length
-        ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
+        ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
       let events = null
-      if (refresh && lastScrollPosition) {
-        const latestHash = await sbp('chelonia/out/latestHash', this.currentChatRoomId)
-        events = await sbp('chelonia/out/eventsBetween', lastScrollPosition, latestHash, limit / 2)
+      if (refresh && messageIdToScroll) {
+        events = await sbp('chelonia/out/eventsBetween', messageIdToScroll, latestHash, limit / 2)
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
@@ -451,8 +451,8 @@ export default ({
 
       if (refresh) {
         this.setStartNewMessageIndex()
-        const scrollTargetMessage = refresh && lastScrollPosition
-          ? lastScrollPosition
+        const scrollTargetMessage = refresh && messageIdToScroll
+          ? messageIdToScroll
           : null
         this.updateScroll(scrollTargetMessage)
         return false

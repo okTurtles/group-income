@@ -422,6 +422,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         .should('contain', 'Proposal accepted')
     })
 
+    cy.getByDT('groupMembers').find('ul>li').should('have.length', 2) // user1 & user2
+
     cy.giRedirectToGroupChat()
 
     switchChannel(CHATROOM_GENERAL_NAME)
