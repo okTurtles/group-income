@@ -144,16 +144,18 @@ export default (sbp('sbp/selectors/register', {
             }
           }
         }
-        // note: leaving groups will happen when we sync the removeOurselves message
-        if (!state.currentGroupId) {
-          const { contracts } = state
-          const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
-          if (gId) {
-            sbp('gi.actions/group/switch', gId)
-            const router = sbp('controller/router')
-            if (router.currentRoute.path === '/') {
-              router.push({ path: '/dashboard' }).catch(e => {})
-            }
+      }
+      // note: leaving groups will happen when we sync the removeOurselves message
+      if (!state.currentGroupId) {
+        const { contracts } = state
+        const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
+        if (gId) {
+          sbp('gi.actions/group/switch', gId)
+          const router = sbp('controller/router')
+          // redirect us to the dashboard upon login if there's nothing else going on, no modals up, etc.
+          // only update the URL if it's empty and we're stuck at the homepage, as can sometimes happen
+          if (router.currentRoute.path === '/' && Object.keys(router.currentRoute.query).length === 0) {
+            router.push({ path: '/dashboard' }).catch(console.warn)
           }
         }
       }
