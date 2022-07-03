@@ -9966,12 +9966,15 @@ ${this.getErrorInfo()}`;
         distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize }),
         payments: getters.paymentsForPeriod(period),
         dueOn: getters.dueDateForPeriod(period)
+      }).filter((todo) => {
+        return getters.groupProfile(todo.to).status === PROFILE_STATUS.ACTIVE;
       });
     }
   }
-  function memberLeaves(state, username, dateLeft) {
+  function memberLeaves({ username, dateLeft }, { meta, state, getters }) {
     state.profiles[username].status = PROFILE_STATUS.REMOVED;
     state.profiles[username].departedDate = dateLeft;
+    updateCurrentDistribution({ meta, state, getters });
   }
   (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/group",
@@ -10396,8 +10399,8 @@ ${this.getErrorInfo()}`;
             }
           }
         },
-        process({ data, meta }, { state }) {
-          memberLeaves(state, data.member, meta.createdDate);
+        process({ data, meta }, { state, getters }) {
+          memberLeaves({ username: data.member, dateLeft: meta.createdDate }, { meta, state, getters });
         },
         sideEffect({ data, meta, contractID }, { state, getters }) {
           const rootState = (0, import_sbp3.default)("state/vuex/state");
@@ -10431,8 +10434,8 @@ ${this.getErrorInfo()}`;
         validate: objectMaybeOf({
           reason: string
         }),
-        process({ data, meta, contractID }, { state }) {
-          memberLeaves(state, meta.username, meta.createdDate);
+        process({ data, meta, contractID }, { state, getters }) {
+          memberLeaves({ username: meta.username, dateLeft: meta.createdDate }, { meta, state, getters });
           (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", {
             meta,
             data: { member: meta.username, reason: data.reason || "" },

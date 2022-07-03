@@ -105,7 +105,7 @@ describe('Full walkthrough', function () {
           preferSlim: true
         },
         manifests: {
-          'gi.contracts/group': '21XWnNQQyF9Wm7ZFxozwksfVcvStpBwv3c12THeZTrg3LaLPjT',
+          'gi.contracts/group': '21XWnNSHSo5Dov3RwKFwSJzMNpt3KmpJNaVN6qsacysUnmxgq9',
           'gi.contracts/identity': '21XWnNVUKkh1dWq1RoAAJbkPnGXxqFUpjXrzb9yo7NeGEEToin',
           'gi.contracts/mailbox': '21XWnNKoSm7e2vnGJvoFSRB7heFTeg24FwDCkb6JAazkzhpNdY',
           'gi.contracts/chatroom': '21XWnNXJkm2bkc8Wu7TC38zB845tR28qRGCs2HXCeMEJgvFozi'
