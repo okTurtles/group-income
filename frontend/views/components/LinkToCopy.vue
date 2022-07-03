@@ -68,12 +68,24 @@ export default ({
         return
       }
 
+      const displayTooltip = () => {
+        this.ephemeral.isTooltipActive = true
+
+        setTimeout(() => {
+          this.ephemeral.isTooltipActive = false
+        }, 1500)
+      }
+
       this.$refs.input.select()
-      document.execCommand('copy')
-      this.ephemeral.isTooltipActive = true
-      setTimeout(() => {
-        this.ephemeral.isTooltipActive = false
-      }, 1500)
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(this.link).then(displayTooltip)
+      } else {
+        // document.execCommand is deprecated, so only use it as a fallback of Clipboard API.
+        // reference: https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand
+        document.execCommand('copy')
+
+        displayTooltip()
+      }
     }
   }
 }: Object)
