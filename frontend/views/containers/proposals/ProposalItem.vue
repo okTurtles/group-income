@@ -273,7 +273,7 @@ export default ({
 
   .c-invite-link {
     ::v-deep .c-copy-button {
-      background: $white;
+      background: $background_0;
     }
   }
 }

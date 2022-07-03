@@ -83,6 +83,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import { L } from '@common/common.js'
+import { INCOME_DETAILS_UPDATE } from '@utils/events.js'
 
 export default ({
   name: 'IncomeDetails',
@@ -200,7 +201,9 @@ export default ({
             paymentMethods
           }
         })
+
         this.closeModal()
+        sbp('okTurtles.events/emit', INCOME_DETAILS_UPDATE)
       } catch (e) {
         console.error('IncomeDetails submit() error:', e)
         this.$refs.formMsg.danger(e.message)

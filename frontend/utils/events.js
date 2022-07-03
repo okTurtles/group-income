@@ -2,6 +2,8 @@
 
 // NOTE: do not place contract-related events in here!
 //       place those in @model/contracts/shared/constants.js instead
+//
+//       This file is primarily for frontend UI related events.
 
 export const LOGIN = 'login'
 export const LOGOUT = 'logout'
@@ -20,3 +22,5 @@ export const SELECT_EMOTICON = 'select-emoticon'
 
 export const CAPTURED_LOGS = 'captured-logs'
 export const SET_APP_LOGS_FILTER = 'set-app-logs-filter'
+
+export const INCOME_DETAILS_UPDATE = 'income-details-update'
