@@ -162,7 +162,7 @@ export default ({
       'withGroupCurrency'
     ]),
     needsIncome () {
-      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
+      return this.ourGroupProfile?.incomeDetailsType === 'incomeAmount'
     },
     distributionStart () {
       return this.prettyDate(this.groupSettings.distributionDate)
