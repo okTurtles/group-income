@@ -21,4 +21,4 @@ export const SET_APP_LOGS_FILTER = 'set-app-logs-filter'
 export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
 export const CHATROOM_DETAILS_UPDATED = 'chatroom-details-updated'
 
-export const GROUP_PROFILE_UPDATE = 'group-profile-update'
+export const INCOME_DETAILS_UPDATE = 'income-details-update'

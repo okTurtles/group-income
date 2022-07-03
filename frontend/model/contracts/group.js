@@ -17,7 +17,6 @@ import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, c
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import { unadjustedDistribution, adjustedDistribution } from './distribution/distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
-import { GROUP_PROFILE_UPDATE } from '~/frontend/utils/events.js'
 import L from '~/frontend/views/utils/translations.js'
 import { chatRoomAttributesType } from './chatroom.js'
 import { INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS } from './constants.js'
@@ -867,8 +866,6 @@ sbp('chelonia/defineContract', {
           // someone updated their income details, create a snapshot of the haveNeeds
           updateCurrentDistribution({ meta, state, getters })
         }
-
-        sbp('okTurtles.events/emit', GROUP_PROFILE_UPDATE)
       }
     },
     'gi.contracts/group/updateAllVotingRules': {

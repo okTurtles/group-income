@@ -40,7 +40,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 <script>
 import { mapGetters, mapState } from 'vuex'
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL, GROUP_PROFILE_UPDATE } from '@utils/events.js'
+import { OPEN_MODAL, INCOME_DETAILS_UPDATE } from '@utils/events.js'
 import Page from '@components/Page.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import StartInvitingWidget from '@containers/dashboard/StartInvitingWidget.vue'
@@ -58,11 +58,16 @@ import { addTimeToDate, DAYS_MILLIS, humanDate } from '~/frontend/utils/time.js'
 export default ({
   name: 'GroupDashboard',
   beforeMount () {
+    sbp('okTurtles.events/on', INCOME_DETAILS_UPDATE, this.closeBanner)
+
     if (!this.isCloseToDistributionTime) {
       localStorage.setItem(this.bannerStorageKey, false)
     }
 
-    this.checkIfBannerBeenDismissed()
+    this.updateBannerVisibility()
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', INCOME_DETAILS_UPDATE, this.closeBanner)
   },
   data () {
     return {
@@ -114,17 +119,12 @@ export default ({
     humanDate,
     handleIncomeClick (e) {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
-
-      // firstly, make sure the listener is attached to 'GROUP_PROFILE_UPDATE' more than twice.
-      // e.g. user dismiss the modal without actually 'updating the income-details' and then click on the banner again.
-      sbp('okTurtles.events/off', GROUP_PROFILE_UPDATE, this.closeBanner)
-      sbp('okTurtles.events/once', GROUP_PROFILE_UPDATE, this.closeBanner)
     },
     closeBanner () {
       localStorage.setItem(this.bannerStorageKey, true)
       this.ephemeral.hideBanner = true
     },
-    checkIfBannerBeenDismissed () {
+    updateBannerVisibility () {
       this.ephemeral.hideBanner = localStorage.getItem(this.bannerStorageKey) === 'true'
     }
   },
@@ -132,7 +132,7 @@ export default ({
     bannerStorageKey () {
       // if the user performs switching to another group while he/she is still in this page[GroupDashboard.vue],
       // check if the distribution-warning banner has been dismissed for the switched group again.
-      this.checkIfBannerBeenDismissed()
+      this.updateBannerVisibility()
     }
   },
   components: {
