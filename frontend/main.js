@@ -19,7 +19,6 @@ import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT } from './utils/events.js'
-import { requestNotificationPermission } from './utils/notification.js'
 import BackgroundSounds from './views/components/sounds/Background.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
@@ -276,8 +275,6 @@ async function startApp () {
       }
 
       this.setBadgeOnTab()
-
-      this.$el.addEventListener('mousemove', this.requestPermissions, false)
     },
     computed: {
       ...mapGetters(['ourUnreadMessages', 'unreadGroupNotificationCountFor']),
@@ -322,11 +319,6 @@ async function startApp () {
           })
         }
         window.favicon.badge(this.shouldSetBadge ? 1 : 0)
-      },
-      async requestPermissions () {
-        await requestNotificationPermission()
-
-        this.$el.removeEventListener('mousemove', this.requestPermissions)
       }
     },
     watch: {
