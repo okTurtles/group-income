@@ -206,9 +206,11 @@ export default ({
 .c-card {
   margin-top: -1.5rem;
   padding: 0;
+  height: 100%;
 
   @include tablet {
     margin-top: 1.5rem;
+    height: auto;
   }
 
   &:last-child {

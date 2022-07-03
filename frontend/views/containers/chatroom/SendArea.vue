@@ -126,8 +126,7 @@ export default ({
         actionsWidth: '',
         maskHeight: '',
         textWithLines: '',
-        showButtons: true,
-        isPhone: false
+        showButtons: true
       }
     }
   },
@@ -138,7 +137,7 @@ export default ({
   },
   created () {
     // TODO #492 create a global Vue Responsive just for media queries.
-    const mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
+    const mediaIsPhone = window.matchMedia('(hover: none) and (pointer: coarse)')
     this.ephemeral.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.ephemeral.isPhone = e.matches }
   },
@@ -406,6 +405,11 @@ $initialHeight: 43px;
   border-radius: 0;
   margin-top: -1px;
   margin-right: 0;
-  color: $white;
+  color: var(--primary_0);
+  background: transparent;
+
+  @include until($tablet) {
+    display: none;
+  }
 }
 </style>
