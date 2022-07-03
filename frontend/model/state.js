@@ -438,9 +438,7 @@ const getters = {
       return isNeeder ? payment.to === ourUsername : payment.from === ourUsername
     }
     const cPeriod = getters.currentPaymentPeriod
-    const ourUnadjustedPayments = getters.groupIncomeDistribution.filter(isOurPayment)
     const ourAdjustedPayments = getters.groupIncomeAdjustedDistribution.filter(isOurPayment)
-
     const receivedOrSent = isNeeder
       ? getters.ourPaymentsReceivedInPeriod(cPeriod)
       : getters.ourPaymentsSentInPeriod(cPeriod)
@@ -448,8 +446,9 @@ const getters = {
     const nonLateAdjusted = ourAdjustedPayments.filter((p) => !p.isLate)
     const paymentsDone = paymentsTotal - nonLateAdjusted.length
     const hasPartials = ourAdjustedPayments.some(p => p.partial)
-    const amountTotal = ourUnadjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
     const amountDone = receivedOrSent.reduce((acc, payment) => acc + payment.amount, 0)
+    const amountLeft = ourAdjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
+    const amountTotal = amountDone + amountLeft
     return {
       paymentsDone,
       hasPartials,

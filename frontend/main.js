@@ -6,6 +6,7 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
+import '@model/captureLogs.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import './controller/namespace.js'
@@ -94,6 +95,8 @@ async function startApp () {
           errMsg: e.message || '?'
         })
       })
+      // Since a runtime error just occured, we likely want to persist app logs to local storage now.
+      sbp('appLogs/save')
     }
   }
   function displaySeriousErrorBanner (e: Error) {
