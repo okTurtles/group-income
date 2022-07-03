@@ -40,7 +40,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 <script>
 import { mapGetters, mapState } from 'vuex'
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, INCOME_DETAILS_UPDATE } from '@utils/events.js'
 import Page from '@components/Page.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import StartInvitingWidget from '@containers/dashboard/StartInvitingWidget.vue'
@@ -58,10 +58,16 @@ import { addTimeToDate, DAYS_MILLIS, humanDate } from '~/frontend/utils/time.js'
 export default ({
   name: 'GroupDashboard',
   beforeMount () {
+    sbp('okTurtles.events/on', INCOME_DETAILS_UPDATE, this.closeBanner)
+
     if (!this.isCloseToDistributionTime) {
-      localStorage.setItem('giHideDistributionWarning', false)
+      localStorage.setItem(this.bannerStorageKey, false)
     }
-    this.ephemeral.hideBanner = localStorage.getItem('giHideDistributionWarning')
+
+    this.updateBannerVisibility()
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', INCOME_DETAILS_UPDATE, this.closeBanner)
   },
   data () {
     return {
@@ -93,11 +99,17 @@ export default ({
       return Object.keys(this.currentGroupState.proposals).length > 0
     },
     isCloseToDistributionTime () {
-      const warningDate = addTimeToDate(new Date(this.groupSettings.distributionDate), -7 * DAYS_MILLIS)
-      return Date.now() >= new Date(warningDate).getTime()
+      const dDay = new Date(this.groupSettings.distributionDate)
+      const warningDate = addTimeToDate(dDay, -7 * DAYS_MILLIS)
+
+      // when (D-day - 7d) <= today < D-day
+      return Date.now() >= new Date(warningDate).getTime() && Date.now() < dDay.getTime()
+    },
+    bannerStorageKey () {
+      return `giHideDistributionWarning.${this.currentGroupId}`
     },
     showBanner () {
-      return !this.hasIncomeDetails && this.isCloseToDistributionTime && !this.ephemeral.hideBanner
+      return this.isCloseToDistributionTime && !this.ephemeral.hideBanner
     },
     hasMemberRequest () {
       return this.requests
@@ -109,8 +121,18 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
     },
     closeBanner () {
-      localStorage.setItem('giHideDistributionWarning', true)
+      localStorage.setItem(this.bannerStorageKey, true)
       this.ephemeral.hideBanner = true
+    },
+    updateBannerVisibility () {
+      this.ephemeral.hideBanner = localStorage.getItem(this.bannerStorageKey) === 'true'
+    }
+  },
+  watch: {
+    bannerStorageKey () {
+      // if the user performs switching to another group while he/she is still in this page[GroupDashboard.vue],
+      // check if the distribution-warning banner has been dismissed for the switched group again.
+      this.updateBannerVisibility()
     }
   },
   components: {
