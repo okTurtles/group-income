@@ -1,6 +1,6 @@
 <template lang='pug'>
 .theme-list
-  fieldset.theme(@click='setTheme("system")')
+  fieldset.theme(@click.prevent='setTheme("system")')
     label(for='system')
       .c-combined-color
         ThemeSvg(:color='themes.light')
@@ -10,7 +10,7 @@
         input.input(type='radio' name='theme' value='system' id='system' v-model='theme')
         i18n(tag='span') Use system settings
 
-  fieldset.theme(v-for='(color, label) in themes' :key='label' @click='setTheme(label)')
+  fieldset.theme(v-for='(color, label) in themes' :key='label' @click.prevent='setTheme(label)')
     label(:for='label')
       .c-color
         ThemeSvg(:color='color')

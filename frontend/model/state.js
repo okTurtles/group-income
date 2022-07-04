@@ -33,6 +33,15 @@ const checkSystemColor = () => {
 }
 const defaultTheme = checkSystemColor()
 
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (store.state.theme === 'system') {
+      store.commit('setTheme', THEME_DARK)
+      store.commit('setTheme', 'system')
+    }
+  })
+}
+
 const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
