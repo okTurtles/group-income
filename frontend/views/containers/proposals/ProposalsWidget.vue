@@ -14,12 +14,11 @@
     v-else
     :title='L("Proposals")'
   )
-    ul.c-proposals(data-test='proposalsWidget')
-      proposal-box(
-        v-for='hashes in proposals'
-        :key='hashes[0]'
-        :proposalHashes='hashes'
-      )
+    proposal-box(
+      v-for='hashes in proposals'
+      :key='hashes[0]'
+      :proposalHashes='hashes'
+    )
 </template>
 
 <script>

@@ -1,45 +1,59 @@
 <template lang='pug'>
-  li.c-li(data-test='proposalItem')
-    .c-item
-      .c-main
+li.c-item-wrapper(data-test='proposalItem')
+  .c-item
+    .c-main
+      .c-icons
         i(:class='iconClass')
-        .c-main-content
-          p.has-text-bold(data-test='typeDescription')
-            | {{typeDescription}}
-            tooltip.c-tip(
-              v-if='isToRemoveMe && proposal.status === statuses.STATUS_OPEN'
-              direction='top'
-              :text='L("You cannot vote.")'
-            )
-              .button.is-icon-smaller.is-primary
-                i.icon-question
-          p.has-text-1(
-            :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
-            data-test='statusDescription'
-            ) {{statusDescription}}
-      proposal-vote-options(
-        v-if='proposal.status === statuses.STATUS_OPEN'
-        :proposalHash='proposalHash'
-      )
-    // Note: $refs.voteMsg is used by children ProposalVoteOptions
-    banner-scoped(ref='voteMsg' data-test='voteMsg')
-    p.c-sendLink(v-if='invitationLink' data-test='sendLink')
-      i18n(
-        :args='{ user: proposal.data.proposalData.member}'
-      ) Please send the following link to {user} so they can join the group:
-      | &nbsp;
-      link-to-copy.c-invite-link(
-        :link='invitationLink'
-        tag='p'
-      )
-      i18n.has-text-danger(
-        v-if='isExpiredInvitationLink'
-      ) Expired
+        avatar-user.c-avatar(:username='proposal.meta.username' size='xs')
+
+      .c-main-content
+        p.has-text-bold(data-test='typeDescription')
+          | {{typeDescription}}
+          tooltip.c-tip(
+            v-if='isToRemoveMe && proposal.status === statuses.STATUS_OPEN'
+            direction='top'
+            :text='L("You cannot vote.")'
+          )
+            .button.is-icon-smaller.is-primary
+              i.icon-question
+
+        p(data-test='title' v-safe-html='title')
+
+        p.has-text-1(
+          :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
+          data-test='statusDescription'
+        ) {{statusDescription}}
+
+        .c-reason(v-if='humanReason')
+          p.has-text-1.c-reason-text(v-if='humanReason') {{ humanReason }}
+          | &nbsp;
+          button.link(
+            v-if='shouldTruncateReason'
+            @click='toggleReason'
+          ) {{ ephemeral.isReasonHidden ? L('Read more') : L('Hide') }}
+    proposal-vote-options(
+      v-if='proposal.status === statuses.STATUS_OPEN'
+      :proposalHash='proposalHash'
+    )
+  // Note: $refs.voteMsg is used by children ProposalVoteOptions
+  banner-scoped(ref='voteMsg' data-test='voteMsg')
+  p.c-sendLink(v-if='invitationLink' data-test='sendLink')
+    i18n(
+      :args='{ user: proposal.data.proposalData.member}'
+    ) Please send the following link to {user} so they can join the group:
+    | &nbsp;
+    link-to-copy.c-invite-link(
+      :link='invitationLink'
+      tag='p'
+    )
+    i18n.has-text-danger(
+      v-if='isExpiredInvitationLink'
+    ) Expired
 </template>
 
 <script>
 import { mapGetters, mapState } from 'vuex'
-import L from '@view-utils/translations.js'
+import AvatarUser from '@components/AvatarUser.vue'
 import currencies from '~/frontend/views/utils/currencies.js'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import {
@@ -60,15 +74,28 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { INVITE_STATUS } from '@model/contracts/constants.js'
+import L from '@view-utils/translations.js'
+import { TABLET } from '@view-utils/breakpoints.js'
 
 export default ({
   name: 'ProposalItem',
   props: {
     proposalHash: String
   },
+  data () {
+    return {
+      config: {
+        reasonMaxLength: window.innerWidth < TABLET ? 50 : 170
+      },
+      ephemeral: {
+        isReasonHidden: true
+      }
+    }
+  },
   components: {
     BannerScoped,
     ProposalVoteOptions,
+    AvatarUser,
     LinkToCopy,
     Tooltip
   },
@@ -85,6 +112,22 @@ export default ({
     },
     proposal () {
       return this.currentGroupState.proposals[this.proposalHash]
+    },
+    title () {
+      const username = this.proposal.meta.username
+      const isOwnProposal = username === this.ourUsername
+
+      if (this.proposal.status === STATUS_OPEN) {
+        return isOwnProposal
+          ? L('You are proposing')
+          : L('{username} is proposing', { username: `${username}` })
+      }
+
+      // Note: In English, no matter the subject, the wording is the same,
+      // but in other languages the wording is different (ex: Portuguese)
+      return isOwnProposal
+        ? L('You proposed')
+        : L('{username} proposed', { username: `${username}` })
     },
     proposalType () {
       return this.proposal.data.proposalType
@@ -151,28 +194,41 @@ export default ({
         [PROPOSAL_GENERIC]: () => L('TODO: Change [generic] from [current] to [new-value]', {})
       }[this.proposalType]()
     },
+    humanDate () {
+      const date = new Date(this.proposal.meta.createdDate)
+      const offset = date.getTimezoneOffset()
+      const minutes = date.getMinutes()
+      date.setMinutes(minutes + offset)
+      const locale = navigator.languages !== undefined ? navigator.languages[0] : navigator.language
+
+      return date.toLocaleDateString(locale, {
+        year: 'numeric', month: 'long', day: 'numeric'
+      })
+    },
     statusDescription () {
       const votes = Object.values(this.proposal.votes)
       const yay = votes.filter(v => v === VOTE_FOR).length
       const nay = votes.filter(v => v === VOTE_AGAINST).length
+      const date = this.humanDate
       const total = yay + nay
       switch (this.proposal.status) {
         case STATUS_OPEN: {
           const excludeVotes = this.proposalType === PROPOSAL_REMOVE_MEMBER ? 1 : 0
 
-          return L('{count} out of {total} members voted.', {
+          return L('{count} out of {total} members voted on {date}', {
             count: votes.length,
-            total: this.groupMembersCount - excludeVotes
+            total: this.groupMembersCount - excludeVotes,
+            date
           })
         }
         case STATUS_FAILED: {
-          return L('Proposal refused with {nay} against out of {total} total votes.', { nay, total })
+          return L('Proposal refused with {nay} against out of {total} total votes on {date}', { nay, total, date })
         }
         case STATUS_CANCELLED: {
           return L('Proposal cancelled.')
         }
         case STATUS_PASSED: {
-          return L('Proposal accepted with {yay} in favor out of {total} total votes.', { yay, total })
+          return L('Proposal accepted with {yay} in favor out of {total} total votes on {date}', { yay, total, date })
         }
         default:
           return `TODO status: ${this.proposal.status}`
@@ -201,6 +257,22 @@ export default ({
 
       return `${type[this.proposalType]} ${status[this.proposal.status]} icon-round`
     },
+    shouldTruncateReason () {
+      const reason = this.proposal.data.proposalData.reason
+      const threshold = 40 // avoid clicking "read more" and see only a few more characters.
+      return reason.length > this.config.reasonMaxLength + threshold
+    },
+    humanReason () {
+      const reason = this.proposal.data.proposalData.reason
+      const maxlength = this.config.reasonMaxLength
+      if (this.ephemeral.isReasonHidden && this.shouldTruncateReason) {
+        // Prevent "..." to be added after an empty space. ex: "they would ..." -> "they would..."
+        const charToTruncate = reason.charAt(maxlength - 1) === ' ' ? maxlength - 1 : maxlength
+        return `"${reason.substr(0, charToTruncate)}..."`
+      }
+
+      return reason ? `"${reason}"` : ''
+    },
     invitationLink () {
       if (this.proposalType === PROPOSAL_INVITE_MEMBER &&
         this.proposal.status === STATUS_PASSED &&
@@ -226,6 +298,12 @@ export default ({
       }
       return false
     }
+  },
+  methods: {
+    toggleReason (e) {
+      e.target.blur() // so the button doesnt remain focused (with black color).
+      this.ephemeral.isReasonHidden = !this.ephemeral.isReasonHidden
+    }
   }
 }: Object)
 </script>
@@ -233,9 +311,12 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-li {
-  &:not(:first-child) {
-    margin-top: 1.5rem;
+.c-item-wrapper {
+  margin-top: 2rem;
+
+  &:not(:last-child) {
+    padding-bottom: 2rem;
+    border-bottom: 1px solid $general_1;
   }
 }
 
@@ -281,6 +362,42 @@ export default ({
 .icon-round {
   @include phone {
     margin-left: 0.5rem;
+  }
+}
+
+.c-main-content {
+  word-break: break-word;
+  min-width: 0; // So ellipsis works correctly inside grid. pls refer to a discussion here(https://github.com/okTurtles/group-income/pull/765#issuecomment-551691920) for the context.
+}
+
+.c-icons {
+  position: relative;
+  align-self: flex-start;
+
+  .icon-round {
+    width: 3.75rem;
+    height: 3.75rem;
+    display: grid;
+    align-items: center;
+  }
+
+  .c-avatar {
+    position: absolute;
+    bottom: -0.2rem;
+    right: 1rem;
+
+    @include phone {
+      display: none;
+    }
+  }
+}
+
+.c-reason {
+  position: relative;
+  margin-top: 1rem;
+
+  &-text {
+    display: inline;
   }
 }
 </style>
