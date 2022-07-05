@@ -1,7 +1,7 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
 
 const groupName1 = 'Dreamers'
-const groupName2 = 'Donuts'
+// const groupName2 = 'Donuts'
 const userId = Math.floor(Math.random() * 10000)
 const user1 = `user1-${userId}`
 const user2 = `user2-${userId}`
@@ -44,7 +44,23 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
   }
 
-  it(`user1 creats '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
+  function replyMessage (nth, message) {
+    cy.getByDT('conversationWapper').find(`.c-message:nth-child(${nth})`).within(() => {
+      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
+      cy.get('.c-menu>.c-actions button[aria-label="Reply"]').click()
+      cy.get('.c-menu>.c-actions').invoke('hide')
+    })
+    cy.get('.c-tooltip.is-active').invoke('hide')
+
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('textarea').should('exist')
+      cy.get('.c-replying-wrapper').should('exist')
+    })
+
+    sendMessage(message)
+  }
+
+  it(`user1 creats '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default and sends 25 messages`, () => {
     cy.visit('/')
     cy.giSignup(user1)
     me = user1
@@ -60,10 +76,14 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
     checkIfJoined(CHATROOM_GENERAL_NAME)
 
+    for (let i = 0; i < 5; i++) {
+      sendMessage(`${i + 1}`)
+    }
+
     cy.giLogout()
   })
 
-  it(`user2 joins ${groupName1} group`, () => {
+  it(`user2 joins ${groupName1} group and sends another 25 messages`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       groupName: groupName1,
@@ -79,21 +99,12 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
       cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
     })
-  })
 
-  it('user2 sends test messages from 1 to 20', () => {
-    for (let i = 0; i < 20; i++) {
+    for (let i = 5; i < 10; i++) {
       sendMessage(`${i + 1}`)
     }
-  })
 
-  it('user1 sends test messages from 21 to 50', () => {
-    switchUser(user1);
-    cy.giRedirectToGroupChat()
-
-    for (let i = 20; i < 50; i++) {
-      sendMessage(`${i + 1}`)
-    }
+    replyMessage(5, 'Fourty one')
 
     cy.giLogout()
   })

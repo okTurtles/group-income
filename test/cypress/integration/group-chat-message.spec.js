@@ -77,6 +77,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.getByDT('conversationWapper').find(`.c-message:nth-child(${nth})`).within(() => {
       cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
       cy.get('.c-menu>.c-actions button[aria-label="Add reaction"]').click()
+      cy.get('.c-menu>.c-actions').invoke('hide')
     })
     cy.get(`${emojiWrapperSelector} span[data-title="${emojiCode}"]`).eq(0).click()
 
