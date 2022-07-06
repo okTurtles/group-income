@@ -236,6 +236,7 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     } catch (e) {
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
+      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     }
