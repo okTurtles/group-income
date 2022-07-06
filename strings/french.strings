@@ -22,7 +22,7 @@
 "Messages" = "Messages";
 
 /* MISSING TRANSLATION - main.js */
-"Loading events for '{contract}' from server..." = "Loading events for '{contract}' from server...";
+"Loading events from server..." = "Loading events from server...";
 
 /* MISSING TRANSLATION - main.js */
 "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'";

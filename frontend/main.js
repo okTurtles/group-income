@@ -142,12 +142,12 @@ async function startApp () {
   // this is definitely very hacky, but we put it here since CONTRACT_IS_SYNCING can
   // be called before the main App component is loaded (just after we call login)
   // and we don't yet have access to the component's 'this'
-  const initialSyncs = { ephemeral: { debouncedSyncBanner (c) {}, syncs: [] } }
+  const initialSyncs = { ephemeral: { debouncedSyncBanner () {}, syncs: [] } }
   const syncFn = function (contractID, isSyncing) {
     // Make it possible for Cypress to wait for contracts to finish syncing.
     if (isSyncing) {
       this.ephemeral.syncs.push(contractID)
-      this.ephemeral.debouncedSyncBanner(contractID)
+      this.ephemeral.debouncedSyncBanner()
     } else if (this.ephemeral.syncs.includes(contractID)) {
       this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
     }
@@ -209,16 +209,17 @@ async function startApp () {
       // display a self-clearing banner that shows up after we've taken 2 or more seconds
       // to sync a contract.
       this.ephemeral.debouncedSyncBanner = bannerGeneral.debouncedShow({
-        message: (cID) => {
-          return L("Loading events for '{contract}' from server...", { contract: contractName(cID) })
-        },
+        // we can't actually show in the global banner what contract is syncing because doing
+        // so would involve having to repeatedly call the message() function, and if there
+        // were other danger banners that needed to take precedence they would get covered
+        message: () => L('Loading events from server...'),
         icon: 'wifi',
         seconds: 2,
         clearWhen: () => !this.ephemeral.syncs.length
       })
       this.ephemeral.syncs = initialSyncs.ephemeral.syncs
       if (this.ephemeral.syncs.length) {
-        this.ephemeral.debouncedSyncBanner(this.ephemeral.syncs[0])
+        this.ephemeral.debouncedSyncBanner()
       }
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))

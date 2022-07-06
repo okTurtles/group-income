@@ -68,16 +68,20 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         Vue.set(state, 'loginState', data)
       },
-      async sideEffect () {
-        try {
-          await sbp('gi.actions/identity/updateLoginStateUponLogin')
-        } catch (e) {
-          sbp('gi.notifications/emit', 'ERROR', {
-            message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
-              errName: e.name,
-              errMsg: e.message || '?'
+      sideEffect ({ contractID }) {
+        // it only makes sense to call updateLoginStateUponLogin for ourselves
+        if (contractID === sbp('state/vuex/getters').ourIdentityContractId) {
+          // makes sure that updateLoginStateUponLogin gets run after the entire identity
+          // state has been synced, this way we don't end up joining groups we've left, etc.
+          sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/updateLoginStateUponLogin'])
+            .catch((e) => {
+              sbp('gi.notifications/emit', 'ERROR', {
+                message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
+                  errName: e.name,
+                  errMsg: e.message || '?'
+                })
+              })
             })
-          })
         }
       }
     }
