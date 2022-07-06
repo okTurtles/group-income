@@ -9,10 +9,10 @@ let invitationLinkAnyone
 let me
 
 describe('Send/edit/remove messages & add/remove emoticons inside group chat', () => {
-  function switchUser (username) {
-    cy.giSwitchUser(username)
-    me = username
-  }
+  // function switchUser (username) {
+  //   cy.giSwitchUser(username)
+  //   me = username
+  // }
 
   function checkIfJoined (channelName, inviter, invitee) {
     // Attention: need to check just after joined
@@ -26,7 +26,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
         cy.get('textarea').should('exist')
       })
     }
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
       const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
       cy.get('.c-message:last-child .c-notification').should('contain', message)
@@ -38,17 +38,27 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('textarea').clear().type(`${message}{enter}`)
       cy.get('textarea').should('be.empty')
     })
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message:last-child .c-who > span:first-child').should('contain', me)
       cy.get('.c-message.sent:last-child .c-text').should('contain', message)
     })
   }
 
   function replyMessage (nth, message) {
-    cy.getByDT('conversationWapper').find(`.c-message:nth-child(${nth})`).within(() => {
-      cy.get('.c-menu>.c-actions').invoke('attr', 'style', 'display: flex').invoke('show')
-      cy.get('.c-menu>.c-actions button[aria-label="Reply"]').click()
-      cy.get('.c-menu>.c-actions').invoke('hide')
+    cy.getByDT('conversationWrapper').find(`.c-message:nth-child(${nth})`).within(() => {
+      cy.get('.c-menu>.c-actions')
+        .invoke('attr', 'style', 'display: flex')
+        .invoke('show')
+        .scrollIntoView()
+        .should('be.visible')
+      cy.get('.c-menu>.c-actions button[aria-label="Reply"]')
+        .scrollIntoView()
+        .should('be.visible')
+        .click({ force: true })
+      cy.get('.c-menu>.c-actions')
+        .should('be.visible')
+        .invoke('hide')
+        .should('be.hidden')
     })
     cy.get('.c-tooltip.is-active').invoke('hide')
 
@@ -76,9 +86,11 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
     checkIfJoined(CHATROOM_GENERAL_NAME)
 
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 25; i++) {
       sendMessage(`${i + 1}`)
     }
+
+    replyMessage(5, 'Three')
 
     cy.giLogout()
   })
@@ -100,11 +112,9 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
     })
 
-    for (let i = 5; i < 10; i++) {
+    for (let i = 25; i < 50; i++) {
       sendMessage(`${i + 1}`)
     }
-
-    replyMessage(5, 'Fourty one')
 
     cy.giLogout()
   })

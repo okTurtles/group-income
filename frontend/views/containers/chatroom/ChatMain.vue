@@ -11,7 +11,7 @@
     .c-body-conversation(
       v-else
       ref='conversation'
-      data-test='conversationWapper'
+      data-test='conversationWrapper'
       @scroll='onChatScroll'
     )
 
