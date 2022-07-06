@@ -3,9 +3,17 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
   .c-container
     .c-header
       i18n.is-title-2.c-title(tag='h2') Notifications
-      button.is-small.is-outlined.c-btnSettings(@click='clickSettings')
-        i.icon-cog.is-prefix
-        i18n Settings
+
+      .c-btn-container
+        i18n.link(
+          tag='button'
+          data-test='MarkAllAsRead_In_Modal'
+          @click='markAllNotificationsAsRead'
+        ) Mark all as read
+
+        button.is-small.is-outlined.c-btnSettings(@click='clickSettings')
+          i.icon-cog.is-prefix
+          i18n Settings
 
     .card.c-card
       notification-list(variant='default')
@@ -13,6 +21,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 
 <script>
 import sbp from '@sbp/sbp'
+import { mapState } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import NotificationList from './NotificationList.vue'
@@ -28,11 +37,19 @@ export default {
       searchText: ''
     }
   },
+  computed: {
+    ...mapState([
+      'currentGroupId'
+    ])
+  },
   methods: {
     clickSettings () {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', {
         section: 'notifications'
       })
+    },
+    markAllNotificationsAsRead () {
+      sbp('gi.notifications/markAllAsRead', this.currentGroupId)
     }
   }
 }
@@ -41,11 +58,23 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-btnSettings {
-  @include phone {
-    position: absolute;
-    left: 1rem;
-    margin-top: 8rem;
+.c-btn-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: absolute;
+  width: 100%;
+  flex-grow: 1;
+  padding: 0 1rem;
+  left: 0;
+  margin-top: 8rem;
+
+  @include tablet {
+    position: relative;
+    width: auto;
+    padding: 0;
+    margin-top: 0;
+    margin-left: 0.5rem;
   }
 }
 

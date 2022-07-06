@@ -12,11 +12,17 @@ tooltip(
     .card.c-card(role='dialog' :aria-label='L("Notifications")' data-test='notificationCard')
       .c-header
         i18n.is-title-4(tag='h2') Notifications
-        i18n.link(tag='button' @click='handleSettingsClick') Settings
+        button.is-icon-small.c-settings-btn(@click='handleSettingsClick')
+          i.icon-cog
 
       .c-body
         notification-list(variant='compact' @select='toggleTooltip')
       .c-footer(v-if='currentNotificationCount')
+        i18n.link(tag='button'
+          @click='markAllNotificationsAsRead'
+          data-test='markAllAsRead_In_Tooltip'
+        ) Mark all as read
+
         router-link.link(:to='{ query: { modal: "NotificationModal" }}' @click.native='toggleTooltip')
           i18n See all
 
@@ -25,7 +31,7 @@ tooltip(
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import ModalClose from '@components/modal/ModalClose.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -48,9 +54,15 @@ export default {
         section: 'notifications'
       })
       this.toggleTooltip()
+    },
+    markAllNotificationsAsRead () {
+      sbp('gi.notifications/markAllAsRead', this.currentGroupId)
     }
   },
   computed: {
+    ...mapState([
+      'currentGroupId'
+    ]),
     ...mapGetters([
       'currentNotificationCount'
     ])
@@ -120,11 +132,20 @@ export default {
   }
 }
 
-.c-header {
+.c-header,
+.c-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.c-header {
   padding: 1rem 1rem 0.5rem;
+}
+
+.c-footer {
+  border-top: 1px solid $general_1;
+  padding: 0.75rem 1rem;
 }
 
 .c-body {
@@ -133,9 +154,18 @@ export default {
   overscroll-behavior-y: contain;
 }
 
-.c-footer {
-  border-top: 1px solid $general_1;
-  padding: 0.5rem 1rem 1rem;
-  text-align: center;
+.c-settings-btn {
+  .icon-cog {
+    transform-origin: 49% 48%;
+  }
+
+  &:hover .icon-cog,
+  &:focus .icon-cog {
+    animation: cog 400ms forwards;
+  }
+}
+
+@keyframes cog {
+  to { transform: rotate(180deg); }
 }
 </style>

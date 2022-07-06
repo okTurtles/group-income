@@ -30,6 +30,7 @@ import './views/utils/vFocus.js'
 import './views/utils/vError.js'
 import './views/utils/vSafeHtml.js'
 import './views/utils/vStyle.js'
+import './views/utils/sebinFakeNotification.js'
 import './utils/touchInteractions.js'
 import 'wicg-inert'
 
