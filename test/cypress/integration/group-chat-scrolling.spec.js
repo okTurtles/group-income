@@ -9,10 +9,10 @@ let invitationLinkAnyone
 let me
 
 describe('Send/edit/remove messages & add/remove emoticons inside group chat', () => {
-  // function switchUser (username) {
-  //   cy.giSwitchUser(username)
-  //   me = username
-  // }
+  function switchUser (username) {
+    cy.giSwitchUser(username)
+    me = username
+  }
 
   function checkIfJoined (channelName, inviter, invitee) {
     // Attention: need to check just after joined
@@ -51,10 +51,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
         .invoke('show')
         .scrollIntoView()
         .should('be.visible')
-      cy.get('.c-menu>.c-actions button[aria-label="Reply"]')
-        .scrollIntoView()
-        .should('be.visible')
-        .click({ force: true })
+      cy.get('.c-menu>.c-actions button[aria-label="Reply"]').click({ force: true })
       cy.get('.c-menu>.c-actions')
         .should('be.visible')
         .invoke('hide')
@@ -87,10 +84,8 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     checkIfJoined(CHATROOM_GENERAL_NAME)
 
     for (let i = 0; i < 25; i++) {
-      sendMessage(`${i + 1}`)
+      sendMessage(`Text-${i + 1}`)
     }
-
-    replyMessage(5, 'Three')
 
     cy.giLogout()
   })
@@ -113,9 +108,31 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
 
     for (let i = 25; i < 50; i++) {
-      sendMessage(`${i + 1}`)
+      sendMessage(`Text-${i + 1}`)
     }
+
+    replyMessage(5, 'Three')
+  })
+
+  it('user1 checks if it scrolls to the target message when click and button to jump to the latest', () => {
+    switchUser(user1)
+    cy.giRedirectToGroupChat()
+
+    cy.getByDT('conversationWrapper').within(() => {
+      // TODO: check the saved scroll position and unread message position
+      // cy.contains('Text-25').should('be.visible')
+      // cy.contains(`Joined ${CHATROOM_GENERAL_NAME}`).should('be.visible')
+      cy.get('.c-message').last().scrollIntoView().should('be.visible').within(() => {
+        cy.get('.c-replying').should('exist').click()
+      })
+      cy.contains('Text-3').should('be.visible')
+    })
+
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('.c-jump-to-latest').should('be.visible')
+    })
 
     cy.giLogout()
   })
 })
+
