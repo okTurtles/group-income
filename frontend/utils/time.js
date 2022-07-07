@@ -113,14 +113,20 @@ export function firstDayOfMonth (date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1)
 }
 
-// TODO: Provide locale fallback in case navigator does not exist (e.g. server, Mocha, etc...)
-const locale = (typeof navigator === 'undefined' && 'en-US') || (navigator.languages ? navigator.languages[0] : navigator.language)
-
 export function humanDate (
   date: number | Date | string,
-  opts?: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+  options?: Intl$DateTimeFormatOptions = { month: 'short', day: 'numeric' }
 ): string {
-  return new Date(date).toLocaleDateString(locale, opts)
+  const locale = typeof navigator === 'undefined'
+    // Fallback for Mocha tests.
+    ? 'en-US'
+    // Flow considers `navigator.languages` to be of type `$ReadOnlyArray<string>`,
+    // which is not compatible with the `string[]` expected by `.toLocaleDateString()`.
+    // Casting to `string[]` through `any` as a workaround.
+    : ((navigator.languages: any): string[]) ?? navigator.language
+  // NOTE: `.toLocaleDateString()` automatically takes local timezone differences into account.
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
+  return new Date(date).toLocaleDateString(locale, options)
 }
 
 export function isPeriodStamp (arg: string): boolean {

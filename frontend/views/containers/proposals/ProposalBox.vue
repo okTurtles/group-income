@@ -3,7 +3,7 @@ li.c-wrapper
   avatar-user.c-avatar(:username='proposal.meta.username' size='sm')
   .c-header
     h4.is-title-4.c-header-title(data-test='title' v-safe-html='title')
-    span.has-text-1 {{ humanDate }}
+    span.has-text-1 {{ humanCreatedDate }}
   .c-main
     ul
       proposal-item(v-for='hash in proposalHashes' :key='hash' :proposalHash='hash')
@@ -19,6 +19,7 @@ li.c-wrapper
 
 <script>
 import { mapGetters } from 'vuex'
+import { humanDate } from '@utils/time.js'
 import L, { LTags } from '@view-utils/translations.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProposalItem from './ProposalItem.vue'
@@ -73,11 +74,8 @@ export default ({
         ? L('{strong_}You{_strong} proposed:', LTags('strong'))
         : L('{username} proposed:', { username: `<strong>${username}</strong>` })
     },
-    humanDate () {
-      const date = new Date(this.proposal.meta.createdDate)
-      // NOTE: `.toLocaleDateString()` automatically takes local timezone differences into account.
-      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
-      return date.toLocaleDateString(navigator.languages ?? navigator.language, {
+    humanCreatedDate () {
+      return humanDate(this.proposal.meta.createdDate, {
         year: 'numeric', month: 'long', day: 'numeric'
       })
     },
