@@ -75,12 +75,9 @@ export default ({
     },
     humanDate () {
       const date = new Date(this.proposal.meta.createdDate)
-      const offset = date.getTimezoneOffset()
-      const minutes = date.getMinutes()
-      date.setMinutes(minutes + offset)
-      const locale = navigator.languages !== undefined ? navigator.languages[0] : navigator.language
-
-      return date.toLocaleDateString(locale, {
+      // NOTE: `.toLocaleDateString()` automatically takes local timezone differences into account.
+      // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/toLocaleDateString
+      return date.toLocaleDateString(navigator.languages ?? navigator.language, {
         year: 'numeric', month: 'long', day: 'numeric'
       })
     },
