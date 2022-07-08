@@ -37,6 +37,10 @@ describe('Group - Removing a member', () => {
     assertMembersCount(1)
   }
 
+  function getProposalItems (num) {
+    return cy.getByDT('proposalItem', 'li').children()
+  }
+
   // ------- Remove member that has only 1 group.
 
   it('user1 creates a groupA', () => {
@@ -151,16 +155,16 @@ describe('Group - Removing a member', () => {
       cy.getByDT('closeModal').should('not.exist')
     })
 
-    cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
+    getProposalItems().eq(0).within(() => {
       cy.getByDT('typeDescription').should('contain', `Remove userBot-${userId} from the group.`)
-      cy.getByDT('statusDescription').should('contain', '1 out of 2 members voted.') // 1 out of 2 - the 3rd member can't vote.
+      cy.getByDT('statusDescription').should('contain', '1 out of 2 members voted') // 1 out of 2 - the 3rd member can't vote.
     })
   })
 
   it('userBot cannot vote in this proposal', () => {
     cy.giSwitchUser(`userBot-${userId}`)
 
-    cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
+    getProposalItems().eq(0).within(() => {
       cy.getByDT('typeDescription').should('contain', `Remove userBot-${userId} (you) from the group.`)
       // There are no buttons to vote.
       cy.get('button').should('not.exist')
@@ -173,7 +177,7 @@ describe('Group - Removing a member', () => {
     // Change from groupB to groupA dashboard
     cy.getByDT('groupsList').find('li:nth-child(1) button').click()
 
-    cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
+    getProposalItems().eq(0).within(() => {
       cy.getByDT('typeDescription').should('contain', `Remove userBot-${userId} from the group.`)
       cy.getByDT('voteFor').click()
       cy.getByDT('statusDescription')

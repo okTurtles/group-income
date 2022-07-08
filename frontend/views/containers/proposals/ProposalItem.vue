@@ -31,24 +31,25 @@ li.c-item-wrapper(data-test='proposalItem')
             v-if='shouldTruncateReason'
             @click='toggleReason'
           ) {{ ephemeral.isReasonHidden ? L('Read more') : L('Hide') }}
-    proposal-vote-options(
-      v-if='proposal.status === statuses.STATUS_OPEN'
-      :proposalHash='proposalHash'
-    )
-  // Note: $refs.voteMsg is used by children ProposalVoteOptions
-  banner-scoped(ref='voteMsg' data-test='voteMsg')
-  p.c-sendLink(v-if='invitationLink' data-test='sendLink')
-    i18n(
-      :args='{ user: proposal.data.proposalData.member}'
-    ) Please send the following link to {user} so they can join the group:
-    | &nbsp;
-    link-to-copy.c-invite-link(
-      :link='invitationLink'
-      tag='p'
-    )
-    i18n.has-text-danger(
-      v-if='isExpiredInvitationLink'
-    ) Expired
+
+        // Note: $refs.voteMsg is used by children ProposalVoteOptions
+        banner-scoped(ref='voteMsg' data-test='voteMsg')
+        p.c-sendLink(v-if='invitationLink' data-test='sendLink')
+          i18n(
+            :args='{ user: proposal.data.proposalData.member}'
+          ) Please send the following link to {user} so they can join the group:
+
+          link-to-copy.c-invite-link(
+            :link='invitationLink'
+            tag='p'
+          )
+          i18n.has-text-danger(
+            v-if='isExpiredInvitationLink'
+          ) Expired
+      proposal-vote-options(
+        v-if='proposal.status === statuses.STATUS_OPEN'
+        :proposalHash='proposalHash'
+      )
 </template>
 
 <script>
@@ -330,8 +331,15 @@ export default ({
 }
 
 .c-main {
-  display: flex;
-  flex-grow: 1;
+  grid-template-columns: auto 1fr auto;
+  display: grid;
+  grid-template-areas: "icons content actions";
+  width: 100%;
+
+  @include phone {
+    grid-template-areas: "icons content content"
+                         "icons actions actions";
+  }
 
   &-content {
     flex-grow: 1;
@@ -347,6 +355,7 @@ export default ({
   background-color: $general_2;
   padding: 1.1875rem 1rem;
   margin-top: 1rem;
+  display: grid;
 
   @include tablet {
     padding: 1rem;
@@ -367,18 +376,24 @@ export default ({
 
 .c-main-content {
   word-break: break-word;
-  min-width: 0; // So ellipsis works correctly inside grid. pls refer to a discussion here(https://github.com/okTurtles/group-income/pull/765#issuecomment-551691920) for the context.
+  grid-area: content;
 }
 
 .c-icons {
   position: relative;
   align-self: flex-start;
+  grid-area: icons;
 
   .icon-round {
     width: 3.75rem;
     height: 3.75rem;
     display: grid;
     align-items: center;
+
+    @include phone {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
   }
 
   .c-avatar {

@@ -1,23 +1,35 @@
 <template lang='pug'>
-  callout-card(
-    v-if='!hasProposals'
-    :title='L("Proposals")'
-    :svg='SvgVote'
-    :isCard='true'
-  )
-    i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
-    i18n.has-text-1(tag='p') No one has created a proposal yet.
+callout-card(
+  v-if='!hasProposals'
+  :title='L("Proposals")'
+  :svg='SvgVote'
+  :isCard='true'
+)
+  i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
+  i18n.has-text-1(tag='p') No one has created a proposal yet.
 
-  // TODO: view without current proposals
-  // TODO: button "see all proposals"
-  page-section(
-    v-else
-    :title='L("Proposals")'
-  )
-    proposal-box(
-      v-for='hashes in proposals'
-      :key='hashes[0]'
-      :proposalHashes='hashes'
+// TODO: view without current proposals
+// TODO: button "see all proposals"
+page-section(
+  v-else
+  :title='L("Proposals")'
+)
+  .c-all-actions
+    i18n.button.is-outlined.is-small(
+      tag='span'
+      @click='seeAll'
+    ) See all proposals
+
+    i18n.button.is-primary.is-small(
+      tag='span'
+      @click='createProposal'
+    ) Create Proposal
+
+  ul.c-proposals(data-test='proposalsWidget')
+    proposal-item(
+      v-for='hashe in proposals'
+      :key='hashe'
+      :proposalHash='hashe'
     )
 </template>
 
@@ -25,14 +37,14 @@
 import { mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
-import ProposalBox from '@containers/proposals/ProposalBox.vue'
+import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
 
 export default ({
   name: 'ProposalsWidget',
   components: {
-    ProposalBox,
+    ProposalItem,
     CalloutCard,
     SvgVote,
     PageSection
@@ -96,14 +108,40 @@ export default ({
       // this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
 
       this.proposalsGrouped = proposalsGrouped // eslint-disable-line vue/no-side-effects-in-computed-properties
-
-      return this.proposalsGrouped
+      console.log(this.proposalsGrouped.flat())
+      return this.proposalsGrouped.flat()
     }
   },
   methods: {
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
+    },
+
+    seeAll () {
+      // Todo
+    },
+    createProposal () {
+      // Todo
     }
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.card {
+  position: relative;
+}
+.c-all-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+
+  @include tablet {
+    position: absolute;
+    right: 1.5rem;
+    top: 0;
+  }
+}
+</style>
