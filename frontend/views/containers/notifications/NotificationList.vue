@@ -191,6 +191,11 @@ export default ({
   }
 }
 
+.c-item-text {
+  word-break: break-word;
+  word-wrap: break-word;
+}
+
 .c-thumbCircle {
   position: relative;
   display: inline-block;
