@@ -337,8 +337,7 @@ export default ({
   width: 100%;
 
   @include phone {
-    grid-template-areas: "icons content content"
-                         "icons actions actions";
+    grid-template-areas: "icons content content" "icons actions actions";
   }
 
   &-content {
@@ -372,11 +371,6 @@ export default ({
   @include phone {
     margin-left: 0.5rem;
   }
-}
-
-.c-main-content {
-  word-break: break-word;
-  grid-area: content;
 }
 
 .c-icons {

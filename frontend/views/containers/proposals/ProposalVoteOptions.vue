@@ -169,7 +169,7 @@ export default ({
   grid-area: actions;
   @include phone {
     flex: auto;
-    margin: 1rem 1rem 1rem 0rem;
+    margin: 1rem 1rem 1rem 0;
 
     .buttons {
       justify-content: flex-end;

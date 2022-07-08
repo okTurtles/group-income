@@ -133,6 +133,7 @@ export default ({
 .card {
   position: relative;
 }
+
 .c-all-actions {
   margin-top: 1.5rem;
   display: flex;
