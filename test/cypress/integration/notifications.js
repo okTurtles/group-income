@@ -1,3 +1,7 @@
+import { TABLET } from '../../../frontend/views/utils/breakpoints.js'
+
+const WIDTH_MOBILE = TABLET - 10
+
 const dreamersGroupName = 'Dreamers'
 const turtlesGroupName = 'Turtles'
 const username = `user-${Math.floor(Math.random() * 10000)}`
@@ -335,27 +339,42 @@ describe('Notifications - markAsUnread and markAllAsUnread', () => {
     })
   })
 
-  it("should clear both the bell icon's badge as well as the current group avatar's badge", () => {
+  it("clicking on 'mark all as unread' should clear both the bell icon's badge as well as the current group avatar's badge", () => {
     cy.window().its('sbp').then(sbp => {
-      sbp('gi.notifications/markAllAsRead')
+      cy.getByDT('markAllAsRead_In_Tooltip').click()
 
       cyCheckBellsBadge(0)
       cyCheckDreamersBadge(0)
       // Other group's counter shouldn't have changed.
       cyCheckTurtlesBadge(fakeNotificationsForTurtles.length)
-    })
-  })
-
-  it('switches to the second group and mark its notifications as unread', () => {
-    cy.window().its('sbp').then(sbp => {
-      switchGroup(turtlesGroupName, sbp)
-      sbp('gi.notifications/markAllAsRead')
+      // close the notification-card tooltip
       cy.getByDT('closeProfileCard').click()
-
-      cyCheckBellsBadge(0)
-      cyCheckDreamersBadge(0)
-      cyCheckTurtlesBadge(0)
-      cy.giLogout()
     })
   })
+
+  it('switches to the second group and mark all its notifications as unread via the button in the notification modal',
+    { viewportWidth: WIDTH_MOBILE },
+    () => {
+      // make sure the test-specific config override is done properly first
+      cy.window().its('innerWidth').should('be.lte', WIDTH_MOBILE)
+      cy.window().its('sbp').then(sbp => {
+        switchGroup(turtlesGroupName, sbp)
+
+        // expand the navigation menu
+        cy.getByDT('NavigationToggleBtn').click()
+        cy.get('nav.c-navigation').should('be.visible')
+
+        // open the notification modal
+        cy.getByDT('notificationBell').click()
+        cy.getByDT('notificationModal').should('be.visible')
+
+        // click on 'mark all as read' button in the modal & close out of it
+        cy.getByDT('MarkAllAsRead_In_Modal').click()
+        cy.getByDT('closeModal').click()
+
+        cyCheckBellsBadge(0)
+        cyCheckDreamersBadge(0)
+        cyCheckTurtlesBadge(0)
+      })
+    })
 })

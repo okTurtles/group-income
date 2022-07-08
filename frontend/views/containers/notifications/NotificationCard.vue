@@ -56,7 +56,7 @@ export default {
       this.toggleTooltip()
     },
     markAllNotificationsAsRead () {
-      sbp('gi.notifications/markAllAsRead', this.currentGroupId)
+      sbp('gi.notifications/markAllAsRead')
     }
   },
   computed: {

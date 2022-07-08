@@ -88,10 +88,13 @@ const mutations = {
   },
 
   // Clears the bell icon's badge, as well as the current group avatar's badge in the sidebar if visible.
-  [keys.MARK_ALL_NOTIFICATIONS_AS_READ] (state) {
-    sbp('state/vuex/getters').currentUnreadNotifications.forEach(item => {
-      item.read = true
-    })
+  [keys.MARK_ALL_NOTIFICATIONS_AS_READ] (state, groupID = '') {
+    const markItemRead = item => { item.read = true }
+    if (groupID) {
+      sbp('state/vuex/getters').unreadGroupNotificationsFor(groupID).forEach(markItemRead)
+    } else {
+      sbp('state/vuex/getters').currentUnreadNotifications.forEach(markItemRead)
+    }
   },
 
   [keys.REMOVE_NOTIFICATION] (state, notification: Notification) {

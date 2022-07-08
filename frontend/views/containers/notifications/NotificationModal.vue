@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Group members")')
+modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Group members")' data-test='notificationModal')
   .c-container
     .c-header
       i18n.is-title-2.c-title(tag='h2') Notifications
@@ -49,7 +49,7 @@ export default {
       })
     },
     markAllNotificationsAsRead () {
-      sbp('gi.notifications/markAllAsRead', this.currentGroupId)
+      sbp('gi.notifications/markAllAsRead')
     }
   }
 }
