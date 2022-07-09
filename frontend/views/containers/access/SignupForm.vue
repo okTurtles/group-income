@@ -48,6 +48,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { noUppercase } from '@view-utils/validators.js'
 
 export default ({
   name: 'SignupForm',
@@ -102,6 +103,7 @@ export default ({
         username: {
           [L('A username is required.')]: required,
           [L('A username cannot contain spaces.')]: nonWhitespace,
+          [L('A username cannot contain uppercase letters.')]: noUppercase,
           [L('This username is already being used.')]: (value) => {
             if (!value) return true
             if (this.usernameAsyncValidation.timer) {
