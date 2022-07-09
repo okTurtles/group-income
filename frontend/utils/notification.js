@@ -1,9 +1,9 @@
-export function checkNotification (): void {
+function checkNotification (): void {
   return !!window.Notification
 }
 
-export async function requestNotificationPermission (): Promise<null | string> {
-  if (!checkNotification() || Notification.permission !== 'default') {
+export async function requestNotificationPermission (force: boolean = false): Promise<null | string> {
+  if (!checkNotification() || (!force && Notification.permission !== 'default')) {
     return null
   }
 
@@ -20,7 +20,6 @@ export function makeNotification ({ title, body, icon }: {
   if (!checkNotification() || Notification.permission !== 'granted') {
     return
   }
-  const notification = new Notification(title, { body, icon })
-  // HACK: need to use variable (ERROR: assigned and never used)
-  console.log('Unread message', notification)
+  // eslint-disable-next-line
+  new Notification(title, { body, icon })
 }

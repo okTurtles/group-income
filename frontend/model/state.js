@@ -165,20 +165,15 @@ const mutations = {
     if (!prevUnread) {
       return
     }
-    Vue.set(state.chatRoomUnread, chatRoomId, {
-      ...prevUnread,
-      mentionings: [...prevUnread.mentionings, { messageId, createdDate }]
-    })
+    prevUnread.mentionings.push({ messageId, createdDate })
   },
   deleteChatRoomUnreadMentioning (state, { chatRoomId, messageId }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
     if (!prevUnread) {
       return
     }
-    Vue.set(state.chatRoomUnread, chatRoomId, {
-      ...prevUnread,
-      mentionings: prevUnread.mentionings.filter(m => m.messageId !== messageId)
-    })
+
+    prevUnread.mentionings = prevUnread.mentionings.filter(m => m.messageId !== messageId)
   },
   deleteChatRoomUnread (state, { chatRoomId }) {
     Vue.delete(state.chatRoomUnread, chatRoomId)

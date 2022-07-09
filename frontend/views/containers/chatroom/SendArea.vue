@@ -367,9 +367,10 @@ export default ({
       this.updateTextWithLines()
     },
     startMentioning (keyword, position) {
+      const all = makeMentionFromUsername('').all.slice(1)
       this.ephemeral.mentioning.options = this.users.concat([{
         // TODO: use group picture here or broadcast icon
-        username: 'here', displayName: 'here', picture: ''
+        username: all, displayName: all, picture: ''
       }]).filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
         user.displayName.toUpperCase().includes(keyword.toUpperCase()))

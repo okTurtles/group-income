@@ -146,7 +146,7 @@ export function makeMentionFromUsername (username: string): {
 } {
   return {
     me: `@${username}`,
-    all: '@here'
+    all: '@all'
   }
 }
 
@@ -193,7 +193,7 @@ function addMentioning ({ contractID, messageId, datetime, text, username, chatR
     icon: rootGetters.globalProfile2(groupID, username).picture
   })
 
-  sbp('okTurtles.events/emit', MESSAGE_RECEIVE, {})
+  sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 
 function deleteMentioning ({ contractID, messageId }: {
