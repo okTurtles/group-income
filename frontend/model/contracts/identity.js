@@ -31,7 +31,7 @@ sbp('chelonia/defineContract', {
         })(data)
 
         if (!noUppercase(data.attributes.username)) {
-          throw new TypeError(L('The username cannot contain uppercase letters.'))
+          throw new TypeError('A username cannot contain uppercase letters.')
         }
       },
       process ({ data }, { state }) {

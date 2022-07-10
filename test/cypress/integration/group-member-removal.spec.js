@@ -131,7 +131,7 @@ describe('Group - Removing a member', () => {
 
   it('userBot joins groupA', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
-      username: `userBot-${userId}`,
+      username: `userbot-${userId}`,
       groupName: groupNameA,
       bypassUI: true
     })
@@ -140,10 +140,10 @@ describe('Group - Removing a member', () => {
   it('user1 proposes to remove userBot', () => {
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
-    openRemoveMemberModal('userBot', 2)
+    openRemoveMemberModal('userbot', 2)
 
     cy.getByDT('modalProposal').within(() => {
-      cy.getByDT('description').should('contain', `Remove userBot-${userId} from the group`)
+      cy.getByDT('description').should('contain', `Remove userbot-${userId} from the group`)
       cy.getByDT('nextBtn').click()
       cy.getByDT('reason', 'textarea').clear().type('I think it is a bot!')
       cy.getByDT('submitBtn').click()
@@ -152,16 +152,16 @@ describe('Group - Removing a member', () => {
     })
 
     cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
-      cy.getByDT('typeDescription').should('contain', `Remove userBot-${userId} from the group.`)
+      cy.getByDT('typeDescription').should('contain', `Remove userbot-${userId} from the group.`)
       cy.getByDT('statusDescription').should('contain', '1 out of 2 members voted.') // 1 out of 2 - the 3rd member can't vote.
     })
   })
 
   it('userBot cannot vote in this proposal', () => {
-    cy.giSwitchUser(`userBot-${userId}`)
+    cy.giSwitchUser(`userbot-${userId}`)
 
     cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
-      cy.getByDT('typeDescription').should('contain', `Remove userBot-${userId} (you) from the group.`)
+      cy.getByDT('typeDescription').should('contain', `Remove userbot-${userId} (you) from the group.`)
       // There are no buttons to vote.
       cy.get('button').should('not.exist')
     })
@@ -174,7 +174,7 @@ describe('Group - Removing a member', () => {
     cy.getByDT('groupsList').find('li:nth-child(1) button').click()
 
     cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
-      cy.getByDT('typeDescription').should('contain', `Remove userBot-${userId} from the group.`)
+      cy.getByDT('typeDescription').should('contain', `Remove userbot-${userId} from the group.`)
       cy.getByDT('voteFor').click()
       cy.getByDT('statusDescription')
         .should('contain', 'Proposal accepted')
@@ -189,7 +189,7 @@ describe('Group - Removing a member', () => {
     cy.giLogout()
 
     // Verify userBot has no group now
-    cy.giLogin(`userBot-${userId}`) // [*note_1*]
+    cy.giLogin(`userbot-${userId}`) // [*note_1*]
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
