@@ -58,7 +58,7 @@ export default ({
       }),
       icon: 'coins',
       level: 'info',
-      linkTo: '/contributions/TODO-LINK-MODAL',
+      linkTo: '/contributions?modal=IncomeDetails',
       scope: 'user'
     }
   },

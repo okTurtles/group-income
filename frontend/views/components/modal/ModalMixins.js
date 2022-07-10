@@ -5,7 +5,7 @@ import { CLOSE_MODAL } from '@utils/events.js'
 import { mapMutations } from 'vuex'
 import ModalClose from './ModalClose.vue'
 
-const modaMixins = {
+const modalMixins = {
   props: {
     a11yTitle: {
       type: String,
@@ -52,4 +52,4 @@ const modaMixins = {
   }
 }
 
-export default modaMixins
+export default modalMixins

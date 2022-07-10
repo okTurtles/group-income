@@ -229,6 +229,7 @@ export default (sbp('sbp/selectors/register', {
     }
     sbp('okTurtles.events/emit', CONTRACT_REGISTERED, contract)
   },
+  'chelonia/queueInvocation': sbp('sbp/selectors/fn', 'okTurtles.eventQueue/queueEvent'),
   // call this manually to resubscribe/unsubscribe from contracts as needed
   // if you are using a custom stateSelector and reload the state (e.g. upon login)
   'chelonia/pubsub/update': function () {
@@ -259,7 +260,7 @@ export default (sbp('sbp/selectors/register', {
       ? (typeof contractIDs === 'string' ? [contractIDs] : contractIDs)
       : Object.keys(sbp(this.config.stateSelector).contracts)
     return Promise.all(listOfIds.map(cID => {
-      return sbp('okTurtles.eventQueue/queueEvent', cID, ['chelonia/private/noop'])
+      return sbp('chelonia/queueInvocation', cID, ['chelonia/private/noop'])
     }))
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
@@ -272,7 +273,7 @@ export default (sbp('sbp/selectors/register', {
       // but after it's finished. This is used in tandem with
       // queuing the 'chelonia/private/in/handleEvent' selector, defined below.
       // This prevents handleEvent getting called with the wrong previousHEAD for an event.
-      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
+      return sbp('chelonia/queueInvocation', contractID, [
         'chelonia/private/in/syncContract', contractID
       ]).catch((err) => {
         console.error(`[chelonia] failed to sync ${contractID}:`, err)
@@ -285,7 +286,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
-      return sbp('okTurtles.eventQueue/queueEvent', contractID, [
+      return sbp('chelonia/queueInvocation', contractID, [
         'chelonia/contract/removeImmediately', contractID
       ])
     }))

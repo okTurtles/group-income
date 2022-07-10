@@ -3,7 +3,7 @@ nav.c-navigation(
   :aria-label='L("Main")'
   :class='{ "is-active": ephemeral.isActive }'
 )
-  toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive')
+  toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive' data-test='NavigationToggleBtn')
     badge.c-toggle-badge(v-if='totalUnreadNotificationCount' data-test='dashboardBadge') {{ totalUnreadNotificationCount }}
   groups-list(v-if='groupsByName.length > 1' :inert='isInert')
 
