@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { noUppercase } from '~/frontend/views/utils/validators.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
@@ -17,13 +18,19 @@ sbp('chelonia/defineContract', {
   },
   actions: {
     'gi.contracts/identity': {
-      validate: objectMaybeOf({
-        attributes: objectMaybeOf({
-          username: string,
-          email: string,
-          picture: string
-        })
-      }),
+      validate: (data, { state, meta }) => {
+        objectMaybeOf({
+          attributes: objectMaybeOf({
+            username: string,
+            email: string,
+            picture: string
+          })
+        })(data)
+
+        if (!noUppercase(data.attributes.username)) {
+          throw new TypeError('A username cannot contain uppercase letters.')
+        }
+      },
       process ({ data }, { state }) {
         const initialState = merge({
           settings: {},
