@@ -73,7 +73,7 @@ import SendArea from './SendArea.vue'
 import { humanDate } from '@utils/time.js'
 import { makeMentionFromUsername } from '@model/contracts/chatroom.js'
 
-const textObjectType = { Text: 'TEXT', Mention: 'MENTION' }
+const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
@@ -113,52 +113,19 @@ export default ({
     ...mapGetters(['chatRoomUsers', 'ourUsername']),
     textObjects () {
       if (!this.text.includes('@')) {
-        return [{ type: textObjectType.Text, text: this.text }]
+        return [{ type: TextObjectType.Text, text: this.text }]
       }
       const ableMentionings = [
         ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
         makeMentionFromUsername('').all
       ]
 
-      let count = (this.text.match(/@/g)).length
-      const splitByMentionings = (objTexts, mentionings) => {
-        if (!mentionings.length || !count) {
-          return objTexts
-        }
-
-        const curMention = mentionings.pop()
-
-        objTexts = objTexts.map(o => {
-          if (o.type === textObjectType.Mention) {
-            return o
-          } else {
-            if (!o.text.includes(curMention)) {
-              return o
-            } else {
-              return o.text.split(curMention).map((text, i) => {
-                if (!i) {
-                  return { type: textObjectType.Text, text }
-                } else {
-                  count--
-                  const myMention = makeMentionFromUsername(this.ourUsername)
-                  return [
-                    {
-                      type: textObjectType.Mention,
-                      text: curMention,
-                      toMe: curMention === myMention.me || curMention === myMention.all
-                    },
-                    { type: textObjectType.Text, text }
-                  ]
-                }
-              }).flat()
-            }
-          }
-        }).flat()
-
-        return splitByMentionings(objTexts, mentionings)
-      }
-
-      return splitByMentionings([{ type: textObjectType.Text, text: this.text }], ableMentionings)
+      return this.text
+        .split(new RegExp(`(${ableMentionings.join('|')})`))
+        .map(t => ableMentionings.includes(t)
+          ? { type: TextObjectType.Mention, text: t }
+          : { type: TextObjectType.Text, text: t }
+        )
     }
   },
   methods: {
@@ -197,10 +164,10 @@ export default ({
       this.$refs.messageAction.$refs.menu.handleTrigger()
     },
     isText (o) {
-      return o.type === textObjectType.Text
+      return o.type === TextObjectType.Text
     },
     isMention (o) {
-      return o.type === textObjectType.Mention
+      return o.type === TextObjectType.Mention
     }
   }
 }: Object)
