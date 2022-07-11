@@ -10,6 +10,8 @@ import { merge } from '~/frontend/utils/giLodash.js'
 import { alphanumericOrHyphens, noConsecutiveHyphens, noLeadingOrTrailingHyphen, noUppercase } from '~/frontend/views/utils/validators.js'
 import L from '~/frontend/views/utils/translations.js'
 
+import { IDENTITY_USERNAME_MAX_CHARS } from './constants.js'
+
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
   getters: {
@@ -30,20 +32,20 @@ sbp('chelonia/defineContract', {
             picture: string
           })
         })(data)
-
-        if (!maxLength(80)(data.attributes.username)) {
-          throw new TypeError('A username cannot exceed 80 characters.')
+        const { username } = data.attributes
+        if (!maxLength(IDENTITY_USERNAME_MAX_CHARS)(username)) {
+          throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`)
         }
-        if (!alphanumericOrHyphens(data.attributes.username)) {
+        if (!alphanumericOrHyphens(username)) {
           throw new TypeError('A username cannot contain non-alphanumeric characters.')
         }
-        if (!noConsecutiveHyphens(data.attributes.username)) {
+        if (!noConsecutiveHyphens(username)) {
           throw new TypeError('A username cannot contain two consecutive hyphens.')
         }
-        if (!noLeadingOrTrailingHyphen(data.attributes.username)) {
+        if (!noLeadingOrTrailingHyphen(username)) {
           throw new TypeError('A username cannot start or end with a hyphen.')
         }
-        if (!noUppercase(data.attributes.username)) {
+        if (!noUppercase(username)) {
           throw new TypeError('A username cannot contain uppercase letters.')
         }
       },

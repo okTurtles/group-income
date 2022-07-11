@@ -46,12 +46,13 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import {
+  IDENTITY_PASSWORD_MIN_CHARS as passwordMinChars,
+  IDENTITY_USERNAME_MAX_CHARS as usernameMaxChars
+} from '@model/contracts/constants.js'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { alphanumericOrHyphens, noConsecutiveHyphens, noLeadingOrTrailingHyphen, noUppercase } from '@view-utils/validators.js'
-
-const passwordMinChars = 7
-const usernameMaxChars = 80
 
 export default ({
   name: 'SignupForm',
@@ -107,7 +108,7 @@ export default ({
           [L('A username is required.')]: required,
           [L('A username cannot contain white space.')]: nonWhitespace,
           [L('A username can only contain letters, digits or hyphens.')]: alphanumericOrHyphens,
-          [L('A username cannot exceed { maxChars } characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
+          [L('A username cannot exceed {maxChars} characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
           [L('A username cannot contain uppercase letters.')]: noUppercase,
           [L('A username cannot start or end with a hyphen.')]: noLeadingOrTrailingHyphen,
           [L('A username cannot contain two consecutive hyphens.')]: noConsecutiveHyphens,
@@ -135,9 +136,7 @@ export default ({
         },
         password: {
           [L('A password is required.')]: required,
-          [
-            L('Your password must be at least { minChars } characters long.', { minChars: passwordMinChars })
-          ]: minLength(passwordMinChars)
+          [L('Your password must be at least {minChars} characters long.', { minChars: passwordMinChars })]: minLength(passwordMinChars)
         },
         email: {
           [L('An email is required.')]: required,

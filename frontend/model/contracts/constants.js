@@ -1,5 +1,8 @@
 'use strict'
 
+export const IDENTITY_PASSWORD_MIN_CHARS = 7
+export const IDENTITY_USERNAME_MAX_CHARS = 80
+
 export const INVITE_INITIAL_CREATOR = 'invite-initial-creator'
 export const INVITE_STATUS = {
   REVOKED: 'revoked',
