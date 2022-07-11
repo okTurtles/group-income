@@ -1,8 +1,7 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
 
 const groupName1 = 'Dreamers'
-// const groupName2 = 'Donuts'
-const secondChannelName = 'Bulgaria Hackathon'
+const groupName2 = 'Bulgaria Hackathon'
 const userId = Math.floor(Math.random() * 10000)
 const user1 = `user1-${userId}`
 const user2 = `user2-${userId}`
@@ -135,7 +134,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
     })
 
-    for (let i = 25; i < 30; i++) {
+    for (let i = 25; i < 50; i++) {
       sendMessage(`Text-${i + 1}`)
     }
 
@@ -157,9 +156,12 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
   })
 
   it('user2 creates a new channel and check how the scroll position is saved for each channel', () => {
-    cy.giAddNewChatroom(secondChannelName, '', false)
-    checkIfJoined(secondChannelName)
+    cy.giAddNewChatroom(groupName2, '', false)
+    checkIfJoined(groupName2)
 
+    // TODO: need to remove this cy.wait
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(1000)
     switchChannel(CHATROOM_GENERAL_NAME)
 
     cy.getByDT('conversationWrapper').within(() => {
@@ -178,39 +180,23 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.getByDT('messageInputWrapper').within(() => {
       cy.get('.c-jump-to-latest').should('not.exist')
     })
+  })
+
+  it('user1 checks how infinite scrolls works', () => {
+    switchUser(user1)
+    cy.giRedirectToGroupChat()
+
+    waitUntilMessageLoaded()
+
+    cy.getByDT('conversationWrapper').scrollTo(0)
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message:nth-child(2) .c-who > span:first-child').should('contain', user1)
+      cy.get('.c-message:nth-child(2) .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
+    })
+
+    waitUntilMessageLoaded()
 
     cy.giLogout()
   })
-
-  // it('user1 checks if it scrolls to the target message when click and button to jump to the latest', () => {
-  //   switchUser(user1)
-  //   cy.giRedirectToGroupChat()
-
-  //   cy.getByDT('messageInputWrapper').within(() => {
-  //     cy.get('.c-jump-to-latest').should('be.visible')
-  //   })
-
-  //   cy.getByDT('conversationWrapper').within(() => {
-  //     // TODO: check the saved scroll position and unread message position
-  //     // cy.contains('Text-25').should('be.visible')
-  //     // cy.contains(`Joined ${CHATROOM_GENERAL_NAME}`).should('be.visible')
-  //   })
-
-  //   cy.getByDT('messageInputWrapper').within(() => {
-  //     cy.get('.c-jump-to-latest').click()
-  //   })
-
-  //   cy.getByDT('conversationWrapper').within(() => {
-  //     cy.get('.c-message').last().should('be.visible').within(() => {
-  //       cy.get('.c-replying').should('exist').click()
-  //     })
-  //     cy.contains('Text-3').should('be.visible')
-  //   })
-
-  //   cy.getByDT('messageInputWrapper').within(() => {
-  //     cy.get('.c-jump-to-latest').should('be.visible')
-  //   })
-
-  //   cy.giLogout()
-  // })
 })
