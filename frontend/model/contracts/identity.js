@@ -2,11 +2,12 @@
 
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
+import { maxLength } from 'vuelidate/lib/validators'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import '~/shared/domains/chelonia/chelonia.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
-import { noUppercase } from '~/frontend/views/utils/validators.js'
+import { alphanumericOrHyphens, noConsecutiveHyphens, noLeadingOrTrailingHyphen, noUppercase } from '~/frontend/views/utils/validators.js'
 import L from '~/frontend/views/utils/translations.js'
 
 sbp('chelonia/defineContract', {
@@ -30,6 +31,18 @@ sbp('chelonia/defineContract', {
           })
         })(data)
 
+        if (!maxLength(80)(data.attributes.username)) {
+          throw new TypeError('A username cannot exceed 80 characters.')
+        }
+        if (!alphanumericOrHyphens(data.attributes.username)) {
+          throw new TypeError('A username cannot contain non-alphanumeric characters.')
+        }
+        if (!noConsecutiveHyphens(data.attributes.username)) {
+          throw new TypeError('A username cannot contain two consecutive hyphens.')
+        }
+        if (!noLeadingOrTrailingHyphen(data.attributes.username)) {
+          throw new TypeError('A username cannot start or end with a hyphen.')
+        }
         if (!noUppercase(data.attributes.username)) {
           throw new TypeError('A username cannot contain uppercase letters.')
         }

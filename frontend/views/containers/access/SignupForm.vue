@@ -39,7 +39,7 @@ form(data-test='signup' @submit.prevent='')
 
 <script>
 import sbp from '@sbp/sbp'
-import { required, minLength, email } from 'vuelidate/lib/validators'
+import { required, maxLength, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
@@ -48,7 +48,10 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { noUppercase } from '@view-utils/validators.js'
+import { alphanumericOrHyphens, noConsecutiveHyphens, noLeadingOrTrailingHyphen, noUppercase } from '@view-utils/validators.js'
+
+const passwordMinChars = 7
+const usernameMaxChars = 80
 
 export default ({
   name: 'SignupForm',
@@ -102,8 +105,12 @@ export default ({
       form: {
         username: {
           [L('A username is required.')]: required,
-          [L('A username cannot contain spaces.')]: nonWhitespace,
+          [L('A username cannot contain white space.')]: nonWhitespace,
+          [L('A username can only contain letters, digits or hyphens.')]: alphanumericOrHyphens,
+          [L('A username cannot exceed { maxChars } characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
           [L('A username cannot contain uppercase letters.')]: noUppercase,
+          [L('A username cannot start or end with a hyphen.')]: noLeadingOrTrailingHyphen,
+          [L('A username cannot contain two consecutive hyphens.')]: noConsecutiveHyphens,
           [L('This username is already being used.')]: (value) => {
             if (!value) return true
             if (this.usernameAsyncValidation.timer) {
@@ -128,7 +135,9 @@ export default ({
         },
         password: {
           [L('A password is required.')]: required,
-          [L('Your password must be at least 7 characteres long.')]: minLength(7)
+          [
+            L('Your password must be at least { minChars } characters long.', { minChars: passwordMinChars })
+          ]: minLength(passwordMinChars)
         },
         email: {
           [L('An email is required.')]: required,
