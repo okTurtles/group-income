@@ -3,7 +3,9 @@ function checkNotification (): void {
 }
 
 export async function requestNotificationPermission (force: boolean = false): Promise<null | string> {
-  if (!checkNotification() || (!force && Notification.permission !== 'default')) {
+  if (!checkNotification() ||
+    (!force && Notification.permission !== 'default') ||
+    (force && Notification.permission !== 'granted')) {
     return null
   }
 
