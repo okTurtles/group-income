@@ -40,7 +40,6 @@ const initialState = {
   theme: defaultTheme,
   reducedMotion: false,
   increasedContrast: false,
-  muteNotification: false,
   fontSize: 16,
   appLogsFilter: process.env.NODE_ENV === 'development'
     ? ['error', 'warn', 'info', 'debug', 'log']
@@ -120,9 +119,6 @@ const mutations = {
   },
   setIncreasedContrast (state, isChecked) {
     state.increasedContrast = isChecked
-  },
-  setMuteNotification (state, isMuted) {
-    state.muteNotification = isMuted
   },
   setFontSize (state, fontSize) {
     state.fontSize = fontSize

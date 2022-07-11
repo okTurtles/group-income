@@ -1854,7 +1854,7 @@
 /* views/containers/user-settings/Appearence.vue */
 "When enabled the amount of animations you see around are reduced." = "Ceci réduit le nombre d’animations affichées.";
 
-/* views/containers/user-settings/Notification.vue */
+/* views/containers/user-settings/NotificationSettings.vue */
 "Request Permission" = "Demander la permission";
 
 /* views/containers/user-settings/Troubleshooting.vue */
