@@ -89,7 +89,7 @@ export default ({
     form: {
       username: {
         [L('A username is required.')]: required,
-        [L('A username cannot contain spaces.')]: nonWhitespace
+        [L('A username cannot contain white space.')]: nonWhitespace
       },
       password: {
         [L('A password is required.')]: required
