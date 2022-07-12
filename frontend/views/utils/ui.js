@@ -19,15 +19,14 @@ export default (sbp('sbp/selectors/register', {
       })
     })
   },
+  'gi.ui/clearBanner' (): void {
+    sbp('okTurtles.data/get', 'BANNER')?.clean()
+  },
   'gi.ui/dangerBanner' (message: string, icon: string = 'exclamation-triangle'): void {
     sbp('okTurtles.data/get', 'BANNER')?.danger(message, icon)
   },
-
-  'gi.ui/generalBanner' (message: string, icon: string): void {
+  'gi.ui/showBanner' (message: string, icon: string): void {
     sbp('okTurtles.data/get', 'BANNER')?.show(message, icon)
-  },
-  'gi.ui/generalBanner/clear' (): void {
-    sbp('okTurtles.data/get', 'BANNER')?.clean()
   },
   'gi.ui/seriousErrorBanner' (e: Error): void {
     sbp('okTurtles.data/get', 'BANNER')?.danger(

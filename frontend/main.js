@@ -212,39 +212,34 @@ async function startApp () {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
-      // call from anywhere in the app:
-      // sbp('okTurtles.data/get', 'BANNER').show(L('Trying to reconnect...'), 'wifi')
-      // sbp('okTurtles.data/get', 'BANNER').danger(L('message'), 'icon-type')
-      // sbp('okTurtles.data/get', 'BANNER').clean()
       sbp('okTurtles.data/apply', PUBSUB_INSTANCE, (pubsub) => {
-        const banner = this.$refs.bannerGeneral
-        // Allow to access `L` inside event handlers.
+        // Allow access to `L` inside event handlers.
         const L = this.L.bind(this)
 
         Object.assign(pubsub.customEventHandlers, {
           offline () {
-            banner.show(L('Your device appears to be offline.'), 'wifi')
+            sbp('gi.ui/showBanner', L('Your device appears to be offline.'), 'wifi')
           },
           online () {
-            banner.clean()
+            sbp('gi.ui/clearBanner')
           },
           'reconnection-attempt' () {
-            banner.show(L('Trying to reconnect...'), 'wifi')
+            sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')
           },
           'reconnection-failed' () {
-            banner.show(L('We could not connect to the server. Please refresh the page.'), 'wifi')
+            sbp('gi.ui/showBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
           },
           'reconnection-succeeded' () {
-            banner.clean()
+            sbp('gi.ui/clearBanner')
           }
         })
       })
       // Useful in case the app is started in offline mode.
       if (navigator.onLine === false) {
-        this.$refs.bannerGeneral.show(L('Your device appears to be offline.'), 'wifi')
+        sbp('gi.ui/showBanner', L('Your device appears to be offline.'), 'wifi')
       }
       if (this.ephemeral.isCorrupted) {
-        this.$refs.bannerGeneral.danger(
+        sbp('gi.ui/dangerBanner',
           L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
             'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&section=troubleshooting">`,
             '_a': '</a>'
