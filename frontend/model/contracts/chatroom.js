@@ -9,7 +9,7 @@ import {
   string, literalOf, unionOf, optional
 } from '~/frontend/utils/flowTyper.js'
 import { merge, cloneDeep } from '~/frontend/utils/giLodash.js'
-import { makeNotification } from '~/frontend/utils/notification.js'
+import { makeNotification } from '~/frontend/utils/nativeNotification.js'
 import L from '~/frontend/views/utils/translations.js'
 import {
   CHATROOM_NAME_LIMITS_IN_CHARS,
@@ -150,7 +150,7 @@ export function makeMentionFromUsername (username: string): {
   }
 }
 
-function addMentioning ({ contractID, messageId, datetime, text, username, chatRoomName }: {
+function addMention ({ contractID, messageId, datetime, text, username, chatRoomName }: {
   contractID: string,
   messageId: string,
   datetime: string,
@@ -165,27 +165,13 @@ function addMentioning ({ contractID, messageId, datetime, text, username, chatR
     return
   }
 
-  sbp('state/vuex/commit', 'addChatRoomUnreadMentioning', {
+  sbp('state/vuex/commit', 'addChatRoomUnreadMention', {
     chatRoomId: contractID,
     messageId,
     createdDate: new Date(datetime).getTime()
   })
 
   const rootGetters = sbp('state/vuex/getters')
-  // Commented to make notification for mentions
-  // const isExist = rootGetters.currentGroupNotifications.find(n =>
-  //   n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${contractID}`
-  // )
-  // if (!isExist) {
-  //   const rootState = sbp('state/vuex/state')
-  //   const groupID = rootGetters.groupIdFromChatRoomId(contractID)
-  //   sbp('gi.notifications/emit', 'MENTION_ADDED', {
-  //     groupID: groupID,
-  //     chatRoomId: contractID,
-  //     username: rootState.loggedIn.username
-  //   })
-  // }
-
   const groupID = rootGetters.groupIdFromChatRoomId(contractID)
   makeNotification({
     title: `# ${chatRoomName}`,
@@ -196,15 +182,15 @@ function addMentioning ({ contractID, messageId, datetime, text, username, chatR
   sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 
-function deleteMentioning ({ contractID, messageId }: {
+function deleteMention ({ contractID, messageId }: {
   contractID: string, messageId: string
 }): void {
-  sbp('state/vuex/commit', 'deleteChatRoomUnreadMentioning', { chatRoomId: contractID, messageId })
+  sbp('state/vuex/commit', 'deleteChatRoomUnreadMention', { chatRoomId: contractID, messageId })
 
   // Commented to delete notification for mentions
   // const rootState = sbp('state/vuex/state')
   // if (!rootState.chatRoomUnread[contractID] ||
-  //   !rootState.chatRoomUnread[contractID].mentionings.length) {
+  //   !rootState.chatRoomUnread[contractID].mentions.length) {
   //   const rootGetters = sbp('state/vuex/getters')
   //   const notification = rootGetters.currentGroupNotifications.find(n =>
   //     n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${contractID}`
@@ -463,7 +449,7 @@ sbp('chelonia/defineContract', {
         const mentions = makeMentionFromUsername(me)
         if (data.type === MESSAGE_TYPES.TEXT &&
           (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))) {
-          addMentioning({
+          addMention({
             contractID,
             messageId: newMessage.id,
             datetime: newMessage.datetime,
@@ -514,12 +500,12 @@ sbp('chelonia/defineContract', {
         if (me === meta.username) {
           return
         }
-        const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentionings.find(m => m.messageId === data.id)
+        const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentions.find(m => m.messageId === data.id)
         const mentions = makeMentionFromUsername(me)
         const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all)
         if (!isAlreadyAdded && isIncludeMention) {
           // TODO: Not sure createdDate should be this way
-          addMentioning({
+          addMention({
             contractID,
             messageId: data.id,
             datetime: meta.createdDate,
@@ -528,7 +514,7 @@ sbp('chelonia/defineContract', {
             chatRoomName: getters.chatRoomAttributes.name
           })
         } else if (isAlreadyAdded && !isIncludeMention) {
-          deleteMentioning({ contractID, messageId: data.id })
+          deleteMention({ contractID, messageId: data.id })
         }
       }
     },
@@ -567,8 +553,8 @@ sbp('chelonia/defineContract', {
         if (me === meta.username) {
           return
         }
-        if (rootState.chatRoomUnread[contractID].mentionings.find(m => m.messageId === data.id)) {
-          deleteMentioning({ contractID, messageId: data.id })
+        if (rootState.chatRoomUnread[contractID].mentions.find(m => m.messageId === data.id)) {
+          deleteMention({ contractID, messageId: data.id })
         }
 
         emitMessageEvent({ contractID, hash })

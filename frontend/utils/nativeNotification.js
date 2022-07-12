@@ -1,4 +1,4 @@
-function checkNotification (): void {
+function checkNotification (): boolean {
   return !!window.Notification
 }
 

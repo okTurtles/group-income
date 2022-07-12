@@ -346,7 +346,7 @@
 "The group has a new member. Say hi to {name}!" = "Le groupe a un nouveau membre. Souhaitez la bienvenue à {name} !";
 
 /* model/notifications/templates.js */
-"You have unread mentionings." = "Vous avez des mentions non lues.";
+"You have unread mentions." = "Vous avez des mentions non lues.";
 
 /* model/notifications/templates.js */
 "You haven't updated your income details in more than {months} months. Would you like to review them now?" = "Vos détails de revenu n’ont pas été mis à jour depuis plus de {months} mois. Souhaitez-vous les vérifier maintenant ?";

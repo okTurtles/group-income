@@ -115,14 +115,14 @@ export default ({
       if (!this.text.includes('@')) {
         return [{ type: TextObjectType.Text, text: this.text }]
       }
-      const ableMentionings = [
+      const possibleMentions = [
         ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
         makeMentionFromUsername('').all
       ]
 
       return this.text
-        .split(new RegExp(`(${ableMentionings.join('|')})`))
-        .map(t => ableMentionings.includes(t)
+        .split(new RegExp(`(${possibleMentions.join('|')})`))
+        .map(t => possibleMentions.includes(t)
           ? { type: TextObjectType.Mention, text: t }
           : { type: TextObjectType.Text, text: t }
         )

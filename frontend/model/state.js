@@ -144,10 +144,10 @@ const mutations = {
     Vue.delete(state.chatRoomScrollPosition, chatRoomId)
   },
   setChatRoomUnreadSince (state, { chatRoomId, messageId, createdDate }) {
-    const prevMentionings = state.chatRoomUnread[chatRoomId] ? state.chatRoomUnread[chatRoomId].mentionings : []
+    const prevMentions = state.chatRoomUnread[chatRoomId] ? state.chatRoomUnread[chatRoomId].mentions : []
     Vue.set(state.chatRoomUnread, chatRoomId, {
       since: { messageId, createdDate, deletedDate: null },
-      mentionings: prevMentionings.filter(m => m.createdDate > createdDate) // TODO: in model/contracts/chatroom.js
+      mentions: prevMentions.filter(m => m.createdDate > createdDate) // TODO: in model/contracts/chatroom.js
     })
   },
   deleteChatRoomUnreadSince (state, { chatRoomId, deletedDate }) {
@@ -156,20 +156,20 @@ const mutations = {
       deletedDate
     })
   },
-  addChatRoomUnreadMentioning (state, { chatRoomId, messageId, createdDate }) {
+  addChatRoomUnreadMention (state, { chatRoomId, messageId, createdDate }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
     if (!prevUnread) {
       return
     }
-    prevUnread.mentionings.push({ messageId, createdDate })
+    prevUnread.mentions.push({ messageId, createdDate })
   },
-  deleteChatRoomUnreadMentioning (state, { chatRoomId, messageId }) {
+  deleteChatRoomUnreadMention (state, { chatRoomId, messageId }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
     if (!prevUnread) {
       return
     }
 
-    prevUnread.mentionings = prevUnread.mentionings.filter(m => m.messageId !== messageId)
+    prevUnread.mentions = prevUnread.mentions.filter(m => m.messageId !== messageId)
   },
   deleteChatRoomUnread (state, { chatRoomId }) {
     Vue.delete(state.chatRoomUnread, chatRoomId)
@@ -496,6 +496,7 @@ const getters = {
       })
   },
   globalProfile (state, getters) {
+    // get profile from username who is part of current group
     return username => {
       const groupProfile = getters.groupProfile(username)
       const identityState = groupProfile && state[groupProfile.contractID]
@@ -503,6 +504,7 @@ const getters = {
     }
   },
   globalProfile2 (state, getters) {
+    // get profile from username who is part of the group identified by it's group ID
     return (groupID, username) => {
       const groupProfile = state[groupID]?.profiles[username]
       const identityState = groupProfile && state[groupProfile.contractID]
@@ -530,12 +532,12 @@ const getters = {
   currentChatRoomUnreadSince (state, getters) {
     return getters.ourUnreadMessages[getters.currentChatRoomId]?.since // undefined means to the latest
   },
-  currentChatRoomUnreadMentionings (state, getters) {
-    return getters.ourUnreadMessages[getters.currentChatRoomId]?.mentionings || []
+  currentChatRoomUnreadMentions (state, getters) {
+    return getters.ourUnreadMessages[getters.currentChatRoomId]?.mentions || []
   },
-  chatRoomUnreadMentionings (state, getters) {
+  chatRoomUnreadMentions (state, getters) {
     return (chatRoomId: string) => {
-      return getters.ourUnreadMessages[chatRoomId]?.mentionings || []
+      return getters.ourUnreadMessages[chatRoomId]?.mentions || []
     }
   },
   groupIdFromChatRoomId (state, getters) {
@@ -560,11 +562,11 @@ const getters = {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&
         chatRoom.users[state.loggedIn.username]) {
-        const unreadMentioningsCount = getters.chatRoomUnreadMentionings(contractID).length
+        const unreadMentionsCount = getters.chatRoomUnreadMentions(contractID).length
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
-          unreadMentioningsCount,
+          unreadMentionsCount,
           joined: true
         }
       } else {

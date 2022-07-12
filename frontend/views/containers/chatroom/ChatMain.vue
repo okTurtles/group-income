@@ -192,7 +192,7 @@ export default ({
       'currentChatRoomScrollPosition',
       'currentChatRoomUnreadSince',
       'currentGroupNotifications',
-      'currentChatRoomUnreadMentionings'
+      'currentChatRoomUnreadMentions'
     ]),
     bodyStyles () {
       const defaultHeightInRem = 14
@@ -431,8 +431,8 @@ export default ({
       if (this.currentChatRoomUnreadSince) {
         if (!this.currentChatRoomUnreadSince.deletedDate) {
           unreadPosition = this.currentChatRoomUnreadSince.messageId
-        } else if (this.currentChatRoomUnreadMentionings.length) {
-          unreadPosition = this.currentChatRoomUnreadMentionings[0].messageId
+        } else if (this.currentChatRoomUnreadMentions.length) {
+          unreadPosition = this.currentChatRoomUnreadMentions[0].messageId
         }
       }
       const messageIdToScroll = this.currentChatRoomScrollPosition || unreadPosition
@@ -649,16 +649,6 @@ export default ({
             this.setMessageEventListener({ force: true })
           }
         })
-      }
-    },
-    'currentChatRoomUnreadMentionings' (to, from) {
-      if (Array.isArray(to) && !to.length) {
-        const notification = this.currentGroupNotifications.find(n =>
-          n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${this.currentChatRoomId}`
-        )
-        if (notification) {
-          sbp('gi.notifications/remove', notification)
-        }
       }
     }
   }

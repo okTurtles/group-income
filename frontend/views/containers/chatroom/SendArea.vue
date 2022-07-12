@@ -3,14 +3,14 @@
   :class='{"is-editing": isEditing}'
   data-test='messageInputWrapper'
 )
-  .c-mentionings(
-    v-if='ephemeral.mentioning.options.length'
-    ref='mentioningWrapper'
+  .c-mentions(
+    v-if='ephemeral.mention.options.length'
+    ref='mentionWrapper'
   )
-    template(v-for='(user, index) in ephemeral.mentioning.options')
-      .c-mentioning-user(
-        ref='mentioning'
-        :class='{"is-selected": index === ephemeral.mentioning.index}'
+    template(v-for='(user, index) in ephemeral.mention.options')
+      .c-mention-user(
+        ref='mention'
+        :class='{"is-selected": index === ephemeral.mention.index}'
         @click='addSelectedMention(index)'
       )
         avatar(:src='user.picture' size='xs')
@@ -164,7 +164,7 @@ export default ({
         textWithLines: '',
         showButtons: true,
         isPhone: false,
-        mentioning: {
+        mention: {
           position: -1,
           options: [],
           index: -1
@@ -243,53 +243,53 @@ export default ({
         return this.createNewLine()
       }
     },
-    updateMentioningKeyword () {
+    updateMentionKeyword () {
       let value = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart)
       const lastIndex = value.lastIndexOf('@')
-      const regExWordStart = /(\s|\n)/g // Space of Enter
+      const regExWordStart = /(\s)/g // RegEx Metacharacter \s
       if (lastIndex === -1 || (lastIndex > 0 && !regExWordStart.test(value[lastIndex - 1]))) {
-        return this.endMentioning()
+        return this.endMention()
       }
       value = value.slice(lastIndex + 1)
       if (regExWordStart.test(value)) {
-        return this.endMentioning()
+        return this.endMention()
       }
-      this.startMentioning(value, lastIndex)
+      this.startMention(value, lastIndex)
     },
     handleKeydown (e) {
       if (Object.values(caretKeyCodes).includes(e.keyCode)) {
-        const nChoices = this.ephemeral.mentioning.options.length
+        const nChoices = this.ephemeral.mention.options.length
         if (nChoices &&
           (e.keyCode === caretKeyCodes.ArrowUp || e.keyCode === caretKeyCodes.ArrowDown)) {
           const offset = e.keyCode === caretKeyCodes.ArrowUp ? -1 : 1
-          const newIndex = (this.ephemeral.mentioning.index + offset + nChoices) % nChoices
-          this.ephemeral.mentioning.index = newIndex
+          const newIndex = (this.ephemeral.mention.index + offset + nChoices) % nChoices
+          this.ephemeral.mention.index = newIndex
 
-          const { clientHeight, scrollHeight } = this.$refs.mentioningWrapper
+          const { clientHeight, scrollHeight } = this.$refs.mentionWrapper
           if (scrollHeight !== clientHeight) {
-            const offsetTop = this.$refs.mentioning[newIndex].offsetTop + this.$refs.mentioning[newIndex].clientHeight
+            const offsetTop = this.$refs.mention[newIndex].offsetTop + this.$refs.mention[newIndex].clientHeight
 
-            this.$refs.mentioningWrapper.scrollTo({
+            this.$refs.mentionWrapper.scrollTo({
               left: 0, top: Math.max(0, offsetTop - clientHeight)
             })
           }
 
           e.preventDefault()
         } else {
-          this.endMentioning()
+          this.endMention()
         }
       }
     },
     handleKeyDownEnter () {
-      if (this.ephemeral.mentioning.options.length) {
-        this.addSelectedMention(this.ephemeral.mentioning.index)
+      if (this.ephemeral.mention.options.length) {
+        this.addSelectedMention(this.ephemeral.mention.index)
       } else {
         this.sendMessage()
       }
     },
     handleKeyDownTab (e) {
-      if (this.ephemeral.mentioning.options.length) {
-        this.addSelectedMention(this.ephemeral.mentioning.index)
+      if (this.ephemeral.mention.options.length) {
+        this.addSelectedMention(this.ephemeral.mention.index)
         e.preventDefault()
       }
     },
@@ -299,20 +299,20 @@ export default ({
 
       if (!Object.values(caretKeyCodes).includes(e.keyCode) &&
         !Object.values(functionalKeyCodes).includes(e.keyCode)) {
-        this.updateMentioningKeyword()
+        this.updateMentionKeyword()
       }
     },
     addSelectedMention (index) {
       const curValue = this.$refs.textarea.value
       const curPosition = this.$refs.textarea.selectionStart
 
-      const mention = makeMentionFromUsername(this.ephemeral.mentioning.options[index].username).me
-      const value = curValue.slice(0, this.ephemeral.mentioning.position) +
+      const mention = makeMentionFromUsername(this.ephemeral.mention.options[index].username).me
+      const value = curValue.slice(0, this.ephemeral.mention.position) +
          mention + ' ' + curValue.slice(curPosition)
       this.$refs.textarea.value = value
-      const selectionStart = this.ephemeral.mentioning.position + mention.length + 1
+      const selectionStart = this.ephemeral.mention.position + mention.length + 1
       this.$refs.textarea.setSelectionRange(selectionStart, selectionStart)
-      this.endMentioning()
+      this.endMention()
     },
     updateTextWithLines () {
       const newValue = this.$refs.textarea.value
@@ -356,7 +356,7 @@ export default ({
       this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
-      this.endMentioning()
+      this.endMention()
     },
     createPool () {
       console.log('TODO')
@@ -366,21 +366,21 @@ export default ({
       this.closeEmoticon()
       this.updateTextWithLines()
     },
-    startMentioning (keyword, position) {
+    startMention (keyword, position) {
       const all = makeMentionFromUsername('').all.slice(1)
-      this.ephemeral.mentioning.options = this.users.concat([{
+      this.ephemeral.mention.options = this.users.concat([{
         // TODO: use group picture here or broadcast icon
         username: all, displayName: all, picture: ''
       }]).filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
         user.displayName.toUpperCase().includes(keyword.toUpperCase()))
-      this.ephemeral.mentioning.position = position
-      this.ephemeral.mentioning.index = 0
+      this.ephemeral.mention.position = position
+      this.ephemeral.mention.index = 0
     },
-    endMentioning () {
-      this.ephemeral.mentioning.position = -1
-      this.ephemeral.mentioning.index = -1
-      this.ephemeral.mentioning.options = []
+    endMention () {
+      this.ephemeral.mention.position = -1
+      this.ephemeral.mention.index = -1
+      this.ephemeral.mention.options = []
     }
   }
 }: Object)
@@ -533,7 +533,7 @@ $initialHeight: 43px;
   top: -1rem;
 }
 
-.c-mentionings {
+.c-mentions {
   background-color: $general_2;
   border: 1px solid var(--general_0);
   border-radius: 0.3rem 0.3rem 0 0;
@@ -546,18 +546,18 @@ $initialHeight: 43px;
   max-height: 12rem;
 }
 
-.c-mentionings .c-mentioning-user {
+.c-mentions .c-mention-user {
   display: flex;
   align-items: center;
   padding: 0.2rem;
   cursor: pointer;
 }
 
-.c-mentionings .c-mentioning-user.is-selected {
+.c-mentions .c-mention-user.is-selected {
   background-color: $primary_2;
 }
 
-.c-mentionings .c-mentioning-user .c-username {
+.c-mentions .c-mention-user .c-username {
   margin-left: 0.3rem;
 }
 

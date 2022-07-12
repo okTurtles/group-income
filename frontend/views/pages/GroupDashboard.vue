@@ -54,7 +54,7 @@ import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
 import { addTimeToDate, DAYS_MILLIS, humanDate } from '~/frontend/utils/time.js'
-import { requestNotificationPermission } from '~/frontend/utils/notification.js'
+import { requestNotificationPermission } from '~/frontend/utils/nativeNotification.js'
 
 export default ({
   name: 'GroupDashboard',

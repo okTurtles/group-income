@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import { requestNotificationPermission } from '~/frontend/utils/notification.js'
+import { requestNotificationPermission } from '~/frontend/utils/nativeNotification.js'
 export default ({
   name: 'NotificationSettings',
   methods: {

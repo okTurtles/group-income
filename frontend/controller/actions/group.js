@@ -222,7 +222,7 @@ export default (sbp('sbp/selectors/register', {
         /**
          * flag READY_TO_JOIN_CHATROOM is not necessary to sync actually
          * But just this is only for checking if syncing chatrooms or not
-         * Especially inside addMentioning in model/contracts/chatroom.js
+         * Especially inside addMention in model/contracts/chatroom.js
          */
         sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
         await sbp('chelonia/contract/sync', chatRoomIds)

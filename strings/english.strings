@@ -996,6 +996,9 @@
 /* views/components/group-creation-steps/GroupMincome.vue */
 "This value can be adjusted in the future." = "This value can be adjusted in the future.";
 
+/* model/notifications/templates.js */
+"You have unread mentions." = "You have unread mentions.";
+
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
 "Add your income details" = "Add your income details";
 
@@ -1388,9 +1391,6 @@
 
 /* views/containers/user-settings/settings.js */
 "Appearance" = "Appearance";
-
-/* model/notifications/templates.js */
-"You have unread mentionings." = "You have unread mentionings.";
 
 /* controller/actions/group.js */
 "Couldn't join the #{chatroomName} in the group. Doesn't exist." = "Couldn't join the #{chatroomName} in the group. Doesn't exist.";

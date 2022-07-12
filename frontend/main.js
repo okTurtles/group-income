@@ -277,21 +277,15 @@ async function startApp () {
       this.setBadgeOnTab()
     },
     computed: {
-      ...mapGetters(['ourUnreadMessages', 'unreadGroupNotificationCountFor']),
+      ...mapGetters(['ourUnreadMessages', 'totalUnreadNotificationCount']),
       ...mapState(['contracts']),
       ourUnreadMessagesCount () {
         return Object.keys(this.ourUnreadMessages)
-          .map(cId => this.ourUnreadMessages[cId].mentionings.length)
-          .reduce((a, b) => a + b, 0)
-      },
-      ourNotificationsCount () {
-        return Object.keys(this.contracts)
-          .filter(cId => this.contracts[cId].type === 'gi.contracts/group')
-          .map(gId => this.unreadGroupNotificationCountFor(gId))
+          .map(cId => this.ourUnreadMessages[cId].mentions.length)
           .reduce((a, b) => a + b, 0)
       },
       shouldSetBadge () {
-        return this.ourUnreadMessagesCount + this.ourNotificationsCount > 0
+        return this.ourUnreadMessagesCount + this.totalUnreadNotificationCount > 0
       },
       showNav () {
         return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
