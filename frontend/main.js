@@ -48,23 +48,25 @@ async function startApp () {
   // force debug output even in production
   const debugParam = new URLSearchParams(window.location.search).get('debug')
   if (process.env.NODE_ENV !== 'production' || debugParam === 'true') {
-    const reducer = (o, v) => { o[v] = true; return o }
-    const domainBlacklist = [
+    // Domains for which debug logging won't be enabled.
+    const domainBlacklist = new Set([
       'sbp',
       'okTurtles.data'
-    ].reduce(reducer, {})
-    const selBlacklist = [
+    ])
+    // Selectors for which debug logging won't be enabled.
+    const selectorBlacklist = new Set([
       'chelonia/db/get',
       'chelonia/db/logHEAD',
       'chelonia/db/set',
       'state/vuex/state',
       'state/vuex/getters',
       'gi.db/settings/save'
-    ].reduce(reducer, {})
+    ])
     sbp('sbp/filters/global/add', (domain, selector, data) => {
-      if (domainBlacklist[domain] || selBlacklist[selector]) return
+      if (domainBlacklist.has(domain) || selectorBlacklist.has(selector)) return
       console.debug(`[sbp] ${selector}`, data)
     })
+    // Re-enable debug logging for 'gi.db/settings/save', but won't log the saved data.
     sbp('sbp/filters/selector/add', 'gi.db/settings/save', (domain, selector, data) => {
       console.debug("[sbp] 'gi.db/settings/save'", data[0])
     })
