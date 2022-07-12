@@ -24,9 +24,10 @@ import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
-import L, { LError, LTags } from '@view-utils/translations.js'
+import L from '@view-utils/translations.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import './views/utils/avatar.js'
+import './views/utils/ui.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
 import './views/utils/vSafeHtml.js'
@@ -72,37 +73,16 @@ async function startApp () {
     })
   }
 
-  function contractName (contractID: string): string {
-    return sbp('state/vuex/state').contracts[contractID]?.type || contractID
-  }
-
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
-  function notificationError (activity: string) {
-    return function (e: Error, message: GIMessage) {
-      const contractID = message.contractID()
-      const [opType] = message.op()
-      const { action, meta } = message.decryptedValue()
-      sbp('gi.notifications/emit', 'ERROR', {
-        message: L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", {
-          ...LTags('b'),
-          errName: e.name,
-          activity,
-          action: action || opType,
-          who: meta?.username || 'TODO: signing keyID',
-          contract: contractName(contractID),
-          errMsg: e.message || '?'
-        })
-      })
-      // Since a runtime error just occured, we likely want to persist app logs to local storage now.
-      sbp('appLogs/save')
-    }
+
+  // Used in 'chelonia/configure' hooks to emit an error notification.
+  function errorNotification (activity: string, error: Error, message: GIMessage) {
+    sbp('gi.notifications/emit', 'CHELONIA_ERROR', { activity, error, message })
+    // Since a runtime error just occured, we likely want to persist app logs to local storage now.
+    sbp('appLogs/save')
   }
-  function displaySeriousErrorBanner (e: Error) {
-    sbp('okTurtles.data/get', 'BANNER').danger(
-      L('Fatal error: {reportError}', LError(e)), 'exclamation-triangle'
-    )
-  }
+
   sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
     stateSelector: 'state/vuex/state',
@@ -111,11 +91,11 @@ async function startApp () {
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {
         if (e.name === 'ChelErrorUnrecoverable') {
-          displaySeriousErrorBanner(e)
+          sbp('gi.ui/seriousErrorBanner', e)
         }
         if (sbp('okTurtles.data/get', 'sideEffectError') !== message.hash()) {
-          // avoid duplicate notifications for the same message
-          notificationError('handleEvent')(e, message)
+          // Avoid duplicate notifications for the same message.
+          errorNotification('handleEvent', e, message)
         }
       },
       processError: (e: Error, message: GIMessage) => {
@@ -124,12 +104,12 @@ async function startApp () {
             'gi.actions/group/autobanUser', message, e
           ])
         }
-        notificationError('process')(e, message)
+        errorNotification('process', e, message)
       },
       sideEffectError: (e: Error, message: GIMessage) => {
-        displaySeriousErrorBanner(e)
+        sbp('gi.ui/seriousErrorBanner', e)
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
-        notificationError('sideEffect')(e, message)
+        errorNotification('sideEffect', e, message)
       }
     }
   })
