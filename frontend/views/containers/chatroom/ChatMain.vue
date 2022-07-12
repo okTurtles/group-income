@@ -333,6 +333,10 @@ export default ({
           const msgIndex = findMessageIdx(messageId, this.messages)
           if (msgIndex >= 0) {
             scrollAndHighlight(msgIndex)
+          } else {
+            // this is when the target message is deleted after reply message
+            // should let user know the target message is deleted
+            console.debug('Message is removed')
           }
         }
       }
