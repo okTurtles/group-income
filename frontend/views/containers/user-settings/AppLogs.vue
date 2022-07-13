@@ -16,13 +16,13 @@
           .c-filters-inner
             legend.c-filters-legend Optional logs:
             label.checkbox
-              input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
+              input.input(type='checkbox' name='filter' v-model='form.filter' value='debug' checked)
               i18n Debug
             label.checkbox
               input.input(type='checkbox' name='filter' v-model='form.filter' value='info' checked)
               i18n Info
             label.checkbox
-              input.input(type='checkbox' name='filter' v-model='form.filter' value='log' checked)
+              input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
               i18n Log
 
         button.is-small.c-download(@click='downloadLogs')
@@ -39,16 +39,16 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapState, mapMutations } from 'vuex'
+import { mapMutations } from 'vuex'
 import safeLinkTag from '@views/utils/safeLinkTag.js'
-import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
+import { CAPTURED_LOGS } from '@utils/events.js'
 
 export default ({
   name: 'AppLogs',
   data () {
     return {
       form: {
-        filter: []
+        filter: this.$store.state.settings.appLogsFilter
       },
       ephemeral: {
         logs: []
@@ -56,7 +56,6 @@ export default ({
     }
   },
   created () {
-    this.form.filter = this.appLogsFilter
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
 
     // Log entries in chronological order (oldest to most recent).
@@ -68,7 +67,6 @@ export default ({
   watch: {
     'form.filter' (filters) {
       this.setAppLogsFilters(filters)
-      sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, filters)
     },
     prettyLogs () {
       this.$nextTick(() => {
@@ -80,9 +78,6 @@ export default ({
     }
   },
   computed: {
-    ...mapState([
-      'appLogsFilter'
-    ]),
     errorMsg () {
       return this.$route.query.errorMsg
     },

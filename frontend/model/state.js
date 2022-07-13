@@ -8,26 +8,20 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
-import Colors from './colors.js'
 import { CHATROOM_PRIVACY_LEVEL } from './contracts/constants.js'
 import * as _ from '~/frontend/utils/giLodash.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
 import './contracts/chatroom.js'
 import './contracts/group.js'
-import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
+import settingsModule, { defaultSettings } from '~/frontend/model/settings/vuexModule.js'
 
 Vue.use(Vuex)
-
-let defaultTheme = THEME_LIGHT
-if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-  defaultTheme = THEME_DARK
-}
 
 const initialState = {
   currentGroupId: null,
@@ -36,14 +30,7 @@ const initialState = {
   chatRoomUnread: {}, // [chatRoomId]: { messageId, createdDate }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
-  loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: defaultTheme,
-  reducedMotion: false,
-  increasedContrast: false,
-  fontSize: 16,
-  appLogsFilter: process.env.NODE_ENV === 'development'
-    ? ['error', 'warn', 'info', 'debug', 'log']
-    : ['error', 'warn', 'info']
+  loggedIn: false // false | { username: string, identityContractID: string }
 }
 
 sbp('sbp/selectors/register', {
@@ -57,6 +44,10 @@ sbp('sbp/selectors/register', {
     // or adding new settings to the initialState above
     if (!state.notifications) {
       state.notifications = []
+    }
+    if (!state.settings) {
+      // Using cloneDeep() ensures we get a new object every time.
+      state.settings = _.cloneDeep(defaultSettings)
     }
     if (!state.currentChatRoomIDs) {
       state.currentChatRoomIDs = {}
@@ -103,28 +94,6 @@ const mutations = {
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
-  },
-  setTheme (state, color) {
-    state.theme = color
-  },
-  setReducedMotion (state, isChecked) {
-    state.reducedMotion = isChecked
-  },
-  setTemporaryReducedMotion (state) {
-    const tempSettings = state.reducedMotion
-    state.reducedMotion = true
-    setTimeout(() => {
-      state.reducedMotion = tempSettings
-    }, 300)
-  },
-  setIncreasedContrast (state, isChecked) {
-    state.increasedContrast = isChecked
-  },
-  setFontSize (state, fontSize) {
-    state.fontSize = fontSize
-  },
-  setAppLogsFilters (state, filters) {
-    state.appLogsFilter = filters
   },
   setCurrentChatRoomId (state, { groupId, chatRoomId }) {
     if (groupId && state[groupId] && chatRoomId) { // useful when initialize when syncing in another device
@@ -511,15 +480,6 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
-  colors (state) {
-    return Colors[state.theme]
-  },
-  fontSize (state) {
-    return state.fontSize
-  },
-  isDarkTheme (state) {
-    return Colors[state.theme].theme === THEME_DARK
-  },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
   },
@@ -588,7 +548,8 @@ const store: any = new Vuex.Store({
   mutations,
   getters,
   modules: {
-    notifications: notificationModule
+    notifications: notificationModule,
+    settings: settingsModule
   },
   strict: false // we're intentionally modifying state outside of commits
 })
