@@ -54,7 +54,6 @@ import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
 import { addTimeToDate, DAYS_MILLIS, humanDate } from '~/frontend/utils/time.js'
-import { requestNotificationPermission } from '~/frontend/utils/nativeNotification.js'
 
 export default ({
   name: 'GroupDashboard',
@@ -76,9 +75,6 @@ export default ({
         hideBanner: false
       }
     }
-  },
-  mounted () {
-    this.$el.addEventListener('mousemove', this.requestPermissions, false)
   },
   computed: {
     ...mapState([
@@ -130,13 +126,6 @@ export default ({
     },
     updateBannerVisibility () {
       this.ephemeral.hideBanner = localStorage.getItem(this.bannerStorageKey) === 'true'
-    },
-    async requestPermissions () {
-      try {
-        await requestNotificationPermission()
-      } finally {
-        this.$el.removeEventListener('mousemove', this.requestPermissions)
-      }
     }
   },
   watch: {

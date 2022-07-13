@@ -26,9 +26,10 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import ConfettiAnimation from '@components/confetti-animation/ConfettiAnimation.vue'
-import { mapGetters } from 'vuex'
+import { requestNotificationPermission } from '~/frontend/utils/nativeNotification.js'
 
 export default ({
   name: 'GroupWelcome',
@@ -53,6 +54,8 @@ export default ({
       if (this.isButtonClicked) return
       this.isButtonClicked = true
       this.$router.push({ path: '/dashboard' })
+
+      requestNotificationPermission()
     }
   }
 }: Object)
