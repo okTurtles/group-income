@@ -14,7 +14,7 @@
         @click='addSelectedMention(index)'
       )
         avatar(:src='user.picture' size='xs')
-        .c-username {{user.displayName}}
+        .c-username {{user.username}}
 
   .c-jump-to-latest(
     v-if='scrolledUp && !replyingMessage'
