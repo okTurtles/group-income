@@ -42,6 +42,9 @@
 /* views/containers/group-settings/GroupJoinModal.vue */
 "On Group Income, every major decision goes through a voting process. This includes adding new members." = "On Group Income, every major decision goes through a voting process. This includes adding new members.";
 
+/* views/containers/user-settings/NotificationSettings.vue */
+"Request Permission" = "Request Permission";
+
 /* views/containers/user-settings/AppLogs.vue */
 "Log" = "Log";
 
@@ -992,6 +995,9 @@
 
 /* views/components/group-creation-steps/GroupMincome.vue */
 "This value can be adjusted in the future." = "This value can be adjusted in the future.";
+
+/* model/notifications/templates.js */
+"You have unread mentions." = "You have unread mentions.";
 
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
 "Add your income details" = "Add your income details";

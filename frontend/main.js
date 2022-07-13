@@ -1,12 +1,13 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
+import Favico from 'favico.js'
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import Vue from 'vue'
-import { mapMutations } from 'vuex'
+import { mapMutations, mapGetters, mapState } from 'vuex'
 import 'wicg-inert'
 
 import '@model/captureLogs.js'
@@ -20,6 +21,7 @@ import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT } from './utils/events.js'
+import BackgroundSounds from './views/components/sounds/Background.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
@@ -166,6 +168,7 @@ async function startApp () {
     router: router,
     components: {
       AppStyles,
+      BackgroundSounds,
       BannerGeneral,
       Navigation,
       Modal
@@ -234,6 +237,7 @@ async function startApp () {
           }
         })
       })
+
       // Useful in case the app is started in offline mode.
       if (navigator.onLine === false) {
         sbp('gi.ui/showBanner', L('Your device appears to be offline.'), 'wifi')
@@ -247,8 +251,20 @@ async function startApp () {
           'times-circle'
         )
       }
+
+      this.setBadgeOnTab()
     },
     computed: {
+      ...mapGetters(['ourUnreadMessages', 'totalUnreadNotificationCount']),
+      ...mapState(['contracts']),
+      ourUnreadMessagesCount () {
+        return Object.keys(this.ourUnreadMessages)
+          .map(cId => this.ourUnreadMessages[cId].mentions.length)
+          .reduce((a, b) => a + b, 0)
+      },
+      shouldSetBadge () {
+        return this.ourUnreadMessagesCount + this.totalUnreadNotificationCount > 0
+      },
       showNav () {
         return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
       },
@@ -267,7 +283,20 @@ async function startApp () {
     methods: {
       ...mapMutations([
         'setReducedMotion'
-      ])
+      ]),
+      setBadgeOnTab () {
+        if (!window.favicon) {
+          window.favicon = new Favico({
+            textColor: '#d00'
+          })
+        }
+        window.favicon.badge(this.shouldSetBadge ? 1 : 0)
+      }
+    },
+    watch: {
+      shouldSetBadge (to, from) {
+        this.setBadgeOnTab()
+      }
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')
