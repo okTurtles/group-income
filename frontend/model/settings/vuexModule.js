@@ -13,7 +13,7 @@ if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(
 }
 
 export const defaultSettings = {
-  appLogsFilter: process.env.NODE_ENV === 'development'
+  appLogsFilter: (process.env.NODE_ENV === 'development' || new URLSearchParams(window.location.search).get('debug'))
     ? ['error', 'warn', 'info', 'debug', 'log']
     : ['error', 'warn', 'info'],
   fontSize: 16,
