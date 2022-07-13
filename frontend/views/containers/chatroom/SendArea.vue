@@ -371,7 +371,7 @@ export default ({
       const all = makeMentionFromUsername('').all.slice(1)
       this.ephemeral.mention.options = this.users.concat([{
         // TODO: use group picture here or broadcast icon
-        username: all, displayName: all, picture: ''
+        username: all, displayName: all, picture: '/assets/images/horn.png'
       }]).filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
         user.displayName.toUpperCase().includes(keyword.toUpperCase()))
