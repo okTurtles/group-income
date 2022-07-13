@@ -65,8 +65,8 @@ export default ({
     sbp('okTurtles.events/off', CAPTURED_LOGS)
   },
   watch: {
-    'form.filter' (filters) {
-      this.setAppLogsFilters(filters)
+    'form.filter' (filter) {
+      this.setAppLogsFilter(filter)
     },
     prettyLogs () {
       this.$nextTick(() => {
@@ -93,7 +93,7 @@ export default ({
   },
   methods: {
     ...mapMutations([
-      'setAppLogsFilters'
+      'setAppLogsFilter'
     ]),
     addLog (entry: Object) {
       if (entry) {

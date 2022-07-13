@@ -38,9 +38,9 @@ const mutations = {
   resetSettings (state) {
     Object.assign(state, cloneDeep(defaultSettings))
   },
-  setAppLogsFilters (state, filters) {
-    state.appLogsFilter = filters
-    sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, filters)
+  setAppLogsFilter (state, filter) {
+    state.appLogsFilter = filter
+    sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, filter)
   },
   setFontSize (state, fontSize) {
     state.fontSize = fontSize
