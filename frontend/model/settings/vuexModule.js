@@ -1,7 +1,9 @@
 'use strict'
 
+import sbp from '@sbp/sbp'
+
 import Colors from '@model/colors.js'
-import { SET_APP_LOGS_FILTER } from '@utils/events.js'
+import { LOGOUT, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { cloneDeep } from '@utils/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from '@utils/themes.js'
 
@@ -33,6 +35,9 @@ const getters = {
 }
 
 const mutations = {
+  resetSettings (state) {
+    Object.assign(state, cloneDeep(defaultSettings))
+  },
   setAppLogsFilters (state, filters) {
     state.appLogsFilter = filters
     sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, filters)
@@ -57,6 +62,9 @@ const mutations = {
     state.theme = color
   }
 }
+
+// Default application settings must apply again when we're no longer logged in (#1344).
+sbp('okTurtles.events/on', LOGOUT, () => sbp('state/vuex/commit', 'resetSettings'))
 
 export default ({
   state: () => cloneDeep(defaultSettings),
