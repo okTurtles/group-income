@@ -175,6 +175,9 @@ ${this.getErrorInfo()}`;
     throw validatorError(string2, value, _scope);
   };
 
+  // frontend/views/utils/validators.js
+  var noUppercase = (value) => value.toLowerCase() === value;
+
   // frontend/model/contracts/identity.js
   (0, import_sbp.default)("chelonia/defineContract", {
     name: "gi.contracts/identity",
@@ -188,13 +191,18 @@ ${this.getErrorInfo()}`;
     },
     actions: {
       "gi.contracts/identity": {
-        validate: objectMaybeOf({
-          attributes: objectMaybeOf({
-            username: string,
-            email: string,
-            picture: string
-          })
-        }),
+        validate: (data, { state, meta }) => {
+          objectMaybeOf({
+            attributes: objectMaybeOf({
+              username: string,
+              email: string,
+              picture: string
+            })
+          })(data);
+          if (!noUppercase(data.attributes.username)) {
+            throw new TypeError("A username cannot contain uppercase letters.");
+          }
+        },
         process({ data }, { state }) {
           const initialState = merge({
             settings: {},
@@ -236,15 +244,15 @@ ${this.getErrorInfo()}`;
         process({ data }, { state }) {
           import_common.Vue.set(state, "loginState", data);
         },
-        async sideEffect() {
-          try {
-            await (0, import_sbp.default)("gi.actions/identity/updateLoginStateUponLogin");
-          } catch (e) {
-            (0, import_sbp.default)("gi.notifications/emit", "ERROR", {
-              message: (0, import_common.L)("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
-                errName: e.name,
-                errMsg: e.message || "?"
-              })
+        sideEffect({ contractID }) {
+          if (contractID === (0, import_sbp.default)("state/vuex/getters").ourIdentityContractId) {
+            (0, import_sbp.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/updateLoginStateUponLogin"]).catch((e) => {
+              (0, import_sbp.default)("gi.notifications/emit", "ERROR", {
+                message: (0, import_common.L)("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
+                  errName: e.name,
+                  errMsg: e.message || "?"
+                })
+              });
             });
           }
         }

@@ -13,6 +13,7 @@ import { LOGIN, LOGOUT } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
+import manifests from './model/contracts/manifests.json'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
@@ -107,22 +108,17 @@ async function startApp () {
     reactiveSet: Vue.set,
     reactiveDel: Vue.delete,
     contracts: {
+      ...manifests,
       defaults: {
         modules: { '@common/common.js': Common },
         allowedSelectors: [
           'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
-          'gi.actions/identity/updateLoginStateUponLogin',
+          'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
           'gi.actions/chatroom/leave', 'gi.notifications/emit'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],
         preferSlim: true
-      },
-      manifests: {
-        'gi.contracts/group': '21XWnNSHSo5Dov3RwKFwSJzMNpt3KmpJNaVN6qsacysUnmxgq9',
-        'gi.contracts/identity': '21XWnNVUKkh1dWq1RoAAJbkPnGXxqFUpjXrzb9yo7NeGEEToin',
-        'gi.contracts/mailbox': '21XWnNKoSm7e2vnGJvoFSRB7heFTeg24FwDCkb6JAazkzhpNdY',
-        'gi.contracts/chatroom': '21XWnNXJkm2bkc8Wu7TC38zB845tR28qRGCs2HXCeMEJgvFozi'
       }
     },
     hooks: {

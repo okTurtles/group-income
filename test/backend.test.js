@@ -15,6 +15,7 @@ import { createInvite } from '~/frontend/model/contracts/shared/functions.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
+import manifests from '~/frontend/model/contracts/manifests.json'
 
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
 global.WebSocket = require('ws')
@@ -93,22 +94,17 @@ describe('Full walkthrough', function () {
         timeout: 3000
       },
       contracts: {
+        ...manifests,
         defaults: {
           modules: { '@common/common.js': Common },
           allowedSelectors: [
             'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
             'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
-            'gi.actions/identity/updateLoginStateUponLogin',
+            'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
             'gi.actions/chatroom/leave', 'gi.notifications/emit'
           ],
           allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],
           preferSlim: true
-        },
-        manifests: {
-          'gi.contracts/group': '21XWnNSHSo5Dov3RwKFwSJzMNpt3KmpJNaVN6qsacysUnmxgq9',
-          'gi.contracts/identity': '21XWnNVUKkh1dWq1RoAAJbkPnGXxqFUpjXrzb9yo7NeGEEToin',
-          'gi.contracts/mailbox': '21XWnNKoSm7e2vnGJvoFSRB7heFTeg24FwDCkb6JAazkzhpNdY',
-          'gi.contracts/chatroom': '21XWnNXJkm2bkc8Wu7TC38zB845tR28qRGCs2HXCeMEJgvFozi'
         }
       }
     })

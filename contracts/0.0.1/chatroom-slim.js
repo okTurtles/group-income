@@ -308,7 +308,6 @@ ${this.getErrorInfo()}`;
   var HOURS_MILLIS = 60 * MINS_MILLIS;
   var DAYS_MILLIS = 24 * HOURS_MILLIS;
   var MONTHS_MILLIS = 30 * DAYS_MILLIS;
-  var locale = typeof navigator === "undefined" && "en-US" || (navigator.languages ? navigator.languages[0] : navigator.language);
 
   // frontend/views/utils/misc.js
   function logExceptNavigationDuplicated(err) {

@@ -76,6 +76,7 @@ const serviceWorkerDir = 'frontend/controller/serviceworkers'
 const srcDir = 'frontend'
 const contractsDir = 'frontend/model/contracts'
 const mainSrc = path.join(srcDir, 'main.js')
+const manifestJSON = path.join(contractsDir, 'manifests.json')
 
 const development = NODE_ENV === 'development'
 const production = !development
@@ -102,10 +103,10 @@ module.exports = (grunt) => {
     return { stdout }
   }
 
-  async function generateManifests (contractsDir, version) {
+  async function generateManifests (dir, version) {
     grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
     // TODO: do this with JS instead of POSIX commands for Windows support
-    const { stdout } = await execWithErrMsg(`ls ${contractsDir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${contractsDir}/{}-slim.js key.json ${contractsDir}/{}.js`, 'error generating manifests')
+    const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${dir}/{}-slim.js key.json ${dir}/{}.js`, 'error generating manifests')
     console.log(stdout)
   }
 
@@ -114,23 +115,16 @@ module.exports = (grunt) => {
     const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
-    const hashMap = Object.fromEntries(Array.from(stdout.matchAll(r), x => [x[1], x[2]]))
-    replaceManifestsInFile(mainSrc, hashMap)
-    replaceManifestsInFile('test/backend.test.js', hashMap)
+    const manifests = Object.fromEntries(Array.from(stdout.matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+    fs.writeFileSync(manifestJSON,
+      JSON.stringify({ manifests }, null, 2) + '\n',
+      'utf8')
+    console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
   }
 
-  function replaceManifestsInFile (filepath, hashMap) {
-    const txt = fs.readFileSync(filepath, 'utf8')
-    const txt2 = txt.replaceAll(/'gi.contracts\/([^']+)': '21[^']+'/g, (...args) => {
-      return `'gi.contracts/${args[1]}': '${hashMap[args[1]]}'`
-    })
-    fs.writeFileSync(filepath, txt2, 'utf8')
-    console.log(chalk.green('updated contract hashes in:'), filepath)
-  }
-
-  async function genManifestsAndDeploy (contractsDir, version) {
-    await generateManifests(contractsDir, version)
-    await deployAndUpdateMainSrc(contractsDir)
+  async function genManifestsAndDeploy (dir, version) {
+    await generateManifests(dir, version)
+    await deployAndUpdateMainSrc(dir)
   }
 
   // Used by both the alias plugin and the Vue plugin.
@@ -505,11 +499,19 @@ module.exports = (grunt) => {
       ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
 
-    await Promise.all([buildMain.run(), buildServiceWorkers.run(), buildContracts.run(), buildContractsSlim.run()]).catch(error => {
-      grunt.log.error(error.message)
-      process.exit(1)
-    })
-    await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion)
+    // first we build the contracts since genManifestsAndDeploy depends on that
+    // and then we build the main bundle since it depends on manifests.json
+    await Promise.all([buildContracts.run(), buildContractsSlim.run()])
+      .then(() => {
+        return genManifestsAndDeploy(distContracts, packageJSON.contractsVersion)
+      })
+      .then(() => {
+        return Promise.all([buildMain.run(), buildServiceWorkers.run()])
+      })
+      .catch(error => {
+        grunt.log.error(error.message)
+        process.exit(1)
+      })
 
     if (!this.flags.watch) {
       return done()
@@ -575,8 +577,9 @@ module.exports = (grunt) => {
               await buildContracts.run({ fileEventName, filePath })
               await buildContractsSlim.run({ fileEventName, filePath })
               await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion)
-              // buildMain.run() will get triggered automatically because genManifestsAndDeploy
-              // will update mainSrc with the new manifest hashes
+              // genManifestsAndDeploy modifies manifests.json, which means we need
+              // to regenerate the main bundle since it imports that file
+              await buildMain.run({ fileEventName, filePath })
             } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
               await buildMain.run({ fileEventName, filePath })
             } else {

@@ -81,3 +81,4 @@ declare module '@model/contracts/shared/voting/rules.js' { declare module.export
 declare module '@model/contracts/shared/voting/proposals.js' { declare module.exports: any }
 declare module '@model/contracts/shared/functions.js' { declare module.exports: any }
 declare module '@common/common.js' { declare module.exports: any }
+declare module './model/contracts/manifests.json' { declare module.exports: any }

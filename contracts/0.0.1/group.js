@@ -9580,7 +9580,6 @@ ${this.getErrorInfo()}`;
   function comparePeriodStamps(periodA, periodB) {
     return dateFromPeriodStamp(periodA).getTime() - dateFromPeriodStamp(periodB).getTime();
   }
-  var locale = typeof navigator === "undefined" && "en-US" || (navigator.languages ? navigator.languages[0] : navigator.language);
   function isPeriodStamp(arg) {
     return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg);
   }
@@ -10416,7 +10415,7 @@ ${this.getErrorInfo()}`;
             (0, import_sbp3.default)("chelonia/contract/remove", contractID).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
             });
-            (0, import_sbp3.default)("okTurtles.eventQueue/queueEvent", contractID, ["gi.actions/identity/saveOurLoginState"]).then(function() {
+            (0, import_sbp3.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/saveOurLoginState"]).then(function() {
               const router = (0, import_sbp3.default)("controller/router");
               const switchFrom = router.currentRoute.path;
               const switchTo = groupIdToSwitch ? "/dashboard" : "/";

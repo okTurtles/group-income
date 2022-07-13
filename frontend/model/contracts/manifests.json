@@ -1,0 +1,8 @@
+{
+  "manifests": {
+    "gi.contracts/chatroom": "21XWnNTRSixStCLpDDqpXtjojjdjnCWDCjwiYSjM8nt4kberin",
+    "gi.contracts/group": "21XWnNKWN92F1Z2mqR6dwN83VEhmAULVraytop6gkzh4FXZfQa",
+    "gi.contracts/identity": "21XWnNXrKKtTmrMJZZbjUQUocAwtETsgE8Ri6kY3K9Thy5bvMx",
+    "gi.contracts/mailbox": "21XWnNKoSm7e2vnGJvoFSRB7heFTeg24FwDCkb6JAazkzhpNdY"
+  }
+}
