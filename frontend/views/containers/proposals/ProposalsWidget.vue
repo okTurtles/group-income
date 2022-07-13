@@ -8,12 +8,17 @@
     i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
     i18n.has-text-1(tag='p') No one has created a proposal yet.
 
-  // TODO: view without current proposals
-  // TODO: button "see all proposals"
-  page-section(
+  page-section.c-page-section(
     v-else
     :title='L("Proposals")'
   )
+    template(#cta='')
+      .c-proposal-btns
+        // TODO: implement the actions on below two buttons
+        i18n.is-outlined.is-small.hide-phone(tag='button') See all proposals
+        // TODO: below button has to be replaced with a dropdown button (see: https://github.com/okTurtles/group-income/issues/1288#issuecomment-1155061508)
+        i18n.is-outlined.is-small(tag='button') Create proposal
+
     ul.c-proposals(data-test='proposalsWidget')
       proposal-box(
         v-for='hashes in proposals'
@@ -108,3 +113,13 @@ export default ({
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+.c-page-section {
+  ::v-deep .c-proposal-btns {
+    button:not(:last-child) {
+      margin-right: 0.75rem;
+    }
+  }
+}
+</style>

@@ -1,6 +1,6 @@
 import { INVITE_EXPIRES_IN_DAYS } from '../../../frontend/model/contracts/constants.js'
 
-const userId = Math.floor(Math.random() * 10000)
+const userId = 9789// Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const groupMincome = 250
 const groupNewMincome = 500
@@ -413,6 +413,6 @@ describe('Proposals - Add members', () => {
 
     assertMincome(groupNewMincome)
 
-    cy.giLogout()
+    // cy.giLogout()
   })
 })
