@@ -545,7 +545,7 @@ export default ({
                 const msg = this.messages[this.messages.length - 1]
                 this.updateUnreadMessageId({
                   messageId: msg.id,
-                  createdDate: new Date(msg.datetime).getTime()
+                  createdDate: msg.datetime
                 })
               }
             }
@@ -567,7 +567,7 @@ export default ({
             const msg = this.messages[this.messages.length - 1]
             this.updateUnreadMessageId({
               messageId: msg.id,
-              createdDate: new Date(msg.datetime).getTime()
+              createdDate: msg.datetime
             })
           }
         } else {
@@ -603,10 +603,10 @@ export default ({
         if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
           const latestMessageCreatedAt = this.currentChatRoomUnreadSince?.createdDate
-          if (!latestMessageCreatedAt || latestMessageCreatedAt <= bottomMessageCreatedAt) {
+          if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
             this.updateUnreadMessageId({
               messageId: msg.id,
-              createdDate: new Date(msg.datetime).getTime()
+              createdDate: msg.datetime
             })
           }
           break

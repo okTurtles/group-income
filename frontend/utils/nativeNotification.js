@@ -5,7 +5,7 @@ function checkNotification (): boolean {
 export async function requestNotificationPermission (force: boolean = false): Promise<null | string> {
   if (!checkNotification() ||
     (!force && Notification.permission !== 'default') ||
-    (force && Notification.permission !== 'granted')) {
+    (force && Notification.permission === 'granted')) {
     return null
   }
 

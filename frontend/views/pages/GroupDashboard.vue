@@ -132,9 +132,11 @@ export default ({
       this.ephemeral.hideBanner = localStorage.getItem(this.bannerStorageKey) === 'true'
     },
     async requestPermissions () {
-      await requestNotificationPermission()
-
-      this.$el.removeEventListener('mousemove', this.requestPermissions)
+      try {
+        await requestNotificationPermission()
+      } finally {
+        this.$el.removeEventListener('mousemove', this.requestPermissions)
+      }
     }
   },
   watch: {

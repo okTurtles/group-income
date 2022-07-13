@@ -168,7 +168,7 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
   sbp('state/vuex/commit', 'addChatRoomUnreadMention', {
     chatRoomId: contractID,
     messageId,
-    createdDate: new Date(datetime).getTime()
+    createdDate: datetime
   })
 
   const rootGetters = sbp('state/vuex/getters')
@@ -186,19 +186,16 @@ function deleteMention ({ contractID, messageId }: {
   contractID: string, messageId: string
 }): void {
   sbp('state/vuex/commit', 'deleteChatRoomUnreadMention', { chatRoomId: contractID, messageId })
+}
 
-  // Commented to delete notification for mentions
-  // const rootState = sbp('state/vuex/state')
-  // if (!rootState.chatRoomUnread[contractID] ||
-  //   !rootState.chatRoomUnread[contractID].mentions.length) {
-  //   const rootGetters = sbp('state/vuex/getters')
-  //   const notification = rootGetters.currentGroupNotifications.find(n =>
-  //     n.type === 'MENTION_ADDED' && n.linkTo === `/group-chat/${contractID}`
-  //   )
-  //   if (notification) {
-  //     sbp('gi.notifications/remove', notification)
-  //   }
-  // }
+function updateUnreadPosition ({ contractID, hash, createdDate }: {
+  contractID: string, hash: string, createdDate: string
+}): void {
+  sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
+    chatRoomId: contractID,
+    messageId: hash,
+    createdDate
+  })
 }
 
 sbp('chelonia/defineContract', {
@@ -293,11 +290,7 @@ sbp('chelonia/defineContract', {
 
         if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM') || // Join by himself or Login in another device
           sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID') === contractID) { // Be added by another
-          sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
-            chatRoomId: contractID,
-            messageId: hash,
-            createdDate: new Date(meta.createdDate).getTime()
-          })
+          updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
     },
@@ -320,11 +313,7 @@ sbp('chelonia/defineContract', {
         emitMessageEvent({ contractID, hash })
 
         if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
-          sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
-            chatRoomId: contractID,
-            messageId: hash,
-            createdDate: new Date(meta.createdDate).getTime()
-          })
+          updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
     },
@@ -349,11 +338,7 @@ sbp('chelonia/defineContract', {
         emitMessageEvent({ contractID, hash })
 
         if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
-          sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
-            chatRoomId: contractID,
-            messageId: hash,
-            createdDate: new Date(meta.createdDate).getTime()
-          })
+          updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
     },
@@ -388,11 +373,7 @@ sbp('chelonia/defineContract', {
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
           if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
-            sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
-              chatRoomId: contractID,
-              messageId: hash,
-              createdDate: new Date(meta.createdDate).getTime()
-            })
+            updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
           }
           if (sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')) {
             return
@@ -415,12 +396,10 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ meta, contractID }, { state }) {
-        if (state.attributes.creator === meta.username) { // Not sure this condition is necessary
-          if (sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')) {
-            return
-          }
-          leaveChatRoom({ contractID })
+        if (sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')) {
+          return
         }
+        leaveChatRoom({ contractID })
       }
     },
     'gi.contracts/chatroom/addMessage': {
@@ -460,11 +439,7 @@ sbp('chelonia/defineContract', {
         }
 
         if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
-          sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
-            chatRoomId: contractID,
-            messageId: hash,
-            createdDate: new Date(meta.createdDate).getTime()
-          })
+          updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
     },
@@ -546,7 +521,7 @@ sbp('chelonia/defineContract', {
         if (rootState.chatRoomUnread[contractID].since.messageId === data.id) {
           sbp('state/vuex/commit', 'deleteChatRoomUnreadSince', {
             chatRoomId: contractID,
-            deletedDate: new Date(meta.createdDate).getTime()
+            deletedDate: meta.createdDate
           })
         }
 

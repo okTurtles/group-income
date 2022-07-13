@@ -124,6 +124,7 @@ const caretKeyCodes = {
   End: 35,
   Home: 36
 }
+const caretKeyCodeValues = Object.fromEntries(Object.values(caretKeyCodes).map(v => [v, true]))
 const functionalKeyCodes = {
   Shift: 16,
   Ctrl: 17,
@@ -131,6 +132,7 @@ const functionalKeyCodes = {
   CapsLock: 20,
   Enter: 13
 }
+const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCodes).map(v => [v, true]))
 
 export default ({
   name: 'SendArea',
@@ -257,7 +259,7 @@ export default ({
       this.startMention(value, lastIndex)
     },
     handleKeydown (e) {
-      if (Object.values(caretKeyCodes).includes(e.keyCode)) {
+      if (caretKeyCodeValues[e.keyCode]) {
         const nChoices = this.ephemeral.mention.options.length
         if (nChoices &&
           (e.keyCode === caretKeyCodes.ArrowUp || e.keyCode === caretKeyCodes.ArrowDown)) {
@@ -297,8 +299,7 @@ export default ({
       if (e.keyCode === 13) e.preventDefault()
       else this.updateTextArea()
 
-      if (!Object.values(caretKeyCodes).includes(e.keyCode) &&
-        !Object.values(functionalKeyCodes).includes(e.keyCode)) {
+      if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
         this.updateMentionKeyword()
       }
     },

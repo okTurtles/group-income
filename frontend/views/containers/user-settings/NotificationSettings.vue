@@ -13,7 +13,7 @@ export default ({
   name: 'NotificationSettings',
   methods: {
     requestPermission () {
-      requestNotificationPermission()
+      requestNotificationPermission(true)
     }
   }
 }: Object)
