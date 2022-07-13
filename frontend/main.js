@@ -1,6 +1,7 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
+import Favico from 'favico.js'
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
@@ -12,12 +13,13 @@ import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
 import Vue from 'vue'
-import { mapMutations } from 'vuex'
+import { mapMutations, mapGetters, mapState } from 'vuex'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT } from './utils/events.js'
+import BackgroundSounds from './views/components/sounds/Background.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
@@ -142,12 +144,12 @@ async function startApp () {
   // this is definitely very hacky, but we put it here since CONTRACT_IS_SYNCING can
   // be called before the main App component is loaded (just after we call login)
   // and we don't yet have access to the component's 'this'
-  const initialSyncs = { ephemeral: { debouncedSyncBanner (c) {}, syncs: [] } }
+  const initialSyncs = { ephemeral: { debouncedSyncBanner () {}, syncs: [] } }
   const syncFn = function (contractID, isSyncing) {
     // Make it possible for Cypress to wait for contracts to finish syncing.
     if (isSyncing) {
       this.ephemeral.syncs.push(contractID)
-      this.ephemeral.debouncedSyncBanner(contractID)
+      this.ephemeral.debouncedSyncBanner()
     } else if (this.ephemeral.syncs.includes(contractID)) {
       this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
     }
@@ -184,6 +186,7 @@ async function startApp () {
     router: router,
     components: {
       AppStyles,
+      BackgroundSounds,
       BannerGeneral,
       Navigation,
       Modal
@@ -209,16 +212,17 @@ async function startApp () {
       // display a self-clearing banner that shows up after we've taken 2 or more seconds
       // to sync a contract.
       this.ephemeral.debouncedSyncBanner = bannerGeneral.debouncedShow({
-        message: (cID) => {
-          return L("Loading events for '{contract}' from server...", { contract: contractName(cID) })
-        },
+        // we can't actually show in the global banner what contract is syncing because doing
+        // so would involve having to repeatedly call the message() function, and if there
+        // were other danger banners that needed to take precedence they would get covered
+        message: () => L('Loading events from server...'),
         icon: 'wifi',
         seconds: 2,
         clearWhen: () => !this.ephemeral.syncs.length
       })
       this.ephemeral.syncs = initialSyncs.ephemeral.syncs
       if (this.ephemeral.syncs.length) {
-        this.ephemeral.debouncedSyncBanner(this.ephemeral.syncs[0])
+        this.ephemeral.debouncedSyncBanner()
       }
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
@@ -256,6 +260,7 @@ async function startApp () {
           }
         })
       })
+
       // Useful in case the app is started in offline mode.
       if (navigator.onLine === false) {
         this.$refs.bannerGeneral.show(L('Your device appears to be offline.'), 'wifi')
@@ -269,8 +274,20 @@ async function startApp () {
           'times-circle'
         )
       }
+
+      this.setBadgeOnTab()
     },
     computed: {
+      ...mapGetters(['ourUnreadMessages', 'totalUnreadNotificationCount']),
+      ...mapState(['contracts']),
+      ourUnreadMessagesCount () {
+        return Object.keys(this.ourUnreadMessages)
+          .map(cId => this.ourUnreadMessages[cId].mentions.length)
+          .reduce((a, b) => a + b, 0)
+      },
+      shouldSetBadge () {
+        return this.ourUnreadMessagesCount + this.totalUnreadNotificationCount > 0
+      },
       showNav () {
         return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
       },
@@ -289,7 +306,20 @@ async function startApp () {
     methods: {
       ...mapMutations([
         'setReducedMotion'
-      ])
+      ]),
+      setBadgeOnTab () {
+        if (!window.favicon) {
+          window.favicon = new Favico({
+            textColor: '#d00'
+          })
+        }
+        window.favicon.badge(this.shouldSetBadge ? 1 : 0)
+      }
+    },
+    watch: {
+      shouldSetBadge (to, from) {
+        this.setBadgeOnTab()
+      }
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')

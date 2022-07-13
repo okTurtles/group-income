@@ -104,6 +104,7 @@
     "chalk": "4.1.0",
     "dompurify": "2.2.7",
     "emoji-mart-vue-fast": "7.0.7",
+    "favico.js": "0.3.10",
     "localforage": "1.9.0",
     "multihashes": "0.4.15",
     "scrypt-async": "2.0.1",
