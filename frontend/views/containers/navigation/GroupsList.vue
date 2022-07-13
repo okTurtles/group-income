@@ -13,9 +13,10 @@ ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
       button.c-group-picture.is-unstyled(@click='handleMenuSelect(group.contractID)')
         avatar.c-avatar(:src='$store.state[group.contractID].settings.groupPicture')
       badge(
-        v-if='unreadGroupNotificationCountFor(group.contractID)'
+        v-if='badgeVisiblePerGroup[group.contractID]'
+        type='compact'
         :data-test='`groupBadge-${group.groupName}`'
-      ) {{ unreadGroupNotificationCountFor(group.contractID) }}
+      )
 
   li.c-group-list-item
     tooltip(
@@ -52,8 +53,17 @@ export default ({
     ]),
     ...mapGetters([
       'groupsByName',
+      'ourUnreadMessages',
       'unreadGroupNotificationCountFor'
-    ])
+    ]),
+    badgeVisiblePerGroup () {
+      return Object.fromEntries(
+        this.groupsByName.map(group => ([
+          group.contractID,
+          this.shouldSetBadgeOnGroup(group.contractID)
+        ]))
+      )
+    }
   },
   methods: {
     openModal (mode) {
@@ -64,6 +74,12 @@ export default ({
     },
     changeGroup (hash) {
       this.$store.commit('setCurrentGroupId', hash)
+    },
+    shouldSetBadgeOnGroup (groupID) {
+      return Object.keys(this.ourUnreadMessages)
+        .filter(cID => Object.keys(this.$store.state[groupID].chatRooms).includes(cID))
+        .map(cID => this.ourUnreadMessages[cID].mentions.length)
+        .reduce((a, b) => a + b, 0) + this.unreadGroupNotificationCountFor(groupID) > 0
     }
   }
 }: Object)
