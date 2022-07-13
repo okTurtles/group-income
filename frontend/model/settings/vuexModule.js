@@ -7,15 +7,15 @@ import { LOGOUT, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { cloneDeep } from '@utils/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from '@utils/themes.js'
 
-let defaultTheme = THEME_LIGHT
+let defaultTheme: string = THEME_LIGHT
 if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
   defaultTheme = THEME_DARK
 }
 
 export const defaultSettings = {
-  appLogsFilter: (process.env.NODE_ENV === 'development' || new URLSearchParams(window.location.search).get('debug'))
+  appLogsFilter: (((process.env.NODE_ENV === 'development' || new URLSearchParams(window.location.search).get('debug'))
     ? ['error', 'warn', 'info', 'debug', 'log']
-    : ['error', 'warn', 'info'],
+    : ['error', 'warn', 'info']): string[]),
   fontSize: 16,
   increasedContrast: false,
   reducedMotion: false,
