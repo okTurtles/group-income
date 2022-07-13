@@ -23,6 +23,7 @@ menu-parent(ref='menu')
         i.icon-pencil-alt
 
     tooltip(
+      v-if='isText'
       direction='top'
       :text='L("Reply")'
     )
@@ -50,33 +51,39 @@ menu-parent(ref='menu')
 
   menu-content.c-content
     ul
-      menu-item.hide-desktop.is-icon-small(tag='button'
+      menu-item.hide-desktop.is-icon-small(
+        tag='button'
         @click='action("openEmoticon", $event)'
       )
         i.icon-smile-beam
         i18n Add reaction
 
-      menu-item.hide-desktop.is-icon-small(tag='button'
+      menu-item.hide-desktop.is-icon-small(
+        tag='button'
         v-if='isEditable'
         @click='action("editMessage")'
       )
         i.icon-pencil-alt
         i18n Edit
 
-      menu-item.hide-desktop.is-icon-small(tag='button'
+      menu-item.hide-desktop.is-icon-small(
+        tag='button'
+        v-if='isText'
         @click='action("reply")'
       )
         i.icon-reply
         i18n Reply
 
-      menu-item.hide-desktop.is-icon-small(tag='button'
+      menu-item.hide-desktop.is-icon-small(
+        tag='button'
         v-if='variant === "failed"'
         @click='action("retry")'
       )
         i.icon-undo
         i18n Add emoticons
 
-      menu-item.is-icon-small(tag='button'
+      menu-item.is-icon-small(
+        tag='button'
         @click='action("copyToClipBoard")'
       )
         i.icon-link
@@ -85,6 +92,7 @@ menu-parent(ref='menu')
       menu-item.is-icon-small.is-danger(
         tag='button'
         data-test='deleteMessage'
+        v-if='isEditable'
         @click='action("deleteMessage")'
       )
         i.icon-trash-alt
@@ -111,8 +119,14 @@ export default ({
     isCurrentUser: Boolean
   },
   computed: {
+    isText () {
+      return this.type === MESSAGE_TYPES.TEXT
+    },
+    isPoll () {
+      return this.type === MESSAGE_TYPES.POLL
+    },
     isEditable (): Boolean {
-      return this.isCurrentUser && this.type === MESSAGE_TYPES.TEXT
+      return this.isCurrentUser && (this.isText || this.isPoll)
     }
   },
   methods: {

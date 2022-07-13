@@ -117,7 +117,7 @@ const cyCheckDashboardsBadge = (expectedCount) => {
 
 const cyCheckDreamersBadge = (expectedCount) => {
   if (expectedCount) {
-    cy.getByDT(`groupBadge-${dreamersGroupName}`).should('have.text', expectedCount)
+    cy.getByDT(`groupBadge-${dreamersGroupName}`).should('exist')
   } else {
     cy.getByDT(`groupBadge-${dreamersGroupName}`).should('not.exist')
   }
@@ -129,7 +129,7 @@ const cyCheckListLength = (expectedCount) => {
 
 const cyCheckTurtlesBadge = (expectedCount) => {
   if (expectedCount) {
-    cy.getByDT(`groupBadge-${turtlesGroupName}`).should('have.text', expectedCount)
+    cy.getByDT(`groupBadge-${turtlesGroupName}`).should('exist')
   } else {
     cy.getByDT(`groupBadge-${turtlesGroupName}`).should('not.exist')
   }
