@@ -2,7 +2,6 @@
 
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
-import { maxLength } from 'vuelidate/lib/validators'
 // HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
 import '~/shared/domains/chelonia/chelonia.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
@@ -33,7 +32,7 @@ sbp('chelonia/defineContract', {
           })
         })(data)
         const { username } = data.attributes
-        if (!maxLength(IDENTITY_USERNAME_MAX_CHARS)(username)) {
+        if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
           throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`)
         }
         if (!alphanumericOrHyphens(username)) {
