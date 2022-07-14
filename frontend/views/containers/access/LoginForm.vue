@@ -31,12 +31,12 @@ form(data-test='login' @submit.prevent='')
 import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import { nonWhitespace } from '@views/utils/validators.js'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { noWhitespace } from '@view-utils/validators.js'
 
 export default ({
   name: 'LoginForm',
@@ -89,7 +89,7 @@ export default ({
     form: {
       username: {
         [L('A username is required.')]: required,
-        [L('A username cannot contain whitespace.')]: nonWhitespace
+        [L('A username cannot contain whitespace.')]: noWhitespace
       },
       password: {
         [L('A password is required.')]: required

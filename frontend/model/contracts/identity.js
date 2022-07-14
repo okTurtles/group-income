@@ -6,7 +6,13 @@ import Vue from 'vue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
-import { alphanumericOrHyphens, noConsecutiveHyphens, noLeadingOrTrailingHyphen, noUppercase } from '~/frontend/views/utils/validators.js'
+import {
+  allowedUsernameCharacters,
+  noConsecutiveHyphensOrUnderscores,
+  noLeadingOrTrailingHyphen,
+  noLeadingOrTrailingUnderscore,
+  noUppercase
+} from '~/frontend/views/utils/validators.js'
 import L from '~/frontend/views/utils/translations.js'
 
 import { IDENTITY_USERNAME_MAX_CHARS } from './constants.js'
@@ -35,14 +41,17 @@ sbp('chelonia/defineContract', {
         if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
           throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`)
         }
-        if (!alphanumericOrHyphens(username)) {
-          throw new TypeError('A username cannot contain non-alphanumeric characters.')
+        if (!allowedUsernameCharacters(username)) {
+          throw new TypeError('A username cannot contain disallowed characters.')
         }
-        if (!noConsecutiveHyphens(username)) {
-          throw new TypeError('A username cannot contain two consecutive hyphens.')
+        if (!noConsecutiveHyphensOrUnderscores(username)) {
+          throw new TypeError('A username cannot contain two consecutive hyphens or underscores.')
         }
         if (!noLeadingOrTrailingHyphen(username)) {
           throw new TypeError('A username cannot start or end with a hyphen.')
+        }
+        if (!noLeadingOrTrailingUnderscore(username)) {
+          throw new TypeError('A username cannot start or end with an underscore.')
         }
         if (!noUppercase(username)) {
           throw new TypeError('A username cannot contain uppercase letters.')

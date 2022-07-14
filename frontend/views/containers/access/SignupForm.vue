@@ -41,7 +41,6 @@ form(data-test='signup' @submit.prevent='')
 import sbp from '@sbp/sbp'
 import { required, maxLength, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
-import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -52,7 +51,14 @@ import {
 } from '@model/contracts/constants.js'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { alphanumericOrHyphens, noConsecutiveHyphens, noLeadingOrTrailingHyphen, noUppercase } from '@view-utils/validators.js'
+import {
+  allowedUsernameCharacters,
+  noConsecutiveHyphensOrUnderscores,
+  noLeadingOrTrailingHyphen,
+  noLeadingOrTrailingUnderscore,
+  noUppercase,
+  noWhitespace
+} from '@view-utils/validators.js'
 
 export default ({
   name: 'SignupForm',
@@ -107,11 +113,12 @@ export default ({
         username: {
           [L('A username is required.')]: required,
           [L('A username cannot contain whitespace.')]: nonWhitespace,
-          [L('A username can only contain letters, digits or hyphens.')]: alphanumericOrHyphens,
+          [L('A username can only contain letters, digits, hyphens or underscores.')]: allowedUsernameCharacters,
           [L('A username cannot exceed {maxChars} characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
           [L('A username cannot contain uppercase letters.')]: noUppercase,
           [L('A username cannot start or end with a hyphen.')]: noLeadingOrTrailingHyphen,
-          [L('A username cannot contain two consecutive hyphens.')]: noConsecutiveHyphens,
+          [L('A username cannot start or end with an underscore.')]: noLeadingOrTrailingUnderscore,
+          [L('A username cannot contain two consecutive hyphens or underscores.')]: noConsecutiveHyphensOrUnderscores,
           [L('This username is already being used.')]: (value) => {
             if (!value) return true
             if (this.usernameAsyncValidation.timer) {
