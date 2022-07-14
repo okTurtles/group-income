@@ -106,7 +106,7 @@ export default ({
       form: {
         username: {
           [L('A username is required.')]: required,
-          [L('A username cannot contain white space.')]: nonWhitespace,
+          [L('A username cannot contain whitespace.')]: nonWhitespace,
           [L('A username can only contain letters, digits or hyphens.')]: alphanumericOrHyphens,
           [L('A username cannot exceed {maxChars} characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
           [L('A username cannot contain uppercase letters.')]: noUppercase,
