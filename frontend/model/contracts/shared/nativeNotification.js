@@ -1,3 +1,8 @@
+'use strict'
+
+// NOTE: since these functions don't modify contract state, it should
+//       be safe to modify them without worrying about version conflicts.
+
 function checkNotification (): boolean {
   return !!window.Notification
 }

@@ -1,7 +1,6 @@
 'use strict'
 
 import multihash from 'multihashes'
-
 import nacl from 'tweetnacl'
 import blake from 'blakejs'
 

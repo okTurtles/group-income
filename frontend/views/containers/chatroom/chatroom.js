@@ -1,8 +1,7 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
+import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
-import { CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'
 
 const initChatChannelDetails = {
   isLoading: true,

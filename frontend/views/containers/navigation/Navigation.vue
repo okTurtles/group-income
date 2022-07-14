@@ -88,7 +88,7 @@ import ListItem from '@components/ListItem.vue'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
-import { debounce } from '@utils/giLodash.js'
+import { debounce } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'Navigation',

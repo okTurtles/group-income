@@ -7,7 +7,6 @@ page
       select(v-model='form.mutationErrorType')
         option(value='GIErrorIgnoreAndBan') GIErrorIgnoreAndBan
         option(value='GIErrorUIRuntimeError') GIErrorUIRuntimeError
-        option(value='ChelErrorDBBadPreviousHEAD') ChelErrorDBBadPreviousHEAD
         option(value='unknownType') unknownType
       a.button(@click='sendMalformedMutationOfType') Send malformed mutation
   page-section
@@ -15,7 +14,6 @@ page
       select(v-model='form.sideEffectErrorType')
         option(value='GIErrorIgnoreAndBan') GIErrorIgnoreAndBan
         option(value='GIErrorUIRuntimeError') GIErrorUIRuntimeError
-        option(value='ChelErrorDBBadPreviousHEAD') ChelErrorDBBadPreviousHEAD
         option(value='unknown') Unknown
       a.button(@click='sendMalformedSideEffect') Send malformed sideEffect
 </template>

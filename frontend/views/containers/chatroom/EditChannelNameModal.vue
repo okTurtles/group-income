@@ -37,12 +37,12 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default ({

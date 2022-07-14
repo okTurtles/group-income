@@ -59,7 +59,7 @@ modal-base-template.has-background(
 </template>
 
 <script>
-import L, { LTags } from '@view-utils/translations.js'
+import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'

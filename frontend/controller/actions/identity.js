@@ -1,14 +1,11 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
-import L, { LError } from '@view-utils/translations.js'
+import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { imageUpload } from '@utils/image.js'
-import { pickWhere, difference } from '@utils/giLodash.js'
+import { pickWhere, difference } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
-import './mailbox.js'
-
 import { encryptedAction } from './utils.js'
 
 function generatedLoginState () {

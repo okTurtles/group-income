@@ -39,6 +39,7 @@ form(data-test='signup' @submit.prevent='')
 
 <script>
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import { nonWhitespace } from '@views/utils/validators.js'
@@ -46,10 +47,9 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { noUppercase } from '@view-utils/validators.js'
-import { requestNotificationPermission } from '~/frontend/utils/nativeNotification.js'
+import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 
 export default ({
   name: 'SignupForm',

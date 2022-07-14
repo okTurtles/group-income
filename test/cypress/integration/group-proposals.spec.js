@@ -1,4 +1,4 @@
-import { INVITE_EXPIRES_IN_DAYS } from '../../../frontend/model/contracts/constants.js'
+import { INVITE_EXPIRES_IN_DAYS } from '../../../frontend/model/contracts/shared/constants.js'
 
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'

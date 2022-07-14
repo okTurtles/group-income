@@ -1,13 +1,11 @@
 'use strict'
 
-import Vue from 'vue'
-import Router from 'vue-router'
 import sbp from '@sbp/sbp'
-import store from '@model/state.js'
-
+import { Vue, L } from '@common/common.js'
+import Router from 'vue-router'
+import store from '~/frontend/model/state.js'
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
-import L from '@view-utils/translations.js'
 import { lazyPage } from '@utils/lazyLoadedView.js'
 
 /*

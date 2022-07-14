@@ -116,7 +116,7 @@ import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { makeMentionFromUsername } from '@model/contracts/chatroom.js'
+import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,

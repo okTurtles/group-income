@@ -8,7 +8,8 @@
 </template>
 
 <script>
-import { requestNotificationPermission } from '~/frontend/utils/nativeNotification.js'
+import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
+
 export default ({
   name: 'NotificationSettings',
   methods: {

@@ -4,9 +4,9 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import './internals.js'
-import { CONTRACTS_MODIFIED } from './events.js'
+import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
 import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
-import { merge, cloneDeep, randomHexString, intersection, difference } from '~/frontend/utils/giLodash.js'
+import { merge, cloneDeep, randomHexString, intersection, difference } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // TODO: rename this to ChelMessage
@@ -18,6 +18,7 @@ import type { GIOpContract, GIOpActionUnencrypted } from './GIMessage.js'
 
 export type ChelRegParams = {
   contractName: string;
+  server?: string; // TODO: implement!
   data: Object;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
@@ -29,6 +30,7 @@ export type ChelRegParams = {
 
 export type ChelActionParams = {
   action: string;
+  server?: string; // TODO: implement!
   contractID: string;
   data: Object;
   hooks?: {
@@ -50,14 +52,27 @@ export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)
 // 4 => 'group'
 // 5 => 'payment'
 
-sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
   // https://gitlab.okturtles.org/okturtles/group-income/-/wikis/E2E-Protocol/Framework.md#alt-names
   'chelonia/_init': function () {
     this.config = {
+      // TODO: handle connecting to multiple servers for federation
+      connectionURL: null, // override!
       decryptFn: JSON.parse, // override!
       encryptFn: JSON.stringify, // override!
       stateSelector: 'chelonia/private/state', // override to integrate with, for example, vuex
+      contracts: {
+        defaults: {
+          modules: {}, // '<module name>' => resolved module import
+          exposedGlobals: {},
+          allowedDomains: [],
+          allowedSelectors: [],
+          preferSlim: false
+        },
+        overrides: {}, // override default values per-contract
+        manifests: {} // override! contract names => manifest hashes
+      },
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
       reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
       reactiveDel: (obj, key) => { delete obj[key] },
@@ -82,7 +97,7 @@ sbp('sbp/selectors/register', {
       contracts: {}, // contractIDs => { type, HEAD } (contracts we've subscribed to)
       pending: [] // prevents processing unexpected data from a malicious server
     }
-    this.contracts = {}
+    this.manifestToContract = {}
     this.whitelistedActions = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
     this.sideEffectStack = (contractID: string): Array<*> => {
@@ -93,12 +108,23 @@ sbp('sbp/selectors/register', {
       return stack
     }
   },
-  'chelonia/configure': function (config: Object) {
+  'chelonia/config': function () {
+    return cloneDeep(this.config)
+  },
+  'chelonia/configure': async function (config: Object) {
     merge(this.config, config)
     // merge will strip the hooks off of config.hooks when merging from the root of the object
     // because they are functions and cloneDeep doesn't clone functions
-    merge(this.config.hooks, config.hooks || {})
+    Object.assign(this.config.hooks, config.hooks || {})
+    // using Object.assign here instead of merge to avoid stripping away imported modules
+    Object.assign(this.config.contracts.defaults, config.contracts.defaults || {})
+    const manifests = this.config.contracts.manifests
+    console.debug('[chelonia] preloading manifests:', Object.keys(manifests))
+    for (const contractName in manifests) {
+      await sbp('chelonia/private/loadManifest', manifests[contractName])
+    }
   },
+  // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (): Object {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')
     if (!this.config.connectionOptions) throw new Error('config.connectionOptions missing')
@@ -143,18 +169,27 @@ sbp('sbp/selectors/register', {
     if (!contract.metadata) contract.metadata = { validate () {}, create: () => ({}) }
     if (!contract.getters) contract.getters = {}
     contract.state = (contractID) => sbp(this.config.stateSelector)[contractID]
-    this.contracts[contract.name] = contract
-    sbp('sbp/selectors/register', {
+    contract.manifest = this.defContractManifest
+    contract.sbp = this.defContractSBP
+    this.defContractSelectors = []
+    this.defContract = contract
+    this.defContractSelectors.push(...sbp('sbp/selectors/register', {
       // expose getters for Vuex integration and other conveniences
-      [`${contract.name}/getters`]: () => contract.getters,
+      [`${contract.manifest}/${contract.name}/getters`]: () => contract.getters,
       // 2 ways to cause sideEffects to happen: by defining a sideEffect function in the
       // contract, or by calling /pushSideEffect w/async SBP call. Can also do both.
-      [`${contract.name}/pushSideEffect`]: (contractID: string, asyncSbpCall: Array<*>) => {
+      [`${contract.manifest}/${contract.name}/pushSideEffect`]: (contractID: string, asyncSbpCall: Array<*>) => {
+        // if this version of the contract is pushing a sideEffect to a function defined by the
+        // contract itself, make sure that it calls the same version of the sideEffect
+        const [sel] = asyncSbpCall
+        if (sel.startsWith(contract.name)) {
+          asyncSbpCall[0] = `${contract.manifest}/${sel}`
+        }
         this.sideEffectStack(contractID).push(asyncSbpCall)
       }
-    })
+    }))
     for (const action in contract.actions) {
-      contractFromAction(this.contracts, action) // ensure actions are appropriately named
+      contractNameFromAction(action) // ensure actions are appropriately named
       this.whitelistedActions[action] = true
       // TODO: automatically generate send actions here using `${action}/send`
       //       allow the specification of:
@@ -162,8 +197,8 @@ sbp('sbp/selectors/register', {
       //       - a localized error message
       //       - whatever keys should be passed in as well
       //       base it off of the design of encryptedAction()
-      sbp('sbp/selectors/register', {
-        [`${action}/process`]: (message: Object, state: Object) => {
+      this.defContractSelectors.push(...sbp('sbp/selectors/register', {
+        [`${contract.manifest}/${action}/process`]: (message: Object, state: Object) => {
           const { meta, data, contractID } = message
           // TODO: optimize so that you're creating a proxy object only when needed
           const gProxy = gettersProxy(state, contract.getters)
@@ -172,12 +207,12 @@ sbp('sbp/selectors/register', {
           contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
           contract.actions[action].process(message, { state, ...gProxy })
         },
-        [`${action}/sideEffect`]: async (message: Object, state: ?Object) => {
+        [`${contract.manifest}/${action}/sideEffect`]: async (message: Object, state: ?Object) => {
           const sideEffects = this.sideEffectStack(message.contractID)
           while (sideEffects.length > 0) {
             const sideEffect = sideEffects.shift()
             try {
-              await sbp(...sideEffect)
+              await contract.sbp(...sideEffect)
             } catch (e) {
               console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${message.description()}:`, sideEffect)
               this.sideEffectStacks[message.contractID] = [] // clear the side effects
@@ -190,8 +225,9 @@ sbp('sbp/selectors/register', {
             await contract.actions[action].sideEffect(message, { state, ...gProxy })
           }
         }
-      })
+      }))
     }
+    sbp('okTurtles.events/emit', CONTRACT_REGISTERED, contract)
   },
   'chelonia/queueInvocation': sbp('sbp/selectors/fn', 'okTurtles.eventQueue/queueEvent'),
   // call this manually to resubscribe/unsubscribe from contracts as needed
@@ -331,15 +367,19 @@ sbp('sbp/selectors/register', {
   // 'chelonia/out' - selectors that send data out to the server
   'chelonia/out/registerContract': async function (params: ChelRegParams) {
     const { contractName, hooks, publishOptions } = params
-    const contract = this.contracts[contractName]
-    if (!contract) throw new Error(`contract not defined: ${contractName}`)
-    const contractMsg = GIMessage.createV1_0(null, null, [
-      GIMessage.OP_CONTRACT,
-      ({
-        type: contractName,
-        keyJSON: 'TODO: add group public key here'
-      }: GIOpContract)
-    ])
+    const manifestHash = this.config.contracts.manifests[contractName]
+    const contractInfo = this.manifestToContract[manifestHash]
+    if (!contractInfo) throw new Error(`contract not defined: ${contractName}`)
+    const contractMsg = GIMessage.createV1_0(null, null,
+      [
+        GIMessage.OP_CONTRACT,
+        ({
+          type: contractName,
+          keyJSON: 'TODO: add group public key here'
+        }: GIOpContract)
+      ],
+      manifestHash
+    )
     hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions)
     const msg = await sbp('chelonia/out/actionEncrypted', {
@@ -374,13 +414,13 @@ sbp('sbp/selectors/register', {
   'chelonia/out/propDel': async function () {
 
   }
-})
+}): string[])
 
-function contractFromAction (contracts: Object, action: string): Object {
+function contractNameFromAction (action: string): string {
   const regexResult = ACTION_REGEX.exec(action)
-  const contract = contracts[(regexResult && regexResult[2]) || null]
-  if (!contract) throw new Error(`no contract for action named: ${action}`)
-  return contract
+  const contractName = regexResult && regexResult[2]
+  if (!contractName) throw new Error(`Poorly named action '${action}': missing contract name.`)
+  return contractName
 }
 
 async function outEncryptedOrUnencryptedAction (
@@ -388,7 +428,9 @@ async function outEncryptedOrUnencryptedAction (
   params: ChelActionParams
 ) {
   const { action, contractID, data, hooks, publishOptions } = params
-  const contract = contractFromAction(this.contracts, action)
+  const contractName = contractNameFromAction(action)
+  const manifestHash = this.config.contracts.manifests[contractName]
+  const { contract } = this.manifestToContract[manifestHash]
   const state = contract.state(contractID)
   const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
   const meta = contract.metadata.create()
@@ -396,10 +438,12 @@ async function outEncryptedOrUnencryptedAction (
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
-  const message = GIMessage.createV1_0(contractID, previousHEAD, [
-    opType,
-    opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage)
-  ]
+  const message = GIMessage.createV1_0(contractID, previousHEAD,
+    [
+      opType,
+      opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage)
+    ],
+    manifestHash
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
   hooks && hooks.prepublish && hooks.prepublish(message)
