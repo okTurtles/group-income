@@ -11,10 +11,13 @@
       .c-mention-user(
         ref='mention'
         :class='{"is-selected": index === ephemeral.mention.index}'
-        @click='addSelectedMention(index)'
+        @click.stop='onClickMention(index)'
       )
         avatar(:src='user.picture' size='xs')
-        .c-username {{getMentionTextFromUsername(user)}}
+        .c-username {{user.username}}
+        .c-display-name(
+          v-if='user.displayName !== user.username'
+        ) ({{user.displayName}})
 
   .c-jump-to-latest(
     v-if='scrolledUp && !replyingMessage'
@@ -192,6 +195,11 @@ export default ({
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
     if (!this.ephemeral.isPhone) this.$refs.textarea.focus()
+
+    window.addEventListener('click', this.onWindowMouseClicked)
+  },
+  beforeDestroy () {
+    window.removeEventListener('click', this.onWindowMouseClicked)
   },
   computed: {
     ...mapGetters(['chatRoomUsers', 'globalProfile']),
@@ -281,6 +289,10 @@ export default ({
           this.endMention()
         }
       }
+    },
+    onClickMention (index) {
+      this.$refs.textarea.focus()
+      this.addSelectedMention(index)
     },
     handleKeyDownEnter () {
       if (this.ephemeral.mention.options.length) {
@@ -383,12 +395,13 @@ export default ({
       this.ephemeral.mention.index = -1
       this.ephemeral.mention.options = []
     },
-    getMentionTextFromUsername (user) {
-      const { username, displayName } = user
-      if (!displayName || username === displayName) {
-        return username
-      } else {
-        return `${username} (${displayName})`
+    onWindowMouseClicked (e) {
+      if (!this.$refs.mentionWrapper) {
+        return
+      }
+      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-mentions')
+      if (!element) {
+        this.endMention()
       }
     }
   }
@@ -568,6 +581,11 @@ $initialHeight: 43px;
 
 .c-mentions .c-mention-user .c-username {
   margin-left: 0.3rem;
+}
+
+.c-mentions .c-mention-user .c-display-name {
+  margin-left: 0.3rem;
+  color: $text_1;
 }
 
 .c-clear {
