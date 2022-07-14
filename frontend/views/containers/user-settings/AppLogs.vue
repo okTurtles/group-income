@@ -16,10 +16,10 @@
           .c-filters-inner
             legend.c-filters-legend Optional logs:
             label.checkbox
-              input.input(type='checkbox' name='filter' v-model='form.filter' value='debug' checked)
+              input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
               i18n Debug
             label.checkbox
-              input.input(type='checkbox' name='filter' v-model='form.filter' value='info' checked)
+              input.input(type='checkbox' name='filter' v-model='form.filter' value='info')
               i18n Info
             label.checkbox
               input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
@@ -40,8 +40,8 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapMutations } from 'vuex'
-import safeLinkTag from '@views/utils/safeLinkTag.js'
 import { CAPTURED_LOGS } from '@utils/events.js'
+import safeLinkTag from '@view-utils/safeLinkTag.js'
 
 export default ({
   name: 'AppLogs',
