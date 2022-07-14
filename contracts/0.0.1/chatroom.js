@@ -9150,6 +9150,7 @@
   var CHATROOM_ACTIONS_PER_PAGE = 40;
   var CHATROOM_MESSAGES_PER_PAGE = 20;
   var CHATROOM_MESSAGE_ACTION = "chatroom-message-action";
+  var MESSAGE_RECEIVE = "message-receive";
   var CHATROOM_TYPES = {
     INDIVIDUAL: "individual",
     GROUP: "group"
@@ -9450,6 +9451,8 @@ ${this.getErrorInfo()}`;
         await (0, import_sbp2.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
       }
     }
+    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
+    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
     (0, import_sbp2.default)("chelonia/contract/remove", contractID).catch((e) => {
       console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
     });
@@ -9461,6 +9464,23 @@ ${this.getErrorInfo()}`;
       }
     }
     return -1;
+  }
+  function makeMentionFromUsername(username) {
+    return {
+      me: `@${username}`,
+      all: "@all"
+    };
+  }
+
+  // frontend/model/contracts/shared/nativeNotification.js
+  function checkNotification() {
+    return !!window.Notification;
+  }
+  function makeNotification({ title, body, icon }) {
+    if (!checkNotification() || Notification.permission !== "granted") {
+      return;
+    }
+    new Notification(title, { body, icon });
   }
 
   // frontend/model/contracts/chatroom.js
@@ -9475,6 +9495,34 @@ ${this.getErrorInfo()}`;
   }
   function emitMessageEvent({ contractID, hash: hash2 }) {
     (0, import_sbp3.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash: hash2 });
+  }
+  function addMention({ contractID, messageId, datetime, text: text2, username, chatRoomName }) {
+    if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+      return;
+    }
+    (0, import_sbp3.default)("state/vuex/commit", "addChatRoomUnreadMention", {
+      chatRoomId: contractID,
+      messageId,
+      createdDate: datetime
+    });
+    const rootGetters = (0, import_sbp3.default)("state/vuex/getters");
+    const groupID = rootGetters.groupIdFromChatRoomId(contractID);
+    makeNotification({
+      title: `# ${chatRoomName}`,
+      body: text2,
+      icon: rootGetters.globalProfile2(groupID, username).picture
+    });
+    (0, import_sbp3.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
+  }
+  function deleteMention({ contractID, messageId }) {
+    (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadMention", { chatRoomId: contractID, messageId });
+  }
+  function updateUnreadPosition({ contractID, hash: hash2, createdDate }) {
+    (0, import_sbp3.default)("state/vuex/commit", "setChatRoomUnreadSince", {
+      chatRoomId: contractID,
+      messageId: hash2,
+      createdDate
+    });
   }
   (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/chatroom",
@@ -9526,7 +9574,7 @@ ${this.getErrorInfo()}`;
             attributes: {
               creator: meta.username,
               deletedDate: null,
-              archievedDate: null
+              archivedDate: null
             },
             users: {},
             messages: []
@@ -9540,7 +9588,7 @@ ${this.getErrorInfo()}`;
         validate: objectOf({
           username: string
         }),
-        process({ data, meta, hash: hash2 }, { state, getters }) {
+        process({ data, meta, hash: hash2 }, { state }) {
           const { username } = data;
           if (!state.saveMessage && state.users[username]) {
             console.warn("Can not join the chatroom which you are already part of");
@@ -9555,8 +9603,11 @@ ${this.getErrorInfo()}`;
           const newMessage = createMessage({ meta, hash: hash2, data: notificationData, state });
           state.messages.push(newMessage);
         },
-        sideEffect({ contractID, hash: hash2 }) {
+        sideEffect({ contractID, hash: hash2, meta }) {
           emitMessageEvent({ contractID, hash: hash2 });
+          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM") || (0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM_ID") === contractID) {
+            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
+          }
         }
       },
       "gi.contracts/chatroom/rename": {
@@ -9572,8 +9623,11 @@ ${this.getErrorInfo()}`;
           const newMessage = createMessage({ meta, hash: hash2, data: notificationData, state });
           state.messages.push(newMessage);
         },
-        sideEffect({ contractID, hash: hash2 }) {
+        sideEffect({ contractID, hash: hash2, meta }) {
           emitMessageEvent({ contractID, hash: hash2 });
+          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
+          }
         }
       },
       "gi.contracts/chatroom/changeDescription": {
@@ -9589,8 +9643,11 @@ ${this.getErrorInfo()}`;
           const newMessage = createMessage({ meta, hash: hash2, data: notificationData, state });
           state.messages.push(newMessage);
         },
-        sideEffect({ contractID, hash: hash2 }) {
+        sideEffect({ contractID, hash: hash2, meta }) {
           emitMessageEvent({ contractID, hash: hash2 });
+          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
+          }
         }
       },
       "gi.contracts/chatroom/leave": {
@@ -9618,10 +9675,13 @@ ${this.getErrorInfo()}`;
           });
           state.messages.push(newMessage);
         },
-        sideEffect({ data, hash: hash2, contractID }, { state }) {
+        sideEffect({ data, hash: hash2, contractID, meta }, { state }) {
           const rootState = (0, import_sbp3.default)("state/vuex/state");
-          if (!state.saveMessage && data.member === rootState.loggedIn.username) {
-            if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM")) {
+          if (data.member === rootState.loggedIn.username) {
+            if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+              updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
+            }
+            if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
               return;
             }
             leaveChatRoom({ contractID });
@@ -9630,7 +9690,7 @@ ${this.getErrorInfo()}`;
         }
       },
       "gi.contracts/chatroom/delete": {
-        validate: (data, { state, getters, meta }) => {
+        validate: (data, { state, meta }) => {
           if (state.attributes.creator !== meta.username) {
             throw new TypeError(L("Only the channel creator can delete channel."));
           }
@@ -9642,18 +9702,15 @@ ${this.getErrorInfo()}`;
           }
         },
         sideEffect({ meta, contractID }, { state }) {
-          if (!state.saveMessage && state.attributes.creator === meta.username) {
-            if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM")) {
-              return;
-            }
-            leaveChatRoom({ contractID });
+          if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
+            return;
           }
+          leaveChatRoom({ contractID });
         }
       },
       "gi.contracts/chatroom/addMessage": {
         validate: messageType,
         process({ data, meta, hash: hash2 }, { state }) {
-          const newMessage = createMessage({ meta, data, hash: hash2, state });
           if (!state.saveMessage) {
             return;
           }
@@ -9661,11 +9718,31 @@ ${this.getErrorInfo()}`;
           if (pendingMsg) {
             delete pendingMsg.pending;
           } else {
-            state.messages.push(newMessage);
+            state.messages.push(createMessage({ meta, data, hash: hash2, state }));
           }
         },
-        sideEffect({ contractID, hash: hash2 }) {
+        sideEffect({ contractID, hash: hash2, meta, data }, { state, getters }) {
           emitMessageEvent({ contractID, hash: hash2 });
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
+          const me = rootState.loggedIn.username;
+          if (me === meta.username) {
+            return;
+          }
+          const newMessage = createMessage({ meta, data, hash: hash2, state });
+          const mentions = makeMentionFromUsername(me);
+          if (data.type === MESSAGE_TYPES.TEXT && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))) {
+            addMention({
+              contractID,
+              messageId: newMessage.id,
+              datetime: newMessage.datetime,
+              text: newMessage.text,
+              username: meta.username,
+              chatRoomName: getters.chatRoomAttributes.name
+            });
+          }
+          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
+          }
         }
       },
       "gi.contracts/chatroom/editMessage": {
@@ -9688,8 +9765,28 @@ ${this.getErrorInfo()}`;
             }
           }
         },
-        sideEffect({ contractID, hash: hash2 }) {
+        sideEffect({ contractID, hash: hash2, meta, data }, { getters }) {
           emitMessageEvent({ contractID, hash: hash2 });
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
+          const me = rootState.loggedIn.username;
+          if (me === meta.username) {
+            return;
+          }
+          const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageId === data.id);
+          const mentions = makeMentionFromUsername(me);
+          const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all);
+          if (!isAlreadyAdded && isIncludeMention) {
+            addMention({
+              contractID,
+              messageId: data.id,
+              datetime: meta.createdDate,
+              text: data.text,
+              username: meta.username,
+              chatRoomName: getters.chatRoomAttributes.name
+            });
+          } else if (isAlreadyAdded && !isIncludeMention) {
+            deleteMention({ contractID, messageId: data.id });
+          }
         }
       },
       "gi.contracts/chatroom/deleteMessage": {
@@ -9705,13 +9802,27 @@ ${this.getErrorInfo()}`;
             state.messages.splice(msgIndex, 1);
           }
         },
-        sideEffect({ data, contractID, hash: hash2 }) {
+        sideEffect({ data, contractID, hash: hash2, meta }) {
+          emitMessageEvent({ contractID, hash: hash2 });
           const rootState = (0, import_sbp3.default)("state/vuex/state");
+          const me = rootState.loggedIn.username;
           if (rootState.chatRoomScrollPosition[contractID] === data.id) {
             (0, import_sbp3.default)("state/vuex/commit", "setChatRoomScrollPosition", {
               chatRoomId: contractID,
               messageId: null
             });
+          }
+          if (rootState.chatRoomUnread[contractID].since.messageId === data.id) {
+            (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadSince", {
+              chatRoomId: contractID,
+              deletedDate: meta.createdDate
+            });
+          }
+          if (me === meta.username) {
+            return;
+          }
+          if (rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageId === data.id)) {
+            deleteMention({ contractID, messageId: data.id });
           }
           emitMessageEvent({ contractID, hash: hash2 });
         }

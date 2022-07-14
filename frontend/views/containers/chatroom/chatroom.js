@@ -63,8 +63,10 @@ const chatroom: Object = {
     ]),
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
-        const joiningChatRoom = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
-        return joiningChatRoom ? { ...this.ephemeral.loadedSummary, joined: true } : this.ephemeral.loadedSummary || {}
+        const joiningChatRoomId = sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')
+        return !joiningChatRoomId
+          ? this.ephemeral.loadedSummary || {}
+          : { ...this.ephemeral.loadedSummary, joined: joiningChatRoomId === this.currentChatRoomId }
       }
 
       const { name, type, description, creator, picture, privacyLevel } = this.currentChatRoomState.attributes

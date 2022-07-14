@@ -37,6 +37,7 @@ import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 
 export default ({
   name: 'LoginForm',
@@ -75,6 +76,8 @@ export default ({
           password: this.form.password
         })
         this.$emit('submit-succeeded')
+
+        requestNotificationPermission()
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)

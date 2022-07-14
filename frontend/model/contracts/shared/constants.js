@@ -38,6 +38,8 @@ export const CHATROOM_MESSAGES_PER_PAGE = 20
 // chatroom events
 export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
 export const CHATROOM_DETAILS_UPDATED = 'chatroom-details-updated'
+export const MESSAGE_RECEIVE = 'message-receive'
+export const MESSAGE_SEND = 'message-send'
 
 export const CHATROOM_TYPES = {
   INDIVIDUAL: 'individual',

@@ -1,5 +1,5 @@
 <template lang='pug'>
-message-base(v-bind='$props' @addEmoticon='addEmoticon($event)')
+message-base(v-bind='$props' @add-emoticon='addEmoticon($event)')
   template(#body='')
     .c-notification
       p.c-text(v-if='message') {{message.text}}

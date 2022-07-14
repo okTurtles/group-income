@@ -96,6 +96,10 @@ export async function leaveChatRoom ({ contractID }: {
         .catch(logExceptNavigationDuplicated)
     }
   }
+
+  sbp('state/vuex/commit', 'deleteChatRoomUnread', { chatRoomId: contractID })
+  sbp('state/vuex/commit', 'deleteChatRoomScrollPosition', { chatRoomId: contractID })
+
   // NOTE: make sure *not* to await on this, since that can cause
   //       a potential deadlock. See same warning in sideEffect for
   //       'gi.contracts/group/removeMember'
@@ -111,4 +115,13 @@ export function findMessageIdx (id: string, messages: Array<Object>): number {
     }
   }
   return -1
+}
+
+export function makeMentionFromUsername (username: string): {
+  me: string, all: string
+} {
+  return {
+    me: `@${username}`,
+    all: '@all'
+  }
 }

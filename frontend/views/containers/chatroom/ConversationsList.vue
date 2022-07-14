@@ -18,7 +18,6 @@
       variant='solid'
       :data-test='getChannelTestData(id)'
       :icon='getIcon(id)'
-      :badgeCount='list.channels[id].unreadCount'
       :to='buildUrl(id)'
     )
       avatar(
@@ -27,7 +26,12 @@
         size='sm'
       )
 
-      span {{list.channels[id].displayName || list.channels[id].name}}
+      span.c-channel-name {{list.channels[id].displayName || list.channels[id].name}}
+
+      .c-unreadcount-wrapper
+        .pill.is-danger(
+          v-if='list.channels[id].unreadMentionsCount'
+        ) {{limitedUnreadCount(list.channels[id].unreadMentionsCount)}}
 </template>
 
 <script>
@@ -76,6 +80,14 @@ export default ({
     },
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
+    },
+    limitedUnreadCount (n) {
+      const nLimit = 99
+      if (n > nLimit) {
+        return `${nLimit}+`
+      } else {
+        return `${n}`
+      }
     }
   }
 }: Object)
@@ -89,5 +101,20 @@ export default ({
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+}
+
+.c-channel-name {
+  text-align: left;
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100px; // HACK: to truncate
+}
+
+.c-unreadcount-wrapper {
+  width: 2rem;
+  display: flex;
+  justify-content: center;
 }
 </style>

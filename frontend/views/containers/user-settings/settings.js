@@ -25,7 +25,7 @@ export default {
       {
         title: (L('Notifications'): string),
         url: 'notifications',
-        component: 'Placeholder',
+        component: 'NotificationSettings',
         index: 2
       }, {
         title: (L('Appearance'): string),

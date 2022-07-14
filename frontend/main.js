@@ -1,5 +1,6 @@
 'use strict'
 
+// import SBP stuff before anything else so that domains register themselves before called
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
@@ -14,11 +15,12 @@ import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
 import manifests from './model/contracts/manifests.json'
-import { mapMutations } from 'vuex'
+import { mapMutations, mapGetters, mapState } from 'vuex'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
+import BackgroundSounds from './views/components/sounds/Background.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
@@ -31,6 +33,7 @@ import './views/utils/vError.js'
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import 'wicg-inert'
+import Favico from 'favico.js'
 
 const { Vue, L, LError, LTags } = Common
 
@@ -202,6 +205,7 @@ async function startApp () {
     router: router,
     components: {
       AppStyles,
+      BackgroundSounds,
       BannerGeneral,
       Navigation,
       Modal
@@ -275,6 +279,7 @@ async function startApp () {
           }
         })
       })
+
       // Useful in case the app is started in offline mode.
       if (navigator.onLine === false) {
         this.$refs.bannerGeneral.show(L('Your device appears to be offline.'), 'wifi')
@@ -288,8 +293,20 @@ async function startApp () {
           'times-circle'
         )
       }
+
+      this.setBadgeOnTab()
     },
     computed: {
+      ...mapGetters(['ourUnreadMessages', 'totalUnreadNotificationCount']),
+      ...mapState(['contracts']),
+      ourUnreadMessagesCount () {
+        return Object.keys(this.ourUnreadMessages)
+          .map(cId => this.ourUnreadMessages[cId].mentions.length)
+          .reduce((a, b) => a + b, 0)
+      },
+      shouldSetBadge () {
+        return this.ourUnreadMessagesCount + this.totalUnreadNotificationCount > 0
+      },
       showNav () {
         return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
       },
@@ -308,7 +325,20 @@ async function startApp () {
     methods: {
       ...mapMutations([
         'setReducedMotion'
-      ])
+      ]),
+      setBadgeOnTab () {
+        if (!window.favicon) {
+          window.favicon = new Favico({
+            textColor: '#d00'
+          })
+        }
+        window.favicon.badge(this.shouldSetBadge ? 1 : 0)
+      }
+    },
+    watch: {
+      shouldSetBadge (to, from) {
+        this.setBadgeOnTab()
+      }
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')

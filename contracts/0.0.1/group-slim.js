@@ -1498,9 +1498,9 @@ ${this.getErrorInfo()}`;
           const username = data.username || meta.username;
           if (username === rootState.loggedIn.username) {
             if (!(0, import_sbp2.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp2.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
-              (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CHATROOM", true);
+              (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", data.chatRoomID);
               await (0, import_sbp2.default)("chelonia/contract/sync", data.chatRoomID);
-              (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CHATROOM", false);
+              (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", void 0);
               (0, import_sbp2.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
             }
           }
