@@ -47,6 +47,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       })
     })
     cy.getByDT('channelName').should('contain', channelName)
+    waitUntilMessageLoaded()
   }
 
   function checkIfJoined (channelName, inviter, invitee) {
@@ -113,6 +114,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('leaveChannelSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+
+    waitUntilMessageLoaded()
+
     checkIfLeaved(channelName)
   }
 
@@ -178,6 +182,15 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('conversationWapper').within(() => {
       cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel description to: ${description}`)
     })
+  }
+
+  function waitUntilMessageLoaded () {
+    cy.getByDT('conversationWapper').within(() => {
+      cy.get('.infinite-status-prompt:first-child')
+        .invoke('attr', 'style')
+        .should('include', 'display: none')
+    })
+    cy.getByDT('conversationWapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
   }
 
   it(`user1 creats '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
@@ -360,13 +373,15 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     // Change from group1 to group2 group chat page
     cy.getByDT('groupsList').find('li:nth-child(2) button').click()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    waitUntilMessageLoaded()
 
     // Change from group2 to group1 group chat page
     cy.getByDT('groupsList').find('li:first-child button').click()
     cy.getByDT('channelName').should('contain', channelsOf2For1[0])
+    waitUntilMessageLoaded()
   })
 
-  it('user1 kicks user2 from a channel and user2 leaves a group by himself', () => {
+  it('user1 kicks user2 from a channel and user2 leaves a channel by himself', () => {
     const leavingChannels = chatRooms
       .filter(c => c.name.includes('Channel1') && c.users.includes(user2) && !c.isPrivate).map(c => c.name)
 
@@ -410,6 +425,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.getByDT('statusDescription')
         .should('contain', 'Proposal accepted')
     })
+
+    cy.getByDT('groupMembers').find('ul>li').should('have.length', 2) // user1 & user2
 
     cy.giRedirectToGroupChat()
 

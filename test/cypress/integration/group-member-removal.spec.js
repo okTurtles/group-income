@@ -135,7 +135,7 @@ describe('Group - Removing a member', () => {
 
   it('userBot joins groupA', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
-      username: `userBot-${userId}`,
+      username: `userbot-${userId}`,
       groupName: groupNameA,
       bypassUI: true
     })
@@ -144,10 +144,10 @@ describe('Group - Removing a member', () => {
   it('user1 proposes to remove userBot', () => {
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
-    openRemoveMemberModal('userBot', 2)
+    openRemoveMemberModal('userbot', 2)
 
     cy.getByDT('modalProposal').within(() => {
-      cy.getByDT('description').should('contain', `Remove userBot-${userId} from the group`)
+      cy.getByDT('description').should('contain', `Remove userbot-${userId} from the group`)
       cy.getByDT('nextBtn').click()
       cy.getByDT('reason', 'textarea').clear().type('I think it is a bot!')
       cy.getByDT('submitBtn').click()
@@ -162,7 +162,7 @@ describe('Group - Removing a member', () => {
   })
 
   it('userBot cannot vote in this proposal', () => {
-    cy.giSwitchUser(`userBot-${userId}`)
+    cy.giSwitchUser(`userbot-${userId}`)
 
     getProposalItems().eq(0).within(() => {
       cy.getByDT('typeDescription').should('contain', `Remove userBot-${userId} (you) from the group.`)
@@ -193,7 +193,7 @@ describe('Group - Removing a member', () => {
     cy.giLogout()
 
     // Verify userBot has no group now
-    cy.giLogin(`userBot-${userId}`) // [*note_1*]
+    cy.giLogin(`userbot-${userId}`) // [*note_1*]
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
