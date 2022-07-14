@@ -14,7 +14,7 @@
         @click='addSelectedMention(index)'
       )
         avatar(:src='user.picture' size='xs')
-        .c-username {{user.username}}
+        .c-username {{getMentionTextFromUsername(user)}}
 
   .c-jump-to-latest(
     v-if='scrolledUp && !replyingMessage'
@@ -382,6 +382,14 @@ export default ({
       this.ephemeral.mention.position = -1
       this.ephemeral.mention.index = -1
       this.ephemeral.mention.options = []
+    },
+    getMentionTextFromUsername (user) {
+      const { username, displayName } = user
+      if (!displayName || username === displayName) {
+        return username
+      } else {
+        return `${username} (${displayName})`
+      }
     }
   }
 }: Object)
