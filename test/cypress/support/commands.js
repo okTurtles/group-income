@@ -6,7 +6,7 @@
 
 import 'cypress-file-upload'
 
-import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
+import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 
 /* Get element by data-test attribute and other attributes
  ex:
@@ -387,4 +387,5 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
       .invoke('attr', 'style')
       .should('include', 'display: none')
   })
+  cy.getByDT('conversationWapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
 })

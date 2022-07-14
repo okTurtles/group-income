@@ -47,8 +47,7 @@ fieldset(data-test='paymentMethods')
 
 <script>
 import { mapGetters } from 'vuex'
-import Vue from 'vue'
-import L from '@view-utils/translations.js'
+import { Vue, L } from '@common/common.js'
 
 export default ({
   name: 'PaymentMethods',

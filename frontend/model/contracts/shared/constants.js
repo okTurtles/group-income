@@ -1,7 +1,11 @@
 'use strict'
 
+// identity.js related
+
 export const IDENTITY_PASSWORD_MIN_CHARS = 7
 export const IDENTITY_USERNAME_MAX_CHARS = 80
+
+// group.js related
 
 export const INVITE_INITIAL_CREATOR = 'invite-initial-creator'
 export const INVITE_STATUS = {
@@ -10,15 +14,37 @@ export const INVITE_STATUS = {
   USED: 'used'
 }
 export const PROFILE_STATUS = {
-  ACTIVE: 'active',
+  ACTIVE: 'active', // confirmed group join
+  PENDING: 'pending', // shortly after being approved to join the group
   REMOVED: 'removed'
 }
+
+export const PROPOSAL_RESULT = 'proposal-result'
+export const PROPOSAL_INVITE_MEMBER = 'invite-member'
+export const PROPOSAL_REMOVE_MEMBER = 'remove-member'
+export const PROPOSAL_GROUP_SETTING_CHANGE = 'group-setting-change'
+export const PROPOSAL_PROPOSAL_SETTING_CHANGE = 'proposal-setting-change'
+export const PROPOSAL_GENERIC = 'generic'
+
+export const STATUS_OPEN = 'open'
+export const STATUS_PASSED = 'passed'
+export const STATUS_FAILED = 'failed'
+export const STATUS_EXPIRED = 'expired'
+export const STATUS_CANCELLED = 'cancelled'
+
+// chatroom.js related
 
 export const CHATROOM_GENERAL_NAME = 'General'
 export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
 export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
 export const CHATROOM_ACTIONS_PER_PAGE = 40
 export const CHATROOM_MESSAGES_PER_PAGE = 20
+
+// chatroom events
+export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
+export const CHATROOM_DETAILS_UPDATED = 'chatroom-details-updated'
+export const MESSAGE_RECEIVE = 'message-receive'
+export const MESSAGE_SEND = 'message-send'
 
 export const CHATROOM_TYPES = {
   INDIVIDUAL: 'individual',
@@ -60,3 +86,8 @@ export const MESSAGE_VARIANTS = {
   RECEIVED: 'received',
   FAILED: 'failed'
 }
+
+// mailbox.js related
+
+export const MAIL_TYPE_MESSAGE = 'message'
+export const MAIL_TYPE_FRIEND_REQ = 'friend-request'

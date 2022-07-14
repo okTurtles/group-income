@@ -53,6 +53,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
@@ -62,7 +63,6 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import L from '@view-utils/translations.js'
 
 export default ({
   name: 'GroupLeaveModal',

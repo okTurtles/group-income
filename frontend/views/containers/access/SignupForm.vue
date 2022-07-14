@@ -39,7 +39,8 @@ form(data-test='signup' @submit.prevent='')
 
 <script>
 import sbp from '@sbp/sbp'
-import { required, maxLength, minLength, email } from 'vuelidate/lib/validators'
+import { L } from '@common/common.js'
+import { email, maxLength, minLength, required } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
@@ -48,8 +49,8 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import {
   IDENTITY_PASSWORD_MIN_CHARS as passwordMinChars,
   IDENTITY_USERNAME_MAX_CHARS as usernameMaxChars
-} from '@model/contracts/constants.js'
-import L from '@view-utils/translations.js'
+} from '@model/contracts/shared/constants.js'
+import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import {
   allowedUsernameCharacters,
@@ -99,6 +100,8 @@ export default ({
           password: this.form.password
         })
         this.$emit('submit-succeeded')
+
+        requestNotificationPermission()
       } catch (e) {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
@@ -112,7 +115,7 @@ export default ({
       form: {
         username: {
           [L('A username is required.')]: required,
-          [L('A username cannot contain whitespace.')]: nonWhitespace,
+          [L('A username cannot contain whitespace.')]: noWhitespace,
           [L('A username can only contain letters, digits, hyphens or underscores.')]: allowedUsernameCharacters,
           [L('A username cannot exceed {maxChars} characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
           [L('A username cannot contain uppercase letters.')]: noUppercase,

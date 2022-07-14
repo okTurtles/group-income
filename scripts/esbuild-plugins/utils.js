@@ -79,6 +79,7 @@ exports.createAliasReplacer = (aliases) => {
  * @returns {RegExp}
  */
 exports.createFilterRegExpFromAliases = (aliases) => {
+  // see: https://github.com/okTurtles/group-income/pull/1308#discussion_r906336373
   if (aliases.some(alias => alias.includes('/'))) {
     throw new Error('Path aliases may not include slash characters.')
   }

@@ -1,32 +1,29 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { createInvite } from '@model/contracts/group.js'
+import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
+import { createInvite } from '@model/contracts/shared/functions.js'
 import {
   INVITE_INITIAL_CREATOR,
   INVITE_EXPIRES_IN_DAYS,
   CHATROOM_GENERAL_NAME,
   CHATROOM_TYPES,
-  CHATROOM_PRIVACY_LEVEL
-} from '@model/contracts/constants.js'
-import proposals from '@model/contracts/voting/proposals.js'
-import {
+  CHATROOM_PRIVACY_LEVEL,
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC,
   STATUS_OPEN
-} from '@model/contracts/voting/constants.js'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
+} from '@model/contracts/shared/constants.js'
+import proposals from '@model/contracts/shared/voting/proposals.js'
 import { imageUpload } from '@utils/image.js'
-import { merge, omit, randomIntFromRange } from '@utils/giLodash.js'
-import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@utils/time.js'
-import L, { LError } from '@view-utils/translations.js'
+import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { encryptedAction } from './utils.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
+import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
+import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -174,7 +171,6 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/join': async function (params: $Exact<GIActionParams>) {
     try {
       sbp('okTurtles.data/set', 'JOINING_GROUP', true)
-      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
       // post acceptance event to the group contract, unless this is being called
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {
@@ -220,7 +216,14 @@ export default (sbp('sbp/selectors/register', {
         const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms)
           .filter(cId => rootState[params.contractID].chatRooms[cId].users.includes(me))
 
+        /**
+         * flag READY_TO_JOIN_CHATROOM is not necessary to sync actually
+         * But just this is only for checking if syncing chatrooms or not
+         * Especially inside addMention in model/contracts/chatroom.js
+         */
+        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
         await sbp('chelonia/contract/sync', chatRoomIds)
+        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
 
         sbp('state/vuex/commit', 'setCurrentChatRoomId', {
           groupId: params.contractID,
@@ -228,7 +231,6 @@ export default (sbp('sbp/selectors/register', {
         })
       }
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
-      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
     } catch (e) {
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
       sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)

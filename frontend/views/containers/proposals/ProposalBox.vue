@@ -19,11 +19,11 @@ li.c-wrapper
 
 <script>
 import { mapGetters } from 'vuex'
-import { humanDate } from '@utils/time.js'
-import L, { LTags } from '@view-utils/translations.js'
+import { humanDate } from '@model/contracts/shared/time.js'
+import { L, LTags } from '@common/common.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProposalItem from './ProposalItem.vue'
-import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
+import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 
 export default ({

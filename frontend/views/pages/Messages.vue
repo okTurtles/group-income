@@ -22,7 +22,7 @@ page(pageTestName='messages' pageTestHeaderName='messages')
 <script>
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
-import { CHATROOM_TYPES } from '@model/contracts/constants.js'
+import { CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'

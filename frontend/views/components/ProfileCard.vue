@@ -89,7 +89,7 @@ import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
-import { PROFILE_STATUS } from '~/frontend/model/contracts/constants.js'
+import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 
 export default ({
   name: 'ProfileCard',
