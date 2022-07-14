@@ -701,7 +701,7 @@ sbp('chelonia/defineContract', {
           // we were getting the same latestHash upon re-logging in for test "user2 rejoins groupA".
           // We add it to the same queue as '/remove' above gets run on so that it is run after
           // contractID is removed. See also comments in 'gi.actions/identity/login'.
-          sbp('okTurtles.eventQueue/queueEvent', contractID, ['gi.actions/identity/saveOurLoginState'])
+          sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/saveOurLoginState'])
             .then(function () {
               const router = sbp('controller/router')
               const switchFrom = router.currentRoute.path
@@ -959,9 +959,9 @@ sbp('chelonia/defineContract', {
           if (!sbp('okTurtles.data/get', 'JOINING_GROUP') || sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
             // while users are joining chatroom, they don't need to leave chatrooms
             // this is similar to setting 'JOINING_GROUP' before joining group
-            sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
+            sbp('okTurtles.data/set', 'JOINING_CHATROOM_ID', data.chatRoomID)
             await sbp('chelonia/contract/sync', data.chatRoomID)
-            sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
+            sbp('okTurtles.data/set', 'JOINING_CHATROOM_ID', undefined)
             sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
           }
         }

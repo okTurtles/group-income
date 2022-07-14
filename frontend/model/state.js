@@ -45,7 +45,7 @@ const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageId
-  chatRoomUnreadPosition: {}, // [chatRoomId]: { messageId, createdDate }
+  chatRoomUnread: {}, // [chatRoomId]: { messageId, createdDate }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
@@ -77,8 +77,8 @@ sbp('sbp/selectors/register', {
     if (!state.chatRoomScrollPosition) {
       state.chatRoomScrollPosition = {}
     }
-    if (!state.chatRoomUnreadPosition) {
-      state.chatRoomUnreadPosition = {}
+    if (!state.chatRoomUnread) {
+      state.chatRoomUnread = {}
     }
   },
   'state/vuex/save': async function () {
@@ -156,10 +156,39 @@ const mutations = {
   setChatRoomScrollPosition (state, { chatRoomId, messageId }) {
     Vue.set(state.chatRoomScrollPosition, chatRoomId, messageId)
   },
-  setChatRoomUnreadPosition (state, { chatRoomId, messageId, createdDate }) {
-    Vue.set(state.chatRoomUnreadPosition, chatRoomId, {
-      messageId, createdDate
+  deleteChatRoomScrollPosition (state, { chatRoomId }) {
+    Vue.delete(state.chatRoomScrollPosition, chatRoomId)
+  },
+  setChatRoomUnreadSince (state, { chatRoomId, messageId, createdDate }) {
+    const prevMentions = state.chatRoomUnread[chatRoomId] ? state.chatRoomUnread[chatRoomId].mentions : []
+    Vue.set(state.chatRoomUnread, chatRoomId, {
+      since: { messageId, createdDate, deletedDate: null },
+      mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
     })
+  },
+  deleteChatRoomUnreadSince (state, { chatRoomId, deletedDate }) {
+    Vue.set(state.chatRoomUnread[chatRoomId], 'since', {
+      ...state.chatRoomUnread[chatRoomId].since,
+      deletedDate
+    })
+  },
+  addChatRoomUnreadMention (state, { chatRoomId, messageId, createdDate }) {
+    const prevUnread = state.chatRoomUnread[chatRoomId]
+    if (!prevUnread) {
+      return
+    }
+    prevUnread.mentions.push({ messageId, createdDate })
+  },
+  deleteChatRoomUnreadMention (state, { chatRoomId, messageId }) {
+    const prevUnread = state.chatRoomUnread[chatRoomId]
+    if (!prevUnread) {
+      return
+    }
+
+    prevUnread.mentions = prevUnread.mentions.filter(m => m.messageId !== messageId)
+  },
+  deleteChatRoomUnread (state, { chatRoomId }) {
+    Vue.delete(state.chatRoomUnread, chatRoomId)
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
@@ -483,8 +512,17 @@ const getters = {
       })
   },
   globalProfile (state, getters) {
+    // get profile from username who is part of current group
     return username => {
       const groupProfile = getters.groupProfile(username)
+      const identityState = groupProfile && state[groupProfile.contractID]
+      return identityState && identityState.attributes
+    }
+  },
+  globalProfile2 (state, getters) {
+    // get profile from username who is part of the group identified by it's group ID
+    return (groupID, username) => {
+      const groupProfile = state[groupID]?.profiles[username]
       const identityState = groupProfile && state[groupProfile.contractID]
       return identityState && identityState.attributes
     }
@@ -507,8 +545,24 @@ const getters = {
   currentChatRoomScrollPosition (state, getters) {
     return state.chatRoomScrollPosition[getters.currentChatRoomId] // undefined means to the latest
   },
-  currentChatRoomUnreadPosition (state, getters) {
-    return state.chatRoomUnreadPosition[getters.currentChatRoomId] // undefined means to the latest
+  ourUnreadMessages (state, getters) {
+    return state.chatRoomUnread
+  },
+  currentChatRoomUnreadSince (state, getters) {
+    return getters.ourUnreadMessages[getters.currentChatRoomId]?.since // undefined means to the latest
+  },
+  currentChatRoomUnreadMentions (state, getters) {
+    return getters.ourUnreadMessages[getters.currentChatRoomId]?.mentions || []
+  },
+  chatRoomUnreadMentions (state, getters) {
+    return (chatRoomId: string) => {
+      return getters.ourUnreadMessages[chatRoomId]?.mentions || []
+    }
+  },
+  groupIdFromChatRoomId (state, getters) {
+    return (chatRoomId: string) => Object.keys(state.contracts)
+      .find(cId => state.contracts[cId].type === 'gi.contracts/group' &&
+        Object.keys(state[cId].chatRooms).includes(chatRoomId))
   },
   isPrivateChatRoom (state, getters) {
     return (chatRoomId: string) => {
@@ -527,10 +581,11 @@ const getters = {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&
         chatRoom.users[state.loggedIn.username]) {
+        const unreadMentionsCount = getters.chatRoomUnreadMentions(contractID).length
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
-          unreadCount: 0, // TODO: need to implement
+          unreadMentionsCount,
           joined: true
         }
       } else {

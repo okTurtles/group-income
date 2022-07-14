@@ -185,10 +185,10 @@ describe('Full walkthrough', function () {
 
   describe('Identity tests', function () {
     it('Should create identity contracts for Alice and Bob', async function () {
-      users.bob = await createIdentity('Bob', 'bob@okturtles.com')
-      users.alice = await createIdentity('Alice', 'alice@okturtles.org')
+      users.bob = await createIdentity('bob', 'bob@okturtles.com')
+      users.alice = await createIdentity('alice', 'alice@okturtles.org')
       // verify attribute creation and state initialization
-      users.bob.decryptedValue().data.attributes.username.should.match(/^Bob/)
+      users.bob.decryptedValue().data.attributes.username.should.match(/^bob/)
       users.bob.decryptedValue().data.attributes.email.should.equal('bob@okturtles.com')
     })
 

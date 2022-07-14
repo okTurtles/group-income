@@ -6,6 +6,7 @@ import Vue from 'vue'
 import '~/shared/domains/chelonia/chelonia.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
 import { merge } from '~/frontend/utils/giLodash.js'
+import { noUppercase } from '~/frontend/views/utils/validators.js'
 import L from '~/frontend/views/utils/translations.js'
 
 sbp('chelonia/defineContract', {
@@ -20,13 +21,19 @@ sbp('chelonia/defineContract', {
   },
   actions: {
     'gi.contracts/identity': {
-      validate: objectMaybeOf({
-        attributes: objectMaybeOf({
-          username: string,
-          email: string,
-          picture: string
-        })
-      }),
+      validate: (data, { state, meta }) => {
+        objectMaybeOf({
+          attributes: objectMaybeOf({
+            username: string,
+            email: string,
+            picture: string
+          })
+        })(data)
+
+        if (!noUppercase(data.attributes.username)) {
+          throw new TypeError('A username cannot contain uppercase letters.')
+        }
+      },
       process ({ data }, { state }) {
         const initialState = merge({
           settings: {},
@@ -68,16 +75,20 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         Vue.set(state, 'loginState', data)
       },
-      async sideEffect () {
-        try {
-          await sbp('gi.actions/identity/updateLoginStateUponLogin')
-        } catch (e) {
-          sbp('gi.notifications/emit', 'ERROR', {
-            message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
-              errName: e.name,
-              errMsg: e.message || '?'
+      sideEffect ({ contractID }) {
+        // it only makes sense to call updateLoginStateUponLogin for ourselves
+        if (contractID === sbp('state/vuex/getters').ourIdentityContractId) {
+          // makes sure that updateLoginStateUponLogin gets run after the entire identity
+          // state has been synced, this way we don't end up joining groups we've left, etc.
+          sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/updateLoginStateUponLogin'])
+            .catch((e) => {
+              sbp('gi.notifications/emit', 'ERROR', {
+                message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
+                  errName: e.name,
+                  errMsg: e.message || '?'
+                })
+              })
             })
-          })
         }
       }
     }
