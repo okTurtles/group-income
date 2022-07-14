@@ -75,6 +75,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { INVITE_STATUS } from '@model/contracts/constants.js'
+import { humanDate } from '@utils/time.js'
 import L from '@view-utils/translations.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 
@@ -195,14 +196,8 @@ export default ({
         [PROPOSAL_GENERIC]: () => L('TODO: Change [generic] from [current] to [new-value]', {})
       }[this.proposalType]()
     },
-    humanDate () {
-      const date = new Date(this.proposal.meta.createdDate)
-      const offset = date.getTimezoneOffset()
-      const minutes = date.getMinutes()
-      date.setMinutes(minutes + offset)
-      const locale = navigator.languages !== undefined ? navigator.languages[0] : navigator.language
-
-      return date.toLocaleDateString(locale, {
+    humanCreatedDate () {
+      return humanDate(this.proposal.meta.createdDate, {
         year: 'numeric', month: 'long', day: 'numeric'
       })
     },
@@ -210,7 +205,7 @@ export default ({
       const votes = Object.values(this.proposal.votes)
       const yay = votes.filter(v => v === VOTE_FOR).length
       const nay = votes.filter(v => v === VOTE_AGAINST).length
-      const date = this.humanDate
+      const date = this.humanCreatedDate()
       const total = yay + nay
       switch (this.proposal.status) {
         case STATUS_OPEN: {
