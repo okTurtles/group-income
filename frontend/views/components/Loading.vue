@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 export default ({
   name: 'Loading',
   props: {

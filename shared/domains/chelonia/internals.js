@@ -1,18 +1,97 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
+import sbp, { domainFromSelector } from '@sbp/sbp'
 import './db.js'
 import { GIMessage } from './GIMessage.js'
-import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/utils/giLodash.js'
+import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/model/contracts/shared/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
+import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
+import { blake32Hash } from '~/shared/functions.js'
+// import 'ses'
 
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
-sbp('sbp/selectors/register', {
+export default (sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
   'chelonia/private/state': function () {
     return this.state
+  },
+  'chelonia/private/loadManifest': async function (manifestHash: string) {
+    if (this.manifestToContract[manifestHash]) {
+      console.warn('[chelonia]: already loaded manifest', manifestHash)
+      return
+    }
+    const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
+    const manifest = await fetch(manifestURL).then(handleFetchResult('json'))
+    const body = JSON.parse(manifest.body)
+    const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
+    console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
+    const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`)
+      .then(handleFetchResult('text'))
+    const sourceHash = blake32Hash(source)
+    if (sourceHash !== contractInfo.hash) {
+      throw new Error(`bad hash ${sourceHash} for contract '${contractInfo.file}'! Should be: ${contractInfo.hash}`)
+    }
+    function reduceAllow (acc, v) { acc[v] = true; return acc }
+    const allowedSels = ['okTurtles.events/on', 'chelonia/defineContract']
+      .concat(this.config.contracts.defaults.allowedSelectors)
+      .reduce(reduceAllow, {})
+    const allowedDoms = this.config.contracts.defaults.allowedDomains
+      .reduce(reduceAllow, {})
+    let contractName: string // eslint-disable-line prefer-const
+    const contractSBP = (selector: string, ...args) => {
+      const domain = domainFromSelector(selector)
+      if (selector.startsWith(contractName)) {
+        selector = `${manifestHash}/${selector}`
+      }
+      if (allowedSels[selector] || allowedDoms[domain]) {
+        return sbp(selector, ...args)
+      } else {
+        throw new Error(`[chelonia] selector not on allowlist: '${selector}'`)
+      }
+    }
+    // eslint-disable-next-line no-new-func
+    const saferEval: Function = new Function(`
+      return function (require, globals) {
+        // not a real sandbox, can't stop: (() => this)().fetch b/c JS is ridiculous
+        with (globals) {
+          ${source}
+        }
+      }
+    `)()
+    this.defContractSBP = contractSBP
+    this.defContractManifest = manifestHash
+    saferEval((dep) => {
+      return dep === '@sbp/sbp'
+        ? contractSBP
+        : this.config.contracts.defaults.modules[dep]
+    }, {
+      // TODO: not a real sandbox, use webworkers, SES (see bottom of file), or something else
+      // thankfully contracts are signed, so that removes some of the potential trouble
+      window: undefined,
+      self: undefined, // alias for window
+      top: undefined, // alias for window
+      parent: undefined, // alias for window
+      document: undefined,
+      globalThis: undefined,
+      fetch: undefined,
+      XMLHttpRequest: undefined,
+      // preserve these however, they're useful
+      setTimeout,
+      clearTimeout,
+      setInterval,
+      clearInterval,
+      ...this.config.contracts.defaults.exposedGlobals,
+      sbp: contractSBP
+    })
+    contractName = this.defContract.name
+    this.defContractSelectors.forEach(s => { allowedSels[s] = true })
+    this.manifestToContract[manifestHash] = {
+      slim: contractInfo === body.contractSlim,
+      info: contractInfo,
+      contract: this.defContract
+    }
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
@@ -46,7 +125,7 @@ sbp('sbp/selectors/register', {
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
           const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op())
+          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op(), entry.manifest())
         }
       } else {
         const message = (await r.json())?.message
@@ -55,10 +134,11 @@ sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/private/in/processMessage': function (message: GIMessage, state: Object) {
+  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const contractID = message.contractID()
+    const manifestHash = message.manifest()
     const config = this.config
     if (!state._vm) state._vm = {}
     const opFns: { [GIOpType]: (any) => void } = {
@@ -80,7 +160,7 @@ sbp('sbp/selectors/register', {
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
-          sbp(`${action}/process`, { data, meta, hash, contractID }, state)
+          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, contractID }, state)
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -96,6 +176,9 @@ sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_KEY_DEL]: notImplemented,
       [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
+    }
+    if (!this.manifestToContract[manifestHash]) {
+      await sbp('chelonia/private/loadManifest', manifestHash)
     }
     let processOp = true
     if (config.preOp) {
@@ -121,7 +204,7 @@ sbp('sbp/selectors/register', {
   'chelonia/private/in/syncContract': async function (contractID: string) {
     const state = sbp(this.config.stateSelector)
     const latest = await sbp('chelonia/out/latestHash', contractID)
-    console.debug(`syncContract: ${contractID} latestHash is: ${latest}`)
+    console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     let recent
     if (state.contracts[contractID]) {
@@ -222,7 +305,7 @@ sbp('sbp/selectors/register', {
       throw e
     }
   }
-})
+}): string[])
 
 const eventsToReinjest = []
 const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID), 1000)
@@ -273,16 +356,16 @@ const handleEvent = {
       index !== -1 && state.pending.splice(index, 1)
       sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
     }
-    await Promise.resolve() // TODO: load any unloaded contract code
-    sbp('chelonia/private/in/processMessage', message, state[contractID])
+    await sbp('chelonia/private/in/processMessage', message, state[contractID])
   },
   async processSideEffects (message: GIMessage) {
     if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) {
       const contractID = message.contractID()
+      const manifestHash = message.manifest()
       const hash = message.hash()
       const { action, data, meta } = message.decryptedValue()
       const mutation = { data, meta, hash, contractID }
-      await sbp(`${action}/sideEffect`, mutation)
+      await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }
   },
   revertProcess ({ message, state, contractID, contractStateCopy }) {
@@ -309,3 +392,105 @@ const handleEvent = {
 const notImplemented = (v) => {
   throw new Error(`chelonia: action not implemented to handle: ${JSON.stringify(v)}.`)
 }
+
+// The code below represents different ways to dynamically load code at runtime,
+// and the SES example shows how to sandbox runtime loaded code (although it doesn't
+// work, see https://github.com/endojs/endo/issues/1207 for details). It's also not
+// super important since we're loaded signed contracts.
+/*
+// https://2ality.com/2019/10/eval-via-import.html
+// Example: await import(esm`${source}`)
+// const esm = ({ raw }, ...vals) => {
+//   return URL.createObjectURL(new Blob([String.raw({ raw }, ...vals)], { type: 'text/javascript' }))
+// }
+
+// await loadScript.call(this, contractInfo.file, source, contractInfo.hash)
+//   .then(x => {
+//     console.debug(`loaded ${contractInfo.file}`)
+//     return x
+//   })
+// eslint-disable-next-line no-unused-vars
+function loadScript (file, source, hash) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    // script.type = 'application/javascript'
+    script.type = 'module'
+    // problem with this is that scripts will step on each other's feet
+    script.innerHTML = source
+    // NOTE: this will work if the file route adds .header('Content-Type', 'application/javascript')
+    // script.src = `${this.config.connectionURL}/file/${hash}`
+    // this results in: "SyntaxError: import declarations may only appear at top level of a module"
+    // script.innerHTML = `(function () {
+    //   ${source}
+    // })()`
+    script.onload = () => resolve(script)
+    script.onerror = (err) => reject(new Error(`${err || 'Error'} trying to load: ${file}`))
+    document.getElementsByTagName('head')[0].appendChild(script)
+  })
+}
+
+// This code is cobbled together based on:
+// https://github.com/endojs/endo/blob/master/packages/ses/test/test-import-cjs.js
+// https://github.com/endojs/endo/blob/master/packages/ses/test/test-import.js
+//   const vm = await sesImportVM.call(this, `${this.config.connectionURL}/file/${contractInfo.hash}`)
+// eslint-disable-next-line no-unused-vars
+function sesImportVM (url): Promise<Object> {
+  // eslint-disable-next-line no-undef
+  const vm = new Compartment(
+    {
+      ...this.config.contracts.defaults.exposedGlobals,
+      console
+    },
+    {}, // module map
+    {
+      resolveHook (spec, referrer) {
+        console.debug('resolveHook', { spec, referrer })
+        return spec
+      },
+      // eslint-disable-next-line require-await
+      async importHook (moduleSpecifier: string, ...args) {
+        const source = await fetch(moduleSpecifier).then(handleFetchResult('text'))
+        console.debug('importHook', { fetch: moduleSpecifier, args, source })
+        const execute = (moduleExports, compartment, resolvedImports) => {
+          console.debug('execute called with:', { moduleExports, resolvedImports })
+          const functor = compartment.evaluate(
+            `(function (require, exports, module, __filename, __dirname) { ${source} })`
+            // this doesn't seem to help with: https://github.com/endojs/endo/issues/1207
+            // { __evadeHtmlCommentTest__: false, __rejectSomeDirectEvalExpressions__: false }
+          )
+          const require_ = (importSpecifier) => {
+            console.debug('in-source require called with:', importSpecifier, 'keying:', resolvedImports)
+            const namespace = compartment.importNow(resolvedImports[importSpecifier])
+            console.debug('got namespace:', namespace)
+            return namespace.default === undefined ? namespace : namespace.default
+          }
+          const module_ = {
+            get exports () {
+              return moduleExports
+            },
+            set exports (newModuleExports) {
+              moduleExports.default = newModuleExports
+            }
+          }
+          functor(require_, moduleExports, module_, moduleSpecifier)
+        }
+        if (moduleSpecifier === '@common/common.js') {
+          return {
+            imports: [],
+            exports: ['Vue', 'L'],
+            execute
+          }
+        } else {
+          return {
+            imports: ['@common/common.js'],
+            exports: [],
+            execute
+          }
+        }
+      }
+    }
+  )
+  // vm.evaluate(source)
+  return vm.import(url)
+}
+*/

@@ -1,5 +1,5 @@
 import { confettiComponents, confettiNames } from './confettiComponents/index.js'
-import { randomIntFromRange } from '@utils/giLodash.js'
+import { randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 
 const canvas = {
   width: null, height: null

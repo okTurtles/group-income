@@ -54,9 +54,10 @@ li.c-item-wrapper(data-test='proposalItem')
 
 <script>
 import { mapGetters, mapState } from 'vuex'
+import { L } from '@common/common.js'
 import AvatarUser from '@components/AvatarUser.vue'
-import currencies from '~/frontend/views/utils/currencies.js'
-import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
+import currencies from '@model/contracts/shared/currencies.js'
+import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
@@ -67,16 +68,15 @@ import {
   STATUS_PASSED,
   STATUS_FAILED,
   STATUS_EXPIRED,
-  STATUS_CANCELLED
-} from '@model/contracts/voting/constants.js'
-import { VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/voting/rules.js'
+  STATUS_CANCELLED,
+  INVITE_STATUS
+} from '@model/contracts/shared/constants.js'
+import { VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { INVITE_STATUS } from '@model/contracts/constants.js'
 import { humanDate } from '@utils/time.js'
-import L from '@view-utils/translations.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 
 export default ({

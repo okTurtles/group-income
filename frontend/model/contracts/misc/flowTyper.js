@@ -2,9 +2,9 @@
 // library into this file (it was refusing to
 // import because of the way functions were being
 // exported).
-// 
+//
 // GI EDIT NOTES:
-// 
+//
 // - The following functions can be used directly with 'validate'
 //   because they've had their '_scope' second parameter removed:
 //   - arrayOf
@@ -12,12 +12,14 @@
 //   - object
 //   - objectOf
 //   - objectMaybeOf (this is a custom function that didn't exist in flowTyper)
+//
+// TODO: remove this file from eslintIgnore in package.json and fix errors
 
 type LiteralValue = boolean | number | string
 type ObjectRecord<T> = { [key: string]: T }
-type TypeValidator<T> = (mixed, _?:string) => T
-type TypeMaybeValidator<T> = (mixed, _?:string) => ?T
-type TypeArrayValidator<T> = (mixed, _?:string) => T[]
+type TypeValidator<T> = (mixed, _?: string) => T
+type TypeMaybeValidator<T> = (mixed, _?: string) => ?T
+type TypeArrayValidator<T> = (mixed, _?: string) => T[]
 type TypeValidatorRecord<T> = ObjectRecord<TypeValidator<T>>
 type $Literal<T: LiteralValue> = TypeValidator<T>
 
@@ -205,8 +207,7 @@ export const maybe =
 export const mixed = (
   function mixed (value) {
     return value
-  }
-  : TypeValidator<*>
+  }: TypeValidator<*>
 )
 
 export const object = (
@@ -216,8 +217,7 @@ export const object = (
       return Object.assign({}, value)
     }
     throw validatorError(object, value)
-  }
-  : TypeValidator<ObjectRecord<mixed>>
+  }: TypeValidator<ObjectRecord<mixed>>
 )
 
 export const objectOf = <O: TypeValidatorRecord<*>>

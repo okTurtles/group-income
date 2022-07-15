@@ -7,7 +7,7 @@
 </template>
 
 <script>
-import { humanDate } from '@utils/time.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'CypressBypassUI',

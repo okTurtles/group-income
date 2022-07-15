@@ -39,7 +39,7 @@ import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
 import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
-import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
+import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'ProposalsWidget',
