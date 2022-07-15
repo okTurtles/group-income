@@ -125,7 +125,7 @@ describe('Proposals - Add members', () => {
     getProposalItems().each(([item]) => {
       cy.get(item).within(() => {
         assertProposalOpenState({
-          description: '1 out of 3 members voted on '
+          description: '1 out of 3 members voted'
         })
 
         cy.getByDT('voteFor').click()
@@ -149,7 +149,7 @@ describe('Proposals - Add members', () => {
       cy.getByDT('voteAgainst').click()
 
       cy.getByDT('statusDescription')
-        .should('contain', 'Proposal refused')
+        .should('contain', 'Proposal rejected')
     })
   })
 
@@ -351,7 +351,7 @@ describe('Proposals - Add members', () => {
 
     getProposalItems().eq(1).within(() => {
       cy.getByDT('statusDescription')
-        .should('contain', 'Proposal refused')
+        .should('contain', 'Proposal rejected')
     })
 
     getProposalItems().eq(2).within(() => {

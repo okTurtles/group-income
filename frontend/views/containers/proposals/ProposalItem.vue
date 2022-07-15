@@ -196,35 +196,32 @@ export default ({
         [PROPOSAL_GENERIC]: () => L('TODO: Change [generic] from [current] to [new-value]', {})
       }[this.proposalType]()
     },
-    humanCreatedDate () {
-      return humanDate(this.proposal.meta.createdDate, {
-        year: 'numeric', month: 'long', day: 'numeric'
-      })
-    },
     statusDescription () {
       const votes = Object.values(this.proposal.votes)
+      const format = { year: 'numeric', month: 'long', day: 'numeric' }
       const yay = votes.filter(v => v === VOTE_FOR).length
       const nay = votes.filter(v => v === VOTE_AGAINST).length
-      const date = this.humanCreatedDate()
       const total = yay + nay
       switch (this.proposal.status) {
         case STATUS_OPEN: {
           const excludeVotes = this.proposalType === PROPOSAL_REMOVE_MEMBER ? 1 : 0
-
-          return L('{count} out of {total} members voted on {date}', {
+          const date = humanDate(this.proposal.data.expires_date_ms, format)
+          return L('{count} out of {total} members voted. Expires on {date}.', {
             count: votes.length,
             total: this.groupMembersCount - excludeVotes,
             date
           })
         }
         case STATUS_FAILED: {
-          return L('Proposal refused with {nay} against out of {total} total votes on {date}', { nay, total, date })
+          const date = humanDate(this.proposal.meta.dateClosed, format)
+          return L('Proposal rejected on {date} with {nay} against out of {total} total votes.', { nay, total, date })
         }
         case STATUS_CANCELLED: {
           return L('Proposal cancelled.')
         }
         case STATUS_PASSED: {
-          return L('Proposal accepted with {yay} in favor out of {total} total votes on {date}', { yay, total, date })
+          const date = humanDate(this.proposal.meta.dateClosed, format)
+          return L('Proposal accepted on {date} with {yay} in favor out of {total} total votes.', { yay, total, date })
         }
         default:
           return `TODO status: ${this.proposal.status}`
