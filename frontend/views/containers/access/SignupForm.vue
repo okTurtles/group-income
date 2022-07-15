@@ -76,10 +76,10 @@ export default ({
   data () {
     return {
       form: {
-        username: null,
-        password: null,
-        email: null,
-        pictureBase64: null
+        username: '',
+        password: '',
+        email: '',
+        pictureBase64: ''
       },
       usernameAsyncValidation: {
         timer: null,
