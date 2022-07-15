@@ -148,7 +148,7 @@ export default ({
             })
           }[ruleName]()
         },
-        [PROPOSAL_GENERIC]: () => L('TODO: Change [generic] from [current] to [new-value]', {})
+        [PROPOSAL_GENERIC]: () => `${this.proposal.data.proposalData.name}`
       }[this.proposalType]()
     },
     statusDescription () {

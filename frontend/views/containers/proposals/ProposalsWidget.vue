@@ -13,11 +13,13 @@
     :title='L("Proposals")'
   )
     template(#cta='')
+      // TODO: implement "See all proposals"
       .c-proposal-btns
-        // TODO: implement the actions on below two buttons
-        i18n.is-outlined.is-small.hide-phone(tag='button') See all proposals
         // TODO: below button has to be replaced with a dropdown button (see: https://github.com/okTurtles/group-income/issues/1288#issuecomment-1155061508)
-        i18n.is-outlined.is-small(tag='button') Create proposal
+        i18n.is-outlined.is-small(
+          tag='button'
+          @click='openModal("GenericProposal")'
+        ) Create general proposal
 
     ul.c-proposals(data-test='proposalsWidget')
       proposal-box(
@@ -28,12 +30,14 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
 import ProposalBox from '@containers/proposals/ProposalBox.vue'
 import PageSection from '@components/PageSection.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({
   name: 'ProposalsWidget',
@@ -109,6 +113,9 @@ export default ({
   methods: {
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
+    },
+    openModal (modal) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
     }
   }
 }: Object)
