@@ -85,6 +85,7 @@ lazyComponent('ChangeVotingRules', () => import('../views/containers/proposals/C
 lazyComponent('MincomeProposal', () => import('../views/containers/proposals/Mincome.vue'))
 lazyComponent('PaymentsHistoryModal', () => import('../views/containers/payments/PaymentsHistoryModal.vue'))
 lazyComponent('RemoveMember', () => import('../views/containers/proposals/RemoveMember.vue'))
+lazyModalFullScreen('PropositionsAllModal', () => import('../views/containers/proposals/PropositionsAllModal.vue'))
 
 lazyComponent('PaymentDetail', () => import('../views/containers/payments/PaymentDetail.vue'))
 lazyComponent('RecordPayment', () => import('../views/containers/payments/RecordPayment.vue'))

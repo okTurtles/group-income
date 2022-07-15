@@ -76,7 +76,7 @@ import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { humanDate } from '@utils/time.js'
+import { humanDate } from '~/frontend/model/contracts/shared/time.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 
 export default ({

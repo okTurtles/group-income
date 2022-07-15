@@ -17,7 +17,7 @@ page-section(
   .c-all-actions
     i18n.button.is-outlined.is-small(
       tag='span'
-      @click='seeAll'
+      @click='openModal("PropositionsAllModal", proposals)'
     ) See all proposals
 
     i18n.button.is-primary.is-small(
@@ -25,7 +25,7 @@ page-section(
       @click='createProposal'
     ) Create Proposal
 
-  ul.c-proposals(data-test='proposalsWidget')
+  ul(data-test='proposalsWidget')
     proposal-item(
       v-for='hashe in proposals'
       :key='hashe'
@@ -34,12 +34,14 @@ page-section(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
 import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
 import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({
   name: 'ProposalsWidget',
@@ -116,9 +118,8 @@ export default ({
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
     },
-
-    seeAll () {
-      // Todo
+    openModal (modal, queries) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
     createProposal () {
       // Todo
