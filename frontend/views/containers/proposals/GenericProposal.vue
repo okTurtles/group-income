@@ -6,6 +6,8 @@ proposal-template(
   :currentStep.sync='ephemeral.currentStep'
   @submit='submit'
 )
+  banner-scoped(ref='formMsg')
+
   label.field(v-if='ephemeral.currentStep === 0' key='0')
     .label
       i18n Name your proposal
@@ -26,8 +28,6 @@ proposal-template(
       v-error:proposalName=''
       autofocus
     )
-
-  banner-scoped(ref='formMsg')
 </template>
 
 <script>
