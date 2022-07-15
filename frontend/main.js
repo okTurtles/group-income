@@ -1,39 +1,41 @@
 'use strict'
 
 // import SBP stuff before anything else so that domains register themselves before called
-import Favico from 'favico.js'
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import '@model/captureLogs.js'
-import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
+import * as Common from '@common/common.js'
+import { LOGIN, LOGOUT } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
-import Vue from 'vue'
+import manifests from './model/contracts/manifests.json'
 import { mapMutations, mapGetters, mapState } from 'vuex'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
-import { LOGIN, LOGOUT } from './utils/events.js'
 import BackgroundSounds from './views/components/sounds/Background.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
-import L, { LError, LTags } from '@view-utils/translations.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
-import './views/utils/translations.js'
 import './views/utils/avatar.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
-import './views/utils/vSafeHtml.js'
+// import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import 'wicg-inert'
+import Favico from 'favico.js'
+
+const { Vue, L, LError, LTags } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)
@@ -103,11 +105,28 @@ async function startApp () {
       L('Fatal error: {reportError}', LError(e)), 'exclamation-triangle'
     )
   }
-  sbp('chelonia/configure', {
+  await sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
     stateSelector: 'state/vuex/state',
     reactiveSet: Vue.set,
     reactiveDel: Vue.delete,
+    contracts: {
+      ...manifests,
+      defaults: {
+        modules: { '@common/common.js': Common },
+        allowedSelectors: [
+          'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
+          'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
+          'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
+          'gi.actions/chatroom/leave', 'gi.notifications/emit'
+        ],
+        allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],
+        preferSlim: true,
+        exposedGlobals: {
+          Notification
+        }
+      }
+    },
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {
         if (e.name === 'ChelErrorUnrecoverable') {
@@ -137,10 +156,13 @@ async function startApp () {
   // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
   //       actions that they shouldn't be generating, which can lead to bugs or trigger the automated
   //       ban system. Only enable it if you know what you're doing and don't mind the risk.
+  // IMPORTANT: setting 'window.sbp' must come *after* 'chelonia/configure' so that the Cypress
+  //            tests don't attempt to use the contracts before they're ready!
   if (process.env.NODE_ENV === 'development' || window.Cypress || process.env.EXPOSE_SBP === 'true') {
     // In development mode this makes the SBP API available in the devtools console.
     window.sbp = sbp
   }
+
   // this is definitely very hacky, but we put it here since CONTRACT_IS_SYNCING can
   // be called before the main App component is loaded (just after we call login)
   // and we don't yet have access to the component's 'this'

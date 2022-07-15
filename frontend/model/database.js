@@ -2,7 +2,6 @@
 
 import sbp from '@sbp/sbp'
 import localforage from 'localforage'
-import '~/shared/domains/chelonia/db.js'
 
 if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
   const log = localforage.createInstance({

@@ -20,8 +20,8 @@ div(:class='isReady ? "" : "c-ready"')
 </template>
 
 <script>
+import { humanDate } from '@model/contracts/shared/time.js'
 import { toPercent } from '@view-utils/filters.js'
-import { humanDate } from '@utils/time.js'
 import { mapGetters } from 'vuex'
 
 export default ({

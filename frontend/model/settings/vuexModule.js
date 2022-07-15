@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 
 import Colors from '@model/colors.js'
 import { LOGOUT, SET_APP_LOGS_FILTER } from '@utils/events.js'
-import { cloneDeep } from '@utils/giLodash.js'
+import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from '@utils/themes.js'
 
 let defaultTheme: string = THEME_LIGHT

@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import { Vue } from '@common/common.js'
 
 // Register a global custom directive called `v-error`
 // to automatically display vuelidate error messages

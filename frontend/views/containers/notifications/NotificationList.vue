@@ -27,9 +27,9 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { timeSince } from '@utils/time.js'
+import { timeSince } from '@model/contracts/shared/time.js'
 import AvatarUser from '@components/AvatarUser.vue'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'NotificationList',

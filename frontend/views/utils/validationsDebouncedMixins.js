@@ -1,4 +1,4 @@
-import { debounce } from '@utils/giLodash.js'
+import { debounce } from '@model/contracts/shared/giLodash.js'
 
 /**
 Methods to debounce vuelidate validations.

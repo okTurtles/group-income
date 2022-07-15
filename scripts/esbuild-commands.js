@@ -49,21 +49,20 @@ const createEsbuildTask = (esbuildOptions = {}, otherOptions = {}) => {
 const defaultPlugin = {
   name: 'default',
   setup (build) {
-    // TODO: add support for multiple entry points per task.
-    const entryPoint = build.initialOptions.entryPoints[0]
+    const { entryPoints } = build.initialOptions
     const output = build.initialOptions.outdir || build.initialOptions.outfile
     // Will store the build or rebuild start timestamp, in milliseconds.
     let t0 = 0
 
     build.onStart(() => {
-      console.log(chalk`{green esbuild:} ${entryPoint}`)
+      console.log(chalk`{green esbuild:} ${entryPoints}`)
       t0 = Date.now()
     })
 
     build.onEnd((result) => {
       if (!result.errors.length) {
         const duration = Date.now() - t0
-        console.log(chalk`{green esbuild: created} {bold ${output}} {green from} {bold ${entryPoint}} {green in} {bold ${(duration / 1e3).toFixed(1)}s}`)
+        console.log(chalk`{green esbuild: created} {bold ${output}} {green from} {bold ${entryPoints}} {green in} {bold ${(duration / 1e3).toFixed(1)}s}`)
       }
     })
   }

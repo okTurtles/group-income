@@ -26,7 +26,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import Tooltip from '@components/Tooltip.vue'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'MessageReactions',

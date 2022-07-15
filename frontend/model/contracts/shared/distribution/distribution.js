@@ -2,8 +2,8 @@
 
 import mincomeProportional from './mincome-proportional.js'
 import minimizeTotalPaymentsCount from './payments-minimizer.js'
-import { cloneDeep } from '~/frontend/utils/giLodash.js'
-import { saferFloat, DECIMALS_MAX } from '~/frontend/views/utils/currencies.js'
+import { cloneDeep } from '../giLodash.js'
+import { saferFloat, DECIMALS_MAX } from '../currencies.js'
 
 type Distribution = Array<Object>;
 
