@@ -95,7 +95,10 @@ module.exports = (grunt) => {
   const clone = o => JSON.parse(JSON.stringify(o))
 
   async function execWithErrMsg (cmd, errMsg) {
-    const { stdout, stderr } = await execP(cmd)
+    const { stdout, stderr } = await execP(cmd, {
+      // this is needed to get it to work in certain Windows environments
+      shell: process.env.SHELL || '/bin/sh'
+    })
     if (stderr) {
       console.error(chalk`{red ${errMsg}:}`, stderr)
       throw new Error(errMsg)
