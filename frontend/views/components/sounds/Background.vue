@@ -6,7 +6,8 @@
 
 <script>
 import sbp from '@sbp/sbp'
-import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@utils/events.js'
+import { MESSAGE_RECEIVE, MESSAGE_SEND } from '@model/contracts/shared/constants.js'
+
 export default ({
   name: 'BackgroundSounds',
   created () {

@@ -1,5 +1,6 @@
 'use strict'
-import L from '~/frontend/views/utils/translations.js'
+
+import { L } from '@common/common.js'
 
 export const MINS_MILLIS = 60000
 export const HOURS_MILLIS = 60 * MINS_MILLIS

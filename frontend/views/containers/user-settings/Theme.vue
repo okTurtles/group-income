@@ -22,7 +22,7 @@
 
 <script>
 import { mapGetters, mapMutations } from 'vuex'
-import Themes from '@model/colors.js'
+import Themes from '~/frontend/model/colors.js'
 import ThemeSvg from './ThemeSvg.vue'
 import colorsMixins from '@view-utils/colorsManipulation.js'
 

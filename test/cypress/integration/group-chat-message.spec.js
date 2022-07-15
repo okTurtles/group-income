@@ -1,4 +1,4 @@
-import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
+import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 
 const groupName = 'Dreamers'
 const userId = Math.floor(Math.random() * 10000)
