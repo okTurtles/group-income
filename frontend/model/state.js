@@ -27,9 +27,11 @@ const checkSystemColor = () => {
   return theme
 }
 const defaultTheme = checkSystemColor()
+const defaultColor = Colors[defaultTheme]
 
 if (window.matchMedia) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    console.log(store.state.theme)
     if (store.state.theme === 'system') {
       store.commit('setColors', checkSystemColor())
     }
@@ -45,7 +47,7 @@ const initialState = {
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: defaultTheme,
-  themeColor: 
+  themeColor: defaultColor,
   reducedMotion: false,
   increasedContrast: false,
   fontSize: 16,
@@ -114,9 +116,10 @@ const mutations = {
   },
   setTheme (state, color) {
     state.theme = color
+    store.commit('setColors', checkSystemColor())
   },
   setColors (state) {
-    return Colors[state.theme === 'system' ? checkSystemColor() : state.theme]
+    state.themeColor = Colors[state.theme === 'system' ? checkSystemColor() : state.theme]
   },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
@@ -524,7 +527,7 @@ const getters = {
     }
   },
   colors (state) {
-    return state.colorsColors
+    return state.themeColor
   },
   fontSize (state) {
     return state.fontSize
