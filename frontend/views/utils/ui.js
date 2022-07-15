@@ -1,10 +1,10 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import { L, LError } from '@common/common.js'
 import { OPEN_MODAL, MODAL_RESPONSE } from '@utils/events.js'
-import L, { LError } from '@view-utils/translations.js'
 
-// Call from anywhere in the app:
+// Call from anywhere in the app (after BANNER has been set via 'okTurtles.data/set'):
 // sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')
 // sbp('gi.ui/dangerBanner', L('message'), 'icon-type')
 // sbp('gi.ui/clearBanner')

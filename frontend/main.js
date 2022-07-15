@@ -37,7 +37,7 @@ import './views/utils/vError.js'
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 
-const { Vue, L, LError, LTags } = Common
+const { Vue, L } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)
@@ -54,22 +54,23 @@ async function startApp () {
   // force debug output even in production
   const debugParam = new URLSearchParams(window.location.search).get('debug')
   if (process.env.NODE_ENV !== 'production' || debugParam === 'true') {
+    const reducer = (o, v) => { o[v] = true; return o }
     // Domains for which debug logging won't be enabled.
-    const domainBlacklist = new Set([
+    const domainBlacklist = [
       'sbp',
       'okTurtles.data'
-    ])
+    ].reduce(reducer, {})
     // Selectors for which debug logging won't be enabled.
-    const selectorBlacklist = new Set([
+    const selectorBlacklist = [
       'chelonia/db/get',
       'chelonia/db/logHEAD',
       'chelonia/db/set',
       'state/vuex/state',
       'state/vuex/getters',
       'gi.db/settings/save'
-    ])
+    ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
-      if (domainBlacklist.has(domain) || selectorBlacklist.has(selector)) return
+      if (domainBlacklist[domain] || selectorBlacklist[selector]) return
       console.debug(`[sbp] ${selector}`, data)
     })
     // Re-enable debug logging for 'gi.db/settings/save', but won't log the saved data.
