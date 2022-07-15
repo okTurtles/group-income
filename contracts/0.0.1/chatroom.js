@@ -9473,11 +9473,8 @@ ${this.getErrorInfo()}`;
   }
 
   // frontend/model/contracts/shared/nativeNotification.js
-  function checkNotification() {
-    return !!window.Notification;
-  }
   function makeNotification({ title, body, icon }) {
-    if (!checkNotification() || Notification.permission !== "granted") {
+    if (typeof Notification === "undefined" || Notification.permission !== "granted") {
       return;
     }
     new Notification(title, { body, icon });

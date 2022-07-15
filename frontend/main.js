@@ -121,7 +121,10 @@ async function startApp () {
           'gi.actions/chatroom/leave', 'gi.notifications/emit'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],
-        preferSlim: true
+        preferSlim: true,
+        exposedGlobals: {
+          Notification
+        }
       }
     },
     hooks: {
