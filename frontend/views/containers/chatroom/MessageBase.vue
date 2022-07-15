@@ -70,8 +70,8 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
-import { humanDate } from '@utils/time.js'
-import { makeMentionFromUsername } from '@model/contracts/chatroom.js'
+import { humanDate } from '@model/contracts/shared/time.js'
+import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({

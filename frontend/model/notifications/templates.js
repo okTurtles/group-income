@@ -5,8 +5,7 @@ import type {
 } from './types.flow.js'
 
 import sbp from '@sbp/sbp'
-
-import L, { LTags } from '~/frontend/views/utils/translations.js'
+import { L, { LTags } } from '@common/common.js'
 
 const contractName = (contractID) => sbp('state/vuex/state').contracts[contractID]?.type ?? contractID
 // Note: this escaping is not intended as a protection against XSS.

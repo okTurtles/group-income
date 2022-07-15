@@ -1,12 +1,11 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { objectOf, literalOf, unionOf, number } from '~/frontend/utils/flowTyper.js'
-import { DAYS_MILLIS } from '~/frontend/utils/time.js'
-import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
+import { objectOf, literalOf, unionOf, number } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { DAYS_MILLIS } from '../time.js'
 import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.js'
-
 import {
+  PROPOSAL_RESULT,
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_GROUP_SETTING_CHANGE,
@@ -17,7 +16,7 @@ import {
   STATUS_FAILED
   // STATUS_EXPIRED,
   // STATUS_CANCELLED
-} from './constants.js'
+} from '../constants.js'
 
 export function archiveProposal (state: Object, proposalHash: string): void {
   // TODO: handle this better (archive the proposal or whatever)

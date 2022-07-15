@@ -1,9 +1,10 @@
 'use strict'
 
-import { literalOf, unionOf } from '~/frontend/utils/flowTyper.js'
-
-import { PROPOSAL_REMOVE_MEMBER } from './constants.js'
-import { PROFILE_STATUS } from '../constants.js'
+import { literalOf, unionOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import {
+  PROPOSAL_REMOVE_MEMBER,
+  PROFILE_STATUS
+} from '../constants.js'
 
 export const VOTE_AGAINST = ':against'
 export const VOTE_INDIFFERENT = ':indifferent'

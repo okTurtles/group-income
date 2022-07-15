@@ -1,9 +1,8 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import { GIErrorUIRuntimeError, LError } from '@common/common.js'
 import type { GIActionParams } from './types.js'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
-import { LError } from '@view-utils/translations.js'
 
 export function encryptedAction (action: string, humanError: string | Function): Object {
   return {

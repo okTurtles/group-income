@@ -102,7 +102,7 @@ menu-parent(ref='menu')
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
-import { MESSAGE_TYPES } from '@model/contracts/constants.js'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'MessageActions',

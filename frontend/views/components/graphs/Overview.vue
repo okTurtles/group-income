@@ -33,8 +33,8 @@ div
 </template>
 
 <script>
+import currencies from '@model/contracts/shared/currencies.js'
 import { mapGetters } from 'vuex'
-import currencies from '@view-utils/currencies.js'
 import { GraphLegendItem, Bars } from '@components/graphs/index.js'
 
 export default ({

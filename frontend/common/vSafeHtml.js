@@ -18,7 +18,7 @@
 
 import dompurify from 'dompurify'
 import Vue from 'vue'
-import { cloneDeep } from '~/frontend/utils/giLodash.js'
+import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
 
 // See https://github.com/cure53/DOMPurify#can-i-configure-dompurify
 export const defaultConfig = {

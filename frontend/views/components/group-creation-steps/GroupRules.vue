@@ -30,8 +30,8 @@
 </template>
 
 <script>
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import VotingRulesInput from '@components/VotingRulesInput.vue'
 
