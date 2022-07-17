@@ -3,7 +3,7 @@ li.c-wrapper
   avatar-user.c-avatar(:username='proposal.meta.username' size='sm')
   .c-header
     h4.is-title-4.c-header-title(data-test='title' v-safe-html='title')
-    span.has-text-1 {{ humanDate }}
+    span.has-text-1 {{ humanCreatedDate }}
   .c-main
     ul
       proposal-item(v-for='hash in proposalHashes' :key='hash' :proposalHash='hash')
@@ -19,10 +19,11 @@ li.c-wrapper
 
 <script>
 import { mapGetters } from 'vuex'
-import L, { LTags } from '@view-utils/translations.js'
+import { humanDate } from '@model/contracts/shared/time.js'
+import { L, LTags } from '@common/common.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProposalItem from './ProposalItem.vue'
-import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
+import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 
 export default ({
@@ -73,14 +74,8 @@ export default ({
         ? L('{strong_}You{_strong} proposed:', LTags('strong'))
         : L('{username} proposed:', { username: `<strong>${username}</strong>` })
     },
-    humanDate () {
-      const date = new Date(this.proposal.meta.createdDate)
-      const offset = date.getTimezoneOffset()
-      const minutes = date.getMinutes()
-      date.setMinutes(minutes + offset)
-      const locale = navigator.languages !== undefined ? navigator.languages[0] : navigator.language
-
-      return date.toLocaleDateString(locale, {
+    humanCreatedDate () {
+      return humanDate(this.proposal.meta.createdDate, {
         year: 'numeric', month: 'long', day: 'numeric'
       })
     },

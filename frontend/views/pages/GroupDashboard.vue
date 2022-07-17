@@ -38,8 +38,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 </template>
 
 <script>
-import { mapGetters, mapState } from 'vuex'
 import sbp from '@sbp/sbp'
+import { mapGetters, mapState } from 'vuex'
 import { OPEN_MODAL, INCOME_DETAILS_UPDATE } from '@utils/events.js'
 import Page from '@components/Page.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
@@ -53,7 +53,7 @@ import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
-import { addTimeToDate, DAYS_MILLIS, humanDate } from '~/frontend/utils/time.js'
+import { addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'GroupDashboard',

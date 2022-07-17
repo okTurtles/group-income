@@ -1,8 +1,7 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
+import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
-import { CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'
 
 const initChatChannelDetails = {
   isLoading: true,
@@ -64,8 +63,10 @@ const chatroom: Object = {
     ]),
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
-        const joiningChatRoom = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
-        return joiningChatRoom ? { ...this.ephemeral.loadedSummary, joined: true } : this.ephemeral.loadedSummary || {}
+        const joiningChatRoomId = sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')
+        return !joiningChatRoomId
+          ? this.ephemeral.loadedSummary || {}
+          : { ...this.ephemeral.loadedSummary, joined: joiningChatRoomId === this.currentChatRoomId }
       }
 
       const { name, type, description, creator, picture, privacyLevel } = this.currentChatRoomState.attributes

@@ -67,9 +67,9 @@
 </template>
 
 <script>
-import currencies from '@view-utils/currencies.js'
 import Tooltip from '@components/Tooltip.vue'
-import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate } from '~/frontend/utils/time.js'
+import currencies from '@model/contracts/shared/currencies.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'GroupMincome',

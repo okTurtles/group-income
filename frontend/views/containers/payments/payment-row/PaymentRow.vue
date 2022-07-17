@@ -22,8 +22,8 @@
 
 <script>
 import AvatarUser from '@components/AvatarUser.vue'
-import { humanDate } from '@utils/time.js'
-import L from '@view-utils/translations.js'
+import { humanDate } from '@model/contracts/shared/time.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'PaymentRowSent',

@@ -2,8 +2,8 @@
 
 import sbp from '@sbp/sbp'
 import blockies from '@utils/blockies.js'
-import Colors from '@model/colors.js'
-import { randomFromArray } from '~/frontend/utils/giLodash.js'
+import Colors from '~/frontend/model/colors.js'
+import { randomFromArray } from '@model/contracts/shared/giLodash.js'
 import { imageDataURItoBlob } from '@utils/image.js'
 
 const colorOptions = ['primary', 'warning', 'danger', 'success']

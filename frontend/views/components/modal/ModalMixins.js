@@ -1,11 +1,11 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { CLOSE_MODAL } from '~/frontend/utils/events.js'
+import { CLOSE_MODAL } from '@utils/events.js'
 import { mapMutations } from 'vuex'
 import ModalClose from './ModalClose.vue'
 
-const modaMixins = {
+const modalMixins = {
   props: {
     a11yTitle: {
       type: String,
@@ -52,4 +52,4 @@ const modaMixins = {
   }
 }
 
-export default modaMixins
+export default modalMixins
