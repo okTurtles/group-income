@@ -116,9 +116,6 @@ const mutations = {
     state.theme = theme
     state.themeColor = theme === 'system' ? checkSystemColor() : theme
   },
-  setColors (state) {
-    state.themeColor = Colors[state.theme === 'system' ? checkSystemColor() : state.theme]
-  },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
   },
@@ -534,7 +531,7 @@ const getters = {
     return state.theme
   },
   isDarkTheme (state) {
-    return state.themeColor === 'dark'
+    return state.themeColor === THEME_DARK
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null

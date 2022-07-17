@@ -49,7 +49,6 @@ export default ({
 
   computed: {
     ...mapGetters([
-      'colors',
       'theme'
     ])
   }
