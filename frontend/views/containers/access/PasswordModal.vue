@@ -67,7 +67,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'PasswordModal',

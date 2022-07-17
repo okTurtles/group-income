@@ -29,14 +29,15 @@ form(data-test='login' @submit.prevent='')
 
 <script>
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { nonWhitespace } from '@views/utils/validators.js'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 
 export default ({
   name: 'LoginForm',
@@ -75,6 +76,8 @@ export default ({
           password: this.form.password
         })
         this.$emit('submit-succeeded')
+
+        requestNotificationPermission()
       } catch (e) {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)

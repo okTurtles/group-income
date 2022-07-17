@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import { Vue } from '@common/common.js'
 
 /**
  * Table of all well-known safe URLs used in the app UI.
