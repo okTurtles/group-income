@@ -36,7 +36,7 @@ import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
 import ProposalBox from '@containers/proposals/ProposalBox.vue'
 import PageSection from '@components/PageSection.vue'
-import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
+import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({

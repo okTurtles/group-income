@@ -31,7 +31,7 @@ proposal-template(
 </template>
 
 <script>
-import { PROPOSAL_GENERIC } from '@model/contracts/voting/constants.js'
+import { PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import ProposalTemplate from './ProposalTemplate.vue'
@@ -39,7 +39,7 @@ import Tooltip from '@components/Tooltip.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import L from '@view-utils/translations.js'
+import L from '~/frontend/common/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default ({
