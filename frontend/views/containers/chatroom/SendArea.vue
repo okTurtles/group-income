@@ -11,10 +11,13 @@
       .c-mention-user(
         ref='mention'
         :class='{"is-selected": index === ephemeral.mention.index}'
-        @click='addSelectedMention(index)'
+        @click.stop='onClickMention(index)'
       )
         avatar(:src='user.picture' size='xs')
-        .c-username {{user.displayName}}
+        .c-username {{user.username}}
+        .c-display-name(
+          v-if='user.displayName !== user.username'
+        ) ({{user.displayName}})
 
   .c-jump-to-latest(
     v-if='scrolledUp && !replyingMessage'
@@ -113,7 +116,7 @@ import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { makeMentionFromUsername } from '@model/contracts/chatroom.js'
+import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -192,6 +195,11 @@ export default ({
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
     if (!this.ephemeral.isPhone) this.$refs.textarea.focus()
+
+    window.addEventListener('click', this.onWindowMouseClicked)
+  },
+  beforeDestroy () {
+    window.removeEventListener('click', this.onWindowMouseClicked)
   },
   computed: {
     ...mapGetters(['chatRoomUsers', 'globalProfile']),
@@ -282,6 +290,10 @@ export default ({
         }
       }
     },
+    onClickMention (index) {
+      this.$refs.textarea.focus()
+      this.addSelectedMention(index)
+    },
     handleKeyDownEnter () {
       if (this.ephemeral.mention.options.length) {
         this.addSelectedMention(this.ephemeral.mention.index)
@@ -371,7 +383,7 @@ export default ({
       const all = makeMentionFromUsername('').all.slice(1)
       this.ephemeral.mention.options = this.users.concat([{
         // TODO: use group picture here or broadcast icon
-        username: all, displayName: all, picture: ''
+        username: all, displayName: all, picture: '/assets/images/horn.png'
       }]).filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
         user.displayName.toUpperCase().includes(keyword.toUpperCase()))
@@ -382,6 +394,15 @@ export default ({
       this.ephemeral.mention.position = -1
       this.ephemeral.mention.index = -1
       this.ephemeral.mention.options = []
+    },
+    onWindowMouseClicked (e) {
+      if (!this.$refs.mentionWrapper) {
+        return
+      }
+      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-mentions')
+      if (!element) {
+        this.endMention()
+      }
     }
   }
 }: Object)
@@ -560,6 +581,11 @@ $initialHeight: 43px;
 
 .c-mentions .c-mention-user .c-username {
   margin-left: 0.3rem;
+}
+
+.c-mentions .c-mention-user .c-display-name {
+  margin-left: 0.3rem;
+  color: $text_1;
 }
 
 .c-clear {

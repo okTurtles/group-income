@@ -33,6 +33,7 @@
 # Misc
 /ignored
 /data/*
+!/data/.gitkeep
 
 # Cypress
 /test/cypress/videos

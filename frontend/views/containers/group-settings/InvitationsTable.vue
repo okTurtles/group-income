@@ -113,10 +113,10 @@ import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
+import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
 import { mapGetters, mapState } from 'vuex'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'InvitationsTable',

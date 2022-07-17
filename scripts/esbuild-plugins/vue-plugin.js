@@ -9,7 +9,7 @@ const { relative } = require('path')
 const componentCompiler = require('@vue/component-compiler')
 const flowRemoveTypes = require('flow-remove-types')
 
-const { createAliasReplacer } = require('./utils')
+const { createAliasReplacer } = require('./utils.js')
 
 /**
  * @param {Object} [options.aliases]
