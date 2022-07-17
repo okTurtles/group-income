@@ -20,20 +20,18 @@ import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 Vue.use(Vuex)
 
 const checkSystemColor = () => {
-  let theme = THEME_LIGHT
-  if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    theme = THEME_DARK
-  }
-  return theme
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches
+    ? THEME_DARK
+    : THEME_LIGHT
 }
-const defaultTheme = checkSystemColor()
-const defaultColor = Colors[defaultTheme]
+
+const defaultTheme = 'system'
+const defaultColor = checkSystemColor()
 
 if (window.matchMedia) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    console.log(store.state.theme)
     if (store.state.theme === 'system') {
-      store.commit('setColors', checkSystemColor())
+      store.commit('setTheme', 'system')
     }
   })
 }
@@ -114,9 +112,9 @@ const mutations = {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
   },
-  setTheme (state, color) {
-    state.theme = color
-    store.commit('setColors', checkSystemColor())
+  setTheme (state, theme) {
+    state.theme = theme
+    state.themeColor = theme === 'system' ? checkSystemColor() : theme
   },
   setColors (state) {
     state.themeColor = Colors[state.theme === 'system' ? checkSystemColor() : state.theme]
@@ -527,7 +525,7 @@ const getters = {
     }
   },
   colors (state) {
-    return state.themeColor
+    return Colors[state.themeColor]
   },
   fontSize (state) {
     return state.fontSize
@@ -536,7 +534,7 @@ const getters = {
     return state.theme
   },
   isDarkTheme (state) {
-    return Colors[state.theme === 'system' ? checkSystemColor() : state.theme].theme === THEME_DARK
+    return state.themeColor === 'dark'
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
