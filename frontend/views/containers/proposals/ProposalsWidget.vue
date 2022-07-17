@@ -17,7 +17,7 @@ page-section(
   .c-all-actions
     i18n.button.is-outlined.is-small(
       tag='span'
-      @click='openModal("PropositionsAllModal", proposals)'
+      @click='openModal("PropositionsAllModal", { proposals })'
     ) See all proposals
 
     i18n.button.is-primary.is-small(

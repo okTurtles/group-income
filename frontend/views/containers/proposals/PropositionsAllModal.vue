@@ -29,6 +29,7 @@ export default ({
     proposals: Object
   },
   created () {
+    console.log('ee', this.$route.query)
     this.proposals = this.$route.query.proposals
   }
 }: Object)
