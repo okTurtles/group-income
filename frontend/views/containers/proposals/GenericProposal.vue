@@ -42,7 +42,6 @@ import { required } from 'vuelidate/lib/validators'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
-
 export default ({
   name: 'GenericProposal',
   mixins: [
@@ -75,7 +74,7 @@ export default ({
   methods: {
     async submit ({ reason }) {
       const proposalSettings = this.groupSettings.proposals[PROPOSAL_GENERIC]
-      
+
       try {
         await sbp('gi.actions/group/proposal', {
           contractID: this.currentGroupId,
