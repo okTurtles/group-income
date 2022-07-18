@@ -176,7 +176,14 @@ ${this.getErrorInfo()}`;
   };
 
   // frontend/views/utils/validators.js
+  var allowedUsernameCharacters = (value) => /^[\w-]*$/.test(value);
+  var noConsecutiveHyphensOrUnderscores = (value) => !value.includes("--") && !value.includes("__");
+  var noLeadingOrTrailingHyphen = (value) => !value.startsWith("-") && !value.endsWith("-");
+  var noLeadingOrTrailingUnderscore = (value) => !value.startsWith("_") && !value.endsWith("_");
   var noUppercase = (value) => value.toLowerCase() === value;
+
+  // frontend/model/contracts/shared/constants.js
+  var IDENTITY_USERNAME_MAX_CHARS = 80;
 
   // frontend/model/contracts/identity.js
   (0, import_sbp.default)("chelonia/defineContract", {
@@ -199,7 +206,23 @@ ${this.getErrorInfo()}`;
               picture: string
             })
           })(data);
-          if (!noUppercase(data.attributes.username)) {
+          const { username } = data.attributes;
+          if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
+            throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`);
+          }
+          if (!allowedUsernameCharacters(username)) {
+            throw new TypeError("A username cannot contain disallowed characters.");
+          }
+          if (!noConsecutiveHyphensOrUnderscores(username)) {
+            throw new TypeError("A username cannot contain two consecutive hyphens or underscores.");
+          }
+          if (!noLeadingOrTrailingHyphen(username)) {
+            throw new TypeError("A username cannot start or end with a hyphen.");
+          }
+          if (!noLeadingOrTrailingUnderscore(username)) {
+            throw new TypeError("A username cannot start or end with an underscore.");
+          }
+          if (!noUppercase(username)) {
             throw new TypeError("A username cannot contain uppercase letters.");
           }
         },
