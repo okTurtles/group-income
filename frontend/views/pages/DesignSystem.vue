@@ -187,6 +187,7 @@ page(
               i.icon-ellipsis-v icon-ellipsis-v
               i.icon-ellipsis-h icon-ellipsis-h
               i.icon-envelope icon-envelope
+              i.icon-envelope-open-text icon-envelope-open-text
               i.icon-eye icon-eye
               i.icon-eye-slash icon-eye-slash
               i.icon-globe icon-globe
