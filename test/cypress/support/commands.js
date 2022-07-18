@@ -386,5 +386,5 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
       .invoke('attr', 'style')
       .should('include', 'display: none')
   })
-  cy.getByDT('conversationWapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+  cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
 })

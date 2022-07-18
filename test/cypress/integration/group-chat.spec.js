@@ -181,12 +181,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   }
 
   function waitUntilMessageLoaded () {
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.get('.infinite-status-prompt:first-child')
         .invoke('attr', 'style')
         .should('include', 'display: none')
     })
-    cy.getByDT('conversationWapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+    cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
   }
 
   it(`user1 creats '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
