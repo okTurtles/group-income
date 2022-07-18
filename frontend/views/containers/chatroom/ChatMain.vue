@@ -489,7 +489,7 @@ export default ({
       this.ephemeral.startedUnreadMessageId = null
       if (this.currentChatRoomUnreadSince) {
         const startUnreadMessage = this.messages
-          .find(msg => new Date(msg.datetime).getTime() > this.currentChatRoomUnreadSince.createdDate)
+          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
         if (startUnreadMessage) {
           this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
         }

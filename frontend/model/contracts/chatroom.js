@@ -61,10 +61,13 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
 
   const rootGetters = sbp('state/vuex/getters')
   const groupID = rootGetters.groupIdFromChatRoomId(contractID)
+
+  const url = `${location.origin}/app/group-chat/${contractID}`
   makeNotification({
     title: `# ${chatRoomName}`,
     body: text,
-    icon: rootGetters.globalProfile2(groupID, username).picture
+    icon: rootGetters.globalProfile2(groupID, username).picture,
+    url
   })
 
   sbp('okTurtles.events/emit', MESSAGE_RECEIVE)

@@ -17,12 +17,18 @@ export async function requestNotificationPermission (force: boolean = false): Pr
   }
 }
 
-export function makeNotification ({ title, body, icon }: {
-  title: string, body: string, icon: string
+export function makeNotification ({ title, body, icon, url }: {
+  title: string, body: string, icon: string, url?: string
 }): void {
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
     return
   }
-  // eslint-disable-next-line
-  new Notification(title, { body, icon })
+
+  const notification = new Notification(title, { body, icon })
+  if (url) {
+    notification.onclick = function (event) {
+      event.preventDefault()
+      open(url, '_blank')
+    }
+  }
 }
