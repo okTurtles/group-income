@@ -39,11 +39,11 @@
 /* views/containers/group-settings/InvitationsTable.vue */
 "Not used yet" = "Not used yet";
 
+/* views/containers/user-settings/Theme.vue */
+"Use system settings" = "Use system settings";
+
 /* views/containers/group-settings/GroupJoinModal.vue */
 "On Group Income, every major decision goes through a voting process. This includes adding new members." = "On Group Income, every major decision goes through a voting process. This includes adding new members.";
-
-/* views/containers/user-settings/NotificationSettings.vue */
-"Request Permission" = "Request Permission";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Log" = "Log";
@@ -285,7 +285,7 @@
 /* views/components/group-creation-steps/GroupMincome.vue */
 "Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members." = "Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members.";
 
-/* utils/time.js */
+/* model/contracts/shared/time.js */
 "Yesterday" = "Yesterday";
 
 /* views/containers/contributions/PaymentMethods.vue */
@@ -384,7 +384,7 @@
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "This amount will not be used until someone needs it." = "This amount will not be used until someone needs it.";
 
-/* utils/time.js */
+/* model/contracts/shared/time.js */
 "{minutes}m" = "{minutes}m";
 
 /* views/containers/chatroom/MessageInteractive.vue */
@@ -771,6 +771,9 @@
 /* views/containers/user-settings/UserProfile.vue */
 "Delete account" = "Delete account";
 
+/* views/containers/user-settings/NotificationSettings.vue */
+"Notification Permission" = "Notification Permission";
+
 /* views/components/group-creation-steps/GroupMincome.vue */
 "Choose your group's distribution date" = "Choose your group's distribution date";
 
@@ -822,7 +825,7 @@
 /* views/components/group-creation-steps/GroupRules.vue */
 "You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value." = "You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value.";
 
-/* views/components/tabs/TabWrapper.vue, views/containers/chatroom/ChatNav.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/UserSettingsModal.vue */
+/* views/components/tabs/TabWrapper.vue, views/containers/chatroom/ChatNav.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/NotificationSettings.vue, views/containers/user-settings/UserSettingsModal.vue */
 "Settings" = "Settings";
 
 /* views/containers/chatroom/ViewArea.vue */
@@ -881,6 +884,9 @@
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Reached character limit." = "Reached character limit.";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Congratulations" = "Congratulations";
 
 /* views/containers/chatroom/SendArea.vue */
 "Create poll" = "Create poll";
@@ -996,9 +1002,6 @@
 /* views/components/group-creation-steps/GroupMincome.vue */
 "This value can be adjusted in the future." = "This value can be adjusted in the future.";
 
-/* model/notifications/templates.js */
-"You have unread mentions." = "You have unread mentions.";
-
 /* views/containers/contributions/AddIncomeDetailsWidget.vue */
 "Add your income details" = "Add your income details";
 
@@ -1020,7 +1023,7 @@
 /* main.js */
 "We could not connect to the server. Please refresh the page." = "We could not connect to the server. Please refresh the page.";
 
-/* views/utils/translations.js */
+/* common/translations.js */
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". You can {a_}report the error{_a}.";
 
 /* views/containers/contributions/Contribution.vue */
@@ -1197,7 +1200,7 @@
 /* controller/actions/group.js */
 "Failed to update payment." = "Failed to update payment.";
 
-/* utils/time.js */
+/* model/contracts/shared/time.js */
 "1d" = "1d";
 
 /* views/components/group-creation-steps/GroupPurpose.vue */
@@ -1214,6 +1217,9 @@
 
 /* views/containers/notifications/NotificationList.vue */
 "Nothing to see here... yet!" = "Nothing to see here... yet!";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"You have granted browser notification!" = "You have granted browser notification!";
 
 /* views/pages/Payments.vue */
 "{amount} in total, to {count} members" = "{amount} in total, to {count} members";
@@ -1239,7 +1245,7 @@
 /* views/containers/contributions/ContributionsWidget.vue */
 "See all contributions" = "See all contributions";
 
-/* utils/time.js */
+/* model/contracts/shared/time.js */
 "{hours}h" = "{hours}h";
 
 /* views/components/graphs/Overview.vue */
@@ -1530,7 +1536,7 @@
 /* views/components/group-creation-steps/GroupRules.vue */
 "Define the number of people required to block a proposal." = "Define the number of people required to block a proposal.";
 
-/* utils/time.js */
+/* model/contracts/shared/time.js */
 "Today" = "Today";
 
 /* views/containers/user-settings/settings.js */
@@ -1782,6 +1788,9 @@
 /* views/containers/navigation/Navigation.vue */
 "Main" = "Main";
 
+/* views/containers/access/SignupForm.vue */
+"A username cannot contain uppercase letters." = "A username cannot contain uppercase letters.";
+
 /* views/containers/proposals/MemberRequest.vue */
 "Approve" = "Approve";
 
@@ -1805,6 +1814,9 @@
 
 /* views/containers/payments/PaymentDetail.vue */
 "Sent by {name}" = "Sent by {name}";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"When you get chat mentions, browser notification will pop up." = "When you get chat mentions, browser notification will pop up.";
 
 /* views/components/GroupWelcome.vue */
 "You are now embarking on a new journey. We hope you have a blast!" = "You are now embarking on a new journey. We hope you have a blast!";
@@ -1938,6 +1950,9 @@
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to change the groups voting system. " = "{from} wants to change the groups voting system. ";
 
+/* views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue */
+"Mark all as read" = "Mark all as read";
+
 /* views/containers/contributions/ContributionsWidget.vue, views/containers/payments/MonthOverview.vue */
 "Payments received" = "Payments received";
 
@@ -1986,7 +2001,7 @@
 /* views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "Does not match" = "Does not match";
 
-/* utils/time.js */
+/* model/contracts/shared/time.js */
 "<1m" = "<1m";
 
 /* views/containers/chatroom/MessageInteractive.vue */
