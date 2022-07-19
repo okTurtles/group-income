@@ -108,7 +108,6 @@ export default ({
       // this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
 
       this.proposalsGrouped = proposalsGrouped // eslint-disable-line vue/no-side-effects-in-computed-properties
-      console.log(this.proposalsGrouped.flat())
       return this.proposalsGrouped.flat()
     }
   },

@@ -122,14 +122,14 @@ export default ({
       if (this.proposal.status === STATUS_OPEN) {
         return isOwnProposal
           ? L('You are proposing')
-          : L('{username} is proposing', { username: `${username}` })
+          : L('{username} is proposing', { username })
       }
 
       // Note: In English, no matter the subject, the wording is the same,
       // but in other languages the wording is different (ex: Portuguese)
       return isOwnProposal
         ? L('You proposed')
-        : L('{username} proposed', { username: `${username}` })
+        : L('{username} proposed', { username })
     },
     proposalType () {
       return this.proposal.data.proposalType
