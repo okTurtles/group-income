@@ -19,9 +19,21 @@ import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 
 Vue.use(Vuex)
 
-let defaultTheme = THEME_LIGHT
-if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-  defaultTheme = THEME_DARK
+const checkSystemColor = () => {
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches
+    ? THEME_DARK
+    : THEME_LIGHT
+}
+
+const defaultTheme = 'system'
+const defaultColor = checkSystemColor()
+
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (store.state.theme === 'system') {
+      store.commit('setTheme', 'system')
+    }
+  })
 }
 
 const initialState = {
@@ -33,6 +45,7 @@ const initialState = {
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: defaultTheme,
+  themeColor: defaultColor,
   reducedMotion: false,
   increasedContrast: false,
   fontSize: 16,
@@ -99,8 +112,9 @@ const mutations = {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
   },
-  setTheme (state, color) {
-    state.theme = color
+  setTheme (state, theme) {
+    state.theme = theme
+    state.themeColor = theme === 'system' ? checkSystemColor() : theme
   },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
@@ -508,13 +522,16 @@ const getters = {
     }
   },
   colors (state) {
-    return Colors[state.theme]
+    return Colors[state.themeColor]
   },
   fontSize (state) {
     return state.fontSize
   },
+  theme (state) {
+    return state.theme
+  },
   isDarkTheme (state) {
-    return Colors[state.theme].theme === THEME_DARK
+    return state.themeColor === THEME_DARK
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
