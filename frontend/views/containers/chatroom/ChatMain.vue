@@ -370,7 +370,11 @@ export default ({
     editMessage (message, newMessage) {
       sbp('gi.actions/chatroom/editMessage', {
         contractID: this.currentChatRoomId,
-        data: { id: message.id, text: newMessage },
+        data: {
+          id: message.id,
+          createdDate: message.datetime,
+          text: newMessage
+        },
         hooks: {
           prepublish: (msg) => {
             message.text = newMessage

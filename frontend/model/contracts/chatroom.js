@@ -341,6 +341,7 @@ sbp('chelonia/defineContract', {
       validate: (data, { state, meta }) => {
         objectOf({
           id: string,
+          createdDate: string,
           text: string
         })(data)
         // TODO: Actually NOT SURE it's needed to check if the meta.username === message.from
@@ -373,11 +374,10 @@ sbp('chelonia/defineContract', {
         const mentions = makeMentionFromUsername(me)
         const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all)
         if (!isAlreadyAdded && isIncludeMention) {
-          // TODO: Not sure createdDate should be this way
           addMention({
             contractID,
             messageId: data.id,
-            datetime: meta.createdDate,
+            datetime: data.createdDate, // TODO: Not sure createdDate should be this way
             text: data.text,
             username: meta.username,
             chatRoomName: getters.chatRoomAttributes.name
