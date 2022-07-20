@@ -399,6 +399,15 @@ sbp('chelonia/defineContract', {
         if (msgIndex >= 0) {
           state.messages.splice(msgIndex, 1)
         }
+        // filter replied messages and check if the current message is original
+        for (const message of state.messages) {
+          if (message.replyingMessage) {
+            if (message.replyingMessage.id === data.id) {
+              message.replyingMessage.id = null
+              message.replyingMessage.text = 'Original message was removed.'
+            }
+          }
+        }
       },
       sideEffect ({ data, contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
