@@ -22,7 +22,6 @@
 import { mapMutations, mapState } from 'vuex'
 import { L } from '@common/common.js'
 import {
-  getNotificationPermission,
   requestNotificationPermission,
   makeNotification
 } from '@model/contracts/shared/nativeNotification.js'
@@ -36,7 +35,7 @@ export default ({
     }
   },
   mounted () {
-    const permission = getNotificationPermission()
+    const permission = Notification?.permission
     if (permission === null) {
       this.disabled = true
     } else {
@@ -53,7 +52,7 @@ export default ({
       'setNotificationGranted'
     ]),
     async handleNotificationSettings (e) {
-      let permission = getNotificationPermission()
+      let permission = Notification?.permission
       if (permission === null) {
         this.setNotificationGranted(false)
         return

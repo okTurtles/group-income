@@ -455,6 +455,9 @@ export default ({
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
       if (curChatRoomId !== this.currentChatRoomId) {
+        // this.currentChatRoomId is a vuex getter and it could be changed
+        // while we get events from backend. This happens when users switch chatrooms very quickly
+        // In this case, we should avoid the previous events and only necessary to render the last events
         return
       }
       await this.rerenderEvents(events, refresh)

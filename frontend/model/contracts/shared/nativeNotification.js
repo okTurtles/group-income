@@ -38,11 +38,3 @@ export function makeNotification ({ title, body, icon, url }: {
     }
   }
 }
-
-export function getNotificationPermission (): string | null {
-  if (typeof Notification === 'undefined') {
-    return null
-  }
-
-  return Notification.permission
-}
