@@ -51,7 +51,7 @@ function assertContributionsWidget (assertions) {
   cy.getByDT('contributionsLink', 'a').click()
 }
 
-function updateIncome (newIncome, needsIncome, graphicLegend, incomeStatus, paymentDetails) {
+function updateIncome (newIncome, needsIncome, graphicLegend, incomeStatus) {
   cy.getByDT('contributionsLink').click()
   cy.getByDT('openIncomeDetailsModal').click()
   cy.getByDT(needsIncome ? 'needsIncomeRadio' : 'doesntNeedIncomeRadio').click()
