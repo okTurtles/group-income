@@ -59,19 +59,16 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
     createdDate: datetime
   })
 
-  const rootState = sbp('state/vuex/state')
-  if (rootState.notificationGranted) {
-    const rootGetters = sbp('state/vuex/getters')
-    const groupID = rootGetters.groupIdFromChatRoomId(contractID)
-    const url = `${location.origin}/app/group-chat/${contractID}`
+  const rootGetters = sbp('state/vuex/getters')
+  const groupID = rootGetters.groupIdFromChatRoomId(contractID)
+  const path = `/group-chat/${contractID}`
 
-    makeNotification({
-      title: `# ${chatRoomName}`,
-      body: text,
-      icon: rootGetters.globalProfile2(groupID, username).picture,
-      url
-    })
-  }
+  makeNotification({
+    title: `# ${chatRoomName}`,
+    body: text,
+    icon: rootGetters.globalProfile2(groupID, username).picture,
+    path
+  })
 
   sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
@@ -401,11 +398,9 @@ sbp('chelonia/defineContract', {
         }
         // filter replied messages and check if the current message is original
         for (const message of state.messages) {
-          if (message.replyingMessage) {
-            if (message.replyingMessage.id === data.id) {
-              message.replyingMessage.id = null
-              message.replyingMessage.text = 'Original message was removed.'
-            }
+          if (message.replyingMessage?.id === data.id) {
+            message.replyingMessage.id = null
+            message.replyingMessage.text = 'Original message was removed.'
           }
         }
       },

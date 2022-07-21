@@ -12,14 +12,12 @@
             ref='permission'
             type='checkbox'
             name='switch'
-            :disabled='disabled'
             :checked='granted'
             @change='handleNotificationSettings'
           )
 </template>
 
 <script>
-import { mapMutations, mapState } from 'vuex'
 import { L } from '@common/common.js'
 import {
   requestNotificationPermission,
@@ -30,45 +28,25 @@ export default ({
   name: 'NotificationSettings',
   data () {
     return {
-      granted: false,
-      disabled: false
+      granted: false
     }
   },
   mounted () {
-    const permission = Notification?.permission
-    if (permission === null) {
-      this.disabled = true
-    } else {
-      this.granted = permission === 'granted' && this.notificationGranted
-    }
-  },
-  computed: {
-    ...mapState([
-      'notificationGranted'
-    ])
+    this.granted = Notification?.permission === 'granted'
   },
   methods: {
-    ...mapMutations([
-      'setNotificationGranted'
-    ]),
     async handleNotificationSettings (e) {
       let permission = Notification?.permission
-      if (permission === null) {
-        this.setNotificationGranted(false)
-        return
-      } else if (permission !== 'granted') {
+      if (permission !== null) {
         permission = await requestNotificationPermission(true)
       }
-      const granted = e.target.checked && permission === 'granted'
-      this.setNotificationGranted(granted)
-      this.$refs.permission.checked = granted
-
-      if (granted) {
+      if (!this.granted && (permission === 'granted')) {
         makeNotification({
           title: L('Congratulations'),
           body: L('You have granted browser notification!')
         })
       }
+      this.$refs.permission.checked = this.granted = permission === 'granted'
     }
   }
 }: Object)

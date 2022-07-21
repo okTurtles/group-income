@@ -6,35 +6,28 @@ import sbp from '@sbp/sbp'
 
 export async function requestNotificationPermission (force: boolean = false): Promise<null | string> {
   if (typeof Notification === 'undefined' ||
-    (!force && Notification.permission !== 'default') ||
-    (force && Notification.permission === 'granted')) {
+    (!force && Notification.permission !== 'default')) {
     return null
   }
   try {
-    const permission = await Notification.requestPermission()
-    if (permission === 'granted') {
-      sbp('state/vuex/commit', 'setNotificationGranted', true)
-    } else {
-      sbp('state/vuex/commit', 'setNotificationGranted', false)
-    }
-    return permission
+    return await Notification.requestPermission()
   } catch (e) {
     return null
   }
 }
 
-export function makeNotification ({ title, body, icon, url }: {
-  title: string, body: string, icon?: string, url?: string
+export function makeNotification ({ title, body, icon, path }: {
+  title: string, body: string, icon?: string, path?: string
 }): void {
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
     return
   }
 
   const notification = new Notification(title, { body, icon })
-  if (url) {
+  if (path) {
     notification.onclick = function (event) {
       event.preventDefault()
-      open(url, '_blank')
+      sbp('controller/router').push({ path }).catch(console.warn)
     }
   }
 }
