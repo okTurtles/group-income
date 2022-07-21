@@ -434,6 +434,7 @@ export default ({
        * So in this case, we will load messages until the first unread mention
        * and scroll to that message
        */
+      const curChatRoomId = this.currentChatRoomId
       let unreadPosition = null
       if (this.currentChatRoomUnreadSince) {
         if (!this.currentChatRoomUnreadSince.deletedDate) {
@@ -453,7 +454,9 @@ export default ({
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
-
+      if (curChatRoomId !== this.currentChatRoomId) {
+        return
+      }
       await this.rerenderEvents(events, refresh)
 
       if (refresh) {
