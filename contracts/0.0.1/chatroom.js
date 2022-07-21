@@ -6934,9 +6934,9 @@
   var defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g;
   var regexEscapeRE = /[-.*+?^${}()|[\]\/\\]/g;
   var buildRegex = cached(function(delimiters2) {
-    var open2 = delimiters2[0].replace(regexEscapeRE, "\\$&");
+    var open = delimiters2[0].replace(regexEscapeRE, "\\$&");
     var close = delimiters2[1].replace(regexEscapeRE, "\\$&");
-    return new RegExp(open2 + "((?:.|\\n)+?)" + close, "g");
+    return new RegExp(open + "((?:.|\\n)+?)" + close, "g");
   });
   function parseText(text2, delimiters2) {
     var tagRE = delimiters2 ? buildRegex(delimiters2) : defaultTagRE;
@@ -9474,15 +9474,15 @@ ${this.getErrorInfo()}`;
 
   // frontend/model/contracts/shared/nativeNotification.js
   var import_sbp3 = __toESM(__require("@sbp/sbp"));
-  function makeNotification({ title, body, icon, url }) {
+  function makeNotification({ title, body, icon, path }) {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") {
       return;
     }
     const notification = new Notification(title, { body, icon });
-    if (url) {
+    if (path) {
       notification.onclick = function(event) {
         event.preventDefault();
-        open(url, "_blank");
+        (0, import_sbp3.default)("controller/router").push({ path }).catch(console.warn);
       };
     }
   }
@@ -9509,18 +9509,15 @@ ${this.getErrorInfo()}`;
       messageId,
       createdDate: datetime
     });
-    const rootState = (0, import_sbp4.default)("state/vuex/state");
-    if (rootState.notificationGranted) {
-      const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
-      const groupID = rootGetters.groupIdFromChatRoomId(contractID);
-      const url = `${location.origin}/app/group-chat/${contractID}`;
-      makeNotification({
-        title: `# ${chatRoomName}`,
-        body: text2,
-        icon: rootGetters.globalProfile2(groupID, username).picture,
-        url
-      });
-    }
+    const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
+    const groupID = rootGetters.groupIdFromChatRoomId(contractID);
+    const path = `/group-chat/${contractID}`;
+    makeNotification({
+      title: `# ${chatRoomName}`,
+      body: text2,
+      icon: rootGetters.globalProfile2(groupID, username).picture,
+      path
+    });
     (0, import_sbp4.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
   }
   function deleteMention({ contractID, messageId }) {
@@ -9812,11 +9809,9 @@ ${this.getErrorInfo()}`;
             state.messages.splice(msgIndex, 1);
           }
           for (const message of state.messages) {
-            if (message.replyingMessage) {
-              if (message.replyingMessage.id === data.id) {
-                message.replyingMessage.id = null;
-                message.replyingMessage.text = "Original message was removed.";
-              }
+            if (message.replyingMessage?.id === data.id) {
+              message.replyingMessage.id = null;
+              message.replyingMessage.text = "Original message was removed.";
             }
           }
         },
