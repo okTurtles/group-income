@@ -24,7 +24,7 @@
   var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
 
   // frontend/model/contracts/chatroom.js
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
   var import_common2 = __require("@common/common.js");
 
   // frontend/model/contracts/shared/giLodash.js
@@ -377,11 +377,18 @@ ${this.getErrorInfo()}`;
   }
 
   // frontend/model/contracts/shared/nativeNotification.js
-  function makeNotification({ title, body, icon }) {
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  function makeNotification({ title, body, icon, url }) {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") {
       return;
     }
-    new Notification(title, { body, icon });
+    const notification = new Notification(title, { body, icon });
+    if (url) {
+      notification.onclick = function(event) {
+        event.preventDefault();
+        open(url, "_blank");
+      };
+    }
   }
 
   // frontend/model/contracts/chatroom.js
@@ -395,37 +402,42 @@ ${this.getErrorInfo()}`;
     };
   }
   function emitMessageEvent({ contractID, hash }) {
-    (0, import_sbp2.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
+    (0, import_sbp3.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
   }
   function addMention({ contractID, messageId, datetime, text, username, chatRoomName }) {
-    if ((0, import_sbp2.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+    if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
       return;
     }
-    (0, import_sbp2.default)("state/vuex/commit", "addChatRoomUnreadMention", {
+    (0, import_sbp3.default)("state/vuex/commit", "addChatRoomUnreadMention", {
       chatRoomId: contractID,
       messageId,
       createdDate: datetime
     });
-    const rootGetters = (0, import_sbp2.default)("state/vuex/getters");
-    const groupID = rootGetters.groupIdFromChatRoomId(contractID);
-    makeNotification({
-      title: `# ${chatRoomName}`,
-      body: text,
-      icon: rootGetters.globalProfile2(groupID, username).picture
-    });
-    (0, import_sbp2.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
+    const rootState = (0, import_sbp3.default)("state/vuex/state");
+    if (rootState.notificationGranted) {
+      const rootGetters = (0, import_sbp3.default)("state/vuex/getters");
+      const groupID = rootGetters.groupIdFromChatRoomId(contractID);
+      const url = `${location.origin}/app/group-chat/${contractID}`;
+      makeNotification({
+        title: `# ${chatRoomName}`,
+        body: text,
+        icon: rootGetters.globalProfile2(groupID, username).picture,
+        url
+      });
+    }
+    (0, import_sbp3.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
   }
   function deleteMention({ contractID, messageId }) {
-    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomUnreadMention", { chatRoomId: contractID, messageId });
+    (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadMention", { chatRoomId: contractID, messageId });
   }
   function updateUnreadPosition({ contractID, hash, createdDate }) {
-    (0, import_sbp2.default)("state/vuex/commit", "setChatRoomUnreadSince", {
+    (0, import_sbp3.default)("state/vuex/commit", "setChatRoomUnreadSince", {
       chatRoomId: contractID,
       messageId: hash,
       createdDate
     });
   }
-  (0, import_sbp2.default)("chelonia/defineContract", {
+  (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/chatroom",
     metadata: {
       validate: objectOf({
@@ -434,7 +446,7 @@ ${this.getErrorInfo()}`;
         identityContractID: string
       }),
       create() {
-        const { username, identityContractID } = (0, import_sbp2.default)("state/vuex/state").loggedIn;
+        const { username, identityContractID } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
         return {
           createdDate: new Date().toISOString(),
           username,
@@ -506,7 +518,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta }) {
           emitMessageEvent({ contractID, hash });
-          if ((0, import_sbp2.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM") || (0, import_sbp2.default)("okTurtles.data/get", "JOINING_CHATROOM_ID") === contractID) {
+          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM") || (0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM_ID") === contractID) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
           }
         }
@@ -526,7 +538,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta }) {
           emitMessageEvent({ contractID, hash });
-          if ((0, import_sbp2.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
           }
         }
@@ -546,7 +558,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta }) {
           emitMessageEvent({ contractID, hash });
-          if ((0, import_sbp2.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
           }
         }
@@ -577,12 +589,12 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         sideEffect({ data, hash, contractID, meta }, { state }) {
-          const rootState = (0, import_sbp2.default)("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           if (data.member === rootState.loggedIn.username) {
-            if ((0, import_sbp2.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+            if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
               updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
             }
-            if ((0, import_sbp2.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
+            if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
               return;
             }
             leaveChatRoom({ contractID });
@@ -603,7 +615,7 @@ ${this.getErrorInfo()}`;
           }
         },
         sideEffect({ meta, contractID }, { state }) {
-          if ((0, import_sbp2.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
+          if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
             return;
           }
           leaveChatRoom({ contractID });
@@ -624,7 +636,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta, data }, { state, getters }) {
           emitMessageEvent({ contractID, hash });
-          const rootState = (0, import_sbp2.default)("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (me === meta.username) {
             return;
@@ -641,7 +653,7 @@ ${this.getErrorInfo()}`;
               chatRoomName: getters.chatRoomAttributes.name
             });
           }
-          if ((0, import_sbp2.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
           }
         }
@@ -650,6 +662,7 @@ ${this.getErrorInfo()}`;
         validate: (data, { state, meta }) => {
           objectOf({
             id: string,
+            createdDate: string,
             text: string
           })(data);
         },
@@ -668,7 +681,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta, data }, { getters }) {
           emitMessageEvent({ contractID, hash });
-          const rootState = (0, import_sbp2.default)("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (me === meta.username) {
             return;
@@ -680,7 +693,7 @@ ${this.getErrorInfo()}`;
             addMention({
               contractID,
               messageId: data.id,
-              datetime: meta.createdDate,
+              datetime: data.createdDate,
               text: data.text,
               username: meta.username,
               chatRoomName: getters.chatRoomAttributes.name
@@ -702,19 +715,27 @@ ${this.getErrorInfo()}`;
           if (msgIndex >= 0) {
             state.messages.splice(msgIndex, 1);
           }
+          for (const message of state.messages) {
+            if (message.replyingMessage) {
+              if (message.replyingMessage.id === data.id) {
+                message.replyingMessage.id = null;
+                message.replyingMessage.text = "Original message was removed.";
+              }
+            }
+          }
         },
         sideEffect({ data, contractID, hash, meta }) {
           emitMessageEvent({ contractID, hash });
-          const rootState = (0, import_sbp2.default)("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (rootState.chatRoomScrollPosition[contractID] === data.id) {
-            (0, import_sbp2.default)("state/vuex/commit", "setChatRoomScrollPosition", {
+            (0, import_sbp3.default)("state/vuex/commit", "setChatRoomScrollPosition", {
               chatRoomId: contractID,
               messageId: null
             });
           }
           if (rootState.chatRoomUnread[contractID].since.messageId === data.id) {
-            (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomUnreadSince", {
+            (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadSince", {
               chatRoomId: contractID,
               deletedDate: meta.createdDate
             });
