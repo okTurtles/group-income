@@ -48,6 +48,7 @@
 
           i18n.link(
             tag='button'
+            type='button'
             data-test='passwordBtn'
             @click.prevent='openModal("PasswordModal")'
           ) Update Password
