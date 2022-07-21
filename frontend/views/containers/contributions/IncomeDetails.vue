@@ -172,6 +172,12 @@ export default ({
       if (this.needsIncome) {
         // Find the methods that have some info filled...
         const filledMethods = this.$refs.paymentMethods.form.methods.filter(method => method.name !== 'choose' || method.value)
+
+        if (!filledMethods.length) {
+          this.$refs.formMsg.danger(L('Payment details required. Please let people know how they can pay you.'))
+
+          return
+        }
         // From those, find a method with missing info
         const incompletedMethod = filledMethods.find(method => method.name === 'choose' || !method.value)
         // and warn the user about it, if necessary!
@@ -184,10 +190,8 @@ export default ({
           return
         }
 
-        if (filledMethods.length > 0) {
-          for (const method of filledMethods) {
-            paymentMethods.push(method)
-          }
+        for (const method of filledMethods) {
+          paymentMethods.push(method)
         }
       }
 
