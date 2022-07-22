@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
@@ -49,18 +49,21 @@ const chatroom: Object = {
   },
   mounted () {
     this.setGroupChatDetailsAsGlobal()
+    this.updateCurrentChatRoomID(this.$route.params.chatRoomId)
   },
   computed: {
     ...mapGetters([
       'currentChatRoomId',
       'currentChatRoomState',
       'currentGroupState',
+      'groupIdFromChatRoomId',
       'chatRoomUsers',
       'generalChatRoomId',
       'globalProfile',
       'isJoinedChatRoom',
       'isPrivateChatRoom'
     ]),
+    ...mapState(['currentGroupId']),
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
         const joiningChatRoomId = sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')
@@ -189,6 +192,15 @@ const chatroom: Object = {
           privacyLevel: this.summary.privacyLevel
         })
         sbp('okTurtles.events/emit', CHATROOM_DETAILS_UPDATED)
+      }
+    },
+    updateCurrentChatRoomID (chatRoomId: string) {
+      if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+        const groupID = this.groupIdFromChatRoomId(chatRoomId)
+        if (this.currentGroupId !== groupID) {
+          sbp('state/vuex/commit', 'setCurrentGroupId', groupID)
+        }
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
       }
     }
   },
