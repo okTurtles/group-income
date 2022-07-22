@@ -47,6 +47,7 @@ const initialState = {
   theme: defaultTheme,
   themeColor: defaultColor,
   reducedMotion: false,
+  notificationEnabled: true,
   increasedContrast: false,
   fontSize: 16,
   appLogsFilter: process.env.NODE_ENV === 'development'
@@ -125,6 +126,9 @@ const mutations = {
     setTimeout(() => {
       state.reducedMotion = tempSettings
     }, 300)
+  },
+  setNotificationEnabled (state, enabled) {
+    state.notificationEnabled = enabled
   },
   setIncreasedContrast (state, isChecked) {
     state.increasedContrast = isChecked

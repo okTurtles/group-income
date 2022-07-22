@@ -10,7 +10,7 @@ export async function requestNotificationPermission (force: boolean = false): Pr
   }
   if (force || Notification.permission === 'default') {
     try {
-      return await Notification.requestPermission()
+      sbp('state/vuex/commit', 'setNotificationEnabled', await Notification.requestPermission() === 'granted')
     } catch (e) {
       console.error('requestNotificationPermission:', e.message)
       return null
@@ -22,7 +22,8 @@ export async function requestNotificationPermission (force: boolean = false): Pr
 export function makeNotification ({ title, body, icon, path }: {
   title: string, body: string, icon?: string, path?: string
 }): void {
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') {
+  const notificationEnabled = sbp('state/vuex/state').notificationEnabled
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted' || !notificationEnabled) {
     return
   }
 

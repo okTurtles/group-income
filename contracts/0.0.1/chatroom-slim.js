@@ -379,7 +379,8 @@ ${this.getErrorInfo()}`;
   // frontend/model/contracts/shared/nativeNotification.js
   var import_sbp2 = __toESM(__require("@sbp/sbp"));
   function makeNotification({ title, body, icon, path }) {
-    if (typeof Notification === "undefined" || Notification.permission !== "granted") {
+    const notificationEnabled = (0, import_sbp2.default)("state/vuex/state").notificationEnabled;
+    if (typeof Notification === "undefined" || Notification.permission !== "granted" || !notificationEnabled) {
       return;
     }
     const notification = new Notification(title, { body, icon });

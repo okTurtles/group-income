@@ -426,6 +426,9 @@
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Change vote." = "Change vote.";
 
+/* views/containers/user-settings/NotificationSettings.vue */
+"Sorry, you should reset browser notification permission again." = "Sorry, you should reset browser notification permission again.";
+
 /* views/containers/payments/PaymentDetail.vue */
 "Mincome at the time" = "Mincome at the time";
 

@@ -1870,6 +1870,9 @@
 "Notification Permission" = "Autorisation de notification";
 
 /* views/containers/user-settings/NotificationSettings.vue */
+"Sorry, you should reset browser notification permission again." = "Désolé, vous devez réinitialiser à nouveau l'autorisation de notification du navigateur.";
+
+/* views/containers/user-settings/NotificationSettings.vue */
 "When you get chat mentions, browser notification will pop up." = "Lorsque vous recevez des mentions de chat, la notification du navigateur apparaîtra.";
 
 /* views/containers/user-settings/NotificationSettings.vue */

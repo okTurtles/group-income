@@ -18,6 +18,7 @@
 </template>
 
 <script>
+import { mapState, mapMutations } from 'vuex'
 import { L } from '@common/common.js'
 import {
   requestNotificationPermission,
@@ -32,21 +33,33 @@ export default ({
     }
   },
   mounted () {
-    this.granted = Notification?.permission === 'granted'
+    this.granted = Notification?.permission === 'granted' && this.notificationEnabled
+  },
+  computed: {
+    ...mapState(['notificationEnabled'])
   },
   methods: {
+    ...mapMutations([
+      'setNotificationEnabled'
+    ]),
     async handleNotificationSettings (e) {
       let permission = Notification?.permission
-      if (permission !== null) {
+
+      if (permission === 'default') {
         permission = await requestNotificationPermission(true)
+      } else if (permission === 'denied') {
+        alert(L('Sorry, you should reset browser notification permission again.'))
       }
-      if (!this.granted && (permission === 'granted')) {
+
+      this.$refs.permission.checked = this.granted = e.target.checked && permission === 'granted'
+      this.setNotificationEnabled(this.granted)
+
+      if (this.granted) {
         makeNotification({
           title: L('Congratulations'),
           body: L('You have granted browser notification!')
         })
       }
-      this.$refs.permission.checked = this.granted = permission === 'granted'
     }
   }
 }: Object)

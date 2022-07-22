@@ -622,6 +622,7 @@
   "When enabled the amount of animations you see around are reduced.": "Ceci réduit le nombre d’animations affichées.",
   "Congratulations": "Toutes nos félicitations",
   "Notification Permission": "Autorisation de notification",
+  "Sorry, you should reset browser notification permission again.": "Désolé, vous devez réinitialiser à nouveau l'autorisation de notification du navigateur.",
   "When you get chat mentions, browser notification will pop up.": "Lorsque vous recevez des mentions de chat, la notification du navigateur apparaîtra.",
   "You have granted browser notification!": "Vous avez autorisé la notification du navigateur!",
   "All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information.": "Toutes vos données sont stockées localement, sur votre appareil personnel, et cryptées lors de tout envoi {via le réseau, à d’autres membres du groupe}. L’actualisation téléchargera la plus récente version des informations relatives au groupe.",
