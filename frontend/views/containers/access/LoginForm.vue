@@ -37,7 +37,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { noWhitespace } from '@view-utils/validators.js'
+import { noWhitespace } from '@model/contracts/shared/validators.js'
 
 export default ({
   name: 'LoginForm',

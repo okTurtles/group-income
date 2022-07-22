@@ -1,28 +1,29 @@
 <template lang='pug'>
 .theme-list
-  fieldset.theme(v-for='(color, label) in themes' :key='label' @click='setTheme(color.name)')
-    label(:for='label')
-      svg(width='247' height='128' viewBox='0 0 247 128' fill='none' xmlns='http://www.w3.org/2000/svg')
-        path(d='M243 0.5C244.933 0.5 246.5 2.067 246.5 4V124C246.5 125.933 244.933 127.5 243 127.5H4C2.06701 127.5 0.5 125.933 0.5 124V4C0.5 2.067 2.067 0.5 4 0.5H243Z' :fill='color.general_2' :stroke='color.general_0')
-        rect(x='24' y='28' width='48' height='9' rx='4.5' :fill='color.general_0')
-        rect(x='24' y='48' width='48' height='9' rx='4.5' :fill='color.general_0')
-        rect(x='24' y='68' width='48' height='9' rx='4.5' :fill='color.general_0')
-        rect(x='24' y='88' width='48' height='9' rx='4.5' :fill='color.general_0')
-        path(d='M86 32C86 29.7909 87.7909 28 90 28H246V123C246 125.209 244.209 127 242 127H86V32Z' :fill='color.background_0')
-        circle(cx='12.5' cy='32.5' r='4.5' :fill='color.primary_0')
-        circle(cx='12.5' cy='52.5' r='4.5' :fill='color.primary_0')
-        circle(cx='12.5' cy='72.5' r='4.5' :fill='color.primary_0')
-        rect(x='8' y='8.00002' width='64' height='9' rx='4.5' :fill='color.general_0')
-        circle(cx='12.5' cy='92.5' r='4.5' :fill='color.primary_0')
+  fieldset.theme(@click.prevent='setTheme("system")')
+    label(for='system')
+      .c-combined-color
+        ThemeSvg(:color='themes.light')
+        ThemeSvg(:color='themes.dark')
 
       .radio
-        input.input(type='radio' name='theme' :value='label' :id='label' v-model='colors.name')
+        input.input(type='radio' name='theme' value='system' id='system' v-model='theme')
+        i18n(tag='span') Use system settings
+
+  fieldset.theme(v-for='(color, label) in themes' :key='label' @click.prevent='setTheme(label)')
+    label(:for='label')
+      .c-color
+        ThemeSvg(:color='color')
+
+      .radio
+        input.input(type='radio' name='theme' :value='label' :id='label' v-model='theme')
         span {{ label }}
 </template>
 
 <script>
 import { mapGetters, mapMutations } from 'vuex'
 import Themes from '~/frontend/model/colors.js'
+import ThemeSvg from './ThemeSvg.vue'
 import colorsMixins from '@view-utils/colorsManipulation.js'
 
 export default ({
@@ -36,6 +37,10 @@ export default ({
     }
   },
 
+  components: {
+    ThemeSvg
+  },
+
   methods: {
     ...mapMutations([
       'setTheme'
@@ -44,7 +49,7 @@ export default ({
 
   computed: {
     ...mapGetters([
-      'colors'
+      'theme'
     ])
   }
 }: Object)
@@ -54,26 +59,39 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .theme-list {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  column-gap: 0.75rem;
+}
+
+.radio {
+  margin-top: 0.5rem;
 }
 
 .theme {
   margin-bottom: 1.125rem;
-  width: calc(50% - 0.75rem);
 
   &:hover {
-    svg {
+    .c-combined-color,
+    .c-color {
       transform: scale(1.05);
     }
   }
 }
 
-svg {
-  display: block;
+.c-combined-color,
+.c-color {
   transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
-  margin-bottom: 0.5rem;
-  width: 100%;
-  height: auto;
+  border: 1px solid $general_0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.c-combined-color {
+  display: flex;
+
+  svg {
+    margin-right: -50%;
+  }
 }
 </style>

@@ -9272,7 +9272,7 @@ ${this.getErrorInfo()}`;
     throw validatorError(string2, value, _scope);
   };
 
-  // frontend/views/utils/validators.js
+  // frontend/model/contracts/shared/validators.js
   var allowedUsernameCharacters = (value) => /^[\w-]*$/.test(value);
   var noConsecutiveHyphensOrUnderscores = (value) => !value.includes("--") && !value.includes("__");
   var noLeadingOrTrailingHyphen = (value) => !value.startsWith("-") && !value.endsWith("-");

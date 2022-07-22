@@ -59,7 +59,7 @@ import {
   noLeadingOrTrailingUnderscore,
   noUppercase,
   noWhitespace
-} from '@view-utils/validators.js'
+} from '@model/contracts/shared/validators.js'
 
 export default ({
   name: 'SignupForm',

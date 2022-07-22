@@ -118,7 +118,7 @@ module.exports = (grunt) => {
     const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
-    const manifests = Object.fromEntries(Array.from(stdout.matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+    const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
     fs.writeFileSync(manifestJSON,
       JSON.stringify({ manifests }, null, 2) + '\n',
       'utf8')

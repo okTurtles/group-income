@@ -11,7 +11,7 @@ import {
   noLeadingOrTrailingHyphen,
   noLeadingOrTrailingUnderscore,
   noUppercase
-} from '~/frontend/views/utils/validators.js'
+} from './shared/validators.js'
 
 import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
 
