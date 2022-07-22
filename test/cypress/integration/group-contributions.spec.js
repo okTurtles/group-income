@@ -59,6 +59,11 @@ function updateIncome (newIncome, needsIncome, graphicLegend, incomeStatus) {
 
   assertGraphicSummary(graphicLegend)
 
+  if (needsIncome) {
+    // entering the payment details is mandatory for 'needsIncome'
+    cy.randomPaymentMethodInIncomeDetails()
+  }
+
   cy.getByDT('submitIncome').click()
   cy.getByDT('closeModal').should('not.exist') // make sure the modal closes.
 
@@ -149,7 +154,7 @@ describe('Contributions', () => {
     })
   })
 
-  it('user1 decides to switch income details to needing $100', () => {
+  it('user1 decides to switch income details to needing $100 and add a payment info', () => {
     cy.getByDT('openIncomeDetailsModal').click()
     cy.getByDT('needsIncomeRadio').click()
     // After swithing to need income, it should ask user how much he need
@@ -165,6 +170,25 @@ describe('Contributions', () => {
       'Total Pledged$0',
       'Needed Pledges$100'
     ])
+
+    cy.getByDT('submitIncome').click()
+    // When 'need income' is selected, payment details is requried.
+    cy.getByDT('feedbackMsg').should('contain', 'Payment details required. Please let people know how they can pay you.')
+
+    // Fill out the payment details (bitcoin)
+    cy.getByDT('paymentMethods').within(() => {
+      cy.getByDT('fields', 'ul').children().should('have.length', 1)
+
+      cy.log('Fill the 1º payment method (bitcoin)')
+      cy.getByDT('method').within(() => {
+        cy.getByDT('remove', 'button').should('not.be.visible')
+        cy.get('select')
+          .should('have.value', null)
+          .select('bitcoin')
+        cy.get('input').type('h4sh-t0-b3-s4ved')
+        cy.getByDT('remove', 'button').should('be.visible')
+      })
+    })
 
     cy.getByDT('submitIncome').click()
     cy.getByDT('closeModal').should('not.exist')
@@ -183,22 +207,10 @@ describe('Contributions', () => {
     })
   })
 
-  it('user1 adds their payment info', () => {
+  it('user1 adds additional payment info', () => {
     cy.getByDT('openIncomeDetailsModal').click()
 
     cy.getByDT('paymentMethods').within(() => {
-      cy.getByDT('fields', 'ul').children().should('have.length', 1)
-
-      cy.log('Fill the 1º payment method (bitcoin)')
-      cy.getByDT('method').within(() => {
-        cy.getByDT('remove', 'button').should('not.be.visible')
-        cy.get('select')
-          .should('have.value', null)
-          .select('bitcoin')
-        cy.get('input').type('h4sh-t0-b3-s4ved')
-        cy.getByDT('remove', 'button').should('be.visible')
-      })
-
       cy.log('Add a 2º payment method (paypal)')
       cy.getByDT('addMethod', 'button').click()
       cy.getByDT('fields', 'ul').children().should('have.length', 2)
