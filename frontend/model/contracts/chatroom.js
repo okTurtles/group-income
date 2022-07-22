@@ -374,7 +374,13 @@ sbp('chelonia/defineContract', {
           addMention({
             contractID,
             messageId: data.id,
-            datetime: data.createdDate, // TODO: Not sure createdDate should be this way
+            /*
+            * the following datetime is the time when the message(which made mention) is created
+            * the reason why it is it instead of datetime when the mention created is because
+            * it is compared to the datetime of other messages when user scrolls
+            * to decide if it should be removed from the list of mentions or not
+            */
+            datetime: data.createdDate,
             text: data.text,
             username: meta.username,
             chatRoomName: getters.chatRoomAttributes.name

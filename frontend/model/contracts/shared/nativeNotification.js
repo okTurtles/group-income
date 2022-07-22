@@ -5,15 +5,18 @@ import sbp from '@sbp/sbp'
 //       be safe to modify them without worrying about version conflicts.
 
 export async function requestNotificationPermission (force: boolean = false): Promise<null | string> {
-  if (typeof Notification === 'undefined' ||
-    (!force && Notification.permission !== 'default')) {
+  if (typeof Notification === 'undefined') {
     return null
   }
-  try {
-    return await Notification.requestPermission()
-  } catch (e) {
-    return null
+  if (force || Notification.permission === 'default') {
+    try {
+      return await Notification.requestPermission()
+    } catch (e) {
+      console.error('requestNotificationPermission:', e.message)
+      return null
+    }
   }
+  return Notification.permission
 }
 
 export function makeNotification ({ title, body, icon, path }: {
