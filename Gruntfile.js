@@ -113,12 +113,12 @@ module.exports = (grunt) => {
     console.log(stdout)
   }
 
-  async function deployAndUpdateMainSrc (manifestDir) {
+  async function deployAndGenManifestsJSON (manifestDir) {
     grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
     const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
-    const manifests = Object.fromEntries(Array.from(stdout.matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+    const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
     fs.writeFileSync(manifestJSON,
       JSON.stringify({ manifests }, null, 2) + '\n',
       'utf8')
@@ -127,7 +127,7 @@ module.exports = (grunt) => {
 
   async function genManifestsAndDeploy (dir, version) {
     await generateManifests(dir, version)
-    await deployAndUpdateMainSrc(dir)
+    await deployAndGenManifestsJSON(dir)
   }
 
   // Used by both the alias plugin and the Vue plugin.
@@ -356,7 +356,7 @@ module.exports = (grunt) => {
         cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: process.env }
       },
-      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs ./node_modules/.bin/chel deploy ./data'
+      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
     }
   })
 

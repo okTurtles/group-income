@@ -370,7 +370,11 @@ export default ({
     editMessage (message, newMessage) {
       sbp('gi.actions/chatroom/editMessage', {
         contractID: this.currentChatRoomId,
-        data: { id: message.id, text: newMessage },
+        data: {
+          id: message.id,
+          createdDate: message.datetime,
+          text: newMessage
+        },
         hooks: {
           prepublish: (msg) => {
             message.text = newMessage
@@ -430,6 +434,7 @@ export default ({
        * So in this case, we will load messages until the first unread mention
        * and scroll to that message
        */
+      const curChatRoomId = this.currentChatRoomId
       let unreadPosition = null
       if (this.currentChatRoomUnreadSince) {
         if (!this.currentChatRoomUnreadSince.deletedDate) {
@@ -449,7 +454,12 @@ export default ({
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
-
+      if (curChatRoomId !== this.currentChatRoomId) {
+        // this.currentChatRoomId is a vuex getter and it could be changed
+        // while we get events from backend. This happens when users switch chatrooms very quickly
+        // In this case, we should avoid the previous events and only necessary to render the last events
+        return
+      }
       await this.rerenderEvents(events, refresh)
 
       if (refresh) {
@@ -489,7 +499,7 @@ export default ({
       this.ephemeral.startedUnreadMessageId = null
       if (this.currentChatRoomUnreadSince) {
         const startUnreadMessage = this.messages
-          .find(msg => new Date(msg.datetime).getTime() > this.currentChatRoomUnreadSince.createdDate)
+          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
         if (startUnreadMessage) {
           this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
         }

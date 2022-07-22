@@ -7,10 +7,14 @@ import { LOGOUT, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { cloneDeep } from '~/frontend/model/contracts/shared/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from '@utils/themes.js'
 
-let defaultTheme: string = THEME_LIGHT
-if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-  defaultTheme = THEME_DARK
+const checkSystemColor = () => {
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches
+    ? THEME_DARK
+    : THEME_LIGHT
 }
+
+const defaultTheme = 'system'
+const defaultColor = checkSystemColor()
 
 export const defaultSettings = {
   appLogsFilter: (((process.env.NODE_ENV === 'development' || new URLSearchParams(window.location.search).get('debug'))
@@ -18,19 +22,25 @@ export const defaultSettings = {
     : ['error', 'warn', 'info']): string[]),
   fontSize: 16,
   increasedContrast: false,
+  notificationEnabled: true,
+
   reducedMotion: false,
-  theme: defaultTheme
+  theme: defaultTheme,
+  themeColor: defaultColor
 }
 
 const getters = {
   colors (state) {
-    return Colors[state.theme]
+    return Colors[state.themeColor]
   },
   fontSize (state) {
     return state.fontSize
   },
   isDarkTheme (state) {
-    return Colors[state.theme].theme === THEME_DARK
+    return state.themeColor === THEME_DARK
+  },
+  theme (state) {
+    return state.theme
   }
 }
 
@@ -48,6 +58,9 @@ const mutations = {
   setIncreasedContrast (state, isChecked) {
     state.increasedContrast = isChecked
   },
+  setNotificationEnabled (state, enabled) {
+    state.notificationEnabled = enabled
+  },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
   },
@@ -58,8 +71,9 @@ const mutations = {
       state.reducedMotion = tempSettings
     }, 300)
   },
-  setTheme (state, color) {
-    state.theme = color
+  setTheme (state, theme) {
+    state.theme = theme
+    state.themeColor = theme === 'system' ? checkSystemColor() : theme
   }
 }
 

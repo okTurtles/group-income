@@ -28,6 +28,14 @@ const initialState = {
   loggedIn: false // false | { username: string, identityContractID: string }
 }
 
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (store.state.theme === 'system') {
+      store.commit('setTheme', 'system')
+    }
+  })
+}
+
 sbp('sbp/selectors/register', {
   // 'state' is the Vuex state object, and it can only store JSON-like data
   'state/vuex/state': () => store.state,
