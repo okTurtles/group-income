@@ -18,17 +18,14 @@
     )
       slot
 
-      template(v-if='isReasonStep')
-        slot(name='reason')
-
-        label.field(key='reason')
-          i18n.label Why are you proposing this change?
-          textarea.textarea(
-            ref='reason'
-            maxlength='500'
-            data-test='reason'
-          )
-          i18n.helper This is optional.
+      label.field(v-if='isReasonStep' key='reason')
+        i18n.label Why are you proposing this change?
+        textarea.textarea(
+          ref='reason'
+          maxlength='500'
+          data-test='reason'
+        )
+        i18n.helper This is optional.
 
       .c-confirmation(v-if='isConfirmation' key='confirmation')
         svg-proposal.c-svg
