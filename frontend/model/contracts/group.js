@@ -576,6 +576,7 @@ sbp('chelonia/defineContract', {
         if (result === VOTE_FOR || result === VOTE_AGAINST) {
           // handles proposal pass or fail, will update proposal.status accordingly
           proposals[proposal.data.proposalType][result](state, message)
+          Vue.set(proposal, 'dateClosed', meta.createdDate)
         }
       }
     },

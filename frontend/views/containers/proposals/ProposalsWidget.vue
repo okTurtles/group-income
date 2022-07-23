@@ -1,32 +1,36 @@
 <template lang='pug'>
-  callout-card(
-    v-if='!hasProposals'
-    :title='L("Proposals")'
-    :svg='SvgVote'
-    :isCard='true'
-  )
-    i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
-    i18n.has-text-1(tag='p') No one has created a proposal yet.
+callout-card(
+  v-if='!hasProposals'
+  :title='L("Proposals")'
+  :svg='SvgVote'
+  :isCard='true'
+)
+  i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
+  i18n.has-text-1(tag='p') No one has created a proposal yet.
 
-  page-section.c-page-section(
-    v-else
-    :title='L("Proposals")'
-  )
-    template(#cta='')
-      // TODO: implement "See all proposals"
-      .c-proposal-btns
-        // TODO: below button has to be replaced with a dropdown button (see: https://github.com/okTurtles/group-income/issues/1288#issuecomment-1155061508)
-        i18n.is-outlined.is-small(
-          tag='button'
-          @click='openModal("GenericProposal")'
-        ) Create general proposal
+// TODO: view without current proposals
+// TODO: button "see all proposals"
+page-section(
+  v-else
+  :title='L("Proposals")'
+)
+  .c-all-actions
+    i18n.button.is-outlined.is-small(
+      tag='span'
+      @click='seeAll'
+    ) See all proposals
 
-    ul.c-proposals(data-test='proposalsWidget')
-      proposal-box(
-        v-for='hashes in proposals'
-        :key='hashes[0]'
-        :proposalHashes='hashes'
-      )
+    i18n.button.is-primary.is-small(
+      tag='span'
+      @click='createProposal'
+    ) Create Generic Proposal
+
+  ul.c-proposals(data-test='proposalsWidget')
+    proposal-item(
+      v-for='hash in proposals'
+      :key='hash'
+      :proposalHash='hash'
+    )
 </template>
 
 <script>
@@ -34,7 +38,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
-import ProposalBox from '@containers/proposals/ProposalBox.vue'
+import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
 import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
@@ -42,7 +46,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 export default ({
   name: 'ProposalsWidget',
   components: {
-    ProposalBox,
+    ProposalItem,
     CalloutCard,
     SvgVote,
     PageSection
@@ -106,8 +110,7 @@ export default ({
       // this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
 
       this.proposalsGrouped = proposalsGrouped // eslint-disable-line vue/no-side-effects-in-computed-properties
-
-      return this.proposalsGrouped
+      return this.proposalsGrouped.flat()
     }
   },
   methods: {
@@ -116,17 +119,34 @@ export default ({
     },
     openModal (modal) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    },
+    seeAll () {
+      // Todo
+    },
+    createProposal () {
+      // Todo: for now, opening 'Generic Proposal' modal. but need to be updated accordingly, once the button is updated as a dropdown of multiple proposal options.
+      this.openModal('GenericProposal')
     }
   }
 }: Object)
 </script>
 
 <style lang="scss" scoped>
-.c-page-section {
-  ::v-deep .c-proposal-btns {
-    button:not(:last-child) {
-      margin-right: 0.75rem;
-    }
+@import "@assets/style/_variables.scss";
+
+.card {
+  position: relative;
+}
+
+.c-all-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 0.5rem;
+
+  @include tablet {
+    position: absolute;
+    right: 1.5rem;
+    top: 0;
   }
 }
 </style>
