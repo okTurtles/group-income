@@ -2,8 +2,7 @@
 fieldset(data-test='paymentMethods')
   legend.has-text-bold.c-legend
     i18n.is-title-4 Payment info
-    | &nbsp;
-    i18n.has-text-1.has-text-small.c-optional (optional)
+
   i18n.has-text-1 Other group members will be able to use this information to send you monthly contributions.
 
   ul.c-fields(ref='fields' data-test='fields')

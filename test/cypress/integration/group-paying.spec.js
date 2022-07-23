@@ -17,6 +17,11 @@ function setIncomeDetails (doesPledge, incomeAmount) {
   cy.getByDT('openIncomeDetailsModal').click()
   cy.getByDT(doesPledge ? 'doesntNeedIncomeRadio' : 'needsIncomeRadio').click()
   cy.getByDT('inputIncomeOrPledge').clear().type(incomeAmount)
+
+  if (!doesPledge) {
+    cy.randomPaymentMethodInIncomeDetails()
+  }
+
   cy.getByDT('submitIncome').click()
   cy.getByDT('closeModal').should('not.exist')
   cy.url().should('eq', 'http://localhost:8000/app/contributions')

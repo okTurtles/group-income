@@ -892,7 +892,7 @@ sbp('chelonia/defineContract', {
         }
       },
       process ({ data, meta }, { state }) {
-        Vue.delete(state.chatRooms[data.chatRoomID])
+        Vue.delete(state.chatRooms, data.chatRoomID)
       }
     },
     'gi.contracts/group/leaveChatRoom': {
