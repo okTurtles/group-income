@@ -213,14 +213,14 @@ export default ({
           })
         }
         case STATUS_FAILED: {
-          const date = humanDate(this.proposal.meta.dateClosed, format)
+          const date = humanDate(this.proposal.dateClosed, format)
           return L('Proposal rejected on {date} with {nay} against out of {total} total votes.', { nay, total, date })
         }
         case STATUS_CANCELLED: {
           return L('Proposal cancelled.')
         }
         case STATUS_PASSED: {
-          const date = humanDate(this.proposal.meta.dateClosed, format)
+          const date = humanDate(this.proposal.dateClosed, format)
           return L('Proposal accepted on {date} with {yay} in favor out of {total} total votes.', { yay, total, date })
         }
         default:

@@ -27,9 +27,9 @@ page-section(
 
   ul.c-proposals(data-test='proposalsWidget')
     proposal-item(
-      v-for='hashe in proposals'
-      :key='hashe'
-      :proposalHash='hashe'
+      v-for='hash in proposals'
+      :key='hash'
+      :proposalHash='hash'
     )
 </template>
 
