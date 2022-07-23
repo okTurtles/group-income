@@ -23,7 +23,7 @@ page-section(
     i18n.button.is-primary.is-small(
       tag='span'
       @click='createProposal'
-    ) Create Proposal
+    ) Create Generic Proposal
 
   ul.c-proposals(data-test='proposalsWidget')
     proposal-item(
@@ -34,12 +34,14 @@ page-section(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
 import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
 import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({
   name: 'ProposalsWidget',
@@ -115,12 +117,15 @@ export default ({
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
     },
-
+    openModal (modal) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    },
     seeAll () {
       // Todo
     },
     createProposal () {
-      // Todo
+      // Todo: for now, opening 'Generic Proposal' modal. but need to be updated accordingly, once the button is updated as a dropdown of multiple proposal options.
+      this.openModal('GenericProposal')
     }
   }
 }: Object)

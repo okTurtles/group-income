@@ -193,7 +193,7 @@ export default ({
             })
           }[ruleName]()
         },
-        [PROPOSAL_GENERIC]: () => L('TODO: Change [generic] from [current] to [new-value]', {})
+        [PROPOSAL_GENERIC]: () => this.proposal.data.proposalData.name
       }[this.proposalType]()
     },
     statusDescription () {
@@ -233,7 +233,7 @@ export default ({
         [PROPOSAL_REMOVE_MEMBER]: 'icon-user-minus',
         [PROPOSAL_GROUP_SETTING_CHANGE]: 'icon-coins',
         [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'icon-vote-yea',
-        [PROPOSAL_GENERIC]: 'icon-poll'
+        [PROPOSAL_GENERIC]: 'icon-envelope-open-text'
       }
 
       const status = {
