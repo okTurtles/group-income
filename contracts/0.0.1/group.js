@@ -10346,6 +10346,7 @@ ${this.getErrorInfo()}`;
           const result = rules_default[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes);
           if (result === VOTE_FOR || result === VOTE_AGAINST) {
             proposals_default[proposal.data.proposalType][result](state, message);
+            vue_esm_default.set(proposal, "dateClosed", meta.createdDate);
           }
         }
       },

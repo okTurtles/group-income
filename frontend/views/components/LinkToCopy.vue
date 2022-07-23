@@ -98,7 +98,7 @@ export default ({
   position: relative;
   display: flex;
   align-items: center;
-
+  min-width: 0; // So ellipsis works correctly inside grid. pls refer to a discussion here(https://github.com/okTurtles/group-income/pull/765#issuecomment-551691920) for the context.
   .c-invisible-input {
     position: absolute;
     pointer-events: none;
