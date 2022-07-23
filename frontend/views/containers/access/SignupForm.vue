@@ -40,16 +40,26 @@ form(data-test='signup' @submit.prevent='')
 <script>
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { required, minLength, email } from 'vuelidate/lib/validators'
+import { email, maxLength, minLength, required } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
-import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { noUppercase } from '@view-utils/validators.js'
+import {
+  IDENTITY_PASSWORD_MIN_CHARS as passwordMinChars,
+  IDENTITY_USERNAME_MAX_CHARS as usernameMaxChars
+} from '@model/contracts/shared/constants.js'
 import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import {
+  allowedUsernameCharacters,
+  noConsecutiveHyphensOrUnderscores,
+  noLeadingOrTrailingHyphen,
+  noLeadingOrTrailingUnderscore,
+  noUppercase,
+  noWhitespace
+} from '@model/contracts/shared/validators.js'
 
 export default ({
   name: 'SignupForm',
@@ -66,10 +76,10 @@ export default ({
   data () {
     return {
       form: {
-        username: null,
-        password: null,
-        email: null,
-        pictureBase64: null
+        username: '',
+        password: '',
+        email: '',
+        pictureBase64: ''
       },
       usernameAsyncValidation: {
         timer: null,
@@ -105,8 +115,13 @@ export default ({
       form: {
         username: {
           [L('A username is required.')]: required,
-          [L('A username cannot contain spaces.')]: nonWhitespace,
+          [L('A username cannot contain whitespace.')]: noWhitespace,
+          [L('A username can only contain letters, digits, hyphens or underscores.')]: allowedUsernameCharacters,
+          [L('A username cannot exceed {maxChars} characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
           [L('A username cannot contain uppercase letters.')]: noUppercase,
+          [L('A username cannot start or end with a hyphen.')]: noLeadingOrTrailingHyphen,
+          [L('A username cannot start or end with an underscore.')]: noLeadingOrTrailingUnderscore,
+          [L('A username cannot contain two consecutive hyphens or underscores.')]: noConsecutiveHyphensOrUnderscores,
           [L('This username is already being used.')]: (value) => {
             if (!value) return true
             if (this.usernameAsyncValidation.timer) {
@@ -131,7 +146,7 @@ export default ({
         },
         password: {
           [L('A password is required.')]: required,
-          [L('Your password must be at least 7 characteres long.')]: minLength(7)
+          [L('Your password must be at least {minChars} characters long.', { minChars: passwordMinChars })]: minLength(passwordMinChars)
         },
         email: {
           [L('An email is required.')]: required,

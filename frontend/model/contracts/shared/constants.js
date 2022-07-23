@@ -1,5 +1,10 @@
 'use strict'
 
+// identity.js related
+
+export const IDENTITY_PASSWORD_MIN_CHARS = 7
+export const IDENTITY_USERNAME_MAX_CHARS = 80
+
 // group.js related
 
 export const INVITE_INITIAL_CREATOR = 'invite-initial-creator'

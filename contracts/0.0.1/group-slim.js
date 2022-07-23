@@ -1466,7 +1466,7 @@ ${this.getErrorInfo()}`;
           }
         },
         process({ data, meta }, { state }) {
-          import_common2.Vue.delete(state.chatRooms[data.chatRoomID]);
+          import_common2.Vue.delete(state.chatRooms, data.chatRoomID);
         }
       },
       "gi.contracts/group/leaveChatRoom": {

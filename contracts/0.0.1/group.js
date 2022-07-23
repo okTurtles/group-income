@@ -10591,7 +10591,7 @@ ${this.getErrorInfo()}`;
           }
         },
         process({ data, meta }, { state }) {
-          vue_esm_default.delete(state.chatRooms[data.chatRoomID]);
+          vue_esm_default.delete(state.chatRooms, data.chatRoomID);
         }
       },
       "gi.contracts/group/leaveChatRoom": {
