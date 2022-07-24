@@ -4,7 +4,7 @@
   and to update MenuSelect when an option was selected.
   QUESTION: Is v-bind='$attrs' the correct way to pass down
   the props and slot from MenuItem to ListItem?
-list-item.c-menuItem(disable-radius='' v-bind='$attrs' on='$listeners' @click='handleSelect')
+list-item.c-menuItem(disable-radius='' v-bind='$attrs' v-on='$listeners' @click='handleSelect')
   slot
 </template>
 <script>

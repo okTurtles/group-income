@@ -1099,7 +1099,42 @@ page(
                     item-id='message'
                     icon='comment'
                   ) Send message
+        tr
+          td
+            pre
+              | button-dropdown-menu(:buttonText='L("Create proposal")')
+          td
+            button-dropdown-menu(
+              :buttonText='L("Create proposal")'
+              @select='onButtonDropdownItemSelect'
+            )
+              menu-header Group Members
 
+              menu-item(
+                tag='button'
+                item-id='opt-1'
+                icon='comment'
+              ) Add new member
+
+              menu-item(
+                tag='button'
+                item-id='opt-2'
+                icon='comment'
+              ) Remove Member
+
+              menu-header Voting Systems
+              
+              menu-item(
+                tag='button'
+                item-id='opt-3'
+                icon='comment'
+              ) Change disagreeing number
+
+              menu-item(
+                tag='button'
+                item-id='opt-4'
+                icon='comment'
+              ) Change to percentage base
   article#modals
     section.card
       h2.is-title-2.card-header Modals
@@ -1241,10 +1276,11 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CalloutCard from '@components/CalloutCard.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import Search from '@components/Search.vue'
+import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
 import SvgBitcoin from '@svgs/bitcoin.svg'
@@ -1382,7 +1418,9 @@ export default ({
     MenuParent,
     MenuTrigger,
     MenuContent,
+    MenuHeader,
     MenuItem,
+    ButtonDropdownMenu,
     Search,
     Tooltip,
     SvgHello,
@@ -1452,6 +1490,9 @@ export default ({
     },
     toggleTheme () {
       this.setTheme(this.isDarkTheme ? THEME_LIGHT : THEME_DARK)
+    },
+    onButtonDropdownItemSelect (itemId) {
+      console.log('selected item id: ', itemId)
     }
   },
   computed: {
