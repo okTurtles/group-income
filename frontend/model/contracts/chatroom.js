@@ -61,10 +61,13 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
 
   const rootGetters = sbp('state/vuex/getters')
   const groupID = rootGetters.groupIdFromChatRoomId(contractID)
+  const path = `/group-chat/${contractID}`
+
   makeNotification({
     title: `# ${chatRoomName}`,
     body: text,
-    icon: rootGetters.globalProfile2(groupID, username).picture
+    icon: rootGetters.globalProfile2(groupID, username).picture,
+    path
   })
 
   sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
@@ -335,6 +338,7 @@ sbp('chelonia/defineContract', {
       validate: (data, { state, meta }) => {
         objectOf({
           id: string,
+          createdDate: string,
           text: string
         })(data)
         // TODO: Actually NOT SURE it's needed to check if the meta.username === message.from
@@ -367,11 +371,16 @@ sbp('chelonia/defineContract', {
         const mentions = makeMentionFromUsername(me)
         const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all)
         if (!isAlreadyAdded && isIncludeMention) {
-          // TODO: Not sure createdDate should be this way
           addMention({
             contractID,
             messageId: data.id,
-            datetime: meta.createdDate,
+            /*
+            * the following datetime is the time when the message(which made mention) is created
+            * the reason why it is it instead of datetime when the mention created is because
+            * it is compared to the datetime of other messages when user scrolls
+            * to decide if it should be removed from the list of mentions or not
+            */
+            datetime: data.createdDate,
             text: data.text,
             username: meta.username,
             chatRoomName: getters.chatRoomAttributes.name
@@ -392,6 +401,13 @@ sbp('chelonia/defineContract', {
         const msgIndex = findMessageIdx(data.id, state.messages)
         if (msgIndex >= 0) {
           state.messages.splice(msgIndex, 1)
+        }
+        // filter replied messages and check if the current message is original
+        for (const message of state.messages) {
+          if (message.replyingMessage?.id === data.id) {
+            message.replyingMessage.id = null
+            message.replyingMessage.text = 'Original message was removed.'
+          }
         }
       },
       sideEffect ({ data, contractID, hash, meta }) {

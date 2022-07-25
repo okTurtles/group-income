@@ -76,7 +76,7 @@ import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { humanDate } from '~/frontend/model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 
 export default ({
@@ -122,14 +122,14 @@ export default ({
       if (this.proposal.status === STATUS_OPEN) {
         return isOwnProposal
           ? L('You are proposing')
-          : L('{username} is proposing', { username: `${username}` })
+          : L('{username} is proposing', { username })
       }
 
       // Note: In English, no matter the subject, the wording is the same,
       // but in other languages the wording is different (ex: Portuguese)
       return isOwnProposal
         ? L('You proposed')
-        : L('{username} proposed', { username: `${username}` })
+        : L('{username} proposed', { username })
     },
     proposalType () {
       return this.proposal.data.proposalType
@@ -193,7 +193,7 @@ export default ({
             })
           }[ruleName]()
         },
-        [PROPOSAL_GENERIC]: () => L('TODO: Change [generic] from [current] to [new-value]', {})
+        [PROPOSAL_GENERIC]: () => this.proposal.data.proposalData.name
       }[this.proposalType]()
     },
     statusDescription () {
@@ -213,14 +213,14 @@ export default ({
           })
         }
         case STATUS_FAILED: {
-          const date = humanDate(this.proposal.meta.dateClosed, format)
+          const date = humanDate(this.proposal.dateClosed, format)
           return L('Proposal rejected on {date} with {nay} against out of {total} total votes.', { nay, total, date })
         }
         case STATUS_CANCELLED: {
           return L('Proposal cancelled.')
         }
         case STATUS_PASSED: {
-          const date = humanDate(this.proposal.meta.dateClosed, format)
+          const date = humanDate(this.proposal.dateClosed, format)
           return L('Proposal accepted on {date} with {yay} in favor out of {total} total votes.', { yay, total, date })
         }
         default:
@@ -233,7 +233,7 @@ export default ({
         [PROPOSAL_REMOVE_MEMBER]: 'icon-user-minus',
         [PROPOSAL_GROUP_SETTING_CHANGE]: 'icon-coins',
         [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'icon-vote-yea',
-        [PROPOSAL_GENERIC]: 'icon-poll'
+        [PROPOSAL_GENERIC]: 'icon-envelope-open-text'
       }
 
       const status = {

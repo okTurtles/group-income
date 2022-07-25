@@ -8,6 +8,9 @@ import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 
+// util funcs
+const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
+
 /* Get element by data-test attribute and other attributes
  ex:
  cy.getByDT('login')            //  cy.get([data-test="login"])
@@ -326,7 +329,31 @@ Cypress.Commands.add('giAddRandomIncome', () => {
   }
   cy.getByDT(action).click()
   cy.getByDT('inputIncomeOrPledge').type(salary)
+
+  if (action === 'needsIncomeRadio') {
+    // it's mandatory to fill out the payment details when 'needsIncome' is selected.
+    cy.randomPaymentMethodInIncomeDetails()
+  }
+
   cy.getByDT('submitIncome').click()
+})
+
+Cypress.Commands.add('randomPaymentMethodInIncomeDetails', () => {
+  const digits = () => Math.floor(Math.random() * 100000)
+  const paymentMethod = randomFromArray(['paypal', 'bitcoin', 'venmo', 'other'])
+  const detailMap = {
+    'paypal': `abc-${digits()}@abc.com`,
+    'bitcoin': `h4sh-t0-b3-s4ved-${digits()}`,
+    'venmo': [digits(), digits(), digits()].join('-'),
+    'other': [digits(), digits(), digits()].join('-')
+  }
+
+  cy.getByDT('paymentMethods').within(() => {
+    cy.getByDT('method').last().within(() => {
+      cy.get('select').select(paymentMethod)
+      cy.get('input').type(detailMap[paymentMethod])
+    })
+  })
 })
 
 Cypress.Commands.add('giAddNewChatroom', (

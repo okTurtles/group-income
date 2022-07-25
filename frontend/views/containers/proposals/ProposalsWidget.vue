@@ -23,9 +23,9 @@ page-section(
     i18n.button.is-primary.is-small(
       tag='span'
       @click='createProposal'
-    ) Create Proposal
+    ) Create Generic Proposal
 
-  ul(data-test='proposalsWidget')
+  ul.c-proposals(data-test='proposalsWidget')
     proposal-item(
       v-for='hash in proposals'
       :key='hash'
@@ -110,7 +110,6 @@ export default ({
       // this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
 
       this.proposalsGrouped = proposalsGrouped // eslint-disable-line vue/no-side-effects-in-computed-properties
-      console.log(this.proposalsGrouped.flat())
       return this.proposalsGrouped.flat()
     }
   },
@@ -122,7 +121,8 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
     createProposal () {
-      // Todo
+      // Todo: for now, opening 'Generic Proposal' modal. but need to be updated accordingly, once the button is updated as a dropdown of multiple proposal options.
+      this.openModal('GenericProposal')
     }
   }
 }: Object)

@@ -64,7 +64,7 @@ export default ({
   },
   watch: {
     'ephemeral.currentStep': function (step) {
-      if (step === 1) {
+      if (step === 1 && this.groupShouldPropose) {
         this.validateMincome()
       }
     }
