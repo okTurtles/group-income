@@ -6,12 +6,16 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         tag='h2'
       ) All proposals
 
+      i18n.has-text-1.c-proposals-count(
+        :args='{ groupProposalsCount: proposals.length }'
+      ) { groupProposalsCount } proposals
+
     .card.c-card
       ul(data-test='proposalsWidget')
         proposal-item(
-          v-for='hashe in proposals'
-          :key='hashe'
-          :proposalHash='hashe'
+          v-for='hash in proposals'
+          :key='hash'
+          :proposalHash='hash'
         )
 </template>
 
@@ -29,7 +33,6 @@ export default ({
     proposals: Object
   },
   created () {
-    console.log('ee', this.$route.query)
     this.proposals = this.$route.query.proposals
   }
 }: Object)
@@ -91,99 +94,9 @@ export default ({
   }
 }
 
-.c-member-count {
+.c-proposals-count {
   margin-top: 0.5rem;
   margin-bottom: 1.5rem;
 }
 
-.c-identity {
-  display: flex;
-  align-items: center;
-  flex-grow: 1;
-}
-
-.c-name {
-  margin: 0 0.5rem 0 1.5rem;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.c-display-name {
-  color: var(--text_1);
-}
-
-.c-search-member .c-twrapper {
-  display: flex;
-  height: 4.5rem;
-  padding: 0 0.5rem;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid $general_0;
-  transition: opacity ease-in 0.25s, height ease-in 0.25s;
-
-  &:last-child {
-    border-bottom: 0;
-  }
-
-  &:hover {
-    background-color: $general_1;
-    cursor: pointer;
-  }
-}
-
-.slide-list-enter,
-.slide-list-leave-to {
-  height: 0;
-  opacity: 0;
-}
-
-.slide-list-leave-active {
-  overflow: hidden;
-  border-bottom: 0;
-}
-
-.c-actions-buttons {
-  display: none;
-  margin-top: 0;
-
-  i {
-    margin-right: 0.5rem;
-  }
-
-  @include tablet {
-    display: block;
-  }
-}
-
-::v-deep .c-actions span {
-  margin-left: 0.3rem;
-
-  @include phone {
-    display: none;
-  }
-}
-
-.c-action-menu {
-  @include tablet {
-    display: none;
-  }
-}
-
-.is-subtitle {
-  display: flex;
-  margin-top: 1.875rem;
-  margin-bottom: 0.5rem;
-}
-
-.c-second-section::before {
-  content: "";
-  position: absolute;
-  background-color: $general_2;
-  height: 1px;
-  width: calc(100% + 6rem);
-  top: 0;
-  left: -3rem;
-}
 </style>
