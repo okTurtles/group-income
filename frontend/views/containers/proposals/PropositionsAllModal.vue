@@ -6,14 +6,25 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
         tag='h2'
       ) All proposals
 
-      i18n.has-text-1.c-proposals-count(
+    .c-header-info
+      i18n.has-text-1(
+        tag='div'
         :args='{ groupProposalsCount: proposals.length }'
-      ) { groupProposalsCount } proposals
+      ) {groupProposalsCount} proposals
+
+      .selectsolo
+        select.select(
+          ref='select'
+          v-model='ephemeral.selectbox.selectedOption'
+          @change='unfocusSelect'
+        )
+          option(value='Newest') {{ L('Newest first') }}
+          option(value='Oldest') {{ L('Oldest first') }}
 
     .card.c-card
       ul(data-test='proposalsWidget')
         proposal-item(
-          v-for='hash in proposals'
+          v-for='hash in sortedProposal'
           :key='hash'
           :proposalHash='hash'
         )
@@ -29,8 +40,24 @@ export default ({
     ModalBaseTemplate,
     ProposalItem
   },
-  data: {
-    proposals: Object
+  data: () => ({
+    proposals: Object,
+    ephemeral: {
+      selectbox: {
+        focused: false,
+        selectedOption: 'Newest'
+      }
+    }
+  }),
+  methods: {
+    unfocusSelect () {
+      this.$refs.select.blur()
+    }
+  },
+  computed: {
+    sortedProposal () {
+      return this.ephemeral.selectbox.selectedOption === 'Newest' ? this.proposals : [...this.proposals].reverse()
+    }
   },
   created () {
     this.proposals = this.$route.query.proposals
@@ -86,17 +113,10 @@ export default ({
   }
 }
 
-.c-card {
-  margin-top: 1.5rem;
-
-  @include phone {
-    margin-top: 3rem;
-  }
+.c-header-info {
+  display: flex;
+  height: 3.75rem;
+  align-items: center;
+  justify-content: space-between;
 }
-
-.c-proposals-count {
-  margin-top: 0.5rem;
-  margin-bottom: 1.5rem;
-}
-
 </style>

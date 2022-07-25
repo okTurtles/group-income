@@ -145,5 +145,9 @@ export default ({
     right: 1.5rem;
     top: 0;
   }
+
+  @include desktop {
+    top: 1rem;
+  }
 }
 </style>
