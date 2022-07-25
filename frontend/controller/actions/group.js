@@ -436,7 +436,7 @@ export default (sbp('sbp/selectors/register', {
           if (!proposal.votes[getters.ourUsername]) {
             await sbp('gi.actions/group/proposalVote', {
               contractID: groupID,
-              data: { proposalHash, vote: VOTE_FOR, passPayload: { secret: '' } },
+              data: { proposalHash, vote: VOTE_FOR, passPayload: { secret: '', automated: true } },
               publishOptions: { maxAttempts: 3 }
             })
           }
@@ -449,7 +449,8 @@ export default (sbp('sbp/selectors/register', {
                 proposalType: PROPOSAL_REMOVE_MEMBER,
                 proposalData: {
                   member: username,
-                  reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
+                  reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message }),
+                  automated: true
                 },
                 votingRule: contractState.settings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
                 expires_date_ms: Date.now() + contractState.settings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms

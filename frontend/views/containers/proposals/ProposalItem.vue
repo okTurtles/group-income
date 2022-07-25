@@ -119,6 +119,11 @@ export default ({
       const username = this.proposal.meta.username
       const isOwnProposal = username === this.ourUsername
 
+      if (this.proposal.data.proposalData.automated) {
+        return isOwnProposal
+          ? L('Automated ban sent by your client')
+          : L('Automated ban sent by {username}\'s client', { username })
+      }
       if (this.proposal.status === STATUS_OPEN) {
         return isOwnProposal
           ? L('You are proposing')
