@@ -449,7 +449,7 @@ module.exports = (grunt) => {
     const dirPath = `contracts/${version}`
 
     if (fs.existsSync(dirPath)) {
-      if (grunt.option('overwrite')) { // if the task is run with '--overwrite' option, empty the folder first. 
+      if (grunt.option('overwrite')) { // if the task is run with '--overwrite' option, empty the folder first.
         fs.rmSync(dirPath, { recursive: true })
       } else {
         throw new Error(`already exists: ${dirPath}`)
