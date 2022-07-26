@@ -1,9 +1,7 @@
 <template lang='pug'>
-callout-card(
-  v-if='!hasProposals'
-  :title='L("Proposals")'
-  :svg='SvgVote'
-  :isCard='true'
+component(
+  :is='componentData.type'
+  v-bind='componentData.props'
 )
   template(#title-cta='')
     .c-all-actions
@@ -15,35 +13,19 @@ callout-card(
       button-dropdown-menu(
         :buttonText='L("Create proposal")'
         :options='config.proposalOptions'
+        @select='onDropdownItemSelect'
       )
 
-  i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
-  i18n.has-text-1(tag='p') No one has created a proposal yet.
-
-// TODO: view without current proposals
-// TODO: button "see all proposals"
-page-section(
-  v-else
-  :title='L("Proposals")'
-)
-  template(#title-cta='')
-    .c-all-actions
-      i18n.button.is-outlined.is-small.c-see-all-proposal-btn(
-        tag='span'
-        @click='seeAll'
-      ) See all proposals
-
-      button-dropdown-menu(
-        :buttonText='L("Create proposal")'
-        :options='config.proposalOptions'
-      )
-
-  ul.c-proposals(data-test='proposalsWidget')
+  ul.c-proposals(v-if='hasProposals' data-test='proposalsWidget')
     proposal-item(
       v-for='hash in proposals'
       :key='hash'
       :proposalHash='hash'
     )
+
+  template(v-lese)
+    i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
+    i18n.has-text-1(tag='p') No one has created a proposal yet.
 </template>
 
 <script>
@@ -61,14 +43,10 @@ export default ({
   name: 'ProposalsWidget',
   components: {
     ProposalItem,
-    CalloutCard,
-    SvgVote,
-    PageSection,
     ButtonDropdownMenu
   },
   data () {
     return {
-      SvgVote,
       ephemeral: {
         // Keep initial proposals order even after voting in a proposal
         // That way recently voted proposals don't change position immediatly.
@@ -78,14 +56,14 @@ export default ({
       config: {
         proposalOptions: [
           { type: 'header', name: 'Group Members' },
-          { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'comment' },
-          { type: 'item', id: 'remove-member', name: 'Remove member', icon: 'comment' },
+          { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'user-plus' },
+          { type: 'item', id: 'remove-member', name: 'Remove member', icon: 'user-minus' },
           { type: 'header', name: 'Voting Systems' },
-          { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'comment' },
-          { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'comment' },
+          { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'vote-yea' },
+          { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'vote-yea' },
           { type: 'header', name: 'Other proposals' },
-          { type: 'item', id: 'change-mincome', name: 'Change mincome', icon: 'comment' },
-          { type: 'item', id: 'generic-proposal', name: 'Generic proposal', icon: 'comment' }
+          { type: 'item', id: 'change-mincome', name: 'Change mincome', icon: 'dollar-sign' },
+          { type: 'item', id: 'generic-proposal', name: 'Generic proposal', icon: 'envelope-open-text' }
         ]
       }
     }
@@ -139,21 +117,55 @@ export default ({
 
       this.proposalsGrouped = proposalsGrouped // eslint-disable-line vue/no-side-effects-in-computed-properties
       return this.proposalsGrouped.flat()
+    },
+    componentData () {
+      return {
+        type: this.hasProposals ? PageSection : CalloutCard,
+        props: this.hasProposals
+          ? { title: this.L('Proposals') }
+          : {
+              title: this.L('Proposals'),
+              svg: SvgVote,
+              isCard: true
+            }
+      }
     }
   },
   methods: {
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
     },
-    openModal (modal) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    openModal (modal, queries) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
     seeAll () {
-      // Todo
+      alert('TODO!')
     },
-    createProposal () {
-      // Todo: for now, opening 'Generic Proposal' modal. but need to be updated accordingly, once the button is updated as a dropdown of multiple proposal options.
-      this.openModal('GenericProposal')
+    onDropdownItemSelect (itemId) {
+      const modalNameMap = {
+        'add-new-member': 'AddMembers',
+        'change-mincome': 'MincomeProposal',
+        'generic-proposal': 'GenericProposal'
+      }
+      const rules = {
+        'change-disagreeing-number': 'disagreement',
+        'change-to-percentage-base': 'percentage'
+      }
+
+      switch (itemId) {
+        case 'change-disagreeing-number':
+        case 'change-to-percentage-base':
+          this.openModal('ChangeVotingRules', { rule: rules[itemId] })
+          break
+        case 'remove-member':
+          alert('TODO!')
+          // TODO : needs clarification on what action is supposed to happen when this opt is selected.
+          //        'RemoveMember' Modal immeidately gets unloaded when opened with no username provided as a query string.
+          //        Pls refer to created() hook in RemoveMember.vue component for details.
+          break
+        default:
+          this.openModal(modalNameMap[itemId])
+      }
     }
   }
 }: Object)

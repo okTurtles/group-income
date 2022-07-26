@@ -1,5 +1,5 @@
 <template lang="pug">
-menu-parent.c-menu(v-on='$listeners')
+menu-parent.c-menu(v-on='listeners')
   menu-trigger.is-small.c-trigger-btn(:aria-label='buttonText')
     | {{ buttonText }}
     i.icon-angle-down.is-suffix
@@ -10,7 +10,7 @@ menu-parent.c-menu(v-on='$listeners')
         component(
           v-for='item in options'
           :key='item.id || item.name'
-          :is='config.component[item.type]'
+          :is='config.components[item.type]'
           v-bind='propObj(item)'
         ) {{ item.name }}
 
@@ -37,10 +37,10 @@ export default ({
        * NOTE: Shape of the array must strictly follow below statement.
        *
        * - An item to be mapped to a 'menu-item' component:
-       *  { type: 'item', id: '...', name: '...', icon: '...' }
+       *  { type: 'item', id: string, name: string, icon: string }
        *
        * - An item to be mapped to a 'menu-header' component:
-       *  { type: 'header', name: '...' }
+       *  { type: 'header', name: string }
        */
     }
   },
@@ -49,15 +49,26 @@ export default ({
       return item.type === 'item'
         ? { tag: 'button', 'item-id': item.id, icon: item.icon }
         : {}
+    },
+    onItemSelect (itemId) {
+      this.$emit('select', itemId)
     }
   },
   data () {
     return {
       config: {
-        component: {
+        components: {
           'item': MenuItem,
           'header': MenuHeader
         }
+      }
+    }
+  },
+  computed: {
+    listeners () {
+      return {
+        ...this.$listeners,
+        select: this.onItemSelect
       }
     }
   }
