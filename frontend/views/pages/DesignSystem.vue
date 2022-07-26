@@ -1102,39 +1102,16 @@ page(
         tr
           td
             pre
-              | button-dropdown-menu(:buttonText='L("Create proposal")')
+              | button-dropdown-menu(
+              |   :buttonText='L("Create proposal")'
+              |   :options='buttonDropdownMenuOpts'
+              | )
           td
             button-dropdown-menu(
               :buttonText='L("Create proposal")'
+              :options='config.buttonDropdownMenuOpts'
               @select='onButtonDropdownItemSelect'
             )
-              menu-header Group Members
-
-              menu-item(
-                tag='button'
-                item-id='opt-1'
-                icon='comment'
-              ) Add new member
-
-              menu-item(
-                tag='button'
-                item-id='opt-2'
-                icon='comment'
-              ) Remove Member
-
-              menu-header Voting Systems
-              
-              menu-item(
-                tag='button'
-                item-id='opt-3'
-                icon='comment'
-              ) Change disagreeing number
-
-              menu-item(
-                tag='button'
-                item-id='opt-4'
-                icon='comment'
-              ) Change to percentage base
   article#modals
     section.card
       h2.is-title-2.card-header Modals
@@ -1391,6 +1368,14 @@ export default ({
             name: 'SvgVote',
             sprite: 'Dashboard'
           }
+        ],
+        buttonDropdownMenuOpts: [
+          { type: 'header', name: 'Group Members' },
+          { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'comment' },
+          { type: 'item', id: 'remove-member', name: 'Remove member', icon: 'comment' },
+          { type: 'header', name: 'Voting Systems' },
+          { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'comment' },
+          { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'comment' }
         ]
       },
       form: {

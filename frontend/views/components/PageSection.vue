@@ -1,8 +1,8 @@
 <template lang='pug'>
 section.card
-  .c-title-wrapper(v-if='$slots.cta')
+  .c-title-wrapper(v-if='$slots["title-cta"]')
     h2.is-title-3(v-if='title') {{ title }}
-    slot(name='cta')
+    slot(name='title-cta')
   h2.is-title-3(v-else-if='title') {{ title }}
   slot
 </template>
@@ -23,5 +23,6 @@ export default ({
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
 }
 </style>

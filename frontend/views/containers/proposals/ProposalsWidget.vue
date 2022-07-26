@@ -5,6 +5,18 @@ callout-card(
   :svg='SvgVote'
   :isCard='true'
 )
+  template(#title-cta='')
+    .c-all-actions
+      i18n.button.is-outlined.is-small.c-see-all-proposal-btn(
+        tag='span'
+        @click='seeAll'
+      ) See all proposals
+
+      button-dropdown-menu(
+        :buttonText='L("Create proposal")'
+        :options='config.proposalOptions'
+      )
+
   i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
   i18n.has-text-1(tag='p') No one has created a proposal yet.
 
@@ -14,16 +26,17 @@ page-section(
   v-else
   :title='L("Proposals")'
 )
-  .c-all-actions
-    i18n.button.is-outlined.is-small(
-      tag='span'
-      @click='seeAll'
-    ) See all proposals
+  template(#title-cta='')
+    .c-all-actions
+      i18n.button.is-outlined.is-small.c-see-all-proposal-btn(
+        tag='span'
+        @click='seeAll'
+      ) See all proposals
 
-    i18n.button.is-primary.is-small(
-      tag='span'
-      @click='createProposal'
-    ) Create Generic Proposal
+      button-dropdown-menu(
+        :buttonText='L("Create proposal")'
+        :options='config.proposalOptions'
+      )
 
   ul.c-proposals(data-test='proposalsWidget')
     proposal-item(
@@ -40,6 +53,7 @@ import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
 import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
+import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
@@ -49,7 +63,8 @@ export default ({
     ProposalItem,
     CalloutCard,
     SvgVote,
-    PageSection
+    PageSection,
+    ButtonDropdownMenu
   },
   data () {
     return {
@@ -59,6 +74,19 @@ export default ({
         // That way recently voted proposals don't change position immediatly.
         // Only re-sort this when the user re-visits this component again.
         proposalsSorted: null
+      },
+      config: {
+        proposalOptions: [
+          { type: 'header', name: 'Group Members' },
+          { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'comment' },
+          { type: 'item', id: 'remove-member', name: 'Remove member', icon: 'comment' },
+          { type: 'header', name: 'Voting Systems' },
+          { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'comment' },
+          { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'comment' },
+          { type: 'header', name: 'Other proposals' },
+          { type: 'item', id: 'change-mincome', name: 'Change mincome', icon: 'comment' },
+          { type: 'item', id: 'generic-proposal', name: 'Generic proposal', icon: 'comment' }
+        ]
       }
     }
   },
@@ -139,14 +167,15 @@ export default ({
 }
 
 .c-all-actions {
-  margin-top: 1.5rem;
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 
-  @include tablet {
-    position: absolute;
-    right: 1.5rem;
-    top: 0;
+  .c-see-all-proposal-btn {
+    font-weight: 400;
+
+    @include phone {
+      display: none;
+    }
   }
 }
 </style>

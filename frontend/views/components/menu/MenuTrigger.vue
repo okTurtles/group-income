@@ -22,10 +22,11 @@ export default ({
   },
   methods: {
     handleClick () {
-      if (this.isActive)
+      if (this.isActive) {
         this.Menu.closeMenu()
-      else
+      } else {
         this.Menu.handleTrigger()
+      }
     }
   }
 }: Object)
