@@ -123,7 +123,9 @@ async function startApp () {
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],
         preferSlim: true,
         exposedGlobals: {
-          Notification
+          // note: needs to be written this way and not simply "Notification"
+          // because that breaks on mobile where Notification is undefined
+          Notification: window.Notification
         }
       }
     },
