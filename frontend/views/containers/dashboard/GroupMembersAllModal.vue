@@ -94,8 +94,14 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                 i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
             .c-actions
+              button.is-icon(
+                v-if='$route.query.toRemove'
+                @click.stop='removeMember'
+              )
+                i.icon-times
+
               i18n.button.is-outlined.is-small(
-                v-if='addedMember'
+                v-else-if='addedMember'
                 tag='button'
                 @click.stop='addToChannel()'
                 data-test='addToChannel'

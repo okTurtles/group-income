@@ -144,28 +144,19 @@ export default ({
     onDropdownItemSelect (itemId) {
       const modalNameMap = {
         'add-new-member': 'AddMembers',
+        'remove-member': 'GroupMembersAllModal',
         'change-mincome': 'MincomeProposal',
-        'generic-proposal': 'GenericProposal'
+        'generic-proposal': 'GenericProposal',
+        'change-disagreeing-number': 'ChangeVotingRules',
+        'change-to-percentage-base': 'ChangeVotingRules'
       }
-      const rules = {
-        'change-disagreeing-number': 'disagreement',
-        'change-to-percentage-base': 'percentage'
+      const queries = {
+        'change-disagreeing-number': { rule: 'disagreement' },
+        'change-to-percentage-base': { rule: 'percentage' },
+        'remove-member': { toRemove: true }
       }
 
-      switch (itemId) {
-        case 'change-disagreeing-number':
-        case 'change-to-percentage-base':
-          this.openModal('ChangeVotingRules', { rule: rules[itemId] })
-          break
-        case 'remove-member':
-          alert('TODO!')
-          // TODO : needs clarification on what action is supposed to happen when this opt is selected.
-          //        'RemoveMember' Modal immeidately gets unloaded when opened with no username provided as a query string.
-          //        Pls refer to created() hook in RemoveMember.vue component for details.
-          break
-        default:
-          this.openModal(modalNameMap[itemId])
-      }
+      this.openModal(modalNameMap[itemId], queries[itemId] || undefined)
     }
   }
 }: Object)
