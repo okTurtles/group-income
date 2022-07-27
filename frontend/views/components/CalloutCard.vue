@@ -4,10 +4,10 @@
     div
       h2.is-title-3.c-title(
         v-if='title'
-        :class='{ "has-cta": $slots["title-cta"] }'
+        :class='{ "has-cta": $slots.cta }'
       )
         span.c-title-text {{ title }}
-        slot(name='title-cta')
+        slot(name='cta')
       slot
 </template>
 

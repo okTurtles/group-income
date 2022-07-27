@@ -3,7 +3,7 @@ component(
   :is='componentData.type'
   v-bind='componentData.props'
 )
-  template(#title-cta='')
+  template(#cta='')
     .c-all-actions
       i18n.button.is-outlined.is-small.c-see-all-proposal-btn(
         tag='span'
