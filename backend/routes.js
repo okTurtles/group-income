@@ -9,6 +9,7 @@ import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
 import './database.js'
+import { registrationKey, register, getChallenge, getContractSalt, update } from './zkppSalt.js'
 
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
@@ -229,4 +230,98 @@ route.GET('/app/{path*}', {}, {
 
 route.GET('/', {}, function (req, h) {
   return h.redirect('/app/')
+})
+
+route.POST('/zkpp/{contract}', {
+  validate: {
+    payload: Joi.alternatives([
+      {
+        b: Joi.string().required()
+      },
+      {
+        r: Joi.string().required(),
+        s: Joi.string().required(),
+        sig: Joi.string().required(),
+        Eh: Joi.string().required()
+      }
+    ])
+  }
+}, async function (req, h) {
+  if (req.payload['b']) {
+    const result = await registrationKey(req.params['contract'], req.payload['b'])
+
+    if (!result) {
+      return Boom.internal('internal error')
+    }
+
+    return result
+  } else {
+    const result = await register(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
+
+    if (!result) {
+      return Boom.internal('internal error')
+    }
+
+    return result
+  }
+})
+
+route.GET('/zkpp/{contract}/auth_hash', {}, async function (req, h) {
+  if (!req.query['b']) {
+    return Boom.badRequest('b query param required')
+  }
+
+  const challenge = await getChallenge(req.params['contract'], req.query['b'])
+
+  if (!challenge) {
+    return Boom.internal('internal error')
+  }
+
+  return challenge
+})
+
+route.GET('/zkpp/{contract}/contract_hash', {}, async function (req, h) {
+  if (!req.query['r']) {
+    return Boom.badRequest('r query param required')
+  }
+
+  if (!req.query['s']) {
+    return Boom.badRequest('s query param required')
+  }
+
+  if (!req.query['sig']) {
+    return Boom.badRequest('sig query param required')
+  }
+
+  if (!req.query['hc']) {
+    return Boom.badRequest('hc query param required')
+  }
+
+  const salt = await getContractSalt(req.params['contract'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
+
+  if (!salt) {
+    return Boom.internal('internal error')
+  }
+
+  return salt
+})
+
+route.PUT('/zkpp/{contract}', {
+  validate: {
+    payload: Joi.object({
+      r: Joi.string().required(),
+      s: Joi.string().required(),
+      sig: Joi.string().required(),
+      hc: Joi.string().required(),
+      Ea: Joi.string().required()
+    })
+  }
+}, async function (req, h) {
+  const result = await update(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
+
+  if (!result) {
+    return Boom.internal('internal error')
+  }
+
+  return result
 })
