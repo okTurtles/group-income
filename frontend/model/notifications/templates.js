@@ -4,6 +4,7 @@ import type {
 } from './types.flow.js'
 
 import { L } from '@common/common.js'
+import sbp from '@sbp/sbp'
 
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.
@@ -63,6 +64,8 @@ export default ({
     }
   },
   MEMBER_ADDED (data: { groupID: string, username: string }) {
+    const rootState = sbp('state/vuex/state')
+
     return {
       avatarUsername: data.username,
       body: L('The group has a new member. Say hi to {name}!', {
@@ -70,7 +73,7 @@ export default ({
       }),
       icon: 'user-plus',
       level: 'info',
-      linkTo: '/group-chat/XXXX',
+      linkTo: `/group-chat/${rootState[data.groupID]?.generalChatRoomId || 'XXXX'}`,
       scope: 'group'
     }
   },

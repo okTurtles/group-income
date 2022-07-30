@@ -722,7 +722,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta, contractID }, { state }) {
         console.debug('inviteAccept:', data, state.invites)
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== INVITE_STATUS.VALID) {
@@ -741,21 +741,22 @@ sbp('chelonia/defineContract', {
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
+        meta.groupId = contractID
       },
       // !! IMPORANT!!
       // Actions here MUST NOT modify contract state!
       // They MUST NOT call 'commit'!
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      async sideEffect ({ meta }, { state }) {
-        const rootState = sbp('state/vuex/state')
+      async sideEffect ({ meta, contractID }, { state }) {
+        const { loggedIn } = sbp('state/vuex/state')
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
-        if (meta.username === rootState.loggedIn.username) {
+        if (meta.username === loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name in state.profiles) {
-            if (name !== rootState.loggedIn.username) {
+            if (name !== loggedIn.username) {
               await sbp('chelonia/contract/sync', state.profiles[name].contractID)
             }
           }
@@ -763,6 +764,12 @@ sbp('chelonia/defineContract', {
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
           await sbp('chelonia/contract/sync', meta.identityContractID)
+
+          // emit a notification for a member addition.
+          sbp('gi.notifications/emit', 'MEMBER_ADDED', {
+            groupID: contractID || meta.groupId,
+            username: meta.username
+          })
         }
       }
     },

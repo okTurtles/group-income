@@ -166,6 +166,7 @@ export default ({
       this.ephemeral.errorMsg = null
       try {
         const { groupId, secret } = this.ephemeral.query
+
         await sbp('gi.actions/group/joinAndSwitch', {
           contractID: groupId,
           data: { inviteSecret: secret }
