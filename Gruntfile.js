@@ -118,7 +118,7 @@ module.exports = (grunt) => {
     const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
     console.log(stdout)
     const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
-    const manifests = Object.fromEntries(Array.from(stdout.matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+    const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
     fs.writeFileSync(manifestJSON,
       JSON.stringify({ manifests }, null, 2) + '\n',
       'utf8')
@@ -356,7 +356,7 @@ module.exports = (grunt) => {
         cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: process.env }
       },
-      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs ./node_modules/.bin/chel deploy ./data'
+      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
     }
   })
 
@@ -447,8 +447,13 @@ module.exports = (grunt) => {
     if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
     const done = this.async()
     const dirPath = `contracts/${version}`
+
     if (fs.existsSync(dirPath)) {
-      throw new Error(`already exists: ${dirPath}`)
+      if (grunt.option('overwrite')) { // if the task is run with '--overwrite' option, empty the folder first.
+        fs.rmSync(dirPath, { recursive: true })
+      } else {
+        throw new Error(`already exists: ${dirPath}`)
+      }
     }
     // since the copied manifest files might not have the correct version on them
     // we need to delete the old ones and regenerate them

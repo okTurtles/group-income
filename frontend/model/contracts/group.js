@@ -576,6 +576,7 @@ sbp('chelonia/defineContract', {
         if (result === VOTE_FOR || result === VOTE_AGAINST) {
           // handles proposal pass or fail, will update proposal.status accordingly
           proposals[proposal.data.proposalType][result](state, message)
+          Vue.set(proposal, 'dateClosed', meta.createdDate)
         }
       }
     },
@@ -891,7 +892,7 @@ sbp('chelonia/defineContract', {
         }
       },
       process ({ data, meta }, { state }) {
-        Vue.delete(state.chatRooms[data.chatRoomID])
+        Vue.delete(state.chatRooms, data.chatRoomID)
       }
     },
     'gi.contracts/group/leaveChatRoom': {

@@ -187,9 +187,7 @@ export default ({
         if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
           this.redirectChat('GroupChatConversation')
         } else {
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            chatRoomId: to.params.chatRoomId
-          })
+          this.updateCurrentChatRoomID(to.params.chatRoomId)
           if (!this.isJoinedChatRoom(chatRoomId)) {
             this.loadSummaryAndDetails()
           }
