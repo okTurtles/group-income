@@ -9977,6 +9977,14 @@ ${this.getErrorInfo()}`;
     state.profiles[username].departedDate = dateLeft;
     updateCurrentDistribution({ meta, state, getters });
   }
+  function isContractYoungerThanUser(contractMetaData, userProfile) {
+    if (!contractMetaData || !userProfile) {
+      return;
+    }
+    const contractCreated = new Date(contractMetaData.createdDate);
+    const userJoined = new Date(userProfile.joinedDate);
+    return contractCreated > userJoined;
+  }
   (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/group",
     metadata: {
@@ -10429,6 +10437,13 @@ ${this.getErrorInfo()}`;
               console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e);
             });
           } else {
+            const myProfile = state.profiles[username] || null;
+            if (!meta.isRemoveOurselves && isContractYoungerThanUser(meta, myProfile)) {
+              (0, import_sbp3.default)("gi.notifications/emit", "MEMBER_REMOVED", {
+                groupID: contractID,
+                username: data.member
+              });
+            }
           }
         }
       },
@@ -10438,11 +10453,23 @@ ${this.getErrorInfo()}`;
         }),
         process({ data, meta, contractID }, { state, getters }) {
           memberLeaves({ username: meta.username, dateLeft: meta.createdDate }, { meta, state, getters });
+          meta.isRemoveOurselves = true;
           (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", {
             meta,
             data: { member: meta.username, reason: data.reason || "" },
             contractID
           }]);
+        },
+        sideEffect({ meta, contractID }, { state }) {
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+          const { profiles = {} } = state;
+          const myProfile = profiles[loggedIn.username] || null;
+          if (loggedIn.username !== meta.username && isContractYoungerThanUser(meta, myProfile)) {
+            (0, import_sbp3.default)("gi.notifications/emit", "MEMBER_LEFT", {
+              groupID: contractID,
+              username: meta.username
+            });
+          }
         }
       },
       "gi.contracts/group/invite": {
@@ -10455,7 +10482,7 @@ ${this.getErrorInfo()}`;
         validate: objectOf({
           inviteSecret: string
         }),
-        process({ data, meta }, { state }) {
+        process({ data, meta, contractID }, { state }) {
           console.debug("inviteAccept:", data, state.invites);
           const invite = state.invites[data.inviteSecret];
           if (invite.status !== INVITE_STATUS.VALID) {
@@ -10467,17 +10494,29 @@ ${this.getErrorInfo()}`;
             invite.status = INVITE_STATUS.USED;
           }
           vue_esm_default.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate));
+          meta.groupId = contractID;
         },
-        async sideEffect({ meta }, { state }) {
-          const rootState = (0, import_sbp3.default)("state/vuex/state");
-          if (meta.username === rootState.loggedIn.username) {
-            for (const name in state.profiles) {
-              if (name !== rootState.loggedIn.username) {
-                await (0, import_sbp3.default)("chelonia/contract/sync", state.profiles[name].contractID);
+        async sideEffect({ meta, contractID }, { state }) {
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+          const { profiles = {} } = state;
+          if (meta.username === loggedIn.username) {
+            for (const name in profiles) {
+              if (name !== loggedIn.username) {
+                await (0, import_sbp3.default)("chelonia/contract/sync", profiles[name].contractID);
               }
             }
           } else {
+            const myProfile = profiles[loggedIn.username] || null;
             await (0, import_sbp3.default)("chelonia/contract/sync", meta.identityContractID);
+            if (!myProfile) {
+              return;
+            }
+            if (isContractYoungerThanUser(meta, myProfile)) {
+              (0, import_sbp3.default)("gi.notifications/emit", "MEMBER_ADDED", {
+                groupID: contractID || meta.groupId,
+                username: meta.username
+              });
+            }
           }
         }
       },
