@@ -750,26 +750,35 @@ sbp('chelonia/defineContract', {
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
       async sideEffect ({ meta, contractID }, { state }) {
         const { loggedIn } = sbp('state/vuex/state')
-        // TODO: per #257 this will have to be encompassed in a recoverable transaction
+        const { profiles = {} } = state
+
+        // TODO: per #257 this will ,have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
         if (meta.username === loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
-          for (const name in state.profiles) {
+          for (const name in profiles) {
             if (name !== loggedIn.username) {
-              await sbp('chelonia/contract/sync', state.profiles[name].contractID)
+              await sbp('chelonia/contract/sync', profiles[name].contractID)
             }
           }
         } else {
+          const myGroupProfile = profiles[loggedIn.username]
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
           await sbp('chelonia/contract/sync', meta.identityContractID)
 
-          // emit a notification for a member addition.
-          sbp('gi.notifications/emit', 'MEMBER_ADDED', {
-            groupID: contractID || meta.groupId,
-            username: meta.username
-          })
+          if (!myGroupProfile) { return }
+
+          const myJoinedDate = new Date(myGroupProfile.joinedDate)
+          const theirJoinedDate = new Date(meta.createdDate)
+
+          if (theirJoinedDate > myJoinedDate) {
+            sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
+              groupID: contractID || meta.groupId,
+              username: meta.username
+            })
+          }
         }
       }
     },
