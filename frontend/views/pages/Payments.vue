@@ -63,6 +63,20 @@ page(
       )
 
       .tab-section
+        banner-simple(severity='info')(
+          v-if='!isCloseToDistributionTime'
+          class='c-banner-next-distribution'
+        )
+          i18n.c-description(
+            @click='openModal("IncomeDetails")'
+            tag='p'
+            :args='{ \
+              r1: `<button class="link js-btnInvite" data-test="openWarningIncomeDetailsModal">`, \
+              r2: "</button>", \
+              date: nextDistribution \
+            }'
+          ) Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.
+
         .c-container(v-if='paymentsFiltered.length')
           payments-list(
             :titles='tableTitles'
@@ -94,11 +108,8 @@ page(
           i18n(tag='p' :args='{query: form.searchText }') No results for "{query}".
         .c-container-empty(v-else data-test='noPayments')
           svg-contributions.c-svg
-          i18n.c-description(tag='p') There are no payments.
-          i18n.c-description(
-            tag='p'
-            :args='{ ...LTags(), date: nextDistribution }'
-          ) Next distribution period: {date}
+          i18n.c-description(tag='p') There are no pending payments.
+
 </template>
 
 <script>
@@ -113,8 +124,9 @@ import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
+import { dateToMonthstamp, addTimeToDate, humanDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { L, LTags } from '@common/common.js'
+import BannerSimple from '@components/banners/BannerSimple.vue'
 
 export default ({
   name: 'Payments',
@@ -125,7 +137,8 @@ export default ({
     PaymentsList,
     PaymentsPagination,
     MonthOverview,
-    AddIncomeDetailsWidget
+    AddIncomeDetailsWidget,
+    BannerSimple
   },
   data () {
     return {
@@ -172,7 +185,7 @@ export default ({
     },
     nextDistribution () {
       const currentPeriod = this.groupSettings.distributionDate
-      return this.prettyDate(this.periodAfterPeriod(currentPeriod))
+      return humanDate(this.periodAfterPeriod(currentPeriod), { month: 'long', day: 'numeric' })
     },
     tabItems () {
       const items = []
@@ -301,6 +314,12 @@ export default ({
         amount: this.withGroupCurrency(amount),
         count: this.paymentsTodo.length
       }
+    },
+    isCloseToDistributionTime () {
+      const dDay = new Date(this.groupSettings.distributionDate)
+      const warningDate = addTimeToDate(dDay, -7 * DAYS_MILLIS)
+
+      return Date.now() >= new Date(warningDate).getTime() && Date.now() < dDay.getTime()
     }
   },
   methods: {
@@ -355,6 +374,10 @@ export default ({
     margin-top: -1rem;
     padding-bottom: 1.5rem;
   }
+}
+
+.c-banner-next-distribution {
+  margin-top: 2rem;
 }
 
 // Search
