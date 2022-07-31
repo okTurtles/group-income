@@ -120,6 +120,15 @@ function memberLeaves ({ username, dateLeft }, { meta, state, getters }) {
   updateCurrentDistribution({ meta, state, getters })
 }
 
+function isContractYoungerThanUser (contractMetaData, userProfile) {
+  if (!contractMetaData || !userProfile) { return }
+
+  const contractCreated = new Date(contractMetaData.createdDate)
+  const userJoined = new Date(userProfile.joinedDate)
+
+  return contractCreated > userJoined
+}
+
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/group',
   metadata: {
@@ -686,6 +695,15 @@ sbp('chelonia/defineContract', {
             })
           // TODO - #828 remove other group members contracts if applicable
         } else {
+          const myProfile = state.profiles[username] || null
+
+          if (!meta.isRemoveOurselves &&
+            isContractYoungerThanUser(meta, myProfile)) {
+            sbp('gi.notifications/emit', 'MEMBER_REMOVED', { // emit a notification for a member removal.
+              groupID: contractID,
+              username: data.member
+            })
+          }
           // TODO - #828 remove the member contract if applicable.
           // problem is, if they're in another group we're also a part of, or if we
           // have a DM with them, we don't want to do this. may need to use manual reference counting
@@ -703,6 +721,8 @@ sbp('chelonia/defineContract', {
           { username: meta.username, dateLeft: meta.createdDate },
           { meta, state, getters }
         )
+
+        meta.isRemoveOurselves = true
         sbp('gi.contracts/group/pushSideEffect', contractID,
           ['gi.contracts/group/removeMember/sideEffect', {
             meta,
@@ -710,6 +730,19 @@ sbp('chelonia/defineContract', {
             contractID
           }]
         )
+      },
+      sideEffect ({ meta, contractID }, { state }) {
+        const { loggedIn } = sbp('state/vuex/state')
+        const { profiles = {} } = state
+        const myProfile = profiles[loggedIn.username] || null
+
+        if (loggedIn.username !== meta.username &&
+          isContractYoungerThanUser(meta, myProfile)) {
+          sbp('gi.notifications/emit', 'MEMBER_LEFT', { // emit a notification for a member addition.
+            groupID: contractID,
+            username: meta.username
+          })
+        }
       }
     },
     'gi.contracts/group/invite': {
@@ -763,17 +796,14 @@ sbp('chelonia/defineContract', {
             }
           }
         } else {
-          const myGroupProfile = profiles[loggedIn.username]
+          const myProfile = profiles[loggedIn.username] || null
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
           await sbp('chelonia/contract/sync', meta.identityContractID)
 
-          if (!myGroupProfile) { return }
+          if (!myProfile) { return }
 
-          const myJoinedDate = new Date(myGroupProfile.joinedDate)
-          const theirJoinedDate = new Date(meta.createdDate)
-
-          if (theirJoinedDate > myJoinedDate) {
+          if (isContractYoungerThanUser(meta, myProfile)) {
             sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
               groupID: contractID || meta.groupId,
               username: meta.username
