@@ -316,7 +316,7 @@ export default ({
       }
     },
     isCloseToDistributionTime () {
-      const dDay = new Date(this.groupSettings.distributionDate)
+      const dDay = this.periodAfterPeriod(this.groupSettings.distributionDate)
       const warningDate = addTimeToDate(dDay, -7 * DAYS_MILLIS)
 
       return Date.now() >= new Date(warningDate).getTime() && Date.now() < dDay.getTime()
