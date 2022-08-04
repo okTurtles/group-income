@@ -407,6 +407,9 @@ ${this.getErrorInfo()}`;
   function comparePeriodStamps(periodA, periodB) {
     return dateFromPeriodStamp(periodA).getTime() - dateFromPeriodStamp(periodB).getTime();
   }
+  function compareISOTimestamps(a, b) {
+    return new Date(a).getTime() - new Date(b).getTime();
+  }
   function isPeriodStamp(arg) {
     return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg);
   }
@@ -852,13 +855,11 @@ ${this.getErrorInfo()}`;
     state.profiles[username].departedDate = dateLeft;
     updateCurrentDistribution({ meta, state, getters });
   }
-  function isContractYoungerThanUser(contractMetaData, userProfile) {
-    if (!contractMetaData || !userProfile) {
+  function isActionYoungerThanUser(actionMeta, userProfile) {
+    if (!actionMeta || !userProfile) {
       return;
     }
-    const contractCreated = new Date(contractMetaData.createdDate);
-    const userJoined = new Date(userProfile.joinedDate);
-    return contractCreated > userJoined;
+    return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
   }
   (0, import_sbp2.default)("chelonia/defineContract", {
     name: "gi.contracts/group",
@@ -1313,10 +1314,11 @@ ${this.getErrorInfo()}`;
             });
           } else {
             const myProfile = state.profiles[username] || null;
-            if (!meta.isRemoveOurselves && isContractYoungerThanUser(meta, myProfile)) {
-              (0, import_sbp2.default)("gi.notifications/emit", "MEMBER_REMOVED", {
+            if (isActionYoungerThanUser(meta, myProfile)) {
+              const memberRemovedThemselves = data.member === meta.username;
+              (0, import_sbp2.default)("gi.notifications/emit", memberRemovedThemselves ? "MEMBER_LEFT" : "MEMBER_REMOVED", {
                 groupID: contractID,
-                username: data.member
+                username: memberRemovedThemselves ? meta.username : data.member
               });
             }
           }
@@ -1328,23 +1330,11 @@ ${this.getErrorInfo()}`;
         }),
         process({ data, meta, contractID }, { state, getters }) {
           memberLeaves({ username: meta.username, dateLeft: meta.createdDate }, { meta, state, getters });
-          meta.isRemoveOurselves = true;
           (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", {
             meta,
             data: { member: meta.username, reason: data.reason || "" },
             contractID
           }]);
-        },
-        sideEffect({ meta, contractID }, { state }) {
-          const { loggedIn } = (0, import_sbp2.default)("state/vuex/state");
-          const { profiles = {} } = state;
-          const myProfile = profiles[loggedIn.username] || null;
-          if (loggedIn.username !== meta.username && isContractYoungerThanUser(meta, myProfile)) {
-            (0, import_sbp2.default)("gi.notifications/emit", "MEMBER_LEFT", {
-              groupID: contractID,
-              username: meta.username
-            });
-          }
         }
       },
       "gi.contracts/group/invite": {
@@ -1386,7 +1376,7 @@ ${this.getErrorInfo()}`;
             if (!myProfile) {
               return;
             }
-            if (isContractYoungerThanUser(meta, myProfile)) {
+            if (isActionYoungerThanUser(meta, myProfile)) {
               (0, import_sbp2.default)("gi.notifications/emit", "MEMBER_ADDED", {
                 groupID: contractID || meta.groupId,
                 username: meta.username

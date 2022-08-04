@@ -10,7 +10,7 @@ import {
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { merge, deepEqualJSONType, omit } from './shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
+import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
@@ -120,13 +120,15 @@ function memberLeaves ({ username, dateLeft }, { meta, state, getters }) {
   updateCurrentDistribution({ meta, state, getters })
 }
 
-function isContractYoungerThanUser (contractMetaData, userProfile) {
-  if (!contractMetaData || !userProfile) { return }
+function isActionYoungerThanUser (actionMeta, userProfile) {
+  // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
+  // This is used mostly for checking if a notification should be sent for that user or not.
+  // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
+  // 'MEMBER_ADDED' notification for user-1.
 
-  const contractCreated = new Date(contractMetaData.createdDate)
-  const userJoined = new Date(userProfile.joinedDate)
+  if (!actionMeta || !userProfile) { return }
 
-  return contractCreated > userJoined
+  return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
 }
 
 sbp('chelonia/defineContract', {
@@ -697,12 +699,15 @@ sbp('chelonia/defineContract', {
         } else {
           const myProfile = state.profiles[username] || null
 
-          if (!meta.isRemoveOurselves &&
-            isContractYoungerThanUser(meta, myProfile)) {
-            sbp('gi.notifications/emit', 'MEMBER_REMOVED', { // emit a notification for a member removal.
-              groupID: contractID,
-              username: data.member
-            })
+          if (isActionYoungerThanUser(meta, myProfile)) {
+            const memberRemovedThemselves = data.member === meta.username
+
+            sbp('gi.notifications/emit', // emit a notification for a member removal.
+              memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
+              {
+                groupID: contractID,
+                username: memberRemovedThemselves ? meta.username : data.member
+              })
           }
           // TODO - #828 remove the member contract if applicable.
           // problem is, if they're in another group we're also a part of, or if we
@@ -722,7 +727,6 @@ sbp('chelonia/defineContract', {
           { meta, state, getters }
         )
 
-        meta.isRemoveOurselves = true
         sbp('gi.contracts/group/pushSideEffect', contractID,
           ['gi.contracts/group/removeMember/sideEffect', {
             meta,
@@ -730,19 +734,6 @@ sbp('chelonia/defineContract', {
             contractID
           }]
         )
-      },
-      sideEffect ({ meta, contractID }, { state }) {
-        const { loggedIn } = sbp('state/vuex/state')
-        const { profiles = {} } = state
-        const myProfile = profiles[loggedIn.username] || null
-
-        if (loggedIn.username !== meta.username &&
-          isContractYoungerThanUser(meta, myProfile)) {
-          sbp('gi.notifications/emit', 'MEMBER_LEFT', { // emit a notification for a member addition.
-            groupID: contractID,
-            username: meta.username
-          })
-        }
       }
     },
     'gi.contracts/group/invite': {
@@ -803,7 +794,7 @@ sbp('chelonia/defineContract', {
 
           if (!myProfile) { return }
 
-          if (isContractYoungerThanUser(meta, myProfile)) {
+          if (isActionYoungerThanUser(meta, myProfile)) {
             sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
               groupID: contractID || meta.groupId,
               username: meta.username
