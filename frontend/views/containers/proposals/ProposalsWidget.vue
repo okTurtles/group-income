@@ -23,7 +23,7 @@ component(
       :proposalHash='hash'
     )
 
-  template(v-lese)
+  template(v-else)
     i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
     i18n.has-text-1(tag='p') No one has created a proposal yet.
 </template>
@@ -71,7 +71,8 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'currentIdentityState'
+      'currentIdentityState',
+      'groupShouldPropose'
     ]),
     hasProposals () {
       return Object.keys(this.currentGroupState.proposals).length > 0
@@ -143,7 +144,7 @@ export default ({
     },
     onDropdownItemSelect (itemId) {
       const modalNameMap = {
-        'add-new-member': 'AddMembers',
+        'add-new-member': this.groupShouldPropose ? 'AddMembers' : 'InvitationLinkModal',
         'remove-member': 'GroupMembersAllModal',
         'change-mincome': 'MincomeProposal',
         'generic-proposal': 'GenericProposal',
