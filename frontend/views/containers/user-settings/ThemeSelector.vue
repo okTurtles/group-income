@@ -24,12 +24,9 @@
 import { mapGetters, mapMutations } from 'vuex'
 import Themes from '~/frontend/model/settings/colors.js'
 import ThemeSvg from './ThemeSvg.vue'
-import colorsMixins from '@view-utils/colorsManipulation.js'
 
 export default ({
   name: 'ThemeSelector',
-
-  mixins: [colorsMixins],
 
   data () {
     return {
