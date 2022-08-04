@@ -2,7 +2,7 @@
   .settings-container
     section.card
       i18n.is-title-2.c-title(tag='h2') Theme
-      SelectorTheme
+      ThemeSelector
 
       //- .c-subcontent
       //-   .c-text-content
@@ -37,13 +37,13 @@
 
 <script>
 import { mapMutations } from 'vuex'
-import SelectorTheme from './Theme.vue'
+import ThemeSelector from './Theme.vue'
 import SelectorFontSize from './FontSize.vue'
 
 export default ({
   name: 'SettingsAppearence',
   components: {
-    SelectorTheme,
+    ThemeSelector,
     SelectorFontSize
   },
   methods: {

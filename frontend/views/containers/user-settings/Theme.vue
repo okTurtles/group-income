@@ -27,7 +27,7 @@ import ThemeSvg from './ThemeSvg.vue'
 import colorsMixins from '@view-utils/colorsManipulation.js'
 
 export default ({
-  name: 'SelectorTheme',
+  name: 'ThemeSelector',
 
   mixins: [colorsMixins],
 
