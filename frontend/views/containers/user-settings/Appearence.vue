@@ -37,7 +37,7 @@
 
 <script>
 import { mapMutations } from 'vuex'
-import ThemeSelector from './Theme.vue'
+import ThemeSelector from './ThemeSelector.vue'
 import SelectorFontSize from './FontSize.vue'
 
 export default ({

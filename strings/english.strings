@@ -39,7 +39,7 @@
 /* views/containers/group-settings/InvitationsTable.vue */
 "Not used yet" = "Not used yet";
 
-/* views/containers/user-settings/Theme.vue */
+/* views/containers/user-settings/ThemeSelector.vue */
 "Use system settings" = "Use system settings";
 
 /* views/containers/group-settings/GroupJoinModal.vue */
