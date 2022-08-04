@@ -14,7 +14,7 @@ const checkSystemColor = () => {
 }
 
 const defaultTheme = 'system'
-const defaultColor = checkSystemColor()
+const defaultColor: string = checkSystemColor()
 
 export const defaultSettings = {
   appLogsFilter: (((process.env.NODE_ENV === 'development' || new URLSearchParams(window.location.search).get('debug'))
