@@ -30,7 +30,7 @@ const initialState = {
 
 if (window.matchMedia) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    if (store.state.theme === 'system') {
+    if (sbp('state/vuex/getters').theme === 'system') {
       store.commit('setTheme', 'system')
     }
   })
