@@ -12,7 +12,7 @@ component(
 
       button-dropdown-menu(
         :buttonText='L("Create proposal")'
-        :options='config.proposalOptions'
+        :options='proposalOptions'
         @select='onDropdownItemSelect'
       )
 
@@ -52,19 +52,6 @@ export default ({
         // That way recently voted proposals don't change position immediatly.
         // Only re-sort this when the user re-visits this component again.
         proposalsSorted: null
-      },
-      config: {
-        proposalOptions: [
-          { type: 'header', name: 'Group Members' },
-          { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'user-plus' },
-          { type: 'item', id: 'remove-member', name: 'Remove member', icon: 'user-minus' },
-          { type: 'header', name: 'Voting Systems' },
-          { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'vote-yea' },
-          { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'vote-yea' },
-          { type: 'header', name: 'Other proposals' },
-          { type: 'item', id: 'change-mincome', name: 'Change mincome', icon: 'dollar-sign' },
-          { type: 'item', id: 'generic-proposal', name: 'Generic proposal', icon: 'envelope-open-text' }
-        ]
       }
     }
   },
@@ -72,7 +59,10 @@ export default ({
     ...mapGetters([
       'currentGroupState',
       'currentIdentityState',
-      'groupShouldPropose'
+      'groupShouldPropose',
+      'groupSettings',
+      'ourUsername',
+      'groupMembersCount'
     ]),
     hasProposals () {
       return Object.keys(this.currentGroupState.proposals).length > 0
@@ -130,6 +120,33 @@ export default ({
               isCard: true
             }
       }
+    },
+    proposalOptions () {
+      const isUserGroupCreator = this.ourUsername === this.groupSettings.groupCreator
+
+      return [
+        { type: 'header', name: 'Group Members' },
+        { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'user-plus' },
+        {
+          type: 'item',
+          id: 'remove-member',
+          name: 'Remove member',
+          icon: 'user-minus',
+          isDisabled: this.groupMembersCount < (isUserGroupCreator ? 2 : 3)
+        },
+        { type: 'header', name: 'Voting Systems' },
+        { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'vote-yea' },
+        { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'vote-yea' },
+        { type: 'header', name: 'Other proposals' },
+        { type: 'item', id: 'change-mincome', name: 'Change mincome', icon: 'dollar-sign' },
+        {
+          type: 'item',
+          id: 'generic-proposal',
+          name: 'Generic proposal',
+          icon: 'envelope-open-text',
+          isDisabled: this.groupMembersCount < 3
+        }
+      ]
     }
   },
   methods: {

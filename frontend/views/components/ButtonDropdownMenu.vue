@@ -37,7 +37,7 @@ export default ({
        * NOTE: Shape of the array must strictly follow below statement.
        *
        * - An item to be mapped to a 'menu-item' component:
-       *  { type: 'item', id: string, name: string, icon: string }
+       *  { type: 'item', id: string, name: string, icon: string, isDisabled?: boolean }
        *
        * - An item to be mapped to a 'menu-header' component:
        *  { type: 'header', name: string }
@@ -47,7 +47,12 @@ export default ({
   methods: {
     propObj (item) {
       return item.type === 'item'
-        ? { tag: 'button', 'item-id': item.id, icon: item.icon }
+        ? {
+            tag: 'button',
+            'item-id': item.id,
+            icon: item.icon,
+            ...(item.isDisabled ? { 'disabled': true } : {})
+          }
         : {}
     },
     onItemSelect (itemId) {
