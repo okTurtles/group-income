@@ -10334,6 +10334,24 @@ ${this.getErrorInfo()}`;
             status: STATUS_OPEN,
             payload: null
           });
+        },
+        sideEffect({ contractID, meta, data }, { getters }) {
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+          const typeToSubTypeMap = {
+            [PROPOSAL_INVITE_MEMBER]: "ADD_MEMBER",
+            [PROPOSAL_REMOVE_MEMBER]: "REMOVE_MEMBER",
+            [PROPOSAL_GROUP_SETTING_CHANGE]: "CHANGE_MINCOME",
+            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: "CHANGE_VOTING_RULE",
+            [PROPOSAL_GENERIC]: "GENERIC"
+          };
+          const myProfile = getters.groupProfile(loggedIn.username);
+          if (meta.username !== loggedIn.username && isActionYoungerThanUser(meta, myProfile)) {
+            (0, import_sbp3.default)("gi.notifications/emit", "NEW_PROPOSAL", {
+              groupID: contractID,
+              creator: meta.username,
+              subtype: typeToSubTypeMap[data.proposalType]
+            });
+          }
         }
       },
       "gi.contracts/group/proposalVote": {
@@ -10358,6 +10376,18 @@ ${this.getErrorInfo()}`;
           if (result === VOTE_FOR || result === VOTE_AGAINST) {
             proposals_default[proposal.data.proposalType][result](state, message);
             vue_esm_default.set(proposal, "dateClosed", meta.createdDate);
+          }
+        },
+        sideEffect({ contractID, data, meta }, { state, getters }) {
+          const proposal = state.proposals[data.proposalHash];
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+          const myProfile = getters.groupProfile(loggedIn.username);
+          if (proposal?.dateClosed && isActionYoungerThanUser(meta, myProfile)) {
+            (0, import_sbp3.default)("gi.notifications/emit", "PROPOSAL_CLOSED", {
+              groupID: contractID,
+              creator: meta.username,
+              proposalStatus: proposal.status
+            });
           }
         }
       },
@@ -10438,7 +10468,7 @@ ${this.getErrorInfo()}`;
               console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e);
             });
           } else {
-            const myProfile = state.profiles[username] || null;
+            const myProfile = getters.groupProfile(username);
             if (isActionYoungerThanUser(meta, myProfile)) {
               const memberRemovedThemselves = data.member === meta.username;
               (0, import_sbp3.default)("gi.notifications/emit", memberRemovedThemselves ? "MEMBER_LEFT" : "MEMBER_REMOVED", {
@@ -10484,7 +10514,6 @@ ${this.getErrorInfo()}`;
             invite.status = INVITE_STATUS.USED;
           }
           vue_esm_default.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate));
-          meta.groupId = contractID;
         },
         async sideEffect({ meta, contractID }, { state }) {
           const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
@@ -10503,7 +10532,7 @@ ${this.getErrorInfo()}`;
             }
             if (isActionYoungerThanUser(meta, myProfile)) {
               (0, import_sbp3.default)("gi.notifications/emit", "MEMBER_ADDED", {
-                groupID: contractID || meta.groupId,
+                groupID: contractID,
                 username: meta.username
               });
             }

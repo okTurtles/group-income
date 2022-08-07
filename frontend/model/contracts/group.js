@@ -558,6 +558,27 @@ sbp('chelonia/defineContract', {
         // TODO: save all proposals disk so that we only keep open proposals in memory
         // TODO: create a global timer to auto-pass/archive expired votes
         //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
+      },
+      sideEffect ({ contractID, meta, data }, { getters }) {
+        const { loggedIn } = sbp('state/vuex/state')
+        const typeToSubTypeMap = {
+          [PROPOSAL_INVITE_MEMBER]: 'ADD_MEMBER',
+          [PROPOSAL_REMOVE_MEMBER]: 'REMOVE_MEMBER',
+          [PROPOSAL_GROUP_SETTING_CHANGE]: 'CHANGE_MINCOME',
+          [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'CHANGE_VOTING_RULE',
+          [PROPOSAL_GENERIC]: 'GENERIC'
+        }
+
+        const myProfile = getters.groupProfile(loggedIn.username)
+
+        if (meta.username !== loggedIn.username &&
+          isActionYoungerThanUser(meta, myProfile)) {
+          sbp('gi.notifications/emit', 'NEW_PROPOSAL', {
+            groupID: contractID,
+            creator: meta.username,
+            subtype: typeToSubTypeMap[data.proposalType]
+          })
+        }
       }
     },
     'gi.contracts/group/proposalVote': {
@@ -588,6 +609,20 @@ sbp('chelonia/defineContract', {
           // handles proposal pass or fail, will update proposal.status accordingly
           proposals[proposal.data.proposalType][result](state, message)
           Vue.set(proposal, 'dateClosed', meta.createdDate)
+        }
+      },
+      sideEffect ({ contractID, data, meta }, { state, getters }) {
+        const proposal = state.proposals[data.proposalHash]
+        const { loggedIn } = sbp('state/vuex/state')
+        const myProfile = getters.groupProfile(loggedIn.username)
+
+        if (proposal?.dateClosed &&
+          isActionYoungerThanUser(meta, myProfile)) {
+          sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
+            groupID: contractID,
+            creator: meta.username,
+            proposalStatus: proposal.status
+          })
         }
       }
     },
@@ -697,7 +732,7 @@ sbp('chelonia/defineContract', {
             })
           // TODO - #828 remove other group members contracts if applicable
         } else {
-          const myProfile = state.profiles[username] || null
+          const myProfile = getters.groupProfile(username)
 
           if (isActionYoungerThanUser(meta, myProfile)) {
             const memberRemovedThemselves = data.member === meta.username
@@ -765,7 +800,6 @@ sbp('chelonia/defineContract', {
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
-        meta.groupId = contractID
       },
       // !! IMPORANT!!
       // Actions here MUST NOT modify contract state!
@@ -796,7 +830,7 @@ sbp('chelonia/defineContract', {
 
           if (isActionYoungerThanUser(meta, myProfile)) {
             sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
-              groupID: contractID || meta.groupId,
+              groupID: contractID,
               username: meta.username
             })
           }

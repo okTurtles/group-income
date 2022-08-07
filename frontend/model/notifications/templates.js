@@ -2,7 +2,7 @@ import type {
   NewProposalType,
   NotificationTemplate
 } from './types.flow.js'
-
+import { STATUS_PASSED, STATUS_FAILED } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 import sbp from '@sbp/sbp'
 
@@ -107,14 +107,16 @@ export default ({
       ADD_MEMBER: (creator: string) => L('{member} proposed to add a member to the group. Vote now!', { member: strong(creator) }),
       CHANGE_MINCOME: (creator: string) => L('{member} proposed to change the group mincome. Vote now!', { member: strong(creator) }),
       CHANGE_VOTING_RULE: (creator: string) => L('{member} proposed to change the group voting system. Vote now!', { member: strong(creator) }),
-      REMOVE_MEMBER: (creator: string) => L('{member} proposed to remove a member from the group. Vote now!', { member: strong(creator) })
+      REMOVE_MEMBER: (creator: string) => L('{member} proposed to remove a member from the group. Vote now!', { member: strong(creator) }),
+      GENERIC: (creator: string) => L('{member} created a proposal. Vote now!', { member: strong(creator) })
     }
 
     const iconMap = {
       ADD_MEMBER: 'user-plus',
       CHANGE_MINCOME: 'coins',
       CHANGE_VOTING_RULE: 'vote-yea',
-      REMOVE_MEMBER: 'user-minus'
+      REMOVE_MEMBER: 'user-minus',
+      GENERIC: 'envelope-open-text'
     }
 
     return {
@@ -125,6 +127,22 @@ export default ({
       level: 'info',
       linkTo: '/dashboard#TODO-proposals',
       subtype: data.subtype,
+      scope: 'group'
+    }
+  },
+  PROPOSAL_CLOSED (data: { groupID: string, creator: string, proposalStatus: string }) {
+    const bodyTemplateMap = {
+      // TODO: needs various messages depending on the proposal type? TBD by team.
+      [STATUS_PASSED]: (creator: string) => L("{member}'s proposal has passed.", { member: strong(creator) }),
+      [STATUS_FAILED]: (creator: string) => L("{member}'s proposal has failed.", { member: strong(creator) })
+    }
+
+    return {
+      avatarUsername: data.creator,
+      body: bodyTemplateMap[data.proposalStatus](data.creator),
+      icon: 'cog', // TODO: to be decided.
+      level: 'info',
+      linkTo: '/dashboard#TODO-proposals', // TODO: to be decided.
       scope: 'group'
     }
   }
