@@ -2,7 +2,12 @@
   section.c-calloutCard(:class='{ card: isCard }')
     component.c-svg(:is='svg')
     div
-      h2.is-title-3.c-title(v-if='title') {{ title }}
+      h2.is-title-3.c-title(
+        v-if='title'
+        :class='{ "has-cta": $slots.cta }'
+      )
+        span.c-title-text {{ title }}
+        slot(name='cta')
       slot
 </template>
 
@@ -43,5 +48,14 @@ export default ({
 
 .c-title {
   margin-bottom: 0.5rem;
+
+  &.has-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 0.5rem;
+  }
 }
 </style>

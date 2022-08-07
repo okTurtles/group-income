@@ -66,7 +66,7 @@ import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 
 export default ({
-  name: 'GroupMembersAllModal',
+  name: 'GroupMembersDirectMessages',
   components: {
     ModalBaseTemplate,
     Search,
