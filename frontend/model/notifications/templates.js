@@ -140,7 +140,7 @@ export default ({
     return {
       avatarUsername: data.creator,
       body: bodyTemplateMap[data.proposalStatus](data.creator),
-      icon: 'cog', // TODO: to be decided.
+      icon: 'cog', // TODO : to be decided.
       level: 'info',
       linkTo: '/dashboard#TODO-proposals', // TODO: to be decided.
       scope: 'group'
