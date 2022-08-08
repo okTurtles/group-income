@@ -135,7 +135,9 @@ export default ({
       this.$refs.formMsg.clean()
       return true
     },
-    async submit (form) {
+    async submit ({ reason }) {
+      // reason gets delivered from 'ProposalTemplate.vue'
+
       if (!this.validateThreshold()) {
         return
       }
@@ -153,7 +155,7 @@ export default ({
                 },
                 ruleName: this.config.rule,
                 ruleThreshold: +this.form.threshold,
-                reason: form.reason
+                reason
               },
               votingRule: this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].rule,
               expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].expires_ms
