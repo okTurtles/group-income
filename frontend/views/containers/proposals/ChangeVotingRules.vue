@@ -52,8 +52,7 @@ export default ({
         rule: null
       },
       form: {
-        threshold: null,
-        reason: ''
+        threshold: null
       },
       ephemeral: {
         errorMsg: null,
@@ -135,14 +134,14 @@ export default ({
       this.$refs.formMsg.clean()
       return true
     },
-    async submit ({ reason }) {
-      // reason gets delivered from 'ProposalTemplate.vue'
-
+    async submit (arg) {
       if (!this.validateThreshold()) {
         return
       }
 
       if (this.groupShouldPropose) {
+        const { reason } = arg // reason gets delivered from ProposalTemplate.vue
+
         try {
           await sbp('gi.actions/group/proposal', {
             contractID: this.currentGroupId,
