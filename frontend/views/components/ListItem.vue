@@ -63,6 +63,7 @@ export default ({
     display: flex;
     align-items: center;
     flex-grow: 1;
+    white-space: normal;
   }
 }
 
