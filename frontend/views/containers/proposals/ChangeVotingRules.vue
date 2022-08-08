@@ -140,7 +140,7 @@ export default ({
       }
 
       if (this.groupShouldPropose) {
-        const { reason } = arg // reason gets delivered from ProposalTemplate.vue
+        const { reason } = arg // reason gets delivered from 'ProposalTemplate.vue'
 
         try {
           await sbp('gi.actions/group/proposal', {
