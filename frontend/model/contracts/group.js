@@ -194,6 +194,12 @@ sbp('chelonia/defineContract', {
         })
       }
     },
+    isCloseToDistributionTime (state, getters) {
+      const dDay = new Date(getters.groupSettings.distributionDate)
+      const warningDate = addTimeToDate(dDay, -7 * DAYS_MILLIS)
+      // when (D-day - 7d) <= today < D-day
+      return Date.now() >= new Date(warningDate).getTime() && Date.now() < dDay.getTime()
+    },
     periodBeforePeriod (state, getters) {
       return (periodStamp: string) => {
         const len = getters.groupSettings.distributionPeriodLength

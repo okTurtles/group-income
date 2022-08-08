@@ -26,12 +26,9 @@ page(
       ) You can change this at any time by updating your {r1}income details{r2}.
 
     section(v-if='!distributionStarted')
+      payment-banner
       .c-container-empty
         svg-contributions.c-svg
-        i18n.c-description(
-          tag='p'
-          :args='{ startDate: distributionStart }'
-        ) The distribution period begins on: {startDate}
 
     section(v-else-if='tabItems.length === 0 && paymentsListData.length === 0')
       .c-container-empty
@@ -63,19 +60,7 @@ page(
       )
 
       .tab-section
-        banner-simple(severity='info')(
-          v-if='!isCloseToDistributionTime'
-          class='c-banner-next-distribution'
-        )
-          i18n.c-description(
-            @click='openModal("IncomeDetails")'
-            tag='p'
-            :args='{ \
-              r1: `<button class="link js-btnInvite" data-test="openWarningIncomeDetailsModal">`, \
-              r2: "</button>", \
-              date: nextDistribution \
-            }'
-          ) Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.
+        payment-banner(v-if='!distributionStarted')
 
         .c-container(v-if='paymentsFiltered.length')
           payments-list(
@@ -122,11 +107,11 @@ import SvgContributions from '@svgs/contributions.svg'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
+import PaymentBanner from '@containers/payments/PaymentBanner.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
-import { dateToMonthstamp, addTimeToDate, humanDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
+import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
 import { L, LTags } from '@common/common.js'
-import BannerSimple from '@components/banners/BannerSimple.vue'
 
 export default ({
   name: 'Payments',
@@ -138,7 +123,7 @@ export default ({
     PaymentsPagination,
     MonthOverview,
     AddIncomeDetailsWidget,
-    BannerSimple
+    PaymentBanner
   },
   data () {
     return {
@@ -171,7 +156,6 @@ export default ({
       'groupSettings',
       'ourUsername',
       'userDisplayName',
-      'periodAfterPeriod',
       'withGroupCurrency'
     ]),
     needsIncome () {
@@ -182,10 +166,6 @@ export default ({
     },
     distributionStarted () {
       return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
-    },
-    nextDistribution () {
-      const currentPeriod = this.groupSettings.distributionDate
-      return humanDate(this.periodAfterPeriod(currentPeriod), { month: 'long', day: 'numeric' })
     },
     tabItems () {
       const items = []
@@ -314,12 +294,6 @@ export default ({
         amount: this.withGroupCurrency(amount),
         count: this.paymentsTodo.length
       }
-    },
-    isCloseToDistributionTime () {
-      const dDay = this.periodAfterPeriod(this.groupSettings.distributionDate)
-      const warningDate = addTimeToDate(dDay, -7 * DAYS_MILLIS)
-
-      return Date.now() >= new Date(warningDate).getTime() && Date.now() < dDay.getTime()
     }
   },
   methods: {
@@ -376,7 +350,7 @@ export default ({
   }
 }
 
-.c-banner-next-distribution {
+.tab-section .c-banner-next-distribution {
   margin-top: 2rem;
 }
 

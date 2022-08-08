@@ -53,7 +53,7 @@ import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
-import { addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'GroupDashboard',
@@ -87,20 +87,14 @@ export default ({
       'groupsByName',
       'groupMembersCount',
       'groupProfiles',
-      'ourGroupProfile'
+      'ourGroupProfile',
+      'isCloseToDistributionTime'
     ]),
     canDisplayGraph () {
       return Object.values(this.groupProfiles).filter(profile => profile.incomeDetailsType).length > 0
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
-    },
-    isCloseToDistributionTime () {
-      const dDay = new Date(this.groupSettings.distributionDate)
-      const warningDate = addTimeToDate(dDay, -7 * DAYS_MILLIS)
-
-      // when (D-day - 7d) <= today < D-day
-      return Date.now() >= new Date(warningDate).getTime() && Date.now() < dDay.getTime()
     },
     bannerStorageKey () {
       return `giHideDistributionWarning.${this.currentGroupId}`
