@@ -94,8 +94,14 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
                 i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
             .c-actions
+              button.is-icon(
+                v-if='$route.query.toRemove'
+                @click.stop='removeMember(username)'
+              )
+                i.icon-times
+
               i18n.button.is-outlined.is-small(
-                v-if='addedMember'
+                v-else-if='addedMember'
                 tag='button'
                 @click.stop='addToChannel()'
                 data-test='addToChannel'
@@ -106,7 +112,9 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
@@ -170,8 +178,8 @@ export default ({
     closeModal () {
       this.$refs.modal.close()
     },
-    removeMember () {
-      console.log('TODO removeMember')
+    removeMember (username) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'RemoveMember', { username })
     },
     addToChannel () {
       console.log('TODO addToChannel')
