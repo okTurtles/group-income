@@ -12,11 +12,10 @@ import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import './mailbox.js'
 
 import { encryptedAction } from './utils.js'
+import { handleFetchResult } from '../utils/misc.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
-
-// eslint-disable-next-line camelcase
-const salt_TODO_CHANGEME_NEEDS_TO_BE_DYNAMIC = 'SALT CHANGEME'
+import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 
 function generatedLoginState () {
   const { contracts } = sbp('state/vuex/state')
@@ -36,8 +35,25 @@ function diffLoginStates (s1: ?Object, s2: ?Object) {
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/identity/retrieveSalt': async (username: string, password: string) => {
-    // TODO RETRIEVE FROM SERVER
-    return await Promise.resolve(salt_TODO_CHANGEME_NEEDS_TO_BE_DYNAMIC)
+    const r = randomNonce()
+    const b = hash(r)
+    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
+      .then(handleFetchResult('json'))
+
+    const { authSalt, s, sig } = authHash
+
+    const h = await hashPassword(password, authSalt)
+
+    const [c, hc] = computeCAndHc(r, s, h)
+
+    const contractHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}/contract_hash?${(new URLSearchParams({
+      'r': r,
+      's': s,
+      'sig': sig,
+      'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
+    })).toString()}`).then(handleFetchResult('text'))
+
+    return decryptContractSalt(c, contractHash)
   },
   'gi.actions/identity/create': async function ({
     data: { username, email, password, picture },
@@ -69,12 +85,42 @@ export default (sbp('sbp/selectors/register', {
     const mailbox = await sbp('gi.actions/mailbox/create', { options: { sync: true } })
     const mailboxID = mailbox.contractID()
 
+    const keyPair = boxKeyPair()
+    const r = Buffer.from(keyPair.publicKey).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')
+    const b = hash(r)
+    const registrationRes = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
+      },
+      body: `b=${encodeURIComponent(b)}`
+    })
+      .then(handleFetchResult('json'))
+
+    const { p, s, sig } = registrationRes
+
+    const [contractSalt, Eh] = await buildRegisterSaltRequest(p, keyPair.secretKey, password)
+
+    const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        'r': r,
+        's': s,
+        'sig': sig,
+        'Eh': Eh
+      })
+    })
+
+    if (!res.ok) {
+      throw new Error('Unable to register hash')
+    }
+
     // Create the necessary keys to initialise the contract
-    // TODO: The salt needs to be dynamically generated
-    // eslint-disable-next-line camelcase
-    const salt = salt_TODO_CHANGEME_NEEDS_TO_BE_DYNAMIC
-    const IPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, password, salt)
-    const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
+    const IPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, password, contractSalt)
+    const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, contractSalt)
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
 

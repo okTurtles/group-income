@@ -6,10 +6,20 @@ import 'should-sinon'
 
 import { registrationKey, register, getChallenge, getContractSalt, update } from './zkppSalt.js'
 
+const saltsAndEncryptedHashedPassword = (p: string, secretKey: Uint8Array, hash: string) => {
+  const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
+  const dhKey = nacl.hash(nacl.box.before(Buffer.from(p, 'base64url'), secretKey))
+  const authSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from('AUTHSALT')), dhKey]))).slice(0, 18).toString('base64')
+  const contractSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from('CONTRACTSALT')), dhKey]))).slice(0, 18).toString('base64')
+  const encryptionKey = nacl.hash(Buffer.from(authSalt + contractSalt)).slice(0, nacl.secretbox.keyLength)
+  const encryptedHashedPassword = Buffer.concat([nonce, nacl.secretbox(Buffer.from(hash), nonce, encryptionKey)]).toString('base64url')
+
+  return [authSalt, contractSalt, encryptedHashedPassword]
+}
+
 describe('ZKPP Salt functions', () => {
   it('register', async () => {
     const keyPair = nacl.box.keyPair()
-    const nonce = nacl.randomBytes(nacl.box.nonceLength)
     const publicKey = Buffer.from(keyPair.publicKey).toString('base64url')
     const publicKeyHash = Buffer.from(nacl.hash(Buffer.from(publicKey))).toString('base64url')
 
@@ -17,24 +27,23 @@ describe('ZKPP Salt functions', () => {
     const regKeyAlice2 = await registrationKey('alice', publicKeyHash)
     should(regKeyAlice1).be.of.type('object')
     should(regKeyAlice2).be.of.type('object')
-    const encryptedHashedPasswordAlice1 = Buffer.concat([nonce, nacl.box(Buffer.from('hash'), nonce, Buffer.from(regKeyAlice1.p, 'base64url'), keyPair.secretKey)]).toString('base64url')
+    const [, , encryptedHashedPasswordAlice1] = saltsAndEncryptedHashedPassword(regKeyAlice1.p, keyPair.secretKey, 'hash')
     const res1 = await register('alice', publicKey, regKeyAlice1.s, regKeyAlice1.sig, encryptedHashedPasswordAlice1)
     should(res1).equal(true, 'register should allow new entry (alice)')
 
-    const encryptedHashedPasswordAlice2 = Buffer.concat([nonce, nacl.box(Buffer.from('hash'), nonce, Buffer.from(regKeyAlice2.p, 'base64url'), keyPair.secretKey)]).toString('base64url')
+    const [, , encryptedHashedPasswordAlice2] = saltsAndEncryptedHashedPassword(regKeyAlice1.p, keyPair.secretKey, 'hash')
     const res2 = await register('alice', publicKey, regKeyAlice2.s, regKeyAlice2.sig, encryptedHashedPasswordAlice2)
     should(res2).equal(false, 'register should not overwrite entry (alice)')
 
     const regKeyBob1 = await registrationKey('bob', publicKeyHash)
     should(regKeyBob1).be.of.type('object')
-    const encryptedHashedPasswordBob1 = Buffer.concat([nonce, nacl.box(Buffer.from('hash'), nonce, Buffer.from(regKeyBob1.p, 'base64url'), keyPair.secretKey)]).toString('base64url')
+    const [, , encryptedHashedPasswordBob1] = saltsAndEncryptedHashedPassword(regKeyBob1.p, keyPair.secretKey, 'hash')
     const res3 = await register('bob', publicKey, regKeyBob1.s, regKeyBob1.sig, encryptedHashedPasswordBob1)
     should(res3).equal(true, 'register should allow new entry (bob)')
   })
 
   it('getContractSalt', async () => {
     const keyPair = nacl.box.keyPair()
-    const eNonce = nacl.randomBytes(nacl.box.nonceLength)
     const publicKey = Buffer.from(keyPair.publicKey).toString('base64url')
     const publicKeyHash = Buffer.from(nacl.hash(Buffer.from(publicKey))).toString('base64url')
 
@@ -42,13 +51,10 @@ describe('ZKPP Salt functions', () => {
     const regKey = await registrationKey(contract, publicKeyHash)
     should(regKey).be.of.type('object')
 
-    const encryptedHashedPassword = Buffer.concat([eNonce, nacl.box(Buffer.from('hash'), eNonce, Buffer.from(regKey.p, 'base64url'), keyPair.secretKey)]).toString('base64url')
+    const [authSalt, contractSalt, encryptedHashedPassword] = saltsAndEncryptedHashedPassword(regKey.p, keyPair.secretKey, hash)
+
     const res = await register(contract, publicKey, regKey.s, regKey.sig, encryptedHashedPassword)
     should(res).equal(true, 'register should allow new entry (' + contract + ')')
-
-    const dhKey = nacl.hash(nacl.box.before(Buffer.from(regKey.p, 'base64url'), keyPair.secretKey))
-    const authSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from('AUTHSALT')), dhKey]))).slice(0, 18).toString('base64url')
-    const contractSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from('CONTRACTSALT')), dhKey]))).slice(0, 18).toString('base64url')
 
     const b = Buffer.from(nacl.hash(Buffer.from(r))).toString('base64url')
     const challenge = await getChallenge(contract, b)
@@ -71,7 +77,6 @@ describe('ZKPP Salt functions', () => {
 
   it('update', async () => {
     const keyPair = nacl.box.keyPair()
-    const eNonce = nacl.randomBytes(nacl.box.nonceLength)
     const publicKey = Buffer.from(keyPair.publicKey).toString('base64url')
     const publicKeyHash = Buffer.from(nacl.hash(Buffer.from(publicKey))).toString('base64url')
 
@@ -79,12 +84,10 @@ describe('ZKPP Salt functions', () => {
     const regKey = await registrationKey(contract, publicKeyHash)
     should(regKey).be.of.type('object')
 
-    const encryptedHashedPassword = Buffer.concat([eNonce, nacl.box(Buffer.from('hash'), eNonce, Buffer.from(regKey.p, 'base64url'), keyPair.secretKey)]).toString('base64url')
+    const [authSalt, , encryptedHashedPassword] = saltsAndEncryptedHashedPassword(regKey.p, keyPair.secretKey, hash)
+
     const res = await register(contract, publicKey, regKey.s, regKey.sig, encryptedHashedPassword)
     should(res).equal(true, 'register should allow new entry (' + contract + ')')
-
-    const dhKey = nacl.hash(nacl.box.before(Buffer.from(regKey.p, 'base64url'), keyPair.secretKey))
-    const authSalt = Buffer.from(nacl.hash(Buffer.concat([nacl.hash(Buffer.from('AUTHSALT')), dhKey]))).slice(0, 18).toString('base64url')
 
     const b = Buffer.from(nacl.hash(Buffer.from(r))).toString('base64url')
     const challenge = await getChallenge(contract, b)

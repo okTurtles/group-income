@@ -2,6 +2,7 @@ import { blake32Hash } from '~/shared/functions.js'
 import { timingSafeEqual } from 'crypto'
 import nacl from 'tweetnacl'
 import sbp from '@sbp/sbp'
+import { boxKeyPair, encryptContractSalt, hashStringArray, hashRawStringArray, hash, parseRegisterSalt, randomNonce, computeCAndHc } from '~/shared/zkpp.js'
 
 // TODO HARDCODED VALUES
 const recordPepper = 'pepper'
@@ -10,14 +11,6 @@ const challengeSecret = 'secret'
 const registrationSecret = 'secret'
 const maxAge = 30
 
-const hashStringArray = (...args: Array<Uint8Array | string>) => {
-  return nacl.hash(Buffer.concat(args.map((s) => nacl.hash(Buffer.from(s)))))
-}
-
-const hashRawStringArray = (...args: Array<Uint8Array | string>) => {
-  return nacl.hash(Buffer.concat(args.map((s) => Buffer.from(s))))
-}
-
 const getZkppSaltRecord = async (contract: string) => {
   const recordId = blake32Hash(hashStringArray('RID', contract, recordPepper))
   const record = await sbp('chelonia/db/get', recordId)
@@ -25,7 +18,7 @@ const getZkppSaltRecord = async (contract: string) => {
   if (record) {
     const encryptionKey = hashStringArray('REK', contract, recordMasterKey).slice(0, nacl.secretbox.keyLength)
 
-    const recordBuf = Buffer.from(record, 'base64url')
+    const recordBuf = Buffer.from(record.replace(/_/g, '/').replace(/-/g, '+'), 'base64')
     const nonce = recordBuf.slice(0, nacl.secretbox.nonceLength)
     const recordCiphertext = recordBuf.slice(nacl.secretbox.nonceLength)
     const recordPlaintext = nacl.secretbox.open(recordCiphertext, nonce, encryptionKey)
@@ -65,7 +58,7 @@ const setZkppSaltRecord = async (contract: string, hashedPassword: string, authS
   const recordPlaintext = JSON.stringify([hashedPassword, authSalt, contractSalt])
   const recordCiphertext = nacl.secretbox(Buffer.from(recordPlaintext), nonce, encryptionKey)
   const recordBuf = Buffer.concat([nonce, recordCiphertext])
-  const record = recordBuf.toString('base64url')
+  const record = recordBuf.toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
   await sbp('chelonia/db/set', recordId, record)
 }
 
@@ -75,9 +68,9 @@ export const getChallenge = async (contract: string, b: string): Promise<false |
     return false
   }
   const { authSalt } = record
-  const s = Buffer.from(nacl.randomBytes(12)).toString('base64url')
+  const s = randomNonce()
   const now = (Date.now() / 1000 | 0).toString(16)
-  const sig = [now, Buffer.from(hashStringArray(contract, b, s, now, challengeSecret)).toString('base64url')].join(',')
+  const sig = [now, Buffer.from(hashStringArray(contract, b, s, now, challengeSecret)).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')].join(',')
 
   return {
     authSalt,
@@ -101,9 +94,9 @@ const verifyChallenge = (contract: string, r: string, s: string, userSig: string
     return false
   }
 
-  const b = Buffer.from(nacl.hash(Buffer.from(r))).toString('base64url')
+  const b = hash(r)
   const sig = hashStringArray(contract, b, s, then, challengeSecret)
-  const macBuf = Buffer.from(mac, 'base64url')
+  const macBuf = Buffer.from(mac.replace(/_/g, '/').replace(/-/g, '+'), 'base64')
 
   return sig.byteLength === macBuf.byteLength && timingSafeEqual(sig, macBuf)
 }
@@ -116,14 +109,14 @@ export const registrationKey = async (contract: string, b: string): Promise<fals
 
   const encryptionKey = hashStringArray('REG', contract, registrationSecret).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
-  const keyPair = nacl.box.keyPair()
-  const s = Buffer.concat([nonce, nacl.secretbox(keyPair.secretKey, nonce, encryptionKey)]).toString('base64url')
+  const keyPair = boxKeyPair()
+  const s = Buffer.concat([nonce, nacl.secretbox(keyPair.secretKey, nonce, encryptionKey)]).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
   const now = (Date.now() / 1000 | 0).toString(16)
-  const sig = [now, Buffer.from(hashStringArray(contract, b, s, now, challengeSecret)).toString('base64url')].join(',')
+  const sig = [now, Buffer.from(hashStringArray(contract, b, s, now, challengeSecret)).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')].join(',')
 
   return {
     s,
-    p: Buffer.from(keyPair.publicKey).toString('base64url'),
+    p: Buffer.from(keyPair.publicKey).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, ''),
     sig
   }
 }
@@ -139,27 +132,17 @@ export const register = async (contract: string, clientPublicKey: string, encryp
     return false
   }
 
-  const clientPublicKeyBuf = Buffer.from(clientPublicKey, 'base64url')
-  const encryptedSecretKeyBuf = Buffer.from(encryptedSecretKey, 'base64url')
+  const encryptedSecretKeyBuf = Buffer.from(encryptedSecretKey.replace(/_/g, '/').replace(/-/g, '+'), 'base64')
   const encryptionKey = hashStringArray('REG', contract, registrationSecret).slice(0, nacl.secretbox.keyLength)
   const secretKeyBuf = nacl.secretbox.open(encryptedSecretKeyBuf.slice(nacl.secretbox.nonceLength), encryptedSecretKeyBuf.slice(0, nacl.secretbox.nonceLength), encryptionKey)
 
-  if (clientPublicKeyBuf.byteLength !== nacl.box.publicKeyLength || !secretKeyBuf || secretKeyBuf.byteLength !== nacl.box.secretKeyLength) {
+  const parseRegisterSaltRes = parseRegisterSalt(clientPublicKey, secretKeyBuf, encryptedHashedPassword)
+
+  if (!parseRegisterSaltRes) {
     return false
   }
 
-  const dhKey = nacl.box.before(clientPublicKeyBuf, secretKeyBuf)
-
-  const encryptedHashedPasswordBuf = Buffer.from(encryptedHashedPassword, 'base64url')
-
-  const hashedPasswordBuf = nacl.box.open.after(encryptedHashedPasswordBuf.slice(nacl.box.nonceLength), encryptedHashedPasswordBuf.slice(0, nacl.box.nonceLength), dhKey)
-
-  if (!hashedPasswordBuf) {
-    return false
-  }
-
-  const authSalt = Buffer.from(hashStringArray('AUTHSALT', dhKey)).slice(0, 18).toString('base64url')
-  const contractSalt = Buffer.from(hashStringArray('CONTRACTSALT', dhKey)).slice(0, 18).toString('base64url')
+  const [authSalt, contractSalt, hashedPasswordBuf] = parseRegisterSaltRes
 
   await setZkppSaltRecord(contract, Buffer.from(hashedPasswordBuf).toString(), authSalt, contractSalt)
 
@@ -167,10 +150,8 @@ export const register = async (contract: string, clientPublicKey: string, encryp
 }
 
 const contractSaltVerifyC = (h: string, r: string, s: string, userHc: string) => {
-  const ħ = hashStringArray(r, s)
-  const c = hashStringArray(h, ħ)
-  const hc = nacl.hash(c)
-  const userHcBuf = Buffer.from(userHc, 'base64url')
+  const [c, hc] = computeCAndHc(r, s, h)
+  const userHcBuf = Buffer.from(userHc.replace(/_/g, '/').replace(/-/g, '+'), 'base64')
 
   if (hc.byteLength === userHcBuf.byteLength && timingSafeEqual(hc, userHcBuf)) {
     return c
@@ -197,12 +178,7 @@ export const getContractSalt = async (contract: string, r: string, s: string, si
     return false
   }
 
-  const encryptionKey = hashRawStringArray('CS', c).slice(0, nacl.secretbox.keyLength)
-  const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
-
-  const encryptedContractSalt = nacl.secretbox(Buffer.from(contractSalt), nonce, encryptionKey)
-
-  return Buffer.concat([nonce, encryptedContractSalt]).toString('base64url')
+  return encryptContractSalt(c, contractSalt)
 }
 
 export const update = async (contract: string, r: string, s: string, sig: string, hc: string, encryptedArgs: string): Promise<boolean> => {
@@ -223,7 +199,7 @@ export const update = async (contract: string, r: string, s: string, sig: string
   }
 
   const encryptionKey = hashRawStringArray('SU', c).slice(0, nacl.secretbox.keyLength)
-  const encryptedArgsBuf = Buffer.from(encryptedArgs, 'base64url')
+  const encryptedArgsBuf = Buffer.from(encryptedArgs.replace(/_/g, '/').replace(/-/g, '+'), 'base64')
   const nonce = encryptedArgsBuf.slice(0, nacl.secretbox.nonceLength)
   const encrytedArgsCiphertext = encryptedArgsBuf.slice(nacl.secretbox.nonceLength)
 
