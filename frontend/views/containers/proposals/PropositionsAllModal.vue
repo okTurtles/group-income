@@ -24,7 +24,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
     .card.c-card
       ul(data-test='proposalsWidget')
         proposal-item(
-          v-for='hash in sortedProposal'
+          v-for='hash in proposals'
           :key='hash'
           :proposalHash='hash'
         )
@@ -33,6 +33,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 <script>
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import ProposalItem from './ProposalItem.vue'
+import { mapGetters } from 'vuex'
 
 export default ({
   name: 'PropositionsAllModal',
@@ -41,7 +42,6 @@ export default ({
     ProposalItem
   },
   data: () => ({
-    proposals: Object,
     ephemeral: {
       selectbox: {
         focused: false,
@@ -55,12 +55,13 @@ export default ({
     }
   },
   computed: {
-    sortedProposal () {
-      return this.ephemeral.selectbox.selectedOption === 'Newest' ? this.proposals : [...this.proposals].reverse()
+    ...mapGetters([
+      'currentGroupState'
+    ]),
+    proposals () {
+      const p = Object.keys(this.currentGroupState.proposals)
+      return this.ephemeral.selectbox.selectedOption === 'Newest' ? p : [...p].reverse()
     }
-  },
-  created () {
-    this.proposals = this.$route.query.proposals
   }
 }: Object)
 </script>
