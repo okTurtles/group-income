@@ -10524,7 +10524,7 @@ ${this.getErrorInfo()}`;
           } else {
             const myProfile = profiles[loggedIn.username];
             await (0, import_sbp3.default)("chelonia/contract/sync", meta.identityContractID);
-            if (myProfile && isActionYoungerThanUser(meta, myProfile)) {
+            if (isActionYoungerThanUser(meta, myProfile)) {
               (0, import_sbp3.default)("gi.notifications/emit", "MEMBER_ADDED", {
                 groupID: contractID,
                 username: meta.username
