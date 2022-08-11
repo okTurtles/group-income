@@ -120,15 +120,13 @@ function memberLeaves ({ username, dateLeft }, { meta, state, getters }) {
   updateCurrentDistribution({ meta, state, getters })
 }
 
-function isActionYoungerThanUser (actionMeta, userProfile) {
+function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boolean {
   // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
   // This is used mostly for checking if a notification should be sent for that user or not.
   // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
   // 'MEMBER_ADDED' notification for user-1.
-
-  if (!actionMeta || !userProfile) { return }
-
-  return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
+  return Boolean(userProfile) &&
+    compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
 }
 
 sbp('chelonia/defineContract', {
@@ -571,8 +569,7 @@ sbp('chelonia/defineContract', {
 
         const myProfile = getters.groupProfile(loggedIn.username)
 
-        if (meta.username !== loggedIn.username &&
-          isActionYoungerThanUser(meta, myProfile)) {
+        if (isActionYoungerThanUser(meta, myProfile)) {
           sbp('gi.notifications/emit', 'NEW_PROPOSAL', {
             groupID: contractID,
             creator: meta.username,
@@ -781,7 +778,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
-      process ({ data, meta, contractID }, { state }) {
+      process ({ data, meta }, { state }) {
         console.debug('inviteAccept:', data, state.invites)
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== INVITE_STATUS.VALID) {
@@ -821,14 +818,12 @@ sbp('chelonia/defineContract', {
             }
           }
         } else {
-          const myProfile = profiles[loggedIn.username] || null
+          const myProfile = profiles[loggedIn.username]
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
           await sbp('chelonia/contract/sync', meta.identityContractID)
 
-          if (!myProfile) { return }
-
-          if (isActionYoungerThanUser(meta, myProfile)) {
+          if (myProfile && isActionYoungerThanUser(meta, myProfile)) {
             sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
               groupID: contractID,
               username: meta.username
