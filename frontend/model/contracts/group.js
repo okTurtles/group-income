@@ -10,7 +10,7 @@ import {
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { merge, deepEqualJSONType, omit } from './shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
+import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
@@ -118,6 +118,15 @@ function memberLeaves ({ username, dateLeft }, { meta, state, getters }) {
   state.profiles[username].departedDate = dateLeft
   // remove any todos for this member from the adjusted distribution
   updateCurrentDistribution({ meta, state, getters })
+}
+
+function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boolean {
+  // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
+  // This is used mostly for checking if a notification should be sent for that user or not.
+  // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
+  // 'MEMBER_ADDED' notification for user-1.
+  return Boolean(userProfile) &&
+    compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
 }
 
 sbp('chelonia/defineContract', {
@@ -547,6 +556,26 @@ sbp('chelonia/defineContract', {
         // TODO: save all proposals disk so that we only keep open proposals in memory
         // TODO: create a global timer to auto-pass/archive expired votes
         //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
+      },
+      sideEffect ({ contractID, meta, data }, { getters }) {
+        const { loggedIn } = sbp('state/vuex/state')
+        const typeToSubTypeMap = {
+          [PROPOSAL_INVITE_MEMBER]: 'ADD_MEMBER',
+          [PROPOSAL_REMOVE_MEMBER]: 'REMOVE_MEMBER',
+          [PROPOSAL_GROUP_SETTING_CHANGE]: 'CHANGE_MINCOME',
+          [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'CHANGE_VOTING_RULE',
+          [PROPOSAL_GENERIC]: 'GENERIC'
+        }
+
+        const myProfile = getters.groupProfile(loggedIn.username)
+
+        if (isActionYoungerThanUser(meta, myProfile)) {
+          sbp('gi.notifications/emit', 'NEW_PROPOSAL', {
+            groupID: contractID,
+            creator: meta.username,
+            subtype: typeToSubTypeMap[data.proposalType]
+          })
+        }
       }
     },
     'gi.contracts/group/proposalVote': {
@@ -577,6 +606,20 @@ sbp('chelonia/defineContract', {
           // handles proposal pass or fail, will update proposal.status accordingly
           proposals[proposal.data.proposalType][result](state, message)
           Vue.set(proposal, 'dateClosed', meta.createdDate)
+        }
+      },
+      sideEffect ({ contractID, data, meta }, { state, getters }) {
+        const proposal = state.proposals[data.proposalHash]
+        const { loggedIn } = sbp('state/vuex/state')
+        const myProfile = getters.groupProfile(loggedIn.username)
+
+        if (proposal?.dateClosed &&
+          isActionYoungerThanUser(meta, myProfile)) {
+          sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
+            groupID: contractID,
+            creator: meta.username,
+            proposalStatus: proposal.status
+          })
         }
       }
     },
@@ -686,6 +729,18 @@ sbp('chelonia/defineContract', {
             })
           // TODO - #828 remove other group members contracts if applicable
         } else {
+          const myProfile = getters.groupProfile(username)
+
+          if (isActionYoungerThanUser(meta, myProfile)) {
+            const memberRemovedThemselves = data.member === meta.username
+
+            sbp('gi.notifications/emit', // emit a notification for a member removal.
+              memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
+              {
+                groupID: contractID,
+                username: memberRemovedThemselves ? meta.username : data.member
+              })
+          }
           // TODO - #828 remove the member contract if applicable.
           // problem is, if they're in another group we're also a part of, or if we
           // have a DM with them, we don't want to do this. may need to use manual reference counting
@@ -703,6 +758,7 @@ sbp('chelonia/defineContract', {
           { username: meta.username, dateLeft: meta.createdDate },
           { meta, state, getters }
         )
+
         sbp('gi.contracts/group/pushSideEffect', contractID,
           ['gi.contracts/group/removeMember/sideEffect', {
             meta,
@@ -747,22 +803,32 @@ sbp('chelonia/defineContract', {
       // They MUST NOT call 'commit'!
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      async sideEffect ({ meta }, { state }) {
-        const rootState = sbp('state/vuex/state')
-        // TODO: per #257 this will have to be encompassed in a recoverable transaction
+      async sideEffect ({ meta, contractID }, { state }) {
+        const { loggedIn } = sbp('state/vuex/state')
+        const { profiles = {} } = state
+
+        // TODO: per #257 this will ,have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
-        if (meta.username === rootState.loggedIn.username) {
+        if (meta.username === loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
-          for (const name in state.profiles) {
-            if (name !== rootState.loggedIn.username) {
-              await sbp('chelonia/contract/sync', state.profiles[name].contractID)
+          for (const name in profiles) {
+            if (name !== loggedIn.username) {
+              await sbp('chelonia/contract/sync', profiles[name].contractID)
             }
           }
         } else {
+          const myProfile = profiles[loggedIn.username]
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
           await sbp('chelonia/contract/sync', meta.identityContractID)
+
+          if (isActionYoungerThanUser(meta, myProfile)) {
+            sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
+              groupID: contractID,
+              username: meta.username
+            })
+          }
         }
       }
     },
