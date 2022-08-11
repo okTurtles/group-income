@@ -125,8 +125,7 @@ function isActionYoungerThanUser (actionMeta: Object, userProfile: Object): bool
   // This is used mostly for checking if a notification should be sent for that user or not.
   // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
   // 'MEMBER_ADDED' notification for user-1.
-  return userProfile &&
-    compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
+  return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
 }
 
 sbp('chelonia/defineContract', {

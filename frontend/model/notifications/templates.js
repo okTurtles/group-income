@@ -73,7 +73,7 @@ export default ({
       }),
       icon: 'user-plus',
       level: 'info',
-      linkTo: `/group-chat/${rootState[data.groupID]?.generalChatRoomId || 'XXXX'}`,
+      linkTo: `/group-chat/${rootState[data.groupID]?.generalChatRoomId}`,
       scope: 'group'
     }
   },
