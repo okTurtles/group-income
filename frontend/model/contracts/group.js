@@ -120,12 +120,14 @@ function memberLeaves ({ username, dateLeft }, { meta, state, getters }) {
   updateCurrentDistribution({ meta, state, getters })
 }
 
-function isActionYoungerThanUser (actionMeta: Object, userProfile: Object): boolean {
+function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boolean {
   // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
   // This is used mostly for checking if a notification should be sent for that user or not.
   // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
   // 'MEMBER_ADDED' notification for user-1.
-  return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
+  // In some situations, userProfile is undefined, for example, when inviteAccept is called in
+  // certain situations. So we need to check for that here.
+  return Boolean(userProfile) && compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
 }
 
 sbp('chelonia/defineContract', {
