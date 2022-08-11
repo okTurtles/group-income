@@ -823,7 +823,7 @@ sbp('chelonia/defineContract', {
           // new member has joined, so subscribe to their identity contract
           await sbp('chelonia/contract/sync', meta.identityContractID)
 
-          if (myProfile && isActionYoungerThanUser(meta, myProfile)) {
+          if (isActionYoungerThanUser(meta, myProfile)) {
             sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
               groupID: contractID,
               username: meta.username
