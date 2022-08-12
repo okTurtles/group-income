@@ -4,7 +4,8 @@ export type NewProposalType =
   | 'ADD_MEMBER'
   | 'CHANGE_MINCOME'
   | 'CHANGE_VOTING_RULE'
-  | 'REMOVE_MEMBER';
+  | 'REMOVE_MEMBER'
+  | 'GENERIC';
 
 export type Notification = {
   // Indicates which user avatar icon to display alongside the notification.
