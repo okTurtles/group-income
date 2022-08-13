@@ -247,7 +247,7 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-header {
-  background: $white;
+  background: $background_0;
   padding: 1.5rem 0 1.125rem 2rem;
   position: absolute;
   left: 0;
