@@ -55,6 +55,11 @@ page(
           | {{ link.title }}
           span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
+        .c-chip-container(v-if='paymentsListData.length')
+          i18n.c-distribution-chip.pill.is-primary(
+            :args='{ startDate: distributionDateShort }'
+          ) Next distribution Date: {startDate}
+
       search(
         v-if='paymentsListData.length && ephemeral.activeTab !== "PaymentRowTodo"'
         :placeholder='L("Search payments...")'
@@ -92,13 +97,20 @@ page(
             )
         .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
           i18n(tag='p' :args='{query: form.searchText }') No results for "{query}".
-        .c-container-empty(v-else data-test='noPayments')
+        .c-container-empty.no-payments(v-else data-test='noPayments')
+          banner-simple.c-distribution-banner(severity='info')
+            i18n(
+              @click='handleIncomeClick'
+              :args='{ \
+                r1: `<button class="link js-btnInvite">`, \
+                r2: "</button>", \
+                ...LTags("strong"), \
+                date: distributionDateShort \
+              }'
+            ) {strong_}Next distribution date is on {date}.{_strong} Make sure to update your {r1}income details{r2} by then.
+
           svg-contributions.c-svg
           i18n.c-description(tag='p') There are no payments.
-          i18n.c-description(
-            tag='p'
-            :args='{ ...LTags(), date: nextDistribution }'
-          ) Next distribution period: {date}
 </template>
 
 <script>
@@ -106,6 +118,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import Search from '@components/Search.vue'
+import BannerSimple from '@components/banners/BannerSimple.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
@@ -125,7 +138,8 @@ export default ({
     PaymentsList,
     PaymentsPagination,
     MonthOverview,
-    AddIncomeDetailsWidget
+    AddIncomeDetailsWidget,
+    BannerSimple
   },
   data () {
     return {
@@ -170,9 +184,8 @@ export default ({
     distributionStarted () {
       return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
     },
-    nextDistribution () {
-      const currentPeriod = this.groupSettings.distributionDate
-      return this.prettyDate(this.periodAfterPeriod(currentPeriod))
+    distributionDateShort () {
+      return humanDate(this.groupSettings.distributionDate, { month: "short", day: "numeric" })
     },
     tabItems () {
       const items = []
@@ -357,6 +370,27 @@ export default ({
   }
 }
 
+// Tabs
+.tabs {
+  flex-wrap: wrap;
+
+  .c-chip-container {
+    flex-grow: 1;
+    align-self: center;
+    height: max-content;
+    text-align: right;
+    padding-right: 1rem;
+
+    @include tablet {
+      padding-right: 1.5rem;
+    }
+  }
+  .c-distribution-chip {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1.6rem;
+  }
+}
+
 // Search
 .tabs + .c-search-form {
   margin-top: 1.5rem;
@@ -368,12 +402,23 @@ export default ({
   text-align: center;
   padding-top: 2.5rem;
 
+  &.no-payments {
+    max-width: unset;
+  }
+
   @include desktop {
-    padding-top: 4rem;
+    &:not(.no-payments) {
+      padding-top: 4rem;
+    }
+  }
+
+  .c-distribution-banner {
+    margin-bottom: 4.5rem;
+    text-align: left;
   }
 
   .c-description {
-    margin: 1.5rem 0 0 0;
+    margin: 1rem 0 0 0;
     color: $text_1;
   }
 
