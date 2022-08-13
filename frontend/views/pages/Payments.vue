@@ -185,7 +185,7 @@ export default ({
       return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
     },
     distributionDateShort () {
-      return humanDate(this.groupSettings.distributionDate, { month: "short", day: "numeric" })
+      return humanDate(this.groupSettings.distributionDate, { month: 'short', day: 'numeric' })
     },
     tabItems () {
       const items = []
