@@ -385,6 +385,7 @@ export default ({
       padding-right: 1.5rem;
     }
   }
+
   .c-distribution-chip {
     padding: 0.25rem 0.75rem;
     border-radius: 1.6rem;
