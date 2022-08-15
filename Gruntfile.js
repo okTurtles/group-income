@@ -107,22 +107,34 @@ module.exports = (grunt) => {
   }
 
   async function generateManifests (dir, version) {
-    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
-    // TODO: do this with JS instead of POSIX commands for Windows support
-    const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${dir}/{}-slim.js key.json ${dir}/{}.js`, 'error generating manifests')
-    console.log(stdout)
+    if (development) {
+      grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
+      // TODO: do this with JS instead of POSIX commands for Windows support
+      const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${dir}/{}-slim.js key.json ${dir}/{}.js`, 'error generating manifests')
+      console.log(stdout)
+    } else {
+      // Only run these in NODE_ENV=development so that production servers
+      // don't overwrite manifests.json
+      grunt.log.writeln(chalk.yellow("\n(Skipping) Running 'chel manifest'"))
+    }
   }
 
   async function deployAndUpdateMainSrc (manifestDir) {
-    grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
-    const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
-    console.log(stdout)
-    const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
-    const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
-    fs.writeFileSync(manifestJSON,
-      JSON.stringify({ manifests }, null, 2) + '\n',
-      'utf8')
-    console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
+    if (development) {
+      grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
+      const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
+      console.log(stdout)
+      const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
+      const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+      fs.writeFileSync(manifestJSON,
+        JSON.stringify({ manifests }, null, 2) + '\n',
+        'utf8')
+      console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
+    } else {
+      // Only run these in NODE_ENV=development so that production servers
+      // don't overwrite manifests.json
+      grunt.log.writeln(chalk.yellow("\n(Skipping) Running 'chel deploy'"))
+    }
   }
 
   async function genManifestsAndDeploy (dir, version) {
