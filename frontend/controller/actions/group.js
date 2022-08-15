@@ -436,7 +436,7 @@ export default (sbp('sbp/selectors/register', {
           if (!proposal.votes[getters.ourUsername]) {
             await sbp('gi.actions/group/proposalVote', {
               contractID: groupID,
-              data: { proposalHash, vote: VOTE_FOR, passPayload: { secret: '', automated: true } },
+              data: { proposalHash, vote: VOTE_FOR, passPayload: { secret: '' } },
               publishOptions: { maxAttempts: 3 }
             })
           }

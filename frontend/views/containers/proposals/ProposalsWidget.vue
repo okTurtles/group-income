@@ -3,9 +3,6 @@ component(
   :is='componentData.type'
   v-bind='componentData.props'
 )
-  i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
-  i18n.has-text-1(tag='p') No one has created a proposal yet.
-
   template(#cta='')
     .c-all-actions
       i18n.button.is-outlined.is-small.c-see-all-proposal-btn(
@@ -13,13 +10,13 @@ component(
         @click='openModal("PropositionsAllModal", { proposals })'
       ) See all proposals
 
+      button-dropdown-menu(
+        :buttonText='L("Create proposal")'
+        :options='proposalOptions'
+        @select='onDropdownItemSelect'
+      )
 
-    i18n.button.is-primary.is-small(
-      tag='span'
-      @click='createProposal'
-    ) Create Generic Proposal
-
-  ul.c-proposals(data-test='proposalsWidget')
+  ul.c-proposals(v-if='hasProposals' data-test='proposalsWidget')
     proposal-item(
       v-for='hash in proposals'
       :key='hash'
@@ -190,11 +187,5 @@ export default ({
 .c-all-actions {
   display: flex;
   gap: 0.5rem;
-
-  @include tablet {
-    position: absolute;
-    right: 1.5rem;
-    top: 0;
-  }
 }
 </style>
