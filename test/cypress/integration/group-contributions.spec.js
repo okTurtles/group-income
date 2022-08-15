@@ -99,7 +99,7 @@ describe('Contributions', () => {
       })
     }
 
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`)
   })
 
   it('user1 fills their Income Details - pledges $500', () => {

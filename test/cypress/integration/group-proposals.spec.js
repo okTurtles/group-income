@@ -78,7 +78,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('user1 proposes to add user4, user5 together to the group', () => {
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`)
 
     cy.giInviteMember([`user4-${userId}`, `user5-${userId}`])
   })
@@ -283,7 +283,7 @@ describe('Proposals - Add members', () => {
   it(`proposal-based invitation link has ${groupInviteLinkExpiry.proposal} days of expiry`, () => {
     // Expiry check in Group Settings page and Dashboard
     cy.visit('/')
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`)
 
     cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
     cy.getByDT('groupSettingsLink').click()
@@ -337,7 +337,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('user1 logins and sees all 5 proposals correctly and the new members', () => {
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`)
 
     // A quick checkup that each proposal state is correct.
     // OPTIMIZE: Maybe we should adopt Visual Testing in these cases

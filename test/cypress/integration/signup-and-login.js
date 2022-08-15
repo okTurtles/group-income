@@ -4,6 +4,7 @@ describe('Signup, Profile and Login', () => {
   // users and groups that are created during test...
   const userId = Math.floor(Math.random() * 10000)
   const username = `user1-${userId}`
+  const password = '123456789'
 
   it('user1 signups and creates a group', () => {
     cy.visit('/')
@@ -15,7 +16,22 @@ describe('Signup, Profile and Login', () => {
 
   it('user1 does logout and login again', () => {
     cy.giLogout()
-    cy.giLogin(username)
+    cy.getByDT('loginBtn').click()
+    cy.getByDT('loginName').clear().type(username)
+    cy.getByDT('password').clear().type(password)
+
+    cy.getByDT('loginSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+
+    // We changed pages (to dashboard or create group), so there's no login button anymore.
+    cy.getByDT('loginBtn').should('not.exist')
+
+    // Wait for contracts to finish syncing.
+    cy.getByDT('app').then(([el]) => {
+      cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+      cy.get(el).should('have.attr', 'data-sync', '')
+    })
+    cy.log('- logged in')
   })
 
   it('user1 changes avatar and profile settings', () => {

@@ -472,7 +472,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   })
 
   it(`user1 checks if user2 and user3 are removed from all the channels including ${CHATROOM_GENERAL_NAME}`, () => {
-    cy.giLogin(user1, { bypassUI: true })
+    cy.giLogin(user1)
     me = user1
 
     cy.giRedirectToGroupChat()

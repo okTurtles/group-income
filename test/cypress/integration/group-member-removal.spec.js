@@ -142,7 +142,7 @@ describe('Group - Removing a member', () => {
   })
 
   it('user1 proposes to remove userBot', () => {
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`)
 
     openRemoveMemberModal('userbot', 2)
 
@@ -205,7 +205,7 @@ describe('Group - Removing a member', () => {
   // ------- A member leaves the group.
 
   it('user2 leaves the groupA - is left with groupB', () => {
-    cy.giLogin(`user2-${userId}`, { bypassUI: true })
+    cy.giLogin(`user2-${userId}`)
 
     cy.getByDT('groupSettingsLink').click()
     cy.getByDT('leaveModalBtn').click()

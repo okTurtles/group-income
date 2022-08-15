@@ -162,7 +162,7 @@ describe('Group Voting Rules', () => {
       })
     }
 
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`)
 
     verifyRuleSelected('disagreement', {
       status: '4 (adjusted to 3*)',
@@ -178,7 +178,7 @@ describe('Group Voting Rules', () => {
       bypassUI: true
     })
 
-    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+    cy.giLogin(`user1-${userId}`)
 
     verifyRuleSelected('disagreement', {
       status: '4',

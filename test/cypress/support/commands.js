@@ -76,40 +76,29 @@ Cypress.Commands.add('giSignup', (username, {
   }
 })
 
-Cypress.Commands.add('giLogin', (username, {
-  password = '123456789',
-  bypassUI
-} = {}) => {
-  if (bypassUI) {
-    cy.window().its('sbp').then(async sbp => {
-      const ourUsername = sbp('state/vuex/getters').ourUsername
-      if (ourUsername === username) {
-        throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
-      }
-      await sbp('gi.actions/identity/login', { username, password })
-      await sbp('controller/router').push({ path: '/' }).catch(e => {})
-    })
+Cypress.Commands.add('giLogin', (username, password = '123456789') => {
+  cy.window().its('sbp').then(async sbp => {
+    const ourUsername = sbp('state/vuex/getters').ourUsername
+    if (ourUsername === username) {
+      throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
+    }
+    await sbp('gi.actions/identity/login', { username, password })
+    await sbp('controller/router').push({ path: '/' }).catch(e => {})
     cy.get('nav').within(() => {
       cy.getByDT('dashboard').click()
     })
-  } else {
-    cy.getByDT('loginBtn').click()
-    cy.getByDT('loginName').clear().type(username)
-    cy.getByDT('password').clear().type(password)
-
-    cy.getByDT('loginSubmit').click()
-    cy.getByDT('closeModal').should('not.exist')
-  }
+  })
 
   // We changed pages (to dashboard or create group)
   // so there's no login button anymore
   cy.getByDT('loginBtn').should('not.exist')
 
-  // wait for contracts to finish syncing
+  // Wait for contracts to finish syncing.
   cy.getByDT('app').then(([el]) => {
     cy.get(el).should('have.attr', 'data-logged-in', 'yes')
     cy.get(el).should('have.attr', 'data-sync', '')
   })
+  cy.log(`- logged in: ${username}`)
 })
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
@@ -126,7 +115,7 @@ Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
 
 Cypress.Commands.add('giSwitchUser', (user) => {
   cy.giLogout()
-  cy.giLogin(user, { bypassUI: true })
+  cy.giLogin(user)
 })
 
 Cypress.Commands.add('closeModal', () => {
@@ -281,7 +270,6 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     })
   } else {
     cy.visit(invitationLink)
-
     if (isLoggedIn) {
       cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
     } else {
