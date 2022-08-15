@@ -5,7 +5,7 @@ import { Vue, Errors, L } from '@common/common.js'
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './shared/voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
 import {
-  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED, MAX_ARCHIVED_PROPOSALS,
   INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
@@ -628,7 +628,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         proposalHash: string
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta, contractID }, { state }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           // https://github.com/okTurtles/group-income/issues/602
@@ -639,7 +639,7 @@ sbp('chelonia/defineContract', {
           throw new Errors.GIErrorIgnoreAndBan('proposalWithdraw for wrong user!')
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
-        archiveProposal(state, data.proposalHash)
+        archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID })
       }
     },
     'gi.contracts/group/removeMember': {
@@ -1046,5 +1046,26 @@ sbp('chelonia/defineContract', {
       }
     })
     // TODO: remove group profile when leave group is implemented
+  },
+  // methods are SBP selectors that are version-tracked for each contract.
+  // in other words, you can use them to define SBP selectors that will
+  // contain functions that you can modify across different contract versions,
+  // and when the contract calls them, it will use that specific version of the
+  // method.
+  //
+  // They are useful when used in conjunction with pushSideEffect from process
+  // functions.
+  //
+  // IMPORTANT: they MUST begin with the name of the contract.
+  methods: {
+    'gi.contracts/group/archiveProposal': async function (proposalHash, proposal) {
+      const proposals = await sbp('gi.db/archive/load', 'proposals') || []
+      // newest at the front of the array, oldest at the back
+      proposals.unshift([proposalHash, proposal])
+      while (proposals.length > MAX_ARCHIVED_PROPOSALS) {
+        proposals.pop()
+      }
+      return sbp('gi.db/archive/save', 'proposals', proposals)
+    }
   }
 })

@@ -68,3 +68,24 @@ sbp('sbp/selectors/register', {
     return files.removeItem(url)
   }
 })
+
+// ======================================
+// Archve for proposals and anything else
+// ======================================
+
+const archive = localforage.createInstance({
+  name: 'Group Income',
+  storeName: 'Archive'
+})
+
+sbp('sbp/selectors/register', {
+  'gi.db/archive/save': function (key: string, value: any): Promise<*> {
+    return archive.setItem(key, value)
+  },
+  'gi.db/archive/load': function (key: string): Promise<any> {
+    return archive.getItem(key)
+  },
+  'gi.db/archive/delete': function (key: string): Promise<Object> {
+    return archive.removeItem(key)
+  }
+})
