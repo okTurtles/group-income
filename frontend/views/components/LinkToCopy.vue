@@ -68,12 +68,24 @@ export default ({
         return
       }
 
+      const displayTooltip = () => {
+        this.ephemeral.isTooltipActive = true
+
+        setTimeout(() => {
+          this.ephemeral.isTooltipActive = false
+        }, 1500)
+      }
+
       this.$refs.input.select()
-      document.execCommand('copy')
-      this.ephemeral.isTooltipActive = true
-      setTimeout(() => {
-        this.ephemeral.isTooltipActive = false
-      }, 1500)
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(this.link).then(displayTooltip)
+      } else {
+        // document.execCommand is deprecated, so only use it as a fallback of Clipboard API.
+        // reference: https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand
+        document.execCommand('copy')
+
+        displayTooltip()
+      }
     }
   }
 }: Object)
@@ -86,7 +98,7 @@ export default ({
   position: relative;
   display: flex;
   align-items: center;
-
+  min-width: 0; // So ellipsis works correctly inside grid. pls refer to a discussion here(https://github.com/okTurtles/group-income/pull/765#issuecomment-551691920) for the context.
   .c-invisible-input {
     position: absolute;
     pointer-events: none;

@@ -1,16 +1,13 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, deriveKeyFromPassword, deserializeKey, serializeKey, encrypt } from '~/shared/domains/chelonia/crypto.js'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
-import L, { LError } from '@view-utils/translations.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, deriveKeyFromPassword, deserializeKey, serializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
+import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { imageUpload } from '@utils/image.js'
-import { pickWhere, difference } from '@utils/giLodash.js'
-import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
+import { pickWhere, difference } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
-import './mailbox.js'
-
 import { encryptedAction } from './utils.js'
 import { handleFetchResult } from '../utils/misc.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
@@ -322,16 +319,18 @@ export default (sbp('sbp/selectors/register', {
             }
           }
         }
-        // note: leaving groups will happen when we sync the removeOurselves message
-        if (!state.currentGroupId) {
-          const { contracts } = state
-          const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
-          if (gId) {
-            sbp('gi.actions/group/switch', gId)
-            const router = sbp('controller/router')
-            if (router.currentRoute.path === '/') {
-              router.push({ path: '/dashboard' }).catch(e => {})
-            }
+      }
+      // note: leaving groups will happen when we sync the removeOurselves message
+      if (!state.currentGroupId) {
+        const { contracts } = state
+        const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
+        if (gId) {
+          sbp('gi.actions/group/switch', gId)
+          const router = sbp('controller/router')
+          // redirect us to the dashboard upon login if there's nothing else going on, no modals up, etc.
+          // only update the URL if it's empty and we're stuck at the homepage, as can sometimes happen
+          if (router.currentRoute.path === '/' && Object.keys(router.currentRoute.query).length === 0) {
+            router.push({ path: '/dashboard' }).catch(console.warn)
           }
         }
       }
@@ -360,7 +359,7 @@ export default (sbp('sbp/selectors/register', {
       : {}
 
     try {
-      captureLogsStart(username)
+      sbp('appLogs/startCapture', username)
       const state = await sbp('gi.db/settings/load', username)
       let contractIDs = []
       // login can be called when no settings are saved (e.g. from Signup.vue)
@@ -423,7 +422,7 @@ export default (sbp('sbp/selectors/register', {
     }
     sbp('state/vuex/commit', 'logout')
     sbp('okTurtles.events/emit', LOGOUT)
-    captureLogsPause({ wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
+    sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.')),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),

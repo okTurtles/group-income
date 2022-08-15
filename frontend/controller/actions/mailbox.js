@@ -1,11 +1,11 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey, encrypt } from '~/shared/domains/chelonia/crypto.js'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
-import L, { LError } from '@view-utils/translations.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
+import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
+import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { encryptedAction } from './utils.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/mailbox/create': async function ({

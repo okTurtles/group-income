@@ -74,7 +74,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import currencies, { normalizeCurrency } from '@view-utils/currencies.js'
+import currencies, { normalizeCurrency } from '@model/contracts/shared/currencies.js'
 import PaymentMethods from './PaymentMethods.vue'
 import GroupPledgesGraph from './GroupPledgesGraph.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -82,7 +82,8 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
+import { INCOME_DETAILS_UPDATE } from '@utils/events.js'
 
 export default ({
   name: 'IncomeDetails',
@@ -171,6 +172,12 @@ export default ({
       if (this.needsIncome) {
         // Find the methods that have some info filled...
         const filledMethods = this.$refs.paymentMethods.form.methods.filter(method => method.name !== 'choose' || method.value)
+
+        if (!filledMethods.length) {
+          this.$refs.formMsg.danger(L('Payment details required. Please let people know how they can pay you.'))
+
+          return
+        }
         // From those, find a method with missing info
         const incompletedMethod = filledMethods.find(method => method.name === 'choose' || !method.value)
         // and warn the user about it, if necessary!
@@ -183,10 +190,8 @@ export default ({
           return
         }
 
-        if (filledMethods.length > 0) {
-          for (const method of filledMethods) {
-            paymentMethods.push(method)
-          }
+        for (const method of filledMethods) {
+          paymentMethods.push(method)
         }
       }
 
@@ -200,7 +205,9 @@ export default ({
             paymentMethods
           }
         })
+
         this.closeModal()
+        sbp('okTurtles.events/emit', INCOME_DETAILS_UPDATE)
       } catch (e) {
         console.error('IncomeDetails submit() error:', e)
         this.$refs.formMsg.danger(e.message)

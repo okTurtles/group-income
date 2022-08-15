@@ -4,7 +4,7 @@
   p {{text}}
   .buttons
     i18n.button.is-outlined.is-small.is-primary(
-      v-if='members < 2'
+      v-if='joined && members < 2'
       tag='button'
       @click='openModal("ChatMembersAllModal")'
       data-test='addMembers'
@@ -12,7 +12,7 @@
 
     i18n.button.is-outlined.is-small(
       tag='button'
-      v-if='!description && creator === ourUsername'
+      v-if='joined && !description && creator === ourUsername'
       @click.prevent='openModal("EditChannelDescriptionModal")'
       data-test='addDescription'
     ) Add a description
@@ -21,11 +21,11 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
-import { CHATROOM_TYPES } from '@model/contracts/constants.js'
+import { CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
 import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
-import L from '@view-utils/translations.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({
@@ -37,6 +37,9 @@ export default ({
   props: {
     members: {
       type: Number
+    },
+    joined: {
+      type: Boolean
     },
     creator: {
       type: String

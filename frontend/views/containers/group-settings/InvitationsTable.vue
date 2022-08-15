@@ -78,13 +78,13 @@ page-section.c-section(:title='L("Invite links")')
 
             menu-content.c-dropdown-action
               ul
-                //- menu-item(
-                //-   tag='button'
-                //-   item-id='original'
-                //-   icon='vote-yea'
-                //- )
-                //-   // TODO: #925
-                //-   i18n See original proposal
+                menu-item(
+                  tag='button'
+                  item-id='original'
+                  @click='handleSeeOriginal(item)'
+                  icon='check-to-slot'
+                )
+                  i18n See original proposal
                 menu-item(
                   v-if='item.status.isActive'
                   tag='button'
@@ -113,10 +113,10 @@ import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
+import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
 import { mapGetters, mapState } from 'vuex'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'InvitationsTable',
@@ -248,6 +248,9 @@ export default ({
       if (e.target.classList.contains('js-btnInvite')) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
       }
+    },
+    handleSeeOriginal (inviteItem) {
+      console.log(inviteItem, 'TODO - See Original Proposal')
     },
     async handleRevokeClick (inviteSecret) {
       if (!confirm(L('Are you sure you want to revoke this link? This action cannot be undone.'))) {

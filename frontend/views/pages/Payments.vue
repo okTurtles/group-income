@@ -112,9 +112,9 @@ import PaymentsList from '@containers/payments/PaymentsList.vue'
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
-import L, { LTags } from '@view-utils/translations.js'
-import { dateToMonthstamp, humanDate } from '@utils/time.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
+import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
+import { L, LTags } from '@common/common.js'
 
 export default ({
   name: 'Payments',
@@ -162,7 +162,7 @@ export default ({
       'withGroupCurrency'
     ]),
     needsIncome () {
-      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
+      return this.ourGroupProfile?.incomeDetailsType === 'incomeAmount'
     },
     distributionStart () {
       return this.prettyDate(this.groupSettings.distributionDate)

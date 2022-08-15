@@ -58,12 +58,14 @@ export class GIMessage {
       originatingContractID,
       previousHEAD = null,
       op,
+      manifest,
       signatureFn = defaultSignatureFn
     }: {
       contractID: string | null,
       originatingContractID?: string,
       previousHEAD?: string | null,
       op: GIOp,
+      manifest: string,
       signatureFn?: Function
     }
   ): this {
@@ -72,7 +74,8 @@ export class GIMessage {
       previousHEAD,
       contractID,
       originatingContractID,
-      op: op[0]
+      op: op[0],
+      manifest
     }
     console.log('createV1_0', { op, head })
     const message = op[1]
@@ -156,6 +159,8 @@ export class GIMessage {
   signature (): Object { return this._signature }
 
   signedPayload (): string { return this._signedPayload }
+
+  manifest (): string { return this.head().manifest }
 
   description (): string {
     const type = this.opType()

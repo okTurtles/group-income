@@ -3,7 +3,7 @@ import type {
   NotificationTemplate
 } from './types.flow.js'
 
-import L from '~/frontend/views/utils/translations.js'
+import { L } from '@common/common.js'
 
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.
@@ -58,7 +58,7 @@ export default ({
       }),
       icon: 'coins',
       level: 'info',
-      linkTo: '/contributions/TODO-LINK-MODAL',
+      linkTo: '/contributions?modal=IncomeDetails',
       scope: 'user'
     }
   },

@@ -47,7 +47,7 @@ route.POST('/event', {
   }
 })
 
-route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
+route.GET('/eventsSince/{contractID}/{since}', {}, async function (request, h) {
   try {
     const { contractID, since } = request.params
     const stream = await sbp('backend/db/streamEntriesSince', contractID, since)
@@ -75,7 +75,24 @@ route.GET('/eventsBefore/{before}/{limit}', {}, async function (request, h) {
     if (!limit) return Boom.badRequest('missing limit')
     if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return Boom.badRequest('invalid limit')
 
-    const stream = await sbp('backend/db/streamEntriesBefore', before, limit)
+    const stream = await sbp('backend/db/streamEntriesBefore', before, parseInt(limit))
+    request.events.once('disconnect', stream.destroy.bind(stream))
+    return stream
+  } catch (err) {
+    return logger(err)
+  }
+})
+
+route.GET('/eventsBetween/{startHash}/{endHash}', {}, async function (request, h) {
+  try {
+    const { startHash, endHash } = request.params
+    const offset = parseInt(request.query.offset || '0')
+
+    if (!startHash) return Boom.badRequest('missing startHash')
+    if (!endHash) return Boom.badRequest('missing endHash')
+    if (isNaN(offset) || offset < 0) return Boom.badRequest('invalid offset')
+
+    const stream = await sbp('backend/db/streamEntriesBetween', startHash, endHash, offset)
     request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {

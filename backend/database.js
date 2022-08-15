@@ -84,6 +84,44 @@ export default (sbp('sbp/selectors/register', {
       }
     })
   },
+  'backend/db/streamEntriesBetween': async function (startHash: string, endHash: string, offset: number): Promise<*> {
+    let prefix = '['
+    let isMet = false
+    let currentHEAD = endHash
+    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
+    if (!entry) {
+      throw Boom.notFound(`entry ${currentHEAD} doesn't exist!`)
+    }
+    // NOTE: if this ever stops working you can also try Readable.from():
+    // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
+    return new Readable({
+      async read (): any {
+        try {
+          entry = await sbp('chelonia/db/getEntry', currentHEAD)
+          const json = `"${strToB64(entry.serialize())}"`
+          this.push(prefix + json)
+          prefix = ','
+
+          if (currentHEAD === startHash) {
+            isMet = true
+          } else if (isMet) {
+            offset--
+          }
+
+          currentHEAD = entry.message().previousHEAD
+          if (!currentHEAD || (isMet && !offset)) {
+            this.push(']')
+            this.push(null)
+          }
+        } catch (e) {
+          // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
+          console.error(`read(): ${e.message}:`, e)
+          this.push(']')
+          this.push(null)
+        }
+      }
+    })
+  },
   // =======================
   // wrapper methods to add / lookup names
   // =======================

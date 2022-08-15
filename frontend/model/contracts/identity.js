@@ -1,12 +1,18 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import Vue from 'vue'
-// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import '~/shared/domains/chelonia/chelonia.js'
-import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
-import { merge } from '~/frontend/utils/giLodash.js'
-// import L from '~/frontend/views/utils/translations.js'
+import { Vue, L } from '@common/common.js'
+import { merge } from './shared/giLodash.js'
+import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/model/contracts/misc/flowTyper.js'
+import {
+  allowedUsernameCharacters,
+  noConsecutiveHyphensOrUnderscores,
+  noLeadingOrTrailingHyphen,
+  noLeadingOrTrailingUnderscore,
+  noUppercase
+} from './shared/validators.js'
+
+import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
@@ -20,13 +26,34 @@ sbp('chelonia/defineContract', {
   },
   actions: {
     'gi.contracts/identity': {
-      validate: objectMaybeOf({
-        attributes: objectMaybeOf({
-          username: string,
-          email: string,
-          picture: string
-        })
-      }),
+      validate: (data, { state, meta }) => {
+        objectMaybeOf({
+          attributes: objectMaybeOf({
+            username: string,
+            email: string,
+            picture: string
+          })
+        })(data)
+        const { username } = data.attributes
+        if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
+          throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`)
+        }
+        if (!allowedUsernameCharacters(username)) {
+          throw new TypeError('A username cannot contain disallowed characters.')
+        }
+        if (!noConsecutiveHyphensOrUnderscores(username)) {
+          throw new TypeError('A username cannot contain two consecutive hyphens or underscores.')
+        }
+        if (!noLeadingOrTrailingHyphen(username)) {
+          throw new TypeError('A username cannot start or end with a hyphen.')
+        }
+        if (!noLeadingOrTrailingUnderscore(username)) {
+          throw new TypeError('A username cannot start or end with an underscore.')
+        }
+        if (!noUppercase(username)) {
+          throw new TypeError('A username cannot contain uppercase letters.')
+        }
+      },
       process ({ data }, { state }) {
         const initialState = merge({
           settings: {},
@@ -68,17 +95,21 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         Vue.set(state, 'loginState', data)
       },
-      async sideEffect () {
-        /* try {
-          sbp('okTurtles.eventQueue/queueEvent', , ['gi.actions/identity/updateLoginStateUponLogin'])
-        } catch (e) {
-          sbp('gi.notifications/emit', 'ERROR', {
-            message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
-              errName: e.name,
-              errMsg: e.message || '?'
+      sideEffect ({ contractID }) {
+        // it only makes sense to call updateLoginStateUponLogin for ourselves
+        if (contractID === sbp('state/vuex/getters').ourIdentityContractId) {
+          // makes sure that updateLoginStateUponLogin gets run after the entire identity
+          // state has been synced, this way we don't end up joining groups we've left, etc.
+          sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/updateLoginStateUponLogin'])
+            .catch((e) => {
+              sbp('gi.notifications/emit', 'ERROR', {
+                message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
+                  errName: e.name,
+                  errMsg: e.message || '?'
+                })
+              })
             })
-          })
-        } */
+        }
       }
     }
   }

@@ -1,12 +1,11 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { objectOf, literalOf, unionOf, number } from '~/frontend/utils/flowTyper.js'
-import { DAYS_MILLIS } from '~/frontend/utils/time.js'
-import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
+import { objectOf, literalOf, unionOf, number } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { DAYS_MILLIS } from '../time.js'
 import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.js'
-
 import {
+  PROPOSAL_RESULT,
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_GROUP_SETTING_CHANGE,
@@ -17,7 +16,7 @@ import {
   STATUS_FAILED
   // STATUS_EXPIRED,
   // STATUS_CANCELLED
-} from './constants.js'
+} from '../constants.js'
 
 export function archiveProposal (state: Object, proposalHash: string): void {
   // TODO: handle this better (archive the proposal or whatever)
@@ -48,6 +47,7 @@ export function oneVoteToPass (proposalHash: string): boolean {
   votes[String(Math.random())] = VOTE_FOR
   const newResult = rules[proposal.data.votingRule](state, proposal.data.proposalType, votes)
   console.debug(`oneVoteToPass currentResult(${currentResult}) newResult(${newResult})`)
+
   return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
 }
 
@@ -65,7 +65,7 @@ export const proposalDefaults = {
   rule: RULE_PERCENTAGE,
   expires_ms: 14 * DAYS_MILLIS,
   ruleSettings: ({
-    [RULE_PERCENTAGE]: { threshold: 0.75 },
+    [RULE_PERCENTAGE]: { threshold: 0.67 },
     [RULE_DISAGREEMENT]: { threshold: 1 }
   }: {|disagreement: {|threshold: number|}, percentage: {|threshold: number|}|})
 }
@@ -169,7 +169,10 @@ const proposals: Object = {
   [PROPOSAL_GENERIC]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data }) {
-      throw new Error('unimplemented!')
+      const proposal = state.proposals[data.proposalHash]
+      proposal.status = STATUS_PASSED
+
+      sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
     },
     [VOTE_AGAINST]: voteAgainst
   }

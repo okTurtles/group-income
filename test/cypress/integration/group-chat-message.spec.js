@@ -1,4 +1,4 @@
-import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/constants.js'
+import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 
 const groupName = 'Dreamers'
 const userId = Math.floor(Math.random() * 10000)
@@ -115,7 +115,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.giGetInvitationAnyone().then(url => {
       invitationLinkAnyone = url
     })
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     cy.getByDT('channelsList').within(() => {
       cy.get('ul').children().should('have.length', 1)
@@ -133,7 +133,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       bypassUI: true
     })
     me = user2
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     checkIfJoined(CHATROOM_GENERAL_NAME)
@@ -150,16 +150,16 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
   it('user1 sends greetings and edits', () => {
     switchUser(user1)
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     sendMessage('Hi')
 
-    editMessage(6, `Hi ${user2}. I am fine thanks.`)
+    editMessage(7, `Hi ${user2}. I am fine thanks.`)
   })
 
   it('user2 edits and deletes message', () => {
     switchUser(user2)
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     editMessage(5, 'Can we have a meeting this evening?')
 
@@ -168,7 +168,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
   it('user1 sees the edited message but he is not able to see the deleted message', () => {
     switchUser(user1)
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     cy.getByDT('conversationWapper').within(() => {
       cy.get('.c-message').should('have.length', 4)
@@ -192,7 +192,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
   it('user2 sees the emojis user1 created and adds his emoji', () => {
     switchUser(user2)
-    cy.getByDT('groupChatLink').click()
+    cy.giRedirectToGroupChat()
 
     cy.getByDT('conversationWapper').within(() => {
       cy.get('.c-message:nth-child(4) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)

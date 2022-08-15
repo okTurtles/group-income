@@ -3,6 +3,7 @@ message-base(
   v-bind='$props'
   @add-emoticon='addEmoticon($event)'
   @reply='reply'
+  @reply-message-clicked='scrollToReplyMessage'
   @message-edited='editMessage'
   @delete-message='deleteMessage'
 )
@@ -11,7 +12,7 @@ message-base(
 
 <script>
 import MessageBase from './MessageBase.vue'
-import { MESSAGE_VARIANTS } from '@model/contracts/constants.js'
+import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'Message',
@@ -55,6 +56,9 @@ export default ({
     },
     reply () {
       this.$emit('reply')
+    },
+    scrollToReplyMessage () {
+      this.$emit('scroll-to-replying-message')
     },
     moreOptions () {
       console.log('TODO MORE OPTIONS')

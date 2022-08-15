@@ -8,7 +8,12 @@
           TODO later - Design a cool skeleton loading
           - this should be done only after knowing exactly how server gets each conversation data
 
-    .c-body-conversation(ref='conversation' v-else='' data-test='conversationWapper')
+    .c-body-conversation(
+      v-else
+      ref='conversation'
+      data-test='conversationWapper'
+      @scroll='onChatScroll'
+    )
 
       infinite-loading(
         direction='top'
@@ -21,6 +26,7 @@
             :members='details.numberOfParticipants'
             :creator='summary.creator'
             :type='type'
+            :joined='summary.joined'
             :name='summary.title'
             :description='summary.description'
           )
@@ -29,26 +35,28 @@
             :members='details.numberOfParticipants'
             :creator='summary.creator'
             :type='type'
+            :joined='summary.joined'
             :name='summary.title'
             :description='summary.description'
           )
 
       template(v-for='(message, index) in messages')
         .c-divider(
-          v-if='changeDay(index) || isNew(index)'
-          :class='{"is-new": isNew(index)}'
+          v-if='changeDay(index) || isNew(message.id)'
+          :class='{"is-new": isNew(message.id)}'
           :key='`date-${index}`'
         )
-          span(v-if='changeDay(index)') {{proximityDate(message.datetime)}}
-          i18n.c-new(v-if='isNew(index)' :class='{"is-new-date": changeDay(index)}') New
+          i18n.c-new(v-if='isNew(message.id)' :class='{"is-new-date": changeDay(index)}') New
+          span(v-else-if='changeDay(index)') {{proximityDate(message.datetime)}}
 
         component(
           :is='messageType(message)'
+          :ref='message.id'
           :key='message.id'
           :text='message.text'
           :type='message.type'
           :notification='message.notification'
-          :replyingMessage='message.replyingMessage'
+          :replyingMessage='replyingMessage(message)'
           :from='message.from'
           :datetime='time(message.datetime)'
           :edited='!!message.updatedDate'
@@ -62,6 +70,7 @@
           :class='{removed: message.delete}'
           @retry='retryMessage(index)'
           @reply='replyMessage(message)'
+          @scroll-to-replying-message='scrollToMessage(message.replyingMessage.id)'
           @edit-message='(newMessage) => editMessage(message, newMessage)'
           @delete-message='deleteMessage(message)'
           @add-emoticon='addEmoticon(message, $event)'
@@ -70,24 +79,27 @@
   .c-footer
     send-area(
       v-if='summary.joined'
-      :title='summary.title'
-      @send='handleSendMessage'
-      @height-update='updateSendAreaHeight'
-      @start-typing='updateScroll'
       :loading='details.isLoading'
       :replying-message='ephemeral.replyingMessage'
+      :replying-message-id='ephemeral.replyingMessageId'
       :replying-to='ephemeral.replyingTo'
-      @stop-replying='ephemeral.replyingMessage = null'
+      :title='summary.title'
+      :scrolledUp='isScrolledUp'
+      @send='handleSendMessage'
+      @height-update='updateSendAreaHeight'
+      @jump-to-latest='updateScroll'
+      @stop-replying='stopReplying'
     )
     view-area(
       v-else
+      :joined='summary.joined'
       :title='summary.title'
     )
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import InfiniteLoading from 'vue-infinite-loading'
@@ -99,19 +111,18 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
-import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE } from '@model/contracts/constants.js'
-import { createMessage } from '@model/contracts/chatroom.js'
-import { proximityDate, MINS_MILLIS } from '@utils/time.js'
-import { cloneDeep } from '@utils/giLodash.js'
-import { CHATROOM_MESSAGE_ACTION } from '~/frontend/utils/events.js'
+import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_MESSAGE_ACTION } from '@model/contracts/shared/constants.js'
+import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
+import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
+import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 
 export default ({
   name: 'ChatMain',
   components: {
     Avatar,
-    Emoticons,
     ConversationGreetings,
+    Emoticons,
     InfiniteLoading,
     Loading,
     Message,
@@ -141,10 +152,13 @@ export default ({
       latestEvents: [],
       messages: [],
       ephemeral: {
-        refreshMessages: true,
-        infiniteLoading: null,
+        startedUnreadMessageId: null,
+        scrolledDistance: 0,
         bodyPaddingBottom: '',
+        infiniteLoading: null,
+        shouldRefreshMessages: true,
         replyingMessage: null,
+        replyingMessageId: null,
         replyingTo: null
       }
     }
@@ -172,26 +186,38 @@ export default ({
       'chatRoomUsers',
       'ourIdentityContractId',
       'currentIdentityState',
-      'isJoinedChatRoom'
+      'isJoinedChatRoom',
+      'setChatRoomScrollPosition',
+      'currentChatRoomScrollPosition',
+      'currentChatRoomUnreadSince',
+      'currentGroupNotifications',
+      'currentChatRoomUnreadMentions'
     ]),
     bodyStyles () {
+      const defaultHeightInRem = 14
+      let heightDiscountInRem = 0
+      if (!this.summary.joined) {
+        heightDiscountInRem += 4
+      }
       // Not sure what `bodyPaddingBottom` means, I delete it now
       // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
       const phoneStyles = {}
-      const unjoinedStyles =
-        this.summary.joined
-          ? {}
-          : { height: !this.config.isPhone ? 'calc(var(--vh, 1vh) * 100 - 18rem)' : 'calc(var(--vh, 1vh) * 100 - 16rem)' }
-      return { ...phoneStyles, ...unjoinedStyles }
-    },
-    startedUnreadIndex () {
-      return this.messages.findIndex(message => message.unread === true)
+      const responsiveStyles = {
+        height: `calc(var(--vh, 1vh) * 100 - ${defaultHeightInRem + heightDiscountInRem}rem)`
+      }
+      return { ...phoneStyles, ...responsiveStyles }
     },
     currentUserAttr () {
       return {
         ...this.currentIdentityState.attributes,
         id: this.ourIdentityContractId
       }
+    },
+    isScrolledUp () {
+      if (!this.ephemeral.scrolledDistance) {
+        return false
+      }
+      return this.ephemeral.scrolledDistance > 500
     }
   },
   methods: {
@@ -220,6 +246,9 @@ export default ({
         return this.isCurrentUser(message.from) ? MESSAGE_VARIANTS.SENT : MESSAGE_VARIANTS.RECEIVED
       }
     },
+    replyingMessage (message) {
+      return message.replyingMessage ? message.replyingMessage.text : ''
+    },
     time (strTime) {
       return new Date(strTime)
     },
@@ -227,7 +256,7 @@ export default ({
       if (from === MESSAGE_TYPES.NOTIFICATION || from === MESSAGE_TYPES.INTERACTIVE) {
         return this.currentUserAttr.picture
       }
-      return this.details.participants[from].picture
+      return this.details.participants[from]?.picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
@@ -241,7 +270,15 @@ export default ({
     updateSendAreaHeight (height) {
       this.ephemeral.bodyPaddingBottom = height
     },
-    handleSendMessage (message, replyingMessage = null) {
+    stopReplying () {
+      this.ephemeral.replyingMessage = null
+      this.ephemeral.replyingMessageId = null
+      this.ephemeral.replyingTo = null
+    },
+    handleSendMessage (message) {
+      const replyingMessage = this.ephemeral.replyingMessageId
+        ? { id: this.ephemeral.replyingMessageId, text: this.ephemeral.replyingMessage }
+        : null
       // Consider only simple TEXT now
       // TODO: implement other types of messages later
       const data = { type: MESSAGE_TYPES.TEXT, text: message }
@@ -259,18 +296,68 @@ export default ({
               // when we don't get event after a certain period
               pending: true
             })
+            this.stopReplying()
+            this.updateScroll()
           }
         }
       })
-      // need to scroll to the bottom
-      this.updateScroll()
     },
-    updateScroll () {
+    async scrollToMessage (messageId, effect = true) {
+      if (!messageId || !this.messages.length) {
+        return
+      }
+
+      const scrollAndHighlight = (index) => {
+        const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
+        const eleTarget = document.querySelectorAll('.c-body-conversation > .c-message')[Math.max(0, index - 1)]
+
+        if (!eleTarget) { return }
+
+        if (effect) {
+          eleTarget.scrollIntoView({ behavior: 'smooth' })
+          eleMessage.classList.add('c-focused')
+          setTimeout(() => {
+            eleMessage.classList.remove('c-focused')
+          }, 1500)
+        } else {
+          eleTarget.scrollIntoView()
+        }
+      }
+
+      const msgIndex = findMessageIdx(messageId, this.messages)
+      if (msgIndex >= 0) {
+        scrollAndHighlight(msgIndex)
+      } else {
+        const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+        const events = await sbp('chelonia/out/eventsBetween', messageId, this.messages[0].id, limit / 2)
+        if (events && events.length) {
+          await this.rerenderEvents(events, false)
+
+          const msgIndex = findMessageIdx(messageId, this.messages)
+          if (msgIndex >= 0) {
+            scrollAndHighlight(msgIndex)
+          } else {
+            // this is when the target message is deleted after reply message
+            // should let user know the target message is deleted
+            console.debug('Message is removed')
+          }
+        }
+      }
+    },
+    updateScroll (scrollTargetMessage = null) {
       if (this.summary.title) {
         // force conversation viewport to be at the bottom (most recent messages)
         setTimeout(() => {
-          this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
-        }, 500)
+          if (scrollTargetMessage) {
+            this.scrollToMessage(scrollTargetMessage, false)
+          } else if (this.$refs.conversation) {
+            this.$refs.conversation.scroll({
+              left: 0,
+              top: this.$refs.conversation.scrollHeight,
+              behavior: 'smooth'
+            })
+          }
+        }, 100)
       }
     },
     retryMessage (index) {
@@ -279,12 +366,17 @@ export default ({
     },
     replyMessage (message) {
       this.ephemeral.replyingMessage = message.text
+      this.ephemeral.replyingMessageId = message.id
       this.ephemeral.replyingTo = this.who(message)
     },
     editMessage (message, newMessage) {
       sbp('gi.actions/chatroom/editMessage', {
         contractID: this.currentChatRoomId,
-        data: { id: message.id, text: newMessage },
+        data: {
+          id: message.id,
+          createdDate: message.datetime,
+          text: newMessage
+        },
         hooks: {
           prepublish: (msg) => {
             message.text = newMessage
@@ -312,8 +404,8 @@ export default ({
         return prev.getDay() !== current.getDay()
       } else return false
     },
-    isNew (index) {
-      return this.startedUnreadIndex === index
+    isNew (msgId) {
+      return this.ephemeral.startedUnreadMessageId === msgId
     },
     addEmoticon (message, emoticon) {
       sbp('gi.actions/chatroom/makeEmotion', {
@@ -335,20 +427,60 @@ export default ({
         saveMessage: true
       }
     },
-    async getLatestEvents (refresh = false) {
+    async renderMoreMessages (refresh = false) {
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-      const fromLatest = refresh || !this.latestEvents.length
-      const before = fromLatest
-        ? await sbp('chelonia/out/latestHash', this.currentChatRoomId)
+      /***
+       * if the removed message was the starting position of unread messages
+       * we can load message of that hash(messageId) but not scroll
+       * because it doesn't exist in this.messages
+       * So in this case, we will load messages until the first unread mention
+       * and scroll to that message
+       */
+      const curChatRoomId = this.currentChatRoomId
+      let unreadPosition = null
+      if (this.currentChatRoomUnreadSince) {
+        if (!this.currentChatRoomUnreadSince.deletedDate) {
+          unreadPosition = this.currentChatRoomUnreadSince.messageId
+        } else if (this.currentChatRoomUnreadMentions.length) {
+          unreadPosition = this.currentChatRoomUnreadMentions[0].messageId
+        }
+      }
+      const messageIdToScroll = this.currentChatRoomScrollPosition || unreadPosition
+      const latestHash = await sbp('chelonia/out/latestHash', this.currentChatRoomId)
+      const before = refresh || !this.latestEvents.length
+        ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
-
-      const newEvents = await sbp('chelonia/out/eventsBefore', before, limit)
-
-      if (fromLatest) {
-        this.latestEvents = newEvents
+      let events = null
+      if (refresh && messageIdToScroll) {
+        events = await sbp('chelonia/out/eventsBetween', messageIdToScroll, latestHash, limit / 2)
       } else {
-        newEvents.pop() // remove duplication
-        this.latestEvents.unshift(...newEvents)
+        events = await sbp('chelonia/out/eventsBefore', before, limit)
+      }
+      if (curChatRoomId !== this.currentChatRoomId) {
+        // this.currentChatRoomId is a vuex getter and it could be changed
+        // while we get events from backend. This happens when users switch chatrooms very quickly
+        // In this case, we should avoid the previous events and only necessary to render the last events
+        return
+      }
+      await this.rerenderEvents(events, refresh)
+
+      if (refresh) {
+        this.setStartNewMessageIndex()
+        const scrollTargetMessage = refresh && messageIdToScroll
+          ? messageIdToScroll
+          : null
+        this.updateScroll(scrollTargetMessage)
+        return false
+      }
+
+      return events.length < limit
+    },
+    async rerenderEvents (events, refresh) {
+      if (refresh) {
+        this.latestEvents = events
+      } else {
+        events.pop() // remove duplication
+        this.latestEvents.unshift(...events)
       }
 
       const state = this.getSimulatedState(true)
@@ -357,14 +489,22 @@ export default ({
       }
       this.messages = state.messages
       this.$forceUpdate()
-
-      return newEvents.length < limit
     },
     setInitMessages () {
-      this.refreshMessages = true
+      this.shouldRefreshMessages = true
       this.messages = []
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
+      }
+    },
+    setStartNewMessageIndex () {
+      this.ephemeral.startedUnreadMessageId = null
+      if (this.currentChatRoomUnreadSince) {
+        const startUnreadMessage = this.messages
+          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
+        if (startUnreadMessage) {
+          this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
+        }
       }
     },
     setMessageEventListener ({ force = false, from, to }) {
@@ -377,13 +517,55 @@ export default ({
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
+    updateUnreadMessageId ({ messageId, createdDate }) {
+      if (this.isJoinedChatRoom(this.currentChatRoomId)) {
+        sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
+          chatRoomId: this.currentChatRoomId,
+          messageId,
+          createdDate
+        })
+      }
+    },
     listenChatRoomActions ({ hash }) {
-      sbp('okTurtles.events/once', hash, async (contractID, message) => {
-        const state = this.getSimulatedState(false)
-        await sbp('chelonia/private/in/processMessage', message, state)
-        this.latestEvents.push(message.serialize())
+      const isAddedNewMessage = (message: GIMessage): boolean => {
+        const { action, meta } = message.decryptedValue()
+        const rootState = sbp('state/vuex/state')
+        const me = rootState.loggedIn.username
 
-        this.$forceUpdate()
+        if (/.*(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
+          // we add new pending message in 'handleSendMessage' function so we skip when I added a new message
+          return { added: true, self: me === meta.username }
+        }
+
+        return { added: false, self: false }
+      }
+
+      sbp('okTurtles.events/once', hash, async (contractID, message) => {
+        if (contractID === this.currentChatRoomId) {
+          const state = this.getSimulatedState(false)
+          await sbp('chelonia/private/in/processMessage', message, state)
+          this.latestEvents.push(message.serialize())
+
+          this.$forceUpdate()
+
+          // TODO: Need to scroll to the bottom only when new message is ADDED by ANOTHER
+          if (this.ephemeral.scrolledDistance < 50) {
+            const { added, self } = isAddedNewMessage(message)
+            if (added) {
+              const isScrollable = this.$refs.conversation &&
+                this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
+              if (!self && isScrollable) {
+                this.updateScroll()
+              } else if (!isScrollable) {
+                const msg = this.messages[this.messages.length - 1]
+                this.updateUnreadMessageId({
+                  messageId: msg.id,
+                  createdDate: msg.datetime
+                })
+              }
+            }
+          }
+        }
       })
     },
     resizeEventHandler () {
@@ -392,19 +574,87 @@ export default ({
     },
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
-      this.getLatestEvents(this.refreshMessages).then(completed => {
-        completed ? $state.complete() : $state.loaded()
-        this.refreshMessages = false
+      this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
+        if (completed) {
+          $state.complete()
+          if (!this.$refs.conversation ||
+            this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
+            const msg = this.messages[this.messages.length - 1]
+            this.updateUnreadMessageId({
+              messageId: msg.id,
+              createdDate: msg.datetime
+            })
+          }
+        } else {
+          $state.loaded()
+        }
+        this.shouldRefreshMessages = false
       })
-    }
+    },
+    onChatScroll: debounce(function () {
+      if (!this.$refs.conversation) {
+        return
+      }
+      // Because of infinite-scroll this is not calculated in scrollheight
+      // 117 is the height of `conversation-greetings` component
+      const topOffset = 117
+      const curScrollTop = this.$refs.conversation.scrollTop
+      const curScrollBottom = curScrollTop + this.$refs.conversation.clientHeight
+      if (!this.$refs.conversation) {
+        this.ephemeral.scrolledDistance = 0
+      } else {
+        const scrollTopMax = this.$refs.conversation.scrollHeight - this.$refs.conversation.clientHeight
+        this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
+      }
+
+      if (!this.summary.joined) {
+        return
+      }
+
+      for (let i = this.messages.length - 1; i >= 0; i--) {
+        const msg = this.messages[i]
+        const offsetTop = this.$refs[msg.id][0].$el.offsetTop
+        const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
+        if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
+          const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
+          const latestMessageCreatedAt = this.currentChatRoomUnreadSince?.createdDate
+          if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
+            this.updateUnreadMessageId({
+              messageId: msg.id,
+              createdDate: msg.datetime
+            })
+          }
+          break
+        }
+      }
+
+      if (this.ephemeral.scrolledDistance > 500) {
+        // Save the current scroll position per each chatroom
+        for (let i = 0; i < this.messages.length - 1; i++) {
+          const msg = this.messages[i]
+          const offsetTop = this.$refs[msg.id][0].$el.offsetTop
+          const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
+          if (offsetTop - parentOffsetTop + topOffset >= curScrollTop) {
+            sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+              chatRoomId: this.currentChatRoomId,
+              messageId: this.messages[i + 1].id // Leave one(+1) message at the front by default for better seeing
+            })
+            break
+          }
+        }
+      } else if (this.currentChatRoomScrollPosition) {
+        sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
+          chatRoomId: this.currentChatRoomId,
+          messageId: null
+        })
+      }
+    }, 500)
   },
   watch: {
     currentChatRoomId (to, from) {
-      const force = sbp('okTurtles.data/get', 'JOINING_CHATROOM')
+      const force = !!sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')
       this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
-      // need to scroll to the saved position
-      this.$nextTick(() => this.updateScroll())
     },
     'summary.joined' (to, from) {
       if (to) {
@@ -452,8 +702,9 @@ export default ({
 }
 
 .c-body-conversation {
+  margin-right: 1rem;
   padding: 2rem 0;
-  overflow-y: scroll;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 

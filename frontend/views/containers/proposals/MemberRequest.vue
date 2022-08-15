@@ -73,17 +73,15 @@
 import { mapGetters } from 'vuex'
 import SvgConversation from '@svgs/conversation.svg'
 import CalloutCard from '@components/CalloutCard.vue'
-import ProposalBox from '@containers/proposals/ProposalBox.vue'
 import PageSection from '@components/PageSection.vue'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
-import { humanDate } from '@utils/time.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 
 export default {
   name: 'MemberRequest',
   components: {
-    ProposalBox,
     CalloutCard,
     SvgConversation,
     PageSection,

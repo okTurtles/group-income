@@ -1,4 +1,4 @@
-import Vue from 'vue'
+import { Vue } from '@common/common.js'
 // Register a global custom directive called `v-focus`
 Vue.directive('focus', {
   // When the bound element is inserted into the DOM...

@@ -32,7 +32,12 @@ export default ({
     ...mapGetters(['currentChatRoomId'])
   },
   props: {
-    title: String
+    title: {
+      type: String
+    },
+    joined: {
+      type: Boolean
+    }
   },
   methods: {
     join: async function () {

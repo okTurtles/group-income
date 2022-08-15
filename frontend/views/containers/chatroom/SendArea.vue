@@ -3,13 +3,37 @@
   :class='{"is-editing": isEditing}'
   data-test='messageInputWrapper'
 )
-  .c-replying(v-if='replyingMessage')
-    i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
-    button.c-clear.is-icon-small(
-      :aria-label='L("Stop replying")'
-      @click='stopReplying'
-    )
-      i.icon-times
+  .c-mentions(
+    v-if='ephemeral.mention.options.length'
+    ref='mentionWrapper'
+  )
+    template(v-for='(user, index) in ephemeral.mention.options')
+      .c-mention-user(
+        ref='mention'
+        :class='{"is-selected": index === ephemeral.mention.index}'
+        @click.stop='onClickMention(index)'
+      )
+        avatar(:src='user.picture' size='xs')
+        .c-username {{user.username}}
+        .c-display-name(
+          v-if='user.displayName !== user.username'
+        ) ({{user.displayName}})
+
+  .c-jump-to-latest(
+    v-if='scrolledUp && !replyingMessage'
+    @click='$emit("jump-to-latest")'
+  )
+    i18n Jump to latest message
+    button.is-icon-small
+      i.icon-arrow-down
+  .c-replying-wrapper
+    .c-replying(v-if='replyingMessage')
+      i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
+      button.c-clear.is-icon-small(
+        :aria-label='L("Stop replying")'
+        @click='stopReplying'
+      )
+        i.icon-times
 
   textarea.textarea.c-send-textarea(
     ref='textarea'
@@ -18,8 +42,10 @@
     :style='textareaStyles'
     @focus='textAreaFocus'
     @blur='textAreaBlur'
-    @keydown.enter.exact.prevent='sendMessage'
+    @keydown.enter.exact.prevent='handleKeyDownEnter'
+    @keydown.tab.exact='handleKeyDownTab'
     @keydown.ctrl='isNextLine'
+    @keydown='handleKeydown'
     @keyup='handleKeyup'
     v-bind='$attrs'
   )
@@ -36,6 +62,18 @@
         @click='sendMessage'
       ) Save changes
 
+    div(v-if='isEditing')
+      .addons.addons-editing
+        tooltip(
+          v-if='ephemeral.showButtons'
+          direction='top'
+          :text='L("Add reaction")'
+        )
+          button.is-icon(
+            :aria-label='L("Add reaction")'
+            @click='openEmoticon'
+          )
+            i.icon-smile-beam
     div(v-else)
       .addons
         tooltip(
@@ -48,7 +86,6 @@
             @click='createPool'
           )
             i.icon-poll
-
         tooltip(
           v-if='ephemeral.showButtons'
           direction='top'
@@ -75,24 +112,49 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
+import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
+import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
+
+const caretKeyCodes = {
+  ArrowLeft: 37,
+  ArrowUp: 38,
+  ArrowRight: 39,
+  ArrowDown: 40,
+  Esc: 27,
+  End: 35,
+  Home: 36
+}
+const caretKeyCodeValues = Object.fromEntries(Object.values(caretKeyCodes).map(v => [v, true]))
+const functionalKeyCodes = {
+  Shift: 16,
+  Ctrl: 17,
+  Alt: 18,
+  CapsLock: 20,
+  Enter: 13
+}
+const functionalKeyCodeValues = Object.fromEntries(Object.values(functionalKeyCodes).map(v => [v, true]))
 
 export default ({
   name: 'SendArea',
   mixins: [emoticonsMixins],
   components: {
+    Avatar,
     Tooltip
   },
   props: {
     title: String,
     defaultText: String,
     searchPlaceholder: String,
+    scrolledUp: Boolean,
     loading: {
       type: Boolean,
       default: false
     },
     replyingMessage: String,
+    replyingMessageId: String,
     replyingTo: String,
     isEditing: {
       type: Boolean,
@@ -106,7 +168,12 @@ export default ({
         maskHeight: '',
         textWithLines: '',
         showButtons: true,
-        isPhone: false
+        isPhone: false,
+        mention: {
+          position: -1,
+          options: [],
+          index: -1
+        }
       }
     }
   },
@@ -128,8 +195,25 @@ export default ({
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
     if (!this.ephemeral.isPhone) this.$refs.textarea.focus()
+
+    window.addEventListener('click', this.onWindowMouseClicked)
+  },
+  beforeDestroy () {
+    window.removeEventListener('click', this.onWindowMouseClicked)
   },
   computed: {
+    ...mapGetters(['chatRoomUsers', 'globalProfile']),
+    users () {
+      return Object.keys(this.chatRoomUsers)
+        .map(username => {
+          const { displayName, picture } = this.globalProfile(username)
+          return {
+            username,
+            displayName: displayName || username,
+            picture
+          }
+        })
+    },
     textareaStyles () {
       return {
         paddingRight: this.ephemeral.actionsWidth + 'px',
@@ -150,7 +234,6 @@ export default ({
   },
   methods: {
     textAreaFocus () {
-      this.$emit('start-typing')
       if (this.ephemeral.isPhone) this.ephemeral.showButtons = false
     },
     textAreaBlur (event) {
@@ -170,9 +253,79 @@ export default ({
         return this.createNewLine()
       }
     },
+    updateMentionKeyword () {
+      let value = this.$refs.textarea.value.slice(0, this.$refs.textarea.selectionStart)
+      const lastIndex = value.lastIndexOf('@')
+      const regExWordStart = /(\s)/g // RegEx Metacharacter \s
+      if (lastIndex === -1 || (lastIndex > 0 && !regExWordStart.test(value[lastIndex - 1]))) {
+        return this.endMention()
+      }
+      value = value.slice(lastIndex + 1)
+      if (regExWordStart.test(value)) {
+        return this.endMention()
+      }
+      this.startMention(value, lastIndex)
+    },
+    handleKeydown (e) {
+      if (caretKeyCodeValues[e.keyCode]) {
+        const nChoices = this.ephemeral.mention.options.length
+        if (nChoices &&
+          (e.keyCode === caretKeyCodes.ArrowUp || e.keyCode === caretKeyCodes.ArrowDown)) {
+          const offset = e.keyCode === caretKeyCodes.ArrowUp ? -1 : 1
+          const newIndex = (this.ephemeral.mention.index + offset + nChoices) % nChoices
+          this.ephemeral.mention.index = newIndex
+
+          const { clientHeight, scrollHeight } = this.$refs.mentionWrapper
+          if (scrollHeight !== clientHeight) {
+            const offsetTop = this.$refs.mention[newIndex].offsetTop + this.$refs.mention[newIndex].clientHeight
+
+            this.$refs.mentionWrapper.scrollTo({
+              left: 0, top: Math.max(0, offsetTop - clientHeight)
+            })
+          }
+
+          e.preventDefault()
+        } else {
+          this.endMention()
+        }
+      }
+    },
+    onClickMention (index) {
+      this.$refs.textarea.focus()
+      this.addSelectedMention(index)
+    },
+    handleKeyDownEnter () {
+      if (this.ephemeral.mention.options.length) {
+        this.addSelectedMention(this.ephemeral.mention.index)
+      } else {
+        this.sendMessage()
+      }
+    },
+    handleKeyDownTab (e) {
+      if (this.ephemeral.mention.options.length) {
+        this.addSelectedMention(this.ephemeral.mention.index)
+        e.preventDefault()
+      }
+    },
     handleKeyup (e) {
       if (e.keyCode === 13) e.preventDefault()
       else this.updateTextArea()
+
+      if (!caretKeyCodeValues[e.keyCode] && !functionalKeyCodeValues[e.keyCode]) {
+        this.updateMentionKeyword()
+      }
+    },
+    addSelectedMention (index) {
+      const curValue = this.$refs.textarea.value
+      const curPosition = this.$refs.textarea.selectionStart
+
+      const mention = makeMentionFromUsername(this.ephemeral.mention.options[index].username).me
+      const value = curValue.slice(0, this.ephemeral.mention.position) +
+         mention + ' ' + curValue.slice(curPosition)
+      this.$refs.textarea.value = value
+      const selectionStart = this.ephemeral.mention.position + mention.length + 1
+      this.$refs.textarea.setSelectionRange(selectionStart, selectionStart)
+      this.endMention()
     },
     updateTextWithLines () {
       const newValue = this.$refs.textarea.value
@@ -206,7 +359,6 @@ export default ({
       this.updateTextArea()
     },
     stopReplying () {
-      this.ephemeral.replyingMessage = null
       this.$emit('stop-replying')
     },
     sendMessage () {
@@ -214,9 +366,10 @@ export default ({
         return false
       }
 
-      this.$emit('send', this.$refs.textarea.value, this.replyingMessage) // TODO remove first / last empty lines
+      this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
+      this.endMention()
     },
     createPool () {
       console.log('TODO')
@@ -225,6 +378,31 @@ export default ({
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
       this.closeEmoticon()
       this.updateTextWithLines()
+    },
+    startMention (keyword, position) {
+      const all = makeMentionFromUsername('').all.slice(1)
+      this.ephemeral.mention.options = this.users.concat([{
+        // TODO: use group picture here or broadcast icon
+        username: all, displayName: all, picture: '/assets/images/horn.png'
+      }]).filter(user =>
+        user.username.toUpperCase().includes(keyword.toUpperCase()) ||
+        user.displayName.toUpperCase().includes(keyword.toUpperCase()))
+      this.ephemeral.mention.position = position
+      this.ephemeral.mention.index = 0
+    },
+    endMention () {
+      this.ephemeral.mention.position = -1
+      this.ephemeral.mention.index = -1
+      this.ephemeral.mention.options = []
+    },
+    onWindowMouseClicked (e) {
+      if (!this.$refs.mentionWrapper) {
+        return
+      }
+      const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-mentions')
+      if (!element) {
+        this.endMention()
+      }
     }
   }
 }: Object)
@@ -310,6 +488,10 @@ $initialHeight: 43px;
   }
 }
 
+.inputgroup.is-editing .c-send-mask {
+  top: 0;
+}
+
 .inputgroup .addons button.is-icon:focus {
   box-shadow: none;
   border: none;
@@ -317,6 +499,10 @@ $initialHeight: 43px;
 
 .inputgroup .addons button.is-icon:first-child:last-child {
   width: 2rem;
+}
+
+.inputgroup .addons.addons-editing {
+  top: -2.7rem;
 }
 
 .icon-smile-beam::before {
@@ -330,9 +516,18 @@ $initialHeight: 43px;
   box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 }
 
+.c-replying-wrapper {
+  display: table;
+  table-layout: fixed;
+  width: 100%;
+  position: absolute;
+  top: -1rem;
+}
+
 .c-replying {
+  display: table-cell;
   background-color: $general_2;
-  padding: 0.5rem 2rem 0.7rem 0.5rem;
+  padding: 0.4rem 2rem 0.5rem 0.5rem;
   border-radius: 0.3rem 0.3rem 0 0;
   margin-bottom: -0.2rem;
   white-space: nowrap;
@@ -343,10 +538,60 @@ $initialHeight: 43px;
   color: $text_1;
 }
 
+.c-jump-to-latest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $general_2;
+  padding: 0.2rem;
+  border-radius: 0.3rem 0.3rem 0 0;
+  font-size: $size_5;
+  color: $text_1;
+  text-align: center;
+  cursor: pointer;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1rem;
+}
+
+.c-mentions {
+  background-color: $general_2;
+  border: 1px solid var(--general_0);
+  border-radius: 0.3rem 0.3rem 0 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 12rem;
+}
+
+.c-mentions .c-mention-user {
+  display: flex;
+  align-items: center;
+  padding: 0.2rem;
+  cursor: pointer;
+}
+
+.c-mentions .c-mention-user.is-selected {
+  background-color: $primary_2;
+}
+
+.c-mentions .c-mention-user .c-username {
+  margin-left: 0.3rem;
+}
+
+.c-mentions .c-mention-user .c-display-name {
+  margin-left: 0.3rem;
+  color: $text_1;
+}
+
 .c-clear {
   position: absolute;
   right: 0.2rem;
-  top: 0.4rem;
+  top: 0.2rem;
 }
 
 .c-send-button {

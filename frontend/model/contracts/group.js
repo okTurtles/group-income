@@ -1,62 +1,28 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import Vue from 'vue'
-// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import '~/shared/domains/chelonia/chelonia.js'
-import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
-// TODO: use protocol versioning to load these (and other) files
-//       https://github.com/okTurtles/group-income/issues/603
-import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './voting/rules.js'
-import proposals, { proposalType, proposalSettingsType, archiveProposal } from './voting/proposals.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/constants.js'
-import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
-import * as Errors from '../errors.js'
-import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from '~/frontend/utils/time.js'
-import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
-import { unadjustedDistribution, adjustedDistribution } from './distribution/distribution.js'
-import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
-import L from '~/frontend/views/utils/translations.js'
-import { chatRoomAttributesType } from './chatroom.js'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS } from './constants.js'
-import { ChelErrorDBBadPreviousHEAD } from '~/shared/domains/chelonia/errors.js'
+import { Vue, Errors, L } from '@common/common.js'
+import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './shared/voting/rules.js'
+import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
+import {
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED,
+  INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
+} from './shared/constants.js'
+import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
+import { merge, deepEqualJSONType, omit } from './shared/giLodash.js'
+import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
+import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
+import currencies, { saferFloat } from './shared/currencies.js'
+import { inviteType, chatRoomAttributesType } from './shared/types.js'
+import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 
-export const inviteType: any = objectOf({
-  inviteSecret: string,
-  quantity: number,
-  creator: string,
-  invitee: optional(string),
-  status: string,
-  responses: mapOf(string, string),
-  expires: number
-})
-
-export function createInvite (
-  {
-    quantity = 1,
-    creator,
-    expires,
-    invitee
-  }: { quantity: number, creator: string, expires?: number, invitee?: string }
-): {|
-  creator: string,
-  expires: number,
-  inviteSecret: string,
-  invitee: void | string,
-  quantity: number,
-  responses: {...},
-  status: string,
-|} {
-  return {
-    inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
-    quantity,
-    creator,
-    invitee,
-    status: INVITE_STATUS.VALID,
-    responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: Date.now() + DAYS_MILLIS * (expires || INVITE_EXPIRES_IN_DAYS.INITIAL)
+function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
+  let value = obj[key]
+  if (!value) {
+    Vue.set(obj, key, initialValue)
+    value = obj[key]
   }
+  return value
 }
 
 function initGroupProfile (contractID: string, joinedDate: string) {
@@ -140,13 +106,18 @@ function updateAdjustedDistribution ({ period, getters }) {
       distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize }),
       payments: getters.paymentsForPeriod(period),
       dueOn: getters.dueDateForPeriod(period)
+    }).filter(todo => {
+      // only return todos for active members
+      return getters.groupProfile(todo.to).status === PROFILE_STATUS.ACTIVE
     })
   }
 }
 
-function memberLeaves (state, username, dateLeft) {
+function memberLeaves ({ username, dateLeft }, { meta, state, getters }) {
   state.profiles[username].status = PROFILE_STATUS.REMOVED
   state.profiles[username].departedDate = dateLeft
+  // remove any todos for this member from the adjusted distribution
+  updateCurrentDistribution({ meta, state, getters })
 }
 
 sbp('chelonia/defineContract', {
@@ -302,9 +273,13 @@ sbp('chelonia/defineContract', {
       const pendingMembers = {}
       for (const inviteId in invites) {
         const invite = invites[inviteId]
-        if (invite.status === INVITE_STATUS.VALID && invite.creator !== INVITE_INITIAL_CREATOR) {
+        if (
+          invite.status === INVITE_STATUS.VALID &&
+          invite.creator !== INVITE_INITIAL_CREATOR
+        ) {
           pendingMembers[invites[inviteId].invitee] = {
-            invitedBy: invites[inviteId].creator
+            invitedBy: invites[inviteId].creator,
+            expires: invite.expires
           }
         }
       }
@@ -444,6 +419,7 @@ sbp('chelonia/defineContract', {
           settings: {
             groupCreator: meta.username,
             distributionPeriodLength: 30 * DAYS_MILLIS,
+            inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
             inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
           },
           profiles: {
@@ -600,6 +576,7 @@ sbp('chelonia/defineContract', {
         if (result === VOTE_FOR || result === VOTE_AGAINST) {
           // handles proposal pass or fail, will update proposal.status accordingly
           proposals[proposal.data.proposalType][result](state, message)
+          Vue.set(proposal, 'dateClosed', meta.createdDate)
         }
       }
     },
@@ -663,8 +640,11 @@ sbp('chelonia/defineContract', {
           }
         }
       },
-      process ({ data, meta }, { state }) {
-        memberLeaves(state, data.member, meta.createdDate)
+      process ({ data, meta }, { state, getters }) {
+        memberLeaves(
+          { username: data.member, dateLeft: meta.createdDate },
+          { meta, state, getters }
+        )
       },
       sideEffect ({ data, meta, contractID }, { state, getters }) {
         const rootState = sbp('state/vuex/state')
@@ -693,7 +673,7 @@ sbp('chelonia/defineContract', {
           // we were getting the same latestHash upon re-logging in for test "user2 rejoins groupA".
           // We add it to the same queue as '/remove' above gets run on so that it is run after
           // contractID is removed. See also comments in 'gi.actions/identity/login'.
-          sbp('okTurtles.eventQueue/queueEvent', contractID, ['gi.actions/identity/saveOurLoginState'])
+          sbp('chelonia/queueInvocation', contractID, ['gi.actions/identity/saveOurLoginState'])
             .then(function () {
               const router = sbp('controller/router')
               const switchFrom = router.currentRoute.path
@@ -718,8 +698,11 @@ sbp('chelonia/defineContract', {
       validate: objectMaybeOf({
         reason: string
       }),
-      process ({ data, meta, contractID }, { state }) {
-        memberLeaves(state, meta.username, meta.createdDate)
+      process ({ data, meta, contractID }, { state, getters }) {
+        memberLeaves(
+          { username: meta.username, dateLeft: meta.createdDate },
+          { meta, state, getters }
+        )
         sbp('gi.contracts/group/pushSideEffect', contractID,
           ['gi.contracts/group/removeMember/sideEffect', {
             meta,
@@ -909,7 +892,7 @@ sbp('chelonia/defineContract', {
         }
       },
       process ({ data, meta }, { state }) {
-        Vue.delete(state.chatRooms[data.chatRoomID])
+        Vue.delete(state.chatRooms, data.chatRoomID)
       }
     },
     'gi.contracts/group/leaveChatRoom': {
@@ -948,9 +931,9 @@ sbp('chelonia/defineContract', {
           if (!sbp('okTurtles.data/get', 'JOINING_GROUP') || sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
             // while users are joining chatroom, they don't need to leave chatrooms
             // this is similar to setting 'JOINING_GROUP' before joining group
-            sbp('okTurtles.data/set', 'JOINING_CHATROOM', true)
+            sbp('okTurtles.data/set', 'JOINING_CHATROOM_ID', data.chatRoomID)
             await sbp('chelonia/contract/sync', data.chatRoomID)
-            sbp('okTurtles.data/set', 'JOINING_CHATROOM', false)
+            sbp('okTurtles.data/set', 'JOINING_CHATROOM_ID', undefined)
             sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
           }
         }
@@ -978,8 +961,7 @@ sbp('chelonia/defineContract', {
       'gi.contracts/group/malformedMutation': {
         validate: objectOf({ errorType: string, sideEffect: optional(boolean) }),
         process ({ data }) {
-          const ErrorsTypes = { ChelErrorDBBadPreviousHEAD, ...Errors }
-          const ErrorType = ErrorsTypes[data.errorType]
+          const ErrorType = Errors[data.errorType]
           if (data.sideEffect) return
           if (ErrorType) {
             throw new ErrorType('malformedMutation!')

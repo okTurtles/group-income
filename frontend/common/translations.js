@@ -1,10 +1,11 @@
 'use strict'
 
+// since this file is loaded by common.js, we avoid circular imports and directly import
 import sbp from '@sbp/sbp'
-import { defaultConfig as defaultDompurifyConfig } from '~/frontend/views/utils/vSafeHtml.js'
+import { defaultConfig as defaultDompurifyConfig } from './vSafeHtml.js'
 import dompurify from 'dompurify'
 import Vue from 'vue'
-import template from '~/frontend/utils/stringTemplate.js'
+import template from './stringTemplate.js'
 
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags
@@ -59,7 +60,7 @@ sbp('sbp/selectors/register', {
       return
     }
     try {
-      currentTranslationTable = await sbp('backend/translations/get', language)
+      currentTranslationTable = (await sbp('backend/translations/get', language)) || defaultTranslationTable
 
       // Only set `currentLanguage` if there was no error fetching the ressource.
       currentLanguage = language

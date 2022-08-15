@@ -25,11 +25,11 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import L from '@view-utils/translations.js'
-import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
-import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
-import { createInvite } from '@model/contracts/group.js'
+import { L } from '@common/common.js'
+import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/shared/voting/rules.js'
+import { oneVoteToPass } from '@model/contracts/shared/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/shared/constants.js'
+import { createInvite } from '@model/contracts/shared/functions.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { leaveAllChatRooms } from '@controller/actions/group.js'
 
@@ -166,17 +166,19 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-ctas {
+  grid-area: actions;
   @include phone {
-    width: 100%;
-    margin-top: 1rem;
-    margin-bottom: 0.5rem;
+    flex: auto;
+    margin: 1rem 1rem 1rem 0;
 
-    .button {
+    .buttons {
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+
+    button {
       flex-grow: 1;
-
-      &:not(:last-child) {
-        margin-right: 1rem;
-      }
+      margin-right: 0;
     }
   }
 }

@@ -22,7 +22,7 @@
 "Messages" = "Messages";
 
 /* MISSING TRANSLATION - main.js */
-"Loading events for '{contract}' from server..." = "Loading events for '{contract}' from server...";
+"Loading events from server..." = "Loading events from server...";
 
 /* MISSING TRANSLATION - main.js */
 "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'";
@@ -30,16 +30,16 @@
 /* MISSING TRANSLATION - model/contracts/identity.js */
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
 
-/* MISSING TRANSLATION - utils/time.js */
+/* MISSING TRANSLATION - model/contracts/shared/time.js */
 "1d" = "1d";
 
-/* MISSING TRANSLATION - utils/time.js */
+/* MISSING TRANSLATION - model/contracts/shared/time.js */
 "<1m" = "<1m";
 
-/* MISSING TRANSLATION - utils/time.js */
+/* MISSING TRANSLATION - model/contracts/shared/time.js */
 "{hours}h" = "{hours}h";
 
-/* MISSING TRANSLATION - utils/time.js */
+/* MISSING TRANSLATION - model/contracts/shared/time.js */
 "{minutes}m" = "{minutes}m";
 
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupMincome.vue */
@@ -62,6 +62,9 @@
 
 /* MISSING TRANSLATION - views/components/modal/Prompt.vue */
 "Yes" = "Yes";
+
+/* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
+"A username cannot contain uppercase letters." = "A username cannot contain uppercase letters.";
 
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
 "Email" = "Email";
@@ -98,6 +101,9 @@
 
 /* MISSING TRANSLATION - views/containers/navigation/Navigation.vue */
 "Blog" = "Blog";
+
+/* MISSING TRANSLATION - views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue */
+"Mark all as read" = "Mark all as read";
 
 /* MISSING TRANSLATION - views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/settings.js */
 "Notifications" = "Notifications";
@@ -144,8 +150,14 @@
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "Proposal refused with {nay} against out of {total} total votes." = "Proposal refused with {nay} against out of {total} total votes.";
 
+/* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
+"Info" = "Info";
+
 /* MISSING TRANSLATION - views/containers/user-settings/Appearence.vue */
 "Animations" = "Animations";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Theme.vue */
+"Use system settings" = "Use system settings";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
 "Ok" = "Ok";
@@ -167,6 +179,9 @@
 
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "Date" = "Date";
+
+/* common/translations.js */
+"\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". Vous pouvez {a_}signaler l’erreur{_a}.";
 
 /* controller/actions/chatroom.js */
 "Failed to add message." = "Échec de l'ajout du message.";
@@ -249,6 +264,12 @@
 /* controller/actions/group.js */
 "Failed to vote on proposal." = "Une erreur est survenue lors du vote.";
 
+/* controller/actions/group.js */
+"Only channel members can invite others to join." = "Seuls les membres de la chaîne peuvent inviter d'autres personnes à la rejoindre.";
+
+/* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue */
+"Duplicate channel name" = "Nom de canal dupliqué";
+
 /* controller/actions/identity.js */
 "Failed to create user identity: {reportError}" = "La création du profil utilisateur a échoué : {reportError}";
 
@@ -330,6 +351,12 @@
 /* model/contracts/group.js */
 "There is an identical open proposal." = "Une proposition identique a déjà été créée.";
 
+/* model/contracts/shared/time.js */
+"Today" = "Aujourd’hui";
+
+/* model/contracts/shared/time.js */
+"Yesterday" = "Hier";
+
 /* model/notifications/templates.js */
 "Do not forget to send your pledge by {date}." = "N’oubliez pas d’envoyer votre contribution avant le {date}.";
 
@@ -356,12 +383,6 @@
 
 /* model/notifications/templates.js */
 "{name} was kicked out of the group. Contributions were updated accordingly." = "{name} a été exclu du groupe. Les contributions ont été mises à jour en conséquence.";
-
-/* utils/time.js */
-"Today" = "Aujourd’hui";
-
-/* utils/time.js */
-"Yesterday" = "Hier";
 
 /* views/components/AvatarUpload.vue */
 "Avatar updated!" = "Avatar mis à jour !";
@@ -558,7 +579,7 @@
 /* views/components/modal/ModalClose.vue */
 "close modal" = "fermer le dialogue";
 
-/* views/components/tabs/TabWrapper.vue, views/containers/chatroom/ChatNav.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/UserSettingsModal.vue */
+/* views/components/tabs/TabWrapper.vue, views/containers/chatroom/ChatNav.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/NotificationSettings.vue, views/containers/user-settings/UserSettingsModal.vue */
 "Settings" = "Paramètres";
 
 /* views/containers/access/LoginForm.vue */
@@ -911,6 +932,9 @@
 
 /* views/containers/chatroom/SendArea.vue */
 "Create poll" = "Créer un sondage";
+
+/* views/containers/chatroom/SendArea.vue */
+"Jump to latest message" = "Aller au dernier message";
 
 /* views/containers/chatroom/SendArea.vue */
 "Replying to {replyingTo}: \"{replyingMessage}\"" = "Répondre à {replyingTo} : \"{replyingMessage}\"";
@@ -1375,9 +1399,6 @@
 "Are you sure you want to revoke this link? This action cannot be undone." = "Êtes-vous sûr(e) de vouloir révoquer ce lien ? Cette action ne pourra pas être annulée.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
-"Expired" = "Expirée";
-
-/* views/containers/group-settings/InvitationsTable.vue */
 "Filter links" = "Filtrer les liens";
 
 /* views/containers/group-settings/InvitationsTable.vue */
@@ -1397,6 +1418,9 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Revoked" = "Révoquée";
+
+/* views/containers/group-settings/InvitationsTable.vue */
+"See original proposal" = "Voir la proposition originale";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Show list" = "Afficher la liste";
@@ -1433,6 +1457,9 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "{numberOfResponses}/{quantity} used" = "{numberOfResponses}/{quantity} utilisées";
+
+/* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
+"Expired" = "Expirée";
 
 /* views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/ErrorPage.vue */
 "Page not found" = "Page introuvable";
@@ -1836,6 +1863,21 @@
 /* views/containers/user-settings/Appearence.vue */
 "When enabled the amount of animations you see around are reduced." = "Ceci réduit le nombre d’animations affichées.";
 
+/* views/containers/user-settings/NotificationSettings.vue */
+"Congratulations" = "Toutes nos félicitations";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Notification Permission" = "Autorisation de notification";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Sorry, you should reset browser notification permission again." = "Désolé, vous devez réinitialiser à nouveau l'autorisation de notification du navigateur.";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"When you get chat mentions, browser notification will pop up." = "Lorsque vous recevez des mentions de chat, la notification du navigateur apparaîtra.";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"You have granted browser notification!" = "Vous avez autorisé la notification du navigateur!";
+
 /* views/containers/user-settings/Troubleshooting.vue */
 "All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information." = "Toutes vos données sont stockées localement, sur votre appareil personnel, et cryptées lors de tout envoi {via le réseau, à d’autres membres du groupe}. L’actualisation téléchargera la plus récente version des informations relatives au groupe.";
 
@@ -2097,9 +2139,6 @@
 /* views/pages/Payments.vue */
 "{amount} in total, to {count} members" = "{amount} au total, à {count} membres";
 
-/* views/utils/translations.js */
-"\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". Vous pouvez {a_}signaler l’erreur{_a}.";
-
 /* Not currently used */
 "According to your voting rules, 8 out of 10 members will have to agree with this." = "Selon vos règles de vote, l’approbation de huit membres sur dix sera nécessaire.";
 
@@ -2245,9 +2284,6 @@
 "Search for a channel" = "Rechercher un groupe de discussion";
 
 /* Not currently used */
-"See original proposal" = "Afficher la proposition initiale";
-
-/* Not currently used */
 "Send to" = "Envoyer à";
 
 /* Not currently used */
@@ -2281,6 +2317,9 @@
 "This months overview" = "Résumé de ce mois";
 
 /* Not currently used */
+"To the latest message" = "Vers le dernier message";
+
+/* Not currently used */
 "To:" = "À :";
 
 /* Not currently used */
@@ -2291,6 +2330,9 @@
 
 /* Not currently used */
 "What is the minimum each member should receive monthly?" = "Quel est le montant mensuel minimum pour chaque membre ?";
+
+/* Not currently used */
+"You have unread mentions." = "Vous avez des mentions non lues.";
 
 /* Not currently used */
 "\\* This value was automatically adjusted because your group is currently smaller than the disagreement number." = "\\* Cette valeur a été ajustée automatiquement parce que la taille de votre groupe est actuellement inférieure au seuil de désaccord.";
