@@ -1,46 +1,52 @@
 <template lang='pug'>
-  callout-card(
-    v-if='!hasProposals'
-    :title='L("Proposals")'
-    :svg='SvgVote'
-    :isCard='true'
-  )
+component(
+  :is='componentData.type'
+  v-bind='componentData.props'
+)
+  template(#cta='')
+    .c-all-actions
+      i18n.button.is-outlined.is-small.c-see-all-proposal-btn(
+        tag='span'
+        @click='seeAll'
+      ) See all proposals
+
+      button-dropdown-menu(
+        :buttonText='L("Create proposal")'
+        :options='proposalOptions'
+        @select='onDropdownItemSelect'
+      )
+
+  ul.c-proposals(v-if='hasProposals' data-test='proposalsWidget')
+    proposal-item(
+      v-for='hash in proposals'
+      :key='hash'
+      :proposalHash='hash'
+    )
+
+  template(v-else)
     i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
     i18n.has-text-1(tag='p') No one has created a proposal yet.
-
-  // TODO: view without current proposals
-  // TODO: button "see all proposals"
-  page-section(
-    v-else
-    :title='L("Proposals")'
-  )
-    ul.c-proposals(data-test='proposalsWidget')
-      proposal-box(
-        v-for='hashes in proposals'
-        :key='hashes[0]'
-        :proposalHashes='hashes'
-      )
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
-import ProposalBox from '@containers/proposals/ProposalBox.vue'
+import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
+import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({
   name: 'ProposalsWidget',
   components: {
-    ProposalBox,
-    CalloutCard,
-    SvgVote,
-    PageSection
+    ProposalItem,
+    ButtonDropdownMenu
   },
   data () {
     return {
-      SvgVote,
       ephemeral: {
         // Keep initial proposals order even after voting in a proposal
         // That way recently voted proposals don't change position immediatly.
@@ -52,7 +58,11 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'currentIdentityState'
+      'currentIdentityState',
+      'groupShouldPropose',
+      'groupSettings',
+      'ourUsername',
+      'groupMembersCount'
     ]),
     hasProposals () {
       return Object.keys(this.currentGroupState.proposals).length > 0
@@ -97,14 +107,96 @@ export default ({
       // this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
 
       this.proposalsGrouped = proposalsGrouped // eslint-disable-line vue/no-side-effects-in-computed-properties
+      return this.proposalsGrouped.flat()
+    },
+    componentData () {
+      return {
+        type: this.hasProposals ? PageSection : CalloutCard,
+        props: this.hasProposals
+          ? { title: this.L('Proposals') }
+          : {
+              title: this.L('Proposals'),
+              svg: SvgVote,
+              isCard: true
+            }
+      }
+    },
+    proposalOptions () {
+      const isUserGroupCreator = this.ourUsername === this.groupSettings.groupCreator
 
-      return this.proposalsGrouped
+      return [
+        { type: 'header', name: 'Group Members' },
+        { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'user-plus' },
+        {
+          type: 'item',
+          id: 'remove-member',
+          name: 'Remove member',
+          icon: 'user-minus',
+          isDisabled: this.groupMembersCount < (isUserGroupCreator ? 2 : 3)
+        },
+        { type: 'header', name: 'Voting Systems' },
+        { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'vote-yea' },
+        { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'vote-yea' },
+        { type: 'header', name: 'Other proposals' },
+        { type: 'item', id: 'change-mincome', name: 'Change mincome', icon: 'dollar-sign' },
+        {
+          type: 'item',
+          id: 'generic-proposal',
+          name: 'Generic proposal',
+          icon: 'envelope-open-text',
+          isDisabled: this.groupMembersCount < 3
+        }
+      ]
     }
   },
   methods: {
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
+    },
+    openModal (modal, queries) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
+    },
+    seeAll () {
+      alert('TODO!')
+    },
+    onDropdownItemSelect (itemId) {
+      const modalNameMap = {
+        'add-new-member': this.groupShouldPropose ? 'AddMembers' : 'InvitationLinkModal',
+        'remove-member': 'GroupMembersAllModal',
+        'change-mincome': 'MincomeProposal',
+        'generic-proposal': 'GenericProposal',
+        'change-disagreeing-number': 'ChangeVotingRules',
+        'change-to-percentage-base': 'ChangeVotingRules'
+      }
+      const queries = {
+        'change-disagreeing-number': { rule: 'disagreement' },
+        'change-to-percentage-base': { rule: 'percentage' },
+        'remove-member': { toRemove: true }
+      }
+
+      this.openModal(modalNameMap[itemId], queries[itemId] || undefined)
     }
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.card {
+  position: relative;
+}
+
+.c-all-actions {
+  display: flex;
+  gap: 0.75rem;
+
+  .c-see-all-proposal-btn {
+    font-weight: 400;
+
+    @include phone {
+      display: none;
+    }
+  }
+}
+</style>

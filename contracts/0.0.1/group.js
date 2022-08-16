@@ -9674,7 +9674,9 @@ ${this.getErrorInfo()}`;
     [PROPOSAL_GENERIC]: {
       defaults: proposalDefaults,
       [VOTE_FOR]: function(state, { meta, data }) {
-        throw new Error("unimplemented!");
+        const proposal = state.proposals[data.proposalHash];
+        proposal.status = STATUS_PASSED;
+        (0, import_sbp2.default)("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_FOR, data);
       },
       [VOTE_AGAINST]: voteAgainst
     }
@@ -10346,6 +10348,7 @@ ${this.getErrorInfo()}`;
           const result = rules_default[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes);
           if (result === VOTE_FOR || result === VOTE_AGAINST) {
             proposals_default[proposal.data.proposalType][result](state, message);
+            vue_esm_default.set(proposal, "dateClosed", meta.createdDate);
           }
         }
       },
@@ -10589,7 +10592,7 @@ ${this.getErrorInfo()}`;
           }
         },
         process({ data, meta }, { state }) {
-          vue_esm_default.delete(state.chatRooms[data.chatRoomID]);
+          vue_esm_default.delete(state.chatRooms, data.chatRoomID);
         }
       },
       "gi.contracts/group/leaveChatRoom": {

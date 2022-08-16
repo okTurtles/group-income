@@ -187,6 +187,7 @@ page(
               i.icon-ellipsis-v icon-ellipsis-v
               i.icon-ellipsis-h icon-ellipsis-h
               i.icon-envelope icon-envelope
+              i.icon-envelope-open-text icon-envelope-open-text
               i.icon-eye icon-eye
               i.icon-eye-slash icon-eye-slash
               i.icon-globe icon-globe
@@ -1098,7 +1099,19 @@ page(
                     item-id='message'
                     icon='comment'
                   ) Send message
-
+        tr
+          td
+            pre
+              | button-dropdown-menu(
+              |   :buttonText='L("Create proposal")'
+              |   :options='buttonDropdownMenuOpts'
+              | )
+          td
+            button-dropdown-menu(
+              :buttonText='L("Create proposal")'
+              :options='config.buttonDropdownMenuOpts'
+              @select='onButtonDropdownItemSelect'
+            )
   article#modals
     section.card
       h2.is-title-2.card-header Modals
@@ -1240,10 +1253,11 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CalloutCard from '@components/CalloutCard.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import Search from '@components/Search.vue'
+import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
 import SvgBitcoin from '@svgs/bitcoin.svg'
@@ -1354,6 +1368,14 @@ export default ({
             name: 'SvgVote',
             sprite: 'Dashboard'
           }
+        ],
+        buttonDropdownMenuOpts: [
+          { type: 'header', name: 'Group Members' },
+          { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'comment' },
+          { type: 'item', id: 'remove-member', name: 'Remove member', icon: 'comment' },
+          { type: 'header', name: 'Voting Systems' },
+          { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'comment' },
+          { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'comment' }
         ]
       },
       form: {
@@ -1381,7 +1403,9 @@ export default ({
     MenuParent,
     MenuTrigger,
     MenuContent,
+    MenuHeader,
     MenuItem,
+    ButtonDropdownMenu,
     Search,
     Tooltip,
     SvgHello,
@@ -1451,6 +1475,9 @@ export default ({
     },
     toggleTheme () {
       this.setTheme(this.isDarkTheme ? THEME_LIGHT : THEME_DARK)
+    },
+    onButtonDropdownItemSelect (itemId) {
+      console.log('selected item id: ', itemId)
     }
   },
   computed: {

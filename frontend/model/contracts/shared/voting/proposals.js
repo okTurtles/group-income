@@ -47,6 +47,7 @@ export function oneVoteToPass (proposalHash: string): boolean {
   votes[String(Math.random())] = VOTE_FOR
   const newResult = rules[proposal.data.votingRule](state, proposal.data.proposalType, votes)
   console.debug(`oneVoteToPass currentResult(${currentResult}) newResult(${newResult})`)
+
   return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
 }
 
@@ -168,7 +169,10 @@ const proposals: Object = {
   [PROPOSAL_GENERIC]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data }) {
-      throw new Error('unimplemented!')
+      const proposal = state.proposals[data.proposalHash]
+      proposal.status = STATUS_PASSED
+
+      sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
     },
     [VOTE_AGAINST]: voteAgainst
   }
