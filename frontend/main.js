@@ -5,6 +5,10 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
+import Favico from 'favico.js'
+import { mapMutations, mapGetters, mapState } from 'vuex'
+import 'wicg-inert'
+
 import '@model/captureLogs.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
@@ -15,7 +19,6 @@ import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
 import manifests from './model/contracts/manifests.json'
-import { mapMutations, mapGetters, mapState } from 'vuex'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
@@ -27,15 +30,14 @@ import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 import './views/utils/avatar.js'
+import './views/utils/ui.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
-import 'wicg-inert'
-import Favico from 'favico.js'
 
-const { Vue, L, LError, LTags } = Common
+const { Vue, L } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)
@@ -53,11 +55,13 @@ async function startApp () {
   const debugParam = new URLSearchParams(window.location.search).get('debug')
   if (process.env.NODE_ENV !== 'production' || debugParam === 'true') {
     const reducer = (o, v) => { o[v] = true; return o }
+    // Domains for which debug logging won't be enabled.
     const domainBlacklist = [
       'sbp',
       'okTurtles.data'
     ].reduce(reducer, {})
-    const selBlacklist = [
+    // Selectors for which debug logging won't be enabled.
+    const selectorBlacklist = [
       'chelonia/db/get',
       'chelonia/db/logHEAD',
       'chelonia/db/set',
@@ -66,44 +70,23 @@ async function startApp () {
       'gi.db/settings/save'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
-      if (domainBlacklist[domain] || selBlacklist[selector]) return
+      if (domainBlacklist[domain] || selectorBlacklist[selector]) return
       console.debug(`[sbp] ${selector}`, data)
     })
+    // Re-enable debug logging for 'gi.db/settings/save', but won't log the saved data.
     sbp('sbp/filters/selector/add', 'gi.db/settings/save', (domain, selector, data) => {
       console.debug("[sbp] 'gi.db/settings/save'", data[0])
     })
   }
 
-  function contractName (contractID: string): string {
-    return sbp('state/vuex/state').contracts[contractID]?.type || contractID
-  }
-
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
-  function notificationError (activity: string) {
-    return function (e: Error, message: GIMessage) {
-      const contractID = message.contractID()
-      const [opType] = message.op()
-      const { action, meta } = message.decryptedValue()
-      sbp('gi.notifications/emit', 'ERROR', {
-        message: L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", {
-          ...LTags('b'),
-          errName: e.name,
-          activity,
-          action: action || opType,
-          who: meta?.username || 'TODO: signing keyID',
-          contract: contractName(contractID),
-          errMsg: e.message || '?'
-        })
-      })
-      // Since a runtime error just occured, we likely want to persist app logs to local storage now.
-      sbp('appLogs/save')
-    }
-  }
-  function displaySeriousErrorBanner (e: Error) {
-    sbp('okTurtles.data/get', 'BANNER').danger(
-      L('Fatal error: {reportError}', LError(e)), 'exclamation-triangle'
-    )
+
+  // Used in 'chelonia/configure' hooks to emit an error notification.
+  function errorNotification (activity: string, error: Error, message: GIMessage) {
+    sbp('gi.notifications/emit', 'CHELONIA_ERROR', { activity, error, message })
+    // Since a runtime error just occured, we likely want to persist app logs to local storage now.
+    sbp('appLogs/save')
   }
   await sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
@@ -132,11 +115,11 @@ async function startApp () {
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {
         if (e.name === 'ChelErrorUnrecoverable') {
-          displaySeriousErrorBanner(e)
+          sbp('gi.ui/seriousErrorBanner', e)
         }
         if (sbp('okTurtles.data/get', 'sideEffectError') !== message.hash()) {
-          // avoid duplicate notifications for the same message
-          notificationError('handleEvent')(e, message)
+          // Avoid duplicate notifications for the same message.
+          errorNotification('handleEvent', e, message)
         }
       },
       processError: (e: Error, message: GIMessage) => {
@@ -145,12 +128,12 @@ async function startApp () {
             'gi.actions/group/autobanUser', message, e
           ])
         }
-        notificationError('process')(e, message)
+        errorNotification('process', e, message)
       },
       sideEffectError: (e: Error, message: GIMessage) => {
-        displaySeriousErrorBanner(e)
+        sbp('gi.ui/seriousErrorBanner', e)
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
-        notificationError('sideEffect')(e, message)
+        errorNotification('sideEffect', e, message)
       }
     }
   })
@@ -257,40 +240,35 @@ async function startApp () {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
-      // call from anywhere in the app:
-      // sbp('okTurtles.data/get', 'BANNER').show(L('Trying to reconnect...'), 'wifi')
-      // sbp('okTurtles.data/get', 'BANNER').danger(L('message'), 'icon-type')
-      // sbp('okTurtles.data/get', 'BANNER').clean()
       sbp('okTurtles.data/apply', PUBSUB_INSTANCE, (pubsub) => {
-        const banner = this.$refs.bannerGeneral
-        // Allow to access `L` inside event handlers.
+        // Allow access to `L` inside event handlers.
         const L = this.L.bind(this)
 
         Object.assign(pubsub.customEventHandlers, {
           offline () {
-            banner.show(L('Your device appears to be offline.'), 'wifi')
+            sbp('gi.ui/showBanner', L('Your device appears to be offline.'), 'wifi')
           },
           online () {
-            banner.clean()
+            sbp('gi.ui/clearBanner')
           },
           'reconnection-attempt' () {
-            banner.show(L('Trying to reconnect...'), 'wifi')
+            sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')
           },
           'reconnection-failed' () {
-            banner.show(L('We could not connect to the server. Please refresh the page.'), 'wifi')
+            sbp('gi.ui/showBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
           },
           'reconnection-succeeded' () {
-            banner.clean()
+            sbp('gi.ui/clearBanner')
           }
         })
       })
 
       // Useful in case the app is started in offline mode.
       if (navigator.onLine === false) {
-        this.$refs.bannerGeneral.show(L('Your device appears to be offline.'), 'wifi')
+        sbp('gi.ui/showBanner', L('Your device appears to be offline.'), 'wifi')
       }
       if (this.ephemeral.isCorrupted) {
-        this.$refs.bannerGeneral.danger(
+        sbp('gi.ui/dangerBanner',
           L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
             'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&section=troubleshooting">`,
             '_a': '</a>'
