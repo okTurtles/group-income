@@ -5,7 +5,7 @@ import { Vue, Errors, L } from '@common/common.js'
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './shared/voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
 import {
-  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED, MAX_ARCHIVED_PROPOSALS,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED, MAX_ARCHIVED_PROPOSALS, PROPOSAL_ARCHIVED,
   INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
@@ -1058,14 +1058,17 @@ sbp('chelonia/defineContract', {
   //
   // IMPORTANT: they MUST begin with the name of the contract.
   methods: {
-    'gi.contracts/group/archiveProposal': async function (proposalHash, proposal) {
-      const proposals = await sbp('gi.db/archive/load', 'proposals') || []
+    'gi.contracts/group/archiveProposal': async function (contractID, proposalHash, proposal) {
+      const { username } = sbp('state/vuex/state').loggedIn
+      const key = `proposals/${username}/${contractID}`
+      const proposals = await sbp('gi.db/archive/load', key) || []
       // newest at the front of the array, oldest at the back
       proposals.unshift([proposalHash, proposal])
       while (proposals.length > MAX_ARCHIVED_PROPOSALS) {
         proposals.pop()
       }
-      return sbp('gi.db/archive/save', 'proposals', proposals)
+      await sbp('gi.db/archive/save', key, proposals)
+      sbp('okTurtles.events/emit', PROPOSAL_ARCHIVED, [proposalHash, proposal])
     }
   }
 })

@@ -13,6 +13,7 @@
 // https://on.cypress.io/configuration
 // ***********************************************************
 
+import 'cypress-pipe'
 import './commands.js'
 import './output-logs.js'
 

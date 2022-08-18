@@ -87,5 +87,8 @@ sbp('sbp/selectors/register', {
   },
   'gi.db/archive/delete': function (key: string): Promise<Object> {
     return archive.removeItem(key)
+  },
+  'gi.db/archive/clear': function (): Promise {
+    return archive.clear()
   }
 })

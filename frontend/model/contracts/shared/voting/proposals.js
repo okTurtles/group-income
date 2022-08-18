@@ -22,7 +22,7 @@ import {
 export function archiveProposal ({ state, proposalHash, proposal, contractID }) {
   Vue.delete(state.proposals, proposalHash)
   sbp('gi.contracts/group/pushSideEffect', contractID,
-    ['gi.contracts/group/archiveProposal', proposalHash, proposal]
+    ['gi.contracts/group/archiveProposal', contractID, proposalHash, proposal]
   )
 }
 
