@@ -407,6 +407,9 @@ ${this.getErrorInfo()}`;
   function comparePeriodStamps(periodA, periodB) {
     return dateFromPeriodStamp(periodA).getTime() - dateFromPeriodStamp(periodB).getTime();
   }
+  function compareISOTimestamps(a, b) {
+    return new Date(a).getTime() - new Date(b).getTime();
+  }
   function isPeriodStamp(arg) {
     return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg);
   }
@@ -852,6 +855,9 @@ ${this.getErrorInfo()}`;
     state.profiles[username].departedDate = dateLeft;
     updateCurrentDistribution({ meta, state, getters });
   }
+  function isActionYoungerThanUser(actionMeta, userProfile) {
+    return Boolean(userProfile) && compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
+  }
   (0, import_sbp2.default)("chelonia/defineContract", {
     name: "gi.contracts/group",
     metadata: {
@@ -1200,6 +1206,24 @@ ${this.getErrorInfo()}`;
             status: STATUS_OPEN,
             payload: null
           });
+        },
+        sideEffect({ contractID, meta, data }, { getters }) {
+          const { loggedIn } = (0, import_sbp2.default)("state/vuex/state");
+          const typeToSubTypeMap = {
+            [PROPOSAL_INVITE_MEMBER]: "ADD_MEMBER",
+            [PROPOSAL_REMOVE_MEMBER]: "REMOVE_MEMBER",
+            [PROPOSAL_GROUP_SETTING_CHANGE]: "CHANGE_MINCOME",
+            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: "CHANGE_VOTING_RULE",
+            [PROPOSAL_GENERIC]: "GENERIC"
+          };
+          const myProfile = getters.groupProfile(loggedIn.username);
+          if (isActionYoungerThanUser(meta, myProfile)) {
+            (0, import_sbp2.default)("gi.notifications/emit", "NEW_PROPOSAL", {
+              groupID: contractID,
+              creator: meta.username,
+              subtype: typeToSubTypeMap[data.proposalType]
+            });
+          }
         }
       },
       "gi.contracts/group/proposalVote": {
@@ -1224,6 +1248,18 @@ ${this.getErrorInfo()}`;
           if (result === VOTE_FOR || result === VOTE_AGAINST) {
             proposals_default[proposal.data.proposalType][result](state, message);
             import_common2.Vue.set(proposal, "dateClosed", meta.createdDate);
+          }
+        },
+        sideEffect({ contractID, data, meta }, { state, getters }) {
+          const proposal = state.proposals[data.proposalHash];
+          const { loggedIn } = (0, import_sbp2.default)("state/vuex/state");
+          const myProfile = getters.groupProfile(loggedIn.username);
+          if (proposal?.dateClosed && isActionYoungerThanUser(meta, myProfile)) {
+            (0, import_sbp2.default)("gi.notifications/emit", "PROPOSAL_CLOSED", {
+              groupID: contractID,
+              creator: meta.username,
+              proposalStatus: proposal.status
+            });
           }
         }
       },
@@ -1304,6 +1340,14 @@ ${this.getErrorInfo()}`;
               console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e);
             });
           } else {
+            const myProfile = getters.groupProfile(username);
+            if (isActionYoungerThanUser(meta, myProfile)) {
+              const memberRemovedThemselves = data.member === meta.username;
+              (0, import_sbp2.default)("gi.notifications/emit", memberRemovedThemselves ? "MEMBER_LEFT" : "MEMBER_REMOVED", {
+                groupID: contractID,
+                username: memberRemovedThemselves ? meta.username : data.member
+              });
+            }
           }
         }
       },
@@ -1343,16 +1387,24 @@ ${this.getErrorInfo()}`;
           }
           import_common2.Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate));
         },
-        async sideEffect({ meta }, { state }) {
-          const rootState = (0, import_sbp2.default)("state/vuex/state");
-          if (meta.username === rootState.loggedIn.username) {
-            for (const name in state.profiles) {
-              if (name !== rootState.loggedIn.username) {
-                await (0, import_sbp2.default)("chelonia/contract/sync", state.profiles[name].contractID);
+        async sideEffect({ meta, contractID }, { state }) {
+          const { loggedIn } = (0, import_sbp2.default)("state/vuex/state");
+          const { profiles = {} } = state;
+          if (meta.username === loggedIn.username) {
+            for (const name in profiles) {
+              if (name !== loggedIn.username) {
+                await (0, import_sbp2.default)("chelonia/contract/sync", profiles[name].contractID);
               }
             }
           } else {
+            const myProfile = profiles[loggedIn.username];
             await (0, import_sbp2.default)("chelonia/contract/sync", meta.identityContractID);
+            if (isActionYoungerThanUser(meta, myProfile)) {
+              (0, import_sbp2.default)("gi.notifications/emit", "MEMBER_ADDED", {
+                groupID: contractID,
+                username: meta.username
+              });
+            }
           }
         }
       },

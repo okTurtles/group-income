@@ -311,6 +311,8 @@ export default ({
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
         const eleTarget = document.querySelectorAll('.c-body-conversation > .c-message')[Math.max(0, index - 1)]
 
+        if (!eleTarget) { return }
+
         if (effect) {
           eleTarget.scrollIntoView({ behavior: 'smooth' })
           eleMessage.classList.add('c-focused')

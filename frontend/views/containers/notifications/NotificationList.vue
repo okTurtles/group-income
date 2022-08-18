@@ -156,6 +156,7 @@ export default ({
   display: flex;
   align-items: center;
   min-height: 3rem;
+  cursor: pointer;
 
   &:hover,
   &:focus {

@@ -1,10 +1,19 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
 import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/model/contracts/misc/flowTyper.js'
-import { noUppercase } from '~/frontend/views/utils/validators.js'
+import {
+  allowedUsernameCharacters,
+  noConsecutiveHyphensOrUnderscores,
+  noLeadingOrTrailingHyphen,
+  noLeadingOrTrailingUnderscore,
+  noUppercase
+} from './shared/validators.js'
+
+import { IDENTITY_USERNAME_MAX_CHARS } from './shared/constants.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/identity',
@@ -26,8 +35,23 @@ sbp('chelonia/defineContract', {
             picture: string
           })
         })(data)
-
-        if (!noUppercase(data.attributes.username)) {
+        const { username } = data.attributes
+        if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
+          throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`)
+        }
+        if (!allowedUsernameCharacters(username)) {
+          throw new TypeError('A username cannot contain disallowed characters.')
+        }
+        if (!noConsecutiveHyphensOrUnderscores(username)) {
+          throw new TypeError('A username cannot contain two consecutive hyphens or underscores.')
+        }
+        if (!noLeadingOrTrailingHyphen(username)) {
+          throw new TypeError('A username cannot start or end with a hyphen.')
+        }
+        if (!noLeadingOrTrailingUnderscore(username)) {
+          throw new TypeError('A username cannot start or end with an underscore.')
+        }
+        if (!noUppercase(username)) {
           throw new TypeError('A username cannot contain uppercase letters.')
         }
       },

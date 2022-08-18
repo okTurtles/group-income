@@ -63,8 +63,29 @@
 /* MISSING TRANSLATION - views/components/modal/Prompt.vue */
 "Yes" = "Yes";
 
+/* MISSING TRANSLATION - views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
+"A username cannot contain whitespace." = "A username cannot contain whitespace.";
+
+/* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
+"A username can only contain letters, digits, hyphens or underscores." = "A username can only contain letters, digits, hyphens or underscores.";
+
+/* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
+"A username cannot contain two consecutive hyphens or underscores." = "A username cannot contain two consecutive hyphens or underscores.";
+
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
 "A username cannot contain uppercase letters." = "A username cannot contain uppercase letters.";
+
+/* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
+"A username cannot exceed {maxChars} characters." = "A username cannot exceed {maxChars} characters.";
+
+/* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
+"A username cannot start or end with a hyphen." = "A username cannot start or end with a hyphen.";
+
+/* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
+"A username cannot start or end with an underscore." = "A username cannot start or end with an underscore.";
+
+/* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
+"Your password must be at least {minChars} characters long." = "Your password must be at least {minChars} characters long.";
 
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
 "Email" = "Email";
@@ -83,6 +104,9 @@
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed." = "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.";
+
+/* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
+"Payment details required. Please let people know how they can pay you." = "Payment details required. Please let people know how they can pay you.";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{count}{_b}" = "{b_}{count}{_b}";
@@ -113,6 +137,18 @@
 
 /* MISSING TRANSLATION - views/containers/payments/PaymentDetail.vue */
 "Notes" = "Notes";
+
+/* MISSING TRANSLATION - views/containers/proposals/GenericProposal.vue */
+"A proposal name is required." = "A proposal name is required.";
+
+/* MISSING TRANSLATION - views/containers/proposals/GenericProposal.vue */
+"Generic Proposal" = "Generic Proposal";
+
+/* MISSING TRANSLATION - views/containers/proposals/GenericProposal.vue */
+"Group members will be able to vote Yes/No on this proposal. Make sure it is clear and concise." = "Group members will be able to vote Yes/No on this proposal. Make sure it is clear and concise.";
+
+/* MISSING TRANSLATION - views/containers/proposals/GenericProposal.vue */
+"Name your proposal" = "Name your proposal";
 
 /* MISSING TRANSLATION - views/containers/proposals/MemberRequest.vue */
 "Approve All" = "Approve All";
@@ -145,10 +181,37 @@
 "There are no open requests right now." = "There are no open requests right now.";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
-"Proposal accepted with {yay} in favor out of {total} total votes." = "Proposal accepted with {yay} in favor out of {total} total votes.";
+"Proposal accepted on {date} with {yay} in favor out of {total} total votes." = "Proposal accepted on {date} with {yay} in favor out of {total} total votes.";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
-"Proposal refused with {nay} against out of {total} total votes." = "Proposal refused with {nay} against out of {total} total votes.";
+"Proposal rejected on {date} with {nay} against out of {total} total votes." = "Proposal rejected on {date} with {nay} against out of {total} total votes.";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
+"You are proposing" = "You are proposing";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
+"You proposed" = "You proposed";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
+"{count} out of {total} members voted. Expires on {date}." = "{count} out of {total} members voted. Expires on {date}.";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
+"{username} is proposing" = "{username} is proposing";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
+"{username} proposed" = "{username} proposed";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
+"Create Generic Proposal" = "Create Generic Proposal";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue */
+"See all proposals" = "See all proposals";
+
+/* MISSING TRANSLATION - views/containers/proposals/PropositionsAllModal.vue */
+"All proposals" = "All proposals";
+
+/* MISSING TRANSLATION - views/containers/proposals/PropositionsAllModal.vue */
+"{ groupProposalsCount } proposals" = "{ groupProposalsCount } proposals";
 
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
 "Info" = "Info";
@@ -592,9 +655,6 @@
 "A password is required." = "Un mot de passe est requis.";
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
-"A username cannot contain spaces." = "Les espaces ne sont pas autorisées.";
-
-/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
 "A username is required." = "Un nom d’utilisateur est requis.";
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/GroupLeaveModal.vue */
@@ -641,9 +701,6 @@
 
 /* views/containers/access/SignupForm.vue */
 "This username is already being used." = "Ce nom d’utilisateur est déjà utilisé.";
-
-/* views/containers/access/SignupForm.vue */
-"Your password must be at least 7 characteres long." = "Votre mot de passe doit comporter au moins sept caractères.";
 
 /* views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
 "An email is required." = "Une adresse email est requise.";
@@ -1023,7 +1080,7 @@
 /* views/containers/contributions/ContributionItem.vue */
 "{service} from {who}" = "{service} de la part de {who}";
 
-/* views/containers/contributions/ContributionItem.vue, views/containers/proposals/ProposalBox.vue */
+/* views/containers/contributions/ContributionItem.vue, views/containers/proposals/ProposalItem.vue */
 "Hide" = "Cacher";
 
 /* views/containers/contributions/ContributionsOverviewWidget.vue */
@@ -1169,9 +1226,6 @@
 
 /* views/containers/contributions/IncomeDetails.vue */
 "{firstMember} will ensure you meet the mincome" = "{firstMember} vous garantit un revenu minimum";
-
-/* views/containers/contributions/PaymentMethods.vue */
-"(optional)" = "(facultatif)";
 
 /* views/containers/contributions/PaymentMethods.vue */
 "Choose..." = "Choisir...";
@@ -1695,21 +1749,6 @@
 /* views/containers/proposals/Mincome.vue */
 "The new mincome should be different than the current one." = "Le nouveau revenu minimum devrait être différent du précédent.";
 
-/* views/containers/proposals/ProposalBox.vue */
-"Read more" = "Lire la suite";
-
-/* views/containers/proposals/ProposalBox.vue */
-"{strong_}You{_strong} are proposing:" = "{strong_}Vous{_strong} proposez :";
-
-/* views/containers/proposals/ProposalBox.vue */
-"{strong_}You{_strong} proposed:" = "{strong_}Vous{_strong} avez proposé :";
-
-/* views/containers/proposals/ProposalBox.vue */
-"{username} is proposing:" = "{username} propose :";
-
-/* views/containers/proposals/ProposalBox.vue */
-"{username} proposed:" = "{username} a proposé :";
-
 /* views/containers/proposals/ProposalItem.vue */
 "Add {user} to group." = "Ajouter {user} au groupe.";
 
@@ -1735,22 +1774,19 @@
 "Proposal cancelled." = "Proposition annulée.";
 
 /* views/containers/proposals/ProposalItem.vue */
+"Read more" = "Lire la suite";
+
+/* views/containers/proposals/ProposalItem.vue */
 "Remove {user} (you) from the group." = "Exclure {user} (vous) du groupe.";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Remove {user} from the group." = "Exclure {user} du groupe.";
 
 /* views/containers/proposals/ProposalItem.vue */
-"TODO: Change [generic] from [current] to [new-value]" = "TODO: Changer [generic] de [current] à [new-value]";
-
-/* views/containers/proposals/ProposalItem.vue */
 "You cannot vote." = "Vous ne pouvez pas voter.";
 
 /* views/containers/proposals/ProposalItem.vue */
 "mincome" = "revenu minimum";
-
-/* views/containers/proposals/ProposalItem.vue */
-"{count} out of {total} members voted." = "{count} membres sur {total} ont voté.";
 
 /* views/containers/proposals/ProposalTemplate.vue */
 "Members of your group will now be asked to vote." = "Les membres du groupe vont maintenant pouvoir voter.";
@@ -2140,6 +2176,12 @@
 "{amount} in total, to {count} members" = "{amount} au total, à {count} membres";
 
 /* Not currently used */
+"(optional)" = "(facultatif)";
+
+/* Not currently used */
+"A username cannot contain spaces." = "Les espaces ne sont pas autorisées.";
+
+/* Not currently used */
 "According to your voting rules, 8 out of 10 members will have to agree with this." = "Selon vos règles de vote, l’approbation de huit membres sur dix sera nécessaire.";
 
 /* Not currently used */
@@ -2290,6 +2332,9 @@
 "Show payment menu" = "Afficher le menu de paiement";
 
 /* Not currently used */
+"TODO: Change [generic] from [current] to [new-value]" = "TODO: Changer [generic] de [current] à [new-value]";
+
+/* Not currently used */
 "TODO: Change [rule setting] from [current] to [new-value]" = "TODO: Changer [rule setting] de [current] à [new-value]";
 
 /* Not currently used */
@@ -2335,6 +2380,9 @@
 "You have unread mentions." = "Vous avez des mentions non lues.";
 
 /* Not currently used */
+"Your password must be at least 7 characteres long." = "Votre mot de passe doit comporter au moins sept caractères.";
+
+/* Not currently used */
 "\\* This value was automatically adjusted because your group is currently smaller than the disagreement number." = "\\* Cette valeur a été ajustée automatiquement parce que la taille de votre groupe est actuellement inférieure au seuil de désaccord.";
 
 /* Not currently used */
@@ -2342,6 +2390,9 @@
 
 /* Not currently used */
 "inbox" = "boîte de réception";
+
+/* Not currently used */
+"{count} out of {total} members voted." = "{count} membres sur {total} ont voté.";
 
 /* Not currently used */
 "{currentPage} out of {maxPages}" = "{currentPage} sur {maxPages}";
@@ -2353,7 +2404,19 @@
 "{service} by {who}" = "{service} par {who}";
 
 /* Not currently used */
+"{strong_}You{_strong} are proposing:" = "{strong_}Vous{_strong} proposez :";
+
+/* Not currently used */
+"{strong_}You{_strong} proposed:" = "{strong_}Vous{_strong} avez proposé :";
+
+/* Not currently used */
 "{total} in total, to {count} members" = "{total} au total, à {count} membres";
+
+/* Not currently used */
+"{username} is proposing:" = "{username} propose :";
+
+/* Not currently used */
+"{username} proposed:" = "{username} a proposé :";
 
 /* Not currently used */
 "{value} of {max}" = "{value} sur {max}";

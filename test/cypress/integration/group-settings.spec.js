@@ -6,6 +6,10 @@ const groupNewMincome = groupMincome + 100
 const sharedValues = ''
 let invitationLinkAnyone
 
+function getProposalItems (num) {
+  return cy.getByDT('proposalItem', 'li').children()
+}
+
 describe('Changing Group Settings', () => {
   it('user1 creates a new group', () => {
     cy.visit('/')
@@ -185,19 +189,19 @@ describe('Group Voting Rules', () => {
   function voteInProposal (username, proposalNth, votesSoFar, voteType, opts = {}) {
     cy.log(`${username} votes "${voteType}"`)
     cy.giSwitchUser(`${username}-${userId}`)
-    cy.getByDT('proposalsWidget', 'ul').children().eq(proposalNth).within(() => {
-      cy.getByDT('statusDescription').should('contain', `${votesSoFar} out of 5 members voted.`)
+    getProposalItems().eq(proposalNth).within(() => {
+      cy.getByDT('statusDescription').should('contain', `${votesSoFar} out of 5 members voted`)
       cy.getByDT(voteType).click()
 
       if (opts.decisive) {
         if (opts.decisive === 'rejected') {
-          cy.getByDT('statusDescription').should('contain', 'Proposal refused')
+          cy.getByDT('statusDescription').should('contain', 'Proposal rejected')
         } else if (opts.decisive === 'approved') {
           cy.getByDT('statusDescription').should('contain', 'Proposal accepted')
         }
         cy.getByDT('voted').should('not.exist')
       } else {
-        cy.getByDT('statusDescription').should('contain', `${votesSoFar + 1} out of 5 members voted.`)
+        cy.getByDT('statusDescription').should('contain', `${votesSoFar + 1} out of 5 members voted`)
         if (voteType === 'voteFor') {
           cy.getByDT('voted').should('contain', 'You voted yes.')
         } else {
@@ -213,9 +217,9 @@ describe('Group Voting Rules', () => {
     cy.getByDT('dashboard').click()
 
     cy.log('Proposal is in the dashboard')
-    cy.getByDT('proposalsWidget', 'ul').children().should('have.length', 1)
+    getProposalItems().should('have.length', 1)
 
-    cy.getByDT('proposalsWidget', 'ul').children().eq(0).within(() => {
+    getProposalItems().eq(0).within(() => {
       cy.get('i.icon-round').should('have.class', 'icon-vote-yea')
       cy.getByDT('typeDescription').should('contain', 'Change from a disagreement based voting system to a percentage based one, with minimum agreement of 15%.')
     })
@@ -232,9 +236,9 @@ describe('Group Voting Rules', () => {
     cy.getByDT('dashboard').click()
 
     cy.log('Proposal is in the dashboard')
-    cy.getByDT('proposalsWidget', 'ul').children().should('have.length', 2)
+    getProposalItems().should('have.length', 2)
 
-    cy.getByDT('proposalsWidget', 'ul').children().eq(1).within(() => {
+    getProposalItems().eq(1).within(() => {
       cy.get('i.icon-round').should('have.class', 'icon-vote-yea')
       cy.getByDT('typeDescription').should('contain', 'Change from a disagreement based voting system to a percentage based one, with minimum agreement of 15%.')
     })
@@ -251,9 +255,9 @@ describe('Group Voting Rules', () => {
     cy.getByDT('dashboard').click()
 
     cy.log('Proposal is in the dashboard')
-    cy.getByDT('proposalsWidget', 'ul').children().should('have.length', 3)
+    getProposalItems().should('have.length', 3)
 
-    cy.getByDT('proposalsWidget', 'ul').children().eq(2).within(() => {
+    getProposalItems().eq(2).within(() => {
       cy.get('i.icon-round').should('have.class', 'icon-vote-yea')
       cy.getByDT('typeDescription').should('contain', 'Change percentage based from 15% to 80%.')
     })

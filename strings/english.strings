@@ -15,14 +15,14 @@
 /* views/containers/access/SignupModal.vue */
 "Sign Up" = "Sign Up";
 
-/* views/containers/proposals/ProposalBox.vue */
-"{username} is proposing:" = "{username} is proposing:";
-
 /* views/containers/access/LoginForm.vue, views/pages/Home.vue */
 "Login" = "Login";
 
 /* controller/router.js */
 "Group Dashboard" = "Group Dashboard";
+
+/* views/containers/access/SignupForm.vue */
+"A username cannot start or end with a hyphen." = "A username cannot start or end with a hyphen.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "The groups voting rules changed" = "The groups voting rules changed";
@@ -95,9 +95,6 @@
 
 /* views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
 "Leave Group" = "Leave Group";
-
-/* views/containers/proposals/ProposalItem.vue */
-"Proposal refused with {nay} against out of {total} total votes." = "Proposal refused with {nay} against out of {total} total votes.";
 
 /* views/pages/Contributions.vue */
 "Add members to group" = "Add members to group";
@@ -182,9 +179,6 @@
 
 /* views/components/Search.vue */
 "Clear search" = "Clear search";
-
-/* views/containers/proposals/ProposalItem.vue */
-"Proposal accepted with {yay} in favor out of {total} total votes." = "Proposal accepted with {yay} in favor out of {total} total votes.";
 
 /* model/contracts/identity.js */
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
@@ -312,9 +306,6 @@
 /* views/containers/group-settings/InvitationsTable.vue */
 "Active links" = "Active links";
 
-/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
-"A username cannot contain spaces." = "A username cannot contain spaces.";
-
 /* views/containers/chatroom/ConversationGreetings.vue */
 "Add a description" = "Add a description";
 
@@ -356,6 +347,9 @@
 
 /* views/containers/group-settings/GroupJoinModal.vue */
 "2. Wait for the group vote" = "2. Wait for the group vote";
+
+/* views/containers/proposals/PropositionsAllModal.vue */
+"All proposals" = "All proposals";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Vote no" = "Vote no";
@@ -459,6 +453,9 @@
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to remove members from the group." = "{from} wants to remove members from the group.";
 
+/* views/containers/access/SignupForm.vue */
+"A username cannot exceed {maxChars} characters." = "A username cannot exceed {maxChars} characters.";
+
 /* views/containers/user-settings/settings.js */
 "App settings" = "App settings";
 
@@ -479,6 +476,9 @@
 
 /* views/containers/access/PasswordModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
 "Cancel" = "Cancel";
+
+/* views/containers/access/SignupForm.vue */
+"A username can only contain letters, digits, hyphens or underscores." = "A username can only contain letters, digits, hyphens or underscores.";
 
 /* views/components/graphs/SupportHistory.vue */
 "Your group is still in its first month." = "Your group is still in its first month.";
@@ -564,9 +564,6 @@
 /* views/containers/user-settings/settings.js */
 "Privacy & Safety" = "Privacy & Safety";
 
-/* views/containers/access/SignupForm.vue */
-"Your password must be at least 7 characteres long." = "Your password must be at least 7 characteres long.";
-
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{count}{_b} {sm_}(adjusted to {nr}*){_sm}" = "{b_}{count}{_b} {sm_}(adjusted to {nr}*){_sm}";
 
@@ -608,9 +605,6 @@
 
 /* views/pages/Payments.vue */
 "No results for \"{query}\"." = "No results for \"{query}\".";
-
-/* views/containers/proposals/ProposalItem.vue */
-"TODO: Change [generic] from [current] to [new-value]" = "TODO: Change [generic] from [current] to [new-value]";
 
 /* controller/actions/chatroom.js */
 "Failed to delete message." = "Failed to delete message.";
@@ -673,6 +667,9 @@
 "Joined {title}" = "Joined {title}";
 
 /* views/containers/contributions/IncomeDetails.vue */
+"Payment details required. Please let people know how they can pay you." = "Payment details required. Please let people know how they can pay you.";
+
+/* views/containers/contributions/IncomeDetails.vue */
 "Yes, I do" = "Yes, I do";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
@@ -707,6 +704,9 @@
 
 /* views/containers/contributions/IncomeDetails.vue */
 "{firstMember} will ensure you meet the mincome" = "{firstMember} will ensure you meet the mincome";
+
+/* views/containers/proposals/ProposalItem.vue */
+"{username} proposed" = "{username} proposed";
 
 /* controller/actions/identity.js */
 "Failed to update profile settings." = "Failed to update profile settings.";
@@ -749,6 +749,9 @@
 
 /* views/components/group-creation-steps/GroupMincome.vue */
 "3. Minimum Income" = "3. Minimum Income";
+
+/* views/containers/proposals/GenericProposal.vue */
+"Group members will be able to vote Yes/No on this proposal. Make sure it is clear and concise." = "Group members will be able to vote Yes/No on this proposal. Make sure it is clear and concise.";
 
 /* views/containers/design-system/DSModalQuery.vue */
 "Hello" = "Hello";
@@ -900,7 +903,7 @@
 /* views/containers/payments/PaymentRowTodo.vue */
 "Dismiss this payment" = "Dismiss this payment";
 
-/* views/containers/contributions/ContributionItem.vue, views/containers/proposals/ProposalBox.vue */
+/* views/containers/contributions/ContributionItem.vue, views/containers/proposals/ProposalItem.vue */
 "Hide" = "Hide";
 
 /* views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue */
@@ -932,6 +935,9 @@
 
 /* controller/actions/group.js */
 "Failed to cancel proposal." = "Failed to cancel proposal.";
+
+/* views/containers/proposals/GenericProposal.vue */
+"Generic Proposal" = "Generic Proposal";
 
 /* views/pages/DesignSystem.vue */
 "Open Prompt" = "Open Prompt";
@@ -1107,6 +1113,9 @@
 /* controller/router.js */
 "Group Income" = "Group Income";
 
+/* views/containers/proposals/ProposalItem.vue */
+"You are proposing" = "You are proposing";
+
 /* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
 "Group members" = "Group members";
 
@@ -1173,6 +1182,9 @@
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "{span_}Group{_span} goal" = "{span_}Group{_span} goal";
 
+/* views/containers/proposals/ProposalItem.vue */
+"Proposal accepted on {date} with {yay} in favor out of {total} total votes." = "Proposal accepted on {date} with {yay} in favor out of {total} total votes.";
+
 /* views/containers/navigation/Navigation.vue */
 "Blog" = "Blog";
 
@@ -1190,9 +1202,6 @@
 
 /* views/containers/design-system/DSModalNested.vue */
 "Modal example" = "Modal example";
-
-/* views/containers/proposals/ProposalItem.vue */
-"{count} out of {total} members voted." = "{count} out of {total} members voted.";
 
 /* views/pages/Payments.vue */
 "You are currently {strong_}sending{_strong} mincome." = "You are currently {strong_}sending{_strong} mincome.";
@@ -1239,6 +1248,9 @@
 /* views/containers/proposals/ProposalItem.vue */
 "Please send the following link to {user} so they can join the group:" = "Please send the following link to {user} so they can join the group:";
 
+/* views/containers/access/SignupForm.vue */
+"A username cannot start or end with an underscore." = "A username cannot start or end with an underscore.";
+
 /* views/containers/access/LoginForm.vue */
 "Coming soon" = "Coming soon";
 
@@ -1280,6 +1292,9 @@
 
 /* views/pages/DesignSystem.vue */
 "Show info" = "Show info";
+
+/* views/containers/proposals/ProposalItem.vue */
+"{username} is proposing" = "{username} is proposing";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Are you sure you want to vote yes?" = "Are you sure you want to vote yes?";
@@ -1323,17 +1338,11 @@
 /* views/containers/payments/PaymentRowRecord.vue */
 "Reset" = "Reset";
 
-/* views/containers/proposals/ProposalBox.vue */
-"{strong_}You{_strong} are proposing:" = "{strong_}You{_strong} are proposing:";
-
 /* views/containers/access/PasswordModal.vue */
 "Change password" = "Change password";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "See original proposal" = "See original proposal";
-
-/* views/containers/proposals/ProposalBox.vue */
-"{strong_}You{_strong} proposed:" = "{strong_}You{_strong} proposed:";
 
 /* controller/actions/identity.js */
 "Failed to upload the profile picture. {codeError}" = "Failed to upload the profile picture. {codeError}";
@@ -1364,6 +1373,9 @@
 
 /* controller/router.js */
 "Group Chat" = "Group Chat";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Create Generic Proposal" = "Create Generic Proposal";
 
 /* views/pages/Payments.vue */
 "You are currently {strong_}receiving{_strong} mincome." = "You are currently {strong_}receiving{_strong} mincome.";
@@ -1425,9 +1437,6 @@
 /* views/containers/user-settings/Troubleshooting.vue */
 "Please use the re-sync option below to restore functionality." = "Please use the re-sync option below to restore functionality.";
 
-/* views/containers/proposals/ProposalBox.vue */
-"{username} proposed:" = "{username} proposed:";
-
 /* views/containers/contributions/PaymentMethods.vue */
 "Choose..." = "Choose...";
 
@@ -1454,6 +1463,9 @@
 
 /* views/pages/GroupDashboard.vue */
 "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then." = "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.";
+
+/* views/containers/proposals/GenericProposal.vue */
+"Name your proposal" = "Name your proposal";
 
 /* main.js */
 "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'";
@@ -1491,6 +1503,9 @@
 /* views/containers/chatroom/MessageActions.vue */
 "More options" = "More options";
 
+/* views/containers/proposals/ProposalsWidget.vue */
+"See all proposals" = "See all proposals";
+
 /* views/pages/Payments.vue */
 "You can change this at any time by updating your {r1}income details{r2}." = "You can change this at any time by updating your {r1}income details{r2}.";
 
@@ -1505,6 +1520,9 @@
 
 /* views/components/AvatarUpload.vue */
 "Change avatar" = "Change avatar";
+
+/* views/containers/proposals/PropositionsAllModal.vue */
+"{ groupProposalsCount } proposals" = "{ groupProposalsCount } proposals";
 
 /* views/components/group-creation-steps/GroupName.vue */
 "1. Create a new group" = "1. Create a new group";
@@ -1665,8 +1683,14 @@
 /* views/components/group-creation-steps/GroupName.vue */
 "Group avatar" = "Group avatar";
 
+/* views/containers/proposals/GenericProposal.vue */
+"A proposal name is required." = "A proposal name is required.";
+
 /* views/components/VotingRulesInput.vue */
 "The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}." = "The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}.";
+
+/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
+"A username cannot contain whitespace." = "A username cannot contain whitespace.";
 
 /* views/containers/user-settings/Troubleshooting.vue */
 "Re-sync and rebuild data" = "Re-sync and rebuild data";
@@ -1742,6 +1766,9 @@
 
 /* views/containers/group-settings/GroupCreationModal.vue, views/containers/proposals/Mincome.vue */
 "The amount must be a number. (E.g. 100.75)" = "The amount must be a number. (E.g. 100.75)";
+
+/* views/containers/proposals/ProposalItem.vue */
+"{count} out of {total} members voted. Expires on {date}." = "{count} out of {total} members voted. Expires on {date}.";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "All links" = "All links";
@@ -1824,8 +1851,17 @@
 /* views/components/GroupWelcome.vue */
 "You are now embarking on a new journey. We hope you have a blast!" = "You are now embarking on a new journey. We hope you have a blast!";
 
+/* views/containers/access/SignupForm.vue */
+"Your password must be at least {minChars} characters long." = "Your password must be at least {minChars} characters long.";
+
+/* views/containers/access/SignupForm.vue */
+"A username cannot contain two consecutive hyphens or underscores." = "A username cannot contain two consecutive hyphens or underscores.";
+
 /* views/containers/payments/MonthOverview.vue, views/containers/payments/RecordPaymentsList.vue */
 "Amount sent" = "Amount sent";
+
+/* views/containers/proposals/ProposalItem.vue */
+"You proposed" = "You proposed";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "All group members will be added to this channel." = "All group members will be added to this channel.";
@@ -1887,17 +1923,17 @@
 /* views/containers/contributions/ContributionItem.vue */
 "A total of {service} to {button_}{numMembers} members{_button}" = "A total of {service} to {button_}{numMembers} members{_button}";
 
-/* views/containers/proposals/ProposalBox.vue */
+/* views/containers/proposals/ProposalItem.vue */
 "Read more" = "Read more";
-
-/* views/containers/contributions/PaymentMethods.vue */
-"(optional)" = "(optional)";
 
 /* views/containers/contributions/IncomeDetails.vue */
 "Income Details" = "Income Details";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "{minutes}m left" = "{minutes}m left";
+
+/* views/containers/proposals/ProposalItem.vue */
+"Proposal rejected on {date} with {nay} against out of {total} total votes." = "Proposal rejected on {date} with {nay} against out of {total} total votes.";
 
 /* views/containers/payments/MonthOverview.vue */
 "There was a problem with {nr} of your payments." = "There was a problem with {nr} of your payments.";

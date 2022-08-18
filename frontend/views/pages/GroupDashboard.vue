@@ -24,7 +24,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
     contributions-summary-widget
 
-  proposals-widget(v-if='hasProposals')
+  proposals-widget
 
   member-request(v-if='hasMemberRequest')
 
@@ -94,9 +94,6 @@ export default ({
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
-    },
-    hasProposals () {
-      return Object.keys(this.currentGroupState.proposals).length > 0
     },
     isCloseToDistributionTime () {
       const dDay = new Date(this.groupSettings.distributionDate)
