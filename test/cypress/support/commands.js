@@ -70,7 +70,7 @@ Cypress.Commands.add('giSignup', (username, {
   }
 
   if (isInvitation) {
-    // cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
+    cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
   } else {
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
   }
