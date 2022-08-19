@@ -1,6 +1,12 @@
 <template lang='pug'>
   // Note: .cpr- is from payment-row
   payment-row(:payment='payment' data-test='payRow')
+    template(slot='cellPrefix')
+      label.checkbox.c-check(data-test='check')
+        input.input(type='checkbox' v-model='form.checked')
+        span
+          i18n.sr-only Select payment item
+
     template(slot='cellAmount')
       template(v-if='payment.partial')
         i18n.c-partial(
@@ -12,6 +18,10 @@
         i18n.pill.is-primary Partial
       strong(v-else) {{withGroupCurrency(payment.amount)}}
       payment-not-received-tooltip(v-if='wasNotReceived' :member='payment.displayName')
+
+    template(slot='cellMethod')
+      .c-methods-container
+        i18n.pill.is-neutral Manual
 
     template(slot='cellActions')
       .cpr-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{ humanDate(payment.date) }}
@@ -50,6 +60,13 @@ export default ({
       required: true
     }
   },
+  data () {
+    return {
+      form: {
+        checked: false
+      }
+    }
+  },
   computed: {
     ...mapGetters([
       'withGroupCurrency'
@@ -81,6 +98,9 @@ export default ({
         console.error(e)
         alert(e.message)
       }
+    },
+    select () {
+      this.form.checked = true
     }
   }
 }: Object)
@@ -88,6 +108,10 @@ export default ({
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-check {
+  margin-right: 0.2rem;
+}
 
 .c-partial {
   color: $text_1;
@@ -98,6 +122,12 @@ export default ({
 
   @include tablet {
     margin-right: 0.5rem;
+  }
+}
+
+.c-methods-container {
+  @include phone {
+    display: none;
   }
 }
 </style>

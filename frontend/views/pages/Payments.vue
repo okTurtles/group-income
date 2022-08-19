@@ -60,12 +60,23 @@ page(
             :args='{ startDate: distributionDateShort }'
           ) Next distribution Date: {startDate}
 
-      search(
-        v-if='paymentsListData.length && ephemeral.activeTab !== "PaymentRowTodo"'
-        :placeholder='L("Search payments...")'
-        :label='L("Search for a payment")'
-        v-model='form.searchText'
-      )
+      .c-filters(v-if='paymentsListData.length > 0')
+        .c-method-filters
+          button.is-small.c-payment-method-filter-opt(
+            v-for='(name, method) in config.paymentMethodFilterOptions'
+            type='button'
+            :key='method'
+            :disabled='method === "lightning"'
+            :class='{ "is-active":  ephemeral.paymentMethodFilter === method }'
+            @click='ephemeral.paymentMethodFilter = method'
+          ) {{ name }}
+
+        search.c-search-input(
+          v-if='paymentsListData.length'
+          :placeholder='L("Search payments...")'
+          :label='L("Search for a payment")'
+          v-model='form.searchText'
+        )
 
       .tab-section
         .c-container(v-if='paymentsFiltered.length')
@@ -149,7 +160,17 @@ export default ({
       ephemeral: {
         activeTab: '',
         rowsPerPage: 10,
-        currentPage: 0
+        currentPage: 0,
+        paymentMethodFilter: 'all' // defaults to 'all' options
+      },
+      config: {
+        paymentMethodFilterOptions: {
+          'all': L('ALL'),
+          'lightning': L('Lightning'),
+          'manual': L('Manual')
+        }
+        // TODO: maybe externalize the option names as contants, (e.g. PAYMENTS_METHOD.MANUAL, PAYMENTS_METHOD.LIGHTNING)
+        //       once the payment method is implemented in the 'gi.contracts/group'
       }
     }
   },
@@ -223,12 +244,14 @@ export default ({
         ? {
             one: firstTab,
             two: L('Amount'),
-            three: L('Due in')
+            three: L('Accepted methods'),
+            four: L('Due in')
           }
         : {
             one: firstTab,
             two: L('Amount'),
-            three: L('Date')
+            three: L('Payment method'),
+            four: L('Payment date')
           }
     },
     introTitle () {
@@ -328,9 +351,21 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },
     filterPayment (payment) {
-      const query = this.form.searchText
-      const { amount, username, displayName } = payment
-      return query === '' || `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(query.toUpperCase()) !== -1
+      const {
+        amount, username, displayName,
+        // NOTE: 'accepted payment method' is not implemented yet, so 'acceptedMethods' just a dummy field for now.
+        // TODO: update the field name & the related logic (e.g. 'matchesMethodFilter' below) accordingly
+        //       once 'accepted payment method' is implemented in the contract.
+        acceptedMethods = ['manual']
+      } = payment
+      const methodFilterVal = this.ephemeral.paymentMethodFilter
+      const searchQuery = this.form.searchText
+
+      const matchesMethodFilter = methodFilterVal === 'all' || acceptedMethods.includes(methodFilterVal)
+      const matchesSearchQuery = searchQuery === '' ||
+        `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(searchQuery.toUpperCase()) !== -1
+
+      return matchesMethodFilter && matchesSearchQuery
     },
     paginateList (list) {
       const start = this.ephemeral.rowsPerPage * this.ephemeral.currentPage
@@ -393,8 +428,56 @@ export default ({
 }
 
 // Search
-.tabs + .c-search-form {
+.c-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  width: 100%;
   margin-top: 1.5rem;
+
+  .c-method-filters {
+    display: inline-flex;
+    gap: 0.5rem;
+    width: max-content;
+  }
+
+  .c-search-input {
+    max-width: 12.125rem;
+  }
+}
+
+.c-payment-method-filter-opt {
+  text-transform: uppercase;
+  color: $text_0;
+  background-color: $general_2;
+
+  &.is-active {
+    color: $primary_0;
+    border: 1px solid $primary_0;
+  }
+
+  &:hover,
+  &.is-active {
+    background-color: $primary_2;
+  }
+
+  &[disabled] {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.c-search-input {
+  ::v-deep .inputgroup .input {
+    padding-right: 2.75rem;
+
+    &:placeholder-shown {
+      // if the text input element is empty.
+      padding-right: 1.375rem;
+    }
+  }
 }
 
 .c-container-empty {

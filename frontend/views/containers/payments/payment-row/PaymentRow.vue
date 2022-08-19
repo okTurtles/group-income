@@ -12,6 +12,12 @@
     td.c-td-amount(v-if='$slots["cellAmount"]')
       slot(name='cellAmount')
 
+    td(v-if='$slots["cellMethod"]')
+      slot(name='cellMethod')
+
+    td(v-if='$slots["cellDate"]')
+      slot(name='cellDate')
+
     td
       .cpr-actions
         slot(name='cellActions')
