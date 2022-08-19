@@ -9430,6 +9430,7 @@ ${this.getErrorInfo()}`;
   var PROPOSAL_GROUP_SETTING_CHANGE = "group-setting-change";
   var PROPOSAL_PROPOSAL_SETTING_CHANGE = "proposal-setting-change";
   var PROPOSAL_GENERIC = "generic";
+  var PROPOSAL_ARCHIVED = "proposal-archived";
   var MAX_ARCHIVED_PROPOSALS = 100;
   var STATUS_OPEN = "open";
   var STATUS_PASSED = "passed";
@@ -9591,7 +9592,7 @@ ${this.getErrorInfo()}`;
   // frontend/model/contracts/shared/voting/proposals.js
   function archiveProposal({ state, proposalHash, proposal, contractID }) {
     vue_esm_default.delete(state.proposals, proposalHash);
-    (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/archiveProposal", proposalHash, proposal]);
+    (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/archiveProposal", contractID, proposalHash, proposal]);
   }
   var proposalSettingsType = objectOf({
     rule: ruleType,
@@ -10740,13 +10741,16 @@ ${this.getErrorInfo()}`;
       }
     },
     methods: {
-      "gi.contracts/group/archiveProposal": async function(proposalHash, proposal) {
-        const proposals2 = await (0, import_sbp3.default)("gi.db/archive/load", "proposals") || [];
+      "gi.contracts/group/archiveProposal": async function(contractID, proposalHash, proposal) {
+        const { username } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
+        const key = `proposals/${username}/${contractID}`;
+        const proposals2 = await (0, import_sbp3.default)("gi.db/archive/load", key) || [];
         proposals2.unshift([proposalHash, proposal]);
         while (proposals2.length > MAX_ARCHIVED_PROPOSALS) {
           proposals2.pop();
         }
-        return (0, import_sbp3.default)("gi.db/archive/save", "proposals", proposals2);
+        await (0, import_sbp3.default)("gi.db/archive/save", key, proposals2);
+        (0, import_sbp3.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, [proposalHash, proposal]);
       }
     }
   });
