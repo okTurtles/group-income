@@ -5,9 +5,9 @@ component(
 )
   template(#cta='')
     .c-all-actions
-      i18n.button.is-outlined.is-small.c-see-all-proposal-btn(
+      i18n.button.is-outlined.is-small(
         tag='span'
-        @click='seeAll'
+        @click='openModal("PropositionsAllModal")'
       ) See all proposals
 
       button-dropdown-menu(
@@ -23,7 +23,7 @@ component(
       :proposalHash='hash'
     )
 
-  template(v-else)
+  .c-description(v-else)
     i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
     i18n.has-text-1(tag='p') No one has created a proposal yet.
 </template>
@@ -156,9 +156,6 @@ export default ({
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
-    seeAll () {
-      alert('TODO!')
-    },
     onDropdownItemSelect (itemId) {
       const modalNameMap = {
         'add-new-member': this.groupShouldPropose ? 'AddMembers' : 'InvitationLinkModal',
@@ -198,5 +195,13 @@ export default ({
       display: none;
     }
   }
+
+  @include desktop {
+    top: 1rem;
+  }
+}
+
+.c-description p {
+  margin-top: 1rem;
 }
 </style>
