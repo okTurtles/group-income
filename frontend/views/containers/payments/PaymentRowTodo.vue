@@ -74,6 +74,9 @@ export default ({
     wasNotReceived () {
       const { data } = this.payment
       return data && data.status === PAYMENT_NOT_RECEIVED
+    },
+    hash () {
+      return this.payment?.hash
     }
   },
   methods: {
@@ -101,6 +104,9 @@ export default ({
     },
     select () {
       this.form.checked = true
+    },
+    deselect () {
+      this.form.checked = false
     }
   }
 }: Object)

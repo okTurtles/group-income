@@ -18,6 +18,9 @@
     td(v-if='$slots["cellDate"]')
       slot(name='cellDate')
 
+    td(v-if='$slots["cellRelativeTo"]')
+      slot(name='cellRelativeTo')
+
     td
       .cpr-actions
         slot(name='cellActions')

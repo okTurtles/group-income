@@ -44,21 +44,24 @@ page(
         :aria-label='L("Payments type")'
         data-test='payNav'
       )
-        button.is-unstyled.tabs-link(
-          v-for='(link, index) in tabItems'
-          :key='index'
-          :class='{ "is-active": ephemeral.activeTab === link.url}'
-          :data-test='`link-${link.url}`'
-          :aria-expanded='ephemeral.activeTab === link.url'
-          @click='handleTabClick(link.url)'
-        )
-          | {{ link.title }}
-          span.tabs-notification(v-if='link.notification') {{ link.notification }}
+        .c-tabs-link-container
+          button.is-unstyled.tabs-link(
+            v-for='(link, index) in tabItems'
+            :key='index'
+            :class='{ "is-active": ephemeral.activeTab === link.url}'
+            :data-test='`link-${link.url}`'
+            :aria-expanded='ephemeral.activeTab === link.url'
+            @click='handleTabClick(link.url)'
+          )
+            | {{ link.title }}
+            span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
         .c-chip-container(v-if='paymentsListData.length')
           i18n.c-distribution-chip.pill.is-primary(
             :args='{ startDate: distributionDateShort }'
           ) Next distribution Date: {startDate}
+
+      h3.is-title-3.c-tab-header(v-if='tabHeader') {{ tabHeader }}
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -81,6 +84,7 @@ page(
       .tab-section
         .c-container(v-if='paymentsFiltered.length')
           payments-list(
+            ref='paymentList'
             :titles='tableTitles'
             :paymentsList='paginateList(paymentsFiltered)'
             :paymentsType='ephemeral.activeTab'
@@ -96,7 +100,7 @@ page(
               i18n.button(
                 tag='button'
                 data-test='recordPayment'
-                @click='openModal("RecordPayment")'
+                @click='onRecordPaymentClick'
               ) Record payments
             payments-pagination(
               v-else
@@ -138,6 +142,7 @@ import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
+import { randomHexString } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
 
 export default ({
@@ -265,7 +270,7 @@ export default ({
 
       for (const payment of this.ourPayments.todo) {
         payments.push({
-          hash: payment.hash,
+          hash: payment.hash || randomHexString(15),
           username: payment.to,
           displayName: this.userDisplayName(payment.to),
           amount: payment.amount,
@@ -324,6 +329,12 @@ export default ({
         PaymentRowSent: () => this.paymentsSent,
         PaymentRowReceived: () => this.paymentsReceived
       }[this.ephemeral.activeTab]()
+    },
+    tabHeader () {
+      return {
+        PaymentRowSent: L('Completed payments'),
+        PaymentRowReceived: L('Received payments')
+      }[this.ephemeral.activeTab] || ''
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
@@ -386,6 +397,10 @@ export default ({
     handleRowsPerPageChange (value) {
       this.ephemeral.rowsPerPage = value
       this.ephemeral.currentPage = 0 // go back to first page.
+    },
+    onRecordPaymentClick () {
+      // this.openModal("RecordPayment")
+      console.log('all selected items: ', this.$refs.paymentList.getAllSelectedTodoItems())
     }
   }
 }: Object)
@@ -408,13 +423,19 @@ export default ({
 // Tabs
 .tabs {
   flex-wrap: wrap;
+  margin-bottom: 2rem;
+
+  .c-tabs-link-container {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+  }
 
   .c-chip-container {
-    flex-grow: 1;
     align-self: center;
     height: max-content;
-    text-align: right;
-    padding-right: 1rem;
+    padding: 0 1rem;
+    margin: 0.75rem 0;
 
     @include tablet {
       padding-right: 1.5rem;

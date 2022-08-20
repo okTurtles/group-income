@@ -5,8 +5,17 @@
       strong {{ withGroupCurrency(payment.amount) }}
       payment-not-received-tooltip(v-if='notReceived' :member='payment.displayName')
 
-    template(slot='cellActions')
+    template(slot='cellMethod')
+      .c-methods-container
+        i18n.pill.is-neutral Manual
+
+    template(slot='cellDate')
       .cpr-date.has-text-1 {{ humanDate(payment.date) }}
+
+    template(slot='cellRelativeTo')
+      .c-relative-to TODO
+
+    template(slot='cellActions')
       payment-actions-menu
         menu-item(
           tag='button'
@@ -90,4 +99,10 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-methods-container,
+.c-relative-to {
+  @include phone {
+    display: none;
+  }
+}
 </style>
