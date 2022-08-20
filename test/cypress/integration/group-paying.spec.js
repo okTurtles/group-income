@@ -168,7 +168,7 @@ describe('Group Payments', () => {
     cy.getByDT('modal').within(() => {
       cy.getByDT('payRecord').find('tbody').children().should('have.length', 1)
       cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').should('have.value', '100')
-      cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').clear({ force: true }).type('50')
+      cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').clear({ force: true }).type('50', { force: true })
       cy.getByDT('payRow').eq(0).find('label[data-test="check"] input').should('be.checked')
 
       cy.get('button[type="submit"]').click()
