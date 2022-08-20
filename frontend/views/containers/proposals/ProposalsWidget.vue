@@ -57,11 +57,15 @@ export default ({
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', PROPOSAL_ARCHIVED, this.onProposalArchived)
+    while (this.ephemeral.timeouts.length > 0) {
+      clearTimeout(this.ephemeral.timeouts.pop())
+    }
   },
   data () {
     return {
       ephemeral: {
-        archivedProposals: []
+        archivedProposals: [],
+        timeouts: []
       }
     }
   },
@@ -129,11 +133,11 @@ export default ({
     onProposalArchived (hashWithProp) {
       this.ephemeral.archivedProposals.unshift(hashWithProp)
       // after a day, remove it from the list
-      setTimeout(() => {
+      this.ephemeral.timeouts.push(setTimeout(() => {
         this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => {
           return x[0] !== hashWithProp[0]
         })
-      }, 1000 * 60 * 60 * 24) // 1 day
+      }, 1000 * 60 * 60 * 24)) // 1 day
     },
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN

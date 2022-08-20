@@ -151,6 +151,9 @@ describe('Proposals - Add members', () => {
     // This .pipe() function (from 'cypress-pipe' dependency)
     // let's use apply a should() over a jQuery query repeatedly
     // until it's true.
+    // The reason we start with 'body' is because in some tests
+    // (including in other integration tests), proposalsWidget isn't
+    // attached to the DOM because of the v-if (when there are no proposals)
     cy.get('body')
       .pipe($el => $el.find('[data-test="proposalsWidget"]').children().eq(4).find('[data-test="statusDescription"]'))
       .should('contain', 'Proposal rejected')

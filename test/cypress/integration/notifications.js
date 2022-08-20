@@ -376,7 +376,8 @@ describe('Notifications - markAsUnread and markAllAsUnread', () => {
     })
   })
 
-  it('logs out', () => {
+  it('log out', () => {
+    // sets up the next integration test
     cy.giLogout()
   })
 })
