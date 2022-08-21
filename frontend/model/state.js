@@ -42,6 +42,7 @@ const initialState = {
   chatRoomScrollPosition: {}, // [chatRoomId]: messageId
   chatRoomUnread: {}, // [chatRoomId]: { messageId, createdDate }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
+  paymentsToRecord: [], // used in Payments page for recording 'todo' payments items.
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: defaultTheme,
@@ -186,6 +187,12 @@ const mutations = {
   },
   deleteChatRoomUnread (state, { chatRoomId }) {
     Vue.delete(state.chatRoomUnread, chatRoomId)
+  },
+  addPaymentsToRecord (state, todoItemsToRecord) {
+    state.paymentsToRecord = todoItemsToRecord
+  },
+  unloadPaymentsToRecord (state) {
+    state.paymentsToRecord = []
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state

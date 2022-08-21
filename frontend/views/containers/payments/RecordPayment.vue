@@ -112,9 +112,13 @@ export default ({
       checked: false
     }))
   },
+  beforeDestroy () {
+    this.$store.commit('unloadPaymentsToRecord')
+  },
   computed: {
     ...mapState([
-      'currentGroupId'
+      'currentGroupId',
+      'paymentsToRecord'
     ]),
     ...mapGetters([
       'groupSettings',
@@ -124,41 +128,20 @@ export default ({
       'userDisplayName'
     ]),
     paymentsList () {
-      const latePayments = []
-      const notReceivedPayments = []
-      const todoPayments = []
-
-      for (const payment of this.ourPayments.sent) {
-        const { hash, data, meta } = payment
-        if (data.status !== PAYMENT_NOT_RECEIVED) {
-          continue
-        }
-        notReceivedPayments.push({
-          hash,
-          data,
-          meta,
-          username: data.toUser,
-          displayName: this.userDisplayName(data.toUser),
-          date: meta.createdDate,
-          monthstamp: dateToMonthstamp(meta.createdDate),
-          amount: data.amount
-        })
-      }
-
-      for (const payment of this.ourPayments.todo) {
-        todoPayments.push({
-          hash: payment.hash,
-          username: payment.to,
-          displayName: this.userDisplayName(payment.to),
-          amount: payment.amount,
-          total: payment.total,
-          partial: payment.partial,
-          isLate: payment.isLate,
-          date: payment.dueOn
-        })
-      }
-
-      return latePayments.concat(notReceivedPayments, todoPayments)
+      return this.paymentsToRecord.map(item => {
+        return item.status === PAYMENT_NOT_RECEIVED // if not received item, re-format the obj
+          ? {
+              hash: item.hash,
+              data: item.data,
+              meta: item.meta,
+              username: item.toUser,
+              displayName: this.userDisplayName(item.toUser),
+              date: item.meta.createdDate,
+              monthstamp: dateToMonthstamp(item.createdDate),
+              amount: item.amount
+            }
+          : item
+      })
     },
     recordNumber () {
       return this.form.paymentsToRecord.filter(p => p.checked).length

@@ -56,7 +56,7 @@ page(
             | {{ link.title }}
             span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-        .c-chip-container(v-if='paymentsListData.length')
+        .c-chip-container
           i18n.c-distribution-chip.pill.is-primary(
             :args='{ startDate: distributionDateShort }'
           ) Next distribution Date: {startDate}
@@ -88,6 +88,7 @@ page(
             :titles='tableTitles'
             :paymentsList='paginateList(paymentsFiltered)'
             :paymentsType='ephemeral.activeTab'
+            @todo-items-change='onTodoItemsChange'
           )
           .c-footer
             .c-payment-record(v-if='ephemeral.activeTab === "PaymentRowTodo"')
@@ -100,8 +101,9 @@ page(
               i18n.button(
                 tag='button'
                 data-test='recordPayment'
+                :disabled='!ephemeral.selectedTodoItems || ephemeral.selectedTodoItems.length === 0'
                 @click='onRecordPaymentClick'
-              ) Record payments
+              ) Send payments
             payments-pagination(
               v-else
               :count='paymentsFiltered.length'
@@ -113,17 +115,6 @@ page(
         .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
           i18n(tag='p' :args='{query: form.searchText }') No results for "{query}".
         .c-container-empty.no-payments(v-else data-test='noPayments')
-          banner-simple.c-distribution-banner(severity='info')
-            i18n(
-              @click='handleIncomeClick'
-              :args='{ \
-                r1: `<button class="link js-btnInvite">`, \
-                r2: "</button>", \
-                ...LTags("strong"), \
-                date: distributionDateShort \
-              }'
-            ) {strong_}Next distribution date is on {date}.{_strong} Make sure to update your {r1}income details{r2} by then.
-
           svg-contributions.c-svg
           i18n.c-description(tag='p') There are no payments.
 </template>
@@ -133,7 +124,6 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import Search from '@components/Search.vue'
-import BannerSimple from '@components/banners/BannerSimple.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
@@ -154,8 +144,7 @@ export default ({
     PaymentsList,
     PaymentsPagination,
     MonthOverview,
-    AddIncomeDetailsWidget,
-    BannerSimple
+    AddIncomeDetailsWidget
   },
   data () {
     return {
@@ -166,7 +155,9 @@ export default ({
         activeTab: '',
         rowsPerPage: 10,
         currentPage: 0,
-        paymentMethodFilter: 'all' // defaults to 'all' options
+        paymentMethodFilter: 'all', // defaults to 'all' options
+        enableSendPaymentBtn: false,
+        selectedTodoItems: null
       },
       config: {
         paymentMethodFilterOptions: {
@@ -399,8 +390,11 @@ export default ({
       this.ephemeral.currentPage = 0 // go back to first page.
     },
     onRecordPaymentClick () {
-      // this.openModal("RecordPayment")
-      console.log('all selected items: ', this.$refs.paymentList.getAllSelectedTodoItems())
+      this.$store.commit('addPaymentsToRecord', this.ephemeral.selectedTodoItems)
+      this.openModal('RecordPayment')
+    },
+    onTodoItemsChange (selectedTodos) {
+      this.ephemeral.selectedTodoItems = selectedTodos
     }
   }
 }: Object)
@@ -515,11 +509,6 @@ export default ({
     &:not(.no-payments) {
       padding-top: 4rem;
     }
-  }
-
-  .c-distribution-banner {
-    margin-bottom: 4.5rem;
-    text-align: left;
   }
 
   .c-description {

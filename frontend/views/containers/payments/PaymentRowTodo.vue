@@ -108,6 +108,11 @@ export default ({
     deselect () {
       this.form.checked = false
     }
+  },
+  watch: {
+    'form.checked' () {
+      this.$emit('change')
+    }
   }
 }: Object)
 </script>
