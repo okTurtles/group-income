@@ -103,7 +103,7 @@ async function startApp () {
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
           'gi.actions/chatroom/leave', 'gi.notifications/emit'
         ],
-        allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],
+        allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,
         exposedGlobals: {
           // note: needs to be written this way and not simply "Notification"

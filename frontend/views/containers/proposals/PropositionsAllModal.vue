@@ -4,7 +4,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
     .c-header
       i18n.is-title-2.c-title(
         tag='h2'
-      ) All proposals
+      ) Archived proposals
 
     .c-header-info
       i18n.has-text-1(
@@ -24,16 +24,19 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
     .card.c-card
       ul(data-test='proposalsWidget')
         proposal-item(
-          v-for='hash in proposals'
+          v-for='[hash, obj] of proposals'
           :key='hash'
           :proposalHash='hash'
+          :proposalObject='obj'
         )
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import ProposalItem from './ProposalItem.vue'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
+// import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'PropositionsAllModal',
@@ -46,20 +49,30 @@ export default ({
       selectbox: {
         focused: false,
         selectedOption: 'Newest'
-      }
+      },
+      proposals: []
     }
   }),
+  async mounted () {
+    // const openProposals = Object.entries(this.currentGroupState.proposals)
+    //   .sort((a, b) => {
+    //     return compareISOTimestamps(a[1].meta.createdDate, b[1].meta.createdDate)
+    //   })
+    const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+    const archivedProposals = await sbp('gi.db/archive/load', key) || []
+    // this.ephemeral.proposals = openProposals.concat(archivedProposals)
+    this.ephemeral.proposals = archivedProposals
+  },
   methods: {
     unfocusSelect () {
       this.$refs.select.blur()
     }
   },
   computed: {
-    ...mapGetters([
-      'currentGroupState'
-    ]),
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['currentGroupState', 'ourUsername']),
     proposals () {
-      const p = Object.keys(this.currentGroupState.proposals)
+      const p = this.ephemeral.proposals
       return this.ephemeral.selectbox.selectedOption === 'Newest' ? p : [...p].reverse()
     }
   }
