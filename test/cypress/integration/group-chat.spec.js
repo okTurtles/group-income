@@ -497,7 +497,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       username: user3,
       groupName: groupName1,
       shouldLogoutAfter: false,
-      isLoggedIn: true
+      isLoggedIn: true,
+      bypassUI: true
     })
 
     cy.giRedirectToGroupChat()
