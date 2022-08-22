@@ -457,6 +457,7 @@ export default ({
     }
   }
 }
+
 .inputgroup.is-editing .c-send-mask {
   top: 0;
 }
@@ -549,12 +550,15 @@ export default ({
   align-items: center;
   padding: 0.2rem;
   cursor: pointer;
+
   &.is-selected {
     background-color: $primary_2;
   }
+
   .c-username {
     margin-left: 0.3rem;
   }
+
   .c-display-name {
     margin-left: 0.3rem;
     color: $text_1;
