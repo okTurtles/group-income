@@ -1,36 +1,38 @@
 <template lang='pug'>
-callout-card(
-  v-if='!hasProposals'
-  :title='L("Proposals")'
-  :svg='SvgVote'
-  :isCard='true'
+component(
+  :is='componentData.type'
+  v-bind='componentData.props'
 )
-  i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
-  i18n.has-text-1(tag='p') No one has created a proposal yet.
+  template(#cta='')
+    .c-all-actions
+      i18n.button.is-outlined.is-small(
+        tag='span'
+        data-test='openAllProposals'
+        @click='openModal("PropositionsAllModal")'
+      ) Archived proposals
 
-// TODO: view without current proposals
-// TODO: button "see all proposals"
-page-section(
-  v-else
-  :title='L("Proposals")'
-)
-  .c-all-actions
-    i18n.button.is-outlined.is-small(
-      tag='span'
-      @click='seeAll'
-    ) See all proposals
+      button-dropdown-menu(
+        :buttonText='L("Create proposal")'
+        :options='proposalOptions'
+        @select='onDropdownItemSelect'
+      )
 
-    i18n.button.is-primary.is-small(
-      tag='span'
-      @click='createProposal'
-    ) Create Generic Proposal
-
-  ul.c-proposals(data-test='proposalsWidget')
+  ul.c-proposals(v-if='hasProposals' data-test='proposalsWidget')
     proposal-item(
       v-for='hash in proposals'
       :key='hash'
       :proposalHash='hash'
     )
+    proposal-item(
+      v-for='[hash, obj] of ephemeral.archivedProposals'
+      :key='hash'
+      :proposalHash='hash'
+      :proposalObject='obj'
+    )
+
+  .c-description(v-else)
+    i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
+    i18n.has-text-1(tag='p') No one has created a proposal yet.
 </template>
 
 <script>
@@ -40,92 +42,125 @@ import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
 import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
-import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
+import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
+import { STATUS_OPEN, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({
   name: 'ProposalsWidget',
   components: {
     ProposalItem,
-    CalloutCard,
-    SvgVote,
-    PageSection
+    ButtonDropdownMenu
+  },
+  mounted () {
+    sbp('okTurtles.events/on', PROPOSAL_ARCHIVED, this.onProposalArchived)
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', PROPOSAL_ARCHIVED, this.onProposalArchived)
+    while (this.ephemeral.timeouts.length > 0) {
+      clearTimeout(this.ephemeral.timeouts.pop())
+    }
   },
   data () {
     return {
-      SvgVote,
       ephemeral: {
-        // Keep initial proposals order even after voting in a proposal
-        // That way recently voted proposals don't change position immediatly.
-        // Only re-sort this when the user re-visits this component again.
-        proposalsSorted: null
+        archivedProposals: [],
+        timeouts: []
       }
     }
   },
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'currentIdentityState'
+      'currentIdentityState',
+      'groupShouldPropose',
+      'groupSettings',
+      'ourUsername',
+      'groupMembersCount'
     ]),
     hasProposals () {
-      return Object.keys(this.currentGroupState.proposals).length > 0
+      return Object.keys(this.currentGroupState.proposals).length > 0 ||
+        this.ephemeral.archivedProposals.length > 0
     },
     proposals () {
-      if (this.proposalsSorted) {
-        return this.proposalsSorted
+      const openProposals = Object.entries(this.currentGroupState.proposals)
+        .sort((a, b) => {
+          return b[1].data.expires_date_ms - a[1].data.expires_date_ms
+        })
+      return openProposals.map(x => x[0])
+    },
+    componentData () {
+      return {
+        type: this.hasProposals ? PageSection : CalloutCard,
+        props: this.hasProposals
+          ? { title: this.L('Proposals') }
+          : {
+              title: this.L('Proposals'),
+              svg: SvgVote,
+              isCard: true
+            }
       }
+    },
+    proposalOptions () {
+      const isUserGroupCreator = this.ourUsername === this.groupSettings.groupCreator
 
-      const p = this.currentGroupState.proposals
-      // TODO/BUG: array.sort doesn't work the same in all browsers.
-      const sortByExpire = Object.keys(p) // .stableSort((prev, curr) => p[curr].data.expires_date_ms - p[prev].data.expires_date_ms)
-
-      // HACK/NOTE: Proposals to invite members created at the same time by
-      // the same user, should be "visually together". A solution without
-      // modifying the store/state is to group the "similiar" proposals in a sub-array.
-      const proposalsGrouped = [] // [[hash1], [hash2], [hash3_g, hash4_g]]
-
-      sortByExpire.forEach((hash, index) => {
-        if (index === 0) {
-          proposalsGrouped.push([hash])
-          return
+      return [
+        { type: 'header', name: 'Group Members' },
+        { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'user-plus' },
+        {
+          type: 'item',
+          id: 'remove-member',
+          name: 'Remove member',
+          icon: 'user-minus',
+          isDisabled: this.groupMembersCount < (isUserGroupCreator ? 2 : 3)
+        },
+        { type: 'header', name: 'Voting Systems' },
+        { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'vote-yea' },
+        { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'vote-yea' },
+        { type: 'header', name: 'Other proposals' },
+        { type: 'item', id: 'change-mincome', name: 'Change mincome', icon: 'dollar-sign' },
+        {
+          type: 'item',
+          id: 'generic-proposal',
+          name: 'Generic proposal',
+          icon: 'envelope-open-text',
+          isDisabled: this.groupMembersCount < 3
         }
-
-        const current = p[hash]
-        const previous = p[sortByExpire[index - 1]]
-        const expireAtSameTime = current.data.expires_date_ms === previous.data.expires_date_ms
-        const createdBySameUser = current.meta.username === previous.meta.username
-        if (expireAtSameTime && createdBySameUser) {
-          // This proposal should be displayed "visually together" with
-          // the previous proposal, so let's group it under the same index.
-          proposalsGrouped[proposalsGrouped.length - 1].push(hash)
-        } else {
-          proposalsGrouped.push([hash])
-        }
-      })
-      // Push grouped proposals already voted to the bottom
-      // REVIEW: improve sort order, taking in account status as well
-      // const sortByNotVoted = proposalsGrouped.stableSort((prev, curr) => {
-      //   return curr.some(hash => this.hadVoted(p[hash])) ? -1 : 1
-      // })
-      // this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
-
-      this.proposalsGrouped = proposalsGrouped // eslint-disable-line vue/no-side-effects-in-computed-properties
-      return this.proposalsGrouped.flat()
+      ]
     }
   },
   methods: {
+    onProposalArchived (hashWithProp) {
+      this.ephemeral.archivedProposals.unshift(hashWithProp)
+      // after a day, remove it from the list
+      this.ephemeral.timeouts.push(setTimeout(() => {
+        this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => {
+          return x[0] !== hashWithProp[0]
+        })
+      }, 1000 * 60 * 60 * 24)) // 1 day
+    },
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
     },
-    openModal (modal) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    openModal (modal, queries) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
-    seeAll () {
-      // Todo
-    },
-    createProposal () {
-      // Todo: for now, opening 'Generic Proposal' modal. but need to be updated accordingly, once the button is updated as a dropdown of multiple proposal options.
-      this.openModal('GenericProposal')
+    onDropdownItemSelect (itemId) {
+      const modalNameMap = {
+        'add-new-member': this.groupShouldPropose ? 'AddMembers' : 'InvitationLinkModal',
+        'remove-member': 'GroupMembersAllModal',
+        'change-mincome': 'MincomeProposal',
+        'generic-proposal': 'GenericProposal',
+        'change-disagreeing-number': 'ChangeVotingRules',
+        'change-to-percentage-base': 'ChangeVotingRules'
+      }
+      const queries = {
+        'change-disagreeing-number': { rule: 'disagreement' },
+        'change-to-percentage-base': { rule: 'percentage' },
+        'remove-member': { toRemove: true }
+      }
+
+      this.openModal(modalNameMap[itemId], queries[itemId] || undefined)
     }
   }
 }: Object)
@@ -139,14 +174,23 @@ export default ({
 }
 
 .c-all-actions {
-  margin-top: 1.5rem;
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
 
-  @include tablet {
-    position: absolute;
-    right: 1.5rem;
-    top: 0;
+  .c-see-all-proposal-btn {
+    font-weight: 400;
+
+    @include phone {
+      display: none;
+    }
   }
+
+  @include desktop {
+    top: 1rem;
+  }
+}
+
+.c-description p {
+  margin-top: 1rem;
 }
 </style>

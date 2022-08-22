@@ -1,7 +1,7 @@
 {
   "name": "group-income",
   "version": "0.0.1",
-  "contractsVersion": "0.0.1",
+  "contractsVersion": "0.0.3",
   "private": true,
   "description": "",
   "scripts": {
@@ -140,6 +140,7 @@
     "browser-sync": "2.27.10",
     "cypress": "7.7.0",
     "cypress-file-upload": "5.0.8",
+    "cypress-pipe": "2.0.0",
     "esbuild": "0.14.47",
     "esbuild-sass-plugin": "2.2.6",
     "eslint": "7.32.0",
