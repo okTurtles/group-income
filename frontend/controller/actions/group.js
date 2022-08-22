@@ -25,6 +25,7 @@ import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/
 import { encryptedAction } from './utils.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
+import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import type { GIActionParams } from './types.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
@@ -225,6 +226,13 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error('gi.actions/group/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create the group: {reportError}', LError(e)))
+    }
+  },
+  'gi.contracts/group/getShareableKeys': async function (contractID) {
+    const state = await sbp('chelonia/latestContractState', contractID)
+    return {
+      signingKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string),
+      keys: state._volatile.keys
     }
   },
   'gi.actions/group/createAndSwitch': async function (params: GIActionParams) {

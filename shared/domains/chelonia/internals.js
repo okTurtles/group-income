@@ -2,8 +2,8 @@
 
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import './db.js'
-import { decrypt, verifySignature } from './crypto.js'
-import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpPropSet, GIOpType } from './GIMessage.js'
+import { encrypt, decrypt, verifySignature } from './crypto.js'
+import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpPropSet, GIOpType, GIOpKeyRequest, GIOpKeyRequestResponse } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/model/contracts/shared/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
@@ -198,6 +198,7 @@ export default (sbp('sbp/selectors/register', {
         }
       },
       [GIMessage.OP_KEYSHARE] (v: GIOpKeyShare) {
+        // TODO: Prompt to user if contract not in pending
         if (message.originatingContractID() !== contractID && v.contractID !== message.originatingContractID()) {
           throw new Error('External contracts can only set keys for themselves')
         }
@@ -226,6 +227,19 @@ export default (sbp('sbp/selectors/register', {
               }
             }
           }
+        }
+      },
+      [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
+        if (!state._vm.pending_key_requests) state._vm.pending_key_requests = Object.create(null)
+        state._vm.pending_key_requests[message.hash()] = [
+          message.originatingContractID(),
+          message.head().previousHEAD,
+          v
+        ]
+      },
+      [GIMessage.OP_KEY_REQUEST_RESPONSE] (v: GIOpKeyRequestResponse) {
+        if (state._vm.pending_key_requests && v in state._vm.pending_key_requests) {
+          delete state._vm.pending_key_requests[v]
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -346,12 +360,87 @@ export default (sbp('sbp/selectors/register', {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
       }
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
+      await sbp('chelonia/private/respondToKeyRequests', contractID)
     } catch (e) {
       console.error(`[chelonia] syncContract error: ${e.message}`, e)
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
       this.config.hooks.syncContractError?.(e, contractID)
       throw e
     }
+  },
+  'chelonia/private/respondToKeyRequests': async function (contractID: string) {
+    const state = sbp(this.config.stateSelector)
+    const contractState = state.contracts[contractID] ?? {}
+
+    if (!contractState._vm || !contractState._vm.pending_key_requests) {
+      return
+    }
+
+    const pending = contractState._vm.pending_key_requests
+
+    delete contractState._vm.pending_key_requests
+
+    await Promise.all(Object.entries(pending).map(async ([hash, entry]) => {
+      if (!Array.isArray(entry) || entry.length !== 3) {
+        return
+      }
+
+      const [originatingContractID, previousHEAD, v] = ((entry: any): [string, string, GIOpKeyRequest])
+
+      // 1. Sync (originating) identity contract
+      await sbp('okTurtles.eventQueue/queueEvent', originatingContractID, [
+        'chelonia/private/in/syncContract', originatingContractID
+      ])
+
+      const contractName = this.state.contracts[contractID].type
+      const recipientContractName = this.state.contracts[originatingContractID].type
+
+      try {
+        // 2. Verify 'data'
+        const { data, keyId, encryptionKeyId } = v
+
+        const originatingState = sbp(self.config.stateSelector)[originatingContractID]
+
+        const signingKey = originatingState._vm.authorizedKeys[keyId]
+
+        if (!signingKey) {
+          throw new Error('Unable to find signing key')
+        }
+
+        // sign(originatingContractID + GIMessage.OP_KEY_REQUEST + contractID + HEAD)
+        verifySignature(signingKey, [originatingContractID, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD].map(encodeURIComponent).join('|'), data)
+
+        const encryptionKey = originatingState._vm.authorizedKeys[encryptionKeyId]
+
+        if (!encryptionKey) {
+          throw new Error('Unable to find encryption key')
+        }
+
+        const { keys, signingKeyId } = sbp(`${contractName}/getShareableKeys`, contractID)
+
+        // 3. Send OP_KEYSHARE to identity contract
+        await sbp('chelonia/out/keyShare', {
+          destinationContractID: originatingContractID,
+          destinationContractName: recipientContractName,
+          data: {
+            contractID: contractID,
+            keys: Object.entries(keys).map(([keyId, key]: [string, mixed]) => ({
+              id: keyId,
+              meta: {
+                private: {
+                  keyId: encryptionKeyId,
+                  content: encrypt(encryptionKey, (key: any))
+                }
+              }
+            }))
+          },
+          signingKeyId
+        })
+      } finally {
+        // 4. Update contract with information
+        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: hash })
+      }
+    }))
   },
   'chelonia/private/in/handleEvent': async function (message: GIMessage) {
     const state = sbp(this.config.stateSelector)
@@ -535,11 +624,11 @@ function loadScript (file, source, hash) {
     // script.type = 'application/javascript'
     script.type = 'module'
     // problem with this is that scripts will step on each other's feet
-    script.innerHTML = source
+    script.text = source
     // NOTE: this will work if the file route adds .header('Content-Type', 'application/javascript')
     // script.src = `${this.config.connectionURL}/file/${hash}`
     // this results in: "SyntaxError: import declarations may only appear at top level of a module"
-    // script.innerHTML = `(function () {
+    // script.text = `(function () {
     //   ${source}
     // })()`
     script.onload = () => resolve(script)

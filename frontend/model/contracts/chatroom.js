@@ -20,6 +20,7 @@ import { objectOf, string, optional } from '~/frontend/model/contracts/misc/flow
 
 function createNotificationData (
   notificationType: string,
+
   moreParams: Object = {}
 ): Object {
   return {

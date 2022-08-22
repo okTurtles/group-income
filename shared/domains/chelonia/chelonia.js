@@ -12,7 +12,7 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import { ChelErrorUnrecoverable } from './errors.js'
-import type { GIKey, GIOpContract, GIOpActionUnencrypted, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare } from './GIMessage.js'
+import type { GIKey, GIOpContract, GIOpActionUnencrypted, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpKeyRequestResponse } from './GIMessage.js'
 import { keyId, sign, encrypt, decrypt, generateSalt } from './crypto.js'
 
 // TODO: define ChelContractType for /defineContract
@@ -80,6 +80,19 @@ export type ChelKeyShareParams = {
   destinationContractID: string;
   destinationContractName: string;
   data: GIOpKeyShare;
+  signingKeyId: string;
+  hooks?: {
+    prepublishContract?: (GIMessage) => void;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
+  };
+  publishOptions?: { maxAttempts: number };
+}
+
+export type ChelKeyRequestResponseParams = {
+  contractName: string;
+  contractID: string;
+  data: GIOpKeyRequestResponse;
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
@@ -611,6 +624,35 @@ export default (sbp('sbp/selectors/register', {
       previousHEAD,
       op: [
         GIMessage.OP_KEY_DEL,
+        payload
+      ],
+      manifest: manifestHash,
+      signatureFn: signingKey ? signatureFnBuilder(signingKey) : undefined
+    })
+    hooks && hooks.prepublish && hooks.prepublish(msg)
+    await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
+    hooks && hooks.postpublish && hooks.postpublish(msg)
+    return msg
+  },
+  'chelonia/out/keyRequestResponse': async function (params: ChelKeyRequestResponseParams): Promise<GIMessage> {
+    const { contractID, contractName, data, hooks, publishOptions } = params
+    const manifestHash = this.config.contracts.manifests[contractName]
+    const contract = this.manifestToContract[manifestHash]?.contract
+    if (!contract) {
+      throw new Error('Contract name not found')
+    }
+    const state = contract.state(contractID)
+    const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+    const meta = contract.metadata.create()
+    const gProxy = gettersProxy(state, contract.getters)
+    contract.metadata.validate(meta, { state, ...gProxy, contractID })
+    const payload = (data: GIOpKeyRequestResponse)
+    const signingKey = this.env.additionalKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+    const msg = GIMessage.createV1_0({
+      contractID,
+      previousHEAD,
+      op: [
+        GIMessage.OP_KEY_REQUEST_RESPONSE,
         payload
       ],
       manifest: manifestHash,
