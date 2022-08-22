@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-chat-main(v-if='summary.title')
   emoticons
-  .c-body(:style='bodyStyles')
+  .c-body
     .c-body-loading(v-if='details.isLoading')
       loading
         //
@@ -193,20 +193,6 @@ export default ({
       'currentGroupNotifications',
       'currentChatRoomUnreadMentions'
     ]),
-    bodyStyles () {
-      const defaultHeightInRem = 14
-      let heightDiscountInRem = 0
-      if (!this.summary.joined) {
-        heightDiscountInRem += 4
-      }
-      // Not sure what `bodyPaddingBottom` means, I delete it now
-      // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
-      const phoneStyles = {}
-      const responsiveStyles = {
-        height: `calc(var(--vh, 1vh) * 100 - ${defaultHeightInRem + heightDiscountInRem}rem)`
-      }
-      return { ...phoneStyles, ...responsiveStyles }
-    },
     currentUserAttr () {
       return {
         ...this.currentIdentityState.attributes,
