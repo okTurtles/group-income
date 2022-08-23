@@ -42,9 +42,8 @@ page(
       nav.tabs(
         v-if='tabItems.length > 0'
         :aria-label='L("Payments type")'
-        data-test='payNav'
       )
-        .c-tabs-link-container
+        .c-tabs-link-container(data-test='payNav')
           button.is-unstyled.tabs-link(
             v-for='(link, index) in tabItems'
             :key='index'

@@ -254,6 +254,7 @@ export default ({
 
 .c-payment-form {
   width: 100%;
+
   @include tablet {
     max-width: 33rem;
   }

@@ -2,7 +2,7 @@
   // Note: .cpr- is from payment-row
   payment-row(:payment='payment' data-test='payRow')
     template(slot='cellPrefix')
-      label.checkbox.c-check(data-test='check')
+      label.checkbox.c-check(data-test='todoCheck')
         input.input(type='checkbox' v-model='form.checked')
         span
           i18n.sr-only Select payment item

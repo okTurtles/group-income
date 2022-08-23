@@ -89,7 +89,9 @@ describe('Group Payments', () => {
       ['Amount sent', '$0 out of $250']
     ])
 
-    cy.getByDT('recordPayment').click()
+    cy.getByDT('recordPayment').should('be.disabled')
+    cy.getByDT('todoCheck').click()
+    cy.getByDT('recordPayment').should('not.be.disabled').click()
     cy.getByDT('modal').within(() => {
       cy.getByDT('payRecord').find('tbody').children().should('have.length', 1)
       cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').should('have.value', '250')
@@ -112,7 +114,7 @@ describe('Group Payments', () => {
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user3-${userId}`)
       cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$250')
-      cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', humanDateToday)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(4)').should('contain', humanDateToday)
 
       cy.log('assert payment detail is correct')
       cy.getByDT('menuTrigger').click()
@@ -152,7 +154,7 @@ describe('Group Payments', () => {
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user1-${userId}`)
       cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$250')
-      cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', humanDateToday)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(4)').should('contain', humanDateToday)
     })
 
     assertMonthOverview([
@@ -164,6 +166,8 @@ describe('Group Payments', () => {
   it('user4 sends $50 to user2 (partial)', () => {
     cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
     cy.getByDT('paymentsLink').click()
+
+    cy.getByDT('todoCheck').click()
     cy.getByDT('recordPayment').click()
     cy.getByDT('modal').within(() => {
       cy.getByDT('payRecord').find('tbody').children().should('have.length', 1)
@@ -184,7 +188,7 @@ describe('Group Payments', () => {
     ])
 
     cy.getByDT('payList').within(() => {
-      cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$50 out of $100')
+      cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', '$50 out of $100')
     })
 
     cy.getByDT('link-PaymentRowSent').click()
@@ -192,7 +196,7 @@ describe('Group Payments', () => {
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user2-${userId}`)
       cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$50')
-      cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', humanDateToday)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(4)').should('contain', humanDateToday)
     })
 
     cy.log('user2 confirms the received payment')
@@ -203,7 +207,7 @@ describe('Group Payments', () => {
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user4-${userId}`)
       cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$50')
-      cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', humanDateToday)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(4)').should('contain', humanDateToday)
     })
   })
 
