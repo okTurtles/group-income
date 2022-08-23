@@ -52,7 +52,7 @@ hapi.ext({
         request.response.output.headers['X-Frame-Options'] = 'deny'
       }
     } catch (err) {
-      console.warn('[backend] Could not set X-Frame-Options header:', err.message)
+      console.warn(chalk.yellow('[backend] Could not set X-Frame-Options header:', err.message))
     }
     return h.continue
   }
