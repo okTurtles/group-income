@@ -23,6 +23,7 @@ modal-base-template(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from './RecordPaymentsList.vue'
 import { randomHexString } from '@model/contracts/shared/giLodash.js'
@@ -40,28 +41,28 @@ const fakeUser2 = {
 
 const dummyListData = [
   {
-    "hash": randomHexString(10),
-    "username": fakeUser1.username,
-    "displayName": fakeUser1.username,
-    "amount": 98.57142857,
-    "total": 98.57142857,
-    "partial": false,
-    "isLate": false,
-    "date": "2022-09-24T11:27:28.893Z",
-    "index": 0,
-    "checked": false
+    hash: randomHexString(10),
+    username: fakeUser1.username,
+    displayName: fakeUser1.username,
+    amount: 98.57142857,
+    total: 98.57142857,
+    partial: false,
+    isLate: false,
+    date: '2022-09-24T11:27:28.893Z',
+    index: 0,
+    checked: false
   },
   {
-    "hash": randomHexString(10),
-    "username": fakeUser2.username,
-    "displayName": fakeUser2.username,
-    "amount": 250,
-    "total": 250,
-    "partial": false,
-    "isLate": false,
-    "date": "2022-09-24T11:27:28.893Z",
-    "index": 1,
-    "checked": false
+    hash: randomHexString(10),
+    username: fakeUser2.username,
+    displayName: fakeUser2.username,
+    amount: 250,
+    total: 250,
+    partial: false,
+    isLate: false,
+    date: '2022-09-24T11:27:28.893Z',
+    index: 1,
+    checked: false
   }
 ]
 
