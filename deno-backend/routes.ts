@@ -4,7 +4,7 @@ import { blake32Hash } from '~/shared/functions.ts'
 import { SERVER_INSTANCE } from './instance-keys.ts'
 
 import { badRequest } from 'pogo/lib/bang.ts'
-import Router from 'pogo/lib/router.ts'
+import { Router } from 'pogo'
 
 import './database.ts'
 import * as pathlib from 'path'

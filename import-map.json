@@ -11,7 +11,8 @@
     "blakejs": "https://cdn.skypack.dev/blakejs",
     "buffer": "https://cdn.skypack.dev/buffer",
     "multihashes": "https://esm.sh/multihashes",
-    "pogo/": "../pogo/",
+    "pogo": "https://raw.githubusercontent.com/snowteamer/pogo/master/main.ts",
+    "pogo/": "https://raw.githubusercontent.com/snowteamer/pogo/master/",
     "tweetnacl": "https://cdn.skypack.dev/tweetnacl"
   }
 }

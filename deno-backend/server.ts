@@ -1,7 +1,7 @@
 import { blue, bold, gray } from "fmt/colors.ts"
 
 import * as http from 'https://deno.land/std@0.132.0/http/server.ts';
-import pogo from 'pogo/main.ts';
+import pogo from 'pogo';
 
 import sbp from  "@sbp/sbp"
 import GiAuth from './auth.ts'
@@ -59,6 +59,15 @@ const pubsub = createServer({
 const pogoServer = pogo.server({
   hostname: 'localhost',
   port: Number.parseInt(API_PORT),
+  onPreResponse (response) {
+    try {
+      if (typeof response.header === 'function') {
+        response.header('X-Frame-Options', 'deny')
+      }
+    } catch (err) {
+      console.warn('could not set X-Frame-Options header:', err.message)
+    }
+  }
 })
 
 // Patch the Pogo server to add WebSocket support.
