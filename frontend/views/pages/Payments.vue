@@ -68,7 +68,6 @@ page(
             v-for='(name, method) in config.paymentMethodFilterOptions'
             type='button'
             :key='method'
-            :disabled='method === "lightning"'
             :class='{ "is-active":  ephemeral.paymentMethodFilter === method }'
             @click='ephemeral.paymentMethodFilter = method'
           ) {{ name }}
@@ -103,6 +102,7 @@ page(
                 :disabled='!ephemeral.selectedTodoItems || ephemeral.selectedTodoItems.length === 0'
                 @click='onRecordPaymentClick'
               ) Send payments
+
             payments-pagination(
               v-else
               :count='paymentsFiltered.length'
@@ -113,6 +113,9 @@ page(
             )
         .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
           i18n(tag='p' :args='{query: form.searchText }') No results for "{query}".
+          .c-lightning-btn-container(v-if='ephemeral.paymentMethodFilter === "lightning"')
+            button(@click='openLightningPayments') Open Lightning Modal
+
         .c-container-empty.no-payments(v-else data-test='noPayments')
           svg-contributions.c-svg
           i18n.c-description(tag='p') There are no payments.
@@ -394,6 +397,36 @@ export default ({
     },
     onTodoItemsChange (selectedTodos) {
       this.ephemeral.selectedTodoItems = selectedTodos
+    },
+    async openLightningPayments () {
+      const fakeUsers = [
+        {
+          username: 'fake-user-1',
+          email: 'fake1@abc.com',
+          password: '123456789'
+        },
+        {
+          username: 'fake-user-2',
+          email: 'fake2@def.com',
+          password: '123456789'
+        }
+      ]
+      const wait = (milli) => new Promise(resolve => setTimeout(resolve, milli))
+
+      // check if the fake users have been created and sign them up if not.
+      // TODO: to be removed once lightning network is implemented
+      for (const userData of fakeUsers) {
+        const contractID = await sbp('namespace/lookup', userData.username)
+
+        if (!contractID) {
+          console.log(`signing up a fake user [${userData.username}]`)
+          await sbp('gi.actions/identity/signup', userData)
+        }
+      }
+
+      await wait(100) // wait a little bit for the avatar image to be prepared
+
+      this.openModal('SendPaymentsLightning')
     }
   }
 }: Object)
@@ -574,5 +607,9 @@ export default ({
       width: 100%;
     }
   }
+}
+
+.c-lightning-btn-container {
+  margin-top: 1.5rem;
 }
 </style>

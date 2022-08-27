@@ -40,7 +40,7 @@ modal-base-template(
                   @change='ephemeral.displayMemo = !ephemeral.displayMemo'
                 )
                 i18n.sr-only(tag='label' for='displayComment') Toggle comment box
-            
+
             transition(name='slidedown')
               label.field(v-if='ephemeral.displayMemo')
                 i18n.sr-only.label Leave a message
@@ -58,32 +58,28 @@ modal-base-template(
                 @change='ephemeral.addDonationFee = !ephemeral.addDonationFee'
               )
               i18n.sr-only(tag='label' for='addDonationFee') Toggle donation fee
+      
       .c-section-qr-code
+        i18n.has-text-bold(tag='h4') QR code payment
+
+        .c-qr-code-wrapper
+          .c-qr-code-img-placeholder
+          i18n.c-qr-code-instruction.has-text-1(tag='p')
+            | To complete your payment,
+            | please use your payment app to scan the QR code with your phone or copy the payment link.
 </template>
 
 <script>
 import { Vue } from '@common/common.js'
-import sbp from '@sbp/sbp'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from './RecordPaymentsList.vue'
 import { randomHexString } from '@model/contracts/shared/giLodash.js'
 
-const fakeUser1 = {
-  username: 'fake-user-1',
-  email: 'fake1@abc.com',
-  password: '123456789'
-}
-const fakeUser2 = {
-  username: 'fake-user-2',
-  email: 'fake2@def.com',
-  password: '123456789'
-}
-
 const dummyListData = [
   {
     hash: randomHexString(10),
-    username: fakeUser1.username,
-    displayName: fakeUser1.username,
+    username: 'fake-user-1',
+    displayName: 'fake-user-1',
     amount: 98.57,
     total: 98.57,
     partial: false,
@@ -94,8 +90,8 @@ const dummyListData = [
   },
   {
     hash: randomHexString(10),
-    username: fakeUser2.username,
-    displayName: fakeUser2.username,
+    username: 'fake-user-2',
+    displayName: 'fake-user-2',
     amount: 250,
     total: 250,
     partial: false,
@@ -124,23 +120,7 @@ export default ({
       }
     }
   },
-  created () {
-    this.initFakeUsers()
-  },
   methods: {
-    async initFakeUsers () {
-      // check if the fake users exist and sign them up if not.
-      // TODO: to be removed once lightning network is implemented
-
-      for (const userData of [fakeUser1, fakeUser2]) {
-        const contractID = await sbp('namespace/lookup', userData.username)
-
-        if (!contractID) {
-          console.log(`signing up a fake user [${userData.username}]`)
-          await sbp('gi.actions/identity/signup', userData)
-        }
-      }
-    },
     updateItem ({ index, ...data }) {
       Vue.set(this.ephemeral.dummyListData, index, {
         ...this.ephemeral.dummyListData[index],
@@ -199,10 +179,28 @@ export default ({
   display: flex;
   width: 100%;
   border: 1px solid $general_0;
+  padding: 1.5rem;
 
   @include tablet {
     flex-direction: column;
     width: 13.75rem;
+    padding: 2.5rem 1.5rem 1.5rem;
+  }
+}
+
+.c-qr-code-wrapper {
+  margin-top: 0.5rem;
+
+  .c-qr-code-img-placeholder {
+    display: block;
+    width: 10.75rem;
+    height: 10.75rem;
+    background-color: $general_2;
+    margin-bottom: 0.75rem;
+  }
+
+  .c-qr-code-instruction {
+    font-size: $size_4;
   }
 }
 
