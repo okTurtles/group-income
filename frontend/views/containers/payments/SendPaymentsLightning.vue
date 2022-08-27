@@ -17,12 +17,15 @@ modal-base-template(
 
         record-payments-list(
           :paymentsList='ephemeral.dummyListData'
+          paymentType='lightning'
           @update='updateItem'
         )
+
       .c-section-qr-code
 </template>
 
 <script>
+import { Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from './RecordPaymentsList.vue'
@@ -44,8 +47,8 @@ const dummyListData = [
     hash: randomHexString(10),
     username: fakeUser1.username,
     displayName: fakeUser1.username,
-    amount: 98.57142857,
-    total: 98.57142857,
+    amount: 98.57,
+    total: 98.57,
     partial: false,
     isLate: false,
     date: '2022-09-24T11:27:28.893Z',
@@ -96,8 +99,11 @@ export default ({
         }
       }
     },
-    updateItem (data) {
-      console.log('updating the item: ', data)
+    updateItem ({ index, ...data }) {
+      Vue.set(this.ephemeral.dummyListData, index, {
+        ...this.ephemeral.dummyListData[index],
+        ...data
+      })
     }
   }
 }: Object)
@@ -130,11 +136,13 @@ export default ({
   position: relative;
   display: flex;
   flex-direction: column;
+  gap: 1.375rem;
 
   @include tablet {
     padding: 2.5rem 2rem 2.5rem 0;
     flex-direction: row;
     align-items: flex-start;
+    gap: 2.25rem;
   }
 }
 
@@ -147,9 +155,12 @@ export default ({
 .c-section-qr-code {
   position: relative;
   display: flex;
+  width: 100%;
+  border: 1px solid $general_0;
 
   @include tablet {
     flex-direction: column;
+    width: 13.75rem;
   }
 }
 

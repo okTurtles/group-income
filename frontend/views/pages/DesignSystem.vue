@@ -781,9 +781,14 @@ page(
                   option Other
                 input.input(aria-label='Value')
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+
+        tr
+          td(colspan='2')
+            br
+            h3.is-title-3 Input Group
+
         tr
           td
-            h3.is-title-3 Input Group
             h4.is-title-4 With suffix
             br
             pre
@@ -799,6 +804,25 @@ page(
                 input.input(type='text' placeholder='Amount')
                 .suffix USD
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+
+        tr
+          td
+            h4.is-title-4 Disabled style
+            br
+            pre
+              | label.field
+              |   .label Mincome
+              |   .inputgroup.disabled
+              |     input.input
+              |     .suffix USD
+          td
+            label.field
+              .label Mincome
+              .inputgroup.disabled(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Amount')
+                .suffix USD
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+
         tr
           td
             h4.is-title-4 With shifted btn
