@@ -17,10 +17,47 @@ modal-base-template(
 
         record-payments-list(
           :paymentsList='ephemeral.dummyListData'
+          :addDonationFee='ephemeral.addDonationFee'
           paymentType='lightning'
           @update='updateItem'
         )
 
+        .c-toggles-wrapper
+          .c-toggle-comment
+            .c-toggle-flex
+              .c-toggle-flex-info
+                i18n.has-text-bold(
+                  tag='h4'
+                  :args='{ span_: `<span class="has-text-small has-text-1 has-text-normal">`, _span: "</span>" }'
+                ) Add a note {span_}(optional){_span}
+
+                i18n.has-text-small.has-text-1(tag='p') Leave a message to the group members selected above.
+
+              .c-toggle-flex-action
+                input.switch(
+                  type='checkbox'
+                  name='displayComment'
+                  @change='ephemeral.displayMemo = !ephemeral.displayMemo'
+                )
+                i18n.sr-only(tag='label' for='displayComment') Toggle comment box
+            
+            transition(name='slidedown')
+              label.field(v-if='ephemeral.displayMemo')
+                i18n.sr-only.label Leave a message
+                textarea.textarea.c-comment(v-model='form.memo' rows='4')
+
+          .c-toggle-donation.c-toggle-flex
+            .c-toggle-flex-info
+              i18n.has-text-bold(tag='h4') Donation fee
+              i18n.has-text-small.has-text-1(tag='p') Donate 1% to support the development of Group Income
+
+            .c-toggle-flex-action
+              input.switch(
+                type='checkbox'
+                name='addDonationFee'
+                @change='ephemeral.addDonationFee = !ephemeral.addDonationFee'
+              )
+              i18n.sr-only(tag='label' for='addDonationFee') Toggle donation fee
       .c-section-qr-code
 </template>
 
@@ -78,7 +115,12 @@ export default ({
   data () {
     return {
       ephemeral: {
-        dummyListData
+        dummyListData,
+        displayMemo: false,
+        addDonationFee: false
+      },
+      form: {
+        memo: ''
       }
     }
   },
@@ -185,5 +227,28 @@ export default ({
   @include tablet {
     padding-left: 2.5rem;
   }
+}
+
+.c-toggle-comment,
+.c-toggle-donation {
+  padding: 0.75rem 0 0.75rem 0.5rem;
+
+  @include tablet {
+    padding-left: 2.5rem;
+  }
+}
+
+.c-toggle-comment {
+  box-shadow: inset 0 -2px 0 $general_2;
+}
+
+.c-toggle-flex {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.c-comment {
+  margin-top: 1rem;
 }
 </style>

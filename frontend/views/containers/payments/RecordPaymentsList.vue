@@ -58,6 +58,10 @@ export default ({
       type: String,
       default: 'manual',
       validator: v => ['manual', 'lightning'].includes(v)
+    },
+    addDonationFee: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -93,7 +97,9 @@ export default ({
       return currencies[this.groupSettings.mincomeCurrency]
     },
     totalAmount () {
-      return this.paymentsList.reduce((acc, p) => acc + p.amount, 0)
+      const total = this.paymentsList.reduce((acc, p) => acc + p.amount, 0)
+
+      return this.currencies.displayWithoutCurrency(total * (this.addDonationFee ? 1.01 : 1))
     }
   },
   watch: {
@@ -149,6 +155,7 @@ export default ({
   justify-content: flex-end;
   align-items: center;
   width: 100%;
+  margin-top: 1rem;
   margin-bottom: 2rem;
 
   .c-total-label {

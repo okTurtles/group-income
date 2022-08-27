@@ -32,7 +32,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
               name='displayComment'
               @change='ephemeral.displayMemo = !ephemeral.displayMemo'
             )
-            i18n.sr-only(tag='label' for='displayMemo') Toggle comment box
+            i18n.sr-only(tag='label' for='displayComment') Toggle comment box
 
         transition(name='slidedown')
           label.field(v-if='ephemeral.displayMemo')
