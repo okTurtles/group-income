@@ -69,7 +69,7 @@ export default ({
     }
   },
   beforeDestroy () {
-    if (!this.$assistant.ephemeral.groupPictureFile) {
+    if (this.$assistant.ephemeral.groupPictureType !== 'image') {
       const pictureBase64 = this.$refs.pictureCanvas.toDataURL('image/png')
       this.$v.form.groupPicture.$touch()
       this.$assistant.ephemeral.groupPictureFile = imageDataURItoBlob(pictureBase64)
@@ -78,7 +78,9 @@ export default ({
   },
   computed: {
     groupInitials () {
-      return this.group.groupName ? this.group.groupName.match(/\b(\w)/g).join('').slice(0, 2).toUpperCase() : ''
+      return this.group.groupName
+        ? this.group.groupName.match(/\b(\w)/g)?.join('').slice(0, 2).toUpperCase() ?? ''
+        : ''
     }
   },
   methods: {

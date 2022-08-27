@@ -90,6 +90,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
@@ -98,9 +99,8 @@ import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'
 import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
-import sbp from '@sbp/sbp'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'GroupChat',
@@ -187,10 +187,8 @@ export default ({
         if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
           this.redirectChat('GroupChatConversation')
         } else {
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            chatRoomId: to.params.chatRoomId
-          })
-          if (!this.isPrivateChatRoom(chatRoomId)) {
+          this.updateCurrentChatRoomID(to.params.chatRoomId)
+          if (!this.isJoinedChatRoom(chatRoomId)) {
             this.loadSummaryAndDetails()
           }
         }

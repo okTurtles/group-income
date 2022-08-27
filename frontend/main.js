@@ -5,32 +5,39 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
-import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import Favico from 'favico.js'
+import { mapMutations, mapGetters, mapState } from 'vuex'
+import 'wicg-inert'
+
+import '@model/captureLogs.js'
+import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
+import * as Common from '@common/common.js'
+import { LOGIN, LOGOUT } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
-import Vue from 'vue'
-import { mapMutations } from 'vuex'
+import manifests from './model/contracts/manifests.json'
 import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
-import { LOGIN, LOGOUT } from './utils/events.js'
+import BackgroundSounds from './views/components/sounds/Background.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
-import L, { LError, LTags } from '@view-utils/translations.js'
 import ALLOWED_URLS from '@view-utils/allowedUrls.js'
-import './views/utils/translations.js'
 import './views/utils/avatar.js'
+import './views/utils/ui.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
-import './views/utils/vSafeHtml.js'
+// import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
-import 'wicg-inert'
+
+const { Vue, L } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)
@@ -48,11 +55,13 @@ async function startApp () {
   const debugParam = new URLSearchParams(window.location.search).get('debug')
   if (process.env.NODE_ENV !== 'production' || debugParam === 'true') {
     const reducer = (o, v) => { o[v] = true; return o }
+    // Domains for which debug logging won't be enabled.
     const domainBlacklist = [
       'sbp',
       'okTurtles.data'
     ].reduce(reducer, {})
-    const selBlacklist = [
+    // Selectors for which debug logging won't be enabled.
+    const selectorBlacklist = [
       'chelonia/db/get',
       'chelonia/db/logHEAD',
       'chelonia/db/set',
@@ -61,56 +70,56 @@ async function startApp () {
       'gi.db/settings/save'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
-      if (domainBlacklist[domain] || selBlacklist[selector]) return
+      if (domainBlacklist[domain] || selectorBlacklist[selector]) return
       console.debug(`[sbp] ${selector}`, data)
     })
+    // Re-enable debug logging for 'gi.db/settings/save', but won't log the saved data.
     sbp('sbp/filters/selector/add', 'gi.db/settings/save', (domain, selector, data) => {
       console.debug("[sbp] 'gi.db/settings/save'", data[0])
     })
   }
 
-  function contractName (contractID: string): string {
-    return sbp('state/vuex/state').contracts[contractID]?.type || contractID
-  }
-
   // this is to ensure compatibility between frontend and test/backend.test.js
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
-  function notificationError (activity: string) {
-    return function (e: Error, message: GIMessage) {
-      const contractID = message.contractID()
-      const [opType] = message.op()
-      const { action, meta } = message.decryptedValue()
-      sbp('gi.notifications/emit', 'ERROR', {
-        message: L("{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'", {
-          ...LTags('b'),
-          errName: e.name,
-          activity,
-          action: action || opType,
-          who: meta?.username || 'TODO: signing keyID',
-          contract: contractName(contractID),
-          errMsg: e.message || '?'
-        })
-      })
-    }
+
+  // Used in 'chelonia/configure' hooks to emit an error notification.
+  function errorNotification (activity: string, error: Error, message: GIMessage) {
+    sbp('gi.notifications/emit', 'CHELONIA_ERROR', { activity, error, message })
+    // Since a runtime error just occured, we likely want to persist app logs to local storage now.
+    sbp('appLogs/save')
   }
-  function displaySeriousErrorBanner (e: Error) {
-    sbp('okTurtles.data/get', 'BANNER').danger(
-      L('Fatal error: {reportError}', LError(e)), 'exclamation-triangle'
-    )
-  }
-  sbp('chelonia/configure', {
+  await sbp('chelonia/configure', {
     connectionURL: sbp('okTurtles.data/get', 'API_URL'),
     stateSelector: 'state/vuex/state',
     reactiveSet: Vue.set,
     reactiveDel: Vue.delete,
+    contracts: {
+      ...manifests,
+      defaults: {
+        modules: { '@common/common.js': Common },
+        allowedSelectors: [
+          'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
+          'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
+          'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
+          'gi.actions/chatroom/leave', 'gi.notifications/emit'
+        ],
+        allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
+        preferSlim: true,
+        exposedGlobals: {
+          // note: needs to be written this way and not simply "Notification"
+          // because that breaks on mobile where Notification is undefined
+          Notification: window.Notification
+        }
+      }
+    },
     hooks: {
       handleEventError: (e: Error, message: GIMessage) => {
         if (e.name === 'ChelErrorUnrecoverable') {
-          displaySeriousErrorBanner(e)
+          sbp('gi.ui/seriousErrorBanner', e)
         }
         if (sbp('okTurtles.data/get', 'sideEffectError') !== message.hash()) {
-          // avoid duplicate notifications for the same message
-          notificationError('handleEvent')(e, message)
+          // Avoid duplicate notifications for the same message.
+          errorNotification('handleEvent', e, message)
         }
       },
       processError: (e: Error, message: GIMessage) => {
@@ -119,12 +128,12 @@ async function startApp () {
             'gi.actions/group/autobanUser', message, e
           ])
         }
-        notificationError('process')(e, message)
+        errorNotification('process', e, message)
       },
       sideEffectError: (e: Error, message: GIMessage) => {
-        displaySeriousErrorBanner(e)
+        sbp('gi.ui/seriousErrorBanner', e)
         sbp('okTurtles.data/set', 'sideEffectError', message.hash())
-        notificationError('sideEffect')(e, message)
+        errorNotification('sideEffect', e, message)
       }
     }
   })
@@ -132,19 +141,22 @@ async function startApp () {
   // NOTE: setting 'EXPOSE_SBP' in production will make it easier for users to generate contract
   //       actions that they shouldn't be generating, which can lead to bugs or trigger the automated
   //       ban system. Only enable it if you know what you're doing and don't mind the risk.
+  // IMPORTANT: setting 'window.sbp' must come *after* 'chelonia/configure' so that the Cypress
+  //            tests don't attempt to use the contracts before they're ready!
   if (process.env.NODE_ENV === 'development' || window.Cypress || process.env.EXPOSE_SBP === 'true') {
     // In development mode this makes the SBP API available in the devtools console.
     window.sbp = sbp
   }
+
   // this is definitely very hacky, but we put it here since CONTRACT_IS_SYNCING can
   // be called before the main App component is loaded (just after we call login)
   // and we don't yet have access to the component's 'this'
-  const initialSyncs = { ephemeral: { debouncedSyncBanner (c) {}, syncs: [] } }
+  const initialSyncs = { ephemeral: { debouncedSyncBanner () {}, syncs: [] } }
   const syncFn = function (contractID, isSyncing) {
     // Make it possible for Cypress to wait for contracts to finish syncing.
     if (isSyncing) {
       this.ephemeral.syncs.push(contractID)
-      this.ephemeral.debouncedSyncBanner(contractID)
+      this.ephemeral.debouncedSyncBanner()
     } else if (this.ephemeral.syncs.includes(contractID)) {
       this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
     }
@@ -181,6 +193,7 @@ async function startApp () {
     router: router,
     components: {
       AppStyles,
+      BackgroundSounds,
       BannerGeneral,
       Navigation,
       Modal
@@ -206,16 +219,17 @@ async function startApp () {
       // display a self-clearing banner that shows up after we've taken 2 or more seconds
       // to sync a contract.
       this.ephemeral.debouncedSyncBanner = bannerGeneral.debouncedShow({
-        message: (cID) => {
-          return L("Loading events for '{contract}' from server...", { contract: contractName(cID) })
-        },
+        // we can't actually show in the global banner what contract is syncing because doing
+        // so would involve having to repeatedly call the message() function, and if there
+        // were other danger banners that needed to take precedence they would get covered
+        message: () => L('Loading events from server...'),
         icon: 'wifi',
         seconds: 2,
         clearWhen: () => !this.ephemeral.syncs.length
       })
       this.ephemeral.syncs = initialSyncs.ephemeral.syncs
       if (this.ephemeral.syncs.length) {
-        this.ephemeral.debouncedSyncBanner(this.ephemeral.syncs[0])
+        this.ephemeral.debouncedSyncBanner()
       }
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
@@ -226,39 +240,35 @@ async function startApp () {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
-      // call from anywhere in the app:
-      // sbp('okTurtles.data/get', 'BANNER').show(L('Trying to reconnect...'), 'wifi')
-      // sbp('okTurtles.data/get', 'BANNER').danger(L('message'), 'icon-type')
-      // sbp('okTurtles.data/get', 'BANNER').clean()
       sbp('okTurtles.data/apply', PUBSUB_INSTANCE, (pubsub) => {
-        const banner = this.$refs.bannerGeneral
-        // Allow to access `L` inside event handlers.
+        // Allow access to `L` inside event handlers.
         const L = this.L.bind(this)
 
         Object.assign(pubsub.customEventHandlers, {
           offline () {
-            banner.show(L('Your device appears to be offline.'), 'wifi')
+            sbp('gi.ui/showBanner', L('Your device appears to be offline.'), 'wifi')
           },
           online () {
-            banner.clean()
+            sbp('gi.ui/clearBanner')
           },
           'reconnection-attempt' () {
-            banner.show(L('Trying to reconnect...'), 'wifi')
+            sbp('gi.ui/showBanner', L('Trying to reconnect...'), 'wifi')
           },
           'reconnection-failed' () {
-            banner.show(L('We could not connect to the server. Please refresh the page.'), 'wifi')
+            sbp('gi.ui/showBanner', L('We could not connect to the server. Please refresh the page.'), 'wifi')
           },
           'reconnection-succeeded' () {
-            banner.clean()
+            sbp('gi.ui/clearBanner')
           }
         })
       })
+
       // Useful in case the app is started in offline mode.
       if (navigator.onLine === false) {
-        this.$refs.bannerGeneral.show(L('Your device appears to be offline.'), 'wifi')
+        sbp('gi.ui/showBanner', L('Your device appears to be offline.'), 'wifi')
       }
       if (this.ephemeral.isCorrupted) {
-        this.$refs.bannerGeneral.danger(
+        sbp('gi.ui/dangerBanner',
           L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
             'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&section=troubleshooting">`,
             '_a': '</a>'
@@ -266,8 +276,20 @@ async function startApp () {
           'times-circle'
         )
       }
+
+      this.setBadgeOnTab()
     },
     computed: {
+      ...mapGetters(['ourUnreadMessages', 'totalUnreadNotificationCount']),
+      ...mapState(['contracts']),
+      ourUnreadMessagesCount () {
+        return Object.keys(this.ourUnreadMessages)
+          .map(cId => this.ourUnreadMessages[cId].mentions.length)
+          .reduce((a, b) => a + b, 0)
+      },
+      shouldSetBadge () {
+        return this.ourUnreadMessagesCount + this.totalUnreadNotificationCount > 0
+      },
       showNav () {
         return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
       },
@@ -286,7 +308,20 @@ async function startApp () {
     methods: {
       ...mapMutations([
         'setReducedMotion'
-      ])
+      ]),
+      setBadgeOnTab () {
+        if (!window.favicon) {
+          window.favicon = new Favico({
+            textColor: '#d00'
+          })
+        }
+        window.favicon.badge(this.shouldSetBadge ? 1 : 0)
+      }
+    },
+    watch: {
+      shouldSetBadge (to, from) {
+        this.setBadgeOnTab()
+      }
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')

@@ -19,6 +19,8 @@
 declare function logger(err: Error): void
 // Nodejs globals.
 declare var process: any
+// Third-party globals
+declare var Compartment: Function
 
 // =======================
 // Fix "Required module not found" in a hackish way.
@@ -58,9 +60,25 @@ declare module '@sbp/sbp' { declare module.exports: any }
 declare module '@sbp/okturtles.data' { declare module.exports: any }
 declare module '@sbp/okturtles.eventqueue' { declare module.exports: any }
 declare module '@sbp/okturtles.events' { declare module.exports: any }
+declare module 'favico.js' { declare module.exports: any }
 
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }
 // Other .js files.
 declare module '@utils/blockies.js' { declare module.exports: Object }
-declare module '~/frontend/utils/flowTyper.js' { declare module.exports: Object }
+declare module '~/frontend/model/contracts/misc/flowTyper.js' { declare module.exports: Object }
+declare module '~/frontend/model/contracts/shared/time.js' { declare module.exports: Object }
+declare module '@model/contracts/shared/time.js' { declare module.exports: Object }
+// HACK: declared three files below but not sure why it's necessary
+declare module '~/shared/domains/chelonia/events.js' { declare module.exports: Object }
+declare module '~/shared/domains/chelonia/errors.js' { declare module.exports: Object }
+declare module '~/shared/domains/chelonia/internals.js' { declare module.exports: Object }
+declare module '~/frontend/model/contracts/shared/giLodash.js' { declare module.exports: any }
+declare module '@model/contracts/shared/giLodash.js' { declare module.exports: any }
+declare module '@model/contracts/shared/constants.js' { declare module.exports: any }
+declare module '@model/contracts/shared/distribution/distribution.js' { declare module.exports: any }
+declare module '@model/contracts/shared/voting/rules.js' { declare module.exports: any }
+declare module '@model/contracts/shared/voting/proposals.js' { declare module.exports: any }
+declare module '@model/contracts/shared/functions.js' { declare module.exports: any }
+declare module '@common/common.js' { declare module.exports: any }
+declare module './model/contracts/manifests.json' { declare module.exports: any }

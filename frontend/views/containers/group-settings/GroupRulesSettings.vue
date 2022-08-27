@@ -36,9 +36,9 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers, getPercentFromDecimal } from '@model/contracts/voting/rules.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 
 export default ({
@@ -69,7 +69,7 @@ export default ({
     proposalSettings () {
       // note: a console error can happen here if we're on this page and logout
       // because the group disappears. it's not a big deal though
-      return this.groupProposalSettings()
+      return this.groupProposalSettings() || {}
     },
     votingRulesSorted () {
       return this.proposalSettings.rule === RULE_DISAGREEMENT ? [RULE_DISAGREEMENT, RULE_PERCENTAGE] : [RULE_PERCENTAGE, RULE_DISAGREEMENT]

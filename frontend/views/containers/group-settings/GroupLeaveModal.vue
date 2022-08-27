@@ -53,6 +53,7 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
@@ -62,7 +63,6 @@ import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import L from '@view-utils/translations.js'
 
 export default ({
   name: 'GroupLeaveModal',
@@ -92,7 +92,9 @@ export default ({
       'ourUsername'
     ]),
     code () {
-      return L('LEAVE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })
+      return L('LEAVE {GROUP_NAME}', {
+        GROUP_NAME: this.groupSettings.groupName.toUpperCase()
+      })
     }
   },
   methods: {

@@ -29,10 +29,10 @@ proposal-template(
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
-import L, { LTags } from '@view-utils/translations.js'
-import { proposalDefaults } from '@model/contracts/voting/proposals.js'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
-import { PROPOSAL_PROPOSAL_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
+import { L, LTags } from '@common/common.js'
+import { proposalDefaults } from '@model/contracts/shared/voting/proposals.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
+import { PROPOSAL_PROPOSAL_SETTING_CHANGE } from '@model/contracts/shared/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 import VotingRulesInput from '@components/VotingRulesInput.vue'
@@ -52,8 +52,7 @@ export default ({
         rule: null
       },
       form: {
-        threshold: null,
-        reason: ''
+        threshold: null
       },
       ephemeral: {
         errorMsg: null,
@@ -135,12 +134,14 @@ export default ({
       this.$refs.formMsg.clean()
       return true
     },
-    async submit () {
+    async submit (arg) {
       if (!this.validateThreshold()) {
         return
       }
 
       if (this.groupShouldPropose) {
+        const { reason } = arg // reason gets delivered from 'ProposalTemplate.vue'
+
         try {
           await sbp('gi.actions/group/proposal', {
             contractID: this.currentGroupId,
@@ -153,7 +154,7 @@ export default ({
                 },
                 ruleName: this.config.rule,
                 ruleThreshold: +this.form.threshold,
-                reason: this.form.reason
+                reason
               },
               votingRule: this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].rule,
               expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].expires_ms

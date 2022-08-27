@@ -65,6 +65,8 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .settings-container {
+  width: 100%;
+
   @include desktop {
     padding-top: 1.5rem;
   }

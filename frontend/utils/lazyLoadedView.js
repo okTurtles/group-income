@@ -1,5 +1,4 @@
-import Vue from 'vue'
-
+import { Vue } from '@common/common.js'
 import ErrorModal from '@views/containers/loading-error/ErrorModal.vue'
 import ErrorPage from '@views/containers/loading-error/ErrorPage.vue'
 import LoadingModal from '@views/containers/loading-error/LoadingModal.vue'
@@ -8,7 +7,7 @@ import LoadingPage from '@views/containers/loading-error/LoadingPage.vue'
 
 type LazyImport = () => Promise<Object>;
 
-// See https://v2.vuejs.org/v2/guide/components-dynamic-lazy.html#Async-Components
+// See https://v2.vuejs.org/v2/guide/components-dynamic-async.html#Async-Components
 function asyncHandler (lazyImport, { loading, error } = {}) {
   return () => ({
     // HACK: sometimes a bundler bug makes it necessary to use
@@ -86,11 +85,14 @@ lazyComponent('ChangeVotingRules', () => import('../views/containers/proposals/C
 lazyComponent('MincomeProposal', () => import('../views/containers/proposals/Mincome.vue'))
 lazyComponent('PaymentsHistoryModal', () => import('../views/containers/payments/PaymentsHistoryModal.vue'))
 lazyComponent('RemoveMember', () => import('../views/containers/proposals/RemoveMember.vue'))
+lazyComponent('GenericProposal', () => import('../views/containers/proposals/GenericProposal.vue'))
+lazyModalFullScreen('PropositionsAllModal', () => import('../views/containers/proposals/PropositionsAllModal.vue'))
 
 lazyComponent('PaymentDetail', () => import('../views/containers/payments/PaymentDetail.vue'))
 lazyComponent('RecordPayment', () => import('../views/containers/payments/RecordPayment.vue'))
 
 lazyComponent('Appearence', () => import('../views/containers/user-settings/Appearence.vue'))
+lazyComponent('NotificationSettings', () => import('../views/containers/user-settings/NotificationSettings.vue'))
 lazyComponent('AppLogs', () => import('../views/containers/user-settings/AppLogs.vue'))
 lazyComponent('GroupMembersDirectMessages', () => import('../views/containers/chatroom/GroupMembersDirectMessages.vue'))
 lazyComponent('Placeholder', () => import('../views/containers/user-settings/Placeholder.vue'))

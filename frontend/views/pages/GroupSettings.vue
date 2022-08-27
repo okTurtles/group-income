@@ -97,7 +97,7 @@ import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.j
 import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import { required } from 'vuelidate/lib/validators'
-import currencies from '@view-utils/currencies.js'
+import currencies from '@model/contracts/shared/currencies.js'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
@@ -105,7 +105,7 @@ import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
 import GroupRulesSettings from '@containers/group-settings/GroupRulesSettings.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'GroupSettings',

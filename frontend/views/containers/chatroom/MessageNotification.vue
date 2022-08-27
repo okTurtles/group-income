@@ -1,15 +1,15 @@
 <template lang='pug'>
-message-base(v-bind='$props' @addEmoticon='addEmoticon($event)')
+message-base(v-bind='$props' @add-emoticon='addEmoticon($event)')
   template(#body='')
     .c-notification
       p.c-text(v-if='message') {{message.text}}
 </template>
 
 <script>
+import { L } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
-import L from '@view-utils/translations.js'
-import { MESSAGE_NOTIFICATIONS, MESSAGE_VARIANTS } from '@model/contracts/constants.js'
+import { MESSAGE_NOTIFICATIONS, MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'MessageNotification',
@@ -22,7 +22,7 @@ export default ({
     text: String,
     notification: Object, // { type, params }
     who: String,
-    currentUserId: String,
+    currentUsername: String,
     avatar: String,
     datetime: {
       type: Date,

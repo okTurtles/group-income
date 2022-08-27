@@ -7,16 +7,15 @@ import '~/shared/domains/chelonia/chelonia.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { blake32Hash } from '~/shared/functions.js'
-import proposals from '~/frontend/model/contracts/voting/proposals.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/voting/constants.js'
-import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
-import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/payments/index.js'
-import { INVITE_INITIAL_CREATOR } from '~/frontend/model/contracts/constants.js'
-import { createInvite } from '~/frontend/model/contracts/group.js'
-import '~/frontend/model/contracts/identity.js'
+import * as Common from '@common/common.js'
+import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
+import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
+import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS, MAIL_TYPE_MESSAGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
+import { createInvite } from '~/frontend/model/contracts/shared/functions.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
+import manifests from '~/frontend/model/contracts/manifests.json'
 
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
 global.WebSocket = require('ws')
@@ -58,18 +57,7 @@ const vuexState = {
 
 // this is to ensure compatibility between frontend and test/backend.test.js
 sbp('okTurtles.data/set', 'API_URL', process.env.API_URL)
-sbp('chelonia/configure', {
-  connectionURL: process.env.API_URL,
-  stateSelector: 'state/vuex/state',
-  skipSideEffects: true,
-  connectionOptions: {
-    pingTimeout: 0,
-    reconnectOnDisconnection: false,
-    reconnectOnOnline: false,
-    reconnectOnTimeout: false,
-    timeout: 3000
-  }
-})
+
 sbp('sbp/selectors/register', {
   // for handling the loggedIn metadata() in Contracts.js
   'state/vuex/state': () => {
@@ -94,6 +82,34 @@ sbp('sbp/selectors/register', {
 describe('Full walkthrough', function () {
   const users = {}
   const groups = {}
+
+  it('Should configure chelonia', async function () {
+    await sbp('chelonia/configure', {
+      connectionURL: process.env.API_URL,
+      stateSelector: 'state/vuex/state',
+      skipSideEffects: true,
+      connectionOptions: {
+        reconnectOnDisconnection: false,
+        reconnectOnOnline: false,
+        reconnectOnTimeout: false,
+        timeout: 3000
+      },
+      contracts: {
+        ...manifests,
+        defaults: {
+          modules: { '@common/common.js': Common },
+          allowedSelectors: [
+            'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
+            'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
+            'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
+            'gi.actions/chatroom/leave', 'gi.notifications/emit'
+          ],
+          allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue'],
+          preferSlim: true
+        }
+      }
+    })
+  })
 
   function login (user) {
     // we set this so that the metadata on subsequent messages is properly filled in
@@ -122,7 +138,11 @@ describe('Full walkthrough', function () {
     return msg
   }
   function createGroup (name: string, hooks: Object = {}): Promise {
-    const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
+    const initialInvite = createInvite({
+      quantity: 60,
+      creator: INVITE_INITIAL_CREATOR,
+      expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+    })
     return sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/group',
       data: {
@@ -182,10 +202,10 @@ describe('Full walkthrough', function () {
 
   describe('Identity tests', function () {
     it('Should create identity contracts for Alice and Bob', async function () {
-      users.bob = await createIdentity('Bob', 'bob@okturtles.com')
-      users.alice = await createIdentity('Alice', 'alice@okturtles.org')
+      users.bob = await createIdentity('bob', 'bob@okturtles.com')
+      users.alice = await createIdentity('alice', 'alice@okturtles.org')
       // verify attribute creation and state initialization
-      users.bob.decryptedValue().data.attributes.username.should.match(/^Bob/)
+      users.bob.decryptedValue().data.attributes.username.should.match(/^bob/)
       users.bob.decryptedValue().data.attributes.email.should.equal('bob@okturtles.com')
     })
 
@@ -245,7 +265,7 @@ describe('Full walkthrough', function () {
       should(state.attributes.mailbox).equal(bob.mailbox.contractID())
       // 4. fetch the latest hash for bob's mailbox.
       //    we don't need latest state for it just latest hash
-      const res = await sbp('chelonia/private/out/latestHash', state.attributes.mailbox)
+      const res = await sbp('chelonia/out/latestHash', state.attributes.mailbox)
       should(res).equal(bob.mailbox.hash())
     })
 
@@ -255,7 +275,7 @@ describe('Full walkthrough', function () {
         action: 'gi.contracts/mailbox/postMessage',
         data: {
           from: users.bob.decryptedValue().data.attributes.username,
-          messageType: TYPE_MESSAGE,
+          messageType: MAIL_TYPE_MESSAGE,
           message: groups.group1.contractID()
         },
         contractID: mailbox.contractID(),

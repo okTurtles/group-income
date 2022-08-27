@@ -40,12 +40,12 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'
 import ProgressBar from '@components/graphs/Progress.vue'
-import L, { LTags } from '@view-utils/translations.js'
-import currencies from '@view-utils/currencies.js'
+import currencies from '@model/contracts/shared/currencies.js'
 
 export default ({
   name: 'ContributionsWidget',

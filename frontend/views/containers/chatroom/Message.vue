@@ -3,13 +3,16 @@ message-base(
   v-bind='$props'
   @add-emoticon='addEmoticon($event)'
   @reply='reply'
+  @reply-message-clicked='scrollToReplyMessage'
+  @message-edited='editMessage'
+  @delete-message='deleteMessage'
 )
 
 </template>
 
 <script>
 import MessageBase from './MessageBase.vue'
-import { MESSAGE_VARIANTS } from '@model/contracts/constants.js'
+import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'Message',
@@ -17,14 +20,16 @@ export default ({
     MessageBase
   },
   props: {
+    type: String,
     text: String,
     who: String,
-    currentUserId: String,
+    currentUsername: String,
     avatar: String,
     datetime: {
       type: Date,
       required: true
     },
+    edited: Boolean,
     variant: {
       type: String,
       validator (value) {
@@ -43,11 +48,17 @@ export default ({
     variants: MESSAGE_VARIANTS
   }),
   methods: {
-    edit () {
-      this.$emit('edit')
+    editMessage (newMessage) {
+      this.$emit('edit-message', newMessage)
+    },
+    deleteMessage () {
+      this.$emit('delete-message')
     },
     reply () {
       this.$emit('reply')
+    },
+    scrollToReplyMessage () {
+      this.$emit('scroll-to-replying-message')
     },
     moreOptions () {
       console.log('TODO MORE OPTIONS')

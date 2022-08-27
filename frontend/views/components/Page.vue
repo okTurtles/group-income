@@ -9,6 +9,7 @@ div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-s
       )
       slot(name='title')
 
+    toggle(@toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
     slot(name='description')
 
   main.p-main(:class='mainClass')
@@ -27,7 +28,7 @@ div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-s
 <script>
 import Toggle from '@components/Toggle.vue'
 import { DESKTOP } from '@view-utils/breakpoints.js'
-import { debounce } from '@utils/giLodash.js'
+import { debounce } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'Page',
@@ -154,6 +155,14 @@ $pagePaddingDesktop: 5.5rem;
     min-height: 4.75rem;
     padding-left: $pagePaddingDesktop;
   }
+
+  .c-toggle.sidebar {
+    right: -1rem;
+
+    @include desktop {
+      display: none;
+    }
+  }
 }
 
 .p-title {
@@ -196,6 +205,10 @@ $pagePaddingDesktop: 5.5rem;
 
   .c-toggle {
     right: 100%;
+
+    @include until($desktop) {
+      display: none;
+    }
   }
 
   &.is-active {
@@ -203,6 +216,7 @@ $pagePaddingDesktop: 5.5rem;
 
     .c-toggle {
       height: 100vh;
+      display: block;
     }
   }
 }

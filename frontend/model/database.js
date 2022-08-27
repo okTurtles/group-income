@@ -2,7 +2,6 @@
 
 import sbp from '@sbp/sbp'
 import localforage from 'localforage'
-import '~/shared/domains/chelonia/db.js'
 
 if (process.env.LIGHTWEIGHT_CLIENT !== 'true') {
   const log = localforage.createInstance({
@@ -67,5 +66,29 @@ sbp('sbp/selectors/register', {
   },
   'gi.db/files/delete': function (url: string): Promise<Blob> {
     return files.removeItem(url)
+  }
+})
+
+// ======================================
+// Archve for proposals and anything else
+// ======================================
+
+const archive = localforage.createInstance({
+  name: 'Group Income',
+  storeName: 'Archive'
+})
+
+sbp('sbp/selectors/register', {
+  'gi.db/archive/save': function (key: string, value: any): Promise<*> {
+    return archive.setItem(key, value)
+  },
+  'gi.db/archive/load': function (key: string): Promise<any> {
+    return archive.getItem(key)
+  },
+  'gi.db/archive/delete': function (key: string): Promise<Object> {
+    return archive.removeItem(key)
+  },
+  'gi.db/archive/clear': function (): Promise<any> {
+    return archive.clear()
   }
 })

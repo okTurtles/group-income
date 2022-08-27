@@ -48,7 +48,7 @@ div
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
 import { LOGIN } from '@utils/events.js'
 import SignupForm from '@containers/access/SignupForm.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
@@ -56,7 +56,7 @@ import Loading from '@components/Loading.vue'
 import Avatar from '@components/Avatar.vue'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgBrokenLink from '@svgs/broken-link.svg'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 
 let syncFinished = false
 sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })
@@ -166,6 +166,7 @@ export default ({
       this.ephemeral.errorMsg = null
       try {
         const { groupId, secret } = this.ephemeral.query
+
         await sbp('gi.actions/group/joinAndSwitch', {
           contractID: groupId,
           data: { inviteSecret: secret }

@@ -64,9 +64,9 @@ transition(name='replace-list')
 </template>
 
 <script>
+import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
-import L from '@view-utils/translations.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default ({

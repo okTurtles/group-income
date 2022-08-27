@@ -22,7 +22,11 @@ export default ({
   },
   methods: {
     handleClick () {
-      this.Menu.handleTrigger()
+      if (this.isActive) {
+        this.Menu.closeMenu()
+      } else {
+        this.Menu.handleTrigger()
+      }
     }
   }
 }: Object)

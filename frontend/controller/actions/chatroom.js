@@ -1,8 +1,7 @@
 'use strict'
 import sbp from '@sbp/sbp'
-import L from '@view-utils/translations.js'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
-import { omit } from '~/frontend/utils/giLodash.js'
+import { L, GIErrorUIRuntimeError } from '@common/common.js'
+import { omit } from '@model/contracts/shared/giLodash.js'
 import { encryptedAction } from './utils.js'
 import type { GIRegParams } from './types.js'
 
@@ -19,6 +18,9 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
+  ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),
+  ...encryptedAction('gi.actions/chatroom/deleteMessage', L('Failed to delete message.')),
+  ...encryptedAction('gi.actions/chatroom/makeEmotion', L('Failed to make emotion.')),
   ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.')),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),

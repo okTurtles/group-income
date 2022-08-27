@@ -52,12 +52,12 @@ modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle
 import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
-import proposals from '@model/contracts/voting/proposals.js'
-import { PROPOSAL_GENERIC } from '@model/contracts/voting/constants.js'
-import currencies, { mincomePositive, normalizeCurrency } from '@view-utils/currencies.js'
-import L from '@view-utils/translations.js'
-import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '~/frontend/utils/time.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
+import proposals from '@model/contracts/shared/voting/proposals.js'
+import { PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
+import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
+import { L } from '@common/common.js'
+import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
@@ -119,8 +119,7 @@ export default ({
             mincomeCurrency: this.form.mincomeCurrency,
             ruleName: this.form.ruleName,
             ruleThreshold: this.form.ruleThreshold[this.form.ruleName],
-            // TODO: connect this to the form data and then delete this comment!
-            distributionDate: dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
+            distributionDate: this.form.distributionDate
           }
         })
         this.next()
@@ -142,6 +141,7 @@ export default ({
         ruleOrder: Math.round(Math.random()) === 1 ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE],
         mincomeAmount: '',
         mincomeCurrency: 'USD',
+        distributionDate: dateToPeriodStamp(addTimeToDate(new Date().setUTCHours(0, 0, 0, 0), 3 * DAYS_MILLIS)),
         ruleName: null,
         ruleThreshold: {
           [RULE_DISAGREEMENT]: proposalsSettings[RULE_DISAGREEMENT].threshold,
@@ -178,6 +178,9 @@ export default ({
         }
       },
       mincomeCurrency: {
+        required
+      },
+      distributionDate: {
         required
       },
       ruleName: {

@@ -19,21 +19,31 @@
           span.has-text-1 {{ humanDate(datetime, { hour: 'numeric', minute: 'numeric' }) }}
 
       slot(name='body')
-        p.c-replying(if='replyingMessage') {{ replyingMessage }}
+        p.c-replying(
+          if='replyingMessage'
+          @click='onReplyMessageClicked'
+        ) {{ replyingMessage }}
         send-area(
           v-if='isEditing'
-          title=''
+          :defaultText='text'
           :isEditing='true'
-          @send='sendEdit'
+          @send='onMessageEdited'
           @cancelEdit='cancelEdit'
         )
 
-        p.c-text(v-else-if='text') {{ text }}
+        p.c-text(v-else-if='text')
+          template(v-for='(objText, index) in textObjects')
+            span(v-if='isText(objText)') {{ objText.text }}
+            span.c-mention(
+              v-else-if='isMention(objText)'
+              :class='{"c-mention-to-me": objText.toMe}'
+            ) {{ objText.text }}
+          i18n.c-edited(v-if='edited') (edited)
 
   message-reactions(
     v-if='!isEditing'
     :emoticonsList='emoticonsList'
-    :currentUserId='currentUserId'
+    :currentUsername='currentUsername'
     @selectEmoticon='selectEmoticon($event)'
     @openEmoticon='openEmoticon($event)'
   )
@@ -41,25 +51,29 @@
   message-actions(
     v-if='!isEditing'
     :variant='variant'
+    :type='type'
     :isCurrentUser='isCurrentUser'
     ref='messageAction'
     @openEmoticon='openEmoticon($event)'
-    @edit='edit'
+    @editMessage='editMessage'
+    @deleteMessage='deleteMessage'
     @reply='reply'
     @retry='retry'
     @copyToClipBoard='copyToClipBoard'
-    @deleteMessage='deleteMessage'
   )
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import emoticonsMixins from './EmoticonsMixins.js'
 import MessageActions from './MessageActions.vue'
 import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
-import { humanDate } from '@utils/time.js'
+import { humanDate } from '@model/contracts/shared/time.js'
+import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
 
+const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({
   name: 'MessageBase',
   mixins: [emoticonsMixins],
@@ -78,12 +92,13 @@ export default ({
     text: String,
     replyingMessage: String,
     who: String,
-    currentUserId: String,
+    currentUsername: String,
     avatar: String,
     datetime: {
       type: Date,
       required: true
     },
+    edited: Boolean,
     notification: Object,
     type: String,
     emoticonsList: {
@@ -94,14 +109,41 @@ export default ({
     isSameSender: Boolean,
     isCurrentUser: Boolean
   },
+  computed: {
+    ...mapGetters(['chatRoomUsers', 'ourUsername']),
+    textObjects () {
+      if (!this.text.includes('@')) {
+        return [{ type: TextObjectType.Text, text: this.text }]
+      }
+      const possibleMentions = [
+        ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
+        makeMentionFromUsername('').all
+      ]
+
+      return this.text
+        .split(new RegExp(`(${possibleMentions.join('|')})`))
+        .map(t => possibleMentions.includes(t)
+          ? { type: TextObjectType.Mention, text: t }
+          : { type: TextObjectType.Text, text: t }
+        )
+    }
+  },
   methods: {
     humanDate,
-    edit () {
+    editMessage () {
       this.isEditing = true
     },
-    sendEdit (newMessage) {
+    onReplyMessageClicked () {
+      this.$emit('reply-message-clicked')
+    },
+    onMessageEdited (newMessage) {
       this.isEditing = false
-      this.$emit('edit', newMessage)
+      if (this.text !== newMessage) {
+        this.$emit('message-edited', newMessage)
+      }
+    },
+    deleteMessage () {
+      this.$emit('delete-message')
     },
     cancelEdit () {
       this.isEditing = false
@@ -118,11 +160,14 @@ export default ({
     retry () {
       this.$emit('retry')
     },
-    deleteMessage () {
-      this.$emit('delete-message')
-    },
     openMenu () {
       this.$refs.messageAction.$refs.menu.handleTrigger()
+    },
+    isText (o) {
+      return o.type === TextObjectType.Text
+    },
+    isMention (o) {
+      return o.type === TextObjectType.Mention
     }
   }
 }: Object)
@@ -210,10 +255,40 @@ export default ({
   }
 }
 
+.c-focused {
+  animation: focused 1s linear 0.5s;
+}
+
 .c-replying {
+  border-left: 2px;
+  border-color: #dbdbdb; // var(--text_1);
+  border-style: none none none solid;
   font-size: 0.75rem;
   color: var(--text_1);
   font-style: italic;
   padding-left: 0.25rem;
+
+  &:hover {
+    cursor: pointer;
+    color: var(--text_2);
+    border-color: var(--text_1); // var(--text_2);
+  }
+}
+
+.c-edited {
+  margin-left: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--text_1);
+}
+
+.c-mention {
+  background-color: $primary_2;
+  color: $primary_0;
+  padding: 0 0.1rem;
+}
+
+.c-mention.c-mention-to-me {
+  background-color: $warning_1;
+  // background-color: #f2c74466;
 }
 </style>

@@ -1,6 +1,6 @@
 'use strict'
 
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 
 export default {
   activeTab: 3,
@@ -25,7 +25,7 @@ export default {
       {
         title: (L('Notifications'): string),
         url: 'notifications',
-        component: 'Placeholder',
+        component: 'NotificationSettings',
         index: 2
       }, {
         title: (L('Appearance'): string),

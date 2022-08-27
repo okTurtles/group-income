@@ -4,19 +4,14 @@
 // state) per: http://vuex.vuejs.org/en/intro.html
 
 import sbp from '@sbp/sbp'
-import Vue from 'vue'
+import { Vue } from '@common/common.js'
+import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
-// HACK: work around esbuild code splitting / chunking bug: https://github.com/evanw/esbuild/issues/399
-import { EVENT_HANDLED } from '~/shared/domains/chelonia/events.js'
 import Colors from './colors.js'
-import { CHATROOM_PRIVACY_LEVEL } from './contracts/constants.js'
-import * as _ from '~/frontend/utils/giLodash.js'
-import './contracts/mailbox.js'
-import './contracts/identity.js'
-import './contracts/chatroom.js'
-import './contracts/group.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
-import { unadjustedDistribution, adjustedDistribution } from '~/frontend/model/contracts/distribution/distribution.js'
+import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
@@ -24,24 +19,40 @@ import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 
 Vue.use(Vuex)
 
-let defaultTheme = THEME_LIGHT
-if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-  defaultTheme = THEME_DARK
+const checkSystemColor = () => {
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches
+    ? THEME_DARK
+    : THEME_LIGHT
+}
+
+const defaultTheme = 'system'
+const defaultColor = checkSystemColor()
+
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (store.state.theme === 'system') {
+      store.commit('setTheme', 'system')
+    }
+  })
 }
 
 const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
+  chatRoomScrollPosition: {}, // [chatRoomId]: messageId
+  chatRoomUnread: {}, // [chatRoomId]: { messageId, createdDate }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: defaultTheme,
+  themeColor: defaultColor,
   reducedMotion: false,
+  notificationEnabled: true,
   increasedContrast: false,
   fontSize: 16,
   appLogsFilter: process.env.NODE_ENV === 'development'
-    ? ['error', 'warn', 'debug', 'log']
-    : ['error', 'warn']
+    ? ['error', 'warn', 'info', 'debug', 'log']
+    : ['error', 'warn', 'info']
 }
 
 sbp('sbp/selectors/register', {
@@ -58,6 +69,12 @@ sbp('sbp/selectors/register', {
     }
     if (!state.currentChatRoomIDs) {
       state.currentChatRoomIDs = {}
+    }
+    if (!state.chatRoomScrollPosition) {
+      state.chatRoomScrollPosition = {}
+    }
+    if (!state.chatRoomUnread) {
+      state.chatRoomUnread = {}
     }
   },
   'state/vuex/save': async function () {
@@ -96,8 +113,9 @@ const mutations = {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
   },
-  setTheme (state, color) {
-    state.theme = color
+  setTheme (state, theme) {
+    state.theme = theme
+    state.themeColor = theme === 'system' ? checkSystemColor() : theme
   },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
@@ -109,6 +127,9 @@ const mutations = {
       state.reducedMotion = tempSettings
     }, 300)
   },
+  setNotificationEnabled (state, enabled) {
+    state.notificationEnabled = enabled
+  },
   setIncreasedContrast (state, isChecked) {
     state.increasedContrast = isChecked
   },
@@ -119,13 +140,52 @@ const mutations = {
     state.appLogsFilter = filters
   },
   setCurrentChatRoomId (state, { groupId, chatRoomId }) {
-    if (chatRoomId) {
+    if (groupId && state[groupId] && chatRoomId) { // useful when initialize when syncing in another device
+      Vue.set(state.currentChatRoomIDs, groupId, chatRoomId)
+    } else if (chatRoomId) { // set chatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, chatRoomId)
-    } else if (groupId && state[groupId]) {
+    } else if (groupId && state[groupId]) { // set defaultChatRoomId as the current chatroomId of current group
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, state[groupId].generalChatRoomId || null)
-    } else {
+    } else { // reset
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
     }
+  },
+  setChatRoomScrollPosition (state, { chatRoomId, messageId }) {
+    Vue.set(state.chatRoomScrollPosition, chatRoomId, messageId)
+  },
+  deleteChatRoomScrollPosition (state, { chatRoomId }) {
+    Vue.delete(state.chatRoomScrollPosition, chatRoomId)
+  },
+  setChatRoomUnreadSince (state, { chatRoomId, messageId, createdDate }) {
+    const prevMentions = state.chatRoomUnread[chatRoomId] ? state.chatRoomUnread[chatRoomId].mentions : []
+    Vue.set(state.chatRoomUnread, chatRoomId, {
+      since: { messageId, createdDate, deletedDate: null },
+      mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
+    })
+  },
+  deleteChatRoomUnreadSince (state, { chatRoomId, deletedDate }) {
+    Vue.set(state.chatRoomUnread[chatRoomId], 'since', {
+      ...state.chatRoomUnread[chatRoomId].since,
+      deletedDate
+    })
+  },
+  addChatRoomUnreadMention (state, { chatRoomId, messageId, createdDate }) {
+    const prevUnread = state.chatRoomUnread[chatRoomId]
+    if (!prevUnread) {
+      return
+    }
+    prevUnread.mentions.push({ messageId, createdDate })
+  },
+  deleteChatRoomUnreadMention (state, { chatRoomId, messageId }) {
+    const prevUnread = state.chatRoomUnread[chatRoomId]
+    if (!prevUnread) {
+      return
+    }
+
+    prevUnread.mentions = prevUnread.mentions.filter(m => m.messageId !== messageId)
+  },
+  deleteChatRoomUnread (state, { chatRoomId }) {
+    Vue.delete(state.chatRoomUnread, chatRoomId)
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
@@ -137,29 +197,30 @@ const mutations = {
 const getters = {
   // !!  IMPORTANT  !!
   //
+  // We register pure Vuex getters here, but later on at the bottom of this file,
+  // we will also import into Vuex the contract getters so that they can be reused
+  // without having to be redefined. This is possible because Chelonia contract getters
+  // are designed to be compatible with Vuex getters.
+  //
+  // We will use the getters 'currentGroupState', 'currentIdentityState', and
+  // 'currentChatRoomState' as a "bridge" between the contract getters and Vuex.
+  //
+  // This makes it possible for the getters inside of contracts to refer to each
+  // specific contractID instance, while the Vuex version of those getters that
+  // are imported at the bottom of this file (in the listener for CONTRACT_REGISTERED
+  // will reference the state for the specific contractID for either the current group,
+  // the current user identity contract, or the current chatroom we're looking at.
+  //
   // For getters that get data from only contract state, write them
-  // under the 'getters' key of the object passed to DefineContract.
+  // under the 'getters' key of the object passed to 'chelonia/defineContract'.
   // See for example: frontend/model/contracts/group.js
   //
-  // For convenience, we've defined the same getter, `currentGroupState`,
+  // Again, for convenience, we've defined the same getter, `currentGroupState`,
   // twice, so that we can reuse the same getter definitions both here with Vuex,
   // and inside of the contracts (e.g. in group.js).
   //
-  // The one here is based off the value of `state.currentGroupId` — a user
-  // preference that does not exist in the group contract state.
-  //
-  // The getters in DefineContract are designed to be compatible with Vuex!
-  // When they're used in the context of DefineContract, their 'state' always refers
-  // to the state of the contract whose messages are being processed, regardless
-  // of what group we're in. That is why the definition of 'currentGroupState' in
-  // group.js simply returns the state.
-  //
-  // Since the getter functions are compatible between Vuex and our contract chain
-  // library, we can simply import them here, while excluding the getter for
-  // `currentGroupState`, and redefining it here based on the Vuex rootState.
-  ..._.omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
-  ..._.omit(sbp('gi.contracts/identity/getters'), ['currentIdentityState']),
-  ..._.omit(sbp('gi.contracts/chatroom/getters'), ['currentChatRoomState']),
+  // The 'currentGroupState' here is based off the value of `state.currentGroupId`,
+  // a user preference that does not exist in the group contract state.
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },
@@ -382,9 +443,7 @@ const getters = {
       return isNeeder ? payment.to === ourUsername : payment.from === ourUsername
     }
     const cPeriod = getters.currentPaymentPeriod
-    const ourUnadjustedPayments = getters.groupIncomeDistribution.filter(isOurPayment)
     const ourAdjustedPayments = getters.groupIncomeAdjustedDistribution.filter(isOurPayment)
-
     const receivedOrSent = isNeeder
       ? getters.ourPaymentsReceivedInPeriod(cPeriod)
       : getters.ourPaymentsSentInPeriod(cPeriod)
@@ -392,8 +451,9 @@ const getters = {
     const nonLateAdjusted = ourAdjustedPayments.filter((p) => !p.isLate)
     const paymentsDone = paymentsTotal - nonLateAdjusted.length
     const hasPartials = ourAdjustedPayments.some(p => p.partial)
-    const amountTotal = ourUnadjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
     const amountDone = receivedOrSent.reduce((acc, payment) => acc + payment.amount, 0)
+    const amountLeft = ourAdjustedPayments.reduce((acc, payment) => acc + payment.amount, 0)
+    const amountTotal = amountDone + amountLeft
     return {
       paymentsDone,
       hasPartials,
@@ -425,6 +485,8 @@ const getters = {
     }
 
     return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
+      .filter(username => getters.groupProfiles[username] ||
+         getters.groupMembersPending[username].expires >= Date.now())
       .map(username => {
         const { displayName } = getters.globalProfile(username) || {}
         return {
@@ -448,23 +510,57 @@ const getters = {
       })
   },
   globalProfile (state, getters) {
+    // get profile from username who is part of current group
     return username => {
       const groupProfile = getters.groupProfile(username)
       const identityState = groupProfile && state[groupProfile.contractID]
       return identityState && identityState.attributes
     }
   },
+  globalProfile2 (state, getters) {
+    // get profile from username who is part of the group identified by it's group ID
+    return (groupID, username) => {
+      const groupProfile = state[groupID]?.profiles[username]
+      const identityState = groupProfile && state[groupProfile.contractID]
+      return identityState && identityState.attributes
+    }
+  },
   colors (state) {
-    return Colors[state.theme]
+    return Colors[state.themeColor]
   },
   fontSize (state) {
     return state.fontSize
   },
+  theme (state) {
+    return state.theme
+  },
   isDarkTheme (state) {
-    return Colors[state.theme].theme === THEME_DARK
+    return state.themeColor === THEME_DARK
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
+  },
+  currentChatRoomScrollPosition (state, getters) {
+    return state.chatRoomScrollPosition[getters.currentChatRoomId] // undefined means to the latest
+  },
+  ourUnreadMessages (state, getters) {
+    return state.chatRoomUnread
+  },
+  currentChatRoomUnreadSince (state, getters) {
+    return getters.ourUnreadMessages[getters.currentChatRoomId]?.since // undefined means to the latest
+  },
+  currentChatRoomUnreadMentions (state, getters) {
+    return getters.ourUnreadMessages[getters.currentChatRoomId]?.mentions || []
+  },
+  chatRoomUnreadMentions (state, getters) {
+    return (chatRoomId: string) => {
+      return getters.ourUnreadMessages[chatRoomId]?.mentions || []
+    }
+  },
+  groupIdFromChatRoomId (state, getters) {
+    return (chatRoomId: string) => Object.keys(state.contracts)
+      .find(cId => state.contracts[cId].type === 'gi.contracts/group' &&
+        Object.keys(state[cId].chatRooms).includes(chatRoomId))
   },
   isPrivateChatRoom (state, getters) {
     return (chatRoomId: string) => {
@@ -478,15 +574,16 @@ const getters = {
     }
   },
   chatRoomsInDetail (state, getters) {
-    const chatRoomsInDetail = _.merge({}, getters.getChatRooms)
+    const chatRoomsInDetail = merge({}, getters.getChatRooms)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&
         chatRoom.users[state.loggedIn.username]) {
+        const unreadMentionsCount = getters.chatRoomUnreadMentions(contractID).length
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
-          unreadCount: 0, // TODO: need to implement
+          unreadMentionsCount,
           joined: true
         }
       } else {
@@ -504,7 +601,7 @@ const getters = {
 }
 
 const store: any = new Vuex.Store({
-  state: _.cloneDeep(initialState),
+  state: cloneDeep(initialState),
   mutations,
   getters,
   modules: {
@@ -514,8 +611,12 @@ const store: any = new Vuex.Store({
 })
 
 // save the state each time it's modified, but debounce it to avoid saving too frequently
-const debouncedSave = _.debounce(() => sbp('state/vuex/save'), 500)
-store.subscribe(debouncedSave) // for e.g saving notifications that are markedAsRead
+const debouncedSave = debounce(() => sbp('state/vuex/save'), 500)
+store.subscribe((commit) => {
+  if (commit.type !== 'noop') {
+    debouncedSave()
+  }
+}) // for e.g saving notifications that are markedAsRead
 // since Chelonia updates do not pass through calls to 'commit', also save upon EVENT_HANDLED
 sbp('okTurtles.events/on', EVENT_HANDLED, debouncedSave)
 // logout will call 'state/vuex/save', so we clear any debounced calls to it before it gets run
@@ -525,9 +626,28 @@ sbp('sbp/filters/selector/add', 'gi.actions/identity/logout', function () {
 // Since Chelonia directly modifies contract state without using 'commit', we
 // need this hack to tell the vuex developer tool it needs to refresh the state
 if (process.env.NODE_ENV === 'development') {
-  sbp('okTurtles.events/on', EVENT_HANDLED, _.debounce(() => {
+  sbp('okTurtles.events/on', EVENT_HANDLED, debounce(() => {
     store.commit('noop')
   }, 500))
 }
+
+// See the "IMPORTANT" comment above where the Vuex getters are defined for details.
+// handle contracts being registered
+const omitGetters = {
+  'gi.contracts/group': ['currentGroupState'],
+  'gi.contracts/identity': ['currentIdentityState'],
+  'gi.contracts/chatroom': ['currentChatRoomState']
+}
+sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
+  const { contracts: { manifests } } = sbp('chelonia/config')
+  // check to make sure we're only loading the getters for the version of the contract
+  // that this build of GI was compiled with
+  if (manifests[contract.name] === contract.manifest) {
+    console.debug(`registering getters for '${contract.name}' (${contract.manifest})`)
+    store.registerModule(contract.name, {
+      getters: omit(contract.getters, omitGetters[contract.name] || [])
+    })
+  }
+})
 
 export default store

@@ -12,17 +12,18 @@ menu-parent(ref='menu')
         i.icon-smile-beam
 
     tooltip(
-      v-if='isCurrentUser'
+      v-if='isEditable'
       direction='top'
       :text='L("Edit")'
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Edit")'
-        @click='action("edit")'
+        @click='action("editMessage")'
       )
         i.icon-pencil-alt
 
     tooltip(
+      v-if='isText'
       direction='top'
       :text='L("Reply")'
     )
@@ -50,39 +51,48 @@ menu-parent(ref='menu')
 
   menu-content.c-content
     ul
-      menu-item.hide-desktop.is-icon-small(tag='button'
+      menu-item.hide-desktop.is-icon-small(
+        tag='button'
         @click='action("openEmoticon", $event)'
       )
         i.icon-smile-beam
         i18n Add reaction
 
-      menu-item.hide-desktop.is-icon-small(tag='button'
-        v-if='isCurrentUser'
-        @click='action("edit")'
+      menu-item.hide-desktop.is-icon-small(
+        tag='button'
+        v-if='isEditable'
+        @click='action("editMessage")'
       )
         i.icon-pencil-alt
         i18n Edit
 
-      menu-item.hide-desktop.is-icon-small(tag='button'
+      menu-item.hide-desktop.is-icon-small(
+        tag='button'
+        v-if='isText'
         @click='action("reply")'
       )
         i.icon-reply
         i18n Reply
 
-      menu-item.hide-desktop.is-icon-small(tag='button'
+      menu-item.hide-desktop.is-icon-small(
+        tag='button'
         v-if='variant === "failed"'
         @click='action("retry")'
       )
         i.icon-undo
         i18n Add emoticons
 
-      menu-item.is-icon-small(tag='button'
+      menu-item.is-icon-small(
+        tag='button'
         @click='action("copyToClipBoard")'
       )
         i.icon-link
         i18n Copy message Link
 
-      menu-item.is-icon-small.is-danger(tag='button'
+      menu-item.is-icon-small.is-danger(
+        tag='button'
+        data-test='deleteMessage'
+        v-if='isEditable'
         @click='action("deleteMessage")'
       )
         i.icon-trash-alt
@@ -92,6 +102,7 @@ menu-parent(ref='menu')
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'MessageActions',
@@ -104,7 +115,19 @@ export default ({
   },
   props: {
     variant: String,
+    type: String,
     isCurrentUser: Boolean
+  },
+  computed: {
+    isText () {
+      return this.type === MESSAGE_TYPES.TEXT
+    },
+    isPoll () {
+      return this.type === MESSAGE_TYPES.POLL
+    },
+    isEditable (): Boolean {
+      return this.isCurrentUser && (this.isText || this.isPoll)
+    }
   },
   methods: {
     action (type, e) {

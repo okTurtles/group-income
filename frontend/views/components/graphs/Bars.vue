@@ -61,9 +61,9 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { debounce } from '@utils/giLodash.js'
 import { TABLET } from '@view-utils/breakpoints.js'
-import currencies from '@view-utils/currencies.js'
+import { debounce } from '@model/contracts/shared/giLodash.js'
+import currencies from '@model/contracts/shared/currencies.js'
 
 export default ({
   name: 'Bars',
@@ -267,6 +267,7 @@ export default ({
   display: flex;
   flex-wrap: wrap;
   position: relative;
+  min-height: 160px;
 }
 
 .c-tag {

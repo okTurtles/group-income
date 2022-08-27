@@ -48,6 +48,7 @@
 
           i18n.link(
             tag='button'
+            type='button'
             data-test='passwordBtn'
             @click.prevent='openModal("PasswordModal")'
           ) Update Password
@@ -81,12 +82,12 @@ import { validationMixin } from 'vuelidate'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { required, email } from 'vuelidate/lib/validators'
 import { OPEN_MODAL } from '@utils/events.js'
-import { cloneDeep } from '@utils/giLodash.js'
+import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { mapGetters } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'UserProfile',

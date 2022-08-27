@@ -108,15 +108,14 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 
 <script>
 import sbp from '@sbp/sbp'
-import L, { LTags } from '@view-utils/translations.js'
+import { L, LTags } from '@common/common.js'
 import { mapGetters, mapState } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/constants.js'
-import { CHATROOM_DETAILS_UPDATED } from '~/frontend/utils/events.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
 
 const initDetails = {
   name: '',
@@ -209,7 +208,7 @@ export default ({
       const members = this.isJoined ? this.chatRoomUsersInSort : this.details.participants
       this.addedMembers = members.map(member => ({ ...member, departedDate: null }))
       this.canAddMembers = this.groupMembersSorted
-        .filter(member => !this.addedMembers.find(mb => mb.username === member.username))
+        .filter(member => !this.addedMembers.find(mb => mb.username === member.username) && !member.invitedBy)
         .map(member => ({
           username: member.username,
           displayName: member.displayName,

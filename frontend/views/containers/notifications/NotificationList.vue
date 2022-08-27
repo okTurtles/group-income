@@ -13,10 +13,9 @@
       span.is-subtitle.c-title(v-if='list.title') {{ list.title }}
       ul.c-list(
         :aria-label='list.title'
-        @click='() => $emit("select")'
       )
         li(v-for='item of list.items')
-          router-link.c-item(:to='item.linkTo' :class='item.read ? "" : "unread"' @click.native='markAsRead(item)')
+          a.c-item(:class='item.read ? "" : "unread"' @click='handleItemClick(item)' draggable='false' @selectstart='ephemeral.isSelectingText = true')
             span.c-thumbCircle
               avatar-user(:username='item.avatarUsername' size='md')
               i(:class='`icon-${item.icon} ${iconBg(item.level)}`')
@@ -28,9 +27,9 @@
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { timeSince } from '@utils/time.js'
+import { timeSince } from '@model/contracts/shared/time.js'
 import AvatarUser from '@components/AvatarUser.vue'
-import L from '@view-utils/translations.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'NotificationList',
@@ -43,7 +42,10 @@ export default ({
   },
   data: () => ({
     ephemeral: {
-      isLoading: false
+      isLoading: false,
+      // Whether the user is currently dragging the pointer to highlight some notification text.
+      // This flag is used to ignore the click event fired upon releasing the pointer in that case.
+      isSelectingText: false
     }
   }),
   components: {
@@ -73,6 +75,14 @@ export default ({
   methods: {
     ageTag (item: Object): number {
       return timeSince(item.timestamp)
+    },
+    handleItemClick (item) {
+      if (!this.ephemeral.isSelectingText) {
+        this.markAsRead(item)
+        this.$router.push(item.linkTo).catch(console.warn)
+        this.$emit('select')
+      }
+      this.ephemeral.isSelectingText = false
     },
     iconBg (level: string): string {
       return {
@@ -146,6 +156,7 @@ export default ({
   display: flex;
   align-items: center;
   min-height: 3rem;
+  cursor: pointer;
 
   &:hover,
   &:focus {
@@ -191,9 +202,15 @@ export default ({
   }
 }
 
+.c-item-text {
+  word-break: break-word;
+  word-wrap: break-word;
+}
+
 .c-thumbCircle {
   position: relative;
   display: inline-block;
+  flex-shrink: 0;
 
   i {
     position: absolute;

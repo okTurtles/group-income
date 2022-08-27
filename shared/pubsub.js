@@ -203,6 +203,9 @@ const defaultClientEventHandlers = {
     client.socket = null
     client.clearAllTimers()
 
+    // This has been commented out to make the client always try to reconnect.
+    // See https://github.com/okTurtles/group-income/issues/1246
+    /*
     // See "Status Codes" https://tools.ietf.org/html/rfc6455#section-7.4
     switch (event.code) {
       // TODO: verify that this list of codes is correct.
@@ -212,6 +215,7 @@ const defaultClientEventHandlers = {
       }
       default: break
     }
+    */
     // If we should reconnect then consider our current subscriptions as pending again,
     // waiting to be restored upon reconnection.
     if (client.shouldReconnect) {

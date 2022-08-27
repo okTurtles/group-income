@@ -11,13 +11,16 @@
 //
 // =======================
 
+const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
 const { exec, fork } = require('child_process')
+const execP = util.promisify(exec)
 const { copyFile, readFile } = require('fs/promises')
+const fs = require('fs')
 const path = require('path')
 const { resolve } = path
-const { version } = require('./package.json')
+const packageJSON = require('./package.json')
 
 // =======================
 // Global environment variables setup
@@ -49,7 +52,7 @@ const applyPortShift = (env) => {
 
 Object.assign(process.env, applyPortShift(process.env))
 
-process.env.GI_VERSION = `${version}@${new Date().toISOString()}`
+process.env.GI_VERSION = `${packageJSON.version}@${new Date().toISOString()}`
 
 // Not loading babel-register here since it is quite a heavy import and is not always used.
 // We will rather load it later, and only if necessary.
@@ -67,9 +70,13 @@ const backendIndex = './backend/index.js'
 const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
 const distDir = 'dist'
+const distContracts = 'dist/contracts'
 const distJS = 'dist/assets/js'
 const serviceWorkerDir = 'frontend/controller/serviceworkers'
 const srcDir = 'frontend'
+const contractsDir = 'frontend/model/contracts'
+const mainSrc = path.join(srcDir, 'main.js')
+const manifestJSON = path.join(contractsDir, 'manifests.json')
 
 const development = NODE_ENV === 'development'
 const production = !development
@@ -77,10 +84,69 @@ const production = !development
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
+  // Helper functions
+
+  function pick (o, props) {
+    const x = {}
+    for (const k of props) { x[k] = o[k] }
+    return x
+  }
+
+  const clone = o => JSON.parse(JSON.stringify(o))
+
+  async function execWithErrMsg (cmd, errMsg) {
+    const { stdout, stderr } = await execP(cmd, {
+      // this is needed to get it to work in certain Windows environments
+      shell: process.env.SHELL || '/bin/sh'
+    })
+    if (stderr) {
+      console.error(chalk`{red ${errMsg}:}`, stderr)
+      throw new Error(errMsg)
+    }
+    return { stdout }
+  }
+
+  async function generateManifests (dir, version) {
+    if (development) {
+      grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
+      // TODO: do this with JS instead of POSIX commands for Windows support
+      const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${dir}/{}-slim.js key.json ${dir}/{}.js`, 'error generating manifests')
+      console.log(stdout)
+    } else {
+      // Only run these in NODE_ENV=development so that production servers
+      // don't overwrite manifests.json
+      grunt.log.writeln(chalk.yellow("\n(Skipping) Running 'chel manifest'"))
+    }
+  }
+
+  async function deployAndUpdateMainSrc (manifestDir) {
+    if (development) {
+      grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
+      const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
+      console.log(stdout)
+      const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
+      const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+      fs.writeFileSync(manifestJSON,
+        JSON.stringify({ manifests }, null, 2) + '\n',
+        'utf8')
+      console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
+    } else {
+      // Only run these in NODE_ENV=development so that production servers
+      // don't overwrite manifests.json
+      grunt.log.writeln(chalk.yellow("\n(Skipping) Running 'chel deploy'"))
+    }
+  }
+
+  async function genManifestsAndDeploy (dir, version) {
+    await generateManifests(dir, version)
+    await deployAndUpdateMainSrc(dir)
+  }
+
   // Used by both the alias plugin and the Vue plugin.
   const aliasPluginOptions = {
     entries: {
       '@assets': './frontend/assets',
+      '@common': './frontend/common',
       '@components': './frontend/views/components',
       '@containers': './frontend/views/containers',
       '@controller': './frontend/controller',
@@ -153,13 +219,32 @@ module.exports = (grunt) => {
     // Native options used when building the main entry point.
     main: {
       assetNames: '../css/[name]',
-      entryPoints: [`${srcDir}/main.js`]
+      entryPoints: [mainSrc]
     },
     // Native options used when building our service worker(s).
     serviceWorkers: {
       entryPoints: ['./frontend/controller/serviceworkers/primary.js']
     }
   }
+  esbuildOptionBags.contracts = {
+    ...pick(clone(esbuildOptionBags.default), [
+      'define', 'bundle', 'watch', 'incremental'
+    ]),
+    // format: 'esm',
+    format: 'iife',
+    // banner: {
+    //   js: 'import { createRequire as topLevelCreateRequire } from "module"\nconst require = topLevelCreateRequire(import.meta.url)'
+    // },
+    splitting: false,
+    outdir: distContracts,
+    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`],
+    external: ['@sbp/sbp']
+  }
+  // prevent contract hash from changing each time we build them
+  esbuildOptionBags.contracts.define['process.env.GI_VERSION'] = "'x.x.x'"
+  esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
+  esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
+  esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
 
   // Additional options which are not part of the esbuild API.
   const esbuildOtherOptionBags = {
@@ -243,6 +328,8 @@ module.exports = (grunt) => {
     flowtype: flowRemoveTypesPluginOptions
   }
 
+  // Helper functions
+
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
@@ -276,11 +363,12 @@ module.exports = (grunt) => {
       // Test files:
       // - anything in the `/test` folder, e.g. integration tests;
       // - anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.
-      // The `--require @babel/register` flags ensure Babel support in our test files.
+      // The `--require` flag ensures custom Babel support in our test files.
       test: {
-        cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require @babel/register --exit -R spec --bail "{./{,!(node_modules|ignored|dist|historical|test)/**/}*.test.js,./test/*.js}"',
+        cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: process.env }
-      }
+      },
+      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
     }
   })
 
@@ -367,9 +455,35 @@ module.exports = (grunt) => {
     cypress[command](options).then(r => done(r.totalFailed === 0)).catch(done)
   })
 
+  grunt.registerTask('pin', async function (version) {
+    if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
+    const done = this.async()
+    const dirPath = `contracts/${version}`
+
+    if (fs.existsSync(dirPath)) {
+      if (grunt.option('overwrite')) { // if the task is run with '--overwrite' option, empty the folder first.
+        fs.rmSync(dirPath, { recursive: true })
+      } else {
+        throw new Error(`already exists: ${dirPath}`)
+      }
+    }
+    // since the copied manifest files might not have the correct version on them
+    // we need to delete the old ones and regenerate them
+    await execWithErrMsg(`rm -f ${distContracts}/*.manifest.json`)
+    await genManifestsAndDeploy(distContracts, version)
+    await execWithErrMsg(`cp -r ${distContracts} ${dirPath}`, 'error copying contracts')
+    console.log(chalk`{green Version} {bold ${version}} {green pinned to:} ${dirPath}`)
+    // it's possible for the UI to get updated without the contracts getting updated,
+    // so we keep their version numbers separate.
+    packageJSON.contractsVersion = version
+    fs.writeFileSync('package.json', JSON.stringify(packageJSON, null, 2) + '\n', 'utf8')
+    console.log(chalk.green('updated package.json "contractsVersion" to:'), version)
+    done()
+  })
+
   grunt.registerTask('default', ['dev'])
   // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
   // --------------------
@@ -378,29 +492,46 @@ module.exports = (grunt) => {
 
   grunt.registerTask('esbuild', async function () {
     const done = this.async()
-    const aliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')(aliasPluginOptions)
+    const createAliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')
+    const aliasPlugin = createAliasPlugin(aliasPluginOptions)
     const flowRemoveTypesPlugin = require('./scripts/esbuild-plugins/flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
     const svgPlugin = require('./scripts/esbuild-plugins/vue-inline-svg-plugin.js')(svgInlineVuePluginOptions)
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
+    const defaultPlugins = [aliasPlugin, flowRemoveTypesPlugin]
 
     const buildMain = createEsbuildTask({
       ...esbuildOptionBags.default,
       ...esbuildOptionBags.main,
-      plugins: [aliasPlugin, flowRemoveTypesPlugin, sassPlugin, svgPlugin, vuePlugin]
+      plugins: [...defaultPlugins, sassPlugin, svgPlugin, vuePlugin]
     }, esbuildOtherOptionBags.main)
 
     const buildServiceWorkers = createEsbuildTask({
       ...esbuildOptionBags.default,
       ...esbuildOptionBags.serviceWorkers,
-      plugins: [aliasPlugin, flowRemoveTypesPlugin]
+      plugins: defaultPlugins
+    })
+    const buildContracts = createEsbuildTask({
+      ...esbuildOptionBags.contracts, plugins: defaultPlugins
+    })
+    const buildContractsSlim = createEsbuildTask({
+      ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
 
-    await Promise.all([buildMain.run(), buildServiceWorkers.run()]).catch(error => {
-      grunt.log.error(error.message)
-      process.exit(1)
-    })
+    // first we build the contracts since genManifestsAndDeploy depends on that
+    // and then we build the main bundle since it depends on manifests.json
+    await Promise.all([buildContracts.run(), buildContractsSlim.run()])
+      .then(() => {
+        return genManifestsAndDeploy(distContracts, packageJSON.contractsVersion)
+      })
+      .then(() => {
+        return Promise.all([buildMain.run(), buildServiceWorkers.run()])
+      })
+      .catch(error => {
+        grunt.log.error(error.message)
+        process.exit(1)
+      })
 
     if (!this.flags.watch) {
       return done()
@@ -462,8 +593,17 @@ module.exports = (grunt) => {
           try {
             if (filePath.startsWith(serviceWorkerDir)) {
               await buildServiceWorkers.run({ fileEventName, filePath })
+            } else if (filePath.startsWith(contractsDir)) {
+              await buildContracts.run({ fileEventName, filePath })
+              await buildContractsSlim.run({ fileEventName, filePath })
+              await genManifestsAndDeploy(distContracts, packageJSON.contractsVersion)
+              // genManifestsAndDeploy modifies manifests.json, which means we need
+              // to regenerate the main bundle since it imports that file
+              await buildMain.run({ fileEventName, filePath })
             } else if (/^(frontend|shared)[/\\]/.test(filePath)) {
               await buildMain.run({ fileEventName, filePath })
+            } else {
+              grunt.log.error('no builder defined for path:', filePath)
             }
           } catch (error) {
             grunt.log.error(error.message)
@@ -488,7 +628,7 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'backend:launch', 'exec:test', 'cypress'])
+  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'backend:launch', 'exec:test', 'cypress'])
   grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
 
   // -------------------------------------------------------------------------

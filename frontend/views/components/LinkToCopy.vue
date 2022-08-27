@@ -47,22 +47,45 @@ export default ({
     }
   },
   methods: {
+    // FIXME: probably needs to be defined centrally somewhere else
+    isMacSafari () {
+      // NB: Chrome, Edge, Brave on Macintosh tacks on the 'Safari/537.36' string in its userAgent
+      // so we have to ensure that were not mistaking those browsers instead when matching for Safari on Macintosh
+      const userAgent = navigator.userAgent
+      const safari = /Macintosh.*Safari/
+      const chrome = /Macintosh.*Chrome/
+      const edge = /Macintosh.*Edg/
+      return userAgent.match(safari) &&
+              !(userAgent.match(chrome) || userAgent.match(edge))
+    },
     copyToClipboard () {
       // if the user is using the device that supports web share API, use it and then skip the other logics below.
-      if (navigator.share) {
+      if (navigator.share && !this.isMacSafari()) {
         navigator.share({
           title: this.L('Your invite'),
           url: this.link
-        })
+        }).catch((error) => console.error('navigator.share failed with:', error))
         return
       }
 
+      const displayTooltip = () => {
+        this.ephemeral.isTooltipActive = true
+
+        setTimeout(() => {
+          this.ephemeral.isTooltipActive = false
+        }, 1500)
+      }
+
       this.$refs.input.select()
-      document.execCommand('copy')
-      this.ephemeral.isTooltipActive = true
-      setTimeout(() => {
-        this.ephemeral.isTooltipActive = false
-      }, 1500)
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(this.link).then(displayTooltip)
+      } else {
+        // document.execCommand is deprecated, so only use it as a fallback of Clipboard API.
+        // reference: https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand
+        document.execCommand('copy')
+
+        displayTooltip()
+      }
     }
   }
 }: Object)
@@ -75,7 +98,7 @@ export default ({
   position: relative;
   display: flex;
   align-items: center;
-
+  min-width: 0; // So ellipsis works correctly inside grid. pls refer to a discussion here(https://github.com/okTurtles/group-income/pull/765#issuecomment-551691920) for the context.
   .c-invisible-input {
     position: absolute;
     pointer-events: none;

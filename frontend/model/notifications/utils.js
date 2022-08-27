@@ -1,6 +1,6 @@
 import type { Notification } from './types.flow.js'
 
-import { DAYS_MILLIS as ONE_DAY, HOURS_MILLIS as ONE_HOUR } from '~/frontend/utils/time.js'
+import { DAYS_MILLIS as ONE_DAY, HOURS_MILLIS as ONE_HOUR } from '~/frontend/model/contracts/shared/time.js'
 
 import {
   MAX_AGE_READ,
