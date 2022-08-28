@@ -1,7 +1,10 @@
+/* globals logger, Deno */
+
+import { bold, yellow } from 'fmt/colors.ts'
+
 import sbp from '@sbp/sbp'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.ts'
-import { blake32Hash } from '~/shared/functions.ts'
-import { SERVER_INSTANCE } from './instance-keys.ts'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { blake32Hash } from '~/shared/functions.js'
 
 import { badRequest } from 'pogo/lib/bang.ts'
 import { Router } from 'pogo'
@@ -27,8 +30,7 @@ const route = new Proxy({}, {
 route.POST('/event', async function (request, h) {
   try {
     console.log('/event handler')
-    const payload = await request.raw.text();
-    console.log("payload:", payload);
+    const payload = await request.raw.text()
 
     const entry = GIMessage.deserialize(payload)
     await sbp('backend/server/handleEntry', entry)
@@ -43,11 +45,48 @@ route.POST('/event', async function (request, h) {
   }
 })
 
+route.GET('/eventsBefore/{before}/{limit}', async function (request, h) {
+  try {
+    const { before, limit } = request.params
+    console.log('/eventsBefore:', before, limit)
+    if (!before) return badRequest('missing before')
+    if (!limit) return badRequest('missing limit')
+    if (isNaN(parseInt(limit)) || parseInt(limit) <= 0) return badRequest('invalid limit')
+
+    const json = await sbp('backend/db/streamEntriesBefore', before, parseInt(limit))
+    // Make sure to close the stream in case of disconnection.
+    // request.events.once('disconnect', stream.cancel.bind(stream))
+    return h.response(json).type('application/json')
+  } catch (err) {
+    return logger(err)
+  }
+})
+
+route.GET('/eventsBetween/{startHash}/{endHash}', async function (request, h) {
+  try {
+    const { startHash, endHash } = request.params
+    console.log('/eventsBetween:', startHash, endHash)
+    const offset = parseInt(request.searchParams.get('offset') || '0')
+
+    if (!startHash) return badRequest('missing startHash')
+    if (!endHash) return badRequest('missing endHash')
+    if (isNaN(offset) || offset < 0) return badRequest('invalid offset')
+
+    const json = await sbp('backend/db/streamEntriesBetween', startHash, endHash, offset)
+    // Make sure to close the stream in case of disconnection.
+    // request.events.once('disconnect', stream.cancel.bind(stream))
+    return h.response(json).type('application/json')
+  } catch (err) {
+    return logger(err)
+  }
+})
+
 route.GET('/eventsSince/{contractID}/{since}', async function (request, h) {
   try {
     const { contractID, since } = request.params
+    console.log('/eventsSince:', contractID, since)
     const json = await sbp('backend/db/streamEntriesSince', contractID, since)
-    // Make sure to close the stream in case of disconnection."
+    // Make sure to close the stream in case of disconnection.
     // request.events.once('disconnect', stream.cancel.bind(stream))
     return h.response(json).type('application/json')
   } catch (err) {
@@ -58,7 +97,7 @@ route.GET('/eventsSince/{contractID}/{since}', async function (request, h) {
 route.POST('/name', async function (request, h) {
   try {
     console.debug('/name', request.body)
-    const payload = await request.raw.json();
+    const payload = await request.raw.json()
 
     const { name, value } = payload
     return await sbp('backend/db/registerName', name, value)
@@ -85,7 +124,7 @@ route.GET('/latestHash/{contractID}', async function handler (request, h) {
     request.response.header('cache-control', 'no-store')
     if (!hash) {
       console.warn(`[backend] latestHash not found for ${contractID}`)
-      return new NotFound()
+      return new Deno.errors.NotFound()
     }
     return hash
   } catch (err) {
@@ -104,18 +143,6 @@ route.GET('/time', function (request, h) {
 //       has a complete copy of the data and can act as a
 //       new coordinating server... I don't like that.
 
-const MEGABYTE = 1048576 // TODO: add settings for these
-const SECOND = 1000
-
-// TODO: only allow uploads from registered users
-const fileUploadOptions = {
-  output: 'data',
-  multipart: true,
-  allow: 'multipart/form-data',
-  maxBytes: 6 * MEGABYTE, // TODO: make this a configurable setting
-  timeout: 10 * SECOND // TODO: make this a configurable setting
-}
-
 route.POST('/file', async function (request, h) {
   try {
     console.log('FILE UPLOAD!')
@@ -125,7 +152,7 @@ route.POST('/file', async function (request, h) {
     const hash = formData.get('hash')
     if (!data) return badRequest('missing data')
     if (!hash) return badRequest('missing hash')
-    
+
     const fileData = await new Promise((resolve, reject) => {
       const fileReader = new FileReader()
       fileReader.onload = (event) => {
@@ -139,10 +166,10 @@ route.POST('/file', async function (request, h) {
     const ourHash = blake32Hash(new Uint8Array(fileData))
     if (ourHash !== hash) {
       console.error(`hash(${hash}) != ourHash(${ourHash})`)
-      return new badRequest('bad hash!')
+      return badRequest('bad hash!')
     }
     await sbp('backend/db/writeFileOnce', hash, fileData)
-    console.log('/file/' + hash);
+    console.log('/file/' + hash)
     return '/file/' + hash
   } catch (err) {
     console.error(err)

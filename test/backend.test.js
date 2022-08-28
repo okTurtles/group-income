@@ -350,7 +350,6 @@ describe('Full walkthrough', function () {
       console.log(`hash for ${path.basename(filepath)}: ${hash}`)
       form.append('hash', hash)
       const blob = new Blob([buffer])
-      console.log(blob);
       form.append('data', blob, path.basename(filepath))
       await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
         .then(handleFetchResult('text'))

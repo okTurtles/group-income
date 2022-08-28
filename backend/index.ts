@@ -13,6 +13,17 @@ const logger = window.logger = function (err) {
   return err // routes.js is written in a way that depends on this returning the error
 }
 
+const process = window.process = {
+  env: {
+    get (key) {
+      return Deno.env.get(key)
+    },
+    set (key, value) {
+      return Deno.env.set(key, value)
+    }
+  }
+}
+
 const dontLog = { 'backend/server/broadcastEntry': true }
 
 function logSBP (domain, selector, data) {

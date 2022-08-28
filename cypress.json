@@ -2,7 +2,7 @@
   "baseUrl": "http://localhost:8000",
   "viewportWidth": 1201,
   "viewportHeight": 900,
-  "defaultCommandTimeout": 10000, 
+  "defaultCommandTimeout": 20000, 
   "fixturesFolder": "test/cypress/fixtures",
   "integrationFolder": "test/cypress/integration",
   "pluginsFile": "test/cypress/plugins",

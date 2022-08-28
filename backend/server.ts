@@ -17,7 +17,7 @@ import {
 } from '~/backend/pubsub.ts'
 import { router } from './routes.ts'
 
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.ts'
+import { GIMessage } from '../shared/domains/chelonia/GIMessage.js'
 
 const { version } = await import('~/package.json', {
   assert: { type: "json" },
@@ -78,6 +78,9 @@ const pogoServer = pogo.server({
     if (isUpgradeableRequest(request)) {
       return pubsub.handleUpgradeableRequest(request)
     } else {
+      if (NODE_ENV === 'development' && !CI) {
+        console.debug(grey(`${request.info.remoteAddress}: ${request.toString()} --> ${request.response.status}`))
+      }
       return originalInject(request)
     }
   }
@@ -85,12 +88,6 @@ const pogoServer = pogo.server({
 pogoServer.router = router
 
 console.log('Backend HTTP server listening:', pogoServer.options)
-
-if (NODE_ENV === 'development' && !CI) {
-  server.events?.on('response', (request, event, tags) => {
-    console.debug(grey(`${request.info.remoteAddress}: ${request.method.toUpperCase()} ${request.path} --> ${request.response.statusCode}`))
-  })
-}
 
 sbp('okTurtles.data/set', PUBSUB_INSTANCE, pubsub)
 sbp('okTurtles.data/set', SERVER_INSTANCE, pogoServer)

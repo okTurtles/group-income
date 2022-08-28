@@ -2,7 +2,6 @@
 
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
-import type { JSONObject, JSONType } from '~/shared/types.js'
 
 // ====== Event name constants ====== //
 
@@ -23,53 +22,6 @@ export const PUBSUB_RECONNECTION_SUCCEEDED = 'pubsub-reconnection-succeeded'
  * - 'TimeoutID' is an opaque type declared in Flow's core definition file,
  *   used as the return type of the core setTimeout() function.
  */
-
-export type Message = {
-  [key: string]: JSONType,
-  +type: string
-}
-
-export type PubSubClient = {
-  connectionTimeoutID: TimeoutID | void,
-  +customEventHandlers: Object,
-  failedConnectionAttempts: number,
-  +isLocal: boolean,
-  isNew: boolean,
-  +listeners: Object,
-  +messageHandlers: Object,
-  nextConnectionAttemptDelayID: TimeoutID | void,
-  +options: Object,
-  +pendingSubscriptionSet: Set<string>,
-  pendingSyncSet: Set<string>,
-  +pendingUnsubscriptionSet: Set<string>,
-  pingTimeoutID: TimeoutID | void,
-  shouldReconnect: boolean,
-  socket: WebSocket | null,
-  +subscriptionSet: Set<string>,
-  +url: string,
-  // Methods
-  clearAllTimers(): void,
-  connect(): void,
-  destroy(): void,
-  pub(contractID: string, data: JSONType): void,
-  scheduleConnectionAttempt(): void,
-  sub(contractID: string): void,
-  unsub(contractID: string): void
-}
-
-export type SubMessage = {
-  [key: string]: JSONType,
-  +type: 'sub',
-  +contractID: string,
-  +dontBroadcast: boolean
-}
-
-export type UnsubMessage = {
-  [key: string]: JSONType,
-  +type: 'unsub',
-  +contractID: string,
-  +dontBroadcast: boolean
-}
 
 // ====== Enums ====== //
 
@@ -94,10 +46,6 @@ export const RESPONSE_TYPE = Object.freeze({
   SUCCESS: 'success'
 })
 
-export type NotificationTypeEnum = $Values<typeof NOTIFICATION_TYPE>
-export type RequestTypeEnum = $Values<typeof REQUEST_TYPE>
-export type ResponseTypeEnum = $Values<typeof RESPONSE_TYPE>
-
 // ====== API ====== //
 
 /**
@@ -117,8 +65,8 @@ export type ResponseTypeEnum = $Values<typeof RESPONSE_TYPE>
  * {number?} timeout=5_000 - Connection timeout duration in milliseconds.
  * @returns {PubSubClient}
  */
-export function createClient (url: string, options?: Object = {}): PubSubClient {
-  const client: PubSubClient = {
+export function createClient (url, options = {}) {
+  const client = {
     customEventHandlers: options.handlers || {},
     // The current number of connection attempts that failed.
     // Reset to 0 upon successful connection.
@@ -176,11 +124,11 @@ export function createClient (url: string, options?: Object = {}): PubSubClient 
   return client
 }
 
-export function createMessage (type: string, data: JSONType): string {
+export function createMessage (type, data) {
   return JSON.stringify({ type, data })
 }
 
-export function createRequest (type: RequestTypeEnum, data: JSONObject, dontBroadcast: boolean = false): string {
+export function createRequest (type, data, dontBroadcast = false) {
   // Had to use Object.assign() instead of object spreading to make Flow happy.
   return JSON.stringify(Object.assign({ type, dontBroadcast }, data))
 }
@@ -188,7 +136,7 @@ export function createRequest (type: RequestTypeEnum, data: JSONObject, dontBroa
 // These handlers receive the PubSubClient instance through the `this` binding.
 const defaultClientEventHandlers = {
   // Emitted when the connection is closed.
-  close (event: CloseEvent) {
+  close (event) {
     const client = this
 
     console.debug('[pubsub] Event: close', event.code, event.reason)
@@ -245,7 +193,7 @@ const defaultClientEventHandlers = {
 
   // Emitted when an error has occured.
   // The socket will be closed automatically by the engine if necessary.
-  error (event: Event) {
+  error (event) {
     const client = this
     // Not all error events should be logged with console.error, for example every
     // failed connection attempt generates one such event.
@@ -256,7 +204,7 @@ const defaultClientEventHandlers = {
   // Emitted when a message is received.
   // The connection will be terminated if the message is malformed or has an
   // unexpected data type (e.g. binary instead of text).
-  message (event: MessageEvent) {
+  message (event) {
     const client = this
     const { data } = event
 
@@ -266,7 +214,7 @@ const defaultClientEventHandlers = {
       })
       return client.destroy()
     }
-    let msg: Message = { type: '' }
+    let msg = { type: '' }
 
     try {
       msg = messageParser(data)
@@ -285,7 +233,7 @@ const defaultClientEventHandlers = {
     }
   },
 
-  offline (event: Event) {
+  offline (event) {
     console.info('[pubsub] Event: offline')
     const client = this
 
@@ -296,7 +244,7 @@ const defaultClientEventHandlers = {
     client.socket?.close(4002, 'offline')
   },
 
-  online (event: Event) {
+  online (event) {
     console.info('[pubsub] Event: online')
     const client = this
 
@@ -309,7 +257,7 @@ const defaultClientEventHandlers = {
   },
 
   // Emitted when the connection is established.
-  open (event: Event) {
+  open (event) {
     console.debug('[pubsub] Event: open')
     const client = this
     const { options } = this
@@ -340,22 +288,22 @@ const defaultClientEventHandlers = {
     // There should be no pending unsubscription since we just got connected.
   },
 
-  'reconnection-attempt' (event: CustomEvent) {
+  'reconnection-attempt' (event) {
     console.info('[pubsub] Trying to reconnect...')
   },
 
-  'reconnection-succeeded' (event: CustomEvent) {
+  'reconnection-succeeded' (event) {
     console.info('[pubsub] Connection re-established')
   },
 
-  'reconnection-failed' (event: CustomEvent) {
+  'reconnection-failed' (event) {
     console.warn('[pubsub] Reconnection failed')
     const client = this
 
     client.destroy()
   },
 
-  'reconnection-scheduled' (event: CustomEvent) {
+  'reconnection-scheduled' (event) {
     const { delay, nth } = event.detail
     console.info(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
   }
@@ -469,7 +417,7 @@ const socketEventNames = ['close', 'error', 'message', 'open']
 const isDefinetelyOffline = () => typeof navigator === 'object' && navigator.onLine === false
 
 // Parses and validates a received message.
-export const messageParser = (data: string): Message => {
+export const messageParser = (data) => {
   const msg = JSON.parse(data)
 
   if (typeof msg !== 'object' || msg === null) {
@@ -557,7 +505,7 @@ const publicMethods = {
     client.shouldReconnect = false
   },
 
-  getNextRandomDelay (): number {
+  getNextRandomDelay () {
     const client = this
 
     const {
@@ -595,7 +543,7 @@ const publicMethods = {
   },
 
   // Unused for now.
-  pub (contractID: string, data: JSONType, dontBroadcast = false) {
+  pub (contractID, data, dontBroadcast = false) {
   },
 
   /**
@@ -607,7 +555,7 @@ const publicMethods = {
    * - Calling this method again before the server has responded has no effect.
    * @param contractID - The ID of the contract whose updates we want to subscribe to.
    */
-  sub (contractID: string, dontBroadcast = false) {
+  sub (contractID, dontBroadcast = false) {
     const client = this
     const { socket } = this
 
@@ -630,7 +578,7 @@ const publicMethods = {
    * - Calling this method again before the server has responded has no effect.
    * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
    */
-  unsub (contractID: string, dontBroadcast = false) {
+  unsub (contractID, dontBroadcast = false) {
     const client = this
     const { socket } = this
 
@@ -648,7 +596,7 @@ const publicMethods = {
 // Register custom SBP event listeners before the first connection.
 for (const name of Object.keys(defaultClientEventHandlers)) {
   if (name === 'error' || !socketEventNames.includes(name)) {
-    sbp('okTurtles.events/on', `pubsub-${name}`, (target, detail?: Object) => {
+    sbp('okTurtles.events/on', `pubsub-${name}`, (target, detail) => {
       target.listeners[name]({ type: name, target, detail })
     })
   }

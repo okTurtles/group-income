@@ -1,7 +1,7 @@
 {
   "imports": {
-    "~/backend/": "./deno-backend/",
-    "~/shared/": "./deno-shared/",
+    "~/backend/": "./backend/",
+    "~/shared/": "./shared/",
     "~/": "./",
     "@sbp/": "https://cdn.skypack.dev/@sbp/",
 

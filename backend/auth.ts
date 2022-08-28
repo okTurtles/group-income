@@ -4,7 +4,7 @@
 
 const { AlreadyExists, BadRequest, NotFound, PermissionDenied } = Deno.errors
 
-import { verify, b64ToStr } from '~/shared/functions.ts'
+import { verify, b64ToStr } from '~/shared/functions.js'
 
 export default {
   name: 'gi-auth',

@@ -5,7 +5,7 @@
 //
 // Ensures:
 //
-// - Babel support is available on the backend, in Mocha tests, etc.
+// - Babel support is available in Mocha tests, etc.
 // - Environment variables are set to different values depending
 //   on whether we're in a production environment or otherwise.
 //
@@ -14,7 +14,7 @@
 const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { exec, fork } = require('child_process')
+const { exec } = require('child_process')
 const execP = util.promisify(exec)
 const { copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
@@ -66,7 +66,7 @@ const {
   EXPOSE_SBP = ''
 } = process.env
 
-const backendIndex = './backend/index.js'
+// const backendIndex = './backend/index.ts'
 const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
 const distDir = 'dist'
@@ -356,6 +356,7 @@ module.exports = (grunt) => {
     },
 
     exec: {
+      deno: 'deno run --allow-env --allow-net --allow-read --allow-write --import-map=import-map.json --no-check backend/index.ts',
       eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
@@ -376,54 +377,7 @@ module.exports = (grunt) => {
   //  Grunt Tasks
   // -------------------------------------------------------------------------
 
-  let child = null
-
-  // Useful helper task for `grunt test`.
-  grunt.registerTask('backend:launch', '[internal]', function () {
-    const done = this.async()
-    grunt.log.writeln('backend: launching...')
-    // Provides Babel support for the backend files.
-    require('@babel/register')
-    require(backendIndex).then(done).catch(done)
-  })
-
-  // Used with `grunt dev` only, makes it possible to restart just the server when
-  // backend or shared files are modified.
-  grunt.registerTask('backend:relaunch', '[internal]', function () {
-    const done = this.async() // Tell Grunt we're async.
-    const fork2 = function () {
-      grunt.log.writeln('backend: forking...')
-      child = fork(backendIndex, process.argv, {
-        env: process.env,
-        execArgv: ['--require', '@babel/register']
-      })
-      child.on('error', (err) => {
-        if (err) {
-          console.error('error starting or sending message to child:', err)
-          process.exit(1)
-        }
-      })
-      child.on('exit', (c) => {
-        if (c !== 0) {
-          grunt.log.error(`child exited with error code: ${c}`.bold)
-          // ^C can cause c to be null, which is an OK error.
-          process.exit(c || 0)
-        }
-      })
-      done()
-    }
-    if (child) {
-      grunt.log.writeln('Killing child!')
-      // Wait for successful shutdown to avoid EADDRINUSE errors.
-      child.on('message', () => {
-        child = null
-        fork2()
-      })
-      child.send({ shutdown: 1 })
-    } else {
-      fork2()
-    }
-  })
+  const child = null
 
   grunt.registerTask('build', function () {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
@@ -483,7 +437,7 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
   // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'exec:deno', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
   // --------------------
@@ -547,7 +501,7 @@ module.exports = (grunt) => {
 
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
+      [['backend/**/*.ts', 'shared/**/*.js'], [eslint, 'exec:deno']],
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
@@ -628,8 +582,8 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'backend:launch', 'exec:test', 'cypress'])
-  grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
+  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'exec:deno', 'exec:test', 'cypress'])
+  grunt.registerTask('test:unit', ['exec:deno', 'exec:test'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers

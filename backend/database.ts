@@ -1,9 +1,10 @@
 import * as pathlib from 'path'
 
 import sbp from "@sbp/sbp"
+import { notFound } from 'pogo/lib/bang.ts'
 
-import '~/shared/domains/chelonia/db.ts'
-import { strToB64 } from '~/shared/functions.ts'
+import '~/shared/domains/chelonia/db.js'
+import { strToB64 } from '~/shared/functions.js'
 
 const CI = Deno.env.get('CI')
 const GI_VERSION = Deno.env.get('GI_VERSION')
@@ -43,7 +44,7 @@ export default (sbp('sbp/selectors/register', {
   'backend/db/streamEntriesSince': async function (contractID: string, hash: string) {
     let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
     if (!currentHEAD) {
-      throw new NotFound(`contractID ${contractID} doesn't exist!`)
+      throw notFound(`contractID ${contractID} doesn't exist!`)
     }
     const chunks = ['[']
     try {
@@ -66,9 +67,75 @@ export default (sbp('sbp/selectors/register', {
     } catch (error) {
       console.error(`read(): ${error.message}:`, error)
     }
-    const json = chunks.join('')
-    // console.log('streamEntriesSince text:', json)
-    return json
+    return chunks.join('')
+  },
+  'backend/db/streamEntriesBefore': async function (before: string, limit: number): Promise<any> {
+    let currentHEAD = before
+    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
+    if (!entry) {
+      throw notFound(`entry ${currentHEAD} doesn't exist!`)
+    }
+    limit++ // to return `before` apart from the `limit` number of events
+    const chunks = ['[']
+    try {
+      while (true) {
+        if (!currentHEAD || !limit) {
+          chunks[chunks.length] = ']'
+          break
+        }
+        const entry = await sbp('chelonia/db/getEntry', currentHEAD)
+        if (!entry) {
+          console.error(`read(): entry ${currentHEAD} no longer exists.`)
+          chunks[chunks.length] = ']'
+          break
+        }
+        if (chunks.length > 1) chunks[chunks.length] = ','
+        chunks[chunks.length] = `"${strToB64(entry.serialize())}"`
+
+        currentHEAD = entry.message().previousHEAD
+        limit--
+      }
+    } catch (error) {
+      console.error(`read(): ${error.message}:`, error)
+    }
+    return chunks.join('')
+  },
+  'backend/db/streamEntriesBetween': async function (startHash: string, endHash: string, offset: number): Promise<any> {
+    let isMet = false
+    let currentHEAD = endHash
+    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
+    if (!entry) {
+      throw notFound(`entry ${currentHEAD} doesn't exist!`)
+    }
+    const chunks = ['[']
+    try {
+      while (true) {
+        const entry = await sbp('chelonia/db/getEntry', currentHEAD)
+        if (!entry) {
+          console.error(`read(): entry ${currentHEAD} no longer exists.`)
+          chunks[chunks.length] = ']'
+          break
+        }
+        if (chunks.length > 1) chunks[chunks.length] = ','
+        chunks[chunks.length] = `"${strToB64(entry.serialize())}"`
+
+        if (currentHEAD === startHash) {
+          isMet = true
+        } else if (isMet) {
+          offset--
+        }
+
+        currentHEAD = entry.message().previousHEAD
+
+        if (!currentHEAD || (isMet && !offset)) {
+          chunks[chunks.length] = ']'
+          break
+        }
+      }
+    } catch (error) {
+      console.error(`read(): ${error.message}:`, error)
+    }
+    return chunks.join('')
   },
   // =======================
   // wrapper methods to add / lookup names

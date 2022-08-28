@@ -10,8 +10,6 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { blake32Hash } from '~/shared/functions.js'
 // import 'ses'
 
-import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
-
 // export const FERAL_FUNCTION = Function
 
 export default (sbp('sbp/selectors/register', {
@@ -19,7 +17,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/state': function () {
     return this.state
   },
-  'chelonia/private/loadManifest': async function (manifestHash: string) {
+  'chelonia/private/loadManifest': async function (manifestHash) {
     if (this.manifestToContract[manifestHash]) {
       console.warn('[chelonia]: already loaded manifest', manifestHash)
       return
@@ -41,8 +39,8 @@ export default (sbp('sbp/selectors/register', {
       .reduce(reduceAllow, {})
     const allowedDoms = this.config.contracts.defaults.allowedDomains
       .reduce(reduceAllow, {})
-    let contractName: string // eslint-disable-line prefer-const
-    const contractSBP = (selector: string, ...args) => {
+    let contractName // eslint-disable-line prefer-const
+    const contractSBP = (selector, ...args) => {
       const domain = domainFromSelector(selector)
       if (selector.startsWith(contractName)) {
         selector = `${manifestHash}/${selector}`
@@ -55,7 +53,7 @@ export default (sbp('sbp/selectors/register', {
     }
     // const saferEval: Function = new FERAL_FUNCTION(`
     // eslint-disable-next-line no-new-func
-    const saferEval: Function = new Function(`
+    const saferEval = new Function(`
       return function (globals) {
         // almost a real sandbox
         // stops (() => this)().fetch
@@ -119,7 +117,7 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 3 } = {}) {
+  'chelonia/private/out/publishEvent': async function (entry, { maxAttempts = 3 } = {}) {
     const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
@@ -158,27 +156,27 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object) {
+  'chelonia/private/in/processMessage': async function (message, state) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const contractID = message.contractID()
     const manifestHash = message.manifest()
     const config = this.config
     if (!state._vm) state._vm = {}
-    const opFns: { [GIOpType]: (any) => void } = {
-      [GIMessage.OP_CONTRACT] (v: GIOpContract) {
+    const opFns = {
+      [GIMessage.OP_CONTRACT] (v) {
         // TODO: shouldn't each contract have its own set of authorized keys?
         if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
         // TODO: we probably want to be pushing the de-JSON-ified key here
         state._vm.authorizedKeys.push({ key: v.keyJSON, context: 'owner' })
       },
-      [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
+      [GIMessage.OP_ACTION_ENCRYPTED] (v) {
         if (!config.skipActionProcessing) {
           const decrypted = message.decryptedValue(config.decryptFn)
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
         }
       },
-      [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
+      [GIMessage.OP_ACTION_UNENCRYPTED] (v) {
         if (!config.skipActionProcessing) {
           const { data, meta, action } = v
           if (!config.whitelisted(action)) {
@@ -188,11 +186,11 @@ export default (sbp('sbp/selectors/register', {
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
-      [GIMessage.OP_PROP_SET] (v: GIOpPropSet) {
+      [GIMessage.OP_PROP_SET] (v) {
         if (!state._vm.props) state._vm.props = {}
         state._vm.props[v.key] = v.value
       },
-      [GIMessage.OP_KEY_ADD] (v: GIOpKeyAdd) {
+      [GIMessage.OP_KEY_ADD] (v) {
         // TODO: implement this. consider creating a function so that
         //       we're not duplicating code in [GIMessage.OP_CONTRACT]
         // if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
@@ -217,7 +215,7 @@ export default (sbp('sbp/selectors/register', {
       config[`postOp_${opT}`] && config[`postOp_${opT}`](message, state)
     }
   },
-  'chelonia/private/in/enqueueHandleEvent': function (event: GIMessage) {
+  'chelonia/private/in/enqueueHandleEvent': function (event) {
     // make sure handleEvent is called AFTER any currently-running invocations
     // to 'chelonia/contract/sync', to prevent gi.db from throwing
     // "bad previousHEAD" errors
@@ -225,7 +223,7 @@ export default (sbp('sbp/selectors/register', {
       'chelonia/private/in/handleEvent', event
     ])
   },
-  'chelonia/private/in/syncContract': async function (contractID: string) {
+  'chelonia/private/in/syncContract': async function (contractID) {
     const state = sbp(this.config.stateSelector)
     const latest = await sbp('chelonia/out/latestHash', contractID)
     console.debug(`[chelonia] syncContract: ${contractID} latestHash is: ${latest}`)
@@ -263,7 +261,7 @@ export default (sbp('sbp/selectors/register', {
       throw e
     }
   },
-  'chelonia/private/in/handleEvent': async function (message: GIMessage) {
+  'chelonia/private/in/handleEvent': async function (message) {
     const state = sbp(this.config.stateSelector)
     const contractID = message.contractID()
     const hash = message.hash()
@@ -329,13 +327,13 @@ export default (sbp('sbp/selectors/register', {
       throw e
     }
   }
-}): string[])
+}))
 
 const eventsToReinjest = []
 const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID), 1000)
 
 const handleEvent = {
-  async addMessageToDB (message: GIMessage) {
+  async addMessageToDB (message) {
     const contractID = message.contractID()
     const hash = message.hash()
     try {
@@ -364,12 +362,12 @@ const handleEvent = {
       throw e
     }
   },
-  async processMutation (message: GIMessage, state: Object) {
+  async processMutation (message, state) {
     const contractID = message.contractID()
     if (message.isFirstMessage()) {
       // Flow doesn't understand that a first message must be a contract,
       // so we have to help it a bit in order to acces the 'type' property.
-      const { type } = ((message.opValue(): any): GIOpContract)
+      const { type } = ((message.opValue()))
       if (!state[contractID]) {
         console.debug(`contract ${type} registered for ${contractID}`)
         this.config.reactiveSet(state, contractID, {})
@@ -382,7 +380,7 @@ const handleEvent = {
     }
     await sbp('chelonia/private/in/processMessage', message, state[contractID])
   },
-  async processSideEffects (message: GIMessage) {
+  async processSideEffects (message) {
     if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) {
       const contractID = message.contractID()
       const manifestHash = message.manifest()
