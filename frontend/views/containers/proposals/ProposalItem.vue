@@ -147,9 +147,14 @@ export default ({
           user: this.proposal.data.proposalData.member
         }),
         [PROPOSAL_REMOVE_MEMBER]: () => {
-          const user = this.userDisplayName(this.proposal.data.proposalData.member)
-          return this.isToRemoveMe
-            ? L('Remove {user} (you) from the group.', { user })
+          const user = [
+            this.userDisplayName(this.proposal.data.proposalData.member),
+            this.isToRemoveMe && '(you)'
+          ].filter(Boolean).join(' ')
+          const isAutomatedBan = this.proposal.data.proposalData.automated
+
+          return isAutomatedBan
+            ? L('[Automated] Remove {user} from the group.', { user })
             : L('Remove {user} from the group.', { user })
         },
         [PROPOSAL_GROUP_SETTING_CHANGE]: () => {
