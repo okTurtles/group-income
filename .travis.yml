@@ -9,6 +9,14 @@ env:
 branches:
   only:
     - master # https://github.com/okTurtles/group-income/issues/58
+before_install:
+  # https://blog.travis-ci.com/2021-02-01-rundeno
+  - pwd
+  - curl -fsSL https://deno.land/x/install/install.sh | sh
+  - ls -l $HOME/.deno
+  - export DENO_INSTALL="$HOME/.deno"
+  - export PATH="$DENO_INSTALL/bin:$PATH"
+  - deno run https://deno.land/std/examples/welcome.ts   
 cache:
   # Caches $HOME/.npm when npm ci is default script command
   # Caches node_modules in all other cases
