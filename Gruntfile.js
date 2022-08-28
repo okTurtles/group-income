@@ -356,7 +356,6 @@ module.exports = (grunt) => {
     },
 
     exec: {
-      deno: 'deno run --allow-env --allow-net --allow-read --allow-write --import-map=import-map.json --no-check backend/index.ts',
       eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
@@ -409,6 +408,10 @@ module.exports = (grunt) => {
     cypress[command](options).then(r => done(r.totalFailed === 0)).catch(done)
   })
 
+  grunt.registerTask('deno', function () {
+    exec('deno run --allow-env --allow-net --allow-read --allow-write --import-map=import-map.json --no-check backend/index.ts')
+  })
+
   grunt.registerTask('pin', async function (version) {
     if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
     const done = this.async()
@@ -437,7 +440,7 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
   // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'exec:deno', 'keepalive'])
+  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'deno', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
   // --------------------
@@ -501,7 +504,7 @@ module.exports = (grunt) => {
 
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.ts', 'shared/**/*.js'], [eslint, 'exec:deno']],
+      [['backend/**/*.ts', 'shared/**/*.js'], [eslint, 'deno']],
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
@@ -582,8 +585,8 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'exec:deno', 'exec:test', 'cypress'])
-  grunt.registerTask('test:unit', ['exec:deno', 'exec:test'])
+  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno', 'exec:test', 'cypress'])
+  grunt.registerTask('test:unit', ['deno', 'exec:test'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers
