@@ -432,7 +432,7 @@ export default (sbp('sbp/selectors/register', {
             prop.data.proposalData.member === username
           )) ?? ['', undefined]
         if (proposal) {
-          // cast our vote if we haven't already cast it
+          // cast our vote if we haven't already cast it.
           if (!proposal.votes[getters.ourUsername]) {
             await sbp('gi.actions/group/proposalVote', {
               contractID: groupID,
