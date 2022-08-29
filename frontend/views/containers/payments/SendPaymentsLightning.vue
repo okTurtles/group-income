@@ -58,7 +58,7 @@ modal-base-template(
                 @change='ephemeral.addDonationFee = !ephemeral.addDonationFee'
               )
               i18n.sr-only(tag='label' for='addDonationFee') Toggle donation fee
-      
+
       .c-section-qr-code
         i18n.has-text-bold(tag='h4') QR code payment
 
