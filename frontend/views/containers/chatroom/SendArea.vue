@@ -40,6 +40,7 @@
     ref='textarea'
     :disabled='loading'
     :placeholder='L("Write your message...")'
+    :style='textareaStyles'
     @blur='textAreaBlur'
     @keydown.enter.exact.prevent='handleKeyDownEnter'
     @keydown.tab.exact='handleKeyDownTab'
@@ -164,6 +165,7 @@ export default ({
       ephemeral: {
         actionsWidth: '',
         textWithLines: '',
+        maskHeight: '',
         showButtons: true,
         isPhone: false,
         mention: {
@@ -213,6 +215,11 @@ export default ({
     },
     isActive () {
       return this.ephemeral.textWithLines
+    },
+    textareaStyles () {
+      return {
+        height: this.ephemeral.maskHeight + 'px'
+      }
     }
   },
   methods: {
@@ -325,6 +332,8 @@ export default ({
       // TRICK: Use an invisible element (.mask) as placeholder to know the
       // amount of space the user message takes... (taking in account new lines)
       this.$refs.mask.textContent = this.ephemeral.textWithLines + (isLastLineEmpty ? '.' : '')
+      // ...and apply the maks's height to the textarea so it dynamically grows as the user types
+      this.ephemeral.maskHeight = this.$refs.mask.offsetHeight - 2
     },
     createNewLine () {
       this.$refs.textarea.value += '\n'
@@ -388,7 +397,7 @@ export default ({
   display: block;
   background-color: var(--background_0);
   border: 1px solid var(--general_0);
-  margin: 1rem 1.5rem 0 1.5rem;
+  margin: 1rem;
 
   @include tablet {
     margin: 1rem 2.5rem 2rem 2.5rem;
@@ -406,7 +415,8 @@ export default ({
     resize: none;
     overflow: hidden;
     height: 2.75rem;
-    min-height: 0;
+    min-height: 2.75rem;
+    max-height: 5.5rem;
     background-color: transparent;
     border: none;
 
@@ -426,6 +436,8 @@ export default ({
     opacity: 0;
     pointer-events: none;
     height: auto;
+    white-space: pre-line;
+    min-height: 0;
   }
 
   &-btn {
@@ -587,6 +599,10 @@ export default ({
   &:hover {
     color: var(--primary_0);
     cursor: pointer;
+  }
+
+  &.isActive {
+    background: $primary_0;
   }
 }
 </style>
