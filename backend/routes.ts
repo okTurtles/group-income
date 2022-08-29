@@ -200,11 +200,9 @@ route.GET('/file/{hash}', async function handler (request, h) {
 route.GET('/assets/{subpath*}', async function handler (request, h) {
   try {
     const { subpath } = request.params
-    console.log('subpath:', subpath)
-    const basename = pathlib.basename(subpath)
     console.debug(`GET /assets/${subpath}`)
+    const basename = pathlib.basename(subpath)
     const base = pathlib.resolve('dist/assets')
-    console.log('base:', base)
     // In the build config we told our bundler to use the `[name]-[hash]-cached` template
     // to name immutable assets. This is useful because `dist/assets/` currently includes
     // a few files without hash in their name.

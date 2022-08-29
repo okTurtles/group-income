@@ -1,10 +1,11 @@
-// create our auth plugin. see:
+/* globals Deno */
+// Create our auth plugin. See:
 // https://hapijs.com/tutorials/auth
 // https://hapijs.com/tutorials/plugins
 
-const { AlreadyExists, BadRequest, NotFound, PermissionDenied } = Deno.errors
-
 import { verify, b64ToStr } from '~/shared/functions.js'
+
+const { BadRequest, PermissionDenied } = Deno.errors
 
 export default {
   name: 'gi-auth',

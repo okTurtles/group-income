@@ -66,7 +66,7 @@ const {
   EXPOSE_SBP = ''
 } = process.env
 
-// const backendIndex = './backend/index.ts'
+const backendIndex = './backend/index.ts'
 const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
 const distDir = 'dist'
@@ -408,54 +408,6 @@ module.exports = (grunt) => {
     cypress[command](options).then(r => done(r.totalFailed === 0)).catch(done)
   })
 
-  grunt.registerTask('deno', function () {
-    const done = this.async() // Tell Grunt we're async.
-    const fork2 = function () {
-      grunt.log.writeln('backend: forking...')
-      child = spawn(
-        'deno',
-        ['run', '--allow-env', '--allow-net', '--allow-read', '--allow-write', '--import-map=import-map.json', '--no-check', 'backend/index.ts'],
-        {
-          env: process.env
-        }
-      )
-      child.on('error', (err) => {
-        if (err) {
-          console.error('error starting or sending message to child:', err)
-          process.exit(1)
-        }
-      })
-      child.on('exit', (c) => {
-        if (c !== 0) {
-          grunt.log.error(`child exited with error code: ${c}`.bold)
-          // ^C can cause c to be null, which is an OK error.
-          process.exit(c || 0)
-        }
-      })
-      child.stdout.on('data', (data) => {
-        console.log(String(data))
-      })
-      child.stderr.on('data', (data) => {
-        console.error(String(data))
-      })
-      child.on('close', (code) => {
-        console.log(`child process exited with code ${code}`)
-      })
-      done()
-    }
-    if (child) {
-      grunt.log.writeln('Killing child!')
-      // Wait for successful shutdown to avoid EADDRINUSE errors.
-      child.on('message', () => {
-        child = null
-        fork2()
-      })
-      child.send({ shutdown: 1 })
-    } else {
-      fork2()
-    }
-  })
-
   grunt.registerTask('pin', async function (version) {
     if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
     const done = this.async()
@@ -483,8 +435,63 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('default', ['dev'])
+
+  grunt.registerTask('deno:start', function () {
+    const done = this.async() // Tell Grunt we're async.
+    child = spawn(
+      'deno',
+      ['run', '--allow-env', '--allow-net', '--allow-read', '--allow-write', '--import-map=import-map.json', '--no-check', backendIndex],
+      {
+        env: process.env
+      }
+    )
+    child.on('error', (err) => {
+      if (err) {
+        console.error('Error starting or sending message to child:', err)
+        process.exit(1)
+      }
+    })
+    child.on('exit', (c) => {
+      // ^C can cause c to be null, which is an OK error.
+      if (c === null) {
+        grunt.log.writeln('Backend process exited with null code.')
+        // process.exit(0)
+      } else if (c !== 0) {
+        grunt.log.error(`Backend process exited with error code: ${c}`.bold)
+        process.exit(c)
+      } else {
+        grunt.log.writeln('Backend process exited normally.')
+      }
+    })
+    child.stdout.on('data', (data) => {
+      console.log(String(data))
+    })
+    child.stderr.on('data', (data) => {
+      console.error(String(data))
+    })
+    child.on('close', (code) => {
+      console.log(`Backend process closed with code ${code}`)
+    })
+    child.on('spawn', () => {
+      grunt.log.writeln('Backend process spawned.')
+      done()
+    })
+  })
+
+  grunt.registerTask('deno:stop', function () {
+    if (child) {
+      const killed = child.kill()
+      if (killed) {
+        grunt.log.writeln('Deno backend stopped.')
+        child = null
+      } else {
+        grunt.log.error('Failed to quit dangling child!')
+      }
+    }
+  })
+
   // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'deno', 'keepalive'])
+  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'deno:start', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
   // --------------------
@@ -548,7 +555,7 @@ module.exports = (grunt) => {
 
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.ts', 'shared/**/*.js'], [eslint, 'deno']],
+      [['backend/**/*.ts', 'shared/**/*.js'], [eslint, 'deno:stop', 'deno:start']],
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
@@ -621,6 +628,19 @@ module.exports = (grunt) => {
     done()
   })
 
+  // Stops the Flowtype server.
+  grunt.registerTask('flow:stop', function () {
+    const done = this.async()
+    exec('./node_modules/.bin/flow stop', (err, stdout, stderr) => {
+      if (!err) {
+        grunt.log.writeln('Flowtype server stopped')
+      } else {
+        grunt.log.error('Could not stop Flowtype server:', err.message)
+      }
+      done(err)
+    })
+  })
+
   // eslint-disable-next-line no-unused-vars
   let killKeepAlive = null
   grunt.registerTask('keepalive', function () {
@@ -629,14 +649,15 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno', 'exec:test', 'cypress'])
-  grunt.registerTask('test:unit', ['deno', 'exec:test'])
+  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno:start', 'exec:test', 'cypress', 'deno:stop', 'flow:stop'])
+  grunt.registerTask('test:unit', ['deno:start', 'exec:test', 'deno:stop'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers
   // -------------------------------------------------------------------------
 
-  process.on('exit', () => {
+  process.on('exit', (code, signal) => {
+    console.log('[node] Exiting with code:', code, 'signal:', signal)
     // Note: 'beforeExit' doesn't work.
     // In cases where 'watch' fails while child (server) is still running
     // we will exit and child will continue running in the background.
@@ -644,12 +665,14 @@ module.exports = (grunt) => {
     // the PORT_SHIFT envar. If grunt-contrib-watch livereload process
     // cannot bind to the port for some reason, then the parent process
     // will exit leaving a dangling child server process.
-    if (child) {
+    if (child && !child.killed) {
       grunt.log.writeln('Quitting dangling child!')
-      child.send({ shutdown: 2 })
+      child.kill()
     }
-    // Stops the Flowtype server.
-    exec('./node_modules/.bin/flow stop')
+    // Make sure to stop the Flowtype server in case `flow:stop` wasn't called.
+    exec('./node_modules/.bin/flow stop', () => {
+      grunt.log.writeln('Flowtype server stopped in process exit handler')
+    })
   })
 
   process.on('uncaughtException', (err) => {
