@@ -7,7 +7,10 @@
 # - https://flowtype.org/docs/objects.html
 # - https://flowtype.org/docs/functions.html
 .*/Gruntfile.js
+# Backend files use TypeScript instead of Flow since they run using Deno.
 .*/backend/.*
+# Shared files must be imported by Deno backend files, so they better not contain Flowtype annotations.
+.*/shared/.*
 .*/dist/.*
 .*/contracts/.*
 .*/frontend/assets/.*
