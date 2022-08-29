@@ -14,7 +14,7 @@
 const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { exec } = require('child_process')
+const { exec, spawn } = require('child_process')
 const execP = util.promisify(exec)
 const { copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
@@ -376,7 +376,7 @@ module.exports = (grunt) => {
   //  Grunt Tasks
   // -------------------------------------------------------------------------
 
-  const child = null
+  let child = null
 
   grunt.registerTask('build', function () {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
@@ -409,7 +409,51 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('deno', function () {
-    exec('deno run --allow-env --allow-net --allow-read --allow-write --import-map=import-map.json --no-check backend/index.ts')
+    const done = this.async() // Tell Grunt we're async.
+    const fork2 = function () {
+      grunt.log.writeln('backend: forking...')
+      child = spawn(
+        'deno',
+        ['run', '--allow-env', '--allow-net', '--allow-read', '--allow-write', '--import-map=import-map.json', '--no-check', 'backend/index.ts'],
+        {
+          env: process.env
+        }
+      )
+      child.on('error', (err) => {
+        if (err) {
+          console.error('error starting or sending message to child:', err)
+          process.exit(1)
+        }
+      })
+      child.on('exit', (c) => {
+        if (c !== 0) {
+          grunt.log.error(`child exited with error code: ${c}`.bold)
+          // ^C can cause c to be null, which is an OK error.
+          process.exit(c || 0)
+        }
+      })
+      child.stdout.on('data', (data) => {
+        console.log(String(data))
+      })
+      child.stderr.on('data', (data) => {
+        console.error(String(data))
+      })
+      child.on('close', (code) => {
+        console.log(`child process exited with code ${code}`)
+      })
+      done()
+    }
+    if (child) {
+      grunt.log.writeln('Killing child!')
+      // Wait for successful shutdown to avoid EADDRINUSE errors.
+      child.on('message', () => {
+        child = null
+        fork2()
+      })
+      child.send({ shutdown: 1 })
+    } else {
+      fork2()
+    }
   })
 
   grunt.registerTask('pin', async function (version) {

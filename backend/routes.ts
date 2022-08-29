@@ -197,22 +197,29 @@ route.GET('/file/{hash}', async function handler (request, h) {
 
 // SPA routes
 
-route.GET('/assets/{subpath*}', function handler (request, h) {
-  const { subpath } = request.params
-  const basename = pathlib.basename(subpath)
-  console.debug(`GET /assets/${subpath}`)
-  const base = pathlib.resolve('dist/assets')
-  // In the build config we told our bundler to use the `[name]-[hash]-cached` template
-  // to name immutable assets. This is useful because `dist/assets/` currently includes
-  // a few files without hash in their name.
-  if (basename.includes('-cached')) {
+route.GET('/assets/{subpath*}', async function handler (request, h) {
+  try {
+    const { subpath } = request.params
+    console.log('subpath:', subpath)
+    const basename = pathlib.basename(subpath)
+    console.debug(`GET /assets/${subpath}`)
+    const base = pathlib.resolve('dist/assets')
+    console.log('base:', base)
+    // In the build config we told our bundler to use the `[name]-[hash]-cached` template
+    // to name immutable assets. This is useful because `dist/assets/` currently includes
+    // a few files without hash in their name.
+    if (basename.includes('-cached')) {
+      return (await h.file(pathlib.join(base, subpath)))
+        .header('etag', basename)
+        .header('cache-control', 'public,max-age=31536000,immutable')
+    }
+    // Files like `main.js` or `main.css` should be revalidated before use. Se we use the default headers.
+    // This should also be suitable for serving unversioned fonts and images.
     return h.file(pathlib.join(base, subpath))
-      .header('etag', basename)
-      .header('cache-control', 'public,max-age=31536000,immutable')
+  } catch (err) {
+    console.error(err)
+    return logger(err)
   }
-  // Files like `main.js` or `main.css` should be revalidated before use. Se we use the default headers.
-  // This should also be suitable for serving unversioned fonts and images.
-  return h.file(pathlib.join(base, subpath))
 })
 
 route.GET('/app/{path*}', function handler (req, h) {
