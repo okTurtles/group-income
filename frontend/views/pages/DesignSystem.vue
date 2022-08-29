@@ -1265,6 +1265,30 @@ page(
           component.c-svg(:is='svg.component')
           .c-svgList-text
             p #[b Name]: {{svg.name}}
+
+  article#qrcode
+    section.card
+      h2.is-title-2.card-header QR Code
+      p We have a component named 'QrCode' that uses 'qrious' to encode a string into a qr-code image.
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | qr-code(
+              |   value='https://groupincome.org/community/'
+              |   :sideLength='88'
+              | )
+          td
+            qr-code(
+              value='https://groupincome.org/community/'
+              :sideLength='88'
+            )
+      br
+      br
 </template>
 
 <script>
@@ -1277,6 +1301,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CalloutCard from '@components/CalloutCard.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
+import QrCode from '@components/QrCode.vue'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
@@ -1424,6 +1449,7 @@ export default ({
     ButtonSubmit,
     CalloutCard,
     LinkToCopy,
+    QrCode,
     MenuParent,
     MenuTrigger,
     MenuContent,

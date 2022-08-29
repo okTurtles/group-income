@@ -63,7 +63,10 @@ modal-base-template(
         i18n.has-text-bold(tag='h4') QR code payment
 
         .c-qr-code-wrapper
-          .c-qr-code-img-placeholder
+          qr-code.c-qr-code-img(
+            :sideLength='172'
+            value='https://groupincome.org/community/'
+          )
           i18n.c-qr-code-instruction.has-text-1(tag='p')
             | To complete your payment,
             | please use your payment app to scan the QR code with your phone or copy the payment link.
@@ -73,6 +76,7 @@ modal-base-template(
 import { Vue } from '@common/common.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from './RecordPaymentsList.vue'
+import QrCode from '@components/QrCode.vue'
 import { randomHexString } from '@model/contracts/shared/giLodash.js'
 
 const dummyListData = [
@@ -106,7 +110,8 @@ export default ({
   name: 'SendPayemntsLightning',
   components: {
     ModalBaseTemplate,
-    RecordPaymentsList
+    RecordPaymentsList,
+    QrCode
   },
   data () {
     return {
