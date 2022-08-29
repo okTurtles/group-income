@@ -4,7 +4,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
     .c-header
       i18n.is-title-2.c-title(
         tag='h2'
-      ) All proposals
+      ) Archived proposals
 
     .c-header-info
       i18n.has-text-1(
@@ -24,15 +24,18 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
     .card.c-card
       ul(data-test='proposalsWidget')
         proposal-item(
-          v-for='hash in sortedProposal'
+          v-for='[hash, obj] of proposals'
           :key='hash'
           :proposalHash='hash'
+          :proposalObject='obj'
         )
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import ProposalItem from './ProposalItem.vue'
+import { mapGetters, mapState } from 'vuex'
 
 export default ({
   name: 'PropositionsAllModal',
@@ -41,26 +44,31 @@ export default ({
     ProposalItem
   },
   data: () => ({
-    proposals: Object,
     ephemeral: {
       selectbox: {
         focused: false,
         selectedOption: 'Newest'
-      }
+      },
+      proposals: []
     }
   }),
+  async mounted () {
+    const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+    const archivedProposals = await sbp('gi.db/archive/load', key) || []
+    this.ephemeral.proposals = archivedProposals
+  },
   methods: {
     unfocusSelect () {
       this.$refs.select.blur()
     }
   },
   computed: {
-    sortedProposal () {
-      return this.ephemeral.selectbox.selectedOption === 'Newest' ? this.proposals : [...this.proposals].reverse()
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['currentGroupState', 'ourUsername']),
+    proposals () {
+      const p = this.ephemeral.proposals
+      return this.ephemeral.selectbox.selectedOption === 'Newest' ? p : [...p].reverse()
     }
-  },
-  created () {
-    this.proposals = this.$route.query.proposals
   }
 }: Object)
 </script>

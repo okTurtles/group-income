@@ -1,5 +1,6 @@
 import sbp from '@sbp/sbp'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
+import { createCircularList } from '~/frontend/utils/circularList.js'
 
 /*
   - giConsole/[username]/entries - the stored log entries.
@@ -24,43 +25,6 @@ const getItem = (key: string): ?string => localStorage.getItem(`giConsole/${user
 const removeItem = (key: string): void => localStorage.removeItem(`giConsole/${username}/${key}`)
 const setItem = (key: string, value: any): void => {
   localStorage.setItem(`giConsole/${username}/${key}`, typeof value === 'string' ? value : JSON.stringify(value))
-}
-
-// A list with fixed capacity and constant-time `add()`.
-function createCircularList (capacity: number, defaultValue = ''): Object {
-  const buffer: string[] = new Array(capacity).fill(defaultValue)
-  let isFull = false
-  let offset = 0
-
-  // NOTE: this code doesn't let distinct instances share their method objects,
-  // which would be bad for memory usage if many instances were created.
-  // But that's fine since we're only using one so far.
-  return {
-    add (entry) {
-      buffer[offset] = entry
-      if (offset === capacity - 1) {
-        isFull = true
-      }
-      offset = (offset + 1) % capacity
-    },
-    addAll (entries: Array<*>) {
-      for (const entry of entries) {
-        this.add(entry)
-      }
-    },
-    clear () {
-      buffer.fill(defaultValue)
-      isFull = false
-      offset = 0
-    },
-    toArray (): Array<*> {
-      return (
-        isFull
-          ? [...buffer.slice(offset), ...buffer.slice(0, offset)]
-          : buffer.slice(0, offset)
-      )
-    }
-  }
 }
 
 function createLogger (config: Object): Object {

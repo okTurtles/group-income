@@ -90,7 +90,8 @@ import { TABLET } from '@view-utils/breakpoints.js'
 export default ({
   name: 'ProposalItem',
   props: {
-    proposalHash: String
+    proposalHash: String,
+    proposalObject: Object
   },
   data () {
     return {
@@ -122,7 +123,7 @@ export default ({
       return { STATUS_OPEN, STATUS_PASSED, STATUS_FAILED, STATUS_EXPIRED, STATUS_CANCELLED }
     },
     proposal () {
-      return this.currentGroupState.proposals[this.proposalHash]
+      return this.proposalObject || this.currentGroupState.proposals[this.proposalHash]
     },
     subtitle () {
       const username = this.proposal.meta.username
@@ -285,7 +286,7 @@ export default ({
         this.isOurProposal
       ) {
         const secret = this.proposal.payload.inviteSecret
-        if (this.currentGroupState.invites[secret].status === INVITE_STATUS.VALID) {
+        if (this.currentGroupState.invites[secret]?.status === INVITE_STATUS.VALID) {
           return buildInvitationUrl(this.currentGroupId, this.proposal.payload.inviteSecret)
         }
       }

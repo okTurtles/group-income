@@ -38,7 +38,7 @@ describe('Group - Removing a member', () => {
   }
 
   function getProposalItems (num) {
-    return cy.getByDT('proposalItem', 'li').children()
+    return cy.getByDT('proposalsWidget').children()
   }
 
   // ------- Remove member that has only 1 group.
@@ -180,9 +180,11 @@ describe('Group - Removing a member', () => {
     getProposalItems().eq(0).within(() => {
       cy.getByDT('typeDescription').should('contain', `Remove userbot-${userId} from the group.`)
       cy.getByDT('voteFor').click()
-      cy.getByDT('statusDescription')
-        .should('contain', 'Proposal accepted')
     })
+    // see explanatory comment in group-proposals.spec.js for this .pipe() thing
+    cy.get('body')
+      .pipe($el => $el.find('[data-test="proposalsWidget"]').children().eq(0).find('[data-test="statusDescription"]'))
+      .should('contain', 'Proposal accepted')
 
     // Verify the group has 2 members only again
     assertMembersCount(2)
