@@ -38,6 +38,26 @@ const hapi = new Hapi.Server({
   }
 })
 
+// See https://stackoverflow.com/questions/26213255/hapi-set-header-before-sending-response
+hapi.ext({
+  type: 'onPreResponse',
+  method: function (request, h) {
+    try {
+      // Hapi Boom error responses don't have `.header()`,
+      // but custom headers can be manually added using `.output.headers`.
+      // See https://hapi.dev/module/boom/api/.
+      if (typeof request.response.header === 'function') {
+        request.response.header('X-Frame-Options', 'deny')
+      } else {
+        request.response.output.headers['X-Frame-Options'] = 'deny'
+      }
+    } catch (err) {
+      console.warn(chalk.yellow('[backend] Could not set X-Frame-Options header:', err.message))
+    }
+    return h.continue
+  }
+})
+
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 sbp('sbp/selectors/register', {
