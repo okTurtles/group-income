@@ -442,7 +442,8 @@ module.exports = (grunt) => {
       'deno',
       ['run', '--allow-env', '--allow-net', '--allow-read', '--allow-write', '--import-map=import-map.json', '--no-check', backendIndex],
       {
-        env: process.env
+        env: process.env,
+        stdio: 'inherit'
       }
     )
     child.on('error', (err) => {
@@ -462,12 +463,6 @@ module.exports = (grunt) => {
       } else {
         grunt.log.writeln('Backend process exited normally.')
       }
-    })
-    child.stdout.on('data', (data) => {
-      console.log(String(data))
-    })
-    child.stderr.on('data', (data) => {
-      console.error(String(data))
     })
     child.on('close', (code) => {
       console.log(`Backend process closed with code ${code}`)
