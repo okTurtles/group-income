@@ -69,7 +69,6 @@ export function createServer(options?: Object = {}) {
   }
 
   server.emit = (name, ...args) => {
-    console.log('emit:', name)
     const queue = server.queuesByEventName.get(name) ?? emptySet;
     try {
       for(const callback of queue) {
@@ -125,7 +124,6 @@ export function createServer(options?: Object = {}) {
             client.activeSinceLastPing = false
             client.pinged = true
           })
-          console.log('client pinged')
         }
       })
     }, server.options.pingInterval)
@@ -143,7 +141,7 @@ const defaultOptions = {
   logPingRounds: true,
   logPongMessages: true,
   maxPayload: 6 * 1024 * 1024,
-  pingInterval: 0 // 30000
+  pingInterval: 30000
 }
 
 // Internal default handlers for server events.
@@ -230,7 +228,6 @@ const internalSocketEventHandlers = {
     let msg: Message = { type: '' }
 
     try {
-      console.log('data:', data)
       msg = messageParser(data)
     } catch (error) {
       log.error(`Malformed message: ${error.message}`)
