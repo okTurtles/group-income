@@ -426,7 +426,7 @@ export default ({
 
       await wait(100) // wait a little bit for the avatar image to be prepared
 
-      this.openModal('SendPaymentsLightning')
+      this.openModal('SendPaymentsViaLightning')
     }
   }
 }: Object)

@@ -97,7 +97,9 @@ export default ({
       return currencies[this.groupSettings.mincomeCurrency]
     },
     totalAmount () {
-      const total = this.paymentsList.reduce((acc, p) => acc + p.amount, 0)
+      const total = this.paymentsList
+        .filter(item => item.checked)
+        .reduce((acc, p) => acc + p.amount, 0)
 
       return this.currencies.displayWithoutCurrency(total * (this.addDonationFee ? 1.01 : 1))
     }

@@ -49,7 +49,7 @@ function assertMonthOverview (items) {
 describe('Group Payments', () => {
   const invitationLinks = {}
 
-  it('user1 creates a group', () => {
+  it(`user1-${userId} creates a group`, () => {
     cy.visit('/')
 
     cy.giSignup(`user1-${userId}`, { bypassUI: true })

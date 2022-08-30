@@ -44,7 +44,11 @@ modal-base-template(
             transition(name='slidedown')
               label.field(v-if='ephemeral.displayMemo')
                 i18n.sr-only.label Leave a message
-                textarea.textarea.c-comment(v-model='form.memo' rows='4')
+                textarea.textarea.c-comment(
+                  rows='4'
+                  @input='config.debouncedMemoUpdate'
+                  :value='form.memo'
+                )
 
           .c-toggle-donation.c-toggle-flex
             .c-toggle-flex-info
@@ -65,11 +69,17 @@ modal-base-template(
         .c-qr-code-wrapper
           qr-code.c-qr-code-img(
             :sideLength='172'
-            value='https://groupincome.org/community/'
+            :value='dummyQRstring'
           )
           i18n.c-qr-code-instruction.has-text-1(tag='p')
             | To complete your payment,
             | please use your payment app to scan the QR code with your phone or copy the payment link.
+
+          copyable-input.c-copy-link(
+            :uneditable='true'
+            :value='dummyLinkToCopy'
+            tooltipDirection='top'
+          )
 </template>
 
 <script>
@@ -77,7 +87,8 @@ import { Vue } from '@common/common.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from './RecordPaymentsList.vue'
 import QrCode from '@components/QrCode.vue'
-import { randomHexString } from '@model/contracts/shared/giLodash.js'
+import CopyableInput from '@components/CopyableInput.vue'
+import { randomHexString, debounce } from '@model/contracts/shared/giLodash.js'
 
 const dummyListData = [
   {
@@ -107,10 +118,11 @@ const dummyListData = [
 ]
 
 export default ({
-  name: 'SendPayemntsLightning',
+  name: 'SendPayemntsViaLightning',
   components: {
     ModalBaseTemplate,
     RecordPaymentsList,
+    CopyableInput,
     QrCode
   },
   data () {
@@ -120,9 +132,33 @@ export default ({
         displayMemo: false,
         addDonationFee: false
       },
+      config: {
+        debouncedMemoUpdate: debounce(this.onMemoUpdate, 150)
+      },
       form: {
         memo: ''
       }
+    }
+  },
+  computed: {
+    dummyQueryString () {
+      const checkedToStr = this.ephemeral.dummyListData.filter(item => item.checked)
+        .map(({ username, amount }) => `to=${username}_amount=${amount}`)
+        .join('?')
+      
+      const allStr = [
+        checkedToStr,
+        this.ephemeral.displayMemo && this.form.memo && `memo=${this.form.memo}`,
+        this.ephemeral.addDonationFee && `donation=true`
+      ].filter(Boolean).join('?')
+
+      return allStr ? `?${allStr}` : ''
+    },
+    dummyLinkToCopy () {
+      return `https://groupincome.org/dummy-pay-link/f4k3_H45h_t0_5h4r3${this.dummyQueryString}`
+    },
+    dummyQRstring () {
+      return `https://groupincome.org/dummy-qr${this.dummyQueryString}`
     }
   },
   methods: {
@@ -131,6 +167,9 @@ export default ({
         ...this.ephemeral.dummyListData[index],
         ...data
       })
+    },
+    onMemoUpdate ({ target }) {
+      this.form.memo = target.value
     }
   }
 }: Object)
@@ -206,6 +245,7 @@ export default ({
 
   .c-qr-code-instruction {
     font-size: $size_4;
+    margin-bottom: 3.25rem;
   }
 }
 

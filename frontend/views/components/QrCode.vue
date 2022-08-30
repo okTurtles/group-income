@@ -59,6 +59,7 @@ export default ({
         ...this.colorSet,
         backgroundAlpha: this.alpha,
         foregroundAlpha: this.alpha,
+        level: 'M',
         size: this.pixelSize,
         value: this.value
       }
@@ -66,9 +67,14 @@ export default ({
   },
   methods: {
     createInstance () {
+      const canvasEl = this.$refs.canvas
+
+      canvasEl.width = this.sideLength
+      canvasEl.height = this.sideLength
+
       this.ephemeral.qr = new QRious({
         ...this.qriousConfig,
-        element: this.$refs.canvas
+        element: canvasEl
       })
     },
     update () {
@@ -98,6 +104,7 @@ export default ({
   display: inline-block;
   width: var(--side-length);
   height: var(--side-length);
+  overflow: hidden;
 }
 
 .c-qr-loading-ani,
@@ -115,5 +122,9 @@ export default ({
 
 .c-qr-canvas {
   z-index: 1;
+  transform-origin: center center;
+  // cutting the side-padding from each sides of the image.
+  // passing "padding" prop as 0 in to the 'qrious' instance is buggy.
+  transform: scale(1.05);
 }
 </style>
