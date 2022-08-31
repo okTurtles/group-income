@@ -55,10 +55,15 @@ page(
             | {{ link.title }}
             span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-        .c-chip-container
+        .c-tabs-chip-container.hide-phone
           i18n.c-distribution-chip.pill.is-primary(
             :args='{ startDate: distributionDateShort }'
           ) Next distribution Date: {startDate}
+
+      .c-below-tabs-chip-container.hide-tablet
+        i18n.c-distribution-chip.pill.is-primary(
+          :args='{ startDate: distributionDateShort }'
+        ) Next distribution Date: {startDate}
 
       h3.is-title-3.c-tab-header(v-if='tabHeader') {{ tabHeader }}
 
@@ -457,32 +462,36 @@ export default ({
     flex-grow: 1;
   }
 
-  .c-chip-container {
+  .c-tabs-chip-container {
     align-self: center;
     height: max-content;
-    padding: 0 1rem;
+    padding: 0 1.5rem 0 0;
     margin: 0.75rem 0;
-
-    @include tablet {
-      padding-right: 1.5rem;
-    }
   }
+}
 
-  .c-distribution-chip {
-    padding: 0.25rem 0.75rem;
-    border-radius: 1.6rem;
-  }
+.c-below-tabs-chip-container {
+  margin-bottom: 1.5rem;
+}
+
+.c-distribution-chip {
+  padding: 0.25rem 0.75rem;
+  border-radius: 1.6rem;
 }
 
 // Search
 .c-filters {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 1rem;
   width: 100%;
-  margin-top: 1.5rem;
+
+  @include tablet {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
 
   .c-method-filters {
     display: inline-flex;
@@ -491,7 +500,12 @@ export default ({
   }
 
   .c-search-input {
-    max-width: 12.125rem;
+    order: -1;
+
+    @include tablet {
+      order: unset;
+      max-width: 12.125rem;
+    }
   }
 }
 
