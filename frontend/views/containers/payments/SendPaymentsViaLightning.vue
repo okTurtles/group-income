@@ -145,11 +145,11 @@ export default ({
       const checkedToStr = this.ephemeral.dummyListData.filter(item => item.checked)
         .map(({ username, amount }) => `to=${username}_amount=${amount}`)
         .join('?')
-      
+
       const allStr = [
         checkedToStr,
         this.ephemeral.displayMemo && this.form.memo && `memo=${this.form.memo}`,
-        this.ephemeral.addDonationFee && `donation=true`
+        this.ephemeral.addDonationFee && checkedToStr && 'donation=true'
       ].filter(Boolean).join('?')
 
       return allStr ? `?${allStr}` : ''

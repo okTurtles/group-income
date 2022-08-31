@@ -12,7 +12,7 @@ table.table.c-payments.is-editing(
             i18n.sr-only Mark sent to all
       i18n(tag='th') Sent to
       i18n.sr-only(tag='th') Due
-      i18n.c-th-amount(tag='th') Amount sent
+      th.c-th-amount {{ isLightning ? L('Amount') : L('Amount sent') }}
 
   tbody
     component(

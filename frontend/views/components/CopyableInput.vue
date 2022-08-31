@@ -105,8 +105,9 @@ button.c-btn {
   &.is-direction-bottom {
     transform: translateX(-50%) translateY(0.25rem);
   }
+
   &.is-direction-top {
     transform: translateX(-50%) translateY(-0.25rem);
-  } 
+  }
 }
 </style>
