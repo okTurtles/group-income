@@ -19,7 +19,7 @@ import { router } from './routes.ts'
 
 import { GIMessage } from '../shared/domains/chelonia/GIMessage.js'
 
-const { version } = await import('~/package.json', {
+const { default: { version }} = await import('~/package.json', {
   assert: { type: "json" },
 })
 
@@ -44,7 +44,10 @@ const API_PORT = Deno.env.get('API_PORT')
 const API_URL = Deno.env.get('API_URL')
 const CI = Deno.env.get('CI')
 const GI_VERSION = Deno.env.get('GI_VERSION')
-const NODE_ENV = Deno.env.get('NODE_ENV')
+const NODE_ENV = Deno.env.get('NODE_ENV') ?? 'development'
+
+console.info('GI_VERSION:', GI_VERSION)
+console.info('NODE_ENV:', NODE_ENV)
 
 const pubsub = createServer({
   serverHandlers: {
@@ -59,11 +62,9 @@ const pubsub = createServer({
 const pogoServer = pogo.server({
   hostname: 'localhost',
   port: Number.parseInt(API_PORT),
-  onPreResponse (response) {
+  onPreResponse (response, h) {
     try {
-      if (typeof response.header === 'function') {
-        response.header('X-Frame-Options', 'deny')
-      }
+      response.headers.set('X-Frame-Options', 'deny')
     } catch (err) {
       console.warn('could not set X-Frame-Options header:', err.message)
     }
@@ -74,20 +75,21 @@ const pogoServer = pogo.server({
 {
   const originalInject = pogoServer.inject.bind(pogoServer)
 
-  pogoServer.inject = (request) => {
+  pogoServer.inject = async (request, connInfo) => {
     if (isUpgradeableRequest(request)) {
       return pubsub.handleUpgradeableRequest(request)
     } else {
+      const response = await originalInject(request, connInfo)
+      // This logging code has to be put here instead of inside onPreResponse
+      // because it requires access to the request object.
       if (NODE_ENV === 'development' && !CI) {
-        console.debug(grey(`${request.info.remoteAddress}: ${request.toString()} --> ${request.response.status}`))
+        console.debug(gray(`${connInfo.remoteAddr.hostname}: ${request.method} ${request.url} --> ${response.status}`))
       }
-      return originalInject(request)
+      return response
     }
   }
 }
 pogoServer.router = router
-
-console.log('Backend HTTP server listening:', pogoServer.options)
 
 sbp('okTurtles.data/set', PUBSUB_INSTANCE, pubsub)
 sbp('okTurtles.data/set', SERVER_INSTANCE, pogoServer)
@@ -109,6 +111,9 @@ sbp('sbp/selectors/register', {
   }
 })
 
-pogoServer.start()
-  .then(() => sbp('okTurtles.events/emit', SERVER_RUNNING, pogoServer))
-  .catch(console.error.bind(console, 'error in server.start():'))
+try {
+  pogoServer.start()
+  sbp('okTurtles.events/emit', SERVER_RUNNING, pogoServer)
+} catch (err) {
+  console.error('error in server.start():', err.message)
+}

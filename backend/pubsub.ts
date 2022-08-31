@@ -7,7 +7,7 @@ import {
 import { messageParser } from '~/shared/pubsub.js'
 
 const CI = Deno.env.get('CI')
-const NODE_ENV = Deno.env.get('NODE_ENV')
+const NODE_ENV = Deno.env.get('NODE_ENV') ?? 'development'
 
 const emptySet = Object.freeze(new Set())
 // Used to tag console output.

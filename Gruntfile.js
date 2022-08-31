@@ -442,7 +442,6 @@ module.exports = (grunt) => {
       'deno',
       ['run', '--allow-env', '--allow-net', '--allow-read', '--allow-write', '--import-map=import-map.json', '--no-check', backendIndex],
       {
-        env: process.env,
         stdio: 'inherit'
       }
     )
