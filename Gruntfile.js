@@ -440,7 +440,7 @@ module.exports = (grunt) => {
     const done = this.async() // Tell Grunt we're async.
     child = spawn(
       'deno',
-      ['run', '--allow-env', '--allow-net', '--allow-read', '--allow-write', '--import-map=import-map.json', '--no-check', backendIndex],
+      ['run', '--allow-env', '--allow-net', '--allow-read', '--allow-write', '--import-map=import-map.json', backendIndex],
       {
         stdio: 'inherit'
       }
