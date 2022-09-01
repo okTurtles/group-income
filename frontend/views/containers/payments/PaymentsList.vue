@@ -141,11 +141,7 @@ export default ({
     }
 
     th.c-th-who {
-      width: 52%;
-
-      @include until(480px) {
-        width: 35%;
-      }
+      width: 65%;
 
       @include tablet {
         width: 27%;
@@ -153,10 +149,18 @@ export default ({
     }
 
     th.c-th-method {
-      width: 24%;
+      width: 20%;
 
       @include phone {
         display: none;
+      }
+    }
+
+    th.c-th-amount {
+      width: 35%;
+
+      @include tablet {
+        width: 24%;
       }
     }
   }
@@ -171,24 +175,34 @@ export default ({
     }
 
     th.c-th-amount {
-      width: 14%;
+      width: 20%;
     }
 
     th.c-th-method {
-      width: 19%;
+      display: none;
 
-      @include phone {
-        display: none;
+      @include tablet {
+        display: table-cell;
+        width: 24%;
+      }
+
+      @include desktop {
+        width: 19%;
       }
     }
 
     th.c-th-date {
-      width: 14%;
+      width: 18%;
       padding-right: 0.5rem;
     }
 
     th.c-th-relative-to {
+      display: none;
       padding-right: 0;
+
+      @include desktop {
+        display: table-cell;
+      }
     }
   }
 }

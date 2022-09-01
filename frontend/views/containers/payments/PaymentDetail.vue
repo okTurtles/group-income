@@ -138,5 +138,6 @@ export default ({
 
 .buttons {
   justify-content: center;
+  width: 100%;
 }
 </style>

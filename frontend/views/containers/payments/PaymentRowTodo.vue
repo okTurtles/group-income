@@ -8,16 +8,22 @@
           i18n.sr-only Select payment item
 
     template(slot='cellAmount')
-      template(v-if='payment.partial')
-        i18n.c-partial(
-          :args='{ \
-            partial_amount: `<strong class="has-text-0">${withGroupCurrency(payment.amount)}</strong>`, \
-            partial_total: withGroupCurrency(payment.total) \
-          }'
-        ) {partial_amount} out of {partial_total}
-        i18n.pill.is-primary Partial
-      strong(v-else) {{withGroupCurrency(payment.amount)}}
-      payment-not-received-tooltip(v-if='wasNotReceived' :member='payment.displayName')
+      .c-amount-container
+        .c-amount-value-container
+          template(v-if='payment.partial')
+            i18n.c-partial(
+              :args='{ \
+                partial_amount: `<strong class="has-text-0">${withGroupCurrency(payment.amount)}</strong>`, \
+                partial_total: withGroupCurrency(payment.total) \
+              }'
+            ) {partial_amount} out of {partial_total}
+          strong(v-else) {{withGroupCurrency(payment.amount)}}
+
+          payment-not-received-tooltip.c-not-received-tooltip(v-if='wasNotReceived' :member='payment.displayName')
+
+        .c-amount-pill-container
+          i18n.pill.is-primary(v-if='payment.partial') Partial
+          i18n.pill.is-neutral.hide-tablet Manual
 
     template(slot='cellMethod')
       .c-methods-container
@@ -133,6 +139,33 @@ export default ({
 
   @include tablet {
     margin-right: 0.5rem;
+  }
+}
+
+.c-amount-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: 100%;
+
+  @include tablet {
+    align-items: flex-start;
+  }
+
+  .c-amount-value-container {
+    display: flex;
+  }
+
+  .c-not-received-tooltip {
+    @include phone {
+      order: -1;
+    }
+  }
+
+  .c-amount-pill-container {
+    margin-top: 2px;
+    display: flex;
+    gap: 0.5rem;
   }
 }
 

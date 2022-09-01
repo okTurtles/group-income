@@ -64,22 +64,22 @@ modal-base-template(
               i18n.sr-only(tag='label' for='addDonationFee') Toggle donation fee
 
       .c-section-qr-code
-        i18n.has-text-bold(tag='h4') QR code payment
+        i18n.has-text-bold.c-qr-code-header(tag='h4') QR code payment
 
-        .c-qr-code-wrapper
-          qr-code.c-qr-code-img(
-            :sideLength='172'
-            :value='dummyQRstring'
-          )
-          i18n.c-qr-code-instruction.has-text-1(tag='p')
-            | To complete your payment,
-            | please use your payment app to scan the QR code with your phone or copy the payment link.
+        qr-code.c-qr-code-img(
+          :sideLength='172'
+          :value='dummyQRstring'
+        )
 
-          copyable-input.c-copy-link(
-            :uneditable='true'
-            :value='dummyLinkToCopy'
-            tooltipDirection='top'
-          )
+        i18n.c-qr-code-instruction.has-text-1(tag='p')
+          | To complete your payment,
+          | please use your payment app to scan the QR code with your phone or copy the payment link.
+
+        copyable-input.c-copy-link(
+          :uneditable='true'
+          :value='dummyLinkToCopy'
+          tooltipDirection='top'
+        )
 </template>
 
 <script>
@@ -178,6 +178,16 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+@mixin divider-bottom {
+  box-shadow: inset 0 -2px 0 $general_2;
+}
+
+@mixin only-tablet {
+  @media screen and (min-width: $tablet) and (max-width: $desktop - 1px) {
+    @content;
+  }
+}
+
 .c-header {
   position: absolute;
   top: 0;
@@ -204,7 +214,7 @@ export default ({
   flex-direction: column;
   gap: 1.375rem;
 
-  @include tablet {
+  @include desktop {
     padding: 2.5rem 2rem 2.5rem 0;
     flex-direction: row;
     align-items: flex-start;
@@ -221,30 +231,53 @@ export default ({
 .c-section-qr-code {
   position: relative;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
-  border: 1px solid $general_0;
-  padding: 1.5rem;
+  max-width: 19.375rem;
+  margin: 0 auto;
+  min-height: 10.875rem;
+  border: 1px solid rgba(0, 0, 0, 0);
+  border-radius: 3px;
 
   @include tablet {
-    flex-direction: column;
+    align-items: stretch;
+    max-width: unset;
+  }
+
+  @include only-tablet {
+    padding-right: 13rem;
+  }
+
+  @include desktop {
+    border-color: $general_0;
     width: 13.75rem;
     padding: 2.5rem 1.5rem 1.5rem;
   }
 }
 
-.c-qr-code-wrapper {
-  margin-top: 0.5rem;
+.c-qr-code-header {
+  margin-bottom: 0.75rem;
+}
 
-  .c-qr-code-img-placeholder {
-    display: block;
-    width: 10.75rem;
-    height: 10.75rem;
-    background-color: $general_2;
-    margin-bottom: 0.75rem;
+.c-qr-code-img {
+  margin-bottom: 0.75rem;
+
+  @include only-tablet {
+    position: absolute !important;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+    margin-bottom: 0;
   }
+}
 
-  .c-qr-code-instruction {
-    font-size: $size_4;
+.c-qr-code-instruction {
+  font-size: $size_4;
+  margin-bottom: 1.375rem;
+
+  @include desktop {
     margin-bottom: 3.25rem;
   }
 }
@@ -254,20 +287,18 @@ export default ({
   display: block;
   padding-top: 7.25rem;
   width: 100%;
-
-  @include tablet {
-    max-width: 50.25rem;
-  }
+  max-width: 33.375rem;
 
   @include desktop {
     padding-top: 0;
+    max-width: 50.25rem;
   }
 }
 
 .c-sub-title {
   padding-left: 0.5rem;
 
-  @include tablet {
+  @include desktop {
     padding-left: 2.5rem;
   }
 }
@@ -275,14 +306,16 @@ export default ({
 .c-toggle-comment,
 .c-toggle-donation {
   padding: 0.75rem 0 0.75rem 0.5rem;
+  @include divider-bottom;
 
-  @include tablet {
+  @include desktop {
     padding-left: 2.5rem;
+    box-shadow: none;
   }
 }
 
 .c-toggle-comment {
-  box-shadow: inset 0 -2px 0 $general_2;
+  @include divider-bottom;
 }
 
 .c-toggle-flex {
@@ -293,5 +326,13 @@ export default ({
 
 .c-comment {
   margin-top: 1rem;
+}
+
+.c-copy-link {
+  align-self: stretch;
+
+  @include phone {
+    margin-bottom: 0.5rem;
+  }
 }
 </style>

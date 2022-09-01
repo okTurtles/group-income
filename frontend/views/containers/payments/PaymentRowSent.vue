@@ -5,6 +5,9 @@
       strong {{ withGroupCurrency(payment.amount) }}
       payment-not-received-tooltip(v-if='notReceived' :member='payment.displayName')
 
+      .c-amount-pill-container
+        i18n.pill.is-neutral.hide-tablet Manual
+
     template(slot='cellMethod')
       .c-methods-container
         i18n.pill.is-neutral Manual
@@ -99,10 +102,27 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-methods-container,
-.c-relative-to {
+.c-methods-container {
   @include phone {
     display: none;
+  }
+}
+
+.c-relative-to {
+  display: none;
+
+  @include desktop {
+    display: block;
+  }
+}
+
+.c-amount-pill-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 2px;
+
+  @include phone {
+    justify-content: flex-end;
   }
 }
 </style>

@@ -6,7 +6,7 @@
   )
     .button.is-icon-smaller.c-tip
       i.icon-info
-    i18n.pill.is-warning Not received
+    i18n.pill.is-warning.c-tip-text Not received
 </template>
 
 <script>
@@ -57,4 +57,11 @@ export default ({
   }
 }
 
+.c-tip-text {
+    display: none;
+
+    @include desktop {
+      display: inline-block;
+    }
+  }
 </style>

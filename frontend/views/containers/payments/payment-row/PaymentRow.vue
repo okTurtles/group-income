@@ -78,14 +78,14 @@ export default ({
   }
 }
 
-.cpr-actions {
-  justify-content: space-between;
-}
-
 .cpr-actions,
 .c-user {
   display: flex;
   align-items: center;
+}
+
+.cpr-actions {
+  justify-content: space-between;
 }
 
 .c-avatar {

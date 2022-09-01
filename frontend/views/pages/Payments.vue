@@ -73,6 +73,7 @@ page(
             v-for='(name, method) in config.paymentMethodFilterOptions'
             type='button'
             :key='method'
+            :disabled='method === "lightning" && ephemeral.activeTab !== "PaymentRowTodo"'
             :class='{ "is-active":  ephemeral.paymentMethodFilter === method }'
             @click='ephemeral.paymentMethodFilter = method'
           ) {{ name }}
@@ -116,10 +117,19 @@ page(
               @change-page='handlePageChange'
               @change-rows-per-page='handleRowsPerPageChange'
             )
+
+        .c-container(v-else-if='ephemeral.paymentMethodFilter === "lightning"')
+          p.c-lightning-todo-msg 'TODO: implementing Lightning payments in the front end.'
+
+          .c-footer
+            .c-payment-record
+              button(
+                type='button'
+                @click='openLightningPayments'
+              ) Open Placeholder Modal
+
         .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
           i18n(tag='p' :args='{query: form.searchText }') No results for "{query}".
-          .c-lightning-btn-container(v-if='ephemeral.paymentMethodFilter === "lightning"')
-            button(@click='openLightningPayments') Open Lightning Modal
 
         .c-container-empty.no-payments(v-else data-test='noPayments')
           svg-contributions.c-svg
@@ -417,11 +427,12 @@ export default ({
         }
       ]
       const wait = (milli) => new Promise(resolve => setTimeout(resolve, milli))
+      let contractID
 
       // check if the fake users have been created and sign them up if not.
       // TODO: to be removed once lightning network is implemented
       for (const userData of fakeUsers) {
-        const contractID = await sbp('namespace/lookup', userData.username)
+        contractID = await sbp('namespace/lookup', userData.username)
 
         if (!contractID) {
           console.log(`signing up a fake user [${userData.username}]`)
@@ -429,7 +440,11 @@ export default ({
         }
       }
 
-      await wait(100) // wait a little bit for the avatar image to be prepared
+      if (!contractID) {
+        // if fake users have just been created,
+        // wait a little bit for the avatar image to be prepared
+        await wait(100)
+      }
 
       this.openModal('SendPaymentsViaLightning')
     }
@@ -454,7 +469,7 @@ export default ({
 // Tabs
 .tabs {
   flex-wrap: wrap;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
 
   .c-tabs-link-container {
     display: flex;
@@ -467,6 +482,14 @@ export default ({
     height: max-content;
     padding: 0 1.5rem 0 0;
     margin: 0.75rem 0;
+  }
+}
+
+.c-tab-header {
+  margin-bottom: 1.5rem;
+
+  @include tablet {
+    margin-bottom: 2.5rem;
   }
 }
 
@@ -484,7 +507,7 @@ export default ({
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 1.5rem;
   width: 100%;
 
   @include tablet {
@@ -613,17 +636,24 @@ export default ({
   }
 
   @include phone {
-    .c-payment-info {
-      display: none;
-    }
+    .c-payment-record {
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: stretch;
 
-    .c-payment-record .button {
-      width: 100%;
+      .c-payment-info {
+        margin-bottom: 2rem;
+      }
+
+      .button {
+        width: 100%;
+      }
     }
   }
 }
 
-.c-lightning-btn-container {
-  margin-top: 1.5rem;
+.c-lightning-todo-msg {
+  margin-top: 2.5rem;
+  margin-bottom: 1.25rem;
 }
 </style>

@@ -145,7 +145,7 @@ export default ({
     th.c-th-checkbox {
       padding-left: 0.5rem;
 
-      @include tablet {
+      @include desktop {
         padding-left: 2.5rem;
       }
     }

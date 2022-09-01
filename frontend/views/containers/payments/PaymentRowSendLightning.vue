@@ -93,7 +93,7 @@ export default ({
   margin-right: 0.5rem;
   margin-left: 0.5rem;
 
-  @include tablet {
+  @include desktop {
     margin-left: 2.5rem;
   }
 }
