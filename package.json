@@ -5,7 +5,7 @@
   "private": true,
   "description": "",
   "scripts": {
-    "backend": "npx nodemon --watch backend/ -- --require ./Gruntfile.js --require @babel/register ./backend/index.js",
+    "backend": "deno run --allow-env --allow-net --allow-read --allow-write --import-map=import-map.json --watch backend/index.ts",
     "sass-dev": "node-sass --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/style",
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "cy:open": "cypress open",
