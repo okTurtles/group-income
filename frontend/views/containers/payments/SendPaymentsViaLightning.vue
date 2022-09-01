@@ -133,7 +133,7 @@ export default ({
         addDonationFee: false
       },
       config: {
-        debouncedMemoUpdate: debounce(this.onMemoUpdate, 150)
+        debouncedMemoUpdate: debounce(this.onMemoUpdate, 650)
       },
       form: {
         memo: ''

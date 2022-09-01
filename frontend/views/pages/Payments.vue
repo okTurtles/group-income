@@ -118,7 +118,7 @@ page(
               @change-rows-per-page='handleRowsPerPageChange'
             )
 
-        .c-container(v-else-if='ephemeral.paymentMethodFilter === "lightning"')
+        .c-container(v-else-if='ephemeral.activeTab === "PaymentRowTodo" && ephemeral.paymentMethodFilter === "lightning"')
           p.c-lightning-todo-msg 'TODO: implementing Lightning payments in the front end.'
 
           .c-footer

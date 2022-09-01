@@ -58,10 +58,10 @@ export default ({
 }
 
 .c-tip-text {
-    display: none;
+  display: none;
 
-    @include desktop {
-      display: inline-block;
-    }
+  @include desktop {
+    display: inline-block;
   }
+}
 </style>

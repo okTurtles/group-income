@@ -7,8 +7,15 @@
         span
           i18n.sr-only Mark as an item to pay
 
+    template(slot='cellUser')
+      .c-user-wrapper
+        .c-user-avatar-name
+          avatar-user.c-avatar(:username='payment.username' size='xs')
+          strong.c-name {{ payment.displayName }}
+        i18n.pill.is-neutral.hide-tablet(tag='div') Lightning
+
     template(slot='cellActions')
-      .pill.is-neutral Lightning
+      i18n.pill.is-neutral.hide-phone Lightning
       i18n.is-unstyled.link.is-link-inherit.c-reset(
         tag='button'
         type='button'
@@ -28,11 +35,13 @@
 import { mapGetters } from 'vuex'
 import currencies from '@model/contracts/shared/currencies.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
+import AvatarUser from '@components/AvatarUser.vue'
 
 export default ({
   name: 'PaymentRowSendLightning',
   components: {
-    PaymentRow
+    PaymentRow,
+    AvatarUser
   },
   props: {
     payment: {
@@ -88,6 +97,19 @@ export default ({
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-user-avatar-name {
+  display: flex;
+  align-items: center;
+
+  .c-avatar {
+    margin-right: 0.5rem;
+
+    @include phone {
+      display: none;
+    }
+  }
+}
 
 .c-check {
   margin-right: 0.5rem;

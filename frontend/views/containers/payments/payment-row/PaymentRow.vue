@@ -3,11 +3,13 @@
     td(v-if='$slots["cellPrefix"]')
       slot(name='cellPrefix')
     td
-      .c-user
-        avatar-user.c-avatar(:username='payment.username' size='xs')
-        strong.c-name {{payment.displayName}}
+      slot(name='cellUser')
+      template(v-if='!$slots["cellUser"]')
+        .c-user
+          avatar-user.c-avatar(:username='payment.username' size='xs')
+          strong.c-name {{payment.displayName}}
 
-      span.c-user-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{dateText}}
+        span.c-user-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{dateText}}
 
     td.c-td-amount(v-if='$slots["cellAmount"]')
       slot(name='cellAmount')
