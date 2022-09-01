@@ -52,13 +52,13 @@ export default (sbp('sbp/selectors/register', {
         const entry = await sbp('chelonia/db/getEntry', currentHEAD)
         if (!entry) {
           console.error(`read(): entry ${currentHEAD} no longer exists.`)
-          chunks[chunks.length] = ']'
+          chunks.push(']')
           break
         }
-        if (chunks.length > 1) chunks[chunks.length] = ','
-        chunks[chunks.length] = `"${strToB64(entry.serialize())}"`
+        if (chunks.length > 1) chunks.push(',')
+        chunks.push(`"${strToB64(entry.serialize())}"`)
         if (currentHEAD === hash) {
-          chunks[chunks.length] = ']'
+          chunks.push(']')
           break
         } else {
          currentHEAD = entry.message().previousHEAD
@@ -80,17 +80,17 @@ export default (sbp('sbp/selectors/register', {
     try {
       while (true) {
         if (!currentHEAD || !limit) {
-          chunks[chunks.length] = ']'
+          chunks.push(']')
           break
         }
         const entry = await sbp('chelonia/db/getEntry', currentHEAD)
         if (!entry) {
           console.error(`read(): entry ${currentHEAD} no longer exists.`)
-          chunks[chunks.length] = ']'
+          chunks.push(']')
           break
         }
-        if (chunks.length > 1) chunks[chunks.length] = ','
-        chunks[chunks.length] = `"${strToB64(entry.serialize())}"`
+        if (chunks.length > 1) chunks.push(',')
+        chunks.push(`"${strToB64(entry.serialize())}"`)
 
         currentHEAD = entry.message().previousHEAD
         limit--
@@ -113,11 +113,11 @@ export default (sbp('sbp/selectors/register', {
         const entry = await sbp('chelonia/db/getEntry', currentHEAD)
         if (!entry) {
           console.error(`read(): entry ${currentHEAD} no longer exists.`)
-          chunks[chunks.length] = ']'
+          chunks.push(']')
           break
         }
-        if (chunks.length > 1) chunks[chunks.length] = ','
-        chunks[chunks.length] = `"${strToB64(entry.serialize())}"`
+        if (chunks.length > 1) chunks.push(',')
+        chunks.push(`"${strToB64(entry.serialize())}"`)
 
         if (currentHEAD === startHash) {
           isMet = true
@@ -128,7 +128,7 @@ export default (sbp('sbp/selectors/register', {
         currentHEAD = entry.message().previousHEAD
 
         if (!currentHEAD || (isMet && !offset)) {
-          chunks[chunks.length] = ']'
+          chunks.push(']')
           break
         }
       }
