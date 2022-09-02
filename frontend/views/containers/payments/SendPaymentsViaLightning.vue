@@ -236,21 +236,18 @@ export default ({
   width: 100%;
   max-width: 19.375rem;
   margin: 0 auto;
-  min-height: 10.875rem;
+  min-height: 12.875rem;
   border: 1px solid rgba(0, 0, 0, 0);
   border-radius: 3px;
 
   @include tablet {
+    border-color: $general_0;
     align-items: stretch;
     max-width: unset;
-  }
-
-  @include only-tablet {
-    padding-right: 13rem;
+    padding: 1rem 13rem 1rem 1rem;
   }
 
   @include desktop {
-    border-color: $general_0;
     width: 13.75rem;
     padding: 2.5rem 1.5rem 1.5rem;
   }
@@ -265,7 +262,7 @@ export default ({
 
   @include only-tablet {
     position: absolute !important;
-    right: 0;
+    right: 1rem;
     top: 50%;
     transform: translateY(-50%);
     z-index: 1;

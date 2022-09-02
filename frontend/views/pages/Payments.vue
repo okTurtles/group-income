@@ -119,11 +119,11 @@ page(
             )
 
         .c-container(v-else-if='ephemeral.activeTab === "PaymentRowTodo" && ephemeral.paymentMethodFilter === "lightning"')
-          p.c-lightning-todo-msg 'TODO: implementing Lightning payments in the front end.'
+          p.c-lightning-todo-msg 'TODO: implementing Lightning payments.'
 
           .c-footer
             .c-payment-record
-              button(
+              button.is-success.is-outlined.is-small(
                 type='button'
                 @click='openLightningPayments'
               ) Open Placeholder Modal
@@ -636,6 +636,10 @@ export default ({
   }
 
   @include phone {
+    .c-pagination {
+      justify-content: center;
+    }
+
     .c-payment-record {
       flex-direction: column;
       justify-content: flex-start;
@@ -653,7 +657,6 @@ export default ({
 }
 
 .c-lightning-todo-msg {
-  margin-top: 2.5rem;
-  margin-bottom: 1.25rem;
+  margin-top: 2rem;
 }
 </style>

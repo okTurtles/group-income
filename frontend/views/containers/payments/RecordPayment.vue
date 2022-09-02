@@ -109,7 +109,7 @@ export default ({
     this.form.paymentsToRecord = this.paymentsList.map((payment, index) => ({
       ...payment,
       index: index, // A link between original payment and this copy
-      checked: true // comes pre-filled with the total amount to be sent that month
+      checked: false
     }))
   },
   beforeDestroy () {
