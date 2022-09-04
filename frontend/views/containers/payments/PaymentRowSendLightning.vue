@@ -27,13 +27,12 @@
       label.field
         .inputgroup
           input.input(data-test='amount' inputmode='decimal' pattern='[0-9]*' v-model='form.amount')
-          .suffix.hide-phone {{ currencies.symbolWithCode }}
-          .suffix.hide-tablet {{ currencies.symbol }}
+          .suffix.hide-phone {{ groupCurrency.symbolWithCode }}
+          .suffix.hide-tablet {{ groupCurrency.symbol }}
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import currencies from '@model/contracts/shared/currencies.js'
 import PaymentRow from './payment-row/PaymentRow.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 
@@ -50,14 +49,13 @@ export default ({
     }
   },
   data () {
-    const gCurrency = currencies[this.$store.getters.groupSettings.mincomeCurrency]
     return {
       config: {
         initialAmount: this.payment.amount
       },
       form: {
         checked: this.payment.checked,
-        amount: gCurrency.displayWithoutCurrency(this.payment.amount)
+        amount: this.payment.amount
       }
     }
   },
@@ -81,11 +79,9 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupSettings'
-    ]),
-    currencies () {
-      return currencies[this.groupSettings.mincomeCurrency]
-    }
+      'groupSettings',
+      'groupCurrency'
+    ])
   },
   methods: {
     reset () {

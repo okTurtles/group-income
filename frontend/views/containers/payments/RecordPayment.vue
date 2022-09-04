@@ -81,6 +81,7 @@ import RecordPaymentsList from '@containers/payments/RecordPaymentsList.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import { PAYMENTS_RECORDED } from '@utils/events.js'
 
 export default ({
   name: 'RecordPayment',
@@ -221,6 +222,9 @@ export default ({
 
       if (!hasError) {
         this.donePayment = true
+        sbp('okTurtles.events/emit', PAYMENTS_RECORDED, { 
+          hashes: paymentsToRecord.map(p => p.hash)
+        })
       }
     }
   }
