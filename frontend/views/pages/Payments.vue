@@ -92,7 +92,7 @@ page(
             :titles='tableTitles'
             :paymentsList='paginateList(paymentsFiltered)'
             :paymentsType='ephemeral.activeTab'
-            @todo-items-change='onTodoItemsChange'
+            :selectedTodoItems.sync='ephemeral.selectedTodoItems'
           )
           .c-footer
             .c-payment-record(v-if='ephemeral.activeTab === "PaymentRowTodo"')
@@ -367,7 +367,7 @@ export default ({
       this.ephemeral.activeTab = this.needsIncome ? 'PaymentRowReceived' : 'PaymentRowTodo'
     },
     openModal (name, props) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
+      sbp('okTurtles.events/emit', OPEN_MODAL, name, null, props)
     },
     filterPayment (payment) {
       const {
@@ -407,11 +407,7 @@ export default ({
       this.ephemeral.currentPage = 0 // go back to first page.
     },
     onRecordPaymentClick () {
-      this.$store.commit('addPaymentsToRecord', this.ephemeral.selectedTodoItems)
-      this.openModal('RecordPayment')
-    },
-    onTodoItemsChange (selectedTodos) {
-      this.ephemeral.selectedTodoItems = selectedTodos
+      this.openModal('RecordPayment', { todoItems: this.ephemeral.selectedTodoItems })
     },
     async openLightningPayments () {
       const fakeUsers = [

@@ -90,11 +90,11 @@ export default ({
     // TODO: make multiple payments
     async cancelPayment () {
       try {
-        if (this.payment.hash) {
+        if (this.hash) {
           await sbp('gi.actions/group/paymentUpdate', {
             contractID: this.$store.state.currentGroupId,
             data: {
-              paymentHash: this.payment.hash,
+              paymentHash: this.hash,
               updatedProperties: {
                 status: PAYMENT_CANCELLED
               }
@@ -116,8 +116,11 @@ export default ({
     }
   },
   watch: {
-    'form.checked' () {
-      this.$emit('change')
+    'form.checked' (checked) {
+      this.$emit('change', {
+        hash: this.hash,
+        checked
+      })
     }
   }
 }: Object)

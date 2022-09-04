@@ -2,7 +2,7 @@
 modal-base-template(
   :fullscreen='true'
   class='has-background'
-  :a11yTitle='L("Sned payments via Lightning")'
+  :a11yTitle='L("Send payments via Lightning")'
 )
   .c-header
     i18n.is-title-2.c-title(tag='h2') Send payment via Lightning
@@ -37,7 +37,7 @@ modal-base-template(
                 input.switch(
                   type='checkbox'
                   name='displayComment'
-                  @change='ephemeral.displayMemo = !ephemeral.displayMemo'
+                  v-model='ephemeral.displayMemo'
                 )
                 i18n.sr-only(tag='label' for='displayComment') Toggle comment box
 
@@ -59,7 +59,7 @@ modal-base-template(
               input.switch(
                 type='checkbox'
                 name='addDonationFee'
-                @change='ephemeral.addDonationFee = !ephemeral.addDonationFee'
+                v-model='ephemeral.addDonationFee'
               )
               i18n.sr-only(tag='label' for='addDonationFee') Toggle donation fee
 
@@ -130,7 +130,7 @@ export default ({
       ephemeral: {
         dummyListData,
         displayMemo: false,
-        addDonationFee: false
+        addDonationFee: true
       },
       config: {
         debouncedMemoUpdate: debounce(this.onMemoUpdate, 650)

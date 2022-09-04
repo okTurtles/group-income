@@ -293,14 +293,6 @@ legend.legend {
       }
     }
   }
-
-  &.disabled {
-    pointer-events: none;
-
-    input {
-      background-color: $general_2;
-    }
-  }
 }
 
 span.error,
