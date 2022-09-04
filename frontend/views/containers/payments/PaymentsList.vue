@@ -34,6 +34,7 @@ import Tooltip from '@components/Tooltip.vue'
 import PaymentRowTodo from './PaymentRowTodo.vue'
 import PaymentRowSent from './PaymentRowSent.vue'
 import PaymentRowReceived from './PaymentRowReceived.vue'
+import { PAYMENTS_RECORDED } from '@utils/events.js'
 
 export default ({
   name: 'PaymentsList',
@@ -63,6 +64,12 @@ export default ({
       type: Array
     }
   },
+  beforeMount () {
+    sbp('okTurtles.events/on', PAYMENTS_RECORDED, this.resetTodoSelectionInfo)
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', PAYMENTS_RECORDED, this.resetTodoSelectionInfo)
+  },
   data () {
     return {
       form: {
@@ -85,6 +92,7 @@ export default ({
       return this.paymentsType === 'PaymentRowTodo'
         ? this.form.selectedItemHashes
           .map(hash => this.paymentsList.find(p => p.hash === hash))
+          .filter(Boolean)
         : null
     }
   },
@@ -98,7 +106,7 @@ export default ({
       immediate: true,
       handler (type) {
         if (type === 'PaymentRowTodo') {
-          this.$emit('update:selectedTodoItems', this.allSelectedTodoItems)
+          this.syncSelectedTodoItems()
         }
       }
     }
@@ -115,8 +123,15 @@ export default ({
             .filter(v => v !== hash)
         }
 
-        this.$emit('update:selectedTodoItems', this.allSelectedTodoItems)
+        this.syncSelectedTodoItems()
       }
+    },
+    resetTodoSelectionInfo () {
+      this.form.selectedItemHashes = []
+      this.syncSelectedTodoItems()
+    },
+    syncSelectedTodoItems () {
+      this.$emit('update:selectedTodoItems', this.allSelectedTodoItems)
     }
   }
 }: Object)

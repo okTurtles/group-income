@@ -29,8 +29,8 @@ table.table.c-payments.is-editing(
           i18n.c-total-label(tag='label') Total
           .inputgroup.disabled
             input.input.c-total-amount(:value='totalAmount')
-            .suffix.hide-phone {{ currencies.symbolWithCode }}
-            .suffix.hide-tablet {{ currencies.symbol }}
+            .suffix.hide-phone {{ groupCurrency.symbolWithCode }}
+            .suffix.hide-tablet {{ groupCurrency.symbol }}
 </template>
 
 <script>
@@ -39,7 +39,6 @@ import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
 import PaymentRowRecord from './PaymentRowRecord.vue'
 import PaymentRowSendLightning from './PaymentRowSendLightning.vue'
-import currencies from '@model/contracts/shared/currencies.js'
 
 export default ({
   name: 'RecordPaymentsList',
@@ -81,6 +80,7 @@ export default ({
       'groupIncomeAdjustedDistribution',
       'ourGroupProfile',
       'groupSettings',
+      'groupCurrency',
       'ourUsername',
       'userDisplayName'
     ]),
@@ -93,15 +93,12 @@ export default ({
         'table-in-card': !this.isLightning
       }
     },
-    currencies () {
-      return currencies[this.groupSettings.mincomeCurrency]
-    },
     totalAmount () {
       const total = this.paymentsList
         .filter(item => item.checked)
         .reduce((acc, p) => acc + p.amount, 0)
 
-      return this.currencies.displayWithoutCurrency(total * (this.addDonationFee ? 1.01 : 1))
+      return this.groupCurrency.displayWithoutCurrency(total * (this.addDonationFee ? 1.01 : 1))
     }
   },
   watch: {
