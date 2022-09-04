@@ -21,10 +21,10 @@ table.table.table-in-card.c-payments(data-test='payList' :class='tableClass')
     component(
       v-for='(payment, index) in paymentsList'
       ref='paymentItem'
-      :key='index'
+      :key='payment.hash || index'
       :payment='payment'
       :is='paymentsType'
-      @change='config.debouncedOnItemChange'
+      @change='onItemChange'
     )
 </template>
 
@@ -34,7 +34,6 @@ import Tooltip from '@components/Tooltip.vue'
 import PaymentRowTodo from './PaymentRowTodo.vue'
 import PaymentRowSent from './PaymentRowSent.vue'
 import PaymentRowReceived from './PaymentRowReceived.vue'
-import { debounce } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'PaymentsList',
@@ -58,15 +57,17 @@ export default ({
       type: String,
       validator: (value) => ['PaymentRowTodo', 'PaymentRowSent', 'PaymentRowReceived'].includes(value),
       required: true
+    },
+    selectedTodoItems: {
+      // a prop that is specifically for 'PaymentRowTodo' type.
+      type: Array
     }
   },
   data () {
     return {
       form: {
-        checkAll: false
-      },
-      config: {
-        debouncedOnItemChange: debounce(this.onItemChange, 100)
+        checkAll: false,
+        selectedItemHashes: []
       }
     }
   },
@@ -79,6 +80,12 @@ export default ({
       }
 
       return `c-is-${map[this.paymentsType]}`
+    },
+    allSelectedTodoItems () {
+      return this.paymentsType === 'PaymentRowTodo'
+        ? this.form.selectedItemHashes
+          .map(hash => this.paymentsList.find(p => p.hash === hash))
+        : null
     }
   },
   watch: {
@@ -87,39 +94,29 @@ export default ({
 
       this.$refs.paymentItem.forEach(c => c[method](true))
     },
-    paymentsType: {
+    'paymentsType': {
       immediate: true,
-      handler (val) {
-        if (val === 'PaymentRowTodo') {
-          // each time the tab in Payments.vue is switched back to 'PaymentsTodo',
-          // ephemeral.selectedTodoItems needs to get updated accordingly so that
-          // the 'Send payments' button updates its 'disabled' attribute properly.
-          const sendCurrentlySelectedTodos = () => {
-            this.$emit('todo-items-change', this.getAllSelectedTodoItems())
-          }
-
-          if (this.$refs.paymentItem) {
-            sendCurrentlySelectedTodos()
-          } else {
-            // if the children are not mounted yet, give it a bit of delay until then.
-            setTimeout(sendCurrentlySelectedTodos, 50)
-          }
+      handler (type) {
+        if (type === 'PaymentRowTodo') {
+          this.$emit('update:selectedTodoItems', this.allSelectedTodoItems)
         }
       }
     }
   },
   methods: {
-    getAllSelectedTodoItems () {
-      return this.paymentsType === 'PaymentRowTodo'
-        ? this.$refs.paymentItem.filter(c => c.form.checked)
-          .map(c => this.paymentsList.find(p => p.hash === c.hash))
-        : null
-    },
-    onItemChange () {
-      // NOTE: logic here is specifically targeted for 'paymentRowTodo.vue'.
-      // it detects the selection status change of any todo items and
-      // sends all selected items to the parent component(Payment.vue).
-      this.$emit('todo-items-change', this.getAllSelectedTodoItems())
+    onItemChange (data) {
+      if (this.paymentsType === 'PaymentRowTodo') {
+        const { hash, checked } = data
+
+        if (checked) {
+          this.form.selectedItemHashes.push(hash)
+        } else {
+          this.form.selectedItemHashes = this.form.selectedItemHashes
+            .filter(v => v !== hash)
+        }
+
+        this.$emit('update:selectedTodoItems', this.allSelectedTodoItems)
+      }
     }
   }
 }: Object)

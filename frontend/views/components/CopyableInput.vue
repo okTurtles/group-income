@@ -1,10 +1,9 @@
 <template lang="pug">
-.inputgroup.c-wrapper(
-  :class='{ "is-uneditable": uneditable }'
-)
+.inputgroup.c-wrapper
   input.input.c-input(
     ref='input'
     :value='value'
+    :disabled='uneditable'
     @input='onInput'
     @keyup.enter='copyToClipboard'
   )
@@ -85,9 +84,13 @@ export default ({
   padding: 0 0.5rem;
   padding-right: 2.25rem;
   min-width: 10.875rem;
+}
 
-  .is-uneditable & {
-    pointer-events: none;
+.c-wrapper {
+  .addons {
+    @include desktop {
+      margin-right: -4px;
+    }
   }
 }
 

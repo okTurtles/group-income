@@ -93,6 +93,11 @@ export default ({
     BannerSimple,
     ButtonSubmit
   },
+  props: {
+    todoItems: {
+      type: Array
+    }
+  },
   data () {
     return {
       form: {
@@ -112,13 +117,9 @@ export default ({
       checked: false
     }))
   },
-  beforeDestroy () {
-    this.$store.commit('unloadPaymentsToRecord')
-  },
   computed: {
     ...mapState([
-      'currentGroupId',
-      'paymentsToRecord'
+      'currentGroupId'
     ]),
     ...mapGetters([
       'groupSettings',
@@ -128,7 +129,7 @@ export default ({
       'userDisplayName'
     ]),
     paymentsList () {
-      return this.paymentsToRecord.map(item => {
+      return this.todoItems.map(item => {
         return item.status === PAYMENT_NOT_RECEIVED // if not received item, re-format the obj
           ? {
               hash: item.hash,
