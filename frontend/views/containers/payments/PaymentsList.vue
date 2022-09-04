@@ -29,6 +29,7 @@ table.table.table-in-card.c-payments(data-test='payList' :class='tableClass')
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
 import PaymentRowTodo from './PaymentRowTodo.vue'
