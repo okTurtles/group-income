@@ -20,5 +20,6 @@ describe('avatar file serving', function () {
     assert.equal(headers.get('content-type'), 'application/octet-stream')
     assert.equal(headers.get('etag'), `"${hash}"`)
     assert(headers.has('last-modified'))
+    assert.equal(headers.get('x-frame-options'), 'deny')
   })
 })

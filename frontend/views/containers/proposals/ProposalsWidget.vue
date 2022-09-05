@@ -7,8 +7,9 @@ component(
     .c-all-actions
       i18n.button.is-outlined.is-small(
         tag='span'
+        data-test='openAllProposals'
         @click='openModal("PropositionsAllModal")'
-      ) See all proposals
+      ) Archived proposals
 
       button-dropdown-menu(
         :buttonText='L("Create proposal")'
@@ -21,6 +22,12 @@ component(
       v-for='hash in proposals'
       :key='hash'
       :proposalHash='hash'
+    )
+    proposal-item(
+      v-for='[hash, obj] of ephemeral.archivedProposals'
+      :key='hash'
+      :proposalHash='hash'
+      :proposalObject='obj'
     )
 
   .c-description(v-else)
@@ -36,7 +43,7 @@ import CalloutCard from '@components/CalloutCard.vue'
 import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
 import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
-import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
+import { STATUS_OPEN, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
 
 export default ({
@@ -45,13 +52,20 @@ export default ({
     ProposalItem,
     ButtonDropdownMenu
   },
+  mounted () {
+    sbp('okTurtles.events/on', PROPOSAL_ARCHIVED, this.onProposalArchived)
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', PROPOSAL_ARCHIVED, this.onProposalArchived)
+    while (this.ephemeral.timeouts.length > 0) {
+      clearTimeout(this.ephemeral.timeouts.pop())
+    }
+  },
   data () {
     return {
       ephemeral: {
-        // Keep initial proposals order even after voting in a proposal
-        // That way recently voted proposals don't change position immediatly.
-        // Only re-sort this when the user re-visits this component again.
-        proposalsSorted: null
+        archivedProposals: [],
+        timeouts: []
       }
     }
   },
@@ -65,49 +79,15 @@ export default ({
       'groupMembersCount'
     ]),
     hasProposals () {
-      return Object.keys(this.currentGroupState.proposals).length > 0
+      return Object.keys(this.currentGroupState.proposals).length > 0 ||
+        this.ephemeral.archivedProposals.length > 0
     },
     proposals () {
-      if (this.proposalsSorted) {
-        return this.proposalsSorted
-      }
-
-      const p = this.currentGroupState.proposals
-      // TODO/BUG: array.sort doesn't work the same in all browsers.
-      const sortByExpire = Object.keys(p) // .stableSort((prev, curr) => p[curr].data.expires_date_ms - p[prev].data.expires_date_ms)
-
-      // HACK/NOTE: Proposals to invite members created at the same time by
-      // the same user, should be "visually together". A solution without
-      // modifying the store/state is to group the "similiar" proposals in a sub-array.
-      const proposalsGrouped = [] // [[hash1], [hash2], [hash3_g, hash4_g]]
-
-      sortByExpire.forEach((hash, index) => {
-        if (index === 0) {
-          proposalsGrouped.push([hash])
-          return
-        }
-
-        const current = p[hash]
-        const previous = p[sortByExpire[index - 1]]
-        const expireAtSameTime = current.data.expires_date_ms === previous.data.expires_date_ms
-        const createdBySameUser = current.meta.username === previous.meta.username
-        if (expireAtSameTime && createdBySameUser) {
-          // This proposal should be displayed "visually together" with
-          // the previous proposal, so let's group it under the same index.
-          proposalsGrouped[proposalsGrouped.length - 1].push(hash)
-        } else {
-          proposalsGrouped.push([hash])
-        }
-      })
-      // Push grouped proposals already voted to the bottom
-      // REVIEW: improve sort order, taking in account status as well
-      // const sortByNotVoted = proposalsGrouped.stableSort((prev, curr) => {
-      //   return curr.some(hash => this.hadVoted(p[hash])) ? -1 : 1
-      // })
-      // this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
-
-      this.proposalsGrouped = proposalsGrouped // eslint-disable-line vue/no-side-effects-in-computed-properties
-      return this.proposalsGrouped.flat()
+      const openProposals = Object.entries(this.currentGroupState.proposals)
+        .sort((a, b) => {
+          return b[1].data.expires_date_ms - a[1].data.expires_date_ms
+        })
+      return openProposals.map(x => x[0])
     },
     componentData () {
       return {
@@ -150,6 +130,15 @@ export default ({
     }
   },
   methods: {
+    onProposalArchived (hashWithProp) {
+      this.ephemeral.archivedProposals.unshift(hashWithProp)
+      // after a day, remove it from the list
+      this.ephemeral.timeouts.push(setTimeout(() => {
+        this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => {
+          return x[0] !== hashWithProp[0]
+        })
+      }, 1000 * 60 * 60 * 24)) // 1 day
+    },
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
     },
@@ -187,6 +176,7 @@ export default ({
 .c-all-actions {
   display: flex;
   gap: 0.75rem;
+  flex-wrap: wrap;
 
   .c-see-all-proposal-btn {
     font-weight: 400;
