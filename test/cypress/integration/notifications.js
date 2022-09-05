@@ -352,29 +352,32 @@ describe('Notifications - markAsUnread and markAllAsUnread', () => {
     })
   })
 
-  it('switches to the second group and mark all its notifications as unread via the button in the notification modal',
-    { viewportWidth: WIDTH_MOBILE },
-    () => {
-      // make sure the test-specific config override is done properly first
-      cy.window().its('innerWidth').should('be.lte', WIDTH_MOBILE)
-      cy.window().its('sbp').then(sbp => {
-        switchGroup(turtlesGroupName, sbp)
+  it('switches to the second group and mark all its notifications as unread via the button in the notification modal', { viewportWidth: WIDTH_MOBILE }, () => {
+    // make sure the test-specific config override is done properly first
+    cy.window().its('innerWidth').should('be.lte', WIDTH_MOBILE)
+    cy.window().its('sbp').then(sbp => {
+      switchGroup(turtlesGroupName, sbp)
 
-        // expand the navigation menu
-        cy.getByDT('NavigationToggleBtn').click()
-        cy.get('nav.c-navigation').should('be.visible')
+      // expand the navigation menu
+      cy.getByDT('NavigationToggleBtn').click()
+      cy.get('nav.c-navigation').should('be.visible')
 
-        // open the notification modal
-        cy.getByDT('notificationBell').click()
-        cy.getByDT('notificationModal').should('be.visible')
+      // open the notification modal
+      cy.getByDT('notificationBell').click()
+      cy.getByDT('notificationModal').should('be.visible')
 
-        // click on 'mark all as read' button in the modal & close out of it
-        cy.getByDT('MarkAllAsRead_In_Modal').click()
-        cy.getByDT('closeModal').click()
+      // click on 'mark all as read' button in the modal & close out of it
+      cy.getByDT('MarkAllAsRead_In_Modal').click()
+      cy.getByDT('closeModal').click()
 
-        cyCheckBellsBadge(0)
-        cyCheckDreamersBadge(0)
-        cyCheckTurtlesBadge(0)
-      })
+      cyCheckBellsBadge(0)
+      cyCheckDreamersBadge(0)
+      cyCheckTurtlesBadge(0)
     })
+  })
+
+  it('log out', () => {
+    // sets up the next integration test
+    cy.giLogout()
+  })
 })
