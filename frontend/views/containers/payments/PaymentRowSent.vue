@@ -9,7 +9,7 @@
         i18n.pill.is-neutral.hide-tablet Manual
 
     template(slot='cellMethod')
-      .c-methods-container
+      .c-methods-container.hide-phone
         i18n.pill.is-neutral Manual
 
     template(slot='cellDate')
@@ -101,12 +101,6 @@ export default ({
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
-
-.c-methods-container {
-  @include phone {
-    display: none;
-  }
-}
 
 .c-relative-to {
   display: none;

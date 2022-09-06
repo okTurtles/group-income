@@ -12,9 +12,9 @@ table.table.table-in-card.c-payments(data-test='payList' :class='tableClass')
             i18n.sr-only Select payment item
       th.c-th-who {{ titles.one }}
       th.c-th-amount {{ titles.two }}
-      th.c-th-method {{ titles.three }}
-      th.c-th-date {{ titles.four }}
-      th.c-th-relative-to(v-if='paymentsType !== "PaymentRowTodo"')
+      th.c-th-method.hide-phone {{ titles.three }}
+      th.c-th-date.hide-phone {{ titles.four }}
+      th.c-th-relative-to.hide-phone(v-if='paymentsType !== "PaymentRowTodo"')
         | {{ L('Relative to') }}
         i.icon-sort-down.c-action-arrow
   tbody
@@ -144,6 +144,12 @@ export default ({
 .c-payments {
   margin-top: 1rem;
 
+  th.c-th-amount {
+    @include phone {
+      text-align: right;
+    }
+  }
+
   &.c-is-todo {
     th.c-th-check-all {
       width: 1.125rem;
@@ -163,10 +169,6 @@ export default ({
 
     th.c-th-method {
       width: 20%;
-
-      @include phone {
-        display: none;
-      }
     }
 
     th.c-th-amount {
@@ -192,10 +194,7 @@ export default ({
     }
 
     th.c-th-method {
-      display: none;
-
       @include tablet {
-        display: table-cell;
         width: 24%;
       }
 
@@ -224,20 +223,5 @@ export default ({
   display: inline-block;
   margin-left: 0.5rem;
   transform: translateY(-2px);
-}
-
-@include phone {
-  .c-th-amount {
-    text-align: right;
-  }
-
-  .c-th-date,
-  .c-th-relative-to {
-    display: none;
-  }
-
-  .c-th-actions {
-    opacity: 0;
-  }
 }
 </style>

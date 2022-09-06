@@ -94,9 +94,9 @@ export default ({
   }
 }
 
-button.c-btn {
+.inputgroup .addons button.is-icon.c-btn {
   font-size: $size_4;
-  width: 2rem !important;
+  width: 2rem;
   border-left: 1px solid $general_0;
 }
 
