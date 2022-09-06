@@ -2194,6 +2194,12 @@
 "A username cannot contain spaces." = "Les espaces ne sont pas autorisées.";
 
 /* Not currently used */
+"(optional)" = "(facultatif)";
+
+/* Not currently used */
+"A username cannot contain spaces." = "Les espaces ne sont pas autorisées.";
+
+/* Not currently used */
 "According to your voting rules, 8 out of 10 members will have to agree with this." = "Selon vos règles de vote, l’approbation de huit membres sur dix sera nécessaire.";
 
 /* Not currently used */

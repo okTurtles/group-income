@@ -1383,6 +1383,9 @@
 /* controller/router.js */
 "Group Chat" = "Group Chat";
 
+/* views/containers/proposals/ProposalsWidget.vue */
+"Create Generic Proposal" = "Create Generic Proposal";
+
 /* views/pages/Payments.vue */
 "You are currently {strong_}receiving{_strong} mincome." = "You are currently {strong_}receiving{_strong} mincome.";
 
@@ -1509,6 +1512,9 @@
 /* views/containers/chatroom/MessageActions.vue */
 "More options" = "More options";
 
+/* views/containers/proposals/ProposalsWidget.vue */
+"See all proposals" = "See all proposals";
+
 /* views/pages/Payments.vue */
 "You can change this at any time by updating your {r1}income details{r2}." = "You can change this at any time by updating your {r1}income details{r2}.";
 
@@ -1523,6 +1529,9 @@
 
 /* views/components/AvatarUpload.vue */
 "Change avatar" = "Change avatar";
+
+/* views/containers/proposals/PropositionsAllModal.vue */
+"{ groupProposalsCount } proposals" = "{ groupProposalsCount } proposals";
 
 /* views/components/group-creation-steps/GroupName.vue */
 "1. Create a new group" = "1. Create a new group";

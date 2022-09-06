@@ -647,6 +647,7 @@ sbp('chelonia/defineContract', {
         objectOf({
           member: string, // username to remove
           reason: optional(string),
+          automated: optional(boolean),
           // In case it happens in a big group (by proposal)
           // we need to validate the associated proposal.
           proposalHash: optional(string),
