@@ -222,7 +222,7 @@ export default ({
 
       if (!hasError) {
         this.donePayment = true
-        sbp('okTurtles.events/emit', PAYMENTS_RECORDED, { 
+        sbp('okTurtles.events/emit', PAYMENTS_RECORDED, {
           hashes: paymentsToRecord.map(p => p.hash)
         })
       }
