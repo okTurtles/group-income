@@ -14,9 +14,10 @@ table.table.table-in-card.c-payments(data-test='payList' :class='tableClass')
       th.c-th-amount {{ titles.two }}
       th.c-th-method.hide-phone {{ titles.three }}
       th.c-th-date.hide-phone {{ titles.four }}
-      th.c-th-relative-to.hide-phone(v-if='paymentsType !== "PaymentRowTodo"')
+      th.c-th-relative-to(v-if='paymentsType !== "PaymentRowTodo"')
         | {{ L('Relative to') }}
         i.icon-sort-down.c-action-arrow
+      th.c-th-action(v-if='paymentsType !== "PaymentRowTodo"')
   tbody
     component(
       v-for='(payment, index) in paymentsList'
@@ -191,6 +192,10 @@ export default ({
 
     th.c-th-amount {
       width: 20%;
+
+      @include desktop {
+        width: 14%;
+      }
     }
 
     th.c-th-method {
@@ -214,6 +219,16 @@ export default ({
 
       @include desktop {
         display: table-cell;
+        width: 14%;
+      }
+    }
+
+    th.c-th-action {
+      display: none;
+
+      @include desktop {
+        display: table-cell;
+        width: 5%;
       }
     }
   }

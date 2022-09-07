@@ -16,7 +16,7 @@
       .cpr-date.has-text-1 {{ humanDate(payment.date) }}
 
     template(slot='cellRelativeTo')
-      .c-relative-to TODO
+      .c-relative-to.has-text-1 {{ humanDate(periodStampGivenDate(payment.date)) }}
 
     template(slot='cellActions')
       payment-actions-menu
@@ -67,7 +67,8 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'withGroupCurrency'
+      'withGroupCurrency',
+      'periodStampGivenDate'
     ]),
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
