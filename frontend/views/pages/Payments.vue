@@ -119,10 +119,10 @@ page(
             )
 
         .c-container(v-else-if='ephemeral.activeTab === "PaymentRowTodo" && ephemeral.paymentMethodFilter === "lightning"')
-          p.c-lightning-todo-msg 'TODO: implementing Lightning payments.'
+          p.c-lightning-todo-msg Coming Soon.
 
           .c-footer
-            .c-payment-record
+            .c-payment-record(v-if='isDevEnv')
               button.is-success.is-outlined.is-small(
                 type='button'
                 @click='openLightningPayments'
@@ -356,6 +356,9 @@ export default ({
         amount: this.withGroupCurrency(amount),
         count: this.paymentsTodo.length
       }
+    },
+    isDevEnv () {
+      return process.env.NODE_ENV === 'development'
     }
   },
   methods: {
