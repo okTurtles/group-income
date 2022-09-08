@@ -8,7 +8,7 @@ page(
 )
   template(#title='') {{ L('Payments') }}
 
-  template(#sidebar='' v-if='tabItems.length > 0 || paymentsListData.length > 0')
+  template(#sidebar='' v-if='showTabSelectionMenu || paymentsListData.length > 0')
     month-overview
 
   add-income-details-widget(v-if='!hasIncomeDetails')
@@ -40,7 +40,7 @@ page(
 
     section.card(v-else)
       nav.tabs(
-        v-if='tabItems.length > 0'
+        v-if='showTabSelectionMenu'
         :aria-label='L("Payments type")'
       )
         .c-tabs-link-container(data-test='payNav')
@@ -61,7 +61,7 @@ page(
       .c-tab-header-container
         h3.is-title-3(v-if='tabHeader') {{ tabHeader }}
 
-        next-distribution-pill(:class='{ "hide-tablet": ephemeral.activeTab === "PaymentRowTodo" }')
+        next-distribution-pill(v-if='!showTabSelectionMenu' :class='{ "hide-tablet": ephemeral.activeTab === "PaymentRowTodo" }')
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -350,6 +350,9 @@ export default ({
         amount: this.withGroupCurrency(amount),
         count: this.paymentsTodo.length
       }
+    },
+    showTabSelectionMenu () {
+      return this.tabItems.length > 0
     },
     isDevEnv () {
       return process.env.NODE_ENV === 'development'
