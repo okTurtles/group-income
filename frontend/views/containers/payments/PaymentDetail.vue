@@ -45,7 +45,8 @@ export default ({
   },
   created () {
     const id = this.$route.query.id
-    const payment = this.currentGroupState.payments[id]
+    const payment = this.lightningPayment || // TODO: to be re-worked once lightning network is implemented.
+      this.currentGroupState.payments[id]
 
     if (id) {
       sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'PaymentDetail', { id })
@@ -62,6 +63,14 @@ export default ({
   data: () => ({
     payment: null
   }),
+  props: {
+    lightningPayment: {
+      // temporary prop for dummy lightning payment data.
+      // TODO: onece lightning networki is implemented, remove this prop and get the payment data from Vuex getter.
+      type: Object,
+      required: false
+    }
+  },
   computed: {
     ...mapGetters([
       'currentGroupState',

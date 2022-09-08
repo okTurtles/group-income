@@ -122,7 +122,12 @@ page(
               button.is-success.is-outlined.is-small(
                 type='button'
                 @click='openLightningPayments'
-              ) Open Placeholder Modal
+              ) Open laceholder Modal
+
+              button.is-outlined.is-small(
+                type='button'
+                @click='openLightningPaymentDetail'
+              ) Open Placeholder Detail Modal
 
         .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
           i18n(tag='p' :args='{query: form.searchText }') No results for "{query}".
@@ -443,6 +448,25 @@ export default ({
       }
 
       this.openModal('SendPaymentsViaLightning')
+    },
+    openLightningPaymentDetail () {
+      const dummyLightningPaymentData = {
+        data: {
+          toUser: 'fake-user-2',
+          amount: 98.57142857,
+          groupMincome: 1000,
+          memo: 'Love you so much! Thank you for the Portuguese class last week. P.S.: sent to the Paypal email on your profile.',
+          currencyFromTo: ['USD', 'USD']
+        },
+        meta: {
+          createdDate: '2022-09-08T07:54:13.809Z',
+          username: 'fake-user-1'
+        }
+      }
+
+      this.openModal('PaymentDetail', {
+        lightningPayment: dummyLightningPaymentData
+      })
     }
   }
 }: Object)
