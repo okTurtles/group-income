@@ -56,16 +56,12 @@ page(
             span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
         .c-tabs-chip-container.hide-phone
-          i18n.c-distribution-chip.pill.is-primary(
-            :args='{ startDate: distributionDateShort }'
-          ) Next distribution Date: {startDate}
+          next-distribution-pill
 
-      .c-below-tabs-chip-container.hide-tablet
-        i18n.c-distribution-chip.pill.is-primary(
-          :args='{ startDate: distributionDateShort }'
-        ) Next distribution Date: {startDate}
+      .c-tab-header-container
+        h3.is-title-3(v-if='tabHeader') {{ tabHeader }}
 
-      h3.is-title-3.c-tab-header(v-if='tabHeader') {{ tabHeader }}
+        next-distribution-pill(:class='{ "hide-tablet": ephemeral.activeTab === "PaymentRowTodo" }')
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -144,6 +140,7 @@ import Search from '@components/Search.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
+import NextDistributionPill from '@containers/payments/PaymentNextDistributionPill.vue'
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
@@ -160,6 +157,7 @@ export default ({
     Search,
     PaymentsList,
     PaymentsPagination,
+    NextDistributionPill,
     MonthOverview,
     AddIncomeDetailsWidget
   },
@@ -206,7 +204,6 @@ export default ({
       'groupSettings',
       'ourUsername',
       'userDisplayName',
-      'periodAfterPeriod',
       'withGroupCurrency'
     ]),
     needsIncome () {
@@ -217,9 +214,6 @@ export default ({
     },
     distributionStarted () {
       return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
-    },
-    distributionDateShort () {
-      return humanDate(this.groupSettings.distributionDate, { month: 'short', day: 'numeric' })
     },
     tabItems () {
       const items = []
@@ -484,7 +478,12 @@ export default ({
   }
 }
 
-.c-tab-header {
+.c-tab-header-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
   margin-bottom: 1.5rem;
 
   @include tablet {
@@ -494,11 +493,6 @@ export default ({
 
 .c-below-tabs-chip-container {
   margin-bottom: 1.5rem;
-}
-
-.c-distribution-chip {
-  padding: 0.25rem 0.75rem;
-  border-radius: 1.6rem;
 }
 
 // Search
