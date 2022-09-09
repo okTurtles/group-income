@@ -247,7 +247,7 @@ export default ({
 
       if (!this.needsIncome || this.paymentsSent.length) {
         items.push({
-          title: L('Sent'),
+          title: L('Completed'),
           url: 'PaymentRowSent'
         })
       }
@@ -408,7 +408,7 @@ export default ({
       if (contains('js-btnInvite')) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
       } else if (contains('js-btnDistribute')) {
-        alert('TODO!')
+        alert("We'll share this soon in an upcoming blog post!")
       }
     },
     handlePageChange (type) {
@@ -420,6 +420,7 @@ export default ({
       this.ephemeral.currentPage = 0 // go back to first page.
     },
     onRecordPaymentClick () {
+      console.log('todoItems: ', this.ephemeral.selectedTodoItems)
       this.openModal('RecordPayment', { todoItems: this.ephemeral.selectedTodoItems })
     },
     async openLightningPayments () {
