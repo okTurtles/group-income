@@ -18,12 +18,21 @@ page(
       span.has-text-1(v-safe-html='introTitle')
       | &nbsp;
       i18n.has-text-1(
-        @click='handleIncomeClick'
+        @click='handleAnchorClick'
         :args='{ \
           r1: `<button class="link js-btnInvite" data-test="openIncomeDetailsModal">`, \
           r2: "</button>" \
         }'
       ) You can change this at any time by updating your {r1}income details{r2}.
+
+      i18n.has-text-1(
+        @click='handleAnchorClick'
+        tag='div'
+        :args='{ \
+          r1: `<button class="link js-btnDistribute">`, \
+          r2: "</button>" \
+        }'
+      ) Learn more about {r1}how we distribute income.{r2}
 
     section(v-if='!distributionStarted')
       .c-container-empty
@@ -55,13 +64,13 @@ page(
             | {{ link.title }}
             span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-        .c-tabs-chip-container.hide-phone
+        .c-tabs-chip-container.hide-phone(v-if='ephemeral.activeTab === "PaymentRowTodo"')
           next-distribution-pill
 
       .c-tab-header-container
         h3.is-title-3(v-if='tabHeader') {{ tabHeader }}
 
-        next-distribution-pill(v-if='!showTabSelectionMenu' :class='{ "hide-tablet": ephemeral.activeTab === "PaymentRowTodo" }')
+        next-distribution-pill.c-distribution-pill(:class='{ "hide-tablet": ephemeral.activeTab === "PaymentRowTodo" }')
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -398,9 +407,13 @@ export default ({
     handleTabClick (url) {
       this.ephemeral.activeTab = url
     },
-    handleIncomeClick (e) {
-      if (e.target.classList.contains('js-btnInvite')) {
+    handleAnchorClick ({ target }) {
+      const contains = className => target.classList.contains(className)
+
+      if (contains('js-btnInvite')) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
+      } else if (contains('js-btnDistribute')) {
+        alert('TODO!')
       }
     },
     handlePageChange (type) {
@@ -480,6 +493,10 @@ export default ({
   margin-top: -1.5rem;
   padding-bottom: 1rem;
 
+  > div {
+    margin-top: 0.25rem;
+  }
+
   @include desktop {
     margin-top: -1rem;
     padding-bottom: 1.5rem;
@@ -507,7 +524,8 @@ export default ({
 
 .c-tab-header-container {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
+  flex-wrap: wrap-reverse;
   align-items: center;
   justify-content: space-between;
   gap: 1.25rem;
