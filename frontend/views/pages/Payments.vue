@@ -468,6 +468,7 @@ export default ({
           toUser: 'fake-user-2',
           amount: 98.57142857,
           groupMincome: 1000,
+          transactionId: randomHexString(50),
           memo: 'Love you so much! Thank you for the Portuguese class last week. P.S.: sent to the Paypal email on your profile.',
           currencyFromTo: ['USD', 'USD']
         },
