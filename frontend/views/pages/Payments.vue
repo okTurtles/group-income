@@ -8,7 +8,7 @@ page(
 )
   template(#title='') {{ L('Payments') }}
 
-  template(#sidebar='' v-if='tabItems.length > 0 || paymentsListData.length > 0')
+  template(#sidebar='' v-if='showTabSelectionMenu || paymentsListData.length > 0')
     month-overview
 
   add-income-details-widget(v-if='!hasIncomeDetails')
@@ -18,12 +18,21 @@ page(
       span.has-text-1(v-safe-html='introTitle')
       | &nbsp;
       i18n.has-text-1(
-        @click='handleIncomeClick'
+        @click='handleAnchorClick'
         :args='{ \
           r1: `<button class="link js-btnInvite" data-test="openIncomeDetailsModal">`, \
           r2: "</button>" \
         }'
       ) You can change this at any time by updating your {r1}income details{r2}.
+
+      i18n.has-text-1(
+        @click='handleAnchorClick'
+        tag='div'
+        :args='{ \
+          r1: `<button class="link js-btnDistribute">`, \
+          r2: "</button>" \
+        }'
+      ) Learn more about {r1}how we distribute income.{r2}
 
     section(v-if='!distributionStarted')
       .c-container-empty
@@ -40,34 +49,55 @@ page(
 
     section.card(v-else)
       nav.tabs(
-        v-if='tabItems.length > 0'
+        v-if='showTabSelectionMenu'
         :aria-label='L("Payments type")'
-        data-test='payNav'
       )
-        button.is-unstyled.tabs-link(
-          v-for='(link, index) in tabItems'
-          :key='index'
-          :class='{ "is-active": ephemeral.activeTab === link.url}'
-          :data-test='`link-${link.url}`'
-          :aria-expanded='ephemeral.activeTab === link.url'
-          @click='handleTabClick(link.url)'
-        )
-          | {{ link.title }}
-          span.tabs-notification(v-if='link.notification') {{ link.notification }}
+        .c-tabs-link-container(data-test='payNav')
+          button.is-unstyled.tabs-link(
+            v-for='(link, index) in tabItems'
+            :key='index'
+            :class='{ "is-active": ephemeral.activeTab === link.url}'
+            :data-test='`link-${link.url}`'
+            :aria-expanded='ephemeral.activeTab === link.url'
+            @click='handleTabClick(link.url)'
+          )
+            | {{ link.title }}
+            span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-      search(
-        v-if='paymentsListData.length && ephemeral.activeTab !== "PaymentRowTodo"'
-        :placeholder='L("Search payments...")'
-        :label='L("Search for a payment")'
-        v-model='form.searchText'
-      )
+        .c-tabs-chip-container.hide-phone(v-if='ephemeral.activeTab === "PaymentRowTodo"')
+          next-distribution-pill
+
+      .c-tab-header-container
+        h3.is-title-3(v-if='tabHeader') {{ tabHeader }}
+
+        next-distribution-pill.c-distribution-pill(:class='{ "hide-tablet": ephemeral.activeTab === "PaymentRowTodo" }')
+
+      .c-filters(v-if='paymentsListData.length > 0')
+        .c-method-filters
+          button.is-small.c-payment-method-filter-opt(
+            v-for='(name, method) in config.paymentMethodFilterOptions'
+            type='button'
+            :key='method'
+            :disabled='method === "lightning" && ephemeral.activeTab !== "PaymentRowTodo"'
+            :class='{ "is-active":  ephemeral.paymentMethodFilter === method }'
+            @click='ephemeral.paymentMethodFilter = method'
+          ) {{ name }}
+
+        search.c-search-input(
+          v-if='paymentsListData.length'
+          :placeholder='L("Search payments...")'
+          :label='L("Search for a payment")'
+          v-model='form.searchText'
+        )
 
       .tab-section
         .c-container(v-if='paymentsFiltered.length')
           payments-list(
+            ref='paymentList'
             :titles='tableTitles'
             :paymentsList='paginateList(paymentsFiltered)'
             :paymentsType='ephemeral.activeTab'
+            :selectedTodoItems.sync='ephemeral.selectedTodoItems'
           )
           .c-footer
             .c-payment-record(v-if='ephemeral.activeTab === "PaymentRowTodo"')
@@ -80,8 +110,10 @@ page(
               i18n.button(
                 tag='button'
                 data-test='recordPayment'
-                @click='openModal("RecordPayment")'
-              ) Record payments
+                :disabled='!ephemeral.selectedTodoItems || ephemeral.selectedTodoItems.length === 0'
+                @click='onRecordPaymentClick'
+              ) Send payments
+
             payments-pagination(
               v-else
               :count='paymentsFiltered.length'
@@ -90,15 +122,23 @@ page(
               @change-page='handlePageChange'
               @change-rows-per-page='handleRowsPerPageChange'
             )
+
+        .c-container(v-else-if='ephemeral.activeTab === "PaymentRowTodo" && ephemeral.paymentMethodFilter === "lightning"')
+          p.c-lightning-todo-msg Coming Soon.
+
+          .c-footer
+            .c-payment-record(v-if='isDevEnv')
+              button.is-success.is-outlined.is-small(
+                type='button'
+                @click='openLightningPayments'
+              ) Open Placeholder Modal
+
         .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
           i18n(tag='p' :args='{query: form.searchText }') No results for "{query}".
-        .c-container-empty(v-else data-test='noPayments')
+
+        .c-container-empty.no-payments(v-else data-test='noPayments')
           svg-contributions.c-svg
           i18n.c-description(tag='p') There are no payments.
-          i18n.c-description(
-            tag='p'
-            :args='{ ...LTags(), date: nextDistribution }'
-          ) Next distribution period: {date}
 </template>
 
 <script>
@@ -109,11 +149,13 @@ import Search from '@components/Search.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
+import NextDistributionPill from '@containers/payments/PaymentNextDistributionPill.vue'
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
+import { randomHexString } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
 
 export default ({
@@ -124,6 +166,7 @@ export default ({
     Search,
     PaymentsList,
     PaymentsPagination,
+    NextDistributionPill,
     MonthOverview,
     AddIncomeDetailsWidget
   },
@@ -135,7 +178,19 @@ export default ({
       ephemeral: {
         activeTab: '',
         rowsPerPage: 10,
-        currentPage: 0
+        currentPage: 0,
+        paymentMethodFilter: 'all', // defaults to 'all' options
+        enableSendPaymentBtn: false,
+        selectedTodoItems: null
+      },
+      config: {
+        paymentMethodFilterOptions: {
+          'all': L('ALL'),
+          'lightning': L('Lightning'),
+          'manual': L('Manual')
+        }
+        // TODO: maybe externalize the option names as contants, (e.g. PAYMENTS_METHOD.MANUAL, PAYMENTS_METHOD.LIGHTNING)
+        //       once the payment method is implemented in the 'gi.contracts/group'
       }
     }
   },
@@ -158,7 +213,6 @@ export default ({
       'groupSettings',
       'ourUsername',
       'userDisplayName',
-      'periodAfterPeriod',
       'withGroupCurrency'
     ]),
     needsIncome () {
@@ -169,10 +223,6 @@ export default ({
     },
     distributionStarted () {
       return Date.now() >= new Date(this.groupSettings.distributionDate).getTime()
-    },
-    nextDistribution () {
-      const currentPeriod = this.groupSettings.distributionDate
-      return this.prettyDate(this.periodAfterPeriod(currentPeriod))
     },
     tabItems () {
       const items = []
@@ -197,7 +247,7 @@ export default ({
 
       if (!this.needsIncome || this.paymentsSent.length) {
         items.push({
-          title: L('Sent'),
+          title: L('Completed'),
           url: 'PaymentRowSent'
         })
       }
@@ -210,12 +260,14 @@ export default ({
         ? {
             one: firstTab,
             two: L('Amount'),
-            three: L('Due in')
+            three: L('Accepted methods'),
+            four: L('Due in')
           }
         : {
             one: firstTab,
             two: L('Amount'),
-            three: L('Date')
+            three: L('Payment method'),
+            four: L('Payment date')
           }
     },
     introTitle () {
@@ -229,7 +281,7 @@ export default ({
 
       for (const payment of this.ourPayments.todo) {
         payments.push({
-          hash: payment.hash,
+          hash: payment.hash || randomHexString(15),
           username: payment.to,
           displayName: this.userDisplayName(payment.to),
           amount: payment.amount,
@@ -289,6 +341,12 @@ export default ({
         PaymentRowReceived: () => this.paymentsReceived
       }[this.ephemeral.activeTab]()
     },
+    tabHeader () {
+      return {
+        PaymentRowSent: L('Completed payments'),
+        PaymentRowReceived: L('Received payments')
+      }[this.ephemeral.activeTab] || ''
+    },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
     },
@@ -301,6 +359,12 @@ export default ({
         amount: this.withGroupCurrency(amount),
         count: this.paymentsTodo.length
       }
+    },
+    showTabSelectionMenu () {
+      return this.tabItems.length > 0
+    },
+    isDevEnv () {
+      return process.env.NODE_ENV === 'development'
     }
   },
   methods: {
@@ -312,12 +376,24 @@ export default ({
       this.ephemeral.activeTab = this.needsIncome ? 'PaymentRowReceived' : 'PaymentRowTodo'
     },
     openModal (name, props) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
+      sbp('okTurtles.events/emit', OPEN_MODAL, name, null, props)
     },
     filterPayment (payment) {
-      const query = this.form.searchText
-      const { amount, username, displayName } = payment
-      return query === '' || `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(query.toUpperCase()) !== -1
+      const {
+        amount, username, displayName,
+        // NOTE: 'accepted payment method' is not implemented yet, so 'acceptedMethods' just a dummy field for now.
+        // TODO: update the field name & the related logic (e.g. 'matchesMethodFilter' below) accordingly
+        //       once 'accepted payment method' is implemented in the contract.
+        acceptedMethods = ['manual']
+      } = payment
+      const methodFilterVal = this.ephemeral.paymentMethodFilter
+      const searchQuery = this.form.searchText
+
+      const matchesMethodFilter = methodFilterVal === 'all' || acceptedMethods.includes(methodFilterVal)
+      const matchesSearchQuery = searchQuery === '' ||
+        `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(searchQuery.toUpperCase()) !== -1
+
+      return matchesMethodFilter && matchesSearchQuery
     },
     paginateList (list) {
       const start = this.ephemeral.rowsPerPage * this.ephemeral.currentPage
@@ -326,9 +402,13 @@ export default ({
     handleTabClick (url) {
       this.ephemeral.activeTab = url
     },
-    handleIncomeClick (e) {
-      if (e.target.classList.contains('js-btnInvite')) {
+    handleAnchorClick ({ target }) {
+      const contains = className => target.classList.contains(className)
+
+      if (contains('js-btnInvite')) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
+      } else if (contains('js-btnDistribute')) {
+        alert("We'll share this soon in an upcoming blog post!")
       }
     },
     handlePageChange (type) {
@@ -338,6 +418,45 @@ export default ({
     handleRowsPerPageChange (value) {
       this.ephemeral.rowsPerPage = value
       this.ephemeral.currentPage = 0 // go back to first page.
+    },
+    onRecordPaymentClick () {
+      console.log('todoItems: ', this.ephemeral.selectedTodoItems)
+      this.openModal('RecordPayment', { todoItems: this.ephemeral.selectedTodoItems })
+    },
+    async openLightningPayments () {
+      const fakeUsers = [
+        {
+          username: 'fake-user-1',
+          email: 'fake1@abc.com',
+          password: '123456789'
+        },
+        {
+          username: 'fake-user-2',
+          email: 'fake2@def.com',
+          password: '123456789'
+        }
+      ]
+      const wait = (milli) => new Promise(resolve => setTimeout(resolve, milli))
+      let contractID
+
+      // check if the fake users have been created and sign them up if not.
+      // TODO: to be removed once lightning network is implemented
+      for (const userData of fakeUsers) {
+        contractID = await sbp('namespace/lookup', userData.username)
+
+        if (!contractID) {
+          console.log(`signing up a fake user [${userData.username}]`)
+          await sbp('gi.actions/identity/signup', userData)
+        }
+      }
+
+      if (!contractID) {
+        // if fake users have just been created,
+        // wait a little bit for the avatar image to be prepared
+        await wait(100)
+      }
+
+      this.openModal('SendPaymentsViaLightning')
     }
   }
 }: Object)
@@ -351,15 +470,113 @@ export default ({
   margin-top: -1.5rem;
   padding-bottom: 1rem;
 
+  > div {
+    margin-top: 0.25rem;
+  }
+
   @include desktop {
     margin-top: -1rem;
     padding-bottom: 1.5rem;
   }
 }
 
+// Tabs
+.tabs {
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+
+  .c-tabs-link-container {
+    display: flex;
+    flex-direction: row;
+    flex-grow: 1;
+  }
+
+  .c-tabs-chip-container {
+    align-self: center;
+    height: max-content;
+    padding: 0 1.5rem 0 0;
+    margin: 0.75rem 0;
+  }
+}
+
+.c-tab-header-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap-reverse;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+
+  @include tablet {
+    margin-bottom: 2.5rem;
+  }
+}
+
+.c-below-tabs-chip-container {
+  margin-bottom: 1.5rem;
+}
+
 // Search
-.tabs + .c-search-form {
-  margin-top: 1.5rem;
+.c-filters {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.5rem;
+  width: 100%;
+
+  @include tablet {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .c-method-filters {
+    display: inline-flex;
+    gap: 0.5rem;
+    width: max-content;
+  }
+
+  .c-search-input {
+    order: -1;
+
+    @include tablet {
+      order: unset;
+      max-width: 12.125rem;
+    }
+  }
+}
+
+.c-payment-method-filter-opt {
+  text-transform: uppercase;
+  color: $text_0;
+  background-color: $general_2;
+
+  &.is-active {
+    color: $primary_0;
+    border: 1px solid $primary_0;
+  }
+
+  &:hover,
+  &.is-active {
+    background-color: $primary_2;
+  }
+
+  &[disabled] {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.c-search-input {
+  ::v-deep .inputgroup .input {
+    padding-right: 2.75rem;
+
+    &:placeholder-shown {
+      // if the text input element is empty.
+      padding-right: 1.375rem;
+    }
+  }
 }
 
 .c-container-empty {
@@ -368,12 +585,18 @@ export default ({
   text-align: center;
   padding-top: 2.5rem;
 
+  &.no-payments {
+    max-width: unset;
+  }
+
   @include desktop {
-    padding-top: 4rem;
+    &:not(.no-payments) {
+      padding-top: 4rem;
+    }
   }
 
   .c-description {
-    margin: 1.5rem 0 0 0;
+    margin: 1rem 0 0 0;
     color: $text_1;
   }
 
@@ -428,13 +651,27 @@ export default ({
   }
 
   @include phone {
-    .c-payment-info {
-      display: none;
+    .c-pagination {
+      justify-content: center;
     }
 
-    .c-payment-record .button {
-      width: 100%;
+    .c-payment-record {
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: stretch;
+
+      .c-payment-info {
+        margin-bottom: 2rem;
+      }
+
+      .button {
+        width: 100%;
+      }
     }
   }
+}
+
+.c-lightning-todo-msg {
+  margin-top: 2rem;
 }
 </style>

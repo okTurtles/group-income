@@ -90,6 +90,7 @@ lazyModalFullScreen('PropositionsAllModal', () => import('../views/containers/pr
 
 lazyComponent('PaymentDetail', () => import('../views/containers/payments/PaymentDetail.vue'))
 lazyComponent('RecordPayment', () => import('../views/containers/payments/RecordPayment.vue'))
+lazyComponent('SendPaymentsViaLightning', () => import('../views/containers/payments/SendPaymentsViaLightning.vue'))
 
 lazyComponent('Appearence', () => import('../views/containers/user-settings/Appearence.vue'))
 lazyComponent('NotificationSettings', () => import('../views/containers/user-settings/NotificationSettings.vue'))

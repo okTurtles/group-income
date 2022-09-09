@@ -32,7 +32,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
               name='displayComment'
               @change='ephemeral.displayMemo = !ephemeral.displayMemo'
             )
-            i18n.sr-only(tag='label' for='displayMemo') Toggle comment box
+            i18n.sr-only(tag='label' for='displayComment') Toggle comment box
 
         transition(name='slidedown')
           label.field(v-if='ephemeral.displayMemo')
@@ -81,6 +81,7 @@ import RecordPaymentsList from '@containers/payments/RecordPaymentsList.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import { PAYMENTS_RECORDED } from '@utils/events.js'
 
 export default ({
   name: 'RecordPayment',
@@ -92,6 +93,11 @@ export default ({
     BannerScoped,
     BannerSimple,
     ButtonSubmit
+  },
+  props: {
+    todoItems: {
+      type: Array
+    }
   },
   data () {
     return {
@@ -124,41 +130,20 @@ export default ({
       'userDisplayName'
     ]),
     paymentsList () {
-      const latePayments = []
-      const notReceivedPayments = []
-      const todoPayments = []
-
-      for (const payment of this.ourPayments.sent) {
-        const { hash, data, meta } = payment
-        if (data.status !== PAYMENT_NOT_RECEIVED) {
-          continue
-        }
-        notReceivedPayments.push({
-          hash,
-          data,
-          meta,
-          username: data.toUser,
-          displayName: this.userDisplayName(data.toUser),
-          date: meta.createdDate,
-          monthstamp: dateToMonthstamp(meta.createdDate),
-          amount: data.amount
-        })
-      }
-
-      for (const payment of this.ourPayments.todo) {
-        todoPayments.push({
-          hash: payment.hash,
-          username: payment.to,
-          displayName: this.userDisplayName(payment.to),
-          amount: payment.amount,
-          total: payment.total,
-          partial: payment.partial,
-          isLate: payment.isLate,
-          date: payment.dueOn
-        })
-      }
-
-      return latePayments.concat(notReceivedPayments, todoPayments)
+      return this.todoItems.map(item => {
+        return item.status === PAYMENT_NOT_RECEIVED // if not received item, re-format the obj
+          ? {
+              hash: item.hash,
+              data: item.data,
+              meta: item.meta,
+              username: item.toUser,
+              displayName: this.userDisplayName(item.toUser),
+              date: item.meta.createdDate,
+              monthstamp: dateToMonthstamp(item.createdDate),
+              amount: item.amount
+            }
+          : item
+      })
     },
     recordNumber () {
       return this.form.paymentsToRecord.filter(p => p.checked).length
@@ -237,6 +222,9 @@ export default ({
 
       if (!hasError) {
         this.donePayment = true
+        sbp('okTurtles.events/emit', PAYMENTS_RECORDED, {
+          hashes: paymentsToRecord.map(p => p.hash)
+        })
       }
     }
   }
@@ -271,6 +259,7 @@ export default ({
 
 .c-payment-form {
   width: 100%;
+
   @include tablet {
     max-width: 33rem;
   }
