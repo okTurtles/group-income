@@ -11,7 +11,7 @@ div(:class='isReady ? "" : "c-ready"')
 
   div(v-else)
     bar-graph(:bars='history')
-    i18.has-text-1(tag='p') * This month contains delayed payments for prior months.
+    i18n.has-text-1(tag='p') * This month contains delayed payments for prior months.
 </template>
 
 <script>

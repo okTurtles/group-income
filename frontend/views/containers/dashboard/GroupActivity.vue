@@ -25,6 +25,7 @@ section.card
 import Overview from '@components/graphs/Overview.vue'
 import SupportHistory from '@containers/contributions/SupportHistory.vue'
 import TodoHistory from '@containers/contributions/TodoHistory.vue'
+import GroupMembersActivity from '@containers/dashboard/GroupMembersActivity.vue'
 
 import { L } from '@common/common.js'
 export default ({
@@ -42,17 +43,18 @@ export default ({
         url: 'TodoHistory'
       }, {
         title: L('Activity'),
-        url: 'Overview'
+        url: 'GroupMembersActivity'
       }],
       ephemeral: {
-        activeTab: 'Overview'
+        activeTab: 'GroupMembersActivity'
       }
     }
   },
   components: {
     Overview,
     SupportHistory,
-    TodoHistory
+    TodoHistory,
+    GroupMembersActivity
   },
   methods: {
     handleTabClick (url) {
