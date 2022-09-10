@@ -46,7 +46,7 @@ export default ({
         url: 'GroupMembersActivity'
       }],
       ephemeral: {
-        activeTab: 'GroupMembersActivity'
+        activeTab: 'Overview'
       }
     }
   },

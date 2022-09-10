@@ -156,6 +156,38 @@
 
       i18n(tag='strong') Everyone logged in the past week.
 
+  .c-inactive
+    i18n.is-title-3(
+      tag='h2'
+    ) Inactive Users
+
+    table.table.table-in-card(data-test='payList' :class='tableClass')
+      thead
+        tr
+          i18n(tag='th') Member
+          i18n(tag='th') Payment Method
+          i18n(tag='th') Last login
+      tbody
+        tr
+          td
+            .c-item
+              avatar.c-avatar.icon-round(:src='memberGlobalProfile.picture' size='sm')
+              strong Rosalía
+          td
+            i18n.pill.is-neutral Receiver
+          td
+            | Jun 27
+
+        tr
+          td
+            .c-item
+              avatar.c-avatar.icon-round(:src='memberGlobalProfile.picture' size='sm')
+              strong Ken M
+          td
+            i18n.pill.is-neutral Pledger
+          td
+            | Jun 27
+
 </template>
 
 <script>
@@ -199,6 +231,7 @@ export default ({
     flex-wrap: nowrap;
   }
 
+  + .c-inactive,
   + .c-columns {
     margin-top: 2rem;
   }
@@ -233,5 +266,9 @@ export default ({
   border-radius: 50%;
   text-align: center;
   line-height: 2rem;
+}
+
+.table {
+  margin-top: 1rem;
 }
 </style>
