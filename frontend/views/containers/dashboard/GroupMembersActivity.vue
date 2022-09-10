@@ -2,9 +2,7 @@
 .c-wrapper
   .c-columns
     .c-column
-      i18n.is-title-3(
-        tag='h2'
-      ) Missed Pledges
+      i18n.is-title-3(tag='h2') Missed Pledges
       i18n.has-text-1.c-para When members have missed payments they will appear here.
 
       ul.spacer
@@ -30,9 +28,7 @@
               i18n(:args='{  date: "May 25" }') , relative to {date}
 
     .c-column
-      i18n.is-title-3(
-        tag='h2'
-      ) Inactive Members
+      i18n.is-title-3(tag='h2') Inactive Members
       i18n.has-text-1.c-para Members that haven’t logged to the platform in more than a week.
 
       ul.spacer
@@ -52,9 +48,7 @@
 
   .c-columns
     .c-column
-      i18n.is-title-3(
-        tag='h2'
-      ) Streaks
+      i18n.is-title-3(tag='h2') Streaks
       i18n.has-text-1.c-para Information about your pledges streaks and other streak members appears here.
 
       ul.spacer
@@ -89,9 +83,7 @@
               i18n(:args='{ ...LTags("strong"), streaks: "4 weeks" }')  have {strong_} streaks of more than {streaks}{_strong}
 
     .c-column
-      i18n.is-title-3(
-        tag='h2'
-      ) Inactivity
+      i18n.is-title-3(tag='h2') Inactivity
       .has-text-1.c-para Members that haven’t logged in, missed their pledges or haven´t voted last proposals will appear here.
 
       ul.spacer
@@ -141,25 +133,19 @@
 
   .c-columns
     .c-column
-      i18n.is-title-3(
-        tag='h2'
-      ) Failed Pledges
+      i18n.is-title-3(tag='h2') Failed Pledges
       i18n.has-text-1.c-para When members have missed payments they will appear here.
 
       i18n(tag='strong') No members with missed pledges.
 
     .c-column
-      i18n.is-title-3(
-        tag='h2'
-      ) Inactive Members
+      i18n.is-title-3(tag='h2') Inactive Members
       i18n.has-text-1.c-para Members that haven’t logged to the platform in more than a week.
 
       i18n(tag='strong') Everyone logged in the past week.
 
   .c-inactive
-    i18n.is-title-3(
-      tag='h2'
-    ) Inactive Users
+    i18n.is-title-3(tag='h2') Inactive Users
 
     table.table.table-in-card(data-test='payList' :class='tableClass')
       thead
@@ -175,8 +161,7 @@
               strong Rosalía
           td
             i18n.pill.is-neutral Receiver
-          td
-            | Jun 27
+          td Jun 27
 
         tr
           td
@@ -185,8 +170,7 @@
               strong Ken M
           td
             i18n.pill.is-neutral Pledger
-          td
-            | Jun 27
+          td Jun 27
 
 </template>
 
