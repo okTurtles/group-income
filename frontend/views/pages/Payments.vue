@@ -131,7 +131,7 @@ page(
               button.is-success.is-outlined.is-small(
                 type='button'
                 @click='openLightningPayments'
-              ) Open laceholder Modal
+              ) Open Placeholder Modal
 
               button.is-outlined.is-small(
                 type='button'
@@ -252,7 +252,7 @@ export default ({
 
       if (!this.needsIncome || this.paymentsSent.length) {
         items.push({
-          title: L('Sent'),
+          title: L('Completed'),
           url: 'PaymentRowSent'
         })
       }
@@ -413,7 +413,7 @@ export default ({
       if (contains('js-btnInvite')) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
       } else if (contains('js-btnDistribute')) {
-        alert('TODO!')
+        alert("We'll share this soon in an upcoming blog post!")
       }
     },
     handlePageChange (type) {

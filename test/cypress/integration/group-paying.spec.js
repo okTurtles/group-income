@@ -83,7 +83,7 @@ describe('Group Payments', () => {
     cy.getByDT('paymentsLink').click()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
 
-    assertNavTabs(['Todo1', 'Sent'])
+    assertNavTabs(['Todo1', 'Completed'])
     assertMonthOverview([
       ['Payments sent', '0 out of 1'],
       ['Amount sent', '$0 out of $250']
@@ -108,7 +108,7 @@ describe('Group Payments', () => {
     ])
 
     cy.log('assert payments table is correct')
-    assertNavTabs(['Todo', 'Sent'])
+    assertNavTabs(['Todo', 'Completed'])
     cy.getByDT('link-PaymentRowSent').click()
     cy.getByDT('payList').find('tbody').children().should('have.length', 1)
     cy.getByDT('payList').within(() => {
@@ -180,7 +180,7 @@ describe('Group Payments', () => {
       cy.getByDT('closeModal').should('not.exist')
     })
 
-    assertNavTabs(['Todo1', 'Sent'])
+    assertNavTabs(['Todo1', 'Completed'])
 
     assertMonthOverview([
       ['Payments sent', '1 out of 2'],
@@ -218,7 +218,7 @@ describe('Group Payments', () => {
 
     cy.getByDT('paymentsLink').click()
 
-    assertNavTabs(['Received', 'Sent'])
+    assertNavTabs(['Received', 'Completed'])
     cy.getByDT('noPayments').should('exist')
 
     cy.getByDT('link-PaymentRowSent').click()
@@ -234,7 +234,7 @@ describe('Group Payments', () => {
     setIncomeDetails(true, 250)
 
     cy.getByDT('paymentsLink').click()
-    assertNavTabs(['Todo', 'Sent'])
+    assertNavTabs(['Todo', 'Completed'])
   })
 
   it.skip('one month later, user1 sends to user3 the missing $78.57 (test incomplete)', () => {
