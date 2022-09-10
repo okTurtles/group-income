@@ -127,7 +127,7 @@ page(
           p.c-lightning-todo-msg Coming Soon.
 
           .c-footer
-            .c-payment-record(v-if='isDevEnv')
+            .c-payment-record.c-lightning-temp(v-if='isDevEnv')
               button.is-success.is-outlined.is-small(
                 type='button'
                 @click='openLightningPayments'
@@ -529,11 +529,17 @@ export default ({
   flex-wrap: wrap-reverse;
   align-items: center;
   justify-content: space-between;
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
 
-  @include tablet {
-    margin-bottom: 2.5rem;
+  > * {
+    margin-bottom: 1.25rem;
+
+    @include tablet {
+      margin-bottom: 2.5rem;
+    }
+  }
+
+  h3 {
+    margin-right: 1.25rem;
   }
 }
 
@@ -672,6 +678,13 @@ export default ({
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    &.c-lightning-temp {
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 1rem;
+    }
   }
 
   @include phone {
