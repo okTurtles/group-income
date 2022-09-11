@@ -18,7 +18,7 @@ const readTextFileAsync = Deno.readTextFile
 const writeFileAsync = Deno.writeFile
 const writeTextFileAsync = Deno.writeTextFile
 
-const dirExists = async (pathname: numer) => {
+const dirExists = async (pathname) => {
   try {
     const stats = await Deno.stat(pathname)
     return stats ?? stats.isDirectory()

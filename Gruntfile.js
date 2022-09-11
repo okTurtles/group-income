@@ -684,7 +684,7 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno:start', 'exec:test', 'cypress', 'deno:stop', 'flow:stop'])
+  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno:start', 'exec:test', 'exec:testWithDeno', 'cypress', 'deno:stop', 'flow:stop'])
   grunt.registerTask('test:unit', ['deno:start', 'exec:test', 'exec:testWithDeno', 'deno:stop'])
 
   // -------------------------------------------------------------------------
