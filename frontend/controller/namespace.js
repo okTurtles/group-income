@@ -1,3 +1,4 @@
+// @no-flow
 'use strict'
 
 import sbp from '@sbp/sbp'
@@ -5,7 +6,7 @@ import { handleFetchResult } from './utils/misc.js'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {
-  'namespace/register': (name: string, value: string) => {
+  'namespace/register': (name, value) => {
     return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name`, {
       method: 'POST',
       body: JSON.stringify({ name, value }),
@@ -14,9 +15,9 @@ sbp('sbp/selectors/register', {
       }
     }).then(handleFetchResult('json'))
   },
-  'namespace/lookup': (name: string) => {
+  'namespace/lookup': (name) => {
     // TODO: should `name` be encodeURI'd?
-    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${name}`).then((r: Object) => {
+    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${name}`).then((r) => {
       if (!r.ok) {
         console.warn(`namespace/lookup: ${r.status} for ${name}`)
         if (r.status !== 404) {

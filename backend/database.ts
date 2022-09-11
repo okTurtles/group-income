@@ -3,8 +3,8 @@ import * as pathlib from 'path'
 import sbp from "@sbp/sbp"
 import { notFound } from 'pogo/lib/bang.ts'
 
-import '~/shared/domains/chelonia/db.js'
-import { strToB64 } from '~/shared/functions.js'
+import '~/shared/domains/chelonia/db.ts'
+import { strToB64 } from '~/shared/functions.ts'
 
 const CI = Deno.env.get('CI')
 const GI_VERSION = Deno.env.get('GI_VERSION')
@@ -18,7 +18,7 @@ const readTextFileAsync = Deno.readTextFile
 const writeFileAsync = Deno.writeFile
 const writeTextFileAsync = Deno.writeTextFile
 
-const dirExists = async (pathname) => {
+const dirExists = async (pathname: numer) => {
   try {
     const stats = await Deno.stat(pathname)
     return stats ?? stats.isDirectory()

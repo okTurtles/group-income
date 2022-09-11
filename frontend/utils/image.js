@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { blake32Hash } from '~/shared/functions.js'
+import { blake32Hash } from '~/shared/functions.ts'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 
 // Copied from https://stackoverflow.com/a/27980815/4737729

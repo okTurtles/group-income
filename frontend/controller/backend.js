@@ -1,9 +1,9 @@
 'use strict'
 
-import type { JSONObject } from '~/shared/types.js'
+import type { JSONObject } from '~/shared/types.ts'
 
 import sbp from '@sbp/sbp'
-import { NOTIFICATION_TYPE } from '~/shared/pubsub.js'
+import { NOTIFICATION_TYPE } from '~/shared/pubsub.ts'
 import { handleFetchResult } from './utils/misc.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 

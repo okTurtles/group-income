@@ -55,6 +55,8 @@
     "dist/*",
     "ignored/*",
     "node_modules/*",
+    "test/common/*",
+    "test/contracts/*",
     "test/cypress/cache/*",
     "contracts/*"
   ],

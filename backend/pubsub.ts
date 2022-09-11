@@ -4,7 +4,7 @@ import {
   isWebSocketPingEvent,
 } from "https://deno.land/std@0.92.0/ws/mod.ts";
 
-import { messageParser } from '~/shared/pubsub.js'
+import { messageParser } from '~/shared/pubsub.ts'
 
 const CI = Deno.env.get('CI')
 const NODE_ENV = Deno.env.get('NODE_ENV') ?? 'development'

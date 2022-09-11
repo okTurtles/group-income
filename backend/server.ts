@@ -17,7 +17,7 @@ import {
 } from '~/backend/pubsub.ts'
 import { router } from './routes.ts'
 
-import { GIMessage } from '../shared/domains/chelonia/GIMessage.js'
+import { GIMessage } from '../shared/domains/chelonia/GIMessage.ts'
 
 const { default: { version }} = await import('~/package.json', {
   assert: { type: "json" },

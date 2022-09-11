@@ -7,10 +7,10 @@ import "@sbp/okturtles.events"
 import { SERVER_RUNNING } from './events.ts'
 import { PUBSUB_INSTANCE } from './instance-keys.ts'
 
-const logger = window.logger = function (err) {
+window.logger = function (err) {
   console.error(err)
   err.stack && console.error(err.stack)
-  return err // routes.js is written in a way that depends on this returning the error
+  return err // routes.ts is written in a way that depends on this returning the error
 }
 
 const process = window.process = {
@@ -32,16 +32,20 @@ function logSBP (domain, selector, data) {
   }
 }
 
-;['backend'].forEach(domain => sbp('sbp/filters/domain/add', domain, logSBP))
+['backend'].forEach(domain => sbp('sbp/filters/domain/add', domain, logSBP))
 ;[].forEach(sel => sbp('sbp/filters/selector/add', sel, logSBP))
 
 export default (new Promise((resolve, reject) => {
-  sbp('okTurtles.events/on', SERVER_RUNNING, function () {
-    console.log(bold('backend startup sequence complete.'))
-    resolve()
-  })
-  // Call this after we've registered listener for `SERVER_RUNNING`.
-  import('./server.ts')
+  try {
+    sbp('okTurtles.events/on', SERVER_RUNNING, function () {
+      console.log(bold('backend startup sequence complete.'))
+      resolve()
+    })
+    // Call this after we've registered listener for `SERVER_RUNNING`.
+    import('./server.ts')
+  } catch (err) {
+    reject(err)
+  }
 }))
 
 const shutdownFn = function (message) {

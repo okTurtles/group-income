@@ -1,10 +1,8 @@
-'use strict'
-
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.ts'
+import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.ts'
 
 const headSuffix = '-HEAD'
 

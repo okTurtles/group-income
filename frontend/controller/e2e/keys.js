@@ -3,11 +3,11 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { blake32Hash, bytesToB64 } from '~/shared/functions.js'
+import { blake32Hash, bytesToB64 } from '~/shared/functions.ts'
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
 
-import type { GIKey, GIKeyType } from '~/shared/domains/chelonia/GIMessage.js'
+import type { GIKey, GIKeyType } from '~/shared/domains/chelonia/GIMessage.ts'
 
 function genSeed (): string {
   return bytesToB64(nacl.randomBytes(nacl.box.secretKeyLength))

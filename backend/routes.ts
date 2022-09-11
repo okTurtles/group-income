@@ -1,10 +1,10 @@
-/* globals logger, Deno */
+/* globals Deno */
 
 import { bold, yellow } from 'fmt/colors.ts'
 
 import sbp from '@sbp/sbp'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import { blake32Hash } from '~/shared/functions.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.ts'
+import { blake32Hash } from '~/shared/functions.ts'
 
 import { badRequest } from 'pogo/lib/bang.ts'
 import { Router } from 'pogo'

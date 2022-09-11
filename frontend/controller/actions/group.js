@@ -23,7 +23,7 @@ import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/
 import { encryptedAction } from './utils.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
-import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import type { GIMessage } from '~/shared/domains/chelonia/chelonia.ts'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group

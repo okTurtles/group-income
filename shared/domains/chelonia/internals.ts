@@ -1,18 +1,16 @@
-'use strict'
-
 import sbp, { domainFromSelector } from '@sbp/sbp'
-import './db.js'
-import { GIMessage } from './GIMessage.js'
+import './db.ts'
+import { GIMessage } from './GIMessage.ts'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/model/contracts/shared/giLodash.js'
-import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
-import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
+import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.ts'
+import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.ts'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { blake32Hash } from '~/shared/functions.js'
+import { blake32Hash } from '~/shared/functions.ts'
 // import 'ses'
 
 // export const FERAL_FUNCTION = Function
 
-export default (sbp('sbp/selectors/register', {
+export default sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
   'chelonia/private/state': function () {
     return this.state
@@ -64,7 +62,7 @@ export default (sbp('sbp/selectors/register', {
           has (o, p) { /* console.log('has', p); */ return true }
         })) {
           (function () {
-            'use strict'
+            'use strict';
             ${source}
           })()
         }
@@ -82,12 +80,12 @@ export default (sbp('sbp/selectors/register', {
       console,
       Object,
       Error,
+      Function, // TODO: remove this
       TypeError,
       Math,
       Symbol,
       Date,
       Array,
-      // $FlowFixMe
       BigInt,
       Boolean,
       String,
@@ -327,7 +325,7 @@ export default (sbp('sbp/selectors/register', {
       throw e
     }
   }
-}))
+})
 
 const eventsToReinjest = []
 const reprocessDebounced = debounce((contractID) => sbp('chelonia/contract/sync', contractID), 1000)

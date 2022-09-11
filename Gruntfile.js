@@ -226,6 +226,34 @@ module.exports = (grunt) => {
       entryPoints: ['./frontend/controller/serviceworkers/primary.js']
     }
   }
+  esbuildOptionBags.testCommons = {
+    ...esbuildOptionBags.default,
+    bundle: true,
+    entryPoints: ['./frontend/common/common.js'],
+    external: ['dompurify', 'vue'],
+    outdir: './test/common',
+    splitting: false
+  }
+  esbuildOptionBags.testContracts = {
+    ...esbuildOptionBags.default,
+    bundle: true,
+    entryPoints: [
+      `${contractsDir}/group.js`,
+      `${contractsDir}/chatroom.js`,
+      `${contractsDir}/identity.js`,
+      `${contractsDir}/mailbox.js`,
+      // `${contractsDir}/misc/flowTyper.js`,
+      `${contractsDir}/shared/voting/proposals.js`,
+      `${contractsDir}/shared/payments/index.js`,
+      `${contractsDir}/shared/constants.js`,
+      `${contractsDir}/shared/functions.js`,
+      `${contractsDir}/shared/giLodash.js`
+    ],
+    external: ['dompurify', 'vue'],
+    outdir: './test/contracts',
+    splitting: false
+  }
+
   esbuildOptionBags.contracts = {
     ...pick(clone(esbuildOptionBags.default), [
       'define', 'bundle', 'watch', 'incremental'
@@ -360,14 +388,14 @@ module.exports = (grunt) => {
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
-      // Test files:
-      // - anything in the `/test` folder, e.g. integration tests;
-      // - anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.
+      // Test anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.
       // The `--require` flag ensures custom Babel support in our test files.
       test: {
         cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: process.env }
       },
+      // Test anything in /test that ends with `.test.ts`.
+      testWithDeno: 'deno test --allow-env --allow-net --allow-read --allow-write --importmap=import-map.json --no-check ./test/*.ts',
       chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
     }
   })
@@ -462,7 +490,6 @@ module.exports = (grunt) => {
       // ^C can cause c to be null, which is an OK error.
       if (c === null) {
         grunt.log.writeln('Backend process exited with null code.')
-        // process.exit(0)
       } else if (c !== 0) {
         grunt.log.error(`Backend process exited with error code: ${c}`.bold)
         process.exit(c)
@@ -527,6 +554,12 @@ module.exports = (grunt) => {
     const buildContractsSlim = createEsbuildTask({
       ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
+    const buildTestCommons = createEsbuildTask({
+      ...esbuildOptionBags.testCommons, plugins: defaultPlugins
+    })
+    const buildTestContracts = createEsbuildTask({
+      ...esbuildOptionBags.testContracts, plugins: defaultPlugins
+    })
 
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
@@ -537,6 +570,7 @@ module.exports = (grunt) => {
       .then(() => {
         return Promise.all([buildMain.run(), buildServiceWorkers.run()])
       })
+      .then(() => Promise.all([buildTestContracts.run(), buildTestCommons.run()]))
       .catch(error => {
         grunt.log.error(error.message)
         process.exit(1)
@@ -556,7 +590,7 @@ module.exports = (grunt) => {
 
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.ts', 'shared/**/*.js'], [eslint, 'deno:stop', 'deno:start']],
+      [['backend/**/*.ts', 'shared/**/*.ts'], [eslint, 'deno:stop', 'deno:start']],
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
@@ -651,7 +685,7 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno:start', 'exec:test', 'cypress', 'deno:stop', 'flow:stop'])
-  grunt.registerTask('test:unit', ['deno:start', 'exec:test', 'deno:stop'])
+  grunt.registerTask('test:unit', ['deno:start', 'exec:test', 'exec:testWithDeno', 'deno:stop'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers

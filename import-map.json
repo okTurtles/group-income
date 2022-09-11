@@ -3,6 +3,7 @@
     "~/backend/": "./backend/",
     "~/shared/": "./shared/",
     "~/": "./",
+    "@common/": "./frontend/common/",
     "@sbp/": "https://cdn.skypack.dev/@sbp/",
 
     "fmt/": "https://deno.land/std@0.138.0/fmt/",
@@ -10,9 +11,11 @@
 
     "blakejs": "https://cdn.skypack.dev/blakejs",
     "buffer": "https://cdn.skypack.dev/buffer",
+    "dompurify": "https://cdn.skypack.dev/dompurify",
     "multihashes": "https://esm.sh/multihashes",
     "pogo": "https://raw.githubusercontent.com/snowteamer/pogo/master/main.ts",
     "pogo/": "https://raw.githubusercontent.com/snowteamer/pogo/master/",
-    "tweetnacl": "https://cdn.skypack.dev/tweetnacl"
+    "tweetnacl": "https://cdn.skypack.dev/tweetnacl",
+    "vue": "https://esm.sh/vue@2.7.10"
   }
 }

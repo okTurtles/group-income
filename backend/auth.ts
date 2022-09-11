@@ -3,7 +3,7 @@
 // https://hapijs.com/tutorials/auth
 // https://hapijs.com/tutorials/plugins
 
-import { verify, b64ToStr } from '~/shared/functions.js'
+import { verify, b64ToStr } from '~/shared/functions.ts'
 
 const { BadRequest, PermissionDenied } = Deno.errors
 
