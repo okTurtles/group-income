@@ -10,8 +10,7 @@ import { blake32Hash } from '~/shared/functions.js'
 import * as Common from '@common/common.js'
 import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
-import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS, MAIL_TYPE_MESSAGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
-import { createInvite } from '~/frontend/model/contracts/shared/functions.js'
+import { MAIL_TYPE_MESSAGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
@@ -138,18 +137,15 @@ describe('Full walkthrough', function () {
     return msg
   }
   function createGroup (name: string, hooks: Object = {}): Promise {
-    const initialInvite = createInvite({
+    /* const initialInvite = createInvite({
       quantity: 60,
       creator: INVITE_INITIAL_CREATOR,
       expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
-    })
+    }) */
     return sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/group',
       keys: [],
       data: {
-        invites: {
-          [initialInvite.inviteSecret]: initialInvite
-        },
         settings: {
           // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
           groupName: name,

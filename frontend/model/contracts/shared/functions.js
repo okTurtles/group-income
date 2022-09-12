@@ -1,8 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { INVITE_STATUS, MESSAGE_TYPES } from './constants.js'
-import { DAYS_MILLIS } from './time.js'
+import { MESSAGE_TYPES } from './constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // !!!!!!!!!!!!!!!
@@ -19,30 +18,6 @@ import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 // THIS, AND SHOULD INCLUDE THOSE FUNCTIONS (WITHOUT EXPORTING THEM),
 // DIRECTLY IN YOUR CONTRACT DEFINITION FILE. THEN YOU CAN MODIFY
 // THEM AS MUCH AS YOU LIKE (and generate new contract versions out of them).
-
-// group.js related
-
-export function createInvite ({ quantity = 1, creator, expires, invitee }: {
-  quantity: number, creator: string, expires: number, invitee?: string
-}): {|
-  creator: string,
-  expires: number,
-  inviteSecret: string,
-  invitee: void | string,
-  quantity: number,
-  responses: {...},
-  status: string,
-|} {
-  return {
-    inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
-    quantity,
-    creator,
-    invitee,
-    status: INVITE_STATUS.VALID,
-    responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: Date.now() + DAYS_MILLIS * expires
-  }
-}
 
 // chatroom.js related
 

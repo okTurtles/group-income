@@ -152,7 +152,7 @@ export default ({
       'currentGroupId'
     ]),
     invitesToShow () {
-      const { invites } = this.currentGroupState
+      const { invites } = this.currentGroupState._vm
 
       if (!invites) { return [] }
 

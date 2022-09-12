@@ -14,7 +14,7 @@ import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, c
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
-import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
@@ -269,7 +269,7 @@ sbp('chelonia/defineContract', {
       return getters.groupMembersByUsername.length
     },
     groupMembersPending (state, getters) {
-      const invites = getters.currentGroupState.invites
+      const invites = getters.currentGroupState._vm.invites
       const pendingMembers = {}
       for (const inviteId in invites) {
         const invite = invites[inviteId]
@@ -389,7 +389,6 @@ sbp('chelonia/defineContract', {
     // this is the constructor
     'gi.contracts/group': {
       validate: objectMaybeOf({
-        invites: mapOf(string, inviteType),
         settings: objectMaybeOf({
           // TODO: add 'groupPubkey'
           groupName: string,
@@ -414,7 +413,6 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           payments: {},
           paymentsByPeriod: {},
-          invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
             groupCreator: meta.username,
@@ -772,7 +770,7 @@ sbp('chelonia/defineContract', {
           inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
         })(data)
 
-        if (!state.invites[data.inviteSecret]) {
+        if (!state._vm.invites[data.inviteSecret]) {
           throw new TypeError(L('The link does not exist.'))
         }
       },

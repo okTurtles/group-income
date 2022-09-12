@@ -67,7 +67,7 @@ export default (sbp('sbp/selectors/register', {
         contractName: 'gi.contracts/chatroom'
       })
 
-      const chatroom = await sbp('chelonia/with-env', '', {
+      const chatroom = await sbp('chelonia/withEnv', '', {
         additionalKeys: {
           [CSKid]: CSK,
           [CEKid]: CEK
@@ -110,7 +110,7 @@ export default (sbp('sbp/selectors/register', {
 
       const contractID = chatroom.contractID()
 
-      await sbp('chelonia/with-env', contractID, { additionalKeys: { [CEKid]: CEK } }, ['chelonia/contract/sync', contractID])
+      await sbp('chelonia/withEnv', contractID, { additionalKeys: { [CEKid]: CEK } }, ['chelonia/contract/sync', contractID])
 
       const userID = rootState.loggedIn.identityContractID
       await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID })

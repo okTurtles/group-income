@@ -209,11 +209,11 @@ export default (sbp('sbp/selectors/register', {
       return stack
     }
   },
-  'chelonia/with-env': async function (contractID: string, env: Object, sbpInvocation: Array<*>) {
+  'chelonia/withEnv': async function (contractID: string, env: Object, sbpInvocation: Array<*>) {
     const savedEnv = this.env
     this.env = env
     try {
-      return await sbp('okTurtles.eventQueue/queueEvent', `chelonia/with-env/${contractID}`, sbpInvocation)
+      return await sbp('okTurtles.eventQueue/queueEvent', `chelonia/withEnv/${contractID}`, sbpInvocation)
     } finally {
       this.env = savedEnv
     }
@@ -450,7 +450,10 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/latestContractState': async function (contractID: string) {
     const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
-    let state = cloneDeep(sbp(this.config.stateSelector)[contractID] || Object.create(null))
+    if (sbp(this.config.stateSelector)[contractID]) {
+      return cloneDeep(sbp(this.config.stateSelector)[contractID])
+    }
+    let state = Object.create(null)
     // fast-path
     try {
       for (const event of events) {

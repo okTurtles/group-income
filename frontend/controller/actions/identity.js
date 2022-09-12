@@ -140,7 +140,7 @@ export default (sbp('sbp/selectors/register', {
     let userID
     // next create the identity contract itself and associate it with the mailbox
     try {
-      const user = await sbp('chelonia/with-env', '', {
+      const user = await sbp('chelonia/withEnv', '', {
         additionalKeys: {
           [IPKid]: IPK,
           [CSKid]: CSK,
@@ -205,8 +205,8 @@ export default (sbp('sbp/selectors/register', {
 
       userID = user.contractID()
 
-      await sbp('chelonia/with-env', userID, { additionalKeys: { [IEKid]: IEK } }, ['chelonia/contract/sync', userID])
-      await sbp('chelonia/with-env', userID, { additionalKeys: { [IEKid]: IEK } }, ['gi.actions/identity/setAttributes', {
+      await sbp('chelonia/withEnv', userID, { additionalKeys: { [IEKid]: IEK } }, ['chelonia/contract/sync', userID])
+      await sbp('chelonia/withEnv', userID, { additionalKeys: { [IEKid]: IEK } }, ['gi.actions/identity/setAttributes', {
         contractID: userID,
         data: { mailbox: mailboxID },
         signingKeyId: CSKid,
@@ -378,7 +378,7 @@ export default (sbp('sbp/selectors/register', {
       sbp('state/vuex/commit', 'login', { username, identityContractID })
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
-      sbp('chelonia/with-env', identityContractID, { additionalKeys }, ['chelonia/contract/sync', contractIDs]).then(async function () {
+      sbp('chelonia/withEnv', identityContractID, { additionalKeys }, ['chelonia/contract/sync', contractIDs]).then(async function () {
         // contract sync might've triggered an async call to /remove, so wait before proceeding
         await sbp('chelonia/contract/wait', contractIDs)
         // similarly, since removeMember may have triggered saveOurLoginState asynchronously,

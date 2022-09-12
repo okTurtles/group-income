@@ -115,7 +115,9 @@ export default ({
           return
         }
         const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
-        const invite = state.invites[this.ephemeral.query.secret]
+        // TODO: Derive public key from secret
+        const publicKey = this.ephemeral.query.secret
+        const invite = state._vm.invites[publicKey]
         if (!invite || invite.status !== INVITE_STATUS.VALID) {
           console.error('Join.vue error: Link is not valid.')
           this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')

@@ -19,6 +19,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
+import { serializeKey } from '../../../../shared/domains/chelonia/crypto.js'
 
 export default ({
   name: 'InvitationLinkModal',
@@ -31,8 +32,15 @@ export default ({
       'currentGroupState'
     ]),
     welcomeInviteSecret () {
-      const invites = this.currentGroupState.invites
-      return Object.keys(invites).find(invite => invites[invite].creator === INVITE_INITIAL_CREATOR)
+      const invites = this.currentGroupState._vm.invites
+      console.log({ invites })
+      const initialInvite = Object.keys(invites).find(invite => invites[invite].creator === INVITE_INITIAL_CREATOR)
+      console.log({ initialInvite })
+      const key = this.currentGroupState._volatile.keys[initialInvite]
+      console.log({ key })
+      if (key) {
+        return serializeKey(key, true)
+      }
     },
     link () {
       return buildInvitationUrl(this.$store.state.currentGroupId, this.welcomeInviteSecret)

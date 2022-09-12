@@ -18,7 +18,7 @@ const saltsAndEncryptedHashedPassword = (p: string, secretKey: Uint8Array, hash:
 }
 
 describe('ZKPP Salt functions', () => {
-  it('register', async () => {
+  it('register() conforms to the API to register a new salt', async () => {
     const keyPair = nacl.box.keyPair()
     const publicKey = Buffer.from(keyPair.publicKey).toString('base64url')
     const publicKeyHash = Buffer.from(nacl.hash(Buffer.from(publicKey))).toString('base64url')
@@ -42,7 +42,7 @@ describe('ZKPP Salt functions', () => {
     should(res3).equal(true, 'register should allow new entry (bob)')
   })
 
-  it('getContractSalt', async () => {
+  it('getContractSalt() conforms to the API to obtain salt', async () => {
     const keyPair = nacl.box.keyPair()
     const publicKey = Buffer.from(keyPair.publicKey).toString('base64url')
     const publicKeyHash = Buffer.from(nacl.hash(Buffer.from(publicKey))).toString('base64url')
@@ -75,7 +75,7 @@ describe('ZKPP Salt functions', () => {
     should(retrievedContractSalt).equal(contractSalt, 'mismatched contractSalt')
   })
 
-  it('update', async () => {
+  it('update() conforms to the API to update salt', async () => {
     const keyPair = nacl.box.keyPair()
     const publicKey = Buffer.from(keyPair.publicKey).toString('base64url')
     const publicKeyHash = Buffer.from(nacl.hash(Buffer.from(publicKey))).toString('base64url')

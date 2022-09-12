@@ -163,7 +163,7 @@ export default (sbp('sbp/selectors/register', {
     const signedPayload = message.signedPayload()
     const env = this.env
     const self = this
-    if (!state._vm) state._vm = {}
+    if (!state._vm) state._vm = Object.create(null)
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         const keys = { ...env.additionalKeys, ...state._volatile?.keys }
@@ -178,6 +178,14 @@ export default (sbp('sbp/selectors/register', {
               } catch (e) {
                 console.error('Decryption error', e)
               }
+            }
+          }
+          if (key.meta?.type === 'inviteKey') {
+            if (!state._vm.invites) state._vm.invites = Object.create(null)
+            state._vm.invites[key.id] = {
+              creator: key.meta.creator,
+              quantity: key.meta.quantity,
+              expires: key.meta.expires
             }
           }
         }
@@ -236,6 +244,7 @@ export default (sbp('sbp/selectors/register', {
           message.head().previousHEAD,
           v
         ]
+        // TODO: Update count on _vm.invites
       },
       [GIMessage.OP_KEY_REQUEST_RESPONSE] (v: GIOpKeyRequestResponse) {
         if (state._vm.pending_key_requests && v in state._vm.pending_key_requests) {
@@ -264,6 +273,14 @@ export default (sbp('sbp/selectors/register', {
               }
             }
           }
+          if (key.meta?.type === 'inviteKey') {
+            if (state._vm.invites) state._vm.invites = Object.create(null)
+            state._vm.invites[key.id] = {
+              creator: key.meta.creator,
+              quantity: key.meta.quantity,
+              expires: key.meta.expires
+            }
+          }
         }
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
@@ -272,6 +289,7 @@ export default (sbp('sbp/selectors/register', {
           delete state._vm.authorizedKeys[v]
           if (state._volatile?.keys) { delete state._volatile.keys[v] }
         })
+        // TODO: Revoke invite keys if (key.meta?.type === 'inviteKey')
       },
       [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
     }

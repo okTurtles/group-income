@@ -1,6 +1,10 @@
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
 
+export const base64ToBase64url = (s: string): string => s.replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
+
+export const base64urlToBase64 = (s: string): string => s.replace(/_/g, '/').replace(/-/g, '+') + '='.repeat((4 - s.length % 4) % 4)
+
 export const hashStringArray = (...args: Array<Uint8Array | string>): Uint8Array => {
   return nacl.hash(Buffer.concat(args.map((s) => nacl.hash(Buffer.from(s)))))
 }
@@ -10,11 +14,11 @@ export const hashRawStringArray = (...args: Array<Uint8Array | string>): Uint8Ar
 }
 
 export const randomNonce = (): string => {
-  return Buffer.from(nacl.randomBytes(12)).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')
+  return base64ToBase64url(Buffer.from(nacl.randomBytes(12)).toString('base64'))
 }
 
 export const hash = (v: string): string => {
-  return Buffer.from(nacl.hash(Buffer.from(v))).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
+  return base64ToBase64url(Buffer.from(nacl.hash(Buffer.from(v))).toString('base64'))
 }
 
 export const computeCAndHc = (r: string, s: string, h: string): [Uint8Array, Uint8Array] => {
@@ -31,12 +35,12 @@ export const encryptContractSalt = (c: Uint8Array, contractSalt: string): string
 
   const encryptedContractSalt = nacl.secretbox(Buffer.from(contractSalt), nonce, encryptionKey)
 
-  return Buffer.concat([nonce, encryptedContractSalt]).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')
+  return base64ToBase64url(Buffer.concat([nonce, encryptedContractSalt]).toString('base64'))
 }
 
 export const decryptContractSalt = (c: Uint8Array, encryptedContractSaltBox: string): string => {
   const encryptionKey = hashRawStringArray('CS', c).slice(0, nacl.secretbox.keyLength)
-  const encryptedContractSaltBoxBuf = Buffer.from(encryptedContractSaltBox.replace(/_/g, '/').replace(/-/g, '+'), 'base64')
+  const encryptedContractSaltBoxBuf = Buffer.from(base64urlToBase64(encryptedContractSaltBox), 'base64')
 
   const nonce = encryptedContractSaltBoxBuf.slice(0, nacl.secretbox.nonceLength)
   const encryptedContractSalt = encryptedContractSaltBoxBuf.slice(nacl.secretbox.nonceLength)
@@ -59,7 +63,7 @@ export const boxKeyPair = (): any => {
 }
 
 export const saltAgreement = (publicKey: string, secretKey: Uint8Array): false | [string, string] => {
-  const publicKeyBuf = Buffer.from(publicKey.replace(/_/g, '/').replace(/-/g, '+'), 'base64')
+  const publicKeyBuf = Buffer.from(base64urlToBase64(publicKey), 'base64')
   const dhKey = nacl.box.before(publicKeyBuf, secretKey)
 
   if (!publicKeyBuf || publicKeyBuf.byteLength !== nacl.box.publicKeyLength) {
@@ -81,7 +85,7 @@ export const parseRegisterSalt = (publicKey: string, secretKey: Uint8Array, encr
   const [authSalt, contractSalt] = saltAgreementRes
 
   const encryptionKey = nacl.hash(Buffer.from(authSalt + contractSalt)).slice(0, nacl.secretbox.keyLength)
-  const encryptedHashedPasswordBuf = Buffer.from(encryptedHashedPassword.replace(/_/g, '/').replace(/-/g, '+'), 'base64')
+  const encryptedHashedPasswordBuf = Buffer.from(base64urlToBase64(encryptedHashedPassword), 'base64')
 
   const hashedPasswordBuf = nacl.secretbox.open(encryptedHashedPasswordBuf.slice(nacl.box.nonceLength), encryptedHashedPasswordBuf.slice(0, nacl.box.nonceLength), encryptionKey)
 
@@ -107,5 +111,5 @@ export const buildRegisterSaltRequest = async (publicKey: string, secretKey: Uin
 
   const encryptedHashedPasswordBuf = nacl.secretbox(Buffer.from(hashedPassword), nonce, encryptionKey)
 
-  return [contractSalt, Buffer.concat([nonce, encryptedHashedPasswordBuf]).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')]
+  return [contractSalt, base64ToBase64url(Buffer.concat([nonce, encryptedHashedPasswordBuf]).toString('base64'))]
 }

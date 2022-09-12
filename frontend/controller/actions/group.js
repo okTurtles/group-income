@@ -3,7 +3,6 @@
 import sbp from '@sbp/sbp'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
-import { createInvite } from '@model/contracts/shared/functions.js'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
   INVITE_INITIAL_CREATOR,
@@ -85,27 +84,26 @@ export default (sbp('sbp/selectors/register', {
     // eslint-disable-next-line camelcase
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
+    const inviteKey = keygen(EDWARDS25519SHA512BATCH)
 
     // Key IDs
     const CSKid = keyId(CSK)
     const CEKid = keyId(CEK)
+    const inviteKeyId = keyId(inviteKey)
 
     // Public keys to be stored in the contract
     const CSKp = serializeKey(CSK, false)
     const CEKp = serializeKey(CEK, false)
+    const inviteKeyP = serializeKey(inviteKey, false)
 
     // Secret keys to be stored encrypted in the contract
     const CSKs = encrypt(CEK, serializeKey(CSK, true))
     const CEKs = encrypt(CEK, serializeKey(CEK, true))
+    const inviteKeyS = encrypt(CEK, serializeKey(inviteKey, true))
 
     const rootState = sbp('state/vuex/state')
 
     try {
-      const initialInvite = createInvite({
-        quantity: 60,
-        creator: INVITE_INITIAL_CREATOR,
-        expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
-      })
       const proposalSettings = {
         rule: ruleName,
         ruleSettings: {
@@ -121,10 +119,11 @@ export default (sbp('sbp/selectors/register', {
         // handle Flowtype annotations, even though our .babelrc should make it work.
         distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
       }
-      const message = await sbp('chelonia/with-env', '', {
+      const message = await sbp('chelonia/withEnv', '', {
         additionalKeys: {
           [CSKid]: CSK,
-          [CEKid]: CEK
+          [CEKid]: CEK,
+          [inviteKeyId]: inviteKey
         }
       }, ['chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
@@ -158,12 +157,25 @@ export default (sbp('sbp/selectors/register', {
                 content: CEKs
               }
             }
+          },
+          {
+            id: inviteKeyId,
+            type: inviteKey.type,
+            data: inviteKeyP,
+            permissions: [GIMessage.OP_KEY_REQUEST],
+            meta: {
+              type: 'inviteKey',
+              quantity: 60,
+              creator: INVITE_INITIAL_CREATOR,
+              expires: Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
+              private: {
+                keyId: CEKid,
+                content: inviteKeyS
+              }
+            }
           }
         ],
         data: {
-          invites: {
-            [initialInvite.inviteSecret]: initialInvite
-          },
           settings: {
             // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
             groupName: name,
@@ -201,11 +213,11 @@ export default (sbp('sbp/selectors/register', {
 
       const contractID = message.contractID()
 
-      await sbp('chelonia/with-env', contractID, { additionalKeys: { [CEKid]: CEK } }, ['chelonia/contract/sync', contractID])
+      await sbp('chelonia/withEnv', contractID, { additionalKeys: { [CEKid]: CEK } }, ['chelonia/contract/sync', contractID])
       saveLoginState('creating', contractID)
 
       // create a 'General' chatroom contract and let the creator join
-      await sbp('chelonia/with-env', contractID, { additionalKeys: { [CEKid]: CEK } }, ['gi.actions/group/addAndJoinChatRoom', {
+      await sbp('chelonia/withEnv', contractID, { additionalKeys: { [CEKid]: CEK } }, ['gi.actions/group/addAndJoinChatRoom', {
         contractID,
         data: {
           attributes: {
