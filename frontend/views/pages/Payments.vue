@@ -162,6 +162,11 @@ import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
 import { randomHexString } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
+import {
+  dummyLightningUsers,
+  dummyLightningTodoItems,
+  dummyLightningPaymentDetails
+} from '@view-utils/lightning-dummy-data.js'
 
 export default ({
   name: 'Payments',
@@ -189,13 +194,13 @@ export default ({
         selectedTodoItems: null
       },
       config: {
+        // TODO: maybe externalize the option names as contants, (e.g. PAYMENTS_METHOD.MANUAL, PAYMENTS_METHOD.LIGHTNING)
+        //       once the payment method is implemented in the 'gi.contracts/group'
         paymentMethodFilterOptions: {
           'all': L('ALL'),
           'lightning': L('Lightning'),
           'manual': L('Manual')
         }
-        // TODO: maybe externalize the option names as contants, (e.g. PAYMENTS_METHOD.MANUAL, PAYMENTS_METHOD.LIGHTNING)
-        //       once the payment method is implemented in the 'gi.contracts/group'
       }
     }
   },
@@ -428,24 +433,12 @@ export default ({
       this.openModal('RecordPayment', { todoItems: this.ephemeral.selectedTodoItems })
     },
     async openLightningPayments () {
-      const fakeUsers = [
-        {
-          username: 'fake-user-1',
-          email: 'fake1@abc.com',
-          password: '123456789'
-        },
-        {
-          username: 'fake-user-2',
-          email: 'fake2@def.com',
-          password: '123456789'
-        }
-      ]
       const wait = (milli) => new Promise(resolve => setTimeout(resolve, milli))
       let contractID
 
       // check if the fake users have been created and sign them up if not.
       // TODO: to be removed once lightning network is implemented
-      for (const userData of fakeUsers) {
+      for (const userData of dummyLightningUsers) {
         contractID = await sbp('namespace/lookup', userData.username)
 
         if (!contractID) {
@@ -460,26 +453,11 @@ export default ({
         await wait(100)
       }
 
-      this.openModal('SendPaymentsViaLightning')
+      this.openModal('SendPaymentsViaLightning', { todoItems: dummyLightningTodoItems })
     },
     openLightningPaymentDetail () {
-      const dummyLightningPaymentData = {
-        data: {
-          toUser: 'fake-user-2',
-          amount: 98.57142857,
-          groupMincome: 1000,
-          transactionId: randomHexString(50),
-          memo: 'Love you so much! Thank you for the Portuguese class last week. P.S.: sent to the Paypal email on your profile.',
-          currencyFromTo: ['USD', 'USD']
-        },
-        meta: {
-          createdDate: '2022-09-08T07:54:13.809Z',
-          username: 'fake-user-1'
-        }
-      }
-
       this.openModal('PaymentDetail', {
-        lightningPayment: dummyLightningPaymentData
+        lightningPayment: dummyLightningPaymentDetails
       })
     }
   }

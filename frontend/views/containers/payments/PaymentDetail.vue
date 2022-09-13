@@ -27,7 +27,7 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
       i18n.has-text-1 Notes
       p.has-text-bold {{ payment.data.memo }}
 
-  .buttons
+  .buttons(v-if='!lightningPayment')
     i18n.button.is-danger.is-outlined.is-small(
       tag='button'
       @click='submit'
