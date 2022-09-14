@@ -16,7 +16,7 @@ modal-base-template(
         i18n.is-title-3.c-sub-title(tag='h3') Send payment
 
         record-payments-list(
-          :paymentsList='ephemeral.dummyListData'
+          :paymentsList='form.paymentsToSend'
           :addDonationFee='ephemeral.addDonationFee'
           paymentType='lightning'
           @update='updateItem'
@@ -88,34 +88,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from './RecordPaymentsList.vue'
 import QrCode from '@components/QrCode.vue'
 import CopyableInput from '@components/CopyableInput.vue'
-import { randomHexString, debounce } from '@model/contracts/shared/giLodash.js'
-
-const dummyListData = [
-  {
-    hash: randomHexString(10),
-    username: 'fake-user-1',
-    displayName: 'fake-user-1',
-    amount: 98.57,
-    total: 98.57,
-    partial: false,
-    isLate: false,
-    date: '2022-09-24T11:27:28.893Z',
-    index: 0,
-    checked: false
-  },
-  {
-    hash: randomHexString(10),
-    username: 'fake-user-2',
-    displayName: 'fake-user-2',
-    amount: 250,
-    total: 250,
-    partial: false,
-    isLate: false,
-    date: '2022-09-24T11:27:28.893Z',
-    index: 1,
-    checked: false
-  }
-]
+import { debounce } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'SendPayemntsViaLightning',
@@ -125,10 +98,14 @@ export default ({
     CopyableInput,
     QrCode
   },
+  props: {
+    todoItems: {
+      type: Array
+    }
+  },
   data () {
     return {
       ephemeral: {
-        dummyListData,
         displayMemo: false,
         addDonationFee: true
       },
@@ -136,13 +113,21 @@ export default ({
         debouncedMemoUpdate: debounce(this.onMemoUpdate, 650)
       },
       form: {
-        memo: ''
+        memo: '',
+        paymentsToSend: []
       }
     }
   },
+  created () {
+    this.form.paymentsToSend = this.todoItems.map((payment, index) => ({
+      ...payment,
+      index, // A link between original payment and this copy
+      checked: false
+    }))
+  },
   computed: {
     dummyQueryString () {
-      const checkedToStr = this.ephemeral.dummyListData.filter(item => item.checked)
+      const checkedToStr = this.form.paymentsToSend.filter(item => item.checked)
         .map(({ username, amount }) => `to=${username}_amount=${amount}`)
         .join('?')
 
@@ -163,8 +148,8 @@ export default ({
   },
   methods: {
     updateItem ({ index, ...data }) {
-      Vue.set(this.ephemeral.dummyListData, index, {
-        ...this.ephemeral.dummyListData[index],
+      Vue.set(this.form.paymentsToSend, index, {
+        ...this.form.paymentsToSend[index],
         ...data
       })
     },
