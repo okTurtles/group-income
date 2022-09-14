@@ -12,10 +12,17 @@ sbp('sbp/selectors/register', {
       headers: {
         'Content-Type': 'application/json'
       }
-    }).then(handleFetchResult('json'))
+    }).then(handleFetchResult('json')).then(result => {
+      sbp('state/vuex/state').namespaceLookups[name] = value
+      return result
+    })
   },
   'namespace/lookup': (name: string) => {
     // TODO: should `name` be encodeURI'd?
+    const cache = sbp('state/vuex/state').namespaceLookups
+    if (name in cache) {
+      return cache[name]
+    }
     return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${name}`).then((r: Object) => {
       if (!r.ok) {
         console.warn(`namespace/lookup: ${r.status} for ${name}`)
@@ -25,6 +32,11 @@ sbp('sbp/selectors/register', {
         return null
       }
       return r['text']()
+    }).then(value => {
+      if (value === null) {
+        return null
+      }
+      return (cache[name] = value)
     })
   }
 })
