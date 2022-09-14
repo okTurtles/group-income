@@ -5,7 +5,7 @@
 
 import { verify, b64ToStr } from '~/shared/functions.ts'
 
-const { BadRequest, PermissionDenied } = Deno.errors
+const { PermissionDenied } = Deno.errors
 
 export default {
   name: 'gi-auth',
@@ -20,12 +20,12 @@ export default {
           // NOTE: if you want to add any signature verification, do it here
           // eslint-disable-next-line no-constant-condition
           if (false) {
-            if (!scheme.includes('gi')) h.unauthenticated(new BadRequest('Bad authentication'))
+            if (!scheme.includes('gi')) h.unauthenticated(new PermissionDenied('Bad authentication'))
 
             try {
               json = JSON.parse(b64ToStr(json))
             } catch (e) {
-              return h.unauthenticated(new BadRequest('Invalid token format'))
+              return h.unauthenticated(new PermissionDenied('Invalid token format'))
             }
             // http://hapijs.com/api/#serverauthschemename-scheme
             const isValid = verify(json.msg, json.key, json.sig)

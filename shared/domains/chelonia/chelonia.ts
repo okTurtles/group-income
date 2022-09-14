@@ -1,9 +1,11 @@
+declare var process: any
+
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import './internals.ts'
 import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.ts'
-import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.ts'
+import { createClient, NOTIFICATION_TYPE, PubsubClient } from '~/shared/pubsub.ts'
 import { merge, cloneDeep, randomHexString, intersection, difference } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr } from '~/shared/functions.ts'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
@@ -12,16 +14,93 @@ import { GIMessage } from './GIMessage.ts'
 import { ChelErrorUnrecoverable } from './errors.ts'
 import type { GIOpContract, GIOpActionUnencrypted } from './GIMessage.ts'
 
-// TODO: define ChelContractType for /defineContract
+type JSONType = ReturnType<typeof JSON.parse>
+
+export type CheloniaConfig = {
+  connectionOptions: {
+    maxRetries: number
+    reconnectOnTimeout: boolean
+    timeout: number
+  }
+  connectionURL: null | string
+  contracts: {
+    defaults: {
+      modules: Record<string, any>
+      exposedGlobals: Record<string, boolean>
+      allowedDomains: string[]
+      allowedSelectors: string[]
+      preferSlim: boolean
+    }
+    manifests: Record<string, string> // Contract names -> manifest hashes
+    overrides: Record<string, any> // Override default values per-contract.
+  }
+  decryptFn: (arg: string) => JSONType
+  encryptFn: (arg: JSONType) => string
+  hooks: {
+    preHandleEvent: null | ((message: GIMessage) => Promise<void>)
+    postHandleEvent: null | ((message: GIMessage) => Promise<void>)
+    processError: null | ((e: Error, message: GIMessage) => void)
+    sideEffectError: null | ((e: Error, message: GIMessage) => void)
+    handleEventError: null | ((e: Error, message: GIMessage) => void)
+    syncContractError: null | ((e: Error, contractID: string) => void)
+    pubsubError: null | ((e: Error, socket: WebSocket) => void)
+  }
+  postOp?: (state: any, message: any) => boolean
+  preOp?: (state: any, message: any) => boolean
+  reactiveDel: (obj: any, key: string) => void
+  reactiveSet: (obj: any, key: string, value: any) => typeof value
+  skipActionProcessing: boolean
+  skipSideEffects: boolean
+  skipProcessing?: boolean
+  stateSelector: string // Override to integrate with, for example, Vuex.
+  whitelisted: (action: string) => boolean
+}
+
+export type CheloniaInstance = {
+  config: CheloniaConfig;
+  contractsModifiedListener?: () => void;
+  contractSBP?: any;
+  defContract?: ContractDefinition;
+  defContractManifest?: string;
+  defContractSBP?: SBP;
+  defContractSelectors?: string[];
+  manifestToContract: Record<string, any>;
+  sideEffectStack: (contractID: string) => any[];
+  sideEffectStacks: Record<string, any[]>;
+  state: CheloniaState;
+  whitelistedActions: Record<string, any>;
+}
+
+export type CheloniaState = {
+  contracts: Record<string, { type: string; HEAD: string; }>; // Contracts we've subscribed to.
+  pending: string[]; // Prevents processing unexpected data from a malicious server.
+}
+
+export type ContractDefinition = {
+  actions: any
+  getters: any
+  manifest: string
+  metadata: {
+    create(): any
+    validate(meta: any, args: any): void
+    validate(): void
+  }
+  methods: any
+  name: string
+  sbp: SBP
+  state (contractID: string): any
+}
+
+type SBP = (selector: string, ...args: any[]) => any
 
 export type ChelRegParams = {
   contractName: string;
   server?: string; // TODO: implement!
   data: Object;
   hooks?: {
-    prepublishContract?: (GIMessage) => void;
-    prepublish?: (GIMessage) => void;
-    postpublish?: (GIMessage) => void;
+    prepublishContract?: (msg: GIMessage) => void;
+    prepublish?: (msg: GIMessage) => void;
+    postpublish?: (msg: GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
 }
@@ -32,9 +111,9 @@ export type ChelActionParams = {
   contractID: string;
   data: Object;
   hooks?: {
-    prepublishContract?: (GIMessage) => void;
-    prepublish?: (GIMessage) => void;
-    postpublish?: (GIMessage) => void;
+    prepublishContract?: (msg: GIMessage) => void;
+    prepublish?: (msg: GIMessage) => void;
+    postpublish?: (msg: GIMessage) => void;
   };
   publishOptions?: { maxAttempts: number };
 }
@@ -72,8 +151,8 @@ export default sbp('sbp/selectors/register', {
         manifests: {} // override! contract names => manifest hashes
       },
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
-      reactiveSet: (obj, key, value) => { obj[key] = value; return value }, // example: set to Vue.set
-      reactiveDel: (obj, key) => { delete obj[key] },
+      reactiveSet: (obj: any, key: string, value: any): typeof value => { obj[key] = value; return value }, // example: set to Vue.set
+      reactiveDel: (obj: any, key: string): void => { delete obj[key] },
       skipActionProcessing: false,
       skipSideEffects: false,
       connectionOptions: {
@@ -106,10 +185,10 @@ export default sbp('sbp/selectors/register', {
       return stack
     }
   },
-  'chelonia/config': function () {
+  'chelonia/config': function (): CheloniaConfig {
     return cloneDeep(this.config)
   },
-  'chelonia/configure': async function (config: Object) {
+  'chelonia/configure': async function (config: CheloniaConfig) {
     merge(this.config, config)
     // merge will strip the hooks off of config.hooks when merging from the root of the object
     // because they are functions and cloneDeep doesn't clone functions
@@ -123,7 +202,7 @@ export default sbp('sbp/selectors/register', {
     }
   },
   // TODO: allow connecting to multiple servers at once
-  'chelonia/connect': function (): Object {
+  'chelonia/connect': function (): PubsubClient {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')
     if (!this.config.connectionOptions) throw new Error('config.connectionOptions missing')
     if (this.pubsub) {
@@ -138,14 +217,14 @@ export default sbp('sbp/selectors/register', {
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       messageHandlers: {
-        [NOTIFICATION_TYPE.ENTRY] (msg) {
+        [NOTIFICATION_TYPE.ENTRY] (msg: { data: JSONType }) {
           // We MUST use 'chelonia/private/in/enqueueHandleEvent' to ensure handleEvent()
           // is called AFTER any currently-running calls to 'chelonia/contract/sync'
           // to prevent gi.db from throwing "bad previousHEAD" errors.
           // Calling via SBP also makes it simple to implement 'test/backend.js'
           sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data))
         },
-        [NOTIFICATION_TYPE.APP_VERSION] (msg) {
+        [NOTIFICATION_TYPE.APP_VERSION] (msg: { data: JSONType }) {
           const ourVersion = process.env.GI_VERSION
           const theirVersion = msg.data
 
@@ -162,7 +241,7 @@ export default sbp('sbp/selectors/register', {
     }
     return this.pubsub
   },
-  'chelonia/defineContract': function (contract: Object) {
+  'chelonia/defineContract': function (contract: ContractDefinition) {
     if (!ACTION_REGEX.exec(contract.name)) throw new Error(`bad contract name: ${contract.name}`)
     if (!contract.metadata) contract.metadata = { validate () {}, create: () => ({}) }
     if (!contract.getters) contract.getters = {}
@@ -176,7 +255,7 @@ export default sbp('sbp/selectors/register', {
       [`${contract.manifest}/${contract.name}/getters`]: () => contract.getters,
       // 2 ways to cause sideEffects to happen: by defining a sideEffect function in the
       // contract, or by calling /pushSideEffect w/async SBP call. Can also do both.
-      [`${contract.manifest}/${contract.name}/pushSideEffect`]: (contractID: string, asyncSbpCall: Array<any>) => {
+      [`${contract.manifest}/${contract.name}/pushSideEffect`]: (contractID: string, asyncSbpCall: any[]) => {
         // if this version of the contract is pushing a sideEffect to a function defined by the
         // contract itself, make sure that it calls the same version of the sideEffect
         const [sel] = asyncSbpCall
@@ -196,7 +275,7 @@ export default sbp('sbp/selectors/register', {
       //       - whatever keys should be passed in as well
       //       base it off of the design of encryptedAction()
       this.defContractSelectors.push(...sbp('sbp/selectors/register', {
-        [`${contract.manifest}/${action}/process`]: (message: Object, state: Object) => {
+        [`${contract.manifest}/${action}/process`]: (message: any, state: any) => {
           const { meta, data, contractID } = message
           // TODO: optimize so that you're creating a proxy object only when needed
           const gProxy = gettersProxy(state, contract.getters)
@@ -205,12 +284,13 @@ export default sbp('sbp/selectors/register', {
           contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
           contract.actions[action].process(message, { state, ...gProxy })
         },
-        [`${contract.manifest}/${action}/sideEffect`]: async (message: Object, state: Object) => {
+        [`${contract.manifest}/${action}/sideEffect`]: async (message: any, state: any) => {
           const sideEffects = this.sideEffectStack(message.contractID)
           while (sideEffects.length > 0) {
             const sideEffect = sideEffects.shift()
             try {
-              await contract.sbp(...sideEffect)
+              const [selector, ...args] = sideEffect
+              await contract.sbp(selector, ...args)
             } catch (e) {
               console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${message.description()}:`, sideEffect)
               this.sideEffectStacks[message.contractID] = [] // clear the side effects
@@ -278,7 +358,7 @@ export default sbp('sbp/selectors/register', {
       // This prevents handleEvent getting called with the wrong previousHEAD for an event.
       return sbp('chelonia/queueInvocation', contractID, [
         'chelonia/private/in/syncContract', contractID
-      ]).catch((err) => {
+      ]).catch((err: any) => {
         console.error(`[chelonia] failed to sync ${contractID}:`, err)
         throw err // re-throw the error
       })
@@ -305,43 +385,41 @@ export default sbp('sbp/selectors/register', {
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
-  'chelonia/out/eventsSince': async function (contractID: string, since: string) {
+  'chelonia/out/eventsSince': async function (contractID: string, since: string): Promise<string[] | void> {
     const events = await fetch(`${this.config.connectionURL}/eventsSince/${contractID}/${since}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
     }
   },
-  'chelonia/out/latestHash': function (contractID: string) {
+  'chelonia/out/latestHash': function (contractID: string): Promise<string> {
     return fetch(`${this.config.connectionURL}/latestHash/${contractID}`, {
       cache: 'no-store'
     }).then(handleFetchResult('text'))
   },
-  'chelonia/out/eventsBefore': async function (before: string, limit: number) {
+  'chelonia/out/eventsBefore': async function (before: string, limit: number): Promise<string[] | void> {
     if (limit <= 0) {
       console.error('[chelonia] invalid params error: "limit" needs to be positive integer')
       return
     }
-
     const events = await fetch(`${this.config.connectionURL}/eventsBefore/${before}/${limit}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
     }
   },
-  'chelonia/out/eventsBetween': async function (startHash: string, endHash: string, offset: number = 0) {
+  'chelonia/out/eventsBetween': async function (startHash: string, endHash: string, offset: number = 0): Promise<string[] | void> {
     if (offset < 0) {
       console.error('[chelonia] invalid params error: "offset" needs to be positive integer or zero')
       return
     }
-
     const events = await fetch(`${this.config.connectionURL}/eventsBetween/${startHash}/${endHash}?offset=${offset}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
     }
   },
-  'chelonia/latestContractState': async function (contractID: string) {
+  'chelonia/latestContractState': async function (contractID: string): Promise<any> {
     const events = await sbp('chelonia/out/eventsSince', contractID, contractID)
     let state = {}
     // fast-path
@@ -368,7 +446,7 @@ export default sbp('sbp/selectors/register', {
     return state
   },
   // 'chelonia/out' - selectors that send data out to the server
-  'chelonia/out/registerContract': async function (params: ChelRegParams) {
+  'chelonia/out/registerContract': async function (params: ChelRegParams): Promise<GIMessage> {
     const { contractName, hooks, publishOptions } = params
     const manifestHash = this.config.contracts.manifests[contractName]
     const contractInfo = this.manifestToContract[manifestHash]
@@ -427,9 +505,10 @@ function contractNameFromAction (action: string): string {
 }
 
 async function outEncryptedOrUnencryptedAction (
+  this: CheloniaInstance,
   opType: 'ae' | 'au',
   params: ChelActionParams
-) {
+): Promise<GIMessage> {
   const { action, contractID, data, hooks, publishOptions } = params
   const contractName = contractNameFromAction(action)
   const manifestHash = this.config.contracts.manifests[contractName]
@@ -461,10 +540,10 @@ async function outEncryptedOrUnencryptedAction (
 // The only way to pass in the state is by creating a Proxy object that does
 // that for us. This allows us to maintain compatibility with Vue.js and integrate
 // the contract getters into the Vue-facing getters.
-function gettersProxy (state: Object, getters: Object) {
-  const proxyGetters = new Proxy({}, {
-    get (target, prop) {
-      return getters[prop](state, proxyGetters)
+function gettersProxy (state: any, getters: any): { getters: any } {
+  const proxyGetters: any = new Proxy({}, {
+    get (target: any, prop: string) {
+      return (getters[prop] as any)(state, proxyGetters)
     }
   })
   return { getters: proxyGetters }

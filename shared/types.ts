@@ -8,9 +8,9 @@
 // https://flowtype.org/docs/modules.html#import-type
 // https://flowtype.org/docs/advanced-configuration.html
 
-export type JSONType = string | number | boolean | null | JSONObject | JSONArray;
-export type JSONObject = { [key:string]: JSONType };
-export type JSONArray = Array<JSONType>;
+export type JSONType = string | number | boolean | null | JSONObject | JSONArray
+export type JSONObject = { [key: string]: JSONType }
+export type JSONArray = Array<JSONType>
 
 export type ResType =
   | ResTypeErr | ResTypeOK | ResTypeAlready
@@ -27,7 +27,7 @@ export type ResTypeEntry = 'entry'
 // https://github.com/facebook/flow/issues/3041
 export type Response = {
 // export interface Response {
-  type: ResType;
-  err?: string;
+  type: ResType
+  err?: string
   data?: JSONType
 }

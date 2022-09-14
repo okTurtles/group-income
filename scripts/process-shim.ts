@@ -1,11 +1,13 @@
-window.process = {
+const process = {
   env: {
-    get (key) {
+    get (key: string): string | void {
       return Deno.env.get(key)
     },
-    set (key, value) {
+    set (key: string, value: string): void {
       return Deno.env.set(key, value)
     }
   }
 }
-console.log(process);
+
+// @ts-ignore
+globalThis.process = process

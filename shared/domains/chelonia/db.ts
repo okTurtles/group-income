@@ -1,3 +1,5 @@
+declare var process: any
+
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
@@ -13,37 +15,38 @@ sbp('sbp/selectors/unsafe', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/
 
 const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
-      'chelonia/db/get': function (key) {
+      'chelonia/db/get': function (key: string): Promise<string | null> {
         const id = sbp('chelonia/db/contractIdFromLogHEAD', key)
+        // @ts-ignore Property 'config' does not exist.
         return Promise.resolve(id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : null)
       },
-      'chelonia/db/set': function (key, value) { return Promise.resolve(value) },
-      'chelonia/db/delete': function () { return Promise.resolve() }
+      'chelonia/db/set': function (key: string, value: any): Promise<any> { return Promise.resolve(value) },
+      'chelonia/db/delete': function (): Promise<void> { return Promise.resolve() }
     }
   : {
-      'chelonia/db/get': function (key) {
+      'chelonia/db/get': function (key: any): any {
         return Promise.resolve(sbp('okTurtles.data/get', key))
       },
-      'chelonia/db/set': function (key, value) {
+      'chelonia/db/set': function (key: any, value: any) {
         return Promise.resolve(sbp('okTurtles.data/set', key, value))
       },
-      'chelonia/db/delete': function (key) {
+      'chelonia/db/delete': function (key: any) {
         return Promise.resolve(sbp('okTurtles.data/delete', key))
       }
     }
 
 export default (sbp('sbp/selectors/register', {
   ...dbPrimitiveSelectors,
-  'chelonia/db/logHEAD': function (contractID) {
+  'chelonia/db/logHEAD': function (contractID: string) {
     return `${contractID}${headSuffix}`
   },
-  'chelonia/db/contractIdFromLogHEAD': function (key) {
+  'chelonia/db/contractIdFromLogHEAD': function (key: string) {
     return key.endsWith(headSuffix) ? key.slice(0, -headSuffix.length) : null
   },
-  'chelonia/db/latestHash': function (contractID) {
+  'chelonia/db/latestHash': function (contractID: string) {
     return sbp('chelonia/db/get', sbp('chelonia/db/logHEAD', contractID))
   },
-  'chelonia/db/getEntry': async function (hash) {
+  'chelonia/db/getEntry': async function (hash: string) {
     try {
       const value = await sbp('chelonia/db/get', hash)
       if (!value) throw new Error(`no entry for ${hash}!`)
@@ -52,7 +55,7 @@ export default (sbp('sbp/selectors/register', {
       throw new ChelErrorDBConnection(`${e.name} during getEntry: ${e.message}`)
     }
   },
-  'chelonia/db/addEntry': function (entry) {
+  'chelonia/db/addEntry': function (entry: GIMessage) {
     // because addEntry contains multiple awaits - we want to make sure it gets executed
     // "atomically" to minimize the chance of a contract fork
     return sbp('okTurtles.eventQueue/queueEvent', `chelonia/db/${entry.contractID()}`, [
@@ -60,7 +63,8 @@ export default (sbp('sbp/selectors/register', {
     ])
   },
   // NEVER call this directly yourself! _always_ call 'chelonia/db/addEntry' instead
-  'chelonia/private/db/addEntry': async function (entry) {
+  // @throws ChelErrorDBConnection, ChelErrorDBConnection
+  'chelonia/private/db/addEntry': async function (entry: GIMessage): Promise<string> {
     try {
       const { previousHEAD } = entry.message()
       const contractID = entry.contractID()
@@ -84,7 +88,7 @@ export default (sbp('sbp/selectors/register', {
       throw new ChelErrorDBConnection(`${e.name} during addEntry: ${e.message}`)
     }
   },
-  'chelonia/db/lastEntry': async function (contractID) {
+  'chelonia/db/lastEntry': async function (contractID: string) {
     try {
       const hash = await sbp('chelonia/db/latestHash', contractID)
       if (!hash) throw new Error(`contract ${contractID} has no latest hash!`)

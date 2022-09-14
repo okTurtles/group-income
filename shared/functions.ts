@@ -7,12 +7,14 @@ import blake from 'blakejs'
 import { Buffer } from 'buffer'
 
 if (typeof window === 'object') {
+  // @ts-ignore
   window.Buffer = Buffer
 } else {
-  global.Buffer = Buffer
+  // @ts-ignore
+  globalThis.Buffer = Buffer
 }
 
-export function blake32Hash (data) {
+export function blake32Hash (data: any) {
   // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
   const uint8array = blake.blake2b(data, null, 32)
   // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
@@ -27,15 +29,15 @@ export function blake32Hash (data) {
 //       and you have to jump through some hoops to get it to work:
 //       https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/btoa#Unicode_strings
 //       These hoops might result in inconsistencies between Node.js and the frontend.
-export const b64ToBuf = (b64) => Buffer.from(b64, 'base64')
-export const b64ToStr = (b64) => b64ToBuf(b64).toString('utf8')
-export const bufToB64 = (buf) => Buffer.from(buf).toString('base64')
-export const strToBuf = (str) => Buffer.from(str, 'utf8')
-export const strToB64 = (str) => strToBuf(str).toString('base64')
-export const bytesToB64 = (ary) => Buffer.from(ary).toString('base64')
+export const b64ToBuf = (b64: string) => Buffer.from(b64, 'base64')
+export const b64ToStr = (b64: string) => b64ToBuf(b64).toString('utf8')
+export const bufToB64 = (buf: any) => Buffer.from(buf).toString('base64')
+export const strToBuf = (str: string) => Buffer.from(str, 'utf8')
+export const strToB64 = (str: string) => strToBuf(str).toString('base64')
+export const bytesToB64 = (ary: any) => Buffer.from(ary).toString('base64')
 
 export function sign (
-  { publicKey, secretKey },
+  { publicKey, secretKey }: any,
   msg = 'hello!',
   futz = ''
 ) {
@@ -47,7 +49,7 @@ export function sign (
 }
 
 export function verify (
-  msg, key, sig
+  msg: string, key: string, sig: string
 ) {
   return nacl.sign.detached.verify(strToBuf(msg), b64ToBuf(sig), b64ToBuf(key))
 }

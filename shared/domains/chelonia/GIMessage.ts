@@ -1,7 +1,25 @@
 // TODO: rename GIMessage to CMessage or something similar
 
 import { blake32Hash } from '~/shared/functions.ts'
-import type { JSONType, JSONObject } from '~/shared/types.ts'
+import type { JSONObject } from '~/shared/types.ts'
+
+type JSONType = ReturnType<typeof JSON.parse>
+
+type Mapping = {
+  key: string;
+  value: string;
+}
+
+type Message = {
+  version: string; // Semver version string
+  previousHEAD: string | null;
+  contractID: string | null;
+  op: GIOp
+  manifest: string;
+  // The nonce makes it difficult to predict message contents
+  // and makes it easier to prevent conflicts during development.
+  nonce: number;
+}
 
 export type GIKeyType = ''
 
@@ -23,10 +41,9 @@ export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypt
 export type GIOp = [GIOpType, GIOpValue]
 
 export class GIMessage {
-  // flow type annotations to make flow happy
-  _decrypted: GIOpValue
-  _mapping: Object
-  _message: Object
+  _decrypted?: GIOpValue
+  _mapping: Mapping
+  _message: Message
 
   static OP_CONTRACT: 'c' = 'c'
   static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
@@ -43,9 +60,9 @@ export class GIMessage {
     previousHEAD: string | null = null,
     op: GIOp,
     manifest: string,
-    signatureFn?: Function = defaultSignatureFn
-  ): this {
-    const message = {
+    signatureFn: Function = defaultSignatureFn
+  ): GIMessage {
+    const message: Message = {
       version: '1.0.0',
       previousHEAD,
       contractID,
@@ -71,7 +88,7 @@ export class GIMessage {
   }
 
   // TODO: we need signature verification upon decryption somewhere...
-  static deserialize (value: string): this {
+  static deserialize (value: string): GIMessage {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     return new this({
       mapping: { key: blake32Hash(value), value },
@@ -79,7 +96,7 @@ export class GIMessage {
     })
   }
 
-  constructor ({ mapping, message }: { mapping: Object, message: Object }) {
+  constructor ({ mapping, message }: { mapping: Mapping, message: Message }) {
     this._mapping = mapping
     this._message = message
     // perform basic sanity check
@@ -107,7 +124,7 @@ export class GIMessage {
     return this._decrypted
   }
 
-  message (): Object { return this._message }
+  message (): Message { return this._message }
 
   op (): GIOp { return this.message().op }
 
@@ -122,13 +139,13 @@ export class GIMessage {
     let desc = `<op_${type}`
     if (type === GIMessage.OP_ACTION_ENCRYPTED && this._decrypted) {
       const { _decrypted } = this
-      if (typeof _decrypted.type === 'string') {
-        desc += `|${_decrypted.type}`
+      if (typeof (_decrypted as GIOpContract).type === 'string') {
+        desc += `|${(_decrypted as GIOpContract).type}`
       }
     } else if (type === GIMessage.OP_ACTION_UNENCRYPTED) {
       const value = this.opValue()
-      if (typeof value.type === 'string') {
-        desc += `|${value.type}`
+      if (typeof (value as GIOpContract).type === 'string') {
+        desc += `|${(value as GIOpContract).type}`
       }
     }
     return `${desc}|${this.hash()} of ${this.contractID()}>`

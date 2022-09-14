@@ -1,7 +1,16 @@
-'use strict'
+declare var process: any
 
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
+
+type JSONType = ReturnType<typeof JSON.parse>;
+
+// ====== Types ====== //
+
+type Message = {
+  [key: string]: JSONType;
+  type: string
+}
 
 // ====== Event name constants ====== //
 
@@ -10,18 +19,6 @@ export const PUBSUB_RECONNECTION_ATTEMPT = 'pubsub-reconnection-attempt'
 export const PUBSUB_RECONNECTION_FAILED = 'pubsub-reconnection-failed'
 export const PUBSUB_RECONNECTION_SCHEDULED = 'pubsub-reconnection-scheduled'
 export const PUBSUB_RECONNECTION_SUCCEEDED = 'pubsub-reconnection-succeeded'
-
-// ====== Types ====== //
-
-/*
- * Flowtype usage notes:
- *
- * - The '+' prefix indicates properties that should not be re-assigned or
- *   deleted after their initialization.
- *
- * - 'TimeoutID' is an opaque type declared in Flow's core definition file,
- *   used as the return type of the core setTimeout() function.
- */
 
 // ====== Enums ====== //
 
@@ -46,6 +43,240 @@ export const RESPONSE_TYPE = Object.freeze({
   SUCCESS: 'success'
 })
 
+export class PubsubClient {
+  connectionTimeoutID?: number;
+  customEventHandlers: Record<string, EventListener>;
+  // The current number of connection attempts that failed.
+  // Reset to 0 upon successful connection.
+  // Used to compute how long to wait before the next reconnection attempt.
+  failedConnectionAttempts: number;
+  isLocal: boolean;
+  // True if this client has never been connected yet.
+  isNew: boolean;
+  listeners: Record<string, EventListener>;
+  messageHandlers: Record<string, (this: PubsubClient, msg: Message) => void>;
+  nextConnectionAttemptDelayID?: number;
+  options: any;
+  // Requested subscriptions for which we didn't receive a response yet.
+  pendingSubscriptionSet: Set<string>;
+  pendingSyncSet: Set<string>;
+  pendingUnsubscriptionSet: Set<string>;
+  pingTimeoutID?: number;
+  shouldReconnect: boolean;
+  // The underlying WebSocket object.
+  // A new one is necessary for every connection or reconnection attempt.
+  socket: WebSocket | null = null;
+  subscriptionSet: Set<string>;
+  url: string;
+
+  constructor (url: string, options: any = {}) {
+    this.customEventHandlers = options.handlers ?? {}
+    this.failedConnectionAttempts = 0
+    this.isLocal = /\/\/(localhost|127\.0\.0\.1)([:?/]|$)/.test(url)
+    // True if this client has never been connected yet.
+    this.isNew = true
+    this.listeners = Object.create(null)
+    this.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
+    this.options = { ...defaultOptions, ...options }
+    // Requested subscriptions for which we didn't receive a response yet.
+    this.pendingSubscriptionSet = new Set()
+    this.pendingSyncSet = new Set()
+    this.pendingUnsubscriptionSet = new Set()
+    this.shouldReconnect = true
+    this.subscriptionSet = new Set()
+    this.url = url.replace(/^http/, 'ws')
+
+    const client = this
+    // Create and save references to reusable event listeners.
+    // Every time a new underlying WebSocket object will be created for this
+    // client instance, these event listeners will be detached from the older
+    // socket then attached to the new one, hereby avoiding both unnecessary
+    // allocations and garbage collections of a bunch of functions every time.
+    // Another benefit is the ability to patch the client protocol at runtime by
+    // updating the client's custom event handler map.
+    for (const name of Object.keys(defaultClientEventHandlers)) {
+      client.listeners[name] = (event: any) => {
+        try {
+          // Use `.call()` to pass the client via the 'this' binding.
+          // @ts-ignore
+          defaultClientEventHandlers[name as SocketEventName]?.call(client, event)
+          client.customEventHandlers[name]?.call(client, event)
+        } catch (error) {
+          // Do not throw any error but emit an `error` event instead.
+          sbp('okTurtles.events/emit', PUBSUB_ERROR, client, error.message)
+        }
+      }
+    }
+    // Add global event listeners before the first connection.
+    if (typeof window === 'object') {
+      for (const name of globalEventNames) {
+        window.addEventListener(name, client.listeners[name])
+      }
+    }
+    if (!client.options.manual) {
+      client.connect()
+    }
+  }
+
+  clearAllTimers () {
+    clearTimeout(this.connectionTimeoutID)
+    clearTimeout(this.nextConnectionAttemptDelayID)
+    clearTimeout(this.pingTimeoutID)
+    this.connectionTimeoutID = undefined
+    this.nextConnectionAttemptDelayID = undefined
+    this.pingTimeoutID = undefined
+  }
+
+  // Performs a connection or reconnection attempt.
+  connect () {
+    const client = this
+
+    if (client.socket !== null) {
+      throw new Error('connect() can only be called if there is no current socket.')
+    }
+    if (client.nextConnectionAttemptDelayID) {
+      throw new Error('connect() must not be called during a reconnection delay.')
+    }
+    if (!client.shouldReconnect) {
+      throw new Error('connect() should no longer be called on this instance.')
+    }
+    client.socket = new WebSocket(client.url)
+
+    if (client.options.timeout) {
+      client.connectionTimeoutID = setTimeout(() => {
+        client.connectionTimeoutID = undefined
+        client.socket?.close(4000, 'timeout')
+      }, client.options.timeout)
+    }
+    // Attach WebSocket event listeners.
+    for (const name of socketEventNames) {
+      client.socket.addEventListener(name, client.listeners[name])
+    }
+  }
+
+  /**
+   * Immediately close the socket, stop listening for events and clear any cache.
+   *
+   * This method is used in unit tests.
+   * - In particular, no 'close' event handler will be called.
+   * - Any incoming or outgoing buffered data will be discarded.
+   * - Any pending messages will be discarded.
+   */
+  destroy () {
+    const client = this
+
+    client.clearAllTimers()
+    // Update property values.
+    // Note: do not clear 'client.options'.
+    client.pendingSubscriptionSet.clear()
+    client.pendingUnsubscriptionSet.clear()
+    client.subscriptionSet.clear()
+    // Remove global event listeners.
+    if (typeof window === 'object') {
+      for (const name of globalEventNames) {
+        window.removeEventListener(name, client.listeners[name])
+      }
+    }
+    // Remove WebSocket event listeners.
+    if (client.socket) {
+      for (const name of socketEventNames) {
+        client.socket.removeEventListener(name, client.listeners[name])
+      }
+      client.socket.close(4001, 'destroy')
+    }
+    client.listeners = {}
+    client.socket = null
+    client.shouldReconnect = false
+  }
+
+  getNextRandomDelay (): number {
+    const client = this
+
+    const {
+      maxReconnectionDelay,
+      minReconnectionDelay,
+      reconnectionDelayGrowFactor
+    } = client.options
+
+    const minDelay = minReconnectionDelay * reconnectionDelayGrowFactor ** client.failedConnectionAttempts
+    const maxDelay = minDelay * reconnectionDelayGrowFactor
+
+    return Math.min(maxReconnectionDelay, Math.round(minDelay + Math.random() * (maxDelay - minDelay)))
+  }
+
+  // Schedules a connection attempt to happen after a delay computed according to
+  // a randomized exponential backoff algorithm variant.
+  scheduleConnectionAttempt () {
+    const client = this
+
+    if (!client.shouldReconnect) {
+      throw new Error('Cannot call `scheduleConnectionAttempt()` when `shouldReconnect` is false.')
+    }
+    if (client.nextConnectionAttemptDelayID) {
+      return console.warn('[pubsub] A reconnection attempt is already scheduled.')
+    }
+    const delay = client.getNextRandomDelay()
+    const nth = client.failedConnectionAttempts + 1
+
+    client.nextConnectionAttemptDelayID = setTimeout(() => {
+      sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_ATTEMPT, client)
+      client.nextConnectionAttemptDelayID = undefined
+      client.connect()
+    }, delay)
+    sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SCHEDULED, client, { delay, nth })
+  }
+
+  // Unused for now.
+  pub (contractID: string, data: JSONType) {
+  }
+
+  /**
+   * Sends a SUB request to the server as soon as possible.
+   *
+   * - The given contract ID will be cached until we get a relevant server
+   * response, allowing us to resend the same request if necessary.
+   * - Any identical UNSUB request that has not been sent yet will be cancelled.
+   * - Calling this method again before the server has responded has no effect.
+   * @param contractID - The ID of the contract whose updates we want to subscribe to.
+   */
+  sub (contractID: string, dontBroadcast = false) {
+    const client = this
+    const { socket } = this
+
+    if (!client.pendingSubscriptionSet.has(contractID)) {
+      client.pendingSubscriptionSet.add(contractID)
+      client.pendingUnsubscriptionSet.delete(contractID)
+
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }, dontBroadcast))
+      }
+    }
+  }
+
+  /**
+   * Sends an UNSUB request to the server as soon as possible.
+   *
+   * - The given contract ID will be cached until we get a relevant server
+   * response, allowing us to resend the same request if necessary.
+   * - Any identical SUB request that has not been sent yet will be cancelled.
+   * - Calling this method again before the server has responded has no effect.
+   * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
+   */
+  unsub (contractID: string, dontBroadcast = false) {
+    const client = this
+    const { socket } = this
+
+    if (!client.pendingUnsubscriptionSet.has(contractID)) {
+      client.pendingSubscriptionSet.delete(contractID)
+      client.pendingUnsubscriptionSet.add(contractID)
+
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }, dontBroadcast))
+      }
+    }
+  }
+}
+
 // ====== API ====== //
 
 /**
@@ -65,70 +296,15 @@ export const RESPONSE_TYPE = Object.freeze({
  * {number?} timeout=5_000 - Connection timeout duration in milliseconds.
  * @returns {PubSubClient}
  */
-export function createClient (url, options = {}) {
-  const client = {
-    customEventHandlers: options.handlers || {},
-    // The current number of connection attempts that failed.
-    // Reset to 0 upon successful connection.
-    // Used to compute how long to wait before the next reconnection attempt.
-    failedConnectionAttempts: 0,
-    isLocal: /\/\/(localhost|127\.0\.0\.1)([:?/]|$)/.test(url),
-    // True if this client has never been connected yet.
-    isNew: true,
-    listeners: Object.create(null),
-    messageHandlers: { ...defaultMessageHandlers, ...options.messageHandlers },
-    nextConnectionAttemptDelayID: undefined,
-    options: { ...defaultOptions, ...options },
-    // Requested subscriptions for which we didn't receive a response yet.
-    pendingSubscriptionSet: new Set(),
-    pendingSyncSet: new Set(),
-    pendingUnsubscriptionSet: new Set(),
-    pingTimeoutID: undefined,
-    shouldReconnect: true,
-    // The underlying WebSocket object.
-    // A new one is necessary for every connection or reconnection attempt.
-    socket: null,
-    subscriptionSet: new Set(),
-    connectionTimeoutID: undefined,
-    url: url.replace(/^http/, 'ws'),
-    ...publicMethods
-  }
-  // Create and save references to reusable event listeners.
-  // Every time a new underlying WebSocket object will be created for this
-  // client instance, these event listeners will be detached from the older
-  // socket then attached to the new one, hereby avoiding both unnecessary
-  // allocations and garbage collections of a bunch of functions every time.
-  // Another benefit is the ability to patch the client protocol at runtime by
-  // updating the client's custom event handler map.
-  for (const name of Object.keys(defaultClientEventHandlers)) {
-    client.listeners[name] = (event) => {
-      try {
-        // Use `.call()` to pass the client via the 'this' binding.
-        defaultClientEventHandlers[name]?.call(client, event)
-        client.customEventHandlers[name]?.call(client, event)
-      } catch (error) {
-        // Do not throw any error but emit an `error` event instead.
-        sbp('okTurtles.events/emit', PUBSUB_ERROR, client, error.message)
-      }
-    }
-  }
-  // Add global event listeners before the first connection.
-  if (typeof window === 'object') {
-    for (const name of globalEventNames) {
-      window.addEventListener(name, client.listeners[name])
-    }
-  }
-  if (!client.options.manual) {
-    client.connect()
-  }
-  return client
+export function createClient (url: string, options: any = {}): PubsubClient {
+  return new PubsubClient(url, options)
 }
 
-export function createMessage (type, data) {
+export function createMessage (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
-export function createRequest (type, data, dontBroadcast = false) {
+export function createRequest (type: string, data: JSONType, dontBroadcast = false): string {
   // Had to use Object.assign() instead of object spreading to make Flow happy.
   return JSON.stringify(Object.assign({ type, dontBroadcast }, data))
 }
@@ -136,7 +312,7 @@ export function createRequest (type, data, dontBroadcast = false) {
 // These handlers receive the PubSubClient instance through the `this` binding.
 const defaultClientEventHandlers = {
   // Emitted when the connection is closed.
-  close (event) {
+  close (this: PubsubClient, event: CloseEvent) {
     const client = this
 
     console.debug('[pubsub] Event: close', event.code, event.reason)
@@ -193,7 +369,7 @@ const defaultClientEventHandlers = {
 
   // Emitted when an error has occured.
   // The socket will be closed automatically by the engine if necessary.
-  error (event) {
+  error (this: PubsubClient, event: Event) {
     const client = this
     // Not all error events should be logged with console.error, for example every
     // failed connection attempt generates one such event.
@@ -204,7 +380,7 @@ const defaultClientEventHandlers = {
   // Emitted when a message is received.
   // The connection will be terminated if the message is malformed or has an
   // unexpected data type (e.g. binary instead of text).
-  message (event) {
+  message (this: PubsubClient, event: MessageEvent) {
     const client = this
     const { data } = event
 
@@ -233,7 +409,7 @@ const defaultClientEventHandlers = {
     }
   },
 
-  offline (event) {
+  offline (this: PubsubClient, event: Event) {
     console.info('[pubsub] Event: offline')
     const client = this
 
@@ -244,7 +420,7 @@ const defaultClientEventHandlers = {
     client.socket?.close(4002, 'offline')
   },
 
-  online (event) {
+  online (this: PubsubClient, event: Event) {
     console.info('[pubsub] Event: online')
     const client = this
 
@@ -257,7 +433,7 @@ const defaultClientEventHandlers = {
   },
 
   // Emitted when the connection is established.
-  open (event) {
+  open (this: PubsubClient, event: Event) {
     console.debug('[pubsub] Event: open')
     const client = this
     const { options } = this
@@ -288,22 +464,22 @@ const defaultClientEventHandlers = {
     // There should be no pending unsubscription since we just got connected.
   },
 
-  'reconnection-attempt' (event) {
+  'reconnection-attempt' (this: PubsubClient, event: CustomEvent) {
     console.info('[pubsub] Trying to reconnect...')
   },
 
-  'reconnection-succeeded' (event) {
+  'reconnection-succeeded' (this: PubsubClient, event: CustomEvent) {
     console.info('[pubsub] Connection re-established')
   },
 
-  'reconnection-failed' (event) {
+  'reconnection-failed' (this: PubsubClient, event: CustomEvent) {
     console.warn('[pubsub] Reconnection failed')
     const client = this
 
     client.destroy()
   },
 
-  'reconnection-scheduled' (event) {
+  'reconnection-scheduled' (event: CustomEvent) {
     const { delay, nth } = event.detail
     console.info(`[pubsub] Scheduled connection attempt ${nth} in ~${delay} ms`)
   }
@@ -311,11 +487,11 @@ const defaultClientEventHandlers = {
 
 // These handlers receive the PubSubClient instance through the `this` binding.
 const defaultMessageHandlers = {
-  [NOTIFICATION_TYPE.ENTRY] (msg) {
+  [NOTIFICATION_TYPE.ENTRY] (this: PubsubClient, msg: Message) {
     console.debug('[pubsub] Received ENTRY:', msg)
   },
 
-  [NOTIFICATION_TYPE.PING] ({ data }) {
+  [NOTIFICATION_TYPE.PING] (this: PubsubClient, { data }: Message) {
     const client = this
 
     if (client.options.logPingMessages) {
@@ -331,19 +507,19 @@ const defaultMessageHandlers = {
   },
 
   // PUB can be used to send ephemeral messages outside of any contract log.
-  [NOTIFICATION_TYPE.PUB] (msg) {
+  [NOTIFICATION_TYPE.PUB] (msg: Message) {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
-  [NOTIFICATION_TYPE.SUB] (msg) {
+  [NOTIFICATION_TYPE.SUB] (msg: Message) {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
-  [NOTIFICATION_TYPE.UNSUB] (msg) {
+  [NOTIFICATION_TYPE.UNSUB] (msg: Message) {
     console.debug(`[pubsub] Ignoring ${msg.type} message:`, msg.data)
   },
 
-  [RESPONSE_TYPE.ERROR] ({ data: { type, contractID } }) {
+  [RESPONSE_TYPE.ERROR] (this: PubsubClient, { data: { type, contractID } }: Message) {
     console.warn(`[pubsub] Received ERROR response for ${type} request to ${contractID}`)
     const client = this
 
@@ -365,7 +541,7 @@ const defaultMessageHandlers = {
     }
   },
 
-  [RESPONSE_TYPE.SUCCESS] ({ data: { type, contractID } }) {
+  [RESPONSE_TYPE.SUCCESS] (this: PubsubClient, { data: { type, contractID } }: Message) {
     const client = this
 
     switch (type) {
@@ -411,13 +587,16 @@ const defaultOptions = {
 const globalEventNames = ['offline', 'online']
 const socketEventNames = ['close', 'error', 'message', 'open']
 
+type SocketEventName = 'close' | 'error' | 'message' | 'open';
+
 // `navigator.onLine` can give confusing false positives when `true`,
 // so we'll define `isDefinetelyOffline()` rather than `isOnline()` or `isOffline()`.
 // See https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine
+// @ts-ignore TS2339 [ERROR]: Property 'onLine' does not exist on type 'Navigator'.
 const isDefinetelyOffline = () => typeof navigator === 'object' && navigator.onLine === false
 
 // Parses and validates a received message.
-export const messageParser = (data) => {
+export const messageParser = (data: string): Message => {
   const msg = JSON.parse(data)
 
   if (typeof msg !== 'object' || msg === null) {
@@ -431,173 +610,11 @@ export const messageParser = (data) => {
   return msg
 }
 
-const publicMethods = {
-  clearAllTimers () {
-    const client = this
-
-    clearTimeout(client.connectionTimeoutID)
-    clearTimeout(client.nextConnectionAttemptDelayID)
-    clearTimeout(client.pingTimeoutID)
-    client.connectionTimeoutID = undefined
-    client.nextConnectionAttemptDelayID = undefined
-    client.pingTimeoutID = undefined
-  },
-
-  // Performs a connection or reconnection attempt.
-  connect () {
-    const client = this
-
-    if (client.socket !== null) {
-      throw new Error('connect() can only be called if there is no current socket.')
-    }
-    if (client.nextConnectionAttemptDelayID) {
-      throw new Error('connect() must not be called during a reconnection delay.')
-    }
-    if (!client.shouldReconnect) {
-      throw new Error('connect() should no longer be called on this instance.')
-    }
-    client.socket = new WebSocket(client.url)
-
-    if (client.options.timeout) {
-      client.connectionTimeoutID = setTimeout(() => {
-        client.connectionTimeoutID = undefined
-        client.socket?.close(4000, 'timeout')
-      }, client.options.timeout)
-    }
-    // Attach WebSocket event listeners.
-    for (const name of socketEventNames) {
-      client.socket.addEventListener(name, client.listeners[name])
-    }
-  },
-
-  /**
-   * Immediately close the socket, stop listening for events and clear any cache.
-   *
-   * This method is used in unit tests.
-   * - In particular, no 'close' event handler will be called.
-   * - Any incoming or outgoing buffered data will be discarded.
-   * - Any pending messages will be discarded.
-   */
-  destroy () {
-    const client = this
-
-    client.clearAllTimers()
-    // Update property values.
-    // Note: do not clear 'client.options'.
-    client.pendingSubscriptionSet.clear()
-    client.pendingUnsubscriptionSet.clear()
-    client.subscriptionSet.clear()
-    // Remove global event listeners.
-    if (typeof window === 'object') {
-      for (const name of globalEventNames) {
-        window.removeEventListener(name, client.listeners[name])
-      }
-    }
-    // Remove WebSocket event listeners.
-    if (client.socket) {
-      for (const name of socketEventNames) {
-        client.socket.removeEventListener(name, client.listeners[name])
-      }
-      client.socket.close(4001, 'destroy')
-    }
-    client.listeners = {}
-    client.socket = null
-    client.shouldReconnect = false
-  },
-
-  getNextRandomDelay () {
-    const client = this
-
-    const {
-      maxReconnectionDelay,
-      minReconnectionDelay,
-      reconnectionDelayGrowFactor
-    } = client.options
-
-    const minDelay = minReconnectionDelay * reconnectionDelayGrowFactor ** client.failedConnectionAttempts
-    const maxDelay = minDelay * reconnectionDelayGrowFactor
-
-    return Math.min(maxReconnectionDelay, Math.round(minDelay + Math.random() * (maxDelay - minDelay)))
-  },
-
-  // Schedules a connection attempt to happen after a delay computed according to
-  // a randomized exponential backoff algorithm variant.
-  scheduleConnectionAttempt () {
-    const client = this
-
-    if (!client.shouldReconnect) {
-      throw new Error('Cannot call `scheduleConnectionAttempt()` when `shouldReconnect` is false.')
-    }
-    if (client.nextConnectionAttemptDelayID) {
-      return console.warn('[pubsub] A reconnection attempt is already scheduled.')
-    }
-    const delay = client.getNextRandomDelay()
-    const nth = client.failedConnectionAttempts + 1
-
-    client.nextConnectionAttemptDelayID = setTimeout(() => {
-      sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_ATTEMPT, client)
-      client.nextConnectionAttemptDelayID = undefined
-      client.connect()
-    }, delay)
-    sbp('okTurtles.events/emit', PUBSUB_RECONNECTION_SCHEDULED, client, { delay, nth })
-  },
-
-  // Unused for now.
-  pub (contractID, data, dontBroadcast = false) {
-  },
-
-  /**
-   * Sends a SUB request to the server as soon as possible.
-   *
-   * - The given contract ID will be cached until we get a relevant server
-   * response, allowing us to resend the same request if necessary.
-   * - Any identical UNSUB request that has not been sent yet will be cancelled.
-   * - Calling this method again before the server has responded has no effect.
-   * @param contractID - The ID of the contract whose updates we want to subscribe to.
-   */
-  sub (contractID, dontBroadcast = false) {
-    const client = this
-    const { socket } = this
-
-    if (!client.pendingSubscriptionSet.has(contractID)) {
-      client.pendingSubscriptionSet.add(contractID)
-      client.pendingUnsubscriptionSet.delete(contractID)
-
-      if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(createRequest(REQUEST_TYPE.SUB, { contractID }, dontBroadcast))
-      }
-    }
-  },
-
-  /**
-   * Sends an UNSUB request to the server as soon as possible.
-   *
-   * - The given contract ID will be cached until we get a relevant server
-   * response, allowing us to resend the same request if necessary.
-   * - Any identical SUB request that has not been sent yet will be cancelled.
-   * - Calling this method again before the server has responded has no effect.
-   * @param contractID - The ID of the contract whose updates we want to unsubscribe from.
-   */
-  unsub (contractID, dontBroadcast = false) {
-    const client = this
-    const { socket } = this
-
-    if (!client.pendingUnsubscriptionSet.has(contractID)) {
-      client.pendingSubscriptionSet.delete(contractID)
-      client.pendingUnsubscriptionSet.add(contractID)
-
-      if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(createRequest(REQUEST_TYPE.UNSUB, { contractID }, dontBroadcast))
-      }
-    }
-  }
-}
-
 // Register custom SBP event listeners before the first connection.
 for (const name of Object.keys(defaultClientEventHandlers)) {
   if (name === 'error' || !socketEventNames.includes(name)) {
-    sbp('okTurtles.events/on', `pubsub-${name}`, (target, detail) => {
-      target.listeners[name]({ type: name, target, detail })
+    sbp('okTurtles.events/on', `pubsub-${name}`, (target: PubsubClient, detail: any) => {
+      target.listeners[name](({ type: name, target, detail } as unknown) as Event)
     })
   }
 }

@@ -1,0 +1,32 @@
+{
+  "parserOptions": {
+    "parser": "@babel/eslint-parser"
+  },
+  "extends": [
+    "plugin:cypress/recommended",
+    "plugin:flowtype/recommended",
+    "plugin:vue/essential",
+    "standard"
+  ],
+  "plugins": [
+    "cypress",
+    "flowtype",
+    "import"
+  ],
+  "ignorePatterns": [
+    "assets/*",
+    "model/contracts/misc/flowTyper.js"
+  ],
+  "rules": {
+    "require-await": "error",
+    "vue/max-attributes-per-line": "off",
+    "vue/html-indent": "off",
+    "flowtype/no-types-missing-file-annotation": "off",
+    "quote-props": "off",
+    "dot-notation": "off",
+    "import/extensions": [
+      2,
+      "ignorePackages"
+    ]
+  }
+}

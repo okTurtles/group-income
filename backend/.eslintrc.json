@@ -1,0 +1,20 @@
+{
+  "parserOptions": {
+    "parser": "@typescript-eslint/parser"
+  },
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+  "plugins": [
+    "@typescript-eslint",
+    "import"
+  ],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": ["error", { "args": "none" }],
+    "require-await": "error",
+    "quote-props": "off",
+    "dot-notation": "off",
+    "import/extensions": [
+      2,
+      "ignorePackages"
+    ]
+  }
+}

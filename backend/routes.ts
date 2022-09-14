@@ -6,17 +6,22 @@ import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.ts'
 import { blake32Hash } from '~/shared/functions.ts'
 
-import { badRequest } from 'pogo/lib/bang.ts'
+import { badRequest, notFound } from 'pogo/lib/bang.ts'
 import { Router } from 'pogo'
+import type { RouteHandler } from 'pogo/lib/types.ts'
+import type ServerRequest from 'pogo/lib/request.ts'
+import Toolkit from 'pogo/lib/toolkit.ts'
 
 import './database.ts'
 import * as pathlib from 'path'
 
+declare const logger: Function
+
 export const router = new Router()
 
-const route = new Proxy({}, {
-  get: function (obj, prop) {
-    return function (path: string, handler: Function | Object) {
+const route: Record<string, Function> = new Proxy({}, {
+  get: function (obj: any, prop: string) {
+    return function (path: string, handler: RouteHandler) {
       router.add({ path, method: prop, handler })
     }
   }
@@ -27,7 +32,7 @@ const route = new Proxy({}, {
 // NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
 //       See related TODO in pubsub.js and the reddit discussion link.
-route.POST('/event', async function (request, h) {
+route.POST('/event', async function (request: ServerRequest, h: Toolkit) {
   try {
     console.log('/event handler')
     const payload = await request.raw.text()
@@ -40,12 +45,11 @@ route.POST('/event', async function (request, h) {
       console.error(bold(yellow('ChelErrorDBBadPreviousHEAD')), err)
       return badRequest(err.message)
     }
-    console.error(err)
-    return err
+    return logger(err)
   }
 })
 
-route.GET('/eventsBefore/{before}/{limit}', async function (request, h) {
+route.GET('/eventsBefore/{before}/{limit}', async function (request: ServerRequest, h: Toolkit) {
   try {
     const { before, limit } = request.params
     console.log('/eventsBefore:', before, limit)
@@ -62,7 +66,7 @@ route.GET('/eventsBefore/{before}/{limit}', async function (request, h) {
   }
 })
 
-route.GET('/eventsBetween/{startHash}/{endHash}', async function (request, h) {
+route.GET('/eventsBetween/{startHash}/{endHash}', async function (request: ServerRequest, h: Toolkit) {
   try {
     const { startHash, endHash } = request.params
     console.log('/eventsBetween:', startHash, endHash)
@@ -81,7 +85,7 @@ route.GET('/eventsBetween/{startHash}/{endHash}', async function (request, h) {
   }
 })
 
-route.GET('/eventsSince/{contractID}/{since}', async function (request, h) {
+route.GET('/eventsSince/{contractID}/{since}', async function (request: ServerRequest, h: Toolkit) {
   try {
     const { contractID, since } = request.params
     console.log('/eventsSince:', contractID, since)
@@ -94,7 +98,7 @@ route.GET('/eventsSince/{contractID}/{since}', async function (request, h) {
   }
 })
 
-route.POST('/name', async function (request, h) {
+route.POST('/name', async function (request: ServerRequest, h: Toolkit) {
   try {
     console.debug('/name', request.body)
     const payload = await request.raw.json()
@@ -106,17 +110,16 @@ route.POST('/name', async function (request, h) {
   }
 })
 
-route.GET('/name/{name}', async function (request, h) {
+route.GET('/name/{name}', async function (request: ServerRequest, h: Toolkit) {
   console.debug('GET /name/{name}', request.params.name)
   try {
-    const result = await sbp('backend/db/lookupName', request.params.name)
-    return result instanceof Deno.errors.NotFound ? request.response.code(404) : result
+    return await sbp('backend/db/lookupName', request.params.name)
   } catch (err) {
-    return (err)
+    return logger(err)
   }
 })
 
-route.GET('/latestHash/{contractID}', async function handler (request, h) {
+route.GET('/latestHash/{contractID}', async function (request: ServerRequest, h: Toolkit) {
   try {
     const { contractID } = request.params
     const hash = await sbp('chelonia/db/latestHash', contractID)
@@ -124,7 +127,7 @@ route.GET('/latestHash/{contractID}', async function handler (request, h) {
     request.response.header('cache-control', 'no-store')
     if (!hash) {
       console.warn(`[backend] latestHash not found for ${contractID}`)
-      return new Deno.errors.NotFound()
+      return notFound()
     }
     return hash
   } catch (err) {
@@ -132,7 +135,7 @@ route.GET('/latestHash/{contractID}', async function handler (request, h) {
   }
 })
 
-route.GET('/time', function (request, h) {
+route.GET('/time', function (request: ServerRequest, h: Toolkit) {
   request.response.header('cache-control', 'no-store')
   return new Date().toISOString()
 })
@@ -143,20 +146,20 @@ route.GET('/time', function (request, h) {
 //       has a complete copy of the data and can act as a
 //       new coordinating server... I don't like that.
 
-route.POST('/file', async function (request, h) {
+route.POST('/file', async function (request: ServerRequest, h: Toolkit) {
   try {
     console.log('FILE UPLOAD!')
 
     const formData = await request.raw.formData()
-    const data = formData.get('data')
+    const data = formData.get('data') as File
     const hash = formData.get('hash')
     if (!data) return badRequest('missing data')
     if (!hash) return badRequest('missing hash')
 
-    const fileData = await new Promise((resolve, reject) => {
+    const fileData: ArrayBuffer = await new Promise((resolve, reject) => {
       const fileReader = new FileReader()
       fileReader.onload = (event) => {
-        resolve(fileReader.result)
+        resolve(fileReader.result as ArrayBuffer)
       }
       fileReader.onerror = (event) => {
         reject(fileReader.error)
@@ -172,12 +175,11 @@ route.POST('/file', async function (request, h) {
     console.log('/file/' + hash)
     return '/file/' + hash
   } catch (err) {
-    console.error(err)
-    return err
+    return logger(err)
   }
 })
 
-route.GET('/file/{hash}', async function handler (request, h) {
+route.GET('/file/{hash}', async function handler (request: ServerRequest, h: Toolkit) {
   try {
     const { hash } = request.params
     const base = pathlib.resolve('data')
@@ -189,15 +191,15 @@ route.GET('/file/{hash}', async function handler (request, h) {
       .header('content-type', 'application/octet-stream')
       .header('cache-control', 'public,max-age=31536000,immutable')
       .header('etag', `"${hash}"`)
-      .header('last-modified', new Date().toGMTString())
+      .header('last-modified', new Date().toUTCString())
   } catch (err) {
-    console.log(err)
+    return logger(err)
   }
 })
 
 // SPA routes
 
-route.GET('/assets/{subpath*}', async function handler (request, h) {
+route.GET('/assets/{subpath*}', async function handler (request: ServerRequest, h: Toolkit) {
   try {
     const { subpath } = request.params
     console.debug(`GET /assets/${subpath}`)
@@ -215,15 +217,14 @@ route.GET('/assets/{subpath*}', async function handler (request, h) {
     // This should also be suitable for serving unversioned fonts and images.
     return h.file(pathlib.join(base, subpath))
   } catch (err) {
-    console.error(err)
     return logger(err)
   }
 })
 
-route.GET('/app/{path*}', function handler (req, h) {
+route.GET('/app/{path*}', function (request: ServerRequest, h: Toolkit) {
   return h.file(pathlib.resolve('./dist/index.html'))
 })
 
-route.GET('/', function (req, h) {
+route.GET('/', function (request: ServerRequest, h: Toolkit) {
   return h.redirect('/app/')
 })
