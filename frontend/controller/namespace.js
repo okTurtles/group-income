@@ -1,6 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import Vue from 'vue'
 import { handleFetchResult } from './utils/misc.js'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
@@ -13,7 +14,7 @@ sbp('sbp/selectors/register', {
         'Content-Type': 'application/json'
       }
     }).then(handleFetchResult('json')).then(result => {
-      sbp('state/vuex/state').namespaceLookups[name] = value
+      Vue.set(sbp('state/vuex/state').namespaceLookups, name, value)
       return result
     })
   },
@@ -33,10 +34,10 @@ sbp('sbp/selectors/register', {
       }
       return r['text']()
     }).then(value => {
-      if (value === null) {
-        return null
+      if (value !== null) {
+        Vue.set(cache, name, value)
       }
-      return (cache[name] = value)
+      return value
     })
   }
 })
