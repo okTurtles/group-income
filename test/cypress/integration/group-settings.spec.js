@@ -119,6 +119,15 @@ describe('Group Voting Rules', () => {
     })
   }
 
+  it.skip('user1 creates a group with rule "disagreement" of "2"', () => {
+    cy.giCreateGroup('groupDis_2', { ruleName: 'disagreement', ruleThreshold: 2 })
+
+    verifyRuleSelected('disagreement', {
+      status: '2',
+      ruleAdjusted: false
+    })
+  })
+
   it('user1 creates a group with rule "percentage" of 40%', () => {
     cy.giCreateGroup(groupNamePerc40, { bypassUI: true, ruleName: 'percentage', ruleThreshold: 0.4 })
 
