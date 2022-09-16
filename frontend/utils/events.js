@@ -24,3 +24,5 @@ export const CAPTURED_LOGS = 'captured-logs'
 export const SET_APP_LOGS_FILTER = 'set-app-logs-filter'
 
 export const INCOME_DETAILS_UPDATE = 'income-details-update'
+
+export const PAYMENTS_RECORDED = 'payments-recorded'

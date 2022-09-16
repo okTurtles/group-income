@@ -1,7 +1,7 @@
 {
   "name": "group-income",
   "version": "0.0.1",
-  "contractsVersion": "0.0.3",
+  "contractsVersion": "0.0.4",
   "private": true,
   "description": "",
   "scripts": {
@@ -109,6 +109,7 @@
     "favico.js": "0.3.10",
     "localforage": "1.9.0",
     "multihashes": "0.4.15",
+    "qrious": "4.0.2",
     "scrypt-async": "2.0.1",
     "tweetnacl": "1.0.3",
     "tweetnacl-util": "0.15.1",

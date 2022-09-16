@@ -4,7 +4,14 @@ li.c-item-wrapper(data-test='proposalItem')
     .c-main
       .c-icons
         i(:class='iconClass')
-        avatar-user.c-avatar(:username='proposal.meta.username' size='xs')
+        avatar.c-avatar(
+          v-if='this.proposal.data.proposalData.automated'
+          :src='currentGroupState.settings.groupPicture'
+        )
+        avatar-user.c-avatar(
+          v-else
+          :username='proposal.meta.username' size='xs'
+        )
 
       .c-main-content
         p.has-text-bold(data-test='typeDescription')
@@ -17,7 +24,7 @@ li.c-item-wrapper(data-test='proposalItem')
             .button.is-icon-smaller.is-primary
               i.icon-question
 
-        p(data-test='title' v-safe-html='title')
+        p(data-test='title' v-safe-html='subtitle')
 
         p.has-text-1(
           :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
@@ -56,6 +63,7 @@ li.c-item-wrapper(data-test='proposalItem')
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
 import AvatarUser from '@components/AvatarUser.vue'
+import Avatar from '@components/Avatar.vue'
 import currencies from '@model/contracts/shared/currencies.js'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import {
@@ -99,6 +107,7 @@ export default ({
     BannerScoped,
     ProposalVoteOptions,
     AvatarUser,
+    Avatar,
     LinkToCopy,
     Tooltip
   },
@@ -116,10 +125,13 @@ export default ({
     proposal () {
       return this.proposalObject || this.currentGroupState.proposals[this.proposalHash]
     },
-    title () {
+    subtitle () {
       const username = this.proposal.meta.username
       const isOwnProposal = username === this.ourUsername
 
+      if (this.proposal.data.proposalData.automated) {
+        return L('Group Income system is proposing')
+      }
       if (this.proposal.status === STATUS_OPEN) {
         return isOwnProposal
           ? L('You are proposing')
@@ -148,9 +160,10 @@ export default ({
         }),
         [PROPOSAL_REMOVE_MEMBER]: () => {
           const user = this.userDisplayName(this.proposal.data.proposalData.member)
+          const automated = this.proposal.data.proposalData.automated ? `[${L('Automated')}] ` : ''
           return this.isToRemoveMe
-            ? L('Remove {user} (you) from the group.', { user })
-            : L('Remove {user} from the group.', { user })
+            ? L('{automated}Remove {user} (you) from the group.', { user, automated })
+            : L('{automated}Remove {user} from the group.', { user, automated })
         },
         [PROPOSAL_GROUP_SETTING_CHANGE]: () => {
           const { setting } = this.proposal.data.proposalData
