@@ -161,7 +161,7 @@ export default ({
     }
 
     th.c-th-who {
-      width: 65%;
+      width: 40%;
 
       @include tablet {
         width: 27%;
@@ -173,7 +173,7 @@ export default ({
     }
 
     th.c-th-amount {
-      width: 35%;
+      width: 55%;
 
       @include tablet {
         width: 24%;
@@ -183,7 +183,7 @@ export default ({
 
   &:not(.c-is-todo) {
     th.c-th-who {
-      width: 70%;
+      width: 40%;
 
       @include tablet {
         width: 30%;
@@ -191,7 +191,11 @@ export default ({
     }
 
     th.c-th-amount {
-      width: 20%;
+      width: 55%;
+      
+      @include tablet {
+        width: 20%;
+      }
 
       @include desktop {
         width: 14%;
