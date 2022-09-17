@@ -70,7 +70,7 @@ page(
       .c-tab-header-container
         h3.is-title-3(v-if='tabHeader') {{ tabHeader }}
 
-        next-distribution-pill.c-distribution-pill(:class='{ "hide-tablet": ephemeral.activeTab === "PaymentRowTodo" }')
+        next-distribution-pill.hide-tablet.c-distribution-pill(v-if='ephemeral.activeTab === "PaymentRowTodo"')
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -271,7 +271,7 @@ export default ({
             one: firstTab,
             two: L('Amount'),
             three: L('Accepted methods'),
-            four: L('Due in')
+            four: L('Due on')
           }
         : {
             one: firstTab,
