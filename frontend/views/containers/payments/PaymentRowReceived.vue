@@ -40,6 +40,12 @@
           @click='markNotReceived'
         )
           i18n I did not receive this
+
+        menu-item(
+          tag='button'
+          icon='comment'
+          @click='openModal("ThankYouNoteModal")'
+        ) Send thank you
 </template>
 
 <script>

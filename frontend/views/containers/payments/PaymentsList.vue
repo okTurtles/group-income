@@ -192,7 +192,7 @@ export default ({
 
     th.c-th-amount {
       width: 55%;
-      
+
       @include tablet {
         width: 20%;
       }

@@ -487,7 +487,8 @@ sbp('chelonia/defineContract', {
         updatedProperties: objectMaybeOf({
           status: paymentStatusType,
           details: object,
-          memo: string
+          memo: string,
+          thankYouNote: string
         })
       }),
       process ({ data, meta, hash }, { state, getters }) {
