@@ -455,8 +455,8 @@ module.exports = (grunt) => {
     cypress[command](options).then(r => done(r.totalFailed === 0)).catch(done)
   })
 
-  grunt.registerTask('pin', async function (version) {
-    if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
+  grunt.registerTask('_pin', async function (version) {
+    // a task internally executed in 'pin' task below
     const done = this.async()
     const dirPath = `contracts/${version}`
 
@@ -479,6 +479,13 @@ module.exports = (grunt) => {
     fs.writeFileSync('package.json', JSON.stringify(packageJSON, null, 2) + '\n', 'utf8')
     console.log(chalk.green('updated package.json "contractsVersion" to:'), version)
     done()
+  })
+
+  grunt.registerTask('pin', function (version) {
+    if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
+
+    grunt.task.run('build')
+    grunt.task.run(`_pin:${version}`)
   })
 
   grunt.registerTask('default', ['dev'])

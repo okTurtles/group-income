@@ -70,7 +70,7 @@ page(
       .c-tab-header-container
         h3.is-title-3(v-if='tabHeader') {{ tabHeader }}
 
-        next-distribution-pill.c-distribution-pill(:class='{ "hide-tablet": ephemeral.activeTab === "PaymentRowTodo" }')
+        next-distribution-pill.hide-tablet.c-distribution-pill(v-if='ephemeral.activeTab === "PaymentRowTodo"')
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -127,11 +127,16 @@ page(
           p.c-lightning-todo-msg Coming Soon.
 
           .c-footer
-            .c-payment-record(v-if='isDevEnv')
+            .c-payment-record.c-lightning-temp(v-if='isDevEnv')
               button.is-success.is-outlined.is-small(
                 type='button'
                 @click='openLightningPayments'
               ) Open Placeholder Modal
+
+              button.is-outlined.is-small(
+                type='button'
+                @click='openLightningPaymentDetail'
+              ) Open Placeholder Detail Modal
 
         .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
           i18n(tag='p' :args='{query: form.searchText }') No results for "{query}".
@@ -157,6 +162,11 @@ import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
 import { randomHexString } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
+import {
+  dummyLightningUsers,
+  dummyLightningTodoItems,
+  dummyLightningPaymentDetails
+} from '@view-utils/lightning-dummy-data.js'
 
 export default ({
   name: 'Payments',
@@ -184,13 +194,13 @@ export default ({
         selectedTodoItems: null
       },
       config: {
+        // TODO: maybe externalize the option names as contants, (e.g. PAYMENTS_METHOD.MANUAL, PAYMENTS_METHOD.LIGHTNING)
+        //       once the payment method is implemented in the 'gi.contracts/group'
         paymentMethodFilterOptions: {
           'all': L('ALL'),
           'lightning': L('Lightning'),
           'manual': L('Manual')
         }
-        // TODO: maybe externalize the option names as contants, (e.g. PAYMENTS_METHOD.MANUAL, PAYMENTS_METHOD.LIGHTNING)
-        //       once the payment method is implemented in the 'gi.contracts/group'
       }
     }
   },
@@ -261,7 +271,7 @@ export default ({
             one: firstTab,
             two: L('Amount'),
             three: L('Accepted methods'),
-            four: L('Due in')
+            four: L('Due on')
           }
         : {
             one: firstTab,
@@ -420,28 +430,15 @@ export default ({
       this.ephemeral.currentPage = 0 // go back to first page.
     },
     onRecordPaymentClick () {
-      console.log('todoItems: ', this.ephemeral.selectedTodoItems)
       this.openModal('RecordPayment', { todoItems: this.ephemeral.selectedTodoItems })
     },
     async openLightningPayments () {
-      const fakeUsers = [
-        {
-          username: 'fake-user-1',
-          email: 'fake1@abc.com',
-          password: '123456789'
-        },
-        {
-          username: 'fake-user-2',
-          email: 'fake2@def.com',
-          password: '123456789'
-        }
-      ]
       const wait = (milli) => new Promise(resolve => setTimeout(resolve, milli))
       let contractID
 
       // check if the fake users have been created and sign them up if not.
       // TODO: to be removed once lightning network is implemented
-      for (const userData of fakeUsers) {
+      for (const userData of dummyLightningUsers) {
         contractID = await sbp('namespace/lookup', userData.username)
 
         if (!contractID) {
@@ -456,7 +453,12 @@ export default ({
         await wait(100)
       }
 
-      this.openModal('SendPaymentsViaLightning')
+      this.openModal('SendPaymentsViaLightning', { todoItems: dummyLightningTodoItems })
+    },
+    openLightningPaymentDetail () {
+      this.openModal('PaymentDetail', {
+        lightningPayment: dummyLightningPaymentDetails
+      })
     }
   }
 }: Object)
@@ -505,11 +507,17 @@ export default ({
   flex-wrap: wrap-reverse;
   align-items: center;
   justify-content: space-between;
-  gap: 1.25rem;
-  margin-bottom: 1.5rem;
 
-  @include tablet {
-    margin-bottom: 2.5rem;
+  > * {
+    margin-bottom: 1.25rem;
+
+    @include tablet {
+      margin-bottom: 2.5rem;
+    }
+  }
+
+  h3 {
+    margin-right: 1.25rem;
   }
 }
 
@@ -648,6 +656,13 @@ export default ({
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    &.c-lightning-temp {
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+      gap: 1rem;
+    }
   }
 
   @include phone {

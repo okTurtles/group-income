@@ -17,11 +17,17 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
     li.c-payment-list-item
       i18n.has-text-1 Mincome at the time
       strong {{ withCurrency(payment.data.groupMincome) }}
+    li.c-payment-list-item(v-if='lightningPayment')
+      i18n.has-text-1 Transaction ID
+      link-to-copy.c-lightning-trxn-id(
+        :link='payment.data.transactionId'
+      )
+
     li.c-payment-list-item.c-column(v-if='payment.data.memo')
       i18n.has-text-1 Notes
       p.has-text-bold {{ payment.data.memo }}
 
-  .buttons
+  .buttons(v-if='!lightningPayment')
     i18n.button.is-danger.is-outlined.is-small(
       tag='button'
       @click='submit'
@@ -34,6 +40,7 @@ import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
 import currencies from '@model/contracts/shared/currencies.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
@@ -41,11 +48,13 @@ import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 export default ({
   name: 'PaymentDetail',
   components: {
-    ModalTemplate
+    ModalTemplate,
+    LinkToCopy
   },
   created () {
     const id = this.$route.query.id
-    const payment = this.currentGroupState.payments[id]
+    const payment = this.lightningPayment || // TODO: to be re-worked once lightning network is implemented.
+      this.currentGroupState.payments[id]
 
     if (id) {
       sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'PaymentDetail', { id })
@@ -62,6 +71,14 @@ export default ({
   data: () => ({
     payment: null
   }),
+  props: {
+    lightningPayment: {
+      // temporary prop for dummy lightning payment data.
+      // TODO: onece lightning networki is implemented, remove this prop and get the payment data from Vuex getter.
+      type: Object,
+      required: false
+    }
+  },
   computed: {
     ...mapGetters([
       'currentGroupState',
@@ -133,6 +150,10 @@ export default ({
       padding-top: 1rem;
       padding-bottom: 0.3125rem;
     }
+  }
+
+  .c-lightning-trxn-id {
+    max-width: 60%;
   }
 }
 
