@@ -5,8 +5,20 @@
       strong {{ withGroupCurrency(payment.amount) }}
       payment-not-received-tooltip(v-if='notReceived' :member='payment.displayName')
 
-    template(slot='cellActions')
+      .c-amount-pill-container
+        i18n.pill.is-neutral.hide-tablet Manual
+
+    template(slot='cellMethod')
+      .c-methods-container
+        i18n.pill.is-neutral Manual
+
+    template(slot='cellDate')
       .cpr-date.has-text-1 {{ humanDate(payment.date) }}
+
+    template(slot='cellRelativeTo')
+      .c-relative-to.has-text-1 {{ humanDate(periodStampGivenDate(payment.date)) }}
+
+    template(slot='cellActions')
       payment-actions-menu
         menu-item(
           tag='button'
@@ -55,7 +67,8 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'withGroupCurrency'
+      'withGroupCurrency',
+      'periodStampGivenDate'
     ]),
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
@@ -94,4 +107,27 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-methods-container {
+  @include phone {
+    display: none;
+  }
+}
+
+.c-relative-to {
+  display: none;
+
+  @include desktop {
+    display: block;
+  }
+}
+
+.c-amount-pill-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 2px;
+
+  @include phone {
+    justify-content: flex-end;
+  }
+}
 </style>

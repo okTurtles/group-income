@@ -41,7 +41,7 @@ export default ({
     position: relative;
     z-index: 2;
     padding-top: 0.5rem;
-    padding-bottom: 4rem;
+    padding-bottom: 1rem;
   }
 }
 

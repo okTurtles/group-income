@@ -44,6 +44,7 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
+  namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   theme: defaultTheme,
   themeColor: defaultColor,
   reducedMotion: false,
@@ -75,6 +76,9 @@ sbp('sbp/selectors/register', {
     }
     if (!state.chatRoomUnread) {
       state.chatRoomUnread = {}
+    }
+    if (!state.namespaceLookups) {
+      state.namespaceLookups = Object.create(null)
     }
   },
   'state/vuex/save': async function () {
