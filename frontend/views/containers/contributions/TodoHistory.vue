@@ -4,7 +4,7 @@ div(:class='isReady ? "" : "c-ready"')
     tag='h2'
   ) TODO history
 
-  i18n(tag='p') Percentage of the payments TODO reached by the group.
+  i18n(tag='p') Percentage of payments completed by those pledging.
 
   p(v-if='history.length === 0')
     i18n Your group is still in its first month.

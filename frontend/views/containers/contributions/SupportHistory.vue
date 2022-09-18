@@ -4,7 +4,7 @@ div(:class='isReady ? "" : "c-ready"')
     tag='h2'
   ) Support history
 
-  i18n(tag='p') Percentage of the goal reached by the group.
+  i18n(tag='p') Percentage of the group income goal reached by the group.
 
   p(v-if='history.length === 0')
     i18n Your group is still in its first month.

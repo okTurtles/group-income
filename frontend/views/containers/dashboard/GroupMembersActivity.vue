@@ -2,59 +2,13 @@
 .c-wrapper
   .c-columns
     .c-column
-      i18n.is-title-3(tag='h2') Missed Pledges
-      i18n.has-text-1.c-para When members have missed payments they will appear here.
-
-      ul.spacer
-        li.c-item-wrapper
-          .c-item
-            avatar.c-avatar.icon-round(:src='memberGlobalProfile.picture' size='sm')
-            .c-item-copy
-              span.has-text-bold Rosalía
-              i18n(:args='{  date: "Jun 27" }') , relative to {date}
-
-        li.c-item-wrapper
-          .c-item
-            avatar.c-avatar.icon-round(:src='memberGlobalProfile.picture' size='sm')
-            .c-item-copy
-              span.has-text-bold Ken M
-              i18n(:args='{  date: "Jun 27" }') , relative to {date}
-
-        li.c-item-wrapper
-          .c-item
-            avatar.c-avatar.icon-round(:src='memberGlobalProfile.picture' size='sm')
-            .c-item-copy
-              span.has-text-bold Attila the Hun
-              i18n(:args='{  date: "May 25" }') , relative to {date}
-
-    .c-column
-      i18n.is-title-3(tag='h2') Inactive Members
-      i18n.has-text-1.c-para Members that haven’t logged to the platform in more than a week.
-
-      ul.spacer
-        li.c-item-wrapper
-          .c-item
-            avatar.c-avatar.icon-round(:src='memberGlobalProfile.picture' size='sm')
-            .c-item-copy
-              span.has-text-bold Rosalía
-              i18n(:args='{  date: "Jun 20" }') , last login on {date}
-
-        li.c-item-wrapper
-          .c-item
-            avatar.c-avatar.icon-round(:src='memberGlobalProfile.picture' size='sm')
-            .c-item-copy
-              span.has-text-bold Inês de Castro
-              i18n(:args='{  date: "Jun 17" }') , last login on {date}
-
-  .c-columns
-    .c-column
       i18n.is-title-3(tag='h2') Streaks
       i18n.has-text-1.c-para Information about your pledges streaks and other streak members appears here.
 
       ul.spacer
         li.c-item-wrapper
           .c-item
-            .icon-star.icon-round.has-background-warning.has-text-warning
+            .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
               i18n(
                 :args='{ ...LTags("strong"), timeframe: "2 weeks", pourcent: 100 }'
@@ -131,52 +85,9 @@
                   div Ines de Castro
               i18n(:args='{ ...LTags("strong"), proposalNumber: 2 }')  haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}
 
-  .c-columns
-    .c-column
-      i18n.is-title-3(tag='h2') Failed Pledges
-      i18n.has-text-1.c-para When members have missed payments they will appear here.
-
-      i18n(tag='strong') No members with missed pledges.
-
-    .c-column
-      i18n.is-title-3(tag='h2') Inactive Members
-      i18n.has-text-1.c-para Members that haven’t logged to the platform in more than a week.
-
-      i18n(tag='strong') Everyone logged in the past week.
-
-  .c-inactive
-    i18n.is-title-3(tag='h2') Inactive Users
-
-    table.table.table-in-card(data-test='payList' :class='tableClass')
-      thead
-        tr
-          i18n(tag='th') Member
-          i18n(tag='th') Payment Method
-          i18n(tag='th') Last login
-      tbody
-        tr
-          td
-            .c-item
-              avatar.c-avatar.icon-round(:src='memberGlobalProfile.picture' size='sm')
-              strong Rosalía
-          td
-            i18n.pill.is-neutral Receiver
-          td Jun 27
-
-        tr
-          td
-            .c-item
-              avatar.c-avatar.icon-round(:src='memberGlobalProfile.picture' size='sm')
-              strong Ken M
-          td
-            i18n.pill.is-neutral Pledger
-          td Jun 27
-
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 
 export default ({
@@ -188,16 +99,7 @@ export default ({
     }
   },
   components: {
-    Avatar,
     Tooltip
-  },
-  computed: {
-    ...mapGetters([
-      'globalProfile'
-    ]),
-    memberGlobalProfile () {
-      return this.globalProfile(this.username) || {}
-    }
   }
 }: Object)
 
