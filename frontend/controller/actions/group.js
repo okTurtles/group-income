@@ -26,6 +26,7 @@ import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import type { GIActionParams } from './types.js'
+import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -252,15 +253,14 @@ export default (sbp('sbp/selectors/register', {
     sbp('gi.actions/group/switch', message.contractID())
     return message
   },
-  'gi.actions/group/join': async function (params: $Exact<GIActionParams>) {
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept: boolean } }) {
     try {
       sbp('okTurtles.data/set', 'JOINING_GROUP', true)
       // post acceptance event to the group contract, unless this is being called
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {
-        await sbp('chelonia/out/actionEncrypted', {
+        await sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
-          action: 'gi.contracts/group/inviteAccept',
           hooks: {
             prepublish: params.hooks?.prepublish,
             postpublish: null
@@ -322,7 +322,7 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     }
   },
-  'gi.actions/group/joinAndSwitch': async function (params: GIActionParams) {
+  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept: boolean } }) {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     sbp('gi.actions/group/switch', params.contractID)

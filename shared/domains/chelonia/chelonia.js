@@ -12,8 +12,9 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import { ChelErrorUnrecoverable } from './errors.js'
-import type { GIKey, GIOpContract, GIOpActionUnencrypted, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpKeyRequestResponse } from './GIMessage.js'
+import type { GIKey, GIOpContract, GIOpActionUnencrypted, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpKeyRequest, GIOpKeyRequestResponse } from './GIMessage.js'
 import { keyId, sign, encrypt, decrypt, generateSalt } from './crypto.js'
+import type { Key } from './crypto.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -81,6 +82,22 @@ export type ChelKeyShareParams = {
   destinationContractName: string;
   data: GIOpKeyShare;
   signingKeyId: string;
+  hooks?: {
+    prepublishContract?: (GIMessage) => void;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
+  };
+  publishOptions?: { maxAttempts: number };
+}
+
+export type ChelKeyRequestParams = {
+  originatingContractID: string;
+  originatingContractName: string;
+  contractName: string;
+  contractID: string;
+  signingKey: Key,
+  innerSigningKeyId: string;
+  encryptionKeyId: string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
     prepublish?: (GIMessage) => void;
@@ -627,6 +644,43 @@ export default (sbp('sbp/selectors/register', {
       previousHEAD,
       op: [
         GIMessage.OP_KEY_DEL,
+        payload
+      ],
+      manifest: manifestHash,
+      signatureFn: signingKey ? signatureFnBuilder(signingKey) : undefined
+    })
+    hooks && hooks.prepublish && hooks.prepublish(msg)
+    await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
+    hooks && hooks.postpublish && hooks.postpublish(msg)
+    return msg
+  },
+  'chelonia/out/keyRequest': async function (params: ChelKeyRequestParams): Promise<GIMessage> {
+    const { originatingContractID, originatingContractName, contractID, contractName, hooks, publishOptions, signingKey, innerSigningKeyId, encryptionKeyId } = params
+    const manifestHash = this.config.contracts.manifests[contractName]
+    const originatingManifestHash = this.config.contracts.manifests[originatingContractName]
+    const contract = this.manifestToContract[manifestHash]?.contract
+    const originatingContract = this.manifestToContract[originatingManifestHash]?.contract
+    if (!contract) {
+      throw new Error('Contract name not found')
+    }
+    const state = contract.state(contractID)
+    const originatingState = originatingContract.state(originatingContractID)
+    const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+    const meta = contract.metadata.create()
+    const gProxy = gettersProxy(state, contract.getters)
+    contract.metadata.validate(meta, { state, ...gProxy, contractID })
+    const innerSigningKey = this.env.additionalKeys?.[innerSigningKeyId] || originatingState?._volatile?.keys[innerSigningKeyId]
+    const payload = ({
+      keyId: innerSigningKeyId,
+      encryptionKeyId: encryptionKeyId,
+      data: JSON.stringify(signatureFnBuilder(innerSigningKey)(`${originatingContractID}${GIMessage.OP_KEY_REQUEST}${contractID}${previousHEAD}`))
+    }: GIOpKeyRequest)
+    const msg = GIMessage.createV1_0({
+      originatingContractID,
+      contractID,
+      previousHEAD,
+      op: [
+        GIMessage.OP_KEY_REQUEST,
         payload
       ],
       manifest: manifestHash,

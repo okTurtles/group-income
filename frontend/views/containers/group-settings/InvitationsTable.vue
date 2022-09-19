@@ -159,12 +159,17 @@ export default ({
       const invitesList = Object.values(invites)
         .filter(invite => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
         .map(this.mapInvite)
-      const options = {
+
+      return invitesList
+
+      // TODO: Make active and all work
+
+      /* const options = {
         Active: () => invitesList.filter(invite => invite.status.isActive || (invite.status.isRevoked && invite.inviteSecret === this.ephemeral.inviteRevokedNow)),
         All: () => invitesList
-      }
+      } */
 
-      return options[this.ephemeral.selectbox.selectedOption]()
+      // return options[this.ephemeral.selectbox.selectedOption]()
     }
   },
   methods: {
@@ -225,7 +230,7 @@ export default ({
       const isAnyoneLink = creator === INVITE_INITIAL_CREATOR
       const isInviteExpired = expiryTime < Date.now()
       const isInviteRevoked = status === INVITE_STATUS.REVOKED
-      const numberOfResponses = Object.keys(responses).length
+      const numberOfResponses = responses ? Object.keys(responses).length : 0
       const isAllInviteUsed = numberOfResponses === quantity
 
       return {

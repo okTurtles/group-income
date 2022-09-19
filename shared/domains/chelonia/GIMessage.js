@@ -135,6 +135,8 @@ export class GIMessage {
         if (!this.isFirstMessage()) throw new Error('OP_CONTRACT: must be first message')
         break
       case GIMessage.OP_KEYSHARE:
+      case GIMessage.OP_KEY_REQUEST:
+      case GIMessage.OP_KEY_REQUEST_RESPONSE:
       case GIMessage.OP_ACTION_ENCRYPTED:
         // nothing for now
         break

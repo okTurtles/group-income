@@ -185,7 +185,9 @@ export default (sbp('sbp/selectors/register', {
             state._vm.invites[key.id] = {
               creator: key.meta.creator,
               quantity: key.meta.quantity,
-              expires: key.meta.expires
+              expires: key.meta.expires,
+              inviteSecret: state._volatile?.keys[key.id],
+              responses: Object.create(null)
             }
           }
         }
@@ -278,7 +280,9 @@ export default (sbp('sbp/selectors/register', {
             state._vm.invites[key.id] = {
               creator: key.meta.creator,
               quantity: key.meta.quantity,
-              expires: key.meta.expires
+              expires: key.meta.expires,
+              inviteSecret: state._volatile?.keys[key.id],
+              responses: Object.create(null)
             }
           }
         }

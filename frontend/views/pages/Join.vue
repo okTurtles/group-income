@@ -48,7 +48,7 @@ div
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
+import { INVITE_INITIAL_CREATOR /* , INVITE_STATUS */ } from '@model/contracts/shared/constants.js'
 import { LOGIN } from '@utils/events.js'
 import SignupForm from '@containers/access/SignupForm.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
@@ -57,6 +57,7 @@ import Avatar from '@components/Avatar.vue'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import { L } from '@common/common.js'
+import { deserializeKey, keyId } from '../../../shared/domains/chelonia/crypto.js'
 
 let syncFinished = false
 sbp('okTurtles.events/once', LOGIN, () => { syncFinished = true })
@@ -116,9 +117,10 @@ export default ({
         }
         const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
         // TODO: Derive public key from secret
-        const publicKey = this.ephemeral.query.secret
+        const secretKey = deserializeKey(this.ephemeral.query.secret)
+        const publicKey = keyId(secretKey)
         const invite = state._vm.invites[publicKey]
-        if (!invite || invite.status !== INVITE_STATUS.VALID) {
+        if (!invite /* || invite.status !== INVITE_STATUS.VALID */) {
           console.error('Join.vue error: Link is not valid.')
           this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
           this.pageStatus = 'INVALID'
@@ -167,10 +169,18 @@ export default ({
     async accept () {
       this.ephemeral.errorMsg = null
       try {
+        const originatingContractID = this.$store.state['loggedIn']['identityContractID']
+        const userState = this.$store.state[originatingContractID]
+
         const { groupId, secret } = this.ephemeral.query
         await sbp('gi.actions/group/joinAndSwitch', {
+          originatingContractID,
+          originatingContractName: 'gi.contracts/identity',
           contractID: groupId,
-          data: { inviteSecret: secret }
+          contractName: 'gi.contracts/group',
+          signingKey: secret,
+          innerSigningKeyId: Object.values(userState._vm.authorizedKeys).find((k) => k.meta?.type === 'csk').id,
+          encryptionKeyId: Object.values(userState._vm.authorizedKeys).find((k) => k.meta?.type === 'cek').id
         })
         this.pageStatus = 'WELCOME'
       } catch (e) {
