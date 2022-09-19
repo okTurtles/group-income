@@ -34,7 +34,7 @@ const getZkppSaltRecord = async (contract: string) => {
       const recordObj = JSON.parse(recordString)
 
       if (!Array.isArray(recordObj) || recordObj.length !== 3 || !recordObj.reduce((acc, cv) => acc && typeof cv === 'string', true)) {
-        console.log('Error validating encryped JSON object ' + recordId)
+        console.error('Error validating encrypted JSON object ' + recordId)
         return null
       }
 
@@ -46,7 +46,7 @@ const getZkppSaltRecord = async (contract: string) => {
         contractSalt
       }
     } catch {
-      console.log('Error parsing encrypted JSON object ' + recordId)
+      console.error('Error parsing encrypted JSON object ' + recordId)
       // empty
     }
   }
@@ -108,7 +108,7 @@ const verifyChallenge = (contract: string, r: string, s: string, userSig: string
 export const registrationKey = async (contract: string, b: string): Promise<false | {s: string; p: string; sig: string;}> => {
   const record = await getZkppSaltRecord(contract)
   if (record) {
-    return false
+    throw new Error('registrationKey: User record already exists')
   }
 
   const encryptionKey = hashStringArray('REG', contract, registrationSecret).slice(0, nacl.secretbox.keyLength)
@@ -128,7 +128,7 @@ export const registrationKey = async (contract: string, b: string): Promise<fals
 export const register = async (contract: string, clientPublicKey: string, encryptedSecretKey: string, userSig: string, encryptedHashedPassword: string): Promise<boolean> => {
   if (!verifyChallenge(contract, clientPublicKey, encryptedSecretKey, userSig)) {
     console.debug('register: Error validating challenge: ' + JSON.stringify({ contract, clientPublicKey, userSig }))
-    return false
+    throw new Error('register: Invalid challenge')
   }
 
   const record = await getZkppSaltRecord(contract)
@@ -142,6 +142,7 @@ export const register = async (contract: string, clientPublicKey: string, encryp
   const encryptionKey = hashStringArray('REG', contract, registrationSecret).slice(0, nacl.secretbox.keyLength)
   const secretKeyBuf = nacl.secretbox.open(encryptedSecretKeyBuf.slice(nacl.secretbox.nonceLength), encryptedSecretKeyBuf.slice(0, nacl.secretbox.nonceLength), encryptionKey)
 
+  // Likely a bad implementation on the client side
   if (!secretKeyBuf) {
     console.debug(`register: Error decrypting arguments for contract ID ${contract} (${JSON.stringify({ clientPublicKey, userSig })})`)
     return false
@@ -149,6 +150,7 @@ export const register = async (contract: string, clientPublicKey: string, encryp
 
   const parseRegisterSaltRes = parseRegisterSalt(clientPublicKey, secretKeyBuf, encryptedHashedPassword)
 
+  // Likely a bad implementation on the client side
   if (!parseRegisterSaltRes) {
     console.debug(`register: Error parsing registration salt for contract ID ${contract} (${JSON.stringify({ clientPublicKey, userSig })})`)
     return false
@@ -175,12 +177,13 @@ const contractSaltVerifyC = (h: string, r: string, s: string, userHc: string) =>
 export const getContractSalt = async (contract: string, r: string, s: string, sig: string, hc: string): Promise<false | string> => {
   if (!verifyChallenge(contract, r, s, sig)) {
     console.debug('getContractSalt: Error validating challenge: ' + JSON.stringify({ contract, r, s, sig }))
-    return false
+    throw new Error('getContractSalt: Bad challenge')
   }
 
   const record = await getZkppSaltRecord(contract)
   if (!record) {
-    console.debug('getContractSalt: Error obtaining ZKPP salt record for contract ID ' + contract)
+    // This shouldn't happen at this stage as the record was already obtained
+    console.error('getContractSalt: Error obtaining ZKPP salt record for contract ID ' + contract)
     return false
   }
 
@@ -189,8 +192,8 @@ export const getContractSalt = async (contract: string, r: string, s: string, si
   const c = contractSaltVerifyC(hashedPassword, r, s, hc)
 
   if (!c) {
-    console.debug(`getContractSalt: Error verifying challenge for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
-    return false
+    console.error(`getContractSalt: Error verifying challenge for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
+    throw new Error('getContractSalt: Bad challenge')
   }
 
   return encryptContractSalt(c, contractSalt)
@@ -199,12 +202,13 @@ export const getContractSalt = async (contract: string, r: string, s: string, si
 export const update = async (contract: string, r: string, s: string, sig: string, hc: string, encryptedArgs: string): Promise<boolean> => {
   if (!verifyChallenge(contract, r, s, sig)) {
     console.debug('update: Error validating challenge: ' + JSON.stringify({ contract, r, s, sig }))
-    return false
+    throw new Error('update: Bad challenge')
   }
 
   const record = await getZkppSaltRecord(contract)
   if (!record) {
-    console.debug('update: Error obtaining ZKPP salt record for contract ID ' + contract)
+    // This shouldn't happen at this stage as the record was already obtained
+    console.error('update: Error obtaining ZKPP salt record for contract ID ' + contract)
     return false
   }
   const { hashedPassword } = record
@@ -212,8 +216,8 @@ export const update = async (contract: string, r: string, s: string, sig: string
   const c = contractSaltVerifyC(hashedPassword, r, s, hc)
 
   if (!c) {
-    console.debug(`update: Error verifying challenge for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
-    return false
+    console.error(`update: Error verifying challenge for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
+    throw new Error('update: Bad challenge')
   }
 
   const encryptionKey = hashRawStringArray('SU', c).slice(0, nacl.secretbox.keyLength)
@@ -224,7 +228,7 @@ export const update = async (contract: string, r: string, s: string, sig: string
   const args = nacl.secretbox.open(encryptedArgsCiphertext, nonce, encryptionKey)
 
   if (!args) {
-    console.debug(`update: Error decrypting arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
+    console.error(`update: Error decrypting arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
     return false
   }
 
@@ -232,7 +236,7 @@ export const update = async (contract: string, r: string, s: string, sig: string
     const argsObj = JSON.parse(Buffer.from(args).toString())
 
     if (!Array.isArray(argsObj) || argsObj.length !== 3 || !argsObj.reduce((acc, cv) => acc && typeof cv === 'string', true)) {
-      console.debug(`update: Error validating the encrypted arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
+      console.error(`update: Error validating the encrypted arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
       return false
     }
 
@@ -242,7 +246,7 @@ export const update = async (contract: string, r: string, s: string, sig: string
 
     return true
   } catch {
-    console.debug(`update: Error parsing encrypted arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
+    console.error(`update: Error parsing encrypted arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
     // empty
   }
 

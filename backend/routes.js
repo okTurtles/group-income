@@ -264,23 +264,26 @@ route.POST('/zkpp/{contract}', {
     ])
   }
 }, async function (req, h) {
-  if (req.payload['b']) {
-    const result = await registrationKey(req.params['contract'], req.payload['b'])
+  try {
+    if (req.payload['b']) {
+      const result = await registrationKey(req.params['contract'], req.payload['b'])
 
-    if (!result) {
-      return Boom.internal('internal error')
+      if (result) {
+        return result
+      }
+    } else {
+      const result = await register(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
+
+      if (result) {
+        return result
+      }
     }
-
-    return result
-  } else {
-    const result = await register(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['Eh'])
-
-    if (!result) {
-      return Boom.internal('internal error')
-    }
-
-    return result
+  } catch (e) {
+    const ip = req.info.remoteAddress
+    console.error(e.message, { ip })
   }
+
+  return Boom.internal('internal error')
 })
 
 route.GET('/zkpp/{contract}/auth_hash', {}, async function (req, h) {
@@ -288,13 +291,18 @@ route.GET('/zkpp/{contract}/auth_hash', {}, async function (req, h) {
     return Boom.badRequest('b query param required')
   }
 
-  const challenge = await getChallenge(req.params['contract'], req.query['b'])
+  try {
+    const challenge = await getChallenge(req.params['contract'], req.query['b'])
 
-  if (!challenge) {
-    return Boom.internal('internal error')
+    if (challenge) {
+      return challenge
+    }
+  } catch (e) {
+    const ip = req.info.remoteAddress
+    console.error(e.message, { ip })
   }
 
-  return challenge
+  return Boom.internal('internal error')
 })
 
 route.GET('/zkpp/{contract}/contract_hash', {}, async function (req, h) {
@@ -314,13 +322,18 @@ route.GET('/zkpp/{contract}/contract_hash', {}, async function (req, h) {
     return Boom.badRequest('hc query param required')
   }
 
-  const salt = await getContractSalt(req.params['contract'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
+  try {
+    const salt = await getContractSalt(req.params['contract'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
-  if (!salt) {
-    return Boom.internal('internal error')
+    if (salt) {
+      return salt
+    }
+  } catch (e) {
+    const ip = req.info.remoteAddress
+    console.error(e.message, { ip })
   }
 
-  return salt
+  return Boom.internal('internal error')
 })
 
 route.PUT('/zkpp/{contract}', {
@@ -334,11 +347,16 @@ route.PUT('/zkpp/{contract}', {
     })
   }
 }, async function (req, h) {
-  const result = await update(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
+  try {
+    const result = await update(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 
-  if (!result) {
-    return Boom.internal('internal error')
+    if (result) {
+      return result
+    }
+  } catch (e) {
+    const ip = req.info.remoteAddress
+    console.error(e.message, { ip })
   }
 
-  return result
+  return Boom.internal('internal error')
 })
