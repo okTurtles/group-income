@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-pagination
-  .c-pagination-settings
+  .c-pagination-settings.hide-phone
     i18n.has-text-1(
       tag='span' aria-hidden='true'
     ) Show:
@@ -29,20 +29,19 @@
       }'
     ) {range} out of {count}
 
-    .c-previous-next
-      button.is-icon-small.c-btn(
-        :disabled='page === 0'
-        @click='previousPage'
-        :aria-label='L("Previous page")'
-      )
-        i.icon-chevron-left
+    button.is-icon-small.c-btn(
+      :disabled='page === 0'
+      @click='previousPage'
+      :aria-label='L("Previous page")'
+    )
+      i.icon-chevron-left
 
-      button.is-icon-small.c-btn(
-        :disabled='page + 1 >= maxPages'
-        @click='nextPage'
-        :aria-label='L("Next page")'
-      )
-        i.icon-chevron-right
+    button.is-icon-small.c-btn(
+      :disabled='page + 1 >= maxPages'
+      @click='nextPage'
+      :aria-label='L("Next page")'
+    )
+      i.icon-chevron-right
 </template>
 
 <script>
@@ -103,7 +102,6 @@ export default ({
 
 .c-btn {
   background-color: $general_2;
-  margin: 0 0.25rem;
 
   &[disabled] {
     background-color: $general_2;
@@ -121,6 +119,26 @@ export default ({
 
   &:last-child i {
     margin-right: -1px;
+  }
+
+  @include tablet {
+    margin: 0 0.25rem;
+
+    &:first-of-type {
+      margin-left: 1rem;
+    }
+  }
+}
+
+@include phone {
+  .c-pagination-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .c-btn:first-of-type {
+    order: -1;
+    margin-top: 0;
   }
 }
 </style>

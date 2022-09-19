@@ -187,9 +187,7 @@ export default ({
         if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
           this.redirectChat('GroupChatConversation')
         } else {
-          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-            chatRoomId: to.params.chatRoomId
-          })
+          this.updateCurrentChatRoomID(to.params.chatRoomId)
           if (!this.isJoinedChatRoom(chatRoomId)) {
             this.loadSummaryAndDetails()
           }
@@ -206,9 +204,13 @@ export default ({
 .c-card {
   margin-top: -1.5rem;
   padding: 0;
+  height: 100%;
+  margin-bottom: 0;
 
   @include tablet {
+    height: calc(100% - 3rem);
     margin-top: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   &:last-child {

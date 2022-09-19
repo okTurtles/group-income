@@ -1,6 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import { Vue } from '@common/common.js'
 import { objectOf, literalOf, unionOf, number } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { DAYS_MILLIS } from '../time.js'
 import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.js'
@@ -18,10 +19,11 @@ import {
   // STATUS_CANCELLED
 } from '../constants.js'
 
-export function archiveProposal (state: Object, proposalHash: string): void {
-  // TODO: handle this better (archive the proposal or whatever)
-  console.warn('archiveProposal is not fully implemented yet...')
-  // Vue.delete(state.proposals, proposalHash)
+export function archiveProposal ({ state, proposalHash, proposal, contractID }) {
+  Vue.delete(state.proposals, proposalHash)
+  sbp('gi.contracts/group/pushSideEffect', contractID,
+    ['gi.contracts/group/archiveProposal', contractID, proposalHash, proposal]
+  )
 }
 
 export function buildInvitationUrl (groupId: string, inviteSecret: string): string {
@@ -47,6 +49,7 @@ export function oneVoteToPass (proposalHash: string): boolean {
   votes[String(Math.random())] = VOTE_FOR
   const newResult = rules[proposal.data.votingRule](state, proposal.data.proposalType, votes)
   console.debug(`oneVoteToPass currentResult(${currentResult}) newResult(${newResult})`)
+
   return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
 }
 
@@ -54,8 +57,8 @@ function voteAgainst (state: any, { meta, data, contractID }: any) {
   const { proposalHash } = data
   const proposal = state.proposals[proposalHash]
   proposal.status = STATUS_FAILED
-  archiveProposal(state, proposalHash)
   sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_AGAINST, data)
+  archiveProposal({ state, proposalHash, proposal, contractID })
 }
 
 // NOTE: The code is ready to receive different proposals settings,
@@ -64,7 +67,7 @@ export const proposalDefaults = {
   rule: RULE_PERCENTAGE,
   expires_ms: 14 * DAYS_MILLIS,
   ruleSettings: ({
-    [RULE_PERCENTAGE]: { threshold: 0.67 },
+    [RULE_PERCENTAGE]: { threshold: 0.66 },
     [RULE_DISAGREEMENT]: { threshold: 1 }
   }: {|disagreement: {|threshold: number|}, percentage: {|threshold: number|}|})
 }
@@ -73,7 +76,8 @@ const proposals: Object = {
   [PROPOSAL_INVITE_MEMBER]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data, contractID }) {
-      const proposal = state.proposals[data.proposalHash]
+      const { proposalHash } = data
+      const proposal = state.proposals[proposalHash]
       proposal.payload = data.passPayload
       proposal.status = STATUS_PASSED
       // NOTE: if invite/process requires more than just data+meta
@@ -81,6 +85,7 @@ const proposals: Object = {
       const message = { meta, data: data.passPayload, contractID }
       sbp('gi.contracts/group/invite/process', message, state)
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
+      archiveProposal({ state, proposalHash, proposal, contractID })
       // TODO: for now, generate the link and send it to the user's inbox
       //       however, we cannot send GIMessages in any way from here
       //       because that means each time someone synchronizes this contract
@@ -131,13 +136,15 @@ const proposals: Object = {
       sbp('gi.contracts/group/pushSideEffect', contractID,
         ['gi.contracts/group/removeMember/sideEffect', message]
       )
+      archiveProposal({ state, proposalHash, proposal, contractID })
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_GROUP_SETTING_CHANGE]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data, contractID }) {
-      const proposal = state.proposals[data.proposalHash]
+      const { proposalHash } = data
+      const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED
       const { setting, proposedValue } = proposal.data.proposalData
       // NOTE: if updateSettings ever needs more ethana just meta+data
@@ -148,13 +155,15 @@ const proposals: Object = {
         contractID
       }
       sbp('gi.contracts/group/updateSettings/process', message, state)
+      archiveProposal({ state, proposalHash, proposal, contractID })
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data, contractID }) {
-      const proposal = state.proposals[data.proposalHash]
+      const { proposalHash } = data
+      const proposal = state.proposals[proposalHash]
       proposal.status = STATUS_PASSED
       const message = {
         meta,
@@ -162,13 +171,18 @@ const proposals: Object = {
         contractID
       }
       sbp('gi.contracts/group/updateAllVotingRules/process', message, state)
+      archiveProposal({ state, proposalHash, proposal, contractID })
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_GENERIC]: {
     defaults: proposalDefaults,
-    [VOTE_FOR]: function (state, { meta, data }) {
-      throw new Error('unimplemented!')
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
+      const { proposalHash } = data
+      const proposal = state.proposals[proposalHash]
+      proposal.status = STATUS_PASSED
+      sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
+      archiveProposal({ state, proposalHash, proposal, contractID })
     },
     [VOTE_AGAINST]: voteAgainst
   }

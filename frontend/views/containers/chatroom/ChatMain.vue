@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-chat-main(v-if='summary.title')
   emoticons
-  .c-body(:style='bodyStyles')
+  .c-body
     .c-body-loading(v-if='details.isLoading')
       loading
         //
@@ -86,7 +86,6 @@
       :title='summary.title'
       :scrolledUp='isScrolledUp'
       @send='handleSendMessage'
-      @height-update='updateSendAreaHeight'
       @jump-to-latest='updateScroll'
       @stop-replying='stopReplying'
     )
@@ -154,7 +153,6 @@ export default ({
       ephemeral: {
         startedUnreadMessageId: null,
         scrolledDistance: 0,
-        bodyPaddingBottom: '',
         infiniteLoading: null,
         shouldRefreshMessages: true,
         replyingMessage: null,
@@ -193,20 +191,6 @@ export default ({
       'currentGroupNotifications',
       'currentChatRoomUnreadMentions'
     ]),
-    bodyStyles () {
-      const defaultHeightInRem = 14
-      let heightDiscountInRem = 0
-      if (!this.summary.joined) {
-        heightDiscountInRem += 4
-      }
-      // Not sure what `bodyPaddingBottom` means, I delete it now
-      // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
-      const phoneStyles = {}
-      const responsiveStyles = {
-        height: `calc(var(--vh, 1vh) * 100 - ${defaultHeightInRem + heightDiscountInRem}rem)`
-      }
-      return { ...phoneStyles, ...responsiveStyles }
-    },
     currentUserAttr () {
       return {
         ...this.currentIdentityState.attributes,
@@ -267,9 +251,6 @@ export default ({
       if (timeBetween > MINS_MILLIS * 10) { return false }
       return this.messages[index].from === this.messages[index - 1].from
     },
-    updateSendAreaHeight (height) {
-      this.ephemeral.bodyPaddingBottom = height
-    },
     stopReplying () {
       this.ephemeral.replyingMessage = null
       this.ephemeral.replyingMessageId = null
@@ -310,6 +291,8 @@ export default ({
       const scrollAndHighlight = (index) => {
         const eleMessage = document.querySelectorAll('.c-body-conversation > .c-message')[index]
         const eleTarget = document.querySelectorAll('.c-body-conversation > .c-message')[Math.max(0, index - 1)]
+
+        if (!eleTarget) { return }
 
         if (effect) {
           eleTarget.scrollIntoView({ behavior: 'smooth' })
@@ -370,7 +353,11 @@ export default ({
     editMessage (message, newMessage) {
       sbp('gi.actions/chatroom/editMessage', {
         contractID: this.currentChatRoomId,
-        data: { id: message.id, text: newMessage },
+        data: {
+          id: message.id,
+          createdDate: message.datetime,
+          text: newMessage
+        },
         hooks: {
           prepublish: (msg) => {
             message.text = newMessage
@@ -430,6 +417,7 @@ export default ({
        * So in this case, we will load messages until the first unread mention
        * and scroll to that message
        */
+      const curChatRoomId = this.currentChatRoomId
       let unreadPosition = null
       if (this.currentChatRoomUnreadSince) {
         if (!this.currentChatRoomUnreadSince.deletedDate) {
@@ -449,7 +437,12 @@ export default ({
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
-
+      if (curChatRoomId !== this.currentChatRoomId) {
+        // this.currentChatRoomId is a vuex getter and it could be changed
+        // while we get events from backend. This happens when users switch chatrooms very quickly
+        // In this case, we should avoid the previous events and only necessary to render the last events
+        return
+      }
       await this.rerenderEvents(events, refresh)
 
       if (refresh) {
@@ -489,7 +482,7 @@ export default ({
       this.ephemeral.startedUnreadMessageId = null
       if (this.currentChatRoomUnreadSince) {
         const startUnreadMessage = this.messages
-          .find(msg => new Date(msg.datetime).getTime() > this.currentChatRoomUnreadSince.createdDate)
+          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
         if (startUnreadMessage) {
           this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
         }
@@ -674,9 +667,13 @@ export default ({
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
-  height: calc(var(--vh, 1vh) * 100 - 14rem);
+  height: calc(var(--vh, 1vh) * 100 - 16rem);
   width: calc(100% + 1rem);
   position: relative;
+
+  @include tablet {
+    height: calc(var(--vh, 1vh) * 100 - 14rem);
+  }
 
   &::before {
     content: "";

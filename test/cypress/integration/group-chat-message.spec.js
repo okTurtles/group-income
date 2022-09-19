@@ -155,7 +155,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
 
     sendMessage('Hi')
 
-    editMessage(6, `Hi ${user2}. I am fine thanks.`)
+    editMessage(7, `Hi ${user2}. I am fine thanks.`)
   })
 
   it('user2 edits and deletes message', () => {

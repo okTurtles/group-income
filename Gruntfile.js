@@ -107,22 +107,34 @@ module.exports = (grunt) => {
   }
 
   async function generateManifests (dir, version) {
-    grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
-    // TODO: do this with JS instead of POSIX commands for Windows support
-    const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${dir}/{}-slim.js key.json ${dir}/{}.js`, 'error generating manifests')
-    console.log(stdout)
+    if (development) {
+      grunt.log.writeln(chalk.underline("\nRunning 'chel manifest'"))
+      // TODO: do this with JS instead of POSIX commands for Windows support
+      const { stdout } = await execWithErrMsg(`ls ${dir}/*-slim.js | sed -En 's/.*\\/(.*)-slim.js/\\1/p' | xargs -I {} node_modules/.bin/chel manifest -v ${version} -s ${dir}/{}-slim.js key.json ${dir}/{}.js`, 'error generating manifests')
+      console.log(stdout)
+    } else {
+      // Only run these in NODE_ENV=development so that production servers
+      // don't overwrite manifests.json
+      grunt.log.writeln(chalk.yellow("\n(Skipping) Running 'chel manifest'"))
+    }
   }
 
   async function deployAndUpdateMainSrc (manifestDir) {
-    grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
-    const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
-    console.log(stdout)
-    const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
-    const manifests = Object.fromEntries(Array.from(stdout.matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
-    fs.writeFileSync(manifestJSON,
-      JSON.stringify({ manifests }, null, 2) + '\n',
-      'utf8')
-    console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
+    if (development) {
+      grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
+      const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
+      console.log(stdout)
+      const r = /contracts\/([^.]+)\.(?:x|[\d.]+)\.manifest.*data\/(.*)/g
+      const manifests = Object.fromEntries(Array.from(stdout.replace(/\\/g, '/').matchAll(r), x => [`gi.contracts/${x[1]}`, x[2]]))
+      fs.writeFileSync(manifestJSON,
+        JSON.stringify({ manifests }, null, 2) + '\n',
+        'utf8')
+      console.log(chalk.green('manifest JSON written to:'), manifestJSON, '\n')
+    } else {
+      // Only run these in NODE_ENV=development so that production servers
+      // don't overwrite manifests.json
+      grunt.log.writeln(chalk.yellow("\n(Skipping) Running 'chel deploy'"))
+    }
   }
 
   async function genManifestsAndDeploy (dir, version) {
@@ -356,7 +368,7 @@ module.exports = (grunt) => {
         cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
         options: { env: process.env }
       },
-      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs ./node_modules/.bin/chel deploy ./data'
+      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
     }
   })
 
@@ -443,12 +455,17 @@ module.exports = (grunt) => {
     cypress[command](options).then(r => done(r.totalFailed === 0)).catch(done)
   })
 
-  grunt.registerTask('pin', async function (version) {
-    if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
+  grunt.registerTask('_pin', async function (version) {
+    // a task internally executed in 'pin' task below
     const done = this.async()
     const dirPath = `contracts/${version}`
+
     if (fs.existsSync(dirPath)) {
-      throw new Error(`already exists: ${dirPath}`)
+      if (grunt.option('overwrite')) { // if the task is run with '--overwrite' option, empty the folder first.
+        fs.rmSync(dirPath, { recursive: true })
+      } else {
+        throw new Error(`already exists: ${dirPath}`)
+      }
     }
     // since the copied manifest files might not have the correct version on them
     // we need to delete the old ones and regenerate them
@@ -462,6 +479,13 @@ module.exports = (grunt) => {
     fs.writeFileSync('package.json', JSON.stringify(packageJSON, null, 2) + '\n', 'utf8')
     console.log(chalk.green('updated package.json "contractsVersion" to:'), version)
     done()
+  })
+
+  grunt.registerTask('pin', function (version) {
+    if (typeof version !== 'string') throw new Error('usage: grunt pin:<version>')
+
+    grunt.task.run('build')
+    grunt.task.run(`_pin:${version}`)
   })
 
   grunt.registerTask('default', ['dev'])

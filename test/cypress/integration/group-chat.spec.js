@@ -27,6 +27,10 @@ const channelsOf1For2 = chatRooms.filter(c => c.name.startsWith('Channel1') && c
 const channelsOf2For1 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.users.includes(user1)).map(c => c.name)
 const channelsOf2For3 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.users.includes(user3)).map(c => c.name)
 
+function getProposalItems () {
+  return cy.getByDT('proposalsWidget').children()
+}
+
 describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
   function switchUser (username) {
     cy.giSwitchUser(username)
@@ -406,21 +410,23 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.getByDT('closeModal').should('not.exist')
     })
 
-    cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
+    getProposalItems().within(() => {
       cy.getByDT('typeDescription').should('contain', `Remove ${user3} from the group.`)
-      cy.getByDT('statusDescription').should('contain', '1 out of 2 members voted.') // 1 out of 2 - user3 can't vote.
+      cy.getByDT('statusDescription').should('contain', '1 out of 2 members voted') // 1 out of 2 - user3 can't vote.
     })
   })
 
   it('user1 approves the proposal and removes user3 and logout', () => {
     switchUser(user1)
 
-    cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
+    getProposalItems().within(() => {
       cy.getByDT('typeDescription').should('contain', `Remove ${user3} from the group.`)
       cy.getByDT('voteFor').click()
-      cy.getByDT('statusDescription')
-        .should('contain', 'Proposal accepted')
     })
+    // see explanatory comment in group-proposals.spec.js for this .pipe() thing
+    cy.get('body')
+      .pipe($el => $el.find('[data-test="proposalsWidget"]').find('[data-test="statusDescription"]'))
+      .should('contain', 'Proposal accepted')
 
     cy.getByDT('groupMembers').find('ul>li').should('have.length', 2) // user1 & user2
 

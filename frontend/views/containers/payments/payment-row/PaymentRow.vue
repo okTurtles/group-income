@@ -3,14 +3,25 @@
     td(v-if='$slots["cellPrefix"]')
       slot(name='cellPrefix')
     td
-      .c-user
-        avatar-user.c-avatar(:username='payment.username' size='xs')
-        strong.c-name {{payment.displayName}}
+      slot(name='cellUser')
+      template(v-if='!$slots["cellUser"]')
+        .c-user
+          avatar-user.c-avatar(:username='payment.username' size='xs')
+          strong.c-name {{payment.displayName}}
 
-      span.c-user-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{dateText}}
+        span.c-user-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{ humanDate(payment.date) }}
 
     td.c-td-amount(v-if='$slots["cellAmount"]')
       slot(name='cellAmount')
+
+    td(v-if='$slots["cellMethod"]')
+      slot(name='cellMethod')
+
+    td(v-if='$slots["cellDate"]')
+      slot(name='cellDate')
+
+    td(v-if='$slots["cellRelativeTo"]')
+      slot(name='cellRelativeTo')
 
     td
       .cpr-actions
@@ -23,7 +34,6 @@
 <script>
 import AvatarUser from '@components/AvatarUser.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { L } from '@common/common.js'
 
 export default ({
   name: 'PaymentRowSent',
@@ -34,18 +44,6 @@ export default ({
     payment: {
       type: Object,
       required: true
-    }
-  },
-  computed: {
-    dateText () {
-      const hDate = humanDate(this.payment.date)
-      if (this.payment.isLate === false) {
-        // Make sure isLate is false to avoid false positives with "undefined".
-        // isLate only exists in "TODO" row. Use it to show the text "Due".
-        // Maybe a key "showDue" would be better, but for now this works.
-        return L('Due {date}', { date: hDate })
-      }
-      return hDate
     }
   },
   methods: {
@@ -69,14 +67,14 @@ export default ({
   }
 }
 
-.cpr-actions {
-  justify-content: space-between;
-}
-
 .cpr-actions,
 .c-user {
   display: flex;
   align-items: center;
+}
+
+.cpr-actions {
+  justify-content: space-between;
 }
 
 .c-avatar {

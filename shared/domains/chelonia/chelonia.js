@@ -227,6 +227,11 @@ export default (sbp('sbp/selectors/register', {
         }
       }))
     }
+    for (const method in contract.methods) {
+      this.defContractSelectors.push(...sbp('sbp/selectors/register', {
+        [`${contract.manifest}/${method}`]: contract.methods[method]
+      }))
+    }
     sbp('okTurtles.events/emit', CONTRACT_REGISTERED, contract)
   },
   'chelonia/queueInvocation': sbp('sbp/selectors/fn', 'okTurtles.eventQueue/queueEvent'),

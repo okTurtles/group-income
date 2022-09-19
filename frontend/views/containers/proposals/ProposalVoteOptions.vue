@@ -166,17 +166,19 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .c-ctas {
+  grid-area: actions;
   @include phone {
-    width: 100%;
-    margin-top: 1rem;
-    margin-bottom: 0.5rem;
+    flex: auto;
+    margin: 1rem 1rem 1rem 0;
 
-    .button {
+    .buttons {
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+
+    button {
       flex-grow: 1;
-
-      &:not(:last-child) {
-        margin-right: 1rem;
-      }
+      margin-right: 0;
     }
   }
 }

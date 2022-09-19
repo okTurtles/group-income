@@ -51,6 +51,7 @@ const vuexState = {
   theme: THEME_LIGHT,
   fontSize: 1,
   increasedContrast: false,
+  namespaceLookups: Object.create(null),
   reducedMotion: false,
   appLogsFilter: ['error', 'info', 'warn']
 }

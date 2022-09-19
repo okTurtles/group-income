@@ -12,6 +12,8 @@ import { blake32Hash } from '~/shared/functions.js'
 
 import type { GIOpContract, GIOpType, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpPropSet, GIOpKeyAdd } from './GIMessage.js'
 
+// export const FERAL_FUNCTION = Function
+
 export default (sbp('sbp/selectors/register', {
   //     DO NOT CALL ANY OF THESE YOURSELF!
   'chelonia/private/state': function () {
@@ -51,38 +53,60 @@ export default (sbp('sbp/selectors/register', {
         throw new Error(`[chelonia] selector not on allowlist: '${selector}'`)
       }
     }
+    // const saferEval: Function = new FERAL_FUNCTION(`
     // eslint-disable-next-line no-new-func
     const saferEval: Function = new Function(`
-      return function (require, globals) {
-        // not a real sandbox, can't stop: (() => this)().fetch b/c JS is ridiculous
-        with (globals) {
-          ${source}
+      return function (globals) {
+        // almost a real sandbox
+        // stops (() => this)().fetch
+        // needs additional step of locking down Function constructor to stop:
+        // new (()=>{}).constructor("console.log(typeof this.fetch)")()
+        with (new Proxy(globals, {
+          get (o, p) { return o[p] },
+          has (o, p) { /* console.log('has', p); */ return true }
+        })) {
+          (function () {
+            'use strict'
+            ${source}
+          })()
         }
       }
     `)()
+    // TODO: lock down Function constructor! could just use SES lockdown()
+    // or do our own version of it.
+    // https://github.com/endojs/endo/blob/master/packages/ses/src/tame-function-constructors.js
     this.defContractSBP = contractSBP
     this.defContractManifest = manifestHash
-    saferEval((dep) => {
-      return dep === '@sbp/sbp'
-        ? contractSBP
-        : this.config.contracts.defaults.modules[dep]
-    }, {
-      // TODO: not a real sandbox, use webworkers, SES (see bottom of file), or something else
-      // thankfully contracts are signed, so that removes some of the potential trouble
-      window: undefined,
-      self: undefined, // alias for window
-      top: undefined, // alias for window
-      parent: undefined, // alias for window
-      document: undefined,
-      globalThis: undefined,
-      fetch: undefined,
-      XMLHttpRequest: undefined,
-      // preserve these however, they're useful
-      setTimeout,
-      clearTimeout,
-      setInterval,
-      clearInterval,
+    // contracts will also be signed, so even if sandbox breaks we still have protection
+    saferEval({
+      // pass in globals that we want access to by default in the sandbox
+      // note: you can undefine these by setting them to undefined in exposedGlobals
+      console,
+      Object,
+      Error,
+      TypeError,
+      Math,
+      Symbol,
+      Date,
+      Array,
+      // $FlowFixMe
+      BigInt,
+      Boolean,
+      String,
+      Number,
+      Uint8Array,
+      ArrayBuffer,
+      JSON,
+      RegExp,
+      parseFloat,
+      parseInt,
+      Promise,
       ...this.config.contracts.defaults.exposedGlobals,
+      require: (dep) => {
+        return dep === '@sbp/sbp'
+          ? contractSBP
+          : this.config.contracts.defaults.modules[dep]
+      },
       sbp: contractSBP
     })
     contractName = this.defContract.name

@@ -187,6 +187,7 @@ page(
               i.icon-ellipsis-v icon-ellipsis-v
               i.icon-ellipsis-h icon-ellipsis-h
               i.icon-envelope icon-envelope
+              i.icon-envelope-open-text icon-envelope-open-text
               i.icon-eye icon-eye
               i.icon-eye-slash icon-eye-slash
               i.icon-globe icon-globe
@@ -780,9 +781,14 @@ page(
                   option Other
                 input.input(aria-label='Value')
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+
+        tr
+          td(colspan='2')
+            br
+            h3.is-title-3 Input Group
+
         tr
           td
-            h3.is-title-3 Input Group
             h4.is-title-4 With suffix
             br
             pre
@@ -798,6 +804,25 @@ page(
                 input.input(type='text' placeholder='Amount')
                 .suffix USD
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+
+        tr
+          td
+            h4.is-title-4 Disabled style
+            br
+            pre
+              | label.field
+              |   .label Mincome
+              |   .inputgroup.disabled
+              |     input.input
+              |     .suffix USD
+          td
+            label.field
+              .label Mincome
+              .inputgroup.disabled(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Amount')
+                .suffix USD
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+
         tr
           td
             h4.is-title-4 With shifted btn
@@ -1098,7 +1123,19 @@ page(
                     item-id='message'
                     icon='comment'
                   ) Send message
-
+        tr
+          td
+            pre
+              | button-dropdown-menu(
+              |   :buttonText='L("Create proposal")'
+              |   :options='buttonDropdownMenuOpts'
+              | )
+          td
+            button-dropdown-menu(
+              :buttonText='L("Create proposal")'
+              :options='config.buttonDropdownMenuOpts'
+              @select='onButtonDropdownItemSelect'
+            )
   article#modals
     section.card
       h2.is-title-2.card-header Modals
@@ -1195,6 +1232,42 @@ page(
 
       p *yesButton and noButton parameters are optional
 
+  article#clipboard-uis
+    section.card
+      h2.is-title-2.card-header Clipboard tools
+      p UI elements to use for copying a text or link into the clipboard of user's device.
+      br
+      br
+
+      h3.is-title-3 Link to copy
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td.c-top
+            pre
+              | link-to-copy.c-link(link='string')
+          td
+            link-to-copy.c-link(link='http://localhost:3000/app/join?groupId=21XWnNJvq9&secret=3763')
+
+      br
+      h3.is-title-3 Copyable input
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td.c-top
+            pre
+              | copyable-input(v-model='form.copyableInput')
+          td
+            copyable-input(
+              v-model='form.copyableInput'
+            )
+
   article#Illustrations
     section.card
       h2.is-title-2.card-header Illustrations (SVGs)
@@ -1228,6 +1301,30 @@ page(
           component.c-svg(:is='svg.component')
           .c-svgList-text
             p #[b Name]: {{svg.name}}
+
+  article#qrcode
+    section.card
+      h2.is-title-2.card-header QR Code
+      p We have a component named 'QrCode' that uses 'qrious' to encode a string into a qr-code image.
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td.c-top
+            pre
+              | qr-code(
+              |   value='https://groupincome.org/community/'
+              |   :sideLength='88'
+              | )
+          td
+            qr-code(
+              value='https://groupincome.org/community/'
+              :sideLength='88'
+            )
+      br
+      br
 </template>
 
 <script>
@@ -1240,10 +1337,13 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import CalloutCard from '@components/CalloutCard.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import CopyableInput from '@components/CopyableInput.vue'
+import QrCode from '@components/QrCode.vue'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import Search from '@components/Search.vue'
+import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
 import SvgBitcoin from '@svgs/bitcoin.svg'
@@ -1354,11 +1454,20 @@ export default ({
             name: 'SvgVote',
             sprite: 'Dashboard'
           }
+        ],
+        buttonDropdownMenuOpts: [
+          { type: 'header', name: 'Group Members' },
+          { type: 'item', id: 'add-new-member', name: 'Add new member', icon: 'comment' },
+          { type: 'item', id: 'remove-member', name: 'Remove member', icon: 'comment' },
+          { type: 'header', name: 'Voting Systems' },
+          { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'comment' },
+          { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'comment' }
         ]
       },
       form: {
         searchValue: '',
         selectPayment: 'choose',
+        copyableInput: '',
         sliderValue: 25
       },
       ephemeral: {
@@ -1378,10 +1487,14 @@ export default ({
     ButtonSubmit,
     CalloutCard,
     LinkToCopy,
+    CopyableInput,
+    QrCode,
     MenuParent,
     MenuTrigger,
     MenuContent,
+    MenuHeader,
     MenuItem,
+    ButtonDropdownMenu,
     Search,
     Tooltip,
     SvgHello,
@@ -1451,6 +1564,9 @@ export default ({
     },
     toggleTheme () {
       this.setTheme(this.isDarkTheme ? THEME_LIGHT : THEME_DARK)
+    },
+    onButtonDropdownItemSelect (itemId) {
+      console.log('selected item id: ', itemId)
     }
   },
   computed: {
