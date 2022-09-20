@@ -406,7 +406,9 @@ sbp('chelonia/defineContract', {
         for (const message of state.messages) {
           if (message.replyingMessage?.id === data.id) {
             message.replyingMessage.id = null
-            message.replyingMessage.text = 'Original message was removed.'
+            message.replyingMessage.text = L('Original message was removed by {username}', {
+              username: makeMentionFromUsername(meta.username).me
+            })
           }
         }
       },
