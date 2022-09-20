@@ -64,13 +64,13 @@ page(
             | {{ link.title }}
             span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-        .c-tabs-chip-container.hide-phone(v-if='ephemeral.activeTab === "PaymentRowTodo"')
+        .c-tabs-chip-container.hide-phone
           next-distribution-pill
 
       .c-tab-header-container
-        h3.is-title-3(v-if='tabHeader') {{ tabHeader }}
+        h3.is-title-3(v-if='this.ephemeral.activeTab === "PaymentRowReceived"') {{ L('Received payments') }}
 
-        next-distribution-pill.c-distribution-pill(:class='{ "hide-tablet": ephemeral.activeTab === "PaymentRowTodo" }')
+        next-distribution-pill.hide-tablet.c-distribution-pill(v-if='this.ephemeral.activeTab !== "PaymentRowReceived"')
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -350,12 +350,6 @@ export default ({
         PaymentRowSent: () => this.paymentsSent,
         PaymentRowReceived: () => this.paymentsReceived
       }[this.ephemeral.activeTab]()
-    },
-    tabHeader () {
-      return {
-        PaymentRowSent: L('Completed payments'),
-        PaymentRowReceived: L('Received payments')
-      }[this.ephemeral.activeTab] || ''
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
