@@ -667,12 +667,12 @@ export default ({
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
-  height: calc(var(--vh, 1vh) * 100 - 16rem);
+  height: calc(var(--vh, 1vh) * 100 - 18rem);
   width: calc(100% + 1rem);
   position: relative;
 
   @include tablet {
-    height: calc(var(--vh, 1vh) * 100 - 14rem);
+    height: calc(var(--vh, 1vh) * 100 - 16rem);
   }
 
   &::before {

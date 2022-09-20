@@ -110,7 +110,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
     checkIfJoined(CHATROOM_GENERAL_NAME)
 
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 15; i++) {
       sendMessage(`Text-${i + 1}`)
     }
 
@@ -134,7 +134,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
     })
 
-    for (let i = 25; i < 50; i++) {
+    for (let i = 15; i < 30; i++) {
       sendMessage(`Text-${i + 1}`)
     }
 
