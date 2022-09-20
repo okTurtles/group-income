@@ -6,10 +6,9 @@ import {
   GIOpActionUnencrypted,
   GIOpContract,
   GIOpKeyAdd,
-  GIOpPropSet,
-  GIOpValue
+  GIOpPropSet
 } from './GIMessage.ts'
-import type { CheloniaConfig, CheloniaInstance, CheloniaState, ContractDefinition } from './chelonia.ts'
+import type { CheloniaConfig, CheloniaInstance, CheloniaState, ContractDefinition, ContractInfo } from './chelonia.ts'
 
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/model/contracts/shared/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.ts'
@@ -17,6 +16,37 @@ import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { blake32Hash } from '~/shared/functions.ts'
 // import 'ses'
+
+type BoolCallback = (...args: unknown[]) => boolean | void
+
+type ContractState = {
+  _vm?: VM
+}
+
+type Key = {
+  context: string
+  key: string
+}
+
+type RevertProcessParameters = {
+  message: GIMessage
+  state: CheloniaState
+  contractID: string
+  contractStateCopy: ContractState
+}
+
+type RevertSideEffectParameters = {
+  message: GIMessage
+  state: CheloniaState
+  contractID: string
+  contractStateCopy: ContractState
+  stateCopy: CheloniaState
+}
+
+type VM = {
+  authorizedKeys: Key[]
+  props: Record<string, unknown>
+}
 
 // export const FERAL_FUNCTION = Function
 
@@ -33,7 +63,7 @@ export default sbp('sbp/selectors/register', {
     const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
     const manifest = await fetch(manifestURL).then(handleFetchResult('json'))
     const body = JSON.parse(manifest.body)
-    const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
+    const contractInfo: ContractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
     const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`)
       .then(handleFetchResult('text'))
@@ -48,7 +78,7 @@ export default sbp('sbp/selectors/register', {
     const allowedDoms = this.config.contracts.defaults.allowedDomains
       .reduce(reduceAllow, {})
     let contractName: string // eslint-disable-line prefer-const
-    const contractSBP = (selector: string, ...args: any[]) => {
+    const contractSBP = (selector: string, ...args: unknown[]) => {
       const domain = domainFromSelector(selector)
       if (selector.startsWith(contractName)) {
         selector = `${manifestHash}/${selector}`
@@ -164,23 +194,24 @@ export default sbp('sbp/selectors/register', {
       }
     }
   },
-  'chelonia/private/in/processMessage': async function (this: CheloniaInstance, message: GIMessage, state: any) {
+  'chelonia/private/in/processMessage': async function (this: CheloniaInstance, message: GIMessage, state: ContractState) {
     const [opT, opV] = message.op()
     const hash = message.hash()
     const contractID = message.contractID()
     const manifestHash = message.manifest()
     const config = this.config
-    if (!state._vm) state._vm = {}
+    if (!state._vm) state._vm = {} as VM
+    const { _vm } = state
     const opFns = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         // TODO: shouldn't each contract have its own set of authorized keys?
-        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = []
+        if (!_vm.authorizedKeys) _vm.authorizedKeys = []
         // TODO: we probably want to be pushing the de-JSON-ified key here
-        state._vm.authorizedKeys.push({ key: v.keyJSON, context: 'owner' })
+        _vm.authorizedKeys.push({ key: v.keyJSON, context: 'owner' })
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing) {
-          const decrypted = message.decryptedValue(config.decryptFn)
+          const decrypted = message.decryptedValue(config.decryptFn) as GIOpActionUnencrypted
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
         }
       },
@@ -195,8 +226,8 @@ export default sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
       [GIMessage.OP_PROP_SET] (v: GIOpPropSet) {
-        if (!state._vm.props) state._vm.props = {}
-        state._vm.props[v.key] = v.value
+        if (!_vm.props) _vm.props = {}
+        _vm.props[v.key] = v.value
       },
       [GIMessage.OP_KEY_ADD] (v: GIOpKeyAdd) {
         // TODO: implement this. consider creating a function so that
@@ -215,14 +246,13 @@ export default sbp('sbp/selectors/register', {
       processOp = config.preOp(message, state) !== false && processOp
     }
     if (`preOp_${opT}` in config) {
-      // @ts-ignore Property 'preOp_ae' does not exist on type 'CheloniaConfig'
-      processOp = (config[`preOp_${opT}`] as any)(message, state) !== false && processOp
+      processOp = (config[`preOp_${opT}`] as BoolCallback)(message, state) !== false && processOp
     }
     if (processOp && !config.skipProcessing) {
+      // @ts-expect-error TS2345: Argument of type 'GIOpValue' is not assignable.
       opFns[opT](opV)
       config.postOp && config.postOp(message, state)
-      // @ts-ignore Property 'postOp_ae' does not exist on type 'CheloniaConfig'
-      ;(`postOp_${opT}` in config) && (config[`postOp_${opT}`] as any)(message, state)
+      ;(`postOp_${opT}` in config) && (config[`postOp_${opT}`] as BoolCallback)(message, state)
     }
   },
   'chelonia/private/in/enqueueHandleEvent': function (this: CheloniaInstance, event: GIMessage) {
@@ -372,7 +402,7 @@ const handleEvent = {
       throw e
     }
   },
-  async processMutation (this: CheloniaInstance, message: GIMessage, state: any) {
+  async processMutation (this: CheloniaInstance, message: GIMessage, state: CheloniaState) {
     const contractID = message.contractID()
     if (message.isFirstMessage()) {
       const { type } = message.opValue() as GIOpContract
@@ -394,12 +424,12 @@ const handleEvent = {
       const contractID = message.contractID()
       const manifestHash = message.manifest()
       const hash = message.hash()
-      const { action, data, meta } = message.decryptedValue()
+      const { action, data, meta } = message.decryptedValue() as GIOpActionUnencrypted
       const mutation = { data, meta, hash, contractID }
       await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }
   },
-  revertProcess (this: CheloniaInstance, { message, state, contractID, contractStateCopy }: any) {
+  revertProcess (this: CheloniaInstance, { message, state, contractID, contractStateCopy }: RevertProcessParameters) {
     console.warn(`[chelonia] reverting mutation ${message.description()}: ${message.serialize()}. Any side effects will be skipped!`)
     if (!contractStateCopy) {
       console.warn(`[chelonia] mutation reversion on very first message for contract ${contractID}! Your contract may be too damaged to be useful and should be redeployed with bugfixes.`)
@@ -407,7 +437,7 @@ const handleEvent = {
     }
     this.config.reactiveSet(state, contractID, contractStateCopy)
   },
-  revertSideEffect (this: CheloniaInstance, { message, state, contractID, contractStateCopy, stateCopy }: any) {
+  revertSideEffect (this: CheloniaInstance, { message, state, contractID, contractStateCopy, stateCopy }: RevertSideEffectParameters) {
     console.warn(`[chelonia] reverting entire state because failed sideEffect for ${message.description()}: ${message.serialize()}`)
     if (!contractStateCopy) {
       this.config.reactiveDel(state, contractID)
@@ -420,7 +450,7 @@ const handleEvent = {
   }
 }
 
-const notImplemented = (v: any) => {
+const notImplemented = (v: unknown) => {
   throw new Error(`chelonia: action not implemented to handle: ${JSON.stringify(v)}.`)
 }
 

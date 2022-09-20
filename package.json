@@ -50,6 +50,7 @@
   "eslintIgnore": [
     "frontend/assets/*",
     "frontend/model/contracts/misc/flowTyper.js",
+    "shared/declarations.js",
     "historical/*",
     "shared/types.js",
     "dist/*",

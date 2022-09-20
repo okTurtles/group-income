@@ -1,5 +1,3 @@
-/* globals Deno */
-
 import { bold, yellow } from 'fmt/colors.ts'
 
 import sbp from '@sbp/sbp'
@@ -15,13 +13,15 @@ import Toolkit from 'pogo/lib/toolkit.ts'
 import './database.ts'
 import * as pathlib from 'path'
 
-declare const logger: Function
+declare const logger: (err: Error) => Error
 
 export const router = new Router()
 
-const route: Record<string, Function> = new Proxy({}, {
-  get: function (obj: any, prop: string) {
-    return function (path: string, handler: RouteHandler) {
+type RouterProxyTarget = Record<string, (pathSpec: string, handler: RouteHandler) => Response>
+
+const route = new Proxy({} as RouterProxyTarget, {
+  get (obj: RouterProxyTarget, prop: string) {
+    return (path: string, handler: RouteHandler) => {
       router.add({ path, method: prop, handler })
     }
   }

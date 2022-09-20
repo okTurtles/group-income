@@ -9,7 +9,7 @@ const { PermissionDenied } = Deno.errors
 
 export default {
   name: 'gi-auth',
-  register (server: Object, opts: Object) {
+  register (server: unknown, opts: unknown) {
     server.auth.scheme('gi-auth', function (server, options) {
       return {
         authenticate (request, h) {

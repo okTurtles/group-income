@@ -1,5 +1,4 @@
-declare var process: any
-
+/* eslint-disable camelcase */
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
@@ -12,9 +11,37 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.ts'
 import { ChelErrorUnrecoverable } from './errors.ts'
-import type { GIOpContract, GIOpActionUnencrypted } from './GIMessage.ts'
+import type { GIOpActionUnencrypted } from './GIMessage.ts'
 
+declare const process: {
+  env: Record<string, string>
+}
 type JSONType = ReturnType<typeof JSON.parse>
+
+export type ChelActionParams = {
+  action: string;
+  server?: string; // TODO: implement!
+  contractID: string;
+  data: JSONType;
+  hooks?: {
+    prepublishContract?: (msg: GIMessage) => void;
+    prepublish?: (msg: GIMessage) => void;
+    postpublish?: (msg: GIMessage) => void;
+  };
+  publishOptions?: { maxAttempts: number };
+}
+
+export type ChelRegParams = {
+  contractName: string;
+  server?: string; // TODO: implement!
+  data: JSONType;
+  hooks?: {
+    prepublishContract?: (msg: GIMessage) => void;
+    prepublish?: (msg: GIMessage) => void;
+    postpublish?: (msg: GIMessage) => void;
+  };
+  publishOptions?: { maxAttempts: number };
+}
 
 export type CheloniaConfig = {
   connectionOptions: {
@@ -25,14 +52,14 @@ export type CheloniaConfig = {
   connectionURL: null | string
   contracts: {
     defaults: {
-      modules: Record<string, any>
+      modules: Record<string, unknown>
       exposedGlobals: Record<string, boolean>
       allowedDomains: string[]
       allowedSelectors: string[]
       preferSlim: boolean
     }
     manifests: Record<string, string> // Contract names -> manifest hashes
-    overrides: Record<string, any> // Override default values per-contract.
+    overrides: Record<string, unknown> // Override default values per-contract.
   }
   decryptFn: (arg: string) => JSONType
   encryptFn: (arg: JSONType) => string
@@ -45,10 +72,26 @@ export type CheloniaConfig = {
     syncContractError: null | ((e: Error, contractID: string) => void)
     pubsubError: null | ((e: Error, socket: WebSocket) => void)
   }
-  postOp?: (state: any, message: any) => boolean
-  preOp?: (state: any, message: any) => boolean
-  reactiveDel: (obj: any, key: string) => void
-  reactiveSet: (obj: any, key: string, value: any) => typeof value
+  postOp?: (state: unknown, message: unknown) => boolean
+  postOp_ae?: PostOp
+  postOp_au?: PostOp
+  postOp_c?: PostOp
+  postOp_ka?: PostOp
+  postOp_kd?: PostOp
+  postOp_pd?: PostOp
+  postOp_ps?: PostOp
+  postOp_pu?: PostOp
+  preOp?: PreOp
+  preOp_ae?: PreOp
+  preOp_au?: PreOp
+  preOp_c?: PreOp
+  preOp_ka?: PreOp
+  preOp_kd?: PreOp
+  preOp_pd?: PreOp
+  preOp_ps?: PreOp
+  preOp_pu?: PreOp
+  reactiveDel: (obj: Record<string, unknown>, key: string) => void
+  reactiveSet: (obj: Record<string, unknown>, key: string, value: unknown) => typeof value
   skipActionProcessing: boolean
   skipSideEffects: boolean
   skipProcessing?: boolean
@@ -59,68 +102,86 @@ export type CheloniaConfig = {
 export type CheloniaInstance = {
   config: CheloniaConfig;
   contractsModifiedListener?: () => void;
-  contractSBP?: any;
-  defContract?: ContractDefinition;
+  contractSBP?: unknown;
+  defContract: ContractDefinition;
   defContractManifest?: string;
   defContractSBP?: SBP;
   defContractSelectors?: string[];
-  manifestToContract: Record<string, any>;
-  sideEffectStack: (contractID: string) => any[];
-  sideEffectStacks: Record<string, any[]>;
+  manifestToContract: Record<string, {
+    slim: boolean
+    info: ContractInfo
+    contract: ContractDefinition
+  }>
+  sideEffectStack: (contractID: string) => SBPCallParameters[];
+  sideEffectStacks: Record<string, SBPCallParameters[]>;
   state: CheloniaState;
-  whitelistedActions: Record<string, any>;
+  whitelistedActions: Record<string, boolean>;
 }
 
-export type CheloniaState = {
-  contracts: Record<string, { type: string; HEAD: string; }>; // Contracts we've subscribed to.
-  pending: string[]; // Prevents processing unexpected data from a malicious server.
+export interface CheloniaState {
+  [contractID: string]: unknown
+  contracts: Record<string, { type: string; HEAD: string }> // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
+  pending: string[] // Prevents processing unexpected data from a malicious server.
 }
+
+type Action = {
+  validate: (data: JSONType, { state, getters, meta, contractID }: {
+    state: CheloniaState
+    getters: Getters
+    meta: JSONType
+    contractID: string
+  }) => boolean | void
+  process: (message: Mutation, { state, getters }: {
+    state: CheloniaState
+    getters: Getters
+  }) => void
+  sideEffect?: (message: Mutation, { state, getters }: {
+    state: CheloniaState
+    getters: Getters
+  }) => void
+}
+
+export type Mutation = {
+  data: JSONType
+  meta: JSONType
+  hash: string
+  contractID: string
+}
+
+type PostOp = (state: unknown, message: unknown) => boolean
+type PreOp = (state: unknown, message: unknown) => boolean
+
+type SBP = (selector: string, ...args: unknown[]) => unknown
+
+type SBPCallParameters = [string, ...unknown[]]
 
 export type ContractDefinition = {
-  actions: any
-  getters: any
+  actions: Record<string, Action>
+  getters: Getters
   manifest: string
   metadata: {
-    create(): any
-    validate(meta: any, args: any): void
+    create(): JSONType
+    validate(meta: JSONType, args: {
+      state: CheloniaState
+      getters: Getters
+      contractID: string
+    }): void
     validate(): void
   }
-  methods: any
+  methods: Record<string, (...args: unknown[]) => unknown>
   name: string
   sbp: SBP
-  state (contractID: string): any
+  state (contractID: string): CheloniaState // Contract instance state
 }
 
-type SBP = (selector: string, ...args: any[]) => any
-
-export type ChelRegParams = {
-  contractName: string;
-  server?: string; // TODO: implement!
-  data: Object;
-  hooks?: {
-    prepublishContract?: (msg: GIMessage) => void;
-    prepublish?: (msg: GIMessage) => void;
-    postpublish?: (msg: GIMessage) => void;
-  };
-  publishOptions?: { maxAttempts: number };
-}
-
-export type ChelActionParams = {
-  action: string;
-  server?: string; // TODO: implement!
-  contractID: string;
-  data: Object;
-  hooks?: {
-    prepublishContract?: (msg: GIMessage) => void;
-    prepublish?: (msg: GIMessage) => void;
-    postpublish?: (msg: GIMessage) => void;
-  };
-  publishOptions?: { maxAttempts: number };
+export type ContractInfo = {
+  file: string
+  hash: string
 }
 
 export { GIMessage }
 
-export const ACTION_REGEX: RegExp = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)\w*/
+export const ACTION_REGEX = /^((([\w.]+)\/([^/]+))(?:\/(?:([^/]+)\/)?)?)\w*/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
 // 0 => 'gi.contracts/group/payment/process'
 // 1 => 'gi.contracts/group/payment/'
@@ -151,8 +212,8 @@ export default sbp('sbp/selectors/register', {
         manifests: {} // override! contract names => manifest hashes
       },
       whitelisted: (action: string): boolean => !!this.whitelistedActions[action],
-      reactiveSet: (obj: any, key: string, value: any): typeof value => { obj[key] = value; return value }, // example: set to Vue.set
-      reactiveDel: (obj: any, key: string): void => { delete obj[key] },
+      reactiveSet: (obj: CheloniaState, key: string, value: unknown): typeof value => { obj[key] = value; return value }, // example: set to Vue.set
+      reactiveDel: (obj: CheloniaState, key: string): void => { delete obj[key] },
       skipActionProcessing: false,
       skipSideEffects: false,
       connectionOptions: {
@@ -176,8 +237,8 @@ export default sbp('sbp/selectors/register', {
     }
     this.manifestToContract = {}
     this.whitelistedActions = {}
-    this.sideEffectStacks = {} // [contractID]: Array<any>
-    this.sideEffectStack = (contractID: string): Array<any> => {
+    this.sideEffectStacks = {} // [contractID]: Array<unknown>
+    this.sideEffectStack = (contractID: string): Array<unknown> => {
       let stack = this.sideEffectStacks[contractID]
       if (!stack) {
         this.sideEffectStacks[contractID] = stack = []
@@ -245,7 +306,7 @@ export default sbp('sbp/selectors/register', {
     if (!ACTION_REGEX.exec(contract.name)) throw new Error(`bad contract name: ${contract.name}`)
     if (!contract.metadata) contract.metadata = { validate () {}, create: () => ({}) }
     if (!contract.getters) contract.getters = {}
-    contract.state = (contractID) => sbp(this.config.stateSelector)[contractID]
+    contract.state = (contractID: string) => sbp(this.config.stateSelector)[contractID]
     contract.manifest = this.defContractManifest
     contract.sbp = this.defContractSBP
     this.defContractSelectors = []
@@ -255,7 +316,7 @@ export default sbp('sbp/selectors/register', {
       [`${contract.manifest}/${contract.name}/getters`]: () => contract.getters,
       // 2 ways to cause sideEffects to happen: by defining a sideEffect function in the
       // contract, or by calling /pushSideEffect w/async SBP call. Can also do both.
-      [`${contract.manifest}/${contract.name}/pushSideEffect`]: (contractID: string, asyncSbpCall: any[]) => {
+      [`${contract.manifest}/${contract.name}/pushSideEffect`]: (contractID: string, asyncSbpCall: SBPCallParameters) => {
         // if this version of the contract is pushing a sideEffect to a function defined by the
         // contract itself, make sure that it calls the same version of the sideEffect
         const [sel] = asyncSbpCall
@@ -275,7 +336,7 @@ export default sbp('sbp/selectors/register', {
       //       - whatever keys should be passed in as well
       //       base it off of the design of encryptedAction()
       this.defContractSelectors.push(...sbp('sbp/selectors/register', {
-        [`${contract.manifest}/${action}/process`]: (message: any, state: any) => {
+        [`${contract.manifest}/${action}/process`]: (message: Mutation, state: CheloniaState) => {
           const { meta, data, contractID } = message
           // TODO: optimize so that you're creating a proxy object only when needed
           const gProxy = gettersProxy(state, contract.getters)
@@ -284,7 +345,7 @@ export default sbp('sbp/selectors/register', {
           contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
           contract.actions[action].process(message, { state, ...gProxy })
         },
-        [`${contract.manifest}/${action}/sideEffect`]: async (message: any, state: any) => {
+        [`${contract.manifest}/${action}/sideEffect`]: async (message: Mutation, state: CheloniaState) => {
           const sideEffects = this.sideEffectStack(message.contractID)
           while (sideEffects.length > 0) {
             const sideEffect = sideEffects.shift()
@@ -292,15 +353,17 @@ export default sbp('sbp/selectors/register', {
               const [selector, ...args] = sideEffect
               await contract.sbp(selector, ...args)
             } catch (e) {
+              // @ts-expect-error: TS2339 Property 'description' does not exist on type 'Mutation'.
               console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${message.description()}:`, sideEffect)
               this.sideEffectStacks[message.contractID] = [] // clear the side effects
               throw e
             }
           }
-          if (contract.actions[action].sideEffect) {
+          const { sideEffect } = contract.actions[action]
+          if (sideEffect) {
             state = state || contract.state(message.contractID)
             const gProxy = gettersProxy(state, contract.getters)
-            await contract.actions[action].sideEffect(message, { state, ...gProxy })
+            await sideEffect(message, { state, ...gProxy })
           }
         }
       }))
@@ -338,7 +401,7 @@ export default sbp('sbp/selectors/register', {
     }
   },
   // resolves when all pending actions for these contractID(s) finish
-  'chelonia/contract/wait': function (contractIDs?: string | string[]): Promise<any> {
+  'chelonia/contract/wait': function (contractIDs?: string | string[]): Promise<unknown> {
     const listOfIds = contractIDs
       ? (typeof contractIDs === 'string' ? [contractIDs] : contractIDs)
       : Object.keys(sbp(this.config.stateSelector).contracts)
@@ -348,7 +411,7 @@ export default sbp('sbp/selectors/register', {
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
   // TODO: add an optional parameter to "retain" the contract (see #828)
-  'chelonia/contract/sync': function (contractIDs: string | string[]): Promise<any> {
+  'chelonia/contract/sync': function (contractIDs: string | string[]): Promise<unknown> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
       // enqueue this invocation in a serial queue to ensure
@@ -358,7 +421,7 @@ export default sbp('sbp/selectors/register', {
       // This prevents handleEvent getting called with the wrong previousHEAD for an event.
       return sbp('chelonia/queueInvocation', contractID, [
         'chelonia/private/in/syncContract', contractID
-      ]).catch((err: any) => {
+      ]).catch((err: unknown) => {
         console.error(`[chelonia] failed to sync ${contractID}:`, err)
         throw err // re-throw the error
       })
@@ -366,7 +429,7 @@ export default sbp('sbp/selectors/register', {
   },
   // TODO: implement 'chelonia/contract/release' (see #828)
   // safer version of removeImmediately that waits to finish processing events for contractIDs
-  'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<any> {
+  'chelonia/contract/remove': function (contractIDs: string | string[]): Promise<unknown> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
     return Promise.all(listOfIds.map(contractID => {
       return sbp('chelonia/queueInvocation', contractID, [
@@ -408,7 +471,7 @@ export default sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
-  'chelonia/out/eventsBetween': async function (startHash: string, endHash: string, offset: number = 0): Promise<string[] | void> {
+  'chelonia/out/eventsBetween': async function (startHash: string, endHash: string, offset = 0): Promise<string[] | void> {
     if (offset < 0) {
       console.error('[chelonia] invalid params error: "offset" needs to be positive integer or zero')
       return
@@ -419,7 +482,7 @@ export default sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
-  'chelonia/latestContractState': async function (contractID: string): Promise<any> {
+  'chelonia/latestContractState': async function (contractID: string): Promise<unknown> {
     const events = await sbp('chelonia/out/eventsSince', contractID, contractID)
     let state = {}
     // fast-path
@@ -534,16 +597,18 @@ async function outEncryptedOrUnencryptedAction (
   return message
 }
 
+type Getters = Record<string, (...args: unknown[]) => unknown>
+
 // The gettersProxy is what makes Vue-like getters possible. In other words,
 // we want to make sure that the getter functions that we defined in each
 // contract get passed the 'state' when a getter is accessed.
 // The only way to pass in the state is by creating a Proxy object that does
 // that for us. This allows us to maintain compatibility with Vue.js and integrate
 // the contract getters into the Vue-facing getters.
-function gettersProxy (state: any, getters: any): { getters: any } {
-  const proxyGetters: any = new Proxy({}, {
-    get (target: any, prop: string) {
-      return (getters[prop] as any)(state, proxyGetters)
+function gettersProxy (state: unknown, getters: Getters): { getters: Getters } {
+  const proxyGetters: Getters = new Proxy({} as Getters, {
+    get (target: Getters, prop: string) {
+      return (getters[prop])(state, proxyGetters)
     }
   })
   return { getters: proxyGetters }

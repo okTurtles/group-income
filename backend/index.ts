@@ -1,8 +1,6 @@
-declare var process: any
-
 import { bold } from 'fmt/colors.ts'
 
-import sbp from  '@sbp/sbp'
+import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import { notFound } from 'pogo/lib/bang.ts'
@@ -12,7 +10,7 @@ import { SERVER_RUNNING } from './events.ts'
 import { PUBSUB_INSTANCE } from './instance-keys.ts'
 import type { PubsubClient, PubsubServer } from './pubsub.ts'
 
-// @ts-ignore
+// @ts-expect-error TS7017 [ERROR]: Element implicitly has an 'any' type.
 globalThis.logger = function (err: Error) {
   console.error(err)
   err.stack && console.error(err.stack)
@@ -25,7 +23,7 @@ globalThis.logger = function (err: Error) {
 
 const dontLog: Record<string, boolean> = { 'backend/server/broadcastEntry': true }
 
-function logSBP (domain: string, selector: string, data: any) {
+function logSBP (domain: string, selector: string, data: unknown) {
   if (!(selector in dontLog)) {
     console.log(bold(`[sbp] ${selector}`), data)
   }
@@ -67,7 +65,8 @@ const shutdownFn = function () {
   })
 }
 
-Deno.addSignalListener('SIGUSR2', shutdownFn)
+Deno.addSignalListener('SIGBREAK', shutdownFn)
+Deno.addSignalListener('SIGINT', shutdownFn)
 
 // Equivalent to the `uncaughtException` event in Nodejs.
 addEventListener('error', (event) => {

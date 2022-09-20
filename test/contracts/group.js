@@ -432,14 +432,14 @@ var objectOf = (typeObj, _scope = "Object") => {
     }
     const undefAttr = typeAttrs.find((property) => {
       const propertyTypeFn = typeObj[property];
-      return propertyTypeFn.name === "maybe" && !o.hasOwnProperty(property);
+      return propertyTypeFn.name.includes("maybe") && !o.hasOwnProperty(property);
     });
     if (undefAttr) {
       throw validatorError(object2, o[undefAttr], `${_scope}.${undefAttr}`, `empty object property '${undefAttr}' for ${_scope} type`, `void | null | ${getType(typeObj[undefAttr]).substr(1)}`, "-");
     }
     const reducer = isEmpty(value) ? (acc, key) => Object.assign(acc, { [key]: typeObj[key](value) }) : (acc, key) => {
       const typeFn = typeObj[key];
-      if (typeFn.name === "optional" && !o.hasOwnProperty(key)) {
+      if (typeFn.name.includes("optional") && !o.hasOwnProperty(key)) {
         return Object.assign(acc, {});
       } else {
         return Object.assign(acc, { [key]: typeFn(o[key], `${_scope}.${key}`) });
@@ -448,7 +448,10 @@ var objectOf = (typeObj, _scope = "Object") => {
     return typeAttrs.reduce(reducer, {});
   }
   object2.type = () => {
-    const props = Object.keys(typeObj).map((key) => typeObj[key].name === "optional" ? `${key}?: ${getType(typeObj[key], { noVoid: true })}` : `${key}: ${getType(typeObj[key])}`);
+    const props = Object.keys(typeObj).map((key) => {
+      const ret = typeObj[key].name.includes("optional") ? `${key}?: ${getType(typeObj[key], { noVoid: true })}` : `${key}: ${getType(typeObj[key])}`;
+      return ret;
+    });
     return `{|
  ${props.join(",\n  ")} 
 |}`;
@@ -1539,6 +1542,7 @@ module_default("chelonia/defineContract", {
         objectOf({
           member: string,
           reason: optional(string),
+          automated: optional(boolean),
           proposalHash: optional(string),
           proposalPayload: optional(objectOf({
             secret: string

@@ -6,27 +6,35 @@ import type { JSONObject } from '~/shared/types.ts'
 type JSONType = ReturnType<typeof JSON.parse>
 
 type Mapping = {
-  key: string;
-  value: string;
+  key: string
+  value: string
 }
 
 type Message = {
-  version: string; // Semver version string
-  previousHEAD: string | null;
-  contractID: string | null;
-  op: GIOp
-  manifest: string;
+  contractID: string | null
+  manifest: string
   // The nonce makes it difficult to predict message contents
   // and makes it easier to prevent conflicts during development.
-  nonce: number;
+  nonce: number
+  op: GIOp
+  previousHEAD: string | null
+  version: string // Semver version string
 }
+
+type Signature = {
+  sig: string
+  type: string
+}
+
+type DecryptFunction = (v: GIOpActionEncrypted) => GIOpActionUnencrypted
+type SignatureFunction = (data: string) => Signature
 
 export type GIKeyType = ''
 
 export type GIKey = {
-  type: GIKeyType;
-  data: Object; // based on GIKeyType this will change
-  meta: Object;
+  type: GIKeyType
+  data: JSONType // based on GIKeyType this will change
+  meta: JSONObject
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
@@ -45,14 +53,14 @@ export class GIMessage {
   _mapping: Mapping
   _message: Message
 
-  static OP_CONTRACT: 'c' = 'c'
-  static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
-  static OP_ACTION_UNENCRYPTED: 'au' = 'au' // publicly readable action
-  static OP_KEY_ADD: 'ka' = 'ka' // add this key to the list of keys allowed to write to this contract, or update an existing key
-  static OP_KEY_DEL: 'kd' = 'kd' // remove this key from authorized keys
-  static OP_PROTOCOL_UPGRADE: 'pu' = 'pu'
-  static OP_PROP_SET: 'ps' = 'ps' // set a public key/value pair
-  static OP_PROP_DEL: 'pd' = 'pd' // delete a public key/value pair
+  static OP_CONTRACT = 'c' as const
+  static OP_ACTION_ENCRYPTED = 'ae' as const // e2e-encrypted action
+  static OP_ACTION_UNENCRYPTED = 'au' as const // publicly readable action
+  static OP_KEY_ADD = 'ka' as const // add this key to the list of keys allowed to write to this contract, or update an existing key
+  static OP_KEY_DEL = 'kd' as const // remove this key from authorized keys
+  static OP_PROTOCOL_UPGRADE = 'pu' as const
+  static OP_PROP_SET = 'ps' as const // set a public key/value pair
+  static OP_PROP_DEL = 'pd' as const // delete a public key/value pair
 
   // eslint-disable-next-line camelcase
   static createV1_0 (
@@ -60,7 +68,7 @@ export class GIMessage {
     previousHEAD: string | null = null,
     op: GIOp,
     manifest: string,
-    signatureFn: Function = defaultSignatureFn
+    signatureFn: SignatureFunction = defaultSignatureFn
   ): GIMessage {
     const message: Message = {
       version: '1.0.0',
@@ -113,11 +121,11 @@ export class GIMessage {
     }
   }
 
-  decryptedValue (fn?: Function): any {
+  decryptedValue (fn?: DecryptFunction): GIOpValue {
     if (!this._decrypted) {
       this._decrypted = (
         this.opType() === GIMessage.OP_ACTION_ENCRYPTED && fn !== undefined
-          ? fn(this.opValue())
+          ? fn(this.opValue() as string)
           : this.opValue()
       )
     }
@@ -160,7 +168,7 @@ export class GIMessage {
   hash (): string { return this._mapping.key }
 }
 
-function defaultSignatureFn (data: string) {
+function defaultSignatureFn (data: string): Signature {
   return {
     type: 'default',
     sig: blake32Hash(data)

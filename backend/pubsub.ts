@@ -1,41 +1,36 @@
+import { messageParser } from '~/shared/pubsub.ts'
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+type Callback = (...args: any[]) => void
+
 type JSONType = ReturnType<typeof JSON.parse>
 
-type Message = {
-  [key: string]: JSONType,
+interface Message {
+  [key: string]: JSONType
   type: string
 }
 
-type SubMessage = {
-  contractID: string
-  dontBroadcast?: boolean
-}
-
-type UnsubMessage = {
-  contractID: string
-  dontBroadcast?: boolean
-}
+type MessageHandler = (this: PubsubServer, msg: Message) => void
 
 type PubsubClientEventName = 'close' | 'message'
 type PubsubServerEventName = 'close' | 'connection' | 'error' | 'headers' | 'listening'
 
-import {
-  acceptWebSocket,
-  isWebSocketCloseEvent,
-  isWebSocketPingEvent,
-} from 'https://deno.land/std@0.92.0/ws/mod.ts'
-
-import { messageParser } from '~/shared/pubsub.ts'
-
-const CI = Deno.env.get('CI')
-const NODE_ENV = Deno.env.get('NODE_ENV') ?? 'development'
+type PubsubServerOptions = {
+  clientHandlers?: Record<string, EventListener>
+  logPingRounds?: boolean
+  logPongMessages?: boolean
+  maxPayload?: number
+  messageHandlers?: Record<string, MessageHandler>
+  pingInterval?: number
+  rawHttpServer?: unknown
+  serverHandlers?: Record<string, Callback>
+}
 
 const emptySet = Object.freeze(new Set())
 // Used to tag console output.
 const tag = '[pubsub]'
 
 // ====== Helpers ====== //
-
-// Only necessary when using the `ws` module in Deno.
 
 const generateSocketID = (() => {
   let counter = 0
@@ -46,12 +41,14 @@ const generateSocketID = (() => {
 const logger = {
   log: console.log.bind(console, tag),
   debug: console.debug.bind(console, tag),
-  error: console.error.bind(console, tag)
+  error: console.error.bind(console, tag),
+  info: console.info.bind(console, tag),
+  warn: console.warn.bind(console, tag)
 }
 
 // ====== API ====== //
 
-export function createErrorResponse (data: Object): string {
+export function createErrorResponse (data: JSONType): string {
   return JSON.stringify({ type: 'error', data })
 }
 
@@ -59,17 +56,17 @@ export function createMessage (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
-export function createNotification (type: string, data: Object): string {
+export function createNotification (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
-export function createResponse (type: string, data: Object): string {
+export function createResponse (type: string, data: JSONType): string {
   return JSON.stringify({ type, data })
 }
 
 export class PubsubClient {
-  id: string
   activeSinceLastPing: boolean
+  id: string
   pinged: boolean
   server: PubsubServer
   socket: WebSocket
@@ -94,7 +91,7 @@ export class PubsubClient {
     this.terminate()
   }
 
-  send (data: string | ArrayBufferLike | Blob | ArrayBufferView): void {
+  send (data: string | ArrayBufferLike | ArrayBufferView | Blob): void {
     const { socket } = this
     if (socket.readyState === WebSocket.OPEN) {
       this.socket.send(data)
@@ -105,12 +102,12 @@ export class PubsubClient {
 
   terminate () {
     const { server, socket } = this
-    internalClientEventHandlers.close.call(this, 1000, '')
+    internalClientEventHandlers.close.call(this, new CloseEvent('close', { code: 4001, reason: 'terminated' }))
     // Remove listeners for socket events, i.e. events emitted on a socket object.
     ;['close', 'error', 'message', 'ping', 'pong'].forEach((eventName: string) => {
       socket.removeEventListener(eventName, internalClientEventHandlers[eventName as PubsubClientEventName] as EventListener)
-      if (typeof server.customClientEventHandlers[eventName] === 'function') {
-        socket.removeEventListener(eventName as keyof WebSocketEventMap, server.customClientEventHandlers[eventName] as EventListener)
+      if (typeof server.customClientHandlers[eventName] === 'function') {
+        socket.removeEventListener(eventName as keyof WebSocketEventMap, server.customClientHandlers[eventName] as EventListener)
       }
     })
     socket.close()
@@ -119,19 +116,19 @@ export class PubsubClient {
 
 export class PubsubServer {
   clients: Set<PubsubClient>
-  customServerEventHandlers: Record<string, Function>
-  customClientEventHandlers: Record<string, Function>
-  messageHandlers: Record<string, Function>
-  options: any
+  customServerHandlers: Record<string, EventListener>
+  customClientHandlers: Record<string, EventListener>
+  messageHandlers: Record<string, (msg: Message) => void>
+  options: typeof defaultOptions
   pingIntervalID?: number
-  queuesByEventName: Map<string, Set<Function>>
+  queuesByEventName: Map<string, Set<Callback>>
   subscribersByContractID: Record<string, Set<PubsubClient>>
 
-  constructor (options: Object = {}) {
+  constructor (options: PubsubServerOptions = {}) {
     this.clients = new Set()
-    this.customServerEventHandlers = Object.create(null)
-    this.customClientEventHandlers = Object.create(null)  
-    this.messageHandlers = { ...defaultMessageHandlers, ...(options as any).customMessageHandlers }
+    this.customClientHandlers = options.clientHandlers ?? Object.create(null)
+    this.customServerHandlers = options.serverHandlers ?? Object.create(null)
+    this.messageHandlers = { ...defaultMessageHandlers, ...options.messageHandlers }
     this.options = { ...defaultOptions, ...options }
     this.queuesByEventName = new Map()
     this.subscribersByContractID = Object.create(null)
@@ -151,12 +148,12 @@ export class PubsubServer {
     return response
   }
 
-  emit (name: string, ...args: any[]) {
+  emit (name: string, ...args: unknown[]) {
     const server = this
     const queue = server.queuesByEventName.get(name) ?? emptySet
     try {
       for (const callback of queue) {
-        Function.prototype.call.call(callback as Function, server, ...args)
+        Function.prototype.call.call(callback as Callback, server, ...args)
       }
     } catch (error) {
       if (server.queuesByEventName.has('error')) {
@@ -167,23 +164,19 @@ export class PubsubServer {
     }
   }
 
-  off (name: string, callback: Function) {
+  off (name: string, callback: Callback) {
     const server = this
     const queue = server.queuesByEventName.get(name) ?? emptySet
     queue.delete(callback)
   }
 
-  on (name: string, callback: Function) {
+  on (name: string, callback: Callback) {
     const server = this
     if (!server.queuesByEventName.has(name)) {
       server.queuesByEventName.set(name, new Set())
     }
     const queue = server.queuesByEventName.get(name)
     queue?.add(callback)
-  }
-
-  get port () {
-    return this.options.rawHttpServer?.listener?.addr?.port
   }
 
   /**
@@ -214,17 +207,18 @@ export class PubsubServer {
   }
 }
 
-export function createServer(options = {}) {
+export function createServer (options: PubsubServerOptions = {}) {
   const server = new PubsubServer(options)
 
   // Add listeners for server events, i.e. events emitted on the server object.
-  Object.keys(internalServerHandlers).forEach((name: string) => {
-    server.on(name, (...args: any[]) => {
+  Object.keys(internalServerEventHandlers).forEach((name: string) => {
+    server.on(name, (...args: unknown[]) => {
       try {
         // Always call the default handler first.
-        // @ts-ignore TS2556 [ERROR]: A spread argument must either have a tuple type or be passed to a rest parameter.
-        internalServerHandlers[name as PubsubServerEventName]?.call(server, ...args)
-        server.customServerEventHandlers[name as PubsubServerEventName]?.call(server, ...args)
+        // @ts-expect-error TS2556 [ERROR]: A spread argument must either have a tuple type or be passed to a rest parameter.
+        internalServerEventHandlers[name as PubsubServerEventName]?.call(server, ...args)
+        // @ts-expect-error TS2556 [ERROR]: A spread argument must either have a tuple type or be passed to a rest parameter.
+        server.customServerHandlers[name as PubsubServerEventName]?.call(server, ...args)
       } catch (error) {
         server.emit('error', error)
       }
@@ -255,20 +249,13 @@ export function createServer(options = {}) {
 
 export function isUpgradeableRequest (request: Request): boolean {
   const upgrade = request.headers.get('upgrade')
-  if (upgrade?.toLowerCase() === "websocket") return true
+  if (upgrade?.toLowerCase() === 'websocket') return true
   return false
-}
-
-const defaultOptions = {
-  logPingRounds: true,
-  logPongMessages: true,
-  maxPayload: 6 * 1024 * 1024,
-  pingInterval: 30000
 }
 
 // Internal default handlers for server events.
 // The `this` binding refers to the server object.
-const internalServerHandlers = Object.freeze({
+const internalServerEventHandlers = {
   close () {
     logger.log('Server closed')
   },
@@ -285,7 +272,7 @@ const internalServerHandlers = Object.freeze({
     const url = request.url
     const urlSearch = url.includes('?') ? url.slice(url.lastIndexOf('?')) : ''
     const debugID = new URLSearchParams(urlSearch).get('debugID') || ''
-    
+
     const client = new PubsubClient(socket, server)
     client.id = generateSocketID(debugID)
     client.activeSinceLastPing = true
@@ -301,9 +288,9 @@ const internalServerHandlers = Object.freeze({
           logger.log(`Event '${eventName}' on client ${client.id}`, ...args.map(arg => String(arg)))
         }
         try {
-          // @ts-ignore TS2554 [ERROR]: Expected 3 arguments, but got 2.
+          // @ts-expect-error TS2554 [ERROR]: Expected 3 arguments, but got 2.
           (internalClientEventHandlers)[eventName as PubsubClientEventName]?.call(client, ...args)
-          server.customClientEventHandlers[eventName]?.call(client, ...args)
+          server.customClientHandlers[eventName]?.call(client, ...args)
         } catch (error) {
           server.emit('error', error)
           client.terminate()
@@ -319,14 +306,14 @@ const internalServerHandlers = Object.freeze({
   listening () {
     logger.log('Server listening')
   }
-})
+}
 
 // Default handlers for server-side client socket events.
 // The `this` binding refers to the connected `ws` socket object.
 const internalClientEventHandlers = Object.freeze({
-  close (this: PubsubClient, code: number, reason: string) {
+  close (this: PubsubClient, event: CloseEvent) {
     const client = this
-    const { server, socket, id: socketID } = this
+    const { server, id: socketID } = this
 
     // Notify other clients that this one has left any room they shared.
     for (const contractID of client.subscriptions) {
@@ -343,8 +330,8 @@ const internalClientEventHandlers = Object.freeze({
 
   message (this: PubsubClient, event: MessageEvent) {
     const client = this
-    const { server, socket } = this
-    const { type, data } = event
+    const { server } = this
+    const { data } = event
     const text = data
     let msg: Message = { type: '' }
 
@@ -403,7 +390,7 @@ const defaultMessageHandlers = {
     // Currently unused.
   },
 
-  [SUB] (this: PubsubClient, { contractID, dontBroadcast }: SubMessage) {
+  [SUB] (this: PubsubClient, { contractID, dontBroadcast }: Message) {
     const client = this
     const { server, socket, id: socketID } = this
 
@@ -427,7 +414,7 @@ const defaultMessageHandlers = {
     socket.send(createResponse(SUCCESS, { type: SUB, contractID }))
   },
 
-  [UNSUB] (this: PubsubClient, { contractID, dontBroadcast }: UnsubMessage) {
+  [UNSUB] (this: PubsubClient, { contractID, dontBroadcast }: Message) {
     const client = this
     const { server, socket, id: socketID } = this
 
@@ -451,3 +438,9 @@ const defaultMessageHandlers = {
   }
 }
 
+const defaultOptions = {
+  logPingRounds: true,
+  logPongMessages: true,
+  maxPayload: 6 * 1024 * 1024,
+  pingInterval: 30000
+}
