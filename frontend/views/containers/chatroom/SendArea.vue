@@ -510,7 +510,7 @@ export default ({
   table-layout: fixed;
   width: 100%;
   position: absolute;
-  top: -1rem;
+  top: -2.1rem;
 }
 
 .c-replying {
@@ -541,7 +541,7 @@ export default ({
   position: absolute;
   left: 0;
   right: 0;
-  top: -1rem;
+  top: -2.2rem;
 }
 
 .c-mentions {
