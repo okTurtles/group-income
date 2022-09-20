@@ -1,15 +1,38 @@
-declare var process: any
-
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
+
+declare const process: {
+  env: Record<string, string>
+}
 
 type JSONType = ReturnType<typeof JSON.parse>;
 
 // ====== Types ====== //
 
+type Callback = (this: PubsubClient, ...args: unknown[]) => void
+
 type Message = {
   [key: string]: JSONType;
   type: string
+}
+
+type MessageHandler = (this: PubsubClient, msg: Message) => void
+
+type PubsubClientOptions = {
+  handlers?: Record<string, Callback>
+  eventHandlers?: Record<string, Callback>
+  logPingMessages?: boolean
+  manual?: boolean
+  maxReconnectionDelay?: number
+  maxRetries?: number
+  messageHandlers?: Record<string, Callback>
+  minReconnectionDelay?: number
+  pingTimeout?: number
+  reconnectOnDisconnection?: boolean
+  reconnectOnOnline?: boolean
+  reconnectOnTimeout?: boolean
+  reconnectionDelayGrowFactor?: number
+  timeout?: number
 }
 
 // ====== Event name constants ====== //
@@ -43,33 +66,50 @@ export const RESPONSE_TYPE = Object.freeze({
   SUCCESS: 'success'
 })
 
+// TODO: verify these are good defaults
+const defaultOptions = {
+  logPingMessages: process.env.NODE_ENV === 'development' && !process.env.CI,
+  manual: false,
+  maxReconnectionDelay: 60000,
+  maxRetries: 10,
+  pingTimeout: 45000,
+  minReconnectionDelay: 500,
+  reconnectOnDisconnection: true,
+  reconnectOnOnline: true,
+  // Defaults to false to avoid reconnection attempts in case the server doesn't
+  // respond because of a failed authentication.
+  reconnectOnTimeout: false,
+  reconnectionDelayGrowFactor: 2,
+  timeout: 5000
+}
+
 export class PubsubClient {
-  connectionTimeoutID?: number;
-  customEventHandlers: Record<string, EventListener>;
+  connectionTimeoutID?: number
+  customEventHandlers: Record<string, EventListener>
   // The current number of connection attempts that failed.
   // Reset to 0 upon successful connection.
   // Used to compute how long to wait before the next reconnection attempt.
-  failedConnectionAttempts: number;
-  isLocal: boolean;
+  failedConnectionAttempts: number
+  isLocal: boolean
   // True if this client has never been connected yet.
-  isNew: boolean;
-  listeners: Record<string, EventListener>;
-  messageHandlers: Record<string, (this: PubsubClient, msg: Message) => void>;
-  nextConnectionAttemptDelayID?: number;
-  options: any;
+  isNew: boolean
+  listeners: Record<string, EventListener>
+  messageHandlers: Record<string, MessageHandler>
+  nextConnectionAttemptDelayID?: number
+  options: typeof defaultOptions
   // Requested subscriptions for which we didn't receive a response yet.
-  pendingSubscriptionSet: Set<string>;
-  pendingSyncSet: Set<string>;
-  pendingUnsubscriptionSet: Set<string>;
-  pingTimeoutID?: number;
-  shouldReconnect: boolean;
+  pendingSubscriptionSet: Set<string>
+  pendingSyncSet: Set<string>
+  pendingUnsubscriptionSet: Set<string>
+  pingTimeoutID?: number
+  shouldReconnect: boolean
   // The underlying WebSocket object.
   // A new one is necessary for every connection or reconnection attempt.
-  socket: WebSocket | null = null;
-  subscriptionSet: Set<string>;
-  url: string;
+  socket: WebSocket | null = null
+  subscriptionSet: Set<string>
+  url: string
 
-  constructor (url: string, options: any = {}) {
+  constructor (url: string, options: PubsubClientOptions = {}) {
     this.customEventHandlers = options.handlers ?? {}
     this.failedConnectionAttempts = 0
     this.isLocal = /\/\/(localhost|127\.0\.0\.1)([:?/]|$)/.test(url)
@@ -95,11 +135,11 @@ export class PubsubClient {
     // Another benefit is the ability to patch the client protocol at runtime by
     // updating the client's custom event handler map.
     for (const name of Object.keys(defaultClientEventHandlers)) {
-      client.listeners[name] = (event: any) => {
+      client.listeners[name] = (event: Event) => {
         try {
           // Use `.call()` to pass the client via the 'this' binding.
-          // @ts-ignore
-          defaultClientEventHandlers[name as SocketEventName]?.call(client, event)
+          // @ts-expect-error TS2684
+          defaultClientEventHandlers[name]?.call(client, event)
           client.customEventHandlers[name]?.call(client, event)
         } catch (error) {
           // Do not throw any error but emit an `error` event instead.
@@ -182,7 +222,7 @@ export class PubsubClient {
       for (const name of socketEventNames) {
         client.socket.removeEventListener(name, client.listeners[name])
       }
-      client.socket.close(4001, 'destroy')
+      client.socket.close(4001, 'terminated')
     }
     client.listeners = {}
     client.socket = null
@@ -296,7 +336,7 @@ export class PubsubClient {
  * {number?} timeout=5_000 - Connection timeout duration in milliseconds.
  * @returns {PubSubClient}
  */
-export function createClient (url: string, options: any = {}): PubsubClient {
+export function createClient (url: string, options: PubsubClientOptions = {}): PubsubClient {
   return new PubsubClient(url, options)
 }
 
@@ -568,31 +608,13 @@ const defaultMessageHandlers = {
   }
 }
 
-// TODO: verify these are good defaults
-const defaultOptions = {
-  logPingMessages: process.env.NODE_ENV === 'development' && !process.env.CI,
-  pingTimeout: 45000,
-  maxReconnectionDelay: 60000,
-  maxRetries: 10,
-  minReconnectionDelay: 500,
-  reconnectOnDisconnection: true,
-  reconnectOnOnline: true,
-  // Defaults to false to avoid reconnection attempts in case the server doesn't
-  // respond because of a failed authentication.
-  reconnectOnTimeout: false,
-  reconnectionDelayGrowFactor: 2,
-  timeout: 5000
-}
-
 const globalEventNames = ['offline', 'online']
 const socketEventNames = ['close', 'error', 'message', 'open']
-
-type SocketEventName = 'close' | 'error' | 'message' | 'open';
 
 // `navigator.onLine` can give confusing false positives when `true`,
 // so we'll define `isDefinetelyOffline()` rather than `isOnline()` or `isOffline()`.
 // See https://developer.mozilla.org/en-US/docs/Web/API/Navigator/onLine
-// @ts-ignore TS2339 [ERROR]: Property 'onLine' does not exist on type 'Navigator'.
+// @ts-expect-error TS2339 [ERROR]: Property 'onLine' does not exist on type 'Navigator'.
 const isDefinetelyOffline = () => typeof navigator === 'object' && navigator.onLine === false
 
 // Parses and validates a received message.
@@ -613,7 +635,7 @@ export const messageParser = (data: string): Message => {
 // Register custom SBP event listeners before the first connection.
 for (const name of Object.keys(defaultClientEventHandlers)) {
   if (name === 'error' || !socketEventNames.includes(name)) {
-    sbp('okTurtles.events/on', `pubsub-${name}`, (target: PubsubClient, detail: any) => {
+    sbp('okTurtles.events/on', `pubsub-${name}`, (target: PubsubClient, detail: unknown) => {
       target.listeners[name](({ type: name, target, detail } as unknown) as Event)
     })
   }

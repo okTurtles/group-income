@@ -57,7 +57,7 @@ export default sbp('sbp/selectors/register', {
           chunks.push(']')
           break
         } else {
-         currentHEAD = entry.message().previousHEAD
+          currentHEAD = entry.message().previousHEAD
         }
       }
     } catch (error) {
@@ -67,7 +67,7 @@ export default sbp('sbp/selectors/register', {
   },
   'backend/db/streamEntriesBefore': async function (before: string, limit: number): Promise<string> {
     let currentHEAD = before
-    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
+    const entry = await sbp('chelonia/db/getEntry', currentHEAD)
     if (!entry) {
       throw new NotFound(`entry ${currentHEAD} doesn't exist!`)
     }
@@ -100,7 +100,7 @@ export default sbp('sbp/selectors/register', {
   'backend/db/streamEntriesBetween': async function (startHash: string, endHash: string, offset: number): Promise<string> {
     let isMet = false
     let currentHEAD = endHash
-    let entry = await sbp('chelonia/db/getEntry', currentHEAD)
+    const entry = await sbp('chelonia/db/getEntry', currentHEAD)
     if (!entry) {
       throw new NotFound(`entry ${currentHEAD} doesn't exist!`)
     }
@@ -172,14 +172,14 @@ export default sbp('sbp/selectors/register', {
     }
     return await readFileAsync(filepath)
   },
-  'backend/db/writeFile': async function (filename: string, data: any) {
+  'backend/db/writeFile': async function (filename: string, data: Uint8Array) {
     // TODO: check for how much space we have, and have a server setting
     //       that determines how much of the disk space we're allowed to
     //       use. If the size of the file would cause us to exceed this
     //       amount, throw an exception
     return await writeFileAsync(throwIfFileOutsideDataDir(filename), data)
   },
-  'backend/db/writeFileOnce': async function (filename: string, data: any) {
+  'backend/db/writeFileOnce': async function (filename: string, data: Uint8Array) {
     const filepath = throwIfFileOutsideDataDir(filename)
     if (await fileExists(filepath)) {
       console.warn('writeFileOnce: exists:', filepath)

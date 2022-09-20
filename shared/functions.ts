@@ -7,14 +7,14 @@ import blake from 'blakejs'
 import { Buffer } from 'buffer'
 
 if (typeof window === 'object') {
-  // @ts-ignore
+  // @ts-expect-error TS2339 [ERROR]: Property 'Buffer' does not exist on type 'Window & typeof globalThis'.
   window.Buffer = Buffer
 } else {
-  // @ts-ignore
+  // @ts-expect-error TS7017 [ERROR]: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
   globalThis.Buffer = Buffer
 }
 
-export function blake32Hash (data: any) {
+export function blake32Hash (data: unknown) {
   // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
   const uint8array = blake.blake2b(data, null, 32)
   // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
@@ -31,13 +31,18 @@ export function blake32Hash (data: any) {
 //       These hoops might result in inconsistencies between Node.js and the frontend.
 export const b64ToBuf = (b64: string) => Buffer.from(b64, 'base64')
 export const b64ToStr = (b64: string) => b64ToBuf(b64).toString('utf8')
-export const bufToB64 = (buf: any) => Buffer.from(buf).toString('base64')
+export const bufToB64 = (buf: ArrayBuffer) => Buffer.from(buf).toString('base64')
 export const strToBuf = (str: string) => Buffer.from(str, 'utf8')
 export const strToB64 = (str: string) => strToBuf(str).toString('base64')
-export const bytesToB64 = (ary: any) => Buffer.from(ary).toString('base64')
+export const bytesToB64 = (ary: ArrayBuffer) => Buffer.from(ary).toString('base64')
+
+type KeyPair = {
+  publicKey: string
+  secretKey: string
+}
 
 export function sign (
-  { publicKey, secretKey }: any,
+  { publicKey, secretKey }: KeyPair,
   msg = 'hello!',
   futz = ''
 ) {

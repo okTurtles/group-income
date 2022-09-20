@@ -115,9 +115,10 @@ Deno.test({
 
     // Wait for the server to be ready.
     let t0 = Date.now()
-    let timeout = 3000
+    let timeout = 30000
     await new Promise((resolve, reject) => {
       (function ping () {
+        console.log(process.env.API_URL)
         fetch(process.env.API_URL).then(resolve).catch(() => {
           if (Date.now() > t0 + timeout) {
             reject(new Error('Test setup timed out.'))

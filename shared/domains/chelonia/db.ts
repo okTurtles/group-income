@@ -1,10 +1,12 @@
-declare var process: any
-
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.eventqueue'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.ts'
 import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.ts'
+
+declare const process: {
+  env: Record<string, string>
+}
 
 const headSuffix = '-HEAD'
 
@@ -17,20 +19,20 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
       'chelonia/db/get': function (key: string): Promise<string | null> {
         const id = sbp('chelonia/db/contractIdFromLogHEAD', key)
-        // @ts-ignore Property 'config' does not exist.
+        // @ts-expect-error Property 'config' does not exist.
         return Promise.resolve(id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : null)
       },
-      'chelonia/db/set': function (key: string, value: any): Promise<any> { return Promise.resolve(value) },
+      'chelonia/db/set': function (key: string, value: unknown): Promise<unknown> { return Promise.resolve(value) },
       'chelonia/db/delete': function (): Promise<void> { return Promise.resolve() }
     }
   : {
-      'chelonia/db/get': function (key: any): any {
+      'chelonia/db/get': function (key: unknown): unknown {
         return Promise.resolve(sbp('okTurtles.data/get', key))
       },
-      'chelonia/db/set': function (key: any, value: any) {
+      'chelonia/db/set': function (key: unknown, value: unknown) {
         return Promise.resolve(sbp('okTurtles.data/set', key, value))
       },
-      'chelonia/db/delete': function (key: any) {
+      'chelonia/db/delete': function (key: unknown) {
         return Promise.resolve(sbp('okTurtles.data/delete', key))
       }
     }

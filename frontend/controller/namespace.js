@@ -26,7 +26,7 @@ sbp('sbp/selectors/register', {
       return cache[name]
     }
     return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${name}`).then((r) => {
-		if (!r.ok) {
+      if (!r.ok) {
         console.warn(`namespace/lookup: ${r.status} for ${name}`)
         if (r.status !== 404) {
           throw new Error(`${r.status}: ${r.statusText}`)

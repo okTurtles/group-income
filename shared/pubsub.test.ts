@@ -1,9 +1,7 @@
 import {
   assert,
-  assertEquals,
-  assertMatch,
-  assertNotMatch
-} from "https://deno.land/std@0.153.0/testing/asserts.ts"
+  assertEquals
+} from 'https://deno.land/std@0.153.0/testing/asserts.ts'
 
 import '~/scripts/process-shim.ts'
 
@@ -20,7 +18,7 @@ const {
   minReconnectionDelay
 } = client.options
 
-const createRandomDelays = (number) => {
+const createRandomDelays = (number: number) => {
   return [...new Array(number)].map((_, i) => {
     client.failedConnectionAttempts = i
     return client.getNextRandomDelay()
@@ -29,11 +27,11 @@ const createRandomDelays = (number) => {
 const delays1 = createRandomDelays(10)
 const delays2 = createRandomDelays(10)
 
-
+// Test steps must be async, but we don't always use `await` in them.
+/* eslint-disable require-await */
 Deno.test({
   name: 'Test getNextRandomDelay()',
   fn: async function (tests) {
-
     await tests.step('every delay should be longer than the previous one', async function () {
       // In other words, the delays should be sorted in ascending numerical order.
       assertEquals(delays1, [...delays1].sort((a, b) => a - b))
@@ -59,6 +57,5 @@ Deno.test({
     })
   },
   sanitizeResources: false,
-  sanitizeOps: false,
+  sanitizeOps: false
 })
-

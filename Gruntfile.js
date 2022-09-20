@@ -397,7 +397,7 @@ module.exports = (grunt) => {
         options: { env: process.env }
       },
       // Test anything in /test that ends with `.test.ts`.
-      testWithDeno: 'deno test --allow-env --allow-net --allow-read --allow-write --importmap=import-map.json --no-check ./test/*.ts',
+      testWithDeno: 'deno test --allow-env --allow-net --allow-read --allow-write --import-map=import-map.json --no-check ./test/*.ts',
       chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
     }
   })
