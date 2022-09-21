@@ -1,9 +1,22 @@
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 
+/**
+ * Should import from this function from '../../../frontend/model/contracts/shared/functions.js'
+ * But Cypress doesn't render files using Flowtype annotations
+ * So copied that function and use it here
+ */
+function makeMentionFromUsername (username) {
+  return {
+    me: `@${username}`,
+    all: '@all'
+  }
+}
+
 const groupName = 'Dreamers'
 const userId = Math.floor(Math.random() * 10000)
-const user1 = `user1-${userId}`
-const user2 = `user2-${userId}`
+const user1 = `user1${userId}`
+const user2 = `user2${userId}`
+const user3 = `user3${userId}`
 let invitationLinkAnyone
 let me
 
@@ -206,6 +219,38 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
       cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper.is-user-emoticon').should('have.length', 1)
     })
+    cy.giLogout()
+  })
+
+  it(`user3 joins ${groupName} group and mentions user1 and all`, () => {
+    cy.giAcceptGroupInvite(invitationLinkAnyone, {
+      username: user3,
+      groupName: groupName,
+      shouldLogoutAfter: false,
+      bypassUI: true
+    })
+    me = user3
+    cy.giRedirectToGroupChat()
+
+    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    checkIfJoined(CHATROOM_GENERAL_NAME)
+
+    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
+      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
+    })
+
+    sendMessage(`Hi ${makeMentionFromUsername(user1).all}. Hope you are doing well.`)
+    sendMessage(`I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)
+  })
+
+  it('user1 checks mentions', () => {
+    switchUser(user1)
+
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
+
+    cy.giRedirectToGroupChat()
+
+    cy.getByDT(`channel-${CHATROOM_GENERAL_NAME}-in`).get('.c-unreadcount-wrapper').contains('2')
 
     cy.giLogout()
   })
