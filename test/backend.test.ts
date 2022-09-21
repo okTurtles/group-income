@@ -20,6 +20,9 @@ import { createInvite } from './contracts/shared/functions.js'
 import '~/frontend/controller/namespace.js'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
 import manifests from '~/frontend/model/contracts/manifests.json' assert { type: "json" }
+import packageJSON from '~/package.json' assert { type: 'json' }
+
+const { version } = packageJSON
 
 // var unsignedMsg = sign(personas[0], 'futz')
 
@@ -53,10 +56,6 @@ const applyPortShift = (env) => {
 }
 
 Object.assign(process.env, applyPortShift(process.env))
-
-const { default: { version }} = await import('~/package.json', {
-  assert: { type: "json" },
-})
 
 Deno.env.set('GI_VERSION', `${version}@${new Date().toISOString()}`)
 

@@ -10,7 +10,7 @@ interface Message {
   type: string
 }
 
-type MessageHandler = (this: PubsubServer, msg: Message) => void
+type MessageHandler = (this: PubsubClient, msg: Message) => void
 
 type PubsubClientEventName = 'close' | 'message'
 type PubsubServerEventName = 'close' | 'connection' | 'error' | 'headers' | 'listening'
