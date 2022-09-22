@@ -527,17 +527,12 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/sendPaymentThankYou': {
       validate: objectOf({
+        fromUser: string,
         toUser: string,
         memo: string
       }),
       process ({ data, meta, hash }, { state }) {
-        const { loggedIn } = sbp('state/vuex/state')
-
-        Vue.set(state.paymentThankYouNotes, hash, {
-          fromUser: loggedIn.username,
-          toUser: data.toUser,
-          memo: data.memo
-        })
+        Vue.set(state.paymentThankYouNotes, hash, data)
       },
       sideEffect ({ contractID, meta, data, hash }, { getters }) {
         const { loggedIn } = sbp('state/vuex/state')
@@ -549,7 +544,7 @@ sbp('chelonia/defineContract', {
             hash
           })
         }
-      } // @@@
+      }
     },
     'gi.contracts/group/proposal': {
       validate: (data, { state, meta }) => {

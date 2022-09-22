@@ -28,6 +28,7 @@ modal-template(
 
     .buttons.c-buttons-container(:class='{ "is-centered": isConfirmation }')
       button.is-outlined(
+        data-test='confirmBtn'
         v-if='isConfirmation'
         key='awesome'
         type='button'
@@ -42,6 +43,7 @@ modal-template(
         ) {{ L('Back') }}
 
         button-submit.is-success(
+          data-test='submitBtn'
           key='submit'
           :disabled='!form.memo'
           @click='submit'
@@ -50,6 +52,7 @@ modal-template(
 
 <script>
 import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SvgHello from '@svgs/hello.svg'
@@ -69,6 +72,11 @@ export default ({
       }
     }
   },
+  computed: {
+    ...mapGetters([
+      'ourUsername'
+    ])
+  },
   methods: {
     close () {
       this.$refs.modal.close(0)
@@ -78,6 +86,7 @@ export default ({
         sbp('gi.actions/group/sendPaymentThankYou', {
           contractID: this.$store.state.currentGroupId,
           data: {
+            fromUser: this.ourUsername,
             toUser: this.$route.query.to,
             memo: this.form.memo
           }

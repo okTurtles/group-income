@@ -12,10 +12,11 @@ modal-template(
 
     .c-note-container
       i18n.has-text-1.c-label(
+        data-test='memoLabel'
         :args='{ name: thankYouNote.fromUser }'
       ) {name} Note:
 
-      .c-note.has-text-bold {{ thankYouNote.memo }}
+      .c-note.has-text-bold(data-test='memo') {{ thankYouNote.memo }}
 </template>
 
 <script>
