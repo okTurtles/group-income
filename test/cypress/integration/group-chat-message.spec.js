@@ -250,7 +250,6 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.giRedirectToGroupChat()
     cy.getByDT(`channel-${CHATROOM_GENERAL_NAME}-in`).get('.c-unreadcount-wrapper').contains('1')
 
-
     switchUser(user1)
 
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
