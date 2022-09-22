@@ -298,7 +298,7 @@ export default ({
     border-color: var(--text_1); // var(--text_2);
   }
 
-  & .c-mention {
+  .c-mention {
     background-color: transparent;
   }
 }
