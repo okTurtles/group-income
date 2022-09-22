@@ -169,5 +169,19 @@ export default ({
       linkTo: '/dashboard#TODO-proposals', // TODO: to be decided.
       scope: 'group'
     }
+  },
+  PAYMENT_THANKYOU_SENT (data: { creator: string, hash: string }) {
+    return {
+      avatarUsername: data.creator,
+      body: L('{name} sent you a {strong_}thank you note{_strong} for your contribution.', {
+        name: strong(data.creator),
+        ...LTags('strong')
+      }),
+      creator: data.creator,
+      icon: '',
+      level: 'info',
+      linkTo: `dashboard?modal=ThankYouNoteModal&hash=${data.hash}`,
+      scope: 'group'
+    }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })

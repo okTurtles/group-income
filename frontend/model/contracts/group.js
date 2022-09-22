@@ -317,6 +317,9 @@ sbp('chelonia/defineContract', {
       // note: a lot of code expects this to return an object, so keep the || {} below
       return getters.currentGroupState.paymentsByPeriod || {}
     },
+    groupPaymentThankYouNotes (state, getters): Object {
+      return getters.currentGroupState.paymentThankYouNotes || {}
+    },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
       //       USD, then calling this function is probably an error which should be reported.
@@ -424,6 +427,7 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           payments: {},
           paymentsByPeriod: {},
+          paymentThankYouNotes: {},
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
@@ -518,6 +522,27 @@ sbp('chelonia/defineContract', {
           } else {
             updateCurrentDistribution({ meta, state, getters })
           }
+        }
+      }
+    },
+    'gi.contracts/group/sendPaymentThankYou': {
+      validate: objectOf({
+        fromUser: string,
+        toUser: string,
+        memo: string
+      }),
+      process ({ data, meta, hash }, { state }) {
+        Vue.set(state.paymentThankYouNotes, hash, data)
+      },
+      sideEffect ({ contractID, meta, data, hash }, { getters }) {
+        const { loggedIn } = sbp('state/vuex/state')
+
+        if (data.toUser === loggedIn.username) {
+          sbp('gi.notifications/emit', 'PAYMENT_THANKYOU_SENT', {
+            groupID: contractID,
+            creator: meta.username,
+            hash
+          })
         }
       }
     },

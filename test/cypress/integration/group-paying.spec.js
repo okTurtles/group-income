@@ -163,6 +163,51 @@ describe('Group Payments', () => {
     ])
   })
 
+  it('user3 sends a thank you note to user1 for their payment', () => {
+    const thankYouText = 'Thank you for your contribution! It’s going to be super helpful for my programming lessons.'
+
+    cy.log('user3 opens a "Send Thank you" Modal')
+    cy.getByDT('payList').within(() => {
+      cy.getByDT('menuTrigger').click()
+      cy.getByDT('menuContent').find('ul > li:nth-child(3)').as('btnThankYou')
+
+      cy.get('@btnThankYou').should('contain', 'Send thank you')
+      cy.get('@btnThankYou').click()
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('submitBtn').should('be.disabled')
+
+      cy.get('textarea').type(thankYouText)
+      cy.getByDT('submitBtn').should('not.be.disabled').click()
+
+      cy.getByDT('confirmBtn').click()
+      cy.getByDT('closeModal').should('not.exist')
+    })
+
+    cy.log('user1 receives a notification for a thank you note')
+    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.getByDT('notificationBell').click()
+    cy.getByDT('notificationCard').should('be.visible')
+
+    cy.getByDT('notificationCard').within(() => {
+      cy.getByDT('notificationList').find('ul > li:nth-child(1)')
+        .should('contain', `user3-${userId} sent you a thank you note for your contribution.`)
+        .click()
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Thank you note!')
+
+      cy.getByDT('memoLabel').should('contain', `user3-${userId} Note:`)
+      cy.getByDT('memo').should('contain', thankYouText)
+
+      cy.getByDT('closeModal').click()
+    })
+
+    cy.getByDT('closeModal').should('not.exist')
+  })
+
   it('user4 sends $50 to user2 (partial)', () => {
     cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
     cy.getByDT('paymentsLink').click()
