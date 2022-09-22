@@ -4,6 +4,7 @@ import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/
  * Should import from this function from '../../../frontend/model/contracts/shared/functions.js'
  * But Cypress doesn't render files using Flowtype annotations
  * So copied that function and use it here
+ * TODO: figure out how to import functions with type annotations in Cypress
  */
 function makeMentionFromUsername (username) {
   return {
