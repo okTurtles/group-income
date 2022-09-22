@@ -51,17 +51,6 @@
   )
 
   .c-send-actions(ref='actions')
-    .c-edit-actions(v-if='isEditing')
-      i18n.is-small.is-outlined(
-        tag='button'
-        @click='$emit("cancelEdit")'
-      ) Cancel
-
-      i18n.button.is-small(
-        tag='button'
-        @click='sendMessage'
-      ) Save changes
-
     div(v-if='isEditing')
       .addons.addons-editing
         tooltip(
@@ -74,6 +63,18 @@
             @click='openEmoticon'
           )
             i.icon-smile-beam
+
+    .c-edit-actions(v-if='isEditing')
+      i18n.is-small.is-outlined(
+        tag='button'
+        @click='$emit("cancelEdit")'
+      ) Cancel
+
+      i18n.button.is-small(
+        tag='button'
+        @click='sendMessage'
+      ) Save changes
+
     .c-edit-action-wrapper(v-else)
       .addons
         tooltip(
@@ -460,8 +461,15 @@ export default ({
     .c-send-actions {
       position: relative;
       margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
       bottom: 0;
       height: auto;
+      display: flex;
+      justify-content: space-between;
+
+      .c-edit-actions {
+        margin-right: 0.5rem;
+      }
     }
 
     .is-outlined {
