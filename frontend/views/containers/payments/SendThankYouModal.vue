@@ -17,7 +17,11 @@ modal-template(
     label.field(v-if='!isConfirmation' key='thanks')
       i18n.label What message would you like to send?
 
-      textarea.textarea(ref='thanks' maxlength='500')
+      textarea.textarea(
+        v-model='form.memo'
+        ref='thanks'
+        maxlength='500'
+      )
 
     .c-confirmation(v-else)
       svg-hello.c-svg
@@ -44,6 +48,7 @@ modal-template(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SvgHello from '@svgs/hello.svg'
@@ -57,7 +62,10 @@ export default ({
   },
   data () {
     return {
-      isConfirmation: false
+      isConfirmation: false,
+      form: {
+        memo: null
+      }
     }
   },
   methods: {
@@ -65,6 +73,20 @@ export default ({
       this.$refs.modal.close(0)
     },
     submit () {
+      try {
+        sbp('gi.actions/group/sendPaymentThankYou', {
+          contractID: this.$store.state.currentGroupId,
+          data: {
+            toUser: this.$route.query.to,
+            memo: this.form.memo
+          }
+        })
+      } catch (err) {
+        console.error('send thank you note error: ', err)
+
+        return
+      }
+
       this.isConfirmation = true
     }
   }

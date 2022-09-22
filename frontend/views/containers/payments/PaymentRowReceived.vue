@@ -44,7 +44,7 @@
         menu-item(
           tag='button'
           icon='comment'
-          @click='openModal("ThankYouNoteModal")'
+          @click='openModal("SendThankYouModal", { to: payment.username })'
         ) Send thank you
 </template>
 
