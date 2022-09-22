@@ -63,18 +63,12 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
   const groupID = rootGetters.groupIdFromChatRoomId(contractID)
   const path = `/group-chat/${contractID}`
 
-  const identityState = rootGetters.globalProfile2(groupID, username)
-  if (identityState) {
-    makeNotification({
-      title: `# ${chatRoomName}`,
-      body: text,
-      icon: identityState.picture,
-      path
-    })
-  } else {
-    // this happens when identity contract of username is not synced yet
-    // this means when new user joins the group and mentions immediately when I am absent
-  }
+  makeNotification({
+    title: `# ${chatRoomName}`,
+    body: text,
+    icon: rootGetters.globalProfile2(groupID, username)?.picture,
+    path
+  })
 
   sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
