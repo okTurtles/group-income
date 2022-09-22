@@ -243,13 +243,18 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     sendMessage(`I am a friend of ${makeMentionFromUsername(user1).me}. Let's work together.`)
   })
 
-  it('user1 checks mentions', () => {
+  it('user2 and user1 check mentions for themselves', () => {
+    switchUser(user2)
+
+    cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="1 new notifications"]').contains('1')
+    cy.giRedirectToGroupChat()
+    cy.getByDT(`channel-${CHATROOM_GENERAL_NAME}-in`).get('.c-unreadcount-wrapper').contains('1')
+
+
     switchUser(user1)
 
     cy.getByDT('groupChatLink').get('.c-badge.is-compact[aria-label="2 new notifications"]').contains('2')
-
     cy.giRedirectToGroupChat()
-
     cy.getByDT(`channel-${CHATROOM_GENERAL_NAME}-in`).get('.c-unreadcount-wrapper').contains('2')
 
     cy.giLogout()
