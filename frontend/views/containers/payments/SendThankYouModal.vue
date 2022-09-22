@@ -43,6 +43,7 @@ modal-template(
 
         button-submit.is-success(
           key='submit'
+          :disabled='!form.memo'
           @click='submit'
         ) {{ L('Send Thanks!') }}
 </template>

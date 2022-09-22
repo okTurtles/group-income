@@ -12,14 +12,14 @@ modal-template(
 
     .c-note-container
       i18n.has-text-1.c-label(
-        :args='{ name }'
+        :args='{ name: thankYouNote.fromUser }'
       ) {name} Note:
 
-      .c-note.has-text-bold
-        | Thank you for your contribution! It’s going to be super helpful for my programming lessons.
+      .c-note.has-text-bold {{ thankYouNote.memo }}
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgHello from '@svgs/hello.svg'
 
@@ -30,8 +30,11 @@ export default ({
     SvgHello
   },
   computed: {
-    name () {
-      return 'fake-user-1'
+    ...mapGetters([
+      'groupPaymentThankYouNotes'
+    ]),
+    thankYouNote () {
+      return this.groupPaymentThankYouNotes[this.$route.query.hash]
     }
   }
 }: Object)
@@ -45,8 +48,18 @@ export default ({
   margin-bottom: 1.375rem;
 }
 
+.c-content {
+  width: 100%;
+
+  @include tablet {
+    max-width: 25rem;
+  }
+}
+
 .c-note-container {
+  width: 100%;
   font-size: $size_4;
+  text-align: left;
 }
 
 .c-label {
