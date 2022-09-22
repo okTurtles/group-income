@@ -118,38 +118,10 @@ export default ({
   computed: {
     ...mapGetters(['chatRoomUsers', 'ourUsername']),
     textObjects () {
-      if (!this.text.includes('@')) {
-        return [{ type: TextObjectType.Text, text: this.text }]
-      }
-      const possibleMentions = [
-        ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
-        makeMentionFromUsername('').all
-      ]
-
-      return this.text
-        .split(new RegExp(`(${possibleMentions.join('|')})`))
-        .map(t => possibleMentions.includes(t)
-          ? { type: TextObjectType.Mention, text: t }
-          : { type: TextObjectType.Text, text: t }
-        )
+      return this.generateTextObjectsFromText(this.text)
     },
     replyMessageObjects () {
-      if (!this.replyingMessage) {
-        return []
-      } else if (!this.replyingMessage.includes('@')) {
-        return [{ type: TextObjectType.Text, text: this.replyingMessage }]
-      }
-      const possibleMentions = [
-        ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
-        makeMentionFromUsername('').all
-      ]
-
-      return this.replyingMessage
-        .split(new RegExp(`(${possibleMentions.join('|')})`))
-        .map(t => possibleMentions.includes(t)
-          ? { type: TextObjectType.Mention, text: t }
-          : { type: TextObjectType.Text, text: t }
-        )
+      return this.generateTextObjectsFromText(this.replyingMessage)
     }
   },
   methods: {
@@ -192,6 +164,24 @@ export default ({
     },
     isMention (o) {
       return o.type === TextObjectType.Mention
+    },
+    generateTextObjectsFromText (text) {
+      if (!text) {
+        return []
+      } else if (!text.includes('@')) {
+        return [{ type: TextObjectType.Text, text }]
+      }
+      const possibleMentions = [
+        ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
+        makeMentionFromUsername('').all
+      ]
+
+      return text
+        .split(new RegExp(`(${possibleMentions.join('|')})`))
+        .map(t => possibleMentions.includes(t)
+          ? { type: TextObjectType.Mention, text: t }
+          : { type: TextObjectType.Text, text: t }
+        )
     }
   }
 }: Object)
