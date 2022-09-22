@@ -7060,7 +7060,7 @@
     "&quot;": '"',
     "&amp;": "&",
     "&#10;": "\n",
-    "&#9;": "	",
+    "&#9;": "  ",
     "&#39;": "'"
   };
   var encodedAttr = /&(?:lt|gt|quot|amp|#39);/g;
@@ -9516,16 +9516,12 @@ ${this.getErrorInfo()}`;
     const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
     const groupID = rootGetters.groupIdFromChatRoomId(contractID);
     const path = `/group-chat/${contractID}`;
-    const identityState = rootGetters.globalProfile2(groupID, username);
-    if (identityState) {
-      makeNotification({
-        title: `# ${chatRoomName}`,
-        body: text2,
-        icon: identityState.picture,
-        path
-      });
-    } else {
-    }
+    makeNotification({
+      title: `# ${chatRoomName}`,
+      body: text2,
+      icon: rootGetters.globalProfile2(groupID, username).picture,
+      path
+    });
     (0, import_sbp4.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
   }
   function deleteMention({ contractID, messageId }) {
@@ -9819,9 +9815,7 @@ ${this.getErrorInfo()}`;
           for (const message of state.messages) {
             if (message.replyingMessage?.id === data.id) {
               message.replyingMessage.id = null;
-              message.replyingMessage.text = L("Original message was removed by {username}", {
-                username: makeMentionFromUsername(meta.username).me
-              });
+              message.replyingMessage.text = "Original message was removed.";
             }
           }
         },
