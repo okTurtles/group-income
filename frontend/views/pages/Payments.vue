@@ -271,7 +271,7 @@ export default ({
             one: firstTab,
             two: L('Amount'),
             three: L('Accepted methods'),
-            four: L('Due in')
+            four: L('Due on')
           }
         : {
             one: firstTab,
