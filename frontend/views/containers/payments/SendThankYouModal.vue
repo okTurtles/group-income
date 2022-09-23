@@ -92,7 +92,7 @@ export default ({
           }
         })
       } catch (err) {
-        console.error('send thank you note error: ', err)
+        alert("something went wrong! couldn't process your request to send a thank you note.")
 
         return
       }
