@@ -13,10 +13,10 @@ modal-template(
     .c-note-container
       i18n.has-text-1.c-label(
         data-test='memoLabel'
-        :args='{ name: thankYouNote.fromUser }'
+        :args='{ name: from }'
       ) {name} Note:
 
-      .c-note.has-text-bold(data-test='memo') {{ thankYouNote.memo }}
+      .c-note.has-text-bold(data-test='memo') {{ thankYouNote }}
 </template>
 
 <script>
@@ -32,10 +32,14 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupPaymentThankYouNotes'
+      'groupThankYousFrom'
     ]),
+    from () {
+      return this.$route.query.from || ''
+    },
     thankYouNote () {
-      return this.groupPaymentThankYouNotes[this.$route.query.hash]
+      const to = this.$route.query.to || ''
+      return (this.groupThankYousFrom[this.from] || {})[to]
     }
   }
 }: Object)
