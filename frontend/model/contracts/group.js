@@ -317,8 +317,8 @@ sbp('chelonia/defineContract', {
       // note: a lot of code expects this to return an object, so keep the || {} below
       return getters.currentGroupState.paymentsByPeriod || {}
     },
-    groupPaymentThankYouNotes (state, getters): Object {
-      return getters.currentGroupState.paymentThankYouNotes || {}
+    groupThankYousFrom (state, getters): Object {
+      return getters.currentGroupState.thankYousFrom || {}
     },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
@@ -427,7 +427,7 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           payments: {},
           paymentsByPeriod: {},
-          paymentThankYouNotes: {},
+          thankYousFrom: {}, // { fromUser1: { toUser1: msg1, toUser2: msg2, ... }, fromUser2: {}, ...  }
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
@@ -531,17 +531,21 @@ sbp('chelonia/defineContract', {
         toUser: string,
         memo: string
       }),
-      process ({ data, meta, hash }, { state }) {
-        Vue.set(state.paymentThankYouNotes, hash, data)
+      process ({ data }, { getters }) {
+        const thankYousFrom = getters.groupThankYousFrom
+
+        const fromUser = vueFetchInitKV(thankYousFrom, data.fromUser, {})
+        Vue.set(fromUser, data.toUser, data.memo)
       },
-      sideEffect ({ contractID, meta, data, hash }, { getters }) {
+      sideEffect ({ contractID, meta, data }) {
         const { loggedIn } = sbp('state/vuex/state')
 
         if (data.toUser === loggedIn.username) {
           sbp('gi.notifications/emit', 'PAYMENT_THANKYOU_SENT', {
             groupID: contractID,
-            creator: meta.username,
-            hash
+            creator: meta.username, // username of the from user. to be used with sbp('namespace/lookup') in AvatarUser.vue
+            fromUser: data.fromUser, // display name of the from user
+            toUser: data.toUser
           })
         }
       }

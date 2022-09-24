@@ -170,17 +170,17 @@ export default ({
       scope: 'group'
     }
   },
-  PAYMENT_THANKYOU_SENT (data: { creator: string, hash: string }) {
+  PAYMENT_THANKYOU_SENT (data: { creator: string, fromUser: string, toUser: string }) {
     return {
       avatarUsername: data.creator,
       body: L('{name} sent you a {strong_}thank you note{_strong} for your contribution.', {
-        name: strong(data.creator),
+        name: strong(data.fromUser),
         ...LTags('strong')
       }),
       creator: data.creator,
       icon: '',
       level: 'info',
-      linkTo: `dashboard?modal=ThankYouNoteModal&hash=${data.hash}`,
+      linkTo: `dashboard?modal=ThankYouNoteModal&from=${data.fromUser}&to=${data.toUser}`,
       scope: 'group'
     }
   }

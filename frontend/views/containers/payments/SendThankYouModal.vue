@@ -74,7 +74,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourUsername'
+      'ourUserDisplayName'
     ])
   },
   methods: {
@@ -86,7 +86,7 @@ export default ({
         sbp('gi.actions/group/sendPaymentThankYou', {
           contractID: this.$store.state.currentGroupId,
           data: {
-            fromUser: this.ourUsername,
+            fromUser: this.ourUserDisplayName,
             toUser: this.$route.query.to,
             memo: this.form.memo
           }
