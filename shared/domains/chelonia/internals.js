@@ -343,13 +343,16 @@ export default (sbp('sbp/selectors/register', {
       config[`postOp_${opT}`] && config[`postOp_${opT}`](message, state)
     }
   },
-  'chelonia/private/in/enqueueHandleEvent': function (event: GIMessage) {
+  'chelonia/private/in/enqueueHandleEvent': async function (event: GIMessage) {
     // make sure handleEvent is called AFTER any currently-running invocations
     // to 'chelonia/contract/sync', to prevent gi.db from throwing
     // "bad previousHEAD" errors
-    return sbp('okTurtles.eventQueue/queueEvent', event.contractID(), [
+    const result = await sbp('okTurtles.eventQueue/queueEvent', event.contractID(), [
       'chelonia/private/in/handleEvent', event
     ])
+    // TODO: Handle race conditions
+    await sbp('chelonia/private/respondToKeyRequests', event.contractID())
+    return result
   },
   'chelonia/private/in/syncContract': async function (contractID: string) {
     const state = sbp(this.config.stateSelector)
@@ -392,7 +395,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/private/respondToKeyRequests': async function (contractID: string) {
     const state = sbp(this.config.stateSelector)
-    const contractState = state.contracts[contractID] ?? {}
+    const contractState = state[contractID] ?? {}
 
     if (!contractState._vm || !contractState._vm.pending_key_requests) {
       return
@@ -414,31 +417,31 @@ export default (sbp('sbp/selectors/register', {
         'chelonia/private/in/syncContract', originatingContractID
       ])
 
-      const contractName = this.state.contracts[contractID].type
-      const recipientContractName = this.state.contracts[originatingContractID].type
+      const contractName = state.contracts[contractID].type
+      const recipientContractName = state.contracts[originatingContractID].type
 
       try {
         // 2. Verify 'data'
         const { data, keyId, encryptionKeyId } = v
 
-        const originatingState = sbp(self.config.stateSelector)[originatingContractID]
+        const originatingState = state[originatingContractID]
 
         const signingKey = originatingState._vm.authorizedKeys[keyId]
 
-        if (!signingKey) {
+        if (!signingKey || !signingKey.data) {
           throw new Error('Unable to find signing key')
         }
 
         // sign(originatingContractID + GIMessage.OP_KEY_REQUEST + contractID + HEAD)
-        verifySignature(signingKey, [originatingContractID, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD].map(encodeURIComponent).join('|'), data)
+        verifySignature(signingKey.data, [originatingContractID, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD].map(encodeURIComponent).join('|'), data)
 
         const encryptionKey = originatingState._vm.authorizedKeys[encryptionKeyId]
 
-        if (!encryptionKey) {
+        if (!encryptionKey || !encryptionKey.data) {
           throw new Error('Unable to find encryption key')
         }
 
-        const { keys, signingKeyId } = sbp(`${contractName}/getShareableKeys`, contractID)
+        const { keys, signingKeyId } = await sbp(`${contractName}/getShareableKeys`, contractID)
 
         // 3. Send OP_KEYSHARE to identity contract
         await sbp('chelonia/out/keyShare', {
@@ -451,13 +454,15 @@ export default (sbp('sbp/selectors/register', {
               meta: {
                 private: {
                   keyId: encryptionKeyId,
-                  content: encrypt(encryptionKey, (key: any))
+                  content: encrypt(encryptionKey.data, (key: any))
                 }
               }
             }))
           },
           signingKeyId
         })
+      } catch (e) {
+        console.error('Error at respondToKeyRequests', e)
       } finally {
         // 4. Update contract with information
         await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: hash })

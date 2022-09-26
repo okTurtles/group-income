@@ -520,7 +520,7 @@ export default (sbp('sbp/selectors/register', {
     hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions, signatureFn)
     const contractID = contractMsg.hash()
-    console.log('Register contract, sednig action', {
+    console.log('Register contract, sending action', {
       params,
       xx: {
         action: contractName,
@@ -673,7 +673,7 @@ export default (sbp('sbp/selectors/register', {
     const payload = ({
       keyId: innerSigningKeyId,
       encryptionKeyId: encryptionKeyId,
-      data: JSON.stringify(signatureFnBuilder(innerSigningKey)(`${originatingContractID}${GIMessage.OP_KEY_REQUEST}${contractID}${previousHEAD}`))
+      data: sign(innerSigningKey, [originatingContractID, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD].map(encodeURIComponent).join('|'))
     }: GIOpKeyRequest)
     const msg = GIMessage.createV1_0({
       originatingContractID,
