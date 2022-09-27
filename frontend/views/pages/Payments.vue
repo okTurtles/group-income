@@ -67,10 +67,8 @@ page(
         .c-tabs-chip-container.hide-phone
           next-distribution-pill
 
-      .c-tab-header-container
-        h3.is-title-3(v-if='this.ephemeral.activeTab === "PaymentRowReceived"') {{ L('Received payments') }}
-
-        next-distribution-pill.hide-tablet.c-distribution-pill(v-if='this.ephemeral.activeTab !== "PaymentRowReceived"')
+      .c-chip-container-below-tabs
+        next-distribution-pill.hide-tablet.c-distribution-pill
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -246,9 +244,8 @@ export default ({
       }
 
       const doesNotNeedIncomeAndDidReceiveBefore = !this.needsIncome && this.paymentsReceived.length
-      const doesNeedIncomeAndDidSentBefore = this.needsIncome && this.paymentsSent.length
 
-      if (doesNotNeedIncomeAndDidReceiveBefore || doesNeedIncomeAndDidSentBefore) {
+      if (this.needsIncome || doesNotNeedIncomeAndDidReceiveBefore) {
         items.push({
           title: L('Received'),
           url: 'PaymentRowReceived'
@@ -495,7 +492,7 @@ export default ({
   }
 }
 
-.c-tab-header-container {
+.c-chip-container-below-tabs {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap-reverse;

@@ -182,7 +182,7 @@ $pagePaddingDesktop: 5.5rem;
 
 .p-sidebar {
   grid-area: p-sidebar;
-  position: absolute;
+  position: fixed;
   z-index: $zindex-sidebar;
   right: 0;
   width: $rightSideWidth;
@@ -199,7 +199,6 @@ $pagePaddingDesktop: 5.5rem;
   }
 
   @include desktop {
-    position: fixed;
     transform: translateX(0%);
   }
 
