@@ -12,7 +12,6 @@
 </template>
 
 <script>
-import { L } from '@common/common.js'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import VotingRulesInput from '@components/VotingRulesInput.vue'
 
