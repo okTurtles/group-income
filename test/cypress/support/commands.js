@@ -28,7 +28,7 @@ function checkIfJoinedGeneralChannel (groupName, username) {
   cy.getByDT('messageInputWrapper').within(() => {
     cy.get('textarea').should('exist')
   })
-  cy.getByDT('conversationWapper').within(() => {
+  cy.getByDT('conversationWrapper').within(() => {
     if (username) {
       cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', username)
     }
@@ -362,7 +362,6 @@ Cypress.Commands.add('giAddNewChatroom', (
   cy.getByDT('newChannelButton').click()
   cy.getByDT('modal') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
   cy.getByDT('modal').within(() => {
-    // cy.get('.c-modal-header h1').should('contain', 'Create a channel')
     cy.getByDT('modal-header-title').should('contain', 'Create a channel')
     cy.getByDT('createChannelName').clear().type(name)
     if (description) {
@@ -379,7 +378,7 @@ Cypress.Commands.add('giAddNewChatroom', (
     cy.getByDT('closeModal').should('not.exist')
   })
   cy.getByDT('channelName').should('contain', name)
-  cy.getByDT('conversationWapper').within(() => {
+  cy.getByDT('conversationWrapper').within(() => {
     cy.get('.c-greetings .is-title-4').should('contain', 'Welcome!')
     cy.get('.c-greetings p').should('contain', `This is the beginning of ${name}.`)
     cy.get('.buttons').within(() => {
@@ -408,10 +407,10 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
 
 Cypress.Commands.add('giRedirectToGroupChat', () => {
   cy.getByDT('groupChatLink').click()
-  cy.getByDT('conversationWapper').within(() => {
+  cy.getByDT('conversationWrapper').within(() => {
     cy.get('.infinite-status-prompt:first-child')
       .invoke('attr', 'style')
       .should('include', 'display: none')
   })
-  cy.getByDT('conversationWapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+  cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
 })

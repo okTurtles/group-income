@@ -66,7 +66,7 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
   makeNotification({
     title: `# ${chatRoomName}`,
     body: text,
-    icon: rootGetters.globalProfile2(groupID, username).picture,
+    icon: rootGetters.globalProfile2(groupID, username)?.picture,
     path
   })
 
@@ -406,7 +406,9 @@ sbp('chelonia/defineContract', {
         for (const message of state.messages) {
           if (message.replyingMessage?.id === data.id) {
             message.replyingMessage.id = null
-            message.replyingMessage.text = 'Original message was removed.'
+            message.replyingMessage.text = L('Original message was removed by {username}', {
+              username: makeMentionFromUsername(meta.username).me
+            })
           }
         }
       },
