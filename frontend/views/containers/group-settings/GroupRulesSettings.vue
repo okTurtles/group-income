@@ -1,42 +1,35 @@
 <template lang='pug'>
-  ul.c-wrapper(data-test='votingRules')
-    li.cardBox.c-card(
-      v-for='rule in votingRulesSorted'
-      :class='{ isActive: isRuleActive(rule) }'
-      :aria-current='isRuleActive(rule)'
-      :data-test='rule'
-    )
-      p.is-title-4 {{ config[rule].title }}
-      p.has-text-1.c-expl(v-safe-html='config[rule].explanation')
-      i18n.pill.is-primary.c-active(v-if='isRuleActive(rule)') Active
+ul.c-wrapper(data-test='votingRules')
+  li.cardBox.c-card.is-active(
+    :data-test='config.rule'
+    :aria-current='true'
+  )
+    p.is-title-4 {{ config.title }}
+    p.has-text-1.c-expl(v-safe-html='config.explanation')
+    i18n.pill.is-primary.c-active Active
 
-      dl.c-status(v-if='isRuleActive(rule)')
-        dt.c-status-term {{ config[rule].status }}
-        dd.c-status-desc
-          span(v-safe-html='votingValue(rule)' data-test='ruleStatus')
-          button.link(
-            tag='button'
-            data-test='changeRule'
-            @click='openVotingProposal(rule)'
-          ) {{ groupShouldPropose ? L('Propose change') : L('Change') }}
+    dl.c-status
+      dt.c-status-term {{ config.status }}
+      dd.c-status-desc
+        span(v-safe-html='votingValue(config.rule)' data-test='ruleStatus')
 
-      banner-simple.c-banner(
-        severity='info'
-        data-test='ruleAdjusted'
-        v-if='groupShouldPropose && votingRuleAdjusted(rule)'
-      ) {{ votingRuleAdjusted(rule) }}
+    button.link(
+      type='button'
+      data-test='changeRule'
+      @click='openVotingProposal'
+    ) {{ groupShouldPropose ? L('Propose change') : L('Change') }}
 
-      button.link(
-        v-if='!isRuleActive(rule)'
-        data-test='changeRule'
-        @click='openVotingProposal(rule)'
-      ) {{ groupShouldPropose ? L('Propose changing to this system') : L('Change to this system') }}
+  banner-simple.c-banner(
+    serverity='info'
+    data-test='ruleAdjusted'
+    v-if='groupShouldPropose && votingRuleAdjusted()'
+  ) {{ votingRuleAdjusted() }}
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
+import { RULE_PERCENTAGE, getThresholdAdjusted, getCountOutOfMembers, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { L } from '@common/common.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
@@ -48,16 +41,10 @@ export default ({
   },
   data: () => ({
     config: {
-      [RULE_PERCENTAGE]: {
-        title: L('Percentage based'),
-        explanation: L('Proposals are accepted when the required percentage of members agree to the proposal.'),
-        status: L('Percentage of members that need to agree:')
-      },
-      [RULE_DISAGREEMENT]: {
-        title: L('Disagreement number'),
-        explanation: L('Proposals are rejected when a certain number of members disagree with the proposal.'),
-        status: L('Maximum number of "no" votes:')
-      }
+      rule: RULE_PERCENTAGE,
+      title: L('Percentage based'),
+      explanation: L('Proposals are accepted when the required percentage of members agree to the proposal.'),
+      status: L('Percentage of members that need to agree:')
     }
   }),
   computed: {
@@ -71,9 +58,6 @@ export default ({
       // because the group disappears. it's not a big deal though
       return this.groupProposalSettings() || {}
     },
-    votingRulesSorted () {
-      return this.proposalSettings.rule === RULE_DISAGREEMENT ? [RULE_DISAGREEMENT, RULE_PERCENTAGE] : [RULE_PERCENTAGE, RULE_DISAGREEMENT]
-    },
     votingRuleSettings () {
       return this.proposalSettings.ruleSettings[this.proposalSettings.rule]
     },
@@ -85,14 +69,10 @@ export default ({
     }
   },
   methods: {
-    openVotingProposal (rule) {
-      console.log('rule', rule)
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'ChangeVotingRules', { rule })
+    openVotingProposal () {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'ChangeVotingRules', { rule: this.config.rule })
     },
-    isRuleActive (rule) {
-      return rule === this.proposalSettings.rule
-    },
-    votingValue (option) {
+    votingValue () {
       const HTMLTags = {
         b_: '<span class="has-text-bold">',
         _b: '</span>',
@@ -101,42 +81,28 @@ export default ({
       }
       const count = this.thresholdOriginal
       const adjusted = this.thresholdAdjusted
+      const percent = getPercentFromDecimal(count) + '%'
+      const LArgs = {
+        percent,
+        count: getCountOutOfMembers(this.groupMembersCount, adjusted),
+        total: Math.max(3, this.groupMembersCount), // 3 = minimum groupSize to vote,
+        ...HTMLTags
+      }
 
-      return {
-        [RULE_DISAGREEMENT]: () => {
-          if (!this.groupShouldPropose || count === adjusted) {
-            return L('{b_}{count}{_b}', { count, ...HTMLTags })
-          }
-          return L('{b_}{count}{_b} {sm_}(adjusted to {nr}*){_sm}', { count, nr: adjusted, ...HTMLTags })
-        },
-        [RULE_PERCENTAGE]: () => {
-          const percent = getPercentFromDecimal(this.thresholdOriginal) + '%'
-          const LArgs = {
-            percent,
-            count: getCountOutOfMembers(this.groupMembersCount, adjusted),
-            total: Math.max(3, this.groupMembersCount), // 3 = minimum groupSize to vote,
-            ...HTMLTags
-          }
-
-          if (!this.groupShouldPropose) {
-            return L('{b_}{percent}{_b}', LArgs)
-          }
-          if (count === adjusted) {
-            return L('{b_}{percent}{_b} {sm_}({count} out of {total} members){_sm}', LArgs)
-          }
-          return L('{b_}{percent}{_b} {sm_}({count}* out of {total} members){_sm}', LArgs)
-        }
-      }[option]()
+      if (!this.groupShouldPropose) {
+        return L('{b_}{percent}{_b}', LArgs)
+      }
+      if (count === adjusted) {
+        return L('{b_}{percent}{_b} {sm_}({count} out of {total} members){_sm}', LArgs)
+      }
+      return L('{b_}{percent}{_b} {sm_}({count}* out of {total} members){_sm}', LArgs)
     },
-    votingRuleAdjusted (ruleName) {
-      if (!this.groupShouldPropose || !this.isRuleActive(ruleName) || this.thresholdAdjusted === this.thresholdOriginal) {
+    votingRuleAdjusted () {
+      if (!this.groupShouldPropose || this.thresholdAdjusted === this.thresholdOriginal) {
         return ''
       }
 
-      return {
-        [RULE_DISAGREEMENT]: L('*This value was automatically adjusted because your group is too small for the disagreement number.'),
-        [RULE_PERCENTAGE]: L('*This value was automatically adjusted because there should always be at least 2 "yes" votes.')
-      }[ruleName]
+      return L('*This value was automatically adjusted because there should always be at least 2 "yes" votes.')
     }
   }
 }: Object)
@@ -160,7 +126,7 @@ export default ({
 }
 
 .c-status {
-  margin-bottom: -0.5rem;
+  margin-bottom: 0.5rem;
 
   &-term,
   &-desc > :first-child {
@@ -169,7 +135,6 @@ export default ({
 
   &-term {
     display: inline-block;
-    margin-bottom: 0.5rem;
   }
 
   &-desc {
