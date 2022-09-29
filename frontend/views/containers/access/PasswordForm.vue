@@ -11,8 +11,8 @@ label.field
       :name='name'
       :data-test='name'
       v-model='$v.form[name].$model'
-      @input='debounceField("password")'
-      @blur='updateField("password")'
+      @input='debounceField(name)'
+      @blur='updateField(name)'
     )
     .addons
       button.is-icon(
