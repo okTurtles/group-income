@@ -49,7 +49,7 @@ describe('Signup, Profile and Login', () => {
   it('sign up button remains disabled if passwords are not the same', () => {
     const user2 = `user2-${userId}`
     const password = '123456789'
-    const wrongPassword = 'asdfdasf123'
+    const wrongPassword = 'wRoNgPaSsWoRd123'
 
     cy.getByDT('signupBtn').click()
 
