@@ -8,6 +8,7 @@ import util from 'util'
 import path from 'path'
 import '@sbp/okturtles.data'
 import '~/shared/domains/chelonia/db.js'
+import createLruCache from './lru-cache.js'
 
 const Boom = require('@hapi/boom')
 
@@ -184,15 +185,28 @@ function throwIfFileOutsideDataDir (filename: string): string {
 }
 
 if (production || process.env.GI_PERSIST) {
+  const cache = createLruCache()
+
   sbp('sbp/selectors/overwrite', {
     // we cannot simply map this to readFile, because 'chelonia/db/getEntry'
     // calls this and expects a string, not a Buffer
     // 'chelonia/db/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
     'chelonia/db/get': async function (filename: string) {
-      const value = await sbp('backend/db/readFile', filename)
-      return Boom.isBoom(value) ? null : value.toString('utf8')
+      if (cache.has(filename)) {
+        return cache.get(filename)
+      }
+      const bufferOrError = await sbp('backend/db/readFile', filename)
+      if (Boom.isBoom(bufferOrError)) {
+        return null
+      }
+      const value = bufferOrError.toString('utf8')
+      cache.set(filename, value)
+      return value
     },
-    'chelonia/db/set': sbp('sbp/selectors/fn', 'backend/db/writeFile')
+    'chelonia/db/set': async function (filename: string, data: any): Promise<*> {
+      cache.set(filename, data)
+      return await sbp('backend/db/writeFile', filename, data)
+    }
   })
   sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
 }
