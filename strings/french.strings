@@ -117,6 +117,9 @@
 /* MISSING TRANSLATION - views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description" = "Description";
 
+/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
+"Proposal expiring on {date}" = "Proposal expiring on {date}";
+
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed." = "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.";
 
@@ -401,6 +404,9 @@
 
 /* controller/actions/group.js */
 "Failed to leave group. {codeError}" = "La tentative de quitter le groupe a échoué. {codeError}";
+
+/* controller/actions/group.js */
+"Failed to notify expiring proposals." = "Échec de la notification des propositions arrivant à expiration.";
 
 /* controller/actions/group.js */
 "Failed to remove {member}: {reportError}" = "L’exclusion de {member} a échoué : {reportError}";

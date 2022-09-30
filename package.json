@@ -1,7 +1,7 @@
 {
   "name": "group-income",
   "version": "0.0.1",
-  "contractsVersion": "0.0.5",
+  "contractsVersion": "0.0.6",
   "private": true,
   "description": "",
   "scripts": {

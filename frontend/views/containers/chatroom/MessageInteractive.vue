@@ -14,101 +14,95 @@ message-base(v-bind='$props' @wrapperAction='action')
 </template>
 
 <script>
+import { mapState, mapGetters } from 'vuex'
 import { L } from '@common/common.js'
 import {
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
-  STATUS_OPEN,
-  STATUS_PASSED,
-  STATUS_EXPIRED,
-  STATUS_FAILED,
-  STATUS_CANCELLED
+  PROPOSAL_VARIANTS
 } from '@model/contracts/shared/constants.js'
-
 import MessageBase from './MessageBase.vue'
 import SvgHorn from '@svgs/horn.svg'
-import chatroom from '@containers/chatroom/chatroom.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 
-const fakeProposals = {
-  inviteKattyId: {
-    proposalType: PROPOSAL_INVITE_MEMBER,
-    proposalData: {
-      member: 'Katty',
-      reason: 'She\'s cool'
-    },
-    status: STATUS_FAILED,
-    from: '555',
-    to: '444'
-  },
-  changeMincomeId: {
-    proposalType: PROPOSAL_GROUP_SETTING_CHANGE,
-    status: STATUS_PASSED,
-    proposalData: {
-      setting: 'mincomeAmount',
-      proposedValue: 300,
-      currentValue: 200,
-      mincomeCurrency: 'USD',
-      reason: 'Because why not'
-    }
-  },
-  changeVotingRuleId: {
-    proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
-    status: STATUS_EXPIRED,
-    proposalData: {
-      setting: 'votingRule'
-    }
-  },
-  changeVotingSystemId: {
-    proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
-    status: STATUS_CANCELLED,
-    proposalData: {
-      setting: 'votingSystem'
-    }
-  }
-}
-
-const interactiveMessage = (interaction, summary = null) => {
+const interactiveMessage = (proposal, initialOptions = {}) => {
+  const options = Object.assign({}, initialOptions)
   return {
-    'invite-member': {
-      open: L('{from} wants to add new members to the group.', interaction),
-      passed: L('Added members to this group: {to}', interaction),
-      default: L('No members were added.')
+    [PROPOSAL_INVITE_MEMBER]: {
+      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add new members to the group.', options),
+      [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to add new members to the group.', options),
+      [PROPOSAL_VARIANTS.ACCEPTED]: L('Added members to this group: {to}', options),
+      [PROPOSAL_VARIANTS.REJECTED]: L('No members were added.'),
+      [PROPOSAL_VARIANTS.EXPIRED]: L('No members were added.')
     },
-    'remove-member': {
-      open: L('{from} wants to remove members from the group.', interaction),
-      passed: L('Left {title}', summary),
-      default: L('No members were removed.')
+    [PROPOSAL_REMOVE_MEMBER]: {
+      [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to remove members from the group.', options),
+      [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to remove members from the group.', options),
+      [PROPOSAL_VARIANTS.ACCEPTED]: L('Left {title}', options),
+      [PROPOSAL_VARIANTS.REJECTED]: L('No members were removed.'),
+      [PROPOSAL_VARIANTS.EXPIRED]: L('No members were removed.')
     },
-    'group-setting-change': {
+    [PROPOSAL_GROUP_SETTING_CHANGE]: {
       mincomeAmount: {
-        open: L('{from} wants to change the change the groups mincome. ', interaction),
-        passed: L('The groups mincome changed.'),
-        default: L('The group mincome hasn\'t changed.')
+        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the change the groups mincome. ', options),
+        [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to change the change the groups mincome. ', options),
+        [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups mincome changed.'),
+        [PROPOSAL_VARIANTS.REJECTED]: L('The group mincome hasn\'t changed.'),
+        [PROPOSAL_VARIANTS.EXPIRED]: L('The group mincome hasn\'t changed.')
       }
     },
-    'proposal-setting-change': {
+    [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
       votingRule: {
-        open: L('{from} wants to change the groups voting rules. ', interaction),
-        passed: L('The groups voting rules changed'),
-        default: L('The groups voting rules hasn\'t changed.')
+        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups voting rules. ', options),
+        [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to change the groups voting rules. ', options),
+        [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups voting rules changed'),
+        [PROPOSAL_VARIANTS.REJECTED]: L('The groups voting rules hasn\'t changed.'),
+        [PROPOSAL_VARIANTS.EXPIRED]: L('The groups voting rules hasn\'t changed.')
       },
       votingSystem: {
-        open: L('{from} wants to change the groups voting system. ', interaction),
-        passed: L('The groups voting system changed.'),
-        default: L('The groups voting system hasn\'t changed.')
+        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups voting system. ', options),
+        [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to change the groups voting system. ', options),
+        [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups voting system changed.'),
+        [PROPOSAL_VARIANTS.REJECTED]: L('The groups voting system hasn\'t changed.'),
+        [PROPOSAL_VARIANTS.EXPIRED]: L('The groups voting system hasn\'t changed.')
       }
     }
+  }[proposal.proposalType][proposal.variant]
+}
+
+const proposalStatus = (proposal) => {
+  const options = {}
+  if (proposal.variant === PROPOSAL_VARIANTS.EXPIRING) {
+    const dateParts = new Date(proposal.expires_date_ms).toDateString().split(' ')
+    dateParts.shift()
+    dateParts[1] = dateParts[1] + ','
+    options['date'] = dateParts.join(' ')
   }
+  return {
+    [PROPOSAL_VARIANTS.CREATED]: L('New proposal'),
+    [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal expiring on {date}', options),
+    [PROPOSAL_VARIANTS.ACCEPTED]: L('Proposal Accepted'),
+    [PROPOSAL_VARIANTS.REJECTED]: L('Proposal rejected'),
+    [PROPOSAL_VARIANTS.EXPIRED]: L('Proposal expired')
+  }[proposal.variant]
+}
+
+const proposalSeverity = {
+  [PROPOSAL_VARIANTS.CREATED]: 'is-info',
+  [PROPOSAL_VARIANTS.EXPIRING]: 'is-warning',
+  [PROPOSAL_VARIANTS.ACCEPTED]: 'is-success',
+  [PROPOSAL_VARIANTS.REJECTED]: 'is-danger',
+  [PROPOSAL_VARIANTS.EXPIRED]: 'is-neutral'
 }
 
 export default ({
   name: 'MessageInteractive',
   props: {
     id: String,
-    datetime: Date
+    datetime: Date,
+    proposal: Object
   },
   components: {
     SvgHorn,
@@ -121,55 +115,19 @@ export default ({
     }
   },
   computed: {
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['globalProfile']),
     interactiveMessage () {
-      const summary = chatroom.summary
-      let text = ''
-      let variant = 'proposal'
-      const interaction = fakeProposals[this.id]
-      let status = interaction.status
-      let proposalStatus = ''
-      let proposalSeverity = ''
-      if (status !== 'open' && status !== 'passed') status = 'default'
-      switch (interaction.status) {
-        case STATUS_OPEN:
-          proposalStatus = L('New proposal')
-          proposalSeverity = 'is-info'
-          break
-
-        case STATUS_PASSED:
-          proposalStatus = L('Proposal Accepted')
-          proposalSeverity = 'is-success'
-          break
-
-        case STATUS_FAILED:
-          proposalStatus = L('Proposal rejected')
-          proposalSeverity = 'is-danger'
-          break
-
-        case STATUS_EXPIRED:
-        case STATUS_CANCELLED:
-          proposalStatus = L('Proposal expired')
-          proposalSeverity = 'is-neutral'
-          break
+      const { variant, creator } = this.proposal
+      const creatorProfile = this.globalProfile(creator)
+      const initialOptions = {
+        from: creatorProfile.displayName || creatorProfile.username
       }
 
-      switch (interaction.proposalType) {
-        case PROPOSAL_INVITE_MEMBER:
-        case PROPOSAL_REMOVE_MEMBER:
-          text = interactiveMessage(interaction, summary)[interaction.proposalType][status]
-          if (status === 'passed') variant = 'userAction'
-          break
-
-        case PROPOSAL_GROUP_SETTING_CHANGE:
-        case PROPOSAL_PROPOSAL_SETTING_CHANGE:
-          text = interactiveMessage(interaction)[interaction.proposalType][interaction.proposalData.setting][status]
-          break
-      }
       return {
-        text,
-        variant,
-        proposalStatus,
-        proposalSeverity
+        text: interactiveMessage(this.proposal, initialOptions),
+        proposalStatus: proposalStatus(this.proposal),
+        proposalSeverity: proposalSeverity[variant]
       }
     }
   }
@@ -208,6 +166,11 @@ export default ({
   .is-info {
     background-color: $primary_2;
     color: $primary_0;
+  }
+
+  .is-warning {
+    background-color: $warning_2;
+    color: $warning_0;
   }
 
   .is-danger {
