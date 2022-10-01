@@ -1,8 +1,11 @@
 <template lang='pug'>
 message-base(v-bind='$props' @wrapperAction='action')
   template(#image='')
-    .c-icon
-      svg-horn
+    .c-icon(
+      :class='{"is-warning": isYellowHorn}'
+    )
+      svg-yellow-horn(v-if='isYellowHorn')
+      svg-horn(v-else)
   template(#header='')
     .c-header
       span.c-title.is-title-5(:class='interactiveMessage.proposalSeverity') {{interactiveMessage.proposalStatus}}
@@ -25,6 +28,7 @@ import {
 } from '@model/contracts/shared/constants.js'
 import MessageBase from './MessageBase.vue'
 import SvgHorn from '@svgs/horn.svg'
+import SvgYellowHorn from '@svgs/yellow-horn.svg'
 import { humanDate } from '@model/contracts/shared/time.js'
 
 const interactiveMessage = (proposal, initialOptions = {}) => {
@@ -106,6 +110,7 @@ export default ({
   },
   components: {
     SvgHorn,
+    SvgYellowHorn,
     MessageBase
   },
   methods: {
@@ -129,6 +134,9 @@ export default ({
         proposalStatus: proposalStatus(this.proposal),
         proposalSeverity: proposalSeverity[variant]
       }
+    },
+    isYellowHorn () {
+      return this.proposal.variant === PROPOSAL_VARIANTS.EXPIRING
     }
   }
 }: Object)
@@ -146,6 +154,10 @@ export default ({
   margin-right: 0.5rem;
   border-radius: 50%;
   background: $primary_2;
+
+  &.is-warning {
+    background-color: $warning_2;
+  }
 }
 
 .c-header {
