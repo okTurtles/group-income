@@ -4,7 +4,7 @@ label.field
   .inputgroup(
     v-error:[name]='{ attrs: { "data-test": "badPassword" }}'
   )
-    input.input(
+    input.input.with-single-addon(
       :type='isLock ? "password" : "text"'
       :class='[{error: $v.form[name].$error}, size]'
       :placeholder='showPlaceholder ? name : ""'
