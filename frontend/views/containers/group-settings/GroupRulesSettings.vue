@@ -8,7 +8,8 @@
     )
       p.is-title-4 {{ config[rule].title }}
       p.has-text-1.c-expl(v-safe-html='config[rule].explanation')
-      i18n.pill.is-primary.c-active(v-if='isRuleActive(rule)') Active
+      // disabling below 'active' badge temporarily until 'disagreement-rule' is re-implemented.
+      i18n.pill.is-primary.c-active(v-if='false && isRuleActive(rule)') Active
 
       dl.c-status(v-if='isRuleActive(rule)')
         dt.c-status-term {{ config[rule].status }}
