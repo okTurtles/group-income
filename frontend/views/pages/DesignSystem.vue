@@ -207,6 +207,7 @@ page(
               i.icon-share-atl share-atl
               i.icon-search icon-search
               i.icon-sort-down sort-down
+              i.icon-star icon-star
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo
