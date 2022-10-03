@@ -523,6 +523,20 @@ sbp('chelonia/defineContract', {
             updateCurrentDistribution({ meta, state, getters })
           }
         }
+      },
+      sideEffect ({ meta, contractID, data }, { state, getters }) {
+        if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+          const { loggedIn } = sbp('state/vuex/state')
+          const payment = state.payments[data.paymentHash]
+
+          if (loggedIn.username === payment.data.toUser) {
+            sbp('gi.notifications/emit', 'SEND_PAYMENT_THANKYOU', {
+              groupID: contractID,
+              creator: meta.username,
+              amount: getters.withGroupCurrency(payment.data.amount)
+            })
+          }
+        }
       }
     },
     'gi.contracts/group/sendPaymentThankYou': {

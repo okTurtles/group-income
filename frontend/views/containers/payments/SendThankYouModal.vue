@@ -81,6 +81,11 @@ export default ({
     close () {
       this.$refs.modal.close(0)
     },
+    onEnterPressed () {
+      if (this.form.memo) {
+        this.submit()
+      }
+    },
     submit () {
       try {
         sbp('gi.actions/group/sendPaymentThankYou', {

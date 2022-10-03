@@ -170,6 +170,24 @@ export default ({
       scope: 'group'
     }
   },
+  SEND_PAYMENT_THANKYOU (data: { creator: string, amount: string }) {
+    const { globalProfile } = sbp('state/vuex/getters')
+    const getDisplayName = username => globalProfile(username)?.displayName || username
+
+    return {
+      avatarUsername: data.creator,
+      body: L('{fromUser} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
+        fromUser: getDisplayName(data.creator), // displayName of the sender
+        amount: data.amount,
+        ...LTags('strong')
+      }),
+      creator: data.creator,
+      icon: '',
+      level: 'info',
+      linkTo: `dashboard?modal=SendThankYouModal&to=${data.creator}`,
+      scope: 'group'
+    }
+  },
   PAYMENT_THANKYOU_SENT (data: { creator: string, fromUser: string, toUser: string }) {
     return {
       avatarUsername: data.creator,
