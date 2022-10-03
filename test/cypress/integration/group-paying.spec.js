@@ -45,6 +45,25 @@ function assertMonthOverview (items) {
   })
 }
 
+function openNotificationCard ({
+  messageToAssert = '',
+  clickTheLatestItem = true
+} = {}) {
+  cy.getByDT('notificationBell').click()
+  cy.getByDT('notificationCard').should('be.visible')
+
+  cy.getByDT('notificationCard').within(() => {
+    cy.getByDT('notificationList').find('ul > li:nth-child(1)').as('topMostItem')
+
+    if (messageToAssert) {
+      cy.get('@topMostItem').should('contain', messageToAssert)
+    }
+    if (clickTheLatestItem) {
+      cy.get('@topMostItem').click()
+    }
+  })
+}
+
 describe('Group Payments', () => {
   const invitationLinks = {}
 
@@ -161,12 +180,25 @@ describe('Group Payments', () => {
       ['Payments received', '1 out of 1'],
       ['Amount received', '$250 out of $250']
     ])
+
+    cy.log('user3 receives a notification for the payment and clicking on it opens a "Send thank you note" modal.')
+    openNotificationCard({
+      messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Thank you!')
+      cy.getByDT('closeModal').click()
+    })
+
+    cy.getByDT('closeModal').should('not.exist')
   })
 
   it('user3 sends a thank you note to user1 for their payment', () => {
     const thankYouText = 'Thank you for your contribution! It’s going to be super helpful for my programming lessons.'
 
     cy.log('user3 opens a "Send Thank you" Modal')
+    cy.getByDT('paymentsLink').click()
     cy.getByDT('payList').within(() => {
       cy.getByDT('menuTrigger').click()
       cy.getByDT('menuContent').find('ul > li:nth-child(3)').as('btnThankYou')
@@ -187,13 +219,8 @@ describe('Group Payments', () => {
 
     cy.log('user1 receives a notification for a thank you note')
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
-    cy.getByDT('notificationBell').click()
-    cy.getByDT('notificationCard').should('be.visible')
-
-    cy.getByDT('notificationCard').within(() => {
-      cy.getByDT('notificationList').find('ul > li:nth-child(1)')
-        .should('contain', `user3-${userId} sent you a thank you note for your contribution.`)
-        .click()
+    openNotificationCard({
+      messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`
     })
 
     cy.getByDT('modal').within(() => {
