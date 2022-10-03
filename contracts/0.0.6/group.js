@@ -10321,6 +10321,19 @@ ${this.getErrorInfo()}`;
               updateCurrentDistribution({ meta, state, getters });
             }
           }
+        },
+        sideEffect({ meta, contractID, data }, { state, getters }) {
+          if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+            const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+            const payment = state.payments[data.paymentHash];
+            if (loggedIn.username === payment.data.toUser) {
+              (0, import_sbp3.default)("gi.notifications/emit", "SEND_PAYMENT_THANKYOU", {
+                groupID: contractID,
+                creator: meta.username,
+                amount: getters.withGroupCurrency(payment.data.amount)
+              });
+            }
+          }
         }
       },
       "gi.contracts/group/sendPaymentThankYou": {
