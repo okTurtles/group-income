@@ -8,7 +8,7 @@ import util from 'util'
 import path from 'path'
 import '@sbp/okturtles.data'
 import '~/shared/domains/chelonia/db.js'
-import createLruCache from './lru-cache.js'
+import LRU from 'lru-cache'
 
 const Boom = require('@hapi/boom')
 
@@ -185,7 +185,10 @@ function throwIfFileOutsideDataDir (filename: string): string {
 }
 
 if (production || process.env.GI_PERSIST) {
-  const cache = createLruCache()
+  // https://github.com/isaacs/node-lru-cache#usage
+  const cache = new LRU({
+    max: 1000
+  })
 
   sbp('sbp/selectors/overwrite', {
     // we cannot simply map this to readFile, because 'chelonia/db/getEntry'
