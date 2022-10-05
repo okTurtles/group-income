@@ -1203,9 +1203,10 @@ ${this.getErrorInfo()}`;
             const { loggedIn } = (0, import_sbp2.default)("state/vuex/state");
             const payment = state.payments[data.paymentHash];
             if (loggedIn.username === payment.data.toUser) {
-              (0, import_sbp2.default)("gi.notifications/emit", "SEND_PAYMENT_THANKYOU", {
+              (0, import_sbp2.default)("gi.notifications/emit", "PAYMENT_RECEIVED", {
                 groupID: contractID,
                 creator: meta.username,
+                paymentHash: data.paymentHash,
                 amount: getters.withGroupCurrency(payment.data.amount)
               });
             }
