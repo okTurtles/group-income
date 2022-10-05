@@ -197,8 +197,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('nextBtn').click()
 
     cy.getByDT('rulesStep').within(() => {
-      const threshold = ruleName === 'percentage' ? ruleThreshold * 100 : ruleThreshold
-      cy.getByDT(ruleName, 'label').click()
+      const threshold = ruleThreshold * 100
 
       cy.get(`input[type='range']#range${ruleName}`)
         .invoke('val', threshold)
