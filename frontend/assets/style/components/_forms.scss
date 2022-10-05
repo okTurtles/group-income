@@ -76,7 +76,7 @@ legend.legend {
 
   &.error {
     border-color: $danger_0;
-    color: initial;
+    color: currentColor;
 
     &:focus,
     &:hover {
