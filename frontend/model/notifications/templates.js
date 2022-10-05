@@ -170,7 +170,7 @@ export default ({
       scope: 'group'
     }
   },
-  SEND_PAYMENT_THANKYOU (data: { creator: string, amount: string }) {
+  PAYMENT_RECEIVED (data: { creator: string, amount: string, paymentHash: string }) {
     const { globalProfile } = sbp('state/vuex/getters')
     const getDisplayName = username => globalProfile(username)?.displayName || username
 
@@ -184,7 +184,7 @@ export default ({
       creator: data.creator,
       icon: '',
       level: 'info',
-      linkTo: `dashboard?modal=SendThankYouModal&to=${data.creator}`,
+      linkTo: `dashboard?modal=PaymentDetail&id=${data.paymentHash}`,
       scope: 'group'
     }
   },

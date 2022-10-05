@@ -16,6 +16,7 @@ export default ({
       queries: { // Queries to be used by modals
         // [modalName]: { queryKey: queryValue }
       },
+      replacementQueries: {}, // queries to be used for REPLACE_MODAL
       childData: null,
       replacement: null, // Replace the modal once the first one is close without updating the url
       lastFocus: null // Record element that open the modal
@@ -128,16 +129,21 @@ export default ({
         if (this.lastFocus) this.lastFocus.focus()
       }
       if (this.replacement) {
-        this.openModal(this.replacement)
+        this.openModal(this.replacement, this.replacementQueries[this.replacement])
+
         this.replacement = null
+        delete this.replacementQueries[this.replacement]
       } else {
         this.updateUrl()
       }
     },
-    replaceModal (componentName) {
+    replaceModal (componentName, queries = null) {
       this.replacement = componentName
       // At the moment you can only replace a modal if it's the main one by design
       // Use direct children instead of sbp to wait for animation out
+      if (queries) {
+        this.replacementQueries[componentName] = queries
+      }
       this.$refs['content'].$children[0].close()
     },
     setModalQueries (componentName, queries) {

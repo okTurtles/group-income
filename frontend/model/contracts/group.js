@@ -530,9 +530,10 @@ sbp('chelonia/defineContract', {
           const payment = state.payments[data.paymentHash]
 
           if (loggedIn.username === payment.data.toUser) {
-            sbp('gi.notifications/emit', 'SEND_PAYMENT_THANKYOU', {
+            sbp('gi.notifications/emit', 'PAYMENT_RECEIVED', {
               groupID: contractID,
               creator: meta.username,
+              paymentHash: data.paymentHash,
               amount: getters.withGroupCurrency(payment.data.amount)
             })
           }
