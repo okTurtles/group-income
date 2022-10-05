@@ -181,13 +181,13 @@ describe('Group Payments', () => {
       ['Amount received', '$250 out of $250']
     ])
 
-    cy.log('user3 receives a notification for the payment and clicking on it opens a "Send thank you note" modal.')
+    cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
     openNotificationCard({
       messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
     })
 
     cy.getByDT('modal').within(() => {
-      cy.getByDT('modal-header-title').should('contain', 'Thank you!')
+      cy.getByDT('modal-header-title').should('contain', 'Payment details')
       cy.getByDT('closeModal').click()
     })
 
