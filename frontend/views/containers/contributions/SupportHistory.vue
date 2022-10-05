@@ -15,6 +15,7 @@ div(:class='isReady ? "" : "c-ready"')
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { humanDate } from '@model/contracts/shared/time.js'
 import BarGraph from '@components/graphs/BarGraph.vue'
 
@@ -22,23 +23,56 @@ export default ({
   name: 'GroupSupportHistory',
   data () {
     return {
-      isReady: false,
-      history: []
+      isReady: false
     }
   },
   components: {
     BarGraph
   },
-  created () {
-    // Todo replace history with real data
-    const testNumber = 6
-    for (let i = testNumber; i > 0; i--) {
-      const date = new Date()
-      date.setMonth(date.getMonth() - i)
-      this.history.push({
-        total: 1 / testNumber * (testNumber - i + 1),
-        title: humanDate(date, { month: 'long' })
+  computed: {
+    ...mapGetters([
+      'groupSettings',
+      'currentPaymentPeriod',
+      'periodBeforePeriod',
+      'paymentsForPeriod'
+    ]),
+    mincome () {
+      return this.groupSettings.mincomeAmount
+    },
+    periods () {
+      const periods = []
+      let lastPeriod = this.currentPaymentPeriod
+      for (let i = 0; i < 5; i++) {
+        periods.unshift(lastPeriod)
+        lastPeriod = this.periodBeforePeriod(lastPeriod)
+      }
+      periods.unshift(lastPeriod)
+      return periods
+    },
+    history () {
+      return this.periods.map((period, i) => {
+        const payments = this.paymentsForPeriod(period)
+        const { totalDistributionAmount, numberOfNeedyPeople } = this.parsePayments(payments)
+        return {
+          total: numberOfNeedyPeople === 0 ? 1 : totalDistributionAmount * this.mincome / numberOfNeedyPeople,
+          delayedPayment: payments.some(payment => payment.isLate),
+          title: humanDate(period, { month: 'long' })
+        }
       })
+    }
+  },
+  methods: {
+    parsePayments (payments) {
+      const list = {}
+      payments.forEach(payment => {
+        const { from, to, amount } = payment
+        list[from] = (list[from] || 0) + amount
+        list[to] = (list[to] || 0) - amount
+      })
+      return {
+        numberOfNeedyPeople: Object.values(list).filter(amount => amount < 0).length,
+        totalDistributionAmount: Object.values(list).filter(amount => amount > 0).reduce((total, curValue) => total + curValue, 0)
+      }
     }
   }
 }: Object)

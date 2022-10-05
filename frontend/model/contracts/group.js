@@ -61,7 +61,7 @@ function initPaymentPeriod ({ getters }) {
 function clearOldPayments ({ state, getters }) {
   const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort()
   // save two periods worth of payments, max
-  while (sortedPeriodKeys.length > 2) {
+  while (sortedPeriodKeys.length > 6) {
     const period = sortedPeriodKeys.shift()
     for (const paymentHash of getters.paymentHashesForPeriod(period)) {
       Vue.delete(state.payments, paymentHash)
