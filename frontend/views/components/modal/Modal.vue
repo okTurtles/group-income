@@ -131,8 +131,8 @@ export default ({
       if (this.replacement) {
         this.openModal(this.replacement, this.replacementQueries[this.replacement])
 
-        this.replacement = null
         delete this.replacementQueries[this.replacement]
+        this.replacement = null
       } else {
         this.updateUrl()
       }
