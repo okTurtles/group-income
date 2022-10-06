@@ -556,7 +556,7 @@ sbp('chelonia/defineContract', {
         if (data.toUser === loggedIn.username) {
           sbp('gi.notifications/emit', 'PAYMENT_THANKYOU_SENT', {
             groupID: contractID,
-            creator: meta.username, // username of the from user. to be used with sbp('namespace/lookup') in AvatarUser.vue
+            creator: meta.username, // username of the from user. to be used with sbp('namespace/lookup') in 'AvatarUser.vue'
             fromUser: data.fromUser, // display name of the from user
             toUser: data.toUser
           })
