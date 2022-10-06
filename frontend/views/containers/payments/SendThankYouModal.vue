@@ -96,13 +96,11 @@ export default ({
             memo: this.form.memo
           }
         })
+
+        this.isConfirmation = true
       } catch (err) {
         alert("something went wrong! couldn't process your request to send a thank you note.")
-
-        return
       }
-
-      this.isConfirmation = true
     }
   }
 })

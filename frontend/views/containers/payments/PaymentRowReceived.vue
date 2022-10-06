@@ -45,7 +45,8 @@
           tag='button'
           icon='comment'
           @click='openModal("SendThankYouModal", { to: payment.username })'
-        ) Send thank you
+        )
+          i18n Send thank you
 </template>
 
 <script>

@@ -38,8 +38,8 @@ export default ({
       return this.$route.query.from || ''
     },
     thankYouNote () {
-      const to = this.$route.query.to || ''
-      return (this.groupThankYousFrom[this.from] || {})[to]
+      const to = this.$route.query.to
+      return this.groupThankYousFrom[this.from]?.[to] || ''
     }
   }
 }: Object)
