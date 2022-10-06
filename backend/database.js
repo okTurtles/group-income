@@ -187,7 +187,7 @@ function throwIfFileOutsideDataDir (filename: string): string {
 if (production || process.env.GI_PERSIST) {
   // https://github.com/isaacs/node-lru-cache#usage
   const cache = new LRU({
-    max: 1000
+    max: Number(process.env.GI_LRU_NUM_ITEMS) || 10000
   })
 
   sbp('sbp/selectors/overwrite', {
@@ -195,8 +195,9 @@ if (production || process.env.GI_PERSIST) {
     // calls this and expects a string, not a Buffer
     // 'chelonia/db/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
     'chelonia/db/get': async function (filename: string) {
-      if (cache.has(filename)) {
-        return cache.get(filename)
+      const lookupValue = cache.get(filename)
+      if (lookupValue !== undefined) {
+        return lookupValue
       }
       const bufferOrError = await sbp('backend/db/readFile', filename)
       if (Boom.isBoom(bufferOrError)) {
@@ -207,8 +208,14 @@ if (production || process.env.GI_PERSIST) {
       return value
     },
     'chelonia/db/set': async function (filename: string, data: any): Promise<*> {
-      cache.set(filename, data)
-      return await sbp('backend/db/writeFile', filename, data)
+      // eslint-disable-next-line no-useless-catch
+      try {
+        const result = await sbp('backend/db/writeFile', filename, data)
+        cache.set(filename, data)
+        return result
+      } catch (err) {
+        throw err
+      }
     }
   })
   sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
