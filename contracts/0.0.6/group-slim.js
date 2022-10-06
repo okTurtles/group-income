@@ -1219,9 +1219,8 @@ ${this.getErrorInfo()}`;
           toUser: string,
           memo: string
         }),
-        process({ data }, { getters }) {
-          const thankYousFrom = getters.groupThankYousFrom;
-          const fromUser = vueFetchInitKV(thankYousFrom, data.fromUser, {});
+        process({ data }, { state }) {
+          const fromUser = vueFetchInitKV(state.thankYousFrom, data.fromUser, {});
           import_common3.Vue.set(fromUser, data.toUser, data.memo);
         },
         sideEffect({ contractID, meta, data }) {
