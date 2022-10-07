@@ -857,7 +857,7 @@ page(
               | label.field
               |   .label Password
               |   .inputgroup
-              |     input.input
+              |     input.input.with-single-addon
               |     .addons
               |       button.is-icon(
               |         :aria-label='Show password'
@@ -868,7 +868,7 @@ page(
             label.field
               .label Password
               .inputgroup(:class='{ error: ephemeral.forms.hasError }')
-                input.input(:type='ephemeral.passwordHidden ? "password" : "text"')
+                input.input.with-single-addon(:type='ephemeral.passwordHidden ? "password" : "text"')
                 .addons
                   button.is-icon(
                     aria-label='Show password'

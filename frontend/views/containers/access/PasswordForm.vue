@@ -4,15 +4,15 @@ label.field
   .inputgroup(
     v-error:[name]='{ attrs: { "data-test": "badPassword" }}'
   )
-    input.input(
+    input.input.with-single-addon(
       :type='isLock ? "password" : "text"'
       :class='[{error: $v.form[name].$error}, size]'
       :placeholder='showPlaceholder ? name : ""'
       :name='name'
       :data-test='name'
       v-model='$v.form[name].$model'
-      @input='debounceField("password")'
-      @blur='updateField("password")'
+      @input='debounceField(name)'
+      @blur='updateField(name)'
     )
     .addons
       button.is-icon(
