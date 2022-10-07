@@ -6,6 +6,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
+import { omit } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'Modal',
@@ -44,9 +45,14 @@ export default ({
   },
   watch: {
     '$route' (to, from) {
-      if (to.query.modal) {
+      const toModal = to.query.modal
+
+      if (toModal) {
         // We reset the modals with no animation for simplicity
-        if (to.query.modal !== this.content) this.content = to.query.modal
+        if (toModal !== this.content) {
+          if (this.content) this.replaceModal(queryModal, omit(to.query, 'modal')) // if another modal is already open, replace it.
+          else this.content = queryModal
+        }
         const subcontent = to.query.subcontent ? to.query.subcontent.split('+').pop() : []
         if (subcontent !== this.activeSubcontent()) {
           // Try to find the new subcontent in the list of subcontent
