@@ -27,18 +27,23 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
       i18n.has-text-1 Notes
       p.has-text-bold {{ payment.data.memo }}
 
-  .buttons(v-if='!lightningPayment')
-    i18n.button.is-danger.is-outlined.is-small(
+  .buttons.c-buttons-container(v-if='!lightningPayment')
+    i18n.button.is-outlined(
       tag='button'
-      @click='submit'
+      @click='cancelPayment'
     ) Cancel payment
+
+    i18n.button(
+      tag='button'
+      @click='sendThankYou'
+    ) Send Thanks!
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { L } from '@common/common.js'
-import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
+import { CLOSE_MODAL, REPLACE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import currencies from '@model/contracts/shared/currencies.js'
@@ -97,13 +102,16 @@ export default ({
     }
   },
   methods: {
+    humanDate,
     closeModal () {
       this.$refs.modal.close()
     },
-    submit () {
+    cancelPayment () {
       alert('TODO: Implement cancel payment')
     },
-    humanDate
+    sendThankYou () {
+      sbp('okTurtles.events/emit', REPLACE_MODAL, 'SendThankYouModal', { to: this.payment.meta.username })
+    }
   },
   validations: {
     form: {}
@@ -157,8 +165,27 @@ export default ({
   }
 }
 
-.buttons {
-  justify-content: center;
+.c-buttons-container {
+  flex-direction: column-reverse;
+  align-items: stretch;
+  gap: 1rem;
+  max-width: 25rem;
+  margin: 1.625rem auto 0;
   width: 100%;
+
+  .button:not(:last-child) {
+    margin-right: 0;
+  }
+
+  @include tablet {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 2rem;
+    align-items: center;
+  }
+
+  @include desktop {
+    max-width: unset;
+  }
 }
 </style>

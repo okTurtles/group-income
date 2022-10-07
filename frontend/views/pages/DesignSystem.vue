@@ -179,6 +179,7 @@ page(
               i.icon-cog icon-cog
               i.icon-coins icon-coins
               i.icon-columns icon-columns
+              i.icon-comment icon-comment
               i.icon-comments icon-comments
               i.icon-copy icon-copy
               i.icon-dollar-sign icon-dollar-sign
