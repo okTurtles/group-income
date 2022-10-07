@@ -50,8 +50,8 @@ export default ({
       if (toModal) {
         // We reset the modals with no animation for simplicity
         if (toModal !== this.content) {
-          if (this.content) this.replaceModal(queryModal, omit(to.query, 'modal')) // if another modal is already open, replace it.
-          else this.content = queryModal
+          if (this.content) this.replaceModal(toModal, omit(to.query, 'modal')) // if another modal is already open, replace it.
+          else this.content = toModal
         }
         const subcontent = to.query.subcontent ? to.query.subcontent.split('+').pop() : []
         if (subcontent !== this.activeSubcontent()) {
