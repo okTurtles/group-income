@@ -552,7 +552,7 @@ sbp('chelonia/defineContract', {
           meta,
           votes: { [meta.username]: VOTE_FOR },
           status: STATUS_OPEN,
-          notifiedBeforExpire: false,
+          notifiedBeforeExpire: false,
           payload: null // set later by group/proposalVote
         })
         // TODO: save all proposals disk so that we only keep open proposals in memory
@@ -647,7 +647,7 @@ sbp('chelonia/defineContract', {
       validate: arrayOf(string),
       process ({ data, meta, contractID }, { state }) {
         for (const proposalId of data) {
-          Vue.set(state.proposals[proposalId], 'notifiedBeforExpire', true)
+          Vue.set(state.proposals[proposalId], 'notifiedBeforeExpire', true)
         }
       }
     },

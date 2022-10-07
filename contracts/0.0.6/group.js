@@ -10359,7 +10359,7 @@ ${this.getErrorInfo()}`;
             meta,
             votes: { [meta.username]: VOTE_FOR },
             status: STATUS_OPEN,
-            notifiedBeforExpire: false,
+            notifiedBeforeExpire: false,
             payload: null
           });
         },
@@ -10440,7 +10440,7 @@ ${this.getErrorInfo()}`;
         validate: arrayOf(string),
         process({ data, meta, contractID }, { state }) {
           for (const proposalId of data) {
-            vue_esm_default.set(state.proposals[proposalId], "notifiedBeforExpire", true);
+            vue_esm_default.set(state.proposals[proposalId], "notifiedBeforeExpire", true);
           }
         }
       },

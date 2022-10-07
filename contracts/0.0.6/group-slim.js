@@ -1235,7 +1235,7 @@ ${this.getErrorInfo()}`;
             meta,
             votes: { [meta.username]: VOTE_FOR },
             status: STATUS_OPEN,
-            notifiedBeforExpire: false,
+            notifiedBeforeExpire: false,
             payload: null
           });
         },
@@ -1316,7 +1316,7 @@ ${this.getErrorInfo()}`;
         validate: arrayOf(string),
         process({ data, meta, contractID }, { state }) {
           for (const proposalId of data) {
-            import_common3.Vue.set(state.proposals[proposalId], "notifiedBeforExpire", true);
+            import_common3.Vue.set(state.proposals[proposalId], "notifiedBeforeExpire", true);
           }
         }
       },

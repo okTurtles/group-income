@@ -79,10 +79,7 @@ const interactiveMessage = (proposal, initialOptions = {}) => {
 const proposalStatus = (proposal) => {
   const options = {}
   if (proposal.variant === PROPOSAL_VARIANTS.EXPIRING) {
-    const dateParts = new Date(proposal.expires_date_ms).toDateString().split(' ')
-    dateParts.shift()
-    dateParts[1] = dateParts[1] + ','
-    options['date'] = dateParts.join(' ')
+    options['date'] = humanDate(proposal.expires_date_ms, { month: 'short', day: 'numeric', year: 'numeric' })
   }
   return {
     [PROPOSAL_VARIANTS.CREATED]: L('New proposal'),
