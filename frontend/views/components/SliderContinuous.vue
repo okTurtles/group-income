@@ -1,6 +1,6 @@
 <template lang='pug'>
 .wrapper
-  label.label(:for='`range${uid}`') {{ label }}
+  label.label(v-if='label' :for='`range${uid}`') {{ label }}
 
   span.marks
     span.edge(aria-hidden='true') {{ min }}
@@ -15,6 +15,7 @@
         @input='handleChange'
       )
       output.sOutput(
+        v-if='!hideOutput'
         :for='`range${uid}`'
         :style='ephemeral.outputStyle'
       ) {{ value + unit }}
@@ -35,7 +36,8 @@ export default ({
     min: [String, Number],
     max: [String, Number],
     unit: String,
-    value: [String, Number]
+    value: [String, Number],
+    hideOutput: Boolean
   },
   data: () => ({
     ephemeral: {
