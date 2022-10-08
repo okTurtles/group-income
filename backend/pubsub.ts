@@ -10,7 +10,7 @@ interface Message {
   type: string
 }
 
-type MessageHandler = (this: PubsubServer, msg: Message) => void
+type MessageHandler = (this: PubsubClient, msg: Message) => void
 
 type PubsubClientEventName = 'close' | 'message'
 type PubsubServerEventName = 'close' | 'connection' | 'error' | 'headers' | 'listening'
@@ -116,9 +116,9 @@ export class PubsubClient {
 
 export class PubsubServer {
   clients: Set<PubsubClient>
-  customServerHandlers: Record<string, EventListener>
   customClientHandlers: Record<string, EventListener>
-  messageHandlers: Record<string, (msg: Message) => void>
+  customServerHandlers: Record<string, EventListener>
+  messageHandlers: Record<string, MessageHandler>
   options: typeof defaultOptions
   pingIntervalID?: number
   queuesByEventName: Map<string, Set<Callback>>
@@ -136,12 +136,13 @@ export class PubsubServer {
 
   close () {
     this.clients.forEach(client => client.terminate())
+    this.emit('close')
   }
 
   handleUpgradeableRequest (request: Request): Response {
     const server = this
     const { socket, response } = Deno.upgradeWebSocket(request)
-    // Our code
+
     socket.onopen = () => {
       server.emit('connection', socket, request)
     }
@@ -215,9 +216,9 @@ export function createServer (options: PubsubServerOptions = {}) {
     server.on(name, (...args: unknown[]) => {
       try {
         // Always call the default handler first.
-        // @ts-expect-error TS2556 [ERROR]: A spread argument must either have a tuple type or be passed to a rest parameter.
+        // @ts-expect-error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
         internalServerEventHandlers[name as PubsubServerEventName]?.call(server, ...args)
-        // @ts-expect-error TS2556 [ERROR]: A spread argument must either have a tuple type or be passed to a rest parameter.
+        // @ts-expect-error TS2556: A spread argument must either have a tuple type or be passed to a rest parameter.
         server.customServerHandlers[name as PubsubServerEventName]?.call(server, ...args)
       } catch (error) {
         server.emit('error', error)
@@ -289,7 +290,7 @@ const internalServerEventHandlers = {
         }
         try {
           // @ts-expect-error TS2554 [ERROR]: Expected 3 arguments, but got 2.
-          (internalClientEventHandlers)[eventName as PubsubClientEventName]?.call(client, ...args)
+          internalClientEventHandlers[eventName as PubsubClientEventName]?.call(client, ...args)
           server.customClientHandlers[eventName]?.call(client, ...args)
         } catch (error) {
           server.emit('error', error)

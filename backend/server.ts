@@ -18,9 +18,8 @@ import { router } from './routes.ts'
 
 import { GIMessage } from '../shared/domains/chelonia/GIMessage.ts'
 
-const { default: { version } } = await import('~/package.json', {
-  assert: { type: 'json' }
-})
+import packageJSON from '~/package.json' assert { type: 'json' }
+const { version } = packageJSON
 
 const applyPortShift = (env: ReturnType<typeof Deno.env.toObject>) => {
   // TODO: implement automatic port selection when `PORT_SHIFT` is 'auto'.

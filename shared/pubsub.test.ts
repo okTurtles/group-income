@@ -18,7 +18,7 @@ const {
   minReconnectionDelay
 } = client.options
 
-const createRandomDelays = (number) => {
+const createRandomDelays = (number: number) => {
   return [...new Array(number)].map((_, i) => {
     client.failedConnectionAttempts = i
     return client.getNextRandomDelay()

@@ -69,16 +69,20 @@ const {
 } = process.env
 
 const backendIndex = './backend/index.ts'
+const contractsDir = 'frontend/model/contracts'
+const denoImportMap = 'import-map.json'
+const denoRunPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
+const denoTestPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
 const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
 const distDir = 'dist'
 const distContracts = 'dist/contracts'
 const distJS = 'dist/assets/js'
-const serviceWorkerDir = 'frontend/controller/serviceworkers'
-const srcDir = 'frontend'
-const contractsDir = 'frontend/model/contracts'
-const mainSrc = path.join(srcDir, 'main.js')
 const manifestJSON = path.join(contractsDir, 'manifests.json')
+const srcDir = 'frontend'
+const serviceWorkerDir = 'frontend/controller/serviceworkers'
+
+const mainSrc = path.join(srcDir, 'main.js')
 
 const development = NODE_ENV === 'development'
 const production = !development
@@ -386,6 +390,7 @@ module.exports = (grunt) => {
     },
 
     exec: {
+      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data',
       eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
@@ -397,8 +402,8 @@ module.exports = (grunt) => {
         options: { env: process.env }
       },
       // Test anything in /test that ends with `.test.ts`.
-      testWithDeno: 'deno test --allow-env --allow-net --allow-read --allow-write --import-map=import-map.json --no-check ./test/*.ts',
-      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
+      testWithDeno: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoImportMap} --no-check ./test/*.test.ts`,
+      ts: `deno check --import-map=${denoImportMap} backend/*.ts shared/*.ts shared/domains/chelonia/*.ts`
     }
   })
 
@@ -412,7 +417,7 @@ module.exports = (grunt) => {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean', 'copy', esbuild])
+      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'exec:ts', 'clean', 'copy', esbuild])
     }
   })
 
@@ -477,7 +482,7 @@ module.exports = (grunt) => {
     const done = this.async() // Tell Grunt we're async.
     child = spawn(
       'deno',
-      ['run', '--allow-env', '--allow-net', '--allow-read', '--allow-write', '--import-map=import-map.json', backendIndex],
+      ['run', ...denoRunPermissions, `--import-map=${denoImportMap}`, backendIndex],
       {
         stdio: 'inherit'
       }

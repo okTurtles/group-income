@@ -45,9 +45,9 @@ export default (new Promise((resolve, reject) => {
   }
 }))
 
-const shutdownFn = function () {
+const shutdownFn = (): void => {
   sbp('okTurtles.data/apply', PUBSUB_INSTANCE, function (pubsub: PubsubServer) {
-    console.log('message received in child, shutting down...')
+    console.log('signal received in child, shutting down...')
     pubsub.on('close', async function () {
       try {
         await sbp('backend/server/stop')
@@ -59,14 +59,18 @@ const shutdownFn = function () {
       }
     })
     pubsub.close()
-    // Since `ws` v8.0, `WebSocketServer.close()` no longer closes remaining connections.
-    // See https://github.com/websockets/ws/commit/df7de574a07115e2321fdb5fc9b2d0fea55d27e8
-    pubsub.clients.forEach((client: PubsubClient) => client.terminate())
   })
 }
 
-Deno.addSignalListener('SIGBREAK', shutdownFn)
-Deno.addSignalListener('SIGINT', shutdownFn)
+/*
+ On Windows only SIGINT (ctrl+c) and SIGBREAK (ctrl+break) are supported, but
+ SIGBREAK is not supported on Linux.
+*/
+['SIGBREAK', 'SIGINT'].forEach(signal => {
+  try {
+    Deno.addSignalListener(signal as Deno.Signal, shutdownFn)
+  } catch {}
+})
 
 // Equivalent to the `uncaughtException` event in Nodejs.
 addEventListener('error', (event) => {
