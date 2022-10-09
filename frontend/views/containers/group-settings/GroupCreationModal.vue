@@ -52,7 +52,7 @@ modal-base-template(data-test='groupCreationModal' :fullscreen='true' :a11yTitle
 import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/shared/voting/rules.js'
+import { RULE_PERCENTAGE } from '@model/contracts/shared/voting/rules.js'
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
 import currencies, { mincomePositive, normalizeCurrency } from '@model/contracts/shared/currencies.js'
@@ -73,7 +73,7 @@ import {
 // we use require instead of import with this file to make rollup happy
 // or not... using require only makes rollup happy during compilation
 // but then the browser complains about "require is not defined"
-import { required, requiredIf, between } from 'vuelidate/lib/validators'
+import { required, between } from 'vuelidate/lib/validators'
 
 export default ({
   name: 'GroupCreationModal',
@@ -118,7 +118,7 @@ export default ({
             mincomeAmount: normalizeCurrency(this.form.mincomeAmount),
             mincomeCurrency: this.form.mincomeCurrency,
             ruleName: this.form.ruleName,
-            ruleThreshold: this.form.ruleThreshold[this.form.ruleName],
+            ruleThreshold: this.form.ruleThreshold,
             distributionDate: this.form.distributionDate
           }
         })
@@ -137,18 +137,11 @@ export default ({
         groupName: '',
         groupPicture: '',
         sharedValues: '',
-        // randomize to reduce choice bias
-        ruleOrder: Math.round(Math.random()) === 1 ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE],
         mincomeAmount: '',
         mincomeCurrency: 'USD',
         distributionDate: dateToPeriodStamp(addTimeToDate(new Date().setUTCHours(0, 0, 0, 0), 3 * DAYS_MILLIS)),
-        ruleName: null,
-        ruleThreshold: {
-          [RULE_DISAGREEMENT]: proposalsSettings[RULE_DISAGREEMENT].threshold,
-          [RULE_PERCENTAGE]: proposalsSettings[RULE_PERCENTAGE].threshold
-        },
-        // randomize to reduce choice bias
-        rulesOrder: Math.round(Math.random()) ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE]
+        ruleName: RULE_PERCENTAGE,
+        ruleThreshold: proposalsSettings[RULE_PERCENTAGE].threshold
       },
       ephemeral: {
         groupPictureFile: '', // passed by GroupName.vue
@@ -183,23 +176,9 @@ export default ({
       distributionDate: {
         required
       },
-      ruleName: {
-        required,
-        oneOf: (value) => [RULE_DISAGREEMENT, RULE_PERCENTAGE].includes(value)
-      },
       ruleThreshold: {
-        [RULE_DISAGREEMENT]: {
-          required: requiredIf(function () {
-            return this.form.ruleName === RULE_DISAGREEMENT
-          }),
-          between: between(1, 60)
-        },
-        [RULE_PERCENTAGE]: {
-          required: requiredIf(function (nestedModel) {
-            return this.form.ruleName === RULE_PERCENTAGE
-          }),
-          between: between(0, 100)
-        }
+        required,
+        between: between(0, 100)
       }
     },
     // validation groups by route name for steps

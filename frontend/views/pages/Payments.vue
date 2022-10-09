@@ -64,13 +64,11 @@ page(
             | {{ link.title }}
             span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-        .c-tabs-chip-container.hide-phone(v-if='ephemeral.activeTab === "PaymentRowTodo"')
+        .c-tabs-chip-container.hide-phone
           next-distribution-pill
 
-      .c-tab-header-container
-        h3.is-title-3(v-if='tabHeader') {{ tabHeader }}
-
-        next-distribution-pill.hide-tablet.c-distribution-pill(v-if='ephemeral.activeTab === "PaymentRowTodo"')
+      .c-chip-container-below-tabs
+        next-distribution-pill.hide-tablet.c-distribution-pill
 
       .c-filters(v-if='paymentsListData.length > 0')
         .c-method-filters
@@ -246,9 +244,8 @@ export default ({
       }
 
       const doesNotNeedIncomeAndDidReceiveBefore = !this.needsIncome && this.paymentsReceived.length
-      const doesNeedIncomeAndDidSentBefore = this.needsIncome && this.paymentsSent.length
 
-      if (doesNotNeedIncomeAndDidReceiveBefore || doesNeedIncomeAndDidSentBefore) {
+      if (this.needsIncome || doesNotNeedIncomeAndDidReceiveBefore) {
         items.push({
           title: L('Received'),
           url: 'PaymentRowReceived'
@@ -350,12 +347,6 @@ export default ({
         PaymentRowSent: () => this.paymentsSent,
         PaymentRowReceived: () => this.paymentsReceived
       }[this.ephemeral.activeTab]()
-    },
-    tabHeader () {
-      return {
-        PaymentRowSent: L('Completed payments'),
-        PaymentRowReceived: L('Received payments')
-      }[this.ephemeral.activeTab] || ''
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
@@ -501,7 +492,7 @@ export default ({
   }
 }
 
-.c-tab-header-container {
+.c-chip-container-below-tabs {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap-reverse;

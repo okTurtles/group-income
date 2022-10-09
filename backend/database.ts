@@ -1,6 +1,7 @@
 /* globals Deno */
 import * as pathlib from 'path'
 
+import LRU from 'lru-cache'
 import sbp from '@sbp/sbp'
 
 import '~/shared/domains/chelonia/db.ts'
@@ -203,15 +204,39 @@ function throwIfFileOutsideDataDir (filename: string): string {
 }
 
 if (production || Deno.env.get('GI_PERSIST')) {
+  // https://github.com/isaacs/node-lru-cache#usage
+  const cache = new LRU({
+    max: Number(process.env.GI_LRU_NUM_ITEMS) || 10000
+  })
+
   sbp('sbp/selectors/overwrite', {
     // we cannot simply map this to readFile, because 'chelonia/db/getEntry'
     // calls this and expects a string, not a Buffer
     // 'chelonia/db/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
     'chelonia/db/get': async function (filename: string) {
-      const value = await sbp('backend/db/readFile', filename)
-      return value instanceof Error ? null : value.toString('utf8')
+      const lookupValue = cache.get(filename)
+      if (lookupValue !== undefined) {
+        return lookupValue
+      }
+      const bufferOrError = await sbp('backend/db/readFile', filename)
+
+      if (bufferOrError instanceof Error) {
+        return null
+      }
+      const value = bufferOrError.toString('utf8')
+      cache.set(filename, value)
+      return value
     },
-    'chelonia/db/set': sbp('sbp/selectors/fn', 'backend/db/writeFile')
+    'chelonia/db/set': async function (filename: string, data: unknown): Promise<unknown> {
+      // eslint-disable-next-line no-useless-catch
+      try {
+        const result = await sbp('backend/db/writeFile', filename, data)
+        cache.set(filename, data)
+        return result
+      } catch (err) {
+        throw err
+      }
+    }
   })
   sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
 }

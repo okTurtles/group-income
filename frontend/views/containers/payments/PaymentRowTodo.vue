@@ -157,6 +157,12 @@ export default ({
 
   .c-amount-value-container {
     display: flex;
+    flex-wrap: wrap;
+
+    @include phone {
+      gap: 0.25rem;
+      justify-content: flex-end;
+    }
   }
 
   .c-not-received-tooltip {

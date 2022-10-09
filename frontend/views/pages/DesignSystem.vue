@@ -179,6 +179,7 @@ page(
               i.icon-cog icon-cog
               i.icon-coins icon-coins
               i.icon-columns icon-columns
+              i.icon-comment icon-comment
               i.icon-comments icon-comments
               i.icon-copy icon-copy
               i.icon-dollar-sign icon-dollar-sign
@@ -207,6 +208,7 @@ page(
               i.icon-share-atl share-atl
               i.icon-search icon-search
               i.icon-sort-down sort-down
+              i.icon-star icon-star
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo
@@ -855,7 +857,7 @@ page(
               | label.field
               |   .label Password
               |   .inputgroup
-              |     input.input
+              |     input.input.with-single-addon
               |     .addons
               |       button.is-icon(
               |         :aria-label='Show password'
@@ -866,7 +868,7 @@ page(
             label.field
               .label Password
               .inputgroup(:class='{ error: ephemeral.forms.hasError }')
-                input.input(:type='ephemeral.passwordHidden ? "password" : "text"')
+                input.input.with-single-addon(:type='ephemeral.passwordHidden ? "password" : "text"')
                 .addons
                   button.is-icon(
                     aria-label='Show password'

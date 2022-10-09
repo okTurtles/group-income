@@ -12,6 +12,7 @@
     "blakejs": "https://cdn.skypack.dev/blakejs",
     "buffer": "https://cdn.skypack.dev/buffer",
     "dompurify": "https://cdn.skypack.dev/dompurify",
+    "lru-cache": "https://cdn.skypack.dev/lru-cache",
     "multihashes": "https://esm.sh/multihashes",
     "pogo": "https://raw.githubusercontent.com/snowteamer/pogo/master/main.ts",
     "pogo/": "https://raw.githubusercontent.com/snowteamer/pogo/master/",
