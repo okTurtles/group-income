@@ -67,14 +67,12 @@ declare module '~/frontend/model/contracts/misc/flowTyper.js' { declare module.e
 declare module '~/frontend/model/contracts/shared/time.js' { declare module.exports: Object }
 declare module '@model/contracts/shared/time.js' { declare module.exports: Object }
 // HACK: declared some shared files below but not sure why it's necessary
-declare module '~/shared/domains/chelonia/GIMessage.ts' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/chelonia.ts' { declare module.exports: any }
 declare module '~/shared/domains/chelonia/errors.ts' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/events.ts' { declare module.exports: Object }
 declare module '~/shared/domains/chelonia/internals.ts' { declare module.exports: Object }
 declare module '~/shared/functions.ts' { declare module.exports: any }
 declare module '~/shared/pubsub.ts' { declare module.exports: any }
-declare module '~/shared/types.js' { declare module.exports: any }
 
 declare module '~/frontend/model/contracts/shared/giLodash.js' { declare module.exports: any }
 declare module '@model/contracts/shared/giLodash.js' { declare module.exports: any }

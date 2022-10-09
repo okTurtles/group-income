@@ -48,18 +48,18 @@
     }
   },
   "eslintIgnore": [
+    "contracts/*",
+    "dist/*",
     "frontend/assets/*",
     "frontend/model/contracts/misc/flowTyper.js",
-    "shared/declarations.js",
     "historical/*",
-    "shared/types.js",
-    "dist/*",
     "ignored/*",
     "node_modules/*",
+    "shared/**/*.flow.js",
+    "shared/declarations.js",
     "test/common/*",
     "test/contracts/*",
-    "test/cypress/cache/*",
-    "contracts/*"
+    "test/cypress/cache/*"
   ],
   "browserslist": "> 1% and since 2018 and not dead",
   "stylelint": {

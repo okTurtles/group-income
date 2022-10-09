@@ -10,7 +10,7 @@ import { mapMutations, mapGetters, mapState } from 'vuex'
 import 'wicg-inert'
 
 import '@model/captureLogs.js'
-import type { GIMessage } from '~/shared/domains/chelonia/chelonia.ts'
+import type { GIMessage } from '~/shared/domains/chelonia/types.flow.js'
 import '~/shared/domains/chelonia/chelonia.ts'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.ts'
 import * as Common from '@common/common.js'

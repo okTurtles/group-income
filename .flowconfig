@@ -11,6 +11,8 @@
 .*/backend/.*
 # Shared files must be imported by Deno backend files, so they better not contain Flowtype annotations.
 .*/shared/.*
+!.*/shared/types.flow.js
+!.*/shared/.*/types.flow.js
 .*/dist/.*
 .*/contracts/.*
 .*/frontend/assets/.*

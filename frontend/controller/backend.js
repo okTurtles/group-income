@@ -1,6 +1,6 @@
 'use strict'
 
-import type { JSONObject } from '~/shared/types.ts'
+import type { JSONObject } from '~/shared/types.flow.js'
 
 import sbp from '@sbp/sbp'
 import { NOTIFICATION_TYPE } from '~/shared/pubsub.ts'

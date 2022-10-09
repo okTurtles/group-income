@@ -7,7 +7,7 @@ import { blake32Hash, bytesToB64 } from '~/shared/functions.ts'
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
 
-import type { GIKey, GIKeyType } from '~/shared/domains/chelonia/GIMessage.ts'
+import type { GIKey, GIKeyType } from '~/shared/domains/chelonia/types.flow.js'
 
 function genSeed (): string {
   return bytesToB64(nacl.randomBytes(nacl.box.secretKeyLength))
