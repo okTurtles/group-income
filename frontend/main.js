@@ -346,6 +346,7 @@ async function startApp () {
               .map(proposalId => ({
                 proposalId,
                 proposalType: openProposals[proposalId].data.proposalType,
+                proposalData: openProposals[proposalId].data.proposalData,
                 expires_date_ms: openProposals[proposalId].data.expires_date_ms,
                 createdDate: openProposals[proposalId].meta.createdDate,
                 creator: openProposals[proposalId].meta.username

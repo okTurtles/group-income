@@ -30,10 +30,12 @@ import MessageBase from './MessageBase.vue'
 import SvgHorn from '@svgs/horn.svg'
 import SvgYellowHorn from '@svgs/yellow-horn.svg'
 import { humanDate } from '@model/contracts/shared/time.js'
+import { get } from '@model/contracts/shared/giLodash.js'
 
 const interactiveMessage = (proposal, initialOptions = {}) => {
   const options = Object.assign({}, initialOptions)
-  return {
+  const { proposalType, proposalData, variant } = proposal
+  const interactiveMessages = {
     [PROPOSAL_INVITE_MEMBER]: {
       [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add new members to the group.', options),
       [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to add new members to the group.', options),
@@ -73,7 +75,18 @@ const interactiveMessage = (proposal, initialOptions = {}) => {
         [PROPOSAL_VARIANTS.EXPIRED]: L('The groups voting system hasn\'t changed.')
       }
     }
-  }[proposal.proposalType][proposal.variant]
+  }
+
+  const groupSettingType = proposalData.setting
+  let proposalSettingType
+  if (!!proposalData.ruleName && proposalData.ruleName !== proposalData.current.ruleName) {
+    proposalSettingType = 'votingSystem'
+  } else if (!!proposalData.ruleThreshold && proposalData.ruleThreshold !== proposalData.current.ruleThreshold) {
+    proposalSettingType = 'votingRule'
+  }
+  const keys = [proposalType, groupSettingType, proposalSettingType, variant].filter(key => !!key)
+
+  return get(interactiveMessages, keys)
 }
 
 const proposalStatus = (proposal) => {
