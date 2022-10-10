@@ -217,13 +217,13 @@ export default (sbp('sbp/selectors/register', {
         }
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
-        if (!config.skipActionProcessing) {
+        if (!config.skipActionProcessing && !env.skipActionProcessing) {
           const decrypted = config.decryptFn.call(self, message.opValue(), state)
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
         }
       },
       [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
-        if (!config.skipActionProcessing) {
+        if (!config.skipActionProcessing && !env.skipActionProcessing) {
           const { data, meta, action } = v
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
@@ -264,6 +264,10 @@ export default (sbp('sbp/selectors/register', {
         }
       },
       [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
+        if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeys) {
+          return
+        }
+
         if (!state._vm.pending_key_requests) state._vm.pending_key_requests = Object.create(null)
         state._vm.pending_key_requests[message.hash()] = [
           message.originatingContractID(),
@@ -361,7 +365,7 @@ export default (sbp('sbp/selectors/register', {
     if (config[`preOp_${opT}`]) {
       processOp = config[`preOp_${opT}`](message, state) !== false && processOp
     }
-    if (processOp && !config.skipProcessing) {
+    if (processOp && !config.skipActionProcessing && !env.skipActionProcessing) {
       opFns[opT](opV)
       config.postOp && config.postOp(message, state)
       config[`postOp_${opT}`] && config[`postOp_${opT}`](message, state)
@@ -437,7 +441,7 @@ export default (sbp('sbp/selectors/register', {
       const [originatingContractID, previousHEAD, v] = ((entry: any): [string, string, GIOpKeyRequest])
 
       // 1. Sync (originating) identity contract
-      await sbp('okTurtles.eventQueue/queueEvent', originatingContractID, [
+      await sbp('chelonia/withEnv', originatingContractID, { skipActionProcessing: true }, [
         'chelonia/private/in/syncContract', originatingContractID
       ])
 
@@ -488,8 +492,12 @@ export default (sbp('sbp/selectors/register', {
       } catch (e) {
         console.error('Error at respondToKeyRequests', e)
       } finally {
-        // 4. Update contract with information
-        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: hash })
+        // 4. Remove originating contract and update current contract with information
+        await Promise.all([
+          // TODO: Remove only if not previously subscribed
+          sbp('chelonia/contract/removeImmediately', originatingContractID),
+          sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: hash })
+        ])
       }
     }))
   },
@@ -544,7 +552,7 @@ export default (sbp('sbp/selectors/register', {
       // process any side-effects (these must never result in any mutation to the contract state!)
       if (!processingErrored) {
         try {
-          if (!this.config.skipActionProcessing && !this.config.skipSideEffects) {
+          if (!this.config.skipActionProcessing && !this.config.skipSideEffects && !this.env.skipActionProcessing && !this.env.skipSideEffects) {
             await handleEvent.processSideEffects.call(this, message, state[contractID])
           }
           postHandleEvent && await postHandleEvent(message)

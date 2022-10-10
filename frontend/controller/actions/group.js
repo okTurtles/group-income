@@ -256,6 +256,8 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept: boolean } }) {
     try {
       sbp('okTurtles.data/set', 'JOINING_GROUP', true)
+      // sync the group's contract state
+      await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: true }, ['chelonia/contract/sync', params.contractID])
       // post acceptance event to the group contract, unless this is being called
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {
@@ -267,8 +269,6 @@ export default (sbp('sbp/selectors/register', {
           }
         })
       }
-      // sync the group's contract state
-      await sbp('chelonia/contract/sync', params.contractID)
 
       const rootState = sbp('state/vuex/state')
       if (!params.options?.skipInviteAccept) {

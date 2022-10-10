@@ -692,7 +692,7 @@ export default (sbp('sbp/selectors/register', {
       signatureFn: signingKey ? signatureFnBuilder(signingKey) : undefined
     })
     hooks && hooks.prepublish && hooks.prepublish(msg)
-    await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
+    await sbp('chelonia/private/out/publishEvent', msg, publishOptions).then(() => (state._volatile = { ...state._volatile, pendingKeys: true }))
     hooks && hooks.postpublish && hooks.postpublish(msg)
     return msg
   },
