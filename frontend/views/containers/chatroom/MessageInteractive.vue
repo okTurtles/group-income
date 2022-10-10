@@ -95,9 +95,8 @@ const interactiveMessage = (proposal, initialOptions = {}) => {
   } else if (!!proposalData.ruleThreshold && proposalData.ruleThreshold !== proposalData.current.ruleThreshold) {
     proposalSettingType = 'votingRule'
   }
-  const keys = [proposalType, groupSettingType, proposalSettingType, variant].filter(key => !!key)
 
-  return get(interactiveMessages, keys)
+  return get(interactiveMessages, [proposalType, groupSettingType, proposalSettingType, variant].filter(key => !!key))
 }
 
 const proposalStatus = (proposal) => {
