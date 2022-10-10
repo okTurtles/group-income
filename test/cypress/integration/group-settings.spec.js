@@ -103,7 +103,7 @@ describe('Group Voting Rules', () => {
 
     cy.getByDT('groupSettingsLink').click()
     cy.get('ul[data-test="votingRules"] > li')
-      .should('have.length', 2)
+      .should('have.length', 1)
       .first()
       .should('have.attr', 'data-test', ruleName)
       .should('have.attr', 'aria-current', 'true')
@@ -119,7 +119,7 @@ describe('Group Voting Rules', () => {
     })
   }
 
-  it('user1 creates a group with rule "disagreement" of "2"', () => {
+  it.skip('user1 creates a group with rule "disagreement" of "2"', () => {
     cy.giCreateGroup('groupDis_2', { ruleName: 'disagreement', ruleThreshold: 2 })
 
     verifyRuleSelected('disagreement', {
@@ -137,7 +137,7 @@ describe('Group Voting Rules', () => {
     })
   })
 
-  it('user1 changes the group rule to "disagrement" of "4"', () => {
+  it.skip('user1 changes the group rule to "disagrement" of "4"', () => {
     updateRuleSettings('disagreement', 4, { changeSystem: true })
     verifyRuleSelected('disagreement', {
       status: '4',
@@ -153,7 +153,20 @@ describe('Group Voting Rules', () => {
     cy.giLogout()
   })
 
-  it('in a group with 4 members, the "disagrement" rule is adjusted from 4 to 3', () => {
+  it('4 new memebers joins the group via shared invitation link', () => {
+    // temp test block while 'disagreement rule' is disabled
+    for (let i = 2; i <= 5; i++) {
+      cy.giAcceptGroupInvite(invitationLinkAnyone, {
+        username: `user${i}-${userId}`,
+        groupName: groupNamePerc40,
+        bypassUI: true
+      })
+    }
+
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+  })
+
+  it.skip('in a group with 4 members, the "disagrement" rule is adjusted from 4 to 3', () => {
     for (let i = 2; i <= 4; i++) {
       cy.giAcceptGroupInvite(invitationLinkAnyone, {
         username: `user${i}-${userId}`,
@@ -171,7 +184,7 @@ describe('Group Voting Rules', () => {
     cy.giLogout()
   })
 
-  it('in a group with 5 members, the "disagrement" rule of 4 is not adjusted.', () => {
+  it.skip('in a group with 5 members, the "disagrement" rule of 4 is not adjusted.', () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: `user5-${userId}`,
       groupName: groupNamePerc40,
@@ -192,26 +205,30 @@ describe('Group Voting Rules', () => {
     getProposalItems().eq(proposalNth).within(() => {
       cy.getByDT('statusDescription').should('contain', `${votesSoFar} out of 5 members voted`)
       cy.getByDT(voteType).click()
+    })
+    // see explanatory comment in group-proposals.spec.js for this .pipe() thing
+    let statusDescription = `${votesSoFar + 1} out of 5 members voted`
+    if (opts.decisive === 'rejected') {
+      statusDescription = 'Proposal rejected'
+    } else if (opts.decisive === 'approved') {
+      statusDescription = 'Proposal accepted'
+    }
+    cy.get('body')
+      .pipe($el => $el.find('[data-test="proposalsWidget"]').children().eq(proposalNth).find('[data-test="statusDescription"]'))
+      .should('contain', statusDescription)
 
+    getProposalItems().eq(proposalNth).within(() => {
       if (opts.decisive) {
-        if (opts.decisive === 'rejected') {
-          cy.getByDT('statusDescription').should('contain', 'Proposal rejected')
-        } else if (opts.decisive === 'approved') {
-          cy.getByDT('statusDescription').should('contain', 'Proposal accepted')
-        }
         cy.getByDT('voted').should('not.exist')
+      } else if (voteType === 'voteFor') {
+        cy.getByDT('voted').should('contain', 'You voted yes.')
       } else {
-        cy.getByDT('statusDescription').should('contain', `${votesSoFar + 1} out of 5 members voted`)
-        if (voteType === 'voteFor') {
-          cy.getByDT('voted').should('contain', 'You voted yes.')
-        } else {
-          cy.getByDT('voted').should('contain', 'You voted no.')
-        }
+        cy.getByDT('voted').should('contain', 'You voted no.')
       }
     })
   }
 
-  it('user1 proposes to change rule to percentage 15%). It is rejected once everyone else disagrees.', () => {
+  it.skip('user1 proposes to change rule to percentage 15%). It is rejected once everyone else disagrees.', () => {
     updateRuleSettings('percentage', 0.15, { isProposal: true })
 
     cy.getByDT('dashboard').click()
@@ -230,20 +247,20 @@ describe('Group Voting Rules', () => {
     voteInProposal('user5', 0, 4, 'voteAgainst', { decisive: 'rejected' })
   })
 
-  it('user5 re-creates the same proposal. It is accepted once someone agrees.', () => {
+  it.skip('user5 re-creates the same proposal. It is accepted once someone agrees.', () => {
     updateRuleSettings('percentage', 0.15, { isProposal: true })
 
     cy.getByDT('dashboard').click()
 
     cy.log('Proposal is in the dashboard')
-    getProposalItems().should('have.length', 2)
+    getProposalItems().should('have.length', 1) // since other was archived
 
-    getProposalItems().eq(1).within(() => {
+    getProposalItems().eq(0).within(() => {
       cy.get('i.icon-round').should('have.class', 'icon-vote-yea')
       cy.getByDT('typeDescription').should('contain', 'Change from a disagreement based voting system to a percentage based one, with minimum agreement of 15%.')
     })
 
-    voteInProposal('user1', 1, 1, 'voteFor', { decisive: 'approved' })
+    voteInProposal('user1', 0, 1, 'voteFor', { decisive: 'approved' })
 
     cy.log('Verify new Voting System: percentage of 15% (adjusted)')
     verifyRuleSelected('percentage', { status: '15% (2* out of 5 members)', ruleAdjusted: true })
@@ -255,14 +272,14 @@ describe('Group Voting Rules', () => {
     cy.getByDT('dashboard').click()
 
     cy.log('Proposal is in the dashboard')
-    getProposalItems().should('have.length', 3)
+    getProposalItems().should('have.length', 1) // since others were archived
 
-    getProposalItems().eq(2).within(() => {
+    getProposalItems().eq(0).within(() => {
       cy.get('i.icon-round').should('have.class', 'icon-vote-yea')
-      cy.getByDT('typeDescription').should('contain', 'Change percentage based from 15% to 80%.')
+      cy.getByDT('typeDescription').should('contain', 'Change percentage based from 40% to 80%.')
     })
 
-    voteInProposal('user2', 2, 1, 'voteFor', { decisive: 'approved' })
+    voteInProposal('user2', 0, 1, 'voteFor', { decisive: 'approved' })
 
     cy.log('Verify new Voting System: percentage of 80%.')
     verifyRuleSelected('percentage', { status: '80% (4 out of 5 members)', ruleAdjusted: false })

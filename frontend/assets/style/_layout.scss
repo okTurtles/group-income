@@ -74,7 +74,7 @@ $bannerGeneralHeight: 2.3rem;
 
 .l-navigation {
   grid-area: l-navigation;
-  height: 100vh;
+  height: 100%;
 
   @include until($desktop) {
     position: absolute;

@@ -28,7 +28,7 @@ const channelsOf2For1 = chatRooms.filter(c => c.name.startsWith('Channel2') && c
 const channelsOf2For3 = chatRooms.filter(c => c.name.startsWith('Channel2') && c.users.includes(user3)).map(c => c.name)
 
 function getProposalItems () {
-  return cy.getByDT('proposalItem', 'li').children()
+  return cy.getByDT('proposalsWidget').children()
 }
 
 describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
@@ -62,7 +62,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         cy.get('textarea').should('exist')
       })
     }
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', inviter)
       const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
       cy.get('div.c-message:last-child .c-notification').should('contain', message)
@@ -153,7 +153,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('deleteChannelSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', me)
       cy.get('div.c-message:last-child .c-notification').should('contain', `Deleted the channel: ${channelName}`)
     })
@@ -168,7 +168,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('updateChannelName').type(name)
     cy.getByDT('updateChannelNameSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel name to: ${name}`)
     })
   }
@@ -179,18 +179,18 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('updateChannelDescription').type(description)
     cy.getByDT('updateChannelDescriptionSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel description to: ${description}`)
     })
   }
 
   function waitUntilMessageLoaded () {
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.get('.infinite-status-prompt:first-child')
         .invoke('attr', 'style')
         .should('include', 'display: none')
     })
-    cy.getByDT('conversationWapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+    cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
   }
 
   it(`user1 creats '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
@@ -291,7 +291,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.log(`user1 can add description of ${undetailedChannel.name} chatroom because he is the creator`)
     cy.log('"Add Description" button is visible because no description is added')
     switchChannel(undetailedChannel.name)
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('exist')
     })
     const newName1 = 'Updated-' + undetailedChannel.name
@@ -304,7 +304,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.log('"Add Description" button is invisible because description is already added')
     cy.log('but user1 can update description because he is creator')
     switchChannel(detailedChannel.name)
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('not.exist')
     })
     const newDescription2 = 'Updated description for ' + detailedChannel.name
@@ -313,7 +313,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.log(`user1 can not update details of ${notUpdatableChannel.name} chatroom because he is not creator`)
     switchChannel(notUpdatableChannel.name)
-    cy.getByDT('conversationWapper').within(() => {
+    cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('not.exist')
     })
     cy.getByDT('updateDescription').should('not.have.class', 'c-link')
@@ -422,9 +422,11 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     getProposalItems().within(() => {
       cy.getByDT('typeDescription').should('contain', `Remove ${user3} from the group.`)
       cy.getByDT('voteFor').click()
-      cy.getByDT('statusDescription')
-        .should('contain', 'Proposal accepted')
     })
+    // see explanatory comment in group-proposals.spec.js for this .pipe() thing
+    cy.get('body')
+      .pipe($el => $el.find('[data-test="proposalsWidget"]').find('[data-test="statusDescription"]'))
+      .should('contain', 'Proposal accepted')
 
     cy.getByDT('groupMembers').find('ul>li').should('have.length', 2) // user1 & user2
 

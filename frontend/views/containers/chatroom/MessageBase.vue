@@ -22,7 +22,13 @@
         p.c-replying(
           if='replyingMessage'
           @click='onReplyMessageClicked'
-        ) {{ replyingMessage }}
+        )
+          template(v-for='(objReplyMessage, index) in replyMessageObjects')
+            span(v-if='isText(objReplyMessage)') {{ objReplyMessage.text }}
+            span.c-mention(
+              v-else-if='isMention(objReplyMessage)'
+              :class='{"c-mention-to-me": objReplyMessage.toMe}'
+            ) {{ objReplyMessage.text }}
         send-area(
           v-if='isEditing'
           :defaultText='text'
@@ -112,20 +118,10 @@ export default ({
   computed: {
     ...mapGetters(['chatRoomUsers', 'ourUsername']),
     textObjects () {
-      if (!this.text.includes('@')) {
-        return [{ type: TextObjectType.Text, text: this.text }]
-      }
-      const possibleMentions = [
-        ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
-        makeMentionFromUsername('').all
-      ]
-
-      return this.text
-        .split(new RegExp(`(${possibleMentions.join('|')})`))
-        .map(t => possibleMentions.includes(t)
-          ? { type: TextObjectType.Mention, text: t }
-          : { type: TextObjectType.Text, text: t }
-        )
+      return this.generateTextObjectsFromText(this.text)
+    },
+    replyMessageObjects () {
+      return this.generateTextObjectsFromText(this.replyingMessage)
     }
   },
   methods: {
@@ -168,6 +164,24 @@ export default ({
     },
     isMention (o) {
       return o.type === TextObjectType.Mention
+    },
+    generateTextObjectsFromText (text) {
+      if (!text) {
+        return []
+      } else if (!text.includes('@')) {
+        return [{ type: TextObjectType.Text, text }]
+      }
+      const possibleMentions = [
+        ...Object.keys(this.chatRoomUsers).map(u => makeMentionFromUsername(u).me),
+        makeMentionFromUsername('').all
+      ]
+
+      return text
+        .split(new RegExp(`(${possibleMentions.join('|')})`))
+        .map(t => possibleMentions.includes(t)
+          ? { type: TextObjectType.Mention, text: t }
+          : { type: TextObjectType.Text, text: t }
+        )
     }
   }
 }: Object)
@@ -272,6 +286,10 @@ export default ({
     cursor: pointer;
     color: var(--text_2);
     border-color: var(--text_1); // var(--text_2);
+  }
+
+  .c-mention {
+    background-color: transparent;
   }
 }
 

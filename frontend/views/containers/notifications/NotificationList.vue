@@ -1,5 +1,8 @@
 <template lang='pug'>
-  div(:class='variant')
+  div(
+    data-test='notificationList'
+    :class='variant'
+  )
     .c-loading(v-if='ephemeral.isLoading')
       i18n.sr-only Loading...
       .c-skeleton(v-for='i in [0, 1, 2, 3]' :key='i')
@@ -18,7 +21,7 @@
           a.c-item(:class='item.read ? "" : "unread"' @click='handleItemClick(item)' draggable='false' @selectstart='ephemeral.isSelectingText = true')
             span.c-thumbCircle
               avatar-user(:username='item.avatarUsername' size='md')
-              i(:class='`icon-${item.icon} ${iconBg(item.level)}`')
+              i(v-if='item.icon' :class='`icon-${item.icon} ${iconBg(item.level)}`')
             span.c-item-content
               span.c-item-text(v-safe-html='item.body')
               span.c-item-date.has-text-1.has-text-small {{ ageTag(item) }}
@@ -156,6 +159,7 @@ export default ({
   display: flex;
   align-items: center;
   min-height: 3rem;
+  cursor: pointer;
 
   &:hover,
   &:focus {

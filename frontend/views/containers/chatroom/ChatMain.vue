@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-chat-main(v-if='summary.title')
   emoticons
-  .c-body(:style='bodyStyles')
+  .c-body
     .c-body-loading(v-if='details.isLoading')
       loading
         //
@@ -11,7 +11,7 @@
     .c-body-conversation(
       v-else
       ref='conversation'
-      data-test='conversationWapper'
+      data-test='conversationWrapper'
       @scroll='onChatScroll'
     )
 
@@ -86,7 +86,6 @@
       :title='summary.title'
       :scrolledUp='isScrolledUp'
       @send='handleSendMessage'
-      @height-update='updateSendAreaHeight'
       @jump-to-latest='updateScroll'
       @stop-replying='stopReplying'
     )
@@ -154,7 +153,6 @@ export default ({
       ephemeral: {
         startedUnreadMessageId: null,
         scrolledDistance: 0,
-        bodyPaddingBottom: '',
         infiniteLoading: null,
         shouldRefreshMessages: true,
         replyingMessage: null,
@@ -193,20 +191,6 @@ export default ({
       'currentGroupNotifications',
       'currentChatRoomUnreadMentions'
     ]),
-    bodyStyles () {
-      const defaultHeightInRem = 14
-      let heightDiscountInRem = 0
-      if (!this.summary.joined) {
-        heightDiscountInRem += 4
-      }
-      // Not sure what `bodyPaddingBottom` means, I delete it now
-      // const phoneStyles = this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
-      const phoneStyles = {}
-      const responsiveStyles = {
-        height: `calc(var(--vh, 1vh) * 100 - ${defaultHeightInRem + heightDiscountInRem}rem)`
-      }
-      return { ...phoneStyles, ...responsiveStyles }
-    },
     currentUserAttr () {
       return {
         ...this.currentIdentityState.attributes,
@@ -266,9 +250,6 @@ export default ({
         new Date(this.messages[index - 1].datetime).getTime()
       if (timeBetween > MINS_MILLIS * 10) { return false }
       return this.messages[index].from === this.messages[index - 1].from
-    },
-    updateSendAreaHeight (height) {
-      this.ephemeral.bodyPaddingBottom = height
     },
     stopReplying () {
       this.ephemeral.replyingMessage = null
@@ -686,9 +667,13 @@ export default ({
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
-  height: calc(var(--vh, 1vh) * 100 - 14rem);
+  height: calc(var(--vh, 1vh) * 100 - 18rem);
   width: calc(100% + 1rem);
   position: relative;
+
+  @include tablet {
+    height: calc(var(--vh, 1vh) * 100 - 16rem);
+  }
 
   &::before {
     content: "";

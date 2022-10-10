@@ -173,6 +173,7 @@ export default ({
         const userState = this.$store.state[originatingContractID]
 
         const { groupId, secret } = this.ephemeral.query
+
         await sbp('gi.actions/group/joinAndSwitch', {
           originatingContractID,
           originatingContractName: 'gi.contracts/identity',

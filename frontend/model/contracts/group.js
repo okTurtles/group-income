@@ -5,12 +5,12 @@ import { Vue, Errors, L } from '@common/common.js'
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './shared/voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
 import {
-  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED, MAX_ARCHIVED_PROPOSALS, PROPOSAL_ARCHIVED,
   INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { merge, deepEqualJSONType, omit } from './shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
+import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
@@ -118,6 +118,16 @@ function memberLeaves ({ username, dateLeft }, { meta, state, getters }) {
   state.profiles[username].departedDate = dateLeft
   // remove any todos for this member from the adjusted distribution
   updateCurrentDistribution({ meta, state, getters })
+}
+
+function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boolean {
+  // A util function that checks if an action (or event) in a group occurred after a particular user joined a group.
+  // This is used mostly for checking if a notification should be sent for that user or not.
+  // e.g.) user-2 who joined a group later than user-1 (who is the creator of the group) doesn't need to receive
+  // 'MEMBER_ADDED' notification for user-1.
+  // In some situations, userProfile is undefined, for example, when inviteAccept is called in
+  // certain situations. So we need to check for that here.
+  return Boolean(userProfile) && compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
 }
 
 sbp('chelonia/defineContract', {
@@ -307,6 +317,9 @@ sbp('chelonia/defineContract', {
       // note: a lot of code expects this to return an object, so keep the || {} below
       return getters.currentGroupState.paymentsByPeriod || {}
     },
+    groupThankYousFrom (state, getters): Object {
+      return getters.currentGroupState.thankYousFrom || {}
+    },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
       //       USD, then calling this function is probably an error which should be reported.
@@ -413,6 +426,8 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           payments: {},
           paymentsByPeriod: {},
+          thankYousFrom: {}, // { fromUser1: { toUser1: msg1, toUser2: msg2, ... }, fromUser2: {}, ...  }
+          invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
             groupCreator: meta.username,
@@ -507,6 +522,44 @@ sbp('chelonia/defineContract', {
             updateCurrentDistribution({ meta, state, getters })
           }
         }
+      },
+      sideEffect ({ meta, contractID, data }, { state, getters }) {
+        if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+          const { loggedIn } = sbp('state/vuex/state')
+          const payment = state.payments[data.paymentHash]
+
+          if (loggedIn.username === payment.data.toUser) {
+            sbp('gi.notifications/emit', 'PAYMENT_RECEIVED', {
+              groupID: contractID,
+              creator: meta.username,
+              paymentHash: data.paymentHash,
+              amount: getters.withGroupCurrency(payment.data.amount)
+            })
+          }
+        }
+      }
+    },
+    'gi.contracts/group/sendPaymentThankYou': {
+      validate: objectOf({
+        fromUser: string,
+        toUser: string,
+        memo: string
+      }),
+      process ({ data }, { state }) {
+        const fromUser = vueFetchInitKV(state.thankYousFrom, data.fromUser, {})
+        Vue.set(fromUser, data.toUser, data.memo)
+      },
+      sideEffect ({ contractID, meta, data }) {
+        const { loggedIn } = sbp('state/vuex/state')
+
+        if (data.toUser === loggedIn.username) {
+          sbp('gi.notifications/emit', 'PAYMENT_THANKYOU_SENT', {
+            groupID: contractID,
+            creator: meta.username, // username of the from user. to be used with sbp('namespace/lookup') in 'AvatarUser.vue'
+            fromUser: data.fromUser, // display name of the from user
+            toUser: data.toUser
+          })
+        }
       }
     },
     'gi.contracts/group/proposal': {
@@ -545,6 +598,26 @@ sbp('chelonia/defineContract', {
         // TODO: save all proposals disk so that we only keep open proposals in memory
         // TODO: create a global timer to auto-pass/archive expired votes
         //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
+      },
+      sideEffect ({ contractID, meta, data }, { getters }) {
+        const { loggedIn } = sbp('state/vuex/state')
+        const typeToSubTypeMap = {
+          [PROPOSAL_INVITE_MEMBER]: 'ADD_MEMBER',
+          [PROPOSAL_REMOVE_MEMBER]: 'REMOVE_MEMBER',
+          [PROPOSAL_GROUP_SETTING_CHANGE]: 'CHANGE_MINCOME',
+          [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'CHANGE_VOTING_RULE',
+          [PROPOSAL_GENERIC]: 'GENERIC'
+        }
+
+        const myProfile = getters.groupProfile(loggedIn.username)
+
+        if (isActionYoungerThanUser(meta, myProfile)) {
+          sbp('gi.notifications/emit', 'NEW_PROPOSAL', {
+            groupID: contractID,
+            creator: meta.username,
+            subtype: typeToSubTypeMap[data.proposalType]
+          })
+        }
       }
     },
     'gi.contracts/group/proposalVote': {
@@ -576,13 +649,27 @@ sbp('chelonia/defineContract', {
           proposals[proposal.data.proposalType][result](state, message)
           Vue.set(proposal, 'dateClosed', meta.createdDate)
         }
+      },
+      sideEffect ({ contractID, data, meta }, { state, getters }) {
+        const proposal = state.proposals[data.proposalHash]
+        const { loggedIn } = sbp('state/vuex/state')
+        const myProfile = getters.groupProfile(loggedIn.username)
+
+        if (proposal?.dateClosed &&
+          isActionYoungerThanUser(meta, myProfile)) {
+          sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
+            groupID: contractID,
+            creator: meta.username,
+            proposalStatus: proposal.status
+          })
+        }
       }
     },
     'gi.contracts/group/proposalCancel': {
       validate: objectOf({
         proposalHash: string
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta, contractID }, { state }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           // https://github.com/okTurtles/group-income/issues/602
@@ -593,7 +680,7 @@ sbp('chelonia/defineContract', {
           throw new Errors.GIErrorIgnoreAndBan('proposalWithdraw for wrong user!')
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
-        archiveProposal(state, data.proposalHash)
+        archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID })
       }
     },
     'gi.contracts/group/removeMember': {
@@ -601,6 +688,7 @@ sbp('chelonia/defineContract', {
         objectOf({
           member: string, // username to remove
           reason: optional(string),
+          automated: optional(boolean),
           // In case it happens in a big group (by proposal)
           // we need to validate the associated proposal.
           proposalHash: optional(string),
@@ -684,6 +772,18 @@ sbp('chelonia/defineContract', {
             })
           // TODO - #828 remove other group members contracts if applicable
         } else {
+          const myProfile = getters.groupProfile(username)
+
+          if (isActionYoungerThanUser(meta, myProfile)) {
+            const memberRemovedThemselves = data.member === meta.username
+
+            sbp('gi.notifications/emit', // emit a notification for a member removal.
+              memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
+              {
+                groupID: contractID,
+                username: memberRemovedThemselves ? meta.username : data.member
+              })
+          }
           // TODO - #828 remove the member contract if applicable.
           // problem is, if they're in another group we're also a part of, or if we
           // have a DM with them, we don't want to do this. may need to use manual reference counting
@@ -701,6 +801,7 @@ sbp('chelonia/defineContract', {
           { username: meta.username, dateLeft: meta.createdDate },
           { meta, state, getters }
         )
+
         sbp('gi.contracts/group/pushSideEffect', contractID,
           ['gi.contracts/group/removeMember/sideEffect', {
             meta,
@@ -745,22 +846,32 @@ sbp('chelonia/defineContract', {
       // They MUST NOT call 'commit'!
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      async sideEffect ({ meta }, { state }) {
-        const rootState = sbp('state/vuex/state')
-        // TODO: per #257 this will have to be encompassed in a recoverable transaction
+      async sideEffect ({ meta, contractID }, { state }) {
+        const { loggedIn } = sbp('state/vuex/state')
+        const { profiles = {} } = state
+
+        // TODO: per #257 this will ,have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
-        if (meta.username === rootState.loggedIn.username) {
+        if (meta.username === loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
-          for (const name in state.profiles) {
-            if (name !== rootState.loggedIn.username) {
-              await sbp('chelonia/contract/sync', state.profiles[name].contractID)
+          for (const name in profiles) {
+            if (name !== loggedIn.username) {
+              await sbp('chelonia/contract/sync', profiles[name].contractID)
             }
           }
         } else {
+          const myProfile = profiles[loggedIn.username]
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
           await sbp('chelonia/contract/sync', meta.identityContractID)
+
+          if (isActionYoungerThanUser(meta, myProfile)) {
+            sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
+              groupID: contractID,
+              username: meta.username
+            })
+          }
         }
       }
     },
@@ -977,5 +1088,29 @@ sbp('chelonia/defineContract', {
       }
     })
     // TODO: remove group profile when leave group is implemented
+  },
+  // methods are SBP selectors that are version-tracked for each contract.
+  // in other words, you can use them to define SBP selectors that will
+  // contain functions that you can modify across different contract versions,
+  // and when the contract calls them, it will use that specific version of the
+  // method.
+  //
+  // They are useful when used in conjunction with pushSideEffect from process
+  // functions.
+  //
+  // IMPORTANT: they MUST begin with the name of the contract.
+  methods: {
+    'gi.contracts/group/archiveProposal': async function (contractID, proposalHash, proposal) {
+      const { username } = sbp('state/vuex/state').loggedIn
+      const key = `proposals/${username}/${contractID}`
+      const proposals = await sbp('gi.db/archive/load', key) || []
+      // newest at the front of the array, oldest at the back
+      proposals.unshift([proposalHash, proposal])
+      while (proposals.length > MAX_ARCHIVED_PROPOSALS) {
+        proposals.pop()
+      }
+      await sbp('gi.db/archive/save', key, proposals)
+      sbp('okTurtles.events/emit', PROPOSAL_ARCHIVED, [proposalHash, proposal])
+    }
   }
 })

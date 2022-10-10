@@ -1,5 +1,8 @@
 <template lang='pug'>
-table.table.table-in-card.c-payments.is-editing(data-test='payRecord')
+table.table.c-payments.is-editing(
+  :data-test='isLightning ? "payRecordLightning" : "payRecord"'
+  :class='tableClasses'
+)
   thead
     tr
       th.c-th-checkbox
@@ -9,15 +12,25 @@ table.table.table-in-card.c-payments.is-editing(data-test='payRecord')
             i18n.sr-only Mark sent to all
       i18n(tag='th') Sent to
       i18n.sr-only(tag='th') Due
-      i18n.c-th-amount(tag='th') Amount sent
+      th.c-th-amount {{ isLightning ? L('Amount') : L('Amount sent') }}
 
   tbody
-    payment-row-record(
+    component(
+      :is='config.tableRowComponent'
       v-for='(payment, index) in paymentsList'
       :key='index'
       :payment='payment'
       @update='(data) => $emit("update", data)'
     )
+
+    tr(v-if='isLightning')
+      td(colspan='4')
+        .c-total-amount-wrapper
+          i18n.c-total-label(tag='label') Total
+          .inputgroup.disabled
+            input.input.c-total-amount(:value='totalAmount')
+            .suffix.hide-phone {{ groupCurrency.symbolWithCode }}
+            .suffix.hide-tablet {{ groupCurrency.symbol }}
 </template>
 
 <script>
@@ -25,22 +38,38 @@ import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
 import PaymentRowRecord from './PaymentRowRecord.vue'
+import PaymentRowSendLightning from './PaymentRowSendLightning.vue'
 
 export default ({
   name: 'RecordPaymentsList',
   components: {
     AvatarUser,
     Tooltip,
-    PaymentRowRecord
+    PaymentRowRecord,
+    PaymentRowSendLightning
   },
   props: {
     paymentsList: {
       type: Array,
       required: true
+    },
+    paymentType: {
+      type: String,
+      default: 'manual',
+      validator: v => ['manual', 'lightning'].includes(v)
+    },
+    addDonationFee: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
     return {
+      config: {
+        tableRowComponent: this.paymentType === 'lightning'
+          ? PaymentRowSendLightning
+          : PaymentRowRecord
+      },
       tableChecked: false
     }
   },
@@ -51,9 +80,26 @@ export default ({
       'groupIncomeAdjustedDistribution',
       'ourGroupProfile',
       'groupSettings',
+      'groupCurrency',
       'ourUsername',
       'userDisplayName'
-    ])
+    ]),
+    isLightning () {
+      return this.paymentType === 'lightning'
+    },
+    tableClasses () {
+      return {
+        'is-lightning': this.isLightning,
+        'table-in-card': !this.isLightning
+      }
+    },
+    totalAmount () {
+      const total = this.paymentsList
+        .filter(item => item.checked)
+        .reduce((acc, p) => acc + p.amount, 0)
+
+      return this.groupCurrency.displayWithoutCurrency(total * (this.addDonationFee ? 1.01 : 1))
+    }
   },
   watch: {
     tableChecked (newVal) {
@@ -90,6 +136,37 @@ export default ({
       min-width: 9.375rem;
       display: table-cell;
     }
+  }
+
+  &.is-lightning {
+    th.c-th-checkbox {
+      padding-left: 0.5rem;
+
+      @include desktop {
+        padding-left: 2.5rem;
+      }
+    }
+  }
+}
+
+.c-total-amount-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+
+  .c-total-label {
+    font: {
+      size: $size_4;
+      weight: 600;
+    }
+    margin-right: 1rem;
+  }
+
+  .inputgroup {
+    width: 35%;
   }
 }
 

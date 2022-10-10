@@ -74,6 +74,8 @@ lazyModal('NotificationModal', () => import('../views/containers/notifications/N
 lazyModal('PasswordModal', () => import('../views/containers/access/PasswordModal.vue'))
 lazyModal('SignupModal', () => import('../views/containers/access/SignupModal.vue'))
 lazyModal('Prompt', () => import('../views/components/modal/Prompt.vue'))
+lazyModal('SendThankYouModal', () => import('../views/containers/payments/SendThankYouModal.vue'))
+lazyModal('ThankYouNoteModal', () => import('../views/containers/payments/ThankYouNoteModal.vue'))
 lazyModalFullScreen('GroupCreationModal', () => import('../views/containers/group-settings/GroupCreationModal.vue'))
 lazyModalFullScreen('GroupJoinModal', () => import('../views/containers/group-settings/GroupJoinModal.vue'))
 lazyModalFullScreen('GroupMembersAllModal', () => import('../views/containers/dashboard/GroupMembersAllModal.vue'))
@@ -86,9 +88,11 @@ lazyComponent('MincomeProposal', () => import('../views/containers/proposals/Min
 lazyComponent('PaymentsHistoryModal', () => import('../views/containers/payments/PaymentsHistoryModal.vue'))
 lazyComponent('RemoveMember', () => import('../views/containers/proposals/RemoveMember.vue'))
 lazyComponent('GenericProposal', () => import('../views/containers/proposals/GenericProposal.vue'))
+lazyModalFullScreen('PropositionsAllModal', () => import('../views/containers/proposals/PropositionsAllModal.vue'))
 
 lazyComponent('PaymentDetail', () => import('../views/containers/payments/PaymentDetail.vue'))
 lazyComponent('RecordPayment', () => import('../views/containers/payments/RecordPayment.vue'))
+lazyComponent('SendPaymentsViaLightning', () => import('../views/containers/payments/SendPaymentsViaLightning.vue'))
 
 lazyComponent('Appearence', () => import('../views/containers/user-settings/Appearence.vue'))
 lazyComponent('NotificationSettings', () => import('../views/containers/user-settings/NotificationSettings.vue'))

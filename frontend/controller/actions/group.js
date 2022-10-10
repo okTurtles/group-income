@@ -533,7 +533,8 @@ export default (sbp('sbp/selectors/register', {
                 proposalType: PROPOSAL_REMOVE_MEMBER,
                 proposalData: {
                   member: username,
-                  reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
+                  reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message }),
+                  automated: true
                 },
                 votingRule: contractState.settings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
                 expires_date_ms: Date.now() + contractState.settings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
@@ -564,6 +565,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
+  ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),
   ...encryptedAction('gi.actions/group/groupProfileUpdate', L('Failed to update group profile.')),
   ...encryptedAction('gi.actions/group/proposal', L('Failed to create proposal.')),
   ...encryptedAction('gi.actions/group/proposalVote', L('Failed to vote on proposal.')),

@@ -2,11 +2,28 @@
   // Note: .cpr- is from payment-row
   payment-row(:payment='payment')
     template(slot='cellAmount')
-      strong {{ withGroupCurrency(payment.amount) }}
-      payment-not-received-tooltip(v-if='notReceived' :member='payment.displayName')
+      .c-amount-container
+        strong {{ withGroupCurrency(payment.amount) }}
+        payment-not-received-tooltip.c-not-received-badge(
+          v-if='notReceived'
+          :member='payment.displayName'
+          :hideText='true'
+        )
+
+      .c-amount-pill-container
+        i18n.pill.is-neutral.hide-tablet Manual
+
+    template(slot='cellMethod')
+      .c-methods-container
+        i18n.pill.is-neutral Manual
+
+    template(slot='cellDate')
+      .cpr-date.has-text-1 {{ humanDate(payment.date) }}
+
+    template(slot='cellRelativeTo')
+      .c-relative-to.has-text-1 {{ humanDate(periodStampGivenDate(payment.date)) }}
 
     template(slot='cellActions')
-      .cpr-date.has-text-1 {{ humanDate(payment.date) }}
       payment-actions-menu
         menu-item(
           tag='button'
@@ -23,6 +40,13 @@
           @click='markNotReceived'
         )
           i18n I did not receive this
+
+        menu-item(
+          tag='button'
+          icon='comment'
+          @click='openModal("SendThankYouModal", { to: payment.username })'
+        )
+          i18n Send thank you
 </template>
 
 <script>
@@ -55,7 +79,8 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'withGroupCurrency'
+      'withGroupCurrency',
+      'periodStampGivenDate'
     ]),
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
@@ -94,4 +119,43 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-methods-container {
+  @include phone {
+    display: none;
+  }
+}
+
+.c-relative-to {
+  display: none;
+
+  @include desktop {
+    display: block;
+  }
+}
+
+.c-amount-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+
+  @include phone {
+    justify-content: flex-end;
+  }
+
+  .c-not-received-badge {
+    @include phone {
+      order: -1;
+    }
+  }
+}
+
+.c-amount-pill-container {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 2px;
+
+  @include phone {
+    justify-content: flex-end;
+  }
+}
 </style>
