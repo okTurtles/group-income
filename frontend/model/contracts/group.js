@@ -317,6 +317,9 @@ sbp('chelonia/defineContract', {
       // note: a lot of code expects this to return an object, so keep the || {} below
       return getters.currentGroupState.paymentsByPeriod || {}
     },
+    groupThankYousFrom (state, getters): Object {
+      return getters.currentGroupState.thankYousFrom || {}
+    },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
       //       USD, then calling this function is probably an error which should be reported.
@@ -424,6 +427,7 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           payments: {},
           paymentsByPeriod: {},
+          thankYousFrom: {}, // { fromUser1: { toUser1: msg1, toUser2: msg2, ... }, fromUser2: {}, ...  }
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
@@ -518,6 +522,44 @@ sbp('chelonia/defineContract', {
           } else {
             updateCurrentDistribution({ meta, state, getters })
           }
+        }
+      },
+      sideEffect ({ meta, contractID, data }, { state, getters }) {
+        if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+          const { loggedIn } = sbp('state/vuex/state')
+          const payment = state.payments[data.paymentHash]
+
+          if (loggedIn.username === payment.data.toUser) {
+            sbp('gi.notifications/emit', 'PAYMENT_RECEIVED', {
+              groupID: contractID,
+              creator: meta.username,
+              paymentHash: data.paymentHash,
+              amount: getters.withGroupCurrency(payment.data.amount)
+            })
+          }
+        }
+      }
+    },
+    'gi.contracts/group/sendPaymentThankYou': {
+      validate: objectOf({
+        fromUser: string,
+        toUser: string,
+        memo: string
+      }),
+      process ({ data }, { state }) {
+        const fromUser = vueFetchInitKV(state.thankYousFrom, data.fromUser, {})
+        Vue.set(fromUser, data.toUser, data.memo)
+      },
+      sideEffect ({ contractID, meta, data }) {
+        const { loggedIn } = sbp('state/vuex/state')
+
+        if (data.toUser === loggedIn.username) {
+          sbp('gi.notifications/emit', 'PAYMENT_THANKYOU_SENT', {
+            groupID: contractID,
+            creator: meta.username, // username of the from user. to be used with sbp('namespace/lookup') in 'AvatarUser.vue'
+            fromUser: data.fromUser, // display name of the from user
+            toUser: data.toUser
+          })
         }
       }
     },

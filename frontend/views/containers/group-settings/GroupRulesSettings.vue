@@ -8,7 +8,8 @@
     )
       p.is-title-4 {{ config[rule].title }}
       p.has-text-1.c-expl(v-safe-html='config[rule].explanation')
-      i18n.pill.is-primary.c-active(v-if='isRuleActive(rule)') Active
+      // disabling below 'active' badge temporarily until 'disagreement-rule' is re-implemented.
+      i18n.pill.is-primary.c-active(v-if='false && isRuleActive(rule)') Active
 
       dl.c-status(v-if='isRuleActive(rule)')
         dt.c-status-term {{ config[rule].status }}
@@ -72,7 +73,10 @@ export default ({
       return this.groupProposalSettings() || {}
     },
     votingRulesSorted () {
-      return this.proposalSettings.rule === RULE_DISAGREEMENT ? [RULE_DISAGREEMENT, RULE_PERCENTAGE] : [RULE_PERCENTAGE, RULE_DISAGREEMENT]
+      // NOTE: temporarily hiding DISAGREEMENT_RULE from the settings.
+      // TODO: once disagreement-rule implementation is ready, put this back to
+      //       return this.proposalSettings.rule === RULE_DISAGREEMENT ? [RULE_DISAGREEMENT, RULE_PERCENTAGE] : [RULE_PERCENTAGE, RULE_DISAGREEMENT]
+      return [RULE_PERCENTAGE]
     },
     votingRuleSettings () {
       return this.proposalSettings.ruleSettings[this.proposalSettings.rule]
@@ -86,7 +90,6 @@ export default ({
   },
   methods: {
     openVotingProposal (rule) {
-      console.log('rule', rule)
       sbp('okTurtles.events/emit', OPEN_MODAL, 'ChangeVotingRules', { rule })
     },
     isRuleActive (rule) {

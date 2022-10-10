@@ -6,6 +6,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
+import { omit } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'Modal',
@@ -16,6 +17,7 @@ export default ({
       queries: { // Queries to be used by modals
         // [modalName]: { queryKey: queryValue }
       },
+      replacementQueries: {}, // queries to be used for REPLACE_MODAL
       childData: null,
       replacement: null, // Replace the modal once the first one is close without updating the url
       lastFocus: null // Record element that open the modal
@@ -43,9 +45,14 @@ export default ({
   },
   watch: {
     '$route' (to, from) {
-      if (to.query.modal) {
+      const toModal = to.query.modal
+
+      if (toModal) {
         // We reset the modals with no animation for simplicity
-        if (to.query.modal !== this.content) this.content = to.query.modal
+        if (toModal !== this.content) {
+          if (this.content) this.replaceModal(toModal, omit(to.query, 'modal')) // if another modal is already open, replace it.
+          else this.content = toModal
+        }
         const subcontent = to.query.subcontent ? to.query.subcontent.split('+').pop() : []
         if (subcontent !== this.activeSubcontent()) {
           // Try to find the new subcontent in the list of subcontent
@@ -128,16 +135,21 @@ export default ({
         if (this.lastFocus) this.lastFocus.focus()
       }
       if (this.replacement) {
-        this.openModal(this.replacement)
+        this.openModal(this.replacement, this.replacementQueries[this.replacement])
+
+        delete this.replacementQueries[this.replacement]
         this.replacement = null
       } else {
         this.updateUrl()
       }
     },
-    replaceModal (componentName) {
+    replaceModal (componentName, queries = null) {
       this.replacement = componentName
       // At the moment you can only replace a modal if it's the main one by design
       // Use direct children instead of sbp to wait for animation out
+      if (queries) {
+        this.replacementQueries[componentName] = queries
+      }
       this.$refs['content'].$children[0].close()
     },
     setModalQueries (componentName, queries) {
