@@ -2209,6 +2209,9 @@
 "{fromUser} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}" = "{fromUser} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}";
 
 /* views/containers/chatroom/MessageInteractive.vue */
+"{from} created a proposal. \"{title}\"" = "{from} created a proposal. \"{title}\"";
+
+/* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to add new members to the group." = "{from} wants to add new members to the group.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
@@ -2222,6 +2225,12 @@
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to remove members from the group." = "{from} wants to remove members from the group.";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"{from}'s proposal is accepted. \"{title}\"" = "{from}'s proposal is accepted. \"{title}\"";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"{from}'s proposal is rejected. \"{title}\"" = "{from}'s proposal is rejected. \"{title}\"";
 
 /* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "{groupMembersCount} members" = "{groupMembersCount} members";

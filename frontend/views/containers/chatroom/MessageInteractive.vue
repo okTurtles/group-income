@@ -24,6 +24,7 @@ import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  PROPOSAL_GENERIC,
   PROPOSAL_VARIANTS
 } from '@model/contracts/shared/constants.js'
 import MessageBase from './MessageBase.vue'
@@ -35,6 +36,9 @@ import { get } from '@model/contracts/shared/giLodash.js'
 const interactiveMessage = (proposal, initialOptions = {}) => {
   const options = Object.assign({}, initialOptions)
   const { proposalType, proposalData, variant } = proposal
+  if (proposalType === PROPOSAL_GENERIC) {
+    options['title'] = proposalData.name
+  }
   const interactiveMessages = {
     [PROPOSAL_INVITE_MEMBER]: {
       [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add new members to the group.', options),
@@ -74,6 +78,13 @@ const interactiveMessage = (proposal, initialOptions = {}) => {
         [PROPOSAL_VARIANTS.REJECTED]: L('The groups voting system hasn\'t changed.'),
         [PROPOSAL_VARIANTS.EXPIRED]: L('The groups voting system hasn\'t changed.')
       }
+    },
+    [PROPOSAL_GENERIC]: {
+      [PROPOSAL_VARIANTS.CREATED]: L('{from} created a proposal. "{title}"', options),
+      [PROPOSAL_VARIANTS.EXPIRING]: L('{from} created a proposal. "{title}"', options),
+      [PROPOSAL_VARIANTS.ACCEPTED]: L('{from}\'s proposal is accepted. "{title}"', options),
+      [PROPOSAL_VARIANTS.REJECTED]: L('{from}\'s proposal is rejected. "{title}"', options),
+      [PROPOSAL_VARIANTS.EXPIRED]: L('{from}\'s proposal is rejected. "{title}"', options)
     }
   }
 

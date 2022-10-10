@@ -1120,6 +1120,9 @@
 "The groups voting system hasn't changed." = "Le système de vote du groupe n’a pas changé.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
+"{from} created a proposal. \"{title}\"" = "{from} a créé une proposition. \"{Titre}\"";
+
+/* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to add new members to the group." = "{from} souhaite ajouter de nouveaux membres au groupe.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
@@ -1130,6 +1133,12 @@
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to remove members from the group." = "{from} souhaite exclure des membres du groupe.";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"{from}'s proposal is accepted. \"{title}\"" = "La proposition de {from} est acceptée. \"{Titre}\"";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"{from}'s proposal is rejected. \"{title}\"" = "La proposition de {from} est rejetée. \"{Titre}\"";
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Restantes {title}";
