@@ -52,8 +52,8 @@ const interactiveMessage = (proposal, initialOptions = {}) => {
     },
     [PROPOSAL_GROUP_SETTING_CHANGE]: {
       mincomeAmount: {
-        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the change the groups mincome. ', options),
-        [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to change the change the groups mincome. ', options),
+        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups mincome. ', options),
+        [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to change the groups mincome. ', options),
         [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups mincome changed.'),
         [PROPOSAL_VARIANTS.REJECTED]: L('The group mincome hasn\'t changed.'),
         [PROPOSAL_VARIANTS.EXPIRED]: L('The group mincome hasn\'t changed.')
