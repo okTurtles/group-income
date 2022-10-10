@@ -33,12 +33,14 @@ import SvgYellowHorn from '@svgs/yellow-horn.svg'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { get } from '@model/contracts/shared/giLodash.js'
 
-const interactiveMessage = (proposal, initialOptions = {}) => {
-  const options = Object.assign({}, initialOptions)
+const interactiveMessage = (proposal, baseOptions = {}) => {
+  const options = Object.assign({}, baseOptions)
   const { proposalType, proposalData, variant } = proposal
+
   if (proposalType === PROPOSAL_GENERIC) {
     options['title'] = proposalData.name
   }
+
   const interactiveMessages = {
     [PROPOSAL_INVITE_MEMBER]: {
       [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add new members to the group.', options),
@@ -145,12 +147,12 @@ export default ({
     interactiveMessage () {
       const { variant, creator } = this.proposal
       const creatorProfile = this.globalProfile(creator)
-      const initialOptions = {
+      const baseOptions = {
         from: creatorProfile.displayName || creatorProfile.username
       }
 
       return {
-        text: interactiveMessage(this.proposal, initialOptions),
+        text: interactiveMessage(this.proposal, baseOptions),
         proposalStatus: proposalStatus(this.proposal),
         proposalSeverity: proposalSeverity[variant]
       }
