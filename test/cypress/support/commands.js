@@ -64,6 +64,7 @@ Cypress.Commands.add('giSignup', (username, {
     cy.getByDT('signName').clear().type(username)
     cy.getByDT('signEmail').clear().type(email)
     cy.getByDT('password').type(password)
+    cy.getByDT('passwordConfirm').type(password)
 
     cy.getByDT('signSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
@@ -196,8 +197,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('nextBtn').click()
 
     cy.getByDT('rulesStep').within(() => {
-      const threshold = ruleName === 'percentage' ? ruleThreshold * 100 : ruleThreshold
-      cy.getByDT(ruleName, 'label').click()
+      const threshold = ruleThreshold * 100
 
       cy.get(`input[type='range']#range${ruleName}`)
         .invoke('val', threshold)

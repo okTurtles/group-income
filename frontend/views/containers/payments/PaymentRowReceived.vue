@@ -2,8 +2,13 @@
   // Note: .cpr- is from payment-row
   payment-row(:payment='payment')
     template(slot='cellAmount')
-      strong {{ withGroupCurrency(payment.amount) }}
-      payment-not-received-tooltip(v-if='notReceived' :member='payment.displayName')
+      .c-amount-container
+        strong {{ withGroupCurrency(payment.amount) }}
+        payment-not-received-tooltip.c-not-received-badge(
+          v-if='notReceived'
+          :member='payment.displayName'
+          :hideText='true'
+        )
 
       .c-amount-pill-container
         i18n.pill.is-neutral.hide-tablet Manual
@@ -35,6 +40,13 @@
           @click='markNotReceived'
         )
           i18n I did not receive this
+
+        menu-item(
+          tag='button'
+          icon='comment'
+          @click='openModal("SendThankYouModal", { to: payment.username })'
+        )
+          i18n Send thank you
 </template>
 
 <script>
@@ -118,6 +130,22 @@ export default ({
 
   @include desktop {
     display: block;
+  }
+}
+
+.c-amount-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+
+  @include phone {
+    justify-content: flex-end;
+  }
+
+  .c-not-received-badge {
+    @include phone {
+      order: -1;
+    }
   }
 }
 
