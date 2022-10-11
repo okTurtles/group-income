@@ -44,22 +44,22 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
   const interactiveMessages = {
     [PROPOSAL_INVITE_MEMBER]: {
       [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to add new members to the group.', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to add new members to the group.', options),
+      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to add new members is expiring.', options),
       [PROPOSAL_VARIANTS.ACCEPTED]: L('Added members to this group: {to}', options),
       [PROPOSAL_VARIANTS.REJECTED]: L('No members were added.'),
       [PROPOSAL_VARIANTS.EXPIRED]: L('No members were added.')
     },
     [PROPOSAL_REMOVE_MEMBER]: {
       [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to remove members from the group.', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to remove members from the group.', options),
+      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to remove members is expiring.', options),
       [PROPOSAL_VARIANTS.ACCEPTED]: L('Left {title}', options),
       [PROPOSAL_VARIANTS.REJECTED]: L('No members were removed.'),
       [PROPOSAL_VARIANTS.EXPIRED]: L('No members were removed.')
     },
     [PROPOSAL_GROUP_SETTING_CHANGE]: {
       mincomeAmount: {
-        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups mincome. ', options),
-        [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to change the groups mincome. ', options),
+        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups mincome.', options),
+        [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the mincome is expiring.', options),
         [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups mincome changed.'),
         [PROPOSAL_VARIANTS.REJECTED]: L('The group mincome hasn\'t changed.'),
         [PROPOSAL_VARIANTS.EXPIRED]: L('The group mincome hasn\'t changed.')
@@ -67,15 +67,15 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
     },
     [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
       votingRule: {
-        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups voting rules. ', options),
-        [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to change the groups voting rules. ', options),
+        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups voting rules.', options),
+        [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the voting rules is expiring.', options),
         [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups voting rules changed'),
         [PROPOSAL_VARIANTS.REJECTED]: L('The groups voting rules hasn\'t changed.'),
         [PROPOSAL_VARIANTS.EXPIRED]: L('The groups voting rules hasn\'t changed.')
       },
       votingSystem: {
-        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups voting system. ', options),
-        [PROPOSAL_VARIANTS.EXPIRING]: L('{from} wants to change the groups voting system. ', options),
+        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups voting system.', options),
+        [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the voting system is expiring.', options),
         [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups voting system changed.'),
         [PROPOSAL_VARIANTS.REJECTED]: L('The groups voting system hasn\'t changed.'),
         [PROPOSAL_VARIANTS.EXPIRED]: L('The groups voting system hasn\'t changed.')
@@ -83,7 +83,7 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
     },
     [PROPOSAL_GENERIC]: {
       [PROPOSAL_VARIANTS.CREATED]: L('{from} created a proposal. "{title}"', options),
-      [PROPOSAL_VARIANTS.EXPIRING]: L('{from} created a proposal. "{title}"', options),
+      [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} is expiring. "{title}"', options),
       [PROPOSAL_VARIANTS.ACCEPTED]: L('{from}\'s proposal is accepted. "{title}"', options),
       [PROPOSAL_VARIANTS.REJECTED]: L('{from}\'s proposal is rejected. "{title}"', options),
       [PROPOSAL_VARIANTS.EXPIRED]: L('{from}\'s proposal is rejected. "{title}"', options)

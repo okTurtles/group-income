@@ -145,7 +145,13 @@
 "Proposal expiring on {date}" = "Proposal expiring on {date}";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
-"{from} wants to change the groups mincome. " = "{from} wants to change the groups mincome. ";
+"{from} wants to change the groups mincome." = "{from} wants to change the groups mincome.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
+"{from} wants to change the groups voting rules." = "{from} wants to change the groups voting rules.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
+"{from} wants to change the groups voting system." = "{from} wants to change the groups voting system.";
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed." = "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.";
@@ -1096,6 +1102,24 @@
 "Proposal expired" = "Proposition expirée";
 
 /* views/containers/chatroom/MessageInteractive.vue */
+"Proposal from {from} is expiring. \"{title}\"" = "La proposition de {from} arrive à expiration. \"{title}\"";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"Proposal from {from} to add new members is expiring." = "La proposition de {from} d'ajouter de nouveaux membres expire.";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"Proposal from {from} to change the mincome is expiring." = "La proposition de {from} de modifier l'mincome arrive à expiration.";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"Proposal from {from} to change the voting rules is expiring." = "La proposition de {from} de modifier les règles de vote expire.";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"Proposal from {from} to change the voting system is expiring." = "La proposition de {from} de modifier le système de vote expire.";
+
+/* views/containers/chatroom/MessageInteractive.vue */
+"Proposal from {from} to remove members is expiring." = "La proposition de {from} de supprimer des membres expire.";
+
+/* views/containers/chatroom/MessageInteractive.vue */
 "Proposal rejected" = "Proposition rejetée";
 
 /* views/containers/chatroom/MessageInteractive.vue */
@@ -1124,12 +1148,6 @@
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to add new members to the group." = "{from} souhaite ajouter de nouveaux membres au groupe.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"{from} wants to change the groups voting rules. " = "{from} souhaite changer les règles de vote du groupe. ";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"{from} wants to change the groups voting system. " = "{from} souhaite changer le système de vote du groupe. ";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to remove members from the group." = "{from} souhaite exclure des membres du groupe.";
@@ -2614,7 +2632,7 @@
 "{currentPage} out of {maxPages}" = "{currentPage} sur {maxPages}";
 
 /* Not currently used */
-"{from} wants to change the change the groups mincome. " = "{from} souhaite changer le revenu minimum du groupe. ";
+"{from} wants to change the groups voting system. " = "{from} souhaite changer le système de vote du groupe. ";
 
 /* Not currently used */
 "{personName} marked this payment as not received." = "{personName} a marqué ce paiement comme étant non reçu.";
