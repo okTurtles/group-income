@@ -5,11 +5,12 @@ import { Vue, Errors, L } from '@common/common.js'
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './shared/voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
 import {
-  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED, MAX_ARCHIVED_PROPOSALS, PROPOSAL_ARCHIVED,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
+  STATUS_OPEN, STATUS_CANCELLED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PAYMENTS, PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED,
   INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
-import { merge, deepEqualJSONType, omit } from './shared/giLodash.js'
+import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
 import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies, { saferFloat } from './shared/currencies.js'
@@ -58,30 +59,36 @@ function initPaymentPeriod ({ getters }) {
 
 // NOTE: do not call any of these helper functions from within a getter b/c they modify state!
 
-function clearOldPayments ({ state, getters }) {
+function clearOldPayments ({ contractID, state, getters }) {
   const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort()
   // save two periods worth of payments, max
-  while (sortedPeriodKeys.length > 6) {
+  const paymentsToArchiveByPeriod = {}
+  while (sortedPeriodKeys.length > 2) {
     const period = sortedPeriodKeys.shift()
+    paymentsToArchiveByPeriod[period] = {}
     for (const paymentHash of getters.paymentHashesForPeriod(period)) {
+      paymentsToArchiveByPeriod[period][paymentHash] = cloneDeep(state.payments[paymentHash])
       Vue.delete(state.payments, paymentHash)
-      // TODO: archive the old payments in a sideEffect, not here
     }
     Vue.delete(state.paymentsByPeriod, period)
+
+    sbp('gi.contracts/group/pushSideEffect', contractID,
+      ['gi.contracts/group/archivePayments', contractID, paymentsToArchiveByPeriod]
+    )
   }
 }
 
-function initFetchPeriodPayments ({ meta, state, getters }) {
+function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
   const period = getters.periodStampGivenDate(meta.createdDate)
   const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }))
-  clearOldPayments({ state, getters })
+  clearOldPayments({ contractID, state, getters })
   return periodPayments
 }
 
 // this function is called each time a payment is completed or a user adjusts their income details.
 // TODO: call also when mincome is adjusted
-function updateCurrentDistribution ({ meta, state, getters }) {
-  const curPeriodPayments = initFetchPeriodPayments({ meta, state, getters })
+function updateCurrentDistribution ({ contractID, meta, state, getters }) {
+  const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters })
   const period = getters.periodStampGivenDate(meta.createdDate)
   const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0
   // update distributionDate if we've passed into the next period
@@ -113,11 +120,11 @@ function updateAdjustedDistribution ({ period, getters }) {
   }
 }
 
-function memberLeaves ({ username, dateLeft }, { meta, state, getters }) {
+function memberLeaves ({ username, dateLeft }, { contractID, meta, state, getters }) {
   state.profiles[username].status = PROFILE_STATUS.REMOVED
   state.profiles[username].departedDate = dateLeft
   // remove any todos for this member from the adjusted distribution
-  updateCurrentDistribution({ meta, state, getters })
+  updateCurrentDistribution({ contractID, meta, state, getters })
 }
 
 function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boolean {
@@ -422,7 +429,7 @@ sbp('chelonia/defineContract', {
           })
         })
       }),
-      process ({ data, meta }, { state, getters }) {
+      process ({ data, meta, contractID }, { state, getters }) {
         // TODO: checkpointing: https://github.com/okTurtles/group-income/issues/354
         const initialState = merge({
           payments: {},
@@ -444,7 +451,7 @@ sbp('chelonia/defineContract', {
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
-        initFetchPeriodPayments({ meta, state, getters })
+        initFetchPeriodPayments({ contractID, meta, state, getters })
       }
     },
     'gi.contracts/group/payment': {
@@ -465,7 +472,7 @@ sbp('chelonia/defineContract', {
         details: optional(object),
         memo: optional(string)
       }),
-      process ({ data, meta, hash }, { state, getters }) {
+      process ({ data, meta, hash, contractID }, { state, getters }) {
         if (data.status === PAYMENT_COMPLETED) {
           console.error(`payment: payment ${hash} cannot have status = 'completed'!`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBan('payments cannot be instantly completed!')
@@ -478,7 +485,7 @@ sbp('chelonia/defineContract', {
           meta,
           history: [[meta.createdDate, hash]]
         })
-        const { paymentsFrom } = initFetchPeriodPayments({ meta, state, getters })
+        const { paymentsFrom } = initFetchPeriodPayments({ contractID, meta, state, getters })
         const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {})
         const toUser = vueFetchInitKV(fromUser, data.toUser, [])
         toUser.push(hash)
@@ -494,7 +501,7 @@ sbp('chelonia/defineContract', {
           memo: string
         })
       }),
-      process ({ data, meta, hash }, { state, getters }) {
+      process ({ data, meta, hash, contractID }, { state, getters }) {
         // TODO: we don't want to keep a history of all payments in memory all the time
         //       https://github.com/okTurtles/group-income/issues/426
         const payment = state.payments[data.paymentHash]
@@ -520,7 +527,7 @@ sbp('chelonia/defineContract', {
           if (comparePeriodStamps(updatePeriodStamp, paymentPeriodStamp) > 0) {
             updateAdjustedDistribution({ period: paymentPeriodStamp, getters })
           } else {
-            updateCurrentDistribution({ meta, state, getters })
+            updateCurrentDistribution({ contractID, meta, state, getters })
           }
         }
       },
@@ -727,10 +734,10 @@ sbp('chelonia/defineContract', {
           }
         }
       },
-      process ({ data, meta }, { state, getters }) {
+      process ({ data, meta, contractID }, { state, getters }) {
         memberLeaves(
           { username: data.member, dateLeft: meta.createdDate },
-          { meta, state, getters }
+          { contractID, meta, state, getters }
         )
       },
       sideEffect ({ data, meta, contractID }, { state, getters }) {
@@ -800,7 +807,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, contractID }, { state, getters }) {
         memberLeaves(
           { username: meta.username, dateLeft: meta.createdDate },
-          { meta, state, getters }
+          { contractID, meta, state, getters }
         )
 
         sbp('gi.contracts/group/pushSideEffect', contractID,
@@ -925,7 +932,7 @@ sbp('chelonia/defineContract', {
           })
         )
       }),
-      process ({ data, meta }, { state, getters }) {
+      process ({ data, meta, contractID }, { state, getters }) {
         const groupProfile = state.profiles[meta.username]
         const nonMonetary = groupProfile.nonMonetaryContributions
         for (const key in data) {
@@ -946,7 +953,7 @@ sbp('chelonia/defineContract', {
         }
         if (data.incomeDetailsType) {
           // someone updated their income details, create a snapshot of the haveNeeds
-          updateCurrentDistribution({ meta, state, getters })
+          updateCurrentDistribution({ contractID, meta, state, getters })
         }
       }
     },
@@ -1112,6 +1119,28 @@ sbp('chelonia/defineContract', {
       }
       await sbp('gi.db/archive/save', key, proposals)
       sbp('okTurtles.events/emit', PROPOSAL_ARCHIVED, [proposalHash, proposal])
+    },
+    'gi.contracts/group/archivePayments': async function (contractID, paymentsByPeriod) {
+      const { username } = sbp('state/vuex/state').loggedIn
+      for (const period of Object.keys(paymentsByPeriod).sort()) {
+        const periodKey = `paymentPeriods/${username}/${contractID}`
+        const periods = await sbp('gi.db/archive/load', periodKey) || []
+        const paymentsKey = `paymentsByPeriod/${username}/${contractID}/${period}`
+        const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
+
+        periods.unshift(period)
+        merge(payments, paymentsByPeriod[periodKey])
+
+        if (periods.length > MAX_ARCHIVED_PAYMENTS) {
+          const shouldBeDeletedPeriod = periods.pop()
+          const shouldBeDeletedPaymentsKey = `paymentsByPeriod/${username}/${contractID}/${shouldBeDeletedPeriod}`
+          await sbp('gi.db/archive/delete', shouldBeDeletedPaymentsKey)
+        }
+
+        await sbp('gi.db/archive/save', periodKey, periods)
+        await sbp('gi.db/archive/save', paymentsKey, payments)
+      }
+      sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, paymentsByPeriod)
     }
   }
 })

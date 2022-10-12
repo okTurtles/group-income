@@ -28,6 +28,8 @@ export const PROPOSAL_GENERIC = 'generic'
 
 export const PROPOSAL_ARCHIVED = 'proposal-archived'
 export const MAX_ARCHIVED_PROPOSALS = 100
+export const PAYMENTS_ARCHIVED = 'payments-archived'
+export const MAX_ARCHIVED_PAYMENTS = 100
 
 export const STATUS_OPEN = 'open'
 export const STATUS_PASSED = 'passed'
