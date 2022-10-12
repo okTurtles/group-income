@@ -46,6 +46,25 @@ describe('Signup, Profile and Login', () => {
     cy.giLogout()
   })
 
+  it('sign up button remains disabled if passwords are not the same', () => {
+    const user2 = `user2-${userId}`
+    const password = '123456789'
+    const wrongPassword = 'wRoNgPaSsWoRd123'
+
+    cy.getByDT('signupBtn').click()
+
+    cy.getByDT('signName').type(user2)
+    cy.getByDT('signEmail').type(`${user2}@email.com`)
+    cy.getByDT('password').type(password)
+    cy.getByDT('passwordConfirm').type(wrongPassword)
+    cy.getByDT('signSubmit').should('be.disabled')
+
+    cy.getByDT('passwordConfirm').clear().type(password)
+    cy.getByDT('signSubmit').should('not.be.disabled')
+
+    cy.getByDT('closeModal').click().should('not.exist')
+  })
+
   it('prevent incorrect logins/signup actions', () => {
     cy.log('- Connot login a non existent user')
     cy.getByDT('loginBtn').click()

@@ -169,5 +169,37 @@ export default ({
       linkTo: '/dashboard#TODO-proposals', // TODO: to be decided.
       scope: 'group'
     }
+  },
+  PAYMENT_RECEIVED (data: { creator: string, amount: string, paymentHash: string }) {
+    const { globalProfile } = sbp('state/vuex/getters')
+    const getDisplayName = username => globalProfile(username)?.displayName || username
+
+    return {
+      avatarUsername: data.creator,
+      body: L('{fromUser} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
+        fromUser: getDisplayName(data.creator), // displayName of the sender
+        amount: data.amount,
+        ...LTags('strong')
+      }),
+      creator: data.creator,
+      icon: '',
+      level: 'info',
+      linkTo: `dashboard?modal=PaymentDetail&id=${data.paymentHash}`,
+      scope: 'group'
+    }
+  },
+  PAYMENT_THANKYOU_SENT (data: { creator: string, fromUser: string, toUser: string }) {
+    return {
+      avatarUsername: data.creator,
+      body: L('{name} sent you a {strong_}thank you note{_strong} for your contribution.', {
+        name: strong(data.fromUser),
+        ...LTags('strong')
+      }),
+      creator: data.creator,
+      icon: '',
+      level: 'info',
+      linkTo: `dashboard?modal=ThankYouNoteModal&from=${data.fromUser}&to=${data.toUser}`,
+      scope: 'group'
+    }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })

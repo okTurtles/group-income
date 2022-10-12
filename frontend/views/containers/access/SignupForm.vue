@@ -25,7 +25,10 @@ form(data-test='signup' @submit.prevent='')
       v-error:email='{ attrs: { "data-test": "badEmail" } }'
     )
 
-  password-form(:label='L("Password")' name='password' :$v='$v')
+  .c-password-fields-container
+    password-form(:label='L("Password")' name='password' :$v='$v')
+
+    password-form(:label='L("Confirm Password")' name='passwordConfirm' :$v='$v')
 
   banner-scoped(ref='formMsg' allow-a)
 
@@ -40,7 +43,7 @@ form(data-test='signup' @submit.prevent='')
 <script>
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
-import { email, maxLength, minLength, required } from 'vuelidate/lib/validators'
+import { email, maxLength, minLength, required, sameAs } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
@@ -78,6 +81,7 @@ export default ({
       form: {
         username: '',
         password: '',
+        passwordConfirm: '',
         email: '',
         pictureBase64: ''
       },
@@ -148,6 +152,9 @@ export default ({
           [L('A password is required.')]: required,
           [L('Your password must be at least {minChars} characters long.', { minChars: passwordMinChars })]: minLength(passwordMinChars)
         },
+        passwordConfirm: {
+          [L('Passwords do not match.')]: sameAs('password')
+        },
         email: {
           [L('An email is required.')]: required,
           [L('Please enter a valid email.')]: email
@@ -157,3 +164,20 @@ export default ({
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.c-password-fields-container {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 1.5rem;
+
+  @include tablet {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 1.5rem;
+  }
+}
+</style>

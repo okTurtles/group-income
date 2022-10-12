@@ -8,7 +8,7 @@
           i18n.sr-only Mark as sent
 
     template(slot='cellActions')
-      .cpr-date.pill.is-danger(data-test='isLate') {{ humanDate(payment.date) }}
+      .cpr-date(:class='payment.isLate ? "pull is-danger" : "has-text-1"') {{ humanDate(payment.date) }}
       i18n.is-unstyled.is-link-inherit.link.c-reset(
         tag='button'
         type='button'

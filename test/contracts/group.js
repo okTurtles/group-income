@@ -1271,6 +1271,9 @@ module_default("chelonia/defineContract", {
     groupPeriodPayments(state, getters) {
       return getters.currentGroupState.paymentsByPeriod || {};
     },
+    groupThankYousFrom(state, getters) {
+      return getters.currentGroupState.thankYousFrom || {};
+    },
     withGroupCurrency(state, getters) {
       return getters.groupCurrency?.displayWithCurrency;
     },
@@ -1353,6 +1356,7 @@ module_default("chelonia/defineContract", {
         const initialState = merge({
           payments: {},
           paymentsByPeriod: {},
+          thankYousFrom: {},
           invites: {},
           proposals: {},
           settings: {
@@ -1433,6 +1437,42 @@ module_default("chelonia/defineContract", {
           } else {
             updateCurrentDistribution({ meta, state, getters });
           }
+        }
+      },
+      sideEffect({ meta, contractID, data }, { state, getters }) {
+        if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+          const { loggedIn } = module_default("state/vuex/state");
+          const payment = state.payments[data.paymentHash];
+          if (loggedIn.username === payment.data.toUser) {
+            module_default("gi.notifications/emit", "PAYMENT_RECEIVED", {
+              groupID: contractID,
+              creator: meta.username,
+              paymentHash: data.paymentHash,
+              amount: getters.withGroupCurrency(payment.data.amount)
+            });
+          }
+        }
+      }
+    },
+    "gi.contracts/group/sendPaymentThankYou": {
+      validate: objectOf({
+        fromUser: string,
+        toUser: string,
+        memo: string
+      }),
+      process({ data }, { state }) {
+        const fromUser = vueFetchInitKV(state.thankYousFrom, data.fromUser, {});
+        default2.set(fromUser, data.toUser, data.memo);
+      },
+      sideEffect({ contractID, meta, data }) {
+        const { loggedIn } = module_default("state/vuex/state");
+        if (data.toUser === loggedIn.username) {
+          module_default("gi.notifications/emit", "PAYMENT_THANKYOU_SENT", {
+            groupID: contractID,
+            creator: meta.username,
+            fromUser: data.fromUser,
+            toUser: data.toUser
+          });
         }
       }
     },

@@ -45,6 +45,25 @@ function assertMonthOverview (items) {
   })
 }
 
+function openNotificationCard ({
+  messageToAssert = '',
+  clickTheLatestItem = true
+} = {}) {
+  cy.getByDT('notificationBell').click()
+  cy.getByDT('notificationCard').should('be.visible')
+
+  cy.getByDT('notificationCard').within(() => {
+    cy.getByDT('notificationList').find('ul > li:nth-child(1)').as('topMostItem')
+
+    if (messageToAssert) {
+      cy.get('@topMostItem').should('contain', messageToAssert)
+    }
+    if (clickTheLatestItem) {
+      cy.get('@topMostItem').click()
+    }
+  })
+}
+
 describe('Group Payments', () => {
   const invitationLinks = {}
 
@@ -161,6 +180,59 @@ describe('Group Payments', () => {
       ['Payments received', '1 out of 1'],
       ['Amount received', '$250 out of $250']
     ])
+
+    cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
+    openNotificationCard({
+      messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Payment details')
+      cy.getByDT('closeModal').click()
+    })
+
+    cy.getByDT('closeModal').should('not.exist')
+  })
+
+  it('user3 sends a thank you note to user1 for their payment', () => {
+    const thankYouText = 'Thank you for your contribution! It’s going to be super helpful for my programming lessons.'
+
+    cy.log('user3 opens a "Send Thank you" Modal')
+    cy.getByDT('paymentsLink').click()
+    cy.getByDT('payList').within(() => {
+      cy.getByDT('menuTrigger').click()
+      cy.getByDT('menuContent').find('ul > li:nth-child(3)').as('btnThankYou')
+
+      cy.get('@btnThankYou').should('contain', 'Send thank you')
+      cy.get('@btnThankYou').click()
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('submitBtn').should('be.disabled')
+
+      cy.get('textarea').type(thankYouText)
+      cy.getByDT('submitBtn').should('not.be.disabled').click()
+
+      cy.getByDT('confirmBtn').click()
+      cy.getByDT('closeModal').should('not.exist')
+    })
+
+    cy.log('user1 receives a notification for a thank you note')
+    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    openNotificationCard({
+      messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`
+    })
+
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Thank you note!')
+
+      cy.getByDT('memoLabel').should('contain', `user3-${userId} Note:`)
+      cy.getByDT('memo').should('contain', thankYouText)
+
+      cy.getByDT('closeModal').click()
+    })
+
+    cy.getByDT('closeModal').should('not.exist')
   })
 
   it('user4 sends $50 to user2 (partial)', () => {
