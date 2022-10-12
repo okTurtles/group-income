@@ -6,7 +6,7 @@ import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DI
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
-  STATUS_OPEN, STATUS_CANCELLED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PAYMENTS, PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED,
+  STATUS_OPEN, STATUS_CANCELLED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PAYMENTS, PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED, MAX_SAVED_PERIODS,
   INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
@@ -63,7 +63,7 @@ function clearOldPayments ({ contractID, state, getters }) {
   const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort()
   // save two periods worth of payments, max
   const paymentsToArchiveByPeriod = {}
-  while (sortedPeriodKeys.length > 2) {
+  while (sortedPeriodKeys.length > MAX_SAVED_PERIODS) {
     const period = sortedPeriodKeys.shift()
     paymentsToArchiveByPeriod[period] = {}
     for (const paymentHash of getters.paymentHashesForPeriod(period)) {
@@ -71,11 +71,11 @@ function clearOldPayments ({ contractID, state, getters }) {
       Vue.delete(state.payments, paymentHash)
     }
     Vue.delete(state.paymentsByPeriod, period)
-
-    sbp('gi.contracts/group/pushSideEffect', contractID,
-      ['gi.contracts/group/archivePayments', contractID, paymentsToArchiveByPeriod]
-    )
   }
+
+  sbp('gi.contracts/group/pushSideEffect', contractID,
+    ['gi.contracts/group/archivePayments', contractID, paymentsToArchiveByPeriod]
+  )
 }
 
 function initFetchPeriodPayments ({ contractID, meta, state, getters }) {

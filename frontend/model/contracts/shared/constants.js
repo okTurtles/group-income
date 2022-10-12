@@ -30,6 +30,8 @@ export const PROPOSAL_ARCHIVED = 'proposal-archived'
 export const MAX_ARCHIVED_PROPOSALS = 100
 export const PAYMENTS_ARCHIVED = 'payments-archived'
 export const MAX_ARCHIVED_PAYMENTS = 100
+export const MAX_SAVED_PERIODS = 2
+export const MAX_HISTORY_PERIODS = 6
 
 export const STATUS_OPEN = 'open'
 export const STATUS_PASSED = 'passed'

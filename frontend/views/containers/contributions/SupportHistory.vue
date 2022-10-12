@@ -17,6 +17,7 @@ div(:class='isReady ? "" : "c-ready"')
 <script>
 import { mapGetters } from 'vuex'
 import { humanDate } from '@model/contracts/shared/time.js'
+import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import BarGraph from '@components/graphs/BarGraph.vue'
 
 export default ({
@@ -40,21 +41,18 @@ export default ({
       return this.groupSettings.mincomeAmount
     },
     periods () {
-      const periods = []
-      let lastPeriod = this.currentPaymentPeriod
-      for (let i = 0; i < 5; i++) {
-        periods.unshift(lastPeriod)
-        lastPeriod = this.periodBeforePeriod(lastPeriod)
+      const periods = [this.currentPaymentPeriod]
+      for (let i = 1; i < MAX_HISTORY_PERIODS - 1; i++) {
+        periods.unshift(this.periodBeforePeriod(periods[0]))
       }
-      periods.unshift(lastPeriod)
       return periods
     },
     history () {
       return this.periods.map((period, i) => {
         const payments = this.paymentsForPeriod(period)
-        const { totalDistributionAmount, numberOfNeedyPeople } = this.parsePayments(payments)
+        const { totalDistributionAmount, numReceivers } = this.parsePayments(payments)
         return {
-          total: numberOfNeedyPeople === 0 ? 1 : totalDistributionAmount * this.mincome / numberOfNeedyPeople,
+          total: numReceivers === 0 ? 1 : totalDistributionAmount * this.mincome / numReceivers,
           delayedPayment: payments.some(payment => payment.isLate),
           title: humanDate(period, { month: 'long' })
         }
@@ -70,7 +68,7 @@ export default ({
         list[to] = (list[to] || 0) - amount
       })
       return {
-        numberOfNeedyPeople: Object.values(list).filter(amount => amount < 0).length,
+        numReceivers: Object.values(list).filter(amount => amount < 0).length,
         totalDistributionAmount: Object.values(list).filter(amount => amount > 0).reduce((total, curValue) => total + curValue, 0)
       }
     }
