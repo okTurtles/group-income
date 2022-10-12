@@ -6,7 +6,7 @@ import {
 } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL,
-  MESSAGE_TYPES, MESSAGE_NOTIFICATIONS,
+  MESSAGE_TYPES, MESSAGE_NOTIFICATIONS, PROPOSAL_VARIANTS,
   MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ
 } from './constants.js'
 
@@ -33,7 +33,15 @@ export const chatRoomAttributesType: any = objectOf({
 
 export const messageType: any = objectMaybeOf({
   type: unionOf(...Object.values(MESSAGE_TYPES).map(v => literalOf(v))),
-  text: string, // message text | proposalId when type is INTERACTIVE | notificationType when type if NOTIFICATION
+  text: string, // message text | notificationType when type if NOTIFICATION
+  proposal: objectMaybeOf({
+    proposalId: string,
+    proposalType: string,
+    expires_date_ms: number,
+    createdDate: string,
+    creator: string,
+    variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map(v => literalOf(v)))
+  }),
   notification: objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map(v => literalOf(v))),
     params: mapOf(string, string) // { username }

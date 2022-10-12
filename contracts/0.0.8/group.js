@@ -9435,6 +9435,8 @@ ${this.getErrorInfo()}`;
   var PROPOSAL_GENERIC = "generic";
   var PROPOSAL_ARCHIVED = "proposal-archived";
   var MAX_ARCHIVED_PROPOSALS = 100;
+  var PAYMENTS_ARCHIVED = "payments-archived";
+  var MAX_ARCHIVED_PAYMENTS = 100;
   var STATUS_OPEN = "open";
   var STATUS_PASSED = "passed";
   var STATUS_FAILED = "failed";
@@ -9467,6 +9469,13 @@ ${this.getErrorInfo()}`;
     UPDATE_NAME: "update-name",
     DELETE_CHANNEL: "delete-channel",
     VOTE: "vote"
+  };
+  var PROPOSAL_VARIANTS = {
+    CREATED: "proposal-created",
+    EXPIRING: "proposal-expiring",
+    ACCEPTED: "proposal-accepted",
+    REJECTED: "proposal-rejected",
+    EXPIRED: "proposal-expired"
   };
   var MAIL_TYPE_MESSAGE = "message";
   var MAIL_TYPE_FRIEND_REQ = "friend-request";
@@ -9906,6 +9915,14 @@ ${this.getErrorInfo()}`;
   var messageType = objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
     text: string,
+    proposal: objectMaybeOf({
+      proposalId: string,
+      proposalType: string,
+      expires_date_ms: number,
+      createdDate: string,
+      creator: string,
+      variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map((v) => literalOf(v)))
+    }),
     notification: objectMaybeOf({
       type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
       params: mapOf(string, string)
@@ -9947,24 +9964,28 @@ ${this.getErrorInfo()}`;
       haveNeedsSnapshot: null
     };
   }
-  function clearOldPayments({ state, getters }) {
+  function clearOldPayments({ contractID, state, getters }) {
     const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort();
-    while (sortedPeriodKeys.length > 6) {
+    const paymentsToArchiveByPeriod = {};
+    while (sortedPeriodKeys.length > 2) {
       const period = sortedPeriodKeys.shift();
+      paymentsToArchiveByPeriod[period] = {};
       for (const paymentHash of getters.paymentHashesForPeriod(period)) {
+        paymentsToArchiveByPeriod[period][paymentHash] = cloneDeep(state.payments[paymentHash]);
         vue_esm_default.delete(state.payments, paymentHash);
       }
       vue_esm_default.delete(state.paymentsByPeriod, period);
+      (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/archivePayments", contractID, paymentsToArchiveByPeriod]);
     }
   }
-  function initFetchPeriodPayments({ meta, state, getters }) {
+  function initFetchPeriodPayments({ contractID, meta, state, getters }) {
     const period = getters.periodStampGivenDate(meta.createdDate);
     const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }));
-    clearOldPayments({ state, getters });
+    clearOldPayments({ contractID, state, getters });
     return periodPayments;
   }
-  function updateCurrentDistribution({ meta, state, getters }) {
-    const curPeriodPayments = initFetchPeriodPayments({ meta, state, getters });
+  function updateCurrentDistribution({ contractID, meta, state, getters }) {
+    const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters });
     const period = getters.periodStampGivenDate(meta.createdDate);
     const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0;
     if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
@@ -9990,10 +10011,10 @@ ${this.getErrorInfo()}`;
       });
     }
   }
-  function memberLeaves({ username, dateLeft }, { meta, state, getters }) {
+  function memberLeaves({ username, dateLeft }, { contractID, meta, state, getters }) {
     state.profiles[username].status = PROFILE_STATUS.REMOVED;
     state.profiles[username].departedDate = dateLeft;
-    updateCurrentDistribution({ meta, state, getters });
+    updateCurrentDistribution({ contractID, meta, state, getters });
   }
   function isActionYoungerThanUser(actionMeta, userProfile) {
     return Boolean(userProfile) && compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
@@ -10154,6 +10175,9 @@ ${this.getErrorInfo()}`;
       groupPeriodPayments(state, getters) {
         return getters.currentGroupState.paymentsByPeriod || {};
       },
+      groupThankYousFrom(state, getters) {
+        return getters.currentGroupState.thankYousFrom || {};
+      },
       withGroupCurrency(state, getters) {
         return getters.groupCurrency?.displayWithCurrency;
       },
@@ -10232,10 +10256,11 @@ ${this.getErrorInfo()}`;
             })
           })
         }),
-        process({ data, meta }, { state, getters }) {
+        process({ data, meta, contractID }, { state, getters }) {
           const initialState = merge({
             payments: {},
             paymentsByPeriod: {},
+            thankYousFrom: {},
             invites: {},
             proposals: {},
             settings: {
@@ -10252,7 +10277,7 @@ ${this.getErrorInfo()}`;
           for (const key in initialState) {
             vue_esm_default.set(state, key, initialState[key]);
           }
-          initFetchPeriodPayments({ meta, state, getters });
+          initFetchPeriodPayments({ contractID, meta, state, getters });
         }
       },
       "gi.contracts/group/payment": {
@@ -10267,7 +10292,7 @@ ${this.getErrorInfo()}`;
           details: optional(object),
           memo: optional(string)
         }),
-        process({ data, meta, hash: hash2 }, { state, getters }) {
+        process({ data, meta, hash: hash2, contractID }, { state, getters }) {
           if (data.status === PAYMENT_COMPLETED) {
             console.error(`payment: payment ${hash2} cannot have status = 'completed'!`, { data, meta, hash: hash2 });
             throw new errors_exports.GIErrorIgnoreAndBan("payments cannot be instantly completed!");
@@ -10280,7 +10305,7 @@ ${this.getErrorInfo()}`;
             meta,
             history: [[meta.createdDate, hash2]]
           });
-          const { paymentsFrom } = initFetchPeriodPayments({ meta, state, getters });
+          const { paymentsFrom } = initFetchPeriodPayments({ contractID, meta, state, getters });
           const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {});
           const toUser = vueFetchInitKV(fromUser, data.toUser, []);
           toUser.push(hash2);
@@ -10295,7 +10320,7 @@ ${this.getErrorInfo()}`;
             memo: string
           })
         }),
-        process({ data, meta, hash: hash2 }, { state, getters }) {
+        process({ data, meta, hash: hash2, contractID }, { state, getters }) {
           const payment = state.payments[data.paymentHash];
           if (!payment) {
             console.error(`paymentUpdate: no payment ${data.paymentHash}`, { data, meta, hash: hash2 });
@@ -10314,8 +10339,44 @@ ${this.getErrorInfo()}`;
             if (comparePeriodStamps(updatePeriodStamp, paymentPeriodStamp) > 0) {
               updateAdjustedDistribution({ period: paymentPeriodStamp, getters });
             } else {
-              updateCurrentDistribution({ meta, state, getters });
+              updateCurrentDistribution({ contractID, meta, state, getters });
             }
+          }
+        },
+        sideEffect({ meta, contractID, data }, { state, getters }) {
+          if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+            const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+            const payment = state.payments[data.paymentHash];
+            if (loggedIn.username === payment.data.toUser) {
+              (0, import_sbp3.default)("gi.notifications/emit", "PAYMENT_RECEIVED", {
+                groupID: contractID,
+                creator: meta.username,
+                paymentHash: data.paymentHash,
+                amount: getters.withGroupCurrency(payment.data.amount)
+              });
+            }
+          }
+        }
+      },
+      "gi.contracts/group/sendPaymentThankYou": {
+        validate: objectOf({
+          fromUser: string,
+          toUser: string,
+          memo: string
+        }),
+        process({ data }, { state }) {
+          const fromUser = vueFetchInitKV(state.thankYousFrom, data.fromUser, {});
+          vue_esm_default.set(fromUser, data.toUser, data.memo);
+        },
+        sideEffect({ contractID, meta, data }) {
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+          if (data.toUser === loggedIn.username) {
+            (0, import_sbp3.default)("gi.notifications/emit", "PAYMENT_THANKYOU_SENT", {
+              groupID: contractID,
+              creator: meta.username,
+              fromUser: data.fromUser,
+              toUser: data.toUser
+            });
           }
         }
       },
@@ -10344,6 +10405,7 @@ ${this.getErrorInfo()}`;
             meta,
             votes: { [meta.username]: VOTE_FOR },
             status: STATUS_OPEN,
+            notifiedBeforeExpire: false,
             payload: null
           });
         },
@@ -10420,6 +10482,14 @@ ${this.getErrorInfo()}`;
           archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID });
         }
       },
+      "gi.contracts/group/notifyExpiringProposals": {
+        validate: arrayOf(string),
+        process({ data, meta, contractID }, { state }) {
+          for (const proposalId of data) {
+            vue_esm_default.set(state.proposals[proposalId], "notifiedBeforeExpire", true);
+          }
+        }
+      },
       "gi.contracts/group/removeMember": {
         validate: (data, { state, getters, meta }) => {
           objectOf({
@@ -10453,8 +10523,8 @@ ${this.getErrorInfo()}`;
             }
           }
         },
-        process({ data, meta }, { state, getters }) {
-          memberLeaves({ username: data.member, dateLeft: meta.createdDate }, { meta, state, getters });
+        process({ data, meta, contractID }, { state, getters }) {
+          memberLeaves({ username: data.member, dateLeft: meta.createdDate }, { contractID, meta, state, getters });
         },
         sideEffect({ data, meta, contractID }, { state, getters }) {
           const rootState = (0, import_sbp3.default)("state/vuex/state");
@@ -10497,7 +10567,7 @@ ${this.getErrorInfo()}`;
           reason: string
         }),
         process({ data, meta, contractID }, { state, getters }) {
-          memberLeaves({ username: meta.username, dateLeft: meta.createdDate }, { meta, state, getters });
+          memberLeaves({ username: meta.username, dateLeft: meta.createdDate }, { contractID, meta, state, getters });
           (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", {
             meta,
             data: { member: meta.username, reason: data.reason || "" },
@@ -10593,7 +10663,7 @@ ${this.getErrorInfo()}`;
             value: string
           }))
         }),
-        process({ data, meta }, { state, getters }) {
+        process({ data, meta, contractID }, { state, getters }) {
           const groupProfile = state.profiles[meta.username];
           const nonMonetary = groupProfile.nonMonetaryContributions;
           for (const key in data) {
@@ -10613,7 +10683,7 @@ ${this.getErrorInfo()}`;
             }
           }
           if (data.incomeDetailsType) {
-            updateCurrentDistribution({ meta, state, getters });
+            updateCurrentDistribution({ contractID, meta, state, getters });
           }
         }
       },
@@ -10755,6 +10825,25 @@ ${this.getErrorInfo()}`;
         }
         await (0, import_sbp3.default)("gi.db/archive/save", key, proposals2);
         (0, import_sbp3.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, [proposalHash, proposal]);
+      },
+      "gi.contracts/group/archivePayments": async function(contractID, paymentsByPeriod) {
+        const { username } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
+        for (const period of Object.keys(paymentsByPeriod).sort()) {
+          const periodKey = `paymentPeriods/${username}/${contractID}`;
+          const periods = await (0, import_sbp3.default)("gi.db/archive/load", periodKey) || [];
+          const paymentsKey = `paymentsByPeriod/${username}/${contractID}/${period}`;
+          const payments = await (0, import_sbp3.default)("gi.db/archive/load", paymentsKey) || {};
+          periods.unshift(period);
+          merge(payments, paymentsByPeriod[periodKey]);
+          if (periods.length > MAX_ARCHIVED_PAYMENTS) {
+            const shouldBeDeletedPeriod = periods.pop();
+            const shouldBeDeletedPaymentsKey = `paymentsByPeriod/${username}/${contractID}/${shouldBeDeletedPeriod}`;
+            await (0, import_sbp3.default)("gi.db/archive/delete", shouldBeDeletedPaymentsKey);
+          }
+          await (0, import_sbp3.default)("gi.db/archive/save", periodKey, periods);
+          await (0, import_sbp3.default)("gi.db/archive/save", paymentsKey, payments);
+        }
+        (0, import_sbp3.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, paymentsByPeriod);
       }
     }
   });

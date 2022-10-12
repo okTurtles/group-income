@@ -16,6 +16,10 @@
   var __commonJS = (cb, mod) => function __require2() {
     return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
   };
+  var __export = (target2, all) => {
+    for (var name in all)
+      __defProp(target2, name, { get: all[name], enumerable: true });
+  };
   var __copyProps = (to, from, except, desc) => {
     if (from && typeof from === "object" || typeof from === "function") {
       for (let key of __getOwnPropNames(from))
@@ -789,8 +793,8 @@
     }
   });
 
-  // frontend/model/contracts/chatroom.js
-  var import_sbp4 = __toESM(__require("@sbp/sbp"));
+  // frontend/model/contracts/group.js
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
 
   // node_modules/vue/dist/vue.esm.js
   var emptyObject = Object.freeze({});
@@ -8988,6 +8992,15 @@
   var import_dompurify = __toESM(require_purify());
 
   // frontend/model/contracts/shared/giLodash.js
+  function omit(o, props2) {
+    const x = {};
+    for (const k in o) {
+      if (!props2.includes(k)) {
+        x[k] = o[k];
+      }
+    }
+    return x;
+  }
   function cloneDeep(obj) {
     return JSON.parse(JSON.stringify(obj));
   }
@@ -9005,6 +9018,25 @@
       obj[key] = clone || src[key];
     }
     return obj;
+  }
+  function deepEqualJSONType(a, b) {
+    if (a === b)
+      return true;
+    if (a === null || b === null || typeof a !== typeof b)
+      return false;
+    if (typeof a !== "object")
+      return a === b;
+    if (Array.isArray(a)) {
+      if (a.length !== b.length)
+        return false;
+    } else if (a.constructor.name !== "Object") {
+      throw new Error(`not JSON type: ${a}`);
+    }
+    for (const key in a) {
+      if (!deepEqualJSONType(a[key], b[key]))
+        return false;
+    }
+    return true;
   }
 
   // frontend/common/vSafeHtml.js
@@ -9144,47 +9176,30 @@
     }
   });
 
-  // frontend/model/contracts/shared/constants.js
-  var CHATROOM_NAME_LIMITS_IN_CHARS = 50;
-  var CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280;
-  var CHATROOM_ACTIONS_PER_PAGE = 40;
-  var CHATROOM_MESSAGES_PER_PAGE = 20;
-  var CHATROOM_MESSAGE_ACTION = "chatroom-message-action";
-  var MESSAGE_RECEIVE = "message-receive";
-  var CHATROOM_TYPES = {
-    INDIVIDUAL: "individual",
-    GROUP: "group"
+  // frontend/common/errors.js
+  var errors_exports = {};
+  __export(errors_exports, {
+    GIErrorIgnoreAndBan: () => GIErrorIgnoreAndBan,
+    GIErrorUIRuntimeError: () => GIErrorUIRuntimeError
+  });
+  var GIErrorIgnoreAndBan = class extends Error {
+    constructor(...params) {
+      super(...params);
+      this.name = "GIErrorIgnoreAndBan";
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, this.constructor);
+      }
+    }
   };
-  var CHATROOM_PRIVACY_LEVEL = {
-    GROUP: "chatroom-privacy-level-group",
-    PRIVATE: "chatroom-privacy-level-private",
-    PUBLIC: "chatroom-privacy-level-public"
+  var GIErrorUIRuntimeError = class extends Error {
+    constructor(...params) {
+      super(...params);
+      this.name = "GIErrorUIRuntimeError";
+      if (Error.captureStackTrace) {
+        Error.captureStackTrace(this, this.constructor);
+      }
+    }
   };
-  var MESSAGE_TYPES = {
-    POLL: "message-poll",
-    TEXT: "message-text",
-    INTERACTIVE: "message-interactive",
-    NOTIFICATION: "message-notification"
-  };
-  var MESSAGE_NOTIFICATIONS = {
-    ADD_MEMBER: "add-member",
-    JOIN_MEMBER: "join-member",
-    LEAVE_MEMBER: "leave-member",
-    KICK_MEMBER: "kick-member",
-    UPDATE_DESCRIPTION: "update-description",
-    UPDATE_NAME: "update-name",
-    DELETE_CHANNEL: "delete-channel",
-    VOTE: "vote"
-  };
-  var PROPOSAL_VARIANTS = {
-    CREATED: "proposal-created",
-    EXPIRING: "proposal-expiring",
-    ACCEPTED: "proposal-accepted",
-    REJECTED: "proposal-rejected",
-    EXPIRED: "proposal-expired"
-  };
-  var MAIL_TYPE_MESSAGE = "message";
-  var MAIL_TYPE_FRIEND_REQ = "friend-request";
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -9346,6 +9361,13 @@ ${this.getErrorInfo()}`;
     throw validatorError(undef, value, _scope);
   }
   undef.type = () => "void";
+  var boolean = function boolean2(value, _scope = "") {
+    if (isEmpty(value))
+      return false;
+    if (isBoolean2(value))
+      return value;
+    throw validatorError(boolean2, value, _scope);
+  };
   var number = function number2(value, _scope = "") {
     if (isEmpty(value))
       return 0;
@@ -9360,6 +9382,24 @@ ${this.getErrorInfo()}`;
       return value;
     throw validatorError(string2, value, _scope);
   };
+  function tupleOf_(...typeFuncs) {
+    function tuple(value, _scope = "") {
+      const cardinality = typeFuncs.length;
+      if (isEmpty(value))
+        return typeFuncs.map((fn) => fn(value));
+      if (Array.isArray(value) && value.length === cardinality) {
+        const tupleValue = [];
+        for (let i = 0; i < cardinality; i += 1) {
+          tupleValue.push(typeFuncs[i](value[i], _scope));
+        }
+        return tupleValue;
+      }
+      throw validatorError(tuple, value, _scope);
+    }
+    tuple.type = () => `[${typeFuncs.map((fn) => getType2(fn)).join(", ")}]`;
+    return tuple;
+  }
+  var tupleOf = tupleOf_;
   function unionOf_(...typeFuncs) {
     function union(value, _scope = "") {
       for (const typeFn of typeFuncs) {
@@ -9374,6 +9414,485 @@ ${this.getErrorInfo()}`;
     return union;
   }
   var unionOf = unionOf_;
+
+  // frontend/model/contracts/shared/constants.js
+  var INVITE_INITIAL_CREATOR = "invite-initial-creator";
+  var INVITE_STATUS = {
+    REVOKED: "revoked",
+    VALID: "valid",
+    USED: "used"
+  };
+  var PROFILE_STATUS = {
+    ACTIVE: "active",
+    PENDING: "pending",
+    REMOVED: "removed"
+  };
+  var PROPOSAL_RESULT = "proposal-result";
+  var PROPOSAL_INVITE_MEMBER = "invite-member";
+  var PROPOSAL_REMOVE_MEMBER = "remove-member";
+  var PROPOSAL_GROUP_SETTING_CHANGE = "group-setting-change";
+  var PROPOSAL_PROPOSAL_SETTING_CHANGE = "proposal-setting-change";
+  var PROPOSAL_GENERIC = "generic";
+  var PROPOSAL_ARCHIVED = "proposal-archived";
+  var MAX_ARCHIVED_PROPOSALS = 100;
+  var STATUS_OPEN = "open";
+  var STATUS_PASSED = "passed";
+  var STATUS_FAILED = "failed";
+  var STATUS_CANCELLED = "cancelled";
+  var CHATROOM_TYPES = {
+    INDIVIDUAL: "individual",
+    GROUP: "group"
+  };
+  var CHATROOM_PRIVACY_LEVEL = {
+    GROUP: "chatroom-privacy-level-group",
+    PRIVATE: "chatroom-privacy-level-private",
+    PUBLIC: "chatroom-privacy-level-public"
+  };
+  var MESSAGE_TYPES = {
+    POLL: "message-poll",
+    TEXT: "message-text",
+    INTERACTIVE: "message-interactive",
+    NOTIFICATION: "message-notification"
+  };
+  var INVITE_EXPIRES_IN_DAYS = {
+    ON_BOARDING: 30,
+    PROPOSAL: 7
+  };
+  var MESSAGE_NOTIFICATIONS = {
+    ADD_MEMBER: "add-member",
+    JOIN_MEMBER: "join-member",
+    LEAVE_MEMBER: "leave-member",
+    KICK_MEMBER: "kick-member",
+    UPDATE_DESCRIPTION: "update-description",
+    UPDATE_NAME: "update-name",
+    DELETE_CHANNEL: "delete-channel",
+    VOTE: "vote"
+  };
+  var PROPOSAL_VARIANTS = {
+    CREATED: "proposal-created",
+    EXPIRING: "proposal-expiring",
+    ACCEPTED: "proposal-accepted",
+    REJECTED: "proposal-rejected",
+    EXPIRED: "proposal-expired"
+  };
+  var MAIL_TYPE_MESSAGE = "message";
+  var MAIL_TYPE_FRIEND_REQ = "friend-request";
+
+  // frontend/model/contracts/shared/voting/rules.js
+  var VOTE_AGAINST = ":against";
+  var VOTE_INDIFFERENT = ":indifferent";
+  var VOTE_UNDECIDED = ":undecided";
+  var VOTE_FOR = ":for";
+  var RULE_PERCENTAGE = "percentage";
+  var RULE_DISAGREEMENT = "disagreement";
+  var RULE_MULTI_CHOICE = "multi-choice";
+  var getPopulation = (state) => Object.keys(state.profiles).filter((p) => state.profiles[p].status === PROFILE_STATUS.ACTIVE).length;
+  var rules = {
+    [RULE_PERCENTAGE]: function(state, proposalType2, votes) {
+      votes = Object.values(votes);
+      let population = getPopulation(state);
+      if (proposalType2 === PROPOSAL_REMOVE_MEMBER)
+        population -= 1;
+      const defaultThreshold = state.settings.proposals[proposalType2].ruleSettings[RULE_PERCENTAGE].threshold;
+      const threshold = getThresholdAdjusted(RULE_PERCENTAGE, defaultThreshold, population);
+      const totalIndifferent = votes.filter((x) => x === VOTE_INDIFFERENT).length;
+      const totalFor = votes.filter((x) => x === VOTE_FOR).length;
+      const totalAgainst = votes.filter((x) => x === VOTE_AGAINST).length;
+      const totalForOrAgainst = totalFor + totalAgainst;
+      const turnout = totalForOrAgainst + totalIndifferent;
+      const absent = population - turnout;
+      const neededToPass = Math.ceil(threshold * (population - totalIndifferent));
+      console.debug(`votingRule ${RULE_PERCENTAGE} for ${proposalType2}:`, { neededToPass, totalFor, totalAgainst, totalIndifferent, threshold, absent, turnout, population });
+      if (totalFor >= neededToPass) {
+        return VOTE_FOR;
+      }
+      return totalFor + absent < neededToPass ? VOTE_AGAINST : VOTE_UNDECIDED;
+    },
+    [RULE_DISAGREEMENT]: function(state, proposalType2, votes) {
+      votes = Object.values(votes);
+      const population = getPopulation(state);
+      const minimumMax = proposalType2 === PROPOSAL_REMOVE_MEMBER ? 2 : 1;
+      const thresholdOriginal = Math.max(state.settings.proposals[proposalType2].ruleSettings[RULE_DISAGREEMENT].threshold, minimumMax);
+      const threshold = getThresholdAdjusted(RULE_DISAGREEMENT, thresholdOriginal, population);
+      const totalFor = votes.filter((x) => x === VOTE_FOR).length;
+      const totalAgainst = votes.filter((x) => x === VOTE_AGAINST).length;
+      const turnout = votes.length;
+      const absent = population - turnout;
+      console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType2}:`, { totalFor, totalAgainst, threshold, turnout, population, absent });
+      if (totalAgainst >= threshold) {
+        return VOTE_AGAINST;
+      }
+      return totalAgainst + absent < threshold ? VOTE_FOR : VOTE_UNDECIDED;
+    },
+    [RULE_MULTI_CHOICE]: function(state, proposalType2, votes) {
+      throw new Error("unimplemented!");
+    }
+  };
+  var rules_default = rules;
+  var ruleType = unionOf(...Object.keys(rules).map((k) => literalOf(k)));
+  var getThresholdAdjusted = (rule, threshold, groupSize) => {
+    const groupSizeVoting = Math.max(3, groupSize);
+    return {
+      [RULE_DISAGREEMENT]: () => {
+        return Math.min(groupSizeVoting - 1, threshold);
+      },
+      [RULE_PERCENTAGE]: () => {
+        const minThreshold = 2 / groupSizeVoting;
+        return Math.max(minThreshold, threshold);
+      }
+    }[rule]();
+  };
+
+  // frontend/model/contracts/shared/voting/proposals.js
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+
+  // frontend/model/contracts/shared/time.js
+  var MINS_MILLIS = 6e4;
+  var HOURS_MILLIS = 60 * MINS_MILLIS;
+  var DAYS_MILLIS = 24 * HOURS_MILLIS;
+  var MONTHS_MILLIS = 30 * DAYS_MILLIS;
+  function dateToPeriodStamp(date) {
+    return new Date(date).toISOString();
+  }
+  function dateFromPeriodStamp(daystamp) {
+    return new Date(daystamp);
+  }
+  function periodStampGivenDate({ recentDate, periodStart, periodLength }) {
+    const periodStartDate = dateFromPeriodStamp(periodStart);
+    let nextPeriod = addTimeToDate(periodStartDate, periodLength);
+    const curDate = new Date(recentDate);
+    let curPeriod;
+    if (curDate < nextPeriod) {
+      if (curDate >= periodStartDate) {
+        return periodStart;
+      } else {
+        curPeriod = periodStartDate;
+        do {
+          curPeriod = addTimeToDate(curPeriod, -periodLength);
+        } while (curDate < curPeriod);
+      }
+    } else {
+      do {
+        curPeriod = nextPeriod;
+        nextPeriod = addTimeToDate(nextPeriod, periodLength);
+      } while (curDate >= nextPeriod);
+    }
+    return dateToPeriodStamp(curPeriod);
+  }
+  function dateIsWithinPeriod({ date, periodStart, periodLength }) {
+    const dateObj = new Date(date);
+    const start = dateFromPeriodStamp(periodStart);
+    return dateObj > start && dateObj < addTimeToDate(start, periodLength);
+  }
+  function addTimeToDate(date, timeMillis) {
+    const d = new Date(date);
+    d.setTime(d.getTime() + timeMillis);
+    return d;
+  }
+  function comparePeriodStamps(periodA, periodB) {
+    return dateFromPeriodStamp(periodA).getTime() - dateFromPeriodStamp(periodB).getTime();
+  }
+  function compareISOTimestamps(a, b) {
+    return new Date(a).getTime() - new Date(b).getTime();
+  }
+  function isPeriodStamp(arg) {
+    return /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z/.test(arg);
+  }
+
+  // frontend/model/contracts/shared/voting/proposals.js
+  function archiveProposal({ state, proposalHash, proposal, contractID }) {
+    vue_esm_default.delete(state.proposals, proposalHash);
+    (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/archiveProposal", contractID, proposalHash, proposal]);
+  }
+  var proposalSettingsType = objectOf({
+    rule: ruleType,
+    expires_ms: number,
+    ruleSettings: objectOf({
+      [RULE_PERCENTAGE]: objectOf({ threshold: number }),
+      [RULE_DISAGREEMENT]: objectOf({ threshold: number })
+    })
+  });
+  function voteAgainst(state, { meta, data, contractID }) {
+    const { proposalHash } = data;
+    const proposal = state.proposals[proposalHash];
+    proposal.status = STATUS_FAILED;
+    (0, import_sbp2.default)("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_AGAINST, data);
+    archiveProposal({ state, proposalHash, proposal, contractID });
+  }
+  var proposalDefaults = {
+    rule: RULE_PERCENTAGE,
+    expires_ms: 14 * DAYS_MILLIS,
+    ruleSettings: {
+      [RULE_PERCENTAGE]: { threshold: 0.66 },
+      [RULE_DISAGREEMENT]: { threshold: 1 }
+    }
+  };
+  var proposals = {
+    [PROPOSAL_INVITE_MEMBER]: {
+      defaults: proposalDefaults,
+      [VOTE_FOR]: function(state, { meta, data, contractID }) {
+        const { proposalHash } = data;
+        const proposal = state.proposals[proposalHash];
+        proposal.payload = data.passPayload;
+        proposal.status = STATUS_PASSED;
+        const message = { meta, data: data.passPayload, contractID };
+        (0, import_sbp2.default)("gi.contracts/group/invite/process", message, state);
+        (0, import_sbp2.default)("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_FOR, data);
+        archiveProposal({ state, proposalHash, proposal, contractID });
+      },
+      [VOTE_AGAINST]: voteAgainst
+    },
+    [PROPOSAL_REMOVE_MEMBER]: {
+      defaults: proposalDefaults,
+      [VOTE_FOR]: function(state, { meta, data, contractID }) {
+        const { proposalHash, passPayload } = data;
+        const proposal = state.proposals[proposalHash];
+        proposal.status = STATUS_PASSED;
+        proposal.payload = passPayload;
+        const messageData = {
+          ...proposal.data.proposalData,
+          proposalHash,
+          proposalPayload: passPayload
+        };
+        const message = { data: messageData, meta, contractID };
+        (0, import_sbp2.default)("gi.contracts/group/removeMember/process", message, state);
+        (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", message]);
+        archiveProposal({ state, proposalHash, proposal, contractID });
+      },
+      [VOTE_AGAINST]: voteAgainst
+    },
+    [PROPOSAL_GROUP_SETTING_CHANGE]: {
+      defaults: proposalDefaults,
+      [VOTE_FOR]: function(state, { meta, data, contractID }) {
+        const { proposalHash } = data;
+        const proposal = state.proposals[proposalHash];
+        proposal.status = STATUS_PASSED;
+        const { setting, proposedValue } = proposal.data.proposalData;
+        const message = {
+          meta,
+          data: { [setting]: proposedValue },
+          contractID
+        };
+        (0, import_sbp2.default)("gi.contracts/group/updateSettings/process", message, state);
+        archiveProposal({ state, proposalHash, proposal, contractID });
+      },
+      [VOTE_AGAINST]: voteAgainst
+    },
+    [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
+      defaults: proposalDefaults,
+      [VOTE_FOR]: function(state, { meta, data, contractID }) {
+        const { proposalHash } = data;
+        const proposal = state.proposals[proposalHash];
+        proposal.status = STATUS_PASSED;
+        const message = {
+          meta,
+          data: proposal.data.proposalData,
+          contractID
+        };
+        (0, import_sbp2.default)("gi.contracts/group/updateAllVotingRules/process", message, state);
+        archiveProposal({ state, proposalHash, proposal, contractID });
+      },
+      [VOTE_AGAINST]: voteAgainst
+    },
+    [PROPOSAL_GENERIC]: {
+      defaults: proposalDefaults,
+      [VOTE_FOR]: function(state, { meta, data, contractID }) {
+        const { proposalHash } = data;
+        const proposal = state.proposals[proposalHash];
+        proposal.status = STATUS_PASSED;
+        (0, import_sbp2.default)("okTurtles.events/emit", PROPOSAL_RESULT, state, VOTE_FOR, data);
+        archiveProposal({ state, proposalHash, proposal, contractID });
+      },
+      [VOTE_AGAINST]: voteAgainst
+    }
+  };
+  var proposals_default = proposals;
+  var proposalType = unionOf(...Object.keys(proposals).map((k) => literalOf(k)));
+
+  // frontend/model/contracts/shared/payments/index.js
+  var PAYMENT_PENDING = "pending";
+  var PAYMENT_CANCELLED = "cancelled";
+  var PAYMENT_ERROR = "error";
+  var PAYMENT_NOT_RECEIVED = "not-received";
+  var PAYMENT_COMPLETED = "completed";
+  var paymentStatusType = unionOf(...[PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED].map((k) => literalOf(k)));
+  var PAYMENT_TYPE_MANUAL = "manual";
+  var PAYMENT_TYPE_BITCOIN = "bitcoin";
+  var PAYMENT_TYPE_PAYPAL = "paypal";
+  var paymentType = unionOf(...[PAYMENT_TYPE_MANUAL, PAYMENT_TYPE_BITCOIN, PAYMENT_TYPE_PAYPAL].map((k) => literalOf(k)));
+
+  // frontend/model/contracts/shared/distribution/mincome-proportional.js
+  function mincomeProportional(haveNeeds) {
+    let totalHave = 0;
+    let totalNeed = 0;
+    const havers = [];
+    const needers = [];
+    for (const haveNeed of haveNeeds) {
+      if (haveNeed.haveNeed > 0) {
+        havers.push(haveNeed);
+        totalHave += haveNeed.haveNeed;
+      } else if (haveNeed.haveNeed < 0) {
+        needers.push(haveNeed);
+        totalNeed += Math.abs(haveNeed.haveNeed);
+      }
+    }
+    const totalPercent = Math.min(1, totalNeed / totalHave);
+    const payments = [];
+    for (const haver of havers) {
+      const distributionAmount = totalPercent * haver.haveNeed;
+      for (const needer of needers) {
+        const belowPercentage = Math.abs(needer.haveNeed) / totalNeed;
+        payments.push({
+          amount: distributionAmount * belowPercentage,
+          from: haver.name,
+          to: needer.name
+        });
+      }
+    }
+    return payments;
+  }
+
+  // frontend/model/contracts/shared/distribution/payments-minimizer.js
+  function minimizeTotalPaymentsCount(distribution) {
+    const neederTotalReceived = {};
+    const haverTotalHave = {};
+    const haversSorted = [];
+    const needersSorted = [];
+    const minimizedDistribution = [];
+    for (const todo of distribution) {
+      neederTotalReceived[todo.to] = (neederTotalReceived[todo.to] || 0) + todo.amount;
+      haverTotalHave[todo.from] = (haverTotalHave[todo.from] || 0) + todo.amount;
+    }
+    for (const name in haverTotalHave) {
+      haversSorted.push({ name, amount: haverTotalHave[name] });
+    }
+    for (const name in neederTotalReceived) {
+      needersSorted.push({ name, amount: neederTotalReceived[name] });
+    }
+    haversSorted.sort((a, b) => b.amount - a.amount);
+    needersSorted.sort((a, b) => b.amount - a.amount);
+    while (haversSorted.length > 0 && needersSorted.length > 0) {
+      const mostHaver = haversSorted.pop();
+      const mostNeeder = needersSorted.pop();
+      const diff = mostHaver.amount - mostNeeder.amount;
+      if (diff < 0) {
+        minimizedDistribution.push({ amount: mostHaver.amount, from: mostHaver.name, to: mostNeeder.name });
+        mostNeeder.amount -= mostHaver.amount;
+        needersSorted.push(mostNeeder);
+      } else if (diff > 0) {
+        minimizedDistribution.push({ amount: mostNeeder.amount, from: mostHaver.name, to: mostNeeder.name });
+        mostHaver.amount -= mostNeeder.amount;
+        haversSorted.push(mostHaver);
+      } else {
+        minimizedDistribution.push({ amount: mostNeeder.amount, from: mostHaver.name, to: mostNeeder.name });
+      }
+    }
+    return minimizedDistribution;
+  }
+
+  // frontend/model/contracts/shared/currencies.js
+  var DECIMALS_MAX = 8;
+  function commaToDots(value) {
+    return typeof value === "string" ? value.replace(/,/, ".") : value.toString();
+  }
+  function isNumeric(nr) {
+    return !isNaN(nr - parseFloat(nr));
+  }
+  function isInDecimalsLimit(nr, decimalsMax) {
+    const decimals = nr.split(".")[1];
+    return !decimals || decimals.length <= decimalsMax;
+  }
+  function validateMincome(value, decimalsMax) {
+    const nr = commaToDots(value);
+    return isNumeric(nr) && isInDecimalsLimit(nr, decimalsMax);
+  }
+  function decimalsOrInt(num, decimalsMax) {
+    return num.toFixed(decimalsMax).replace(/\.0+$/, "");
+  }
+  function saferFloat(value) {
+    return parseFloat(value.toFixed(DECIMALS_MAX));
+  }
+  function makeCurrency(options) {
+    const { symbol, symbolWithCode, decimalsMax, formatCurrency } = options;
+    return {
+      symbol,
+      symbolWithCode,
+      decimalsMax,
+      displayWithCurrency: (n) => formatCurrency(decimalsOrInt(n, decimalsMax)),
+      displayWithoutCurrency: (n) => decimalsOrInt(n, decimalsMax),
+      validate: (n) => validateMincome(n, decimalsMax)
+    };
+  }
+  var currencies = {
+    USD: makeCurrency({
+      symbol: "$",
+      symbolWithCode: "$ USD",
+      decimalsMax: 2,
+      formatCurrency: (amount) => "$" + amount
+    }),
+    EUR: makeCurrency({
+      symbol: "\u20AC",
+      symbolWithCode: "\u20AC EUR",
+      decimalsMax: 2,
+      formatCurrency: (amount) => "\u20AC" + amount
+    }),
+    BTC: makeCurrency({
+      symbol: "\u0243",
+      symbolWithCode: "\u0243 BTC",
+      decimalsMax: DECIMALS_MAX,
+      formatCurrency: (amount) => amount + "\u0243"
+    })
+  };
+  var currencies_default = currencies;
+
+  // frontend/model/contracts/shared/distribution/distribution.js
+  var tinyNum = 1 / Math.pow(10, DECIMALS_MAX);
+  function unadjustedDistribution({ haveNeeds = [], minimize = true }) {
+    const distribution = mincomeProportional(haveNeeds);
+    return minimize ? minimizeTotalPaymentsCount(distribution) : distribution;
+  }
+  function adjustedDistribution({ distribution, payments, dueOn }) {
+    distribution = cloneDeep(distribution);
+    for (const todo of distribution) {
+      todo.total = todo.amount;
+    }
+    distribution = subtractDistributions(distribution, payments).filter((todo) => todo.amount >= tinyNum);
+    for (const todo of distribution) {
+      todo.amount = saferFloat(todo.amount);
+      todo.total = saferFloat(todo.total);
+      todo.partial = todo.total !== todo.amount;
+      todo.isLate = false;
+      todo.dueOn = dueOn;
+    }
+    return distribution;
+  }
+  function reduceDistribution(payments) {
+    payments = cloneDeep(payments);
+    for (let i = 0; i < payments.length; i++) {
+      const paymentA = payments[i];
+      for (let j = i + 1; j < payments.length; j++) {
+        const paymentB = payments[j];
+        if (paymentA.from === paymentB.from && paymentA.to === paymentB.to || paymentA.to === paymentB.from && paymentA.from === paymentB.to) {
+          paymentA.amount += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.amount;
+          paymentA.total += (paymentA.from === paymentB.from ? 1 : -1) * paymentB.total;
+          payments.splice(j, 1);
+          j--;
+        }
+      }
+    }
+    return payments;
+  }
+  function addDistributions(paymentsA, paymentsB) {
+    return reduceDistribution([...paymentsA, ...paymentsB]);
+  }
+  function subtractDistributions(paymentsA, paymentsB) {
+    paymentsB = cloneDeep(paymentsB);
+    for (const p of paymentsB) {
+      p.amount *= -1;
+      p.total *= -1;
+    }
+    return addDistributions(paymentsA, paymentsB);
+  }
 
   // frontend/model/contracts/shared/types.js
   var inviteType = objectOf({
@@ -9415,146 +9934,87 @@ ${this.getErrorInfo()}`;
   });
   var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
 
-  // frontend/model/contracts/shared/functions.js
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
-
-  // frontend/model/contracts/shared/time.js
-  var MINS_MILLIS = 6e4;
-  var HOURS_MILLIS = 60 * MINS_MILLIS;
-  var DAYS_MILLIS = 24 * HOURS_MILLIS;
-  var MONTHS_MILLIS = 30 * DAYS_MILLIS;
-
-  // frontend/views/utils/misc.js
-  function logExceptNavigationDuplicated(err) {
-    err.name !== "NavigationDuplicated" && console.error(err);
-  }
-
-  // frontend/model/contracts/shared/functions.js
-  function createMessage({ meta, data, hash: hash2, state }) {
-    const { type, text: text2, replyingMessage } = data;
-    const { createdDate } = meta;
-    let newMessage = {
-      type,
-      datetime: new Date(createdDate).toISOString(),
-      id: hash2,
-      from: meta.username
-    };
-    if (type === MESSAGE_TYPES.TEXT) {
-      newMessage = !replyingMessage ? { ...newMessage, text: text2 } : { ...newMessage, text: text2, replyingMessage };
-    } else if (type === MESSAGE_TYPES.POLL) {
-    } else if (type === MESSAGE_TYPES.NOTIFICATION) {
-      const params = {
-        channelName: state?.attributes.name,
-        channelDescription: state?.attributes.description,
-        ...data.notification
-      };
-      delete params.type;
-      newMessage = {
-        ...newMessage,
-        notification: { type: data.notification.type, params }
-      };
-    } else if (type === MESSAGE_TYPES.INTERACTIVE) {
-      newMessage = {
-        ...newMessage,
-        proposal: data.proposal
-      };
+  // frontend/model/contracts/group.js
+  function vueFetchInitKV(obj, key, initialValue) {
+    let value = obj[key];
+    if (!value) {
+      vue_esm_default.set(obj, key, initialValue);
+      value = obj[key];
     }
-    return newMessage;
+    return value;
   }
-  async function leaveChatRoom({ contractID }) {
-    const rootState = (0, import_sbp2.default)("state/vuex/state");
-    const rootGetters = (0, import_sbp2.default)("state/vuex/getters");
-    if (contractID === rootGetters.currentChatRoomId) {
-      (0, import_sbp2.default)("state/vuex/commit", "setCurrentChatRoomId", {
-        groupId: rootState.currentGroupId
+  function initGroupProfile(contractID, joinedDate) {
+    return {
+      globalUsername: "",
+      contractID,
+      joinedDate,
+      nonMonetaryContributions: [],
+      status: PROFILE_STATUS.ACTIVE,
+      departedDate: null
+    };
+  }
+  function initPaymentPeriod({ getters }) {
+    return {
+      initialCurrency: getters.groupMincomeCurrency,
+      mincomeExchangeRate: 1,
+      paymentsFrom: {},
+      lastAdjustedDistribution: null,
+      haveNeedsSnapshot: null
+    };
+  }
+  function clearOldPayments({ state, getters }) {
+    const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort();
+    while (sortedPeriodKeys.length > 2) {
+      const period = sortedPeriodKeys.shift();
+      for (const paymentHash of getters.paymentHashesForPeriod(period)) {
+        vue_esm_default.delete(state.payments, paymentHash);
+      }
+      vue_esm_default.delete(state.paymentsByPeriod, period);
+    }
+  }
+  function initFetchPeriodPayments({ meta, state, getters }) {
+    const period = getters.periodStampGivenDate(meta.createdDate);
+    const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }));
+    clearOldPayments({ state, getters });
+    return periodPayments;
+  }
+  function updateCurrentDistribution({ meta, state, getters }) {
+    const curPeriodPayments = initFetchPeriodPayments({ meta, state, getters });
+    const period = getters.periodStampGivenDate(meta.createdDate);
+    const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0;
+    if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
+      getters.groupSettings.distributionDate = period;
+    }
+    if (noPayments || !curPeriodPayments.haveNeedsSnapshot) {
+      curPeriodPayments.haveNeedsSnapshot = getters.haveNeedsForThisPeriod(period);
+    }
+    if (!noPayments) {
+      updateAdjustedDistribution({ period, getters });
+    }
+  }
+  function updateAdjustedDistribution({ period, getters }) {
+    const payments = getters.groupPeriodPayments[period];
+    if (payments && payments.haveNeedsSnapshot) {
+      const minimize = getters.groupSettings.minimizeDistribution;
+      payments.lastAdjustedDistribution = adjustedDistribution({
+        distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize }),
+        payments: getters.paymentsForPeriod(period),
+        dueOn: getters.dueDateForPeriod(period)
+      }).filter((todo) => {
+        return getters.groupProfile(todo.to).status === PROFILE_STATUS.ACTIVE;
       });
-      const curRouteName = (0, import_sbp2.default)("controller/router").history.current.name;
-      if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
-        await (0, import_sbp2.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
-      }
-    }
-    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
-    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
-    (0, import_sbp2.default)("chelonia/contract/remove", contractID).catch((e) => {
-      console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
-    });
-  }
-  function findMessageIdx(id, messages) {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].id === id) {
-        return i;
-      }
-    }
-    return -1;
-  }
-  function makeMentionFromUsername(username) {
-    return {
-      me: `@${username}`,
-      all: "@all"
-    };
-  }
-
-  // frontend/model/contracts/shared/nativeNotification.js
-  var import_sbp3 = __toESM(__require("@sbp/sbp"));
-  function makeNotification({ title, body, icon, path }) {
-    const notificationEnabled = (0, import_sbp3.default)("state/vuex/state").notificationEnabled;
-    if (typeof Notification === "undefined" || Notification.permission !== "granted" || !notificationEnabled) {
-      return;
-    }
-    const notification = new Notification(title, { body, icon });
-    if (path) {
-      notification.onclick = function(event) {
-        event.preventDefault();
-        (0, import_sbp3.default)("controller/router").push({ path }).catch(console.warn);
-      };
     }
   }
-
-  // frontend/model/contracts/chatroom.js
-  function createNotificationData(notificationType, moreParams = {}) {
-    return {
-      type: MESSAGE_TYPES.NOTIFICATION,
-      notification: {
-        type: notificationType,
-        ...moreParams
-      }
-    };
+  function memberLeaves({ username, dateLeft }, { meta, state, getters }) {
+    state.profiles[username].status = PROFILE_STATUS.REMOVED;
+    state.profiles[username].departedDate = dateLeft;
+    updateCurrentDistribution({ meta, state, getters });
   }
-  function emitMessageEvent({ contractID, hash: hash2 }) {
-    (0, import_sbp4.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash: hash2 });
+  function isActionYoungerThanUser(actionMeta, userProfile) {
+    return Boolean(userProfile) && compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
   }
-  function addMention({ contractID, messageId, datetime, text: text2, username, chatRoomName }) {
-    if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
-      return;
-    }
-    (0, import_sbp4.default)("state/vuex/commit", "addChatRoomUnreadMention", {
-      chatRoomId: contractID,
-      messageId,
-      createdDate: datetime
-    });
-    const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
-    const groupID = rootGetters.groupIdFromChatRoomId(contractID);
-    const path = `/group-chat/${contractID}`;
-    makeNotification({
-      title: `# ${chatRoomName}`,
-      body: text2,
-      icon: rootGetters.globalProfile2(groupID, username)?.picture,
-      path
-    });
-    (0, import_sbp4.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
-  }
-  function deleteMention({ contractID, messageId }) {
-    (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomUnreadMention", { chatRoomId: contractID, messageId });
-  }
-  function updateUnreadPosition({ contractID, hash: hash2, createdDate }) {
-    (0, import_sbp4.default)("state/vuex/commit", "setChatRoomUnreadSince", {
-      chatRoomId: contractID,
-      messageId: hash2,
-      createdDate
-    });
-  }
-  (0, import_sbp4.default)("chelonia/defineContract", {
-    name: "gi.contracts/chatroom",
+  (0, import_sbp3.default)("chelonia/defineContract", {
+    name: "gi.contracts/group",
     metadata: {
       validate: objectOf({
         createdDate: string,
@@ -9562,7 +10022,7 @@ ${this.getErrorInfo()}`;
         identityContractID: string
       }),
       create() {
-        const { username, identityContractID } = (0, import_sbp4.default)("state/vuex/state").loggedIn;
+        const { username, identityContractID } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
         return {
           createdDate: new Date().toISOString(),
           username,
@@ -9571,339 +10031,794 @@ ${this.getErrorInfo()}`;
       }
     },
     getters: {
-      currentChatRoomState(state) {
+      currentGroupState(state) {
         return state;
       },
-      chatRoomSettings(state, getters) {
-        return getters.currentChatRoomState.settings || {};
+      groupSettings(state, getters) {
+        return getters.currentGroupState.settings || {};
       },
-      chatRoomAttributes(state, getters) {
-        return getters.currentChatRoomState.attributes || {};
+      groupProfile(state, getters) {
+        return (username) => {
+          const profiles = getters.currentGroupState.profiles;
+          return profiles && profiles[username];
+        };
       },
-      chatRoomUsers(state, getters) {
-        return getters.currentChatRoomState.users || {};
+      groupProfiles(state, getters) {
+        const profiles = {};
+        for (const username in getters.currentGroupState.profiles || {}) {
+          const profile = getters.groupProfile(username);
+          if (profile.status === PROFILE_STATUS.ACTIVE) {
+            profiles[username] = profile;
+          }
+        }
+        return profiles;
       },
-      chatRoomLatestMessages(state, getters) {
-        return getters.currentChatRoomState.messages || [];
+      groupMincomeAmount(state, getters) {
+        return getters.groupSettings.mincomeAmount;
+      },
+      groupMincomeCurrency(state, getters) {
+        return getters.groupSettings.mincomeCurrency;
+      },
+      periodStampGivenDate(state, getters) {
+        return (recentDate) => {
+          if (typeof recentDate !== "string") {
+            recentDate = recentDate.toISOString();
+          }
+          const { distributionDate, distributionPeriodLength } = getters.groupSettings;
+          return periodStampGivenDate({
+            recentDate,
+            periodStart: distributionDate,
+            periodLength: distributionPeriodLength
+          });
+        };
+      },
+      periodBeforePeriod(state, getters) {
+        return (periodStamp) => {
+          const len2 = getters.groupSettings.distributionPeriodLength;
+          return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), -len2));
+        };
+      },
+      periodAfterPeriod(state, getters) {
+        return (periodStamp) => {
+          const len2 = getters.groupSettings.distributionPeriodLength;
+          return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), len2));
+        };
+      },
+      dueDateForPeriod(state, getters) {
+        return (periodStamp) => {
+          return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(getters.periodAfterPeriod(periodStamp)), -DAYS_MILLIS));
+        };
+      },
+      paymentTotalFromUserToUser(state, getters) {
+        return (fromUser, toUser, periodStamp) => {
+          const payments = getters.currentGroupState.payments;
+          const periodPayments = getters.groupPeriodPayments;
+          const { paymentsFrom, mincomeExchangeRate } = periodPayments[periodStamp] || {};
+          const total = (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash2) => {
+            const payment = payments[hash2];
+            let { amount, exchangeRate, status } = payment.data;
+            if (status !== PAYMENT_COMPLETED) {
+              return a;
+            }
+            const paymentCreatedPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate);
+            if (periodStamp !== paymentCreatedPeriodStamp) {
+              if (paymentCreatedPeriodStamp !== getters.periodBeforePeriod(periodStamp)) {
+                console.warn(`paymentTotalFromUserToUser: super old payment shouldn't exist, ignoring! (curPeriod=${periodStamp})`, JSON.stringify(payment));
+                return a;
+              }
+              exchangeRate *= periodPayments[paymentCreatedPeriodStamp].mincomeExchangeRate;
+            }
+            return a + amount * exchangeRate * mincomeExchangeRate;
+          }, 0);
+          return saferFloat(total);
+        };
+      },
+      paymentHashesForPeriod(state, getters) {
+        return (periodStamp) => {
+          const periodPayments = getters.groupPeriodPayments[periodStamp];
+          if (periodPayments) {
+            let hashes = [];
+            const { paymentsFrom } = periodPayments;
+            for (const fromUser in paymentsFrom) {
+              for (const toUser in paymentsFrom[fromUser]) {
+                hashes = hashes.concat(paymentsFrom[fromUser][toUser]);
+              }
+            }
+            return hashes;
+          }
+        };
+      },
+      groupMembersByUsername(state, getters) {
+        return Object.keys(getters.groupProfiles);
+      },
+      groupMembersCount(state, getters) {
+        return getters.groupMembersByUsername.length;
+      },
+      groupMembersPending(state, getters) {
+        const invites = getters.currentGroupState.invites;
+        const pendingMembers = {};
+        for (const inviteId in invites) {
+          const invite = invites[inviteId];
+          if (invite.status === INVITE_STATUS.VALID && invite.creator !== INVITE_INITIAL_CREATOR) {
+            pendingMembers[invites[inviteId].invitee] = {
+              invitedBy: invites[inviteId].creator,
+              expires: invite.expires
+            };
+          }
+        }
+        return pendingMembers;
+      },
+      groupShouldPropose(state, getters) {
+        return getters.groupMembersCount >= 3;
+      },
+      groupProposalSettings(state, getters) {
+        return (proposalType2 = PROPOSAL_GENERIC) => {
+          return getters.groupSettings.proposals[proposalType2];
+        };
+      },
+      groupCurrency(state, getters) {
+        const mincomeCurrency = getters.groupMincomeCurrency;
+        return mincomeCurrency && currencies_default[mincomeCurrency];
+      },
+      groupMincomeFormatted(state, getters) {
+        return getters.withGroupCurrency?.(getters.groupMincomeAmount);
+      },
+      groupMincomeSymbolWithCode(state, getters) {
+        return getters.groupCurrency?.symbolWithCode;
+      },
+      groupPeriodPayments(state, getters) {
+        return getters.currentGroupState.paymentsByPeriod || {};
+      },
+      groupThankYousFrom(state, getters) {
+        return getters.currentGroupState.thankYousFrom || {};
+      },
+      withGroupCurrency(state, getters) {
+        return getters.groupCurrency?.displayWithCurrency;
+      },
+      getChatRooms(state, getters) {
+        return getters.currentGroupState.chatRooms;
+      },
+      generalChatRoomId(state, getters) {
+        return getters.currentGroupState.generalChatRoomId;
+      },
+      haveNeedsForThisPeriod(state, getters) {
+        return (currentPeriod) => {
+          const groupProfiles = getters.groupProfiles;
+          const haveNeeds = [];
+          for (const username in groupProfiles) {
+            const { incomeDetailsType, joinedDate } = groupProfiles[username];
+            if (incomeDetailsType) {
+              const amount = groupProfiles[username][incomeDetailsType];
+              const haveNeed = incomeDetailsType === "incomeAmount" ? amount - getters.groupMincomeAmount : amount;
+              let when = dateFromPeriodStamp(currentPeriod).toISOString();
+              if (dateIsWithinPeriod({
+                date: joinedDate,
+                periodStart: currentPeriod,
+                periodLength: getters.groupSettings.distributionPeriodLength
+              })) {
+                when = joinedDate;
+              }
+              haveNeeds.push({ name: username, haveNeed, when });
+            }
+          }
+          return haveNeeds;
+        };
+      },
+      paymentsForPeriod(state, getters) {
+        return (periodStamp) => {
+          const hashes = getters.paymentHashesForPeriod(periodStamp);
+          const events2 = [];
+          if (hashes && hashes.length > 0) {
+            const payments = getters.currentGroupState.payments;
+            for (const paymentHash of hashes) {
+              const payment = payments[paymentHash];
+              if (payment.data.status === PAYMENT_COMPLETED) {
+                events2.push({
+                  from: payment.meta.username,
+                  to: payment.data.toUser,
+                  hash: paymentHash,
+                  amount: payment.data.amount,
+                  isLate: !!payment.data.isLate,
+                  when: payment.data.completedDate
+                });
+              }
+            }
+          }
+          return events2;
+        };
       }
     },
     actions: {
-      "gi.contracts/chatroom": {
-        validate: objectOf({
-          attributes: chatRoomAttributesType
+      "gi.contracts/group": {
+        validate: objectMaybeOf({
+          invites: mapOf(string, inviteType),
+          settings: objectMaybeOf({
+            groupName: string,
+            groupPicture: string,
+            sharedValues: string,
+            mincomeAmount: number,
+            mincomeCurrency: string,
+            distributionDate: isPeriodStamp,
+            distributionPeriodLength: number,
+            minimizeDistribution: boolean,
+            proposals: objectOf({
+              [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
+              [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
+              [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
+              [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
+              [PROPOSAL_GENERIC]: proposalSettingsType
+            })
+          })
         }),
-        process({ meta, data }, { state }) {
+        process({ data, meta }, { state, getters }) {
           const initialState = merge({
+            payments: {},
+            paymentsByPeriod: {},
+            thankYousFrom: {},
+            invites: {},
+            proposals: {},
             settings: {
-              actionsPerPage: CHATROOM_ACTIONS_PER_PAGE,
-              messagesPerPage: CHATROOM_MESSAGES_PER_PAGE,
-              maxNameLength: CHATROOM_NAME_LIMITS_IN_CHARS,
-              maxDescriptionLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
+              groupCreator: meta.username,
+              distributionPeriodLength: 30 * DAYS_MILLIS,
+              inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
+              inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
             },
-            attributes: {
-              creator: meta.username,
-              deletedDate: null,
-              archivedDate: null
+            profiles: {
+              [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
             },
-            users: {},
-            messages: []
+            chatRooms: {}
           }, data);
           for (const key in initialState) {
             vue_esm_default.set(state, key, initialState[key]);
           }
+          initFetchPeriodPayments({ meta, state, getters });
         }
       },
-      "gi.contracts/chatroom/join": {
-        validate: objectOf({
-          username: string
+      "gi.contracts/group/payment": {
+        validate: objectMaybeOf({
+          toUser: string,
+          amount: number,
+          currencyFromTo: tupleOf(string, string),
+          exchangeRate: number,
+          txid: string,
+          status: paymentStatusType,
+          paymentType,
+          details: optional(object),
+          memo: optional(string)
         }),
-        process({ data, meta, hash: hash2 }, { state }) {
-          const { username } = data;
-          if (!state.saveMessage && state.users[username]) {
-            console.warn("Can not join the chatroom which you are already part of");
-            return;
+        process({ data, meta, hash: hash2 }, { state, getters }) {
+          if (data.status === PAYMENT_COMPLETED) {
+            console.error(`payment: payment ${hash2} cannot have status = 'completed'!`, { data, meta, hash: hash2 });
+            throw new errors_exports.GIErrorIgnoreAndBan("payments cannot be instantly completed!");
           }
-          vue_esm_default.set(state.users, username, { joinedDate: meta.createdDate });
-          if (!state.saveMessage) {
-            return;
-          }
-          const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
-          const notificationData = createNotificationData(notificationType, notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { username } : {});
-          const newMessage = createMessage({ meta, hash: hash2, data: notificationData, state });
-          state.messages.push(newMessage);
-        },
-        sideEffect({ contractID, hash: hash2, meta }) {
-          emitMessageEvent({ contractID, hash: hash2 });
-          if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM") || (0, import_sbp4.default)("okTurtles.data/get", "JOINING_CHATROOM_ID") === contractID) {
-            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
-          }
-        }
-      },
-      "gi.contracts/chatroom/rename": {
-        validate: objectOf({
-          name: string
-        }),
-        process({ data, meta, hash: hash2 }, { state }) {
-          vue_esm_default.set(state.attributes, "name", data.name);
-          if (!state.saveMessage) {
-            return;
-          }
-          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {});
-          const newMessage = createMessage({ meta, hash: hash2, data: notificationData, state });
-          state.messages.push(newMessage);
-        },
-        sideEffect({ contractID, hash: hash2, meta }) {
-          emitMessageEvent({ contractID, hash: hash2 });
-          if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
-            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
-          }
-        }
-      },
-      "gi.contracts/chatroom/changeDescription": {
-        validate: objectOf({
-          description: string
-        }),
-        process({ data, meta, hash: hash2 }, { state }) {
-          vue_esm_default.set(state.attributes, "description", data.description);
-          if (!state.saveMessage) {
-            return;
-          }
-          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {});
-          const newMessage = createMessage({ meta, hash: hash2, data: notificationData, state });
-          state.messages.push(newMessage);
-        },
-        sideEffect({ contractID, hash: hash2, meta }) {
-          emitMessageEvent({ contractID, hash: hash2 });
-          if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
-            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
-          }
-        }
-      },
-      "gi.contracts/chatroom/leave": {
-        validate: objectOf({
-          username: optional(string),
-          member: string
-        }),
-        process({ data, meta, hash: hash2 }, { state }) {
-          const { member } = data;
-          const isKicked = data.username && member !== data.username;
-          if (!state.saveMessage && !state.users[member]) {
-            throw new Error(`Can not leave the chatroom which ${member} are not part of`);
-          }
-          vue_esm_default.delete(state.users, member);
-          if (!state.saveMessage) {
-            return;
-          }
-          const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER;
-          const notificationData = createNotificationData(notificationType, isKicked ? { username: member } : {});
-          const newMessage = createMessage({
-            meta: isKicked ? meta : { ...meta, username: member },
-            hash: hash2,
-            data: notificationData,
-            state
+          vue_esm_default.set(state.payments, hash2, {
+            data: {
+              ...data,
+              groupMincome: getters.groupMincomeAmount
+            },
+            meta,
+            history: [[meta.createdDate, hash2]]
           });
-          state.messages.push(newMessage);
-        },
-        sideEffect({ data, hash: hash2, contractID, meta }, { state }) {
-          const rootState = (0, import_sbp4.default)("state/vuex/state");
-          if (data.member === rootState.loggedIn.username) {
-            if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
-              updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
-            }
-            if ((0, import_sbp4.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
-              return;
-            }
-            leaveChatRoom({ contractID });
-          }
-          emitMessageEvent({ contractID, hash: hash2 });
+          const { paymentsFrom } = initFetchPeriodPayments({ meta, state, getters });
+          const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {});
+          const toUser = vueFetchInitKV(fromUser, data.toUser, []);
+          toUser.push(hash2);
         }
       },
-      "gi.contracts/chatroom/delete": {
-        validate: (data, { state, meta }) => {
-          if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the channel creator can delete channel."));
-          }
-        },
-        process({ data, meta }, { state, rootState }) {
-          vue_esm_default.set(state.attributes, "deletedDate", meta.createdDate);
-          for (const username in state.users) {
-            vue_esm_default.delete(state.users, username);
-          }
-        },
-        sideEffect({ meta, contractID }, { state }) {
-          if ((0, import_sbp4.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
-            return;
-          }
-          leaveChatRoom({ contractID });
-        }
-      },
-      "gi.contracts/chatroom/addMessage": {
-        validate: messageType,
-        process({ data, meta, hash: hash2 }, { state }) {
-          if (!state.saveMessage) {
-            return;
-          }
-          const pendingMsg = state.messages.find((msg) => msg.id === hash2 && msg.pending);
-          if (pendingMsg) {
-            delete pendingMsg.pending;
-          } else {
-            state.messages.push(createMessage({ meta, data, hash: hash2, state }));
-          }
-        },
-        sideEffect({ contractID, hash: hash2, meta, data }, { state, getters }) {
-          emitMessageEvent({ contractID, hash: hash2 });
-          const rootState = (0, import_sbp4.default)("state/vuex/state");
-          const me = rootState.loggedIn.username;
-          if (me === meta.username) {
-            return;
-          }
-          const newMessage = createMessage({ meta, data, hash: hash2, state });
-          const mentions = makeMentionFromUsername(me);
-          if (data.type === MESSAGE_TYPES.TEXT && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))) {
-            addMention({
-              contractID,
-              messageId: newMessage.id,
-              datetime: newMessage.datetime,
-              text: newMessage.text,
-              username: meta.username,
-              chatRoomName: getters.chatRoomAttributes.name
-            });
-          }
-          if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
-            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
-          }
-        }
-      },
-      "gi.contracts/chatroom/editMessage": {
-        validate: (data, { state, meta }) => {
-          objectOf({
-            id: string,
-            createdDate: string,
-            text: string
-          })(data);
-        },
-        process({ data, meta }, { state }) {
-          if (!state.saveMessage) {
-            return;
-          }
-          const msgIndex = findMessageIdx(data.id, state.messages);
-          if (msgIndex >= 0 && meta.username === state.messages[msgIndex].from) {
-            state.messages[msgIndex].text = data.text;
-            state.messages[msgIndex].updatedDate = meta.createdDate;
-            if (state.saveMessage && state.messages[msgIndex].pending) {
-              delete state.messages[msgIndex].pending;
-            }
-          }
-        },
-        sideEffect({ contractID, hash: hash2, meta, data }, { getters }) {
-          emitMessageEvent({ contractID, hash: hash2 });
-          const rootState = (0, import_sbp4.default)("state/vuex/state");
-          const me = rootState.loggedIn.username;
-          if (me === meta.username) {
-            return;
-          }
-          const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageId === data.id);
-          const mentions = makeMentionFromUsername(me);
-          const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all);
-          if (!isAlreadyAdded && isIncludeMention) {
-            addMention({
-              contractID,
-              messageId: data.id,
-              datetime: data.createdDate,
-              text: data.text,
-              username: meta.username,
-              chatRoomName: getters.chatRoomAttributes.name
-            });
-          } else if (isAlreadyAdded && !isIncludeMention) {
-            deleteMention({ contractID, messageId: data.id });
-          }
-        }
-      },
-      "gi.contracts/chatroom/deleteMessage": {
-        validate: objectOf({
-          id: string
+      "gi.contracts/group/paymentUpdate": {
+        validate: objectMaybeOf({
+          paymentHash: string,
+          updatedProperties: objectMaybeOf({
+            status: paymentStatusType,
+            details: object,
+            memo: string
+          })
         }),
-        process({ data, meta }, { state }) {
-          if (!state.saveMessage) {
-            return;
+        process({ data, meta, hash: hash2 }, { state, getters }) {
+          const payment = state.payments[data.paymentHash];
+          if (!payment) {
+            console.error(`paymentUpdate: no payment ${data.paymentHash}`, { data, meta, hash: hash2 });
+            throw new errors_exports.GIErrorIgnoreAndBan("paymentUpdate without existing payment");
           }
-          const msgIndex = findMessageIdx(data.id, state.messages);
-          if (msgIndex >= 0) {
-            state.messages.splice(msgIndex, 1);
+          if (meta.username !== payment.meta.username && meta.username !== payment.data.toUser) {
+            console.error(`paymentUpdate: bad username ${meta.username} != ${payment.meta.username} != ${payment.data.username}`, { data, meta, hash: hash2 });
+            throw new errors_exports.GIErrorIgnoreAndBan("paymentUpdate from bad user!");
           }
-          for (const message of state.messages) {
-            if (message.replyingMessage?.id === data.id) {
-              message.replyingMessage.id = null;
-              message.replyingMessage.text = L("Original message was removed by {username}", {
-                username: makeMentionFromUsername(meta.username).me
+          payment.history.push([meta.createdDate, hash2]);
+          merge(payment.data, data.updatedProperties);
+          if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+            payment.data.completedDate = meta.createdDate;
+            const updatePeriodStamp = getters.periodStampGivenDate(meta.createdDate);
+            const paymentPeriodStamp = getters.periodStampGivenDate(payment.meta.createdDate);
+            if (comparePeriodStamps(updatePeriodStamp, paymentPeriodStamp) > 0) {
+              updateAdjustedDistribution({ period: paymentPeriodStamp, getters });
+            } else {
+              updateCurrentDistribution({ meta, state, getters });
+            }
+          }
+        },
+        sideEffect({ meta, contractID, data }, { state, getters }) {
+          if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+            const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+            const payment = state.payments[data.paymentHash];
+            if (loggedIn.username === payment.data.toUser) {
+              (0, import_sbp3.default)("gi.notifications/emit", "PAYMENT_RECEIVED", {
+                groupID: contractID,
+                creator: meta.username,
+                paymentHash: data.paymentHash,
+                amount: getters.withGroupCurrency(payment.data.amount)
               });
             }
           }
-        },
-        sideEffect({ data, contractID, hash: hash2, meta }) {
-          emitMessageEvent({ contractID, hash: hash2 });
-          const rootState = (0, import_sbp4.default)("state/vuex/state");
-          const me = rootState.loggedIn.username;
-          if (rootState.chatRoomScrollPosition[contractID] === data.id) {
-            (0, import_sbp4.default)("state/vuex/commit", "setChatRoomScrollPosition", {
-              chatRoomId: contractID,
-              messageId: null
-            });
-          }
-          if (rootState.chatRoomUnread[contractID].since.messageId === data.id) {
-            (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomUnreadSince", {
-              chatRoomId: contractID,
-              deletedDate: meta.createdDate
-            });
-          }
-          if (me === meta.username) {
-            return;
-          }
-          if (rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageId === data.id)) {
-            deleteMention({ contractID, messageId: data.id });
-          }
-          emitMessageEvent({ contractID, hash: hash2 });
         }
       },
-      "gi.contracts/chatroom/makeEmotion": {
+      "gi.contracts/group/sendPaymentThankYou": {
         validate: objectOf({
-          id: string,
-          emoticon: string
+          fromUser: string,
+          toUser: string,
+          memo: string
         }),
-        process({ data, meta, contractID }, { state }) {
-          if (!state.saveMessage) {
-            return;
+        process({ data }, { state }) {
+          const fromUser = vueFetchInitKV(state.thankYousFrom, data.fromUser, {});
+          vue_esm_default.set(fromUser, data.toUser, data.memo);
+        },
+        sideEffect({ contractID, meta, data }) {
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+          if (data.toUser === loggedIn.username) {
+            (0, import_sbp3.default)("gi.notifications/emit", "PAYMENT_THANKYOU_SENT", {
+              groupID: contractID,
+              creator: meta.username,
+              fromUser: data.fromUser,
+              toUser: data.toUser
+            });
           }
-          const { id, emoticon } = data;
-          const msgIndex = findMessageIdx(id, state.messages);
-          if (msgIndex >= 0) {
-            let emoticons = cloneDeep(state.messages[msgIndex].emoticons || {});
-            if (emoticons[emoticon]) {
-              const alreadyAdded = emoticons[emoticon].indexOf(meta.username);
-              if (alreadyAdded >= 0) {
-                emoticons[emoticon].splice(alreadyAdded, 1);
-                if (!emoticons[emoticon].length) {
-                  delete emoticons[emoticon];
-                  if (!Object.keys(emoticons).length) {
-                    emoticons = null;
-                  }
-                }
-              } else {
-                emoticons[emoticon].push(meta.username);
-              }
-            } else {
-              emoticons[emoticon] = [meta.username];
+        }
+      },
+      "gi.contracts/group/proposal": {
+        validate: (data, { state, meta }) => {
+          objectOf({
+            proposalType,
+            proposalData: object,
+            votingRule: ruleType,
+            expires_date_ms: number
+          })(data);
+          const dataToCompare = omit(data.proposalData, ["reason"]);
+          for (const hash2 in state.proposals) {
+            const prop = state.proposals[hash2];
+            if (prop.status !== STATUS_OPEN || prop.data.proposalType !== data.proposalType) {
+              continue;
             }
-            if (emoticons) {
-              vue_esm_default.set(state.messages[msgIndex], "emoticons", emoticons);
-            } else {
-              vue_esm_default.delete(state.messages[msgIndex], "emoticons");
+            if (deepEqualJSONType(omit(prop.data.proposalData, ["reason"]), dataToCompare)) {
+              throw new TypeError(L("There is an identical open proposal."));
             }
           }
         },
-        sideEffect({ contractID, hash: hash2 }) {
-          emitMessageEvent({ contractID, hash: hash2 });
+        process({ data, meta, hash: hash2 }, { state }) {
+          vue_esm_default.set(state.proposals, hash2, {
+            data,
+            meta,
+            votes: { [meta.username]: VOTE_FOR },
+            status: STATUS_OPEN,
+            notifiedBeforeExpire: false,
+            payload: null
+          });
+        },
+        sideEffect({ contractID, meta, data }, { getters }) {
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+          const typeToSubTypeMap = {
+            [PROPOSAL_INVITE_MEMBER]: "ADD_MEMBER",
+            [PROPOSAL_REMOVE_MEMBER]: "REMOVE_MEMBER",
+            [PROPOSAL_GROUP_SETTING_CHANGE]: "CHANGE_MINCOME",
+            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: "CHANGE_VOTING_RULE",
+            [PROPOSAL_GENERIC]: "GENERIC"
+          };
+          const myProfile = getters.groupProfile(loggedIn.username);
+          if (isActionYoungerThanUser(meta, myProfile)) {
+            (0, import_sbp3.default)("gi.notifications/emit", "NEW_PROPOSAL", {
+              groupID: contractID,
+              creator: meta.username,
+              subtype: typeToSubTypeMap[data.proposalType]
+            });
+          }
         }
+      },
+      "gi.contracts/group/proposalVote": {
+        validate: objectOf({
+          proposalHash: string,
+          vote: string,
+          passPayload: optional(unionOf(object, string))
+        }),
+        process(message, { state }) {
+          const { data, hash: hash2, meta } = message;
+          const proposal = state.proposals[data.proposalHash];
+          if (!proposal) {
+            console.error(`proposalVote: no proposal for ${data.proposalHash}!`, { data, meta, hash: hash2 });
+            throw new errors_exports.GIErrorIgnoreAndBan("proposalVote without existing proposal");
+          }
+          vue_esm_default.set(proposal.votes, meta.username, data.vote);
+          if (new Date(meta.createdDate).getTime() > proposal.data.expires_date_ms) {
+            console.warn("proposalVote: vote on expired proposal!", { proposal, data, meta });
+            return;
+          }
+          const result = rules_default[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes);
+          if (result === VOTE_FOR || result === VOTE_AGAINST) {
+            proposals_default[proposal.data.proposalType][result](state, message);
+            vue_esm_default.set(proposal, "dateClosed", meta.createdDate);
+          }
+        },
+        sideEffect({ contractID, data, meta }, { state, getters }) {
+          const proposal = state.proposals[data.proposalHash];
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+          const myProfile = getters.groupProfile(loggedIn.username);
+          if (proposal?.dateClosed && isActionYoungerThanUser(meta, myProfile)) {
+            (0, import_sbp3.default)("gi.notifications/emit", "PROPOSAL_CLOSED", {
+              groupID: contractID,
+              creator: meta.username,
+              proposalStatus: proposal.status
+            });
+          }
+        }
+      },
+      "gi.contracts/group/proposalCancel": {
+        validate: objectOf({
+          proposalHash: string
+        }),
+        process({ data, meta, contractID }, { state }) {
+          const proposal = state.proposals[data.proposalHash];
+          if (!proposal) {
+            console.error(`proposalCancel: no proposal for ${data.proposalHash}!`, { data, meta });
+            throw new errors_exports.GIErrorIgnoreAndBan("proposalVote without existing proposal");
+          } else if (proposal.meta.username !== meta.username) {
+            console.error(`proposalCancel: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`, { data, meta });
+            throw new errors_exports.GIErrorIgnoreAndBan("proposalWithdraw for wrong user!");
+          }
+          vue_esm_default.set(proposal, "status", STATUS_CANCELLED);
+          archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID });
+        }
+      },
+      "gi.contracts/group/notifyExpiringProposals": {
+        validate: arrayOf(string),
+        process({ data, meta, contractID }, { state }) {
+          for (const proposalId of data) {
+            vue_esm_default.set(state.proposals[proposalId], "notifiedBeforeExpire", true);
+          }
+        }
+      },
+      "gi.contracts/group/removeMember": {
+        validate: (data, { state, getters, meta }) => {
+          objectOf({
+            member: string,
+            reason: optional(string),
+            automated: optional(boolean),
+            proposalHash: optional(string),
+            proposalPayload: optional(objectOf({
+              secret: string
+            }))
+          })(data);
+          const memberToRemove = data.member;
+          const membersCount = getters.groupMembersCount;
+          if (!state.profiles[memberToRemove]) {
+            throw new TypeError(L("Not part of the group."));
+          }
+          if (membersCount === 1 || memberToRemove === meta.username) {
+            throw new TypeError(L("Cannot remove yourself."));
+          }
+          if (membersCount < 3) {
+            if (meta.username !== state.settings.groupCreator) {
+              throw new TypeError(L("Only the group creator can remove members."));
+            }
+          } else {
+            const proposal = state.proposals[data.proposalHash];
+            if (!proposal) {
+              throw new TypeError(L("Admin credentials needed and not implemented yet."));
+            }
+            if (!proposal.payload || proposal.payload.secret !== data.proposalPayload.secret) {
+              throw new TypeError(L("Invalid associated proposal."));
+            }
+          }
+        },
+        process({ data, meta }, { state, getters }) {
+          memberLeaves({ username: data.member, dateLeft: meta.createdDate }, { meta, state, getters });
+        },
+        sideEffect({ data, meta, contractID }, { state, getters }) {
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
+          const contracts = rootState.contracts || {};
+          const { username } = rootState.loggedIn;
+          if (data.member === username) {
+            if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP")) {
+              return;
+            }
+            const groupIdToSwitch = Object.keys(contracts).find((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID && rootState[cID].settings) || null;
+            (0, import_sbp3.default)("state/vuex/commit", "setCurrentChatRoomId", {});
+            (0, import_sbp3.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
+            (0, import_sbp3.default)("chelonia/contract/remove", contractID).catch((e) => {
+              console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
+            });
+            (0, import_sbp3.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/saveOurLoginState"]).then(function() {
+              const router = (0, import_sbp3.default)("controller/router");
+              const switchFrom = router.currentRoute.path;
+              const switchTo = groupIdToSwitch ? "/dashboard" : "/";
+              if (switchFrom !== "/join" && switchFrom !== switchTo) {
+                router.push({ path: switchTo }).catch(console.warn);
+              }
+            }).catch((e) => {
+              console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e);
+            });
+          } else {
+            const myProfile = getters.groupProfile(username);
+            if (isActionYoungerThanUser(meta, myProfile)) {
+              const memberRemovedThemselves = data.member === meta.username;
+              (0, import_sbp3.default)("gi.notifications/emit", memberRemovedThemselves ? "MEMBER_LEFT" : "MEMBER_REMOVED", {
+                groupID: contractID,
+                username: memberRemovedThemselves ? meta.username : data.member
+              });
+            }
+          }
+        }
+      },
+      "gi.contracts/group/removeOurselves": {
+        validate: objectMaybeOf({
+          reason: string
+        }),
+        process({ data, meta, contractID }, { state, getters }) {
+          memberLeaves({ username: meta.username, dateLeft: meta.createdDate }, { meta, state, getters });
+          (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", {
+            meta,
+            data: { member: meta.username, reason: data.reason || "" },
+            contractID
+          }]);
+        }
+      },
+      "gi.contracts/group/invite": {
+        validate: inviteType,
+        process({ data, meta }, { state }) {
+          vue_esm_default.set(state.invites, data.inviteSecret, data);
+        }
+      },
+      "gi.contracts/group/inviteAccept": {
+        validate: objectOf({
+          inviteSecret: string
+        }),
+        process({ data, meta }, { state }) {
+          console.debug("inviteAccept:", data, state.invites);
+          const invite = state.invites[data.inviteSecret];
+          if (invite.status !== INVITE_STATUS.VALID) {
+            console.error(`inviteAccept: invite for ${meta.username} is: ${invite.status}`);
+            return;
+          }
+          vue_esm_default.set(invite.responses, meta.username, true);
+          if (Object.keys(invite.responses).length === invite.quantity) {
+            invite.status = INVITE_STATUS.USED;
+          }
+          vue_esm_default.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate));
+        },
+        async sideEffect({ meta, contractID }, { state }) {
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
+          const { profiles = {} } = state;
+          if (meta.username === loggedIn.username) {
+            for (const name in profiles) {
+              if (name !== loggedIn.username) {
+                await (0, import_sbp3.default)("chelonia/contract/sync", profiles[name].contractID);
+              }
+            }
+          } else {
+            const myProfile = profiles[loggedIn.username];
+            await (0, import_sbp3.default)("chelonia/contract/sync", meta.identityContractID);
+            if (isActionYoungerThanUser(meta, myProfile)) {
+              (0, import_sbp3.default)("gi.notifications/emit", "MEMBER_ADDED", {
+                groupID: contractID,
+                username: meta.username
+              });
+            }
+          }
+        }
+      },
+      "gi.contracts/group/inviteRevoke": {
+        validate: (data, { state, meta }) => {
+          objectOf({
+            inviteSecret: string
+          })(data);
+          if (!state.invites[data.inviteSecret]) {
+            throw new TypeError(L("The link does not exist."));
+          }
+        },
+        process({ data, meta }, { state }) {
+          const invite = state.invites[data.inviteSecret];
+          vue_esm_default.set(invite, "status", INVITE_STATUS.REVOKED);
+        }
+      },
+      "gi.contracts/group/updateSettings": {
+        validate: objectMaybeOf({
+          groupName: (x) => typeof x === "string",
+          groupPicture: (x) => typeof x === "string",
+          sharedValues: (x) => typeof x === "string",
+          mincomeAmount: (x) => typeof x === "number" && x > 0,
+          mincomeCurrency: (x) => typeof x === "string"
+        }),
+        process({ meta, data }, { state }) {
+          for (const key in data) {
+            vue_esm_default.set(state.settings, key, data[key]);
+          }
+        }
+      },
+      "gi.contracts/group/groupProfileUpdate": {
+        validate: objectMaybeOf({
+          incomeDetailsType: (x) => ["incomeAmount", "pledgeAmount"].includes(x),
+          incomeAmount: (x) => typeof x === "number" && x >= 0,
+          pledgeAmount: (x) => typeof x === "number" && x >= 0,
+          nonMonetaryAdd: string,
+          nonMonetaryEdit: objectOf({
+            replace: string,
+            with: string
+          }),
+          nonMonetaryRemove: string,
+          paymentMethods: arrayOf(objectOf({
+            name: string,
+            value: string
+          }))
+        }),
+        process({ data, meta }, { state, getters }) {
+          const groupProfile = state.profiles[meta.username];
+          const nonMonetary = groupProfile.nonMonetaryContributions;
+          for (const key in data) {
+            const value = data[key];
+            switch (key) {
+              case "nonMonetaryAdd":
+                nonMonetary.push(value);
+                break;
+              case "nonMonetaryRemove":
+                nonMonetary.splice(nonMonetary.indexOf(value), 1);
+                break;
+              case "nonMonetaryEdit":
+                nonMonetary.splice(nonMonetary.indexOf(value.replace), 1, value.with);
+                break;
+              default:
+                vue_esm_default.set(groupProfile, key, value);
+            }
+          }
+          if (data.incomeDetailsType) {
+            updateCurrentDistribution({ meta, state, getters });
+          }
+        }
+      },
+      "gi.contracts/group/updateAllVotingRules": {
+        validate: objectMaybeOf({
+          ruleName: (x) => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(x),
+          ruleThreshold: number,
+          expires_ms: number
+        }),
+        process({ data, meta }, { state }) {
+          if (data.ruleName && data.ruleThreshold) {
+            for (const proposalSettings in state.settings.proposals) {
+              vue_esm_default.set(state.settings.proposals[proposalSettings], "rule", data.ruleName);
+              vue_esm_default.set(state.settings.proposals[proposalSettings].ruleSettings[data.ruleName], "threshold", data.ruleThreshold);
+            }
+          }
+        }
+      },
+      "gi.contracts/group/addChatRoom": {
+        validate: objectOf({
+          chatRoomID: string,
+          attributes: chatRoomAttributesType
+        }),
+        process({ data, meta }, { state }) {
+          const { name, type, privacyLevel } = data.attributes;
+          vue_esm_default.set(state.chatRooms, data.chatRoomID, {
+            creator: meta.username,
+            name,
+            type,
+            privacyLevel,
+            deletedDate: null,
+            users: []
+          });
+          if (!state.generalChatRoomId) {
+            vue_esm_default.set(state, "generalChatRoomId", data.chatRoomID);
+          }
+        }
+      },
+      "gi.contracts/group/deleteChatRoom": {
+        validate: (data, { getters, meta }) => {
+          objectOf({ chatRoomID: string })(data);
+          if (getters.getChatRooms[data.chatRoomID].creator !== meta.username) {
+            throw new TypeError(L("Only the channel creator can delete channel."));
+          }
+        },
+        process({ data, meta }, { state }) {
+          vue_esm_default.delete(state.chatRooms, data.chatRoomID);
+        }
+      },
+      "gi.contracts/group/leaveChatRoom": {
+        validate: objectOf({
+          chatRoomID: string,
+          member: string,
+          leavingGroup: boolean
+        }),
+        process({ data, meta }, { state }) {
+          vue_esm_default.set(state.chatRooms[data.chatRoomID], "users", state.chatRooms[data.chatRoomID].users.filter((u) => u !== data.member));
+        },
+        async sideEffect({ meta, data }, { state }) {
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
+          if (meta.username === rootState.loggedIn.username && !(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP")) {
+            const sendingData = data.leavingGroup ? { member: data.member } : { member: data.member, username: meta.username };
+            await (0, import_sbp3.default)("gi.actions/chatroom/leave", { contractID: data.chatRoomID, data: sendingData });
+          }
+        }
+      },
+      "gi.contracts/group/joinChatRoom": {
+        validate: objectMaybeOf({
+          username: string,
+          chatRoomID: string
+        }),
+        process({ data, meta }, { state }) {
+          const username = data.username || meta.username;
+          state.chatRooms[data.chatRoomID].users.push(username);
+        },
+        async sideEffect({ meta, data }, { state }) {
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
+          const username = data.username || meta.username;
+          if (username === rootState.loggedIn.username) {
+            if (!(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", data.chatRoomID);
+              await (0, import_sbp3.default)("chelonia/contract/sync", data.chatRoomID);
+              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", void 0);
+              (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
+            }
+          }
+        }
+      },
+      "gi.contracts/group/renameChatRoom": {
+        validate: objectOf({
+          chatRoomID: string,
+          name: string
+        }),
+        process({ data, meta }, { state, getters }) {
+          vue_esm_default.set(state.chatRooms, data.chatRoomID, {
+            ...getters.getChatRooms[data.chatRoomID],
+            name: data.name
+          });
+        }
+      },
+      ...{
+        "gi.contracts/group/forceDistributionDate": {
+          validate: optional,
+          process({ meta }, { state, getters }) {
+            getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate);
+          }
+        },
+        "gi.contracts/group/malformedMutation": {
+          validate: objectOf({ errorType: string, sideEffect: optional(boolean) }),
+          process({ data }) {
+            const ErrorType = errors_exports[data.errorType];
+            if (data.sideEffect)
+              return;
+            if (ErrorType) {
+              throw new ErrorType("malformedMutation!");
+            } else {
+              throw new Error(`unknown error type: ${data.errorType}`);
+            }
+          },
+          sideEffect(message, { state }) {
+            if (!message.data.sideEffect)
+              return;
+            (0, import_sbp3.default)("gi.contracts/group/malformedMutation/process", {
+              ...message,
+              data: omit(message.data, ["sideEffect"])
+            }, state);
+          }
+        }
+      }
+    },
+    methods: {
+      "gi.contracts/group/archiveProposal": async function(contractID, proposalHash, proposal) {
+        const { username } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
+        const key = `proposals/${username}/${contractID}`;
+        const proposals2 = await (0, import_sbp3.default)("gi.db/archive/load", key) || [];
+        proposals2.unshift([proposalHash, proposal]);
+        while (proposals2.length > MAX_ARCHIVED_PROPOSALS) {
+          proposals2.pop();
+        }
+        await (0, import_sbp3.default)("gi.db/archive/save", key, proposals2);
+        (0, import_sbp3.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, [proposalHash, proposal]);
       }
     }
   });

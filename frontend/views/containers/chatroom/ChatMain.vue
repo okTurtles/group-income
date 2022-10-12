@@ -56,6 +56,7 @@
           :text='message.text'
           :type='message.type'
           :notification='message.notification'
+          :proposal='message.proposal'
           :replyingMessage='replyingMessage(message)'
           :from='message.from'
           :datetime='time(message.datetime)'
