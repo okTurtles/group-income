@@ -42,7 +42,7 @@ export default ({
     },
     periods () {
       const periods = [this.currentPaymentPeriod]
-      for (let i = 1; i < MAX_HISTORY_PERIODS - 1; i++) {
+      for (let i = 0; i < MAX_HISTORY_PERIODS - 1; i++) {
         periods.unshift(this.periodBeforePeriod(periods[0]))
       }
       return periods
