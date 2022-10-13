@@ -1138,7 +1138,7 @@ sbp('chelonia/defineContract', {
         const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
 
         periods.unshift(period)
-        merge(payments, paymentsByPeriod[periodKey])
+        merge(payments, paymentsByPeriod[period])
 
         if (periods.length > MAX_ARCHIVED_PAYMENTS) {
           const shouldBeDeletedPeriod = periods.pop()

@@ -15,23 +15,30 @@ div(:class='isReady ? "" : "c-ready"')
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import sbp from '@sbp/sbp'
+import { mapState, mapGetters } from 'vuex'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
 import BarGraph from '@components/graphs/BarGraph.vue'
 
 export default ({
   name: 'GroupSupportHistory',
   data () {
     return {
-      isReady: false
+      isReady: false,
+      history: []
     }
   },
   components: {
     BarGraph
   },
   computed: {
+    ...mapState([
+      'currentGroupId'
+    ]),
     ...mapGetters([
+      'ourUsername',
       'groupSettings',
       'currentPaymentPeriod',
       'periodBeforePeriod',
@@ -46,18 +53,10 @@ export default ({
         periods.unshift(this.periodBeforePeriod(periods[0]))
       }
       return periods
-    },
-    history () {
-      return this.periods.map((period, i) => {
-        const payments = this.paymentsForPeriod(period)
-        const { totalDistributionAmount, numReceivers } = this.parsePayments(payments)
-        return {
-          total: numReceivers === 0 ? 1 : totalDistributionAmount * this.mincome / numReceivers,
-          delayedPayment: payments.some(payment => payment.isLate),
-          title: humanDate(period, { month: 'long' })
-        }
-      })
     }
+  },
+  mounted () {
+    this.updateHistory()
   },
   methods: {
     parsePayments (payments) {
@@ -71,6 +70,50 @@ export default ({
         numReceivers: Object.values(list).filter(amount => amount < 0).length,
         totalDistributionAmount: Object.values(list).filter(amount => amount > 0).reduce((total, curValue) => total + curValue, 0)
       }
+    },
+    async getPaymentsForPeriod (period) {
+      const payments = this.paymentsForPeriod(period)
+      if (payments.length) {
+        return payments
+      }
+
+      // the rule to make key is there inside `archivePayments` function of group.js contract
+      const periodKey = `paymentPeriods/${this.ourUsername}/${this.currentGroupId}`
+      const periods = await sbp('gi.db/archive/load', periodKey) || []
+      if (periods.includes(period)) {
+        const paymentsKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}/${period}`
+        const paymentsByHash = await sbp('gi.db/archive/load', paymentsKey) || {}
+        for (const hash of Object.keys(paymentsByHash)) {
+          const payment = paymentsByHash[hash]
+          if (payment.data.status === PAYMENT_COMPLETED) {
+            payments.push({
+              from: payment.meta.username,
+              to: payment.data.toUser,
+              hash,
+              amount: payment.data.amount,
+              isLate: !!payment.data.isLate,
+              when: payment.data.completedDate
+            })
+          }
+        }
+      }
+      return payments
+    },
+    async updateHistory () {
+      this.history = await Promise.all(this.periods.map(async (period, i) => {
+        const payments = await this.getPaymentsForPeriod(period)
+        const { totalDistributionAmount, numReceivers } = this.parsePayments(payments)
+        return {
+          total: numReceivers === 0 ? 1 : totalDistributionAmount / (this.mincome * numReceivers),
+          delayedPayment: payments.some(payment => payment.isLate),
+          title: humanDate(period, { month: 'long' })
+        }
+      }))
+    }
+  },
+  watch: {
+    periods (newPeriods, prevPeriods) {
+      this.updateHistory()
     }
   }
 }: Object)
