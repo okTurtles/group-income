@@ -212,3 +212,25 @@ export function debounce (func: Function, wait: number, immediate: ?boolean): Fu
 
   return debounced
 }
+
+/**
+ * Gets the value at `path` of `obj`. If the resolved value is
+ * `undefined`, the `defaultValue` is returned in its place.
+ *
+ */
+export function get (obj: Object, path: string[], defaultValue: any): any {
+  if (!path.length) {
+    return obj
+  } else if (obj === undefined) {
+    return defaultValue
+  }
+
+  let result = obj
+  let i = 0
+  while (result && i < path.length) {
+    result = result[path[i]]
+    i++
+  }
+
+  return result === undefined ? defaultValue : result
+}
