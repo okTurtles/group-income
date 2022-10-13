@@ -36,8 +36,7 @@ export default ({
     ...mapGetters([
       'groupSettings',
       'currentPaymentPeriod',
-      'periodBeforePeriod',
-      'paymentsForPeriod'
+      'periodBeforePeriod'
     ]),
     mincome () {
       return this.groupSettings.mincomeAmount
