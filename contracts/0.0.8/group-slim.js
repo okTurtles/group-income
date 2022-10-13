@@ -263,6 +263,7 @@ ${this.getErrorInfo()}`;
   var MAX_ARCHIVED_PROPOSALS = 100;
   var PAYMENTS_ARCHIVED = "payments-archived";
   var MAX_ARCHIVED_PAYMENTS = 100;
+  var MAX_SAVED_PERIODS = 2;
   var STATUS_OPEN = "open";
   var STATUS_PASSED = "passed";
   var STATUS_FAILED = "failed";
@@ -843,7 +844,7 @@ ${this.getErrorInfo()}`;
   function clearOldPayments({ contractID, state, getters }) {
     const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort();
     const paymentsToArchiveByPeriod = {};
-    while (sortedPeriodKeys.length > 2) {
+    while (sortedPeriodKeys.length > MAX_SAVED_PERIODS) {
       const period = sortedPeriodKeys.shift();
       paymentsToArchiveByPeriod[period] = {};
       for (const paymentHash of getters.paymentHashesForPeriod(period)) {
@@ -851,8 +852,8 @@ ${this.getErrorInfo()}`;
         import_common3.Vue.delete(state.payments, paymentHash);
       }
       import_common3.Vue.delete(state.paymentsByPeriod, period);
-      (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/archivePayments", contractID, paymentsToArchiveByPeriod]);
     }
+    (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/archivePayments", contractID, paymentsToArchiveByPeriod]);
   }
   function initFetchPeriodPayments({ contractID, meta, state, getters }) {
     const period = getters.periodStampGivenDate(meta.createdDate);
@@ -1710,7 +1711,7 @@ ${this.getErrorInfo()}`;
           const paymentsKey = `paymentsByPeriod/${username}/${contractID}/${period}`;
           const payments = await (0, import_sbp2.default)("gi.db/archive/load", paymentsKey) || {};
           periods.unshift(period);
-          merge(payments, paymentsByPeriod[periodKey]);
+          merge(payments, paymentsByPeriod[period]);
           if (periods.length > MAX_ARCHIVED_PAYMENTS) {
             const shouldBeDeletedPeriod = periods.pop();
             const shouldBeDeletedPaymentsKey = `paymentsByPeriod/${username}/${contractID}/${shouldBeDeletedPeriod}`;
