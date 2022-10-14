@@ -38,6 +38,7 @@
 
 <script>
 import Avatar from '@components/Avatar.vue'
+import { OPEN_MODAL } from '@utils/events.js'
 import { imageDataURItoBlob } from '@utils/image.js'
 
 export default ({
@@ -112,10 +113,13 @@ export default ({
     },
     fileChange (files) {
       if (!files.length) return
-      this.$v.form.groupPicture.$touch()
-      this.$assistant.ephemeral.groupPictureFile = files[0]
-      this.$refs.pictureAvatar.setFromBlob(files[0])
-      this.$assistant.ephemeral.groupPictureType = 'image'
+
+      const imageUrl = URL.createObjectURL(files[0])
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'AvatarEditorModal', { imageUrl })
+      // this.$v.form.groupPicture.$touch()
+      // this.$assistant.ephemeral.groupPictureFile = files[0]
+      // this.$refs.pictureAvatar.setFromBlob(files[0])
+      // this.$assistant.ephemeral.groupPictureType = 'image'
     }
   }
 }: Object)

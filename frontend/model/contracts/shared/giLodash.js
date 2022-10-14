@@ -86,6 +86,22 @@ export function randomFromArray (arr: any[]): any {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
+export function linearScale ([d1, d2], [r1, r2]) {
+  // generate a function that takes a value between d1 and d2 and then
+  // returns a linearly-scaled output whose min and max values are r1 and r2 respectively.
+  const [dSpan, rSpan] = [d2 - d1, r2 - r1]
+  return function (value) {
+    if (value <= d1) {
+      return r1
+    } else if (value >= d2) {
+      return r2
+    } else {
+      const percent = (value - d1) / dSpan
+      return r1 + rSpan * percent
+    }
+  }
+}
+
 export function flatten (arr: Array<*>): Array<any> {
   let flat: Array<*> = []
   for (let i = 0; i < arr.length; i++) {

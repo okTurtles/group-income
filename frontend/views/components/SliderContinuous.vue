@@ -3,7 +3,10 @@
   label.label(v-if='label' :for='`range${uid}`') {{ label }}
 
   span.marks
-    span.edge(aria-hidden='true') {{ min }}
+    span.edge(
+      v-if='!hideText'
+      aria-hidden='true'
+    ) {{ min }}
 
     span.slider(:style='ephemeral.styleVars')
       input.sInput(
@@ -15,12 +18,15 @@
         @input='handleChange'
       )
       output.sOutput(
-        v-if='!hideOutput'
+        v-if='!hideText'
         :for='`range${uid}`'
         :style='ephemeral.outputStyle'
       ) {{ value + unit }}
 
-    span.edge(aria-hidden='true') {{ max }}
+    span.edge(
+      v-if='!hideText'
+      aria-hidden='true'
+    ) {{ max }}
 </template>
 
 <script>
@@ -37,7 +43,7 @@ export default ({
     max: [String, Number],
     unit: String,
     value: [String, Number],
-    hideOutput: Boolean
+    hideText: Boolean
   },
   data: () => ({
     ephemeral: {

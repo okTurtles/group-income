@@ -11,18 +11,24 @@ modal-template(
     @submit.prevent=''
     @keyup.enter='onEnterPressed'
   )
-    .c-canvas-container
-      canvas.c-canvas(ref='canvas')
+    editor-canvas.c-canvas-container
 
     .c-slider-container
+      button.is-icon-small(@pointerdown='decrementSlider')
+        i.icon-magnifying-minus
+
       slider-continuous.c-slider(
-        :hideOutput='true'
+        ref='slider'
+        :hideText='true'
         uid='avatar-zoom'
-        :min='1'
-        :max='100'
-        :value='form.sliderValue'
+        :min='config.sliderMin'
+        :max='config.sliderMax'
+        :value='form.slider'
         @input='onSliderInput'
       )
+
+      button.is-icon-small(@pointerdown='incrementSlider')
+        i.icon-magnifying-plus
 
     i18n.has-text-1(tag='p') Click and drag to reposition
 
@@ -42,19 +48,44 @@ modal-template(
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
+import EditorCanvas from './EditorCanvas.vue'
+import { linearScale } from '@model/contracts/shared/giLodash.js'
+
+const SLIDER_MIN = 0, SLIDER_MAX = 100
+const ZOOM_MIN = 1, ZOOM_MAX = 3
+const zoomCalculator = linearScale([SLIDER_MIN, SLIDER_MAX], [ZOOM_MIN, ZOOM_MAX])
+/*
+  e.g)
+  if SLIDER_MIN = 0, SLIDER_MAX = 100, ZOOM_MIN = 1, ZOOM_MAX = 5,
+
+  zoomCalculator(0) => 1,
+  zoomCalculator(100) => 5,
+  zoomCalculator(50) => 3 which is 1 + (5 - 1) * 0.5,
+  zoomCalculator(25) => 2 which is 1 + (5 - 1) * 0.25,
+*/
 
 export default ({
   name: 'AvatarEditor',
   components: {
     ModalTemplate,
     ButtonSubmit,
-    SliderContinuous
+    SliderContinuous,
+    EditorCanvas
   },
   data () {
     return {
+      config: {
+        sliderMin: SLIDER_MIN,
+        sliderMax: SLIDER_MAX
+      },
       form: {
-        sliderValue: 1
+        slider: SLIDER_MIN
       }
+    }
+  },
+  computed: {
+    zoom () {
+      return zoomCalculator(this.form.slider)
     }
   },
   methods: {
@@ -68,7 +99,15 @@ export default ({
       alert('TODO!')
     },
     onSliderInput (e) {
-      this.form.sliderValue = e.target.value
+      this.form.slider = parseFloat(e.target.value)
+    },
+    incrementSlider () {
+      this.form.slider = Math.min(SLIDER_MAX, this.form.slider + 1)
+      this.$refs.slider.updateSlider(this.form.slider)
+    },
+    decrementSlider () {
+      this.form.slider = Math.max(SLIDER_MIN, this.form.slider - 1)
+      this.$refs.slider.updateSlider(this.form.slider)
     }
   }
 }: Object)
@@ -79,6 +118,7 @@ export default ({
 
 .c-form {
   max-width: 25rem;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -88,5 +128,28 @@ export default ({
   background-color: $general_2;
   height: 15.625rem;
   margin-bottom: 0.5rem;
+}
+
+.c-slider-container {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.buttons {
+  margin-top: 2rem;
+}
+
+.c-slider {
+  flex-grow: 1;
+
+  ::v-deep .marks {
+    margin-top: -0.5rem;
+  }
 }
 </style>
