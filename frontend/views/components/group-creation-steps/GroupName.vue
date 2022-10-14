@@ -37,6 +37,7 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import Avatar from '@components/Avatar.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { imageDataURItoBlob } from '@utils/image.js'

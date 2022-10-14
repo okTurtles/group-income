@@ -11,7 +11,7 @@ modal-template(
     @submit.prevent=''
     @keyup.enter='onEnterPressed'
   )
-    editor-canvas.c-canvas-container
+    editor-canvas.c-canvas-container(:zoom='zoom')
 
     .c-slider-container
       button.is-icon-small(@pointerdown='decrementSlider')
@@ -51,8 +51,10 @@ import SliderContinuous from '@components/SliderContinuous.vue'
 import EditorCanvas from './EditorCanvas.vue'
 import { linearScale } from '@model/contracts/shared/giLodash.js'
 
-const SLIDER_MIN = 0, SLIDER_MAX = 100
-const ZOOM_MIN = 1, ZOOM_MAX = 3
+const SLIDER_MIN = 0
+const SLIDER_MAX = 100
+const ZOOM_MIN = 1
+const ZOOM_MAX = 3
 const zoomCalculator = linearScale([SLIDER_MIN, SLIDER_MAX], [ZOOM_MIN, ZOOM_MAX])
 /*
   e.g)
