@@ -2,9 +2,10 @@
 .c-editor-canvas
   canvas.c-canvas(
     ref='canvas'
+    :style='ephemeral.canvas.style'
+    :width='ephemeral.canvas.onCanvas.width'
+    :height='ephemeral.canvas.onCanvas.height'
     v-if='ephemeral.image.loaded'
-    :width='ephemeral.canvas.width'
-    :height='ephemeral.canvas.height'
   )
 
   .c-invisible-utils
@@ -26,8 +27,8 @@ export default {
           onCanvas: { x: null, y: null, width: null, height: null }
         },
         canvas: {
-          width: 0,
-          height: 0
+          style: { width: null, height: null },
+          onCanvas: { width: null, height: null }
         },
         clipCircle: {
           x: null,
@@ -44,18 +45,26 @@ export default {
       default: 1
     }
   },
+  watch: {
+    zoom () {
+      this.calculate()
+      this.draw()
+    }
+  },
   computed: {
     ...mapGetters([
-      'isDarkTheme'
+      'isDarkTheme',
+      'colors'
     ]),
     isWiderThanTaller () {
       const img = this.ephemeral.image
       return img.loaded && img.intrinsic.aspectRatio <= 1
     },
-    clipCircleBgColor () {
-      return this.isDarkTheme
-        ? 'rgba(56, 60, 62, 0.5)'
-        : 'rgba(255, 255, 255, 0.5)'
+    onCanvasColors () {
+      return {
+        clipCircleBg: this.isDarkTheme ? 'rgba(46, 48, 50, 0.5)' : 'rgba(245, 245, 245, 0.5)', // $general_2 with opacity .5
+        canvasBg: this.colors['general_2']
+      }
     }
   },
   methods: {
@@ -76,20 +85,34 @@ export default {
       })
     },
     onWindowResize () {
+      const pixelRatio = window.devicePixelRatio || 1
       const rootElComputedStyle = window.getComputedStyle(this.$el)
       const extractStyle = prop => parseFloat(rootElComputedStyle.getPropertyValue(prop))
 
-      // re-calculate & reset canvas physical size to be the same as its container
-      this.ephemeral.canvas.width = extractStyle('width')
-      this.ephemeral.canvas.height = extractStyle('height')
+      // re-calculate & reset canvas css size to be the same as its container
+      this.ephemeral.canvas.style = {
+        width: `${extractStyle('width')}px`,
+        height: `${extractStyle('height')}px`
+      }
+      this.ephemeral.canvas.onCanvas = {
+        // if window.devicePixelRatio is not taken into account in the on-canvas dimensions,
+        // the image gets blurry (reference: https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio#examples)
+        width: extractStyle('width') * pixelRatio,
+        height: extractStyle('height') * pixelRatio
+      }
 
       if (this.ephemeral.image.loaded) {
-        this.calculate()
-        this.draw()
+        this.$nextTick(() => {
+          // re. the usage of $nextTick() here:
+          // painting on canvas has to be deferred until canvas DOM size has been updated. (it's a bug-fix)
+          this.calculate()
+          this.draw()
+        })
       }
     },
     calculate () {
-      const { canvas, image, clipCircle } = this.ephemeral
+      const { image, clipCircle } = this.ephemeral
+      const canvas = this.ephemeral.canvas.onCanvas
       const canvasCenter = { x: canvas.width / 2, y: canvas.height / 2 }
 
       // calculate various on-canvas values of the image
@@ -97,6 +120,7 @@ export default {
       image.onCanvas.height = canvas.height
       image.onCanvas.x = canvasCenter.x - image.onCanvas.width / 2
       image.onCanvas.y = 0
+      this.applyImageTransformation()
 
       // calculate the values of the clipping clipping circle
       if (this.isWiderThanTaller) {
@@ -108,26 +132,42 @@ export default {
         clipCircle.x = canvasCenter.x - clipCircle.diameter / 2
         clipCircle.y = canvasCenter.y - clipCircle.diameter / 2
       }
+    },
+    applyImageTransformation () {
+      // re-caculate on-canvas size & position of the image with the current transformation options (zoom, translation etc.)
+      const { image, canvas } = this.ephemeral
+      const canvasCenter = { x: canvas.onCanvas.width / 2, y: canvas.onCanvas.height / 2 }
 
-      console.log('clipCircle: ', clipCircle)
+      // 1. zoom
+      if (this.zoom > 1) {
+        image.onCanvas.width *= this.zoom
+        image.onCanvas.height *= this.zoom
+        image.onCanvas.x = canvasCenter.x - image.onCanvas.width / 2
+        image.onCanvas.y = canvasCenter.y - image.onCanvas.height / 2
+      }
     },
     draw () {
       const cx = this.$refs.canvas.getContext('2d')
-      const { image, canvas, clipCircle } = this.ephemeral
-      const imgOnCanvas = image.onCanvas
+      const image = this.ephemeral.image.onCanvas
+      const canvas = this.ephemeral.canvas.onCanvas
+      const clipCircle = this.ephemeral.clipCircle
       const canvasCenter = { x: canvas.width / 2, y: canvas.height / 2 }
 
-      // draw image on the canvas
-      cx.drawImage(this.$refs.img, imgOnCanvas.x, imgOnCanvas.y, imgOnCanvas.width, imgOnCanvas.height)
+      // 1. draw the background
+      cx.fillStyle = this.onCanvasColors.canvasBg
+      cx.fillRect(0, 0, canvas.width, canvas.height)
 
-      // draw the clipping circle on the canvas
+      // 2. draw image
+      cx.drawImage(this.$refs.img, image.x, image.y, image.width, image.height)
+
+      // 3. draw the clipping circle
       const cPath = new Path2D()
       cPath.rect(0, 0, canvas.width, canvas.height)
       cPath.moveTo(canvasCenter.x + clipCircle.diameter / 2, canvasCenter.y)
       cPath.arc(canvasCenter.x, canvasCenter.y, clipCircle.diameter / 2, 0, Math.PI * 2, true)
 
       cx.save()
-      cx.fillStyle = this.clipCircleBgColor
+      cx.fillStyle = this.onCanvasColors.clipCircleBg
       cx.fill(cPath, 'evenodd')
       cx.restore()
     }
@@ -151,7 +191,6 @@ export default {
 .c-editor-canvas {
   position: relative;
   display: block;
-  background-color: $general_2;
   width: 100%;
   height: 15.625rem;
 }
@@ -164,7 +203,8 @@ export default {
   position: absolute;
   width: 1px;
   height: 1px;
-  opacity: 0;
+  top: -10rem;
+  left: -10rem;
   pointer-events: none;
   overflow: hidden;
 }

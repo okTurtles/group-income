@@ -127,7 +127,6 @@ export default ({
 .c-canvas-container {
   position: relative;
   opacity: 0.7;
-  background-color: $general_2;
   height: 15.625rem;
   margin-bottom: 0.5rem;
 }
