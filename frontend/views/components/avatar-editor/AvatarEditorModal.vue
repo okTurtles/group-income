@@ -7,11 +7,11 @@ modal-template(
   template(slot='title')
     i18n Edit avatar
 
-  form.c-form(
-    @submit.prevent=''
-    @keyup.enter='onEnterPressed'
-  )
-    editor-canvas.c-canvas-container(:zoom='zoom')
+  form.c-form(@submit.prevent='')
+    editor-canvas.c-canvas-container(
+      ref='editorCanvas'
+      :zoom='zoom'
+    )
 
     .c-slider-container
       button.is-icon-small(@pointerdown='decrementSlider')
@@ -50,6 +50,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import EditorCanvas from './EditorCanvas.vue'
 import { linearScale } from '@model/contracts/shared/giLodash.js'
+import { AVATAR_EDITED } from '@utils/events.js'
 
 const SLIDER_MIN = 0
 const SLIDER_MAX = 100
@@ -91,14 +92,14 @@ export default ({
     }
   },
   methods: {
-    onEnterPressed () {
-      alert('TODO!')
-    },
     close () {
       this.$refs.modal.close()
     },
     submit () {
-      alert('TODO!')
+      const blob = this.$refs.editorCanvas.extractEditedImage()
+      sbp('okTurtles.events/emit', AVATAR_EDITED, { blob })
+
+      this.close()
     },
     onSliderInput (e) {
       this.form.slider = parseFloat(e.target.value)

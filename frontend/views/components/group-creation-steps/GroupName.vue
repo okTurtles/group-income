@@ -39,7 +39,7 @@
 <script>
 import sbp from '@sbp/sbp'
 import Avatar from '@components/Avatar.vue'
-import { OPEN_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, AVATAR_EDITED } from '@utils/events.js'
 import { imageDataURItoBlob } from '@utils/image.js'
 
 export default ({
@@ -57,6 +57,9 @@ export default ({
       this.updatePictureCanvas(initials)
     }
   },
+  beforeMount () {
+    sbp('okTurtles.events/on', AVATAR_EDITED, this.updateGroupPictureByEditor)
+  },
   mounted () {
     this.$refs.name.focus()
     const c = this.$refs.pictureCanvas
@@ -71,6 +74,8 @@ export default ({
     }
   },
   beforeDestroy () {
+    sbp('okTurtles.events/off', AVATAR_EDITED, this.updateGroupPictureByEditor)
+
     if (this.$assistant.ephemeral.groupPictureType !== 'image') {
       const pictureBase64 = this.$refs.pictureCanvas.toDataURL('image/png')
       this.$v.form.groupPicture.$touch()
@@ -106,6 +111,12 @@ export default ({
         }
       })
     },
+    updateGroupPictureByEditor ({ blob }) {
+      this.$v.form.groupPicture.$touch()
+      this.$assistant.ephemeral.groupPictureFile = blob
+      this.$refs.pictureAvatar.setFromBlob(blob)
+      this.$assistant.ephemeral.groupPictureType = 'image'
+    },
     next (e) {
       this.$v.form[e.target.name].$touch()
       if (!this.$v.form[e.target.name].$invalid) {
@@ -117,10 +128,6 @@ export default ({
 
       const imageUrl = URL.createObjectURL(files[0])
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AvatarEditorModal', { imageUrl })
-      // this.$v.form.groupPicture.$touch()
-      // this.$assistant.ephemeral.groupPictureFile = files[0]
-      // this.$refs.pictureAvatar.setFromBlob(files[0])
-      // this.$assistant.ephemeral.groupPictureType = 'image'
     }
   }
 }: Object)

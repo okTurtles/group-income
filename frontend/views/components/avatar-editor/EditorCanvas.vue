@@ -8,12 +8,20 @@
     v-if='ephemeral.image.loaded'
   )
 
+  canvas.c-canvas-img-extract(
+    ref='helperCanvas'
+    :style='{ "width": "50px", "height": "50px" }'
+  )
+
   .c-invisible-utils
     img(ref='img' :src='ephemeral.image.src' @load='onImageLoad')
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
+import { imageDataURItoBlob } from '@utils/image.js'
+
+const EDITED_AVATAR_DIAMETER = 256
 
 export default {
   name: 'AvatarEditorCanvas',
@@ -79,6 +87,10 @@ export default {
       img.intrinsic.height = naturalHeight
       img.intrinsic.aspectRatio = naturalHeight / naturalWidth
 
+      // init helper-canvas
+      this.$refs.helperCanvas.width = EDITED_AVATAR_DIAMETER
+      this.$refs.helperCanvas.height = EDITED_AVATAR_DIAMETER
+
       this.$nextTick(() => {
         this.calculate()
         this.draw()
@@ -120,7 +132,6 @@ export default {
       image.onCanvas.height = canvas.height
       image.onCanvas.x = canvasCenter.x - image.onCanvas.width / 2
       image.onCanvas.y = 0
-      this.applyImageTransformation()
 
       // calculate the values of the clipping clipping circle
       if (this.isWiderThanTaller) {
@@ -132,6 +143,11 @@ export default {
         clipCircle.x = canvasCenter.x - clipCircle.diameter / 2
         clipCircle.y = canvasCenter.y - clipCircle.diameter / 2
       }
+
+      // apply transformation to the on-canvas image
+      // (NOTE: has to be the last step, because clipCircle is calculated
+      //        based on the pre-transformed values of the on-canvas image.)
+      this.applyImageTransformation()
     },
     applyImageTransformation () {
       // re-caculate on-canvas size & position of the image with the current transformation options (zoom, translation etc.)
@@ -170,6 +186,25 @@ export default {
       cx.fillStyle = this.onCanvasColors.clipCircleBg
       cx.fill(cPath, 'evenodd')
       cx.restore()
+    },
+    extractEditedImage () {
+      const { canvas, helperCanvas } = this.$refs
+      const { clipCircle } = this.ephemeral
+      const cx = helperCanvas.getContext('2d')
+
+      cx.drawImage(
+        canvas,
+        clipCircle.x,
+        clipCircle.y,
+        clipCircle.diameter,
+        clipCircle.diameter,
+        0,
+        0,
+        helperCanvas.width,
+        helperCanvas.height
+      )
+
+      return imageDataURItoBlob(helperCanvas.toDataURL('image/jpeg'))
     }
   },
   created () {
@@ -207,5 +242,13 @@ export default {
   left: -10rem;
   pointer-events: none;
   overflow: hidden;
+}
+
+.c-canvas-img-extract {
+  position: absolute;
+  z-index: 1;
+  bottom: 1rem;
+  right: 1rem;
+  border: 2px solid #000;
 }
 </style>
