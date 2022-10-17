@@ -17,8 +17,8 @@ div(:class='isReady ? "" : "c-ready"')
 <script>
 import { mapGetters } from 'vuex'
 import { humanDate } from '@model/contracts/shared/time.js'
-import { getPaymentsByPeriod } from '@model/contracts/shared/functions.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/BarGraph.vue'
 
 export default ({
@@ -29,6 +29,9 @@ export default ({
       history: []
     }
   },
+  mixins: [
+    PaymentsMixin
+  ],
   components: {
     BarGraph
   },
@@ -67,7 +70,7 @@ export default ({
     },
     async updateHistory () {
       this.history = await Promise.all(this.periods.map(async (period, i) => {
-        const payments = await getPaymentsByPeriod(period)
+        const payments = await this.getPaymentsByPeriod(period)
         const { totalDistributionAmount, numReceivers } = this.parsePayments(payments)
         return {
           total: numReceivers === 0 ? 1 : totalDistributionAmount / (this.mincome * numReceivers),

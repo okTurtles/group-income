@@ -3,7 +3,6 @@
 import sbp from '@sbp/sbp'
 import { INVITE_STATUS, MESSAGE_TYPES } from './constants.js'
 import { DAYS_MILLIS } from './time.js'
-import { PAYMENT_COMPLETED } from './payments/index.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // !!!!!!!!!!!!!!!
@@ -22,62 +21,6 @@ import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 // THEM AS MUCH AS YOU LIKE (and generate new contract versions out of them).
 
 // group.js related
-
-export async function getPaymentsByPeriod (period: string) {
-  const rootGetters = sbp('state/vuex/getters')
-  const rootState = sbp('state/vuex/state')
-  const payments = rootGetters.paymentsForPeriod(period)
-  if (payments.length) {
-    return payments
-  }
-
-  // the rule to make key is there inside `archivePayments` function of group.js contract
-  const periodKey = `paymentPeriods/${rootGetters.ourUsername}/${rootState.currentGroupId}`
-  const periods = await sbp('gi.db/archive/load', periodKey) || []
-  if (periods.includes(period)) {
-    const paymentsKey = `paymentsByPeriod/${rootGetters.ourUsername}/${rootState.currentGroupId}/${period}`
-    const paymentsByHash = await sbp('gi.db/archive/load', paymentsKey) || {}
-    for (const hash of Object.keys(paymentsByHash)) {
-      const payment = paymentsByHash[hash]
-      if (payment.data.status === PAYMENT_COMPLETED) {
-        payments.push({
-          from: payment.meta.username,
-          to: payment.data.toUser,
-          hash,
-          amount: payment.data.amount,
-          isLate: !!payment.data.isLate,
-          when: payment.data.completedDate
-        })
-      }
-    }
-  }
-  return payments
-}
-
-export function getHistoricalPeriods (numPeriods: number, skip?: number) {
-  const rootGetters = sbp('state/vuex/getters')
-  let lastPeriod = rootGetters.currentPaymentPeriod
-
-  if (skip) {
-    for (let i = 0; i < skip; i++) {
-      lastPeriod = rootGetters.periodBeforePeriod(lastPeriod)
-    }
-  }
-
-  const periods = [lastPeriod]
-  for (let i = 0; i < numPeriods - 1; i++) {
-    periods.unshift(rootGetters.periodBeforePeriod(periods[0]))
-  }
-  return periods
-}
-
-export async function getHistoricalPayments (numPeriods: number, skip?: number) {
-  const periods = getHistoricalPeriods(numPeriods, skip)
-
-  const payments = await Promise.all(periods.map(period => getPaymentsByPeriod(period)))
-
-  return { periods, payments }
-}
 
 export function createInvite ({ quantity = 1, creator, expires, invitee }: {
   quantity: number, creator: string, expires: number, invitee?: string
