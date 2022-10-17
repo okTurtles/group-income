@@ -29,9 +29,7 @@ export default ({
       history: []
     }
   },
-  mixins: [
-    PaymentsMixin
-  ],
+  mixins: [PaymentsMixin],
   components: {
     BarGraph
   },
@@ -81,7 +79,7 @@ export default ({
     }
   },
   watch: {
-    periods (newPeriods, prevPeriods) {
+    periods () {
       this.updateHistory()
     }
   }

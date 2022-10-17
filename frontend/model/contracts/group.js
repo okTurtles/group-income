@@ -10,6 +10,7 @@ import {
   INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
+import { humanReadablePayment } from './shared/functions.js'
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
 import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
@@ -378,14 +379,7 @@ sbp('chelonia/defineContract', {
           for (const paymentHash of hashes) {
             const payment = payments[paymentHash]
             if (payment.data.status === PAYMENT_COMPLETED) {
-              events.push({
-                from: payment.meta.username,
-                to: payment.data.toUser,
-                hash: paymentHash,
-                amount: payment.data.amount,
-                isLate: !!payment.data.isLate,
-                when: payment.data.completedDate
-              })
+              events.push(humanReadablePayment(paymentHash, payment))
             }
           }
         }

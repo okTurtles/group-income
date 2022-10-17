@@ -22,6 +22,19 @@ import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // group.js related
 
+export function humanReadablePayment (paymentHash, payment): {
+  from: string, to: string, hash: string, amount: number, isLate: boolean, when: string
+} {
+  return {
+    from: payment.meta.username,
+    to: payment.data.toUser,
+    hash: paymentHash,
+    amount: payment.data.amount,
+    isLate: !!payment.data.isLate,
+    when: payment.data.completedDate
+  }
+}
+
 export function createInvite ({ quantity = 1, creator, expires, invitee }: {
   quantity: number, creator: string, expires: number, invitee?: string
 }): {|

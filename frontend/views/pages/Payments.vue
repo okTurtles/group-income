@@ -156,6 +156,7 @@ import NextDistributionPill from '@containers/payments/PaymentNextDistributionPi
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
 import { randomHexString } from '@model/contracts/shared/giLodash.js'
@@ -168,6 +169,7 @@ import {
 
 export default ({
   name: 'Payments',
+  mixins: [PaymentsMixin],
   components: {
     Page,
     SvgContributions,
@@ -199,7 +201,8 @@ export default ({
           'lightning': L('Lightning'),
           'manual': L('Manual')
         }
-      }
+      },
+      historicalPayments: []
     }
   },
   created () {
@@ -208,6 +211,9 @@ export default ({
   watch: {
     needsIncome () {
       this.setInitialActiveTab()
+    },
+    currentPaymentPeriod () {
+      this.getPaymentsInCurrentPage()
     }
   },
   computed: {
@@ -221,7 +227,8 @@ export default ({
       'groupSettings',
       'ourUsername',
       'userDisplayName',
-      'withGroupCurrency'
+      'withGroupCurrency',
+      'currentPaymentPeriod'
     ]),
     needsIncome () {
       return this.ourGroupProfile?.incomeDetailsType === 'incomeAmount'
@@ -450,6 +457,10 @@ export default ({
       this.openModal('PaymentDetail', {
         lightningPayment: dummyLightningPaymentDetails
       })
+    },
+    async getPaymentsInCurrentPage () {
+      const skip = this.ephemeral.rowsPerPage * this.ephemeral.currentPage
+      this.historicalPayments = await this.getHistoricalPayments(this.ephemeral.rowsPerPage, skip)
     }
   }
 }: Object)

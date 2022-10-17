@@ -1,6 +1,7 @@
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
+import { humanReadablePayment } from '@model/contracts/shared/functions.js'
 
 const PaymentsMixin: Object = {
   computed: {
@@ -9,34 +10,34 @@ const PaymentsMixin: Object = {
       'paymentsForPeriod',
       'ourUsername',
       'currentPaymentPeriod',
-      'periodBeforePeriod'
+      'periodBeforePeriod',
+      'paymentHashesForPeriod',
+      'currentGroupState'
     ])
   },
   methods: {
-    async getPaymentsByPeriod (period: string) {
-      const payments = this.paymentsForPeriod(period)
-      if (payments.length) {
-        return payments
+    async getNativePaymentsByPeriod (period: string) {
+      let nativePayments = {}
+      if (period === this.currentPaymentPeriod || period === this.periodBeforePeriod(this.currentPaymentPeriod)) {
+        const paymentHashes = this.paymentHashesForPeriod(period)
+        nativePayments = paymentHashes.map(hash => this.currentGroupState.payments[hash])
+      } else {
+        const periodKey = `paymentPeriods/${this.ourUsername}/${this.currentGroupId}`
+        const periods = await sbp('gi.db/archive/load', periodKey) || []
+        if (periods.includes(period)) {
+          const paymentsKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}/${period}`
+          nativePayments = await sbp('gi.db/archive/load', paymentsKey) || {}
+        }
       }
-
-      // the rule to make key is there inside `archivePayments` function of group.js contract
-      const periodKey = `paymentPeriods/${this.ourUsername}/${this.currentGroupId}`
-      const periods = await sbp('gi.db/archive/load', periodKey) || []
-      if (periods.includes(period)) {
-        const paymentsKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}/${period}`
-        const paymentsByHash = await sbp('gi.db/archive/load', paymentsKey) || {}
-        for (const hash of Object.keys(paymentsByHash)) {
-          const payment = paymentsByHash[hash]
-          if (payment.data.status === PAYMENT_COMPLETED) {
-            payments.push({
-              from: payment.meta.username,
-              to: payment.data.toUser,
-              hash,
-              amount: payment.data.amount,
-              isLate: !!payment.data.isLate,
-              when: payment.data.completedDate
-            })
-          }
+      return nativePayments
+    },
+    async getPaymentsByPeriod (period: string) {
+      const payments = []
+      const paymentsByHash = await this.getNativePaymentsByPeriod(period)
+      for (const hash of Object.keys(paymentsByHash)) {
+        const payment = paymentsByHash[hash]
+        if (payment.data.status === PAYMENT_COMPLETED) {
+          payments.push(humanReadablePayment(hash, payment))
         }
       }
       return payments
