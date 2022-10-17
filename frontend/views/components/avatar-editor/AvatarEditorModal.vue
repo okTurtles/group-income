@@ -40,11 +40,13 @@ modal-template(
 
       button-submit(
         key='save'
+        data-test='saveBtn'
         @click='submit'
       ) Save
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'

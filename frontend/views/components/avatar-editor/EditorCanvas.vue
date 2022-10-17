@@ -1,20 +1,24 @@
 <template lang="pug">
 .c-editor-canvas
-  canvas.c-canvas(
-    ref='canvas'
-    :style='ephemeral.canvas.style'
-    :width='ephemeral.canvas.onCanvas.width'
-    :height='ephemeral.canvas.onCanvas.height'
-    v-if='ephemeral.image.loaded'
-  )
-
-  canvas.c-canvas-img-extract(
-    ref='helperCanvas'
-    :style='{ "width": "50px", "height": "50px" }'
-  )
+  template(v-if='ephemeral.image.loaded')
+    // canvas on which the image is painted
+    canvas.c-canvas(
+      data-test='imageCanvas'
+      ref='canvas'
+      :style='ephemeral.canvas.style'
+      v-bind='canvasCommonAttrs'
+    )
+    // canvas on which the clipping circle is painted
+    canvas.c-canvas(
+      ref='clip'
+      :style='ephemeral.canvas.style'
+      v-bind='canvasCommonAttrs'
+    )
 
   .c-invisible-utils
-    img(ref='img' :src='ephemeral.image.src' @load='onImageLoad')
+    img(ref='img' data-test='imageHelperTag' :src='ephemeral.image.src' @load='onImageLoad')
+    // an invisible helper canvas element to extract the edited image
+    canvas.c-canvas-img-extract(ref='helperCanvas')
 </template>
 
 <script>
@@ -64,6 +68,12 @@ export default {
       'isDarkTheme',
       'colors'
     ]),
+    canvasCommonAttrs () {
+      return {
+        width: this.ephemeral.canvas.onCanvas.width,
+        height: this.ephemeral.canvas.onCanvas.height
+      }
+    },
     isWiderThanTaller () {
       const img = this.ephemeral.image
       return img.loaded && img.intrinsic.aspectRatio <= 1
@@ -77,6 +87,7 @@ export default {
   },
   methods: {
     onImageLoad () {
+      console.log('onImageLoad() in EditorCanvas.vue!')
       // once the image is loaded, extract the image info regarding the intrinsic size that are needed in
       // calculation of the iamge drawn on the canvas.
       const img = this.ephemeral.image
@@ -177,15 +188,15 @@ export default {
       cx.drawImage(this.$refs.img, image.x, image.y, image.width, image.height)
 
       // 3. draw the clipping circle
+      const cx2 = this.$refs.clip.getContext('2d')
       const cPath = new Path2D()
       cPath.rect(0, 0, canvas.width, canvas.height)
       cPath.moveTo(canvasCenter.x + clipCircle.diameter / 2, canvasCenter.y)
       cPath.arc(canvasCenter.x, canvasCenter.y, clipCircle.diameter / 2, 0, Math.PI * 2, true)
 
-      cx.save()
-      cx.fillStyle = this.onCanvasColors.clipCircleBg
-      cx.fill(cPath, 'evenodd')
-      cx.restore()
+      cx2.clearRect(0, 0, canvas.width, canvas.height)
+      cx2.fillStyle = this.onCanvasColors.clipCircleBg
+      cx2.fill(cPath, 'evenodd')
     },
     extractEditedImage () {
       const { canvas, helperCanvas } = this.$refs
@@ -231,7 +242,9 @@ export default {
 }
 
 .c-canvas {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .c-invisible-utils {
@@ -246,9 +259,5 @@ export default {
 
 .c-canvas-img-extract {
   position: absolute;
-  z-index: 1;
-  bottom: 1rem;
-  right: 1rem;
-  border: 2px solid #000;
 }
 </style>

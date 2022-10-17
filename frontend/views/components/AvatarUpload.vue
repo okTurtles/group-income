@@ -22,9 +22,9 @@
 </template>
 <script>
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.js'
-// import { L, LError } from '@common/common.js'
-// import { imageUpload } from '@utils/image.js'
+import { OPEN_MODAL, AVATAR_EDITED } from '@utils/events.js'
+import { L, LError } from '@common/common.js'
+import { imageUpload } from '@utils/image.js'
 import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 
@@ -42,31 +42,39 @@ export default ({
     BannerScoped
   },
   methods: {
-    async fileChange (fileList) {
+    fileChange (fileList) {
       if (!fileList.length) return
-      const fileReceived = fileList[0]
-      const imageUrl = URL.createObjectURL(fileReceived)
-      await sbp('okTurtles.events/emit', OPEN_MODAL, 'AvatarEditorModal', { imageUrl })
-      // let picture
+      const imageUrl = URL.createObjectURL(fileList[0])
 
-      // try {
-      //   picture = await imageUpload(fileReceived)
-      // } catch (e) {
-      //   console.error('AvatarUpload imageUpload() error:', e)
-      //   this.$refs.formMsg.danger(L('Failed to upload avatar. {reportError}', LError(e)))
-      //   return false
-      // }
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'AvatarEditorModal', { imageUrl })
+    },
+    async uploadEditedImage ({ blob }) {
+      let picture
 
-      // try {
-      //   const { selector, contractID, key } = this.sbpParams
-      //   await sbp(selector, { contractID, data: { [key]: picture } })
-      //   this.$refs.picture.setFromBlob(fileReceived)
-      //   this.$refs.formMsg.success(L('Avatar updated!'))
-      // } catch (e) {
-      //   console.error('AvatarUpload fileChange() error:', e)
-      //   this.$refs.formMsg.danger(L('Failed to save avatar. {reportError}', LError(e)))
-      // }
+      try {
+        picture = await imageUpload(blob)
+      } catch (e) {
+        console.error('AvatarUpload imageUpload() error:', e)
+        this.$refs.formMsg.danger(L('Failed to upload avatar. {reportError}', LError(e)))
+        return false
+      }
+
+      try {
+        const { selector, contractID, key } = this.sbpParams
+        await sbp(selector, { contractID, data: { [key]: picture } })
+        this.$refs.picture.setFromBlob(blob)
+        this.$refs.formMsg.success(L('Avatar updated!'))
+      } catch (e) {
+        console.error('AvatarUpload fileChange() error:', e)
+        this.$refs.formMsg.danger(L('Failed to save avatar. {reportError}', LError(e)))
+      }
     }
+  },
+  beforeMount () {
+    sbp('okTurtles.events/on', AVATAR_EDITED, this.uploadEditedImage)
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', AVATAR_EDITED, this.uploadEditedImage)
   }
 }: Object)
 </script>

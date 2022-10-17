@@ -41,13 +41,23 @@ describe('Changing Group Settings', () => {
     const groupPicture = 'imageTest.png' // at fixtures/imageTest
     const newGroupName = 'Turtles'
     const newSharedValues = 'One step at the time.'
+    let imageDataURI
 
     cy.getByDT('groupSettingsLink').click()
 
     cy.fixture(groupPicture, 'base64').then(fileContent => {
+      imageDataURI = `data:image/png;base64, ${fileContent}`
       cy.get('[data-test="avatar"]').attachFile({ fileContent, fileName: groupPicture, mimeType: 'image/png' }, { subjectType: 'input' })
     })
 
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Edit avatar')
+      cy.getByDT('imageHelperTag').invoke('attr', 'src', imageDataURI)
+      cy.getByDT('imageCanvas').should('exist')
+      cy.getByDT('saveBtn').click()
+    })
+
+    cy.getByDT('closeModal').should('not.exist')
     cy.getByDT('avatarMsg').should('contain', 'Avatar updated!')
 
     cy.getByDT('groupName').should('have.value', groupName)
