@@ -9,6 +9,7 @@
     "fmt/": "https://deno.land/std@0.138.0/fmt/",
     "path": "https://deno.land/std@0.138.0/path/mod.ts",
 
+    "asserts": "https://deno.land/std@0.153.0/testing/asserts.ts",
     "blakejs": "https://cdn.skypack.dev/blakejs",
     "buffer": "https://cdn.skypack.dev/buffer",
     "dompurify": "https://cdn.skypack.dev/dompurify",
@@ -16,6 +17,7 @@
     "multihashes": "https://esm.sh/multihashes",
     "pogo": "https://raw.githubusercontent.com/snowteamer/pogo/master/main.ts",
     "pogo/": "https://raw.githubusercontent.com/snowteamer/pogo/master/",
+    "pug-lint": "https://esm.sh/pug-lint",
     "tweetnacl": "https://cdn.skypack.dev/tweetnacl",
     "vue": "https://esm.sh/vue@2.7.10"
   }
