@@ -1,14 +1,14 @@
 import {
   assert,
   assertEquals,
-  assertMatch,
+  assertMatch
 } from 'asserts'
 
-import { createRequire } from "https://deno.land/std/node/module.ts";
+import { createRequire } from 'https://deno.land/std/node/module.ts'
 import PugLinter from 'pug-lint'
 
 // HACK for 'dynamic require is not supported' error in 'linter.configure()'.
-globalThis.require = createRequire(import.meta.url);
+globalThis.require = createRequire(import.meta.url)
 
 Deno.test({
   name: 'i18n tag validation',

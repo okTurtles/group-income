@@ -1,3 +1,4 @@
+/* globals Deno */
 const process = {
   env: {
     get (key: string): string | void {

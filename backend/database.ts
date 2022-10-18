@@ -226,7 +226,7 @@ if (production || Deno.env.get('GI_PERSIST')) {
       cache.set(filename, value)
       return value
     },
-    'chelonia/db/set': async function (filename: string, data: any): Promise<any> {
+    'chelonia/db/set': async function (filename: string, data: unknown): Promise<unknown> {
       // eslint-disable-next-line no-useless-catch
       try {
         const result = await sbp('backend/db/writeFile', filename, data)

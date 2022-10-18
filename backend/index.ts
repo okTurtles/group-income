@@ -8,7 +8,7 @@ import { notFound } from 'pogo/lib/bang.ts'
 import '~/scripts/process-shim.ts'
 import { SERVER_RUNNING } from './events.ts'
 import { PUBSUB_INSTANCE } from './instance-keys.ts'
-import type { PubsubClient, PubsubServer } from './pubsub.ts'
+import type { PubsubServer } from './pubsub.ts'
 
 // @ts-expect-error TS7017 [ERROR]: Element implicitly has an 'any' type.
 globalThis.logger = function (err: Error) {

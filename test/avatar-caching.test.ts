@@ -3,17 +3,13 @@ import {
   assertEquals,
   assertMatch,
   assertNotMatch
-} from "https://deno.land/std@0.153.0/testing/asserts.ts"
-
-import { bold, red, yellow } from 'fmt/colors.ts'
-import * as pathlib from 'path'
+} from 'https://deno.land/std@0.153.0/testing/asserts.ts'
 
 import '~/scripts/process-shim.ts'
 
 Deno.test({
   name: 'Avatar file serving',
   fn: async function (tests) {
-  
     const apiURL = process.env.API_URL ?? 'http://localhost:8000'
     const hash = '21XWnNX5exusmJoJNWNNqjhWPqxGURryWbkUhYVsGT5NFtSGKs'
 
@@ -33,5 +29,5 @@ Deno.test({
     })
   },
   sanitizeResources: false,
-  sanitizeOps: false,
+  sanitizeOps: false
 })

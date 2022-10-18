@@ -391,7 +391,7 @@ module.exports = (grunt) => {
 
     exec: {
       chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data',
-      eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
+      eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,ts,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',

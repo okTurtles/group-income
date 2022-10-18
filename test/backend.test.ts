@@ -1,4 +1,4 @@
-import { assertEquals, assertMatch } from "https://deno.land/std@0.153.0/testing/asserts.ts"
+import { assertEquals, assertMatch } from 'https://deno.land/std@0.153.0/testing/asserts.ts'
 
 import { bold, red, yellow } from 'fmt/colors.ts'
 import * as pathlib from 'path'
@@ -19,7 +19,7 @@ import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS, MAIL_TYPE_MESSAGE, PROP
 import { createInvite } from './contracts/shared/functions.js'
 import '~/frontend/controller/namespace.js'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
-import manifests from '~/frontend/model/contracts/manifests.json' assert { type: "json" }
+import manifests from '~/frontend/model/contracts/manifests.json' assert { type: 'json' }
 import packageJSON from '~/package.json' assert { type: 'json' }
 
 const { version } = packageJSON
@@ -59,9 +59,6 @@ Object.assign(process.env, applyPortShift(process.env))
 
 Deno.env.set('GI_VERSION', `${version}@${new Date().toISOString()}`)
 
-const API_PORT = Deno.env.get('API_PORT')
-const API_URL = Deno.env.get('API_URL')
-const CI = Deno.env.get('CI')
 const GI_VERSION = Deno.env.get('GI_VERSION')
 const NODE_ENV = Deno.env.get('NODE_ENV') ?? 'development'
 
@@ -113,8 +110,8 @@ Deno.test({
     const groups = {}
 
     // Wait for the server to be ready.
-    let t0 = Date.now()
-    let timeout = 30000
+    const t0 = Date.now()
+    const timeout = 30000
     await new Promise((resolve, reject) => {
       (function ping () {
         console.log(process.env.API_URL)
@@ -182,7 +179,7 @@ Deno.test({
       })
       return msg
     }
-    function createGroup (name: string, hooks: Object = {}): Promise {
+    function createGroup (name: string, hooks: Record<string, unknown> = {}): Promise {
       const initialInvite = createInvite({
         quantity: 60,
         creator: INVITE_INITIAL_CREATOR,
@@ -415,7 +412,7 @@ Deno.test({
     })
   },
   sanitizeResources: false,
-  sanitizeOps: false,
+  sanitizeOps: false
 })
 
 // Potentially useful for dealing with fetch API:
