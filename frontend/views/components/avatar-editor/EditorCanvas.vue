@@ -24,8 +24,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import { imageDataURItoBlob } from '@utils/image.js'
-
-const EDITED_AVATAR_DIAMETER = 256
+import { EDITED_AVATAR_DIAMETER } from './avatar-editor-constants.js'
 
 export default {
   name: 'AvatarEditorCanvas',

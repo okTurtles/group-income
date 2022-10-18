@@ -53,15 +53,12 @@ import SliderContinuous from '@components/SliderContinuous.vue'
 import EditorCanvas from './EditorCanvas.vue'
 import { linearScale } from '@model/contracts/shared/giLodash.js'
 import { AVATAR_EDITED } from '@utils/events.js'
+import { ZOOM_SLIDER_MIN, ZOOM_SLIDER_MAX, IMAGE_SCALE_MIN, IMAGE_SCALE_MAX } from './avatar-editor-constants.js'
 
-const SLIDER_MIN = 0
-const SLIDER_MAX = 100
-const ZOOM_MIN = 1
-const ZOOM_MAX = 3
-const zoomCalculator = linearScale([SLIDER_MIN, SLIDER_MAX], [ZOOM_MIN, ZOOM_MAX])
+const zoomCalculator = linearScale([ZOOM_SLIDER_MIN, ZOOM_SLIDER_MAX], [IMAGE_SCALE_MIN, IMAGE_SCALE_MAX])
 /*
   e.g)
-  if SLIDER_MIN = 0, SLIDER_MAX = 100, ZOOM_MIN = 1, ZOOM_MAX = 5,
+  if const zoomCalculator = linearScale([0, 100], [1, 5]),
 
   zoomCalculator(0) => 1,
   zoomCalculator(100) => 5,
@@ -80,11 +77,11 @@ export default ({
   data () {
     return {
       config: {
-        sliderMin: SLIDER_MIN,
-        sliderMax: SLIDER_MAX
+        sliderMin: ZOOM_SLIDER_MIN,
+        sliderMax: ZOOM_SLIDER_MAX
       },
       form: {
-        slider: SLIDER_MIN
+        slider: ZOOM_SLIDER_MIN
       }
     }
   },
@@ -107,11 +104,11 @@ export default ({
       this.form.slider = parseFloat(e.target.value)
     },
     incrementSlider () {
-      this.form.slider = Math.min(SLIDER_MAX, this.form.slider + 1)
+      this.form.slider = Math.min(ZOOM_SLIDER_MAX, this.form.slider + 1)
       this.$refs.slider.updateSlider(this.form.slider)
     },
     decrementSlider () {
-      this.form.slider = Math.max(SLIDER_MIN, this.form.slider - 1)
+      this.form.slider = Math.max(ZOOM_SLIDER_MIN, this.form.slider - 1)
       this.$refs.slider.updateSlider(this.form.slider)
     }
   }
