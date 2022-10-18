@@ -1,68 +1,95 @@
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
-import { humanReadablePayment } from '@model/contracts/shared/functions.js'
+import { simplifyPayment, getPaymentHashes } from '@model/contracts/shared/functions.js'
+import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 
 const PaymentsMixin: Object = {
   computed: {
     ...mapState(['currentGroupId']),
     ...mapGetters([
-      'paymentsForPeriod',
+      'currentGroupState',
       'ourUsername',
-      'currentPaymentPeriod',
+      'ourPayments',
+      'paymentsForPeriod',
       'periodBeforePeriod',
+      'groupPeriodPayments',
+      'currentPaymentPeriod',
       'paymentHashesForPeriod',
-      'currentGroupState'
+      'groupIncomeAdjustedDistribution'
     ])
   },
   methods: {
-    async getNativePaymentsByPeriod (period: string) {
-      let nativePayments = {}
-      if (period === this.currentPaymentPeriod || period === this.periodBeforePeriod(this.currentPaymentPeriod)) {
-        const paymentHashes = this.paymentHashesForPeriod(period)
-        nativePayments = paymentHashes.map(hash => this.currentGroupState.payments[hash])
-      } else {
-        const periodKey = `paymentPeriods/${this.ourUsername}/${this.currentGroupId}`
-        const periods = await sbp('gi.db/archive/load', periodKey) || []
-        if (periods.includes(period)) {
-          const paymentsKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}/${period}`
-          nativePayments = await sbp('gi.db/archive/load', paymentsKey) || {}
+    async getHistoricalPaymentsInTypes () {
+      const paymentsInTypes = {
+        sent: cloneDeep(this.ourPayments?.sent),
+        received: cloneDeep(this.ourPayments?.received),
+        todo: this.groupIncomeAdjustedDistribution.filter(p => p.from === this.ourUsername)
+      }
+
+      const paymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
+      const paymentsByPeriod = await sbp('gi.db/archive/load', paymentsByPeriodKey) || {}
+      const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
+      const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
+
+      for (const period of Object.keys(paymentsByPeriod).sort().reverse()) {
+        const { paymentsFrom } = paymentsByPeriod[period]
+        for (const fromUser of Object.keys(paymentsFrom)) {
+          for (const toUser of Object.keys(paymentsFrom[fromUser])) {
+            if (toUser === this.ourUsername) {
+              for (const rHash of paymentsFrom[fromUser][toUser]) {
+                const { data, meta } = payments[rHash]
+                paymentsInTypes.received.push({ hash: rHash, data, meta, amount: data.amount, username: data.toUser })
+              }
+            } else if (fromUser === this.ourUsername) {
+              for (const sHash of paymentsFrom[fromUser][toUser]) {
+                const { data, meta } = payments[sHash]
+                paymentsInTypes.sent.push({ hash: sHash, data, meta, amount: data.amount, username: data.toUser })
+              }
+            }
+          }
         }
       }
-      return nativePayments
+      const sortPayments = payments => payments
+        .sort((f, l) => f.meta.createdDate > l.meta.createdDate ? 1 : -1)
+      paymentsInTypes.sent = sortPayments(paymentsInTypes.sent)
+      paymentsInTypes.received = sortPayments(paymentsInTypes.received)
+
+      return paymentsInTypes
+    },
+    async getPaymentDetailsByPeriod (period: string) {
+      let detailedPayments = {}
+      if (Object.keys(this.groupPeriodPayments).includes(period)) {
+        const paymentHashes = this.paymentHashesForPeriod(period) || []
+        detailedPayments = paymentHashes.map(hash => this.currentGroupState.payments[hash])
+      } else {
+        const paymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
+        const paymentsByPeriod = await sbp('gi.db/archive/load', paymentsByPeriodKey) || {}
+        const paymentHashes = getPaymentHashes(paymentsByPeriod[period])
+
+        const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
+        const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
+        for (const hash of paymentHashes) {
+          detailedPayments[hash] = payments[hash]
+        }
+      }
+      return detailedPayments
     },
     async getPaymentsByPeriod (period: string) {
       const payments = []
-      const paymentsByHash = await this.getNativePaymentsByPeriod(period)
+      const paymentsByHash = await this.getPaymentDetailsByPeriod(period)
       for (const hash of Object.keys(paymentsByHash)) {
         const payment = paymentsByHash[hash]
         if (payment.data.status === PAYMENT_COMPLETED) {
-          payments.push(humanReadablePayment(hash, payment))
+          payments.push(simplifyPayment(hash, payment))
         }
       }
       return payments
     },
-    getHistoricalPeriods (numPeriods: number, skip?: number) {
-      let lastPeriod = this.currentPaymentPeriod
-
-      if (skip) {
-        for (let i = 0; i < skip; i++) {
-          lastPeriod = this.periodBeforePeriod(lastPeriod)
-        }
-      }
-
-      const periods = [lastPeriod]
-      for (let i = 0; i < numPeriods - 1; i++) {
-        periods.unshift(this.periodBeforePeriod(periods[0]))
-      }
-      return periods
-    },
-    async getHistoricalPayments (numPeriods: number, skip?: number) {
-      const periods = this.getHistoricalPeriods(numPeriods, skip)
-
-      const payments = await Promise.all(periods.map(period => this.getPaymentsByPeriod(period)))
-
-      return { periods, payments }
+    async getHistoricalPaymentByHash (hash: string) {
+      const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
+      const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
+      return payments[hash]
     }
   }
 }

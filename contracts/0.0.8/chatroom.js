@@ -9424,18 +9424,6 @@ ${this.getErrorInfo()}`;
   var DAYS_MILLIS = 24 * HOURS_MILLIS;
   var MONTHS_MILLIS = 30 * DAYS_MILLIS;
 
-  // frontend/model/contracts/shared/payments/index.js
-  var PAYMENT_PENDING = "pending";
-  var PAYMENT_CANCELLED = "cancelled";
-  var PAYMENT_ERROR = "error";
-  var PAYMENT_NOT_RECEIVED = "not-received";
-  var PAYMENT_COMPLETED = "completed";
-  var paymentStatusType = unionOf(...[PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_NOT_RECEIVED, PAYMENT_COMPLETED].map((k) => literalOf(k)));
-  var PAYMENT_TYPE_MANUAL = "manual";
-  var PAYMENT_TYPE_BITCOIN = "bitcoin";
-  var PAYMENT_TYPE_PAYPAL = "paypal";
-  var paymentType = unionOf(...[PAYMENT_TYPE_MANUAL, PAYMENT_TYPE_BITCOIN, PAYMENT_TYPE_PAYPAL].map((k) => literalOf(k)));
-
   // frontend/views/utils/misc.js
   function logExceptNavigationDuplicated(err) {
     err.name !== "NavigationDuplicated" && console.error(err);

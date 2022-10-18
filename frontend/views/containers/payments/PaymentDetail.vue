@@ -46,6 +46,7 @@ import { L } from '@common/common.js'
 import { CLOSE_MODAL, REPLACE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import currencies from '@model/contracts/shared/currencies.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
@@ -56,22 +57,9 @@ export default ({
     ModalTemplate,
     LinkToCopy
   },
+  mixins: [PaymentsMixin],
   created () {
-    const id = this.$route.query.id
-    const payment = this.lightningPayment || // TODO: to be re-worked once lightning network is implemented.
-      this.currentGroupState.payments[id]
-
-    if (id) {
-      sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'PaymentDetail', { id })
-    }
-    if (payment) {
-      this.payment = cloneDeep(payment)
-      // TODO: the payment augmentation duplication in Payment and PaymentRecord, and between todo/sent/received, needs to be resolved more thoroughly
-      this.payment.periodstamp = this.periodStampGivenDate(this.payment.meta.createdDate)
-    } else {
-      console.warn('PaymentDetail: Missing valid query "id"')
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
-    }
+    this.initializeDetails()
   },
   data: () => ({
     payment: null
@@ -103,6 +91,23 @@ export default ({
   },
   methods: {
     humanDate,
+    async initializeDetails () {
+      const id = this.$route.query.id
+      const payment = this.lightningPayment || // TODO: to be re-worked once lightning network is implemented.
+        this.currentGroupState.payments[id] || await this.getHistoricalPaymentByHash(id)
+
+      if (id) {
+        sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'PaymentDetail', { id })
+      }
+      if (payment) {
+        this.payment = cloneDeep(payment)
+        // TODO: the payment augmentation duplication in Payment and PaymentRecord, and between todo/sent/received, needs to be resolved more thoroughly
+        this.payment.periodstamp = this.periodStampGivenDate(this.payment.meta.createdDate)
+      } else {
+        console.warn('PaymentDetail: Missing valid query "id"')
+        sbp('okTurtles.events/emit', CLOSE_MODAL)
+      }
+    },
     closeModal () {
       this.$refs.modal.close()
     },

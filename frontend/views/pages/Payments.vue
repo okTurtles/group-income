@@ -202,18 +202,23 @@ export default ({
           'manual': L('Manual')
         }
       },
-      historicalPayments: []
+      historicalPayments: {
+        received: [],
+        sent: [],
+        todo: []
+      }
     }
   },
   created () {
     this.setInitialActiveTab()
+    this.updatePayments()
   },
   watch: {
     needsIncome () {
       this.setInitialActiveTab()
     },
-    currentPaymentPeriod () {
-      this.getPaymentsInCurrentPage()
+    ourPayments () {
+      this.updatePayments()
     }
   },
   computed: {
@@ -222,13 +227,11 @@ export default ({
       'groupIncomeDistribution',
       'groupIncomeAdjustedDistribution',
       'paymentTotalFromUserToUser',
-      'ourPayments',
       'ourGroupProfile',
       'groupSettings',
       'ourUsername',
       'userDisplayName',
-      'withGroupCurrency',
-      'currentPaymentPeriod'
+      'withGroupCurrency'
     ]),
     needsIncome () {
       return this.ourGroupProfile?.incomeDetailsType === 'incomeAmount'
@@ -293,7 +296,7 @@ export default ({
       const payments = []
       const sentPayments = this.paymentsSent
 
-      for (const payment of this.ourPayments.todo) {
+      for (const payment of this.historicalPayments.todo) {
         payments.push({
           hash: payment.hash || randomHexString(15),
           username: payment.to,
@@ -312,7 +315,7 @@ export default ({
     paymentsSent () {
       const payments = []
 
-      for (const payment of this.ourPayments.sent) {
+      for (const payment of this.historicalPayments.sent) {
         const { hash, data, meta } = payment
         payments.push({
           hash,
@@ -332,7 +335,7 @@ export default ({
     paymentsReceived () {
       const payments = []
 
-      for (const payment of this.ourPayments.received) {
+      for (const payment of this.historicalPayments.received) {
         const { hash, data, meta } = payment
         const fromUser = meta.username
         payments.push({
@@ -458,9 +461,8 @@ export default ({
         lightningPayment: dummyLightningPaymentDetails
       })
     },
-    async getPaymentsInCurrentPage () {
-      const skip = this.ephemeral.rowsPerPage * this.ephemeral.currentPage
-      this.historicalPayments = await this.getHistoricalPayments(this.ephemeral.rowsPerPage, skip)
+    async updatePayments () {
+      this.historicalPayments = await this.getHistoricalPaymentsInTypes()
     }
   }
 }: Object)

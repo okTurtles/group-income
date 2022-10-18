@@ -10,7 +10,7 @@ import {
   INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
-import { humanReadablePayment } from './shared/functions.js'
+import { simplifyPayment, getPaymentHashes } from './shared/functions.js'
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
 import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
@@ -63,19 +63,19 @@ function initPaymentPeriod ({ getters }) {
 function clearOldPayments ({ contractID, state, getters }) {
   const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort()
   // save two periods worth of payments, max
-  const paymentsToArchiveByPeriod = {}
+  const archivingPayments = { paymentsByPeriod: {}, payments: {} }
   while (sortedPeriodKeys.length > MAX_SAVED_PERIODS) {
     const period = sortedPeriodKeys.shift()
-    paymentsToArchiveByPeriod[period] = {}
+    archivingPayments.paymentsByPeriod[period] = state.paymentsByPeriod[period]
     for (const paymentHash of getters.paymentHashesForPeriod(period)) {
-      paymentsToArchiveByPeriod[period][paymentHash] = cloneDeep(state.payments[paymentHash])
+      archivingPayments.payments[paymentHash] = cloneDeep(state.payments[paymentHash])
       Vue.delete(state.payments, paymentHash)
     }
     Vue.delete(state.paymentsByPeriod, period)
   }
 
   sbp('gi.contracts/group/pushSideEffect', contractID,
-    ['gi.contracts/group/archivePayments', contractID, paymentsToArchiveByPeriod]
+    ['gi.contracts/group/archivePayments', contractID, archivingPayments]
   )
 }
 
@@ -269,14 +269,7 @@ sbp('chelonia/defineContract', {
       return (periodStamp) => {
         const periodPayments = getters.groupPeriodPayments[periodStamp]
         if (periodPayments) {
-          let hashes = []
-          const { paymentsFrom } = periodPayments
-          for (const fromUser in paymentsFrom) {
-            for (const toUser in paymentsFrom[fromUser]) {
-              hashes = hashes.concat(paymentsFrom[fromUser][toUser])
-            }
-          }
-          return hashes
+          return getPaymentHashes(periodPayments)
         }
       }
     },
@@ -379,7 +372,7 @@ sbp('chelonia/defineContract', {
           for (const paymentHash of hashes) {
             const payment = payments[paymentHash]
             if (payment.data.status === PAYMENT_COMPLETED) {
-              events.push(humanReadablePayment(paymentHash, payment))
+              events.push(simplifyPayment(paymentHash, payment))
             }
           }
         }
@@ -1123,27 +1116,33 @@ sbp('chelonia/defineContract', {
       await sbp('gi.db/archive/save', key, proposals)
       sbp('okTurtles.events/emit', PROPOSAL_ARCHIVED, [proposalHash, proposal])
     },
-    'gi.contracts/group/archivePayments': async function (contractID, paymentsByPeriod) {
+    'gi.contracts/group/archivePayments': async function (contractID, archivingPayments) {
+      const { paymentsByPeriod, payments } = archivingPayments
       const { username } = sbp('state/vuex/state').loggedIn
+
       for (const period of Object.keys(paymentsByPeriod).sort()) {
-        const periodKey = `paymentPeriods/${username}/${contractID}`
-        const periods = await sbp('gi.db/archive/load', periodKey) || []
-        const paymentsKey = `paymentsByPeriod/${username}/${contractID}/${period}`
-        const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
+        const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`
+        const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
+        const archPaymentsKey = `payments/${username}/${contractID}`
+        let archPayments = await sbp('gi.db/archive/load', archPaymentsKey) || {}
 
-        periods.unshift(period)
-        merge(payments, paymentsByPeriod[period])
+        archPaymentsByPeriod[period] = paymentsByPeriod[period]
+        archPayments = merge(archPayments, payments)
 
-        while (periods.length > MAX_ARCHIVED_PERIODS) {
-          const shouldBeDeletedPeriod = periods.pop()
-          const shouldBeDeletedPaymentsKey = `paymentsByPeriod/${username}/${contractID}/${shouldBeDeletedPeriod}`
-          await sbp('gi.db/archive/delete', shouldBeDeletedPaymentsKey)
+        while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
+          const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift()
+          const paymentHashes = getPaymentHashes(archPaymentsByPeriod[shouldBeDeletedPeriod])
+
+          for (const hash of paymentHashes) {
+            delete archPayments[hash]
+          }
+          delete archPaymentsByPeriod[shouldBeDeletedPeriod]
         }
 
-        await sbp('gi.db/archive/save', periodKey, periods)
-        await sbp('gi.db/archive/save', paymentsKey, payments)
+        await sbp('gi.db/archive/save', archPaymentsByPeriodKey, archPaymentsByPeriod)
+        await sbp('gi.db/archive/save', archPaymentsKey, archPayments)
       }
-      sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, paymentsByPeriod)
+      sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
     }
   }
 })

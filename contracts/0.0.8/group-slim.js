@@ -24,7 +24,7 @@
   var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
 
   // frontend/model/contracts/group.js
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
   var import_common3 = __require("@common/common.js");
 
   // frontend/model/contracts/misc/flowTyper.js
@@ -262,7 +262,7 @@ ${this.getErrorInfo()}`;
   var PROPOSAL_ARCHIVED = "proposal-archived";
   var MAX_ARCHIVED_PROPOSALS = 100;
   var PAYMENTS_ARCHIVED = "payments-archived";
-  var MAX_ARCHIVED_PAYMENTS = 100;
+  var MAX_ARCHIVED_PERIODS = 100;
   var MAX_SAVED_PERIODS = 2;
   var STATUS_OPEN = "open";
   var STATUS_PASSED = "passed";
@@ -551,6 +551,31 @@ ${this.getErrorInfo()}`;
   var PAYMENT_TYPE_BITCOIN = "bitcoin";
   var PAYMENT_TYPE_PAYPAL = "paypal";
   var paymentType = unionOf(...[PAYMENT_TYPE_MANUAL, PAYMENT_TYPE_BITCOIN, PAYMENT_TYPE_PAYPAL].map((k) => literalOf(k)));
+
+  // frontend/model/contracts/shared/functions.js
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  function getPaymentHashes(periodPayments) {
+    let hashes = [];
+    if (periodPayments) {
+      const { paymentsFrom } = periodPayments;
+      for (const fromUser in paymentsFrom) {
+        for (const toUser in paymentsFrom[fromUser]) {
+          hashes = hashes.concat(paymentsFrom[fromUser][toUser]);
+        }
+      }
+    }
+    return hashes;
+  }
+  function humanReadablePayment(paymentHash, payment) {
+    return {
+      from: payment.meta.username,
+      to: payment.data.toUser,
+      hash: paymentHash,
+      amount: payment.data.amount,
+      isLate: !!payment.data.isLate,
+      when: payment.data.completedDate
+    };
+  }
 
   // frontend/model/contracts/shared/giLodash.js
   function omit(o, props) {
@@ -843,17 +868,17 @@ ${this.getErrorInfo()}`;
   }
   function clearOldPayments({ contractID, state, getters }) {
     const sortedPeriodKeys = Object.keys(state.paymentsByPeriod).sort();
-    const paymentsToArchiveByPeriod = {};
+    const archivingPayments = { paymentsByPeriod: {}, payments: {} };
     while (sortedPeriodKeys.length > MAX_SAVED_PERIODS) {
       const period = sortedPeriodKeys.shift();
-      paymentsToArchiveByPeriod[period] = {};
+      archivingPayments.paymentsByPeriod[period] = state.paymentsByPeriod[period];
       for (const paymentHash of getters.paymentHashesForPeriod(period)) {
-        paymentsToArchiveByPeriod[period][paymentHash] = cloneDeep(state.payments[paymentHash]);
+        archivingPayments.payments[paymentHash] = cloneDeep(state.payments[paymentHash]);
         import_common3.Vue.delete(state.payments, paymentHash);
       }
       import_common3.Vue.delete(state.paymentsByPeriod, period);
     }
-    (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/archivePayments", contractID, paymentsToArchiveByPeriod]);
+    (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/archivePayments", contractID, archivingPayments]);
   }
   function initFetchPeriodPayments({ contractID, meta, state, getters }) {
     const period = getters.periodStampGivenDate(meta.createdDate);
@@ -896,7 +921,7 @@ ${this.getErrorInfo()}`;
   function isActionYoungerThanUser(actionMeta, userProfile) {
     return Boolean(userProfile) && compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
   }
-  (0, import_sbp2.default)("chelonia/defineContract", {
+  (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/group",
     metadata: {
       validate: objectOf({
@@ -905,7 +930,7 @@ ${this.getErrorInfo()}`;
         identityContractID: string
       }),
       create() {
-        const { username, identityContractID } = (0, import_sbp2.default)("state/vuex/state").loggedIn;
+        const { username, identityContractID } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
         return {
           createdDate: new Date().toISOString(),
           username,
@@ -1000,14 +1025,7 @@ ${this.getErrorInfo()}`;
         return (periodStamp) => {
           const periodPayments = getters.groupPeriodPayments[periodStamp];
           if (periodPayments) {
-            let hashes = [];
-            const { paymentsFrom } = periodPayments;
-            for (const fromUser in paymentsFrom) {
-              for (const toUser in paymentsFrom[fromUser]) {
-                hashes = hashes.concat(paymentsFrom[fromUser][toUser]);
-              }
-            }
-            return hashes;
+            return getPaymentHashes(periodPayments);
           }
         };
       },
@@ -1096,14 +1114,7 @@ ${this.getErrorInfo()}`;
             for (const paymentHash of hashes) {
               const payment = payments[paymentHash];
               if (payment.data.status === PAYMENT_COMPLETED) {
-                events.push({
-                  from: payment.meta.username,
-                  to: payment.data.toUser,
-                  hash: paymentHash,
-                  amount: payment.data.amount,
-                  isLate: !!payment.data.isLate,
-                  when: payment.data.completedDate
-                });
+                events.push(humanReadablePayment(paymentHash, payment));
               }
             }
           }
@@ -1222,10 +1233,10 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ meta, contractID, data }, { state, getters }) {
           if (data.updatedProperties.status === PAYMENT_COMPLETED) {
-            const { loggedIn } = (0, import_sbp2.default)("state/vuex/state");
+            const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
             const payment = state.payments[data.paymentHash];
             if (loggedIn.username === payment.data.toUser) {
-              (0, import_sbp2.default)("gi.notifications/emit", "PAYMENT_RECEIVED", {
+              (0, import_sbp3.default)("gi.notifications/emit", "PAYMENT_RECEIVED", {
                 groupID: contractID,
                 creator: meta.username,
                 paymentHash: data.paymentHash,
@@ -1246,9 +1257,9 @@ ${this.getErrorInfo()}`;
           import_common3.Vue.set(fromUser, data.toUser, data.memo);
         },
         sideEffect({ contractID, meta, data }) {
-          const { loggedIn } = (0, import_sbp2.default)("state/vuex/state");
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
           if (data.toUser === loggedIn.username) {
-            (0, import_sbp2.default)("gi.notifications/emit", "PAYMENT_THANKYOU_SENT", {
+            (0, import_sbp3.default)("gi.notifications/emit", "PAYMENT_THANKYOU_SENT", {
               groupID: contractID,
               creator: meta.username,
               fromUser: data.fromUser,
@@ -1287,7 +1298,7 @@ ${this.getErrorInfo()}`;
           });
         },
         sideEffect({ contractID, meta, data }, { getters }) {
-          const { loggedIn } = (0, import_sbp2.default)("state/vuex/state");
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
           const typeToSubTypeMap = {
             [PROPOSAL_INVITE_MEMBER]: "ADD_MEMBER",
             [PROPOSAL_REMOVE_MEMBER]: "REMOVE_MEMBER",
@@ -1297,7 +1308,7 @@ ${this.getErrorInfo()}`;
           };
           const myProfile = getters.groupProfile(loggedIn.username);
           if (isActionYoungerThanUser(meta, myProfile)) {
-            (0, import_sbp2.default)("gi.notifications/emit", "NEW_PROPOSAL", {
+            (0, import_sbp3.default)("gi.notifications/emit", "NEW_PROPOSAL", {
               groupID: contractID,
               creator: meta.username,
               subtype: typeToSubTypeMap[data.proposalType]
@@ -1331,10 +1342,10 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, data, meta }, { state, getters }) {
           const proposal = state.proposals[data.proposalHash];
-          const { loggedIn } = (0, import_sbp2.default)("state/vuex/state");
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
           const myProfile = getters.groupProfile(loggedIn.username);
           if (proposal?.dateClosed && isActionYoungerThanUser(meta, myProfile)) {
-            (0, import_sbp2.default)("gi.notifications/emit", "PROPOSAL_CLOSED", {
+            (0, import_sbp3.default)("gi.notifications/emit", "PROPOSAL_CLOSED", {
               groupID: contractID,
               creator: meta.username,
               proposalStatus: proposal.status
@@ -1404,21 +1415,21 @@ ${this.getErrorInfo()}`;
           memberLeaves({ username: data.member, dateLeft: meta.createdDate }, { contractID, meta, state, getters });
         },
         sideEffect({ data, meta, contractID }, { state, getters }) {
-          const rootState = (0, import_sbp2.default)("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           const contracts = rootState.contracts || {};
           const { username } = rootState.loggedIn;
           if (data.member === username) {
-            if ((0, import_sbp2.default)("okTurtles.data/get", "JOINING_GROUP")) {
+            if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP")) {
               return;
             }
             const groupIdToSwitch = Object.keys(contracts).find((cID) => contracts[cID].type === "gi.contracts/group" && cID !== contractID && rootState[cID].settings) || null;
-            (0, import_sbp2.default)("state/vuex/commit", "setCurrentChatRoomId", {});
-            (0, import_sbp2.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
-            (0, import_sbp2.default)("chelonia/contract/remove", contractID).catch((e) => {
+            (0, import_sbp3.default)("state/vuex/commit", "setCurrentChatRoomId", {});
+            (0, import_sbp3.default)("state/vuex/commit", "setCurrentGroupId", groupIdToSwitch);
+            (0, import_sbp3.default)("chelonia/contract/remove", contractID).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown by /remove ${contractID}:`, e);
             });
-            (0, import_sbp2.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/saveOurLoginState"]).then(function() {
-              const router = (0, import_sbp2.default)("controller/router");
+            (0, import_sbp3.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/saveOurLoginState"]).then(function() {
+              const router = (0, import_sbp3.default)("controller/router");
               const switchFrom = router.currentRoute.path;
               const switchTo = groupIdToSwitch ? "/dashboard" : "/";
               if (switchFrom !== "/join" && switchFrom !== switchTo) {
@@ -1431,7 +1442,7 @@ ${this.getErrorInfo()}`;
             const myProfile = getters.groupProfile(username);
             if (isActionYoungerThanUser(meta, myProfile)) {
               const memberRemovedThemselves = data.member === meta.username;
-              (0, import_sbp2.default)("gi.notifications/emit", memberRemovedThemselves ? "MEMBER_LEFT" : "MEMBER_REMOVED", {
+              (0, import_sbp3.default)("gi.notifications/emit", memberRemovedThemselves ? "MEMBER_LEFT" : "MEMBER_REMOVED", {
                 groupID: contractID,
                 username: memberRemovedThemselves ? meta.username : data.member
               });
@@ -1445,7 +1456,7 @@ ${this.getErrorInfo()}`;
         }),
         process({ data, meta, contractID }, { state, getters }) {
           memberLeaves({ username: meta.username, dateLeft: meta.createdDate }, { contractID, meta, state, getters });
-          (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", {
+          (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/removeMember/sideEffect", {
             meta,
             data: { member: meta.username, reason: data.reason || "" },
             contractID
@@ -1476,19 +1487,19 @@ ${this.getErrorInfo()}`;
           import_common3.Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate));
         },
         async sideEffect({ meta, contractID }, { state }) {
-          const { loggedIn } = (0, import_sbp2.default)("state/vuex/state");
+          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
           const { profiles = {} } = state;
           if (meta.username === loggedIn.username) {
             for (const name in profiles) {
               if (name !== loggedIn.username) {
-                await (0, import_sbp2.default)("chelonia/contract/sync", profiles[name].contractID);
+                await (0, import_sbp3.default)("chelonia/contract/sync", profiles[name].contractID);
               }
             }
           } else {
             const myProfile = profiles[loggedIn.username];
-            await (0, import_sbp2.default)("chelonia/contract/sync", meta.identityContractID);
+            await (0, import_sbp3.default)("chelonia/contract/sync", meta.identityContractID);
             if (isActionYoungerThanUser(meta, myProfile)) {
-              (0, import_sbp2.default)("gi.notifications/emit", "MEMBER_ADDED", {
+              (0, import_sbp3.default)("gi.notifications/emit", "MEMBER_ADDED", {
                 groupID: contractID,
                 username: meta.username
               });
@@ -1620,10 +1631,10 @@ ${this.getErrorInfo()}`;
           import_common3.Vue.set(state.chatRooms[data.chatRoomID], "users", state.chatRooms[data.chatRoomID].users.filter((u) => u !== data.member));
         },
         async sideEffect({ meta, data }, { state }) {
-          const rootState = (0, import_sbp2.default)("state/vuex/state");
-          if (meta.username === rootState.loggedIn.username && !(0, import_sbp2.default)("okTurtles.data/get", "JOINING_GROUP")) {
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
+          if (meta.username === rootState.loggedIn.username && !(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP")) {
             const sendingData = data.leavingGroup ? { member: data.member } : { member: data.member, username: meta.username };
-            await (0, import_sbp2.default)("gi.actions/chatroom/leave", { contractID: data.chatRoomID, data: sendingData });
+            await (0, import_sbp3.default)("gi.actions/chatroom/leave", { contractID: data.chatRoomID, data: sendingData });
           }
         }
       },
@@ -1637,14 +1648,14 @@ ${this.getErrorInfo()}`;
           state.chatRooms[data.chatRoomID].users.push(username);
         },
         async sideEffect({ meta, data }, { state }) {
-          const rootState = (0, import_sbp2.default)("state/vuex/state");
+          const rootState = (0, import_sbp3.default)("state/vuex/state");
           const username = data.username || meta.username;
           if (username === rootState.loggedIn.username) {
-            if (!(0, import_sbp2.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp2.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
-              (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", data.chatRoomID);
-              await (0, import_sbp2.default)("chelonia/contract/sync", data.chatRoomID);
-              (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", void 0);
-              (0, import_sbp2.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
+            if (!(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", data.chatRoomID);
+              await (0, import_sbp3.default)("chelonia/contract/sync", data.chatRoomID);
+              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", void 0);
+              (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
             }
           }
         }
@@ -1683,7 +1694,7 @@ ${this.getErrorInfo()}`;
           sideEffect(message, { state }) {
             if (!message.data.sideEffect)
               return;
-            (0, import_sbp2.default)("gi.contracts/group/malformedMutation/process", {
+            (0, import_sbp3.default)("gi.contracts/group/malformedMutation/process", {
               ...message,
               data: omit(message.data, ["sideEffect"])
             }, state);
@@ -1693,34 +1704,38 @@ ${this.getErrorInfo()}`;
     },
     methods: {
       "gi.contracts/group/archiveProposal": async function(contractID, proposalHash, proposal) {
-        const { username } = (0, import_sbp2.default)("state/vuex/state").loggedIn;
+        const { username } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
         const key = `proposals/${username}/${contractID}`;
-        const proposals2 = await (0, import_sbp2.default)("gi.db/archive/load", key) || [];
+        const proposals2 = await (0, import_sbp3.default)("gi.db/archive/load", key) || [];
         proposals2.unshift([proposalHash, proposal]);
         while (proposals2.length > MAX_ARCHIVED_PROPOSALS) {
           proposals2.pop();
         }
-        await (0, import_sbp2.default)("gi.db/archive/save", key, proposals2);
-        (0, import_sbp2.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, [proposalHash, proposal]);
+        await (0, import_sbp3.default)("gi.db/archive/save", key, proposals2);
+        (0, import_sbp3.default)("okTurtles.events/emit", PROPOSAL_ARCHIVED, [proposalHash, proposal]);
       },
-      "gi.contracts/group/archivePayments": async function(contractID, paymentsByPeriod) {
-        const { username } = (0, import_sbp2.default)("state/vuex/state").loggedIn;
+      "gi.contracts/group/archivePayments": async function(contractID, archivingPayments) {
+        const { paymentsByPeriod, payments } = archivingPayments;
+        const { username } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
         for (const period of Object.keys(paymentsByPeriod).sort()) {
-          const periodKey = `paymentPeriods/${username}/${contractID}`;
-          const periods = await (0, import_sbp2.default)("gi.db/archive/load", periodKey) || [];
-          const paymentsKey = `paymentsByPeriod/${username}/${contractID}/${period}`;
-          const payments = await (0, import_sbp2.default)("gi.db/archive/load", paymentsKey) || {};
-          periods.unshift(period);
-          merge(payments, paymentsByPeriod[period]);
-          if (periods.length > MAX_ARCHIVED_PAYMENTS) {
-            const shouldBeDeletedPeriod = periods.pop();
-            const shouldBeDeletedPaymentsKey = `paymentsByPeriod/${username}/${contractID}/${shouldBeDeletedPeriod}`;
-            await (0, import_sbp2.default)("gi.db/archive/delete", shouldBeDeletedPaymentsKey);
+          const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`;
+          const archPaymentsByPeriod = await (0, import_sbp3.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {};
+          const archPaymentsKey = `payments/${username}/${contractID}`;
+          let archPayments = await (0, import_sbp3.default)("gi.db/archive/load", archPaymentsKey) || {};
+          archPaymentsByPeriod[period] = paymentsByPeriod[period];
+          archPayments = merge(archPayments, payments);
+          while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
+            const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift();
+            const paymentHashes = getPaymentHashes(archPaymentsByPeriod[shouldBeDeletedPeriod]);
+            for (const hash of paymentHashes) {
+              delete archPayments[hash];
+            }
+            delete archPaymentsByPeriod[shouldBeDeletedPeriod];
           }
-          await (0, import_sbp2.default)("gi.db/archive/save", periodKey, periods);
-          await (0, import_sbp2.default)("gi.db/archive/save", paymentsKey, payments);
+          await (0, import_sbp3.default)("gi.db/archive/save", archPaymentsByPeriodKey, archPaymentsByPeriod);
+          await (0, import_sbp3.default)("gi.db/archive/save", archPaymentsKey, archPayments);
         }
-        (0, import_sbp2.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, paymentsByPeriod);
+        (0, import_sbp3.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, { paymentsByPeriod, payments });
       }
     }
   });
