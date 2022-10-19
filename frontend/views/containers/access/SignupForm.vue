@@ -71,7 +71,7 @@ export default ({
     validationsDebouncedMixins
   ],
   props: {
-    postEffect: {
+    postSubmit: {
       type: Function,
       default: () => {}
     }
@@ -109,7 +109,7 @@ export default ({
           email: this.form.email,
           password: this.form.password
         })
-        await this.postEffect()
+        await this.postSubmit()
         this.$emit('submit-succeeded')
 
         requestNotificationPermission()

@@ -19,8 +19,8 @@ div
         h1.is-title-1.c-title(data-test='groupName') {{ ephemeral.invitation.groupName }}
         p.has-text-1(data-test='invitationMessage') {{ ephemeral.invitation.message }}
       .card
-        signup-form(v-if='isStatus("SIGNING")' :postEffect='accept')
-        login-form(v-else :postEffect='accept')
+        signup-form(v-if='isStatus("SIGNING")' :postSubmit='accept')
+        login-form(v-else :postSubmit='accept')
 
       p.c-switchEnter(v-if='isStatus("SIGNING")')
         i18n Already have an account?
