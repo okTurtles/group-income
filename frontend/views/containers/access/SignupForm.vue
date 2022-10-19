@@ -70,6 +70,12 @@ export default ({
     validationMixin,
     validationsDebouncedMixins
   ],
+  props: {
+    postEffect: {
+      type: Function,
+      default: () => {}
+    }
+  },
   components: {
     ModalTemplate,
     PasswordForm,
@@ -103,6 +109,7 @@ export default ({
           email: this.form.email,
           password: this.form.password
         })
+        await this.postEffect()
         this.$emit('submit-succeeded')
 
         requestNotificationPermission()

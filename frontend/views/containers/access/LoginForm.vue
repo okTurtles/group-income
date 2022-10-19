@@ -45,6 +45,12 @@ export default ({
     validationMixin,
     validationsDebouncedMixins
   ],
+  props: {
+    postEffect: {
+      type: Function,
+      default: () => {}
+    }
+  },
   components: {
     PasswordForm,
     BannerScoped,
@@ -75,6 +81,7 @@ export default ({
           username: this.form.username,
           password: this.form.password
         })
+        await this.postEffect()
         this.$emit('submit-succeeded')
 
         requestNotificationPermission()
