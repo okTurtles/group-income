@@ -57,7 +57,7 @@ export default ({
       try {
         const { selector, contractID, key } = this.sbpParams
         await sbp(selector, { contractID, data: { [key]: picture } })
-        this.$refs.picture.setFromBlob(fileReceived)
+        // this.$refs.picture.setFromBlob(fileReceived)
         this.$refs.formMsg.success(L('Avatar updated!'))
       } catch (e) {
         console.error('AvatarUpload fileChange() error:', e)
