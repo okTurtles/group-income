@@ -1,14 +1,13 @@
 <template lang="pug">
 .c-editor-canvas
   template(v-if='ephemeral.image.loaded')
-    // canvas on which the image is painted
-    canvas.c-canvas(
+    canvas.c-canvas.bottom(
       data-test='imageCanvas'
       ref='canvas'
       :style='ephemeral.canvas.style'
       v-bind='canvasCommonAttrs'
     )
-    // canvas on which the clipping circle is painted
+
     canvas.c-canvas(
       ref='clip'
       :style='ephemeral.canvas.style'
@@ -17,7 +16,6 @@
 
   .c-invisible-utils
     img(ref='img' data-test='imageHelperTag' :src='ephemeral.image.src' @load='onImageLoad')
-    // an invisible helper canvas element to extract the edited image
     canvas.c-canvas-img-extract(ref='helperCanvas')
 </template>
 
@@ -86,7 +84,6 @@ export default {
   },
   methods: {
     onImageLoad () {
-      console.log('onImageLoad() in EditorCanvas.vue!')
       // once the image is loaded, extract the image info regarding the intrinsic size that are needed in
       // calculation of the iamge drawn on the canvas.
       const img = this.ephemeral.image
@@ -171,37 +168,53 @@ export default {
         image.onCanvas.x = canvasCenter.x - image.onCanvas.width / 2
         image.onCanvas.y = canvasCenter.y - image.onCanvas.height / 2
       }
+
+      // 2. translation - TODO!
+      // 3. rotation - maybe..
     },
     draw () {
       const cx = this.$refs.canvas.getContext('2d')
       const image = this.ephemeral.image.onCanvas
       const canvas = this.ephemeral.canvas.onCanvas
       const clipCircle = this.ephemeral.clipCircle
+      const circleRadius = clipCircle.diameter / 2
       const canvasCenter = { x: canvas.width / 2, y: canvas.height / 2 }
+      const paintImageOn = context => {
+        context.drawImage(this.$refs.img, image.x, image.y, image.width, image.height)
+      }
+
+      cx.clearRect(0, 0, canvas.width, canvas.height)
 
       // 1. draw the background
       cx.fillStyle = this.onCanvasColors.canvasBg
       cx.fillRect(0, 0, canvas.width, canvas.height)
 
-      // 2. draw image
-      cx.drawImage(this.$refs.img, image.x, image.y, image.width, image.height)
+      // 2. paint the image on the bottom canvas
+      paintImageOn(cx)
 
-      // 3. draw the clipping circle
+      // 3. draw a mask on the top canvas
       const cx2 = this.$refs.clip.getContext('2d')
-      const cPath = new Path2D()
-      cPath.rect(0, 0, canvas.width, canvas.height)
-      cPath.moveTo(canvasCenter.x + clipCircle.diameter / 2, canvasCenter.y)
-      cPath.arc(canvasCenter.x, canvasCenter.y, clipCircle.diameter / 2, 0, Math.PI * 2, true)
-
       cx2.clearRect(0, 0, canvas.width, canvas.height)
       cx2.fillStyle = this.onCanvasColors.clipCircleBg
-      cx2.fill(cPath, 'evenodd')
+      cx2.fillRect(0, 0, canvas.width, canvas.height)
+
+      // 4. paint the image again on the top canvas with a circlular clipping-path applied
+      cx2.beginPath()
+      cx2.moveTo(canvasCenter.x + circleRadius, canvasCenter.y)
+      cx2.arc(canvasCenter.x, canvasCenter.y, circleRadius, 0, Math.PI * 2, true)
+      cx2.clip()
+      paintImageOn(cx2)
     },
     extractEditedImage () {
       const { canvas, helperCanvas } = this.$refs
       const { clipCircle } = this.ephemeral
+      const avatarHalf = EDITED_AVATAR_DIAMETER / 2
       const cx = helperCanvas.getContext('2d')
 
+      cx.beginPath()
+      cx.moveTo(EDITED_AVATAR_DIAMETER, avatarHalf)
+      cx.arc(avatarHalf, avatarHalf, avatarHalf, 0, Math.PI * 2, true)
+      cx.clip()
       cx.drawImage(
         canvas,
         clipCircle.x,
@@ -214,7 +227,7 @@ export default {
         helperCanvas.height
       )
 
-      return imageDataURItoBlob(helperCanvas.toDataURL('image/jpeg'))
+      return imageDataURItoBlob(helperCanvas.toDataURL('image/jpg'))
     }
   },
   created () {
@@ -238,12 +251,17 @@ export default {
   display: block;
   width: 100%;
   height: 15.625rem;
+  overflow: hidden;
 }
 
 .c-canvas {
   position: absolute;
   top: 0;
   left: 0;
+
+  &.bottom {
+    filter: brightness(0.8) blur(4px);
+  }
 }
 
 .c-invisible-utils {
