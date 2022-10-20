@@ -79,7 +79,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
         route-name='GroupChatConversation'
       )
 
-      group-members(:title='L("Direct Messages")' action='chat')
+      chat-members(:title='L("Direct Messages")' action='addDirectMessage')
 
   .card.c-card
     chat-main(
@@ -97,7 +97,7 @@ import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'
-import GroupMembers from '@containers/dashboard/GroupMembers.vue'
+import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
@@ -112,7 +112,7 @@ export default ({
     ChatNav,
     ChatMain,
     ConversationsList,
-    GroupMembers,
+    ChatMembers,
     MenuParent,
     MenuHeader,
     MenuTrigger,

@@ -46,15 +46,16 @@ modal-base-template.has-background(
           @click='openDirectMessage(displayName)'
           :key='username'
         )
-          .c-identity
-            avatar-user(:username='username' size='sm')
-            .c-name(data-test='username')
-              span
-                strong {{ localizedName(username) }}
-                .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+          profile-card(:username='username' direction='top-left')
+            .c-identity
+              avatar-user(:username='username' size='sm')
+              .c-name(data-test='username')
+                span
+                  strong {{ localizedName(username) }}
+                  .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
-              i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
-              i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
+                i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
+                i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
 </template>
 
@@ -63,6 +64,7 @@ import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
+import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 
 export default ({
@@ -70,6 +72,7 @@ export default ({
   components: {
     ModalBaseTemplate,
     Search,
+    ProfileCard,
     AvatarUser
   },
   data () {

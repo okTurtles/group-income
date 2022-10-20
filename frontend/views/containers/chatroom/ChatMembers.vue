@@ -1,5 +1,5 @@
 <template lang="pug">
-.c-group-members(data-test='groupMembers')
+.c-group-members(data-test='chatMembers')
   .c-group-members-header
     h3.is-title-4 {{title}}
 
@@ -8,33 +8,17 @@
       @click='headerButtonAction'
     )
       i.icon-plus.is-prefix
-      i18n(v-if='action === "addMember"') Add
-      i18n(v-else) New
+      i18n New
 
   ul.c-group-list
     li.c-group-member(
-      v-for='{username, displayName, invitedBy, isNew} in firstTenMembers'
+      v-for='{username, displayName, invitedBy, isNew} in directMessageMembers'
       :data-test='username'
-      :class='invitedBy && "is-pending"'
       :key='username'
     )
       profile-card(:username='username')
-        avatar(v-if='invitedBy' src='/assets/images/user-avatar-pending.png' size='sm' data-test='openMembersProfileCard')
-        avatar-user(v-else :username='username' size='sm' data-test='openMemberProfileCard')
-
+        avatar-user(:username='username' size='sm' data-test='openMemberProfileCard')
         button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
-        i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
-        i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
-
-        group-members-tooltip-pending.c-menu(v-if='invitedBy' :username='username')
-
-  i18n.link(
-    tag='button'
-    v-if='groupMembersCount > 10'
-    :args='{ groupMembersCount }'
-    @click='openModal("GroupMembersAllModal")'
-    data-test='seeAllMembers'
-  ) See all {groupMembersCount} members
 </template>
 
 <script>
@@ -62,8 +46,8 @@ export default ({
     },
     action: {
       type: String,
-      default: 'addMember',
-      validator: (value) => ['addMember'].includes(value)
+      default: 'addDirectMessage',
+      validator: (value) => ['addDirectMessage'].includes(value)
     }
   },
   computed: {
@@ -74,7 +58,7 @@ export default ({
       'ourUsername',
       'userDisplayName'
     ]),
-    firstTenMembers () {
+    directMessageMembers () {
       return this.groupMembersSorted.slice(0, 10)
     }
   },
@@ -90,8 +74,8 @@ export default ({
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     headerButtonAction () {
-      let modalAction = 'AddMembers'
-      if (this.action === 'addMember' && !this.groupShouldPropose) modalAction = 'InvitationLinkModal'
+      let modalAction = 'GroupMembersDirectMessages'
+      if (this.action === '') modalAction = ''
       this.openModal(modalAction)
     }
   }
@@ -163,5 +147,4 @@ export default ({
   left: auto;
   min-width: 13rem;
 }
-
 </style>
