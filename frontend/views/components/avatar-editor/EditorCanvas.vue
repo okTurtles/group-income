@@ -208,13 +208,8 @@ export default {
     extractEditedImage () {
       const { canvas, helperCanvas } = this.$refs
       const { clipCircle } = this.ephemeral
-      const avatarHalf = EDITED_AVATAR_DIAMETER / 2
       const cx = helperCanvas.getContext('2d')
 
-      cx.beginPath()
-      cx.moveTo(EDITED_AVATAR_DIAMETER, avatarHalf)
-      cx.arc(avatarHalf, avatarHalf, avatarHalf, 0, Math.PI * 2, true)
-      cx.clip()
       cx.drawImage(
         canvas,
         clipCircle.x,
@@ -227,7 +222,12 @@ export default {
         helperCanvas.height
       )
 
-      return imageDataURItoBlob(helperCanvas.toDataURL('image/jpg'))
+      const aEl = document.createElement('a')
+      aEl.download = 'image.jpg'
+      aEl.href = helperCanvas.toDataURL('image/jpeg') 
+      aEl.click()
+
+      return imageDataURItoBlob(helperCanvas.toDataURL('image/jpeg'))
     }
   },
   created () {
