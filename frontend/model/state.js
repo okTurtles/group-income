@@ -513,6 +513,9 @@ const getters = {
         return nameA < nameB ? -1 : 1
       })
   },
+  groupProposals (state, getters) {
+    return contractID => state[contractID]?.proposals
+  },
   globalProfile (state, getters) {
     // get profile from username who is part of current group
     return username => {

@@ -23,6 +23,8 @@ import router from './controller/router.js'
 import { PUBSUB_INSTANCE } from './controller/instance-keys.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
+import { MINS_MILLIS, DAYS_MILLIS } from '@model/contracts/shared/time.js'
+import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
 import BackgroundSounds from './views/components/sounds/Background.vue'
 import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
@@ -235,6 +237,7 @@ async function startApp () {
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGIN, () => {
         this.ephemeral.finishedLogin = 'yes'
+        setTimeout(this.periodicStateChecks, 3000)
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
@@ -280,8 +283,22 @@ async function startApp () {
       this.setBadgeOnTab()
     },
     computed: {
-      ...mapGetters(['ourUnreadMessages', 'totalUnreadNotificationCount']),
+      ...mapGetters(['groupsByName', 'groupProposals', 'ourUnreadMessages', 'totalUnreadNotificationCount']),
       ...mapState(['contracts']),
+      groupOpenProposalsByGroup () {
+        return this.groupsByName.map(group => {
+          const { contractID } = group
+          const openProposals = {}
+          const groupProposals = this.groupProposals(contractID) || {}
+          for (const proposalId in groupProposals) {
+            const proposal = groupProposals[proposalId]
+            if (proposal.status === STATUS_OPEN) {
+              openProposals[proposalId] = proposal
+            }
+          }
+          return { contractID, openProposals }
+        })
+      },
       ourUnreadMessagesCount () {
         return Object.keys(this.ourUnreadMessages)
           .map(cId => this.ourUnreadMessages[cId].mentions.length)
@@ -316,6 +333,36 @@ async function startApp () {
           })
         }
         window.favicon.badge(this.shouldSetBadge ? 1 : 0)
+      },
+      // TODO: move this into a mixin to keep main.js small and separate
+      //       out the functionality into individual update functions
+      periodicStateChecks () {
+        if (!this.ephemeral.syncs.length) {
+          const expiringProposals = this.groupOpenProposalsByGroup.map(({ contractID, openProposals }) => ({
+            contractID,
+            proposals: Object.keys(openProposals)
+              .filter(proposalId => !openProposals[proposalId].notifiedBeforeExpire &&
+                openProposals[proposalId].data.expires_date_ms < Date.now() + DAYS_MILLIS)
+              .map(proposalId => ({
+                proposalId,
+                proposalType: openProposals[proposalId].data.proposalType,
+                proposalData: openProposals[proposalId].data.proposalData,
+                expires_date_ms: openProposals[proposalId].data.expires_date_ms,
+                createdDate: openProposals[proposalId].meta.createdDate,
+                creator: openProposals[proposalId].meta.username
+              }))
+          })).filter(proposalsByGroup => proposalsByGroup.proposals.length)
+
+          if (expiringProposals.length) {
+            Promise.all(expiringProposals.map(async ({ contractID, proposals }) => {
+              await sbp('gi.actions/group/notifyExpiringProposals', {
+                contractID,
+                data: { proposals }
+              })
+            }))
+          }
+        }
+        setTimeout(this.periodicStateChecks, MINS_MILLIS * 15)
       }
     },
     watch: {

@@ -364,7 +364,13 @@ export default sbp('sbp/selectors/register', {
     } catch (e) {
       console.error(`[chelonia] ERROR in handleEvent: ${e.message}`, e)
       handleEventError?.(e, message)
-      throw e
+      if (!(e instanceof ChelErrorUnexpected)) {
+        // sometimes we get this error in the following situation:
+        // Cypress tests run, generate a lot of messages, we are logged out, which
+        // clears the state, but we still receive the message, and since the state
+        // has been cleared, no contracts exist, and ChelErrorUnexpected is thrown
+        throw e
+      }
     }
   }
 })

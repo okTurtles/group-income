@@ -90,6 +90,14 @@ export const MESSAGE_VARIANTS = {
   FAILED: 'failed'
 }
 
+export const PROPOSAL_VARIANTS = {
+  CREATED: 'proposal-created',
+  EXPIRING: 'proposal-expiring',
+  ACCEPTED: 'proposal-accepted',
+  REJECTED: 'proposal-rejected',
+  EXPIRED: 'proposal-expired'
+}
+
 // mailbox.js related
 
 export const MAIL_TYPE_MESSAGE = 'message'
