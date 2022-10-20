@@ -15,6 +15,7 @@ modal-base-template.has-background(
         :placeholder='L("Search...")'
         :label='L("Search")'
         :autofocus='true'
+        v-model='searchText'
       )
 
       .c-member-count.has-text-1(
@@ -51,7 +52,7 @@ modal-base-template.has-background(
               avatar-user(:username='username' size='sm')
               .c-name(data-test='username')
                 span
-                  strong {{ localizedName(username) }}
+                  strong {{ localizedName(username, displayName) }}
                   .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
                 i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
@@ -82,17 +83,17 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupMembersSorted',
       'groupMembersCount',
       'ourUsername',
-      'userDisplayName'
+      'userDisplayName',
+      'ourContacts'
     ]),
     searchResult () {
-      if (!this.searchText) { return this.groupMembersSorted }
+      if (!this.searchText) { return this.ourContacts }
 
       const searchTextCaps = this.searchText.toUpperCase()
       const isInList = (n) => n.toUpperCase().indexOf(searchTextCaps) > -1
-      return this.groupMembersSorted.filter(({ username, displayName }) =>
+      return this.ourContacts.filter(({ username, displayName }) =>
         (!searchTextCaps || isInList(username) || isInList(displayName))
       )
     },
@@ -105,8 +106,8 @@ export default ({
     }
   },
   methods: {
-    localizedName (username) {
-      const name = this.userDisplayName(username)
+    localizedName (username, displayName) {
+      const name = displayName || this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     openDirectMessage (displayName) {

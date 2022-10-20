@@ -532,6 +532,26 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
+  groupMembers (state, getters) {
+    return contractID => {
+      const profiles = state[contractID]?.profiles || {}
+      return Object.keys(profiles).map(username => {
+        return getters.globalProfile2(contractID, username)
+      })
+    }
+  },
+  ourContacts (state, getters) {
+    const allProfiles = getters.groupsByName
+      .map(({ groupName, contractID }) => getters.groupMembers(contractID))
+      .flat()
+    return allProfiles
+      .filter((profile, pos) => allProfiles.findIndex(p => p.username === profile.username) === pos)
+      .sort((profileA, profileB) => {
+        const nameA = profileA.displayName.toUpperCase()
+        const nameB = profileB.displayName.toUpperCase()
+        return nameA > nameB ? 1 : -1
+      })
+  },
   colors (state) {
     return Colors[state.themeColor]
   },

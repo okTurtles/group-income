@@ -18,7 +18,7 @@
     )
       profile-card(:username='username')
         avatar-user(:username='username' size='sm' data-test='openMemberProfileCard')
-        button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
+        button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username, displayName) }}
 </template>
 
 <script>
@@ -53,13 +53,13 @@ export default ({
   computed: {
     ...mapGetters([
       'groupMembersCount',
-      'groupMembersSorted',
+      'ourContacts',
       'groupShouldPropose',
       'ourUsername',
       'userDisplayName'
     ]),
     directMessageMembers () {
-      return this.groupMembersSorted.slice(0, 10)
+      return this.ourContacts
     }
   },
   methods: {
@@ -69,8 +69,8 @@ export default ({
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
-    localizedName (username) {
-      const name = this.userDisplayName(username)
+    localizedName (username, displayName) {
+      const name = displayName || this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     headerButtonAction () {
