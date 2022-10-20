@@ -44,10 +44,10 @@ modal-base-template.has-background(
       )
         li.c-search-member(
           v-for='{username, displayName, invitedBy, isNew} in searchResult'
-          @click='openDirectMessage(displayName)'
+          @click='openOrStartDirectMessage(displayName)'
           :key='username'
         )
-          profile-card(:username='username' direction='top-left')
+          profile-card(:username='username' deactivated direction='top-left')
             .c-identity
               avatar-user(:username='username' size='sm')
               .c-name(data-test='username')
@@ -110,7 +110,7 @@ export default ({
       const name = displayName || this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
-    openDirectMessage (displayName) {
+    openOrStartDirectMessage (displayName) {
       console.log(`TODO: new direct message to ${displayName}`)
       this.closeModal()
     },

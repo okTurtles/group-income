@@ -15,8 +15,9 @@
       v-for='{username, displayName, invitedBy, isNew} in directMessageMembers'
       :data-test='username'
       :key='username'
+      @click='openDirectMessage(username)'
     )
-      profile-card(:username='username')
+      profile-card(:username='username' deactivated)
         avatar-user(:username='username' size='sm' data-test='openMemberProfileCard')
         button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username, displayName) }}
 </template>
@@ -74,9 +75,14 @@ export default ({
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     headerButtonAction () {
-      let modalAction = 'GroupMembersDirectMessages'
-      if (this.action === '') modalAction = ''
-      this.openModal(modalAction)
+      let modalAction = ''
+      if (this.action === 'addDirectMessage') modalAction = 'GroupMembersDirectMessages'
+      if (modalAction) {
+        this.openModal(modalAction)
+      }
+    },
+    openDirectMessage (username) {
+      console.log('Open Direct Message:', username)
     }
   }
 }: Object)

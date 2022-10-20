@@ -1,9 +1,10 @@
 <template lang='pug'>
 tooltip(
+  ref='tooltip'
   :direction='direction'
   :manual='true'
-  ref='tooltip'
   :opacity='1'
+  :deactivated='deactivated'
   :aria-label='L("Show profile")'
 )
   slot
@@ -99,6 +100,10 @@ export default ({
       type: String,
       validator: (value) => ['left', 'top-left'].includes(value),
       default: 'left'
+    },
+    deactivated: {
+      type: Boolean,
+      default: false
     }
   },
   components: {
@@ -109,6 +114,9 @@ export default ({
   },
   methods: {
     openModal (modal, props) {
+      if (this.deactivated) {
+        return
+      }
       this.toggleTooltip()
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },

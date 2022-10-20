@@ -58,6 +58,10 @@ export default ({
       type: Number,
       required: false,
       default: 0.95
+    },
+    deactivated: {
+      type: Boolean,
+      default: false
     }
   },
   data: () => ({
@@ -78,6 +82,9 @@ export default ({
     },
     // Used by parent (ProfileCard.vue)
     toggle () {
+      if (this.deactivated) {
+        return
+      }
       if (!this.manual) { return false }
       this.isActive = !this.isActive
     },
@@ -249,5 +256,4 @@ export default ({
     background-color: rgba(0, 0, 0, 0.7);
   }
 }
-
 </style>
