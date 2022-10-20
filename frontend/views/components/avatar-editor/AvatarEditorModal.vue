@@ -2,6 +2,7 @@
 modal-template(
   class='is-centered'
   ref='modal'
+  data-test='AvatarEditorModal'
   :a11yTitle='L("Edit avatar")'
 )
   template(slot='title')

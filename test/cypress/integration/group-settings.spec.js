@@ -46,12 +46,12 @@ describe('Changing Group Settings', () => {
     cy.getByDT('groupSettingsLink').click()
 
     cy.fixture(groupPicture, 'base64').then(fileContent => {
-      groupPictureDataURI = `data:image/png;base64, ${fileContent}`
+      groupPictureDataURI = `data:image/jpeg;base64, ${fileContent}`
       cy.get('[data-test="avatar"]').attachFile({ fileContent, fileName: groupPicture, mimeType: 'image/png' }, { subjectType: 'input' })
     })
 
     cy.log('Avatar editor modal shoul pop up. image is saved with no edit.')
-    cy.getByDT('modal').within(() => {
+    cy.getByDT('AvatarEditorModal').within(() => {
       cy.getByDT('modal-header-title').should('contain', 'Edit avatar')
       cy.getByDT('imageHelperTag').invoke('attr', 'src', groupPictureDataURI)
       cy.getByDT('imageCanvas').should('exist')

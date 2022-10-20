@@ -222,11 +222,6 @@ export default {
         helperCanvas.height
       )
 
-      const aEl = document.createElement('a')
-      aEl.download = 'image.jpg'
-      aEl.href = helperCanvas.toDataURL('image/jpeg') 
-      aEl.click()
-
       return imageDataURItoBlob(helperCanvas.toDataURL('image/jpeg'))
     }
   },
