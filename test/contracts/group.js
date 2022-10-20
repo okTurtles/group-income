@@ -1113,7 +1113,10 @@ function memberLeaves({ username, dateLeft }, { meta, state, getters }) {
   updateCurrentDistribution({ meta, state, getters });
 }
 function isActionYoungerThanUser(actionMeta, userProfile) {
-  return Boolean(userProfile) && compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
+  if (!userProfile) {
+    return false;
+  }
+  return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
 }
 module_default("chelonia/defineContract", {
   name: "gi.contracts/group",

@@ -127,7 +127,10 @@ function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boo
   // 'MEMBER_ADDED' notification for user-1.
   // In some situations, userProfile is undefined, for example, when inviteAccept is called in
   // certain situations. So we need to check for that here.
-  return Boolean(userProfile) && compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
+  if (!userProfile) {
+    return false
+  }
+  return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
 }
 
 sbp('chelonia/defineContract', {

@@ -19,7 +19,10 @@ import {
   // STATUS_CANCELLED
 } from '../constants.js'
 
-export function archiveProposal ({ state, proposalHash, proposal, contractID }) {
+export function archiveProposal (
+  { state, proposalHash, proposal, contractID }: {
+    state: Object, proposalHash: string, proposal: any, contractID: string
+  }) {
   Vue.delete(state.proposals, proposalHash)
   sbp('gi.contracts/group/pushSideEffect', contractID,
     ['gi.contracts/group/archiveProposal', contractID, proposalHash, proposal]

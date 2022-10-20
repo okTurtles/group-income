@@ -1,4 +1,3 @@
-// @no-flow
 'use strict'
 
 import sbp from '@sbp/sbp'
@@ -7,7 +6,11 @@ import { handleFetchResult } from './utils/misc.js'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {
-  'namespace/register': (name, value) => {
+  /*
+   * @param {string} name
+   * @param {string} value
+   */
+  'namespace/register': (name /*: string */, value /*: string */) => {
     return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name`, {
       method: 'POST',
       body: JSON.stringify({ name, value }),
@@ -19,7 +22,10 @@ sbp('sbp/selectors/register', {
       return result
     })
   },
-  'namespace/lookup': (name) => {
+  /*
+   * @param {string} name
+   */
+  'namespace/lookup': (name /*: string */) => {
     // TODO: should `name` be encodeURI'd?
     const cache = sbp('state/vuex/state').namespaceLookups
     if (name in cache) {
@@ -33,7 +39,7 @@ sbp('sbp/selectors/register', {
         }
         return null
       }
-      return r['text']()
+      return r.text()
     }).then(value => {
       if (value !== null) {
         Vue.set(cache, name, value)
