@@ -57,7 +57,8 @@ export default ({
       'ourContacts',
       'groupShouldPropose',
       'ourUsername',
-      'userDisplayName'
+      'userDisplayName',
+      'mailboxContract'
     ]),
     directMessageMembers () {
       return this.ourContacts
@@ -82,6 +83,10 @@ export default ({
       }
     },
     openDirectMessage (username) {
+      const dmChatroom = this.mailboxContract.users[username]
+      if (!dmChatroom) {
+        console.log('Create a new direct message channel')
+      }
       console.log('Open Direct Message:', username)
     }
   }

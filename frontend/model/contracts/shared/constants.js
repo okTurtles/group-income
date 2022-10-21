@@ -97,8 +97,3 @@ export const PROPOSAL_VARIANTS = {
   REJECTED: 'proposal-rejected',
   EXPIRED: 'proposal-expired'
 }
-
-// mailbox.js related
-
-export const MAIL_TYPE_MESSAGE = 'message'
-export const MAIL_TYPE_FRIEND_REQ = 'friend-request'

@@ -545,7 +545,8 @@ const getters = {
       .map(({ groupName, contractID }) => getters.groupMembers(contractID))
       .flat()
     return allProfiles
-      .filter((profile, pos) => allProfiles.findIndex(p => p.username === profile.username) === pos)
+      .filter((profile, pos) => profile.username !== getters.ourUsername &&
+        allProfiles.findIndex(p => p.username === profile.username) === pos)
       .sort((profileA, profileB) => {
         const nameA = profileA.displayName.toUpperCase()
         const nameB = profileB.displayName.toUpperCase()

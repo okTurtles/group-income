@@ -9,6 +9,15 @@
 /* MISSING TRANSLATION - controller/actions/identity.js */
 "Failed to set login state." = "Failed to set login state.";
 
+/* MISSING TRANSLATION - controller/actions/mailbox.js */
+"Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
+
+/* MISSING TRANSLATION - controller/actions/mailbox.js */
+"Failed to join a new direct message channel." = "Failed to join a new direct message channel.";
+
+/* MISSING TRANSLATION - controller/actions/mailbox.js */
+"Failed to set Mailbox attributes. {attribute}" = "Failed to set Mailbox attributes. {attribute}";
+
 /* MISSING TRANSLATION - controller/router.js */
 "Design System" = "Design System";
 
@@ -570,9 +579,6 @@
 /* controller/actions/mailbox.js */
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
 
-/* controller/actions/mailbox.js */
-"Failed to post message to mailbox." = "L’envoi du message a échoué.";
-
 /* controller/router.js */
 "Group Chat" = "Conversation du groupe";
 
@@ -626,6 +632,21 @@
 
 /* model/contracts/group.js */
 "There is an identical open proposal." = "Une proposition identique a déjà été créée.";
+
+/* model/contracts/mailbox.js */
+"Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can create direct message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can set attributes." = "Seul le créateur de la boîte aux lettres peut définir des attributs.";
+
+/* model/contracts/mailbox.js */
+"Same attribute is already set." = "Le même attribut est déjà défini.";
+
+/* model/contracts/mailbox.js */
+"Wrong direct message channel." = "Mauvais canal de messagerie directe.";
 
 /* model/contracts/shared/time.js */
 "Today" = "Aujourd’hui";
@@ -903,8 +924,14 @@
 /* views/containers/access/SignupModal.vue, views/pages/Join.vue */
 "Already have an account?" = "Vous avez déjà un compte ?";
 
-/* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ConversationsList.vue, views/containers/dashboard/GroupMembers.vue */
+/* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue, views/containers/dashboard/GroupMembers.vue */
 "New" = "Nouveau";
+
+/* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+"{name} (you)" = "{name} (vous)";
+
+/* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/pages/GroupChat.vue */
+"Members" = "Membres";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue */
 "Channel members" = "Membres du salon";
@@ -918,9 +945,6 @@
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/CreateNewChannelModal.vue */
 "Private channel" = "Salon privé";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"{name} (you)" = "{name} (vous)";
-
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search" = "Rechercher";
 
@@ -932,9 +956,6 @@
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Sorry, we couldn't find anyone called \"{searchTerm}\"" = "Désolé, nous n’avons trouvé personne dont le nom soit \"{searchTerm}\"";
-
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/pages/GroupChat.vue */
-"Members" = "Membres";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Add {span_} to channel{_span}" = "Ajouter {span_} au salon{_span}";
@@ -2422,6 +2443,9 @@
 "Failed to create payment. {reportError}" = "Erreur lors de la création du paiement. {reportError}";
 
 /* Not currently used */
+"Failed to post message to mailbox." = "L’envoi du message a échoué.";
+
+/* Not currently used */
 "Failed to propose mincome change: {reportError}" = "La proposition de changement du revenu minimum a échoué : {reportError}";
 
 /* Not currently used */
@@ -2432,6 +2456,9 @@
 
 /* Not currently used */
 "Failed to remove {member}: {codeError}" = "Erreur lors de l’exclusion de {member}: {codeError}";
+
+/* Not currently used */
+"Failed to set Mailbox attributes." = "Impossible de définir les attributs de la boîte aux lettres.";
 
 /* Not currently used */
 "Failed to update group settings. {reportError}" = "La mise à jour des paramètres de groupe a échoué. {reportError}";

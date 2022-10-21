@@ -1,9 +1,9 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { Vue } from '@common/common.js'
-import { mailType } from './shared/types.js'
-import { objectOf, string, object, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { Vue, L } from '@common/common.js'
+import { merge } from './shared/giLodash.js'
+import { objectOf, string, boolean, object } from '~/frontend/model/contracts/misc/flowTyper.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/mailbox',
@@ -21,32 +21,81 @@ sbp('chelonia/defineContract', {
   actions: {
     'gi.contracts/mailbox': {
       validate: object, // TODO: define this
-      process ({ data }, { state }) {
-        for (const key in data) {
-          Vue.set(state, key, data[key])
+      process ({ meta, data }, { state }) {
+        const initialState = merge({
+          attributes: {
+            creator: meta.username,
+            autoJoinAllowance: true
+          },
+          users: {}
+        }, data)
+        for (const key in initialState) {
+          Vue.set(state, key, initialState[key])
         }
-        Vue.set(state, 'messages', [])
       }
     },
-    'gi.contracts/mailbox/postMessage': {
-      validate: objectOf({
-        messageType: mailType,
-        from: string,
-        subject: optional(string),
-        message: optional(string),
-        headers: optional(object)
-      }),
-      process (message, { state }) {
-        state.messages.push(message)
+    'gi.contracts/mailbox/setAutoJoinAllowance': {
+      validate: (data, { state, meta }) => {
+        objectOf({ allownace: boolean })(data)
+        if (state.attributes.creator !== meta.username) {
+          throw new TypeError(L('Only the mailbox creator can set attributes.'))
+        } else if (state.attributes === data.allownace) {
+          throw new TypeError(L('Same attribute is already set.'))
+        }
+      },
+      process ({ meta, data }, { state }) {
+        Vue.set(state.attributes, 'autoJoinAllowance', data.allownace)
       }
     },
-    'gi.contracts/mailbox/authorizeSender': {
-      validate: objectOf({
-        sender: string
-      }),
-      process ({ data }, { state }) {
-        // TODO: replace this via OP_KEY_*?
-        throw new Error('unimplemented!')
+    'gi.contracts/mailbox/createDirectMessage': {
+      validate: (data, { state, meta }) => {
+        objectOf({
+          username: string,
+          contractID: string
+        })(data)
+        if (state.attributes.creator !== meta.username) {
+          throw new TypeError(L('Only the mailbox creator can create direct message channel.'))
+        } else if (state.users[data.username]) {
+          throw new TypeError(L('Already existing direct message channel.'))
+        }
+      },
+      process ({ meta, data }, { state }) {
+        Vue.set(state.users, data.username, {
+          contractID: data.contractID,
+          creator: meta.username,
+          hidden: false,
+          joinedDate: meta.createdDate
+        })
+      },
+      async sideEffect ({ data }) {
+        await sbp('chelonia/contract/sync', data.contractID)
+      }
+    },
+    'gi.contracts/mailbox/joinDirectMessage': {
+      validate: (data, { state, meta }) => {
+        objectOf({
+          username: string,
+          contractID: string
+        })(data)
+        if (state.attributes.creator !== data.username) {
+          throw new TypeError(L('Wrong direct message channel.'))
+        } else if (state.users[meta.username]) {
+          throw new TypeError(L('Already existing direct message channel.'))
+        }
+      },
+      process ({ meta, data }, { state }) {
+        const joinedDate = state.attributes.autoJoinAllowance ? meta.createdDate : null
+        Vue.set(state.users, meta.username, {
+          contractID: data.contractID,
+          creator: meta.username,
+          hidden: false,
+          joinedDate
+        })
+      },
+      async sideEffect ({ data, hash, contractID, meta }, { state }) {
+        if (state.attributes.autoJoinAllowance) {
+          await sbp('chelonia/contract/sync', data.contractID)
+        }
       }
     }
   }
