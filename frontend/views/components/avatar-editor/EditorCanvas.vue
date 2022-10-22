@@ -8,7 +8,8 @@
       v-bind='canvasCommonAttrs'
     )
 
-    canvas.c-canvas(
+    canvas.c-canvas.top(
+      @wheel='$emit("canvas-wheel", $event)'
       ref='clip'
       :style='ephemeral.canvas.style'
       v-bind='canvasCommonAttrs'
@@ -256,6 +257,10 @@ export default {
 
   &.bottom {
     filter: brightness(0.8) blur(4px);
+  }
+
+  &.top {
+    cursor: move;
   }
 }
 

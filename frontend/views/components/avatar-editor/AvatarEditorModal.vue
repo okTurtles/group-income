@@ -12,6 +12,7 @@ modal-template(
     editor-canvas.c-canvas-container(
       ref='editorCanvas'
       :zoom='zoom'
+      @canvas-wheel='HandleWheelOnCanvas'
     )
 
     .c-slider-container
@@ -111,6 +112,10 @@ export default ({
     decrementSlider () {
       this.form.slider = Math.max(ZOOM_SLIDER_MIN, this.form.slider - 1)
       this.$refs.slider.updateSlider(this.form.slider)
+    },
+    HandleWheelOnCanvas ({ deltaY }) {
+      if (deltaY < 0) this.incrementSlider()
+      else this.decrementSlider()
     }
   }
 }: Object)
