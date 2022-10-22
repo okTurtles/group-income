@@ -4,6 +4,7 @@
     component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
+import { mapState } from 'vuex'
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import { omit } from '@model/contracts/shared/giLodash.js'
@@ -22,6 +23,9 @@ export default ({
       replacement: null, // Replace the modal once the first one is close without updating the url
       lastFocus: null // Record element that open the modal
     }
+  },
+  computed: {
+    ...mapState(['loggedIn'])
   },
   created () {
     sbp('okTurtles.events/on', OPEN_MODAL, this.openModal)
@@ -47,7 +51,7 @@ export default ({
     '$route' (to, from) {
       const toModal = to.query.modal
 
-      if (toModal) {
+      if (toModal && !this.isPreauthGuarded(toModal)) {
         // We reset the modals with no animation for simplicity
         if (toModal !== this.content) {
           if (this.content) this.replaceModal(toModal, omit(to.query, 'modal')) // if another modal is already open, replace it.
@@ -154,6 +158,11 @@ export default ({
     },
     setModalQueries (componentName, queries) {
       this.queries[componentName] = queries
+    },
+    isPreauthGuarded (toModal) {
+      // check if the queried modal is not meant to be displayed when the user is not logged in.
+      return !this.loggedIn &&
+        !['SignupModal', 'LoginModal'].includes(toModal)
     }
   }
 }: Object)
