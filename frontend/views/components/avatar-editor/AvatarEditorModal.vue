@@ -12,7 +12,7 @@ modal-template(
     editor-canvas.c-canvas-container(
       ref='editorCanvas'
       :zoom='zoom'
-      @canvas-wheel='HandleWheelOnCanvas'
+      @pointer-wheel='HandleWheelOnCanvas'
     )
 
     .c-slider-container

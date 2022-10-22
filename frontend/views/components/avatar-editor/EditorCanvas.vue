@@ -1,5 +1,7 @@
 <template lang="pug">
-.c-editor-canvas
+.c-editor-canvas(
+  @wheel='$emit("pointer-wheel", $event)'
+)
   template(v-if='ephemeral.image.loaded')
     canvas.c-canvas.bottom(
       data-test='imageCanvas'
@@ -9,7 +11,6 @@
     )
 
     canvas.c-canvas.top(
-      @wheel='$emit("canvas-wheel", $event)'
       ref='clip'
       :style='ephemeral.canvas.style'
       v-bind='canvasCommonAttrs'
@@ -24,9 +25,11 @@
 import { mapGetters } from 'vuex'
 import { imageDataURItoBlob } from '@utils/image.js'
 import { EDITED_AVATAR_DIAMETER } from './avatar-editor-constants.js'
+import pointerEventsMixin from './avatar-editor-pointer-events-setup.js'
 
 export default {
   name: 'AvatarEditorCanvas',
+  mixins: [pointerEventsMixin],
   data () {
     return {
       ephemeral: {
@@ -38,7 +41,8 @@ export default {
         },
         canvas: {
           style: { width: null, height: null },
-          onCanvas: { width: null, height: null }
+          onCanvas: { width: null, height: null },
+          translation: { x: 0, y: 0 }
         },
         clipCircle: {
           x: null,
@@ -191,7 +195,10 @@ export default {
       cx.fillRect(0, 0, canvas.width, canvas.height)
 
       // 2. paint the image on the bottom canvas
+      cx.save()
+      cx.translate(this.ephemeral.canvas.translation.x, this.ephemeral.canvas.translation.y)
       paintImageOn(cx)
+      cx.restore()
 
       // 3. draw a mask on the top canvas
       const cx2 = this.$refs.clip.getContext('2d')
@@ -224,6 +231,13 @@ export default {
       )
 
       return imageDataURItoBlob(helperCanvas.toDataURL('image/jpeg'))
+    },
+    translate ({ x = 0, y = 0 }) {
+      this.ephemeral.canvas.translation.x += x
+      this.ephemeral.canvas.translation.y += y
+
+      this.calculate()
+      this.draw()
     }
   },
   created () {
