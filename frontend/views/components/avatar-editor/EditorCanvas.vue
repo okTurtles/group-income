@@ -258,10 +258,6 @@ export default {
   &.bottom {
     filter: brightness(0.8) blur(4px);
   }
-
-  &.top {
-    cursor: move;
-  }
 }
 
 .c-invisible-utils {
