@@ -3,28 +3,37 @@
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
-import { objectOf, string, boolean, object } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, string, boolean, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/mailbox',
   metadata: {
-    // TODO: why is this missing the from username..?
     validate: objectOf({
-      createdDate: string
+      createdDate: string, // action created date
+      username: optional(string), // action creator
+      identityContractID: optional(string) // action creator identityContractID
     }),
     create () {
+      if (!sbp('state/vuex/state').loggedIn) {
+        return { createdDate: new Date().toISOString() }
+      }
+      const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
-        createdDate: new Date().toISOString()
+        createdDate: new Date().toISOString(),
+        username,
+        identityContractID
       }
     }
   },
   actions: {
     'gi.contracts/mailbox': {
-      validate: object, // TODO: define this
-      process ({ meta, data }, { state }) {
+      validate: objectOf({
+        username: string
+      }),
+      process ({ data }, { state }) {
         const initialState = merge({
           attributes: {
-            creator: meta.username,
+            creator: data.username,
             autoJoinAllowance: true
           },
           users: {}
@@ -72,18 +81,16 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/mailbox/joinDirectMessage': {
-      validate: (data, { state, meta }) => {
-        objectOf({
-          username: string,
-          contractID: string
-        })(data)
+      validate: objectOf({
+        username: string,
+        contractID: string
+      }),
+      process ({ meta, data }, { state }) {
         if (state.attributes.creator !== data.username) {
           throw new TypeError(L('Incorrect mailbox creator to join direct message channel.'))
         } else if (state.users[meta.username]) {
           throw new TypeError(L('Already existing direct message channel.'))
         }
-      },
-      process ({ meta, data }, { state }) {
         const joinedDate = state.attributes.autoJoinAllowance ? meta.createdDate : null
         Vue.set(state.users, meta.username, {
           contractID: data.contractID,

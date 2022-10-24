@@ -43,8 +43,8 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName, invitedBy, isNew} in searchResult'
-          @click='openOrStartDirectMessage(displayName)'
+          v-for='{username, displayName} in searchResult'
+          @click='createNewDirectMessage(username)'
           :key='username'
         )
           profile-card(:username='username' deactivated direction='top-left')
@@ -54,13 +54,10 @@ modal-base-template.has-background(
                 span
                   strong {{ localizedName(username, displayName) }}
                   .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
-
-                i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
-                i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
-
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
@@ -86,7 +83,8 @@ export default ({
       'ourUsername',
       'userDisplayName',
       'ourContacts',
-      'mailboxContract'
+      'mailboxContract',
+      'currentIdentityState'
     ]),
     ourNewDMContacts () {
       return this.ourContacts.filter(contact => !Object.keys(this.mailboxContract.users).includes(contact.username))
@@ -116,8 +114,11 @@ export default ({
       const name = displayName || this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
-    openOrStartDirectMessage (displayName) {
-      console.log(`TODO: new direct message to ${displayName}`)
+    createNewDirectMessage (username) {
+      sbp('gi.actions/mailbox/createDirectMessage', {
+        contractID: this.currentIdentityState.attributes.mailbox,
+        data: { username }
+      })
       this.closeModal()
     },
     closeModal () {

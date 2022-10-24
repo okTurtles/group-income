@@ -4,13 +4,12 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
 import '~/shared/domains/chelonia/chelonia.js'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { blake32Hash } from '~/shared/functions.js'
 import * as Common from '@common/common.js'
 import proposals from '~/frontend/model/contracts/shared/voting/proposals.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/shared/payments/index.js'
-import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS, MAIL_TYPE_MESSAGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
+import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/shared/constants.js'
 import { createInvite } from '~/frontend/model/contracts/shared/functions.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
@@ -186,9 +185,10 @@ describe('Full walkthrough', function () {
   }
 
   async function createMailboxFor (user) {
+    const { username } = users.bob.decryptedValue().data.attributes
     const mailbox = await sbp('chelonia/out/registerContract', {
       contractName: 'gi.contracts/mailbox',
-      data: {}
+      data: { username }
     })
     await sbp('chelonia/out/actionEncrypted', {
       action: 'gi.contracts/identity/setAttributes',
@@ -269,27 +269,28 @@ describe('Full walkthrough', function () {
       should(res).equal(bob.mailbox.hash())
     })
 
-    it("Should invite Bob to Alice's group", function (done) {
-      const mailbox = users.bob.mailbox
-      sbp('chelonia/out/actionEncrypted', {
-        action: 'gi.contracts/mailbox/postMessage',
-        data: {
-          from: users.bob.decryptedValue().data.attributes.username,
-          messageType: MAIL_TYPE_MESSAGE,
-          message: groups.group1.contractID()
-        },
-        contractID: mailbox.contractID(),
-        hooks: {
-          prepublish (invite: GIMessage) {
-            sbp('okTurtles.events/once', invite.hash(), (contractID: string, entry: GIMessage) => {
-              console.debug('Bob successfully got invite!')
-              should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
-              done()
-            })
-          }
-        }
-      })
-    })
+    // TODO: need to implement this in a new way
+    // it("Should invite Bob to Alice's group", function (done) {
+    //   const mailbox = users.bob.mailbox
+    //   sbp('chelonia/out/actionEncrypted', {
+    //     action: 'gi.contracts/mailbox/postMessage',
+    //     data: {
+    //       from: users.bob.decryptedValue().data.attributes.username,
+    //       messageType: MAIL_TYPE_MESSAGE,
+    //       message: groups.group1.contractID()
+    //     },
+    //     contractID: mailbox.contractID(),
+    //     hooks: {
+    //       prepublish (invite: GIMessage) {
+    //         sbp('okTurtles.events/once', invite.hash(), (contractID: string, entry: GIMessage) => {
+    //           console.debug('Bob successfully got invite!')
+    //           should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
+    //           done()
+    //         })
+    //       }
+    //     }
+    //   })
+    // })
 
     it('Should post an event', function () {
       return createPaymentTo(users.bob, 100, groups.group1.contractID())

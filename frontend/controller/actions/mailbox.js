@@ -74,10 +74,10 @@ export default (sbp('sbp/selectors/register', {
 
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, redirectToDMChatroom)
 
-      await sbp('gi.contracts/mailbox/joinDirectMessage', {
+      await sbp('gi.actions/mailbox/joinDirectMessage', {
         ...omit(params, ['options']),
-        data: paramsData,
         contractID: partnerProfile.mailbox,
+        data: paramsData,
         hooks: {
           prepublish: null,
           postpublish: params.hooks?.postpublish

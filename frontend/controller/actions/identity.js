@@ -52,7 +52,10 @@ export default (sbp('sbp/selectors/register', {
     // proceed with creation
     // first create the mailbox for the user and subscribe to it
     // and do this outside of a try block so that if it throws the error just gets passed up
-    const mailbox = await sbp('gi.actions/mailbox/create', { options: { sync: true } })
+    const mailbox = await sbp('gi.actions/mailbox/create', {
+      data: { username },
+      options: { sync: true }
+    })
     const mailboxID = mailbox.contractID()
     let userID
     // next create the identity contract itself and associate it with the mailbox
