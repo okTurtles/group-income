@@ -105,17 +105,17 @@ export default ({
     onSliderInput (e) {
       this.form.slider = parseFloat(e.target.value)
     },
-    incrementSlider () {
-      this.form.slider = Math.min(ZOOM_SLIDER_MAX, this.form.slider + 1)
+    incrementSlider (incVal = 1) {
+      this.form.slider = Math.min(ZOOM_SLIDER_MAX, this.form.slider + incVal)
       this.$refs.slider.updateSlider(this.form.slider)
     },
-    decrementSlider () {
-      this.form.slider = Math.max(ZOOM_SLIDER_MIN, this.form.slider - 1)
+    decrementSlider (decVal = 1) {
+      this.form.slider = Math.max(ZOOM_SLIDER_MIN, this.form.slider - decVal)
       this.$refs.slider.updateSlider(this.form.slider)
     },
     HandleWheelOnCanvas ({ deltaY }) {
-      if (deltaY < 0) this.incrementSlider()
-      else this.decrementSlider()
+      if (deltaY < 0) this.incrementSlider(2)
+      else this.decrementSlider(2)
     }
   }
 }: Object)

@@ -41,8 +41,14 @@ export default {
         },
         canvas: {
           style: { width: null, height: null },
-          onCanvas: { width: null, height: null },
-          translation: { x: 0, y: 0 }
+          onCanvas: {
+            width: null,
+            height: null,
+            origin: {
+              translation: { x: 0, y: 0 },
+              rotation: 0
+            }
+          }
         },
         clipCircle: {
           x: null,
@@ -113,17 +119,13 @@ export default {
       const rootElComputedStyle = window.getComputedStyle(this.$el)
       const extractStyle = prop => parseFloat(rootElComputedStyle.getPropertyValue(prop))
 
-      // re-calculate & reset canvas css size to be the same as its container
-      this.ephemeral.canvas.style = {
-        width: `${extractStyle('width')}px`,
-        height: `${extractStyle('height')}px`
-      }
-      this.ephemeral.canvas.onCanvas = {
-        // if window.devicePixelRatio is not taken into account in the on-canvas dimensions,
-        // the image gets blurry (reference: https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio#examples)
-        width: extractStyle('width') * pixelRatio,
-        height: extractStyle('height') * pixelRatio
-      }
+      // canvas css width & height has to be the same as thier container
+      this.ephemeral.canvas.style.width = `${extractStyle('width')}px`
+      this.ephemeral.canvas.style.height = `${extractStyle('height')}px`
+      // if window.devicePixelRatio is not taken into account in the on-canvas dimensions, the image gets blurry
+      // (reference: https://developer.mozilla.org/en-US/docs/Web/API/Window/devicePixelRatio#examples)
+      this.ephemeral.canvas.onCanvas.width = extractStyle('width') * pixelRatio
+      this.ephemeral.canvas.onCanvas.height = extractStyle('height') * pixelRatio
 
       if (this.ephemeral.image.loaded) {
         this.$nextTick(() => {
@@ -140,10 +142,8 @@ export default {
       const canvasCenter = { x: canvas.width / 2, y: canvas.height / 2 }
 
       // calculate various on-canvas values of the image
-      image.onCanvas.width = canvas.height * (1 / image.intrinsic.aspectRatio)
+      image.onCanvas.width = canvas.height * (1 / image.intrinsic.aspectRatio) // always respect the instrinsic aspect ratio of the image
       image.onCanvas.height = canvas.height
-      image.onCanvas.x = canvasCenter.x - image.onCanvas.width / 2
-      image.onCanvas.y = 0
 
       // calculate the values of the clipping clipping circle
       if (this.isWiderThanTaller) {
@@ -156,26 +156,15 @@ export default {
         clipCircle.y = canvasCenter.y - clipCircle.diameter / 2
       }
 
-      // apply transformation to the on-canvas image
-      // (NOTE: has to be the last step, because clipCircle is calculated
-      //        based on the pre-transformed values of the on-canvas image.)
-      this.applyImageTransformation()
-    },
-    applyImageTransformation () {
-      // re-caculate on-canvas size & position of the image with the current transformation options (zoom, translation etc.)
-      const { image, canvas } = this.ephemeral
-      const canvasCenter = { x: canvas.onCanvas.width / 2, y: canvas.onCanvas.height / 2 }
-
-      // 1. zoom
+      // scale the on-canvas image dimension based on the current zoom value
       if (this.zoom > 1) {
         image.onCanvas.width *= this.zoom
         image.onCanvas.height *= this.zoom
-        image.onCanvas.x = canvasCenter.x - image.onCanvas.width / 2
-        image.onCanvas.y = canvasCenter.y - image.onCanvas.height / 2
       }
 
-      // 2. translation - TODO!
-      // 3. rotation - maybe..
+      // center the on-canvas image relative to the canvas origin
+      image.onCanvas.x = -1 * (image.onCanvas.width / 2)
+      image.onCanvas.y = -1 * (image.onCanvas.height / 2)
     },
     draw () {
       const cx = this.$refs.canvas.getContext('2d')
@@ -184,9 +173,6 @@ export default {
       const clipCircle = this.ephemeral.clipCircle
       const circleRadius = clipCircle.diameter / 2
       const canvasCenter = { x: canvas.width / 2, y: canvas.height / 2 }
-      const paintImageOn = context => {
-        context.drawImage(this.$refs.img, image.x, image.y, image.width, image.height)
-      }
 
       cx.clearRect(0, 0, canvas.width, canvas.height)
 
@@ -194,24 +180,41 @@ export default {
       cx.fillStyle = this.onCanvasColors.canvasBg
       cx.fillRect(0, 0, canvas.width, canvas.height)
 
-      // 2. paint the image on the bottom canvas
+      // 2. apply origin transformation to the bottom canvas
       cx.save()
-      cx.translate(this.ephemeral.canvas.translation.x, this.ephemeral.canvas.translation.y)
-      paintImageOn(cx)
+      cx.translate(
+        canvasCenter.x + canvas.origin.translation.x,
+        canvasCenter.y + canvas.origin.translation.y
+      )
+
+      // 3. paint the image on the bottom canvas
+      cx.drawImage(this.$refs.img, image.x, image.y, image.width, image.height)
       cx.restore()
 
-      // 3. draw a mask on the top canvas
+      // 4. draw a mask on the top canvas
       const cx2 = this.$refs.clip.getContext('2d')
       cx2.clearRect(0, 0, canvas.width, canvas.height)
       cx2.fillStyle = this.onCanvasColors.clipCircleBg
       cx2.fillRect(0, 0, canvas.width, canvas.height)
 
-      // 4. paint the image again on the top canvas with a circlular clipping-path applied
+      // 5. paint the image again on the top canvas with a circlular clipping-path applied
       cx2.beginPath()
       cx2.moveTo(canvasCenter.x + circleRadius, canvasCenter.y)
       cx2.arc(canvasCenter.x, canvasCenter.y, circleRadius, 0, Math.PI * 2, true)
+      cx2.save()
       cx2.clip()
-      paintImageOn(cx2)
+      cx2.drawImage(
+        this.$refs.canvas,
+        clipCircle.x,
+        clipCircle.y,
+        clipCircle.diameter,
+        clipCircle.diameter,
+        clipCircle.x,
+        clipCircle.y,
+        clipCircle.diameter,
+        clipCircle.diameter
+      )
+      cx2.restore()
     },
     extractEditedImage () {
       const { canvas, helperCanvas } = this.$refs
@@ -233,8 +236,8 @@ export default {
       return imageDataURItoBlob(helperCanvas.toDataURL('image/jpeg'))
     },
     translate ({ x = 0, y = 0 }) {
-      this.ephemeral.canvas.translation.x += x
-      this.ephemeral.canvas.translation.y += y
+      this.ephemeral.canvas.onCanvas.origin.translation.x += x
+      this.ephemeral.canvas.onCanvas.origin.translation.y += y
 
       this.calculate()
       this.draw()
@@ -261,7 +264,9 @@ export default {
   display: block;
   width: 100%;
   height: 15.625rem;
+  touch-action: none;
   overflow: hidden;
+  cursor: move;
 }
 
 .c-canvas {
