@@ -229,6 +229,24 @@ export function debounce (func: Function, wait: number, immediate: ?boolean): Fu
   return debounced
 }
 
+export function throttle (func: Function, delay: number): Function {
+  // reference: https://www.geeksforgeeks.org/javascript-throttling/
+
+  // Previously called time of the function
+  let prev = 0
+  return (...args) => {
+    // Current called time of the function
+    const now = new Date().getTime()
+
+    // If difference is greater than delay call
+    if (now - prev > delay) {
+      prev = now
+
+      return func(...args)
+    }
+  }
+}
+
 /**
  * Gets the value at `path` of `obj`. If the resolved value is
  * `undefined`, the `defaultValue` is returned in its place.

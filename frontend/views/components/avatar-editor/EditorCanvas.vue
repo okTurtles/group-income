@@ -48,7 +48,8 @@ export default {
               translation: { x: 0, y: 0 },
               rotation: 0
             }
-          }
+          },
+          boundingRect: null
         },
         clipCircle: {
           x: null,

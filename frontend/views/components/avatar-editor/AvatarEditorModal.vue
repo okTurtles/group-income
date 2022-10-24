@@ -13,6 +13,8 @@ modal-template(
       ref='editorCanvas'
       :zoom='zoom'
       @pointer-wheel='HandleWheelOnCanvas'
+      @pinch-in='decrementSlider(3)'
+      @pinch-out='incrementSlider(3)'
     )
 
     .c-slider-container
