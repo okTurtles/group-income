@@ -196,7 +196,8 @@ export default (sbp('sbp/selectors/register', {
         for (const key of v.keys) {
           if (key.meta?.private) {
             if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
-              if (!state._volatile) state._volatile = { keys: {} }
+              if (!state._volatile) state._volatile = Object.create(null)
+              if (!state._volatile.keys) state._volatile.keys = Object.create(null)
               try {
                 state._volatile.keys[key.id] = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
               } catch (e) {
@@ -246,13 +247,14 @@ export default (sbp('sbp/selectors/register', {
 
         const keys = { ...env.additionalKeys, ...state._volatile?.keys }
 
+        const sharedKeys = Object.create(null)
+
         for (const key of v.keys) {
           if (key.meta?.private) {
             if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
-              if (!targetState._volatile) targetState._volatile = { keys: {} }
               try {
                 const decrypted = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
-                targetState._volatile.keys[key.id] = decrypted
+                sharedKeys[key.id] = decrypted
                 if (env.additionalKeys) {
                   env.additionalKeys[key.id] = decrypted
                 }
@@ -262,6 +264,30 @@ export default (sbp('sbp/selectors/register', {
             }
           }
         }
+        new Promise((resolve) => {
+          if (targetState._volatile?.pendingKeys) {
+            sbp('chelonia/contract/removeImmediately', v.contractID)
+            // Sync...
+            resolve(sbp('chelonia/withEnv', v.contractID, {
+              ...env,
+              additionalKeys: {
+                ...keys,
+                ...sharedKeys
+              }
+            }, [
+              'chelonia/private/in/syncContract', v.contractID
+            ]))
+          } else {
+            resolve()
+          }
+        }).then(() => {
+          if (!targetState._volatile) targetState._volatile = Object.create(null)
+          if (!targetState._volatile.keys) {
+            targetState._volatile.keys = sharedKeys
+          } else {
+            Object.entries((sharedKeys: any)).forEach(([k, v]) => { targetState._volatile.keys[k] = v })
+          }
+        })
       },
       [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
         if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeys) {
@@ -295,7 +321,8 @@ export default (sbp('sbp/selectors/register', {
         for (const key of v) {
           if (key.meta?.private) {
             if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
-              if (!state._volatile) state._volatile = { keys: {} }
+              if (!state._volatile) state._volatile = Object.create(null)
+              if (!state._volatile.keys) state._volatile.keys = Object.create(null)
               try {
                 state._volatile.keys[key.id] = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
               } catch (e) {
@@ -365,8 +392,8 @@ export default (sbp('sbp/selectors/register', {
     if (config[`preOp_${opT}`]) {
       processOp = config[`preOp_${opT}`](message, state) !== false && processOp
     }
+    opFns[opT](opV)
     if (processOp && !config.skipActionProcessing && !env.skipActionProcessing) {
-      opFns[opT](opV)
       config.postOp && config.postOp(message, state)
       config[`postOp_${opT}`] && config[`postOp_${opT}`](message, state)
     }
@@ -440,6 +467,8 @@ export default (sbp('sbp/selectors/register', {
 
       const [originatingContractID, previousHEAD, v] = ((entry: any): [string, string, GIOpKeyRequest])
 
+      const wasSubscribed = !!state.contracts[originatingContractID]
+
       // 1. Sync (originating) identity contract
       await sbp('chelonia/withEnv', originatingContractID, { skipActionProcessing: true }, [
         'chelonia/private/in/syncContract', originatingContractID
@@ -454,7 +483,7 @@ export default (sbp('sbp/selectors/register', {
 
         const originatingState = state[originatingContractID]
 
-        const signingKey = originatingState._vm.authorizedKeys[keyId]
+        const signingKey = originatingState._vm?.authorizedKeys[keyId]
 
         if (!signingKey || !signingKey.data) {
           throw new Error('Unable to find signing key')
@@ -495,7 +524,7 @@ export default (sbp('sbp/selectors/register', {
         // 4. Remove originating contract and update current contract with information
         await Promise.all([
           // TODO: Remove only if not previously subscribed
-          sbp('chelonia/contract/removeImmediately', originatingContractID),
+          wasSubscribed ? Promise.resolve() : sbp('chelonia/contract/removeImmediately', originatingContractID),
           sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: hash })
         ])
       }

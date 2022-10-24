@@ -272,6 +272,7 @@ export default (sbp('sbp/selectors/register', {
 
       const rootState = sbp('state/vuex/state')
       if (!params.options?.skipInviteAccept) {
+        /*
         // join the 'General' chatroom by default
         const generalChatRoomId = rootState[params.contractID].generalChatRoomId
         if (generalChatRoomId) {
@@ -287,7 +288,7 @@ export default (sbp('sbp/selectors/register', {
           })
         } else {
           alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
-        }
+        } */
 
         saveLoginState('joining', params.contractID)
       } else {
