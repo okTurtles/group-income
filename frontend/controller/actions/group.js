@@ -15,7 +15,9 @@ import {
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC,
-  STATUS_OPEN
+  STATUS_OPEN,
+  MESSAGE_TYPES,
+  PROPOSAL_VARIANTS
 } from '@model/contracts/shared/constants.js'
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { imageUpload } from '@utils/image.js'
@@ -559,6 +561,44 @@ export default (sbp('sbp/selectors/register', {
       console.error(`${e.name} during autoBanSenderOfMessage!`, message, e)
       // we really can't do much at this point since this is an exception
       // inside of the exception handler :-(
+    }
+  },
+  'gi.actions/group/notifyExpiringProposals': async function (params: GIActionParams) {
+    try {
+      const { proposals } = params.data
+      await sbp('chelonia/out/actionEncrypted', {
+        ...omit(params, ['options']),
+        data: proposals.map(p => p.proposalId),
+        action: 'gi.contracts/group/notifyExpiringProposals',
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
+      })
+
+      const rootState = sbp('state/vuex/state')
+      const { generalChatRoomId } = rootState[params.contractID]
+
+      for (const proposal of proposals) {
+        await sbp('gi.actions/chatroom/addMessage', {
+          ...omit(params, ['options']),
+          contractID: generalChatRoomId,
+          data: {
+            type: MESSAGE_TYPES.INTERACTIVE,
+            proposal: {
+              ...proposal,
+              variant: PROPOSAL_VARIANTS.EXPIRING
+            }
+          },
+          hooks: {
+            prepublish: params.hooks?.prepublish,
+            postpublish: null
+          }
+        })
+      }
+    } catch (e) {
+      console.error('gi.actions/group/noticeExpiringProposal failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to notify expiring proposals.'))
     }
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
