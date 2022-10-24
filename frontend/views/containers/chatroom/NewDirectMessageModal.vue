@@ -2,12 +2,12 @@
 modal-base-template.has-background(
   ref='modal'
   :fullscreen='true'
-  :a11yTitle='L("Group members")'
+  :a11yTitle='L("New Direct Message")'
   :autofocus='false'
 )
   .c-container
     .c-header
-      i18n.is-title-2.c-title(tag='h2') Direct messages
+      i18n.is-title-2.c-title(tag='h2') Create a new direct message
 
     .card.c-card
       search(
@@ -33,9 +33,9 @@ modal-base-template.has-background(
       i18n.c-member-count.has-text-1(
         v-if='!searchText'
         tag='div'
-        :args='{ groupMembersCount }'
+        :args='{ ourNewContactsCount }'
         data-test='memberCount'
-      ) {groupMembersCount} members
+      ) {ourNewContactsCount} members
 
       transition-group(
         v-if='searchResult'
@@ -69,7 +69,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 
 export default ({
-  name: 'GroupMembersDirectMessages',
+  name: 'NewDirectMessageModal',
   components: {
     ModalBaseTemplate,
     Search,
@@ -83,17 +83,23 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupMembersCount',
       'ourUsername',
       'userDisplayName',
-      'ourContacts'
+      'ourContacts',
+      'mailboxContract'
     ]),
+    ourNewDMContacts () {
+      return this.ourContacts.filter(contact => !Object.keys(this.mailboxContract.users).includes(contact.username))
+    },
+    ourNewContactsCount () {
+      return this.ourNewDMContacts.length
+    },
     searchResult () {
-      if (!this.searchText) { return this.ourContacts }
+      if (!this.searchText) { return this.ourNewDMContacts }
 
       const searchTextCaps = this.searchText.toUpperCase()
       const isInList = (n) => n.toUpperCase().indexOf(searchTextCaps) > -1
-      return this.ourContacts.filter(({ username, displayName }) =>
+      return this.ourNewDMContacts.filter(({ username, displayName }) =>
         (!searchTextCaps || isInList(username) || isInList(displayName))
       )
     },

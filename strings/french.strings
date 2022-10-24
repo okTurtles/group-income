@@ -39,6 +39,9 @@
 /* MISSING TRANSLATION - model/contracts/identity.js */
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
 
+/* MISSING TRANSLATION - model/contracts/mailbox.js */
+"Incorrect mailbox creator to join direct message channel." = "Incorrect mailbox creator to join direct message channel.";
+
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "1d" = "1d";
 
@@ -161,6 +164,9 @@
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to change the groups voting system." = "{from} wants to change the groups voting system.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/NewDirectMessageModal.vue */
+"{ourNewContactsCount} members" = "{ourNewContactsCount} members";
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed." = "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.";
@@ -579,6 +585,12 @@
 /* controller/actions/mailbox.js */
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
 
+/* controller/actions/mailbox.js */
+"Failed to leave direct message channel." = "Impossible de quitter le canal de messagerie directe.";
+
+/* controller/actions/mailbox.js */
+"Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";
+
 /* controller/router.js */
 "Group Chat" = "Conversation du groupe";
 
@@ -637,16 +649,19 @@
 "Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
 
 /* model/contracts/mailbox.js */
+"Not joined or already left direct message channel." = "Pas rejoint ou déjà quitté le canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
 "Only the mailbox creator can create direct message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can leave direct message channel." = "Seul le créateur de la boîte aux lettres peut quitter le canal de messagerie directe.";
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can set attributes." = "Seul le créateur de la boîte aux lettres peut définir des attributs.";
 
 /* model/contracts/mailbox.js */
 "Same attribute is already set." = "Le même attribut est déjà défini.";
-
-/* model/contracts/mailbox.js */
-"Wrong direct message channel." = "Mauvais canal de messagerie directe.";
 
 /* model/contracts/shared/time.js */
 "Today" = "Aujourd’hui";
@@ -762,7 +777,7 @@
 /* views/components/Search.vue */
 "Clear search" = "Effacer la recherche";
 
-/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search..." = "Recherche...";
 
 /* views/components/Toggle.vue */
@@ -927,7 +942,7 @@
 /* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue, views/containers/dashboard/GroupMembers.vue */
 "New" = "Nouveau";
 
-/* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "{name} (you)" = "{name} (vous)";
 
 /* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/pages/GroupChat.vue */
@@ -945,16 +960,16 @@
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/CreateNewChannelModal.vue */
 "Private channel" = "Salon privé";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search" = "Rechercher";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Showing {searchCount} {strong_}results{_strong} for \"{searchTerm}\"" = "{searchCount} {strong_}résultats{_strong} correspondant à la recherche \"{searchTerm}\"";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Showing {strong_}1 result{_strong} for \"{searchTerm}\"" = "{strong_}1 résultat{_strong} correspond à la recherche \"{searchTerm}\"";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Sorry, we couldn't find anyone called \"{searchTerm}\"" = "Désolé, nous n’avons trouvé personne dont le nom soit \"{searchTerm}\"";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
@@ -1052,21 +1067,6 @@
 
 /* views/containers/chatroom/EditChannelNameModal.vue */
 "Rename channel" = "Renommer le salon";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue */
-"Direct messages" = "Conversations privées";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"new" = "nouveau";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"pending" = "en cours";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"{groupMembersCount} members" = "{groupMembersCount} membres";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
-"Group members" = "Membres du groupe";
 
 /* views/containers/chatroom/GroupsShortcut.vue */
 "Groups chat shortcut" = "Raccourci vers la conversation de groupe";
@@ -1211,6 +1211,18 @@
 
 /* views/containers/chatroom/MessageReactions.vue */
 "{userList} reacted with {emotiName}" = "{userList} a/ont réagi avec {emotiName}";
+
+/* views/containers/chatroom/NewDirectMessageModal.vue */
+"Create a new direct message" = "Créer un nouveau message direct";
+
+/* views/containers/chatroom/NewDirectMessageModal.vue */
+"New Direct Message" = "Nouveau Message Privé";
+
+/* views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+"new" = "nouveau";
+
+/* views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+"pending" = "en cours";
 
 /* views/containers/chatroom/SendArea.vue */
 "Create poll" = "Créer un sondage";
@@ -1472,6 +1484,12 @@
 
 /* views/containers/dashboard/GroupMembers.vue */
 "See all {groupMembersCount} members" = "Afficher les {groupMembersCount} membres";
+
+/* views/containers/dashboard/GroupMembersAllModal.vue */
+"{groupMembersCount} members" = "{groupMembersCount} membres";
+
+/* views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
+"Group members" = "Membres du groupe";
 
 /* views/containers/dashboard/GroupMembersTooltipPending.vue */
 "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy} (you)." = "Ce membre n’a pas encore utilisé son lien d’invitation pour rejoindre le groupe. Ce lien devrait lui être communiqué par {invitedBy} (vous).";
@@ -2425,6 +2443,9 @@
 "Delete" = "Effacer";
 
 /* Not currently used */
+"Direct messages" = "Conversations privées";
+
+/* Not currently used */
 "Due in" = "Échéance dans";
 
 /* Not currently used */
@@ -2480,6 +2501,9 @@
 
 /* Not currently used */
 "Inbox" = "Boîte de réception";
+
+/* Not currently used */
+"Incorrect mailbox creator to join direct message channel" = "Créateur de boîte aux lettres incorrect pour rejoindre le canal de messagerie directe.";
 
 /* Not currently used */
 "Invalid Username" = "Nom d’utilisateur invalide";

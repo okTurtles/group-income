@@ -103,16 +103,6 @@ const mutations = {
     state.loggedIn = false
     state.currentGroupId = null
   },
-  deleteMessage (state, hash) {
-    const mailboxContract = store.getters.mailboxContract
-    const index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
-    if (index > -1) { mailboxContract.messages.splice(index, 1) }
-  },
-  markMessageAsRead (state, hash) {
-    const mailboxContract = store.getters.mailboxContract
-    const index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
-    if (index > -1) { mailboxContract.messages[index].read = true }
-  },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
@@ -237,13 +227,6 @@ const getters = {
   mailboxContract (state, getters) {
     const contract = getters.currentIdentityState
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
-  },
-  mailboxMessages (state, getters) {
-    const mailboxContract = getters.mailboxContract
-    return (mailboxContract && mailboxContract.messages) || []
-  },
-  unreadMessageCount (state, getters) {
-    return getters.mailboxMessages.filter(msg => !msg.read).length
   },
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username

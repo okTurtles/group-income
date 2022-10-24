@@ -15,6 +15,9 @@ export default ({
   name: 'AvatarUser',
   components: { Avatar },
   props: {
+    picture: {
+      type: String
+    },
     username: String,
     alt: {
       type: String,
@@ -51,7 +54,7 @@ export default ({
     ]),
     profilePicture () {
       const profile = this.$store.getters.globalProfile(this.username)
-      return profile && profile.picture
+      return this.picture || (profile && profile.picture)
     },
     pictureURL () {
       return this.profilePicture || this.ephemeral.url

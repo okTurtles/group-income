@@ -67,8 +67,8 @@ sbp('chelonia/defineContract', {
           joinedDate: meta.createdDate
         })
       },
-      async sideEffect ({ data }) {
-        await sbp('chelonia/contract/sync', data.contractID)
+      sideEffect ({ data }) {
+        sbp('chelonia/contract/sync', data.contractID)
       }
     },
     'gi.contracts/mailbox/joinDirectMessage': {
@@ -78,7 +78,7 @@ sbp('chelonia/defineContract', {
           contractID: string
         })(data)
         if (state.attributes.creator !== data.username) {
-          throw new TypeError(L('Wrong direct message channel.'))
+          throw new TypeError(L('Incorrect mailbox creator to join direct message channel.'))
         } else if (state.users[meta.username]) {
           throw new TypeError(L('Already existing direct message channel.'))
         }
@@ -92,10 +92,28 @@ sbp('chelonia/defineContract', {
           joinedDate
         })
       },
-      async sideEffect ({ data, hash, contractID, meta }, { state }) {
+      async sideEffect ({ data }, { state }) {
         if (state.attributes.autoJoinAllowance) {
           await sbp('chelonia/contract/sync', data.contractID)
         }
+      }
+    },
+    'gi.contracts/mailbox/leaveDirectMessage': {
+      validate: (data, { state, meta }) => {
+        objectOf({
+          username: string
+        })(data)
+        if (state.attributes.creator !== meta.username) {
+          throw new TypeError(L('Only the mailbox creator can leave direct message channel.'))
+        } else if (!state.users[meta.username].joinedDate) {
+          throw new TypeError(L('Not joined or already left direct message channel.'))
+        }
+      },
+      process ({ data }, { state }) {
+        Vue.set(state.users[data.username], 'joinedDate', null)
+      },
+      sideEffect ({ data }) {
+        sbp('chelonia/contract/remove', data.contractID)
       }
     }
   }

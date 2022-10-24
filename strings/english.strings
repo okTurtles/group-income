@@ -450,6 +450,9 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Create a channel" = "Create a channel";
 
+/* views/containers/chatroom/NewDirectMessageModal.vue */
+"Create a new direct message" = "Create a new direct message";
+
 /* views/containers/navigation/GroupsList.vue */
 "Create a new group" = "Create a new group";
 
@@ -533,9 +536,6 @@
 
 /* views/pages/GroupChat.vue */
 "Direct Messages" = "Direct Messages";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue */
-"Direct messages" = "Direct messages";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Disagreement number" = "Disagreement number";
@@ -669,6 +669,9 @@
 /* controller/actions/chatroom.js, controller/actions/group.js */
 "Failed to leave chat channel." = "Failed to leave chat channel.";
 
+/* controller/actions/mailbox.js */
+"Failed to leave direct message channel." = "Failed to leave direct message channel.";
+
 /* controller/actions/group.js */
 "Failed to leave group. {codeError}" = "Failed to leave group. {codeError}";
 
@@ -795,7 +798,7 @@
 /* views/containers/dashboard/GroupMembersActivity.vue */
 "Group has a streak of {strong_} {pourcent}% Support of {timeframe}{_strong}" = "Group has a streak of {strong_} {pourcent}% Support of {timeframe}{_strong}";
 
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
+/* views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
 "Group members" = "Group members";
 
 /* views/components/graphs/Overview.vue */
@@ -863,6 +866,12 @@
 
 /* views/containers/contributions/IncomeDetails.vue */
 "Income Details" = "Income Details";
+
+/* model/contracts/mailbox.js */
+"Incorrect mailbox creator to join direct message channel." = "Incorrect mailbox creator to join direct message channel.";
+
+/* controller/actions/mailbox.js */
+"Incorrect username to create direct message." = "Incorrect username to create direct message.";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Info" = "Info";
@@ -1047,6 +1056,9 @@
 /* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue, views/containers/dashboard/GroupMembers.vue */
 "New" = "New";
 
+/* views/containers/chatroom/NewDirectMessageModal.vue */
+"New Direct Message" = "New Direct Message";
+
 /* views/containers/access/PasswordModal.vue */
 "New Password" = "New Password";
 
@@ -1103,6 +1115,9 @@
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "Non-monetary" = "Non-monetary";
+
+/* model/contracts/mailbox.js */
+"Not joined or already left direct message channel." = "Not joined or already left direct message channel.";
 
 /* views/containers/access/LoginModal.vue, views/pages/Join.vue */
 "Not on Group Income yet?" = "Not on Group Income yet?";
@@ -1172,6 +1187,9 @@
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can create direct message channel." = "Only the mailbox creator can create direct message channel.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can leave direct message channel." = "Only the mailbox creator can leave direct message channel.";
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can set attributes." = "Only the mailbox creator can set attributes.";
@@ -1500,7 +1518,7 @@
 /* views/containers/chatroom/SendArea.vue, views/pages/GroupSettings.vue */
 "Save changes" = "Save changes";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search" = "Search";
 
 /* views/pages/Payments.vue */
@@ -1512,7 +1530,7 @@
 /* views/pages/Payments.vue */
 "Search payments..." = "Search payments...";
 
-/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search..." = "Search...";
 
 /* views/containers/notifications/NotificationCard.vue */
@@ -1617,10 +1635,10 @@
 /* views/containers/payments/PaymentsPagination.vue */
 "Show:" = "Show:";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Showing {searchCount} {strong_}results{_strong} for \"{searchTerm}\"" = "Showing {searchCount} {strong_}results{_strong} for \"{searchTerm}\"";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Showing {strong_}1 result{_strong} for \"{searchTerm}\"" = "Showing {strong_}1 result{_strong} for \"{searchTerm}\"";
 
 /* views/containers/access/SignupModal.vue */
@@ -1638,7 +1656,7 @@
 /* views/pages/Join.vue */
 "Something went wrong. Please, try again." = "Something went wrong. Please, try again.";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Sorry, we couldn't find anyone called \"{searchTerm}\"" = "Sorry, we couldn't find anyone called \"{searchTerm}\"";
 
 /* views/containers/user-settings/NotificationSettings.vue */
@@ -1980,9 +1998,6 @@
 /* views/containers/chatroom/SendArea.vue */
 "Write your message..." = "Write your message...";
 
-/* model/contracts/mailbox.js */
-"Wrong direct message channel." = "Wrong direct message channel.";
-
 /* views/components/modal/Prompt.vue */
 "Yes" = "Yes";
 
@@ -2163,13 +2178,13 @@
 /* views/containers/proposals/ProposalItem.vue */
 "mincome" = "mincome";
 
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "new" = "new";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "no" = "no";
 
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "pending" = "pending";
 
 /* views/containers/payments/PaymentsPagination.vue */
@@ -2271,7 +2286,7 @@
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from}'s proposal is rejected. \"{title}\"" = "{from}'s proposal is rejected. \"{title}\"";
 
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/dashboard/GroupMembersAllModal.vue */
 "{groupMembersCount} members" = "{groupMembersCount} members";
 
 /* views/components/GroupWelcome.vue */
@@ -2322,7 +2337,7 @@
 /* views/containers/payments/MonthOverview.vue */
 "{month} overview" = "{month} overview";
 
-/* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "{name} (you)" = "{name} (you)";
 
 /* views/containers/payments/ThankYouNoteModal.vue */
@@ -2345,6 +2360,9 @@
 
 /* views/components/Badge.vue */
 "{num} new notifications" = "{num} new notifications";
+
+/* views/containers/chatroom/NewDirectMessageModal.vue */
+"{ourNewContactsCount} members" = "{ourNewContactsCount} members";
 
 /* views/containers/payments/PaymentRowTodo.vue */
 "{partial_amount} out of {partial_total}" = "{partial_amount} out of {partial_total}";

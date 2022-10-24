@@ -66,6 +66,7 @@ export default (sbp('sbp/selectors/register', {
       })
       userID = user.contractID()
       await sbp('chelonia/contract/sync', userID)
+      await sbp('chelonia/contract/sync', mailboxID)
       await sbp('gi.actions/identity/setAttributes', {
         contractID: userID, data: { mailbox: mailboxID }
       })

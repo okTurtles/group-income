@@ -12,13 +12,13 @@
 
   ul.c-group-list
     li.c-group-member(
-      v-for='{username, displayName, invitedBy, isNew} in directMessageMembers'
+      v-for='{username, displayName, picture } in directMessageMembers'
       :data-test='username'
       :key='username'
       @click='openDirectMessage(username)'
     )
       profile-card(:username='username' deactivated)
-        avatar-user(:username='username' size='sm' data-test='openMemberProfileCard')
+        avatar-user(:username='username' :picture='picture' size='sm' data-test='openMemberProfileCard')
         button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username, displayName) }}
 </template>
 
@@ -61,7 +61,7 @@ export default ({
       'mailboxContract'
     ]),
     directMessageMembers () {
-      return this.ourContacts
+      return this.ourContacts.filter(contact => Object.keys(this.mailboxContract.users).includes(contact.username))
     }
   },
   methods: {
@@ -77,7 +77,7 @@ export default ({
     },
     headerButtonAction () {
       let modalAction = ''
-      if (this.action === 'addDirectMessage') modalAction = 'GroupMembersDirectMessages'
+      if (this.action === 'addDirectMessage') modalAction = 'NewDirectMessageModal'
       if (modalAction) {
         this.openModal(modalAction)
       }
