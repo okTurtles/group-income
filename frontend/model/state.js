@@ -536,6 +536,13 @@ const getters = {
         return nameA > nameB ? 1 : -1
       })
   },
+  isDirectMessage (state, getters) {
+    return chatRoomId => {
+      return Object.keys(getters.mailboxContract.users)
+        .map(username => getters.mailboxContract.users[username].contractID)
+        .includes(chatRoomId)
+    }
+  },
   colors (state) {
     return Colors[state.themeColor]
   },

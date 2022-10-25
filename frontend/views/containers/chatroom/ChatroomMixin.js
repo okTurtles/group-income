@@ -9,7 +9,7 @@ const initChatChannelDetails = {
   participants: []
 }
 
-const chatroom: Object = {
+const ChatroomMixin: Object = {
   data (): Object {
     return {
       config: {
@@ -61,7 +61,9 @@ const chatroom: Object = {
       'generalChatRoomId',
       'globalProfile',
       'isJoinedChatRoom',
-      'isPrivateChatRoom'
+      'isPrivateChatRoom',
+      'ourContacts',
+      'isDirectMessage'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -183,7 +185,7 @@ const chatroom: Object = {
       this.setGroupChatDetailsAsGlobal()
     },
     setGroupChatDetailsAsGlobal () {
-      if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
+      if (!this.isJoinedChatRoom(this.currentChatRoomId) && !this.isDirectMessage(this.currentChatRoomId)) {
         sbp('okTurtles.data/set', 'GROUPCHAT_DETAILS', {
           participants: Object.keys(this.details.members || {})
             .map(un => ({ username: un, displayName: this.details.members[un].displayName })),
@@ -195,7 +197,9 @@ const chatroom: Object = {
       }
     },
     updateCurrentChatRoomID (chatRoomId: string) {
-      if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+      if (this.isDirectMessage(chatRoomId)) {
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
+      } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
         const groupID = this.groupIdFromChatRoomId(chatRoomId)
         if (this.currentGroupId !== groupID) {
           sbp('state/vuex/commit', 'setCurrentGroupId', groupID)
@@ -216,4 +220,4 @@ const chatroom: Object = {
   }
 }
 
-export default chatroom
+export default ChatroomMixin

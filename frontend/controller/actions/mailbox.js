@@ -31,6 +31,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/mailbox/createDirectMessage': async function (params: GIActionParams) {
     try {
+      const rootState = sbp('state/vuex/state')
       const rootGetters = sbp('state/vuex/getters')
       const partnerProfile = rootGetters.ourContacts.find(profile => profile.username === params.data.username)
 
@@ -53,18 +54,24 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
+      await sbp('gi.actions/chatroom/join', {
+        ...omit(params, ['options', 'data', 'hook']),
+        contractID: message.contractID(),
+        data: { username: rootState.loggedIn.username }
+      })
+
       const paramsData = {
         username: params.data.username,
         contractID: message.contractID()
       }
       await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options', 'data']),
+        ...omit(params, ['options', 'data', 'hook']),
         data: paramsData,
         action: 'gi.contracts/mailbox/createDirectMessage'
       })
 
       const redirectToDMChatroom = async (contractID, isSyncing) => {
-        if (contractID === params.data.contractID && isSyncing === false) {
+        if (contractID === message.contractID() && isSyncing === false) {
           await sbp('controller/router')
             .push({ name: 'GroupChatConversation', params: { chatRoomId: contractID } })
             .catch(logExceptNavigationDuplicated)
@@ -74,8 +81,14 @@ export default (sbp('sbp/selectors/register', {
 
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, redirectToDMChatroom)
 
+      await sbp('gi.actions/chatroom/join', {
+        ...omit(params, ['options', 'data', 'hook']),
+        contractID: message.contractID(),
+        data: { username: partnerProfile.username }
+      })
+
       await sbp('gi.actions/mailbox/joinDirectMessage', {
-        ...omit(params, ['options']),
+        ...omit(params, ['options', 'data', 'hook']),
         contractID: partnerProfile.mailbox,
         data: paramsData,
         hooks: {

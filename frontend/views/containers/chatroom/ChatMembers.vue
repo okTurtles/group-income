@@ -11,8 +11,10 @@
       i18n New
 
   ul.c-group-list
-    li.c-group-member(
-      v-for='{username, displayName, picture } in directMessageMembers'
+    list-item(
+      v-for='{username, displayName, picture } in directMessages'
+      tag='router-link'
+      :to='buildUrl(username)'
       :data-test='username'
       :key='username'
       @click='openDirectMessage(username)'
@@ -30,6 +32,7 @@ import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
+import ListItem from '@components/ListItem.vue'
 import { L } from '@common/common.js'
 
 export default ({
@@ -38,7 +41,8 @@ export default ({
     Avatar,
     AvatarUser,
     ProfileCard,
-    GroupMembersTooltipPending
+    GroupMembersTooltipPending,
+    ListItem
   },
   props: {
     title: {
@@ -60,7 +64,7 @@ export default ({
       'userDisplayName',
       'mailboxContract'
     ]),
-    directMessageMembers () {
+    directMessages () {
       return this.ourContacts.filter(contact => Object.keys(this.mailboxContract.users).includes(contact.username))
     }
   },
@@ -74,6 +78,13 @@ export default ({
     localizedName (username, displayName) {
       const name = displayName || this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
+    },
+    buildUrl (username) {
+      const chatRoomId = this.mailboxContract.users[username].contractID
+      return {
+        name: 'GroupChatConversation',
+        params: { chatRoomId }
+      }
     },
     headerButtonAction () {
       let modalAction = ''
@@ -113,24 +124,6 @@ export default ({
   margin-bottom: 1.5rem;
 }
 
-.c-group-member {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 3rem;
-  padding: 0.5rem 1.5rem 0.5rem 1.5rem;
-  margin: 0 -0.5rem 0 -1.5rem;
-
-  &:hover {
-    background-color: $general_1;
-    cursor: pointer;
-  }
-
-  > .c-twrapper {
-    width: 100%;
-  }
-}
-
 .c-avatar {
   width: 2rem;
   height: 2rem;
@@ -142,11 +135,6 @@ export default ({
   margin-left: 0.5rem;
   font-family: inherit;
   border-bottom: 1px solid transparent;
-
-  &:hover,
-  &:focus {
-    border-bottom-color: $text_0;
-  }
 }
 
 .c-menu {

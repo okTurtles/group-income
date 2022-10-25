@@ -99,9 +99,9 @@ sbp('chelonia/defineContract', {
           joinedDate
         })
       },
-      async sideEffect ({ data }, { state }) {
+      sideEffect ({ data }, { state }) {
         if (state.attributes.autoJoinAllowance) {
-          await sbp('chelonia/contract/sync', data.contractID)
+          sbp('chelonia/contract/sync', data.contractID)
         }
       }
     },
