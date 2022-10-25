@@ -45,7 +45,6 @@ import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { email, maxLength, minLength, required, sameAs } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
-import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
@@ -71,7 +70,6 @@ export default ({
     validationsDebouncedMixins
   ],
   components: {
-    ModalTemplate,
     PasswordForm,
     BannerScoped,
     ButtonSubmit
