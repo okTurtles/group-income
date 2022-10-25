@@ -63,7 +63,9 @@ const ChatroomMixin: Object = {
       'isJoinedChatRoom',
       'isPrivateChatRoom',
       'ourContacts',
-      'isDirectMessage'
+      'isDirectMessage',
+      'mailboxContract',
+      'ourUsername'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -74,19 +76,26 @@ const ChatroomMixin: Object = {
           : { ...this.ephemeral.loadedSummary, joined: joiningChatRoomId === this.currentChatRoomId }
       }
 
-      const { name, type, description, creator, picture, privacyLevel } = this.currentChatRoomState.attributes
+      const { name, type, description, creator, privacyLevel } = this.currentChatRoomState.attributes
+
+      // partner is only for direct message
+      let partner
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        const partnerUsername = Object.keys(this.mailboxContract.users)
+          .find(username => this.mailboxContract.users[username].contractID === this.currentChatRoomId)
+        partner = this.ourContacts.find(contact => contact.username === partnerUsername)
+      }
 
       return {
         type,
-        title: name,
+        title: type === CHATROOM_TYPES.INDIVIDUAL && partner ? partner.displayName : name,
         description,
-        routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
         private: this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         privacyLevel,
         general: this.generalChatRoomId === this.currentChatRoomId,
         joined: true,
-        creator,
-        picture
+        picture: type === CHATROOM_TYPES.INDIVIDUAL && partner ? partner.picture : undefined,
+        creator
       }
     },
     details (): Object {
@@ -95,6 +104,21 @@ const ChatroomMixin: Object = {
         return this.ephemeral.loadedDetails || {}
       }
       const participants = {}
+
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        for (const username of Object.keys(this.currentChatRoomState.users)) {
+          if (username === this.ourUsername) {
+            participants[username] = this.globalProfile(username)
+          } else {
+            participants[username] = this.ourContacts.find(contact => contact.username === username)
+          }
+        }
+        return {
+          isLoading: false,
+          numberOfParticipants: 1, // TODO: Need to consider guests
+          participants
+        }
+      }
       for (const username in this.currentGroupState.profiles) {
         // need to consider the time when someone is joining
         // here, his identity contract is not synced yet,
@@ -146,17 +170,15 @@ const ChatroomMixin: Object = {
       this.ephemeral.loadedDetails = initChatChannelDetails
       const { chatRoomId } = this.$route.params
       const state = await sbp('chelonia/latestContractState', chatRoomId)
-      const { name, type, description, picture, creator, privacyLevel } = state.attributes
+      const { name, type, description, creator, privacyLevel } = state.attributes
 
       this.ephemeral.loadedSummary = {
         type,
         title: name,
         description,
-        routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
         private: state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         privacyLevel,
         joined: false,
-        picture,
         creator
       }
 

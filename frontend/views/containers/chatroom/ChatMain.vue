@@ -25,7 +25,7 @@
           conversation-greetings(
             :members='details.numberOfParticipants'
             :creator='summary.creator'
-            :type='type'
+            :type='summary.type'
             :joined='summary.joined'
             :name='summary.title'
             :description='summary.description'
@@ -34,7 +34,7 @@
           conversation-greetings(
             :members='details.numberOfParticipants'
             :creator='summary.creator'
-            :type='type'
+            :type='summary.type'
             :joined='summary.joined'
             :name='summary.title'
             :description='summary.description'
@@ -139,9 +139,6 @@ export default ({
     details: {
       type: Object, // { isLoading: Bool, participants: Object }
       default () { return {} }
-    },
-    type: {
-      type: String
     }
   },
   data () {
@@ -562,10 +559,12 @@ export default ({
           if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
             const msg = this.messages[this.messages.length - 1]
-            this.updateUnreadMessageId({
-              messageId: msg.id,
-              createdDate: msg.datetime
-            })
+            if (msg) {
+              this.updateUnreadMessageId({
+                messageId: msg.id,
+                createdDate: msg.datetime
+              })
+            }
           }
         } else {
           $state.loaded()

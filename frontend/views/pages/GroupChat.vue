@@ -85,7 +85,6 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
     chat-main(
       :summary='summary'
       :details='details'
-      :type='type.groups'
     )
 </template>
 
@@ -100,7 +99,7 @@ import ChatroomMixin from '@containers/chatroom/ChatroomMixin.js'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'GroupChat',
@@ -159,12 +158,6 @@ export default ({
       return {
         users: this.details.participants,
         size: this.details.numberOfParticipants
-      }
-    },
-    type () {
-      return {
-        members: CHATROOM_TYPES.INDIVIDUAL,
-        groups: CHATROOM_TYPES.GROUP
       }
     },
     isOnDirectMessage () {

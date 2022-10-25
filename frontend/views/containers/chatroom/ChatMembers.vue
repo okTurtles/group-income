@@ -21,7 +21,7 @@
     )
       profile-card(:username='username' deactivated)
         avatar-user(:username='username' :picture='picture' size='sm' data-test='openMemberProfileCard')
-        button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username, displayName) }}
+        span.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username, displayName) }}
 </template>
 
 <script>

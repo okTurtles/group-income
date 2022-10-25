@@ -8,6 +8,7 @@ import {
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MESSAGES_PER_PAGE,
+  CHATROOM_TYPES,
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS,
   CHATROOM_MESSAGE_ACTION,
@@ -164,7 +165,7 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
-        if (!state.saveMessage) {
+        if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
           return
         }
 
@@ -246,7 +247,7 @@ sbp('chelonia/defineContract', {
         }
         Vue.delete(state.users, member)
 
-        if (!state.saveMessage) {
+        if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
           return
         }
 
