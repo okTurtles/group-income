@@ -51,7 +51,7 @@ export default ({
     '$route' (to, from) {
       const toModal = to.query.modal
 
-      if (toModal && !this.isPreauthGuarded(toModal)) {
+      if (toModal) {
         // We reset the modals with no animation for simplicity
         if (toModal !== this.content) {
           if (this.content) this.replaceModal(toModal, omit(to.query, 'modal')) // if another modal is already open, replace it.
@@ -158,11 +158,6 @@ export default ({
     },
     setModalQueries (componentName, queries) {
       this.queries[componentName] = queries
-    },
-    isPreauthGuarded (toModal) {
-      // check if the queried modal is not meant to be displayed when the user is not logged in.
-      return !this.loggedIn &&
-        !['SignupModal', 'LoginModal'].includes(toModal)
     }
   }
 }: Object)
