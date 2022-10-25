@@ -34,7 +34,8 @@ modal-template(
       button.is-icon-small(@pointerdown='incrementSlider')
         i.icon-magnifying-plus
 
-    i18n.has-text-1(tag='p') Click and drag to reposition
+    i18n.has-text-1.hide-touch-device(tag='p') Click and drag to reposition
+    i18n.has-text-1.hide-hoverable-device(tag='p') Pinch to zoom, drag to reposition
 
     .buttons
       button.is-outlined(
