@@ -4,7 +4,6 @@
     component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
-import { mapState } from 'vuex'
 import sbp from '@sbp/sbp'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import { omit } from '@model/contracts/shared/giLodash.js'
@@ -23,9 +22,6 @@ export default ({
       replacement: null, // Replace the modal once the first one is close without updating the url
       lastFocus: null // Record element that open the modal
     }
-  },
-  computed: {
-    ...mapState(['loggedIn'])
   },
   created () {
     sbp('okTurtles.events/on', OPEN_MODAL, this.openModal)
