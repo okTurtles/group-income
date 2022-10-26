@@ -531,17 +531,16 @@ const getters = {
       .filter((profile, pos) => profile.username !== getters.ourUsername &&
         allProfiles.findIndex(p => p.username === profile.username) === pos)
       .sort((profileA, profileB) => {
-        const nameA = profileA.displayName.toUpperCase()
-        const nameB = profileB.displayName.toUpperCase()
+        const nameA = profileA.displayName?.toUpperCase()
+        const nameB = profileB.displayName?.toUpperCase()
         return nameA > nameB ? 1 : -1
       })
   },
   isDirectMessage (state, getters) {
-    return chatRoomId => {
-      return Object.keys(getters.mailboxContract.users)
-        .map(username => getters.mailboxContract.users[username].contractID)
-        .includes(chatRoomId)
-    }
+    // NOTE: mailbox contract could not be synced at the time of calling this getter
+    return chatRoomId => Object.keys(getters.mailboxContract.users || {})
+      .map(username => getters.mailboxContract.users[username].contractID)
+      .includes(chatRoomId)
   },
   colors (state) {
     return Colors[state.themeColor]
