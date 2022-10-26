@@ -115,7 +115,7 @@ export default ({
           isDisabled: this.groupMembersCount < (isUserGroupCreator ? 2 : 3)
         },
         { type: 'header', name: 'Voting Systems' },
-        { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'vote-yea' },
+        // { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'vote-yea' },
         { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'vote-yea' },
         { type: 'header', name: 'Other proposals' },
         { type: 'item', id: 'change-mincome', name: 'Change mincome', icon: 'dollar-sign' },

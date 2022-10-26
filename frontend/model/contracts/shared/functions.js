@@ -22,7 +22,7 @@ import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // group.js related
 
-export function getPaymentHashes (periodPayments) {
+export function getPaymentHashes (periodPayments: Object): string[] {
   let hashes = []
   if (periodPayments) {
     const { paymentsFrom } = periodPayments
@@ -36,7 +36,7 @@ export function getPaymentHashes (periodPayments) {
   return hashes
 }
 
-export function simplifyPayment (paymentHash, payment): {
+export function simplifyPayment (paymentHash: string, payment: Object): {
   from: string, to: string, hash: string, amount: number, isLate: boolean, when: string
 } {
   return {
