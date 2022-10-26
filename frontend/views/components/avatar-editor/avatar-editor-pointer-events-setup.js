@@ -5,8 +5,7 @@ const pointerEventsMixin = {
   data (): { pointer: Object, throttledHandlers: Object } {
     return {
       pointer: {
-        evts: [],
-        sameTrendCount: 0
+        evts: []
       },
       throttledHandlers: {
         pointerMoveOnWindow: throttle(this.onPointerMove, 20)
@@ -67,11 +66,15 @@ const pointerEventsMixin = {
     this.$el.addEventListener('pointerdown', this.onPointerDown)
     this.$el.addEventListener('pointermove', this.throttledHandlers.pointerMoveOnWindow)
     this.$el.addEventListener('pointerup', this.onPointerCancel)
+    this.$el.addEventListener('pointerout', this.onPointerCancel)
+    this.$el.addEventListener('pointercancel', this.onPointerCancel)
   },
   beforeDestroy () {
     this.$el.removeEventListener('pointerdown', this.onPointerDown)
     this.$el.removeEventListener('pointermove', this.throttledHandlers.pointerMoveOnWindow)
     this.$el.removeEventListener('pointerup', this.onPointerCancel)
+    this.$el.removeEventListener('pointerout', this.onPointerCancel)
+    this.$el.removeEventListener('pointercancel', this.onPointerCancel)
   }
 }
 
