@@ -1,3 +1,5 @@
+/* globals Deno */
+/* eslint require-await: "off" */
 import {
   assert,
   assertEquals,
