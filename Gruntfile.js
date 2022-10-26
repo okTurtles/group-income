@@ -72,6 +72,7 @@ const backendIndex = './backend/index.ts'
 const contractsDir = 'frontend/model/contracts'
 const denoImportMap = 'import-map.json'
 const denoRunPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
+const denoTestImportMap = 'import-map-for-tests.json'
 const denoTestPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
 const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
@@ -248,15 +249,20 @@ module.exports = (grunt) => {
       `${contractsDir}/chatroom.js`,
       `${contractsDir}/identity.js`,
       `${contractsDir}/mailbox.js`,
-      // `${contractsDir}/misc/flowTyper.js`,
+      `${contractsDir}/misc/flowTyper.js`,
       `${contractsDir}/shared/voting/proposals.js`,
+      `${contractsDir}/shared/voting/rules.js`,
       `${contractsDir}/shared/payments/index.js`,
       `${contractsDir}/shared/constants.js`,
       `${contractsDir}/shared/functions.js`,
       `${contractsDir}/shared/giLodash.js`
     ],
     external: ['dompurify', 'vue'],
+    minifyIdentifiers: false,
+    minifySyntax: false,
+    minifyWhitespace: false,
     outdir: './test/contracts',
+    sourcemap: false,
     splitting: false
   }
 
@@ -402,7 +408,7 @@ module.exports = (grunt) => {
         options: { env: process.env }
       },
       // Test anything in /test that ends with `.test.ts`.
-      testWithDeno: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoImportMap} --no-check **/*.test.ts ./frontend/model/contracts/shared/*.test.ts`,
+      testWithDeno: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoTestImportMap} --no-check **/*.test.ts ./frontend/model/contracts/shared/*.test.ts`,
       ts: `deno check --import-map=${denoImportMap} backend/*.ts shared/*.ts shared/domains/chelonia/*.ts`
     }
   })
