@@ -245,18 +245,18 @@ module.exports = (grunt) => {
     ...esbuildOptionBags.default,
     bundle: true,
     entryPoints: [
-      `${contractsDir}/group.js`,
-      `${contractsDir}/chatroom.js`,
-      `${contractsDir}/identity.js`,
-      `${contractsDir}/mailbox.js`,
-      `${contractsDir}/misc/flowTyper.js`,
-      `${contractsDir}/shared/voting/proposals.js`,
-      `${contractsDir}/shared/voting/rules.js`,
-      `${contractsDir}/shared/payments/index.js`,
-      `${contractsDir}/shared/constants.js`,
-      `${contractsDir}/shared/functions.js`,
-      `${contractsDir}/shared/giLodash.js`
-    ],
+      'group.js',
+      'chatroom.js',
+      'identity.js',
+      'mailbox.js',
+      'misc/flowTyper.js',
+      'shared/voting/proposals.js',
+      'shared/voting/rules.js',
+      'shared/payments/index.js',
+      'shared/constants.js',
+      'shared/functions.js',
+      'shared/giLodash.js'
+    ].map(s => `${contractsDir}/${s}`),
     external: ['dompurify', 'vue'],
     minifyIdentifiers: false,
     minifySyntax: false,
@@ -277,7 +277,12 @@ module.exports = (grunt) => {
     // },
     splitting: false,
     outdir: distContracts,
-    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`],
+    entryPoints: [
+      'chatroom.js',
+      'group.js',
+      'identity.js',
+      'mailbox.js'
+    ].map(s => `${contractsDir}/${s}`),
     external: ['@sbp/sbp']
   }
   // prevent contract hash from changing each time we build them
@@ -401,14 +406,8 @@ module.exports = (grunt) => {
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
-      // Test anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.
-      // The `--require` flag ensures custom Babel support in our test files.
-      test: {
-        cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
-        options: { env: process.env }
-      },
-      // Test anything in /test that ends with `.test.ts`.
-      testWithDeno: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoTestImportMap} --no-check **/*.test.ts ./frontend/model/contracts/shared/*.test.ts`,
+      // Test anything that ends with `.test.{js|ts}` in the specified folders, e.g. unit tests for SBP domains kept in the domain folder.
+      test: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoTestImportMap} frontend shared test`,
       ts: `deno check --import-map=${denoImportMap} backend/*.ts shared/*.ts shared/domains/chelonia/*.ts`
     }
   })
@@ -694,8 +693,8 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno:start', 'exec:test', 'exec:testWithDeno', 'cypress', 'deno:stop', 'flow:stop'])
-  grunt.registerTask('test:unit', ['deno:start', 'exec:test', 'exec:testWithDeno', 'deno:stop'])
+  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno:start', 'exec:test', 'cypress', 'deno:stop', 'flow:stop'])
+  grunt.registerTask('test:unit', ['deno:start', 'exec:test', 'deno:stop'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers

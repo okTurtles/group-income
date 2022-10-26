@@ -1,10 +1,18 @@
-/* eslint-env mocha */
+// Can run directly with:
+// deno test --import-map=import-map-for-tests.json frontend/model/contracts/shared/distribution/mincome-proportional.test.ts
 
-import should from 'should'
+import { assertEquals } from 'asserts'
+
 import mincomeProportional from './mincome-proportional.js'
 
-describe('proportionalMincomeDistributionTest', function () {
-  it('distribute income above mincome proportionally', function () {
+type Payment = {
+  amount: number
+  from: string
+  to: string
+}
+
+Deno.test('proportionalMincomeDistributionTest', async function (tests) {
+  await tests.step('distribute income above mincome proportionally', async function () {
     const members = [
       { name: 'a', haveNeed: -30 },
       { name: 'b', haveNeed: -20 },
@@ -22,10 +30,10 @@ describe('proportionalMincomeDistributionTest', function () {
       { amount: 12, from: 'f', to: 'b' }
     ]
 
-    should(mincomeProportional(members)).eql(expected)
+    assertEquals(mincomeProportional(members), expected)
   })
 
-  it('distribute income above mincome proportionally when extra won\'t cover need', function () {
+  await tests.step('distribute income above mincome proportionally when extra won\'t cover need', async function () {
     const members = [
       { name: 'a', haveNeed: -30 },
       { name: 'b', haveNeed: -20 },
@@ -42,10 +50,10 @@ describe('proportionalMincomeDistributionTest', function () {
       { amount: 6, from: 'f', to: 'a' },
       { amount: 4, from: 'f', to: 'b' }
     ]
-    should(mincomeProportional(members)).eql(expected)
+    assertEquals(mincomeProportional(members), expected)
   })
 
-  it('don\'t distribute anything if no one is above mincome', function () {
+  await tests.step('don\'t distribute anything if no one is above mincome', async function () {
     const members = [
       { name: 'a', haveNeed: -30 },
       { name: 'b', haveNeed: -20 },
@@ -54,11 +62,11 @@ describe('proportionalMincomeDistributionTest', function () {
       { name: 'e', haveNeed: -20 },
       { name: 'f', haveNeed: -30 }
     ]
-    const expected = []
-    should(mincomeProportional(members)).eql(expected)
+    const expected: Payment[] = []
+    assertEquals(mincomeProportional(members), expected)
   })
 
-  it('don\'t distribute anything if everyone is above mincome', function () {
+  await tests.step('don\'t distribute anything if everyone is above mincome', async function () {
     const members = [
       { name: 'a', haveNeed: 0 },
       { name: 'b', haveNeed: 5 },
@@ -67,7 +75,7 @@ describe('proportionalMincomeDistributionTest', function () {
       { name: 'e', haveNeed: 60 },
       { name: 'f', haveNeed: 12 }
     ]
-    const expected = []
-    should(mincomeProportional(members)).eql(expected)
+    const expected: Payment[] = []
+    assertEquals(mincomeProportional(members), expected)
   })
 })

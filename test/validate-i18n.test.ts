@@ -8,6 +8,7 @@ import { createRequire } from 'https://deno.land/std/node/module.ts'
 import PugLinter from 'pug-lint'
 
 // HACK for 'dynamic require is not supported' error in 'linter.configure()'.
+// @ts-expect-error Element implicitly has an 'any' type.
 globalThis.require = createRequire(import.meta.url)
 
 Deno.test({
@@ -24,7 +25,7 @@ Deno.test({
 
     const errorCode = 'PUG:LINT_VALIDATEI18N'
 
-    function outdent (str) {
+    function outdent (str: string) {
       const lines = str.slice(1).split('\n')
       const indent = (lines[0].match(/^\s*/) || [''])[0]
 

@@ -1,16 +1,32 @@
-/* eslint-env mocha */
-import rules, { RULE_PERCENTAGE, RULE_DISAGREEMENT, VOTE_FOR, VOTE_AGAINST, VOTE_UNDECIDED } from './rules.js'
-import { PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/shared/constants.js'
-const should = require('should')
+// Can run directly with:
+// deno test --import-map=import-map-for-tests.json frontend/model/contracts/shared/voting/rules.test.ts
 
-const buildState = (groupSize, rule, threshold, opts = {}) => {
+import { assertEquals } from 'asserts'
+
+import rules, { RULE_PERCENTAGE, RULE_DISAGREEMENT, VOTE_FOR, VOTE_AGAINST, VOTE_UNDECIDED } from '@contracts/shared/voting/rules.js'
+import { PROPOSAL_REMOVE_MEMBER } from '@contracts/shared/constants.js'
+
+type Options = {
+  membersInactive?: number
+  proposalType?: string
+}
+
+type Profile = {
+  status: string
+}
+
+type ProfileMap = {
+  [key: string]: Profile
+}
+
+const buildState = (groupSize: number, rule: string, threshold: number, opts: Options = {}) => {
   const { proposalType, membersInactive } = {
     proposalType: opts.proposalType || 'generic',
     membersInactive: opts.membersInactive || 0
   }
   return {
     profiles: (() => {
-      const profiles = {}
+      const profiles: ProfileMap = {}
       for (let i = 0; i < groupSize; i++) {
         profiles[`u${i}`] = { status: 'active' }
       }
@@ -38,87 +54,89 @@ const buildState = (groupSize, rule, threshold, opts = {}) => {
 // VF - Vote For
 // VA - Vote Against
 
-describe('RULE_PERCENTAGE - 70% - 5 members', function () {
+Deno.test('RULE_PERCENTAGE - 70% - 5 members', async function (tests) {
   const state = buildState(5, RULE_PERCENTAGE, 0.70)
-  it('3VF returns undecided', () => {
+
+  await tests.step('3VF returns undecided', () => {
     const result = rules[RULE_PERCENTAGE](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_FOR,
       u3: VOTE_FOR
     })
-    should(result).equal(VOTE_UNDECIDED)
+    assertEquals(result, VOTE_UNDECIDED)
   })
 
-  it('4VF returns for', () => {
+  await tests.step('4VF returns for', () => {
     const result = rules[RULE_PERCENTAGE](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_FOR,
       u3: VOTE_FOR,
       u4: VOTE_FOR
     })
-    should(result).equal(VOTE_FOR)
+    assertEquals(result, VOTE_FOR)
   })
 
-  it('2VA returns against', () => {
+  await tests.step('2VA returns against', () => {
     const result = rules[RULE_PERCENTAGE](state, 'generic', {
       u1: VOTE_AGAINST,
       u2: VOTE_AGAINST
     })
-    should(result).equal(VOTE_AGAINST)
+    assertEquals(result, VOTE_AGAINST)
   })
 })
 
-describe('RULE_PERCENTAGE - 25% - 5 members - (adjusted to 40%)', function () {
+Deno.test('RULE_PERCENTAGE - 25% - 5 members - (adjusted to 40%)', async function (tests) {
   const state = buildState(5, RULE_PERCENTAGE, 0.4)
-  it('1VF returns undecided', () => {
+
+  await tests.step('1VF returns undecided', () => {
     const result = rules[RULE_PERCENTAGE](state, 'generic', {
       u1: VOTE_FOR
     })
-    should(result).equal(VOTE_UNDECIDED)
+    assertEquals(result, VOTE_UNDECIDED)
   })
 
-  it('2VF returns for', () => {
+  await tests.step('2VF returns for', () => {
     const result = rules[RULE_PERCENTAGE](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_FOR
     })
-    should(result).equal(VOTE_FOR)
+    assertEquals(result, VOTE_FOR)
   })
 
-  it('3VA returns undecided', () => {
+  await tests.step('3VA returns undecided', () => {
     const result = rules[RULE_PERCENTAGE](state, 'generic', {
       u1: VOTE_AGAINST,
       u2: VOTE_AGAINST,
       u3: VOTE_AGAINST
     })
-    should(result).equal(VOTE_UNDECIDED)
+    assertEquals(result, VOTE_UNDECIDED)
   })
 
-  it('4VA returns against', () => {
+  await tests.step('4VA returns against', () => {
     const result = rules[RULE_PERCENTAGE](state, 'generic', {
       u1: VOTE_AGAINST,
       u2: VOTE_AGAINST,
       u3: VOTE_AGAINST,
       u4: VOTE_AGAINST
     })
-    should(result).equal(VOTE_AGAINST)
+    assertEquals(result, VOTE_AGAINST)
   })
 })
 
-describe('RULE_DISAGREEMENT - 1 - 5 members', function () {
+Deno.test('RULE_DISAGREEMENT - 1 - 5 members', async function (tests) {
   const state = buildState(5, RULE_DISAGREEMENT, 1)
 
-  it('4VF returns undecided', () => {
+  await tests.step('4VF returns undecided', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_FOR,
       u3: VOTE_FOR,
       u4: VOTE_FOR
     })
-    should(result).equal(VOTE_UNDECIDED)
+    assertEquals(result, VOTE_UNDECIDED)
   })
 
-  it('4VA returns for', () => {
+  await tests.step('4VA returns for', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_FOR,
@@ -126,56 +144,56 @@ describe('RULE_DISAGREEMENT - 1 - 5 members', function () {
       u4: VOTE_FOR,
       u5: VOTE_FOR
     })
-    should(result).equal(VOTE_FOR)
+    assertEquals(result, VOTE_FOR)
   })
 
-  it('1VA returns against', () => {
+  await tests.step('1VA returns against', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_AGAINST
     })
-    should(result).equal(VOTE_AGAINST)
+    assertEquals(result, VOTE_AGAINST)
   })
 })
 
-describe('RULE_DISAGREEMENT - 4 - 5 members', function () {
+Deno.test('RULE_DISAGREEMENT - 4 - 5 members', async function (tests) {
   const state = buildState(5, RULE_DISAGREEMENT, 4)
 
-  it('1VF vs 1VA returns for', () => {
+  await tests.step('1VF vs 1VA returns for', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_AGAINST
     })
-    should(result).equal(VOTE_UNDECIDED)
+    assertEquals(result, VOTE_UNDECIDED)
   })
 
-  it('2VF returns for', () => {
+  await tests.step('2VF returns for', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_FOR
     })
-    should(result).equal(VOTE_FOR)
+    assertEquals(result, VOTE_FOR)
   })
 
-  it('3VA returns undecided', () => {
+  await tests.step('3VA returns undecided', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_AGAINST,
       u2: VOTE_AGAINST,
       u3: VOTE_AGAINST
     })
-    should(result).equal(VOTE_UNDECIDED)
+    assertEquals(result, VOTE_UNDECIDED)
   })
 
-  it('4VA returns against', () => {
+  await tests.step('4VA returns against', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_AGAINST,
       u2: VOTE_AGAINST,
       u3: VOTE_AGAINST,
       u4: VOTE_AGAINST
     })
-    should(result).equal(VOTE_AGAINST)
+    assertEquals(result, VOTE_AGAINST)
   })
 
-  it('2VF vs 3VA returns for', () => {
+  await tests.step('2VF vs 3VA returns for', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_FOR,
@@ -183,109 +201,111 @@ describe('RULE_DISAGREEMENT - 4 - 5 members', function () {
       u4: VOTE_AGAINST,
       u5: VOTE_AGAINST
     })
-    should(result).equal(VOTE_FOR)
+    assertEquals(result, VOTE_FOR)
   })
 })
 
-describe('RULE_DISAGREEMENT - 10 - 4 members - (10 adjusted to 3)', function () {
+Deno.test('RULE_DISAGREEMENT - 10 - 4 members - (10 adjusted to 3)', async function (tests) {
   const state = buildState(4, RULE_DISAGREEMENT, 10)
 
-  it('3VA returns against', () => {
+  await tests.step('3VA returns against', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_AGAINST,
       u2: VOTE_AGAINST,
       u3: VOTE_AGAINST
     })
-    should(result).equal(VOTE_AGAINST)
+    assertEquals(result, VOTE_AGAINST)
   })
 
-  it('2VF returns for', () => {
+  await tests.step('2VF returns for', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_FOR
     })
-    should(result).equal(VOTE_FOR)
+    assertEquals(result, VOTE_FOR)
   })
 
-  it('1VF vs 1VA returns undecided', () => {
+  await tests.step('1VF vs 1VA returns undecided', () => {
     const result = rules[RULE_DISAGREEMENT](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_AGAINST
     })
-    should(result).equal(VOTE_UNDECIDED)
+    assertEquals(result, VOTE_UNDECIDED)
   })
 })
 
-describe('RULE_PERCENTAGE - 60% - inactive members', function () {
-  it('6 members - 3VF returns undecided', () => {
+Deno.test('RULE_PERCENTAGE - 60% - inactive members', async function (tests) {
+  await tests.step('6 members - 3VF returns undecided', () => {
     const state = buildState(6, RULE_PERCENTAGE, 0.6)
     const result = rules[RULE_PERCENTAGE](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_FOR,
       u3: VOTE_FOR
     })
-    should(result).equal(VOTE_UNDECIDED)
+    assertEquals(result, VOTE_UNDECIDED)
   })
 
-  it('6 members (1 inactive) - 3VF returns for', () => {
+  await tests.step('6 members (1 inactive) - 3VF returns for', () => {
     const state = buildState(6, RULE_PERCENTAGE, 0.6, { membersInactive: 1 })
     const result = rules[RULE_PERCENTAGE](state, 'generic', {
       u1: VOTE_FOR,
       u2: VOTE_FOR,
       u3: VOTE_FOR
     })
-    should(result).equal(VOTE_FOR)
+    assertEquals(result, VOTE_FOR)
   })
 })
 
-describe('RULE_DISAGREEMENT - 1 - 3 members - propose to remove member', function () {
+Deno.test('RULE_DISAGREEMENT - 1 - 3 members - propose to remove member', async function (tests) {
   const state = buildState(3, RULE_DISAGREEMENT, 1, { proposalType: PROPOSAL_REMOVE_MEMBER })
-  it('1VA returns undecided', () => {
+
+  await tests.step('1VA returns undecided', () => {
     const result = rules[RULE_DISAGREEMENT](state, PROPOSAL_REMOVE_MEMBER, {
       u1: VOTE_AGAINST
     })
-    should(result).equal(VOTE_UNDECIDED)
+    assertEquals(result, VOTE_UNDECIDED)
   })
 
-  it('2VA returns against', () => {
+  await tests.step('2VA returns against', () => {
     const result = rules[RULE_DISAGREEMENT](state, PROPOSAL_REMOVE_MEMBER, {
       u1: VOTE_AGAINST,
       u2: VOTE_AGAINST
     })
-    should(result).equal(VOTE_AGAINST)
+    assertEquals(result, VOTE_AGAINST)
   })
 
-  it('2VF returns for', () => {
+  await tests.step('2VF returns for', () => {
     const result = rules[RULE_DISAGREEMENT](state, PROPOSAL_REMOVE_MEMBER, {
       u1: VOTE_FOR,
       u2: VOTE_FOR
     })
-    should(result).equal(VOTE_FOR)
+    assertEquals(result, VOTE_FOR)
   })
 })
 
-describe('RULE_PERCENTAGE - 80% - 3 members - propose to remove member', function () {
+Deno.test('RULE_PERCENTAGE - 80% - 3 members - propose to remove member', async function (tests) {
   const state = buildState(3, RULE_PERCENTAGE, 0.8, { proposalType: PROPOSAL_REMOVE_MEMBER })
-  it('1VA returns undecided', () => {
+
+  await tests.step('1VA returns undecided', () => {
     const result = rules[RULE_PERCENTAGE](state, PROPOSAL_REMOVE_MEMBER, {
       u1: VOTE_AGAINST
     })
-    should(result).equal(VOTE_AGAINST)
+    assertEquals(result, VOTE_AGAINST)
   })
 
-  it('2VA returns against', () => {
+  await tests.step('2VA returns against', () => {
     const result = rules[RULE_PERCENTAGE](state, PROPOSAL_REMOVE_MEMBER, {
       u1: VOTE_AGAINST,
       u2: VOTE_AGAINST
     })
-    should(result).equal(VOTE_AGAINST)
+    assertEquals(result, VOTE_AGAINST)
   })
 
-  it('2VF returns for', () => {
+  await tests.step('2VF returns for', () => {
     const result = rules[RULE_PERCENTAGE](state, PROPOSAL_REMOVE_MEMBER, {
       u1: VOTE_FOR,
       u2: VOTE_FOR
     })
-    should(result).equal(VOTE_FOR)
+    assertEquals(result, VOTE_FOR)
   })
 })

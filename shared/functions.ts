@@ -7,11 +7,9 @@ import blake from 'blakejs'
 import { Buffer } from 'buffer'
 
 if (typeof window === 'object') {
-  // @ts-expect-error TS2339 [ERROR]: Property 'Buffer' does not exist on type 'Window & typeof globalThis'.
-  window.Buffer = Buffer
+  (window as typeof window & { Buffer: typeof Buffer }).Buffer = Buffer
 } else {
-  // @ts-expect-error TS7017 [ERROR]: Element implicitly has an 'any' type because type 'typeof globalThis' has no index signature.
-  globalThis.Buffer = Buffer
+  (globalThis as typeof globalThis & { Buffer: typeof Buffer }).Buffer = Buffer
 }
 
 export function blake32Hash (data: unknown) {

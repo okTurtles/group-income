@@ -5,20 +5,22 @@ import minimizeTotalPaymentsCount from './payments-minimizer.js'
 import { cloneDeep } from '../giLodash.js'
 import { saferFloat, DECIMALS_MAX } from '../currencies.js'
 
+/*::
 type Distribution = Array<Object>;
+*/
 
 const tinyNum = 1 / Math.pow(10, DECIMALS_MAX)
 
-export function unadjustedDistribution ({ haveNeeds = [], minimize = true }: {
+export function unadjustedDistribution ({ haveNeeds = [], minimize = true } /*: {
   haveNeeds: Array<Object>, minimize?: boolean
-}): Distribution {
+} */) /*: Distribution */ {
   const distribution = mincomeProportional(haveNeeds)
   return minimize ? minimizeTotalPaymentsCount(distribution) : distribution
 }
 
 export function adjustedDistribution (
-  { distribution, payments, dueOn }: { distribution: Distribution, payments: Distribution, dueOn: string }
-): Distribution {
+  { distribution, payments, dueOn } /*: { distribution: Distribution, payments: Distribution, dueOn: string } */
+) /*: Distribution */ {
   distribution = cloneDeep(distribution)
   // ensure the total is set because of how reduceDistribution works
   for (const todo of distribution) {
@@ -41,7 +43,7 @@ export function adjustedDistribution (
 }
 
 // Merges multiple payments between any combinations two of users:
-function reduceDistribution (payments: Distribution): Distribution {
+function reduceDistribution (payments /*: Distribution */) /*: Distribution */ {
   // Don't modify the payments list/object parameter in-place, as this is not intended:
   payments = cloneDeep(payments)
   for (let i = 0; i < payments.length; i++) {
@@ -65,11 +67,11 @@ function reduceDistribution (payments: Distribution): Distribution {
   return payments
 }
 
-function addDistributions (paymentsA: Distribution, paymentsB: Distribution): Distribution {
+function addDistributions (paymentsA /*: Distribution */, paymentsB /*: Distribution */) /*: Distribution */ {
   return reduceDistribution([...paymentsA, ...paymentsB])
 }
 
-function subtractDistributions (paymentsA: Distribution, paymentsB: Distribution): Distribution {
+function subtractDistributions (paymentsA /*: Distribution */, paymentsB /*: Distribution */) /*: Distribution */ {
   // Don't modify any payment list/objects parameters in-place, as this is not intended:
   paymentsB = cloneDeep(paymentsB)
   // Reverse the sign of the second operand's amounts so that the final addition is actually subtraction:
