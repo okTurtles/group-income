@@ -558,4 +558,3 @@ module_default("chelonia/defineContract", {
     }
   }
 });
-//# sourceMappingURL=mailbox.js.map

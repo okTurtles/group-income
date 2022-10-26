@@ -18,49 +18,6 @@
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh"
   },
-  "eslintConfig": {
-    "root": true,
-    "parserOptions": {
-      "parser": "@babel/eslint-parser"
-    },
-    "extends": [
-      "plugin:cypress/recommended",
-      "plugin:flowtype/recommended",
-      "plugin:vue/essential",
-      "standard"
-    ],
-    "plugins": [
-      "cypress",
-      "flowtype",
-      "import"
-    ],
-    "rules": {
-      "require-await": "error",
-      "vue/max-attributes-per-line": "off",
-      "vue/html-indent": "off",
-      "flowtype/no-types-missing-file-annotation": "off",
-      "quote-props": "off",
-      "dot-notation": "off",
-      "import/extensions": [
-        2,
-        "ignorePackages"
-      ]
-    }
-  },
-  "eslintIgnore": [
-    "contracts/*",
-    "dist/*",
-    "frontend/assets/*",
-    "frontend/model/contracts/misc/flowTyper.js",
-    "historical/*",
-    "ignored/*",
-    "node_modules/*",
-    "shared/**/*.flow.js",
-    "shared/declarations.js",
-    "test/common/*",
-    "test/contracts/*",
-    "test/cypress/cache/*"
-  ],
   "browserslist": "> 1% and since 2018 and not dead",
   "stylelint": {
     "extends": "stylelint-config-standard",

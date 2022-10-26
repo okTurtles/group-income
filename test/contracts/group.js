@@ -1942,4 +1942,3 @@ module_default("chelonia/defineContract", {
     }
   }
 });
-//# sourceMappingURL=group.js.map

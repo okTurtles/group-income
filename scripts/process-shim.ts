@@ -1,5 +1,7 @@
 /* globals Deno */
-const process = {
+
+// @ts-expect-error 'typeof globalThis' has no index signature.
+globalThis.process = {
   env: {
     get (key: string): string | void {
       return Deno.env.get(key)
@@ -9,6 +11,3 @@ const process = {
     }
   }
 }
-
-// @ts-ignore
-globalThis.process = process

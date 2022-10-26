@@ -354,4 +354,3 @@ export {
   leaveChatRoom,
   makeMentionFromUsername
 };
-//# sourceMappingURL=functions.js.map

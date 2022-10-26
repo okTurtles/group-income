@@ -501,4 +501,3 @@ module_default("chelonia/defineContract", {
     }
   }
 });
-//# sourceMappingURL=identity.js.map

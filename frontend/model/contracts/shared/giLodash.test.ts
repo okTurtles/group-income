@@ -1,9 +1,6 @@
 // Can run directly with:
 // deno test --import-map=import-map.json frontend/model/contracts/shared/giLodash.test.ts
 
-/* globals Deno */
-/* eslint require-await: "off" */
-
 import { assertEquals, assertThrows } from 'asserts'
 import sinon from 'sinon'
 

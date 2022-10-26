@@ -1022,4 +1022,3 @@ module_default("chelonia/defineContract", {
     }
   }
 });
-//# sourceMappingURL=chatroom.js.map
