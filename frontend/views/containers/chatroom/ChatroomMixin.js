@@ -77,14 +77,7 @@ const ChatroomMixin: Object = {
       }
 
       const { name, type, description, creator, privacyLevel } = this.currentChatRoomState.attributes
-
-      // partner is only for direct message
-      let partner
-      if (this.isDirectMessage(this.currentChatRoomId)) {
-        const partnerUsername = Object.keys(this.mailboxContract.users)
-          .find(username => this.mailboxContract.users[username].contractID === this.currentChatRoomId)
-        partner = this.ourContacts.find(contact => contact.username === partnerUsername)
-      }
+      const partner = this.partnerProfileFromDMChatRoomID(this.currentChatRoomId)
 
       return {
         type,
@@ -162,7 +155,10 @@ const ChatroomMixin: Object = {
     },
     refreshTitle (title?: string): void {
       title = title || this.currentChatRoomState.attributes?.name
-      if (title) {
+      if (this.currentChatRoomState.attributes?.type === CHATROOM_TYPES.INDIVIDUAL) {
+        const partner = this.partnerProfileFromDMChatRoomID(this.currentChatRoomId)
+        document.title = partner.displayName
+      } else if (title) {
         document.title = title
       }
     },
@@ -227,6 +223,13 @@ const ChatroomMixin: Object = {
           sbp('state/vuex/commit', 'setCurrentGroupId', groupID)
         }
         sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
+      }
+    },
+    partnerProfileFromDMChatRoomID (chatRoomId: string) {
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        const partnerUsername = Object.keys(this.mailboxContract.users)
+          .find(username => this.mailboxContract.users[username].contractID === this.currentChatRoomId)
+        return this.ourContacts.find(contact => contact.username === partnerUsername)
       }
     }
   },
