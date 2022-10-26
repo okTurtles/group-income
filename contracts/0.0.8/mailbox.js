@@ -5622,14 +5622,14 @@
   }
   function genComponentModel(el, value, modifiers) {
     var ref2 = modifiers || {};
-    var number = ref2.number;
+    var number3 = ref2.number;
     var trim = ref2.trim;
     var baseValueExpression = "$$v";
     var valueExpression = baseValueExpression;
     if (trim) {
       valueExpression = "(typeof " + baseValueExpression + " === 'string'? " + baseValueExpression + ".trim(): " + baseValueExpression + ")";
     }
-    if (number) {
+    if (number3) {
       valueExpression = "_n(" + valueExpression + ")";
     }
     var assignment = genAssignmentCode(value, valueExpression);
@@ -5758,23 +5758,23 @@
     return true;
   }
   function genCheckboxModel(el, value, modifiers) {
-    var number = modifiers && modifiers.number;
+    var number3 = modifiers && modifiers.number;
     var valueBinding = getBindingAttr(el, "value") || "null";
     var trueValueBinding = getBindingAttr(el, "true-value") || "true";
     var falseValueBinding = getBindingAttr(el, "false-value") || "false";
     addProp(el, "checked", "Array.isArray(" + value + ")?_i(" + value + "," + valueBinding + ")>-1" + (trueValueBinding === "true" ? ":(" + value + ")" : ":_q(" + value + "," + trueValueBinding + ")"));
-    addHandler(el, "change", "var $$a=" + value + ",$$el=$event.target,$$c=$$el.checked?(" + trueValueBinding + "):(" + falseValueBinding + ");if(Array.isArray($$a)){var $$v=" + (number ? "_n(" + valueBinding + ")" : valueBinding) + ",$$i=_i($$a,$$v);if($$el.checked){$$i<0&&(" + genAssignmentCode(value, "$$a.concat([$$v])") + ")}else{$$i>-1&&(" + genAssignmentCode(value, "$$a.slice(0,$$i).concat($$a.slice($$i+1))") + ")}}else{" + genAssignmentCode(value, "$$c") + "}", null, true);
+    addHandler(el, "change", "var $$a=" + value + ",$$el=$event.target,$$c=$$el.checked?(" + trueValueBinding + "):(" + falseValueBinding + ");if(Array.isArray($$a)){var $$v=" + (number3 ? "_n(" + valueBinding + ")" : valueBinding) + ",$$i=_i($$a,$$v);if($$el.checked){$$i<0&&(" + genAssignmentCode(value, "$$a.concat([$$v])") + ")}else{$$i>-1&&(" + genAssignmentCode(value, "$$a.slice(0,$$i).concat($$a.slice($$i+1))") + ")}}else{" + genAssignmentCode(value, "$$c") + "}", null, true);
   }
   function genRadioModel(el, value, modifiers) {
-    var number = modifiers && modifiers.number;
+    var number3 = modifiers && modifiers.number;
     var valueBinding = getBindingAttr(el, "value") || "null";
-    valueBinding = number ? "_n(" + valueBinding + ")" : valueBinding;
+    valueBinding = number3 ? "_n(" + valueBinding + ")" : valueBinding;
     addProp(el, "checked", "_q(" + value + "," + valueBinding + ")");
     addHandler(el, "change", genAssignmentCode(value, valueBinding), null, true);
   }
   function genSelect(el, value, modifiers) {
-    var number = modifiers && modifiers.number;
-    var selectedVal = 'Array.prototype.filter.call($event.target.options,function(o){return o.selected}).map(function(o){var val = "_value" in o ? o._value : o.value;return ' + (number ? "_n(val)" : "val") + "})";
+    var number3 = modifiers && modifiers.number;
+    var selectedVal = 'Array.prototype.filter.call($event.target.options,function(o){return o.selected}).map(function(o){var val = "_value" in o ? o._value : o.value;return ' + (number3 ? "_n(val)" : "val") + "})";
     var assignment = "$event.target.multiple ? $$selectedVal : $$selectedVal[0]";
     var code = "var $$selectedVal = " + selectedVal + ";";
     code = code + " " + genAssignmentCode(value, assignment);
@@ -5792,7 +5792,7 @@
     }
     var ref2 = modifiers || {};
     var lazy = ref2.lazy;
-    var number = ref2.number;
+    var number3 = ref2.number;
     var trim = ref2.trim;
     var needCompositionGuard = !lazy && type !== "range";
     var event = lazy ? "change" : type === "range" ? RANGE_TOKEN : "input";
@@ -5800,7 +5800,7 @@
     if (trim) {
       valueExpression = "$event.target.value.trim()";
     }
-    if (number) {
+    if (number3) {
       valueExpression = "_n(" + valueExpression + ")";
     }
     var code = genAssignmentCode(value, valueExpression);
@@ -5809,7 +5809,7 @@
     }
     addProp(el, "value", "(" + value + ")");
     addHandler(el, event, code, null, true);
-    if (trim || number) {
+    if (trim || number3) {
       addHandler(el, "blur", "$forceUpdate()");
     }
   }
@@ -8991,21 +8991,6 @@
   function cloneDeep(obj) {
     return JSON.parse(JSON.stringify(obj));
   }
-  function isMergeableObject(val) {
-    const nonNullObject = val && typeof val === "object";
-    return nonNullObject && Object.prototype.toString.call(val) !== "[object RegExp]" && Object.prototype.toString.call(val) !== "[object Date]";
-  }
-  function merge(obj, src) {
-    for (const key in src) {
-      const clone = isMergeableObject(src[key]) ? cloneDeep(src[key]) : void 0;
-      if (clone && isMergeableObject(obj[key])) {
-        merge(obj[key], clone);
-        continue;
-      }
-      obj[key] = clone || src[key];
-    }
-    return obj;
-  }
 
   // frontend/common/vSafeHtml.js
   var defaultConfig = {
@@ -9150,6 +9135,7 @@
   var isNil = (v) => v === null;
   var isUndef2 = (v) => typeof v === "undefined";
   var isBoolean2 = (v) => typeof v === "boolean";
+  var isNumber = (v) => typeof v === "number";
   var isString = (v) => typeof v === "string";
   var isObject2 = (v) => !isNil(v) && typeof v === "object";
   var isFunction = (v) => typeof v === "function";
@@ -9196,6 +9182,46 @@ ${this.getErrorInfo()}`;
   var validatorError = (typeFn, value, scope, message, expectedType, valueType) => {
     return new TypeValidatorError(message, expectedType || getType2(typeFn), valueType || typeof value, JSON.stringify(value), typeFn.name, scope);
   };
+  var arrayOf = (typeFn, _scope = "Array") => {
+    function array(value) {
+      if (isEmpty(value))
+        return [typeFn(value)];
+      if (Array.isArray(value)) {
+        let index2 = 0;
+        return value.map((v) => typeFn(v, `${_scope}[${index2++}]`));
+      }
+      throw validatorError(array, value, _scope);
+    }
+    array.type = () => `Array<${getType2(typeFn)}>`;
+    return array;
+  };
+  var literalOf = (primitive) => {
+    function literal(value, _scope = "") {
+      if (isEmpty(value) || value === primitive)
+        return primitive;
+      throw validatorError(literal, value, _scope);
+    }
+    literal.type = () => {
+      if (isBoolean2(primitive))
+        return `${primitive ? "true" : "false"}`;
+      else
+        return `"${primitive}"`;
+    };
+    return literal;
+  };
+  var mapOf = (keyTypeFn, typeFn) => {
+    function mapOf2(value) {
+      if (isEmpty(value))
+        return {};
+      const o = object(value);
+      const reducer = (acc, key) => Object.assign(acc, {
+        [keyTypeFn(key, "Map[_]")]: typeFn(o[key], `Map.${key}`)
+      });
+      return Object.keys(o).reduce(reducer, {});
+    }
+    mapOf2.type = () => `{ [_:${getType2(keyTypeFn)}]: ${getType2(typeFn)} }`;
+    return mapOf2;
+  };
   var object = function(value) {
     if (isEmpty(value))
       return {};
@@ -9240,6 +9266,15 @@ ${this.getErrorInfo()}`;
     };
     return object2;
   };
+  function objectMaybeOf(validations, _scope = "Object") {
+    return function(data) {
+      object(data);
+      for (const key in data) {
+        validations[key]?.(data[key], `${_scope}.${key}`);
+      }
+      return data;
+    };
+  }
   var optional = (typeFn) => {
     const unionFn = unionOf(typeFn, undef);
     function optional2(v) {
@@ -9254,12 +9289,12 @@ ${this.getErrorInfo()}`;
     throw validatorError(undef, value, _scope);
   }
   undef.type = () => "void";
-  var boolean = function boolean2(value, _scope = "") {
+  var number = function number2(value, _scope = "") {
     if (isEmpty(value))
-      return false;
-    if (isBoolean2(value))
+      return 0;
+    if (isNumber(value))
       return value;
-    throw validatorError(boolean2, value, _scope);
+    throw validatorError(number2, value, _scope);
   };
   var string = function string2(value, _scope = "") {
     if (isEmpty(value))
@@ -9283,123 +9318,123 @@ ${this.getErrorInfo()}`;
   }
   var unionOf = unionOf_;
 
+  // frontend/model/contracts/shared/constants.js
+  var CHATROOM_TYPES = {
+    INDIVIDUAL: "individual",
+    GROUP: "group"
+  };
+  var CHATROOM_PRIVACY_LEVEL = {
+    GROUP: "chatroom-privacy-level-group",
+    PRIVATE: "chatroom-privacy-level-private",
+    PUBLIC: "chatroom-privacy-level-public"
+  };
+  var MESSAGE_TYPES = {
+    POLL: "message-poll",
+    TEXT: "message-text",
+    INTERACTIVE: "message-interactive",
+    NOTIFICATION: "message-notification"
+  };
+  var MESSAGE_NOTIFICATIONS = {
+    ADD_MEMBER: "add-member",
+    JOIN_MEMBER: "join-member",
+    LEAVE_MEMBER: "leave-member",
+    KICK_MEMBER: "kick-member",
+    UPDATE_DESCRIPTION: "update-description",
+    UPDATE_NAME: "update-name",
+    DELETE_CHANNEL: "delete-channel",
+    VOTE: "vote"
+  };
+  var PROPOSAL_VARIANTS = {
+    CREATED: "proposal-created",
+    EXPIRING: "proposal-expiring",
+    ACCEPTED: "proposal-accepted",
+    REJECTED: "proposal-rejected",
+    EXPIRED: "proposal-expired"
+  };
+  var MAIL_TYPE_MESSAGE = "message";
+  var MAIL_TYPE_FRIEND_REQ = "friend-request";
+
+  // frontend/model/contracts/shared/types.js
+  var inviteType = objectOf({
+    inviteSecret: string,
+    quantity: number,
+    creator: string,
+    invitee: optional(string),
+    status: string,
+    responses: mapOf(string, string),
+    expires: number
+  });
+  var chatRoomAttributesType = objectOf({
+    name: string,
+    description: string,
+    type: unionOf(...Object.values(CHATROOM_TYPES).map((v) => literalOf(v))),
+    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v)))
+  });
+  var messageType = objectMaybeOf({
+    type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
+    text: string,
+    proposal: objectMaybeOf({
+      proposalId: string,
+      proposalType: string,
+      expires_date_ms: number,
+      createdDate: string,
+      creator: string,
+      variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map((v) => literalOf(v)))
+    }),
+    notification: objectMaybeOf({
+      type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
+      params: mapOf(string, string)
+    }),
+    replyingMessage: objectOf({
+      id: string,
+      text: string
+    }),
+    emoticons: mapOf(string, arrayOf(string)),
+    onlyVisibleTo: arrayOf(string)
+  });
+  var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
+
   // frontend/model/contracts/mailbox.js
   (0, import_sbp2.default)("chelonia/defineContract", {
     name: "gi.contracts/mailbox",
     metadata: {
       validate: objectOf({
-        createdDate: string,
-        username: optional(string),
-        identityContractID: optional(string)
+        createdDate: string
       }),
       create() {
-        if (!(0, import_sbp2.default)("state/vuex/state").loggedIn) {
-          return { createdDate: new Date().toISOString() };
-        }
-        const { username, identityContractID } = (0, import_sbp2.default)("state/vuex/state").loggedIn;
         return {
-          createdDate: new Date().toISOString(),
-          username,
-          identityContractID
+          createdDate: new Date().toISOString()
         };
       }
     },
     actions: {
       "gi.contracts/mailbox": {
+        validate: object,
+        process({ data }, { state }) {
+          for (const key in data) {
+            vue_esm_default.set(state, key, data[key]);
+          }
+          vue_esm_default.set(state, "messages", []);
+        }
+      },
+      "gi.contracts/mailbox/postMessage": {
         validate: objectOf({
-          username: string
+          messageType: mailType,
+          from: string,
+          subject: optional(string),
+          message: optional(string),
+          headers: optional(object)
+        }),
+        process(message, { state }) {
+          state.messages.push(message);
+        }
+      },
+      "gi.contracts/mailbox/authorizeSender": {
+        validate: objectOf({
+          sender: string
         }),
         process({ data }, { state }) {
-          const initialState = merge({
-            attributes: {
-              creator: data.username,
-              autoJoinAllowance: true
-            },
-            users: {}
-          }, data);
-          for (const key in initialState) {
-            vue_esm_default.set(state, key, initialState[key]);
-          }
-        }
-      },
-      "gi.contracts/mailbox/setAutoJoinAllowance": {
-        validate: (data, { state, meta }) => {
-          objectOf({ allownace: boolean })(data);
-          if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can set attributes."));
-          } else if (state.attributes === data.allownace) {
-            throw new TypeError(L("Same attribute is already set."));
-          }
-        },
-        process({ meta, data }, { state }) {
-          vue_esm_default.set(state.attributes, "autoJoinAllowance", data.allownace);
-        }
-      },
-      "gi.contracts/mailbox/createDirectMessage": {
-        validate: (data, { state, meta }) => {
-          objectOf({
-            username: string,
-            contractID: string
-          })(data);
-          if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can create direct message channel."));
-          } else if (state.users[data.username]) {
-            throw new TypeError(L("Already existing direct message channel."));
-          }
-        },
-        process({ meta, data }, { state }) {
-          vue_esm_default.set(state.users, data.username, {
-            contractID: data.contractID,
-            creator: meta.username,
-            hidden: false,
-            joinedDate: meta.createdDate
-          });
-        },
-        sideEffect({ data }) {
-          (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
-        }
-      },
-      "gi.contracts/mailbox/joinDirectMessage": {
-        validate: objectOf({
-          username: string,
-          contractID: string
-        }),
-        process({ meta, data }, { state }) {
-          if (state.attributes.creator !== data.username) {
-            throw new TypeError(L("Incorrect mailbox creator to join direct message channel."));
-          } else if (state.users[meta.username]) {
-            throw new TypeError(L("Already existing direct message channel."));
-          }
-          const joinedDate = state.attributes.autoJoinAllowance ? meta.createdDate : null;
-          vue_esm_default.set(state.users, meta.username, {
-            contractID: data.contractID,
-            creator: meta.username,
-            hidden: false,
-            joinedDate
-          });
-        },
-        sideEffect({ data }, { state }) {
-          if (state.attributes.autoJoinAllowance) {
-            (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
-          }
-        }
-      },
-      "gi.contracts/mailbox/leaveDirectMessage": {
-        validate: (data, { state, meta }) => {
-          objectOf({
-            username: string
-          })(data);
-          if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can leave direct message channel."));
-          } else if (!state.users[meta.username].joinedDate) {
-            throw new TypeError(L("Not joined or already left direct message channel."));
-          }
-        },
-        process({ data }, { state }) {
-          vue_esm_default.set(state.users[data.username], "joinedDate", null);
-        },
-        sideEffect({ data }) {
-          (0, import_sbp2.default)("chelonia/contract/remove", data.contractID);
+          throw new Error("unimplemented!");
         }
       }
     }

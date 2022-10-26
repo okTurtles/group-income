@@ -10008,7 +10008,10 @@ ${this.getErrorInfo()}`;
     updateCurrentDistribution({ meta, state, getters });
   }
   function isActionYoungerThanUser(actionMeta, userProfile) {
-    return Boolean(userProfile) && compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
+    if (!userProfile) {
+      return false;
+    }
+    return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
   }
   (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/group",

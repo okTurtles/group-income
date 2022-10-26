@@ -9621,7 +9621,7 @@ ${this.getErrorInfo()}`;
             return;
           }
           vue_esm_default.set(state.users, username, { joinedDate: meta.createdDate });
-          if (!state.saveMessage) {
+          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
             return;
           }
           const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
@@ -9688,7 +9688,7 @@ ${this.getErrorInfo()}`;
             throw new Error(`Can not leave the chatroom which ${member} are not part of`);
           }
           vue_esm_default.delete(state.users, member);
-          if (!state.saveMessage) {
+          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
             return;
           }
           const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER;

@@ -59,15 +59,15 @@
     GROUP: "group"
   };
   var CHATROOM_PRIVACY_LEVEL = {
-    GROUP: "group",
-    PRIVATE: "private",
-    PUBLIC: "public"
+    GROUP: "chatroom-privacy-level-group",
+    PRIVATE: "chatroom-privacy-level-private",
+    PUBLIC: "chatroom-privacy-level-public"
   };
   var MESSAGE_TYPES = {
-    POLL: "poll",
-    TEXT: "text",
-    INTERACTIVE: "interactive",
-    NOTIFICATION: "notification"
+    POLL: "message-poll",
+    TEXT: "message-text",
+    INTERACTIVE: "message-interactive",
+    NOTIFICATION: "message-notification"
   };
   var MESSAGE_NOTIFICATIONS = {
     ADD_MEMBER: "add-member",
@@ -80,12 +80,14 @@
     VOTE: "vote"
   };
   var PROPOSAL_VARIANTS = {
-    CREATED: "created",
-    EXPIRING: "expiring",
-    ACCEPTED: "accepted",
-    REJECTED: "rejected",
-    EXPIRED: "expired"
+    CREATED: "proposal-created",
+    EXPIRING: "proposal-expiring",
+    ACCEPTED: "proposal-accepted",
+    REJECTED: "proposal-rejected",
+    EXPIRED: "proposal-expired"
   };
+  var MAIL_TYPE_MESSAGE = "message";
+  var MAIL_TYPE_FRIEND_REQ = "friend-request";
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -314,6 +316,7 @@ ${this.getErrorInfo()}`;
     emoticons: mapOf(string, arrayOf(string)),
     onlyVisibleTo: arrayOf(string)
   });
+  var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
 
   // frontend/model/contracts/shared/functions.js
   var import_sbp = __toESM(__require("@sbp/sbp"));
@@ -525,7 +528,7 @@ ${this.getErrorInfo()}`;
             return;
           }
           import_common2.Vue.set(state.users, username, { joinedDate: meta.createdDate });
-          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+          if (!state.saveMessage) {
             return;
           }
           const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
@@ -592,7 +595,7 @@ ${this.getErrorInfo()}`;
             throw new Error(`Can not leave the chatroom which ${member} are not part of`);
           }
           import_common2.Vue.delete(state.users, member);
-          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+          if (!state.saveMessage) {
             return;
           }
           const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER;
