@@ -1,6 +1,6 @@
 <template lang="pug">
 .c-editor-canvas(
-  @wheel='$emit("pointer-wheel", $event)'
+  @wheel.prevent='$emit("pointer-wheel", $event)'
 )
   template(v-if='ephemeral.image.loaded')
     canvas.c-canvas.bottom(
@@ -265,13 +265,13 @@ export default {
   display: block;
   width: 100%;
   height: 15.625rem;
-  touch-action: none;
   overflow: hidden;
   cursor: move;
 }
 
 .c-canvas {
   position: absolute;
+  touch-action: none;
   top: 0;
   left: 0;
 

@@ -86,7 +86,7 @@ export function randomFromArray (arr: any[]): any {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
-export function linearScale ([d1, d2], [r1, r2]) {
+export function linearScale ([d1, d2]: Array<number>, [r1, r2]: Array<number>): Function {
   // generate a function that takes a value between d1 and d2 and then
   // returns a linearly-scaled output whose min and max values are r1 and r2 respectively.
   const [dSpan, rSpan] = [d2 - d1, r2 - r1]

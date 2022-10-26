@@ -65,13 +65,13 @@ const pointerEventsMixin = {
   },
   mounted () {
     this.$el.addEventListener('pointerdown', this.onPointerDown)
-    window.addEventListener('pointermove', this.throttledHandlers.pointerMoveOnWindow)
-    window.addEventListener('pointerup', this.onPointerCancel)
+    this.$el.addEventListener('pointermove', this.throttledHandlers.pointerMoveOnWindow)
+    this.$el.addEventListener('pointerup', this.onPointerCancel)
   },
   beforeDestroy () {
     this.$el.removeEventListener('pointerdown', this.onPointerDown)
-    window.removeEventListener('pointermove', this.throttledHandlers.pointerMoveOnWindow)
-    window.removeEventListener('pointerup', this.onPointerCancel)
+    this.$el.removeEventListener('pointermove', this.throttledHandlers.pointerMoveOnWindow)
+    this.$el.removeEventListener('pointerup', this.onPointerCancel)
   }
 }
 

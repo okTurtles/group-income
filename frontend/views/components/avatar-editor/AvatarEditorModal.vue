@@ -18,7 +18,7 @@ modal-template(
     )
 
     .c-slider-container
-      button.is-icon-small(@pointerdown='decrementSlider')
+      button.is-icon-small(@pointerdown='decrementSlider()')
         i.icon-magnifying-minus
 
       slider-continuous.c-slider(
@@ -31,7 +31,7 @@ modal-template(
         @input='onSliderInput'
       )
 
-      button.is-icon-small(@pointerdown='incrementSlider')
+      button.is-icon-small(@pointerdown='incrementSlider()')
         i.icon-magnifying-plus
 
     i18n.has-text-1.hide-touch-device(tag='p') Click and drag to reposition
