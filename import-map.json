@@ -11,6 +11,7 @@
 
     "asserts": "https://deno.land/std@0.153.0/testing/asserts.ts",
     "blakejs": "https://cdn.skypack.dev/blakejs",
+    "browser-sync": "https://esm.sh/browser-sync@2.27.10",
     "buffer": "https://cdn.skypack.dev/buffer",
     "dompurify": "https://cdn.skypack.dev/dompurify",
     "lru-cache": "https://cdn.skypack.dev/lru-cache",
@@ -18,6 +19,7 @@
     "pogo": "https://raw.githubusercontent.com/snowteamer/pogo/master/main.ts",
     "pogo/": "https://raw.githubusercontent.com/snowteamer/pogo/master/",
     "pug-lint": "https://esm.sh/pug-lint",
+    "sinon": "https://cdn.skypack.dev/sinon?dts",
     "tweetnacl": "https://cdn.skypack.dev/tweetnacl",
     "vue": "https://esm.sh/vue@2.7.10"
   }

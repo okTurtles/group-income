@@ -308,6 +308,10 @@ function createMessage({ meta, data, hash, state }) {
       notification: { type: data.notification.type, params }
     };
   } else if (type === MESSAGE_TYPES.INTERACTIVE) {
+    newMessage = {
+      ...newMessage,
+      proposal: data.proposal
+    };
   }
   return newMessage;
 }

@@ -402,7 +402,7 @@ module.exports = (grunt) => {
         options: { env: process.env }
       },
       // Test anything in /test that ends with `.test.ts`.
-      testWithDeno: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoImportMap} --no-check ./test/*.test.ts`,
+      testWithDeno: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoImportMap} --no-check **/*.test.ts ./frontend/model/contracts/shared/*.test.ts`,
       ts: `deno check --import-map=${denoImportMap} backend/*.ts shared/*.ts shared/domains/chelonia/*.ts`
     }
   })
@@ -561,9 +561,6 @@ module.exports = (grunt) => {
     const buildContractsSlim = createEsbuildTask({
       ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
-    const buildTestCommons = createEsbuildTask({
-      ...esbuildOptionBags.testCommons, plugins: defaultPlugins
-    })
     const buildTestContracts = createEsbuildTask({
       ...esbuildOptionBags.testContracts, plugins: defaultPlugins
     })
@@ -577,7 +574,7 @@ module.exports = (grunt) => {
       .then(() => {
         return Promise.all([buildMain.run(), buildServiceWorkers.run()])
       })
-      .then(() => Promise.all([buildTestContracts.run(), buildTestCommons.run()]))
+      .then(() => Promise.all([buildTestContracts.run()]))
       .catch(error => {
         grunt.log.error(error.message)
         process.exit(1)

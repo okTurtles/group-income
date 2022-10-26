@@ -71,6 +71,13 @@ var MESSAGE_VARIANTS = {
   RECEIVED: "received",
   FAILED: "failed"
 };
+var PROPOSAL_VARIANTS = {
+  CREATED: "proposal-created",
+  EXPIRING: "proposal-expiring",
+  ACCEPTED: "proposal-accepted",
+  REJECTED: "proposal-rejected",
+  EXPIRED: "proposal-expired"
+};
 var MAIL_TYPE_MESSAGE = "message";
 var MAIL_TYPE_FRIEND_REQ = "friend-request";
 export {
@@ -104,6 +111,7 @@ export {
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_RESULT,
+  PROPOSAL_VARIANTS,
   STATUS_CANCELLED,
   STATUS_EXPIRED,
   STATUS_FAILED,

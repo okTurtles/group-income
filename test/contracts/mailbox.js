@@ -463,6 +463,13 @@ var MESSAGE_NOTIFICATIONS = {
   DELETE_CHANNEL: "delete-channel",
   VOTE: "vote"
 };
+var PROPOSAL_VARIANTS = {
+  CREATED: "proposal-created",
+  EXPIRING: "proposal-expiring",
+  ACCEPTED: "proposal-accepted",
+  REJECTED: "proposal-rejected",
+  EXPIRED: "proposal-expired"
+};
 var MAIL_TYPE_MESSAGE = "message";
 var MAIL_TYPE_FRIEND_REQ = "friend-request";
 
@@ -485,6 +492,14 @@ var chatRoomAttributesType = objectOf({
 var messageType = objectMaybeOf({
   type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
   text: string,
+  proposal: objectMaybeOf({
+    proposalId: string,
+    proposalType: string,
+    expires_date_ms: number,
+    createdDate: string,
+    creator: string,
+    variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map((v) => literalOf(v)))
+  }),
   notification: objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
     params: mapOf(string, string)
