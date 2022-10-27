@@ -137,7 +137,7 @@ export default {
         })
       }
     },
-    calculate () {
+    calculate (isForZoomChange = false) {
       const { image, clipCircle } = this.ephemeral
       const canvas = this.ephemeral.canvas.onCanvas
       const canvasCenter = { x: canvas.width / 2, y: canvas.height / 2 }
@@ -166,6 +166,8 @@ export default {
       // center the on-canvas image relative to the canvas origin
       image.onCanvas.x = -1 * (image.onCanvas.width / 2)
       image.onCanvas.y = -1 * (image.onCanvas.height / 2)
+
+      this.adjustOriginTranslation()
     },
     draw () {
       const cx = this.$refs.canvas.getContext('2d')
@@ -240,8 +242,40 @@ export default {
       this.ephemeral.canvas.onCanvas.origin.translation.x += x
       this.ephemeral.canvas.onCanvas.origin.translation.y += y
 
-      this.calculate()
+      this.adjustOriginTranslation()
       this.draw()
+    },
+    adjustOriginTranslation () {
+      // limit translating of image to the points where the clipping circle never goes beyond
+      // the bounding-box of the on-canvas image.
+
+      const { canvas, clipCircle } = this.ephemeral
+      const image = this.ephemeral.image.onCanvas
+      const originTranslation = canvas.onCanvas.origin.translation
+      const onCanvasCenter = { x: canvas.onCanvas.width / 2, y: canvas.onCanvas.height / 2 }
+
+      const onCanvasImageTopLeft = {
+        x: onCanvasCenter.x + originTranslation.x + image.x,
+        y: onCanvasCenter.y + originTranslation.y + image.y
+      }
+      const onCanvasImageBottomRight = {
+        x: onCanvasImageTopLeft.x + image.width,
+        y: onCanvasImageTopLeft.y + image.height
+      }
+
+      // if the applied translation makes the image go beyond its limit,
+      // adjust the value of the translation.
+      if (onCanvasImageTopLeft.x > clipCircle.x) {
+        originTranslation.x -= (onCanvasImageTopLeft.x - clipCircle.x)
+      } else if (onCanvasImageBottomRight.x < (clipCircle.x + clipCircle.diameter)) {
+        originTranslation.x += ((clipCircle.x + clipCircle.diameter) - onCanvasImageBottomRight.x)
+      }
+
+      if (onCanvasImageTopLeft.y > clipCircle.y) {
+        originTranslation.y -= (onCanvasImageTopLeft.y - clipCircle.y)
+      } else if (onCanvasImageBottomRight.y < (clipCircle.y + clipCircle.diameter)) {
+        originTranslation.y += ((clipCircle.y + clipCircle.diameter) - onCanvasImageBottomRight.y)
+      }
     }
   },
   created () {
