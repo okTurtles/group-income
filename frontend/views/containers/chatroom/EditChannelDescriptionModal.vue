@@ -97,7 +97,7 @@ export default ({
     form: {
       description: {
         [L('Reached character limit.')]: function (value) {
-          return value ? Number(value.length) <= this.maxDescriptionCharacters : false
+          return !value || Number(value.length) <= this.maxDescriptionCharacters
         }
       }
     }
