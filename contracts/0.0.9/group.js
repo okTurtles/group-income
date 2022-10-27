@@ -9726,7 +9726,7 @@ ${this.getErrorInfo()}`;
 
   // frontend/model/contracts/shared/functions.js
   var import_sbp3 = __toESM(__require("@sbp/sbp"));
-  function getPaymentHashes(periodPayments) {
+  function paymentHashesFromPaymentPeriod(periodPayments) {
     let hashes = [];
     if (periodPayments) {
       const { paymentsFrom } = periodPayments;
@@ -9738,7 +9738,7 @@ ${this.getErrorInfo()}`;
     }
     return hashes;
   }
-  function simplifyPayment(paymentHash, payment) {
+  function createPaymentInfo(paymentHash, payment) {
     return {
       from: payment.meta.username,
       to: payment.data.toUser,
@@ -10152,7 +10152,7 @@ ${this.getErrorInfo()}`;
         return (periodStamp) => {
           const periodPayments = getters.groupPeriodPayments[periodStamp];
           if (periodPayments) {
-            return getPaymentHashes(periodPayments);
+            return paymentHashesFromPaymentPeriod(periodPayments);
           }
         };
       },
@@ -10241,7 +10241,7 @@ ${this.getErrorInfo()}`;
             for (const paymentHash of hashes) {
               const payment = payments[paymentHash];
               if (payment.data.status === PAYMENT_COMPLETED) {
-                events2.push(simplifyPayment(paymentHash, payment));
+                events2.push(createPaymentInfo(paymentHash, payment));
               }
             }
           }
@@ -10853,7 +10853,7 @@ ${this.getErrorInfo()}`;
           archPayments = merge(archPayments, payments);
           while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
             const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift();
-            const paymentHashes = getPaymentHashes(archPaymentsByPeriod[shouldBeDeletedPeriod]);
+            const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod]);
             for (const hash2 of paymentHashes) {
               delete archPayments[hash2];
             }

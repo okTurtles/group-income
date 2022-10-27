@@ -71,7 +71,7 @@ export default ({
         const payments = await this.getPaymentsByPeriod(period)
         const { totalDistributionAmount, numReceivers } = this.parsePayments(payments)
         return {
-          total: numReceivers === 0 ? 1 : totalDistributionAmount / (this.mincome * numReceivers),
+          total: numReceivers === 0 ? 0 : totalDistributionAmount / (this.mincome * numReceivers),
           delayedPayment: payments.some(payment => payment.isLate),
           title: humanDate(period, { month: 'long' })
         }

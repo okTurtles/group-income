@@ -10,7 +10,7 @@ import {
   INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
-import { simplifyPayment, getPaymentHashes } from './shared/functions.js'
+import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
 import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
@@ -272,7 +272,7 @@ sbp('chelonia/defineContract', {
       return (periodStamp) => {
         const periodPayments = getters.groupPeriodPayments[periodStamp]
         if (periodPayments) {
-          return getPaymentHashes(periodPayments)
+          return paymentHashesFromPaymentPeriod(periodPayments)
         }
       }
     },
@@ -375,7 +375,7 @@ sbp('chelonia/defineContract', {
           for (const paymentHash of hashes) {
             const payment = payments[paymentHash]
             if (payment.data.status === PAYMENT_COMPLETED) {
-              events.push(simplifyPayment(paymentHash, payment))
+              events.push(createPaymentInfo(paymentHash, payment))
             }
           }
         }
@@ -1134,7 +1134,7 @@ sbp('chelonia/defineContract', {
 
         while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
           const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift()
-          const paymentHashes = getPaymentHashes(archPaymentsByPeriod[shouldBeDeletedPeriod])
+          const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod])
 
           for (const hash of paymentHashes) {
             delete archPayments[hash]

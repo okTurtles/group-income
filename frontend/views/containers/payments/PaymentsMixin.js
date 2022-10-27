@@ -1,9 +1,11 @@
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
-import { simplifyPayment, getPaymentHashes } from '@model/contracts/shared/functions.js'
+import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '@model/contracts/shared/functions.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 
+// NOTE: this mixin combines payment information
+// from both the current in-memory state and the archived payments on disk
 const PaymentsMixin: Object = {
   computed: {
     ...mapState(['currentGroupId']),
@@ -22,8 +24,8 @@ const PaymentsMixin: Object = {
   methods: {
     async getHistoricalPaymentsInTypes () {
       const paymentsInTypes = {
-        sent: cloneDeep(this.ourPayments?.sent),
-        received: cloneDeep(this.ourPayments?.received),
+        sent: cloneDeep(this.ourPayments?.sent || []),
+        received: cloneDeep(this.ourPayments?.received || []),
         todo: this.groupIncomeAdjustedDistribution.filter(p => p.from === this.ourUsername)
       }
 
@@ -36,15 +38,11 @@ const PaymentsMixin: Object = {
         const { paymentsFrom } = paymentsByPeriod[period]
         for (const fromUser of Object.keys(paymentsFrom)) {
           for (const toUser of Object.keys(paymentsFrom[fromUser])) {
-            if (toUser === this.ourUsername) {
-              for (const rHash of paymentsFrom[fromUser][toUser]) {
-                const { data, meta } = payments[rHash]
-                paymentsInTypes.received.push({ hash: rHash, data, meta, amount: data.amount, username: data.toUser })
-              }
-            } else if (fromUser === this.ourUsername) {
-              for (const sHash of paymentsFrom[fromUser][toUser]) {
-                const { data, meta } = payments[sHash]
-                paymentsInTypes.sent.push({ hash: sHash, data, meta, amount: data.amount, username: data.toUser })
+            if (toUser === this.ourUsername || fromUser === this.ourUsername) {
+              const receivedOrSent = toUser === this.ourUsername ? 'received' : 'sent'
+              for (const hash of paymentsFrom[fromUser][toUser]) {
+                const { data, meta } = payments[hash]
+                paymentsInTypes[receivedOrSent].push({ hash, data, meta, amount: data.amount, username: toUser })
               }
             }
           }
@@ -65,7 +63,7 @@ const PaymentsMixin: Object = {
       } else {
         const paymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
         const paymentsByPeriod = await sbp('gi.db/archive/load', paymentsByPeriodKey) || {}
-        const paymentHashes = getPaymentHashes(paymentsByPeriod[period])
+        const paymentHashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period])
 
         const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
         const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
@@ -81,7 +79,7 @@ const PaymentsMixin: Object = {
       for (const hash of Object.keys(paymentsByHash)) {
         const payment = paymentsByHash[hash]
         if (payment.data.status === PAYMENT_COMPLETED) {
-          payments.push(simplifyPayment(hash, payment))
+          payments.push(createPaymentInfo(hash, payment))
         }
       }
       return payments
