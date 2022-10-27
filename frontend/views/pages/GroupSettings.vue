@@ -200,6 +200,7 @@ export default ({
   },
   watch: {
     groupSettings () {
+      // re-fetch the latest correct values whenever the user switches groups
       this.refreshForm()
     }
   }

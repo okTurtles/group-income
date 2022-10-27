@@ -71,6 +71,8 @@ export default ({
     validationsDebouncedMixins
   ],
   props: {
+    // ButtonSubmit component waits until the `click` listener (which is `signup` function) is finished
+    // This prop is something we could add to wait for it to be finished in `signup` process
     postSubmit: {
       type: Function,
       default: () => {}

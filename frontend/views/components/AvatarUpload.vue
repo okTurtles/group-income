@@ -57,6 +57,10 @@ export default ({
       try {
         const { selector, contractID, key } = this.sbpParams
         await sbp(selector, { contractID, data: { [key]: picture } })
+        // calling `setFromBlob` seems unnecessary here since the bound :avatar
+        // parameter should get updated after the upload completes.
+        // also, calling it here prevents the avatar from switching in Group Settings if we
+        // just uploaded a new image and then switch groups (see #1425)
         // this.$refs.picture.setFromBlob(fileReceived)
         this.$refs.formMsg.success(L('Avatar updated!'))
       } catch (e) {
