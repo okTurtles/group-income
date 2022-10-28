@@ -69,6 +69,14 @@ export default ({
     validationMixin,
     validationsDebouncedMixins
   ],
+  props: {
+    // ButtonSubmit component waits until the `click` listener (which is `signup` function) is finished
+    // This prop is something we could add to wait for it to be finished in `signup` process
+    postSubmit: {
+      type: Function,
+      default: () => {}
+    }
+  },
   components: {
     PasswordForm,
     BannerScoped,
@@ -101,6 +109,7 @@ export default ({
           email: this.form.email,
           password: this.form.password
         })
+        await this.postSubmit()
         this.$emit('submit-succeeded')
 
         requestNotificationPermission()
