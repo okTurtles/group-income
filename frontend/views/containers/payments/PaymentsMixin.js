@@ -13,11 +13,8 @@ const PaymentsMixin: Object = {
       'currentGroupState',
       'ourUsername',
       'ourPayments',
-      'paymentsForPeriod',
-      'periodBeforePeriod',
       'groupPeriodPayments',
-      'paymentHashesForPeriod',
-      'groupIncomeAdjustedDistribution'
+      'paymentHashesForPeriod'
     ])
   },
   methods: {
@@ -25,9 +22,7 @@ const PaymentsMixin: Object = {
       const paymentsInTypes = {
         sent: cloneDeep(this.ourPayments?.sent || []),
         received: cloneDeep(this.ourPayments?.received || []),
-        todo: !this.currentGroupState.settings
-          ? []
-          : this.groupIncomeAdjustedDistribution.filter(p => p.from === this.ourUsername)
+        todo: cloneDeep(this.ourPayments?.todo || [])
       }
 
       const paymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`

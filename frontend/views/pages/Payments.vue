@@ -159,7 +159,7 @@ import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWi
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
-import { randomHexString } from '@model/contracts/shared/giLodash.js'
+import { randomHexString, deepEqualJSONType } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
 import {
   dummyLightningUsers,
@@ -217,19 +217,20 @@ export default ({
     needsIncome () {
       this.setInitialActiveTab()
     },
-    ourPayments () {
-      this.updatePayments()
+    ourPayments (to, from) {
+      if (!deepEqualJSONType(to, from)) {
+        this.updatePayments()
+      }
     }
   },
   computed: {
     ...mapGetters([
-      'currentGroupState',
       'groupIncomeDistribution',
-      'groupIncomeAdjustedDistribution',
       'paymentTotalFromUserToUser',
+      'periodStampGivenDate',
+      'currentPaymentPeriod',
       'ourGroupProfile',
       'groupSettings',
-      'ourUsername',
       'userDisplayName',
       'withGroupCurrency'
     ]),
@@ -292,6 +293,11 @@ export default ({
         ? L('You are currently {strong_}receiving{_strong} mincome.', LTags('strong'))
         : L('You are currently {strong_}sending{_strong} mincome.', LTags('strong'))
     },
+    // paymentsCount () {
+    //   if (Object.keys(this.groupSettings).length) {
+    //     return this.paymentHashesForPeriod(this.periodStampGivenDate(this.groupSettings.distributionDate))?.length
+    //   }
+    // },
     paymentsTodo () {
       const payments = []
       const sentPayments = this.paymentsSent
@@ -462,7 +468,10 @@ export default ({
       })
     },
     async updatePayments () {
-      this.historicalPayments = await this.getHistoricalPaymentsInTypes()
+      // NOTE: no need to calculate while logging out
+      if (Object.keys(this.groupSettings).length) {
+        this.historicalPayments = await this.getHistoricalPaymentsInTypes()
+      }
     }
   }
 }: Object)

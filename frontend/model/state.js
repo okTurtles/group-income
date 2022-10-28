@@ -56,6 +56,11 @@ const initialState = {
     : ['error', 'warn', 'info']
 }
 
+const reactiveDate = Vue.observable({ date: new Date() })
+// every 5 minutes update the reactive date to force recomputation of getters using this
+// TODO: can make this every minute after payments pagination no longer loads all of the payments
+setInterval(function () { reactiveDate.date = new Date() }, 5 * 60 * 1000)
+
 sbp('sbp/selectors/register', {
   // 'state' is the Vuex state object, and it can only store JSON-like data
   'state/vuex/state': () => store.state,
@@ -334,8 +339,9 @@ const getters = {
       return profile.displayName || username
     }
   },
+  // this getter gets recomputed automatically according to the setInterval on reactiveDate
   currentPaymentPeriod (state, getters) {
-    return getters.periodStampGivenDate(new Date())
+    return getters.periodStampGivenDate(reactiveDate.date)
   },
   thisPeriodPaymentInfo (state, getters) {
     return getters.groupPeriodPayments[getters.currentPaymentPeriod]
@@ -477,8 +483,8 @@ const getters = {
   },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
-    if (!profiles) return []
-    const weJoinedMs = new Date(profiles[getters.ourUsername].joinedDate).getTime()
+    if (!profiles || !profiles[getters.ourUsername]) return []
+    const weJoinedMs = new Date(profiles[getters.ourUsername]?.joinedDate).getTime()
     const isNewMember = (username) => {
       if (username === getters.ourUsername) { return false }
       const memberProfile = profiles[username]
@@ -615,6 +621,15 @@ const store: any = new Vuex.Store({
     notifications: notificationModule
   },
   strict: false // we're intentionally modifying state outside of commits
+})
+
+// Somewhat of a hack, I'm not sure why this is necessary now, but ever since changing how
+// getters.currentPaymentPeriod works, this is necessary to force the UI to update immediately
+// after a payment is made.
+store.watch(function (state, getters) {
+  return getters.currentGroupState.settings?.distributionDate
+}, function () {
+  reactiveDate.date = new Date()
 })
 
 // save the state each time it's modified, but debounce it to avoid saving too frequently

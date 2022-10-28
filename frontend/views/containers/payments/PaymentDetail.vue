@@ -74,7 +74,6 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'currentGroupState',
       'ourUsername',
       'userDisplayName',
       'periodStampGivenDate'
