@@ -38,8 +38,8 @@ modal-template(
     i18n.has-text-1.hide-hoverable-device(tag='p') Pinch to zoom, drag to reposition
 
     .buttons
-      button.is-outlined(
-        type='button'
+      i18n.is-outlined(
+        tag='button'
         @click='close'
       ) Cancel
 
@@ -47,7 +47,8 @@ modal-template(
         key='save'
         data-test='saveBtn'
         @click='submit'
-      ) Save
+      )
+        i18n Save
 </template>
 
 <script>
