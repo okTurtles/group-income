@@ -1,5 +1,5 @@
 // Can run directly with:
-// deno test --import-map=import-map.json frontend/model/contracts/shared/giLodash.time.ts
+// deno test --import-map=import-map.json frontend/model/contracts/shared/time.test.ts
 
 import { assertEquals } from 'asserts'
 
@@ -11,6 +11,16 @@ import {
 } from './time.js'
 
 Deno.test('Tests for time.js', async function (tests) {
+  const defaultLocale = 'en-US'
+  // In Deno ^v1.27.0, `navigator.language` is defined,
+  // which results in failed tests on devices using another locale than en-US.
+  if (navigator.language !== undefined) {
+    Object.defineProperty(navigator, 'language', { configurable: true, enumerable: true, writable: false, value: defaultLocale })
+  }
+  if (navigator.languages !== undefined) {
+    Object.defineProperty(navigator, 'languages', { configurable: true, enumerable: true, writable: false, value: [defaultLocale] })
+  }
+
   await tests.step('timeSince', async function (tests) {
     const currentDate = 1590823007327
 
