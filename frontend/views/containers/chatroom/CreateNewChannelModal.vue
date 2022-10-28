@@ -79,7 +79,6 @@ import { validationMixin } from 'vuelidate'
 import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
-import maxLength from 'vuelidate/lib/validators/maxLength'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
@@ -93,7 +92,13 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['getChatRooms'])
+    ...mapGetters(['currentChatRoomState', 'getChatRooms']),
+    maxNameCharacters () {
+      return this.currentChatRoomState.settings.maxNameLength
+    },
+    maxDescriptionCharacters () {
+      return this.currentChatRoomState.settings.maxDescriptionLength
+    }
   },
   data () {
     return {
@@ -142,7 +147,9 @@ export default ({
     form: {
       name: {
         [L('This field is required')]: required,
-        maxLength: maxLength(50),
+        [L('Reached character limit.')]: function (value) {
+          return value ? Number(value.length) <= this.maxNameCharacters : false
+        },
         [L('Duplicate channel name')]: (name, siblings) => {
           for (const existingName of siblings.existingNames) {
             if (name.toUpperCase() === existingName.toUpperCase()) {
@@ -153,7 +160,9 @@ export default ({
         }
       },
       description: {
-        maxLength: maxLength(150)
+        [L('Reached character limit.')]: function (value) {
+          return !value || Number(value.length) <= this.maxDescriptionCharacters
+        }
       }
     }
   }

@@ -168,6 +168,15 @@ const router: any = new Router({
 })
 
 router.beforeEach((to, from, next) => {
+  if (to.query.modal &&
+    !['SignupModal', 'LoginModal'].includes(to.query.modal) &&
+    !store.state.loggedIn) {
+    // if modal is queried and,
+    // the requested modal is only meant to be used post authentication and,
+    // the user is not logged in now, discard the navigation.
+    return next(from)
+  }
+
   document.title = to.meta.title
   next()
 })

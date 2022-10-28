@@ -9468,6 +9468,13 @@ ${this.getErrorInfo()}`;
     DELETE_CHANNEL: "delete-channel",
     VOTE: "vote"
   };
+  var PROPOSAL_VARIANTS = {
+    CREATED: "proposal-created",
+    EXPIRING: "proposal-expiring",
+    ACCEPTED: "proposal-accepted",
+    REJECTED: "proposal-rejected",
+    EXPIRED: "proposal-expired"
+  };
   var MAIL_TYPE_MESSAGE = "message";
   var MAIL_TYPE_FRIEND_REQ = "friend-request";
 
@@ -9906,6 +9913,14 @@ ${this.getErrorInfo()}`;
   var messageType = objectMaybeOf({
     type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
     text: string,
+    proposal: objectMaybeOf({
+      proposalId: string,
+      proposalType: string,
+      expires_date_ms: number,
+      createdDate: string,
+      creator: string,
+      variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map((v) => literalOf(v)))
+    }),
     notification: objectMaybeOf({
       type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
       params: mapOf(string, string)
@@ -10387,6 +10402,7 @@ ${this.getErrorInfo()}`;
             meta,
             votes: { [meta.username]: VOTE_FOR },
             status: STATUS_OPEN,
+            notifiedBeforeExpire: false,
             payload: null
           });
         },
@@ -10461,6 +10477,14 @@ ${this.getErrorInfo()}`;
           }
           vue_esm_default.set(proposal, "status", STATUS_CANCELLED);
           archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID });
+        }
+      },
+      "gi.contracts/group/notifyExpiringProposals": {
+        validate: arrayOf(string),
+        process({ data, meta, contractID }, { state }) {
+          for (const proposalId of data) {
+            vue_esm_default.set(state.proposals[proposalId], "notifiedBeforeExpire", true);
+          }
         }
       },
       "gi.contracts/group/removeMember": {

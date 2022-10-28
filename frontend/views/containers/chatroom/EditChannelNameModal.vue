@@ -54,7 +54,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'generalChatRoomId']),
+    ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'generalChatRoomId', 'getChatRooms']),
     maxNameCharacters () {
       return this.currentChatRoomState.settings.maxNameLength
     }
@@ -63,12 +63,15 @@ export default ({
     return {
       channelId: this.$route.query.channel,
       form: {
-        name: null
+        name: null,
+        existingNames: []
       }
     }
   },
   created () {
     this.form.name = this.currentChatRoomState.attributes.name
+    this.form.existingNames = Object.keys(this.getChatRooms)
+      .map(cId => this.getChatRooms[cId].name)
   },
   mounted () {
     if (this.generalChatRoomId === this.currentChatRoomId) {
@@ -109,6 +112,14 @@ export default ({
         [L('This field is required')]: required,
         [L('Reached character limit.')]: function (value) {
           return value ? Number(value.length) <= this.maxNameCharacters : false
+        },
+        [L('Duplicate channel name')]: (name, siblings) => {
+          for (const existingName of siblings.existingNames) {
+            if (name.toUpperCase() === existingName.toUpperCase()) {
+              return false
+            }
+          }
+          return true
         }
       }
     }

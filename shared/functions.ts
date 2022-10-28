@@ -6,11 +6,7 @@ import blake from 'blakejs'
 
 import { Buffer } from 'buffer'
 
-if (typeof window === 'object') {
-  (window as typeof window & { Buffer: typeof Buffer }).Buffer = Buffer
-} else {
-  (globalThis as typeof globalThis & { Buffer: typeof Buffer }).Buffer = Buffer
-}
+(self as typeof self & { Buffer: typeof Buffer }).Buffer = Buffer
 
 export function blake32Hash (data: unknown) {
   // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
