@@ -1,7 +1,7 @@
 {
   "name": "group-income",
   "version": "0.0.1",
-  "contractsVersion": "0.0.6",
+  "contractsVersion": "0.0.8",
   "private": true,
   "description": "",
   "scripts": {
@@ -18,49 +18,6 @@
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh"
   },
-  "eslintConfig": {
-    "root": true,
-    "parserOptions": {
-      "parser": "@babel/eslint-parser"
-    },
-    "extends": [
-      "plugin:cypress/recommended",
-      "plugin:flowtype/recommended",
-      "plugin:vue/essential",
-      "standard"
-    ],
-    "plugins": [
-      "cypress",
-      "flowtype",
-      "import"
-    ],
-    "rules": {
-      "require-await": "error",
-      "vue/max-attributes-per-line": "off",
-      "vue/html-indent": "off",
-      "flowtype/no-types-missing-file-annotation": "off",
-      "quote-props": "off",
-      "dot-notation": "off",
-      "import/extensions": [
-        2,
-        "ignorePackages"
-      ]
-    }
-  },
-  "eslintIgnore": [
-    "contracts/*",
-    "dist/*",
-    "frontend/assets/*",
-    "frontend/model/contracts/misc/flowTyper.js",
-    "historical/*",
-    "ignored/*",
-    "node_modules/*",
-    "shared/**/*.flow.js",
-    "shared/declarations.js",
-    "test/common/*",
-    "test/contracts/*",
-    "test/cypress/cache/*"
-  ],
   "browserslist": "> 1% and since 2018 and not dead",
   "stylelint": {
     "extends": "stylelint-config-standard",
@@ -167,7 +124,6 @@
     "grunt-contrib-copy": "1.0.0",
     "grunt-exec": "3.0.0",
     "load-grunt-tasks": "5.1.0",
-    "mocha": "8.4.0",
     "pug-lint-vue": "git+https://git@github.com/okTurtles/pug-lint-vue.git#619952b834296a98e807691019ef6c2f70540df0",
     "sass": "1.37.5",
     "should": "13.2.3",

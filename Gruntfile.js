@@ -72,6 +72,7 @@ const backendIndex = './backend/index.ts'
 const contractsDir = 'frontend/model/contracts'
 const denoImportMap = 'import-map.json'
 const denoRunPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
+const denoTestImportMap = 'import-map-for-tests.json'
 const denoTestPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
 const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
@@ -244,19 +245,24 @@ module.exports = (grunt) => {
     ...esbuildOptionBags.default,
     bundle: true,
     entryPoints: [
-      `${contractsDir}/group.js`,
-      `${contractsDir}/chatroom.js`,
-      `${contractsDir}/identity.js`,
-      `${contractsDir}/mailbox.js`,
-      // `${contractsDir}/misc/flowTyper.js`,
-      `${contractsDir}/shared/voting/proposals.js`,
-      `${contractsDir}/shared/payments/index.js`,
-      `${contractsDir}/shared/constants.js`,
-      `${contractsDir}/shared/functions.js`,
-      `${contractsDir}/shared/giLodash.js`
-    ],
+      'group.js',
+      'chatroom.js',
+      'identity.js',
+      'mailbox.js',
+      'misc/flowTyper.js',
+      'shared/voting/proposals.js',
+      'shared/voting/rules.js',
+      'shared/payments/index.js',
+      'shared/constants.js',
+      'shared/functions.js',
+      'shared/giLodash.js'
+    ].map(s => `${contractsDir}/${s}`),
     external: ['dompurify', 'vue'],
+    minifyIdentifiers: false,
+    minifySyntax: false,
+    minifyWhitespace: false,
     outdir: './test/contracts',
+    sourcemap: false,
     splitting: false
   }
 
@@ -271,7 +277,12 @@ module.exports = (grunt) => {
     // },
     splitting: false,
     outdir: distContracts,
-    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`],
+    entryPoints: [
+      'chatroom.js',
+      'group.js',
+      'identity.js',
+      'mailbox.js'
+    ].map(s => `${contractsDir}/${s}`),
     external: ['@sbp/sbp']
   }
   // prevent contract hash from changing each time we build them
@@ -391,18 +402,12 @@ module.exports = (grunt) => {
 
     exec: {
       chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data',
-      eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
+      eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,ts,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
-      // Test anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.
-      // The `--require` flag ensures custom Babel support in our test files.
-      test: {
-        cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
-        options: { env: process.env }
-      },
-      // Test anything in /test that ends with `.test.ts`.
-      testWithDeno: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoImportMap} --no-check ./test/*.test.ts`,
+      // Test anything that ends with `.test.{js|ts}` in the specified folders, e.g. unit tests for SBP domains kept in the domain folder.
+      test: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoTestImportMap} frontend shared test`,
       ts: `deno check --import-map=${denoImportMap} backend/*.ts shared/*.ts shared/domains/chelonia/*.ts`
     }
   })
@@ -561,9 +566,6 @@ module.exports = (grunt) => {
     const buildContractsSlim = createEsbuildTask({
       ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
-    const buildTestCommons = createEsbuildTask({
-      ...esbuildOptionBags.testCommons, plugins: defaultPlugins
-    })
     const buildTestContracts = createEsbuildTask({
       ...esbuildOptionBags.testContracts, plugins: defaultPlugins
     })
@@ -577,7 +579,7 @@ module.exports = (grunt) => {
       .then(() => {
         return Promise.all([buildMain.run(), buildServiceWorkers.run()])
       })
-      .then(() => Promise.all([buildTestContracts.run(), buildTestCommons.run()]))
+      .then(() => Promise.all([buildTestContracts.run()]))
       .catch(error => {
         grunt.log.error(error.message)
         process.exit(1)
@@ -691,8 +693,8 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno:start', 'exec:test', 'exec:testWithDeno', 'cypress', 'deno:stop', 'flow:stop'])
-  grunt.registerTask('test:unit', ['deno:start', 'exec:test', 'exec:testWithDeno', 'deno:stop'])
+  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno:start', 'exec:test', 'cypress', 'deno:stop', 'flow:stop'])
+  grunt.registerTask('test:unit', ['deno:start', 'exec:test', 'deno:stop'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers

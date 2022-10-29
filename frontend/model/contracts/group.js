@@ -127,7 +127,10 @@ function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boo
   // 'MEMBER_ADDED' notification for user-1.
   // In some situations, userProfile is undefined, for example, when inviteAccept is called in
   // certain situations. So we need to check for that here.
-  return Boolean(userProfile) && compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
+  if (!userProfile) {
+    return false
+  }
+  return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
 }
 
 sbp('chelonia/defineContract', {
@@ -594,6 +597,7 @@ sbp('chelonia/defineContract', {
           meta,
           votes: { [meta.username]: VOTE_FOR },
           status: STATUS_OPEN,
+          notifiedBeforeExpire: false,
           payload: null // set later by group/proposalVote
         })
         // TODO: save all proposals disk so that we only keep open proposals in memory
@@ -682,6 +686,14 @@ sbp('chelonia/defineContract', {
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
         archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID })
+      }
+    },
+    'gi.contracts/group/notifyExpiringProposals': {
+      validate: arrayOf(string),
+      process ({ data, meta, contractID }, { state }) {
+        for (const proposalId of data) {
+          Vue.set(state.proposals[proposalId], 'notifiedBeforeExpire', true)
+        }
       }
     },
     'gi.contracts/group/removeMember': {

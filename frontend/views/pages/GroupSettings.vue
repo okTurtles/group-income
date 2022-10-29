@@ -181,6 +181,14 @@ export default ({
       } else {
         this.openProposal('GroupLeaveModal')
       }
+    },
+    refreshForm () {
+      const { groupName, sharedValues, mincomeCurrency } = this.groupSettings
+      this.form = {
+        groupName,
+        sharedValues,
+        mincomeCurrency
+      }
     }
   },
   validations: {
@@ -188,6 +196,12 @@ export default ({
       groupName: {
         [L('This field is required')]: required
       }
+    }
+  },
+  watch: {
+    groupSettings () {
+      // re-fetch the latest correct values whenever the user switches groups
+      this.refreshForm()
     }
   }
 }: Object)

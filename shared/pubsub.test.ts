@@ -1,7 +1,7 @@
 import {
   assert,
   assertEquals
-} from 'https://deno.land/std@0.153.0/testing/asserts.ts'
+} from 'asserts'
 
 import '~/scripts/process-shim.ts'
 

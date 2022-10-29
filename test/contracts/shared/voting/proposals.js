@@ -604,4 +604,3 @@ export {
   proposalSettingsType,
   proposalType
 };
-//# sourceMappingURL=proposals.js.map

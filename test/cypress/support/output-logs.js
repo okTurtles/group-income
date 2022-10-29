@@ -3,6 +3,7 @@
 // Copied directly from: https://github.com/cypress-io/cypress/issues/3199#issuecomment-466593084
 // ***********
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const APPLICATION_NAME = require('../../../package.json').name
 
 let logs = ''

@@ -1,22 +1,27 @@
 {
   "imports": {
-    "~/backend/": "./backend/",
-    "~/shared/": "./shared/",
-    "~/": "./",
-    "@common/": "./frontend/common/",
-    "@sbp/": "https://cdn.skypack.dev/@sbp/",
+    "fmt/": "https://deno.land/std@0.161.0/fmt/",
+    "path": "https://deno.land/std@0.161.0/path/mod.ts",
 
-    "fmt/": "https://deno.land/std@0.138.0/fmt/",
-    "path": "https://deno.land/std@0.138.0/path/mod.ts",
-
-    "blakejs": "https://cdn.skypack.dev/blakejs",
-    "buffer": "https://cdn.skypack.dev/buffer",
-    "dompurify": "https://cdn.skypack.dev/dompurify",
-    "lru-cache": "https://cdn.skypack.dev/lru-cache",
-    "multihashes": "https://esm.sh/multihashes",
+    "asserts": "https://deno.land/std@0.161.0/testing/asserts.ts",
+    "blakejs": "https://cdn.skypack.dev/blakejs@1.2.1",
+    "browser-sync": "https://esm.sh/browser-sync@2.27.10",
+    "buffer": "https://cdn.skypack.dev/buffer@6.0.3",
+    "dompurify": "https://cdn.skypack.dev/dompurify@2.4.0",
+    "lru-cache": "https://cdn.skypack.dev/lru-cache@7.14.0",
+    "multihashes": "https://esm.sh/multihashes@4.0.3",
     "pogo": "https://raw.githubusercontent.com/snowteamer/pogo/master/main.ts",
     "pogo/": "https://raw.githubusercontent.com/snowteamer/pogo/master/",
-    "tweetnacl": "https://cdn.skypack.dev/tweetnacl",
-    "vue": "https://esm.sh/vue@2.7.10"
+    "pug-lint": "https://esm.sh/pug-lint@2.6.0",
+    "sinon": "https://cdn.skypack.dev/sinon@14.0.1?dts",
+    "tweetnacl": "https://cdn.skypack.dev/tweetnacl@1.0.3",
+    "vue": "https://esm.sh/vue@2.7.10",
+
+    "~/": "./",
+    "~/backend/": "./backend/",
+    "~/shared/": "./shared/",
+    "@common/": "./frontend/common/",
+    "@contracts/": "./frontend/model/contracts/",
+    "@sbp/": "https://cdn.skypack.dev/@sbp/"
   }
 }

@@ -206,7 +206,7 @@ function throwIfFileOutsideDataDir (filename: string): string {
 if (production || Deno.env.get('GI_PERSIST')) {
   // https://github.com/isaacs/node-lru-cache#usage
   const cache = new LRU({
-    max: Number(process.env.GI_LRU_NUM_ITEMS) || 10000
+    max: Number(Deno.env.get('GI_LRU_NUM_ITEMS')) || 10000
   })
 
   sbp('sbp/selectors/overwrite', {
@@ -219,7 +219,6 @@ if (production || Deno.env.get('GI_PERSIST')) {
         return lookupValue
       }
       const bufferOrError = await sbp('backend/db/readFile', filename)
-
       if (bufferOrError instanceof Error) {
         return null
       }

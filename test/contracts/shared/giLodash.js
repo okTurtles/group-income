@@ -176,6 +176,20 @@ function debounce(func, wait, immediate) {
   };
   return debounced;
 }
+function get(obj, path, defaultValue) {
+  if (!path.length) {
+    return obj;
+  } else if (obj === void 0) {
+    return defaultValue;
+  }
+  let result = obj;
+  let i = 0;
+  while (result && i < path.length) {
+    result = result[path[i]];
+    i++;
+  }
+  return result === void 0 ? defaultValue : result;
+}
 export {
   choose,
   cloneDeep,
@@ -184,6 +198,7 @@ export {
   delay,
   difference,
   flatten,
+  get,
   intersection,
   mapObject,
   mapValues,
@@ -199,4 +214,3 @@ export {
   uniq,
   zip
 };
-//# sourceMappingURL=giLodash.js.map

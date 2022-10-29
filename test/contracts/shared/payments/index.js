@@ -107,4 +107,3 @@ export {
   paymentStatusType,
   paymentType
 };
-//# sourceMappingURL=index.js.map

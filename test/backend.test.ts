@@ -1,5 +1,4 @@
-import { assertEquals, assertMatch } from "https://deno.land/std@0.153.0/testing/asserts.ts"
-
+import { assertEquals, assertMatch, unreachable } from 'asserts'
 import { bold, red, yellow } from 'fmt/colors.ts'
 import * as pathlib from 'path'
 
@@ -8,19 +7,30 @@ import '~/scripts/process-shim.ts'
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
+// eslint-disable-next-line import/no-duplicates
 import '~/shared/domains/chelonia/chelonia.ts'
-import { GIMessage } from '~/shared/domains/chelonia/GIMessage.ts'
+// eslint-disable-next-line import/no-duplicates
+import { type CheloniaState, type GIMessage } from '~/shared/domains/chelonia/chelonia.ts'
+import { type GIOpActionUnencrypted } from '~/shared/domains/chelonia/GIMessage.ts'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
+import applyPortShift from '~/scripts/applyPortShift.ts'
 import { blake32Hash } from '~/shared/functions.ts'
-import * as Common from './common/common.js'
+import { type PubsubClient } from '~/shared/pubsub.ts'
+import * as Common from '@common/common.js'
 import proposals from './contracts/shared/voting/proposals.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from './contracts/shared/payments/index.js'
 import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS, MAIL_TYPE_MESSAGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from './contracts/shared/constants.js'
 import { createInvite } from './contracts/shared/functions.js'
 import '~/frontend/controller/namespace.js'
 import { THEME_LIGHT } from '~/frontend/utils/themes.js'
-import manifests from '~/frontend/model/contracts/manifests.json' assert { type: "json" }
+import manifests from '~/frontend/model/contracts/manifests.json' assert { type: 'json' }
 import packageJSON from '~/package.json' assert { type: 'json' }
+
+type TestUser = GIMessage & { mailbox: GIMessage; socket: PubsubClient }
+
+declare const process: {
+  env: Record<string, string>
+}
 
 const { version } = packageJSON
 
@@ -36,39 +46,17 @@ const { version } = packageJSON
 //       member's key to all the groups that they're in (that's unweildy
 //       and compromises privacy).
 
-/**
- * Creates a modified copy of the given `process.env` object, according to its `PORT_SHIFT` variable.
- *
- * The `API_PORT` and `API_URL` variables will be updated.
- * TODO: make the protocol (http vs https) variable based on environment var.
- * @param {Object} env
- * @returns {Object}
- */
-const applyPortShift = (env) => {
-  // TODO: implement automatic port selection when `PORT_SHIFT` is 'auto'.
-  const API_PORT = 8000 + Number.parseInt(env.PORT_SHIFT || '0')
-  const API_URL = 'http://127.0.0.1:' + API_PORT
-
-  if (Number.isNaN(API_PORT) || API_PORT < 8000 || API_PORT > 65535) {
-    throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
-  }
-  return { ...env, API_PORT, API_URL }
-}
-
 Object.assign(process.env, applyPortShift(process.env))
 
 Deno.env.set('GI_VERSION', `${version}@${new Date().toISOString()}`)
 
-const API_PORT = Deno.env.get('API_PORT')
-const API_URL = Deno.env.get('API_URL')
-const CI = Deno.env.get('CI')
 const GI_VERSION = Deno.env.get('GI_VERSION')
 const NODE_ENV = Deno.env.get('NODE_ENV') ?? 'development'
 
 console.info('GI_VERSION:', GI_VERSION)
 console.info('NODE_ENV:', NODE_ENV)
 
-const vuexState = {
+const vuexState: CheloniaState = {
   currentGroupId: null,
   currentChatRoomIDs: {},
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
@@ -93,8 +81,8 @@ sbp('sbp/selectors/register', {
 })
 
 sbp('sbp/selectors/register', {
-  'backend.tests/postEntry': async function (entry) {
-    console.log(bold(yellow('sending entry with hash:'), entry.hash()))
+  'backend.tests/postEntry': async function (entry: GIMessage) {
+    console.log(bold(yellow('sending entry with hash:')), entry.hash())
     const res = await sbp('chelonia/private/out/publishEvent', entry)
     assertEquals(res, entry.hash())
     return res
@@ -109,15 +97,14 @@ sbp('sbp/selectors/register', {
 Deno.test({
   name: 'Full walkthrough',
   fn: async function (tests) {
-    const users = {}
-    const groups = {}
+    const users: Record<string, TestUser> = {}
+    const groups: Record<string, GIMessage> = {}
 
     // Wait for the server to be ready.
-    let t0 = Date.now()
-    let timeout = 30000
+    const t0 = Date.now()
+    const timeout = 30000
     await new Promise((resolve, reject) => {
       (function ping () {
-        console.log(process.env.API_URL)
         fetch(process.env.API_URL).then(resolve).catch(() => {
           if (Date.now() > t0 + timeout) {
             reject(new Error('Test setup timed out.'))
@@ -156,16 +143,16 @@ Deno.test({
       })
     })
 
-    function login (user) {
+    function login (user: GIMessage) {
       // we set this so that the metadata on subsequent messages is properly filled in
       // currently group and mailbox contracts use this to determine message sender
       vuexState.loggedIn = {
-        username: user.decryptedValue().data.attributes.username,
+        username: decryptedValue(user).data.attributes.username,
         identityContractID: user.contractID()
       }
     }
 
-    async function createIdentity (username, email, testFn) {
+    async function createIdentity (username: string, email: string, testFn?: ((msg: GIMessage) => boolean)) {
       // append random id to username to prevent conflict across runs
       // when GI_PERSIST environment variable is defined
       username = `${username}-${Math.floor(Math.random() * 1000)}`
@@ -176,17 +163,18 @@ Deno.test({
           attributes: { username, email }
         },
         hooks: {
-          prepublish: (message) => { message.decryptedValue(JSON.parse) },
-          postpublish: (message) => { testFn && testFn(message) }
+          prepublish: (message: GIMessage) => { message.decryptedValue(JSON.parse) },
+          postpublish: (message: GIMessage) => { testFn && testFn(message) }
         }
       })
       return msg
     }
-    function createGroup (name: string, hooks: Object = {}): Promise {
+    function createGroup (name: string, hooks: Record<string, unknown> = {}): Promise<GIMessage> {
       const initialInvite = createInvite({
         quantity: 60,
         creator: INVITE_INITIAL_CREATOR,
-        expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
+        expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
+        invitee: undefined
       })
       return sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
@@ -215,14 +203,14 @@ Deno.test({
         hooks
       })
     }
-    function createPaymentTo (to, amount, contractID, currency = 'USD'): Promise {
+    function createPaymentTo (to: GIMessage, amount: number, contractID: string, currency = 'USD'): Promise<GIMessage> {
       return sbp('chelonia/out/actionEncrypted', {
         action: 'gi.contracts/group/payment',
         data: {
-          toUser: to.decryptedValue().data.attributes.username,
+          toUser: decryptedValue(to).data.attributes.username,
           amount: amount,
           currency: currency,
-          txid: String(parseInt(Math.random() * 10000000)),
+          txid: String(Math.floor(Math.random() * 10000000)),
           status: PAYMENT_PENDING,
           paymentType: PAYMENT_TYPE_MANUAL
         },
@@ -230,7 +218,7 @@ Deno.test({
       })
     }
 
-    async function createMailboxFor (user) {
+    async function createMailboxFor (user: TestUser): Promise<GIMessage> {
       const mailbox = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/mailbox',
         data: {}
@@ -245,30 +233,36 @@ Deno.test({
       return mailbox
     }
 
+    function decryptedValue (msg: GIMessage): GIOpActionUnencrypted {
+      return msg.decryptedValue() as GIOpActionUnencrypted
+    }
+
     await tests.step('Identity tests', async function (t) {
       await t.step('Should create identity contracts for Alice and Bob', async function () {
         users.bob = await createIdentity('bob', 'bob@okturtles.com')
         users.alice = await createIdentity('alice', 'alice@okturtles.org')
         // verify attribute creation and state initialization
-        assertMatch(users.bob.decryptedValue().data.attributes.username, /^bob/)
-        assertEquals(users.bob.decryptedValue().data.attributes.email, 'bob@okturtles.com')
+        assertMatch(decryptedValue(users.bob).data.attributes.username, /^bob/)
+        assertEquals(decryptedValue(users.bob).data.attributes.email, 'bob@okturtles.com')
       })
 
       await t.step('Should register Alice and Bob in the namespace', async function () {
         const { alice, bob } = users
-        let res = await sbp('namespace/register', alice.decryptedValue().data.attributes.username, alice.contractID())
+        let res = await sbp('namespace/register', decryptedValue(alice).data.attributes.username, alice.contractID())
         // NOTE: don't rely on the return values for 'namespace/register'
         //       too much... in the future we might remove these checks
         assertEquals(res.value, alice.contractID())
-        res = await sbp('namespace/register', bob.decryptedValue().data.attributes.username, bob.contractID())
+        res = await sbp('namespace/register', decryptedValue(bob).data.attributes.username, bob.contractID())
         assertEquals(res.value, bob.contractID())
+        // @ts-expect-error  Argument of type 'string' is not assignable to parameter of type 'PubsubClient'.
         alice.socket = 'hello'
+        // @ts-expect-error  Argument of type 'string' is not assignable to parameter of type 'PubsubClient'.
         assertEquals(alice.socket, 'hello')
       })
 
       await t.step('Should verify namespace lookups work', async function () {
         const { alice } = users
-        const username = alice.decryptedValue().data.attributes.username
+        const username = decryptedValue(alice).data.attributes.username
         const res = await sbp('namespace/lookup', username)
         assertEquals(res, alice.contractID())
         const contractID = await sbp('namespace/lookup', 'susan')
@@ -300,12 +294,12 @@ Deno.test({
       await t.step('Should get mailbox info for Bob', async function () {
         // 1. look up bob's username to get his identity contract
         const { bob } = users
-        const bobsName = bob.decryptedValue().data.attributes.username
+        const bobsName = decryptedValue(bob).data.attributes.username
         const bobsContractId = await sbp('namespace/lookup', bobsName)
         assertEquals(bobsContractId, bob.contractID())
         // 2. fetch all events for his identity contract to get latest state for it
         const state = await sbp('chelonia/latestContractState', bobsContractId)
-        console.log(bold(red('FINAL STATE:'), state))
+        console.log(bold(red('FINAL STATE:')), state)
         // 3. get bob's mailbox contractID from his identity contract attributes
         assertEquals(state.attributes.mailbox, bob.mailbox.contractID())
         // 4. fetch the latest hash for bob's mailbox.
@@ -314,13 +308,13 @@ Deno.test({
         assertEquals(res, bob.mailbox.hash())
       })
 
-      await t.step("Should invite Bob to Alice's group", function (done) {
+      await t.step("Should invite Bob to Alice's group", async function () {
         const mailbox = users.bob.mailbox
         return new Promise((resolve, reject) => {
           sbp('chelonia/out/actionEncrypted', {
             action: 'gi.contracts/mailbox/postMessage',
             data: {
-              from: users.bob.decryptedValue().data.attributes.username,
+              from: decryptedValue(users.bob).data.attributes.username,
               messageType: MAIL_TYPE_MESSAGE,
               message: groups.group1.contractID()
             },
@@ -329,7 +323,7 @@ Deno.test({
               prepublish (invite: GIMessage) {
                 sbp('okTurtles.events/once', invite.hash(), (contractID: string, entry: GIMessage) => {
                   console.debug('Bob successfully got invite!')
-                  assertEquals(entry.decryptedValue().data.message, groups.group1.contractID())
+                  assertEquals(decryptedValue(entry).data.message, groups.group1.contractID())
                   resolve()
                 })
               }
@@ -338,21 +332,21 @@ Deno.test({
         })
       })
 
-      await t.step('Should post an event', function () {
-        return createPaymentTo(users.bob, 100, groups.group1.contractID())
+      await t.step('Should post an event', async function () {
+        await createPaymentTo(users.bob, 100, groups.group1.contractID())
       })
 
       await t.step('Should sync group and verify payments in state', async function () {
         await sbp('chelonia/contract/sync', groups.group1.contractID())
+        // @ts-expect-error TS2571 [ERROR]: Object is of type 'unknown'.
         assertEquals(Object.keys(vuexState[groups.group1.contractID()].payments).length, 1)
       })
 
       await t.step('Should fail with wrong contractID', async function () {
         try {
           await createPaymentTo(users.bob, 100, '')
-          return Promise.reject(new Error("shouldn't get here!"))
-        } catch (e) {
-          return Promise.resolve()
+          unreachable()
+        } catch {
         }
       })
 
@@ -415,7 +409,7 @@ Deno.test({
     })
   },
   sanitizeResources: false,
-  sanitizeOps: false,
+  sanitizeOps: false
 })
 
 // Potentially useful for dealing with fetch API:
