@@ -86,6 +86,19 @@ function flatten(arr) {
   }
   return flat;
 }
+function linearScale([d1, d2], [r1, r2]) {
+  const [dSpan, rSpan] = [d2 - d1, r2 - r1];
+  return function(value) {
+    if (value <= d1) {
+      return r1;
+    } else if (value >= d2) {
+      return r2;
+    } else {
+      const percent = (value - d1) / dSpan;
+      return r1 + rSpan * percent;
+    }
+  };
+}
 function zip() {
   const arr = Array.prototype.slice.call(arguments);
   const zipped = [];
@@ -176,6 +189,16 @@ function debounce(func, wait, immediate) {
   };
   return debounced;
 }
+function throttle(func, delay2) {
+  let prev = 0;
+  return (...args) => {
+    const now = new Date().getTime();
+    if (now - prev > delay2) {
+      prev = now;
+      return func(...args);
+    }
+  };
+}
 function get(obj, path, defaultValue) {
   if (!path.length) {
     return obj;
@@ -200,6 +223,7 @@ export {
   flatten,
   get,
   intersection,
+  linearScale,
   mapObject,
   mapValues,
   merge,
@@ -210,6 +234,7 @@ export {
   randomFromArray,
   randomHexString,
   randomIntFromRange,
+  throttle,
   union,
   uniq,
   zip

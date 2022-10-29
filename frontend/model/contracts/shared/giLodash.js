@@ -98,6 +98,22 @@ export function flatten (arr /*: Array<*> */) /*: Array<any> */ {
   return flat
 }
 
+export function linearScale ([d1, d2] /*: Array<number> */, [r1, r2] /*: Array<number> */) /*: Function */ {
+  // generate a function that takes a value between d1 and d2 and then
+  // returns a linearly-scaled output whose min and max values are r1 and r2 respectively.
+  const [dSpan, rSpan] = [d2 - d1, r2 - r1]
+  return function (value) {
+    if (value <= d1) {
+      return r1
+    } else if (value >= d2) {
+      return r2
+    } else {
+      const percent = (value - d1) / dSpan
+      return r1 + rSpan * percent
+    }
+  }
+}
+
 export function zip () /*: any[] */ {
   // $FlowFixMe
   const arr = Array.prototype.slice.call(arguments)
@@ -211,6 +227,24 @@ export function debounce (func /*: Function */, wait /*: number */, immediate /*
   }
 
   return debounced
+}
+
+export function throttle (func: Function, delay: number): Function {
+  // reference: https://www.geeksforgeeks.org/javascript-throttling/
+
+  // Previously called time of the function
+  let prev = 0
+  return (...args) => {
+    // Current called time of the function
+    const now = new Date().getTime()
+
+    // If difference is greater than delay call
+    if (now - prev > delay) {
+      prev = now
+
+      return func(...args)
+    }
+  }
 }
 
 /**
