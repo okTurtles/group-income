@@ -223,6 +223,8 @@ page(
               i.icon-reply icon-reply
               i.icon-trash-alt icon-trash-alt
               i.icon-exclamation-triangle icon-exclamation-triangle
+              i.icon-magnifying-plus icon-magnifying-plus
+              i.icon-magnifying-minus icon-magnifying-minus
         tr
           td
             pre
