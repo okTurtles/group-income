@@ -27,6 +27,7 @@ for (const [key, value] of Object.entries(applyPortShift(Deno.env.toObject()))) 
 
 Deno.env.set('GI_VERSION', `${version}@${new Date().toISOString()}`)
 
+const API_HOSTNAME = Deno.env.get('API_HOSTNAME') ?? '127.0.0.1'
 const API_PORT = Deno.env.get('API_PORT') ?? '8000'
 const CI = Deno.env.get('CI')
 const GI_VERSION = Deno.env.get('GI_VERSION') as string
@@ -46,7 +47,7 @@ const pubsub = createServer({
 })
 
 const pogoServer = pogo.server({
-  hostname: 'localhost',
+  hostname: API_HOSTNAME,
   port: Number.parseInt(API_PORT),
   onPreResponse (response: Response, h: Toolkit) {
     try {
