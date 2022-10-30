@@ -229,7 +229,7 @@ export function debounce (func /*: Function */, wait /*: number */, immediate /*
   return debounced
 }
 
-export function throttle (func: Function, delay: number): Function {
+export function throttle (func /*: Function */, delay /*: number */) /*: Function */ {
   // reference: https://www.geeksforgeeks.org/javascript-throttling/
 
   // Previously called time of the function
