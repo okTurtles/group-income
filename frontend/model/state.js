@@ -9,6 +9,7 @@ import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/ev
 import Vuex from 'vuex'
 import Colors from './colors.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -57,9 +58,13 @@ const initialState = {
 }
 
 const reactiveDate = Vue.observable({ date: new Date() })
-// every 5 minutes update the reactive date to force recomputation of getters using this
-// TODO: can make this every minute after payments pagination no longer loads all of the payments
-setInterval(function () { reactiveDate.date = new Date() }, 5 * 60 * 1000)
+setInterval(function () {
+  const date = new Date()
+  // payments recalculation happen within a minute of day switchover
+  if (Math.abs(reactiveDate.date.getTime() - date.getTime()) >= MINS_MILLIS) {
+    reactiveDate.date = date
+  }
+}, 60 * 1000)
 
 sbp('sbp/selectors/register', {
   // 'state' is the Vuex state object, and it can only store JSON-like data
@@ -484,7 +489,7 @@ const getters = {
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
     if (!profiles || !profiles[getters.ourUsername]) return []
-    const weJoinedMs = new Date(profiles[getters.ourUsername]?.joinedDate).getTime()
+    const weJoinedMs = new Date(profiles[getters.ourUsername].joinedDate).getTime()
     const isNewMember = (username) => {
       if (username === getters.ourUsername) { return false }
       const memberProfile = profiles[username]
