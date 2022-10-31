@@ -223,15 +223,15 @@ export default ({
       expires: expiryTime,
       invitee,
       inviteSecret,
+      initialQuantity,
       quantity,
-      responses,
       status
     }) {
       const isAnyoneLink = creator === INVITE_INITIAL_CREATOR
       const isInviteExpired = expiryTime < Date.now()
       const isInviteRevoked = status === INVITE_STATUS.REVOKED
-      const numberOfResponses = responses ? Object.keys(responses).length : 0
-      const isAllInviteUsed = numberOfResponses === quantity
+      const numberOfResponses = initialQuantity - quantity
+      const isAllInviteUsed = (quantity === 0)
 
       return {
         isAnyoneLink,
@@ -239,7 +239,7 @@ export default ({
         inviteSecret,
         inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
         description: this.inviteStatusDescription({
-          isAnyoneLink, isInviteExpired, isInviteRevoked, isAllInviteUsed, quantity, numberOfResponses
+          isAnyoneLink, isInviteExpired, isInviteRevoked, isAllInviteUsed, quantity: initialQuantity, numberOfResponses
         }),
         expiryInfo: isInviteExpired ? L('Expired') : isInviteRevoked ? L('Revoked') : isAllInviteUsed ? '' : this.readableExpiryInfo(expiryTime),
         status: {

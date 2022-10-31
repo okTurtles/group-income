@@ -484,7 +484,7 @@ export default (sbp('sbp/selectors/register', {
       return state
     } catch (e) {
       console.warn(`[chelonia] latestContractState(${contractID}): fast-path failed due to ${e.name}: ${e.message}`, e.stack)
-      state = cloneDeep(sbp(this.config.stateSelector)[contractID] || {})
+      state = Object.create(null)
     }
     // more error-tolerant but slower due to cloning state on each message
     for (const event of events) {
@@ -674,11 +674,13 @@ export default (sbp('sbp/selectors/register', {
     const meta = contract.metadata.create()
     const gProxy = gettersProxy(state, contract.getters)
     contract.metadata.validate(meta, { state, ...gProxy, contractID })
+    const outerKeyId = keyId(signingKey)
     const innerSigningKey = this.env.additionalKeys?.[innerSigningKeyId] || originatingState?._volatile?.keys[innerSigningKeyId]
     const payload = ({
       keyId: innerSigningKeyId,
+      outerKeyId: outerKeyId,
       encryptionKeyId: encryptionKeyId,
-      data: sign(innerSigningKey, [originatingContractID, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD].map(encodeURIComponent).join('|'))
+      data: sign(innerSigningKey, [originatingContractID, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD].map(encodeURIComponent).join('|'))
     }: GIOpKeyRequest)
     const msg = GIMessage.createV1_0({
       originatingContractID,

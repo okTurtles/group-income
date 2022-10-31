@@ -38,8 +38,10 @@ export default ({
       console.log({ initialInvite })
       const key = this.currentGroupState._volatile.keys[initialInvite]
       console.log({ key })
-      if (key) {
+      if (typeof key !== 'string') {
         return serializeKey(key, true)
+      } else {
+        return key
       }
     },
     link () {

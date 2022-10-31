@@ -26,6 +26,7 @@ export type GIOpPropSet = { key: string, value: JSONType }
 export type GIOpKeyShare = { contractID: string, keys: GIKey[] }
 export type GIOpKeyRequest = {
   keyId: string;
+  outerKeyId: string;
   encryptionKeyId: string;
   data: string;
 }

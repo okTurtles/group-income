@@ -406,7 +406,8 @@ export default ({
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
         messages: initialize ? [] : this.messages,
-        saveMessage: true
+        saveMessage: true,
+        _volatile: 'xxx'
       }
     },
     async renderMoreMessages (refresh = false) {

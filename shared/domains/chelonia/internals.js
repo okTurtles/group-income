@@ -209,10 +209,11 @@ export default (sbp('sbp/selectors/register', {
             if (!state._vm.invites) state._vm.invites = Object.create(null)
             state._vm.invites[key.id] = {
               creator: key.meta.creator,
+              initialQuantity: key.meta.quantity,
               quantity: key.meta.quantity,
               expires: key.meta.expires,
               inviteSecret: state._volatile?.keys[key.id],
-              responses: Object.create(null)
+              responses: []
             }
           }
         }
@@ -290,6 +291,23 @@ export default (sbp('sbp/selectors/register', {
         })
       },
       [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
+        // TODO: Verify that v.outerKeyId matches actual signing key
+        if (state._vm?.invites?.[v.outerKeyId]?.quantity != null) {
+          if (state._vm.invites[v.outerKeyId].quantity > 0) {
+            state._vm.invites[v.outerKeyId].quantity--
+          } else {
+            console.error('Ignoring OP_KEY_REQUEST because it exceeds allowed quantity: ' + JSON.stringify(v))
+            return
+          }
+        }
+
+        if (state._vm?.invites?.[v.outerKeyId]?.expires != null) {
+          if (state._vm.invites[v.outerKeyId].expires < Date.now()) {
+            console.error('Ignoring OP_KEY_REQUEST because it expired at ' + state._vm.invites[v.outerKeyId].expires + ': ' + JSON.stringify(v))
+            return
+          }
+        }
+
         if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeys) {
           return
         }
@@ -300,10 +318,17 @@ export default (sbp('sbp/selectors/register', {
           message.head().previousHEAD,
           v
         ]
-        // TODO: Update count on _vm.invites
       },
       [GIMessage.OP_KEY_REQUEST_RESPONSE] (v: GIOpKeyRequestResponse) {
+        if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeys) {
+          return
+        }
+
         if (state._vm.pending_key_requests && v in state._vm.pending_key_requests) {
+          const keyId = state._vm.pending_key_requests[v][2].outerKeyId
+          if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
+            state._vm?.invites?.[keyId]?.responses.push(state._vm.pending_key_requests[v][0])
+          }
           delete state._vm.pending_key_requests[v]
         }
       },
@@ -334,10 +359,11 @@ export default (sbp('sbp/selectors/register', {
             if (state._vm.invites) state._vm.invites = Object.create(null)
             state._vm.invites[key.id] = {
               creator: key.meta.creator,
+              initialQuantity: key.meta.quantity,
               quantity: key.meta.quantity,
               expires: key.meta.expires,
               inviteSecret: state._volatile?.keys[key.id],
-              responses: Object.create(null)
+              responses: []
             }
           }
         }
@@ -479,7 +505,7 @@ export default (sbp('sbp/selectors/register', {
 
       try {
         // 2. Verify 'data'
-        const { data, keyId, encryptionKeyId } = v
+        const { data, keyId, encryptionKeyId, outerKeyId } = v
 
         const originatingState = state[originatingContractID]
 
@@ -490,7 +516,7 @@ export default (sbp('sbp/selectors/register', {
         }
 
         // sign(originatingContractID + GIMessage.OP_KEY_REQUEST + contractID + HEAD)
-        verifySignature(signingKey.data, [originatingContractID, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD].map(encodeURIComponent).join('|'), data)
+        verifySignature(signingKey.data, [originatingContractID, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD].map(encodeURIComponent).join('|'), data)
 
         const encryptionKey = originatingState._vm.authorizedKeys[encryptionKeyId]
 
