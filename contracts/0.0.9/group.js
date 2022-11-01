@@ -9447,15 +9447,15 @@ ${this.getErrorInfo()}`;
     GROUP: "group"
   };
   var CHATROOM_PRIVACY_LEVEL = {
-    GROUP: "group",
-    PRIVATE: "private",
-    PUBLIC: "public"
+    GROUP: "chatroom-privacy-level-group",
+    PRIVATE: "chatroom-privacy-level-private",
+    PUBLIC: "chatroom-privacy-level-public"
   };
   var MESSAGE_TYPES = {
-    POLL: "poll",
-    TEXT: "text",
-    INTERACTIVE: "interactive",
-    NOTIFICATION: "notification"
+    POLL: "message-poll",
+    TEXT: "message-text",
+    INTERACTIVE: "message-interactive",
+    NOTIFICATION: "message-notification"
   };
   var INVITE_EXPIRES_IN_DAYS = {
     ON_BOARDING: 30,
@@ -9472,12 +9472,14 @@ ${this.getErrorInfo()}`;
     VOTE: "vote"
   };
   var PROPOSAL_VARIANTS = {
-    CREATED: "created",
-    EXPIRING: "expiring",
-    ACCEPTED: "accepted",
-    REJECTED: "rejected",
-    EXPIRED: "expired"
+    CREATED: "proposal-created",
+    EXPIRING: "proposal-expiring",
+    ACCEPTED: "proposal-accepted",
+    REJECTED: "proposal-rejected",
+    EXPIRED: "proposal-expired"
   };
+  var MAIL_TYPE_MESSAGE = "message";
+  var MAIL_TYPE_FRIEND_REQ = "friend-request";
 
   // frontend/model/contracts/shared/voting/rules.js
   var VOTE_AGAINST = ":against";
@@ -9958,6 +9960,7 @@ ${this.getErrorInfo()}`;
     emoticons: mapOf(string, arrayOf(string)),
     onlyVisibleTo: arrayOf(string)
   });
+  var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
 
   // frontend/model/contracts/group.js
   function vueFetchInitKV(obj, key, initialValue) {

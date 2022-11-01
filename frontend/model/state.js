@@ -9,6 +9,7 @@ import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/ev
 import Vuex from 'vuex'
 import Colors from './colors.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -55,6 +56,15 @@ const initialState = {
     ? ['error', 'warn', 'info', 'debug', 'log']
     : ['error', 'warn', 'info']
 }
+
+const reactiveDate = Vue.observable({ date: new Date() })
+setInterval(function () {
+  const date = new Date()
+  // payments recalculation happen within a minute of day switchover
+  if (Math.abs(reactiveDate.date.getTime() - date.getTime()) >= MINS_MILLIS) {
+    reactiveDate.date = date
+  }
+}, 60 * 1000)
 
 sbp('sbp/selectors/register', {
   // 'state' is the Vuex state object, and it can only store JSON-like data
@@ -317,8 +327,9 @@ const getters = {
       return profile.displayName || username
     }
   },
+  // this getter gets recomputed automatically according to the setInterval on reactiveDate
   currentPaymentPeriod (state, getters) {
-    return getters.periodStampGivenDate(new Date())
+    return getters.periodStampGivenDate(reactiveDate.date)
   },
   thisPeriodPaymentInfo (state, getters) {
     return getters.groupPeriodPayments[getters.currentPaymentPeriod]
@@ -460,7 +471,7 @@ const getters = {
   },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
-    if (!profiles) return []
+    if (!profiles || !profiles[getters.ourUsername]) return []
     const weJoinedMs = new Date(profiles[getters.ourUsername].joinedDate).getTime()
     const isNewMember = (username) => {
       if (username === getters.ourUsername) { return false }
@@ -625,6 +636,15 @@ const store: any = new Vuex.Store({
     notifications: notificationModule
   },
   strict: false // we're intentionally modifying state outside of commits
+})
+
+// Somewhat of a hack, I'm not sure why this is necessary now, but ever since changing how
+// getters.currentPaymentPeriod works, this is necessary to force the UI to update immediately
+// after a payment is made.
+store.watch(function (state, getters) {
+  return getters.currentGroupState.settings?.distributionDate
+}, function () {
+  reactiveDate.date = new Date()
 })
 
 // save the state each time it's modified, but debounce it to avoid saving too frequently

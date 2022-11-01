@@ -15,7 +15,10 @@ div(:class='isReady ? "" : "c-ready"')
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { humanDate } from '@model/contracts/shared/time.js'
+import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/BarGraph.vue'
 
 export default ({
@@ -26,19 +29,58 @@ export default ({
       history: []
     }
   },
+  mixins: [PaymentsMixin],
   components: {
     BarGraph
   },
-  created () {
-    // Todo replace history with real data
-    const testNumber = 6
-    for (let i = testNumber; i > 0; i--) {
-      const date = new Date()
-      date.setMonth(date.getMonth() - i)
-      this.history.push({
-        total: 1 / testNumber * (testNumber - i + 1),
-        title: humanDate(date, { month: 'long' })
+  computed: {
+    ...mapGetters([
+      'groupSettings',
+      'currentPaymentPeriod',
+      'periodBeforePeriod'
+    ]),
+    mincome () {
+      return this.groupSettings.mincomeAmount
+    },
+    periods () {
+      const periods = [this.currentPaymentPeriod]
+      for (let i = 0; i < MAX_HISTORY_PERIODS - 1; i++) {
+        periods.unshift(this.periodBeforePeriod(periods[0]))
+      }
+      return periods
+    }
+  },
+  mounted () {
+    this.updateHistory()
+  },
+  methods: {
+    parsePayments (payments) {
+      const list = {}
+      payments.forEach(payment => {
+        const { from, to, amount } = payment
+        list[from] = (list[from] || 0) + amount
+        list[to] = (list[to] || 0) - amount
       })
+      return {
+        numReceivers: Object.values(list).filter(amount => amount < 0).length,
+        totalDistributionAmount: Object.values(list).filter(amount => amount > 0).reduce((total, curValue) => total + curValue, 0)
+      }
+    },
+    async updateHistory () {
+      this.history = await Promise.all(this.periods.map(async (period, i) => {
+        const payments = await this.getPaymentsByPeriod(period)
+        const { totalDistributionAmount, numReceivers } = this.parsePayments(payments)
+        return {
+          total: numReceivers === 0 ? 0 : totalDistributionAmount / (this.mincome * numReceivers),
+          delayedPayment: payments.some(payment => payment.isLate),
+          title: humanDate(period, { month: 'long' })
+        }
+      }))
+    }
+  },
+  watch: {
+    periods () {
+      this.updateHistory()
     }
   }
 }: Object)

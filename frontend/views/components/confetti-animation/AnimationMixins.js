@@ -1,5 +1,5 @@
 import { confettiComponents, confettiNames } from './confettiComponents/index.js'
-import { randomIntFromRange } from '@model/contracts/shared/giLodash.js'
+import { randomIntFromRange, linearScale } from '@model/contracts/shared/giLodash.js'
 
 const canvas = {
   width: null, height: null
@@ -23,22 +23,6 @@ let requestId = null
 let unitExplosionDistance = 0
 
 // utils
-function linearScale ([d1, d2], [r1, r2]) {
-  // creates and return a linear-scale function that takes a value between d1 and d2
-  // then calculates a linearly-scaled output value between r1 and r2.
-  const [dSpan, rSpan] = [d2 - d1, r2 - r1]
-  return function (value) {
-    if (value <= d1) {
-      return r1
-    } else if (value >= d2) {
-      return r2
-    } else {
-      const percent = (value - d1) / dSpan
-      return r1 + rSpan * percent
-    }
-  }
-}
-
 function getPositionTo (pFrom, d, angle) {
   const absAngle = Math.abs(angle)
   const [xSign, ySign, theta] =
