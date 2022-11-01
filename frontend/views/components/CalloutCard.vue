@@ -2,11 +2,11 @@
   section.c-calloutCard(:class='{ card: isCard }')
     component.c-svg(:is='svg')
     div
-      h2.is-title-3.c-title(
+      h2.c-title(
         v-if='title'
         :class='{ "has-cta": $slots.cta }'
       )
-        span.c-title-text {{ title }}
+        span.is-title-3.c-title-text {{ title }}
         slot(name='cta')
       slot
 </template>

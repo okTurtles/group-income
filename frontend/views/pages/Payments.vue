@@ -156,9 +156,10 @@ import NextDistributionPill from '@containers/payments/PaymentNextDistributionPi
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
-import { randomHexString } from '@model/contracts/shared/giLodash.js'
+import { randomHexString, deepEqualJSONType } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
 import {
   dummyLightningUsers,
@@ -168,6 +169,7 @@ import {
 
 export default ({
   name: 'Payments',
+  mixins: [PaymentsMixin],
   components: {
     Page,
     SvgContributions,
@@ -199,27 +201,36 @@ export default ({
           'lightning': L('Lightning'),
           'manual': L('Manual')
         }
+      },
+      historicalPayments: {
+        received: [],
+        sent: [],
+        todo: []
       }
     }
   },
   created () {
     this.setInitialActiveTab()
+    this.updatePayments()
   },
   watch: {
     needsIncome () {
       this.setInitialActiveTab()
+    },
+    ourPayments (to, from) {
+      if (!deepEqualJSONType(to, from)) {
+        this.updatePayments()
+      }
     }
   },
   computed: {
     ...mapGetters([
-      'currentGroupState',
       'groupIncomeDistribution',
-      'groupIncomeAdjustedDistribution',
       'paymentTotalFromUserToUser',
-      'ourPayments',
+      'periodStampGivenDate',
+      'currentPaymentPeriod',
       'ourGroupProfile',
       'groupSettings',
-      'ourUsername',
       'userDisplayName',
       'withGroupCurrency'
     ]),
@@ -282,11 +293,16 @@ export default ({
         ? L('You are currently {strong_}receiving{_strong} mincome.', LTags('strong'))
         : L('You are currently {strong_}sending{_strong} mincome.', LTags('strong'))
     },
+    // paymentsCount () {
+    //   if (Object.keys(this.groupSettings).length) {
+    //     return this.paymentHashesForPeriod(this.periodStampGivenDate(this.groupSettings.distributionDate))?.length
+    //   }
+    // },
     paymentsTodo () {
       const payments = []
       const sentPayments = this.paymentsSent
 
-      for (const payment of this.ourPayments.todo) {
+      for (const payment of this.historicalPayments.todo) {
         payments.push({
           hash: payment.hash || randomHexString(15),
           username: payment.to,
@@ -305,7 +321,7 @@ export default ({
     paymentsSent () {
       const payments = []
 
-      for (const payment of this.ourPayments.sent) {
+      for (const payment of this.historicalPayments.sent) {
         const { hash, data, meta } = payment
         payments.push({
           hash,
@@ -325,7 +341,7 @@ export default ({
     paymentsReceived () {
       const payments = []
 
-      for (const payment of this.ourPayments.received) {
+      for (const payment of this.historicalPayments.received) {
         const { hash, data, meta } = payment
         const fromUser = meta.username
         payments.push({
@@ -450,6 +466,12 @@ export default ({
       this.openModal('PaymentDetail', {
         lightningPayment: dummyLightningPaymentDetails
       })
+    },
+    async updatePayments () {
+      // NOTE: no need to calculate while logging out
+      if (Object.keys(this.groupSettings).length) {
+        this.historicalPayments = await this.getHistoricalPaymentsInTypes()
+      }
     }
   }
 }: Object)
