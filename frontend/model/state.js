@@ -41,7 +41,7 @@ const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageId
-  chatRoomUnread: {}, // [chatRoomId]: { messageId, createdDate }
+  chatRoomUnread: {}, // [chatRoomId]: { since: { messageId, createdDate }, mentions: [{ messageId, createdDate }] }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
@@ -176,9 +176,13 @@ const mutations = {
   addChatRoomUnreadMention (state, { chatRoomId, messageId, createdDate }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
     if (!prevUnread) {
-      return
+      Vue.set(state.chatRoomUnread, chatRoomId, {
+        since: { messageId, createdDate, deletedDate: null, fromBeginning: true },
+        mentions: [{ messageId, createdDate }]
+      })
+    } else {
+      prevUnread.mentions.push({ messageId, createdDate })
     }
-    prevUnread.mentions.push({ messageId, createdDate })
   },
   deleteChatRoomUnreadMention (state, { chatRoomId, messageId }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
@@ -534,16 +538,24 @@ const getters = {
       })
     }
   },
-  ourContacts (state, getters) {
+  ourContactProfiles (state, getters) {
+    const profiles = {}
     const allProfiles = getters.groupsByName
       .map(({ groupName, contractID }) => getters.groupMembers(contractID))
       .flat()
-    return allProfiles
-      .filter((profile, pos) => profile.username !== getters.ourUsername &&
+    const profilesSet = allProfiles
+      .filter((profile, pos) => profile && profile.username !== getters.ourUsername &&
         allProfiles.findIndex(p => p.username === profile.username) === pos)
-      .sort((profileA, profileB) => {
-        const nameA = profileA.displayName?.toUpperCase()
-        const nameB = profileB.displayName?.toUpperCase()
+    for (const profile of profilesSet) {
+      profiles[profile.username] = profile
+    }
+    return profiles
+  },
+  ourContacts (state, getters) {
+    return Object.keys(getters.ourContactProfiles)
+      .sort((usernameA, usernameB) => {
+        const nameA = getters.ourContactProfiles[usernameA].displayName?.toUpperCase()
+        const nameB = getters.ourContactProfiles[usernameB].displayName?.toUpperCase()
         return nameA > nameB ? 1 : -1
       })
   },

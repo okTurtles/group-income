@@ -83,11 +83,14 @@ export default ({
       'ourUsername',
       'userDisplayName',
       'ourContacts',
+      'ourContactProfiles',
       'mailboxContract',
       'currentIdentityState'
     ]),
     ourNewDMContacts () {
-      return this.ourContacts.filter(contact => !Object.keys(this.mailboxContract.users).includes(contact.username))
+      return this.ourContacts
+        .filter(username => !Object.keys(this.mailboxContract.users).includes(username))
+        .map(username => this.ourContactProfiles[username])
     },
     ourNewContactsCount () {
       return this.ourNewDMContacts.length

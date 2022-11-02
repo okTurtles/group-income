@@ -62,7 +62,7 @@ const ChatroomMixin: Object = {
       'globalProfile',
       'isJoinedChatRoom',
       'isPrivateChatRoom',
-      'ourContacts',
+      'ourContactProfiles',
       'isDirectMessage',
       'mailboxContract',
       'ourUsername'
@@ -103,7 +103,7 @@ const ChatroomMixin: Object = {
           if (username === this.ourUsername) {
             participants[username] = this.globalProfile(username)
           } else {
-            participants[username] = this.ourContacts.find(contact => contact.username === username)
+            participants[username] = this.ourContactProfiles[username]
           }
         }
         return {
@@ -229,7 +229,7 @@ const ChatroomMixin: Object = {
       if (this.isDirectMessage(this.currentChatRoomId)) {
         const partnerUsername = Object.keys(this.mailboxContract.users)
           .find(username => this.mailboxContract.users[username].contractID === this.currentChatRoomId)
-        return this.ourContacts.find(contact => contact.username === partnerUsername)
+        return this.ourContactProfiles[partnerUsername]
       }
     }
   },

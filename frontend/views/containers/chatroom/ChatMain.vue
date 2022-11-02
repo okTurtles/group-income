@@ -40,6 +40,9 @@
             :description='summary.description'
           )
 
+      .c-divider.is-new(v-if='ephemeral.unreadFromBeginning')
+        i18n.c-new.is-new-date New
+
       template(v-for='(message, index) in messages')
         .c-divider(
           v-if='changeDay(index) || isNew(message.id)'
@@ -149,6 +152,7 @@ export default ({
       latestEvents: [],
       messages: [],
       ephemeral: {
+        unreadFromBeginning: false,
         startedUnreadMessageId: null,
         scrolledDistance: 0,
         infiniteLoading: null,
@@ -417,7 +421,7 @@ export default ({
        */
       const curChatRoomId = this.currentChatRoomId
       let unreadPosition = null
-      if (this.currentChatRoomUnreadSince) {
+      if (this.currentChatRoomUnreadSince && !this.currentChatRoomUnreadSince.fromBeginning) {
         if (!this.currentChatRoomUnreadSince.deletedDate) {
           unreadPosition = this.currentChatRoomUnreadSince.messageId
         } else if (this.currentChatRoomUnreadMentions.length) {
@@ -478,11 +482,17 @@ export default ({
     },
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageId = null
+      this.ephemeral.unreadFromBeginning = false
       if (this.currentChatRoomUnreadSince) {
-        const startUnreadMessage = this.messages
-          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
-        if (startUnreadMessage) {
-          this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
+        const { fromBeginning } = this.currentChatRoomUnreadSince
+        if (fromBeginning) {
+          this.ephemeral.unreadFromBeginning = true
+        } else {
+          const startUnreadMessage = this.messages
+            .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
+          if (startUnreadMessage) {
+            this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
+          }
         }
       }
     },
@@ -598,7 +608,9 @@ export default ({
         const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
         if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
-          const latestMessageCreatedAt = this.currentChatRoomUnreadSince?.createdDate
+          const latestMessageCreatedAt = this.currentChatRoomUnreadSince && !this.currentChatRoomUnreadSince.fromBeginning
+            ? this.currentChatRoomUnreadSince.createdDate
+            : undefined
           if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
             this.updateUnreadMessageId({
               messageId: msg.id,

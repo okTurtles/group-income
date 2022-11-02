@@ -17,11 +17,16 @@
       :to='buildUrl(username)'
       :data-test='username'
       :key='username'
-      @click='openDirectMessage(username)'
     )
-      profile-card(:username='username' deactivated)
-        avatar-user(:username='username' :picture='picture' size='sm' data-test='openMemberProfileCard')
-        span.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username, displayName) }}
+      .profile-wrapper
+        profile-card(:username='username' deactivated)
+          avatar-user(:username='username' :picture='picture' size='sm' data-test='openMemberProfileCard')
+          span.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username, displayName) }}
+
+      .c-unreadcount-wrapper
+        .pill.is-danger(
+          v-if='getUnreadMessagesCountFromUsername(username)'
+        ) {{limitedUnreadCount(getUnreadMessagesCountFromUsername(username))}}
 </template>
 
 <script>
@@ -59,13 +64,17 @@ export default ({
     ...mapGetters([
       'groupMembersCount',
       'ourContacts',
+      'ourContactProfiles',
       'groupShouldPropose',
       'ourUsername',
       'userDisplayName',
-      'mailboxContract'
+      'mailboxContract',
+      'chatRoomUnreadMentions'
     ]),
     directMessages () {
-      return this.ourContacts.filter(contact => Object.keys(this.mailboxContract.users).includes(contact.username))
+      return this.ourContacts
+        .filter(username => Object.keys(this.mailboxContract.users).includes(username))
+        .map(username => this.ourContactProfiles[username])
     }
   },
   methods: {
@@ -93,12 +102,20 @@ export default ({
         this.openModal(modalAction)
       }
     },
-    openDirectMessage (username) {
-      const dmChatroom = this.mailboxContract.users[username]
-      if (!dmChatroom) {
-        console.log('Create a new direct message channel')
+    getDirectMessageIDFromUsername (username) {
+      return this.mailboxContract.users[username].contractID
+    },
+    getUnreadMessagesCountFromUsername (username) {
+      const chatRoomId = this.getDirectMessageIDFromUsername(username)
+      return this.chatRoomUnreadMentions(chatRoomId).length
+    },
+    limitedUnreadCount (n) {
+      const nLimit = 99
+      if (n > nLimit) {
+        return `${nLimit}+`
+      } else {
+        return `${n}`
       }
-      console.log('Open Direct Message:', username)
     }
   }
 }: Object)
@@ -145,5 +162,16 @@ export default ({
   top: calc(100% + 0.5rem);
   left: auto;
   min-width: 13rem;
+}
+
+.c-unreadcount-wrapper {
+  width: 2rem;
+  display: flex;
+  justify-content: center;
+}
+
+.profile-wrapper {
+  flex: auto;
+  width: 100px;
 }
 </style>

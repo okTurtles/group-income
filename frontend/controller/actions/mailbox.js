@@ -33,7 +33,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       const rootState = sbp('state/vuex/state')
       const rootGetters = sbp('state/vuex/getters')
-      const partnerProfile = rootGetters.ourContacts.find(profile => profile.username === params.data.username)
+      const partnerProfile = rootGetters.ourContactProfiles[params.data.username]
 
       if (!partnerProfile) {
         throw new GIErrorUIRuntimeError(L('Incorrect username to create direct message.'))

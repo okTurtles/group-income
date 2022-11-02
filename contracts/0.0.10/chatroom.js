@@ -9530,12 +9530,14 @@ ${this.getErrorInfo()}`;
       createdDate: datetime
     });
     const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
-    const groupID = rootGetters.groupIdFromChatRoomId(contractID);
+    const isDMContact = rootGetters.isDirectMessage(contractID);
+    const partnerProfile = rootGetters.ourContactProfiles[username];
+    const title = isDMContact ? `# ${partnerProfile?.displayName || username}` : `# ${chatRoomName}`;
     const path = `/group-chat/${contractID}`;
     makeNotification({
-      title: `# ${chatRoomName}`,
+      title,
       body: text2,
-      icon: rootGetters.globalProfile2(groupID, username)?.picture,
+      icon: partnerProfile?.picture,
       path
     });
     (0, import_sbp4.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
@@ -9756,7 +9758,10 @@ ${this.getErrorInfo()}`;
           }
           const newMessage = createMessage({ meta, data, hash: hash2, state });
           const mentions = makeMentionFromUsername(me);
-          if (data.type === MESSAGE_TYPES.TEXT && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))) {
+          const isDirectMessage = state.attributes.type === CHATROOM_TYPES.INDIVIDUAL;
+          const isTextMessage = data.type === MESSAGE_TYPES.TEXT;
+          const isMentionedMe = isTextMessage && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all));
+          if (isDirectMessage || isMentionedMe) {
             addMention({
               contractID,
               messageId: newMessage.id,

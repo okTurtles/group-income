@@ -64,15 +64,11 @@ export default (sbp('sbp/selectors/register', {
         contractName: 'gi.contracts/identity',
         publishOptions,
         data: {
-          attributes: { username, email, picture: finalPicture }
+          attributes: { username, email, picture: finalPicture, mailbox: mailboxID }
         }
       })
       userID = user.contractID()
       await sbp('chelonia/contract/sync', userID)
-      await sbp('chelonia/contract/sync', mailboxID)
-      await sbp('gi.actions/identity/setAttributes', {
-        contractID: userID, data: { mailbox: mailboxID }
-      })
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
@@ -199,6 +195,11 @@ export default (sbp('sbp/selectors/register', {
         // we must re-sync our identity contract again to ensure we don't rejoin a group we
         // were just kicked out of
         await sbp('chelonia/contract/sync', identityContractID)
+        const rootGetters = sbp('state/vuex/getters')
+        const { mailbox } = rootGetters.currentIdentityState.attributes
+        if (mailbox && !contractIDs.includes(mailbox)) {
+          await sbp('chelonia/contract/sync', mailbox)
+        }
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })

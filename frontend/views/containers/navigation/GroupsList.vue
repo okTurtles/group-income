@@ -54,6 +54,7 @@ export default ({
     ...mapGetters([
       'groupsByName',
       'ourUnreadMessages',
+      'isDirectMessage',
       'unreadGroupNotificationCountFor'
     ]),
     badgeVisiblePerGroup () {
@@ -77,7 +78,7 @@ export default ({
     },
     shouldSetBadgeOnGroup (groupID) {
       return Object.keys(this.ourUnreadMessages)
-        .filter(cID => Object.keys(this.$store.state[groupID].chatRooms).includes(cID))
+        .filter(cID => this.isDirectMessage(cID) || Object.keys(this.$store.state[groupID].chatRooms).includes(cID))
         .map(cID => this.ourUnreadMessages[cID].mentions.length)
         .reduce((a, b) => a + b, 0) + this.unreadGroupNotificationCountFor(groupID) > 0
     }
