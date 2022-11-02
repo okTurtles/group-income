@@ -2,8 +2,14 @@
 page(pageTestName='groupChat' pageTestHeaderName='channelName')
   template(#title='')
     .c-header
+      avatar(
+        v-if='summary.picture'
+        :src='summary.picture'
+        alt='Partner Picture'
+        size='sm'
+      )
       i(
-        v-if='summary.private !== undefined'
+        v-else
         :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
       )
       | {{summary.title}}
@@ -92,6 +98,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
+import Avatar from '@components/Avatar.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
@@ -108,6 +115,7 @@ export default ({
   ],
   components: {
     Page,
+    Avatar,
     ChatNav,
     ChatMain,
     ConversationsList,
