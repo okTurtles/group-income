@@ -78,6 +78,15 @@
 /* MISSING TRANSLATION - views/components/VotingRulesInput.vue */
 "What percentage of members need to agree to pass a proposal?" = "What percentage of members need to agree to pass a proposal?";
 
+/* MISSING TRANSLATION - views/components/avatar-editor/AvatarEditorModal.vue */
+"Click and drag to reposition" = "Click and drag to reposition";
+
+/* MISSING TRANSLATION - views/components/avatar-editor/AvatarEditorModal.vue */
+"Edit avatar" = "Edit avatar";
+
+/* MISSING TRANSLATION - views/components/avatar-editor/AvatarEditorModal.vue */
+"Pinch to zoom, drag to reposition" = "Pinch to zoom, drag to reposition";
+
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupMincome.vue */
 "Choose your group's distribution date" = "Choose your group's distribution date";
 
@@ -558,7 +567,7 @@
 /* controller/actions/group.js */
 "Only channel members can invite others to join." = "Seuls les membres de la chaîne peuvent inviter d'autres personnes à la rejoindre.";
 
-/* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue */
+/* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Duplicate channel name" = "Nom de canal dupliqué";
 
 /* controller/actions/identity.js */
@@ -789,6 +798,12 @@
 /* views/components/VotingRulesInput.vue */
 "\"No\" votes required to block a proposal" = "Nombre de votes négatifs requis pour bloquer une proposition";
 
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/access/PasswordModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
+"Cancel" = "Annuler";
+
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+"Save" = "Enregistrer";
+
 /* views/components/banners/BannerScoped.vue */
 "Dismiss message" = "Ignorer le message";
 
@@ -918,9 +933,6 @@
 /* views/containers/access/PasswordModal.vue */
 "New Password" = "Nouveau Mot de Passe";
 
-/* views/containers/access/PasswordModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
-"Cancel" = "Annuler";
-
 /* views/containers/access/SignupForm.vue */
 "This username is already being used." = "Ce nom d’utilisateur est déjà utilisé.";
 
@@ -961,6 +973,9 @@
 "Private channel" = "Salon privé";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+"Others ({nbMembers})" = "Autres ({nbMembers})";
+
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search" = "Rechercher";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
@@ -977,9 +992,6 @@
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Channel members ({nbMembers})" = "Membres du salon ({nbMembers})";
-
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"Others ({nbMembers})" = "Autres ({nbMembers})";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/proposals/MemberRequest.vue */
 "Undo" = "Annuler";
@@ -1023,6 +1035,9 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description of the channel" = "Description du salon";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
+"Reached character limit." = "Limite de caractères atteinte.";
+
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Name" = "Nom";
 
@@ -1055,12 +1070,6 @@
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Channel description" = "Description du salon";
-
-/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
-"Reached character limit." = "Limite de caractères atteinte.";
-
-/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
-"Save" = "Enregistrer";
 
 /* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/group-settings/GroupDeletionModal.vue */
 "DELETE {GROUP_NAME}" = "SUPPRIMER {GROUP_NAME}";
@@ -1213,16 +1222,13 @@
 "{userList} reacted with {emotiName}" = "{userList} a/ont réagi avec {emotiName}";
 
 /* views/containers/chatroom/NewDirectMessageModal.vue */
-"Create a new direct message" = "Créer un nouveau message direct";
-
-/* views/containers/chatroom/NewDirectMessageModal.vue */
 "New Direct Message" = "Nouveau Message Privé";
 
-/* views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"new" = "nouveau";
+/* views/containers/chatroom/NewDirectMessageModal.vue */
+"Recent Conversations ({nbMembers})" = "Conversations récentes ({nbMembers})";
 
-/* views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"pending" = "en cours";
+/* views/containers/chatroom/NewDirectMessageModal.vue, views/pages/GroupChat.vue */
+"Direct Messages" = "Conversations privées";
 
 /* views/containers/chatroom/SendArea.vue */
 "Create poll" = "Créer un sondage";
@@ -1484,6 +1490,12 @@
 
 /* views/containers/dashboard/GroupMembers.vue */
 "See all {groupMembersCount} members" = "Afficher les {groupMembersCount} membres";
+
+/* views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+"new" = "nouveau";
+
+/* views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+"pending" = "en cours";
 
 /* views/containers/dashboard/GroupMembersAllModal.vue */
 "{groupMembersCount} members" = "{groupMembersCount} membres";
@@ -2279,9 +2291,6 @@
 
 /* views/pages/GroupChat.vue */
 "Channels" = "Canaux de discussion";
-
-/* views/pages/GroupChat.vue */
-"Direct Messages" = "Conversations privées";
 
 /* views/pages/GroupChat.vue */
 "Notifications settings" = "Paramètres des notifications";

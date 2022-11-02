@@ -7,7 +7,7 @@ modal-base-template.has-background(
 )
   .c-container
     .c-header
-      i18n.is-title-2.c-title(tag='h2') Create a new direct message
+      i18n.is-title-2.c-title(tag='h2') Direct Messages
 
     .card.c-card
       search(
@@ -37,6 +37,34 @@ modal-base-template.has-background(
         data-test='memberCount'
       ) {ourNewContactsCount} members
 
+      .is-subtitle
+        i18n(
+          tag='h3'
+          :args='{  nbMembers: ourRecentConversations.length }'
+        ) Recent Conversations ({nbMembers})
+      transition-group(
+        v-if='ourRecentConversations'
+        name='slide-list'
+        tag='ul'
+      )
+        li.c-search-member(
+          v-for='{username, displayName} in ourRecentConversations'
+          @click='openDirectMessage(username)'
+          :key='username'
+        )
+          profile-card(:username='username' deactivated direction='top-left')
+            .c-identity
+              avatar-user(:username='username' size='sm')
+              .c-name(data-test='username')
+                span
+                  strong {{ localizedName(username, displayName) }}
+                  .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+
+      .is-subtitle
+        i18n(
+          tag='h3'
+          :args='{  nbMembers: searchResult.length }'
+        ) Others ({nbMembers})
       transition-group(
         v-if='searchResult'
         name='slide-list'
@@ -64,6 +92,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'NewDirectMessageModal',
@@ -95,6 +124,11 @@ export default ({
     ourNewContactsCount () {
       return this.ourNewDMContacts.length
     },
+    ourRecentConversations () {
+      return this.ourContacts
+        .filter(username => Object.keys(this.mailboxContract.users).includes(username))
+        .map(username => this.ourContactProfiles[username])
+    },
     searchResult () {
       if (!this.searchText) { return this.ourNewDMContacts }
 
@@ -122,6 +156,14 @@ export default ({
         contractID: this.currentIdentityState.attributes.mailbox,
         data: { username }
       })
+      this.closeModal()
+    },
+    openDirectMessage (username) {
+      const chatRoomId = this.mailboxContract.users[username].contractID
+      this.$router.push({
+        name: 'GroupChatConversation',
+        params: { chatRoomId }
+      }).catch(logExceptNavigationDuplicated)
       this.closeModal()
     },
     closeModal () {
@@ -239,5 +281,11 @@ export default ({
   @include tablet {
     display: none;
   }
+}
+
+.is-subtitle {
+  display: flex;
+  margin-top: 1.875rem;
+  margin-bottom: 0.5rem;
 }
 </style>

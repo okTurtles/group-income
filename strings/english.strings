@@ -297,7 +297,7 @@
 /* views/containers/navigation/Navigation.vue */
 "Blog" = "Blog";
 
-/* views/containers/access/PasswordModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/access/PasswordModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
 "Cancel" = "Cancel";
 
 /* views/containers/payments/PaymentDetail.vue */
@@ -396,6 +396,9 @@
 /* views/components/Search.vue */
 "Clear search" = "Clear search";
 
+/* views/components/avatar-editor/AvatarEditorModal.vue */
+"Click and drag to reposition" = "Click and drag to reposition";
+
 /* views/containers/payments/RecordPayment.vue */
 "Close" = "Close";
 
@@ -449,9 +452,6 @@
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Create a channel" = "Create a channel";
-
-/* views/containers/chatroom/NewDirectMessageModal.vue */
-"Create a new direct message" = "Create a new direct message";
 
 /* views/containers/navigation/GroupsList.vue */
 "Create a new group" = "Create a new group";
@@ -534,7 +534,7 @@
 /* controller/router.js */
 "Design System" = "Design System";
 
-/* views/pages/GroupChat.vue */
+/* views/containers/chatroom/NewDirectMessageModal.vue, views/pages/GroupChat.vue */
 "Direct Messages" = "Direct Messages";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
@@ -579,7 +579,7 @@
 /* views/pages/Payments.vue */
 "Due on" = "Due on";
 
-/* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue */
+/* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Duplicate channel name" = "Duplicate channel name";
 
 /* views/components/modal/ModalClose.vue */
@@ -587,6 +587,9 @@
 
 /* views/containers/chatroom/MessageActions.vue, views/containers/contributions/Contribution.vue, views/containers/dashboard/GroupPurpose.vue */
 "Edit" = "Edit";
+
+/* views/components/avatar-editor/AvatarEditorModal.vue */
+"Edit avatar" = "Edit avatar";
 
 /* views/components/ProfileCard.vue */
 "Edit bio" = "Edit bio";
@@ -1224,7 +1227,7 @@
 /* views/containers/contributions/PaymentMethods.vue */
 "Other group members will be able to use this information to send you monthly contributions." = "Other group members will be able to use this information to send you monthly contributions.";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Others ({nbMembers})" = "Others ({nbMembers})";
 
 /* views/containers/dashboard/GroupActivity.vue */
@@ -1304,6 +1307,9 @@
 
 /* views/containers/contributions/SupportHistory.vue */
 "Percentage of the group income goal reached by the group." = "Percentage of the group income goal reached by the group.";
+
+/* views/components/avatar-editor/AvatarEditorModal.vue */
+"Pinch to zoom, drag to reposition" = "Pinch to zoom, drag to reposition";
 
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "Please confirm that you want to delete this channel" = "Please confirm that you want to delete this channel";
@@ -1407,7 +1413,7 @@
 /* views/containers/user-settings/Troubleshooting.vue */
 "Re-sync failed. {reportError}" = "Re-sync failed. {reportError}";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
+/* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Reached character limit." = "Reached character limit.";
 
 /* views/containers/proposals/ProposalItem.vue */
@@ -1421,6 +1427,9 @@
 
 /* views/pages/Contributions.vue */
 "Receiving" = "Receiving";
+
+/* views/containers/chatroom/NewDirectMessageModal.vue */
+"Recent Conversations ({nbMembers})" = "Recent Conversations ({nbMembers})";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Recent error: \"{errorMsg}\". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot." = "Recent error: \"{errorMsg}\". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot.";
@@ -1509,7 +1518,7 @@
 /* model/contracts/mailbox.js */
 "Same attribute is already set." = "Same attribute is already set.";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Save";
 
 /* views/containers/user-settings/UserProfile.vue */
@@ -2178,13 +2187,13 @@
 /* views/containers/proposals/ProposalItem.vue */
 "mincome" = "mincome";
 
-/* views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "new" = "new";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "no" = "no";
 
-/* views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "pending" = "pending";
 
 /* views/containers/payments/PaymentsPagination.vue */
