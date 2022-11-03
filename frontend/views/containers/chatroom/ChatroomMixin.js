@@ -65,7 +65,8 @@ const ChatroomMixin: Object = {
       'ourContactProfiles',
       'isDirectMessage',
       'mailboxContract',
-      'ourUsername'
+      'ourUsername',
+      'directMessageIDFromUsername'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -228,7 +229,7 @@ const ChatroomMixin: Object = {
     partnerProfileFromDMChatRoomID (chatRoomId: string) {
       if (this.isDirectMessage(this.currentChatRoomId)) {
         const partnerUsername = Object.keys(this.mailboxContract.users)
-          .find(username => this.mailboxContract.users[username].contractID === this.currentChatRoomId)
+          .find(username => this.directMessageIDFromUsername(username) === this.currentChatRoomId)
         return this.ourContactProfiles[partnerUsername]
       }
     }

@@ -114,7 +114,9 @@ export default ({
       'ourContacts',
       'ourContactProfiles',
       'mailboxContract',
-      'currentIdentityState'
+      'currentIdentityState',
+      'ourUnreadMessages',
+      'directMessageIDFromUsername'
     ]),
     ourNewDMContacts () {
       return this.ourContacts
@@ -127,7 +129,28 @@ export default ({
     ourRecentConversations () {
       return this.ourContacts
         .filter(username => Object.keys(this.mailboxContract.users).includes(username))
-        .map(username => this.ourContactProfiles[username])
+        .map(username => {
+          const chatRoomId = this.directMessageIDFromUsername(username)
+          // TODO: this.ourUnreadMessages[chatRoomId] could be undefined
+          // just after new parter made direct message with me
+          // so the mailbox contract is updated, but chatroom contract is not synced yet and vuex state as well
+          const { since, mentions } = this.ourUnreadMessages[chatRoomId] || {}
+          const lastMessageDate = mentions && mentions.length
+            ? mentions[mentions.length - 1].createdDate
+            : since?.createdDate
+          return { username, lastMessageDate }
+        })
+        .sort((former, latter) => {
+          if (former.lastMessageDate > latter.lastMessageDate) {
+            return -1
+          } else if (former.lastMessageDate > latter.lastMessageDate) {
+            return 1
+          }
+          const nameA = this.ourContactProfiles[former.username].displayName || former.username
+          const nameB = this.ourContactProfiles[latter.username].displayName || latter.username
+          return nameA > nameB ? 1 : -1
+        })
+        .map(({ username }) => this.ourContactProfiles[username])
     },
     searchResult () {
       if (!this.searchText) { return this.ourNewDMContacts }
@@ -159,7 +182,7 @@ export default ({
       this.closeModal()
     },
     openDirectMessage (username) {
-      const chatRoomId = this.mailboxContract.users[username].contractID
+      const chatRoomId = this.directMessageIDFromUsername(username)
       this.$router.push({
         name: 'GroupChatConversation',
         params: { chatRoomId }

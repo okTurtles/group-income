@@ -597,6 +597,9 @@ const getters = {
       return getters.ourUnreadMessages[chatRoomId]?.mentions || []
     }
   },
+  directMessageIDFromUsername (state, getters) {
+    return (username: string) => getters.mailboxContract.users[username]?.contractID
+  },
   groupIdFromChatRoomId (state, getters) {
     return (chatRoomId: string) => Object.keys(state.contracts)
       .find(cId => state.contracts[cId].type === 'gi.contracts/group' &&

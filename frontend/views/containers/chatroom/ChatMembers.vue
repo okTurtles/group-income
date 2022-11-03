@@ -69,7 +69,8 @@ export default ({
       'ourUsername',
       'userDisplayName',
       'mailboxContract',
-      'chatRoomUnreadMentions'
+      'chatRoomUnreadMentions',
+      'directMessageIDFromUsername'
     ]),
     directMessages () {
       return this.ourContacts
@@ -89,7 +90,7 @@ export default ({
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     buildUrl (username) {
-      const chatRoomId = this.mailboxContract.users[username].contractID
+      const chatRoomId = this.directMessageIDFromUsername(username)
       return {
         name: 'GroupChatConversation',
         params: { chatRoomId }
@@ -102,11 +103,8 @@ export default ({
         this.openModal(modalAction)
       }
     },
-    getDirectMessageIDFromUsername (username) {
-      return this.mailboxContract.users[username].contractID
-    },
     getUnreadMessagesCountFromUsername (username) {
-      const chatRoomId = this.getDirectMessageIDFromUsername(username)
+      const chatRoomId = this.directMessageIDFromUsername(username)
       return this.chatRoomUnreadMentions(chatRoomId).length
     },
     limitedUnreadCount (n) {
