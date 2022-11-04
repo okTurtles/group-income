@@ -120,7 +120,8 @@ export default ({
     ]),
     ourNewDMContacts () {
       return this.ourContacts
-        .filter(username => !Object.keys(this.mailboxContract.users).includes(username))
+        .filter(username => !Object.keys(this.mailboxContract.users).includes(username) ||
+          !this.mailboxContract.users[username].joinedDate)
         .map(username => this.ourContactProfiles[username])
     },
     ourNewContactsCount () {
@@ -128,10 +129,11 @@ export default ({
     },
     ourRecentConversations () {
       return this.ourContacts
-        .filter(username => Object.keys(this.mailboxContract.users).includes(username))
+        .filter(username => Object.keys(this.mailboxContract.users).includes(username) &&
+          this.mailboxContract.users[username].joinedDate)
         .map(username => {
           const chatRoomId = this.directMessageIDFromUsername(username)
-          // TODO: this.ourUnreadMessages[chatRoomId] could be undefined
+          // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined
           // just after new parter made direct message with me
           // so the mailbox contract is updated, but chatroom contract is not synced yet and vuex state as well
           const { since, mentions } = this.ourUnreadMessages[chatRoomId] || {}
@@ -175,10 +177,17 @@ export default ({
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     createNewDirectMessage (username) {
-      sbp('gi.actions/mailbox/createDirectMessage', {
-        contractID: this.currentIdentityState.attributes.mailbox,
-        data: { username }
-      })
+      if (this.mailboxContract.users[username]) {
+        sbp('gi.actions/mailbox/joinDirectMessage', {
+          contractID: this.currentIdentityState.attributes.mailbox,
+          data: { username }
+        })
+      } else {
+        sbp('gi.actions/mailbox/createDirectMessage', {
+          contractID: this.currentIdentityState.attributes.mailbox,
+          data: { username }
+        })
+      }
       this.closeModal()
     },
     openDirectMessage (username) {

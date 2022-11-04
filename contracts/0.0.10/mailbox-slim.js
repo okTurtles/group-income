@@ -24,8 +24,8 @@
   var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
 
   // frontend/model/contracts/mailbox.js
-  var import_sbp = __toESM(__require("@sbp/sbp"));
-  var import_common = __require("@common/common.js");
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var import_common2 = __require("@common/common.js");
 
   // frontend/model/contracts/shared/giLodash.js
   function cloneDeep(obj) {
@@ -45,6 +45,41 @@
       obj[key] = clone || src[key];
     }
     return obj;
+  }
+
+  // frontend/model/contracts/shared/functions.js
+  var import_sbp = __toESM(__require("@sbp/sbp"));
+
+  // frontend/model/contracts/shared/time.js
+  var import_common = __require("@common/common.js");
+  var MINS_MILLIS = 6e4;
+  var HOURS_MILLIS = 60 * MINS_MILLIS;
+  var DAYS_MILLIS = 24 * HOURS_MILLIS;
+  var MONTHS_MILLIS = 30 * DAYS_MILLIS;
+
+  // frontend/views/utils/misc.js
+  function logExceptNavigationDuplicated(err) {
+    err.name !== "NavigationDuplicated" && console.error(err);
+  }
+
+  // frontend/model/contracts/shared/functions.js
+  async function leaveChatRoom({ contractID }) {
+    const rootState = (0, import_sbp.default)("state/vuex/state");
+    const rootGetters = (0, import_sbp.default)("state/vuex/getters");
+    if (contractID === rootGetters.currentChatRoomId) {
+      (0, import_sbp.default)("state/vuex/commit", "setCurrentChatRoomId", {
+        groupId: rootState.currentGroupId
+      });
+      const curRouteName = (0, import_sbp.default)("controller/router").history.current.name;
+      if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
+        await (0, import_sbp.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
+      }
+    }
+    (0, import_sbp.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
+    (0, import_sbp.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
+    (0, import_sbp.default)("chelonia/contract/remove", contractID).catch((e) => {
+      console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
+    });
   }
 
   // frontend/model/contracts/misc/flowTyper.js
@@ -187,7 +222,7 @@ ${this.getErrorInfo()}`;
   var unionOf = unionOf_;
 
   // frontend/model/contracts/mailbox.js
-  (0, import_sbp.default)("chelonia/defineContract", {
+  (0, import_sbp2.default)("chelonia/defineContract", {
     name: "gi.contracts/mailbox",
     metadata: {
       validate: objectOf({
@@ -196,10 +231,10 @@ ${this.getErrorInfo()}`;
         identityContractID: optional(string)
       }),
       create() {
-        if (!(0, import_sbp.default)("state/vuex/state").loggedIn) {
+        if (!(0, import_sbp2.default)("state/vuex/state").loggedIn) {
           return { createdDate: new Date().toISOString() };
         }
-        const { username, identityContractID } = (0, import_sbp.default)("state/vuex/state").loggedIn;
+        const { username, identityContractID } = (0, import_sbp2.default)("state/vuex/state").loggedIn;
         return {
           createdDate: new Date().toISOString(),
           username,
@@ -221,7 +256,7 @@ ${this.getErrorInfo()}`;
             users: {}
           }, data);
           for (const key in initialState) {
-            import_common.Vue.set(state, key, initialState[key]);
+            import_common2.Vue.set(state, key, initialState[key]);
           }
         }
       },
@@ -229,13 +264,13 @@ ${this.getErrorInfo()}`;
         validate: (data, { state, meta }) => {
           objectOf({ allownace: boolean })(data);
           if (state.attributes.creator !== meta.username) {
-            throw new TypeError((0, import_common.L)("Only the mailbox creator can set attributes."));
+            throw new TypeError((0, import_common2.L)("Only the mailbox creator can set attributes."));
           } else if (state.attributes === data.allownace) {
-            throw new TypeError((0, import_common.L)("Same attribute is already set."));
+            throw new TypeError((0, import_common2.L)("Same attribute is already set."));
           }
         },
         process({ meta, data }, { state }) {
-          import_common.Vue.set(state.attributes, "autoJoinAllowance", data.allownace);
+          import_common2.Vue.set(state.attributes, "autoJoinAllowance", data.allownace);
         }
       },
       "gi.contracts/mailbox/createDirectMessage": {
@@ -245,13 +280,13 @@ ${this.getErrorInfo()}`;
             contractID: string
           })(data);
           if (state.attributes.creator !== meta.username) {
-            throw new TypeError((0, import_common.L)("Only the mailbox creator can create direct message channel."));
+            throw new TypeError((0, import_common2.L)("Only the mailbox creator can create direct message channel."));
           } else if (state.users[data.username]) {
-            throw new TypeError((0, import_common.L)("Already existing direct message channel."));
+            throw new TypeError((0, import_common2.L)("Already existing direct message channel."));
           }
         },
         process({ meta, data }, { state }) {
-          import_common.Vue.set(state.users, data.username, {
+          import_common2.Vue.set(state.users, data.username, {
             contractID: data.contractID,
             creator: meta.username,
             hidden: false,
@@ -259,31 +294,43 @@ ${this.getErrorInfo()}`;
           });
         },
         sideEffect({ data }) {
-          (0, import_sbp.default)("chelonia/contract/sync", data.contractID);
+          (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
         }
       },
       "gi.contracts/mailbox/joinDirectMessage": {
         validate: objectOf({
           username: string,
-          contractID: string
+          contractID: optional(string)
         }),
         process({ meta, data }, { state }) {
-          if (state.attributes.creator !== data.username) {
-            throw new TypeError((0, import_common.L)("Incorrect mailbox creator to join direct message channel."));
-          } else if (state.users[meta.username]) {
-            throw new TypeError((0, import_common.L)("Already existing direct message channel."));
+          if (state.attributes.creator === data.username) {
+            if (state.users[meta.username]) {
+              throw new TypeError((0, import_common2.L)("Already existing direct message channel."));
+            }
+          } else if (state.attributes.creator === meta.username) {
+            if (!state.users[data.username] || state.users[data.username].joinedDate) {
+              throw new TypeError((0, import_common2.L)("Never created or already joined direct message channel."));
+            }
+          } else {
+            throw new TypeError((0, import_common2.L)("Incorrect mailbox creator to join direct message channel."));
           }
           const joinedDate = state.attributes.autoJoinAllowance ? meta.createdDate : null;
-          import_common.Vue.set(state.users, meta.username, {
-            contractID: data.contractID,
-            creator: meta.username,
-            hidden: false,
-            joinedDate
-          });
+          if (state.attributes.creator === data.username) {
+            import_common2.Vue.set(state.users, meta.username, {
+              contractID: data.contractID,
+              creator: meta.username,
+              hidden: false,
+              joinedDate
+            });
+          } else {
+            import_common2.Vue.set(state.users[data.username], "joinedDate", joinedDate);
+          }
         },
-        sideEffect({ data }, { state }) {
-          if (state.attributes.autoJoinAllowance) {
-            (0, import_sbp.default)("chelonia/contract/sync", data.contractID);
+        sideEffect({ meta, data }, { state }) {
+          if (state.attributes.creator === meta.username) {
+            (0, import_sbp2.default)("chelonia/contract/sync", state.users[data.username].contractID);
+          } else if (state.attributes.autoJoinAllowance) {
+            (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
           }
         }
       },
@@ -293,16 +340,19 @@ ${this.getErrorInfo()}`;
             username: string
           })(data);
           if (state.attributes.creator !== meta.username) {
-            throw new TypeError((0, import_common.L)("Only the mailbox creator can leave direct message channel."));
-          } else if (!state.users[meta.username].joinedDate) {
-            throw new TypeError((0, import_common.L)("Not joined or already left direct message channel."));
+            throw new TypeError((0, import_common2.L)("Only the mailbox creator can leave direct message channel."));
+          } else if (!state.users[data.username]?.joinedDate) {
+            throw new TypeError((0, import_common2.L)("Not joined or already left direct message channel."));
           }
         },
         process({ data }, { state }) {
-          import_common.Vue.set(state.users[data.username], "joinedDate", null);
+          import_common2.Vue.set(state.users[data.username], "joinedDate", null);
         },
-        sideEffect({ data }) {
-          (0, import_sbp.default)("chelonia/contract/remove", data.contractID);
+        sideEffect({ data }, { state }) {
+          if ((0, import_sbp2.default)("okTurtles.data/get", "SYNCING_MAILBOX")) {
+            return;
+          }
+          leaveChatRoom({ contractID: state.users[data.username].contractID });
         }
       }
     }

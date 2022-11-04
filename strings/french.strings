@@ -658,6 +658,9 @@
 "Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
 
 /* model/contracts/mailbox.js */
+"Never created or already joined direct message channel." = "Jamais créé ou déjà rejoint le canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
 "Not joined or already left direct message channel." = "Pas rejoint ou déjà quitté le canal de messagerie directe.";
 
 /* model/contracts/mailbox.js */

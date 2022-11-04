@@ -3,6 +3,7 @@
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
+import { leaveChatRoom } from './shared/functions.js'
 import { objectOf, string, boolean, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 
 sbp('chelonia/defineContract', {
@@ -83,24 +84,36 @@ sbp('chelonia/defineContract', {
     'gi.contracts/mailbox/joinDirectMessage': {
       validate: objectOf({
         username: string,
-        contractID: string
+        contractID: optional(string)
       }),
       process ({ meta, data }, { state }) {
-        if (state.attributes.creator !== data.username) {
+        if (state.attributes.creator === data.username) {
+          if (state.users[meta.username]) {
+            throw new TypeError(L('Already existing direct message channel.'))
+          }
+        } else if (state.attributes.creator === meta.username) {
+          if (!state.users[data.username] || state.users[data.username].joinedDate) {
+            throw new TypeError(L('Never created or already joined direct message channel.'))
+          }
+        } else {
           throw new TypeError(L('Incorrect mailbox creator to join direct message channel.'))
-        } else if (state.users[meta.username]) {
-          throw new TypeError(L('Already existing direct message channel.'))
         }
         const joinedDate = state.attributes.autoJoinAllowance ? meta.createdDate : null
-        Vue.set(state.users, meta.username, {
-          contractID: data.contractID,
-          creator: meta.username,
-          hidden: false,
-          joinedDate
-        })
+        if (state.attributes.creator === data.username) {
+          Vue.set(state.users, meta.username, {
+            contractID: data.contractID,
+            creator: meta.username,
+            hidden: false,
+            joinedDate
+          })
+        } else {
+          Vue.set(state.users[data.username], 'joinedDate', joinedDate)
+        }
       },
-      sideEffect ({ data }, { state }) {
-        if (state.attributes.autoJoinAllowance) {
+      sideEffect ({ meta, data }, { state }) {
+        if (state.attributes.creator === meta.username) {
+          sbp('chelonia/contract/sync', state.users[data.username].contractID)
+        } else if (state.attributes.autoJoinAllowance) {
           sbp('chelonia/contract/sync', data.contractID)
         }
       }
@@ -112,15 +125,18 @@ sbp('chelonia/defineContract', {
         })(data)
         if (state.attributes.creator !== meta.username) {
           throw new TypeError(L('Only the mailbox creator can leave direct message channel.'))
-        } else if (!state.users[meta.username].joinedDate) {
+        } else if (!state.users[data.username]?.joinedDate) {
           throw new TypeError(L('Not joined or already left direct message channel.'))
         }
       },
       process ({ data }, { state }) {
         Vue.set(state.users[data.username], 'joinedDate', null)
       },
-      sideEffect ({ data }) {
-        sbp('chelonia/contract/remove', data.contractID)
+      sideEffect ({ data }, { state }) {
+        if (sbp('okTurtles.data/get', 'SYNCING_MAILBOX')) {
+          return
+        }
+        leaveChatRoom({ contractID: state.users[data.username].contractID })
       }
     }
   }

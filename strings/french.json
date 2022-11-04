@@ -218,6 +218,7 @@
   "The link does not exist.": "Le lien n’existe pas.",
   "There is an identical open proposal.": "Une proposition identique a déjà été créée.",
   "Already existing direct message channel.": "Canal de messagerie directe déjà existant.",
+  "Never created or already joined direct message channel.": "Jamais créé ou déjà rejoint le canal de messagerie directe.",
   "Not joined or already left direct message channel.": "Pas rejoint ou déjà quitté le canal de messagerie directe.",
   "Only the mailbox creator can create direct message channel.": "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie directe.",
   "Only the mailbox creator can leave direct message channel.": "Seul le créateur de la boîte aux lettres peut quitter le canal de messagerie directe.",

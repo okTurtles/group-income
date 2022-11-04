@@ -600,6 +600,15 @@ const getters = {
   directMessageIDFromUsername (state, getters) {
     return (username: string) => getters.mailboxContract.users[username]?.contractID
   },
+  usernameFromDirectMessageID (state, getters) {
+    return (chatRoomId: string) => {
+      if (!getters.isDirectMessage(chatRoomId)) {
+        return
+      }
+      return Object.keys(getters.mailboxContract.users)
+        .find(username => getters.directMessageIDFromUsername(username) === chatRoomId)
+    }
+  },
   groupIdFromChatRoomId (state, getters) {
     return (chatRoomId: string) => Object.keys(state.contracts)
       .find(cId => state.contracts[cId].type === 'gi.contracts/group' &&

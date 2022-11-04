@@ -790,7 +790,7 @@
   });
 
   // frontend/model/contracts/mailbox.js
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
 
   // node_modules/vue/dist/vue.esm.js
   var emptyObject = Object.freeze({});
@@ -9144,6 +9144,40 @@
     }
   });
 
+  // frontend/model/contracts/shared/functions.js
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+
+  // frontend/model/contracts/shared/time.js
+  var MINS_MILLIS = 6e4;
+  var HOURS_MILLIS = 60 * MINS_MILLIS;
+  var DAYS_MILLIS = 24 * HOURS_MILLIS;
+  var MONTHS_MILLIS = 30 * DAYS_MILLIS;
+
+  // frontend/views/utils/misc.js
+  function logExceptNavigationDuplicated(err) {
+    err.name !== "NavigationDuplicated" && console.error(err);
+  }
+
+  // frontend/model/contracts/shared/functions.js
+  async function leaveChatRoom({ contractID }) {
+    const rootState = (0, import_sbp2.default)("state/vuex/state");
+    const rootGetters = (0, import_sbp2.default)("state/vuex/getters");
+    if (contractID === rootGetters.currentChatRoomId) {
+      (0, import_sbp2.default)("state/vuex/commit", "setCurrentChatRoomId", {
+        groupId: rootState.currentGroupId
+      });
+      const curRouteName = (0, import_sbp2.default)("controller/router").history.current.name;
+      if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
+        await (0, import_sbp2.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
+      }
+    }
+    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
+    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
+    (0, import_sbp2.default)("chelonia/contract/remove", contractID).catch((e) => {
+      console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
+    });
+  }
+
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
   var isEmpty = (v) => v === EMPTY_VALUE;
@@ -9284,7 +9318,7 @@ ${this.getErrorInfo()}`;
   var unionOf = unionOf_;
 
   // frontend/model/contracts/mailbox.js
-  (0, import_sbp2.default)("chelonia/defineContract", {
+  (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/mailbox",
     metadata: {
       validate: objectOf({
@@ -9293,10 +9327,10 @@ ${this.getErrorInfo()}`;
         identityContractID: optional(string)
       }),
       create() {
-        if (!(0, import_sbp2.default)("state/vuex/state").loggedIn) {
+        if (!(0, import_sbp3.default)("state/vuex/state").loggedIn) {
           return { createdDate: new Date().toISOString() };
         }
-        const { username, identityContractID } = (0, import_sbp2.default)("state/vuex/state").loggedIn;
+        const { username, identityContractID } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
         return {
           createdDate: new Date().toISOString(),
           username,
@@ -9356,31 +9390,43 @@ ${this.getErrorInfo()}`;
           });
         },
         sideEffect({ data }) {
-          (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
+          (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
         }
       },
       "gi.contracts/mailbox/joinDirectMessage": {
         validate: objectOf({
           username: string,
-          contractID: string
+          contractID: optional(string)
         }),
         process({ meta, data }, { state }) {
-          if (state.attributes.creator !== data.username) {
+          if (state.attributes.creator === data.username) {
+            if (state.users[meta.username]) {
+              throw new TypeError(L("Already existing direct message channel."));
+            }
+          } else if (state.attributes.creator === meta.username) {
+            if (!state.users[data.username] || state.users[data.username].joinedDate) {
+              throw new TypeError(L("Never created or already joined direct message channel."));
+            }
+          } else {
             throw new TypeError(L("Incorrect mailbox creator to join direct message channel."));
-          } else if (state.users[meta.username]) {
-            throw new TypeError(L("Already existing direct message channel."));
           }
           const joinedDate = state.attributes.autoJoinAllowance ? meta.createdDate : null;
-          vue_esm_default.set(state.users, meta.username, {
-            contractID: data.contractID,
-            creator: meta.username,
-            hidden: false,
-            joinedDate
-          });
+          if (state.attributes.creator === data.username) {
+            vue_esm_default.set(state.users, meta.username, {
+              contractID: data.contractID,
+              creator: meta.username,
+              hidden: false,
+              joinedDate
+            });
+          } else {
+            vue_esm_default.set(state.users[data.username], "joinedDate", joinedDate);
+          }
         },
-        sideEffect({ data }, { state }) {
-          if (state.attributes.autoJoinAllowance) {
-            (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
+        sideEffect({ meta, data }, { state }) {
+          if (state.attributes.creator === meta.username) {
+            (0, import_sbp3.default)("chelonia/contract/sync", state.users[data.username].contractID);
+          } else if (state.attributes.autoJoinAllowance) {
+            (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
           }
         }
       },
@@ -9391,15 +9437,18 @@ ${this.getErrorInfo()}`;
           })(data);
           if (state.attributes.creator !== meta.username) {
             throw new TypeError(L("Only the mailbox creator can leave direct message channel."));
-          } else if (!state.users[meta.username].joinedDate) {
+          } else if (!state.users[data.username]?.joinedDate) {
             throw new TypeError(L("Not joined or already left direct message channel."));
           }
         },
         process({ data }, { state }) {
           vue_esm_default.set(state.users[data.username], "joinedDate", null);
         },
-        sideEffect({ data }) {
-          (0, import_sbp2.default)("chelonia/contract/remove", data.contractID);
+        sideEffect({ data }, { state }) {
+          if ((0, import_sbp3.default)("okTurtles.data/get", "SYNCING_MAILBOX")) {
+            return;
+          }
+          leaveChatRoom({ contractID: state.users[data.username].contractID });
         }
       }
     }
