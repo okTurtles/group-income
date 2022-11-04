@@ -77,8 +77,10 @@ sbp('chelonia/defineContract', {
           joinedDate: meta.createdDate
         })
       },
-      sideEffect ({ data }) {
-        sbp('chelonia/contract/sync', data.contractID)
+      async sideEffect ({ data }) {
+        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
+        await sbp('chelonia/contract/sync', data.contractID)
+        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
       }
     },
     'gi.contracts/mailbox/joinDirectMessage': {
@@ -110,11 +112,17 @@ sbp('chelonia/defineContract', {
           Vue.set(state.users[data.username], 'joinedDate', joinedDate)
         }
       },
-      sideEffect ({ meta, data }, { state }) {
+      async sideEffect ({ meta, data }, { state }) {
+        let contractID
         if (state.attributes.creator === meta.username) {
-          sbp('chelonia/contract/sync', state.users[data.username].contractID)
+          contractID = state.users[data.username].contractID
         } else if (state.attributes.autoJoinAllowance) {
-          sbp('chelonia/contract/sync', data.contractID)
+          contractID = data.contractID
+        }
+        if (contractID) {
+          sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
+          await sbp('chelonia/contract/sync', contractID)
+          sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
         }
       }
     },

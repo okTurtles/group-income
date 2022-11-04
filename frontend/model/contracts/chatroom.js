@@ -53,7 +53,6 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
   if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
     return
   }
-
   sbp('state/vuex/commit', 'addChatRoomUnreadMention', {
     chatRoomId: contractID,
     messageId,

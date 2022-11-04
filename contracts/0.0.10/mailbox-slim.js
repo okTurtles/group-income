@@ -293,8 +293,10 @@ ${this.getErrorInfo()}`;
             joinedDate: meta.createdDate
           });
         },
-        sideEffect({ data }) {
-          (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
+        async sideEffect({ data }) {
+          (0, import_sbp2.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", true);
+          await (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
+          (0, import_sbp2.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
         }
       },
       "gi.contracts/mailbox/joinDirectMessage": {
@@ -326,11 +328,17 @@ ${this.getErrorInfo()}`;
             import_common2.Vue.set(state.users[data.username], "joinedDate", joinedDate);
           }
         },
-        sideEffect({ meta, data }, { state }) {
+        async sideEffect({ meta, data }, { state }) {
+          let contractID;
           if (state.attributes.creator === meta.username) {
-            (0, import_sbp2.default)("chelonia/contract/sync", state.users[data.username].contractID);
+            contractID = state.users[data.username].contractID;
           } else if (state.attributes.autoJoinAllowance) {
-            (0, import_sbp2.default)("chelonia/contract/sync", data.contractID);
+            contractID = data.contractID;
+          }
+          if (contractID) {
+            (0, import_sbp2.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", true);
+            await (0, import_sbp2.default)("chelonia/contract/sync", contractID);
+            (0, import_sbp2.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
           }
         }
       },
