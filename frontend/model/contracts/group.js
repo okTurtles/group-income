@@ -94,6 +94,7 @@ function updateCurrentDistribution ({ contractID, meta, state, getters }) {
   const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0
   // update distributionDate if we've passed into the next period
   if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
+    updateGroupStreaks({ state, getters })
     getters.groupSettings.distributionDate = period
   }
   // save haveNeeds if there are no payments or the haveNeeds haven't been saved yet
@@ -139,6 +140,38 @@ function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boo
     return false
   }
   return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
+}
+
+function updateGroupStreaks ({ state, getters }) {
+  const { groupIncomeAdjustedDistribution } = sbp('state/vuex/getters')
+  const streaks = state.streaks
+  const groupMadeFullMonthlyPledges = groupIncomeAdjustedDistribution.length === 0
+
+  // --- update 'fullMonthlyPledgesCount' streak ---
+  // if the group has made 100% pledges in this period, +1 the streak value.
+  // or else, reset the value to '0'
+  Vue.set(
+    streaks,
+    'fullMonthlyPledges',
+    groupMadeFullMonthlyPledges ? streaks.fullMonthlyPleges + 1 : 0
+  )
+
+  // --- update 'onTimePayments' streak ---
+  const onTimePayments = streaks.onTimePayments
+  for (const username in getters.groupProfiles) {
+    const profile = getters.groupProfiles[username]
+    if (profile.incomeDetailsType === 'pledgeAmount') {
+      const currentStreak = onTimePayments[username] || 0
+      Vue.set(
+        onTimePayments,
+        username,
+        groupMadeFullMonthlyPledges
+          ? currentStreak + 1
+          : groupIncomeAdjustedDistribution.every(entry => entry.from !== username) ? currentStreak + 1
+          : 0
+      )
+    }
+  }
 }
 
 sbp('chelonia/defineContract', {
@@ -432,6 +465,10 @@ sbp('chelonia/defineContract', {
             distributionPeriodLength: 30 * DAYS_MILLIS,
             inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
             inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
+          },
+          streaks: {
+            fullMonthlyPleges: 0,
+            onTimePayments: {} // { username: number ... }
           },
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
