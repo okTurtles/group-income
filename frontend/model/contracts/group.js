@@ -157,17 +157,19 @@ function updateGroupStreaks ({ state, getters }) {
   )
 
   // --- update 'onTimePayments' streak ---
+  // for those users who pledge
   const onTimePayments = streaks.onTimePayments
   for (const username in getters.groupProfiles) {
     const profile = getters.groupProfiles[username]
     if (profile.incomeDetailsType === 'pledgeAmount') {
       const currentStreak = onTimePayments[username] || 0
+      const hasCompletedMonthly = groupIncomeAdjustedDistribution.every(entry => entry.from !== username)
+
       Vue.set(
         onTimePayments,
         username,
-        groupMadeFullMonthlyPledges
+        hasCompletedMonthly
           ? currentStreak + 1
-          : groupIncomeAdjustedDistribution.every(entry => entry.from !== username) ? currentStreak + 1
           : 0
       )
     }
