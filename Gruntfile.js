@@ -66,7 +66,6 @@ const backendIndex = './backend/index.ts'
 const contractsDir = 'frontend/model/contracts'
 const denoImportMap = 'import-map.json'
 const denoRunPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
-const denoTestImportMap = 'import-map-for-tests.json'
 const denoTestPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
 const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
@@ -227,38 +226,6 @@ module.exports = (grunt) => {
       entryPoints: ['./frontend/controller/serviceworkers/primary.js']
     }
   }
-  esbuildOptionBags.testCommons = {
-    ...esbuildOptionBags.default,
-    bundle: true,
-    entryPoints: ['./frontend/common/common.js'],
-    external: ['dompurify', 'vue'],
-    outdir: './test/common',
-    splitting: false
-  }
-  esbuildOptionBags.testContracts = {
-    ...esbuildOptionBags.default,
-    bundle: true,
-    entryPoints: [
-      'group.js',
-      'chatroom.js',
-      'identity.js',
-      'mailbox.js',
-      'misc/flowTyper.js',
-      'shared/voting/proposals.js',
-      'shared/voting/rules.js',
-      'shared/payments/index.js',
-      'shared/constants.js',
-      'shared/functions.js',
-      'shared/giLodash.js'
-    ].map(s => `${contractsDir}/${s}`),
-    external: ['dompurify', 'vue'],
-    minifyIdentifiers: false,
-    minifySyntax: false,
-    minifyWhitespace: false,
-    outdir: './test/contracts',
-    sourcemap: false,
-    splitting: false
-  }
 
   esbuildOptionBags.contracts = {
     ...pick(clone(esbuildOptionBags.default), [
@@ -284,6 +251,20 @@ module.exports = (grunt) => {
   esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
   esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
   esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
+
+  esbuildOptionBags.testContractsShared = {
+    ...esbuildOptionBags.default,
+    bundle: true,
+    entryNames: 'shared',
+    entryPoints: [`${contractsDir}/shared/index.js`],
+    external: ['dompurify', 'vue'],
+    minifyIdentifiers: false,
+    minifySyntax: false,
+    minifyWhitespace: false,
+    outdir: './test/contracts',
+    sourcemap: false,
+    splitting: false
+  }
 
   // Additional options which are not part of the esbuild API.
   const esbuildOtherOptionBags = {
@@ -401,7 +382,7 @@ module.exports = (grunt) => {
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
       // Test anything that ends with `.test.{js|ts}` in the specified folders, e.g. unit tests for SBP domains kept in the domain folder.
-      test: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoTestImportMap} frontend shared test`,
+      test: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoImportMap} frontend shared test`,
       ts: `deno check --import-map=${denoImportMap} backend/*.ts shared/*.ts shared/domains/chelonia/*.ts`
     }
   })
@@ -560,8 +541,8 @@ module.exports = (grunt) => {
     const buildContractsSlim = createEsbuildTask({
       ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
-    const buildTestContracts = createEsbuildTask({
-      ...esbuildOptionBags.testContracts, plugins: defaultPlugins
+    const buildTestContractsShared = createEsbuildTask({
+      ...esbuildOptionBags.testContractsShared, plugins: defaultPlugins
     })
 
     // first we build the contracts since genManifestsAndDeploy depends on that
@@ -573,7 +554,7 @@ module.exports = (grunt) => {
       .then(() => {
         return Promise.all([buildMain.run(), buildServiceWorkers.run()])
       })
-      .then(() => Promise.all([buildTestContracts.run()]))
+      .then(() => buildTestContractsShared.run())
       .catch(error => {
         grunt.log.error(error.message)
         process.exit(1)

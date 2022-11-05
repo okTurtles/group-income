@@ -7,23 +7,37 @@ import '~/scripts/process-shim.ts'
 import sbp from '@sbp/sbp'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
+
+import applyPortShift from '~/scripts/applyPortShift.ts'
 // eslint-disable-next-line import/no-duplicates
 import '~/shared/domains/chelonia/chelonia.ts'
 // eslint-disable-next-line import/no-duplicates
 import { type CheloniaState, type GIMessage } from '~/shared/domains/chelonia/chelonia.ts'
 import { type GIOpActionUnencrypted } from '~/shared/domains/chelonia/GIMessage.ts'
-import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import applyPortShift from '~/scripts/applyPortShift.ts'
 import { blake32Hash } from '~/shared/functions.ts'
 import { type PubsubClient } from '~/shared/pubsub.ts'
+
 import * as Common from '@common/common.js'
-import proposals from './contracts/shared/voting/proposals.js'
-import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from './contracts/shared/payments/index.js'
-import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS, MAIL_TYPE_MESSAGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from './contracts/shared/constants.js'
-import { createInvite } from './contracts/shared/functions.js'
+import {
+  createInvite,
+  proposals,
+  INVITE_INITIAL_CREATOR,
+  INVITE_EXPIRES_IN_DAYS,
+  MAIL_TYPE_MESSAGE,
+  PAYMENT_PENDING,
+  PAYMENT_TYPE_MANUAL,
+  PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_REMOVE_MEMBER,
+  PROPOSAL_GROUP_SETTING_CHANGE,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  PROPOSAL_GENERIC
+} from '@test-contracts/shared.js'
+
 import '~/frontend/controller/namespace.js'
-import { THEME_LIGHT } from '~/frontend/utils/themes.js'
+import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import manifests from '~/frontend/model/contracts/manifests.json' assert { type: 'json' }
+import { THEME_LIGHT } from '~/frontend/utils/themes.js'
+
 import packageJSON from '~/package.json' assert { type: 'json' }
 
 type TestUser = GIMessage & { mailbox: GIMessage; socket: PubsubClient }

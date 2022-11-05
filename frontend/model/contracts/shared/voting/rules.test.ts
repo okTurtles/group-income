@@ -1,10 +1,17 @@
 // Can run directly with:
-// deno test --import-map=import-map-for-tests.json frontend/model/contracts/shared/voting/rules.test.ts
+// deno test --import-map=import-map.json frontend/model/contracts/shared/voting/rules.test.ts
 
 import { assertEquals } from 'asserts'
 
-import rules, { RULE_PERCENTAGE, RULE_DISAGREEMENT, VOTE_FOR, VOTE_AGAINST, VOTE_UNDECIDED } from '@contracts/shared/voting/rules.js'
-import { PROPOSAL_REMOVE_MEMBER } from '@contracts/shared/constants.js'
+import {
+  rules,
+  PROPOSAL_REMOVE_MEMBER,
+  RULE_PERCENTAGE,
+  RULE_DISAGREEMENT,
+  VOTE_FOR,
+  VOTE_AGAINST,
+  VOTE_UNDECIDED
+} from '@test-contracts/shared.js'
 
 type Options = {
   membersInactive?: number

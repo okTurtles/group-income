@@ -3,14 +3,14 @@ import {
   assertEquals,
   assertMatch,
   assertNotMatch
-} from 'https://deno.land/std@0.153.0/testing/asserts.ts'
+} from 'asserts'
 
 import '~/scripts/process-shim.ts'
 
 Deno.test({
   name: 'Avatar file serving',
   fn: async function (tests) {
-    const apiURL = process.env.API_URL ?? 'http://localhost:8000'
+    const apiURL = Deno.env.get('API_URL') ?? 'http://localhost:8000'
     const hash = '21XWnNX5exusmJoJNWNNqjhWPqxGURryWbkUhYVsGT5NFtSGKs'
 
     // Manually upload a test avatar to the file database.

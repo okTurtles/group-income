@@ -1,5 +1,5 @@
 // Can run directly with:
-// deno test --import-map=import-map-for-tests.json frontend/model/contracts/shared/distribution/distribution.test.ts
+// deno test --import-map=import-map.json frontend/model/contracts/shared/distribution/distribution.test.ts
 
 import { assertEquals } from 'asserts'
 
