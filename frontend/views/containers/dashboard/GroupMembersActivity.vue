@@ -117,9 +117,9 @@ export default ({
       return len === 0
         ? null
         : {
-          members: membersOnStreak,
-          tooltipText: len === 1 ? this.L(`${len} member`) : this.L(`${len} members`)
-        }
+            members: membersOnStreak,
+            tooltipText: len === 1 ? this.L(`${len} member`) : this.L(`${len} members`)
+          }
     }
   },
   components: {
