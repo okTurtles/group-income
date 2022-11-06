@@ -414,7 +414,7 @@
 /* MISSING TRANSLATION - views/containers/user-settings/Appearence.vue */
 "Animations" = "Animations";
 
-/* MISSING TRANSLATION - views/containers/user-settings/Theme.vue */
+/* MISSING TRANSLATION - views/containers/user-settings/ThemeSelector.vue */
 "Use system settings" = "Use system settings";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */

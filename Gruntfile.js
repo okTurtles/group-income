@@ -119,7 +119,7 @@ module.exports = (grunt) => {
     }
   }
 
-  async function deployAndUpdateMainSrc (manifestDir) {
+  async function deployAndGenManifestsJSON (manifestDir) {
     if (development) {
       grunt.log.writeln(chalk.underline("Running 'chel deploy'"))
       const { stdout } = await execWithErrMsg(`./node_modules/.bin/chel deploy ./data ${manifestDir}/*.manifest.json`, 'error deploying contracts')
@@ -139,7 +139,7 @@ module.exports = (grunt) => {
 
   async function genManifestsAndDeploy (dir, version) {
     await generateManifests(dir, version)
-    await deployAndUpdateMainSrc(dir)
+    await deployAndGenManifestsJSON(dir)
   }
 
   // Used by both the alias plugin and the Vue plugin.

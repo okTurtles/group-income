@@ -36,6 +36,9 @@
 /* views/components/group-creation-steps/GroupMincome.vue */
 "3. Minimum Income" = "3. Minimum Income";
 
+/* views/containers/user-settings/ThemeSelector.vue */
+"Use system settings" = "Use system settings";
+
 /* views/containers/group-settings/GroupJoinModal.vue */
 "3. Use your unique access link" = "3. Use your unique access link";
 
