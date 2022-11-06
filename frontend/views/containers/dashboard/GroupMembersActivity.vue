@@ -92,6 +92,9 @@ import Tooltip from '@components/Tooltip.vue'
 
 export default ({
   name: 'GroupMembersActivity',
+  components: {
+    Tooltip
+  },
   data () {
     return {
       isReady: false,
@@ -121,9 +124,6 @@ export default ({
             tooltipText: len === 1 ? this.L(`${len} member`) : this.L(`${len} members`)
           }
     }
-  },
-  components: {
-    Tooltip
   }
 }: Object)
 
