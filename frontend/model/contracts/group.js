@@ -143,9 +143,11 @@ function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boo
 }
 
 function updateGroupStreaks ({ state, getters }) {
-  const { groupIncomeAdjustedDistribution } = sbp('state/vuex/getters')
+  const {
+    groupIncomeAdjustedDistribution,
+    thisPeriodPaymentInfo
+  } = sbp('state/vuex/getters')
   const streaks = state.streaks
-  const groupMadeFullMonthlyPledges = groupIncomeAdjustedDistribution.length === 0
 
   // --- update 'fullMonthlyPledgesCount' streak ---
   // if the group has made 100% pledges in this period, +1 the streak value.
@@ -153,26 +155,30 @@ function updateGroupStreaks ({ state, getters }) {
   Vue.set(
     streaks,
     'fullMonthlyPledges',
-    groupMadeFullMonthlyPledges ? streaks.fullMonthlyPleges + 1 : 0
+    groupIncomeAdjustedDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0
   )
 
-  // --- update 'onTimePayments' streak ---
-  // for those users who pledge
-  const onTimePayments = streaks.onTimePayments
+  // --- update 'onTimePayments' streaks for 'pledging' members of the group ---
   for (const username in getters.groupProfiles) {
-    const profile = getters.groupProfiles[username]
-    if (profile.incomeDetailsType === 'pledgeAmount') {
-      const currentStreak = onTimePayments[username] || 0
-      const hasCompletedMonthly = groupIncomeAdjustedDistribution.every(entry => entry.from !== username)
+    if (getters.groupProfiles[username].incomeDetailsType !== 'pledgeAmount') continue
 
-      Vue.set(
-        onTimePayments,
-        username,
-        hasCompletedMonthly
-          ? currentStreak + 1
-          : 0
-      )
+    const myCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0)
+    const myPaymentsDoneInThisPeriod = thisPeriodPaymentInfo && thisPeriodPaymentInfo.paymentsFrom[username]
+    const myPaymentHashes = []
+
+    if (myPaymentsDoneInThisPeriod) {
+      Object.values(myPaymentsDoneInThisPeriod).forEach(pHashes => myPaymentHashes.concat(pHashes))
     }
+    Vue.set(
+      streaks.onTimePayments,
+      username,
+      // check-1. the pledger has completed all payments assigned to them for current distribution period.
+      // check-2. all those payments in check-1 were done on time.
+      groupIncomeAdjustedDistribution.every(entry => entry.from !== username) &&
+      myPaymentHashes.every(hash => state.payments[hash] && state.payments[hash].data.isLate === false)
+        ? myCurrentStreak + 1
+        : 0
+    )
   }
 }
 
@@ -359,6 +365,9 @@ sbp('chelonia/defineContract', {
     groupThankYousFrom (state, getters): Object {
       return getters.currentGroupState.thankYousFrom || {}
     },
+    groupStreaks (state, getters): Object {
+      return getters.currentGroupState.streaks || {}
+    },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
       //       USD, then calling this function is probably an error which should be reported.
@@ -469,7 +478,7 @@ sbp('chelonia/defineContract', {
             inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
           },
           streaks: {
-            fullMonthlyPleges: 0,
+            fullMonthlyPledges: 0,
             onTimePayments: {} // { username: number ... }
           },
           profiles: {
@@ -1110,6 +1119,7 @@ sbp('chelonia/defineContract', {
       'gi.contracts/group/forceDistributionDate': {
         validate: optional,
         process ({ meta }, { state, getters }) {
+          updateGroupStreaks({ state, getters })
           getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate)
         }
       },

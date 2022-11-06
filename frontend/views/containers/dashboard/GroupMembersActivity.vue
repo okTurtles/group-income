@@ -6,26 +6,25 @@
       i18n.has-text-1.c-para Information about your pledges streaks and other streak members appears here.
 
       ul.spacer
-        li.c-item-wrapper
+        li.c-item-wrapper(v-if='groupStreaks.fullMonthlyPledges > 1')
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
               i18n(
-                :args='{ ...LTags("strong"), timeframe: "2 weeks", pourcent: 100 }'
-              ) Group has a streak of {strong_} {pourcent}% Support of {timeframe}{_strong}
+                :args='{ ...LTags("strong"), streak: groupStreaks.fullMonthlyPledges }'
+              ) Group has a streak of {strong_} 100% Support of {streak} months{_strong}
 
-        li.c-item-wrapper
+        li.c-item-wrapper(v-if='onTimeStreaks')
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
               tooltip(direction='bottom-end')
-                i18n.link(
-                  :args='{  members: 3 }'
-                ) {members} members
+                .link.c-on-time-streak-count {{ onTimeStreaks.tooltipText }}
                 template(slot='tooltip')
-                  div Rosalía
-                  div Ken M
-                  div Ines de Castro
+                  div(
+                    v-for='(name, index) in onTimeStreaks.members'
+                    :key='`member-${index}`'
+                  ) {{ name }}
 
               //- Todo: discuss if tooltip better than toggle
               //- i18n.link(
@@ -34,7 +33,7 @@
               //-   :args='{  members: 3 }'
               //-   @click='openModal("todoSeeMembers")'
               //- ) {members} members
-              i18n(:args='{ ...LTags("strong"), streaks: "4 weeks" }')  have {strong_} streaks of more than {streaks}{_strong}
+              i18n(:args='{ ...LTags("strong") }') have {strong_} on-time payment streaks{_strong}
 
     .c-column
       i18n.is-title-3(tag='h2') Inactivity
@@ -88,6 +87,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import Tooltip from '@components/Tooltip.vue'
 
 export default ({
@@ -96,6 +96,30 @@ export default ({
     return {
       isReady: false,
       history: []
+    }
+  },
+  computed: {
+    ...mapGetters([
+      'groupStreaks',
+      'globalProfile'
+    ]),
+    onTimeStreaks () {
+      const membersOnStreak = []
+      const getDisplayName = name => this.globalProfile(name).displayName || name
+
+      for (const username in this.groupStreaks.onTimePayments) {
+        if (this.groupStreaks.onTimePayments[username] >= 2) {
+          membersOnStreak.push(getDisplayName(username))
+        }
+      }
+
+      const len = membersOnStreak.length
+      return len === 0
+        ? null
+        : {
+          members: membersOnStreak,
+          tooltipText: len === 1 ? this.L(`${len} member`) : this.L(`${len} members`)
+        }
     }
   },
   components: {
@@ -127,6 +151,11 @@ export default ({
   @include tablet {
     width: 50%;
   }
+}
+
+.c-on-time-streak-count {
+  display: inline-block;
+  margin-right: 0.25rem;
 }
 
 .c-para {
