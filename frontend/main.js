@@ -69,6 +69,7 @@ async function startApp () {
       'chelonia/db/set',
       'state/vuex/state',
       'state/vuex/getters',
+      'state/vuex/settings',
       'gi.db/settings/save'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
