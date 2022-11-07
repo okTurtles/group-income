@@ -280,7 +280,7 @@ route.POST('/zkpp/{contract}', {
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error(e.message, { ip })
+    console.error('Error at POST /zkpp/{contract}: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
@@ -299,7 +299,7 @@ route.GET('/zkpp/{contract}/auth_hash', {}, async function (req, h) {
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error(e.message, { ip })
+    console.error('Error at GET /zkpp/{contract}/auth_hash: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
@@ -330,7 +330,7 @@ route.GET('/zkpp/{contract}/contract_hash', {}, async function (req, h) {
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error(e.message, { ip })
+    console.error('Error at GET /zkpp/{contract}/contract_hash: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')
@@ -355,7 +355,7 @@ route.PUT('/zkpp/{contract}', {
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error(e.message, { ip })
+    console.error('Error at GET /zkpp/{contract}/contract_hash: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')

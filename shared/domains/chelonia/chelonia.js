@@ -471,10 +471,10 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'chelonia/latestContractState': async function (contractID: string) {
-    const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
     if (sbp(this.config.stateSelector)[contractID]) {
       return cloneDeep(sbp(this.config.stateSelector)[contractID])
     }
+    const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
     let state = Object.create(null)
     // fast-path
     try {

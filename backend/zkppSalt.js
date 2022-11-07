@@ -47,7 +47,6 @@ const getZkppSaltRecord = async (contract: string) => {
       }
     } catch {
       console.error('Error parsing encrypted JSON object ' + recordId)
-      // empty
     }
   }
 
@@ -134,7 +133,7 @@ export const register = async (contract: string, clientPublicKey: string, encryp
   const record = await getZkppSaltRecord(contract)
 
   if (record) {
-    console.debug('register: Error obtaining ZKPP salt record for contract ID ' + contract)
+    console.error('register: Error: ZKPP salt record for contract ID ' + contract + ' already exists')
     return false
   }
 
@@ -247,7 +246,6 @@ export const update = async (contract: string, r: string, s: string, sig: string
     return true
   } catch {
     console.error(`update: Error parsing encrypted arguments for contract ID ${contract} (${JSON.stringify({ r, s, hc })})`)
-    // empty
   }
 
   return false

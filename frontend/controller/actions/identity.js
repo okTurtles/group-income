@@ -414,8 +414,10 @@ export default (sbp('sbp/selectors/register', {
       console.info('logging out, waiting for any events to finish...')
       await sbp('chelonia/contract/wait')
       await sbp('state/vuex/save')
+      const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
       await sbp('chelonia/contract/remove', Object.keys(state.contracts))
+      await sbp('gi.db/settings/delete', username)
       console.info('successfully logged out')
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)

@@ -201,7 +201,7 @@ export default (sbp('sbp/selectors/register', {
               try {
                 state._volatile.keys[key.id] = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
               } catch (e) {
-                console.error('Decryption error', e)
+                console.error(`OP_CONTRACT decryption error '${e.message || e}':`, e)
               }
             }
           }
@@ -260,7 +260,7 @@ export default (sbp('sbp/selectors/register', {
                   env.additionalKeys[key.id] = decrypted
                 }
               } catch (e) {
-                console.error('Decryption error', e)
+                console.error(`OP_KEYSHARE decryption error '${e.message || e}':`, e)
               }
             }
           }
@@ -351,7 +351,7 @@ export default (sbp('sbp/selectors/register', {
               try {
                 state._volatile.keys[key.id] = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
               } catch (e) {
-                console.error('Decryption error', e)
+                console.error(`OP_KEY_ADD decryption error '${e.message || e}':`, e)
               }
             }
           }
@@ -468,7 +468,7 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
       await sbp('chelonia/private/respondToKeyRequests', contractID)
     } catch (e) {
-      console.error(`[chelonia] syncContract error: ${e.message}`, e)
+      console.error(`[chelonia] syncContract error: ${e.message || e}`, e)
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
       this.config.hooks.syncContractError?.(e, contractID)
       throw e
@@ -588,7 +588,7 @@ export default (sbp('sbp/selectors/register', {
       try {
         await handleEvent.processMutation.call(this, message, state)
       } catch (e) {
-        console.error(`[chelonia] ERROR '${e.name}' in processMutation for ${message.description()}: ${e.message}`, e, message.serialize())
+        console.error(`[chelonia] ERROR '${e.name}' in processMutation for ${message.description()}: ${e.message || e}`, e, message.serialize())
         // we revert any changes to the contract state that occurred, ignoring this mutation
         handleEvent.revertProcess.call(this, { message, state, contractID, contractStateCopy })
         processingErrored = true
@@ -614,7 +614,7 @@ export default (sbp('sbp/selectors/register', {
           sbp('okTurtles.events/emit', hash, contractID, message)
           sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
         } catch (e) {
-          console.error(`[chelonia] ERROR '${e.name}' in side-effects for ${message.description()}: ${e.message}`, e, message.serialize())
+          console.error(`[chelonia] ERROR '${e.name}' in side-effects for ${message.description()}: ${e.message || e}`, e, message.serialize())
           // revert everything
           handleEvent.revertSideEffect.call(this, { message, state, contractID, contractStateCopy, stateCopy })
           this.config.hooks.sideEffectError?.(e, message)
@@ -622,7 +622,7 @@ export default (sbp('sbp/selectors/register', {
         }
       }
     } catch (e) {
-      console.error(`[chelonia] ERROR in handleEvent: ${e.message}`, e)
+      console.error(`[chelonia] ERROR in handleEvent: ${e.message || e}`, e)
       handleEventError?.(e, message)
       if (!(e instanceof ChelErrorUnexpected)) {
         // sometimes we get this error in the following situation:
