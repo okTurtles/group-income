@@ -41,6 +41,8 @@ import './utils/touchInteractions.js'
 
 const { Vue, L } = Common
 
+document.getElementById('fallback')?.remove()
+
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
