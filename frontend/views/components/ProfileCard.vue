@@ -228,6 +228,7 @@ export default ({
 
 .c-payment-type {
   padding-right: 0.5rem;
+  user-select: none;
 }
 
 .c-add-payment-button {
