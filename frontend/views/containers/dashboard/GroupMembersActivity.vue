@@ -18,7 +18,7 @@
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
-              member-count-tooltip.c-on-time-streak-count(:members='onTimeStreakMembers')
+              member-count-tooltip.c-member-count(:members='onTimeStreakMembers')
 
               //- Todo: discuss if tooltip better than toggle
               //- i18n.link(
@@ -34,14 +34,12 @@
       .has-text-1.c-para Members that haven’t logged in, missed their pledges or haven´t voted last proposals will appear here.
 
       ul.spacer
-        li.c-item-wrapper
+        li.c-item-wrapper(v-if='haventLoggedIn.length > 0')
           .c-item
             .icon-user.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip(
-                :members='["Rosalia", "Ken M", "Ines de Castro", "Attila the Hun", "Istralianda"]'
-              )
-              i18n(:args='LTags("strong")')  haven´t {strong_} logged in past week {_strong}
+              member-count-tooltip.c-member-count(:members='haventLoggedIn')
+              i18n(:args='LTags("strong")') haven´t {strong_} logged in past 14 days or more {_strong}
 
         li.c-item-wrapper
           .c-item
@@ -66,6 +64,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import MemberCountTooltip from './MemberCountTooltip.vue'
+import { compareISOTimestamps, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'GroupMembersActivity',
@@ -81,11 +80,20 @@ export default ({
   computed: {
     ...mapGetters([
       'groupStreaks',
-      'userDisplayName'
+      'userDisplayName',
+      'groupProfiles'
     ]),
     onTimeStreakMembers () {
       return Object.entries(this.groupStreaks.onTimePayments)
         .filter(([username, streak]) => streak >= 2)
+        .map(([username]) => this.userDisplayName(username))
+    },
+    haventLoggedIn () {
+      // any group members that haven't logged in for the past 14 days or more
+      const now = new Date().toISOString()
+
+      return Object.entries(this.groupProfiles)
+        .filter(([username, profile]) => compareISOTimestamps(now, profile.lastLoggedIn) >= 14 * DAYS_MILLIS)
         .map(([username]) => this.userDisplayName(username))
     }
   }
@@ -117,7 +125,7 @@ export default ({
   }
 }
 
-.c-on-time-streak-count {
+.c-member-count {
   display: inline-block;
   margin-right: 0.25rem;
 }
