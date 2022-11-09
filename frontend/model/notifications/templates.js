@@ -171,13 +171,12 @@ export default ({
     }
   },
   PAYMENT_RECEIVED (data: { creator: string, amount: string, paymentHash: string }) {
-    const { globalProfile } = sbp('state/vuex/getters')
-    const getDisplayName = username => globalProfile(username)?.displayName || username
+    const { userDisplayName } = sbp('state/vuex/getters')
 
     return {
       avatarUsername: data.creator,
       body: L('{fromUser} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
-        fromUser: getDisplayName(data.creator), // displayName of the sender
+        fromUser: userDisplayName(data.creator), // displayName of the sender
         amount: data.amount,
         ...LTags('strong')
       }),

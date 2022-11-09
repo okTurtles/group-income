@@ -81,21 +81,12 @@ export default ({
   computed: {
     ...mapGetters([
       'groupStreaks',
-      'globalProfile'
+      'userDisplayName'
     ]),
     onTimeStreakMembers () {
-      const membersOnStreak = []
-      const getDisplayName = name => this.globalProfile(name).displayName || name
-
-      for (const username in this.groupStreaks.onTimePayments) {
-        if (this.groupStreaks.onTimePayments[username] >= 2) {
-          membersOnStreak.push(getDisplayName(username))
-        }
-      }
-
       return Object.entries(this.groupStreaks.onTimePayments)
         .filter(([username, streak]) => streak >= 2)
-        .map(([username]) => getDisplayName(username))
+        .map(([username]) => this.userDisplayName(username))
     }
   }
 }: Object)
