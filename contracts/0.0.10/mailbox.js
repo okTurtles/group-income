@@ -9393,6 +9393,9 @@ ${this.getErrorInfo()}`;
           (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", true);
           await (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
           (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
+          if (!(0, import_sbp3.default)("okTurtles.data/get", "SYNCING_MAILBOX")) {
+            await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: data.contractID } }).catch(logExceptNavigationDuplicated);
+          }
         }
       },
       "gi.contracts/mailbox/joinDirectMessage": {
@@ -9435,6 +9438,9 @@ ${this.getErrorInfo()}`;
             (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", true);
             await (0, import_sbp3.default)("chelonia/contract/sync", contractID);
             (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
+          }
+          if (state.attributes.creator === meta.username && !(0, import_sbp3.default)("okTurtles.data/get", "SYNCING_MAILBOX")) {
+            await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: contractID } }).catch(logExceptNavigationDuplicated);
           }
         }
       },

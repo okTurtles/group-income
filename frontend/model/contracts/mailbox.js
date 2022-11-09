@@ -5,6 +5,7 @@ import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
 import { leaveChatRoom } from './shared/functions.js'
 import { objectOf, string, boolean, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/mailbox',
@@ -81,6 +82,12 @@ sbp('chelonia/defineContract', {
         sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
         await sbp('chelonia/contract/sync', data.contractID)
         sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
+
+        if (!sbp('okTurtles.data/get', 'SYNCING_MAILBOX')) {
+          await sbp('controller/router')
+            .push({ name: 'GroupChatConversation', params: { chatRoomId: data.contractID } })
+            .catch(logExceptNavigationDuplicated)
+        }
       }
     },
     'gi.contracts/mailbox/joinDirectMessage': {
@@ -123,6 +130,11 @@ sbp('chelonia/defineContract', {
           sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
           await sbp('chelonia/contract/sync', contractID)
           sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
+        }
+        if (state.attributes.creator === meta.username && !sbp('okTurtles.data/get', 'SYNCING_MAILBOX')) {
+          await sbp('controller/router')
+            .push({ name: 'GroupChatConversation', params: { chatRoomId: contractID } })
+            .catch(logExceptNavigationDuplicated)
         }
       }
     },

@@ -81,16 +81,17 @@ const ChatroomMixin: Object = {
       const { name, type, description, creator, privacyLevel } = this.currentChatRoomState.attributes
       const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
       const partner = this.ourContactProfiles[partnerUsername]
+      const partnerName = partner ? partner.displayName || partner.username : ''
 
       return {
         type,
-        title: type === CHATROOM_TYPES.INDIVIDUAL && partner ? partner.displayName : name,
+        title: type === CHATROOM_TYPES.INDIVIDUAL ? partnerName : name,
         description,
-        private: this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
+        private: privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         privacyLevel,
         general: this.generalChatRoomId === this.currentChatRoomId,
         joined: true,
-        picture: type === CHATROOM_TYPES.INDIVIDUAL && partner ? partner.picture : undefined,
+        picture: type === CHATROOM_TYPES.INDIVIDUAL ? partner?.picture : undefined,
         creator
       }
     },

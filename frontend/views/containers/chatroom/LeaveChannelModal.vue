@@ -49,7 +49,7 @@ export default ({
         return ''
       } else if (this.currentChatRoomState.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
         const username = this.usernameFromDirectMessageID(this.currentChatRoomId)
-        return this.ourContactProfiles[username].displayName
+        return this.ourContactProfiles[username].displayName || username
       } else {
         return this.currentChatRoomState.attributes.name
       }

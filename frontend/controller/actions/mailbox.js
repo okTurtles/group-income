@@ -7,8 +7,6 @@ import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/shared/
 import { encryptedAction } from './utils.js'
 import type { GIActionParams } from './types.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
-import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/mailbox/create': async function ({
@@ -69,17 +67,6 @@ export default (sbp('sbp/selectors/register', {
         data: paramsData,
         action: 'gi.contracts/mailbox/createDirectMessage'
       })
-
-      const redirectToDMChatroom = async (contractID, isSyncing) => {
-        if (contractID === message.contractID() && isSyncing === false) {
-          await sbp('controller/router')
-            .push({ name: 'GroupChatConversation', params: { chatRoomId: contractID } })
-            .catch(logExceptNavigationDuplicated)
-          sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, redirectToDMChatroom)
-        }
-      }
-
-      sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, redirectToDMChatroom)
 
       await sbp('gi.actions/chatroom/join', {
         ...omit(params, ['options', 'data', 'hook']),

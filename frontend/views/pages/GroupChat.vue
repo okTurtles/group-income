@@ -1,5 +1,5 @@
 <template lang='pug'>
-page(pageTestName='groupChat' pageTestHeaderName='channelName')
+page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isOnDirectMessage')
   template(#title='')
     .c-header
       avatar(

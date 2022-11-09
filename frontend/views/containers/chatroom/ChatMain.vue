@@ -550,7 +550,7 @@ export default ({
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               if (!self && isScrollable) {
                 this.updateScroll()
-              } else if (!isScrollable) {
+              } else if (!isScrollable && this.messages.length) {
                 const msg = this.messages[this.messages.length - 1]
                 this.updateUnreadMessageId({
                   messageId: msg.id,

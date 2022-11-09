@@ -513,8 +513,8 @@ const getters = {
   ourContacts (state, getters) {
     return Object.keys(getters.ourContactProfiles)
       .sort((usernameA, usernameB) => {
-        const nameA = getters.ourContactProfiles[usernameA].displayName?.toUpperCase()
-        const nameB = getters.ourContactProfiles[usernameB].displayName?.toUpperCase()
+        const nameA = getters.ourContactProfiles[usernameA].displayName?.toUpperCase() || usernameA
+        const nameB = getters.ourContactProfiles[usernameB].displayName?.toUpperCase() || usernameB
         return nameA > nameB ? 1 : -1
       })
   },

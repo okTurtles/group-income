@@ -45,6 +45,7 @@ modal-base-template.has-background(
       transition-group(
         v-if='ourRecentConversations'
         name='slide-list'
+        data-test='recentConversations'
         tag='ul'
       )
         li.c-search-member(
@@ -68,6 +69,7 @@ modal-base-template.has-background(
       transition-group(
         v-if='searchResult'
         name='slide-list'
+        data-test='others'
         tag='ul'
       )
         li.c-search-member(

@@ -1,6 +1,8 @@
 <template lang='pug'>
 div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-sidebar" : "p-no-sidebar"')
-  header.p-header
+  header.p-header(
+    :class='miniHeader ? "p-mini-header" : ""'
+  )
     slot(name='header')
     h1.is-title-2.p-title(:data-test='pageTestHeaderName' v-if='$slots.title')
       img.c-logo(
@@ -38,7 +40,11 @@ export default ({
   props: {
     pageTestName: String,
     pageTestHeaderName: String,
-    mainClass: String
+    mainClass: String,
+    miniHeader: {
+      type: Boolean,
+      default: false
+    }
   },
   data () {
     return {
@@ -154,6 +160,12 @@ $pagePaddingDesktop: 5.5rem;
     text-align: left;
     min-height: 4.75rem;
     padding-left: $pagePaddingDesktop;
+  }
+
+  &.p-mini-header {
+    @include desktop {
+      min-height: 2.75rem;
+    }
   }
 
   .c-toggle.sidebar {
