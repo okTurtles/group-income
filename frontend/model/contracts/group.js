@@ -32,6 +32,7 @@ function initGroupProfile (contractID: string, joinedDate: string) {
     globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
     contractID,
     joinedDate,
+    lastLoggedIn: joinedDate,
     nonMonetaryContributions: [],
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null
@@ -1113,6 +1114,16 @@ sbp('chelonia/defineContract', {
           ...getters.getChatRooms[data.chatRoomID],
           name: data.name
         })
+      }
+    },
+    'gi.contracts/group/updateLastLoggedIn': {
+      validate () {},
+      process ({ data, meta }) {
+        const profile = sbp('state/vuex/getters').ourGroupProfile
+
+        if (profile) {
+          Vue.set(profile, 'lastLoggedIn', meta.createdDate)
+        }
       }
     },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {

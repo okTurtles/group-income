@@ -155,6 +155,8 @@ export default (sbp('sbp/selectors/register', {
             router.push({ path: '/dashboard' }).catch(console.warn)
           }
         }
+      } else {
+        sbp('gi.actions/group/updateLastLoggedIn', { contractID: state.currentGroupId })
       }
     } catch (e) {
       console.error(`updateLoginState: ${e.name}: '${e.message}'`, e)

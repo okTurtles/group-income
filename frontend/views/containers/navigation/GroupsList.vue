@@ -73,7 +73,7 @@ export default ({
       id && this.changeGroup(id)
     },
     changeGroup (hash) {
-      this.$store.commit('setCurrentGroupId', hash)
+      sbp('gi.actions/group/switch', hash)
     },
     shouldSetBadgeOnGroup (groupID) {
       return Object.keys(this.ourUnreadMessages)
