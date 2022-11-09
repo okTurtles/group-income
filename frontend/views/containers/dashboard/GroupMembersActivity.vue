@@ -14,17 +14,11 @@
                 :args='{ ...LTags("strong"), streak: groupStreaks.fullMonthlyPledges }'
               ) Group has a streak of {strong_} 100% Support of {streak} months{_strong}
 
-        li.c-item-wrapper(v-if='onTimeStreaks')
+        li.c-item-wrapper(v-if='onTimeStreakMembers.length > 0')
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
-              tooltip(direction='bottom-end')
-                .link.c-on-time-streak-count {{ onTimeStreaks.tooltipText }}
-                template(slot='tooltip')
-                  div(
-                    v-for='(name, index) in onTimeStreaks.members'
-                    :key='`member-${index}`'
-                  ) {{ name }}
+              member-count-tooltip.c-on-time-streak-count(:members='onTimeStreakMembers')
 
               //- Todo: discuss if tooltip better than toggle
               //- i18n.link(
@@ -44,56 +38,39 @@
           .c-item
             .icon-user.icon-round.has-background-general
             .c-item-copy
-              tooltip(direction='bottom-end')
-                i18n.link(
-                  :args='{  members: 5 }'
-                ) {members} members
-                template(slot='tooltip')
-                  div Rosalía
-                  div Ken M
-                  div Ines de Castro
-                  div Attila the Hun
-                  div Istralianda
+              member-count-tooltip(
+                :members='["Rosalia", "Ken M", "Ines de Castro", "Attila the Hun", "Istralianda"]'
+              )
               i18n(:args='LTags("strong")')  haven´t {strong_} logged in past week {_strong}
 
         li.c-item-wrapper
           .c-item
             .icon-dollar-sign.icon-round.has-background-general
             .c-item-copy
-              tooltip(direction='bottom-end')
-                i18n.link(
-                  :args='{  members: 3 }'
-                ) {members} members
-                template(slot='tooltip')
-                  div Rosalía
-                  div Ken M
-                  div Ines de Castro
+              member-count-tooltip(
+                :members='["Rosalia", "Ken M", "Ines de Castro"]'
+              )
               i18n(:args='LTags("strong")')  have {strong_} missed payments {_strong}
 
         li.c-item-wrapper
           .c-item
             .icon-vote-yea.icon-round.has-background-general
             .c-item-copy
-              tooltip(direction='bottom-end')
-                i18n.link(
-                  :args='{  members: 3 }'
-                ) {members} members
-                template(slot='tooltip')
-                  div Rosalía
-                  div Ken M
-                  div Ines de Castro
+              member-count-tooltip(
+                :members='["Rosalia", "Ken M", "Ines de Castro"]'
+              )
               i18n(:args='{ ...LTags("strong"), proposalNumber: 2 }')  haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}
 
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import Tooltip from '@components/Tooltip.vue'
+import MemberCountTooltip from './MemberCountTooltip.vue'
 
 export default ({
   name: 'GroupMembersActivity',
   components: {
-    Tooltip
+    MemberCountTooltip
   },
   data () {
     return {
@@ -106,7 +83,7 @@ export default ({
       'groupStreaks',
       'globalProfile'
     ]),
-    onTimeStreaks () {
+    onTimeStreakMembers () {
       const membersOnStreak = []
       const getDisplayName = name => this.globalProfile(name).displayName || name
 
@@ -116,13 +93,9 @@ export default ({
         }
       }
 
-      const len = membersOnStreak.length
-      return len === 0
-        ? null
-        : {
-            members: membersOnStreak,
-            tooltipText: len === 1 ? this.L(`${len} member`) : this.L(`${len} members`)
-          }
+      return Object.entries(this.groupStreaks.onTimePayments)
+        .filter(([username, streak]) => streak >= 2)
+        .map(([username]) => getDisplayName(username))
     }
   }
 }: Object)
