@@ -41,23 +41,30 @@
               member-count-tooltip.c-member-count(:members='haventLoggedIn')
               i18n(:args='LTags("strong")') haven´t {strong_} logged in past 14 days or more {_strong}
 
+        li.c-item-wrapper(v-if='noIncomeDetails.length > 0')
+          .c-item
+            .icon-comment-dollar.icon-round.has-background-general
+            .c-item-copy
+              member-count-tooltip.c-member-count(:members='noIncomeDetails')
+              i18n(:args='LTags("strong")') haven't {strong_} entered income details{_strong}
+
         li.c-item-wrapper
           .c-item
             .icon-dollar-sign.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip(
+              member-count-tooltip.c-member-count(
                 :members='["Rosalia", "Ken M", "Ines de Castro"]'
               )
-              i18n(:args='LTags("strong")')  have {strong_} missed payments {_strong}
+              i18n(:args='LTags("strong")') have {strong_} missed payments {_strong}
 
         li.c-item-wrapper
           .c-item
             .icon-vote-yea.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip(
+              member-count-tooltip.c-member-count(
                 :members='["Rosalia", "Ken M", "Ines de Castro"]'
               )
-              i18n(:args='{ ...LTags("strong"), proposalNumber: 2 }')  haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}
+              i18n(:args='{ ...LTags("strong"), proposalNumber: 2 }') haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}
 
 </template>
 
@@ -88,12 +95,16 @@ export default ({
         .filter(([username, streak]) => streak >= 2)
         .map(([username]) => this.userDisplayName(username))
     },
-    haventLoggedIn () {
-      // any group members that haven't logged in for the past 14 days or more
+    haventLoggedIn () { // group members that haven't logged in for the past 14 days or more
       const now = new Date().toISOString()
 
       return Object.entries(this.groupProfiles)
         .filter(([username, profile]) => compareISOTimestamps(now, profile.lastLoggedIn) >= 14 * DAYS_MILLIS)
+        .map(([username]) => this.userDisplayName(username))
+    },
+    noIncomeDetails () { // group members that haven't entered their income details yet
+      return Object.entries(this.groupProfiles)
+        .filter(([username, profile]) => !profile.incomeDetailsType)
         .map(([username]) => this.userDisplayName(username))
     }
   }
