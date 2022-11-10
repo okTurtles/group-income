@@ -269,29 +269,6 @@ describe('Full walkthrough', function () {
       should(res).equal(bob.mailbox.hash())
     })
 
-    // TODO: need to implement this in a new way
-    // it("Should invite Bob to Alice's group", function (done) {
-    //   const mailbox = users.bob.mailbox
-    //   sbp('chelonia/out/actionEncrypted', {
-    //     action: 'gi.contracts/mailbox/postMessage',
-    //     data: {
-    //       from: users.bob.decryptedValue().data.attributes.username,
-    //       messageType: MAIL_TYPE_MESSAGE,
-    //       message: groups.group1.contractID()
-    //     },
-    //     contractID: mailbox.contractID(),
-    //     hooks: {
-    //       prepublish (invite: GIMessage) {
-    //         sbp('okTurtles.events/once', invite.hash(), (contractID: string, entry: GIMessage) => {
-    //           console.debug('Bob successfully got invite!')
-    //           should(entry.decryptedValue().data.message).equal(groups.group1.contractID())
-    //           done()
-    //         })
-    //       }
-    //     }
-    //   })
-    // })
-
     it('Should post an event', function () {
       return createPaymentTo(users.bob, 100, groups.group1.contractID())
     })
