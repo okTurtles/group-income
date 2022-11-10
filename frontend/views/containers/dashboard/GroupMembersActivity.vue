@@ -14,11 +14,11 @@
                 :args='{ ...LTags("strong"), streak: groupStreaks.fullMonthlyPledges }'
               ) Group has a streak of {strong_} 100% Support of {streak} months{_strong}
 
-        li.c-item-wrapper(v-if='onTimeStreakMembers.length > 0')
+        li.c-item-wrapper(v-if='onTimePayments.length > 0')
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='onTimeStreakMembers')
+              member-count-tooltip.c-member-count(:members='onTimePayments')
 
               //- Todo: discuss if tooltip better than toggle
               //- i18n.link(
@@ -48,13 +48,11 @@
               member-count-tooltip.c-member-count(:members='noIncomeDetails')
               i18n(:args='LTags("strong")') haven't {strong_} entered income details{_strong}
 
-        li.c-item-wrapper
+        li.c-item-wrapper(v-if='missedPayments.length > 0')
           .c-item
             .icon-dollar-sign.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip.c-member-count(
-                :members='["Rosalia", "Ken M", "Ines de Castro"]'
-              )
+            member-count-tooltip.c-member-count(:members='missedPayments')
               i18n(:args='LTags("strong")') have {strong_} missed payments {_strong}
 
         li.c-item-wrapper
@@ -90,10 +88,15 @@ export default ({
       'userDisplayName',
       'groupProfiles'
     ]),
-    onTimeStreakMembers () {
+    onTimePayments () {
       return Object.entries(this.groupStreaks.onTimePayments)
         .filter(([username, streak]) => streak >= 2)
         .map(([username]) => this.userDisplayName(username))
+    },
+    missedPayments () {
+      return Object.entries(this.groupStreaks.missedPayments)
+        .filter(([username, streak]) => streak >= 2)
+        .map(([username, streak]) => `${this.userDisplayName(username)} missed ${streak} payment${streak >= 2 ? 's' : ''}`)
     },
     haventLoggedIn () { // group members that haven't logged in for the past 14 days or more
       const now = new Date().toISOString()

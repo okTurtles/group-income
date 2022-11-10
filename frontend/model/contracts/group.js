@@ -159,26 +159,36 @@ function updateGroupStreaks ({ state, getters }) {
     groupIncomeAdjustedDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0
   )
 
-  // --- update 'onTimePayments' streaks for 'pledging' members of the group ---
+  // --- update payments-related streaks for 'pledging' members of the group ---
   for (const username in getters.groupProfiles) {
     if (getters.groupProfiles[username].incomeDetailsType !== 'pledgeAmount') continue
 
-    const myCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0)
+    // 1) update 'onTimePayments'
+    const myCurrentOnTimeStreak = vueFetchInitKV(streaks.onTimePayments, username, 0)
     const myPaymentsDoneInThisPeriod = thisPeriodPaymentInfo && thisPeriodPaymentInfo.paymentsFrom[username]
+    const myMissedPaymentsInThisPeriod = groupIncomeAdjustedDistribution.filter(entry => entry.from === username)
     const myPaymentHashes = []
 
     if (myPaymentsDoneInThisPeriod) {
-      Object.values(myPaymentsDoneInThisPeriod).forEach(pHashes => myPaymentHashes.concat(pHashes))
+      Object.values(myPaymentsDoneInThisPeriod).forEach(pHashes => myPaymentHashes.push(pHashes))
     }
     Vue.set(
       streaks.onTimePayments,
       username,
       // check-1. the pledger has completed all payments assigned to them for current distribution period.
       // check-2. all those payments in check-1 were done on time.
-      groupIncomeAdjustedDistribution.every(entry => entry.from !== username) &&
+      myMissedPaymentsInThisPeriod.length === 0 &&
       myPaymentHashes.every(hash => state.payments[hash] && state.payments[hash].data.isLate === false)
-        ? myCurrentStreak + 1
+        ? myCurrentOnTimeStreak + 1
         : 0
+    )
+
+    // 2) update 'missedPayments'
+    const myMissedPaymentsStreak = vueFetchInitKV(streaks.missedPayments, username, 0)
+    Vue.set(
+      streaks.missedPayments,
+      username,
+      myMissedPaymentsInThisPeriod.length >= 1 ? myMissedPaymentsStreak + 1 : 0
     )
   }
 }
@@ -480,7 +490,8 @@ sbp('chelonia/defineContract', {
           },
           streaks: {
             fullMonthlyPledges: 0,
-            onTimePayments: {} // { username: number ... }
+            onTimePayments: {}, // { username: number, ... }
+            missedPayments: {} // { username: number, ... }
           },
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)

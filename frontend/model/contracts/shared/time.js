@@ -50,6 +50,7 @@ export function periodStampGivenDate ({ recentDate, periodStart, periodLength }:
       nextPeriod = addTimeToDate(nextPeriod, periodLength)
     } while (curDate >= nextPeriod)
   }
+
   return dateToPeriodStamp(curPeriod)
 }
 
