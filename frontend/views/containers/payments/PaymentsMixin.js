@@ -19,37 +19,20 @@ const PaymentsMixin: Object = {
   },
   methods: {
     async getHistoricalPaymentsInTypes () {
-      const paymentsInTypes = {
+      const currentPaymentsInTypes = {
         sent: cloneDeep(this.ourPayments?.sent || []),
         received: cloneDeep(this.ourPayments?.received || []),
         todo: cloneDeep(this.ourPayments?.todo || [])
       }
 
-      const paymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
-      const paymentsByPeriod = await sbp('gi.db/archive/load', paymentsByPeriodKey) || {}
-      const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
-      const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
+      const historicalPaymentsInTypesKey = `paymentsInTypes/${this.ourUsername}/${this.currentGroupId}`
+      const historicalPaymentsInTypes = await sbp('gi.db/archive/load', historicalPaymentsInTypesKey) || { sent: [], received: [] }
 
-      for (const period of Object.keys(paymentsByPeriod).sort().reverse()) {
-        const { paymentsFrom } = paymentsByPeriod[period]
-        for (const fromUser of Object.keys(paymentsFrom)) {
-          for (const toUser of Object.keys(paymentsFrom[fromUser])) {
-            if (toUser === this.ourUsername || fromUser === this.ourUsername) {
-              const receivedOrSent = toUser === this.ourUsername ? 'received' : 'sent'
-              for (const hash of paymentsFrom[fromUser][toUser]) {
-                const { data, meta } = payments[hash]
-                paymentsInTypes[receivedOrSent].push({ hash, data, meta, amount: data.amount, username: toUser })
-              }
-            }
-          }
-        }
+      return {
+        sent: [...currentPaymentsInTypes.sent, ...historicalPaymentsInTypes.sent],
+        received: [...currentPaymentsInTypes.received, ...historicalPaymentsInTypes.received],
+        todo: currentPaymentsInTypes.todo
       }
-      const sortPayments = payments => payments
-        .sort((f, l) => f.meta.createdDate > l.meta.createdDate ? 1 : -1)
-      paymentsInTypes.sent = sortPayments(paymentsInTypes.sent)
-      paymentsInTypes.received = sortPayments(paymentsInTypes.received)
-
-      return paymentsInTypes
     },
     async getPaymentDetailsByPeriod (period: string) {
       let detailedPayments = {}

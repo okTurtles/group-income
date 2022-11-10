@@ -66,7 +66,7 @@ function clearOldPayments ({ contractID, state, getters }) {
   const archivingPayments = { paymentsByPeriod: {}, payments: {} }
   while (sortedPeriodKeys.length > MAX_SAVED_PERIODS) {
     const period = sortedPeriodKeys.shift()
-    archivingPayments.paymentsByPeriod[period] = state.paymentsByPeriod[period]
+    archivingPayments.paymentsByPeriod[period] = cloneDeep(state.paymentsByPeriod[period])
     for (const paymentHash of getters.paymentHashesForPeriod(period)) {
       archivingPayments.payments[paymentHash] = cloneDeep(state.payments[paymentHash])
       Vue.delete(state.payments, paymentHash)
@@ -1142,8 +1142,33 @@ sbp('chelonia/defineContract', {
           delete archPaymentsByPeriod[shouldBeDeletedPeriod]
         }
 
+        const archPaymentsInTypesKey = `paymentsInTypes/${username}/${contractID}`
+        const archPaymentsInTypes = await sbp('gi.db/archive/load', archPaymentsInTypesKey) || { sent: [], received: [] }
+
+        const newPaymentsInTypes = { sent: [], received: [] }
+        for (const period of Object.keys(paymentsByPeriod).sort().reverse()) {
+          const { paymentsFrom } = paymentsByPeriod[period]
+          for (const fromUser of Object.keys(paymentsFrom)) {
+            for (const toUser of Object.keys(paymentsFrom[fromUser])) {
+              if (toUser === username || fromUser === username) {
+                const receivedOrSent = toUser === username ? 'received' : 'sent'
+                for (const hash of paymentsFrom[fromUser][toUser]) {
+                  const { data, meta } = payments[hash]
+                  newPaymentsInTypes[receivedOrSent].push({ hash, data, meta, amount: data.amount, username: toUser })
+                }
+              }
+            }
+          }
+        }
+
+        const sortPayments = payments => payments
+          .sort((f, l) => f.meta.createdDate < l.meta.createdDate ? 1 : -1)
+        archPaymentsInTypes.sent = [...sortPayments(newPaymentsInTypes.sent), ...archPaymentsInTypes.sent]
+        archPaymentsInTypes.received = [...sortPayments(newPaymentsInTypes.received), ...archPaymentsInTypes.received]
+
         await sbp('gi.db/archive/save', archPaymentsByPeriodKey, archPaymentsByPeriod)
         await sbp('gi.db/archive/save', archPaymentsKey, archPayments)
+        await sbp('gi.db/archive/save', archPaymentsInTypesKey, archPaymentsInTypes)
       }
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
     }
