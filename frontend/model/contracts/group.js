@@ -1128,22 +1128,11 @@ sbp('chelonia/defineContract', {
         const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
         const archPaymentsKey = `payments/${username}/${contractID}`
         let archPayments = await sbp('gi.db/archive/load', archPaymentsKey) || {}
+        const archPaymentsInTypesKey = `paymentsInTypes/${username}/${contractID}`
+        const archPaymentsInTypes = await sbp('gi.db/archive/load', archPaymentsInTypesKey) || { sent: [], received: [] }
 
         archPaymentsByPeriod[period] = paymentsByPeriod[period]
         archPayments = merge(archPayments, payments)
-
-        while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
-          const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift()
-          const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod])
-
-          for (const hash of paymentHashes) {
-            delete archPayments[hash]
-          }
-          delete archPaymentsByPeriod[shouldBeDeletedPeriod]
-        }
-
-        const archPaymentsInTypesKey = `paymentsInTypes/${username}/${contractID}`
-        const archPaymentsInTypes = await sbp('gi.db/archive/load', archPaymentsInTypesKey) || { sent: [], received: [] }
 
         const newPaymentsInTypes = { sent: [], received: [] }
         for (const period of Object.keys(paymentsByPeriod).sort().reverse()) {
@@ -1159,6 +1148,19 @@ sbp('chelonia/defineContract', {
               }
             }
           }
+        }
+
+        while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
+          const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift()
+          const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod])
+
+          for (const hash of paymentHashes) {
+            delete archPayments[hash]
+          }
+          delete archPaymentsByPeriod[shouldBeDeletedPeriod]
+
+          archPaymentsInTypes.sent = archPaymentsInTypes.sent.filter(payment => !paymentHashes.includes(payment.hash))
+          archPaymentsInTypes.received = archPaymentsInTypes.received.filter(payment => !paymentHashes.includes(payment.hash))
         }
 
         const sortPayments = payments => payments

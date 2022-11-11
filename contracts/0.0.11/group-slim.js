@@ -1725,18 +1725,10 @@ ${this.getErrorInfo()}`;
           const archPaymentsByPeriod = await (0, import_sbp3.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {};
           const archPaymentsKey = `payments/${username}/${contractID}`;
           let archPayments = await (0, import_sbp3.default)("gi.db/archive/load", archPaymentsKey) || {};
-          archPaymentsByPeriod[period] = paymentsByPeriod[period];
-          archPayments = merge(archPayments, payments);
-          while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
-            const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift();
-            const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod]);
-            for (const hash of paymentHashes) {
-              delete archPayments[hash];
-            }
-            delete archPaymentsByPeriod[shouldBeDeletedPeriod];
-          }
           const archPaymentsInTypesKey = `paymentsInTypes/${username}/${contractID}`;
           const archPaymentsInTypes = await (0, import_sbp3.default)("gi.db/archive/load", archPaymentsInTypesKey) || { sent: [], received: [] };
+          archPaymentsByPeriod[period] = paymentsByPeriod[period];
+          archPayments = merge(archPayments, payments);
           const newPaymentsInTypes = { sent: [], received: [] };
           for (const period2 of Object.keys(paymentsByPeriod).sort().reverse()) {
             const { paymentsFrom } = paymentsByPeriod[period2];
@@ -1751,6 +1743,16 @@ ${this.getErrorInfo()}`;
                 }
               }
             }
+          }
+          while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
+            const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift();
+            const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod]);
+            for (const hash of paymentHashes) {
+              delete archPayments[hash];
+            }
+            delete archPaymentsByPeriod[shouldBeDeletedPeriod];
+            archPaymentsInTypes.sent = archPaymentsInTypes.sent.filter((payment) => !paymentHashes.includes(payment.hash));
+            archPaymentsInTypes.received = archPaymentsInTypes.received.filter((payment) => !paymentHashes.includes(payment.hash));
           }
           const sortPayments = (payments2) => payments2.sort((f, l) => f.meta.createdDate < l.meta.createdDate ? 1 : -1);
           archPaymentsInTypes.sent = [...sortPayments(newPaymentsInTypes.sent), ...archPaymentsInTypes.sent];
