@@ -144,11 +144,17 @@ function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boo
 }
 
 function updateGroupStreaks ({ state, getters }) {
-  const {
-    groupIncomeAdjustedDistribution,
-    thisPeriodPaymentInfo
-  } = sbp('state/vuex/getters')
   const streaks = state.streaks
+  const cPeriod = getters.groupSettings.distributionDate
+  const thisPeriodPayments = getters.paymentsForPeriod(cPeriod)
+  const thisPeriodDistribution = adjustedDistribution({
+    distribution: unadjustedDistribution({
+      haveNeeds: getters.haveNeedsForThisPeriod(cPeriod),
+      minimize: getters.groupSettings.minimizeDistribution
+    }) || [],
+    payments: getters.paymentsForPeriod(cPeriod),
+    dueOn: getters.dueDateForPeriod(cPeriod)
+  })
 
   // --- update 'fullMonthlyPledgesCount' streak ---
   // if the group has made 100% pledges in this period, +1 the streak value.
@@ -156,30 +162,24 @@ function updateGroupStreaks ({ state, getters }) {
   Vue.set(
     streaks,
     'fullMonthlyPledges',
-    groupIncomeAdjustedDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0
+    thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0
   )
 
-  // --- update payments-related streaks for 'pledging' members of the group ---
+  // --- update 'onTimePayments' streaks for 'pledging' members of the group ---
+  const filterMyItems = (array, username) => array.filter(item => item.from === username)
   for (const username in getters.groupProfiles) {
     if (getters.groupProfiles[username].incomeDetailsType !== 'pledgeAmount') continue
 
-    // 1) update 'onTimePayments'
-    const myCurrentOnTimeStreak = vueFetchInitKV(streaks.onTimePayments, username, 0)
-    const myPaymentsDoneInThisPeriod = thisPeriodPaymentInfo && thisPeriodPaymentInfo.paymentsFrom[username]
-    const myMissedPaymentsInThisPeriod = groupIncomeAdjustedDistribution.filter(entry => entry.from === username)
-    const myPaymentHashes = []
-
-    if (myPaymentsDoneInThisPeriod) {
-      Object.values(myPaymentsDoneInThisPeriod).forEach(pHashes => myPaymentHashes.push(pHashes))
-    }
+    const myCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0)
+    const myMissedPaymentsInThisPeriod = filterMyItems(thisPeriodDistribution, username)
     Vue.set(
       streaks.onTimePayments,
       username,
-      // check-1. the pledger has completed all payments assigned to them for current distribution period.
+      // check-1. if I've made all the pledgeds assigned to me in this period.
       // check-2. all those payments in check-1 were done on time.
       myMissedPaymentsInThisPeriod.length === 0 &&
-      myPaymentHashes.every(hash => state.payments[hash] && state.payments[hash].data.isLate === false)
-        ? myCurrentOnTimeStreak + 1
+      filterMyItems(thisPeriodPayments, username).every(p => p.isLate === false)
+        ? myCurrentStreak + 1
         : 0
     )
 
