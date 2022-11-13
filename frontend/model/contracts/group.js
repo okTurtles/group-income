@@ -491,7 +491,8 @@ sbp('chelonia/defineContract', {
           streaks: {
             fullMonthlyPledges: 0,
             onTimePayments: {}, // { username: number, ... }
-            missedPayments: {} // { username: number, ... }
+            missedPayments: {}, // { username: number, ... }
+            noVotes: {} // { username: number, ... }
           },
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
@@ -707,6 +708,8 @@ sbp('chelonia/defineContract', {
           // handles proposal pass or fail, will update proposal.status accordingly
           proposals[proposal.data.proposalType][result](state, message)
           Vue.set(proposal, 'dateClosed', meta.createdDate)
+
+          // TODO: update 'streaks.noVotes'
         }
       },
       sideEffect ({ contractID, data, meta }, { state, getters }) {
