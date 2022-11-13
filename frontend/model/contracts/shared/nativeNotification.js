@@ -22,16 +22,12 @@ export async function requestNotificationPermission (force: boolean = false): Pr
 export function makeNotification ({ title, body, icon, path }: {
   title: string, body: string, icon?: string, path?: string
 }): void {
-  const notificationEnabled = sbp('state/vuex/state').notificationEnabled
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted' || !notificationEnabled) {
-    return
-  }
-
-  const notification = new Notification(title, { body, icon })
-  if (path) {
-    notification.onclick = function (event) {
-      event.preventDefault()
-      sbp('controller/router').push({ path }).catch(console.warn)
+  if (Notification?.permission === 'granted' && sbp('state/vuex/settings').notificationEnabled) {
+    const notification = new Notification(title, { body, icon })
+    if (path) {
+      notification.onclick = function (event) {
+        sbp('controller/router').push({ path }).catch(console.warn)
+      }
     }
   }
 }

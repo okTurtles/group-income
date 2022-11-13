@@ -14,7 +14,7 @@ import { INVITE_INITIAL_CREATOR, INVITE_EXPIRES_IN_DAYS, MAIL_TYPE_MESSAGE, PROP
 import { createInvite } from '~/frontend/model/contracts/shared/functions.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
-import { THEME_LIGHT } from '~/frontend/utils/themes.js'
+import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
 import manifests from '~/frontend/model/contracts/manifests.json'
 
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
