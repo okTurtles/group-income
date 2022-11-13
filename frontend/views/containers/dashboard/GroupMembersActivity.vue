@@ -104,9 +104,7 @@ export default ({
   computed: {
     ...mapGetters([
       'groupStreaks',
-      'globalProfile',
-      'haveNeedsForThisPeriod',
-      'currentPaymentPeriod'
+      'globalProfile'
     ]),
     onTimeStreaks () {
       const membersOnStreak = []
@@ -126,11 +124,6 @@ export default ({
             tooltipText: len === 1 ? this.L(`${len} member`) : this.L(`${len} members`)
           }
     }
-  },
-  mounted () {
-    const haveNeeds = this.haveNeedsForThisPeriod(this.currentPaymentPeriod)
-
-    console.log('this period haveNeeds: ', haveNeeds)
   }
 }: Object)
 
