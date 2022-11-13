@@ -41,6 +41,8 @@ import './utils/touchInteractions.js'
 
 const { Vue, L } = Common
 
+document.getElementById('fallback')?.remove()
+
 console.info('GI_VERSION:', process.env.GI_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
@@ -69,6 +71,7 @@ async function startApp () {
       'chelonia/db/set',
       'state/vuex/state',
       'state/vuex/getters',
+      'state/vuex/settings',
       'gi.db/settings/save'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
@@ -100,7 +103,7 @@ async function startApp () {
       defaults: {
         modules: { '@common/common.js': Common },
         allowedSelectors: [
-          'state/vuex/state', 'state/vuex/commit', 'state/vuex/getters',
+          'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/contract/sync', 'chelonia/contract/remove', 'controller/router',
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
           'gi.actions/chatroom/leave', 'gi.notifications/emit'

@@ -7,35 +7,17 @@ import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
-import Colors from './colors.js'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
-import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
+import settingsModule, { defaultSettings } from '~/frontend/model/settings/vuexModule.js'
 
 Vue.use(Vuex)
-
-const checkSystemColor = () => {
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches
-    ? THEME_DARK
-    : THEME_LIGHT
-}
-
-const defaultTheme = 'system'
-const defaultColor = checkSystemColor()
-
-if (window.matchMedia) {
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    if (store.state.theme === 'system') {
-      store.commit('setTheme', 'system')
-    }
-  })
-}
 
 const initialState = {
   currentGroupId: null,
@@ -45,16 +27,15 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
-  theme: defaultTheme,
-  themeColor: defaultColor,
-  reducedMotion: false,
-  notificationEnabled: true,
-  increasedContrast: false,
-  fontSize: 16,
-  appLogsFilter: process.env.NODE_ENV === 'development'
-    ? ['error', 'warn', 'info', 'debug', 'log']
-    : ['error', 'warn', 'info']
+  namespaceLookups: Object.create(null) // { [username]: sbp('namespace/lookup') }
+}
+
+if (window.matchMedia) {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (sbp('state/vuex/getters').theme === 'system') {
+      store.commit('setTheme', 'system')
+    }
+  })
 }
 
 const reactiveDate = Vue.observable({ date: new Date() })
@@ -72,11 +53,16 @@ sbp('sbp/selectors/register', {
   'state/vuex/replace': (state) => store.replaceState(state),
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/getters': () => store.getters,
+  'state/vuex/settings': () => store.state.settings,
   'state/vuex/postUpgradeVerification': function (state: Object) {
     // Note: Update this function when renaming a Vuex module, or implementing a new one,
     // or adding new settings to the initialState above
     if (!state.notifications) {
       state.notifications = []
+    }
+    if (!state.settings) {
+      // Using cloneDeep() ensures we get a new object every time.
+      state.settings = cloneDeep(defaultSettings)
     }
     if (!state.currentChatRoomIDs) {
       state.currentChatRoomIDs = {}
@@ -126,32 +112,6 @@ const mutations = {
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
-  },
-  setTheme (state, theme) {
-    state.theme = theme
-    state.themeColor = theme === 'system' ? checkSystemColor() : theme
-  },
-  setReducedMotion (state, isChecked) {
-    state.reducedMotion = isChecked
-  },
-  setTemporaryReducedMotion (state) {
-    const tempSettings = state.reducedMotion
-    state.reducedMotion = true
-    setTimeout(() => {
-      state.reducedMotion = tempSettings
-    }, 300)
-  },
-  setNotificationEnabled (state, enabled) {
-    state.notificationEnabled = enabled
-  },
-  setIncreasedContrast (state, isChecked) {
-    state.increasedContrast = isChecked
-  },
-  setFontSize (state, fontSize) {
-    state.fontSize = fontSize
-  },
-  setAppLogsFilters (state, filters) {
-    state.appLogsFilter = filters
   },
   setCurrentChatRoomId (state, { groupId, chatRoomId }) {
     if (groupId && state[groupId] && chatRoomId) { // useful when initialize when syncing in another device
@@ -543,18 +503,6 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
-  colors (state) {
-    return Colors[state.themeColor]
-  },
-  fontSize (state) {
-    return state.fontSize
-  },
-  theme (state) {
-    return state.theme
-  },
-  isDarkTheme (state) {
-    return state.themeColor === THEME_DARK
-  },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
   },
@@ -623,7 +571,8 @@ const store: any = new Vuex.Store({
   mutations,
   getters,
   modules: {
-    notifications: notificationModule
+    notifications: notificationModule,
+    settings: settingsModule
   },
   strict: false // we're intentionally modifying state outside of commits
 })

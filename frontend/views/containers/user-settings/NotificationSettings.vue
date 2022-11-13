@@ -9,7 +9,6 @@
         label
           i18n.sr-only Notification Permission
           input.switch(
-            ref='permission'
             type='checkbox'
             name='switch'
             :checked='granted'
@@ -18,7 +17,7 @@
 </template>
 
 <script>
-import { mapState, mapMutations } from 'vuex'
+import { mapMutations } from 'vuex'
 import { L } from '@common/common.js'
 import {
   requestNotificationPermission,
@@ -36,7 +35,9 @@ export default ({
     this.granted = Notification?.permission === 'granted' && this.notificationEnabled
   },
   computed: {
-    ...mapState(['notificationEnabled'])
+    notificationEnabled () {
+      return this.$store.state.settings.notificationEnabled
+    }
   },
   methods: {
     ...mapMutations([
@@ -45,15 +46,14 @@ export default ({
     async handleNotificationSettings (e) {
       let permission = Notification?.permission
 
-      if (permission === 'default') {
+      if (permission === 'default' && e.target.checked) {
         permission = await requestNotificationPermission(true)
       } else if (permission === 'denied') {
         alert(L('Sorry, you should reset browser notification permission again.'))
       }
 
-      this.$refs.permission.checked = this.granted = e.target.checked && permission === 'granted'
+      e.target.checked = this.granted = e.target.checked && permission === 'granted'
       this.setNotificationEnabled(this.granted)
-
       if (this.granted) {
         makeNotification({
           title: L('Congratulations'),
