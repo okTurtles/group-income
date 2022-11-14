@@ -19,19 +19,20 @@ const PaymentsMixin: Object = {
   },
   methods: {
     async getHistoricalPaymentsInTypes () {
-      const currentPaymentsInTypes = {
+      const recentSentOrReceivedPayments = {
         sent: cloneDeep(this.ourPayments?.sent || []),
         received: cloneDeep(this.ourPayments?.received || []),
         todo: cloneDeep(this.ourPayments?.todo || [])
       }
 
-      const historicalPaymentsInTypesKey = `paymentsInTypes/${this.ourUsername}/${this.currentGroupId}`
-      const historicalPaymentsInTypes = await sbp('gi.db/archive/load', historicalPaymentsInTypesKey) || { sent: [], received: [] }
+      const historicalSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${this.ourUsername}/${this.currentGroupId}`
+      const historicalSentOrReceivedPayments = await sbp('gi.db/archive/load', historicalSentOrReceivedPaymentsKey) ||
+        { sent: [], received: [] }
 
       return {
-        sent: [...currentPaymentsInTypes.sent, ...historicalPaymentsInTypes.sent],
-        received: [...currentPaymentsInTypes.received, ...historicalPaymentsInTypes.received],
-        todo: currentPaymentsInTypes.todo
+        sent: [...recentSentOrReceivedPayments.sent, ...historicalSentOrReceivedPayments.sent],
+        received: [...recentSentOrReceivedPayments.received, ...historicalSentOrReceivedPayments.received],
+        todo: recentSentOrReceivedPayments.todo
       }
     },
     async getPaymentDetailsByPeriod (period: string) {

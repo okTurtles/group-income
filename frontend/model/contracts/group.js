@@ -1128,13 +1128,13 @@ sbp('chelonia/defineContract', {
         const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
         const archPaymentsKey = `payments/${username}/${contractID}`
         let archPayments = await sbp('gi.db/archive/load', archPaymentsKey) || {}
-        const archPaymentsInTypesKey = `paymentsInTypes/${username}/${contractID}`
-        const archPaymentsInTypes = await sbp('gi.db/archive/load', archPaymentsInTypesKey) || { sent: [], received: [] }
+        const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`
+        const archSentOrReceivedPayments = await sbp('gi.db/archive/load', archSentOrReceivedPaymentsKey) || { sent: [], received: [] }
 
         archPaymentsByPeriod[period] = paymentsByPeriod[period]
         archPayments = merge(archPayments, payments)
 
-        const newPaymentsInTypes = { sent: [], received: [] }
+        const newSentOrReceivedPayments = { sent: [], received: [] }
         for (const period of Object.keys(paymentsByPeriod).sort().reverse()) {
           const { paymentsFrom } = paymentsByPeriod[period]
           for (const fromUser of Object.keys(paymentsFrom)) {
@@ -1143,7 +1143,7 @@ sbp('chelonia/defineContract', {
                 const receivedOrSent = toUser === username ? 'received' : 'sent'
                 for (const hash of paymentsFrom[fromUser][toUser]) {
                   const { data, meta } = payments[hash]
-                  newPaymentsInTypes[receivedOrSent].push({ hash, data, meta, amount: data.amount, username: toUser })
+                  newSentOrReceivedPayments[receivedOrSent].push({ hash, data, meta, amount: data.amount, username: toUser })
                 }
               }
             }
@@ -1159,18 +1159,18 @@ sbp('chelonia/defineContract', {
           }
           delete archPaymentsByPeriod[shouldBeDeletedPeriod]
 
-          archPaymentsInTypes.sent = archPaymentsInTypes.sent.filter(payment => !paymentHashes.includes(payment.hash))
-          archPaymentsInTypes.received = archPaymentsInTypes.received.filter(payment => !paymentHashes.includes(payment.hash))
+          archSentOrReceivedPayments.sent = archSentOrReceivedPayments.sent.filter(payment => !paymentHashes.includes(payment.hash))
+          archSentOrReceivedPayments.received = archSentOrReceivedPayments.received.filter(payment => !paymentHashes.includes(payment.hash))
         }
 
         const sortPayments = payments => payments
           .sort((f, l) => f.meta.createdDate < l.meta.createdDate ? 1 : -1)
-        archPaymentsInTypes.sent = [...sortPayments(newPaymentsInTypes.sent), ...archPaymentsInTypes.sent]
-        archPaymentsInTypes.received = [...sortPayments(newPaymentsInTypes.received), ...archPaymentsInTypes.received]
+        archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent]
+        archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received]
 
         await sbp('gi.db/archive/save', archPaymentsByPeriodKey, archPaymentsByPeriod)
         await sbp('gi.db/archive/save', archPaymentsKey, archPayments)
-        await sbp('gi.db/archive/save', archPaymentsInTypesKey, archPaymentsInTypes)
+        await sbp('gi.db/archive/save', archSentOrReceivedPaymentsKey, archSentOrReceivedPayments)
       }
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
     }
