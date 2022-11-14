@@ -9183,7 +9183,6 @@
   var isEmpty = (v) => v === EMPTY_VALUE;
   var isNil = (v) => v === null;
   var isUndef2 = (v) => typeof v === "undefined";
-  var isBoolean2 = (v) => typeof v === "boolean";
   var isString = (v) => typeof v === "string";
   var isObject2 = (v) => !isNil(v) && typeof v === "object";
   var isFunction = (v) => typeof v === "function";
@@ -9288,13 +9287,6 @@ ${this.getErrorInfo()}`;
     throw validatorError(undef, value, _scope);
   }
   undef.type = () => "void";
-  var boolean = function boolean2(value, _scope = "") {
-    if (isEmpty(value))
-      return false;
-    if (isBoolean2(value))
-      return value;
-    throw validatorError(boolean2, value, _scope);
-  };
   var string = function string2(value, _scope = "") {
     if (isEmpty(value))
       return "";
@@ -9356,17 +9348,17 @@ ${this.getErrorInfo()}`;
           }
         }
       },
-      "gi.contracts/mailbox/setAutoJoinAllowance": {
+      "gi.contracts/mailbox/setAttributes": {
         validate: (data, { state, meta }) => {
-          objectOf({ allownace: boolean })(data);
           if (state.attributes.creator !== meta.username) {
             throw new TypeError(L("Only the mailbox creator can set attributes."));
-          } else if (state.attributes === data.allownace) {
-            throw new TypeError(L("Same attribute is already set."));
           }
+          object(data);
         },
         process({ meta, data }, { state }) {
-          vue_esm_default.set(state.attributes, "autoJoinAllowance", data.allownace);
+          for (const key in data) {
+            vue_esm_default.set(state.attributes, key, data[key]);
+          }
         }
       },
       "gi.contracts/mailbox/createDirectMessage": {

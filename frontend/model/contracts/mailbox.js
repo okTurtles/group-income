@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
 import { leaveChatRoom } from './shared/functions.js'
-import { objectOf, string, boolean, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { object, objectOf, string, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 sbp('chelonia/defineContract', {
@@ -16,6 +16,8 @@ sbp('chelonia/defineContract', {
       identityContractID: optional(string) // action creator identityContractID
     }),
     create () {
+      // NOTE: mailbox contract is created before user logs in and also registers either.
+      // so username and identityContractID could be undefined at this time
       if (!sbp('state/vuex/state').loggedIn) {
         return { createdDate: new Date().toISOString() }
       }
@@ -45,17 +47,17 @@ sbp('chelonia/defineContract', {
         }
       }
     },
-    'gi.contracts/mailbox/setAutoJoinAllowance': {
+    'gi.contracts/mailbox/setAttributes': {
       validate: (data, { state, meta }) => {
-        objectOf({ allownace: boolean })(data)
         if (state.attributes.creator !== meta.username) {
           throw new TypeError(L('Only the mailbox creator can set attributes.'))
-        } else if (state.attributes === data.allownace) {
-          throw new TypeError(L('Same attribute is already set.'))
         }
+        object(data)
       },
       process ({ meta, data }, { state }) {
-        Vue.set(state.attributes, 'autoJoinAllowance', data.allownace)
+        for (const key in data) {
+          Vue.set(state.attributes, key, data[key])
+        }
       }
     },
     'gi.contracts/mailbox/createDirectMessage': {

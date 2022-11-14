@@ -489,7 +489,7 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
-  groupMembers (state, getters) {
+  globalProfilesForGroup (state, getters) {
     return contractID => {
       const profiles = state[contractID]?.profiles || {}
       return Object.keys(profiles).map(username => {
@@ -500,14 +500,15 @@ const getters = {
   ourContactProfiles (state, getters) {
     const profiles = {}
     const allProfiles = getters.groupsByName
-      .map(({ groupName, contractID }) => getters.groupMembers(contractID))
+      .map(({ groupName, contractID }) => getters.globalProfilesForGroup(contractID))
       .flat()
-    const profilesSet = allProfiles
-      .filter((profile, pos) => profile && profile.username !== getters.ourUsername &&
-        allProfiles.findIndex(p => p.username === profile.username) === pos)
-    for (const profile of profilesSet) {
-      profiles[profile.username] = profile
-    }
+
+    allProfiles.forEach((profile, pos) => {
+      if (profile && profile.username !== getters.ourUsername &&
+        allProfiles.findIndex(p => p.username === profile.username) === pos) {
+        profiles[profile.username] = profile
+      }
+    })
     return profiles
   },
   ourContacts (state, getters) {
