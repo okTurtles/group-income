@@ -550,6 +550,9 @@ const getters = {
   currentChatVolatile (state, getters) {
     return state?.[getters.currentChatRoomId]?._volatile || null
   },
+  currentChatVm (state, getters) {
+    return state?.[getters.currentChatRoomId]?._vm || null
+  },
   currentChatRoomScrollPosition (state, getters) {
     return state.chatRoomScrollPosition[getters.currentChatRoomId] // undefined means to the latest
   },

@@ -190,7 +190,7 @@ export default (sbp('sbp/selectors/register', {
     if (!state._vm) state._vm = Object.create(null)
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
-        const keys = { ...env.additionalKeys, ...state._volatile?.keys }
+        const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
         state._vm.authorizedKeys = keysToMap(v.keys)
 
         for (const key of v.keys) {
@@ -246,7 +246,7 @@ export default (sbp('sbp/selectors/register', {
         }
         const targetState = cheloniaState[v.contractID]
 
-        const keys = { ...env.additionalKeys, ...state._volatile?.keys }
+        const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
 
         const sharedKeys = Object.create(null)
 
@@ -256,8 +256,8 @@ export default (sbp('sbp/selectors/register', {
               try {
                 const decrypted = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
                 sharedKeys[key.id] = decrypted
-                if (env.additionalKeys) {
-                  env.additionalKeys[key.id] = decrypted
+                if (config.transientSecretKeys) {
+                  config.transientSecretKeys[key.id] = decrypted
                 }
               } catch (e) {
                 console.error(`OP_KEYSHARE decryption error '${e.message || e}':`, e)
@@ -265,19 +265,22 @@ export default (sbp('sbp/selectors/register', {
             }
           }
         }
-        new Promise((resolve) => {
+        new Promise((resolve, reject) => {
           if (targetState._volatile?.pendingKeys) {
             sbp('chelonia/contract/removeImmediately', v.contractID)
             // Sync...
-            resolve(sbp('chelonia/withEnv', v.contractID, {
-              ...env,
-              additionalKeys: {
+            sbp('chelonia/configure', {
+              transientSecretKeys: {
                 ...keys,
                 ...sharedKeys
               }
-            }, [
-              'chelonia/private/in/syncContract', v.contractID
-            ]))
+            }).then(() =>
+              resolve(sbp('chelonia/withEnv', v.contractID, {
+                ...env
+              }, [
+                'chelonia/private/in/syncContract', v.contractID
+              ]))
+            ).catch(reject)
           } else {
             resolve()
           }
@@ -338,7 +341,7 @@ export default (sbp('sbp/selectors/register', {
         state._vm.props[v.key] = v.value
       },
       [GIMessage.OP_KEY_ADD] (v: GIOpKeyAdd) {
-        const keys = { ...env.additionalKeys, ...state._volatile?.keys }
+        const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
         if (!state._vm.authorizedKeys) state._vm.authorizedKeys = {}
         // Order is so that KEY_ADD doesn't overwrite existing keys
         state._vm.authorizedKeys = { ...keysToMap(v), ...state._vm.authorizedKeys }
@@ -388,7 +391,7 @@ export default (sbp('sbp/selectors/register', {
 
     // Signature verification
     // TODO: Temporary. Skip verifying default signatures
-    if (isNaN(1) && signature.type !== 'default') {
+    if (isNaN(NaN) && signature.type !== 'default') {
       // This sync code has potential issues
       // The first issue is that it can deadlock if there are circular references
       // The second issue is that it doesn't handle key rotation. If the key used for signing is invalidated / removed from the originating contract, we won't have it in the state
@@ -567,7 +570,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       preHandleEvent && await preHandleEvent(message)
       // verify we're expecting to hear from this contract
-      if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
+      if (isNaN(1) && !state.pending.includes(contractID) && !state.contracts[contractID]) {
         console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
         throw new ChelErrorUnexpected()
       }

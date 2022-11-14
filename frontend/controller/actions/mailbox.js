@@ -29,12 +29,14 @@ export default (sbp('sbp/selectors/register', {
       const CSKs = encrypt(CEK, serializeKey(CSK, true))
       const CEKs = encrypt(CEK, serializeKey(CEK, true))
 
-      const mailbox = await sbp('chelonia/withEnv', '', {
-        additionalKeys: {
+      await sbp('chelonia/configure', {
+        transientSecretKeys: {
           [CSKid]: CSK,
           [CEKid]: CEK
         }
-      }, ['chelonia/out/registerContract', {
+      })
+
+      const mailbox = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/mailbox',
         publishOptions,
         signingKeyId: CSKid,
@@ -69,11 +71,11 @@ export default (sbp('sbp/selectors/register', {
           }
         ],
         data
-      }])
+      })
       console.log('gi.actions/mailbox/create', { mailbox })
       const contractID = mailbox.contractID()
       if (sync) {
-        await sbp('chelonia/withEnv', contractID, { additionalKeys: { [CEKid]: CEK } }, ['chelonia/contract/sync', contractID])
+        await sbp('chelonia/contract/sync', contractID)
       }
       return mailbox
     } catch (e) {

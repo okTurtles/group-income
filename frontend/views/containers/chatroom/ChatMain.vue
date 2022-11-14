@@ -191,7 +191,8 @@ export default ({
       'currentChatRoomUnreadSince',
       'currentGroupNotifications',
       'currentChatRoomUnreadMentions',
-      'currentChatVolatile'
+      'currentChatVolatile',
+      'currentChatVm'
     ]),
     currentUserAttr () {
       return {
@@ -408,7 +409,8 @@ export default ({
         users: cloneDeep(this.chatRoomUsers),
         messages: initialize ? [] : this.messages,
         saveMessage: true,
-        _volatile: cloneDeep(this.currentChatVolatile)
+        _volatile: cloneDeep(this.currentChatVolatile),
+        _vm: cloneDeep(this.currentChatVm)
       }
     },
     async renderMoreMessages (refresh = false) {

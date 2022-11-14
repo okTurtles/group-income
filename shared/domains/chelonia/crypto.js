@@ -10,6 +10,13 @@ export const EDWARDS25519SHA512BATCH = 'edwards25519sha512batch'
 export const CURVE25519XSALSA20POLY1305 = 'curve25519xsalsa20poly1305'
 export const XSALSA20POLY1305 = 'xsalsa20poly1305'
 
+const bytesOrObjectToB64 = (ary: Object | Uint8Array) => {
+  if (ary instanceof Uint8Array) {
+    return bytesToB64(ary)
+  }
+  return bytesToB64(new Uint8Array(((Object.values(ary): any[]): number[])))
+}
+
 export type Key = {
   type: string;
   secretKey?: any;
@@ -52,7 +59,7 @@ export const keygen = (type: string): Key => {
   throw new Error('Unsupported key type')
 }
 export const generateSalt = (): string => {
-  return bytesToB64(nacl.randomBytes(18))
+  return bytesOrObjectToB64(nacl.randomBytes(18))
 }
 export const deriveKeyFromPassword = (type: string, password: string, salt: string): Promise<Key> => {
   if (![EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305].includes(type)) {
@@ -101,7 +108,7 @@ export const serializeKey = (key: Key, saveSecretKey: boolean): string => {
 
       return JSON.stringify({
         type: key.type,
-        publicKey: bytesToB64(key.publicKey)
+        publicKey: bytesOrObjectToB64(key.publicKey)
       })
     }
 
@@ -111,7 +118,7 @@ export const serializeKey = (key: Key, saveSecretKey: boolean): string => {
 
     return JSON.stringify({
       type: key.type,
-      secretKey: bytesToB64(key.secretKey)
+      secretKey: bytesOrObjectToB64(key.secretKey)
     })
   } else if (key.type === XSALSA20POLY1305) {
     if (!saveSecretKey) {
@@ -124,7 +131,7 @@ export const serializeKey = (key: Key, saveSecretKey: boolean): string => {
 
     return JSON.stringify({
       type: key.type,
-      secretKey: bytesToB64(key.secretKey)
+      secretKey: bytesOrObjectToB64(key.secretKey)
     })
   }
 
@@ -212,7 +219,7 @@ export const sign = (inKey: Key | string, data: string): string => {
 
   const messageUint8 = strToBuf(data)
   const signature = nacl.sign.detached(messageUint8, key.secretKey)
-  const base64Signature = bytesToB64(signature)
+  const base64Signature = bytesOrObjectToB64(signature)
 
   return base64Signature
 }
@@ -254,7 +261,7 @@ export const encrypt = (inKey: Key | string, data: string): string => {
     fullMessage.set(nonce)
     fullMessage.set(box, nonce.length)
 
-    const base64FullMessage = bytesToB64(fullMessage)
+    const base64FullMessage = bytesOrObjectToB64(fullMessage)
 
     return base64FullMessage
   } else if (key.type === CURVE25519XSALSA20POLY1305) {
@@ -275,7 +282,7 @@ export const encrypt = (inKey: Key | string, data: string): string => {
     fullMessage.set(nonce, nacl.box.publicKeyLength)
     fullMessage.set(box, nacl.box.publicKeyLength + nonce.length)
 
-    const base64FullMessage = bytesToB64(fullMessage)
+    const base64FullMessage = bytesOrObjectToB64(fullMessage)
 
     return base64FullMessage
   }

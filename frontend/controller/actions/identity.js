@@ -140,13 +140,16 @@ export default (sbp('sbp/selectors/register', {
     let userID
     // next create the identity contract itself and associate it with the mailbox
     try {
-      const user = await sbp('chelonia/withEnv', '', {
-        additionalKeys: {
+      await sbp('chelonia/configure', {
+        transientSecretKeys: {
           [IPKid]: IPK,
+          [IEKid]: IEK,
           [CSKid]: CSK,
           [CEKid]: CEK
         }
-      }, ['chelonia/out/registerContract', {
+      })
+
+      const user = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/identity',
         publishOptions,
         signingKeyId: IPKid,
@@ -201,17 +204,17 @@ export default (sbp('sbp/selectors/register', {
             }
           }
         ]
-      }])
+      })
 
       userID = user.contractID()
 
-      await sbp('chelonia/withEnv', userID, { additionalKeys: { [IEKid]: IEK } }, ['chelonia/contract/sync', userID])
-      await sbp('chelonia/withEnv', userID, { additionalKeys: { [IEKid]: IEK } }, ['gi.actions/identity/setAttributes', {
+      await sbp('chelonia/contract/sync', userID)
+      await sbp('gi.actions/identity/setAttributes', {
         contractID: userID,
         data: { mailbox: mailboxID },
         signingKeyId: CSKid,
         encryptionKeyId: CEKid
-      }])
+      })
 
       await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID: mailboxID })
     } catch (e) {
@@ -348,7 +351,7 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Invalid username or password'))
     }
 
-    const additionalKeys = password
+    const transientSecretKeys = password
       ? await (async () => {
         const salt = await sbp('gi.actions/identity/retrieveSalt', username, password)
         const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
@@ -376,9 +379,10 @@ export default (sbp('sbp/selectors/register', {
       }
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, username)
       sbp('state/vuex/commit', 'login', { username, identityContractID })
+      await sbp('chelonia/configure', { transientSecretKeys })
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
-      sbp('chelonia/withEnv', identityContractID, { additionalKeys }, ['chelonia/contract/sync', contractIDs]).then(async function () {
+      sbp('chelonia/contract/sync', contractIDs).then(async function () {
         // contract sync might've triggered an async call to /remove, so wait before proceeding
         await sbp('chelonia/contract/wait', contractIDs)
         // similarly, since removeMember may have triggered saveOurLoginState asynchronously,

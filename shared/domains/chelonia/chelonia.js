@@ -141,7 +141,7 @@ const signatureFnBuilder = (key) => {
 }
 
 const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
-  const key = this.env.additionalKeys?.[eKeyId] || state?._volatile?.keys?.[eKeyId]
+  const key = this.config.transientSecretKeys?.[eKeyId] || state?._volatile?.keys?.[eKeyId]
 
   if (!key) {
     return JSON.stringify(message)
@@ -159,7 +159,7 @@ const decryptFn = function (message: Object, state: ?Object) {
   }
 
   const keyId = message.keyId
-  const key = this.env.additionalKeys?.[keyId] || state?._volatile?.keys?.[keyId]
+  const key = this.config.transientSecretKeys?.[keyId] || state?._volatile?.keys?.[keyId]
 
   if (!key) {
     console.log({ message, state, keyId, env: this.env })
@@ -208,7 +208,8 @@ export default (sbp('sbp/selectors/register', {
         handleEventError: null, // (e: Error, message: GIMessage) => {}
         syncContractError: null, // (e: Error, contractID: string) => {}
         pubsubError: null // (e:Error, socket: Socket)
-      }
+      },
+      transientSecretKeys: {}
     }
     this.state = {
       contracts: {}, // contractIDs => { type, HEAD } (contracts we've subscribed to)
@@ -243,12 +244,16 @@ export default (sbp('sbp/selectors/register', {
     // merge will strip the hooks off of config.hooks when merging from the root of the object
     // because they are functions and cloneDeep doesn't clone functions
     Object.assign(this.config.hooks, config.hooks || {})
+    // The same goes for transientSecretKeys, as cloneDeep will not work properly with Key objects (Uint8Array is converted to Object, and non-enumerable properties fail to be merged)
+    Object.assign(this.config.transientSecretKeys, config.transientSecretKeys || {})
     // using Object.assign here instead of merge to avoid stripping away imported modules
-    Object.assign(this.config.contracts.defaults, config.contracts.defaults || {})
-    const manifests = this.config.contracts.manifests
-    console.debug('[chelonia] preloading manifests:', Object.keys(manifests))
-    for (const contractName in manifests) {
-      await sbp('chelonia/private/loadManifest', manifests[contractName])
+    if (config.contracts) {
+      Object.assign(this.config.contracts.defaults, config.contracts.defaults || {})
+      const manifests = this.config.contracts.manifests
+      console.debug('[chelonia] preloading manifests:', Object.keys(manifests))
+      for (const contractName in manifests) {
+        await sbp('chelonia/private/loadManifest', manifests[contractName])
+      }
     }
   },
   // TODO: allow connecting to multiple servers at once
@@ -506,7 +511,7 @@ export default (sbp('sbp/selectors/register', {
     const manifestHash = this.config.contracts.manifests[contractName]
     const contractInfo = this.manifestToContract[manifestHash]
     if (!contractInfo) throw new Error(`contract not defined: ${contractName}`)
-    const signingKey = this.env.additionalKeys?.[signingKeyId]
+    const signingKey = this.config.transientSecretKeys?.[signingKeyId]
     const signatureFn = signingKey ? signatureFnBuilder(signingKey) : undefined
     const contractMsg = GIMessage.createV1_0({
       contractID: null,
@@ -583,7 +588,7 @@ export default (sbp('sbp/selectors/register', {
     destinationContract.metadata.validate(destinationMeta, { state: destinationState, ...destinationGProxy, destinationContractID })
     const payload = (data: GIOpKeyShare)
 
-    const signingKey = this.env.additionalKeys?.[params.signingKeyId] || ((originatingContractID ? originatingState : destinationState)?._volatile?.keys[params.signingKeyId])
+    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || ((originatingContractID ? originatingState : destinationState)?._volatile?.keys[params.signingKeyId])
 
     const msg = GIMessage.createV1_0({
       contractID: destinationContractID,
@@ -614,7 +619,7 @@ export default (sbp('sbp/selectors/register', {
     const gProxy = gettersProxy(state, contract.getters)
     contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const payload = (data: GIOpKeyAdd)
-    const signingKey = this.env.additionalKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
@@ -643,7 +648,7 @@ export default (sbp('sbp/selectors/register', {
     const gProxy = gettersProxy(state, contract.getters)
     contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const payload = (data: GIOpKeyDel)
-    const signingKey = this.env.additionalKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
@@ -675,7 +680,7 @@ export default (sbp('sbp/selectors/register', {
     const gProxy = gettersProxy(state, contract.getters)
     contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const outerKeyId = keyId(signingKey)
-    const innerSigningKey = this.env.additionalKeys?.[innerSigningKeyId] || originatingState?._volatile?.keys[innerSigningKeyId]
+    const innerSigningKey = this.config.transientSecretKeys?.[innerSigningKeyId] || originatingState?._volatile?.keys[innerSigningKeyId]
     const payload = ({
       keyId: innerSigningKeyId,
       outerKeyId: outerKeyId,
@@ -711,7 +716,7 @@ export default (sbp('sbp/selectors/register', {
     const gProxy = gettersProxy(state, contract.getters)
     contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const payload = (data: GIOpKeyRequestResponse)
-    const signingKey = this.env.additionalKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
@@ -760,7 +765,7 @@ async function outEncryptedOrUnencryptedAction (
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
-  const signingKey = this.env.additionalKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+  const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
   const payload = opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn.call(this, unencMessage, params.encryptionKeyId, state)
   console.log({ unencMessage, ekid: params.encryptionKeyId, state, payload })
   const message = GIMessage.createV1_0({

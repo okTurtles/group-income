@@ -122,13 +122,16 @@ export default (sbp('sbp/selectors/register', {
         // handle Flowtype annotations, even though our .babelrc should make it work.
         distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
       }
-      const message = await sbp('chelonia/withEnv', '', {
-        additionalKeys: {
+
+      await sbp('chelonia/configure', {
+        transientSecretKeys: {
           [CSKid]: CSK,
           [CEKid]: CEK,
           [inviteKeyId]: inviteKey
         }
-      }, ['chelonia/out/registerContract', {
+      })
+
+      const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
         publishOptions,
         signingKeyId: CSKid,
@@ -212,15 +215,15 @@ export default (sbp('sbp/selectors/register', {
             }
           }
         }
-      }])
+      })
 
       const contractID = message.contractID()
 
-      await sbp('chelonia/withEnv', contractID, { additionalKeys: { [CEKid]: CEK } }, ['chelonia/contract/sync', contractID])
+      await sbp('chelonia/contract/sync', contractID)
       saveLoginState('creating', contractID)
 
       // create a 'General' chatroom contract and let the creator join
-      await sbp('chelonia/withEnv', contractID, { additionalKeys: { [CEKid]: CEK } }, ['gi.actions/group/addAndJoinChatRoom', {
+      await sbp('gi.actions/group/addAndJoinChatRoom', {
         contractID,
         data: {
           attributes: {
@@ -232,7 +235,7 @@ export default (sbp('sbp/selectors/register', {
         },
         signingKeyId: CSKid,
         encryptionKeyId: CEKid
-      }])
+      })
 
       const userID = rootState.loggedIn.identityContractID
       await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID })
@@ -300,8 +303,8 @@ export default (sbp('sbp/selectors/register', {
          * but he should sync all the contracts he was syncing in the previous device
          */
         const me = rootState.loggedIn.username
-        const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms)
-          .filter(cId => rootState[params.contractID].chatRooms[cId].users.includes(me))
+        const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
+          .filter(cId => rootState[params.contractID].chatRooms?.[cId].users.includes(me))
 
         /**
          * flag READY_TO_JOIN_CHATROOM is not necessary to sync actually
