@@ -686,7 +686,7 @@ sbp('chelonia/defineContract', {
         vote: string,
         passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       }),
-      process (message, { state }) {
+      process (message, { state, getters }) {
         const { data, hash, meta } = message
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
@@ -710,6 +710,13 @@ sbp('chelonia/defineContract', {
           Vue.set(proposal, 'dateClosed', meta.createdDate)
 
           // TODO: update 'streaks.noVotes'
+          const votedMembers = Object.keys(proposals.votes)
+          for (const member in getters.groupMembersByUsername) {
+            const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, member, 0)
+            const memberHasVoted = member === meta.username || votedMembers.includes(member)
+
+            Vue.set(getters.groupStreaks.noVotes, member, memberHasVoted ? 0 : memberCurrentStreak + 1)
+          }
         }
       },
       sideEffect ({ contractID, data, meta }, { state, getters }) {
