@@ -53,6 +53,7 @@ sbp('sbp/selectors/register', {
   'state/vuex/replace': (state) => store.replaceState(state),
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/getters': () => store.getters,
+  'state/vuex/settings': () => store.state.settings,
   'state/vuex/postUpgradeVerification': function (state: Object) {
     // Note: Update this function when renaming a Vuex module, or implementing a new one,
     // or adding new settings to the initialState above
