@@ -223,9 +223,7 @@ export default (sbp('sbp/selectors/register', {
          * But just this is only for checking if syncing chatrooms or not
          * Especially inside addMention in model/contracts/chatroom.js
          */
-        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
-        await sbp('chelonia/contract/sync', chatRoomIds)
-        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
+        await sbp('chelonia/contract/sync', chatRoomIds, 'READY_TO_JOIN_CHATROOM')
 
         sbp('state/vuex/commit', 'setCurrentChatRoomId', {
           groupId: params.contractID,

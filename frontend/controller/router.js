@@ -132,16 +132,17 @@ const router: any = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
+      path: '/group-chat/:chatRoomId',
+      component: lazyGroupChat,
+      name: 'GroupChatConversation',
+      meta: { title: L('Loading') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+    },
+    {
       path: '/group-settings',
       component: lazyGroupSettings,
       name: 'GroupSettings',
       meta: { title: L('Group Settings') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
-    },
-    {
-      path: '/group-chat/:chatRoomId',
-      component: lazyGroupChat,
-      name: 'GroupChatConversation',
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
@@ -177,9 +178,7 @@ router.beforeEach((to, from, next) => {
     return next(from)
   }
 
-  if (to.meta.title) {
-    document.title = to.meta.title
-  }
+  document.title = to.meta.title
   next()
 })
 

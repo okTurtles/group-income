@@ -81,9 +81,7 @@ sbp('chelonia/defineContract', {
         })
       },
       async sideEffect ({ data }) {
-        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
-        await sbp('chelonia/contract/sync', data.contractID)
-        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
+        await sbp('chelonia/contract/sync', data.contractID, 'READY_TO_JOIN_CHATROOM')
 
         if (!sbp('okTurtles.data/get', 'SYNCING_MAILBOX')) {
           await sbp('controller/router')
@@ -129,9 +127,7 @@ sbp('chelonia/defineContract', {
           contractID = data.contractID
         }
         if (contractID) {
-          sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
-          await sbp('chelonia/contract/sync', contractID)
-          sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
+          await sbp('chelonia/contract/sync', contractID, 'READY_TO_JOIN_CHATROOM')
         }
         if (state.attributes.creator === meta.username && !sbp('okTurtles.data/get', 'SYNCING_MAILBOX')) {
           await sbp('controller/router')

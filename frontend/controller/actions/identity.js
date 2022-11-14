@@ -198,9 +198,7 @@ export default (sbp('sbp/selectors/register', {
         const rootGetters = sbp('state/vuex/getters')
         const { mailbox } = rootGetters.currentIdentityState.attributes
         if (mailbox && !contractIDs.includes(mailbox)) {
-          sbp('okTurtles.data/set', 'SYNCING_MAILBOX', true)
-          await sbp('chelonia/contract/sync', mailbox)
-          sbp('okTurtles.data/set', 'SYNCING_MAILBOX', false)
+          await sbp('chelonia/contract/sync', mailbox, 'SYNCING_MAILBOX')
         }
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
