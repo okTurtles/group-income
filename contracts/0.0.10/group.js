@@ -10050,22 +10050,24 @@ ${this.getErrorInfo()}`;
     return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
   }
   function updateGroupStreaks({ state, getters }) {
-    const {
-      groupIncomeAdjustedDistribution,
-      thisPeriodPaymentInfo
-    } = (0, import_sbp4.default)("state/vuex/getters");
     const streaks = state.streaks;
-    vue_esm_default.set(streaks, "fullMonthlyPledges", groupIncomeAdjustedDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0);
+    const cPeriod = getters.groupSettings.distributionDate;
+    const thisPeriodPayments = getters.paymentsForPeriod(cPeriod);
+    const thisPeriodDistribution = adjustedDistribution({
+      distribution: unadjustedDistribution({
+        haveNeeds: getters.haveNeedsForThisPeriod(cPeriod),
+        minimize: getters.groupSettings.minimizeDistribution
+      }) || [],
+      payments: getters.paymentsForPeriod(cPeriod),
+      dueOn: getters.dueDateForPeriod(cPeriod)
+    });
+    vue_esm_default.set(streaks, "fullMonthlyPledges", thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0);
+    const filterMyItems = (array, username) => array.filter((item) => item.from === username);
     for (const username in getters.groupProfiles) {
       if (getters.groupProfiles[username].incomeDetailsType !== "pledgeAmount")
         continue;
       const myCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0);
-      const myPaymentsDoneInThisPeriod = thisPeriodPaymentInfo && thisPeriodPaymentInfo.paymentsFrom[username];
-      const myPaymentHashes = [];
-      if (myPaymentsDoneInThisPeriod) {
-        Object.values(myPaymentsDoneInThisPeriod).forEach((pHashes) => myPaymentHashes.concat(pHashes));
-      }
-      vue_esm_default.set(streaks.onTimePayments, username, groupIncomeAdjustedDistribution.every((entry) => entry.from !== username) && myPaymentHashes.every((hash2) => state.payments[hash2] && state.payments[hash2].data.isLate === false) ? myCurrentStreak + 1 : 0);
+      vue_esm_default.set(streaks.onTimePayments, username, filterMyItems(thisPeriodDistribution, username).length === 0 && filterMyItems(thisPeriodPayments, username).every((p) => p.isLate === false) ? myCurrentStreak + 1 : 0);
     }
   }
   (0, import_sbp4.default)("chelonia/defineContract", {
