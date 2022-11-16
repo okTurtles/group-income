@@ -362,7 +362,7 @@ const getters = {
           }
         }
       }
-      return payments
+      return payments.sort((paymentA, paymentB) => paymentA.meta.createdDate < paymentB.meta.createdDate ? 1 : -1)
     }
   },
   ourPaymentsReceivedInPeriod (state, getters) {
@@ -386,7 +386,7 @@ const getters = {
           }
         }
       }
-      return payments
+      return payments.sort((paymentA, paymentB) => paymentA.meta.createdDate < paymentB.meta.createdDate ? 1 : -1)
     }
   },
   ourPayments (state, getters) {
