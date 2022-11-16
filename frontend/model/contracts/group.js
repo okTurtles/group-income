@@ -145,8 +145,12 @@ function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boo
 function updateGroupStreaks ({ state, getters }) {
   const streaks = state.streaks
   const cPeriod = getters.groupSettings.distributionDate
-  const thisPeriodPayments = getters.paymentsForPeriod(cPeriod)
-  const thisPeriodDistribution = adjustedDistribution({
+  const thisPeriodPayments = getters.groupPeriodPayments[cPeriod]
+
+  // if there's no period payments set yet, no need to update streak values.
+  if (!thisPeriodPayments) return
+
+  const thisPeriodDistribution = thisPeriodPayments.lastAdjustedDistribution || adjustedDistribution({
     distribution: unadjustedDistribution({
       haveNeeds: getters.haveNeedsForThisPeriod(cPeriod),
       minimize: getters.groupSettings.minimizeDistribution
@@ -165,19 +169,22 @@ function updateGroupStreaks ({ state, getters }) {
   )
 
   // --- update 'onTimePayments' streaks for 'pledging' members of the group ---
+  const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod)
   const filterMyItems = (array, username) => array.filter(item => item.from === username)
-  for (const username in getters.groupProfiles) {
-    if (getters.groupProfiles[username].incomeDetailsType !== 'pledgeAmount') continue
+  const isPledgingMember = username => thisPeriodPayments.haveNeedsSnapshot.some(entry => entry.name === username && entry.haveNeed > 0)
 
-    const myCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0)
+  for (const username in getters.groupProfiles) {
+    if (!isPledgingMember(username)) continue
+
+    const userCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0)
     Vue.set(
       streaks.onTimePayments,
       username,
-      // check-1. if I've made all the pledgeds assigned to me in this period.
+      // check-1. if the user made all the pledgeds assigned to them in this period.
       // check-2. all those payments in check-1 were done on time.
       filterMyItems(thisPeriodDistribution, username).length === 0 &&
-      filterMyItems(thisPeriodPayments, username).every(p => p.isLate === false)
-        ? myCurrentStreak + 1
+      filterMyItems(thisPeriodPaymentDetails, username).every(p => p.isLate === false)
+        ? userCurrentStreak + 1
         : 0
     )
   }
@@ -1116,11 +1123,23 @@ sbp('chelonia/defineContract', {
         })
       }
     },
+    'gi.contracts/group/checkAndUpdateDistributionDate': {
+      validate: optional,
+      process ({ meta }, { state, getters }) {
+        // check if we've passed into the next period and update the group distribution date accordingly if so.
+        const periodForNow = getters.periodStampGivenDate(meta.createdDate)
+        if (comparePeriodStamps(periodForNow, getters.groupSettings.distributionDate) > 0) {
+          // before updating to the new distribution period, make sure to update various payment-related streak values
+          // for the previous period
+          updateGroupStreaks({ state, getters })
+          getters.groupSettings.distributionDate = periodForNow
+        }
+      }
+    },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
       'gi.contracts/group/forceDistributionDate': {
         validate: optional,
         process ({ meta }, { state, getters }) {
-          updateGroupStreaks({ state, getters })
           getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate)
         }
       },
