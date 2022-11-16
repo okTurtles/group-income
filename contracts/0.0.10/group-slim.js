@@ -928,8 +928,10 @@ ${this.getErrorInfo()}`;
   function updateGroupStreaks({ state, getters }) {
     const streaks = state.streaks;
     const cPeriod = getters.groupSettings.distributionDate;
-    const thisPeriodPayments = getters.paymentsForPeriod(cPeriod);
-    const thisPeriodDistribution = adjustedDistribution({
+    const thisPeriodPayments = getters.groupPeriodPayments[cPeriod];
+    if (!thisPeriodPayments)
+      return;
+    const thisPeriodDistribution = thisPeriodPayments.lastAdjustedDistribution || adjustedDistribution({
       distribution: unadjustedDistribution({
         haveNeeds: getters.haveNeedsForThisPeriod(cPeriod),
         minimize: getters.groupSettings.minimizeDistribution
@@ -938,12 +940,14 @@ ${this.getErrorInfo()}`;
       dueOn: getters.dueDateForPeriod(cPeriod)
     });
     import_common3.Vue.set(streaks, "fullMonthlyPledges", thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0);
+    const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod);
     const filterMyItems = (array, username) => array.filter((item) => item.from === username);
+    const isPledgingMember = (username) => thisPeriodPayments.haveNeedsSnapshot.some((entry) => entry.name === username && entry.haveNeed > 0);
     for (const username in getters.groupProfiles) {
-      if (getters.groupProfiles[username].incomeDetailsType !== "pledgeAmount")
+      if (!isPledgingMember(username))
         continue;
-      const myCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0);
-      import_common3.Vue.set(streaks.onTimePayments, username, filterMyItems(thisPeriodDistribution, username).length === 0 && filterMyItems(thisPeriodPayments, username).every((p) => p.isLate === false) ? myCurrentStreak + 1 : 0);
+      const userCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0);
+      import_common3.Vue.set(streaks.onTimePayments, username, filterMyItems(thisPeriodDistribution, username).length === 0 && filterMyItems(thisPeriodPaymentDetails, username).every((p) => p.isLate === false) ? userCurrentStreak + 1 : 0);
     }
   }
   (0, import_sbp3.default)("chelonia/defineContract", {
@@ -1704,11 +1708,20 @@ ${this.getErrorInfo()}`;
           });
         }
       },
+      "gi.contracts/group/checkAndUpdateDistributionDate": {
+        validate: optional,
+        process({ meta }, { state, getters }) {
+          const periodForNow = getters.periodStampGivenDate(meta.createdDate);
+          if (comparePeriodStamps(periodForNow, getters.groupSettings.distributionDate) > 0) {
+            updateGroupStreaks({ state, getters });
+            getters.groupSettings.distributionDate = periodForNow;
+          }
+        }
+      },
       ...{
         "gi.contracts/group/forceDistributionDate": {
           validate: optional,
           process({ meta }, { state, getters }) {
-            updateGroupStreaks({ state, getters });
             getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate);
           }
         },
