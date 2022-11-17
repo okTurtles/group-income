@@ -9497,16 +9497,13 @@ ${this.getErrorInfo()}`;
   // frontend/model/contracts/shared/nativeNotification.js
   var import_sbp3 = __toESM(__require("@sbp/sbp"));
   function makeNotification({ title, body, icon, path }) {
-    const notificationEnabled = (0, import_sbp3.default)("state/vuex/state").notificationEnabled;
-    if (typeof Notification === "undefined" || Notification.permission !== "granted" || !notificationEnabled) {
-      return;
-    }
-    const notification = new Notification(title, { body, icon });
-    if (path) {
-      notification.onclick = function(event) {
-        event.preventDefault();
-        (0, import_sbp3.default)("controller/router").push({ path }).catch(console.warn);
-      };
+    if (Notification?.permission === "granted" && (0, import_sbp3.default)("state/vuex/settings").notificationEnabled) {
+      const notification = new Notification(title, { body, icon });
+      if (path) {
+        notification.onclick = function(event) {
+          (0, import_sbp3.default)("controller/router").push({ path }).catch(console.warn);
+        };
+      }
     }
   }
 

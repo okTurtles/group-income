@@ -44,6 +44,8 @@ setInterval(function () {
   // payments recalculation happen within a minute of day switchover
   if (Math.abs(reactiveDate.date.getTime() - date.getTime()) >= MINS_MILLIS) {
     reactiveDate.date = date
+
+    sbp('gi.actions/group/checkAndUpdateDistributionDate', { contractID: store.state.currentGroupId })
   }
 }, 60 * 1000)
 

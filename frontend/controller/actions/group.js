@@ -530,6 +530,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateLastLoggedIn', L('Failed to update "lastLoggedIn" in a group profile.')),
+  ...encryptedAction('gi.actions/group/checkAndUpdateDistributionDate', L('Failed to update group distribution date.')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
   })
