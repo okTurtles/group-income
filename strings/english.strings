@@ -2128,13 +2128,16 @@
 "have {strong_} missed payments {_strong}" = "have {strong_} missed payments {_strong}";
 
 /* views/containers/dashboard/GroupMembersActivity.vue */
-Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Group has a streak of {strong_} 100% Support of {streak} months{_strong}"
+Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Group has a streak of {strong_} 100% Support of {streak} months{_strong}";
 
 /* views/containers/dashboard/GroupMembersActivity.vue */
 "have {strong_} on-time payment streaks{_strong}" = "have {strong_} on-time payment streaks{_strong}";
 
 /* views/containers/dashboard/GroupMembersActivity.vue */
-"haven´t {strong_} logged in past week {_strong}" = "haven´t {strong_} logged in past week {_strong}";
+"haven´t {strong_} logged in past {daysCount} days or more {_strong}" = "haven´t {strong_} logged in past {daysCount} days or more {_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"haven't {strong_} entered income details{_strong}" = "haven't {strong_} entered income details{_strong}";
 
 /* views/containers/dashboard/GroupMembersActivity.vue */
 "haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}" = "haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}";

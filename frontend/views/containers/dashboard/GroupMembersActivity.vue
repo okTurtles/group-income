@@ -39,7 +39,7 @@
             .icon-user.icon-round.has-background-general
             .c-item-copy
               member-count-tooltip.c-member-count(:members='haventLoggedIn')
-              i18n(:args='LTags("strong")') haven´t {strong_} logged in past 14 days or more {_strong}
+              i18n(:args='{ ...LTags("strong"), daysCount: config.notLoggedInDays }') haven´t {strong_} logged in past {daysCount} days or more {_strong}
 
         li.c-item-wrapper(v-if='noIncomeDetails.length > 0')
           .c-item
@@ -55,14 +55,12 @@
             member-count-tooltip.c-member-count(:members='missedPayments')
               i18n(:args='LTags("strong")') have {strong_} missed payments {_strong}
 
-        li.c-item-wrapper
+        li.c-item-wrapper(v-if='noVotes > 0')
           .c-item
             .icon-vote-yea.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip.c-member-count(
-                :members='["Rosalia", "Ken M", "Ines de Castro"]'
-              )
-              i18n(:args='{ ...LTags("strong"), proposalNumber: 2 }') haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}
+              member-count-tooltip.c-member-count(:members='noVotes')
+              i18n(:args='{ ...LTags("strong"), proposalNumber: config.proposalNumber }') haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}
 
 </template>
 
@@ -70,6 +68,7 @@
 import { mapGetters } from 'vuex'
 import MemberCountTooltip from './MemberCountTooltip.vue'
 import { compareISOTimestamps, DAYS_MILLIS } from '@model/contracts/shared/time.js'
+import { STREAK_MISSED_PROPSAL_VOTE, STREAK_NOT_LOGGED_IN_DAYS, STREAK_ON_TIME_PAYMENTS, STREAK_MISSED_PAYMENTS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'GroupMembersActivity',
@@ -79,7 +78,11 @@ export default ({
   data () {
     return {
       isReady: false,
-      history: []
+      history: [],
+      config: {
+        proposalNumber: STREAK_MISSED_PROPSAL_VOTE,
+        notLoggedInDays: STREAK_NOT_LOGGED_IN_DAYS
+      }
     }
   },
   computed: {
@@ -90,25 +93,30 @@ export default ({
     ]),
     onTimePayments () {
       return Object.entries(this.groupStreaks.onTimePayments)
-        .filter(([username, streak]) => streak >= 2)
+        .filter(([username, streak]) => streak >= STREAK_ON_TIME_PAYMENTS)
         .map(([username]) => this.userDisplayName(username))
     },
     missedPayments () {
       return Object.entries(this.groupStreaks.missedPayments)
-        .filter(([username, streak]) => streak >= 2)
+        .filter(([username, streak]) => streak >= STREAK_MISSED_PAYMENTS)
         .map(([username, streak]) => `${this.userDisplayName(username)} missed ${streak} payment${streak >= 2 ? 's' : ''}`)
     },
     haventLoggedIn () { // group members that haven't logged in for the past 14 days or more
       const now = new Date().toISOString()
 
       return Object.entries(this.groupProfiles)
-        .filter(([username, profile]) => compareISOTimestamps(now, profile.lastLoggedIn) >= 14 * DAYS_MILLIS)
+        .filter(([username, profile]) => compareISOTimestamps(now, profile.lastLoggedIn) >= STREAK_NOT_LOGGED_IN_DAYS * DAYS_MILLIS)
         .map(([username]) => this.userDisplayName(username))
     },
     noIncomeDetails () { // group members that haven't entered their income details yet
       return Object.entries(this.groupProfiles)
         .filter(([username, profile]) => !profile.incomeDetailsType)
         .map(([username]) => this.userDisplayName(username))
+    },
+    noVotes () {
+      return Object.entries(this.groupStreaks.noVotes)
+        .filter(([username, streak]) => streak >= STREAK_MISSED_PROPSAL_VOTE)
+        .map(([username, streak]) => `${this.userDisplayName(username)} missed ${streak} vote${streak >= 2 ? 's' : ''}`)
     }
   }
 }: Object)
