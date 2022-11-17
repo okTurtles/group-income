@@ -9976,6 +9976,7 @@ ${this.getErrorInfo()}`;
       globalUsername: "",
       contractID,
       joinedDate,
+      lastLoggedIn: joinedDate,
       nonMonetaryContributions: [],
       status: PROFILE_STATUS.ACTIVE,
       departedDate: null
@@ -10070,8 +10071,11 @@ ${this.getErrorInfo()}`;
     for (const username in getters.groupProfiles) {
       if (!isPledgingMember(username))
         continue;
+      const myMissedPaymentsInThisPeriod = filterMyItems(thisPeriodDistribution, username);
       const userCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0);
-      vue_esm_default.set(streaks.onTimePayments, username, filterMyItems(thisPeriodDistribution, username).length === 0 && filterMyItems(thisPeriodPaymentDetails, username).every((p) => p.isLate === false) ? userCurrentStreak + 1 : 0);
+      vue_esm_default.set(streaks.onTimePayments, username, myMissedPaymentsInThisPeriod.length === 0 && filterMyItems(thisPeriodPaymentDetails, username).every((p) => p.isLate === false) ? userCurrentStreak + 1 : 0);
+      const myMissedPaymentsStreak = vueFetchInitKV(streaks.missedPayments, username, 0);
+      vue_esm_default.set(streaks.missedPayments, username, myMissedPaymentsInThisPeriod.length >= 1 ? myMissedPaymentsStreak + 1 : 0);
     }
   }
   (0, import_sbp4.default)("chelonia/defineContract", {
@@ -10315,7 +10319,9 @@ ${this.getErrorInfo()}`;
             },
             streaks: {
               fullMonthlyPledges: 0,
-              onTimePayments: {}
+              onTimePayments: {},
+              missedPayments: {},
+              noVotes: {}
             },
             profiles: {
               [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
@@ -10482,7 +10488,7 @@ ${this.getErrorInfo()}`;
           vote: string,
           passPayload: optional(unionOf(object, string))
         }),
-        process(message, { state }) {
+        process(message, { state, getters }) {
           const { data, hash: hash2, meta } = message;
           const proposal = state.proposals[data.proposalHash];
           if (!proposal) {
@@ -10498,6 +10504,12 @@ ${this.getErrorInfo()}`;
           if (result === VOTE_FOR || result === VOTE_AGAINST) {
             proposals_default[proposal.data.proposalType][result](state, message);
             vue_esm_default.set(proposal, "dateClosed", meta.createdDate);
+            const votedMembers = Object.keys(proposal.votes);
+            for (const member of getters.groupMembersByUsername) {
+              const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, member, 0);
+              const memberHasVoted = member === meta.username || votedMembers.includes(member);
+              vue_esm_default.set(getters.groupStreaks.noVotes, member, memberHasVoted ? 0 : memberCurrentStreak + 1);
+            }
           }
         },
         sideEffect({ contractID, data, meta }, { state, getters }) {
@@ -10830,6 +10842,16 @@ ${this.getErrorInfo()}`;
             ...getters.getChatRooms[data.chatRoomID],
             name: data.name
           });
+        }
+      },
+      "gi.contracts/group/updateLastLoggedIn": {
+        validate() {
+        },
+        process({ meta }, { getters }) {
+          const profile = getters.groupProfiles[meta.username];
+          if (profile) {
+            vue_esm_default.set(profile, "lastLoggedIn", meta.createdDate);
+          }
         }
       },
       "gi.contracts/group/checkAndUpdateDistributionDate": {
