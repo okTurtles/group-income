@@ -1,7 +1,7 @@
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
-import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '@model/contracts/shared/functions.js'
+import { createPaymentInfo } from '@model/contracts/shared/functions.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 
 // NOTE: this mixin combines payment information
@@ -36,22 +36,13 @@ const PaymentsMixin: Object = {
       }
     },
     async getPaymentDetailsByPeriod (period: string) {
-      let detailedPayments = {}
       if (Object.keys(this.groupPeriodPayments).includes(period)) {
         const paymentHashes = this.paymentHashesForPeriod(period) || []
-        detailedPayments = paymentHashes.map(hash => this.currentGroupState.payments[hash])
-      } else {
-        const paymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
-        const paymentsByPeriod = await sbp('gi.db/archive/load', paymentsByPeriodKey) || {}
-        const paymentHashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period])
-
-        const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
-        const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
-        for (const hash of paymentHashes) {
-          detailedPayments[hash] = payments[hash]
-        }
+        return paymentHashes.map(hash => this.currentGroupState.payments[hash])
       }
-      return detailedPayments
+
+      const paymentsKey = `payments/${period}/${this.ourUsername}/${this.currentGroupId}`
+      return await sbp('gi.db/archive/load', paymentsKey) || {}
     },
     async getPaymentsByPeriod (period: string) {
       const payments = []
@@ -64,8 +55,8 @@ const PaymentsMixin: Object = {
       }
       return payments
     },
-    async getHistoricalPaymentByHash (hash: string) {
-      const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
+    async getHistoricalPaymentByHash (period: string, hash: string) {
+      const paymentsKey = `payments/${period}/${this.ourUsername}/${this.currentGroupId}`
       const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
       return payments[hash]
     }

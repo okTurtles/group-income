@@ -91,9 +91,10 @@ export default ({
   methods: {
     humanDate,
     async initializeDetails () {
-      const id = this.$route.query.id
+      // NOTE: Only for the historical payments, there is 'period'
+      const { id, period } = this.$route.query
       const payment = this.lightningPayment || // TODO: to be re-worked once lightning network is implemented.
-        this.currentGroupState.payments[id] || await this.getHistoricalPaymentByHash(id)
+        this.currentGroupState.payments[id] || await this.getHistoricalPaymentByHash(period, id)
 
       if (id) {
         sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'PaymentDetail', { id })
