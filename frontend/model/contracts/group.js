@@ -717,8 +717,8 @@ sbp('chelonia/defineContract', {
           Vue.set(proposal, 'dateClosed', meta.createdDate)
 
           // TODO: update 'streaks.noVotes'
-          const votedMembers = Object.keys(proposals.votes)
-          for (const member in getters.groupMembersByUsername) {
+          const votedMembers = Object.keys(proposal.votes)
+          for (const member of getters.groupMembersByUsername) {
             const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, member, 0)
             const memberHasVoted = member === meta.username || votedMembers.includes(member)
 

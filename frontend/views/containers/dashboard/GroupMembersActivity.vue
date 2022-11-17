@@ -52,10 +52,10 @@
           .c-item
             .icon-dollar-sign.icon-round.has-background-general
             .c-item-copy
-            member-count-tooltip.c-member-count(:members='missedPayments')
+              member-count-tooltip.c-member-count(:members='missedPayments')
               i18n(:args='LTags("strong")') have {strong_} missed payments {_strong}
 
-        li.c-item-wrapper(v-if='noVotes > 0')
+        li.c-item-wrapper(v-if='noVotes.length > 0')
           .c-item
             .icon-vote-yea.icon-round.has-background-general
             .c-item-copy
