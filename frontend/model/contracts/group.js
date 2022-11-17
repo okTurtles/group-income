@@ -1146,8 +1146,8 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/updateLastLoggedIn': {
       validate () {},
-      process ({ data, meta }) {
-        const profile = sbp('state/vuex/getters').ourGroupProfile
+      process ({ meta }, { getters }) {
+        const profile = getters.groupProfiles[meta.username]
 
         if (profile) {
           Vue.set(profile, 'lastLoggedIn', meta.createdDate)
