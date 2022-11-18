@@ -56,8 +56,8 @@ modal-base-template.has-background(
                 avatar-user(:username='username' size='sm')
                 .c-name(data-test='username')
                   span
-                    strong {{ localizedName(username) }}
-                    .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+                    strong {{ localizedName(username, displayName) }}
+                    .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
               .c-actions(v-if='isJoined && removable(username)')
                 button.is-icon(
@@ -94,8 +94,8 @@ modal-base-template.has-background(
               avatar-user(:username='username' size='sm')
               .c-name(data-test='username')
                 span
-                  strong {{ localizedName(username) }}
-                  .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+                  strong {{ localizedName(username, displayName) }}
+                  .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
             .c-actions(v-if='isJoined')
               i18n.button.is-outlined.is-small(
@@ -162,7 +162,6 @@ export default ({
       'groupMembersSorted',
       'chatRoomUsersInSort',
       'ourUsername',
-      'userDisplayName',
       'isJoinedChatRoom',
       'ourContactProfiles',
       'ourContacts'
@@ -238,8 +237,8 @@ export default ({
           }))
       }
     },
-    localizedName (username: string) {
-      const name = this.userDisplayName(username)
+    localizedName (username: string, displayName?: string) {
+      const name = displayName || `@${username}`
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     closeModal () {
