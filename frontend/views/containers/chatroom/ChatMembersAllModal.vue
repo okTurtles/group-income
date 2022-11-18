@@ -160,8 +160,10 @@ export default ({
       'currentChatRoomState',
       'currentGroupState',
       'groupMembersSorted',
+      'chatRoomUsers',
       'chatRoomUsersInSort',
       'ourUsername',
+      'globalProfile',
       'isJoinedChatRoom',
       'ourContactProfiles',
       'ourContacts'
@@ -216,10 +218,21 @@ export default ({
       this.initializeMembers()
     },
     initializeMembers () {
-      const members = this.isJoined ? this.chatRoomUsersInSort : this.details.participants
-      this.addedMembers = members.map(member => ({ ...member, departedDate: null }))
-
       if (this.isTypeIndividual) {
+        this.addedMembers = Object.keys(this.chatRoomUsers)
+          .map(username => {
+            return username === this.ourUsername
+              ? {
+                  displayName: this.globalProfile(username).displayName,
+                  username,
+                  departedDate: null
+                }
+              : {
+                  displayName: this.ourContactProfiles[username].displayName,
+                  username,
+                  departedDate: null
+                }
+          })
         this.canAddMembers = this.ourContacts
           .filter(username => !this.addedMembers.find(mb => mb.username === username))
           .map(username => ({
@@ -228,6 +241,8 @@ export default ({
             joinedDate: null
           }))
       } else {
+        const members = this.isJoined ? this.chatRoomUsersInSort : this.details.participants
+        this.addedMembers = members.map(member => ({ ...member, departedDate: null }))
         this.canAddMembers = this.groupMembersSorted
           .filter(member => !this.addedMembers.find(mb => mb.username === member.username) && !member.invitedBy)
           .map(member => ({
