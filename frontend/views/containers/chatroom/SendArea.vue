@@ -202,8 +202,23 @@ export default ({
     window.removeEventListener('click', this.onWindowMouseClicked)
   },
   computed: {
-    ...mapGetters(['chatRoomUsers', 'globalProfile']),
+    ...mapGetters([
+      'chatRoomUsers',
+      'globalProfile',
+      'isDirectMessage',
+      'currentChatRoomId',
+      'usernameFromDirectMessageID',
+      'ourContactProfiles'
+    ]),
     users () {
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
+        return [{
+          username: partnerUsername,
+          displayName: this.ourContactProfiles[partnerUsername].displayName || partnerUsername,
+          picture: this.ourContactProfiles[partnerUsername].picture
+        }]
+      }
       return Object.keys(this.chatRoomUsers)
         .map(username => {
           const { displayName, picture } = this.globalProfile(username)
@@ -363,10 +378,13 @@ export default ({
     },
     startMention (keyword, position) {
       const all = makeMentionFromUsername('').all.slice(1)
-      this.ephemeral.mention.options = this.users.concat([{
-        // TODO: use group picture here or broadcast icon
-        username: all, displayName: all, picture: '/assets/images/horn.png'
-      }]).filter(user =>
+      const availableMentions = this.isDirectMessage(this.currentChatRoomId)
+        ? this.users
+        : [
+            ...this.users,
+            { username: all, displayName: all, picture: '/assets/images/horn.png' } // TODO: use group picture here or broadcast icon
+          ]
+      this.ephemeral.mention.options = availableMentions.filter(user =>
         user.username.toUpperCase().includes(keyword.toUpperCase()) ||
         user.displayName.toUpperCase().includes(keyword.toUpperCase()))
       this.ephemeral.mention.position = position
