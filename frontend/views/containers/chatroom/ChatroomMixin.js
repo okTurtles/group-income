@@ -9,7 +9,7 @@ const initChatChannelDetails = {
   participants: []
 }
 
-const chatroom: Object = {
+const ChatroomMixin: Object = {
   data (): Object {
     return {
       config: {
@@ -61,30 +61,36 @@ const chatroom: Object = {
       'generalChatRoomId',
       'globalProfile',
       'isJoinedChatRoom',
-      'isPrivateChatRoom'
+      'isPrivateChatRoom',
+      'ourContactProfiles',
+      'isDirectMessage',
+      'mailboxContract',
+      'ourUsername',
+      'directMessageIDFromUsername',
+      'usernameFromDirectMessageID'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
-        const joiningChatRoomId = sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')
-        return !joiningChatRoomId
-          ? this.ephemeral.loadedSummary || {}
-          : { ...this.ephemeral.loadedSummary, joined: joiningChatRoomId === this.currentChatRoomId }
+        const joined = sbp('chelonia/contract/isSyncing', this.currentChatRoomId)
+        return Object.assign(this.ephemeral.loadedSummary || {}, { joined })
       }
 
-      const { name, type, description, creator, picture, privacyLevel } = this.currentChatRoomState.attributes
+      const { name, type, description, creator, privacyLevel } = this.currentChatRoomState.attributes
+      const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
+      const partner = this.ourContactProfiles[partnerUsername]
+      const partnerName = partner ? partner.displayName || partner.username : ''
 
       return {
         type,
-        title: name,
+        title: type === CHATROOM_TYPES.INDIVIDUAL ? partnerName : name,
         description,
-        routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
-        private: this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
+        private: privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         privacyLevel,
         general: this.generalChatRoomId === this.currentChatRoomId,
         joined: true,
-        creator,
-        picture
+        picture: type === CHATROOM_TYPES.INDIVIDUAL ? partner?.picture : undefined,
+        creator
       }
     },
     details (): Object {
@@ -93,6 +99,21 @@ const chatroom: Object = {
         return this.ephemeral.loadedDetails || {}
       }
       const participants = {}
+
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        for (const username of Object.keys(this.currentChatRoomState.users)) {
+          if (username === this.ourUsername) {
+            participants[username] = this.globalProfile(username)
+          } else {
+            participants[username] = this.ourContactProfiles[username]
+          }
+        }
+        return {
+          isLoading: false,
+          numberOfParticipants: 1, // TODO: Need to consider guests
+          participants
+        }
+      }
       for (const username in this.currentGroupState.profiles) {
         // need to consider the time when someone is joining
         // here, his identity contract is not synced yet,
@@ -136,7 +157,11 @@ const chatroom: Object = {
     },
     refreshTitle (title?: string): void {
       title = title || this.currentChatRoomState.attributes?.name
-      if (title) {
+      if (this.currentChatRoomState.attributes?.type === CHATROOM_TYPES.INDIVIDUAL) {
+        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
+        const partner = this.ourContactProfiles[partnerUsername]
+        document.title = partner.displayName
+      } else if (title) {
         document.title = title
       }
     },
@@ -144,17 +169,15 @@ const chatroom: Object = {
       this.ephemeral.loadedDetails = initChatChannelDetails
       const { chatRoomId } = this.$route.params
       const state = await sbp('chelonia/latestContractState', chatRoomId)
-      const { name, type, description, picture, creator, privacyLevel } = state.attributes
+      const { name, type, description, creator, privacyLevel } = state.attributes
 
       this.ephemeral.loadedSummary = {
         type,
         title: name,
         description,
-        routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
         private: state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         privacyLevel,
         joined: false,
-        picture,
         creator
       }
 
@@ -183,7 +206,7 @@ const chatroom: Object = {
       this.setGroupChatDetailsAsGlobal()
     },
     setGroupChatDetailsAsGlobal () {
-      if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
+      if (!this.isJoinedChatRoom(this.currentChatRoomId) && !this.isDirectMessage(this.currentChatRoomId)) {
         sbp('okTurtles.data/set', 'GROUPCHAT_DETAILS', {
           participants: Object.keys(this.details.members || {})
             .map(un => ({ username: un, displayName: this.details.members[un].displayName })),
@@ -195,7 +218,9 @@ const chatroom: Object = {
       }
     },
     updateCurrentChatRoomID (chatRoomId: string) {
-      if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+      if (this.isDirectMessage(chatRoomId)) {
+        sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
+      } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
         const groupID = this.groupIdFromChatRoomId(chatRoomId)
         if (this.currentGroupId !== groupID) {
           sbp('state/vuex/commit', 'setCurrentGroupId', groupID)
@@ -216,4 +241,4 @@ const chatroom: Object = {
   }
 }
 
-export default chatroom
+export default ChatroomMixin

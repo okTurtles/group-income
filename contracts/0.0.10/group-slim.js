@@ -868,7 +868,7 @@ ${this.getErrorInfo()}`;
     const archivingPayments = { paymentsByPeriod: {}, payments: {} };
     while (sortedPeriodKeys.length > MAX_SAVED_PERIODS) {
       const period = sortedPeriodKeys.shift();
-      archivingPayments.paymentsByPeriod[period] = cloneDeep(state.paymentsByPeriod[period]);
+      archivingPayments.paymentsByPeriod[period] = state.paymentsByPeriod[period];
       for (const paymentHash of getters.paymentHashesForPeriod(period)) {
         archivingPayments.payments[paymentHash] = cloneDeep(state.payments[paymentHash]);
         import_common3.Vue.delete(state.payments, paymentHash);
@@ -1717,43 +1717,24 @@ ${this.getErrorInfo()}`;
       "gi.contracts/group/archivePayments": async function(contractID, archivingPayments) {
         const { paymentsByPeriod, payments } = archivingPayments;
         const { username } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
-        const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`;
-        const archPaymentsByPeriod = await (0, import_sbp3.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {};
-        const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`;
-        const archSentOrReceivedPayments = await (0, import_sbp3.default)("gi.db/archive/load", archSentOrReceivedPaymentsKey) || { sent: [], received: [] };
-        const sortPayments = (payments2) => payments2.sort((f, l) => f.meta.createdDate < l.meta.createdDate ? 1 : -1);
         for (const period of Object.keys(paymentsByPeriod).sort()) {
+          const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`;
+          const archPaymentsByPeriod = await (0, import_sbp3.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {};
+          const archPaymentsKey = `payments/${username}/${contractID}`;
+          let archPayments = await (0, import_sbp3.default)("gi.db/archive/load", archPaymentsKey) || {};
           archPaymentsByPeriod[period] = paymentsByPeriod[period];
-          const newSentOrReceivedPayments = { sent: [], received: [] };
-          const { paymentsFrom } = paymentsByPeriod[period];
-          for (const fromUser of Object.keys(paymentsFrom)) {
-            for (const toUser of Object.keys(paymentsFrom[fromUser])) {
-              if (toUser === username || fromUser === username) {
-                const receivedOrSent = toUser === username ? "received" : "sent";
-                for (const hash of paymentsFrom[fromUser][toUser]) {
-                  const { data, meta } = payments[hash];
-                  newSentOrReceivedPayments[receivedOrSent].push({ hash, period, data, meta, amount: data.amount, username: toUser });
-                }
-              }
-            }
-          }
-          archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent];
-          archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received];
-          const archPaymentsKey = `payments/${period}/${username}/${contractID}`;
-          const hashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period]);
-          const archPayments = Object.fromEntries(hashes.map((hash) => [hash, payments[hash]]));
+          archPayments = merge(archPayments, payments);
           while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
             const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift();
             const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod]);
-            await (0, import_sbp3.default)("gi.db/archive/delete", `payments/${shouldBeDeletedPeriod}/${username}/${contractID}`);
+            for (const hash of paymentHashes) {
+              delete archPayments[hash];
+            }
             delete archPaymentsByPeriod[shouldBeDeletedPeriod];
-            archSentOrReceivedPayments.sent = archSentOrReceivedPayments.sent.filter((payment) => !paymentHashes.includes(payment.hash));
-            archSentOrReceivedPayments.received = archSentOrReceivedPayments.received.filter((payment) => !paymentHashes.includes(payment.hash));
           }
+          await (0, import_sbp3.default)("gi.db/archive/save", archPaymentsByPeriodKey, archPaymentsByPeriod);
           await (0, import_sbp3.default)("gi.db/archive/save", archPaymentsKey, archPayments);
         }
-        await (0, import_sbp3.default)("gi.db/archive/save", archPaymentsByPeriodKey, archPaymentsByPeriod);
-        await (0, import_sbp3.default)("gi.db/archive/save", archSentOrReceivedPaymentsKey, archSentOrReceivedPayments);
         (0, import_sbp3.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, { paymentsByPeriod, payments });
       }
     }

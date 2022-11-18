@@ -63,7 +63,7 @@ export default ({
     action: {
       type: String,
       default: 'addMember',
-      validator: (value) => ['addMember', 'chat'].includes(value)
+      validator: (value) => ['addMember'].includes(value)
     }
   },
   computed: {
@@ -92,8 +92,6 @@ export default ({
     headerButtonAction () {
       let modalAction = 'AddMembers'
       if (this.action === 'addMember' && !this.groupShouldPropose) modalAction = 'InvitationLinkModal'
-      // Todo create new group modal
-      if (this.action === 'chat') modalAction = 'GroupMembersDirectMessages'
       this.openModal(modalAction)
     }
   }

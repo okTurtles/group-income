@@ -52,7 +52,10 @@ export default (sbp('sbp/selectors/register', {
     // proceed with creation
     // first create the mailbox for the user and subscribe to it
     // and do this outside of a try block so that if it throws the error just gets passed up
-    const mailbox = await sbp('gi.actions/mailbox/create', { options: { sync: true } })
+    const mailbox = await sbp('gi.actions/mailbox/create', {
+      data: { username },
+      options: { sync: true }
+    })
     const mailboxID = mailbox.contractID()
     let userID
     // next create the identity contract itself and associate it with the mailbox
@@ -61,14 +64,11 @@ export default (sbp('sbp/selectors/register', {
         contractName: 'gi.contracts/identity',
         publishOptions,
         data: {
-          attributes: { username, email, picture: finalPicture }
+          attributes: { username, email, picture: finalPicture, mailbox: mailboxID }
         }
       })
       userID = user.contractID()
       await sbp('chelonia/contract/sync', userID)
-      await sbp('gi.actions/identity/setAttributes', {
-        contractID: userID, data: { mailbox: mailboxID }
-      })
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
@@ -116,6 +116,10 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp('state/vuex/state')
     const ourLoginState = generatedLoginState()
     const contractLoginState = getters.loginState
+    const { mailbox } = getters.currentIdentityState.attributes
+    if (mailbox && !Object.keys(state.contracts).includes(mailbox)) {
+      await sbp('chelonia/contract/sync', mailbox)
+    }
     try {
       if (!contractLoginState) {
         console.info('no login state detected in identity contract, will set it')

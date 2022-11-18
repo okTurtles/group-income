@@ -99,6 +99,7 @@ export default (sbp('sbp/selectors/register', {
     }
     this.manifestToContract = {}
     this.whitelistedActions = {}
+    this.currentSyncs = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
     this.sideEffectStack = (contractID: string): Array<*> => {
       let stack = this.sideEffectStacks[contractID]
@@ -270,9 +271,9 @@ export default (sbp('sbp/selectors/register', {
   },
   // 'chelonia/contract' - selectors related to injecting remote data and monitoring contracts
   // TODO: add an optional parameter to "retain" the contract (see #828)
-  'chelonia/contract/sync': function (contractIDs: string | string[]): Promise<*> {
+  'chelonia/contract/sync': async function (contractIDs: string | string[]): Promise<*> {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
-    return Promise.all(listOfIds.map(contractID => {
+    await Promise.all(listOfIds.map(contractID => {
       // enqueue this invocation in a serial queue to ensure
       // handleEvent does not get called on contractID while it's syncing,
       // but after it's finished. This is used in tandem with
@@ -285,6 +286,9 @@ export default (sbp('sbp/selectors/register', {
         throw err // re-throw the error
       })
     }))
+  },
+  'chelonia/contract/isSyncing': function (contractID: string): boolean {
+    return !!this.currentSyncs[contractID]
   },
   // TODO: implement 'chelonia/contract/release' (see #828)
   // safer version of removeImmediately that waits to finish processing events for contractIDs

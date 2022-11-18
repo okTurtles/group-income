@@ -789,8 +789,8 @@
     }
   });
 
-  // frontend/model/contracts/mailbox.js
-  var import_sbp3 = __toESM(__require("@sbp/sbp"));
+  // frontend/model/contracts/identity.js
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
 
   // node_modules/vue/dist/vue.esm.js
   var emptyObject = Object.freeze({});
@@ -9144,40 +9144,6 @@
     }
   });
 
-  // frontend/model/contracts/shared/functions.js
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
-
-  // frontend/model/contracts/shared/time.js
-  var MINS_MILLIS = 6e4;
-  var HOURS_MILLIS = 60 * MINS_MILLIS;
-  var DAYS_MILLIS = 24 * HOURS_MILLIS;
-  var MONTHS_MILLIS = 30 * DAYS_MILLIS;
-
-  // frontend/views/utils/misc.js
-  function logExceptNavigationDuplicated(err) {
-    err.name !== "NavigationDuplicated" && console.error(err);
-  }
-
-  // frontend/model/contracts/shared/functions.js
-  async function leaveChatRoom({ contractID }) {
-    const rootState = (0, import_sbp2.default)("state/vuex/state");
-    const rootGetters = (0, import_sbp2.default)("state/vuex/getters");
-    if (contractID === rootGetters.currentChatRoomId) {
-      (0, import_sbp2.default)("state/vuex/commit", "setCurrentChatRoomId", {
-        groupId: rootState.currentGroupId
-      });
-      const curRouteName = (0, import_sbp2.default)("controller/router").history.current.name;
-      if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
-        await (0, import_sbp2.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
-      }
-    }
-    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
-    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
-    (0, import_sbp2.default)("chelonia/contract/remove", contractID).catch((e) => {
-      console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
-    });
-  }
-
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
   var isEmpty = (v) => v === EMPTY_VALUE;
@@ -9229,6 +9195,19 @@ ${this.getErrorInfo()}`;
   var validatorError = (typeFn, value, scope, message, expectedType, valueType) => {
     return new TypeValidatorError(message, expectedType || getType2(typeFn), valueType || typeof value, JSON.stringify(value), typeFn.name, scope);
   };
+  var arrayOf = (typeFn, _scope = "Array") => {
+    function array(value) {
+      if (isEmpty(value))
+        return [typeFn(value)];
+      if (Array.isArray(value)) {
+        let index2 = 0;
+        return value.map((v) => typeFn(v, `${_scope}[${index2++}]`));
+      }
+      throw validatorError(array, value, _scope);
+    }
+    array.type = () => `Array<${getType2(typeFn)}>`;
+    return array;
+  };
   var object = function(value) {
     if (isEmpty(value))
       return {};
@@ -9273,14 +9252,15 @@ ${this.getErrorInfo()}`;
     };
     return object2;
   };
-  var optional = (typeFn) => {
-    const unionFn = unionOf(typeFn, undef);
-    function optional2(v) {
-      return unionFn(v);
-    }
-    optional2.type = ({ noVoid }) => !noVoid ? getType2(unionFn) : getType2(typeFn);
-    return optional2;
-  };
+  function objectMaybeOf(validations, _scope = "Object") {
+    return function(data) {
+      object(data);
+      for (const key in data) {
+        validations[key]?.(data[key], `${_scope}.${key}`);
+      }
+      return data;
+    };
+  }
   function undef(value, _scope = "") {
     if (isEmpty(value) || isUndef2(value))
       return void 0;
@@ -9294,160 +9274,110 @@ ${this.getErrorInfo()}`;
       return value;
     throw validatorError(string2, value, _scope);
   };
-  function unionOf_(...typeFuncs) {
-    function union(value, _scope = "") {
-      for (const typeFn of typeFuncs) {
-        try {
-          return typeFn(value, _scope);
-        } catch (_) {
-        }
-      }
-      throw validatorError(union, value, _scope);
-    }
-    union.type = () => `(${typeFuncs.map((fn) => getType2(fn)).join(" | ")})`;
-    return union;
-  }
-  var unionOf = unionOf_;
 
-  // frontend/model/contracts/mailbox.js
-  (0, import_sbp3.default)("chelonia/defineContract", {
-    name: "gi.contracts/mailbox",
-    metadata: {
-      validate: objectOf({
-        createdDate: string,
-        username: optional(string),
-        identityContractID: optional(string)
-      }),
-      create() {
-        if (!(0, import_sbp3.default)("state/vuex/state").loggedIn) {
-          return { createdDate: new Date().toISOString() };
-        }
-        const { username, identityContractID } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
-        return {
-          createdDate: new Date().toISOString(),
-          username,
-          identityContractID
-        };
+  // frontend/model/contracts/shared/validators.js
+  var allowedUsernameCharacters = (value) => /^[\w-]*$/.test(value);
+  var noConsecutiveHyphensOrUnderscores = (value) => !value.includes("--") && !value.includes("__");
+  var noLeadingOrTrailingHyphen = (value) => !value.startsWith("-") && !value.endsWith("-");
+  var noLeadingOrTrailingUnderscore = (value) => !value.startsWith("_") && !value.endsWith("_");
+  var noUppercase = (value) => value.toLowerCase() === value;
+
+  // frontend/model/contracts/shared/constants.js
+  var IDENTITY_USERNAME_MAX_CHARS = 80;
+
+  // frontend/model/contracts/identity.js
+  (0, import_sbp2.default)("chelonia/defineContract", {
+    name: "gi.contracts/identity",
+    getters: {
+      currentIdentityState(state) {
+        return state;
+      },
+      loginState(state, getters) {
+        return getters.currentIdentityState.loginState;
       }
     },
     actions: {
-      "gi.contracts/mailbox": {
-        validate: objectOf({
-          username: string
-        }),
+      "gi.contracts/identity": {
+        validate: (data, { state, meta }) => {
+          objectMaybeOf({
+            attributes: objectMaybeOf({
+              username: string,
+              email: string,
+              picture: string
+            })
+          })(data);
+          const { username } = data.attributes;
+          if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
+            throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`);
+          }
+          if (!allowedUsernameCharacters(username)) {
+            throw new TypeError("A username cannot contain disallowed characters.");
+          }
+          if (!noConsecutiveHyphensOrUnderscores(username)) {
+            throw new TypeError("A username cannot contain two consecutive hyphens or underscores.");
+          }
+          if (!noLeadingOrTrailingHyphen(username)) {
+            throw new TypeError("A username cannot start or end with a hyphen.");
+          }
+          if (!noLeadingOrTrailingUnderscore(username)) {
+            throw new TypeError("A username cannot start or end with an underscore.");
+          }
+          if (!noUppercase(username)) {
+            throw new TypeError("A username cannot contain uppercase letters.");
+          }
+        },
         process({ data }, { state }) {
           const initialState = merge({
-            attributes: {
-              creator: data.username,
-              autoJoinAllowance: true
-            },
-            users: {}
+            settings: {},
+            attributes: {}
           }, data);
           for (const key in initialState) {
             vue_esm_default.set(state, key, initialState[key]);
           }
         }
       },
-      "gi.contracts/mailbox/setAttributes": {
-        validate: (data, { state, meta }) => {
-          if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can set attributes."));
-          }
-          object(data);
-        },
-        process({ meta, data }, { state }) {
+      "gi.contracts/identity/setAttributes": {
+        validate: object,
+        process({ data }, { state }) {
           for (const key in data) {
             vue_esm_default.set(state.attributes, key, data[key]);
           }
         }
       },
-      "gi.contracts/mailbox/createDirectMessage": {
-        validate: (data, { state, meta }) => {
-          objectOf({
-            username: string,
-            contractID: string
-          })(data);
-          if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can create direct message channel."));
-          } else if (state.users[data.username]) {
-            throw new TypeError(L("Already existing direct message channel."));
-          }
-        },
-        process({ meta, data }, { state }) {
-          vue_esm_default.set(state.users, data.username, {
-            contractID: data.contractID,
-            creator: meta.username,
-            hidden: false,
-            joinedDate: meta.createdDate
-          });
-        },
-        async sideEffect({ contractID, data }) {
-          await (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
-          if (!(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
-            await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: data.contractID } }).catch(logExceptNavigationDuplicated);
-          }
-        }
-      },
-      "gi.contracts/mailbox/joinDirectMessage": {
-        validate: objectOf({
-          username: string,
-          contractID: optional(string)
-        }),
-        process({ meta, data }, { state }) {
-          if (state.attributes.creator === data.username) {
-            if (state.users[meta.username]) {
-              throw new TypeError(L("Already existing direct message channel."));
-            }
-          } else if (state.attributes.creator === meta.username) {
-            if (!state.users[data.username] || state.users[data.username].joinedDate) {
-              throw new TypeError(L("Never created or already joined direct message channel."));
-            }
-          } else {
-            throw new TypeError(L("Incorrect mailbox creator to join direct message channel."));
-          }
-          const joinedDate = state.attributes.autoJoinAllowance ? meta.createdDate : null;
-          if (state.attributes.creator === data.username) {
-            vue_esm_default.set(state.users, meta.username, {
-              contractID: data.contractID,
-              creator: meta.username,
-              hidden: false,
-              joinedDate
-            });
-          } else {
-            vue_esm_default.set(state.users[data.username], "joinedDate", joinedDate);
-          }
-        },
-        async sideEffect({ contractID, meta, data }, { state }) {
-          let chatRoomId;
-          if (state.attributes.creator === meta.username) {
-            chatRoomId = state.users[data.username].contractID;
-          } else if (state.attributes.autoJoinAllowance) {
-            chatRoomId = data.contractID;
-          }
-          if (chatRoomId) {
-            await (0, import_sbp3.default)("chelonia/contract/sync", chatRoomId);
-          }
-          if (state.attributes.creator === meta.username && !(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
-            await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId } }).catch(logExceptNavigationDuplicated);
-          }
-        }
-      },
-      "gi.contracts/mailbox/leaveDirectMessage": {
-        validate: (data, { state, meta }) => {
-          objectOf({
-            username: string
-          })(data);
-          if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can leave direct message channel."));
-          } else if (!state.users[data.username]?.joinedDate) {
-            throw new TypeError(L("Not joined or already left direct message channel."));
-          }
-        },
+      "gi.contracts/identity/deleteAttributes": {
+        validate: arrayOf(string),
         process({ data }, { state }) {
-          vue_esm_default.set(state.users[data.username], "joinedDate", null);
+          for (const attribute2 of data) {
+            vue_esm_default.delete(state.attributes, attribute2);
+          }
+        }
+      },
+      "gi.contracts/identity/updateSettings": {
+        validate: object,
+        process({ data }, { state }) {
+          for (const key in data) {
+            vue_esm_default.set(state.settings, key, data[key]);
+          }
+        }
+      },
+      "gi.contracts/identity/setLoginState": {
+        validate: objectOf({
+          groupIds: arrayOf(string)
+        }),
+        process({ data }, { state }) {
+          vue_esm_default.set(state, "loginState", data);
         },
-        sideEffect({ contractID, data }, { state }) {
-          leaveChatRoom({ contractID: state.users[data.username].contractID });
+        sideEffect({ contractID }) {
+          if (contractID === (0, import_sbp2.default)("state/vuex/getters").ourIdentityContractId) {
+            (0, import_sbp2.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/updateLoginStateUponLogin"]).catch((e) => {
+              (0, import_sbp2.default)("gi.notifications/emit", "ERROR", {
+                message: L("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
+                  errName: e.name,
+                  errMsg: e.message || "?"
+                })
+              });
+            });
+          }
         }
       }
     }
