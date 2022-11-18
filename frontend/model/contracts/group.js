@@ -1015,7 +1015,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         chatRoomID: string,
         member: string,
-        leavingGroup: boolean // if kicker is exists, it means group leaving
+        leavingGroup: boolean // if kicker exists, it means group leaving
       }),
       process ({ data, meta }, { state }) {
         Vue.set(state.chatRooms[data.chatRoomID], 'users',
@@ -1044,13 +1044,13 @@ sbp('chelonia/defineContract', {
         const rootState = sbp('state/vuex/state')
         const username = data.username || meta.username
         if (username === rootState.loggedIn.username) {
-          if (!sbp('okTurtles.data/get', 'JOINING_GROUP') || sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+          if (!sbp('okTurtles.data/get', 'JOINING_GROUP') || sbp('okTurtles.data/get', 'JOINING_GROUP_CHAT')) {
             // while users are joining chatroom, they don't need to leave chatrooms
             // this is similar to setting 'JOINING_GROUP' before joining group
             sbp('okTurtles.data/set', 'JOINING_CHATROOM_ID', data.chatRoomID)
             await sbp('chelonia/contract/sync', data.chatRoomID)
             sbp('okTurtles.data/set', 'JOINING_CHATROOM_ID', undefined)
-            sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
+            sbp('okTurtles.data/set', 'JOINING_GROUP_CHAT', false)
           }
         }
       }

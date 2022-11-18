@@ -422,7 +422,7 @@ ${this.getErrorInfo()}`;
     (0, import_sbp3.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
   }
   function addMention({ contractID, messageId, datetime, text, username, chatRoomName }) {
-    if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+    if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
       return;
     }
     (0, import_sbp3.default)("state/vuex/commit", "addChatRoomUnreadMention", {
@@ -534,7 +534,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta }) {
           emitMessageEvent({ contractID, hash });
-          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM") || (0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM_ID") === contractID) {
+          if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
           }
         }
@@ -554,7 +554,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta }) {
           emitMessageEvent({ contractID, hash });
-          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+          if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
           }
         }
@@ -574,7 +574,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta }) {
           emitMessageEvent({ contractID, hash });
-          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+          if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
           }
         }
@@ -607,10 +607,8 @@ ${this.getErrorInfo()}`;
         sideEffect({ data, hash, contractID, meta }, { state }) {
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           if (data.member === rootState.loggedIn.username) {
-            if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+            if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
               updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
-            }
-            if ((0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
               return;
             }
             leaveChatRoom({ contractID });
@@ -672,7 +670,7 @@ ${this.getErrorInfo()}`;
               chatRoomName: getters.chatRoomAttributes.name
             });
           }
-          if ((0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+          if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
           }
         }

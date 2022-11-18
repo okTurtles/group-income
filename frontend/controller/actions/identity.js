@@ -116,6 +116,10 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp('state/vuex/state')
     const ourLoginState = generatedLoginState()
     const contractLoginState = getters.loginState
+    const { mailbox } = getters.currentIdentityState.attributes
+    if (mailbox && !Object.keys(state.contracts).includes(mailbox)) {
+      await sbp('chelonia/contract/sync', mailbox)
+    }
     try {
       if (!contractLoginState) {
         console.info('no login state detected in identity contract, will set it')
@@ -195,11 +199,6 @@ export default (sbp('sbp/selectors/register', {
         // we must re-sync our identity contract again to ensure we don't rejoin a group we
         // were just kicked out of
         await sbp('chelonia/contract/sync', identityContractID)
-        const rootGetters = sbp('state/vuex/getters')
-        const { mailbox } = rootGetters.currentIdentityState.attributes
-        if (mailbox && !contractIDs.includes(mailbox)) {
-          await sbp('chelonia/contract/sync', mailbox, 'SYNCING_MAILBOX')
-        }
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })

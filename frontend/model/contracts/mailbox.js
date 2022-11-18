@@ -80,10 +80,10 @@ sbp('chelonia/defineContract', {
           joinedDate: meta.createdDate
         })
       },
-      async sideEffect ({ data }) {
-        await sbp('chelonia/contract/sync', data.contractID, 'READY_TO_JOIN_CHATROOM')
+      async sideEffect ({ contractID, data }) {
+        await sbp('chelonia/contract/sync', data.contractID)
 
-        if (!sbp('okTurtles.data/get', 'SYNCING_MAILBOX')) {
+        if (!sbp('chelonia/contract/isSyncing', contractID)) {
           await sbp('controller/router')
             .push({ name: 'GroupChatConversation', params: { chatRoomId: data.contractID } })
             .catch(logExceptNavigationDuplicated)
@@ -119,19 +119,19 @@ sbp('chelonia/defineContract', {
           Vue.set(state.users[data.username], 'joinedDate', joinedDate)
         }
       },
-      async sideEffect ({ meta, data }, { state }) {
-        let contractID
+      async sideEffect ({ contractID, meta, data }, { state }) {
+        let chatRoomId
         if (state.attributes.creator === meta.username) {
-          contractID = state.users[data.username].contractID
+          chatRoomId = state.users[data.username].contractID
         } else if (state.attributes.autoJoinAllowance) {
-          contractID = data.contractID
+          chatRoomId = data.contractID
         }
-        if (contractID) {
-          await sbp('chelonia/contract/sync', contractID, 'READY_TO_JOIN_CHATROOM')
+        if (chatRoomId) {
+          await sbp('chelonia/contract/sync', chatRoomId)
         }
-        if (state.attributes.creator === meta.username && !sbp('okTurtles.data/get', 'SYNCING_MAILBOX')) {
+        if (state.attributes.creator === meta.username && !sbp('chelonia/contract/isSyncing', contractID)) {
           await sbp('controller/router')
-            .push({ name: 'GroupChatConversation', params: { chatRoomId: contractID } })
+            .push({ name: 'GroupChatConversation', params: { chatRoomId } })
             .catch(logExceptNavigationDuplicated)
         }
       }
@@ -150,10 +150,7 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         Vue.set(state.users[data.username], 'joinedDate', null)
       },
-      sideEffect ({ data }, { state }) {
-        if (sbp('okTurtles.data/get', 'SYNCING_MAILBOX')) {
-          return
-        }
+      sideEffect ({ contractID, data }, { state }) {
         leaveChatRoom({ contractID: state.users[data.username].contractID })
       }
     }

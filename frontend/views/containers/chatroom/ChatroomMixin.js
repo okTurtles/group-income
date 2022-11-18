@@ -72,10 +72,8 @@ const ChatroomMixin: Object = {
     ...mapState(['currentGroupId']),
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
-        const joiningChatRoomId = sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')
-        return !joiningChatRoomId
-          ? this.ephemeral.loadedSummary || {}
-          : { ...this.ephemeral.loadedSummary, joined: joiningChatRoomId === this.currentChatRoomId }
+        const joined = sbp('chelonia/contract/isSyncing', this.currentChatRoomId)
+        return Object.assign(this.ephemeral.loadedSummary || {}, { joined })
       }
 
       const { name, type, description, creator, privacyLevel } = this.currentChatRoomState.attributes

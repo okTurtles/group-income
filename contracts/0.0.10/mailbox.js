@@ -9381,11 +9381,9 @@ ${this.getErrorInfo()}`;
             joinedDate: meta.createdDate
           });
         },
-        async sideEffect({ data }) {
-          (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", true);
+        async sideEffect({ contractID, data }) {
           await (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
-          (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
-          if (!(0, import_sbp3.default)("okTurtles.data/get", "SYNCING_MAILBOX")) {
+          if (!(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
             await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: data.contractID } }).catch(logExceptNavigationDuplicated);
           }
         }
@@ -9419,20 +9417,18 @@ ${this.getErrorInfo()}`;
             vue_esm_default.set(state.users[data.username], "joinedDate", joinedDate);
           }
         },
-        async sideEffect({ meta, data }, { state }) {
-          let contractID;
+        async sideEffect({ contractID, meta, data }, { state }) {
+          let chatRoomId;
           if (state.attributes.creator === meta.username) {
-            contractID = state.users[data.username].contractID;
+            chatRoomId = state.users[data.username].contractID;
           } else if (state.attributes.autoJoinAllowance) {
-            contractID = data.contractID;
+            chatRoomId = data.contractID;
           }
-          if (contractID) {
-            (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", true);
-            await (0, import_sbp3.default)("chelonia/contract/sync", contractID);
-            (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
+          if (chatRoomId) {
+            await (0, import_sbp3.default)("chelonia/contract/sync", chatRoomId);
           }
-          if (state.attributes.creator === meta.username && !(0, import_sbp3.default)("okTurtles.data/get", "SYNCING_MAILBOX")) {
-            await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: contractID } }).catch(logExceptNavigationDuplicated);
+          if (state.attributes.creator === meta.username && !(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
+            await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId } }).catch(logExceptNavigationDuplicated);
           }
         }
       },
@@ -9450,10 +9446,7 @@ ${this.getErrorInfo()}`;
         process({ data }, { state }) {
           vue_esm_default.set(state.users[data.username], "joinedDate", null);
         },
-        sideEffect({ data }, { state }) {
-          if ((0, import_sbp3.default)("okTurtles.data/get", "SYNCING_MAILBOX")) {
-            return;
-          }
+        sideEffect({ contractID, data }, { state }) {
           leaveChatRoom({ contractID: state.users[data.username].contractID });
         }
       }

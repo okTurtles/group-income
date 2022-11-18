@@ -650,7 +650,7 @@ export default ({
   },
   watch: {
     currentChatRoomId (to, from) {
-      const force = !!sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')
+      const force = sbp('chelonia/contract/isSyncing', to)
       this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
     },

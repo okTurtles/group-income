@@ -47,10 +47,7 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
   username: string,
   chatRoomName: string
 }): void {
-  /**
-   * If 'READY_TO_JOIN_CHATROOM' is false, it means not syncing chatroom
-  */
-  if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+  if (sbp('chelonia/contract/isSyncing', contractID)) {
     return
   }
   sbp('state/vuex/commit', 'addChatRoomUnreadMention', {
@@ -182,8 +179,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
 
-        if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM') || // Join by himself or Login in another device
-          sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID') === contractID) { // Be added by another
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
           updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
@@ -206,7 +202,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
 
-        if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
           updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
@@ -231,7 +227,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
 
-        if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
           updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
@@ -266,10 +262,8 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, hash, contractID, meta }, { state }) {
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
-          if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+          if (sbp('chelonia/contract/isSyncing', contractID)) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
-          }
-          if (sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')) {
             return
           }
           leaveChatRoom({ contractID })
@@ -335,7 +329,7 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
           updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
