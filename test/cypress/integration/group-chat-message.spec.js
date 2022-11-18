@@ -214,7 +214,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 2)
     })
 
-    sendEmoticon(5, '+1', 1)
+    sendEmoticon(5, '+1', 2)
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message:nth-child(5) .c-emoticons-list>.c-emoticon-wrapper').should('have.length', 3)
