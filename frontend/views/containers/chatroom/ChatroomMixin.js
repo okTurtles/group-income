@@ -157,11 +157,11 @@ const ChatroomMixin: Object = {
     },
     refreshTitle (title?: string): void {
       title = title || this.currentChatRoomState.attributes?.name
-      if (this.currentChatRoomState.attributes?.type === CHATROOM_TYPES.INDIVIDUAL) {
+      if (this.isDirectMessage(this.currentChatRoomId)) {
         const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
         const partner = this.ourContactProfiles[partnerUsername]
-        document.title = partner.displayName
-      } else if (title) {
+        document.title = partner.displayName || partnerUsername
+      } else if (title) { // Group Chat
         document.title = title
       }
     },
