@@ -30,6 +30,8 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isOn
               i18n Rename
             menu-item(v-if='!isOnDirectMessage' @click='openModal("ChatMembersAllModal")')
               i18n Members
+            menu-item(v-if='isTypeIndividual' @click='openModal("ChatMembersAllModal")')
+              i18n Add People
             menu-item(
               :class='`${!summary.general ? "c-separator" : ""}`'
               @click='openModal("UserSettingsModal", {section: "notifications"})'
@@ -106,7 +108,7 @@ import ChatroomMixin from '@containers/chatroom/ChatroomMixin.js'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'GroupChat',
@@ -170,6 +172,12 @@ export default ({
     },
     isOnDirectMessage () {
       return this.isDirectMessage(this.currentChatRoomId)
+    },
+    isTypeIndividual () {
+      return this.currentChatRoomState.attributes.type === CHATROOM_TYPES.INDIVIDUAL
+    },
+    isPrivacyLevelGroup () {
+      return this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.GROUP
     }
   },
   methods: {

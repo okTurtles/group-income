@@ -606,6 +606,9 @@
 /* controller/router.js */
 "Group Dashboard" = "Tableau de bord";
 
+/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
+"Loading" = "Chargement";
+
 /* controller/router.js, views/containers/contributions/ContributionsWidget.vue, views/containers/navigation/Navigation.vue, views/pages/Payments.vue */
 "Payments" = "Paiements";
 
@@ -672,9 +675,6 @@
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can set attributes." = "Seul le créateur de la boîte aux lettres peut définir des attributs.";
 
-/* model/contracts/mailbox.js */
-"Same attribute is already set." = "Le même attribut est déjà défini.";
-
 /* model/contracts/shared/time.js */
 "Today" = "Aujourd’hui";
 
@@ -722,9 +722,6 @@
 
 /* views/components/Badge.vue */
 "{num} new notifications" = "{num} nouvelles notifications";
-
-/* views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
-"Loading" = "Chargement";
 
 /* views/components/CopyableInput.vue, views/components/LinkToCopy.vue */
 "Copied to clipboard!" = "Copié dans le presse-papiers !";
@@ -2290,6 +2287,9 @@
 "Show info" = "Afficher les informations";
 
 /* views/pages/GroupChat.vue */
+"Add People" = "Ajouter des personnes";
+
+/* views/pages/GroupChat.vue */
 "Channel Options" = "Options du salon";
 
 /* views/pages/GroupChat.vue */
@@ -2594,6 +2594,9 @@
 
 /* Not currently used */
 "Return" = "Retour en arrière";
+
+/* Not currently used */
+"Same attribute is already set." = "Le même attribut est déjà défini.";
 
 /* Not currently used */
 "Search for a channel" = "Rechercher un groupe de discussion";

@@ -122,7 +122,7 @@ import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
+import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
 
 const initDetails = {
   name: '',
@@ -163,7 +163,9 @@ export default ({
       'chatRoomUsersInSort',
       'ourUsername',
       'userDisplayName',
-      'isJoinedChatRoom'
+      'isJoinedChatRoom',
+      'ourContactProfiles',
+      'ourContacts'
     ]),
     ...mapState([
       'currentGroupId'
@@ -201,6 +203,9 @@ export default ({
     },
     isJoined () {
       return this.isJoinedChatRoom(this.currentChatRoomId)
+    },
+    isTypeIndividual () {
+      return this.currentChatRoomState.attributes.type === CHATROOM_TYPES.INDIVIDUAL
     }
   },
   methods: {
@@ -214,13 +219,24 @@ export default ({
     initializeMembers () {
       const members = this.isJoined ? this.chatRoomUsersInSort : this.details.participants
       this.addedMembers = members.map(member => ({ ...member, departedDate: null }))
-      this.canAddMembers = this.groupMembersSorted
-        .filter(member => !this.addedMembers.find(mb => mb.username === member.username) && !member.invitedBy)
-        .map(member => ({
-          username: member.username,
-          displayName: member.displayName,
-          joinedDate: null
-        }))
+
+      if (this.isTypeIndividual) {
+        this.canAddMembers = this.ourContacts
+          .filter(username => !this.addedMembers.find(mb => mb.username === username))
+          .map(username => ({
+            username,
+            displayName: this.ourContactProfiles[username].displayName,
+            joinedDate: null
+          }))
+      } else {
+        this.canAddMembers = this.groupMembersSorted
+          .filter(member => !this.addedMembers.find(mb => mb.username === member.username) && !member.invitedBy)
+          .map(member => ({
+            username: member.username,
+            displayName: member.displayName,
+            joinedDate: null
+          }))
+      }
     },
     localizedName (username: string) {
       const name = this.userDisplayName(username)

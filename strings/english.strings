@@ -111,6 +111,9 @@
 /* views/containers/contributions/Contribution.vue, views/containers/dashboard/GroupMembers.vue */
 "Add" = "Add";
 
+/* views/pages/GroupChat.vue */
+"Add People" = "Add People";
+
 /* views/components/ProfileCard.vue */
 "Add a bio" = "Add a bio";
 
@@ -963,7 +966,7 @@
 /* views/containers/payments/PaymentRowSendLightning.vue, views/pages/Payments.vue */
 "Lightning" = "Lightning";
 
-/* views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
+/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
 "Loading" = "Loading";
 
 /* main.js */
@@ -1517,9 +1520,6 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Revoked" = "Revoked";
-
-/* model/contracts/mailbox.js */
-"Same attribute is already set." = "Same attribute is already set.";
 
 /* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Save";
