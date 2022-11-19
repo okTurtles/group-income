@@ -9,7 +9,7 @@
     <link rel="icon" href="/assets/images/group-income-icon-transparent.png" sizes="32x32">
   </head>
   <body>
-    <div class="modal is-active" id="fallback" style="visibility: hidden;">
+    <div class="modal is-active" id="fallback" style="display: none;">
       <div class="modal-content">
         <h1>Outdated browser</h1>
         <p>You are using an <strong>outdated</strong> or unsupported browser. Please upgrade your browser to improve your experience.</p>
@@ -31,10 +31,9 @@
       <!-- we no longer use cypress-bypass-ui -->
       <!-- <cypress-bypass-ui v-if="isInCypress"></cypress-bypass-ui> -->
     </div>
-    <!-- If main.js loads properly it will remove the fallback element. -->
     <script type="module" src="/assets/js/main.js"></script>
-    <!-- Makes the fallback element visible if JS is enabled. -->
-    <script type="text/javascript">document.getElementById('fallback').style.visibility = ''</script>
+    <!-- Makes the fallback element visible if JS is enabled but modules aren't supported. -->
+    <script type="text/javascript" nomodule>document.getElementById('fallback').style.display = ''</script>
     <noscript>
       <section class="hero is-fullheight">
         <div class="hero-body">
