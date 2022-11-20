@@ -156,6 +156,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       } else {
+        // when the user has already switched into the group, record the log-in time for the group.
         sbp('gi.actions/group/updateLastLoggedIn', { contractID: state.currentGroupId })
       }
     } catch (e) {
