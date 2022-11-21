@@ -522,8 +522,8 @@ const getters = {
   },
   isDirectMessage (state, getters) {
     // NOTE: mailbox contract could not be synced at the time of calling this getter
-    return chatRoomId => Object.keys(getters.mailboxContract.users || {})
-      .map(username => getters.mailboxContract.users[username].contractID)
+    return chatRoomId => Object.keys(getters.mailboxContract.dms || {})
+      .map(username => getters.mailboxContract.dms[username].contractID)
       .includes(chatRoomId)
   },
   currentChatRoomId (state, getters) {
@@ -547,14 +547,14 @@ const getters = {
     }
   },
   directMessageIDFromUsername (state, getters) {
-    return (username: string) => getters.mailboxContract.users[username]?.contractID
+    return (username: string) => getters.mailboxContract.dms[username]?.contractID
   },
   usernameFromDirectMessageID (state, getters) {
     return (chatRoomId: string) => {
       if (!getters.isDirectMessage(chatRoomId)) {
         return
       }
-      return Object.keys(getters.mailboxContract.users)
+      return Object.keys(getters.mailboxContract.dms)
         .find(username => getters.directMessageIDFromUsername(username) === chatRoomId)
     }
   },

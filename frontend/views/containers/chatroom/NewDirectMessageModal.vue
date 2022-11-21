@@ -122,8 +122,8 @@ export default ({
     ]),
     ourNewDMContacts () {
       return this.ourContacts
-        .filter(username => !Object.keys(this.mailboxContract.users).includes(username) ||
-          !this.mailboxContract.users[username].joinedDate)
+        .filter(username => !Object.keys(this.mailboxContract.dms).includes(username) ||
+          !this.mailboxContract.dms[username].joinedDate)
         .map(username => this.ourContactProfiles[username])
     },
     ourNewContactsCount () {
@@ -131,8 +131,8 @@ export default ({
     },
     ourRecentConversations () {
       return this.ourContacts
-        .filter(username => Object.keys(this.mailboxContract.users).includes(username) &&
-          this.mailboxContract.users[username].joinedDate)
+        .filter(username => Object.keys(this.mailboxContract.dms).includes(username) &&
+          this.mailboxContract.dms[username].joinedDate)
         .map(username => {
           const chatRoomId = this.directMessageIDFromUsername(username)
           // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined
@@ -179,7 +179,7 @@ export default ({
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     createNewDirectMessage (username) {
-      if (this.mailboxContract.users[username]) {
+      if (this.mailboxContract.dms[username]) {
         sbp('gi.actions/mailbox/joinDirectMessage', {
           contractID: this.currentIdentityState.attributes.mailbox,
           data: { username }

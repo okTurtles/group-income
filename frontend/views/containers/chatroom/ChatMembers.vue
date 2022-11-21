@@ -74,8 +74,8 @@ export default ({
     ]),
     directMessages () {
       return this.ourContacts
-        .filter(username => Object.keys(this.mailboxContract.users).includes(username) &&
-          this.mailboxContract.users[username].joinedDate)
+        .filter(username => Object.keys(this.mailboxContract.dms).includes(username) &&
+          this.mailboxContract.dms[username].joinedDate)
         .map(username => this.ourContactProfiles[username])
     }
   },

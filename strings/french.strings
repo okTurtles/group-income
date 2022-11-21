@@ -42,6 +42,9 @@
 /* MISSING TRANSLATION - model/contracts/mailbox.js */
 "Incorrect mailbox creator to join direct message channel." = "Incorrect mailbox creator to join direct message channel.";
 
+/* MISSING TRANSLATION - model/contracts/mailbox.js */
+"Only a member of group message channel can add people." = "Only a member of group message channel can add people.";
+
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "1d" = "1d";
 
@@ -661,13 +664,25 @@
 "Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
 
 /* model/contracts/mailbox.js */
+"Already existing group message channel." = "Canal de messagerie de groupe déjà existant.";
+
+/* model/contracts/mailbox.js */
 "Never created or already joined direct message channel." = "Jamais créé ou déjà rejoint le canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
+"Not joined or already deleted group message channel." = "Canal de messagerie de groupe non rejoint ou déjà supprimé.";
 
 /* model/contracts/mailbox.js */
 "Not joined or already left direct message channel." = "Pas rejoint ou déjà quitté le canal de messagerie directe.";
 
 /* model/contracts/mailbox.js */
+"Only creator can delete group message channel." = "Seul le créateur peut supprimer le canal de message de groupe.";
+
+/* model/contracts/mailbox.js */
 "Only the mailbox creator can create direct message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can create group message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie de groupe.";
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can leave direct message channel." = "Seul le créateur de la boîte aux lettres peut quitter le canal de messagerie directe.";

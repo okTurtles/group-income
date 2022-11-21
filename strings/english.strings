@@ -204,6 +204,9 @@
 /* model/contracts/mailbox.js */
 "Already existing direct message channel." = "Already existing direct message channel.";
 
+/* model/contracts/mailbox.js */
+"Already existing group message channel." = "Already existing group message channel.";
+
 /* views/containers/access/SignupModal.vue, views/pages/Join.vue */
 "Already have an account?" = "Already have an account?";
 
@@ -1126,6 +1129,9 @@
 "Non-monetary" = "Non-monetary";
 
 /* model/contracts/mailbox.js */
+"Not joined or already deleted group message channel." = "Not joined or already deleted group message channel.";
+
+/* model/contracts/mailbox.js */
 "Not joined or already left direct message channel." = "Not joined or already left direct message channel.";
 
 /* views/containers/access/LoginModal.vue, views/pages/Join.vue */
@@ -1182,11 +1188,17 @@
 /* views/containers/group-settings/GroupJoinModal.vue */
 "Once the group agrees that you should join them, a unique access link will be generated, giving you instant access to the group" = "Once the group agrees that you should join them, a unique access link will be generated, giving you instant access to the group";
 
+/* model/contracts/mailbox.js */
+"Only a member of group message channel can add people." = "Only a member of group message channel can add people.";
+
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Only added members will have access." = "Only added members will have access.";
 
 /* controller/actions/group.js */
 "Only channel members can invite others to join." = "Only channel members can invite others to join.";
+
+/* model/contracts/mailbox.js */
+"Only creator can delete group message channel." = "Only creator can delete group message channel.";
 
 /* model/contracts/chatroom.js, model/contracts/group.js */
 "Only the channel creator can delete channel." = "Only the channel creator can delete channel.";
@@ -1196,6 +1208,9 @@
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can create direct message channel." = "Only the mailbox creator can create direct message channel.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can create group message channel." = "Only the mailbox creator can create group message channel.";
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can leave direct message channel." = "Only the mailbox creator can leave direct message channel.";

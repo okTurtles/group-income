@@ -38,9 +38,10 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           attributes: {
             creator: data.username,
-            autoJoinAllowance: true
+            autoJoinAllowance: true // this attribute could be used to block him to be joined direct/group messages automatically by another
           },
-          users: {}
+          dms: {}, // direct message
+          gms: {} // group message
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -68,15 +69,15 @@ sbp('chelonia/defineContract', {
         })(data)
         if (state.attributes.creator !== meta.username) {
           throw new TypeError(L('Only the mailbox creator can create direct message channel.'))
-        } else if (state.users[data.username]) {
+        } else if (state.dms[data.username]) {
           throw new TypeError(L('Already existing direct message channel.'))
         }
       },
       process ({ meta, data }, { state }) {
-        Vue.set(state.users, data.username, {
+        Vue.set(state.dms, data.username, {
           contractID: data.contractID,
           creator: meta.username,
-          hidden: false,
+          hidden: false, // TODO: this hidden attribute should be there in state.js as global
           joinedDate: meta.createdDate
         })
       },
@@ -97,11 +98,11 @@ sbp('chelonia/defineContract', {
       }),
       process ({ meta, data }, { state }) {
         if (state.attributes.creator === data.username) {
-          if (state.users[meta.username]) {
+          if (state.dms[meta.username]) {
             throw new TypeError(L('Already existing direct message channel.'))
           }
         } else if (state.attributes.creator === meta.username) {
-          if (!state.users[data.username] || state.users[data.username].joinedDate) {
+          if (!state.dms[data.username] || state.dms[data.username].joinedDate) {
             throw new TypeError(L('Never created or already joined direct message channel.'))
           }
         } else {
@@ -109,20 +110,20 @@ sbp('chelonia/defineContract', {
         }
         const joinedDate = state.attributes.autoJoinAllowance ? meta.createdDate : null
         if (state.attributes.creator === data.username) {
-          Vue.set(state.users, meta.username, {
+          Vue.set(state.dms, meta.username, {
             contractID: data.contractID,
             creator: meta.username,
             hidden: false,
             joinedDate
           })
         } else {
-          Vue.set(state.users[data.username], 'joinedDate', joinedDate)
+          Vue.set(state.dms[data.username], 'joinedDate', joinedDate)
         }
       },
       async sideEffect ({ contractID, meta, data }, { state }) {
         let chatRoomId
         if (state.attributes.creator === meta.username) {
-          chatRoomId = state.users[data.username].contractID
+          chatRoomId = state.dms[data.username].contractID
         } else if (state.attributes.autoJoinAllowance) {
           chatRoomId = data.contractID
         }
@@ -143,15 +144,82 @@ sbp('chelonia/defineContract', {
         })(data)
         if (state.attributes.creator !== meta.username) {
           throw new TypeError(L('Only the mailbox creator can leave direct message channel.'))
-        } else if (!state.users[data.username]?.joinedDate) {
+        } else if (!state.dms[data.username]?.joinedDate) {
           throw new TypeError(L('Not joined or already left direct message channel.'))
         }
       },
       process ({ data }, { state }) {
-        Vue.set(state.users[data.username], 'joinedDate', null)
+        Vue.set(state.dms[data.username], 'joinedDate', null)
       },
       sideEffect ({ contractID, data }, { state }) {
-        leaveChatRoom({ contractID: state.users[data.username].contractID })
+        leaveChatRoom({ contractID: state.dms[data.username].contractID })
+      }
+    },
+    'gi.contracts/mailbox/createGroupChat': {
+      validate: (data, { state, meta }) => {
+        objectOf({ contractID: string })(data)
+        if (state.attributes.creator !== meta.username) {
+          throw new TypeError(L('Only the mailbox creator can create group message channel.'))
+        } else if (state.gms[data.contractID]) {
+          throw new TypeError(L('Already existing group message channel.'))
+        }
+      },
+      process ({ meta, data }, { state }) {
+        Vue.set(state.gms, data.contractID, {
+          creator: meta.username,
+          hidden: false,
+          joinedDate: meta.createdDate
+        })
+      },
+      async sideEffect ({ contractID, data }) {
+        await sbp('chelonia/contract/sync', data.contractID)
+
+        if (!sbp('chelonia/contract/isSyncing', contractID)) {
+          await sbp('controller/router')
+            .push({ name: 'GroupChatConversation', params: { chatRoomId: data.contractID } })
+            .catch(logExceptNavigationDuplicated)
+        }
+      }
+    },
+    'gi.contracts/mailbox/joinGroupChat': {
+      validate: (data, { state, meta }) => {
+        objectOf({
+          creator: string,
+          contractID: string
+        })(data)
+        if (state.attributes.creator === meta.username) {
+          throw new TypeError(L('Only a member of group message channel can add people.'))
+        } else if (state.gms[data.contractID]) {
+          throw new TypeError(L('Already existing group message channel.'))
+        }
+      },
+      process ({ meta, data }, { state }) {
+        Vue.set(state.gms, data.contractID, {
+          creator: data.creator,
+          hidden: false, // TODO: this hidden attribute should be there in state.js as global
+          joinedDate: meta.createdDate
+        })
+      },
+      async sideEffect ({ data }, { state }) {
+        if (state.attributes.autoJoinAllowance) {
+          await sbp('chelonia/contract/sync', data.contractID)
+        }
+      }
+    },
+    'gi.contracts/mailbox/deleteGroupChat': {
+      validate: (data, { state, meta }) => {
+        objectOf({ contractID: string })(data)
+        if (!state.gms[data.contractID]) {
+          throw new TypeError(L('Not joined or already deleted group message channel.'))
+        } else if (state.gms[data.contractID].creator !== meta.username) {
+          throw new TypeError(L('Only creator can delete group message channel.'))
+        }
+      },
+      process ({ data }, { state }) {
+        Vue.delete(state.gms, data.contractID)
+      },
+      sideEffect ({ contractID, data }, { state }) {
+        leaveChatRoom({ contractID: data.contractID })
       }
     }
   }
