@@ -171,6 +171,9 @@
 /* views/containers/chatroom/MessageNotification.vue */
 "Added a member to {title}: {displayName}" = "Added a member to {title}: {displayName}";
 
+/* views/containers/chatroom/MessageNotification.vue */
+"Added a member: {displayName}" = "Added a member: {displayName}";
+
 /* views/containers/chatroom/MessageInteractive.vue */
 "Added members to this group: {to}" = "Added members to this group: {to}";
 
@@ -929,6 +932,9 @@
 
 /* controller/router.js, views/pages/Home.vue */
 "Join a Group" = "Join a Group";
+
+/* views/containers/chatroom/MessageNotification.vue */
+"Joined" = "Joined";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Joined {title}" = "Joined {title}";

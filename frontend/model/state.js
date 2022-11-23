@@ -287,7 +287,7 @@ const getters = {
   },
   userDisplayName (state, getters) {
     return (username) => {
-      const profile = getters.globalProfile(username) || {}
+      const profile = getters.ourContactProfiles[username] || {}
       return profile.displayName || username
     }
   },

@@ -1225,10 +1225,16 @@
 "Added a member to {title}: {displayName}" = "Membre ajouté à {title} : {displayName}";
 
 /* views/containers/chatroom/MessageNotification.vue */
+"Added a member: {displayName}" = "Membre ajouté: {displayName}";
+
+/* views/containers/chatroom/MessageNotification.vue */
 "Deleted the channel: {title}" = "Le salon {title} a été supprimé";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Joined {title}" = "Joint {title}";
+
+/* views/containers/chatroom/MessageNotification.vue */
+"Joined" = "Joint";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Membre expulsé de {title} : {displayName}";
