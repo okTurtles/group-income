@@ -337,13 +337,23 @@ export default ({
           this.closeModal()
         } else {
           const profile = this.ourContactProfiles[username]
-          sbp('gi.actions/mailbox/joinGroupMessage', {
-            contractID: profile.mailbox,
-            data: {
-              creator: this.currentChatRoomState.attributes.creator,
-              contractID: this.currentChatRoomId
+          await sbp('gi.actions/chatroom/join', {
+            contractID: this.currentChatRoomId,
+            data: { username },
+            hooks: {
+              postpublish: (message) => {
+                sbp('gi.actions/mailbox/joinGroupMessage', {
+                  contractID: profile.mailbox,
+                  data: {
+                    creator: this.currentChatRoomState.attributes.creator,
+                    contractID: this.currentChatRoomId
+                  }
+                })
+              }
             }
           })
+          this.canAddMembers = this.canAddMembers.map(member =>
+            member.username === username ? { ...member, joinedDate: new Date().toISOString() } : member)
         }
         return
       }
