@@ -8,7 +8,6 @@ import { Vue } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -40,10 +39,11 @@ if (window.matchMedia) {
 
 const reactiveDate = Vue.observable({ date: new Date() })
 setInterval(function () {
-  const date = new Date()
-  // payments recalculation happen within a minute of day switchover
-  if (Math.abs(reactiveDate.date.getTime() - date.getTime()) >= MINS_MILLIS) {
-    reactiveDate.date = date
+  // We want the getters to recalculate all of the payments within 1 minute of us entering a new period.
+  const rememberedPeriodStamp = store.getters.periodStampGivenDate?.(reactiveDate.date)
+  const currentPeriodStamp = store.getters.periodStampGivenDate?.(new Date())
+  if (rememberedPeriodStamp !== currentPeriodStamp) {
+    reactiveDate.date = new Date()
   }
 }, 60 * 1000)
 
