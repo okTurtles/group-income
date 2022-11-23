@@ -64,12 +64,20 @@ const ChatroomMixin: Object = {
       'isPrivateChatRoom',
       'ourContactProfiles',
       'isDirectMessage',
-      'mailboxContract',
+      'isGroupMessage',
       'ourUsername',
       'directMessageIDFromUsername',
-      'usernameFromDirectMessageID'
+      'usernameFromDirectMessageID',
+      'groupMessageInfo'
     ]),
     ...mapState(['currentGroupId']),
+    isIndividualChatRoom () {
+      return chatRoomId => {
+        const contractID = chatRoomId || this.currentChatRoomId
+        return this.isJoinedChatRoom(contractID) &&
+          this.$store.state[contractID].attributes?.type === CHATROOM_TYPES.INDIVIDUAL
+      }
+    },
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
         const joined = sbp('chelonia/contract/isSyncing', this.currentChatRoomId)
@@ -77,19 +85,27 @@ const ChatroomMixin: Object = {
       }
 
       const { name, type, description, creator, privacyLevel } = this.currentChatRoomState.attributes
-      const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
-      const partner = this.ourContactProfiles[partnerUsername]
-      const partnerName = partner ? partner.displayName || partner.username : ''
+
+      let title = name
+      let picture
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
+        const partner = this.ourContactProfiles[partnerUsername]
+        title = partner?.displayName || partnerUsername
+        picture = partner?.picture
+      } else if (this.isGroupMessage(this.currentChatRoomId)) {
+        title = this.groupMessageInfo(this.currentChatRoomId).title
+      }
 
       return {
         type,
-        title: type === CHATROOM_TYPES.INDIVIDUAL ? partnerName : name,
+        title,
         description,
         private: privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         privacyLevel,
         general: this.generalChatRoomId === this.currentChatRoomId,
         joined: true,
-        picture: type === CHATROOM_TYPES.INDIVIDUAL ? partner?.picture : undefined,
+        picture,
         creator
       }
     },
@@ -100,7 +116,8 @@ const ChatroomMixin: Object = {
       }
       const participants = {}
 
-      if (this.isDirectMessage(this.currentChatRoomId)) {
+      if (this.isIndividualChatRoom()) {
+        const numberOfParticipants = Object.keys(this.currentChatRoomState.users).length
         for (const username of Object.keys(this.currentChatRoomState.users)) {
           if (username === this.ourUsername) {
             participants[username] = this.globalProfile(username)
@@ -110,7 +127,7 @@ const ChatroomMixin: Object = {
         }
         return {
           isLoading: false,
-          numberOfParticipants: 1, // TODO: Need to consider guests
+          numberOfParticipants, // TODO: Need to consider guests
           participants
         }
       }
@@ -156,12 +173,19 @@ const ChatroomMixin: Object = {
       }).catch(logExceptNavigationDuplicated)
     },
     refreshTitle (title?: string): void {
-      title = title || this.currentChatRoomState.attributes?.name
-      if (this.isDirectMessage(this.currentChatRoomId)) {
-        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
-        const partner = this.ourContactProfiles[partnerUsername]
-        document.title = partner.displayName || partnerUsername
-      } else if (title) { // Group Chat
+      if (!title) {
+        if (this.isDirectMessage(this.currentChatRoomId)) {
+          const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
+          const partner = this.ourContactProfiles[partnerUsername]
+          title = partner.displayName || partnerUsername
+        } else if (this.isGroupMessage(this.currentChatRoomId)) {
+          title = this.groupMessageInfo(this.currentChatRoomId).title
+        } else {
+          title = this.currentChatRoomState.attributes?.name
+        }
+      }
+
+      if (title) {
         document.title = title
       }
     },
@@ -206,7 +230,7 @@ const ChatroomMixin: Object = {
       this.setGroupChatDetailsAsGlobal()
     },
     setGroupChatDetailsAsGlobal () {
-      if (!this.isJoinedChatRoom(this.currentChatRoomId) && !this.isDirectMessage(this.currentChatRoomId)) {
+      if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
         sbp('okTurtles.data/set', 'GROUPCHAT_DETAILS', {
           participants: Object.keys(this.details.members || {})
             .map(un => ({ username: un, displayName: this.details.members[un].displayName })),
@@ -218,7 +242,7 @@ const ChatroomMixin: Object = {
       }
     },
     updateCurrentChatRoomID (chatRoomId: string) {
-      if (this.isDirectMessage(chatRoomId)) {
+      if (this.isIndividualChatRoom(chatRoomId)) {
         sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
       } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
         const groupID = this.groupIdFromChatRoomId(chatRoomId)

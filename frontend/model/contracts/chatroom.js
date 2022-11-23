@@ -9,6 +9,7 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MESSAGES_PER_PAGE,
   CHATROOM_TYPES,
+  CHATROOM_PRIVACY_LEVEL,
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS,
   CHATROOM_MESSAGE_ACTION,
@@ -57,10 +58,15 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
   })
 
   const rootGetters = sbp('state/vuex/getters')
-  const isDMContact = rootGetters.isDirectMessage(contractID)
-  const partnerProfile = rootGetters.ourContactProfiles[username]
-  // NOTE: partner identity contract could not be synced at the time of use
-  const title = isDMContact ? `# ${partnerProfile?.displayName || username}` : `# ${chatRoomName}`
+
+  let title = `# ${chatRoomName}`
+  let partnerProfile
+  if (rootGetters.isDirectMessage(contractID)) {
+    title = `# ${partnerProfile?.displayName || username}`
+    partnerProfile = rootGetters.ourContactProfiles[username] // NOTE: partner identity contract could not be synced at the time of use
+  } else if (rootGetters.isGroupMessage(contractID)) {
+    title = `# ${rootGetters.groupMessageInfo(contractID).title}`
+  }
   const path = `/group-chat/${contractID}`
 
   makeNotification({
@@ -164,7 +170,9 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
-        if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+        if (!state.saveMessage ||
+            (state.attributes.type === CHATROOM_TYPES.INDIVIDUAL &&
+              state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE)) {
           return
         }
 

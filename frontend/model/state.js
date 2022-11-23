@@ -198,7 +198,7 @@ const getters = {
   currentChatRoomState (state, getters) {
     return state[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
   },
-  mailboxContract (state, getters) {
+  currentMailboxState (state, getters) {
     const contract = getters.currentIdentityState
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
   },
@@ -522,9 +522,28 @@ const getters = {
   },
   isDirectMessage (state, getters) {
     // NOTE: mailbox contract could not be synced at the time of calling this getter
-    return chatRoomId => Object.keys(getters.mailboxContract.dms || {})
-      .map(username => getters.mailboxContract.dms[username].contractID)
+    return chatRoomId => Object.keys(getters.ourDirectMessages || {})
+      .map(username => getters.ourDirectMessages[username].contractID)
       .includes(chatRoomId)
+  },
+  isGroupMessage (state, getters) {
+    return chatRoomId => Object.keys(getters.ourGroupMessages || {}).includes(chatRoomId)
+  },
+  groupMessageInfo (state, getters) {
+    return chatRoomId => {
+      const usernames = Object.keys(state[chatRoomId].users).filter(username => username !== getters.ourUsername)
+      const lastJoined = usernames.reduce((lastJoined, username) => {
+        const lastJoinedDate = state[chatRoomId].users[lastJoined].joinedDate
+        const currentJoinedDate = state[chatRoomId].users[username].joinedDate
+        return lastJoinedDate > currentJoinedDate ? lastJoined : username
+      }, usernames[0])
+      return {
+        contractID: chatRoomId,
+        title: usernames.join(', '),
+        othersCount: usernames.length,
+        picture: getters.ourContactProfiles[lastJoined]?.picture
+      }
+    }
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
@@ -547,14 +566,14 @@ const getters = {
     }
   },
   directMessageIDFromUsername (state, getters) {
-    return (username: string) => getters.mailboxContract.dms[username]?.contractID
+    return (username: string) => getters.ourDirectMessages[username]?.contractID
   },
   usernameFromDirectMessageID (state, getters) {
     return (chatRoomId: string) => {
       if (!getters.isDirectMessage(chatRoomId)) {
         return
       }
-      return Object.keys(getters.mailboxContract.dms)
+      return Object.keys(getters.ourDirectMessages)
         .find(username => getters.directMessageIDFromUsername(username) === chatRoomId)
     }
   },
@@ -647,7 +666,8 @@ if (process.env.NODE_ENV === 'development') {
 const omitGetters = {
   'gi.contracts/group': ['currentGroupState'],
   'gi.contracts/identity': ['currentIdentityState'],
-  'gi.contracts/chatroom': ['currentChatRoomState']
+  'gi.contracts/chatroom': ['currentChatRoomState'],
+  'gi.contracts/mailbox': ['currentMailboxState']
 }
 sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
   const { contracts: { manifests } } = sbp('chelonia/config')

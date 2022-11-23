@@ -630,6 +630,9 @@
 /* controller/actions/mailbox.js */
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
+/* controller/actions/mailbox.js */
+"Failed to create a new group message channel." = "Failed to create a new group message channel.";
+
 /* controller/actions/chatroom.js */
 "Failed to create chat channel." = "Failed to create chat channel.";
 
@@ -664,7 +667,10 @@
 "Failed to force distribution date." = "Failed to force distribution date.";
 
 /* controller/actions/mailbox.js */
-"Failed to join a new direct message channel." = "Failed to join a new direct message channel.";
+"Failed to join a direct message channel." = "Failed to join a direct message channel.";
+
+/* controller/actions/mailbox.js */
+"Failed to join a group message channel." = "Failed to join a group message channel.";
 
 /* controller/actions/chatroom.js, controller/actions/group.js */
 "Failed to join chat channel." = "Failed to join chat channel.";
@@ -881,6 +887,9 @@
 
 /* controller/actions/mailbox.js */
 "Incorrect username to create direct message." = "Incorrect username to create direct message.";
+
+/* controller/actions/mailbox.js */
+"Incorrect username to create group message." = "Incorrect username to create group message.";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Info" = "Info";
@@ -1127,6 +1136,9 @@
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "Non-monetary" = "Non-monetary";
+
+/* controller/actions/mailbox.js */
+"Not enough usernames provided." = "Not enough usernames provided.";
 
 /* model/contracts/mailbox.js */
 "Not joined or already deleted group message channel." = "Not joined or already deleted group message channel.";

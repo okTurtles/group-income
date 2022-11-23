@@ -29,6 +29,17 @@ sbp('chelonia/defineContract', {
       }
     }
   },
+  getters: {
+    currentMailboxState (state) {
+      return state
+    },
+    ourDirectMessages (state, getters) {
+      return getters.currentMailboxState.dms
+    },
+    ourGroupMessages (state, getters) {
+      return getters.currentMailboxState.gms
+    }
+  },
   actions: {
     'gi.contracts/mailbox': {
       validate: objectOf({
@@ -155,7 +166,7 @@ sbp('chelonia/defineContract', {
         leaveChatRoom({ contractID: state.dms[data.username].contractID })
       }
     },
-    'gi.contracts/mailbox/createGroupChat': {
+    'gi.contracts/mailbox/createGroupMessage': {
       validate: (data, { state, meta }) => {
         objectOf({ contractID: string })(data)
         if (state.attributes.creator !== meta.username) {
@@ -181,19 +192,17 @@ sbp('chelonia/defineContract', {
         }
       }
     },
-    'gi.contracts/mailbox/joinGroupChat': {
-      validate: (data, { state, meta }) => {
-        objectOf({
-          creator: string,
-          contractID: string
-        })(data)
+    'gi.contracts/mailbox/joinGroupMessage': {
+      validate: objectOf({
+        creator: string,
+        contractID: string
+      }),
+      process ({ meta, data }, { state }) {
         if (state.attributes.creator === meta.username) {
           throw new TypeError(L('Only a member of group message channel can add people.'))
         } else if (state.gms[data.contractID]) {
           throw new TypeError(L('Already existing group message channel.'))
         }
-      },
-      process ({ meta, data }, { state }) {
         Vue.set(state.gms, data.contractID, {
           creator: data.creator,
           hidden: false, // TODO: this hidden attribute should be there in state.js as global
@@ -206,7 +215,7 @@ sbp('chelonia/defineContract', {
         }
       }
     },
-    'gi.contracts/mailbox/deleteGroupChat': {
+    'gi.contracts/mailbox/deleteGroupMessage': {
       validate: (data, { state, meta }) => {
         objectOf({ contractID: string })(data)
         if (!state.gms[data.contractID]) {
@@ -218,7 +227,7 @@ sbp('chelonia/defineContract', {
       process ({ data }, { state }) {
         Vue.delete(state.gms, data.contractID)
       },
-      sideEffect ({ contractID, data }, { state }) {
+      sideEffect ({ data }) {
         leaveChatRoom({ contractID: data.contractID })
       }
     }

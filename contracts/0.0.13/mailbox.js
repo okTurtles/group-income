@@ -9330,6 +9330,17 @@ ${this.getErrorInfo()}`;
         };
       }
     },
+    getters: {
+      currentMailboxState(state) {
+        return state;
+      },
+      ourDirectMessages(state, getters) {
+        return getters.currentMailboxState.dms;
+      },
+      ourGroupMessages(state, getters) {
+        return getters.currentMailboxState.gms;
+      }
+    },
     actions: {
       "gi.contracts/mailbox": {
         validate: objectOf({
@@ -9451,7 +9462,7 @@ ${this.getErrorInfo()}`;
           leaveChatRoom({ contractID: state.dms[data.username].contractID });
         }
       },
-      "gi.contracts/mailbox/createGroupChat": {
+      "gi.contracts/mailbox/createGroupMessage": {
         validate: (data, { state, meta }) => {
           objectOf({ contractID: string })(data);
           if (state.attributes.creator !== meta.username) {
@@ -9474,19 +9485,17 @@ ${this.getErrorInfo()}`;
           }
         }
       },
-      "gi.contracts/mailbox/joinGroupChat": {
-        validate: (data, { state, meta }) => {
-          objectOf({
-            creator: string,
-            contractID: string
-          })(data);
+      "gi.contracts/mailbox/joinGroupMessage": {
+        validate: objectOf({
+          creator: string,
+          contractID: string
+        }),
+        process({ meta, data }, { state }) {
           if (state.attributes.creator === meta.username) {
             throw new TypeError(L("Only a member of group message channel can add people."));
           } else if (state.gms[data.contractID]) {
             throw new TypeError(L("Already existing group message channel."));
           }
-        },
-        process({ meta, data }, { state }) {
           vue_esm_default.set(state.gms, data.contractID, {
             creator: data.creator,
             hidden: false,
@@ -9499,7 +9508,7 @@ ${this.getErrorInfo()}`;
           }
         }
       },
-      "gi.contracts/mailbox/deleteGroupChat": {
+      "gi.contracts/mailbox/deleteGroupMessage": {
         validate: (data, { state, meta }) => {
           objectOf({ contractID: string })(data);
           if (!state.gms[data.contractID]) {
@@ -9511,7 +9520,7 @@ ${this.getErrorInfo()}`;
         process({ data }, { state }) {
           vue_esm_default.delete(state.gms, data.contractID);
         },
-        sideEffect({ contractID, data }, { state }) {
+        sideEffect({ data }) {
           leaveChatRoom({ contractID: data.contractID });
         }
       }

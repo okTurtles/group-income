@@ -1,13 +1,15 @@
 <template lang='pug'>
-page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isOnDirectMessage')
+page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isIndividualChatRoom()')
   template(#title='')
     .c-header
-      avatar(
+      .avatar-wrapper(
         v-if='summary.picture'
-        :src='summary.picture'
-        alt='Partner Picture'
-        size='sm'
       )
+        avatar(
+          :src='summary.picture'
+          alt='Partner Picture'
+          size='sm'
+        )
       i(
         v-else
         :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
@@ -23,14 +25,14 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isOn
 
           ul
             menu-item(
-              v-if='!summary.general && ourUsername === summary.creator && !isOnDirectMessage'
+              v-if='!summary.general && ourUsername === summary.creator && !isIndividualChatRoom()'
               @click='openModal("EditChannelNameModal")'
               data-test='renameChannel'
             )
               i18n Rename
-            menu-item(v-if='!isOnDirectMessage' @click='openModal("ChatMembersAllModal")')
+            menu-item(v-if='!isIndividualChatRoom()' @click='openModal("ChatMembersAllModal")')
               i18n Members
-            menu-item(v-if='isTypeIndividual' @click='openModal("ChatMembersAllModal")')
+            menu-item(v-else @click='openModal("ChatMembersAllModal")')
               i18n Add People
             menu-item(
               :class='`${!summary.general ? "c-separator" : ""}`'
@@ -45,13 +47,13 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isOn
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
-              v-if='!summary.general && ourUsername === summary.creator && !isOnDirectMessage'
+              v-if='!summary.general && ourUsername === summary.creator && !isIndividualChatRoom()'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )
               i18n Delete channel
 
-  template(#description='' v-if='!isOnDirectMessage')
+  template(#description='' v-if='!isIndividualChatRoom()')
     .c-header-description
       i18n.is-unstyled.c-link(
         tag='button'
@@ -108,7 +110,7 @@ import ChatroomMixin from '@containers/chatroom/ChatroomMixin.js'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'GroupChat',
@@ -169,15 +171,6 @@ export default ({
         users: this.details.participants,
         size: this.details.numberOfParticipants
       }
-    },
-    isOnDirectMessage () {
-      return this.isDirectMessage(this.currentChatRoomId)
-    },
-    isTypeIndividual () {
-      return this.currentChatRoomState.attributes.type === CHATROOM_TYPES.INDIVIDUAL
-    },
-    isPrivacyLevelGroup () {
-      return this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.GROUP
     }
   },
   methods: {
@@ -196,7 +189,7 @@ export default ({
       this.$nextTick(() => {
         this.refreshTitle()
       })
-      if (this.isDirectMessage(chatRoomId)) {
+      if (this.isIndividualChatRoom(chatRoomId)) {
         this.updateCurrentChatRoomID(chatRoomId)
       } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
         if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
@@ -334,5 +327,9 @@ export default ({
   .c-menu-i {
     transform: rotate(180deg);
   }
+}
+
+.avatar-wrapper {
+  margin-right: 0.5rem;
 }
 </style>

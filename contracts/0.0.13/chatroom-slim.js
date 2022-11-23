@@ -431,9 +431,14 @@ ${this.getErrorInfo()}`;
       createdDate: datetime
     });
     const rootGetters = (0, import_sbp3.default)("state/vuex/getters");
-    const isDMContact = rootGetters.isDirectMessage(contractID);
-    const partnerProfile = rootGetters.ourContactProfiles[username];
-    const title = isDMContact ? `# ${partnerProfile?.displayName || username}` : `# ${chatRoomName}`;
+    let title = `# ${chatRoomName}`;
+    let partnerProfile;
+    if (rootGetters.isDirectMessage(contractID)) {
+      title = `# ${partnerProfile?.displayName || username}`;
+      partnerProfile = rootGetters.ourContactProfiles[username];
+    } else if (rootGetters.isGroupMessage(contractID)) {
+      title = `# ${rootGetters.groupMessageInfo(contractID).title}`;
+    }
     const path = `/group-chat/${contractID}`;
     makeNotification({
       title,
@@ -524,7 +529,7 @@ ${this.getErrorInfo()}`;
             return;
           }
           import_common2.Vue.set(state.users, username, { joinedDate: meta.createdDate });
-          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
             return;
           }
           const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;

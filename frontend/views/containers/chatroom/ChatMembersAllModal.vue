@@ -59,7 +59,7 @@ modal-base-template.has-background(
                     strong {{ localizedName(username, displayName) }}
                     .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
-              .c-actions(v-if='isJoined && removable(username)')
+              .c-actions(v-if='!isTypeIndividual && isJoined && removable(username)')
                 button.is-icon(
                   v-if='!departedDate'
                   :data-test='"removeMember-" + username'
@@ -109,6 +109,7 @@ modal-base-template.has-background(
                 i.icon-check
                 i18n Added.
                 button.is-unstyled.c-action-undo(
+                  v-if='!isTypeIndividual'
                   @click.stop='removeMember(username, true)'
                 ) {{L("Undo")}}
 </template>
@@ -156,6 +157,7 @@ export default ({
   },
   computed: {
     ...mapGetters([
+      'currentIdentityState',
       'currentChatRoomId',
       'currentChatRoomState',
       'currentGroupState',
@@ -164,9 +166,13 @@ export default ({
       'chatRoomUsersInSort',
       'ourUsername',
       'globalProfile',
+      'isDirectMessage',
+      'usernameFromDirectMessageID',
       'isJoinedChatRoom',
+      'groupProfiles',
       'ourContactProfiles',
-      'ourContacts'
+      'ourContacts',
+      'ourGroupMessages'
     ]),
     ...mapState([
       'currentGroupId'
@@ -195,18 +201,26 @@ export default ({
     },
     attributes () {
       const { name, description, privacyLevel } = this.currentChatRoomState.attributes || this.details
+      let title = name
+      if (this.isDirectMessage(this.currentChatRoomId)) {
+        const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
+        title = this.ourContactProfiles[partnerUsername].displayName || partnerUsername
+      }
       const privacy = {
         [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
         [CHATROOM_PRIVACY_LEVEL.GROUP]: L('Group members only'),
         [CHATROOM_PRIVACY_LEVEL.PUBLIC]: L('Public channel')
       }[privacyLevel]
-      return { name, description, privacy }
+      return { name: title, description, privacy }
     },
     isJoined () {
       return this.isJoinedChatRoom(this.currentChatRoomId)
     },
     isTypeIndividual () {
       return this.currentChatRoomState.attributes.type === CHATROOM_TYPES.INDIVIDUAL
+    },
+    isPrivacyLevelPrivate () {
+      return this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     }
   },
   methods: {
@@ -233,6 +247,8 @@ export default ({
                   departedDate: null
                 }
           })
+        // TODO: every user needs to sync his contacts and also users from group messages
+        // https://okturtles.slack.com/archives/C0EH7P20Y/p1669109352107659
         this.canAddMembers = this.ourContacts
           .filter(username => !this.addedMembers.find(mb => mb.username === username))
           .map(username => ({
@@ -300,6 +316,38 @@ export default ({
       }
     },
     async addToChannel (username: string, undoing = false) {
+      if (this.isTypeIndividual) {
+        if (this.isPrivacyLevelPrivate) {
+          const usernames = [this.usernameFromDirectMessageID(this.currentChatRoomId), username]
+          const existingChatRoomId = Object.keys(this.ourGroupMessages).find(contractID => {
+            const users = Object.keys(this.$store.state[contractID]?.users || {})
+            if (users.length === usernames.length + 1) {
+              return [...usernames, this.ourUsername].reduce((existing, un) => existing && users.includes(un), true)
+            }
+            return false
+          })
+          if (existingChatRoomId) {
+            this.$router.push({ name: 'GroupChatConversation', params: { chatRoomId: existingChatRoomId } })
+          } else {
+            sbp('gi.actions/mailbox/createGroupMessage', {
+              contractID: this.currentIdentityState.attributes.mailbox,
+              data: { usernames }
+            })
+          }
+          this.closeModal()
+        } else {
+          const profile = this.ourContactProfiles[username]
+          sbp('gi.actions/mailbox/joinGroupMessage', {
+            contractID: profile.mailbox,
+            data: {
+              creator: this.currentChatRoomState.attributes.creator,
+              contractID: this.currentChatRoomId
+            }
+          })
+        }
+        return
+      }
+
       if (this.isJoinedChatRoom(this.currentChatRoomId, username)) {
         console.log(`${username} is already joined this chatroom`)
         return

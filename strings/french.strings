@@ -13,9 +13,6 @@
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
 /* MISSING TRANSLATION - controller/actions/mailbox.js */
-"Failed to join a new direct message channel." = "Failed to join a new direct message channel.";
-
-/* MISSING TRANSLATION - controller/actions/mailbox.js */
 "Failed to set Mailbox attributes. {attribute}" = "Failed to set Mailbox attributes. {attribute}";
 
 /* MISSING TRANSLATION - controller/router.js */
@@ -595,13 +592,28 @@
 "Invalid username or password" = "Nom d’utilisateur ou mot de passe invalide";
 
 /* controller/actions/mailbox.js */
+"Failed to create a new group message channel." = "Échec de la création d'un nouveau canal de message de groupe.";
+
+/* controller/actions/mailbox.js */
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
+
+/* controller/actions/mailbox.js */
+"Failed to join a direct message channel." = "Échec de la connexion à un canal de messagerie directe.";
+
+/* controller/actions/mailbox.js */
+"Failed to join a group message channel." = "Impossible de rejoindre un canal de messagerie de groupe.";
 
 /* controller/actions/mailbox.js */
 "Failed to leave direct message channel." = "Impossible de quitter le canal de messagerie directe.";
 
 /* controller/actions/mailbox.js */
 "Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";
+
+/* controller/actions/mailbox.js */
+"Incorrect username to create group message." = "Nom d'utilisateur incorrect pour créer un message de groupe.";
+
+/* controller/actions/mailbox.js */
+"Not enough usernames provided." = "Pas assez de noms d'utilisateur fournis.";
 
 /* controller/router.js */
 "Group Chat" = "Conversation du groupe";
