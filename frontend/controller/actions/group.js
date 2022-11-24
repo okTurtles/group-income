@@ -292,14 +292,14 @@ export default (sbp('sbp/selectors/register', {
       })
 
       if (username === me) {
-        // 'READY_TO_JOIN_CHATROOM' is necessary to identify the joining chatroom action is NEW or OLD
+        // 'JOINING_GROUP_CHAT' is necessary to identify the joining chatroom action is NEW or OLD
         // Users join the chatroom thru group making group actions
         // But when user joins the group, he needs to ignore all the actions about chatroom
         // Because the user is joining group, not joining chatroom
         // and he is going to make a new action to join 'General' chatroom AGAIN
         // While joining group, we don't set this flag because Joining chatroom actions are all OLD ones, which need to be ignored
         // Joining 'General' chatroom is one of the steps to join group
-        // So setting 'READY_TO_JOIN_CHATROOM' can not be out of the 'JOINING_GROUP' scope
+        // So setting 'JOINING_GROUP_CHAT' can not be out of the 'JOINING_GROUP' scope
         sbp('okTurtles.data/set', 'JOINING_GROUP_CHAT', true)
       }
       await sbp('chelonia/out/actionEncrypted', {
