@@ -284,7 +284,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ meta, contractID }, { state }) {
-        if (sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')) {
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
           return
         }
         leaveChatRoom({ contractID })
