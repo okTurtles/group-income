@@ -1047,9 +1047,7 @@ sbp('chelonia/defineContract', {
           if (!sbp('okTurtles.data/get', 'JOINING_GROUP') || sbp('okTurtles.data/get', 'JOINING_GROUP_CHAT')) {
             // while users are joining chatroom, they don't need to leave chatrooms
             // this is similar to setting 'JOINING_GROUP' before joining group
-            sbp('okTurtles.data/set', 'JOINING_CHATROOM_ID', data.chatRoomID)
             await sbp('chelonia/contract/sync', data.chatRoomID)
-            sbp('okTurtles.data/set', 'JOINING_CHATROOM_ID', undefined)
             sbp('okTurtles.data/set', 'JOINING_GROUP_CHAT', false)
           }
         }

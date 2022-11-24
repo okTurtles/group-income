@@ -9725,7 +9725,7 @@ ${this.getErrorInfo()}`;
           }
         },
         sideEffect({ meta, contractID }, { state }) {
-          if ((0, import_sbp4.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
+          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
             return;
           }
           leaveChatRoom({ contractID });

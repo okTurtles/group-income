@@ -32,7 +32,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isIn
               i18n Rename
             menu-item(v-if='!isIndividualChatRoom()' @click='openModal("ChatMembersAllModal")')
               i18n Members
-            menu-item(v-else @click='openModal("ChatMembersAllModal")')
+            menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
               i18n Add People
             menu-item(
               :class='`${!summary.general ? "c-separator" : ""}`'
