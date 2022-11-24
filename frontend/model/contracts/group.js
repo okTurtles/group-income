@@ -87,6 +87,15 @@ function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
   return periodPayments
 }
 
+function initGroupStreaks () {
+  return {
+    fullMonthlyPledges: 0,
+    onTimePayments: {}, // { username: number, ... }
+    missedPayments: {}, // { username: number, ... }
+    noVotes: {} // { username: number, ... }
+  }
+}
+
 // this function is called each time a payment is completed or a user adjusts their income details.
 // TODO: call also when mincome is adjusted
 function updateCurrentDistribution ({ contractID, meta, state, getters }) {
@@ -144,13 +153,15 @@ function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boo
 }
 
 function updateGroupStreaks ({ state, getters }) {
-  const streaks = state.streaks
+  const streaks = vueFetchInitKV(state, 'streaks', initGroupStreaks())
   const cPeriod = getters.groupSettings.distributionDate
   const thisPeriodPayments = getters.groupPeriodPayments[cPeriod]
 
   // if there's no period payments set yet, no need to update streak values.
   if (!thisPeriodPayments) return
 
+  // IMPORTANT! This code must be kept in sync with updateAdjustedDistribution!
+  // TODO: see if it's possible to DRY this with the code inside of updateAdjustedDistribution
   const thisPeriodDistribution = thisPeriodPayments.lastAdjustedDistribution || adjustedDistribution({
     distribution: unadjustedDistribution({
       haveNeeds: getters.haveNeedsForThisPeriod(cPeriod),
@@ -158,6 +169,8 @@ function updateGroupStreaks ({ state, getters }) {
     }) || [],
     payments: getters.paymentsForPeriod(cPeriod),
     dueOn: getters.dueDateForPeriod(cPeriod)
+  }).filter(todo => {
+    return getters.groupProfile(todo.to).status === PROFILE_STATUS.ACTIVE
   })
 
   // --- update 'fullMonthlyPledgesCount' streak ---
@@ -267,6 +280,9 @@ sbp('chelonia/defineContract', {
           recentDate = recentDate.toISOString()
         }
         const { distributionDate, distributionPeriodLength } = getters.groupSettings
+
+        if (!distributionDate) return null
+
         return periodStampGivenDate({
           recentDate,
           periodStart: distributionDate,
@@ -495,12 +511,7 @@ sbp('chelonia/defineContract', {
             inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
             inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
           },
-          streaks: {
-            fullMonthlyPledges: 0,
-            onTimePayments: {}, // { username: number, ... }
-            missedPayments: {}, // { username: number, ... }
-            noVotes: {} // { username: number, ... }
-          },
+          streaks: initGroupStreaks(),
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
           },
@@ -716,7 +727,6 @@ sbp('chelonia/defineContract', {
           proposals[proposal.data.proposalType][result](state, message)
           Vue.set(proposal, 'dateClosed', meta.createdDate)
 
-          // TODO: update 'streaks.noVotes'
           const votedMembers = Object.keys(proposal.votes)
           for (const member of getters.groupMembersByUsername) {
             const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, member, 0)
@@ -1154,17 +1164,13 @@ sbp('chelonia/defineContract', {
         }
       }
     },
-    'gi.contracts/group/checkAndUpdateDistributionDate': {
+    'gi.contracts/group/updateDistributionDate': {
       validate: optional,
       process ({ meta }, { state, getters }) {
-        // check if we've passed into the next period and update the group distribution date accordingly if so.
-        const periodForNow = getters.periodStampGivenDate(meta.createdDate)
-        if (comparePeriodStamps(periodForNow, getters.groupSettings.distributionDate) > 0) {
-          // before updating to the new distribution period, make sure to update various payment-related streak values
-          // for the previous period
-          updateGroupStreaks({ state, getters })
-          getters.groupSettings.distributionDate = periodForNow
-        }
+        const period = getters.periodStampGivenDate(meta.createdDate)
+        // right before updating to the new distribution period, make sure to update various payment-related group streaks.
+        updateGroupStreaks({ state, getters })
+        getters.groupSettings.distributionDate = period
       }
     },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {

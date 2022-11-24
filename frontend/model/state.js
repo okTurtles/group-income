@@ -44,8 +44,6 @@ setInterval(function () {
   // payments recalculation happen within a minute of day switchover
   if (Math.abs(reactiveDate.date.getTime() - date.getTime()) >= MINS_MILLIS) {
     reactiveDate.date = date
-
-    sbp('gi.actions/group/checkAndUpdateDistributionDate', { contractID: store.state.currentGroupId })
   }
 }, 60 * 1000)
 
@@ -625,6 +623,15 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
     store.registerModule(contract.name, {
       getters: omit(contract.getters, omitGetters[contract.name] || [])
     })
+
+    if (contract.name === 'gi.contracts/group') {
+      store.watch(
+        (state, getters) => getters.currentPaymentPeriod,
+        () => {
+          sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
+        }
+      )
+    }
   }
 })
 
