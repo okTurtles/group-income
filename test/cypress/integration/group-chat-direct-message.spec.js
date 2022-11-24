@@ -257,7 +257,7 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
     joinUser(user5, false)
   })
 
-  it('user1 adds user4 to DM which is with user2', function (){
+  it('user1 adds user4 to DM which is with user2', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
 
