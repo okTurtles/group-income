@@ -10011,6 +10011,14 @@ ${this.getErrorInfo()}`;
     clearOldPayments({ contractID, state, getters });
     return periodPayments;
   }
+  function initGroupStreaks() {
+    return {
+      fullMonthlyPledges: 0,
+      onTimePayments: {},
+      missedPayments: {},
+      noVotes: {}
+    };
+  }
   function updateCurrentDistribution({ contractID, meta, state, getters }) {
     const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters });
     const period = getters.periodStampGivenDate(meta.createdDate);
@@ -10051,7 +10059,7 @@ ${this.getErrorInfo()}`;
     return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
   }
   function updateGroupStreaks({ state, getters }) {
-    const streaks = state.streaks;
+    const streaks = vueFetchInitKV(state, "streaks", initGroupStreaks());
     const cPeriod = getters.groupSettings.distributionDate;
     const thisPeriodPayments = getters.groupPeriodPayments[cPeriod];
     if (!thisPeriodPayments)
@@ -10063,6 +10071,8 @@ ${this.getErrorInfo()}`;
       }) || [],
       payments: getters.paymentsForPeriod(cPeriod),
       dueOn: getters.dueDateForPeriod(cPeriod)
+    }).filter((todo) => {
+      return getters.groupProfile(todo.to).status === PROFILE_STATUS.ACTIVE;
     });
     vue_esm_default.set(streaks, "fullMonthlyPledges", thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0);
     const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod);
@@ -10130,6 +10140,8 @@ ${this.getErrorInfo()}`;
             recentDate = recentDate.toISOString();
           }
           const { distributionDate, distributionPeriodLength } = getters.groupSettings;
+          if (!distributionDate)
+            return null;
           return periodStampGivenDate({
             recentDate,
             periodStart: distributionDate,
@@ -10317,12 +10329,7 @@ ${this.getErrorInfo()}`;
               inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
               inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
             },
-            streaks: {
-              fullMonthlyPledges: 0,
-              onTimePayments: {},
-              missedPayments: {},
-              noVotes: {}
-            },
+            streaks: initGroupStreaks(),
             profiles: {
               [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
             },
@@ -10854,14 +10861,12 @@ ${this.getErrorInfo()}`;
           }
         }
       },
-      "gi.contracts/group/checkAndUpdateDistributionDate": {
+      "gi.contracts/group/updateDistributionDate": {
         validate: optional,
         process({ meta }, { state, getters }) {
-          const periodForNow = getters.periodStampGivenDate(meta.createdDate);
-          if (comparePeriodStamps(periodForNow, getters.groupSettings.distributionDate) > 0) {
-            updateGroupStreaks({ state, getters });
-            getters.groupSettings.distributionDate = periodForNow;
-          }
+          const period = getters.periodStampGivenDate(meta.createdDate);
+          updateGroupStreaks({ state, getters });
+          getters.groupSettings.distributionDate = period;
         }
       },
       ...{
