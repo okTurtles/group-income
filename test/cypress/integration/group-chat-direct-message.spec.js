@@ -88,7 +88,7 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
   }
 
   function switchDirectMessageChannel (partner) {
-    cy.getByDT('chatMembers').find('ul').children().each(($el, index, $list) => {
+    cy.getByDT('chatMembers').find('ul').get('span[data-test="title"], span[data-test="username"]').each(($el, index, $list) => {
       if ($el.text() === partner) {
         cy.wrap($el).click()
         return false
@@ -257,7 +257,7 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
     joinUser(user5, false)
   })
 
-  it('user1 adds user4 to DM which is with user2', () => {
+  it('user1 adds user4 to DM which is with user3', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
 
@@ -288,6 +288,25 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
     cy.url().then(url => {
       cy.get('@groupMessageLink').should('eq', url) // NOTE: this checks the possibility to create gm for same users
     })
+  })
+
+  it('user3 adds user5 to the channel again', () => {
+    switchUser(user3)
+    cy.giRedirectToGroupChat()
+
+    switchDirectMessageChannel(`${user1}, ${user4}`)
+
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('addPeople').click()
+    cy.getByDT('unjoinedChannelMembersList').within(() => {
+      cy.getByDT('addToChannel-' + user5).click()
+    })
+    cy.getByDT('closeModal').click()
+
+    cy.getByDT('channelName').should('contain', `${user1}, ${user4}, ${user5}`)
+    cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 4) // 3 means user1, user3, user4, user5
 
     cy.giLogout()
   })
