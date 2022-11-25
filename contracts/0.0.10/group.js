@@ -10013,6 +10013,7 @@ ${this.getErrorInfo()}`;
   }
   function initGroupStreaks() {
     return {
+      lastStreakPeriod: null,
       fullMonthlyPledges: 0,
       onTimePayments: {},
       missedPayments: {},
@@ -10062,9 +10063,13 @@ ${this.getErrorInfo()}`;
     const streaks = vueFetchInitKV(state, "streaks", initGroupStreaks());
     const cPeriod = getters.groupSettings.distributionDate;
     const thisPeriodPayments = getters.groupPeriodPayments[cPeriod];
-    if (!thisPeriodPayments)
+    const noPaymentsAtAll = !thisPeriodPayments;
+    if (streaks.lastStreakPeriod === cPeriod)
       return;
-    const thisPeriodDistribution = thisPeriodPayments.lastAdjustedDistribution || adjustedDistribution({
+    else {
+      vue_esm_default.set(streaks, "lastStreakPeriod", cPeriod);
+    }
+    const thisPeriodDistribution = thisPeriodPayments?.lastAdjustedDistribution || adjustedDistribution({
       distribution: unadjustedDistribution({
         haveNeeds: getters.haveNeedsForThisPeriod(cPeriod),
         minimize: getters.groupSettings.minimizeDistribution
@@ -10074,18 +10079,21 @@ ${this.getErrorInfo()}`;
     }).filter((todo) => {
       return getters.groupProfile(todo.to).status === PROFILE_STATUS.ACTIVE;
     });
-    vue_esm_default.set(streaks, "fullMonthlyPledges", thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0);
+    vue_esm_default.set(streaks, "fullMonthlyPledges", noPaymentsAtAll ? 0 : thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0);
     const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod);
     const filterMyItems = (array, username) => array.filter((item) => item.from === username);
-    const isPledgingMember = (username) => thisPeriodPayments.haveNeedsSnapshot.some((entry) => entry.name === username && entry.haveNeed > 0);
+    const isPledgingMember = (username) => {
+      const haveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod);
+      return haveNeeds.some((entry) => entry.name === username && entry.haveNeed > 0);
+    };
     for (const username in getters.groupProfiles) {
       if (!isPledgingMember(username))
         continue;
       const myMissedPaymentsInThisPeriod = filterMyItems(thisPeriodDistribution, username);
       const userCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0);
-      vue_esm_default.set(streaks.onTimePayments, username, myMissedPaymentsInThisPeriod.length === 0 && filterMyItems(thisPeriodPaymentDetails, username).every((p) => p.isLate === false) ? userCurrentStreak + 1 : 0);
+      vue_esm_default.set(streaks.onTimePayments, username, noPaymentsAtAll ? 0 : myMissedPaymentsInThisPeriod.length === 0 && filterMyItems(thisPeriodPaymentDetails, username).every((p) => p.isLate === false) ? userCurrentStreak + 1 : 0);
       const myMissedPaymentsStreak = vueFetchInitKV(streaks.missedPayments, username, 0);
-      vue_esm_default.set(streaks.missedPayments, username, myMissedPaymentsInThisPeriod.length >= 1 ? myMissedPaymentsStreak + 1 : 0);
+      vue_esm_default.set(streaks.missedPayments, username, noPaymentsAtAll ? myMissedPaymentsStreak + 1 : myMissedPaymentsInThisPeriod.length >= 1 ? myMissedPaymentsStreak + 1 : 0);
     }
   }
   (0, import_sbp4.default)("chelonia/defineContract", {
@@ -10865,8 +10873,11 @@ ${this.getErrorInfo()}`;
         validate: optional,
         process({ meta }, { state, getters }) {
           const period = getters.periodStampGivenDate(meta.createdDate);
-          updateGroupStreaks({ state, getters });
-          getters.groupSettings.distributionDate = period;
+          const current = getters.groupSettings?.distributionDate;
+          if (current !== period) {
+            updateGroupStreaks({ state, getters });
+            getters.groupSettings.distributionDate = period;
+          }
         }
       },
       ...{
