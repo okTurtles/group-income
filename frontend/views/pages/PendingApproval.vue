@@ -46,6 +46,12 @@ export default ({
   @include phone {
     padding: 0 1rem;
   }
+
+  @include desktop {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 }
 
 .c-svg {
