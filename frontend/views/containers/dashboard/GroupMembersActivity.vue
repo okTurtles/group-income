@@ -39,7 +39,7 @@
             .icon-user.icon-round.has-background-general
             .c-item-copy
               member-count-tooltip.c-member-count(:members='haventLoggedIn')
-              i18n(:args='{ ...LTags("strong"), daysCount: config.notLoggedInDays }') haven´t {strong_} logged in past {daysCount} days or more {_strong}
+              i18n(:args='{ ...LTags("strong"), daysCount: config.notLoggedInDays }') haven't {strong_} logged in past {daysCount} days or more {_strong}
 
         li.c-item-wrapper(v-if='noIncomeDetails.length > 0')
           .c-item
@@ -60,7 +60,7 @@
             .icon-vote-yea.icon-round.has-background-general
             .c-item-copy
               member-count-tooltip.c-member-count(:members='noVotes')
-              i18n(:args='{ ...LTags("strong"), proposalNumber: config.proposalNumber }') haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}
+              i18n(:args='{ ...LTags("strong"), proposalNumber: config.proposalNumber }') haven't {strong_} voted in the last {proposalNumber} proposals {_strong}
 
 </template>
 
@@ -99,7 +99,13 @@ export default ({
     missedPayments () {
       return Object.entries(this.groupStreaks.missedPayments)
         .filter(([username, streak]) => streak >= STREAK_MISSED_PAYMENTS)
-        .map(([username, streak]) => `${this.userDisplayName(username)} missed ${streak} payment${streak >= 2 ? 's' : ''}`)
+        .map(([username, streak]) => {
+          const Largs = { user: this.userDisplayName(username), streak }
+
+          return streak >= 2
+            ? this.L('{user} missed {streak} payments', Largs)
+            : this.L('{user} missed {streak} payment', Largs)
+        })
     },
     haventLoggedIn () { // group members that haven't logged in for the past 14 days or more
       const now = new Date().toISOString()
@@ -116,7 +122,13 @@ export default ({
     noVotes () {
       return Object.entries(this.groupStreaks.noVotes)
         .filter(([username, streak]) => streak >= STREAK_MISSED_PROPSAL_VOTE)
-        .map(([username, streak]) => `${this.userDisplayName(username)} missed ${streak} vote${streak >= 2 ? 's' : ''}`)
+        .map(([username, streak]) => {
+          const Largs = { user: this.userDisplayName(username), streak }
+
+          return streak >= 2
+            ? this.L('{user} missed {streak} votes', Largs)
+            : this.L('{user} missed {streak} vote', Largs)
+        })
     }
   }
 }: Object)

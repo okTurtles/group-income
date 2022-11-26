@@ -744,6 +744,7 @@ sbp('chelonia/defineContract', {
           proposals[proposal.data.proposalType][result](state, message)
           Vue.set(proposal, 'dateClosed', meta.createdDate)
 
+          // update 'streaks.noVotes' which records the number of proposals that each member did NOT vote for
           const votedMembers = Object.keys(proposal.votes)
           for (const member of getters.groupMembersByUsername) {
             const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, member, 0)
