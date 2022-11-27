@@ -1398,7 +1398,7 @@ ${this.getErrorInfo()}`;
             const votedMembers = Object.keys(proposal.votes);
             for (const member of getters.groupMembersByUsername) {
               const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, member, 0);
-              const memberHasVoted = member === meta.username || votedMembers.includes(member);
+              const memberHasVoted = votedMembers.includes(member);
               import_common3.Vue.set(getters.groupStreaks.noVotes, member, memberHasVoted ? 0 : memberCurrentStreak + 1);
             }
           }
