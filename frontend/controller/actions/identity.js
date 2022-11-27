@@ -156,7 +156,8 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       } else {
-        // when the user has already switched into the group, record the log-in time for the group.
+        // We call updateLastLoggedIn in this else clause, instead of outside of it because
+        // in the `if` above, updateLastLoggedIn will get called by 'gi.actions/group/switch'
         sbp('gi.actions/group/updateLastLoggedIn', { contractID: state.currentGroupId })
       }
     } catch (e) {

@@ -122,6 +122,9 @@ function updateAdjustedDistribution ({ period, getters }) {
   const payments = getters.groupPeriodPayments[period]
   if (payments && payments.haveNeedsSnapshot) {
     const minimize = getters.groupSettings.minimizeDistribution
+
+    // We call updateLastLoggedIn in this else clause, instead of outside of it because
+    // in the `if` above, updateLastLoggedIn will get called by 'gi.actions/group/switch'
     payments.lastAdjustedDistribution = adjustedDistribution({
       distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize }),
       payments: getters.paymentsForPeriod(period),
@@ -748,7 +751,7 @@ sbp('chelonia/defineContract', {
           const votedMembers = Object.keys(proposal.votes)
           for (const member of getters.groupMembersByUsername) {
             const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, member, 0)
-            const memberHasVoted = member === meta.username || votedMembers.includes(member)
+            const memberHasVoted = votedMembers.includes(member)
 
             Vue.set(getters.groupStreaks.noVotes, member, memberHasVoted ? 0 : memberCurrentStreak + 1)
           }
