@@ -136,8 +136,7 @@ export default ({
       'groupsByName',
       'colors',
       'totalUnreadNotificationCount',
-      'groupUnreadMessages',
-      'chatRoomUnreadMentions'
+      'groupUnreadMessages'
     ]),
     currentGroupUnreadMentionsCount () {
       return this.groupUnreadMessages(this.currentGroupId)
