@@ -97,7 +97,7 @@ describe('Group Payments', () => {
   it('user1 sends $250 to user3 (total)', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
 
-    cy.giForceDistributionDateToNow(undefined, 1000)
+    cy.giForceDistributionDateToNow()
 
     cy.getByDT('paymentsLink').click()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
@@ -360,13 +360,13 @@ describe('Group Payments', () => {
     })
   })
 
-  it('three months\'s of payments are made and support history graph displays the histories', () => {
+  it.skip('three months\'s of payments are made and support history graph displays the histories', () => {
     cy.clock(timeStart, ['Date'])
     cy.visit('/')
 
     cy.tick(timeOneMonth)
     cy.getByDT('paymentsLink').click()
-    cy.giForceDistributionDateToNow(timeStart, timeOneMonth)
+    cy.giForceDistributionDateToNow()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(timeStart + timeOneMonth))
     cy.getByDT('recordPayment').should('be.disabled')
     cy.getByDT('todoCheck').click()
@@ -384,7 +384,7 @@ describe('Group Payments', () => {
     cy.tick(timeOneMonth)
     cy.getByDT('dashboard').click()
     cy.getByDT('paymentsLink').click()
-    cy.giForceDistributionDateToNow(timeStart, timeOneMonth)
+    cy.giForceDistributionDateToNow()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(timeStart + timeOneMonth * 2))
     cy.getByDT('recordPayment').should('be.disabled')
     cy.getByDT('todoCheck').click()
@@ -402,7 +402,7 @@ describe('Group Payments', () => {
     cy.tick(timeOneMonth)
     cy.getByDT('dashboard').click()
     cy.getByDT('paymentsLink').click()
-    cy.giForceDistributionDateToNow(timeStart, timeOneMonth)
+    cy.giForceDistributionDateToNow()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(timeStart + timeOneMonth * 3))
     cy.getByDT('recordPayment').should('be.disabled')
     cy.getByDT('todoCheck').click()
@@ -419,7 +419,7 @@ describe('Group Payments', () => {
 
     cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
     cy.getByDT('paymentsLink').click()
-    cy.giForceDistributionDateToNow(timeStart, timeOneMonth)
+    cy.giForceDistributionDateToNow()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(timeStart + timeOneMonth * 3))
     cy.getByDT('recordPayment').should('be.disabled')
     cy.getByDT('todoCheck').click()
