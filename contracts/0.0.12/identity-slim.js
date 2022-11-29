@@ -23,17 +23,35 @@
   };
   var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target, mod));
 
-  // frontend/model/contracts/mailbox.js
+  // frontend/model/contracts/identity.js
   var import_sbp = __toESM(__require("@sbp/sbp"));
   var import_common = __require("@common/common.js");
+
+  // frontend/model/contracts/shared/giLodash.js
+  function cloneDeep(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+  function isMergeableObject(val) {
+    const nonNullObject = val && typeof val === "object";
+    return nonNullObject && Object.prototype.toString.call(val) !== "[object RegExp]" && Object.prototype.toString.call(val) !== "[object Date]";
+  }
+  function merge(obj, src) {
+    for (const key in src) {
+      const clone = isMergeableObject(src[key]) ? cloneDeep(src[key]) : void 0;
+      if (clone && isMergeableObject(obj[key])) {
+        merge(obj[key], clone);
+        continue;
+      }
+      obj[key] = clone || src[key];
+    }
+    return obj;
+  }
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
   var isEmpty = (v) => v === EMPTY_VALUE;
   var isNil = (v) => v === null;
   var isUndef = (v) => typeof v === "undefined";
-  var isBoolean = (v) => typeof v === "boolean";
-  var isNumber = (v) => typeof v === "number";
   var isString = (v) => typeof v === "string";
   var isObject = (v) => !isNil(v) && typeof v === "object";
   var isFunction = (v) => typeof v === "function";
@@ -93,33 +111,6 @@ ${this.getErrorInfo()}`;
     array.type = () => `Array<${getType(typeFn)}>`;
     return array;
   };
-  var literalOf = (primitive) => {
-    function literal(value, _scope = "") {
-      if (isEmpty(value) || value === primitive)
-        return primitive;
-      throw validatorError(literal, value, _scope);
-    }
-    literal.type = () => {
-      if (isBoolean(primitive))
-        return `${primitive ? "true" : "false"}`;
-      else
-        return `"${primitive}"`;
-    };
-    return literal;
-  };
-  var mapOf = (keyTypeFn, typeFn) => {
-    function mapOf2(value) {
-      if (isEmpty(value))
-        return {};
-      const o = object(value);
-      const reducer = (acc, key) => Object.assign(acc, {
-        [keyTypeFn(key, "Map[_]")]: typeFn(o[key], `Map.${key}`)
-      });
-      return Object.keys(o).reduce(reducer, {});
-    }
-    mapOf2.type = () => `{ [_:${getType(keyTypeFn)}]: ${getType(typeFn)} }`;
-    return mapOf2;
-  };
   var object = function(value) {
     if (isEmpty(value))
       return {};
@@ -173,27 +164,12 @@ ${this.getErrorInfo()}`;
       return data;
     };
   }
-  var optional = (typeFn) => {
-    const unionFn = unionOf(typeFn, undef);
-    function optional2(v) {
-      return unionFn(v);
-    }
-    optional2.type = ({ noVoid }) => !noVoid ? getType(unionFn) : getType(typeFn);
-    return optional2;
-  };
   function undef(value, _scope = "") {
     if (isEmpty(value) || isUndef(value))
       return void 0;
     throw validatorError(undef, value, _scope);
   }
   undef.type = () => "void";
-  var number = function number2(value, _scope = "") {
-    if (isEmpty(value))
-      return 0;
-    if (isNumber(value))
-      return value;
-    throw validatorError(number2, value, _scope);
-  };
   var string = function string2(value, _scope = "") {
     if (isEmpty(value))
       return "";
@@ -201,138 +177,110 @@ ${this.getErrorInfo()}`;
       return value;
     throw validatorError(string2, value, _scope);
   };
-  function unionOf_(...typeFuncs) {
-    function union(value, _scope = "") {
-      for (const typeFn of typeFuncs) {
-        try {
-          return typeFn(value, _scope);
-        } catch (_) {
-        }
-      }
-      throw validatorError(union, value, _scope);
-    }
-    union.type = () => `(${typeFuncs.map((fn) => getType(fn)).join(" | ")})`;
-    return union;
-  }
-  var unionOf = unionOf_;
+
+  // frontend/model/contracts/shared/validators.js
+  var allowedUsernameCharacters = (value) => /^[\w-]*$/.test(value);
+  var noConsecutiveHyphensOrUnderscores = (value) => !value.includes("--") && !value.includes("__");
+  var noLeadingOrTrailingHyphen = (value) => !value.startsWith("-") && !value.endsWith("-");
+  var noLeadingOrTrailingUnderscore = (value) => !value.startsWith("_") && !value.endsWith("_");
+  var noUppercase = (value) => value.toLowerCase() === value;
 
   // frontend/model/contracts/shared/constants.js
-  var CHATROOM_TYPES = {
-    INDIVIDUAL: "individual",
-    GROUP: "group"
-  };
-  var CHATROOM_PRIVACY_LEVEL = {
-    GROUP: "chatroom-privacy-level-group",
-    PRIVATE: "chatroom-privacy-level-private",
-    PUBLIC: "chatroom-privacy-level-public"
-  };
-  var MESSAGE_TYPES = {
-    POLL: "message-poll",
-    TEXT: "message-text",
-    INTERACTIVE: "message-interactive",
-    NOTIFICATION: "message-notification"
-  };
-  var MESSAGE_NOTIFICATIONS = {
-    ADD_MEMBER: "add-member",
-    JOIN_MEMBER: "join-member",
-    LEAVE_MEMBER: "leave-member",
-    KICK_MEMBER: "kick-member",
-    UPDATE_DESCRIPTION: "update-description",
-    UPDATE_NAME: "update-name",
-    DELETE_CHANNEL: "delete-channel",
-    VOTE: "vote"
-  };
-  var PROPOSAL_VARIANTS = {
-    CREATED: "proposal-created",
-    EXPIRING: "proposal-expiring",
-    ACCEPTED: "proposal-accepted",
-    REJECTED: "proposal-rejected",
-    EXPIRED: "proposal-expired"
-  };
-  var MAIL_TYPE_MESSAGE = "message";
-  var MAIL_TYPE_FRIEND_REQ = "friend-request";
+  var IDENTITY_USERNAME_MAX_CHARS = 80;
 
-  // frontend/model/contracts/shared/types.js
-  var inviteType = objectOf({
-    inviteSecret: string,
-    quantity: number,
-    creator: string,
-    invitee: optional(string),
-    status: string,
-    responses: mapOf(string, string),
-    expires: number
-  });
-  var chatRoomAttributesType = objectOf({
-    name: string,
-    description: string,
-    type: unionOf(...Object.values(CHATROOM_TYPES).map((v) => literalOf(v))),
-    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v)))
-  });
-  var messageType = objectMaybeOf({
-    type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
-    text: string,
-    proposal: objectMaybeOf({
-      proposalId: string,
-      proposalType: string,
-      expires_date_ms: number,
-      createdDate: string,
-      creator: string,
-      variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map((v) => literalOf(v)))
-    }),
-    notification: objectMaybeOf({
-      type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
-      params: mapOf(string, string)
-    }),
-    replyingMessage: objectOf({
-      id: string,
-      text: string
-    }),
-    emoticons: mapOf(string, arrayOf(string)),
-    onlyVisibleTo: arrayOf(string)
-  });
-  var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
-
-  // frontend/model/contracts/mailbox.js
+  // frontend/model/contracts/identity.js
   (0, import_sbp.default)("chelonia/defineContract", {
-    name: "gi.contracts/mailbox",
-    metadata: {
-      validate: objectOf({
-        createdDate: string
-      }),
-      create() {
-        return {
-          createdDate: new Date().toISOString()
-        };
+    name: "gi.contracts/identity",
+    getters: {
+      currentIdentityState(state) {
+        return state;
+      },
+      loginState(state, getters) {
+        return getters.currentIdentityState.loginState;
       }
     },
     actions: {
-      "gi.contracts/mailbox": {
+      "gi.contracts/identity": {
+        validate: (data, { state, meta }) => {
+          objectMaybeOf({
+            attributes: objectMaybeOf({
+              username: string,
+              email: string,
+              picture: string
+            })
+          })(data);
+          const { username } = data.attributes;
+          if (username.length > IDENTITY_USERNAME_MAX_CHARS) {
+            throw new TypeError(`A username cannot exceed ${IDENTITY_USERNAME_MAX_CHARS} characters.`);
+          }
+          if (!allowedUsernameCharacters(username)) {
+            throw new TypeError("A username cannot contain disallowed characters.");
+          }
+          if (!noConsecutiveHyphensOrUnderscores(username)) {
+            throw new TypeError("A username cannot contain two consecutive hyphens or underscores.");
+          }
+          if (!noLeadingOrTrailingHyphen(username)) {
+            throw new TypeError("A username cannot start or end with a hyphen.");
+          }
+          if (!noLeadingOrTrailingUnderscore(username)) {
+            throw new TypeError("A username cannot start or end with an underscore.");
+          }
+          if (!noUppercase(username)) {
+            throw new TypeError("A username cannot contain uppercase letters.");
+          }
+        },
+        process({ data }, { state }) {
+          const initialState = merge({
+            settings: {},
+            attributes: {}
+          }, data);
+          for (const key in initialState) {
+            import_common.Vue.set(state, key, initialState[key]);
+          }
+        }
+      },
+      "gi.contracts/identity/setAttributes": {
         validate: object,
         process({ data }, { state }) {
           for (const key in data) {
-            import_common.Vue.set(state, key, data[key]);
+            import_common.Vue.set(state.attributes, key, data[key]);
           }
-          import_common.Vue.set(state, "messages", []);
         }
       },
-      "gi.contracts/mailbox/postMessage": {
-        validate: objectOf({
-          messageType: mailType,
-          from: string,
-          subject: optional(string),
-          message: optional(string),
-          headers: optional(object)
-        }),
-        process(message, { state }) {
-          state.messages.push(message);
+      "gi.contracts/identity/deleteAttributes": {
+        validate: arrayOf(string),
+        process({ data }, { state }) {
+          for (const attribute of data) {
+            import_common.Vue.delete(state.attributes, attribute);
+          }
         }
       },
-      "gi.contracts/mailbox/authorizeSender": {
+      "gi.contracts/identity/updateSettings": {
+        validate: object,
+        process({ data }, { state }) {
+          for (const key in data) {
+            import_common.Vue.set(state.settings, key, data[key]);
+          }
+        }
+      },
+      "gi.contracts/identity/setLoginState": {
         validate: objectOf({
-          sender: string
+          groupIds: arrayOf(string)
         }),
         process({ data }, { state }) {
-          throw new Error("unimplemented!");
+          import_common.Vue.set(state, "loginState", data);
+        },
+        sideEffect({ contractID }) {
+          if (contractID === (0, import_sbp.default)("state/vuex/getters").ourIdentityContractId) {
+            (0, import_sbp.default)("chelonia/queueInvocation", contractID, ["gi.actions/identity/updateLoginStateUponLogin"]).catch((e) => {
+              (0, import_sbp.default)("gi.notifications/emit", "ERROR", {
+                message: (0, import_common.L)("Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'", {
+                  errName: e.name,
+                  errMsg: e.message || "?"
+                })
+              });
+            });
+          }
         }
       }
     }

@@ -9447,15 +9447,15 @@ ${this.getErrorInfo()}`;
     GROUP: "group"
   };
   var CHATROOM_PRIVACY_LEVEL = {
-    GROUP: "chatroom-privacy-level-group",
-    PRIVATE: "chatroom-privacy-level-private",
-    PUBLIC: "chatroom-privacy-level-public"
+    GROUP: "group",
+    PRIVATE: "private",
+    PUBLIC: "public"
   };
   var MESSAGE_TYPES = {
-    POLL: "message-poll",
-    TEXT: "message-text",
-    INTERACTIVE: "message-interactive",
-    NOTIFICATION: "message-notification"
+    POLL: "poll",
+    TEXT: "text",
+    INTERACTIVE: "interactive",
+    NOTIFICATION: "notification"
   };
   var INVITE_EXPIRES_IN_DAYS = {
     ON_BOARDING: 30,
@@ -9472,14 +9472,12 @@ ${this.getErrorInfo()}`;
     VOTE: "vote"
   };
   var PROPOSAL_VARIANTS = {
-    CREATED: "proposal-created",
-    EXPIRING: "proposal-expiring",
-    ACCEPTED: "proposal-accepted",
-    REJECTED: "proposal-rejected",
-    EXPIRED: "proposal-expired"
+    CREATED: "created",
+    EXPIRING: "expiring",
+    ACCEPTED: "accepted",
+    REJECTED: "rejected",
+    EXPIRED: "expired"
   };
-  var MAIL_TYPE_MESSAGE = "message";
-  var MAIL_TYPE_FRIEND_REQ = "friend-request";
 
   // frontend/model/contracts/shared/voting/rules.js
   var VOTE_AGAINST = ":against";
@@ -9960,7 +9958,6 @@ ${this.getErrorInfo()}`;
     emoticons: mapOf(string, arrayOf(string)),
     onlyVisibleTo: arrayOf(string)
   });
-  var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
 
   // frontend/model/contracts/group.js
   function vueFetchInitKV(obj, key, initialValue) {
@@ -9996,7 +9993,7 @@ ${this.getErrorInfo()}`;
     const archivingPayments = { paymentsByPeriod: {}, payments: {} };
     while (sortedPeriodKeys.length > MAX_SAVED_PERIODS) {
       const period = sortedPeriodKeys.shift();
-      archivingPayments.paymentsByPeriod[period] = state.paymentsByPeriod[period];
+      archivingPayments.paymentsByPeriod[period] = cloneDeep(state.paymentsByPeriod[period]);
       for (const paymentHash of getters.paymentHashesForPeriod(period)) {
         archivingPayments.payments[paymentHash] = cloneDeep(state.payments[paymentHash]);
         vue_esm_default.delete(state.payments, paymentHash);
@@ -10838,11 +10835,9 @@ ${this.getErrorInfo()}`;
           const rootState = (0, import_sbp4.default)("state/vuex/state");
           const username = data.username || meta.username;
           if (username === rootState.loggedIn.username) {
-            if (!(0, import_sbp4.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
-              (0, import_sbp4.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", data.chatRoomID);
+            if (!(0, import_sbp4.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp4.default)("okTurtles.data/get", "JOINING_GROUP_CHAT")) {
               await (0, import_sbp4.default)("chelonia/contract/sync", data.chatRoomID);
-              (0, import_sbp4.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", void 0);
-              (0, import_sbp4.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
+              (0, import_sbp4.default)("okTurtles.data/set", "JOINING_GROUP_CHAT", false);
             }
           }
         }
@@ -10925,24 +10920,43 @@ ${this.getErrorInfo()}`;
       "gi.contracts/group/archivePayments": async function(contractID, archivingPayments) {
         const { paymentsByPeriod, payments } = archivingPayments;
         const { username } = (0, import_sbp4.default)("state/vuex/state").loggedIn;
+        const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`;
+        const archPaymentsByPeriod = await (0, import_sbp4.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {};
+        const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`;
+        const archSentOrReceivedPayments = await (0, import_sbp4.default)("gi.db/archive/load", archSentOrReceivedPaymentsKey) || { sent: [], received: [] };
+        const sortPayments = (payments2) => payments2.sort((f, l) => f.meta.createdDate < l.meta.createdDate ? 1 : -1);
         for (const period of Object.keys(paymentsByPeriod).sort()) {
-          const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`;
-          const archPaymentsByPeriod = await (0, import_sbp4.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {};
-          const archPaymentsKey = `payments/${username}/${contractID}`;
-          let archPayments = await (0, import_sbp4.default)("gi.db/archive/load", archPaymentsKey) || {};
           archPaymentsByPeriod[period] = paymentsByPeriod[period];
-          archPayments = merge(archPayments, payments);
+          const newSentOrReceivedPayments = { sent: [], received: [] };
+          const { paymentsFrom } = paymentsByPeriod[period];
+          for (const fromUser of Object.keys(paymentsFrom)) {
+            for (const toUser of Object.keys(paymentsFrom[fromUser])) {
+              if (toUser === username || fromUser === username) {
+                const receivedOrSent = toUser === username ? "received" : "sent";
+                for (const hash2 of paymentsFrom[fromUser][toUser]) {
+                  const { data, meta } = payments[hash2];
+                  newSentOrReceivedPayments[receivedOrSent].push({ hash: hash2, period, data, meta, amount: data.amount, username: toUser });
+                }
+              }
+            }
+          }
+          archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent];
+          archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received];
+          const archPaymentsKey = `payments/${period}/${username}/${contractID}`;
+          const hashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period]);
+          const archPayments = Object.fromEntries(hashes.map((hash2) => [hash2, payments[hash2]]));
           while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
             const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift();
             const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod]);
-            for (const hash2 of paymentHashes) {
-              delete archPayments[hash2];
-            }
+            await (0, import_sbp4.default)("gi.db/archive/delete", `payments/${shouldBeDeletedPeriod}/${username}/${contractID}`);
             delete archPaymentsByPeriod[shouldBeDeletedPeriod];
+            archSentOrReceivedPayments.sent = archSentOrReceivedPayments.sent.filter((payment) => !paymentHashes.includes(payment.hash));
+            archSentOrReceivedPayments.received = archSentOrReceivedPayments.received.filter((payment) => !paymentHashes.includes(payment.hash));
           }
-          await (0, import_sbp4.default)("gi.db/archive/save", archPaymentsByPeriodKey, archPaymentsByPeriod);
           await (0, import_sbp4.default)("gi.db/archive/save", archPaymentsKey, archPayments);
         }
+        await (0, import_sbp4.default)("gi.db/archive/save", archPaymentsByPeriodKey, archPaymentsByPeriod);
+        await (0, import_sbp4.default)("gi.db/archive/save", archSentOrReceivedPaymentsKey, archSentOrReceivedPayments);
         (0, import_sbp4.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, { paymentsByPeriod, payments });
       }
     }

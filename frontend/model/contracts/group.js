@@ -32,6 +32,7 @@ function initGroupProfile (contractID: string, joinedDate: string) {
     globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
     contractID,
     joinedDate,
+    lastLoggedIn: joinedDate,
     nonMonetaryContributions: [],
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null
@@ -86,6 +87,16 @@ function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
   return periodPayments
 }
 
+function initGroupStreaks () {
+  return {
+    lastStreakPeriod: null,
+    fullMonthlyPledges: 0,
+    onTimePayments: {}, // { username: number, ... }
+    missedPayments: {}, // { username: number, ... }
+    noVotes: {} // { username: number, ... }
+  }
+}
+
 // this function is called each time a payment is completed or a user adjusts their income details.
 // TODO: call also when mincome is adjusted
 function updateCurrentDistribution ({ contractID, meta, state, getters }) {
@@ -94,6 +105,7 @@ function updateCurrentDistribution ({ contractID, meta, state, getters }) {
   const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0
   // update distributionDate if we've passed into the next period
   if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
+    updateGroupStreaks({ state, getters })
     getters.groupSettings.distributionDate = period
   }
   // save haveNeeds if there are no payments or the haveNeeds haven't been saved yet
@@ -110,6 +122,9 @@ function updateAdjustedDistribution ({ period, getters }) {
   const payments = getters.groupPeriodPayments[period]
   if (payments && payments.haveNeedsSnapshot) {
     const minimize = getters.groupSettings.minimizeDistribution
+
+    // We call updateLastLoggedIn in this else clause, instead of outside of it because
+    // in the `if` above, updateLastLoggedIn will get called by 'gi.actions/group/switch'
     payments.lastAdjustedDistribution = adjustedDistribution({
       distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize }),
       payments: getters.paymentsForPeriod(period),
@@ -139,6 +154,83 @@ function isActionYoungerThanUser (actionMeta: Object, userProfile: ?Object): boo
     return false
   }
   return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0
+}
+
+function updateGroupStreaks ({ state, getters }) {
+  const streaks = vueFetchInitKV(state, 'streaks', initGroupStreaks())
+  const cPeriod = getters.groupSettings.distributionDate
+  const thisPeriodPayments = getters.groupPeriodPayments[cPeriod]
+  const noPaymentsAtAll = !thisPeriodPayments
+
+  if (streaks.lastStreakPeriod === cPeriod) return
+  else {
+    Vue.set(streaks, 'lastStreakPeriod', cPeriod)
+  }
+
+  // IMPORTANT! This code must be kept in sync with updateAdjustedDistribution!
+  // TODO: see if it's possible to DRY this with the code inside of updateAdjustedDistribution
+  const thisPeriodDistribution = thisPeriodPayments?.lastAdjustedDistribution || adjustedDistribution({
+    distribution: unadjustedDistribution({
+      haveNeeds: getters.haveNeedsForThisPeriod(cPeriod),
+      minimize: getters.groupSettings.minimizeDistribution
+    }) || [],
+    payments: getters.paymentsForPeriod(cPeriod),
+    dueOn: getters.dueDateForPeriod(cPeriod)
+  }).filter(todo => {
+    return getters.groupProfile(todo.to).status === PROFILE_STATUS.ACTIVE
+  })
+
+  // --- update 'fullMonthlyPledgesCount' streak ---
+  // if the group has made 100% pledges in this period, +1 the streak value.
+  // or else, reset the value to '0'
+  Vue.set(
+    streaks,
+    'fullMonthlyPledges',
+    noPaymentsAtAll
+      ? 0
+      : thisPeriodDistribution.length === 0
+        ? streaks.fullMonthlyPledges + 1
+        : 0
+  )
+
+  // --- update 'onTimePayments' & 'missedPayments' streaks for 'pledging' members of the group ---
+  const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod)
+  const filterMyItems = (array, username) => array.filter(item => item.from === username)
+  const isPledgingMember = username => {
+    const haveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod)
+    return haveNeeds.some(entry => entry.name === username && entry.haveNeed > 0)
+  }
+
+  for (const username in getters.groupProfiles) {
+    if (!isPledgingMember(username)) continue
+
+    const myMissedPaymentsInThisPeriod = filterMyItems(thisPeriodDistribution, username)
+    const userCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0)
+    Vue.set(
+      streaks.onTimePayments,
+      username,
+      noPaymentsAtAll
+        ? 0
+        : myMissedPaymentsInThisPeriod.length === 0 &&
+          filterMyItems(thisPeriodPaymentDetails, username).every(p => p.isLate === false)
+          // check-1. if the user made all the pledgeds assigned to them in this period.
+          // check-2. all those payments by the user were done on time.
+          ? userCurrentStreak + 1
+          : 0
+    )
+
+    // 2) update 'missedPayments'
+    const myMissedPaymentsStreak = vueFetchInitKV(streaks.missedPayments, username, 0)
+    Vue.set(
+      streaks.missedPayments,
+      username,
+      noPaymentsAtAll
+        ? myMissedPaymentsStreak + 1
+        : myMissedPaymentsInThisPeriod.length >= 1
+          ? myMissedPaymentsStreak + 1
+          : 0
+    )
+  }
 }
 
 sbp('chelonia/defineContract', {
@@ -208,6 +300,9 @@ sbp('chelonia/defineContract', {
           recentDate = recentDate.toISOString()
         }
         const { distributionDate, distributionPeriodLength } = getters.groupSettings
+
+        if (!distributionDate) return null
+
         return periodStampGivenDate({
           recentDate,
           periodStart: distributionDate,
@@ -324,6 +419,9 @@ sbp('chelonia/defineContract', {
     groupThankYousFrom (state, getters): Object {
       return getters.currentGroupState.thankYousFrom || {}
     },
+    groupStreaks (state, getters): Object {
+      return getters.currentGroupState.streaks || {}
+    },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
       //       USD, then calling this function is probably an error which should be reported.
@@ -433,6 +531,7 @@ sbp('chelonia/defineContract', {
             inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
             inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
           },
+          streaks: initGroupStreaks(),
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
           },
@@ -625,7 +724,7 @@ sbp('chelonia/defineContract', {
         vote: string,
         passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       }),
-      process (message, { state }) {
+      process (message, { state, getters }) {
         const { data, hash, meta } = message
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
@@ -647,6 +746,15 @@ sbp('chelonia/defineContract', {
           // handles proposal pass or fail, will update proposal.status accordingly
           proposals[proposal.data.proposalType][result](state, message)
           Vue.set(proposal, 'dateClosed', meta.createdDate)
+
+          // update 'streaks.noVotes' which records the number of proposals that each member did NOT vote for
+          const votedMembers = Object.keys(proposal.votes)
+          for (const member of getters.groupMembersByUsername) {
+            const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, member, 0)
+            const memberHasVoted = votedMembers.includes(member)
+
+            Vue.set(getters.groupStreaks.noVotes, member, memberHasVoted ? 0 : memberCurrentStreak + 1)
+          }
         }
       },
       sideEffect ({ contractID, data, meta }, { state, getters }) {
@@ -1063,6 +1171,29 @@ sbp('chelonia/defineContract', {
           ...getters.getChatRooms[data.chatRoomID],
           name: data.name
         })
+      }
+    },
+    'gi.contracts/group/updateLastLoggedIn': {
+      validate () {},
+      process ({ meta }, { getters }) {
+        const profile = getters.groupProfiles[meta.username]
+
+        if (profile) {
+          Vue.set(profile, 'lastLoggedIn', meta.createdDate)
+        }
+      }
+    },
+    'gi.contracts/group/updateDistributionDate': {
+      validate: optional,
+      process ({ meta }, { state, getters }) {
+        const period = getters.periodStampGivenDate(meta.createdDate)
+        const current = getters.groupSettings?.distributionDate
+
+        if (current !== period) {
+          // right before updating to the new distribution period, make sure to update various payment-related group streaks.
+          updateGroupStreaks({ state, getters })
+          getters.groupSettings.distributionDate = period
+        }
       }
     },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {

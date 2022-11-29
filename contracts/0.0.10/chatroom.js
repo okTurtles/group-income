@@ -9156,15 +9156,15 @@
     GROUP: "group"
   };
   var CHATROOM_PRIVACY_LEVEL = {
-    GROUP: "group",
-    PRIVATE: "private",
-    PUBLIC: "public"
+    GROUP: "chatroom-privacy-level-group",
+    PRIVATE: "chatroom-privacy-level-private",
+    PUBLIC: "chatroom-privacy-level-public"
   };
   var MESSAGE_TYPES = {
-    POLL: "poll",
-    TEXT: "text",
-    INTERACTIVE: "interactive",
-    NOTIFICATION: "notification"
+    POLL: "message-poll",
+    TEXT: "message-text",
+    INTERACTIVE: "message-interactive",
+    NOTIFICATION: "message-notification"
   };
   var MESSAGE_NOTIFICATIONS = {
     ADD_MEMBER: "add-member",
@@ -9177,12 +9177,14 @@
     VOTE: "vote"
   };
   var PROPOSAL_VARIANTS = {
-    CREATED: "created",
-    EXPIRING: "expiring",
-    ACCEPTED: "accepted",
-    REJECTED: "rejected",
-    EXPIRED: "expired"
+    CREATED: "proposal-created",
+    EXPIRING: "proposal-expiring",
+    ACCEPTED: "proposal-accepted",
+    REJECTED: "proposal-rejected",
+    EXPIRED: "proposal-expired"
   };
+  var MAIL_TYPE_MESSAGE = "message";
+  var MAIL_TYPE_FRIEND_REQ = "friend-request";
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -9411,6 +9413,7 @@ ${this.getErrorInfo()}`;
     emoticons: mapOf(string, arrayOf(string)),
     onlyVisibleTo: arrayOf(string)
   });
+  var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
 
   // frontend/model/contracts/shared/functions.js
   var import_sbp2 = __toESM(__require("@sbp/sbp"));
@@ -9518,7 +9521,7 @@ ${this.getErrorInfo()}`;
     (0, import_sbp4.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash: hash2 });
   }
   function addMention({ contractID, messageId, datetime, text: text2, username, chatRoomName }) {
-    if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+    if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
       return;
     }
     (0, import_sbp4.default)("state/vuex/commit", "addChatRoomUnreadMention", {
@@ -9527,14 +9530,12 @@ ${this.getErrorInfo()}`;
       createdDate: datetime
     });
     const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
-    const isDMContact = rootGetters.isDirectMessage(contractID);
-    const partnerProfile = rootGetters.ourContactProfiles[username];
-    const title = isDMContact ? `# ${partnerProfile?.displayName || username}` : `# ${chatRoomName}`;
+    const groupID = rootGetters.groupIdFromChatRoomId(contractID);
     const path = `/group-chat/${contractID}`;
     makeNotification({
-      title,
+      title: `# ${chatRoomName}`,
       body: text2,
-      icon: partnerProfile?.picture,
+      icon: rootGetters.globalProfile2(groupID, username)?.picture,
       path
     });
     (0, import_sbp4.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
@@ -9620,7 +9621,7 @@ ${this.getErrorInfo()}`;
             return;
           }
           vue_esm_default.set(state.users, username, { joinedDate: meta.createdDate });
-          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+          if (!state.saveMessage) {
             return;
           }
           const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
@@ -9630,7 +9631,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash: hash2, meta }) {
           emitMessageEvent({ contractID, hash: hash2 });
-          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+          if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM") || (0, import_sbp4.default)("okTurtles.data/get", "JOINING_CHATROOM_ID") === contractID) {
             updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
           }
         }
@@ -9650,7 +9651,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash: hash2, meta }) {
           emitMessageEvent({ contractID, hash: hash2 });
-          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+          if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
             updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
           }
         }
@@ -9670,7 +9671,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash: hash2, meta }) {
           emitMessageEvent({ contractID, hash: hash2 });
-          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+          if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
             updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
           }
         }
@@ -9687,7 +9688,7 @@ ${this.getErrorInfo()}`;
             throw new Error(`Can not leave the chatroom which ${member} are not part of`);
           }
           vue_esm_default.delete(state.users, member);
-          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+          if (!state.saveMessage) {
             return;
           }
           const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER;
@@ -9703,8 +9704,10 @@ ${this.getErrorInfo()}`;
         sideEffect({ data, hash: hash2, contractID, meta }, { state }) {
           const rootState = (0, import_sbp4.default)("state/vuex/state");
           if (data.member === rootState.loggedIn.username) {
-            if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+            if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
               updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
+            }
+            if ((0, import_sbp4.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
               return;
             }
             leaveChatRoom({ contractID });
@@ -9725,7 +9728,7 @@ ${this.getErrorInfo()}`;
           }
         },
         sideEffect({ meta, contractID }, { state }) {
-          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+          if ((0, import_sbp4.default)("okTurtles.data/get", "JOINING_CHATROOM_ID")) {
             return;
           }
           leaveChatRoom({ contractID });
@@ -9753,10 +9756,7 @@ ${this.getErrorInfo()}`;
           }
           const newMessage = createMessage({ meta, data, hash: hash2, state });
           const mentions = makeMentionFromUsername(me);
-          const isDirectMessage = state.attributes.type === CHATROOM_TYPES.INDIVIDUAL;
-          const isTextMessage = data.type === MESSAGE_TYPES.TEXT;
-          const isMentionedMe = isTextMessage && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all));
-          if (isDirectMessage || isMentionedMe) {
+          if (data.type === MESSAGE_TYPES.TEXT && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))) {
             addMention({
               contractID,
               messageId: newMessage.id,
@@ -9766,7 +9766,7 @@ ${this.getErrorInfo()}`;
               chatRoomName: getters.chatRoomAttributes.name
             });
           }
-          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+          if ((0, import_sbp4.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
             updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
           }
         }

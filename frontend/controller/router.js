@@ -21,6 +21,7 @@ const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
 const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
 const lazyMessages = lazyPage(() => import('@pages/Messages.vue'))
 const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
+const lazyPendingApproval = lazyPage(() => import('@pages/PendingApproval.vue'))
 
 Vue.use(Router)
 
@@ -152,6 +153,13 @@ const router: any = new Router({
       meta: { title: L('Join a Group') },
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
       beforeEnter: createEnterGuards(inviteGuard)
+    },
+    {
+      path: '/pending-approval',
+      component: lazyPendingApproval,
+      name: 'PendingApproval',
+      meta: { title: L('Pending Approval') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     ...(process.env.NODE_ENV === 'development'
       ? [{
