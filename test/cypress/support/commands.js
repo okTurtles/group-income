@@ -405,9 +405,13 @@ Cypress.Commands.add('giAddNewChatroom', (
   })
 })
 
-Cypress.Commands.add('giForceDistributionDateToNow', () => {
+Cypress.Commands.add('giForceDistributionDateToNow', (timeStart = Date.now(), timeToPass = 0) => {
+  cy.clock(timeStart)
+  timeToPass && cy.tick(timeToPass)
+
   cy.window().its('sbp').then(sbp => {
     return new Promise((resolve) => {
+      cy.log(`${new Date().toDateString()}`)
       sbp('gi.actions/group/forceDistributionDate', {
         contractID: sbp('state/vuex/state').currentGroupId,
         hooks: {
