@@ -273,15 +273,15 @@ ${this.getErrorInfo()}`;
     GROUP: "group"
   };
   var CHATROOM_PRIVACY_LEVEL = {
-    GROUP: "chatroom-privacy-level-group",
-    PRIVATE: "chatroom-privacy-level-private",
-    PUBLIC: "chatroom-privacy-level-public"
+    GROUP: "group",
+    PRIVATE: "private",
+    PUBLIC: "public"
   };
   var MESSAGE_TYPES = {
-    POLL: "message-poll",
-    TEXT: "message-text",
-    INTERACTIVE: "message-interactive",
-    NOTIFICATION: "message-notification"
+    POLL: "poll",
+    TEXT: "text",
+    INTERACTIVE: "interactive",
+    NOTIFICATION: "notification"
   };
   var INVITE_EXPIRES_IN_DAYS = {
     ON_BOARDING: 30,
@@ -298,14 +298,12 @@ ${this.getErrorInfo()}`;
     VOTE: "vote"
   };
   var PROPOSAL_VARIANTS = {
-    CREATED: "proposal-created",
-    EXPIRING: "proposal-expiring",
-    ACCEPTED: "proposal-accepted",
-    REJECTED: "proposal-rejected",
-    EXPIRED: "proposal-expired"
+    CREATED: "created",
+    EXPIRING: "expiring",
+    ACCEPTED: "accepted",
+    REJECTED: "rejected",
+    EXPIRED: "expired"
   };
-  var MAIL_TYPE_MESSAGE = "message";
-  var MAIL_TYPE_FRIEND_REQ = "friend-request";
 
   // frontend/model/contracts/shared/voting/rules.js
   var VOTE_AGAINST = ":against";
@@ -836,7 +834,6 @@ ${this.getErrorInfo()}`;
     emoticons: mapOf(string, arrayOf(string)),
     onlyVisibleTo: arrayOf(string)
   });
-  var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
 
   // frontend/model/contracts/group.js
   function vueFetchInitKV(obj, key, initialValue) {
@@ -1714,11 +1711,9 @@ ${this.getErrorInfo()}`;
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           const username = data.username || meta.username;
           if (username === rootState.loggedIn.username) {
-            if (!(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
-              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", data.chatRoomID);
+            if (!(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP_CHAT")) {
               await (0, import_sbp3.default)("chelonia/contract/sync", data.chatRoomID);
-              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", void 0);
-              (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
+              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_GROUP_CHAT", false);
             }
           }
         }

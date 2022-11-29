@@ -658,6 +658,25 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
     store.registerModule(contract.name, {
       getters: omit(contract.getters, omitGetters[contract.name] || [])
     })
+
+    if (contract.name === 'gi.contracts/group') {
+      store.watch(
+        (state, getters) => getters.currentPaymentPeriod,
+        (newPeriod, oldPeriod) => {
+          // This watcher is for automatically syncing 'currentPaymentPeriod' with 'groupSettings.distributionDate'.
+          // Before bringing this logic in, how the app updates the state related to group distribution period was,
+          // 'currentPaymentPeriod': gets auto-updated(t1) in response to the change of 'reactiveDate.date' when it passes into the new period.
+          // 'groupSettings.distributionDate': gets updated manually by calling 'updateCurrentDistribution' function(t2) in group.js
+          // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
+          if (!oldPeriod || !newPeriod) return
+
+          const distributionDateInSettings = store.getters.groupSettings.distributionDate
+          if (newPeriod !== oldPeriod && (newPeriod !== distributionDateInSettings)) {
+            sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
+          }
+        }
+      )
+    }
   }
 })
 

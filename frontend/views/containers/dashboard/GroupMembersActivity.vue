@@ -6,26 +6,19 @@
       i18n.has-text-1.c-para Information about your pledges streaks and other streak members appears here.
 
       ul.spacer
-        li.c-item-wrapper
+        li.c-item-wrapper(v-if='groupStreaks.fullMonthlyPledges > 1')
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
               i18n(
-                :args='{ ...LTags("strong"), timeframe: "2 weeks", pourcent: 100 }'
-              ) Group has a streak of {strong_} {pourcent}% Support of {timeframe}{_strong}
+                :args='{ ...LTags("strong"), streak: groupStreaks.fullMonthlyPledges }'
+              ) Group has a streak of {strong_} 100% Support of {streak} months{_strong}
 
-        li.c-item-wrapper
+        li.c-item-wrapper(v-if='onTimePayments.length > 0')
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
-              tooltip(direction='bottom-end')
-                i18n.link(
-                  :args='{  members: 3 }'
-                ) {members} members
-                template(slot='tooltip')
-                  div Rosalía
-                  div Ken M
-                  div Ines de Castro
+              member-count-tooltip.c-member-count(:members='onTimePayments')
 
               //- Todo: discuss if tooltip better than toggle
               //- i18n.link(
@@ -34,72 +27,109 @@
               //-   :args='{  members: 3 }'
               //-   @click='openModal("todoSeeMembers")'
               //- ) {members} members
-              i18n(:args='{ ...LTags("strong"), streaks: "4 weeks" }')  have {strong_} streaks of more than {streaks}{_strong}
+              i18n(:args='{ ...LTags("strong") }') have {strong_} on-time payment streaks{_strong}
 
     .c-column
       i18n.is-title-3(tag='h2') Inactivity
       .has-text-1.c-para Members that haven’t logged in, missed their pledges or haven´t voted last proposals will appear here.
 
       ul.spacer
-        li.c-item-wrapper
+        li.c-item-wrapper(v-if='haventLoggedIn.length > 0')
           .c-item
             .icon-user.icon-round.has-background-general
             .c-item-copy
-              tooltip(direction='bottom-end')
-                i18n.link(
-                  :args='{  members: 5 }'
-                ) {members} members
-                template(slot='tooltip')
-                  div Rosalía
-                  div Ken M
-                  div Ines de Castro
-                  div Attila the Hun
-                  div Istralianda
-              i18n(:args='LTags("strong")')  haven´t {strong_} logged in past week {_strong}
+              member-count-tooltip.c-member-count(:members='haventLoggedIn')
+              i18n(:args='{ ...LTags("strong"), daysCount: config.notLoggedInDays }') haven't {strong_} logged in past {daysCount} days or more {_strong}
 
-        li.c-item-wrapper
+        li.c-item-wrapper(v-if='noIncomeDetails.length > 0')
+          .c-item
+            .icon-comment-dollar.icon-round.has-background-general
+            .c-item-copy
+              member-count-tooltip.c-member-count(:members='noIncomeDetails')
+              i18n(:args='LTags("strong")') haven't {strong_} entered income details{_strong}
+
+        li.c-item-wrapper(v-if='missedPayments.length > 0')
           .c-item
             .icon-dollar-sign.icon-round.has-background-general
             .c-item-copy
-              tooltip(direction='bottom-end')
-                i18n.link(
-                  :args='{  members: 3 }'
-                ) {members} members
-                template(slot='tooltip')
-                  div Rosalía
-                  div Ken M
-                  div Ines de Castro
-              i18n(:args='LTags("strong")')  have {strong_} missed payments {_strong}
+              member-count-tooltip.c-member-count(:members='missedPayments')
+              i18n(:args='LTags("strong")') have {strong_} missed payments {_strong}
 
-        li.c-item-wrapper
+        li.c-item-wrapper(v-if='noVotes.length > 0')
           .c-item
             .icon-vote-yea.icon-round.has-background-general
             .c-item-copy
-              tooltip(direction='bottom-end')
-                i18n.link(
-                  :args='{  members: 3 }'
-                ) {members} members
-                template(slot='tooltip')
-                  div Rosalía
-                  div Ken M
-                  div Ines de Castro
-              i18n(:args='{ ...LTags("strong"), proposalNumber: 2 }')  haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}
+              member-count-tooltip.c-member-count(:members='noVotes')
+              i18n(:args='{ ...LTags("strong"), proposalNumber: config.proposalNumber }') haven't {strong_} voted in the last {proposalNumber} proposals {_strong}
 
 </template>
 
 <script>
-import Tooltip from '@components/Tooltip.vue'
+import { mapGetters } from 'vuex'
+import MemberCountTooltip from './MemberCountTooltip.vue'
+import { compareISOTimestamps, DAYS_MILLIS } from '@model/contracts/shared/time.js'
+import { STREAK_MISSED_PROPSAL_VOTE, STREAK_NOT_LOGGED_IN_DAYS, STREAK_ON_TIME_PAYMENTS, STREAK_MISSED_PAYMENTS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'GroupMembersActivity',
+  components: {
+    MemberCountTooltip
+  },
   data () {
     return {
       isReady: false,
-      history: []
+      history: [],
+      config: {
+        proposalNumber: STREAK_MISSED_PROPSAL_VOTE,
+        notLoggedInDays: STREAK_NOT_LOGGED_IN_DAYS
+      }
     }
   },
-  components: {
-    Tooltip
+  computed: {
+    ...mapGetters([
+      'groupStreaks',
+      'userDisplayName',
+      'groupProfiles'
+    ]),
+    onTimePayments () {
+      return Object.entries(this.groupStreaks.onTimePayments)
+        .filter(([username, streak]) => streak >= STREAK_ON_TIME_PAYMENTS)
+        .map(([username]) => this.userDisplayName(username))
+    },
+    missedPayments () {
+      return Object.entries(this.groupStreaks.missedPayments)
+        .filter(([username, streak]) => streak >= STREAK_MISSED_PAYMENTS)
+        .map(([username, streak]) => {
+          const Largs = { user: this.userDisplayName(username), streak }
+
+          return streak >= 2
+            ? this.L('{user} missed {streak} payments', Largs)
+            : this.L('{user} missed {streak} payment', Largs)
+        })
+    },
+    haventLoggedIn () { // group members that haven't logged in for the past 14 days or more
+      const now = new Date().toISOString()
+
+      return Object.entries(this.groupProfiles)
+        .filter(([username, profile]) => compareISOTimestamps(now, profile.lastLoggedIn) >= STREAK_NOT_LOGGED_IN_DAYS * DAYS_MILLIS)
+        .map(([username]) => this.userDisplayName(username))
+    },
+    noIncomeDetails () { // group members that haven't entered their income details yet
+      return Object.entries(this.groupProfiles)
+        .filter(([username, profile]) => !profile.incomeDetailsType)
+        .map(([username]) => this.userDisplayName(username))
+    },
+    noVotes () {
+      return Object.entries(this.groupStreaks.noVotes)
+        .filter(([username, streak]) => streak >= STREAK_MISSED_PROPSAL_VOTE)
+        .map(([username, streak]) => {
+          const Largs = { user: this.userDisplayName(username), streak }
+
+          return streak >= 2
+            ? this.L('{user} missed {streak} votes', Largs)
+            : this.L('{user} missed {streak} vote', Largs)
+        })
+    }
   }
 }: Object)
 
@@ -127,6 +157,11 @@ export default ({
   @include tablet {
     width: 50%;
   }
+}
+
+.c-member-count {
+  display: inline-block;
+  margin-right: 0.25rem;
 }
 
 .c-para {
