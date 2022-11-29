@@ -136,14 +136,14 @@ export default ({
       'globalProfile',
       'groupProfiles',
       'isJoinedChatRoom',
-      'getChatRooms',
+      'getGroupChatRooms',
       'ourUsername',
       'isDirectMessage'
     ]),
     getChatRoomIDsInSort () {
-      return Object.keys(this.getChatRooms || {}).map(chatRoomID => ({
-        name: this.getChatRooms[chatRoomID].name,
-        privacyLevel: this.getChatRooms[chatRoomID].privacyLevel,
+      return Object.keys(this.getGroupChatRooms || {}).map(chatRoomID => ({
+        name: this.getGroupChatRooms[chatRoomID].name,
+        privacyLevel: this.getGroupChatRooms[chatRoomID].privacyLevel,
         joined: this.isJoinedChatRoom(chatRoomID),
         id: chatRoomID
       })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {

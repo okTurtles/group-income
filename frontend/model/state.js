@@ -565,6 +565,12 @@ const getters = {
       return getters.ourUnreadMessages[chatRoomId]?.mentions || []
     }
   },
+  groupUnreadMessages (state, getters) {
+    return (groupID: string) => Object.keys(getters.ourUnreadMessages)
+      .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID].chatRooms).includes(cID))
+      .map(cID => getters.ourUnreadMessages[cID].mentions.length)
+      .reduce((sum, n) => sum + n, 0)
+  },
   directMessageIDFromUsername (state, getters) {
     return (username: string) => getters.ourDirectMessages[username]?.contractID
   },
@@ -594,7 +600,7 @@ const getters = {
     }
   },
   chatRoomsInDetail (state, getters) {
-    const chatRoomsInDetail = merge({}, getters.getChatRooms)
+    const chatRoomsInDetail = merge({}, getters.getGroupChatRooms)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&

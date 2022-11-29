@@ -10253,7 +10253,7 @@ ${this.getErrorInfo()}`;
       withGroupCurrency(state, getters) {
         return getters.groupCurrency?.displayWithCurrency;
       },
-      getChatRooms(state, getters) {
+      getGroupChatRooms(state, getters) {
         return getters.currentGroupState.chatRooms;
       },
       generalChatRoomId(state, getters) {
@@ -10797,7 +10797,7 @@ ${this.getErrorInfo()}`;
       "gi.contracts/group/deleteChatRoom": {
         validate: (data, { getters, meta }) => {
           objectOf({ chatRoomID: string })(data);
-          if (getters.getChatRooms[data.chatRoomID].creator !== meta.username) {
+          if (getters.getGroupChatRooms[data.chatRoomID].creator !== meta.username) {
             throw new TypeError(L("Only the channel creator can delete channel."));
           }
         },
@@ -10849,7 +10849,7 @@ ${this.getErrorInfo()}`;
         }),
         process({ data, meta }, { state, getters }) {
           vue_esm_default.set(state.chatRooms, data.chatRoomID, {
-            ...getters.getChatRooms[data.chatRoomID],
+            ...getters.getGroupChatRooms[data.chatRoomID],
             name: data.name
           });
         }

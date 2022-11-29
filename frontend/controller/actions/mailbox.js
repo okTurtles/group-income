@@ -151,9 +151,8 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to create a new group message channel.'))
     }
   },
-  ...encryptedAction('gi.actions/mailbox/setAutoJoinAllowance',
-    L('Failed to set Mailbox attributes. {attribute}', { attribute: 'autoJoinAllownace' })),
   ...encryptedAction('gi.actions/mailbox/joinDirectMessage', L('Failed to join a direct message channel.')),
+  ...encryptedAction('gi.actions/mailbox/leaveDirectMessage', L('Failed to leave direct message channel.')),
   ...encryptedAction('gi.actions/mailbox/joinGroupMessage', L('Failed to join a group message channel.')),
-  ...encryptedAction('gi.actions/mailbox/leaveDirectMessage', L('Failed to leave direct message channel.'))
+  ...encryptedAction('gi.actions/mailbox/setAttributes', L('Failed to set mailbox attributes.'))
 }): string[])
