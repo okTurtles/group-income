@@ -179,17 +179,11 @@ export default ({
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     createNewDirectMessage (username) {
-      if (this.mailboxContract.users[username]) {
-        sbp('gi.actions/mailbox/joinDirectMessage', {
-          contractID: this.currentIdentityState.attributes.mailbox,
-          data: { username }
-        })
-      } else {
-        sbp('gi.actions/mailbox/createDirectMessage', {
-          contractID: this.currentIdentityState.attributes.mailbox,
-          data: { username }
-        })
-      }
+      const actionName = this.mailboxContract.users[username] ? 'joinDirectMessage' : 'createDirectMessage'
+      sbp(`gi.actions/mailbox/${actionName}`, {
+        contractID: this.currentIdentityState.attributes.mailbox,
+        data: { username }
+      })
       this.closeModal()
     },
     openDirectMessage (username) {

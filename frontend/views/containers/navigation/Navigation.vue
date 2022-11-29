@@ -85,7 +85,7 @@ import GroupsList from './GroupsList.vue'
 import Profile from './Profile.vue'
 import Toggle from '@components/Toggle.vue'
 import ListItem from '@components/ListItem.vue'
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { debounce } from '@model/contracts/shared/giLodash.js'
@@ -131,17 +131,16 @@ export default ({
     }
   },
   computed: {
+    ...mapState(['currentGroupId']),
     ...mapGetters([
       'groupsByName',
       'colors',
       'totalUnreadNotificationCount',
-      'getChatRooms',
+      'groupUnreadMessages',
       'chatRoomUnreadMentions'
     ]),
     currentGroupUnreadMentionsCount () {
-      return Object.keys(this.getChatRooms || {})
-        .map(cId => this.chatRoomUnreadMentions(cId).length)
-        .reduce((a, b) => a + b, 0)
+      return this.groupUnreadMessages(this.currentGroupId)
     },
     logo () {
       const name = this.colors.theme === 'dark' ? '-white' : ''

@@ -702,17 +702,23 @@
 /* controller/actions/group.js */
 "Failed to send a payment thank you note." = "Failed to send a payment thank you note.";
 
-/* controller/actions/mailbox.js */
-"Failed to set Mailbox attributes. {attribute}" = "Failed to set Mailbox attributes. {attribute}";
-
 /* controller/actions/identity.js */
 "Failed to set login state." = "Failed to set login state.";
+
+/* controller/actions/mailbox.js */
+"Failed to set mailbox attributes." = "Failed to set mailbox attributes.";
 
 /* controller/actions/identity.js */
 "Failed to set profile attributes." = "Failed to set profile attributes.";
 
 /* controller/actions/identity.js */
 "Failed to signup: {reportError}" = "Failed to signup: {reportError}";
+
+/* controller/actions/group.js */
+"Failed to update \"lastLoggedIn\" in a group profile." = "Failed to update \"lastLoggedIn\" in a group profile.";
+
+/* controller/actions/group.js */
+"Failed to update group distribution date." = "Failed to update group distribution date.";
 
 /* controller/actions/group.js */
 "Failed to update group profile." = "Failed to update group profile.";
@@ -799,7 +805,7 @@
 "Group avatar" = "Group avatar";
 
 /* views/containers/dashboard/GroupMembersActivity.vue */
-"Group has a streak of {strong_} {pourcent}% Support of {timeframe}{_strong}" = "Group has a streak of {strong_} {pourcent}% Support of {timeframe}{_strong}";
+"Group has a streak of {strong_} 100% Support of {streak} months{_strong}" = "Group has a streak of {strong_} 100% Support of {streak} months{_strong}";
 
 /* views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
 "Group members" = "Group members";
@@ -963,7 +969,7 @@
 /* views/containers/payments/PaymentRowSendLightning.vue, views/pages/Payments.vue */
 "Lightning" = "Lightning";
 
-/* views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
+/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
 "Loading" = "Loading";
 
 /* main.js */
@@ -1299,6 +1305,9 @@
 /* views/containers/dashboard/GroupActivity.vue, views/pages/Payments.vue */
 "Payments type" = "Payments type";
 
+/* controller/router.js */
+"Pending Approval" = "Pending Approval";
+
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Percentage based" = "Percentage based";
 
@@ -1517,9 +1526,6 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "Revoked" = "Revoked";
-
-/* model/contracts/mailbox.js */
-"Same attribute is already set." = "Same attribute is already set.";
 
 /* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Save";
@@ -1956,6 +1962,9 @@
 /* views/components/group-creation-steps/GroupRules.vue */
 "Voting on proposals" = "Voting on proposals";
 
+/* views/pages/PendingApproval.vue */
+"Waiting for approval to join {groupName}!" = "Waiting for approval to join {groupName}!";
+
 /* views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/ErrorPage.vue */
 "We are having some trouble. Please try again later." = "We are having some trouble. Please try again later.";
 
@@ -2070,6 +2079,9 @@
 /* views/containers/user-settings/NotificationSettings.vue */
 "You have granted browser notification!" = "You have granted browser notification!";
 
+/* views/pages/PendingApproval.vue */
+"You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group." = "You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group.";
+
 /* model/notifications/templates.js */
 "You haven't updated your income details in more than {months} months. Would you like to review them now?" = "You haven't updated your income details in more than {months} months. Would you like to review them now?";
 
@@ -2176,19 +2188,16 @@
 "have {strong_} missed payments {_strong}" = "have {strong_} missed payments {_strong}";
 
 /* views/containers/dashboard/GroupMembersActivity.vue */
-Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Group has a streak of {strong_} 100% Support of {streak} months{_strong}";
-
-/* views/containers/dashboard/GroupMembersActivity.vue */
 "have {strong_} on-time payment streaks{_strong}" = "have {strong_} on-time payment streaks{_strong}";
-
-/* views/containers/dashboard/GroupMembersActivity.vue */
-"haven´t {strong_} logged in past {daysCount} days or more {_strong}" = "haven´t {strong_} logged in past {daysCount} days or more {_strong}";
 
 /* views/containers/dashboard/GroupMembersActivity.vue */
 "haven't {strong_} entered income details{_strong}" = "haven't {strong_} entered income details{_strong}";
 
 /* views/containers/dashboard/GroupMembersActivity.vue */
-"haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}" = "haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}";
+"haven't {strong_} logged in past {daysCount} days or more {_strong}" = "haven't {strong_} logged in past {daysCount} days or more {_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"haven't {strong_} voted in the last {proposalNumber} proposals {_strong}" = "haven't {strong_} voted in the last {proposalNumber} proposals {_strong}";
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "invite link" = "invite link";
@@ -2318,9 +2327,6 @@ Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Grou
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "{hours}h {minutes}m left" = "{hours}h {minutes}m left";
-
-/* views/containers/dashboard/GroupMembersActivity.vue */
-"{members} members" = "{members} members";
 
 /* model/notifications/templates.js */
 "{member} created a proposal. Vote now!" = "{member} created a proposal. Vote now!";

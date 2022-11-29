@@ -92,7 +92,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['currentChatRoomState', 'getChatRooms']),
+    ...mapGetters(['currentChatRoomState', 'getGroupChatRooms']),
     maxNameCharacters () {
       return this.currentChatRoomState.settings.maxNameLength
     },
@@ -113,8 +113,8 @@ export default ({
   created () {
     // HACK: using rootGetters inside validator makes `Duplicate channel name` error
     // as soon as a new channel is created
-    this.form.existingNames = Object.keys(this.getChatRooms)
-      .map(cId => this.getChatRooms[cId].name)
+    this.form.existingNames = Object.keys(this.getGroupChatRooms)
+      .map(cId => this.getGroupChatRooms[cId].name)
   },
   methods: {
     close () {
