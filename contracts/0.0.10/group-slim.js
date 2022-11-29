@@ -273,15 +273,15 @@ ${this.getErrorInfo()}`;
     GROUP: "group"
   };
   var CHATROOM_PRIVACY_LEVEL = {
-    GROUP: "group",
-    PRIVATE: "private",
-    PUBLIC: "public"
+    GROUP: "chatroom-privacy-level-group",
+    PRIVATE: "chatroom-privacy-level-private",
+    PUBLIC: "chatroom-privacy-level-public"
   };
   var MESSAGE_TYPES = {
-    POLL: "poll",
-    TEXT: "text",
-    INTERACTIVE: "interactive",
-    NOTIFICATION: "notification"
+    POLL: "message-poll",
+    TEXT: "message-text",
+    INTERACTIVE: "message-interactive",
+    NOTIFICATION: "message-notification"
   };
   var INVITE_EXPIRES_IN_DAYS = {
     ON_BOARDING: 30,
@@ -298,12 +298,14 @@ ${this.getErrorInfo()}`;
     VOTE: "vote"
   };
   var PROPOSAL_VARIANTS = {
-    CREATED: "created",
-    EXPIRING: "expiring",
-    ACCEPTED: "accepted",
-    REJECTED: "rejected",
-    EXPIRED: "expired"
+    CREATED: "proposal-created",
+    EXPIRING: "proposal-expiring",
+    ACCEPTED: "proposal-accepted",
+    REJECTED: "proposal-rejected",
+    EXPIRED: "proposal-expired"
   };
+  var MAIL_TYPE_MESSAGE = "message";
+  var MAIL_TYPE_FRIEND_REQ = "friend-request";
 
   // frontend/model/contracts/shared/voting/rules.js
   var VOTE_AGAINST = ":against";
@@ -834,6 +836,7 @@ ${this.getErrorInfo()}`;
     emoticons: mapOf(string, arrayOf(string)),
     onlyVisibleTo: arrayOf(string)
   });
+  var mailType = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map((k) => literalOf(k)));
 
   // frontend/model/contracts/group.js
   function vueFetchInitKV(obj, key, initialValue) {
@@ -849,6 +852,7 @@ ${this.getErrorInfo()}`;
       globalUsername: "",
       contractID,
       joinedDate,
+      lastLoggedIn: joinedDate,
       nonMonetaryContributions: [],
       status: PROFILE_STATUS.ACTIVE,
       departedDate: null
@@ -883,11 +887,21 @@ ${this.getErrorInfo()}`;
     clearOldPayments({ contractID, state, getters });
     return periodPayments;
   }
+  function initGroupStreaks() {
+    return {
+      lastStreakPeriod: null,
+      fullMonthlyPledges: 0,
+      onTimePayments: {},
+      missedPayments: {},
+      noVotes: {}
+    };
+  }
   function updateCurrentDistribution({ contractID, meta, state, getters }) {
     const curPeriodPayments = initFetchPeriodPayments({ contractID, meta, state, getters });
     const period = getters.periodStampGivenDate(meta.createdDate);
     const noPayments = Object.keys(curPeriodPayments.paymentsFrom).length === 0;
     if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
+      updateGroupStreaks({ state, getters });
       getters.groupSettings.distributionDate = period;
     }
     if (noPayments || !curPeriodPayments.haveNeedsSnapshot) {
@@ -920,6 +934,43 @@ ${this.getErrorInfo()}`;
       return false;
     }
     return compareISOTimestamps(actionMeta.createdDate, userProfile.joinedDate) > 0;
+  }
+  function updateGroupStreaks({ state, getters }) {
+    const streaks = vueFetchInitKV(state, "streaks", initGroupStreaks());
+    const cPeriod = getters.groupSettings.distributionDate;
+    const thisPeriodPayments = getters.groupPeriodPayments[cPeriod];
+    const noPaymentsAtAll = !thisPeriodPayments;
+    if (streaks.lastStreakPeriod === cPeriod)
+      return;
+    else {
+      import_common3.Vue.set(streaks, "lastStreakPeriod", cPeriod);
+    }
+    const thisPeriodDistribution = thisPeriodPayments?.lastAdjustedDistribution || adjustedDistribution({
+      distribution: unadjustedDistribution({
+        haveNeeds: getters.haveNeedsForThisPeriod(cPeriod),
+        minimize: getters.groupSettings.minimizeDistribution
+      }) || [],
+      payments: getters.paymentsForPeriod(cPeriod),
+      dueOn: getters.dueDateForPeriod(cPeriod)
+    }).filter((todo) => {
+      return getters.groupProfile(todo.to).status === PROFILE_STATUS.ACTIVE;
+    });
+    import_common3.Vue.set(streaks, "fullMonthlyPledges", noPaymentsAtAll ? 0 : thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0);
+    const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod);
+    const filterMyItems = (array, username) => array.filter((item) => item.from === username);
+    const isPledgingMember = (username) => {
+      const haveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod);
+      return haveNeeds.some((entry) => entry.name === username && entry.haveNeed > 0);
+    };
+    for (const username in getters.groupProfiles) {
+      if (!isPledgingMember(username))
+        continue;
+      const myMissedPaymentsInThisPeriod = filterMyItems(thisPeriodDistribution, username);
+      const userCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0);
+      import_common3.Vue.set(streaks.onTimePayments, username, noPaymentsAtAll ? 0 : myMissedPaymentsInThisPeriod.length === 0 && filterMyItems(thisPeriodPaymentDetails, username).every((p) => p.isLate === false) ? userCurrentStreak + 1 : 0);
+      const myMissedPaymentsStreak = vueFetchInitKV(streaks.missedPayments, username, 0);
+      import_common3.Vue.set(streaks.missedPayments, username, noPaymentsAtAll ? myMissedPaymentsStreak + 1 : myMissedPaymentsInThisPeriod.length >= 1 ? myMissedPaymentsStreak + 1 : 0);
+    }
   }
   (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/group",
@@ -973,6 +1024,8 @@ ${this.getErrorInfo()}`;
             recentDate = recentDate.toISOString();
           }
           const { distributionDate, distributionPeriodLength } = getters.groupSettings;
+          if (!distributionDate)
+            return null;
           return periodStampGivenDate({
             recentDate,
             periodStart: distributionDate,
@@ -1073,6 +1126,9 @@ ${this.getErrorInfo()}`;
       groupThankYousFrom(state, getters) {
         return getters.currentGroupState.thankYousFrom || {};
       },
+      groupStreaks(state, getters) {
+        return getters.currentGroupState.streaks || {};
+      },
       withGroupCurrency(state, getters) {
         return getters.groupCurrency?.displayWithCurrency;
       },
@@ -1157,6 +1213,7 @@ ${this.getErrorInfo()}`;
               inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
               inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
             },
+            streaks: initGroupStreaks(),
             profiles: {
               [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
             },
@@ -1322,7 +1379,7 @@ ${this.getErrorInfo()}`;
           vote: string,
           passPayload: optional(unionOf(object, string))
         }),
-        process(message, { state }) {
+        process(message, { state, getters }) {
           const { data, hash, meta } = message;
           const proposal = state.proposals[data.proposalHash];
           if (!proposal) {
@@ -1338,6 +1395,12 @@ ${this.getErrorInfo()}`;
           if (result === VOTE_FOR || result === VOTE_AGAINST) {
             proposals_default[proposal.data.proposalType][result](state, message);
             import_common3.Vue.set(proposal, "dateClosed", meta.createdDate);
+            const votedMembers = Object.keys(proposal.votes);
+            for (const member of getters.groupMembersByUsername) {
+              const memberCurrentStreak = vueFetchInitKV(getters.groupStreaks.noVotes, member, 0);
+              const memberHasVoted = votedMembers.includes(member);
+              import_common3.Vue.set(getters.groupStreaks.noVotes, member, memberHasVoted ? 0 : memberCurrentStreak + 1);
+            }
           }
         },
         sideEffect({ contractID, data, meta }, { state, getters }) {
@@ -1651,9 +1714,11 @@ ${this.getErrorInfo()}`;
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           const username = data.username || meta.username;
           if (username === rootState.loggedIn.username) {
-            if (!(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP_CHAT")) {
+            if (!(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp3.default)("okTurtles.data/get", "READY_TO_JOIN_CHATROOM")) {
+              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", data.chatRoomID);
               await (0, import_sbp3.default)("chelonia/contract/sync", data.chatRoomID);
-              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_GROUP_CHAT", false);
+              (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOM_ID", void 0);
+              (0, import_sbp3.default)("okTurtles.data/set", "READY_TO_JOIN_CHATROOM", false);
             }
           }
         }
@@ -1668,6 +1733,27 @@ ${this.getErrorInfo()}`;
             ...getters.getChatRooms[data.chatRoomID],
             name: data.name
           });
+        }
+      },
+      "gi.contracts/group/updateLastLoggedIn": {
+        validate() {
+        },
+        process({ meta }, { getters }) {
+          const profile = getters.groupProfiles[meta.username];
+          if (profile) {
+            import_common3.Vue.set(profile, "lastLoggedIn", meta.createdDate);
+          }
+        }
+      },
+      "gi.contracts/group/updateDistributionDate": {
+        validate: optional,
+        process({ meta }, { state, getters }) {
+          const period = getters.periodStampGivenDate(meta.createdDate);
+          const current = getters.groupSettings?.distributionDate;
+          if (current !== period) {
+            updateGroupStreaks({ state, getters });
+            getters.groupSettings.distributionDate = period;
+          }
         }
       },
       ...{

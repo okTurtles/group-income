@@ -14,11 +14,11 @@ nav.c-navigation(
       router-link(to='/home')
         img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
-      notification-bell(data-test='notificationBell')
+      notification-bell(v-if='!notApprovedToGroupYet' data-test='notificationBell')
 
     .c-navigation-body(
       @click.self='enableTimeTravel'
-      v-if='groupsByName.length'
+      v-if='!notApprovedToGroupYet && groupsByName.length'
     )
       .c-navigation-body-top
         ul.c-menu-list
@@ -149,6 +149,10 @@ export default ({
     },
     isInert () {
       return !this.ephemeral.isActive && this.ephemeral.isTouch
+    },
+    notApprovedToGroupYet () {
+      // TODO: once the relevant work is implemented on back-end, this check logic needs to be updated accordingly
+      return this.$route.path === '/pending-approval'
     }
   },
   methods: {
@@ -185,6 +189,8 @@ export default ({
   display: flex;
   flex-direction: column;
   min-width: 14.375rem;
+  justify-content: space-between;
+  height: 100%;
 }
 
 .c-navigation-header {
