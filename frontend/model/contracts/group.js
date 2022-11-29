@@ -89,6 +89,7 @@ function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
 
 function initGroupStreaks () {
   return {
+    lastStreakPeriod: null,
     fullMonthlyPledges: 0,
     onTimePayments: {}, // { username: number, ... }
     missedPayments: {}, // { username: number, ... }
@@ -156,13 +157,16 @@ function updateGroupStreaks ({ state, getters }) {
   const streaks = vueFetchInitKV(state, 'streaks', initGroupStreaks())
   const cPeriod = getters.groupSettings.distributionDate
   const thisPeriodPayments = getters.groupPeriodPayments[cPeriod]
+  const noPaymentsAtAll = !thisPeriodPayments
 
-  // if there's no period payments set yet, no need to update streak values.
-  if (!thisPeriodPayments) return
+  if (streaks.lastStreakPeriod === cPeriod) return
+  else {
+    Vue.set(streaks, 'lastStreakPeriod', cPeriod)
+  }
 
   // IMPORTANT! This code must be kept in sync with updateAdjustedDistribution!
   // TODO: see if it's possible to DRY this with the code inside of updateAdjustedDistribution
-  const thisPeriodDistribution = thisPeriodPayments.lastAdjustedDistribution || adjustedDistribution({
+  const thisPeriodDistribution = thisPeriodPayments?.lastAdjustedDistribution || adjustedDistribution({
     distribution: unadjustedDistribution({
       haveNeeds: getters.haveNeedsForThisPeriod(cPeriod),
       minimize: getters.groupSettings.minimizeDistribution
@@ -173,19 +177,27 @@ function updateGroupStreaks ({ state, getters }) {
     return getters.groupProfile(todo.to).status === PROFILE_STATUS.ACTIVE
   })
 
+  console.log('updating group streaks!! @@@ thisPeriodDistribution: ', thisPeriodDistribution, noPaymentsAtAll)
   // --- update 'fullMonthlyPledgesCount' streak ---
   // if the group has made 100% pledges in this period, +1 the streak value.
   // or else, reset the value to '0'
   Vue.set(
     streaks,
     'fullMonthlyPledges',
-    thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0
+    noPaymentsAtAll
+      ? 0
+      : thisPeriodDistribution.length === 0
+        ? streaks.fullMonthlyPledges + 1
+        : 0
   )
 
-  // --- update 'onTimePayments' streaks for 'pledging' members of the group ---
+  // --- update 'onTimePayments' & 'missedPayments' streaks for 'pledging' members of the group ---
   const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod)
   const filterMyItems = (array, username) => array.filter(item => item.from === username)
-  const isPledgingMember = username => thisPeriodPayments.haveNeedsSnapshot.some(entry => entry.name === username && entry.haveNeed > 0)
+  const isPledgingMember = username => {
+    const haveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod)
+    return haveNeeds.some(entry => entry.name === username && entry.haveNeed > 0)
+  }
 
   for (const username in getters.groupProfiles) {
     if (!isPledgingMember(username)) continue
@@ -195,12 +207,14 @@ function updateGroupStreaks ({ state, getters }) {
     Vue.set(
       streaks.onTimePayments,
       username,
-      // check-1. if the user made all the pledgeds assigned to them in this period.
-      // check-2. all those payments by the user were done on time.
-      myMissedPaymentsInThisPeriod.length === 0 &&
-      filterMyItems(thisPeriodPaymentDetails, username).every(p => p.isLate === false)
-        ? userCurrentStreak + 1
-        : 0
+      noPaymentsAtAll
+        ? 0
+        : myMissedPaymentsInThisPeriod.length === 0 &&
+          filterMyItems(thisPeriodPaymentDetails, username).every(p => p.isLate === false)
+          // check-1. if the user made all the pledgeds assigned to them in this period.
+          // check-2. all those payments by the user were done on time.
+          ? userCurrentStreak + 1
+          : 0
     )
 
     // 2) update 'missedPayments'
@@ -208,7 +222,11 @@ function updateGroupStreaks ({ state, getters }) {
     Vue.set(
       streaks.missedPayments,
       username,
-      myMissedPaymentsInThisPeriod.length >= 1 ? myMissedPaymentsStreak + 1 : 0
+      noPaymentsAtAll
+        ? myMissedPaymentsStreak + 1
+        : myMissedPaymentsInThisPeriod.length >= 1
+          ? myMissedPaymentsStreak + 1
+          : 0
     )
   }
 }
@@ -1168,9 +1186,13 @@ sbp('chelonia/defineContract', {
       validate: optional,
       process ({ meta }, { state, getters }) {
         const period = getters.periodStampGivenDate(meta.createdDate)
+        const current = getters.groupSettings.distributionDate
         // right before updating to the new distribution period, make sure to update various payment-related group streaks.
-        updateGroupStreaks({ state, getters })
-        getters.groupSettings.distributionDate = period
+        console.log('common is it from here?? @@@')
+        if (current !== period) {
+          updateGroupStreaks({ state, getters })
+          getters.groupSettings.distributionDate = period
+        }
       }
     },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
