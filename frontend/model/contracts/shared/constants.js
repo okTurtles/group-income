@@ -64,16 +64,16 @@ export const CHATROOM_TYPES = {
 }
 
 export const CHATROOM_PRIVACY_LEVEL = {
-  GROUP: 'chatroom-privacy-level-group',
-  PRIVATE: 'chatroom-privacy-level-private',
-  PUBLIC: 'chatroom-privacy-level-public'
+  GROUP: 'group',
+  PRIVATE: 'private',
+  PUBLIC: 'public'
 }
 
 export const MESSAGE_TYPES = {
-  POLL: 'message-poll',
-  TEXT: 'message-text',
-  INTERACTIVE: 'message-interactive',
-  NOTIFICATION: 'message-notification'
+  POLL: 'poll',
+  TEXT: 'text',
+  INTERACTIVE: 'interactive',
+  NOTIFICATION: 'notification'
 }
 
 export const INVITE_EXPIRES_IN_DAYS = {
@@ -100,14 +100,9 @@ export const MESSAGE_VARIANTS = {
 }
 
 export const PROPOSAL_VARIANTS = {
-  CREATED: 'proposal-created',
-  EXPIRING: 'proposal-expiring',
-  ACCEPTED: 'proposal-accepted',
-  REJECTED: 'proposal-rejected',
-  EXPIRED: 'proposal-expired'
+  CREATED: 'created',
+  EXPIRING: 'expiring',
+  ACCEPTED: 'accepted',
+  REJECTED: 'rejected',
+  EXPIRED: 'expired'
 }
-
-// mailbox.js related
-
-export const MAIL_TYPE_MESSAGE = 'message'
-export const MAIL_TYPE_FRIEND_REQ = 'friend-request'

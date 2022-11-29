@@ -25,7 +25,7 @@
           conversation-greetings(
             :members='details.numberOfParticipants'
             :creator='summary.creator'
-            :type='type'
+            :type='summary.type'
             :joined='summary.joined'
             :name='summary.title'
             :description='summary.description'
@@ -34,11 +34,14 @@
           conversation-greetings(
             :members='details.numberOfParticipants'
             :creator='summary.creator'
-            :type='type'
+            :type='summary.type'
             :joined='summary.joined'
             :name='summary.title'
             :description='summary.description'
           )
+
+      .c-divider.is-new(v-if='ephemeral.unreadFromBeginning')
+        i18n.c-new.is-new-date New
 
       template(v-for='(message, index) in messages')
         .c-divider(
@@ -111,7 +114,12 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
-import { MESSAGE_TYPES, MESSAGE_VARIANTS, CHATROOM_ACTIONS_PER_PAGE, CHATROOM_MESSAGE_ACTION } from '@model/contracts/shared/constants.js'
+import {
+  MESSAGE_TYPES,
+  MESSAGE_VARIANTS,
+  CHATROOM_ACTIONS_PER_PAGE,
+  CHATROOM_MESSAGE_ACTION
+} from '@model/contracts/shared/constants.js'
 import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
 import { proximityDate, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
@@ -139,9 +147,6 @@ export default ({
     details: {
       type: Object, // { isLoading: Bool, participants: Object }
       default () { return {} }
-    },
-    type: {
-      type: String
     }
   },
   data () {
@@ -152,6 +157,7 @@ export default ({
       latestEvents: [],
       messages: [],
       ephemeral: {
+        unreadFromBeginning: false,
         startedUnreadMessageId: null,
         scrolledDistance: 0,
         infiniteLoading: null,
@@ -420,7 +426,7 @@ export default ({
        */
       const curChatRoomId = this.currentChatRoomId
       let unreadPosition = null
-      if (this.currentChatRoomUnreadSince) {
+      if (this.currentChatRoomUnreadSince && !this.currentChatRoomUnreadSince.fromBeginning) {
         if (!this.currentChatRoomUnreadSince.deletedDate) {
           unreadPosition = this.currentChatRoomUnreadSince.messageId
         } else if (this.currentChatRoomUnreadMentions.length) {
@@ -481,11 +487,17 @@ export default ({
     },
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageId = null
+      this.ephemeral.unreadFromBeginning = false
       if (this.currentChatRoomUnreadSince) {
-        const startUnreadMessage = this.messages
-          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
-        if (startUnreadMessage) {
-          this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
+        const { fromBeginning } = this.currentChatRoomUnreadSince
+        if (fromBeginning) {
+          this.ephemeral.unreadFromBeginning = true
+        } else {
+          const startUnreadMessage = this.messages
+            .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
+          if (startUnreadMessage) {
+            this.ephemeral.startedUnreadMessageId = startUnreadMessage.id
+          }
         }
       }
     },
@@ -538,7 +550,7 @@ export default ({
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               if (!self && isScrollable) {
                 this.updateScroll()
-              } else if (!isScrollable) {
+              } else if (!isScrollable && this.messages.length) {
                 const msg = this.messages[this.messages.length - 1]
                 this.updateUnreadMessageId({
                   messageId: msg.id,
@@ -562,10 +574,12 @@ export default ({
           if (!this.$refs.conversation ||
             this.$refs.conversation.scrollHeight === this.$refs.conversation.clientHeight) {
             const msg = this.messages[this.messages.length - 1]
-            this.updateUnreadMessageId({
-              messageId: msg.id,
-              createdDate: msg.datetime
-            })
+            if (msg) {
+              this.updateUnreadMessageId({
+                messageId: msg.id,
+                createdDate: msg.datetime
+              })
+            }
           }
         } else {
           $state.loaded()
@@ -599,7 +613,9 @@ export default ({
         const parentOffsetTop = this.$refs[msg.id][0].$el.offsetParent.offsetTop
         if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
-          const latestMessageCreatedAt = this.currentChatRoomUnreadSince?.createdDate
+          const latestMessageCreatedAt = this.currentChatRoomUnreadSince && !this.currentChatRoomUnreadSince.fromBeginning
+            ? this.currentChatRoomUnreadSince.createdDate
+            : undefined
           if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
             this.updateUnreadMessageId({
               messageId: msg.id,
@@ -634,7 +650,7 @@ export default ({
   },
   watch: {
     currentChatRoomId (to, from) {
-      const force = !!sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')
+      const force = sbp('chelonia/contract/isSyncing', to)
       this.setMessageEventListener({ from, to, force })
       this.setInitMessages()
     },

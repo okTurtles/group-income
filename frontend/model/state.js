@@ -23,7 +23,7 @@ const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageId
-  chatRoomUnread: {}, // [chatRoomId]: { messageId, createdDate }
+  chatRoomUnread: {}, // [chatRoomId]: { since: { messageId, createdDate }, mentions: [{ messageId, createdDate }] }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
@@ -99,16 +99,6 @@ const mutations = {
     state.loggedIn = false
     state.currentGroupId = null
   },
-  deleteMessage (state, hash) {
-    const mailboxContract = store.getters.mailboxContract
-    const index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
-    if (index > -1) { mailboxContract.messages.splice(index, 1) }
-  },
-  markMessageAsRead (state, hash) {
-    const mailboxContract = store.getters.mailboxContract
-    const index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
-    if (index > -1) { mailboxContract.messages[index].read = true }
-  },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
     Vue.set(state, 'currentGroupId', currentGroupId)
@@ -146,9 +136,13 @@ const mutations = {
   addChatRoomUnreadMention (state, { chatRoomId, messageId, createdDate }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
     if (!prevUnread) {
-      return
+      Vue.set(state.chatRoomUnread, chatRoomId, {
+        since: { messageId, createdDate, deletedDate: null, fromBeginning: true },
+        mentions: [{ messageId, createdDate }]
+      })
+    } else {
+      prevUnread.mentions.push({ messageId, createdDate })
     }
-    prevUnread.mentions.push({ messageId, createdDate })
   },
   deleteChatRoomUnreadMention (state, { chatRoomId, messageId }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
@@ -207,13 +201,6 @@ const getters = {
   mailboxContract (state, getters) {
     const contract = getters.currentIdentityState
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
-  },
-  mailboxMessages (state, getters) {
-    const mailboxContract = getters.mailboxContract
-    return (mailboxContract && mailboxContract.messages) || []
-  },
-  unreadMessageCount (state, getters) {
-    return getters.mailboxMessages.filter(msg => !msg.read).length
   },
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
@@ -503,6 +490,42 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
+  globalProfilesForGroup (state, getters) {
+    return contractID => {
+      const profiles = state[contractID]?.profiles || {}
+      return Object.keys(profiles).map(username => {
+        return getters.globalProfile2(contractID, username)
+      })
+    }
+  },
+  ourContactProfiles (state, getters) {
+    const profiles = {}
+    const allProfiles = getters.groupsByName
+      .map(({ groupName, contractID }) => getters.globalProfilesForGroup(contractID))
+      .flat()
+
+    allProfiles.forEach((profile, pos) => {
+      if (profile && profile.username !== getters.ourUsername &&
+        allProfiles.findIndex(p => p.username === profile.username) === pos) {
+        profiles[profile.username] = profile
+      }
+    })
+    return profiles
+  },
+  ourContacts (state, getters) {
+    return Object.keys(getters.ourContactProfiles)
+      .sort((usernameA, usernameB) => {
+        const nameA = getters.ourContactProfiles[usernameA].displayName?.toUpperCase() || usernameA
+        const nameB = getters.ourContactProfiles[usernameB].displayName?.toUpperCase() || usernameB
+        return nameA > nameB ? 1 : -1
+      })
+  },
+  isDirectMessage (state, getters) {
+    // NOTE: mailbox contract could not be synced at the time of calling this getter
+    return chatRoomId => Object.keys(getters.mailboxContract.users || {})
+      .map(username => getters.mailboxContract.users[username].contractID)
+      .includes(chatRoomId)
+  },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
   },
@@ -523,6 +546,24 @@ const getters = {
       return getters.ourUnreadMessages[chatRoomId]?.mentions || []
     }
   },
+  groupUnreadMessages (state, getters) {
+    return (groupID: string) => Object.keys(getters.ourUnreadMessages)
+      .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID].chatRooms).includes(cID))
+      .map(cID => getters.ourUnreadMessages[cID].mentions.length)
+      .reduce((sum, n) => sum + n, 0)
+  },
+  directMessageIDFromUsername (state, getters) {
+    return (username: string) => getters.mailboxContract.users[username]?.contractID
+  },
+  usernameFromDirectMessageID (state, getters) {
+    return (chatRoomId: string) => {
+      if (!getters.isDirectMessage(chatRoomId)) {
+        return
+      }
+      return Object.keys(getters.mailboxContract.users)
+        .find(username => getters.directMessageIDFromUsername(username) === chatRoomId)
+    }
+  },
   groupIdFromChatRoomId (state, getters) {
     return (chatRoomId: string) => Object.keys(state.contracts)
       .find(cId => state.contracts[cId].type === 'gi.contracts/group' &&
@@ -540,7 +581,7 @@ const getters = {
     }
   },
   chatRoomsInDetail (state, getters) {
-    const chatRoomsInDetail = merge({}, getters.getChatRooms)
+    const chatRoomsInDetail = merge({}, getters.getGroupChatRooms)
     for (const contractID in chatRoomsInDetail) {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&

@@ -25,14 +25,14 @@ import Page from '@components/Page.vue'
 import { CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
-import chatroom from '@containers/chatroom/chatroom.js'
+import ChatroomMixin from '@containers/chatroom/ChatroomMixin.js'
 import GroupsShortcut from '@containers/chatroom/GroupsShortcut.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 
 export default ({
   name: 'Messages',
   mixins: [
-    chatroom
+    ChatroomMixin
   ],
   components: {
     Page,
