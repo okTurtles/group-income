@@ -230,7 +230,7 @@ const ChatroomMixin: Object = {
       this.setGroupChatDetailsAsGlobal()
     },
     setGroupChatDetailsAsGlobal () {
-      if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
+      if (!this.isJoinedChatRoom(this.currentChatRoomId) && !this.isDirectMessage(this.currentChatRoomId)) {
         sbp('okTurtles.data/set', 'GROUPCHAT_DETAILS', {
           participants: Object.keys(this.details.members || {})
             .map(un => ({ username: un, displayName: this.details.members[un].displayName })),
