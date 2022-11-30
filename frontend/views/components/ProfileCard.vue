@@ -91,6 +91,7 @@ import ModalClose from '@components/modal/ModalClose.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'ProfileCard',
@@ -124,7 +125,21 @@ export default ({
       this.$refs.tooltip.toggle()
     },
     sendMessage () {
-      console.log('To do: implement send message')
+      const isExistingDM = this.mailboxContract.users[this.username]?.joinedDate
+      if (!isExistingDM) {
+        const actionName = this.mailboxContract.users[this.username] ? 'joinDirectMessage' : 'createDirectMessage'
+        sbp(`gi.actions/mailbox/${actionName}`, {
+          contractID: this.currentIdentityState.attributes.mailbox,
+          data: { username: this.username }
+        })
+      } else {
+        const chatRoomId = this.directMessageIDFromUsername(this.username)
+        this.$router.push({
+          name: 'GroupChatConversation',
+          params: { chatRoomId }
+        }).catch(logExceptNavigationDuplicated)
+      }
+      this.toggleTooltip()
     }
   },
   computed: {
@@ -135,7 +150,10 @@ export default ({
       'groupSettings',
       'globalProfile',
       'groupShouldPropose',
-      'ourContributionSummary'
+      'ourContributionSummary',
+      'mailboxContract',
+      'currentIdentityState',
+      'directMessageIDFromUsername'
     ]),
     isSelf () {
       return this.username === this.ourUsername
@@ -149,15 +167,12 @@ export default ({
     isActiveGroupMember () {
       return this.userGroupProfile?.status === PROFILE_STATUS.ACTIVE
     },
-
     paymentMethods () {
       return this.userGroupProfile?.paymentMethods
     },
-
     hasIncomeDetails () {
       return !!this.userGroupProfile?.incomeDetailsType
     },
-
     receivingMonetary () {
       return !!this.ourContributionSummary.receivingMonetary
     }

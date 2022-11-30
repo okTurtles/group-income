@@ -54,7 +54,7 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'generalChatRoomId', 'getChatRooms']),
+    ...mapGetters(['currentChatRoomId', 'currentChatRoomState', 'generalChatRoomId', 'getGroupChatRooms']),
     maxNameCharacters () {
       return this.currentChatRoomState.settings.maxNameLength
     }
@@ -70,8 +70,8 @@ export default ({
   },
   created () {
     this.form.name = this.currentChatRoomState.attributes.name
-    this.form.existingNames = Object.keys(this.getChatRooms)
-      .map(cId => this.getChatRooms[cId].name)
+    this.form.existingNames = Object.keys(this.getGroupChatRooms)
+      .map(cId => this.getGroupChatRooms[cId].name)
   },
   mounted () {
     if (this.generalChatRoomId === this.currentChatRoomId) {

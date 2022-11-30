@@ -429,7 +429,7 @@ sbp('chelonia/defineContract', {
       //       bound to the UI in some location.
       return getters.groupCurrency?.displayWithCurrency
     },
-    getChatRooms (state, getters) {
+    getGroupChatRooms (state, getters) {
       return getters.currentGroupState.chatRooms
     },
     generalChatRoomId (state, getters) {
@@ -1111,7 +1111,7 @@ sbp('chelonia/defineContract', {
       validate: (data, { getters, meta }) => {
         objectOf({ chatRoomID: string })(data)
 
-        if (getters.getChatRooms[data.chatRoomID].creator !== meta.username) {
+        if (getters.getGroupChatRooms[data.chatRoomID].creator !== meta.username) {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       },
@@ -1168,7 +1168,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta }, { state, getters }) {
         Vue.set(state.chatRooms, data.chatRoomID, {
-          ...getters.getChatRooms[data.chatRoomID],
+          ...getters.getGroupChatRooms[data.chatRoomID],
           name: data.name
         })
       }

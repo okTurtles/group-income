@@ -3,6 +3,12 @@
 /* MISSING TRANSLATION - controller/actions/group.js */
 "Failed to send a payment thank you note." = "Failed to send a payment thank you note.";
 
+/* MISSING TRANSLATION - controller/actions/group.js */
+"Failed to update \"lastLoggedIn\" in a group profile." = "Failed to update \"lastLoggedIn\" in a group profile.";
+
+/* MISSING TRANSLATION - controller/actions/group.js */
+"Failed to update group distribution date." = "Failed to update group distribution date.";
+
 /* MISSING TRANSLATION - controller/actions/identity.js */
 "Error during login contract sync: {err}" = "Error during login contract sync: {err}";
 
@@ -15,9 +21,6 @@
 /* MISSING TRANSLATION - controller/actions/mailbox.js */
 "Failed to join a new direct message channel." = "Failed to join a new direct message channel.";
 
-/* MISSING TRANSLATION - controller/actions/mailbox.js */
-"Failed to set Mailbox attributes. {attribute}" = "Failed to set Mailbox attributes. {attribute}";
-
 /* MISSING TRANSLATION - controller/router.js */
 "Design System" = "Design System";
 
@@ -26,6 +29,9 @@
 
 /* MISSING TRANSLATION - controller/router.js */
 "Group Income" = "Group Income";
+
+/* MISSING TRANSLATION - controller/router.js */
+"Pending Approval" = "Pending Approval";
 
 /* MISSING TRANSLATION - controller/router.js, views/containers/contributions/ContributionsWidget.vue, views/containers/navigation/Navigation.vue, views/pages/Contributions.vue */
 "Contributions" = "Contributions";
@@ -208,7 +214,7 @@
 "Todo %" = "Todo %";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"Group has a streak of {strong_} {pourcent}% Support of {timeframe}{_strong}" = "Group has a streak of {strong_} {pourcent}% Support of {timeframe}{_strong}";
+"Group has a streak of {strong_} 100% Support of {streak} months{_strong}" = "Group has a streak of {strong_} 100% Support of {streak} months{_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
 "Inactivity" = "Inactivity";
@@ -223,22 +229,16 @@
 "have {strong_} missed payments {_strong}" = "have {strong_} missed payments {_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Group has a streak of {strong_} 100% Support of {streak} months{_strong}";
-
-/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
 "have {strong_} on-time payment streaks{_strong}" = "have {strong_} on-time payment streaks{_strong}";
-
-/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"haven´t {strong_} logged in past {daysCount} days or more {_strong}" = "haven´t {strong_} logged in past {daysCount} days or more {_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
 "haven't {strong_} entered income details{_strong}" = "haven't {strong_} entered income details{_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}" = "haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}";
+"haven't {strong_} logged in past {daysCount} days or more {_strong}" = "haven't {strong_} logged in past {daysCount} days or more {_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"{members} members" = "{members} members";
+"haven't {strong_} voted in the last {proposalNumber} proposals {_strong}" = "haven't {strong_} voted in the last {proposalNumber} proposals {_strong}";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{count}{_b}" = "{b_}{count}{_b}";
@@ -483,6 +483,12 @@ Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Grou
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "Payment date" = "Payment date";
 
+/* MISSING TRANSLATION - views/pages/PendingApproval.vue */
+"Waiting for approval to join {groupName}!" = "Waiting for approval to join {groupName}!";
+
+/* MISSING TRANSLATION - views/pages/PendingApproval.vue */
+"You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group." = "You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group.";
+
 /* common/translations.js */
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". Vous pouvez {a_}signaler l’erreur{_a}.";
 
@@ -604,6 +610,9 @@ Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Grou
 "Failed to leave direct message channel." = "Impossible de quitter le canal de messagerie directe.";
 
 /* controller/actions/mailbox.js */
+"Failed to set mailbox attributes." = "Impossible de définir les attributs de la boîte aux lettres.";
+
+/* controller/actions/mailbox.js */
 "Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";
 
 /* controller/router.js */
@@ -611,6 +620,9 @@ Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Grou
 
 /* controller/router.js */
 "Group Dashboard" = "Tableau de bord";
+
+/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
+"Loading" = "Chargement";
 
 /* controller/router.js, views/containers/contributions/ContributionsWidget.vue, views/containers/navigation/Navigation.vue, views/pages/Payments.vue */
 "Payments" = "Paiements";
@@ -678,9 +690,6 @@ Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Grou
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can set attributes." = "Seul le créateur de la boîte aux lettres peut définir des attributs.";
 
-/* model/contracts/mailbox.js */
-"Same attribute is already set." = "Le même attribut est déjà défini.";
-
 /* model/contracts/shared/time.js */
 "Today" = "Aujourd’hui";
 
@@ -728,9 +737,6 @@ Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Grou
 
 /* views/components/Badge.vue */
 "{num} new notifications" = "{num} nouvelles notifications";
-
-/* views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
-"Loading" = "Chargement";
 
 /* views/components/CopyableInput.vue, views/components/LinkToCopy.vue */
 "Copied to clipboard!" = "Copié dans le presse-papiers !";
@@ -2497,9 +2503,6 @@ Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Grou
 "Failed to remove {member}: {codeError}" = "Erreur lors de l’exclusion de {member}: {codeError}";
 
 /* Not currently used */
-"Failed to set Mailbox attributes." = "Impossible de définir les attributs de la boîte aux lettres.";
-
-/* Not currently used */
 "Failed to update group settings. {reportError}" = "La mise à jour des paramètres de groupe a échoué. {reportError}";
 
 /* Not currently used */
@@ -2600,6 +2603,9 @@ Group has a streak of {strong_} 100% Support of {streak} months{_strong} = "Grou
 
 /* Not currently used */
 "Return" = "Retour en arrière";
+
+/* Not currently used */
+"Same attribute is already set." = "Le même attribut est déjà défini.";
 
 /* Not currently used */
 "Search for a channel" = "Rechercher un groupe de discussion";
