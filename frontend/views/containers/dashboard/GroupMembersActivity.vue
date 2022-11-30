@@ -34,6 +34,21 @@
       .has-text-1.c-para Members that haven’t logged in, missed their pledges or haven´t voted last proposals will appear here.
 
       ul.spacer
+        li.c-item-wrpper
+          .c-item
+            .icon-star.icon-round.has-background-success.has-text-success
+            .c-item-copy
+              tooltip(triggerElementCss='.t-trigger' direction='bottom')
+                i18n(
+                  :args='{ ...LTags("strong"), sp1: `<span class="link t-trigger">`, sp2: "</span>", memberCount: 2, daysCount: 14 }'
+                ) {sp1}{memberCount} members{sp2} haven't {strong_} logged in past {daysCount} days or more {_strong}
+
+                template(slot='tooltip')
+                  div(
+                    v-for='(name, index) in ["Kim minjae", "Song sebin"]'
+                    :key='`member-${index}`'
+                  ) {{ name }}
+
         li.c-item-wrapper(v-if='haventLoggedIn.length > 0')
           .c-item
             .icon-user.icon-round.has-background-general
@@ -66,6 +81,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import Tooltip from '@components/Tooltip.vue'
 import MemberCountTooltip from './MemberCountTooltip.vue'
 import { compareISOTimestamps, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { STREAK_MISSED_PROPSAL_VOTE, STREAK_NOT_LOGGED_IN_DAYS, STREAK_ON_TIME_PAYMENTS, STREAK_MISSED_PAYMENTS } from '@model/contracts/shared/constants.js'
@@ -73,7 +89,8 @@ import { STREAK_MISSED_PROPSAL_VOTE, STREAK_NOT_LOGGED_IN_DAYS, STREAK_ON_TIME_P
 export default ({
   name: 'GroupMembersActivity',
   components: {
-    MemberCountTooltip
+    MemberCountTooltip,
+    Tooltip
   },
   data () {
     return {
