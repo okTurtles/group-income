@@ -231,8 +231,12 @@ describe('Proposals - Add members', () => {
       })
     }
 
-    assertInvitationLinkFor(3, 'user4')
-    assertInvitationLinkFor(2, 'user6')
+    cy.getByDT('openAllProposals').click()
+    cy.getByDT('modal').within(() => {
+      assertInvitationLinkFor(2, 'user4')
+      assertInvitationLinkFor(1, 'user6')
+    })
+    cy.getByDT('closeModal').click()
   })
 
   it(`user1 votes "yes" to the new mincome ($${groupMincome}) and proposal is accepted.`, () => {
