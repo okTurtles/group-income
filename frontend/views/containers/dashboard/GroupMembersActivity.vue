@@ -6,7 +6,7 @@
       i18n.has-text-1.c-para Information about your pledges streaks and other streak members appears here.
 
       ul.spacer
-        li.c-item-wrapper(v-if='groupStreaks.fullMonthlyPledges > 1')
+        li.c-item-wrapper(v-if='groupStreaks.fullMonthlyPledges && groupStreaks.fullMonthlyPledges > 1')
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
@@ -85,12 +85,12 @@ export default ({
       'groupProfiles'
     ]),
     onTimePayments () {
-      return Object.entries(this.groupStreaks.onTimePayments)
+      return Object.entries(this.groupStreaks.onTimePayments || {})
         .filter(([username, streak]) => streak >= STREAK_ON_TIME_PAYMENTS)
         .map(([username]) => this.userDisplayName(username))
     },
     missedPayments () {
-      return Object.entries(this.groupStreaks.missedPayments)
+      return Object.entries(this.groupStreaks.missedPayments || {})
         .filter(([username, streak]) => streak >= STREAK_MISSED_PAYMENTS)
         .map(([username, streak]) => {
           const Largs = { user: this.userDisplayName(username), streak }
@@ -113,7 +113,7 @@ export default ({
         .map(([username]) => this.userDisplayName(username))
     },
     noVotes () {
-      return Object.entries(this.groupStreaks.noVotes)
+      return Object.entries(this.groupStreaks.noVotes || {})
         .filter(([username, streak]) => streak >= STREAK_MISSED_PROPSAL_VOTE)
         .map(([username, streak]) => {
           const Largs = { user: this.userDisplayName(username), streak }
