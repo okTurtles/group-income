@@ -58,26 +58,28 @@ export default (sbp('sbp/selectors/register', {
         data: { username: rootState.loggedIn.username }
       })
 
-      const paramsData = {
-        username: params.data.username,
-        contractID: message.contractID()
-      }
-      await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options', 'data', 'hook']),
-        data: paramsData,
-        action: 'gi.contracts/mailbox/createDirectMessage'
-      })
-
       await sbp('gi.actions/chatroom/join', {
         ...omit(params, ['options', 'data', 'hook']),
         contractID: message.contractID(),
         data: { username: partnerProfile.username }
       })
 
+      await sbp('chelonia/out/actionEncrypted', {
+        ...omit(params, ['options', 'data', 'hook']),
+        data: {
+          username: params.data.username,
+          contractID: message.contractID()
+        },
+        action: 'gi.contracts/mailbox/createDirectMessage'
+      })
+
       await sbp('gi.actions/mailbox/joinDirectMessage', {
         ...omit(params, ['options', 'data', 'hook']),
         contractID: partnerProfile.mailbox,
-        data: paramsData,
+        data: {
+          username: rootState.loggedIn.username,
+          contractID: message.contractID()
+        },
         hooks: {
           prepublish: null,
           postpublish: params.hooks?.postpublish
@@ -123,26 +125,26 @@ export default (sbp('sbp/selectors/register', {
         data: { username: me }
       })
 
-      let paramsData = { contractID: message.contractID() }
-      await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options', 'data', 'hook']),
-        data: paramsData,
-        action: 'gi.contracts/mailbox/createGroupMessage'
-      })
-
-      paramsData = { ...paramsData, creator: me }
-      for (const [index, profile] of partnerProfiles.entries()) {
+      for (const profile of partnerProfiles.entries()) {
         await sbp('gi.actions/chatroom/join', {
           ...omit(params, ['options', 'data', 'hook']),
           contractID: message.contractID(),
           data: { username: profile.username }
         })
+      }
 
+      await sbp('chelonia/out/actionEncrypted', {
+        ...omit(params, ['options', 'data', 'hook']),
+        data: { contractID: message.contractID() },
+        action: 'gi.contracts/mailbox/createGroupMessage'
+      })
+
+      for (const [index, profile] of partnerProfiles.entries()) {
         const hooks = index < partnerProfiles.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
         await sbp('gi.actions/mailbox/joinGroupMessage', {
           ...omit(params, ['options', 'data', 'hook']),
           contractID: profile.mailbox,
-          data: paramsData,
+          data: { contractID: message.contractID() },
           hooks
         })
       }

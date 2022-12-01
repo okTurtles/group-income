@@ -287,6 +287,9 @@ const getters = {
   },
   userDisplayName (state, getters) {
     return (username) => {
+      if (username === getters.ourUsername) {
+        return getters.ourUserDisplayName
+      }
       const profile = getters.ourContactProfiles[username] || {}
       return profile.displayName || username
     }

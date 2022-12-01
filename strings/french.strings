@@ -18,9 +18,6 @@
 /* MISSING TRANSLATION - controller/actions/mailbox.js */
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
-/* MISSING TRANSLATION - controller/actions/mailbox.js */
-"Failed to join a new direct message channel." = "Failed to join a new direct message channel.";
-
 /* MISSING TRANSLATION - controller/router.js */
 "Design System" = "Design System";
 
@@ -44,12 +41,6 @@
 
 /* MISSING TRANSLATION - model/contracts/identity.js */
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
-
-/* MISSING TRANSLATION - model/contracts/mailbox.js */
-"Incorrect mailbox creator to join direct message channel." = "Incorrect mailbox creator to join direct message channel.";
-
-/* MISSING TRANSLATION - model/contracts/mailbox.js */
-"Only a member of group message channel can add people." = "Only a member of group message channel can add people.";
 
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "1d" = "1d";
@@ -700,13 +691,7 @@
 "Never created or already joined direct message channel." = "Jamais créé ou déjà rejoint le canal de messagerie directe.";
 
 /* model/contracts/mailbox.js */
-"Not joined or already deleted group message channel." = "Canal de messagerie de groupe non rejoint ou déjà supprimé.";
-
-/* model/contracts/mailbox.js */
 "Not joined or already left direct message channel." = "Pas rejoint ou déjà quitté le canal de messagerie directe.";
-
-/* model/contracts/mailbox.js */
-"Only creator can delete group message channel." = "Seul le créateur peut supprimer le canal de message de groupe.";
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can create direct message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie directe.";
@@ -2563,9 +2548,6 @@
 "Inbox" = "Boîte de réception";
 
 /* Not currently used */
-"Incorrect mailbox creator to join direct message channel" = "Créateur de boîte aux lettres incorrect pour rejoindre le canal de messagerie directe.";
-
-/* Not currently used */
 "Invalid Username" = "Nom d’utilisateur invalide";
 
 /* Not currently used */
@@ -2602,10 +2584,16 @@
 "No Messages" = "Pas de message";
 
 /* Not currently used */
+"Not joined or already deleted group message channel." = "Canal de messagerie de groupe non rejoint ou déjà supprimé.";
+
+/* Not currently used */
 "Oh no! {br_}Something went wrong." = "Oh non ! {br_}Une erreur s’est produite.";
 
 /* Not currently used */
 "Oh no! {br_}Your link has expired." = "Oh non ! {br_}Votre lien a expiré.";
+
+/* Not currently used */
+"Only creator can delete group message channel." = "Seul le créateur peut supprimer le canal de message de groupe.";
 
 /* Not currently used */
 "Payments Received" = "Paiements Reçus";
