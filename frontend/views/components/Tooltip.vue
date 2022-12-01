@@ -1,6 +1,6 @@
 <template lang='pug'>
 span.c-twrapper(
-  :class='{ "has-target-within": triggerElementCss }'
+  :class='{ "has-target-within": triggerElementSelector }'
   v-bind='rootElAttrs'
 )
   slot
@@ -58,7 +58,7 @@ export default ({
       type: Boolean,
       default: false
     },
-    triggerElementCss: {
+    triggerElementSelector: {
       // Instead of taking the entire 'default-slot' as the trigger element(which is the default behaviour of this component),
       // specifying this prop will bind the tooltip to 'a particular element within the default-slot' content.
       // The value must be a valid css-selector string, which will be used in searching via HTMLElement.querySelector()
@@ -81,10 +81,10 @@ export default ({
   computed: {
     rootElAttrs () {
       return {
-        'tabindex': !this.triggerElementCss
+        'tabindex': !this.triggerElementSelector
           ? (this.manual ? '-1' : '0')
-          : undefined,
-        'aria-label': !this.triggerElementCss ? this.text : undefined
+          : null,
+        'aria-label': !this.triggerElementSelector ? this.text : undefined
       }
     }
   },
@@ -215,7 +215,7 @@ export default ({
     }
   },
   mounted () {
-    this.triggerDOM = this.triggerElementCss ? this.$el.querySelector(this.triggerElementCss) : this.$el
+    this.triggerDOM = this.triggerElementSelector ? this.$el.querySelector(this.triggerElementSelector) : this.$el
 
     this.triggerDOM.addEventListener('click', this.toggle)
     this.triggerDOM.addEventListener('mouseenter', this.show)
@@ -223,8 +223,7 @@ export default ({
     this.triggerDOM.addEventListener('focus', this.show)
     this.triggerDOM.addEventListener('blur', this.hide)
 
-    if (this.triggerElementCss) {
-      this.triggerDOM.setAttribute('aria-label', this.text)
+    if (this.triggerElementSelector) {
       this.triggerDOM.style.cursor = 'pointer'
     }
   },

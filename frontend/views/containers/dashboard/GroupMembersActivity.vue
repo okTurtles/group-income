@@ -18,79 +18,55 @@
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='onTimePayments')
-
               //- Todo: discuss if tooltip better than toggle
-              //- i18n.link(
-              //-   tag='button'
-              //-   :aria-label='L("See members")'
-              //-   :args='{  members: 3 }'
-              //-   @click='openModal("todoSeeMembers")'
-              //- ) {members} members
-              i18n(:args='{ ...LTags("strong") }') have {strong_} on-time payment streaks{_strong}
+              sentence-with-member-tooltip(:members='onTimePayments')
+                .member-count-sentence(v-safe-html='memberCountSentences["onTimePayments"]')
 
     .c-column
       i18n.is-title-3(tag='h2') Inactivity
       .has-text-1.c-para Members that haven’t logged in, missed their pledges or haven´t voted last proposals will appear here.
 
       ul.spacer
-        li.c-item-wrpper
-          .c-item
-            .icon-star.icon-round.has-background-success.has-text-success
-            .c-item-copy
-              tooltip(triggerElementCss='.t-trigger' direction='bottom')
-                i18n(
-                  :args='{ ...LTags("strong"), sp1: `<span class="link t-trigger">`, sp2: "</span>", memberCount: 2, daysCount: 14 }'
-                ) {sp1}{memberCount} members{sp2} haven't {strong_} logged in past {daysCount} days or more {_strong}
-
-                template(slot='tooltip')
-                  div(
-                    v-for='(name, index) in ["Kim minjae", "Song sebin"]'
-                    :key='`member-${index}`'
-                  ) {{ name }}
-
         li.c-item-wrapper(v-if='haventLoggedIn.length > 0')
           .c-item
             .icon-user.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='haventLoggedIn')
-              i18n(:args='{ ...LTags("strong"), daysCount: config.notLoggedInDays }') haven't {strong_} logged in past {daysCount} days or more {_strong}
+              sentence-with-member-tooltip(:members='haventLoggedIn')
+                .member-count-sentence(v-safe-html='memberCountSentences["haventLoggedIn"]')
 
         li.c-item-wrapper(v-if='noIncomeDetails.length > 0')
           .c-item
             .icon-comment-dollar.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='noIncomeDetails')
-              i18n(:args='LTags("strong")') haven't {strong_} entered income details{_strong}
+              sentence-with-member-tooltip(:members='noIncomeDetails')
+                .member-count-sentence(v-safe-html='memberCountSentences["noIncomeDetails"]')
 
         li.c-item-wrapper(v-if='missedPayments.length > 0')
           .c-item
             .icon-dollar-sign.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='missedPayments')
-              i18n(:args='LTags("strong")') have {strong_} missed payments {_strong}
+              sentence-with-member-tooltip(:members='missedPayments')
+                .member-count-sentence(v-safe-html='memberCountSentences["missedPayments"]')
 
         li.c-item-wrapper(v-if='noVotes.length > 0')
           .c-item
             .icon-vote-yea.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='noVotes')
-              i18n(:args='{ ...LTags("strong"), proposalNumber: config.proposalNumber }') haven't {strong_} voted in the last {proposalNumber} proposals {_strong}
+              sentence-with-member-tooltip(:members='noVotes')
+                .member-count-sentence(v-safe-html='memberCountSentences["noVotes"]')
 
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import Tooltip from '@components/Tooltip.vue'
-import MemberCountTooltip from './MemberCountTooltip.vue'
+import SentenceWithMemberTooltip from './SentenceWithMemberTooltip.vue'
 import { compareISOTimestamps, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { STREAK_MISSED_PROPSAL_VOTE, STREAK_NOT_LOGGED_IN_DAYS, STREAK_ON_TIME_PAYMENTS, STREAK_MISSED_PAYMENTS } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'GroupMembersActivity',
   components: {
-    MemberCountTooltip,
-    Tooltip
+    SentenceWithMemberTooltip
   },
   data () {
     return {
@@ -146,6 +122,38 @@ export default ({
             ? this.L('{user} missed {streak} votes', Largs)
             : this.L('{user} missed {streak} vote', Largs)
         })
+    },
+    memberCountSentences () {
+      const argsCommon = {
+        ...this.LTags('strong'),
+        'span_': '<span class="link t-trigger">',
+        '_span': '</span>'
+      }
+      const argsMap = {
+        'onTimePayments': { ...argsCommon, membercount: this.onTimePayments.length },
+        'haventLoggedIn': { ...argsCommon, days: this.config.notLoggedInDays, membercount: this.haventLoggedIn.length },
+        'noIncomeDetails': { ...argsCommon, membercount: this.noIncomeDetails.length },
+        'missedPayments': { ...argsCommon, membercount: this.missedPayments.length },
+        'noVotes': { ...argsCommon, membercount: this.noVotes.length, proposalcount: this.config.proposalNumber }
+      }
+
+      return {
+        'onTimePayments': this.onTimePayments.length === 1
+          ? this.L('{span_}{membercount} member{_span} have {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments'])
+          : this.L('{span_}{membercount} members{_span} have {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments']),
+        'haventLoggedIn': this.haventLoggedIn.length === 1
+          ? this.L('{span_}{membercount} member{_span} haven\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn'])
+          : this.L('{span_}{membercount} members{_span} haven\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn']),
+        'noIncomeDetails': this.noIncomeDetails.length === 1
+          ? this.L('{span_}{membercount} member{_span} haven\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails'])
+          : this.L('{span_}{membercount} members{_span} haven\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails']),
+        'missedPayments': this.missedPayments.length === 1
+          ? this.L('{span_}{membercount} member{_span} have {strong_} missed payments {_strong}', argsMap['missedPayments'])
+          : this.L('{span_}{membercount} members{_span} have {strong_} missed payments {_strong}', argsMap['missedPayments']),
+        'noVotes': this.noVotes.length === 1
+          ? this.L('{span_}{membercount} member{_span} haven\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
+          : this.L('{span_}{membercount} members{_span} haven\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
+      }
     }
   }
 }: Object)
