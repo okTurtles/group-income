@@ -659,7 +659,7 @@ page(
               | tooltip(triggerElementCss='.trigger-target')
               |   i.icon-* Basic
           td
-            tooltip(text='A simple text inside' triggerElementCss='.trigger-target' direction='bottom-end')
+            tooltip(text='A simple text inside' triggerElementSelector='.trigger-target' direction='bottom-end')
               i18n(
                 :args='{ ...LTags("strong"), membercount: `<span class="link trigger-target">${5 + " members"}</span>` }'
               ) {membercount} &nbsp;have {strong_} on-time payment streaks{_strong}
