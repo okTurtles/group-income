@@ -113,7 +113,6 @@ describe('Group Payments', () => {
   it('user1 sends $250 to user3 (total)', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
 
-    cy.wait(2000) // eslint-disable-line cypress/no-unnecessary-waiting
     cy.giForceDistributionDateToNow()
 
     cy.getByDT('paymentsLink').click()
@@ -383,7 +382,6 @@ describe('Group Payments', () => {
     cy.tick(timeOneMonth)
     cy.getByDT('paymentsLink').click()
 
-    cy.wait(2000) // eslint-disable-line cypress/no-unnecessary-waiting
     cy.giForceDistributionDateToNow()
     makePayment(timeStart + timeOneMonth, 250)
 
@@ -391,7 +389,6 @@ describe('Group Payments', () => {
     cy.getByDT('dashboard').click()
     cy.getByDT('paymentsLink').click()
 
-    cy.wait(2000) // eslint-disable-line cypress/no-unnecessary-waiting
     cy.giForceDistributionDateToNow()
     makePayment(timeStart + timeOneMonth * 2, 250)
 
@@ -399,14 +396,12 @@ describe('Group Payments', () => {
     cy.getByDT('dashboard').click()
     cy.getByDT('paymentsLink').click()
 
-    cy.wait(2000) // eslint-disable-line cypress/no-unnecessary-waiting
     cy.giForceDistributionDateToNow()
     makePayment(timeStart + timeOneMonth * 3, 250)
 
     cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
     cy.getByDT('paymentsLink').click()
 
-    cy.wait(2000) // eslint-disable-line cypress/no-unnecessary-waiting
     cy.giForceDistributionDateToNow()
     makePayment(timeStart + timeOneMonth * 3, 100)
 

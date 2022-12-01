@@ -7,6 +7,7 @@
 import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { LOGIN } from '../../../frontend/utils/events.js'
 
 // util funcs
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
@@ -89,6 +90,10 @@ Cypress.Commands.add('giLogin', (username, {
       }
       await sbp('gi.actions/identity/login', { username, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
+
+      return new Promise((resolve) => {
+        sbp('okTurtles.events/on', LOGIN, resolve)
+      })
     })
     cy.get('nav').within(() => {
       cy.getByDT('dashboard').click()
@@ -375,7 +380,7 @@ Cypress.Commands.add('giAddNewChatroom', (
 ) => {
   // Needs to be in 'Group Chat' page
   cy.getByDT('newChannelButton').click()
-  cy.getByDT('modal') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
+  cy.getByDT('modal-header-title').should('contain', 'Create a channel') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
   cy.getByDT('modal').within(() => {
     cy.getByDT('modal-header-title').should('contain', 'Create a channel')
     cy.getByDT('createChannelName').clear().type(name)
