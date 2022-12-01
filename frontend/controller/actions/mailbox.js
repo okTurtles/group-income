@@ -125,7 +125,7 @@ export default (sbp('sbp/selectors/register', {
         data: { username: me }
       })
 
-      for (const profile of partnerProfiles.entries()) {
+      for (const profile of partnerProfiles) {
         await sbp('gi.actions/chatroom/join', {
           ...omit(params, ['options', 'data', 'hook']),
           contractID: message.contractID(),
