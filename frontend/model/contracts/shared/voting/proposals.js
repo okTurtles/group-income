@@ -154,12 +154,16 @@ const proposals: Object = {
       //       this code will need to be updated
       const message = {
         meta,
-        data: setting === 'mincomeAmount'
-          ? { from: sbp('state/vuex/getters').groupMincomeAmount, to: proposedValue }
-          : { [setting]: proposedValue },
+        data: {
+          [setting]: setting === 'mincomeAmount'
+            ? { from: sbp('state/vuex/getters').groupMincomeAmount, to: proposedValue }
+            : proposedValue
+        },
         contractID
       }
       sbp('gi.contracts/group/updateSettings/process', message, state)
+      sbp('gi.contracts/group/pushSideEffect', contractID,
+        ['gi.contracts/group/updateSettings/sideEffect', message])
       archiveProposal({ state, proposalHash, proposal, contractID })
     },
     [VOTE_AGAINST]: voteAgainst
