@@ -143,7 +143,8 @@ export default ({
 
       try {
         await sbp('gi.actions/group/updateSettings', {
-          contractID: this.currentGroupId, data: { mincomeAmount }
+          contractID: this.currentGroupId,
+          data: { mincomeAmount: { from: this.groupSettings.mincomeAmount, to: mincomeAmount } }
         })
         this.$refs.proposal.close()
       } catch (e) {

@@ -1012,14 +1012,34 @@ sbp('chelonia/defineContract', {
         groupName: x => typeof x === 'string',
         groupPicture: x => typeof x === 'string',
         sharedValues: x => typeof x === 'string',
-        mincomeAmount: x => typeof x === 'number' && x > 0,
+        mincomeAmount: objectOf({
+          from: x => typeof x === 'number' && x > 0,
+          to: x => typeof x === 'number' && x > 0
+        }),
         mincomeCurrency: x => typeof x === 'string'
       }),
       process ({ meta, data }, { state }) {
         for (const key in data) {
-          Vue.set(state.settings, key, data[key])
+          const value = key === 'mincomeAmount' ? data[key].to : data[key]
+          Vue.set(state.settings, key, value)
         }
-      }
+      },
+      sideEffect ({ contractID, meta, data }, { getters }) {
+        if (data.mincomeAmount && data.mincomeAmount.to > data.mincomeAmount.from) {
+          // if the mincome has increased, emit a notification
+          // letting any members (who has already set up income details) know of it
+          const { loggedIn } = sbp('state/vuex/state')
+          const myProfile = getters.groupProfile(loggedIn.username)
+
+          if (myProfile.incomeDetailsType && isActionYoungerThanUser(meta, myProfile)) {
+            sbp('gi.notifications/emit', 'MINCOME_INCREASED', {
+              groupID: contractID,
+              creator: meta.username,
+              to: data.mincomeAmount.to
+            })
+          }
+        }
+      } // @@@
     },
     'gi.contracts/group/groupProfileUpdate': {
       validate: objectMaybeOf({

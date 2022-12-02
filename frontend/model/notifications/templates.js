@@ -200,5 +200,18 @@ export default ({
       linkTo: `dashboard?modal=ThankYouNoteModal&from=${data.fromUser}&to=${data.toUser}`,
       scope: 'group'
     }
+  },
+  MINCOME_INCREASED (data: { creator: string, to: number }) {
+    const { withGroupCurrency } = sbp('state/vuex/getters')
+    const formattedAmountTo = withGroupCurrency(data.to)
+    return {
+      avatarUsername: data.creator,
+      body: L('The mincome has changed to {amount}.', { amount: formattedAmountTo }),
+      creator: data.creator,
+      icon: '',
+      level: 'info',
+      scope: 'group',
+      sbpInvocation: ['gi.actions/group/displayMincomeIncreasedPrompt', { amount: formattedAmountTo }]
+    }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })

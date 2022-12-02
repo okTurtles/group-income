@@ -508,6 +508,19 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to notify expiring proposals.'))
     }
   },
+  'gi.actions/group/displayMincomeIncreasedPrompt': async function (params: Object) {
+    const isNoSelected = await sbp('gi.ui/prompt', {
+      question: L('Do you make at least {amount} per month?', { amount: params.amount }),
+      heading: L('Mincome increased'), // TODO: discuss if this heading is appropreate. currently just a placeholder.
+      yesButton: L('No'),
+      noButton: L('Yes')
+    })
+
+    if (isNoSelected) {
+      // TODO: open the income-details modal
+      alert('TODO: open the income-details modal')
+    }
+  },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
