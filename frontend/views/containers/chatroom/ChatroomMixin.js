@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const initChatChannelDetails = {
@@ -64,20 +64,12 @@ const ChatroomMixin: Object = {
       'isPrivateChatRoom',
       'ourContactProfiles',
       'isDirectMessage',
-      'isGroupMessage',
-      'ourUsername',
-      'directMessageIDFromUsername',
+      'isOneToOneDirectMessage',
+      'isOneToManyDirectMessage',
       'usernameFromDirectMessageID',
-      'groupMessageInfo'
+      'oneToManyMessageInfo'
     ]),
     ...mapState(['currentGroupId']),
-    isIndividualChatRoom () {
-      return chatRoomId => {
-        const contractID = chatRoomId || this.currentChatRoomId
-        return this.isJoinedChatRoom(contractID) &&
-          this.$store.state[contractID].attributes?.type === CHATROOM_TYPES.INDIVIDUAL
-      }
-    },
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
         const joined = sbp('chelonia/contract/isSyncing', this.currentChatRoomId)
@@ -88,13 +80,13 @@ const ChatroomMixin: Object = {
 
       let title = name
       let picture
-      if (this.isDirectMessage(this.currentChatRoomId)) {
+      if (this.isOneToOneDirectMessage(this.currentChatRoomId)) {
         const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
         const partner = this.ourContactProfiles[partnerUsername]
         title = partner?.displayName || partnerUsername
         picture = partner?.picture
-      } else if (this.isGroupMessage(this.currentChatRoomId)) {
-        title = this.groupMessageInfo(this.currentChatRoomId).title
+      } else if (this.isOneToManyDirectMessage(this.currentChatRoomId)) {
+        title = this.oneToManyMessageInfo(this.currentChatRoomId).title
       }
 
       return {
@@ -116,14 +108,10 @@ const ChatroomMixin: Object = {
       }
       const participants = {}
 
-      if (this.isIndividualChatRoom()) {
+      if (this.isDirectMessage()) {
         const numberOfParticipants = Object.keys(this.currentChatRoomState.users).length
         for (const username of Object.keys(this.currentChatRoomState.users)) {
-          if (username === this.ourUsername) {
-            participants[username] = this.globalProfile(username)
-          } else {
-            participants[username] = this.ourContactProfiles[username]
-          }
+          participants[username] = this.ourContactProfiles[username]
         }
         return {
           isLoading: false,
@@ -174,12 +162,12 @@ const ChatroomMixin: Object = {
     },
     refreshTitle (title?: string): void {
       if (!title) {
-        if (this.isDirectMessage(this.currentChatRoomId)) {
+        if (this.isOneToOneDirectMessage(this.currentChatRoomId)) {
           const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
           const partner = this.ourContactProfiles[partnerUsername]
           title = partner.displayName || partnerUsername
-        } else if (this.isGroupMessage(this.currentChatRoomId)) {
-          title = this.groupMessageInfo(this.currentChatRoomId).title
+        } else if (this.isOneToManyDirectMessage(this.currentChatRoomId)) {
+          title = this.oneToManyMessageInfo(this.currentChatRoomId).title
         } else {
           title = this.currentChatRoomState.attributes?.name
         }
@@ -230,7 +218,7 @@ const ChatroomMixin: Object = {
       this.setGroupChatDetailsAsGlobal()
     },
     setGroupChatDetailsAsGlobal () {
-      if (!this.isJoinedChatRoom(this.currentChatRoomId) && !this.isDirectMessage(this.currentChatRoomId)) {
+      if (!this.isJoinedChatRoom(this.currentChatRoomId) && !this.isDirectMessage()) {
         sbp('okTurtles.data/set', 'GROUPCHAT_DETAILS', {
           participants: Object.keys(this.details.members || {})
             .map(un => ({ username: un, displayName: this.details.members[un].displayName })),
@@ -242,7 +230,7 @@ const ChatroomMixin: Object = {
       }
     },
     updateCurrentChatRoomID (chatRoomId: string) {
-      if (this.isIndividualChatRoom(chatRoomId)) {
+      if (this.isDirectMessage(chatRoomId)) {
         sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
       } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
         const groupID = this.groupIdFromChatRoomId(chatRoomId)

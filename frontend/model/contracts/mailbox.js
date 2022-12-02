@@ -34,26 +34,29 @@ sbp('chelonia/defineContract', {
       return state
     },
     ourDirectMessages (state, getters) {
-      const directMessages = {}
-      for (const contractID of Object.keys(getters.currentMailboxState.chatRooms)) {
-        const partner = getters.currentMailboxState.chatRooms[contractID].partner
+      return getters.currentMailboxState.chatRooms || {}
+    },
+    ourOneToOneDirectMessages (state, getters) {
+      const oneToOneMessages = {}
+      for (const contractID of Object.keys(getters.ourDirectMessages)) {
+        const partner = getters.ourDirectMessages[contractID].partner
         if (partner) {
-          directMessages[partner] = {
-            ...getters.currentMailboxState.chatRooms[contractID],
+          oneToOneMessages[partner] = {
+            ...getters.ourDirectMessages[contractID],
             contractID
           }
         }
       }
-      return directMessages
+      return oneToOneMessages
     },
-    ourGroupMessages (state, getters) {
-      const groupMessages = {}
-      for (const contractID of Object.keys(getters.currentMailboxState.chatRooms)) {
-        if (!getters.currentMailboxState.chatRooms[contractID].partner) {
-          groupMessages[contractID] = getters.currentMailboxState.chatRooms[contractID]
+    ourOneToManyDirectMessages (state, getters) {
+      const oneToManyMessages = {}
+      for (const contractID of Object.keys(getters.ourDirectMessages)) {
+        if (!getters.ourDirectMessages[contractID].partner) {
+          oneToManyMessages[contractID] = getters.ourDirectMessages[contractID]
         }
       }
-      return groupMessages
+      return oneToManyMessages
     }
   },
   actions: {
@@ -95,7 +98,7 @@ sbp('chelonia/defineContract', {
         })(data)
         if (state.attributes.creator !== meta.username) {
           throw new TypeError(L('Only the mailbox creator can create direct message channel.'))
-        } else if (getters.ourDirectMessages[data.username]) {
+        } else if (getters.ourOneToOneDirectMessages[data.username]) {
           throw new TypeError(L('Already existing direct message channel.'))
         }
       },
@@ -123,10 +126,10 @@ sbp('chelonia/defineContract', {
       }),
       process ({ meta, data }, { state, getters }) {
         const me = state.attributes.creator
-        if (me !== meta.username && getters.ourDirectMessages[data.username]) {
+        if (me !== meta.username && getters.ourOneToOneDirectMessages[data.username]) {
           throw new TypeError(L('Already existing direct message channel.'))
         } else if (me === meta.username) {
-          if (!getters.ourDirectMessages[data.username] || getters.ourDirectMessages[data.username].joinedDate) {
+          if (!getters.ourOneToOneDirectMessages[data.username] || getters.ourOneToOneDirectMessages[data.username].joinedDate) {
             throw new TypeError(L('Never created or already joined direct message channel.'))
           }
         }
@@ -139,7 +142,7 @@ sbp('chelonia/defineContract', {
             joinedDate
           })
         } else {
-          const contractID = getters.ourDirectMessages[data.username].contractID
+          const contractID = getters.ourOneToOneDirectMessages[data.username].contractID
           Vue.set(state.chatRooms[contractID], 'joinedDate', joinedDate)
         }
       },
@@ -147,7 +150,7 @@ sbp('chelonia/defineContract', {
         const me = state.attributes.creator
         let chatRoomId
         if (me === meta.username) {
-          chatRoomId = getters.ourDirectMessages[data.username].contractID
+          chatRoomId = getters.ourOneToOneDirectMessages[data.username].contractID
         } else if (state.attributes.autoJoinAllowance) {
           chatRoomId = data.contractID
         }
@@ -166,16 +169,16 @@ sbp('chelonia/defineContract', {
         objectOf({ username: string })(data)
         if (state.attributes.creator !== meta.username) {
           throw new TypeError(L('Only the mailbox creator can leave direct message channel.'))
-        } else if (!getters.ourDirectMessages[data.username]?.joinedDate) {
+        } else if (!getters.ourOneToOneDirectMessages[data.username]?.joinedDate) {
           throw new TypeError(L('Not joined or already left direct message channel.'))
         }
       },
       process ({ data }, { state, getters }) {
-        const contractID = getters.ourDirectMessages[data.username].contractID
+        const contractID = getters.ourOneToOneDirectMessages[data.username].contractID
         Vue.set(state.chatRooms[contractID], 'joinedDate', null)
       },
       sideEffect ({ data }, { getters }) {
-        leaveChatRoom({ contractID: getters.ourDirectMessages[data.username].contractID })
+        leaveChatRoom({ contractID: getters.ourOneToOneDirectMessages[data.username].contractID })
       }
     },
     'gi.contracts/mailbox/createGroupMessage': {

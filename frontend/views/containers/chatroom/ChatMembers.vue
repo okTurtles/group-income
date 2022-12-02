@@ -83,23 +83,23 @@ export default ({
       'groupShouldPropose',
       'ourUsername',
       'userDisplayName',
-      'ourDirectMessages',
-      'ourGroupMessages',
+      'ourOneToOneDirectMessages',
+      'ourOneToManyDirectMessages',
       'chatRoomUnreadMentions',
       'directMessageIDFromUsername',
-      'groupMessageInfo'
+      'oneToManyMessageInfo'
     ]),
     directMessages () {
-      return Object.keys(this.ourDirectMessages)
-        .filter(username => this.ourDirectMessages[username].joinedDate)
+      return Object.keys(this.ourOneToOneDirectMessages)
+        .filter(username => this.ourOneToOneDirectMessages[username].joinedDate)
         .map(username => this.ourContactProfiles[username])
     },
     groupMessages () {
-      return Object.keys(this.ourGroupMessages)
+      return Object.keys(this.ourOneToManyDirectMessages)
         .filter(contractID => this.$store.state.contracts[contractID] &&
           Object.keys(this.$store.state[contractID]?.users || {}).length > 1 // NOTE: this is when contract is syncing
         )
-        .map(contractID => this.groupMessageInfo(contractID))
+        .map(contractID => this.oneToManyMessageInfo(contractID))
     }
   },
   methods: {

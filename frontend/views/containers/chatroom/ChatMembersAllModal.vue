@@ -59,7 +59,7 @@ modal-base-template.has-background(
                     strong {{ localizedName(username, displayName) }}
                     .c-display-name(v-if='displayName' data-test='profileName') @{{ username }}
 
-              .c-actions(v-if='!isTypeIndividual && isJoined && removable(username)')
+              .c-actions(v-if='!isDirectMessage() && isJoined && removable(username)')
                 button.is-icon(
                   v-if='!departedDate'
                   :data-test='"removeMember-" + username'
@@ -109,7 +109,7 @@ modal-base-template.has-background(
                 i.icon-check
                 i18n Added.
                 button.is-unstyled.c-action-undo(
-                  v-if='!isTypeIndividual'
+                  v-if='!isDirectMessage()'
                   @click.stop='removeMember(username, true)'
                 ) {{L("Undo")}}
 </template>
@@ -123,7 +123,7 @@ import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
-import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
 
 const initDetails = {
   name: '',
@@ -167,12 +167,14 @@ export default ({
       'ourUsername',
       'globalProfile',
       'isDirectMessage',
+      'isOneToOneDirectMessage',
+      'isOneToManyDirectMessage',
+      'oneToManyMessageInfo',
       'usernameFromDirectMessageID',
       'isJoinedChatRoom',
-      'groupProfiles',
       'ourContactProfiles',
       'ourContacts',
-      'ourGroupMessages'
+      'ourOneToManyDirectMessages'
     ]),
     ...mapState([
       'currentGroupId'
@@ -202,9 +204,11 @@ export default ({
     attributes () {
       const { name, description, privacyLevel } = this.currentChatRoomState.attributes || this.details
       let title = name
-      if (this.isDirectMessage(this.currentChatRoomId)) {
+      if (this.isOneToOneDirectMessage()) {
         const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
         title = this.ourContactProfiles[partnerUsername].displayName || partnerUsername
+      } else if (this.isOneToManyDirectMessage()) {
+        title = this.oneToManyMessageInfo(this.currentChatRoomId).title
       }
       const privacy = {
         [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
@@ -215,9 +219,6 @@ export default ({
     },
     isJoined () {
       return this.isJoinedChatRoom(this.currentChatRoomId)
-    },
-    isTypeIndividual () {
-      return this.currentChatRoomState.attributes.type === CHATROOM_TYPES.INDIVIDUAL
     },
     isPrivacyLevelPrivate () {
       return this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
@@ -232,7 +233,7 @@ export default ({
       this.initializeMembers()
     },
     initializeMembers () {
-      if (this.isTypeIndividual) {
+      if (this.isDirectMessage()) {
         this.addedMembers = Object.keys(this.chatRoomUsers)
           .map(username => {
             return username === this.ourUsername
@@ -316,10 +317,10 @@ export default ({
       }
     },
     async addToChannel (username: string, undoing = false) {
-      if (this.isTypeIndividual) {
+      if (this.isDirectMessage()) {
         if (this.isPrivacyLevelPrivate) {
           const usernames = [this.usernameFromDirectMessageID(this.currentChatRoomId), username]
-          const existingChatRoomId = Object.keys(this.ourGroupMessages).find(contractID => {
+          const existingChatRoomId = Object.keys(this.ourOneToManyDirectMessages).find(contractID => {
             const users = Object.keys(this.$store.state[contractID]?.users || {})
             if (users.length === usernames.length + 1) {
               return [...usernames, this.ourUsername].reduce((existing, un) => existing && users.includes(un), true)

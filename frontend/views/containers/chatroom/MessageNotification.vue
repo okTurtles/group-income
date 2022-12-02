@@ -42,16 +42,13 @@ export default ({
     isCurrentUser: Boolean
   },
   computed: {
-    ...mapGetters(['userDisplayName', 'isGroupMessage', 'currentChatRoomId']),
-    isOnGroupMessage () {
-      return this.isGroupMessage(this.currentChatRoomId)
-    },
+    ...mapGetters(['userDisplayName', 'isOneToManyDirectMessage', 'currentChatRoomId']),
     message () {
       const { username, channelName, channelDescription } = this.notification.params
       const displayName = this.userDisplayName(username)
 
       const notificationTemplates = {
-        onlyGroupMessage: {
+        onOneToManyDirectMessage: {
           [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member: {displayName}', { displayName }),
           [MESSAGE_NOTIFICATIONS.JOIN_MEMBER]: L('Joined')
         },
@@ -67,7 +64,7 @@ export default ({
         }
       }
 
-      const notificationSelector = this.isOnGroupMessage ? 'onlyGroupMessage' : 'default'
+      const notificationSelector = this.isOneToManyDirectMessage() ? 'onOneToManyDirectMessage' : 'default'
       const text = notificationTemplates[notificationSelector][this.notification.type]
 
       // let variant = 'simple'

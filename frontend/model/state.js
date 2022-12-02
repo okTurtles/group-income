@@ -493,26 +493,14 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
-  globalProfilesForGroup (state, getters) {
-    return contractID => {
-      const profiles = state[contractID]?.profiles || {}
-      return Object.keys(profiles).map(username => {
-        return getters.globalProfile2(contractID, username)
-      })
-    }
-  },
   ourContactProfiles (state, getters) {
     const profiles = {}
-    const allProfiles = getters.groupsByName
-      .map(({ groupName, contractID }) => getters.globalProfilesForGroup(contractID))
-      .flat()
-
-    allProfiles.forEach((profile, pos) => {
-      if (profile && profile.username !== getters.ourUsername &&
-        allProfiles.findIndex(p => p.username === profile.username) === pos) {
-        profiles[profile.username] = profile
-      }
-    })
+    Object.keys(state.contracts)
+      .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
+      .forEach(contractID => {
+        const attributes = state[contractID].attributes
+        profiles[attributes.username] = { ...attributes, contractID }
+      })
     return profiles
   },
   ourContacts (state, getters) {
@@ -525,14 +513,37 @@ const getters = {
   },
   isDirectMessage (state, getters) {
     // NOTE: mailbox contract could not be synced at the time of calling this getter
-    return chatRoomId => Object.keys(getters.ourDirectMessages || {})
-      .map(username => getters.ourDirectMessages[username].contractID)
-      .includes(chatRoomId)
+    return chatRoomId => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return getters.isJoinedChatRoom(contractID) && getters.ourDirectMessages[contractID]
+    }
   },
-  isGroupMessage (state, getters) {
-    return chatRoomId => Object.keys(getters.ourGroupMessages || {}).includes(chatRoomId)
+  isOneToOneDirectMessage (state, getters) {
+    // NOTE: mailbox contract could not be synced at the time of calling this getter
+    return chatRoomId => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return !!getters.ourDirectMessages[contractID]?.partner
+    }
   },
-  groupMessageInfo (state, getters) {
+  isOneToManyDirectMessage (state, getters) {
+    return chatRoomId => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return getters.ourDirectMessages[contractID] && !getters.ourDirectMessages[contractID].partner
+    }
+  },
+  isPrivateChatRoom (state, getters) {
+    return (chatRoomId: string) => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return state[contractID]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+    }
+  },
+  isJoinedChatRoom (state, getters) {
+    return (chatRoomId: string, username?: string) => {
+      username = username || state.loggedIn.username
+      return !!state[chatRoomId]?.users?.[username]
+    }
+  },
+  oneToManyMessageInfo (state, getters) {
     return chatRoomId => {
       const usernames = Object.keys(state[chatRoomId].users).filter(username => username !== getters.ourUsername)
       const lastJoined = usernames.reduce((lastJoined, username) => {
@@ -570,37 +581,25 @@ const getters = {
   },
   groupUnreadMessages (state, getters) {
     return (groupID: string) => Object.keys(getters.ourUnreadMessages)
-      .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID].chatRooms).includes(cID))
+      .filter(cID => getters.isOneToOneDirectMessage(cID) || Object.keys(state[groupID].chatRooms).includes(cID))
       .map(cID => getters.ourUnreadMessages[cID].mentions.length)
       .reduce((sum, n) => sum + n, 0)
   },
   directMessageIDFromUsername (state, getters) {
-    return (username: string) => getters.ourDirectMessages[username]?.contractID
+    return (username: string) => getters.ourOneToOneDirectMessages[username]?.contractID
   },
   usernameFromDirectMessageID (state, getters) {
     return (chatRoomId: string) => {
-      if (!getters.isDirectMessage(chatRoomId)) {
+      if (!getters.isOneToOneDirectMessage(chatRoomId)) {
         return
       }
-      return Object.keys(getters.ourDirectMessages)
-        .find(username => getters.directMessageIDFromUsername(username) === chatRoomId)
+      return getters.ourDirectMessages[chatRoomId].partner
     }
   },
   groupIdFromChatRoomId (state, getters) {
     return (chatRoomId: string) => Object.keys(state.contracts)
       .find(cId => state.contracts[cId].type === 'gi.contracts/group' &&
         Object.keys(state[cId].chatRooms).includes(chatRoomId))
-  },
-  isPrivateChatRoom (state, getters) {
-    return (chatRoomId: string) => {
-      return state[chatRoomId]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-    }
-  },
-  isJoinedChatRoom (state, getters) {
-    return (chatRoomId: string, username?: string) => {
-      username = username || state.loggedIn.username
-      return !!state[chatRoomId]?.users?.[username]
-    }
   },
   chatRoomsInDetail (state, getters) {
     const chatRoomsInDetail = merge({}, getters.getGroupChatRooms)

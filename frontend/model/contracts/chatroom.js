@@ -61,11 +61,11 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
 
   let title = `# ${chatRoomName}`
   let partnerProfile
-  if (rootGetters.isDirectMessage(contractID)) {
-    title = `# ${partnerProfile?.displayName || username}`
+  if (rootGetters.isOneToOneDirectMessage(contractID)) {
     partnerProfile = rootGetters.ourContactProfiles[username] // NOTE: partner identity contract could not be synced at the time of use
-  } else if (rootGetters.isGroupMessage(contractID)) {
-    title = `# ${rootGetters.groupMessageInfo(contractID).title}`
+    title = `# ${partnerProfile?.displayName || username}`
+  } else if (rootGetters.isOneToManyDirectMessage(contractID)) {
+    title = `# ${rootGetters.oneToManyMessageInfo(contractID).title}`
   }
   const path = `/group-chat/${contractID}`
 
@@ -323,10 +323,11 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, data, hash, state })
         const mentions = makeMentionFromUsername(me)
 
-        const isDirectMessage = state.attributes.type === CHATROOM_TYPES.INDIVIDUAL
+        const isOneToOneDirectMessage = state.attributes.type === CHATROOM_TYPES.INDIVIDUAL &&
+          state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
         const isTextMessage = data.type === MESSAGE_TYPES.TEXT
         const isMentionedMe = isTextMessage && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
-        if (isDirectMessage || isMentionedMe) {
+        if (isOneToOneDirectMessage || isMentionedMe) {
           addMention({
             contractID,
             messageId: newMessage.id,

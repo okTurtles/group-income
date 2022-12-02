@@ -1,5 +1,5 @@
 <template lang='pug'>
-page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isIndividualChatRoom()')
+page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDirectMessage()')
   template(#title='')
     .c-header
       .avatar-wrapper(
@@ -25,12 +25,12 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isIn
 
           ul
             menu-item(
-              v-if='!summary.general && ourUsername === summary.creator && !isIndividualChatRoom()'
+              v-if='!summary.general && ourUsername === summary.creator && !isDirectMessage()'
               @click='openModal("EditChannelNameModal")'
               data-test='renameChannel'
             )
               i18n Rename
-            menu-item(v-if='!isIndividualChatRoom()' @click='openModal("ChatMembersAllModal")')
+            menu-item(v-if='!isDirectMessage()' @click='openModal("ChatMembersAllModal")')
               i18n Members
             menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
               i18n Add People
@@ -47,13 +47,13 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isIn
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
-              v-if='!summary.general && ourUsername === summary.creator && !isIndividualChatRoom()'
+              v-if='!summary.general && ourUsername === summary.creator && !isDirectMessage()'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )
               i18n Delete channel
 
-  template(#description='' v-if='!isIndividualChatRoom()')
+  template(#description='' v-if='!isDirectMessage()')
     .c-header-description
       i18n.is-unstyled.c-link(
         tag='button'
@@ -137,8 +137,7 @@ export default ({
       'groupProfiles',
       'isJoinedChatRoom',
       'getGroupChatRooms',
-      'ourUsername',
-      'isDirectMessage'
+      'ourUsername'
     ]),
     getChatRoomIDsInSort () {
       return Object.keys(this.getGroupChatRooms || {}).map(chatRoomID => ({
@@ -189,7 +188,7 @@ export default ({
       this.$nextTick(() => {
         this.refreshTitle()
       })
-      if (this.isIndividualChatRoom(chatRoomId)) {
+      if (this.isDirectMessage(chatRoomId)) {
         this.updateCurrentChatRoomID(chatRoomId)
       } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
         if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
