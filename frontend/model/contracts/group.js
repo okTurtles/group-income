@@ -1031,7 +1031,6 @@ sbp('chelonia/defineContract', {
           const { loggedIn } = sbp('state/vuex/state')
           const myProfile = getters.groupProfile(loggedIn.username)
 
-          console.log('isActionYoungerThanUser(meta, myProfile): ', isActionYoungerThanUser(meta, myProfile))
           if (isActionYoungerThanUser(meta, myProfile) && myProfile.incomeDetailsType) {
             sbp('gi.notifications/emit', 'MINCOME_INCREASED', {
               groupID: contractID,

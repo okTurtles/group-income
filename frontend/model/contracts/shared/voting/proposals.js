@@ -163,7 +163,7 @@ const proposals: Object = {
       }
       sbp('gi.contracts/group/updateSettings/process', message, state)
       sbp('gi.contracts/group/pushSideEffect', contractID,
-        ['gi.contracts/group/updateSettings/sideEffect', message])
+        ['gi.contracts/group/updateSettings/sideEffect', { ...message, meta: { ...message.meta, username: proposal.meta.username } }])
       archiveProposal({ state, proposalHash, proposal, contractID })
     },
     [VOTE_AGAINST]: voteAgainst

@@ -26,6 +26,7 @@ import { encryptedAction } from './utils.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { REPLACE_MODAL } from '@utils/events.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -511,14 +512,14 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/displayMincomeIncreasedPrompt': async function (params: Object) {
     const isNoSelected = await sbp('gi.ui/prompt', {
       question: L('Do you make at least {amount} per month?', { amount: params.amount }),
-      heading: L('Mincome increased'), // TODO: discuss if this heading is appropreate. currently just a placeholder.
+      heading: L('Mincome increased'), // TODO: discuss if this heading is fine. currently just a placeholder.
       yesButton: L('No'),
       noButton: L('Yes')
     })
 
     if (isNoSelected) {
-      // TODO: open the income-details modal
-      alert('TODO: open the income-details modal')
+      // if a user doesn't make more than the changed mincome, let them decide whether they want to update their income details.
+      sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
