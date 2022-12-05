@@ -345,7 +345,7 @@ const getters = {
         for (const toUser in paymentsFrom[ourUsername]) {
           for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
-            payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+            payments.push({ hash: paymentHash, data, meta, amount: data.amount })
           }
         }
       }
@@ -367,7 +367,7 @@ const getters = {
             if (toUser === ourUsername) {
               for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
-                payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+                payments.push({ hash: paymentHash, data, meta, amount: data.amount })
               }
             }
           }

@@ -226,7 +226,6 @@ export default ({
   computed: {
     ...mapGetters([
       'groupIncomeDistribution',
-      'paymentTotalFromUserToUser',
       'periodStampGivenDate',
       'currentPaymentPeriod',
       'ourGroupProfile',
@@ -321,7 +320,8 @@ export default ({
     paymentsSent () {
       return this.historicalPayments.sent.map(payment => ({
         ...payment,
-        displayName: this.userDisplayName(payment.username),
+        username: payment.data.toUser,
+        displayName: this.userDisplayName(payment.data.toUser),
         monthstamp: dateToMonthstamp(payment.meta.createdDate),
         date: payment.meta.createdDate
       }))

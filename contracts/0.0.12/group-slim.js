@@ -1811,7 +1811,7 @@ ${this.getErrorInfo()}`;
                 const receivedOrSent = toUser === username ? "received" : "sent";
                 for (const hash of paymentsFrom[fromUser][toUser]) {
                   const { data, meta } = payments[hash];
-                  newSentOrReceivedPayments[receivedOrSent].push({ hash, period, data, meta, amount: data.amount, username: toUser });
+                  newSentOrReceivedPayments[receivedOrSent].push({ hash, period, data, meta, amount: data.amount });
                 }
               }
             }
