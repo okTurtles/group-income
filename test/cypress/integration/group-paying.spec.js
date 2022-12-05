@@ -239,7 +239,7 @@ describe('Group Payments', () => {
       messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`
     })
 
-    cy.getByDT('modal-header-title').should('contain', 'Thank you note!')
+    cy.getByDT('modal-header-title').should('contain', 'Thank you note!') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
     cy.getByDT('modal').within(() => {
       cy.getByDT('memoLabel').should('contain', `user3-${userId} Note:`)
       cy.getByDT('memo').should('contain', thankYouText)
@@ -373,54 +373,6 @@ describe('Group Payments', () => {
       cy.getByDT('payRow').eq(1).find('td:nth-child(1)').should('contain', 'user3')
       cy.getByDT('payRow').eq(1).find('td:nth-child(2)').should('contain', '$178.57')
     })
-  })
-
-  it.skip('three months\'s of payments are made and support history graph displays the histories', () => {
-    cy.clock(timeStart, ['Date'])
-    cy.visit('/')
-
-    cy.tick(timeOneMonth)
-    cy.getByDT('paymentsLink').click()
-
-    cy.giForceDistributionDateToNow()
-    makePayment(timeStart + timeOneMonth, 250)
-
-    cy.tick(timeOneMonth)
-    cy.getByDT('dashboard').click()
-    cy.getByDT('paymentsLink').click()
-
-    cy.giForceDistributionDateToNow()
-    makePayment(timeStart + timeOneMonth * 2, 250)
-
-    cy.tick(timeOneMonth)
-    cy.getByDT('dashboard').click()
-    cy.getByDT('paymentsLink').click()
-
-    cy.giForceDistributionDateToNow()
-    makePayment(timeStart + timeOneMonth * 3, 250)
-
-    cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
-    cy.getByDT('paymentsLink').click()
-
-    cy.giForceDistributionDateToNow()
-    makePayment(timeStart + timeOneMonth * 3, 100)
-
-    cy.getByDT('dashboard').click()
-    cy.getByDT('link-SupportHistory').click()
-    cy.get('.bar-graph-container').should('exist')
-
-    // TODO: need to check the percentage
-    // cy.get('.bar-graph-container').find('.bar-graph:nth-child(4)').within(() => {
-    //   cy.get('.bar-graph-txt').should('contain', '25%')
-    // })
-
-    // cy.get('.bar-graph-container').find('.bar-graph:nth-child(5)').within(() => {
-    //   cy.get('.bar-graph-txt').should('contain', '25%')
-    // })
-
-    // cy.get('.bar-graph-container').find('.bar-graph:nth-child(6)').within(() => {
-    //   cy.get('.bar-graph-txt').should('contain', '42%')
-    // })
   })
 
   it('log out', () => {
