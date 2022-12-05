@@ -113,35 +113,6 @@ export default ({
     UserName,
     Tooltip
   },
-  methods: {
-    openModal (modal, props) {
-      if (this.deactivated) {
-        return
-      }
-      this.toggleTooltip()
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
-    },
-    toggleTooltip () {
-      this.$refs.tooltip.toggle()
-    },
-    sendMessage () {
-      const isExistingDM = this.mailboxContract.users[this.username]?.joinedDate
-      if (!isExistingDM) {
-        const actionName = this.mailboxContract.users[this.username] ? 'joinDirectMessage' : 'createDirectMessage'
-        sbp(`gi.actions/mailbox/${actionName}`, {
-          contractID: this.currentIdentityState.attributes.mailbox,
-          data: { username: this.username }
-        })
-      } else {
-        const chatRoomId = this.directMessageIDFromUsername(this.username)
-        this.$router.push({
-          name: 'GroupChatConversation',
-          params: { chatRoomId }
-        }).catch(logExceptNavigationDuplicated)
-      }
-      this.toggleTooltip()
-    }
-  },
   computed: {
     ...mapGetters([
       'ourUsername',
@@ -151,7 +122,7 @@ export default ({
       'globalProfile',
       'groupShouldPropose',
       'ourContributionSummary',
-      'mailboxContract',
+      'ourOneToOneDirectMessages',
       'currentIdentityState',
       'directMessageIDFromUsername'
     ]),
@@ -175,6 +146,35 @@ export default ({
     },
     receivingMonetary () {
       return !!this.ourContributionSummary.receivingMonetary
+    }
+  },
+  methods: {
+    openModal (modal, props) {
+      if (this.deactivated) {
+        return
+      }
+      this.toggleTooltip()
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    },
+    toggleTooltip () {
+      this.$refs.tooltip.toggle()
+    },
+    sendMessage () {
+      const isExistingDM = this.ourOneToOneDirectMessages[this.username]?.joinedDate
+      if (!isExistingDM) {
+        const actionName = this.ourOneToOneDirectMessages[this.username] ? 'joinDirectMessage' : 'createDirectMessage'
+        sbp(`gi.actions/mailbox/${actionName}`, {
+          contractID: this.currentIdentityState.attributes.mailbox,
+          data: { username: this.username }
+        })
+      } else {
+        const chatRoomId = this.directMessageIDFromUsername(this.username)
+        this.$router.push({
+          name: 'GroupChatConversation',
+          params: { chatRoomId }
+        }).catch(logExceptNavigationDuplicated)
+      }
+      this.toggleTooltip()
     }
   }
 }: Object)

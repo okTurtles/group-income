@@ -515,7 +515,7 @@ const getters = {
     // NOTE: mailbox contract could not be synced at the time of calling this getter
     return chatRoomId => {
       const contractID = chatRoomId || getters.currentChatRoomId
-      return getters.isJoinedChatRoom(contractID) && getters.ourDirectMessages[contractID]
+      return getters.isJoinedChatRoom(contractID) && !!getters.ourDirectMessages[contractID]
     }
   },
   isOneToOneDirectMessage (state, getters) {
