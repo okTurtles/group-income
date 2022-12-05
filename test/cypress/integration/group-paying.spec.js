@@ -64,22 +64,6 @@ function openNotificationCard ({
   })
 }
 
-function makePayment (date, amount, paymentsCount = 1) {
-  cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(date))
-  cy.getByDT('recordPayment').should('be.disabled')
-  cy.getByDT('todoCheck').click()
-  cy.getByDT('recordPayment').should('not.be.disabled').click()
-  cy.getByDT('modal').within(() => {
-    cy.getByDT('payRecord').find('tbody').children().should('have.length', paymentsCount)
-    cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').should('have.value', `${amount}`)
-    cy.getByDT('payRow').eq(0).find('label[data-test="check"]').click()
-
-    cy.get('button[type="submit"]').click()
-    cy.getByDT('successClose').click()
-    cy.getByDT('closeModal').should('not.exist')
-  })
-}
-
 describe('Group Payments', () => {
   const invitationLinks = {}
 
