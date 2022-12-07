@@ -1180,7 +1180,7 @@
 "Notifications" = "Notifications";
 
 /* views/pages/GroupChat.vue */
-"Notifications settings" = "Notifications settings";
+"Notification settings" = "Notification settings";
 
 /* views/containers/notifications/NotificationList.vue */
 "OLDER" = "OLDER";

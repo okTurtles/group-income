@@ -2332,7 +2332,7 @@
 "Channels" = "Canaux de discussion";
 
 /* views/pages/GroupChat.vue */
-"Notifications settings" = "Paramètres des notifications";
+"Notification settings" = "Paramètres des notification";
 
 /* views/pages/GroupChat.vue */
 "Rename" = "Renommer";

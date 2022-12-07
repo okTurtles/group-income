@@ -7,7 +7,7 @@ import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -23,13 +23,18 @@ const initialState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageId
   chatRoomUnread: {}, // [chatRoomId]: { since: { messageId, createdDate }, mentions: [{ messageId, createdDate }] }
+  notificationSettings: {
+    messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
+    messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
+  },
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   namespaceLookups: Object.create(null) // { [username]: sbp('namespace/lookup') }
 }
 
-if (window.matchMedia) {
+if (window
+  .matchMedia) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     if (sbp('state/vuex/getters').theme === 'system') {
       store.commit('setTheme', 'system')
@@ -75,6 +80,12 @@ sbp('sbp/selectors/register', {
     }
     if (!state.namespaceLookups) {
       state.namespaceLookups = Object.create(null)
+    }
+    if (!state.notificationSettings) {
+      state.notificationSettings = {
+        messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
+        messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
+      }
     }
   },
   'state/vuex/save': async function () {
@@ -126,6 +137,11 @@ const mutations = {
       since: { messageId, createdDate, deletedDate: null },
       mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
     })
+  },
+  setNotificationSettings (state, settings) {
+    for (const key in settings) {
+      Vue.set(state.notificationSettings, key, settings[key])
+    }
   },
   deleteChatRoomUnreadSince (state, { chatRoomId, deletedDate }) {
     Vue.set(state.chatRoomUnread[chatRoomId], 'since', {
@@ -201,6 +217,9 @@ const getters = {
   currentMailboxState (state, getters) {
     const contract = getters.currentIdentityState
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
+  },
+  notificationSettings (state) {
+    return state.notificationSettings || {}
   },
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username

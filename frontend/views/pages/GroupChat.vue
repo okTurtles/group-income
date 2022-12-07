@@ -36,10 +36,10 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
               i18n Add People
             menu-item(
               :class='`${!summary.general ? "c-separator" : ""}`'
-              @click='openModal("UserSettingsModal", {section: "notifications"})'
+              @click='openModal("ChatNotificationSettingsModal")'
               data-test='notificationsSettings'
             )
-              i18n Notifications settings
+              i18n Notification settings
             menu-item(
               v-if='!summary.general'
               @click='openModal("LeaveChannelModal")'
