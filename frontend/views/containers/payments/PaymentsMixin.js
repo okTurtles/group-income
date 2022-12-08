@@ -55,7 +55,7 @@ const PaymentsMixin: Object = {
       }
       return payments
     },
-    async getHistoricalPaymentByHash (period: string, hash: string) {
+    async getHistoricalPaymentByHashAndPeriod (period: string, hash: string) {
       const paymentsKey = `payments/${period}/${this.ourUsername}/${this.currentGroupId}`
       const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
       return payments[hash]
