@@ -625,6 +625,7 @@ sbp('chelonia/defineContract', {
 
           if (loggedIn.username === payment.data.toUser) {
             sbp('gi.notifications/emit', 'PAYMENT_RECEIVED', {
+              createdDate: meta.createdDate,
               groupID: contractID,
               creator: meta.username,
               paymentHash: data.paymentHash,
@@ -649,6 +650,7 @@ sbp('chelonia/defineContract', {
 
         if (data.toUser === loggedIn.username) {
           sbp('gi.notifications/emit', 'PAYMENT_THANKYOU_SENT', {
+            createdDate: meta.createdDate,
             groupID: contractID,
             creator: meta.username, // username of the from user. to be used with sbp('namespace/lookup') in 'AvatarUser.vue'
             fromUser: data.fromUser, // display name of the from user
@@ -709,6 +711,7 @@ sbp('chelonia/defineContract', {
 
         if (isActionYoungerThanUser(meta, myProfile)) {
           sbp('gi.notifications/emit', 'NEW_PROPOSAL', {
+            createdDate: meta.createdDate,
             groupID: contractID,
             creator: meta.username,
             subtype: typeToSubTypeMap[data.proposalType]
@@ -763,6 +766,7 @@ sbp('chelonia/defineContract', {
         if (proposal?.dateClosed &&
           isActionYoungerThanUser(meta, myProfile)) {
           sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
+            createdDate: meta.createdDate,
             groupID: contractID,
             creator: meta.username,
             proposalStatus: proposal.status
@@ -893,6 +897,7 @@ sbp('chelonia/defineContract', {
             sbp('gi.notifications/emit', // emit a notification for a member removal.
               memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
               {
+                createdDate: meta.createdDate,
                 groupID: contractID,
                 username: memberRemovedThemselves ? meta.username : data.member
               })
@@ -981,6 +986,7 @@ sbp('chelonia/defineContract', {
 
           if (isActionYoungerThanUser(meta, myProfile)) {
             sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
+              createdDate: meta.createdDate,
               groupID: contractID,
               username: meta.username
             })

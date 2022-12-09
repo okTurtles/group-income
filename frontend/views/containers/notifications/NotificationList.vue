@@ -76,7 +76,7 @@ export default ({
     }
   },
   methods: {
-    ageTag (item: Object): number {
+    ageTag (item: Object): string {
       return timeSince(item.timestamp)
     },
     handleItemClick (item) {
