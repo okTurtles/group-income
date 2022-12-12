@@ -16,7 +16,7 @@ export default ({
   name: 'SingleBar',
   props: {
     data: {
-      type: Object, // { total: number, title: string }
+      type: Object, // { total: number, title: string, tooltipContent: Array<string> }
       required: true
     }
   },
@@ -115,6 +115,10 @@ export default ({
   &-progress {
     transition: width 0.7s ease-out, height 0.7s ease-out;
     position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
     left: 0;
     bottom: 0;
     width: 100%;
@@ -125,14 +129,15 @@ export default ({
 
     @include phone {
       height: 100% !important;
-      display: flex;
     }
   }
 }
 
-.isLow .bar-graph {
-  &-title,
-  &-txt {
+.bar-graph-progress.isLow {
+  flex-direction: column-reverse;
+
+  .bar-graph-title,
+  .bar-graph-txt {
     color: var(--danger_0);
 
     @include phone {
@@ -140,11 +145,9 @@ export default ({
     }
   }
 
-  &-title {
-
-    @include from($tablet) {
-      margin-top: -3.3rem;
-    }
+  .bar-graph-txt {
+    order: -1;
+    margin-bottom: 0.5rem;
   }
 }
 </style>

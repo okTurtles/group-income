@@ -16,7 +16,7 @@ div(:class='isReady ? "" : "c-ready"')
 
 <script>
 import { mapGetters } from 'vuex'
-import { humanDate, compareISOTimestamps, dateFromPeriodStamp } from '@model/contracts/shared/time.js'
+import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
@@ -26,7 +26,7 @@ export default ({
   data () {
     return {
       isReady: false,
-      history: []
+      history: null
     }
   },
   mixins: [PaymentsMixin],
@@ -47,10 +47,12 @@ export default ({
     }
   },
   created () {
-    this.initHistory()
+    this.updateHistory()
   },
   methods: {
-    async initHistory () {
+    async updateHistory () {
+      this.history = []
+
       let period = this.currentPaymentPeriod
       const getLen = obj => Object.keys(obj).length
 
@@ -68,6 +70,11 @@ export default ({
           title: this.getPeriodFromStartToDueDate(period)
         })
       }
+    }
+  },
+  watch: {
+    currentPaymentPeriod () {
+      this.updateHistory()
     }
   }
 }: Object)

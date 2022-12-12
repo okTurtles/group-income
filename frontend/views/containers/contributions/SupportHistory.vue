@@ -34,13 +34,9 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupSettings',
       'currentPaymentPeriod',
       'periodBeforePeriod'
     ]),
-    mincome () {
-      return this.groupSettings.mincomeAmount
-    },
     periods () {
       const periods = [this.currentPaymentPeriod]
       for (let i = 0; i < MAX_HISTORY_PERIODS - 1; i++) {
@@ -53,25 +49,13 @@ export default ({
     this.updateHistory()
   },
   methods: {
-    parsePayments (payments) {
-      const list = {}
-      payments.forEach(payment => {
-        const { from, to, amount } = payment
-        list[from] = (list[from] || 0) + amount
-        list[to] = (list[to] || 0) - amount
-      })
-      return {
-        numReceivers: Object.values(list).filter(amount => amount < 0).length,
-        totalDistributionAmount: Object.values(list).filter(amount => amount > 0).reduce((total, curValue) => total + curValue, 0)
-      }
-    },
     async updateHistory () {
       this.history = await Promise.all(this.periods.map(async (period, i) => {
-        const payments = await this.getPaymentsByPeriod(period)
-        const { totalDistributionAmount, numReceivers } = this.parsePayments(payments)
+        const totalTodo = await this.getTotalTodoAmountForPeriod(period)
+        const totalDone = await this.getTotalPledgesDoneForPeriod(period)
+
         return {
-          total: numReceivers === 0 ? 0 : totalDistributionAmount / (this.mincome * numReceivers),
-          delayedPayment: payments.some(payment => payment.isLate),
+          total: totalDone === 0 ? 0 : totalDone / totalTodo,
           title: this.getPeriodFromStartToDueDate(period)
         }
       }))
