@@ -38,7 +38,7 @@ const PaymentsMixin: Object = {
     async getPaymentDetailsByPeriod (period: string) {
       if (Object.keys(this.groupPeriodPayments).includes(period)) {
         const paymentHashes = this.paymentHashesForPeriod(period) || []
-        return paymentHashes.map(hash => this.currentGroupState.payments[hash])
+        return Object.fromEntries(paymentHashes.map(hash => [hash, this.currentGroupState.payments[hash]]))
       }
 
       const paymentsKey = `payments/${period}/${this.ourUsername}/${this.currentGroupId}`
