@@ -35,7 +35,8 @@ export default ({
   computed: {
     ...mapGetters([
       'currentPaymentPeriod',
-      'periodBeforePeriod'
+      'periodBeforePeriod',
+      'withGroupCurrency'
     ]),
     periods () {
       const periods = [this.currentPaymentPeriod]
@@ -56,7 +57,11 @@ export default ({
 
         return {
           total: totalDone === 0 ? 0 : totalDone / totalTodo,
-          title: this.getPeriodFromStartToDueDate(period)
+          title: this.getPeriodFromStartToDueDate(period),
+          tooltipContent: [
+            this.L('Needed: {todo}', { todo: this.withGroupCurrency(totalTodo) }),
+            this.L('Distributed: {done}', { done: this.withGroupCurrency(totalDone) })
+          ]
         }
       }))
     }

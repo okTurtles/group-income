@@ -1,12 +1,20 @@
 <template lang='pug'>
-.bar-graph
+.bar-graph(
+  @mouseenter='ephemeral.tooltipVisible = true'
+  @mouseleave='ephemeral.tooltipVisible = false'
+  @click='toggleTooltip'
+)
   .bar-graph-column(:class='`has-background-${getResult(data.total)}`')
     .bar-graph-progress(
       :style='{height: getPercentage(data.total), width: getPercentage(data.total)}'
       :class='[{ isLow: isLow(data.total) }, `has-background-${getResult(data.total)}-solid`]'
     )
-      h4.bar-graph-title {{ data.title }}
-      p.bar-graph-txt {{ data.total | toPercent }}%
+      .bar-graph-content
+        h4.bar-graph-title {{ data.title }}
+        p.bar-graph-txt {{ data.total | toPercent }}%
+
+    .c-bar-tooltip.hide-phone(v-if='data.tooltipContent && ephemeral.tooltipVisible')
+      .c-tooltip-content(v-for='(content, index) in data.tooltipContent') {{ content }}
 </template>
 
 <script>
@@ -20,6 +28,13 @@ export default ({
       required: true
     }
   },
+  data () {
+    return {
+      ephemeral: {
+        tooltipVisible: false
+      }
+    }
+  },
   methods: {
     getPercentage (percentage) {
       return percentage >= 1 ? '100%' : `${Math.floor(percentage * 100)}%`
@@ -30,7 +45,10 @@ export default ({
       return 'success'
     },
     isLow (percentage) {
-      return percentage <= 0.2
+      return percentage <= 0.35
+    },
+    toggleTooltip () {
+      this.ephemeral.tooltipVisible = !this.ephemeral.tooltipVisible
     }
   },
   filters: {
@@ -84,6 +102,26 @@ export default ({
     }
   }
 
+  &-content {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+
+    @include phone {
+      align-items: flex-end;
+      text-align: right;
+      top: 50%;
+      left: unset;
+      right: 0.5rem;
+      transform: translateY(-50%);
+    }
+  }
+
   &-title,
   &-txt {
     position: relative;
@@ -91,12 +129,6 @@ export default ({
     color: $white;
     z-index: 2;
     transition: opacity 0.7s ease-out;
-
-    @include phone {
-      position: absolute;
-      right: 0.625rem;
-      top: 50%;
-    }
   }
 
   &-title {
@@ -107,7 +139,6 @@ export default ({
     }
 
     @include phone {
-      top: 10%;
       width: max-content;
     }
   }
@@ -133,21 +164,42 @@ export default ({
   }
 }
 
-.bar-graph-progress.isLow {
-  flex-direction: column-reverse;
+.isLow {
+  .bar-graph-content {
+    top: -0.5rem;
+    transform: translate(-50%, -100%);
+
+    @include phone {
+      align-items: flex-start;
+      text-align: left;
+      top: 50%;
+      right: -0.5rem;
+      transform: translate(100%, -50%);
+    }
+  }
 
   .bar-graph-title,
   .bar-graph-txt {
     color: var(--danger_0);
-
-    @include phone {
-      left: calc(100% + 0.5rem);
-    }
   }
+}
 
-  .bar-graph-txt {
-    order: -1;
-    margin-bottom: 0.5rem;
-  }
+.c-bar-tooltip {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 10rem;
+  max-width: 16rem;
+  width: max-content;
+  border-radius: $radius;
+  padding: 0.5rem;
+  z-index: $zindex-tooltip;
+  pointer-events: none;
+  background-color: $text_0;
+  opacity: 0.95;
+  color: $background_0;
+  text-align: center;
+  font-size: $size_4;
 }
 </style>

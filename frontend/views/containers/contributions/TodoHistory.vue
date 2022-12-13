@@ -16,7 +16,7 @@ div(:class='isReady ? "" : "c-ready"')
 
 <script>
 import { mapGetters } from 'vuex'
-import { compareISOTimestamps } from '@model/contracts/shared/time.js'
+// import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
@@ -58,7 +58,7 @@ export default ({
 
       for (let i = 0; i < MAX_HISTORY_PERIODS; i++) {
         period = this.periodBeforePeriod(period)
-        if (compareISOTimestamps(period, this.firstDistributionPeriod) < 0) break
+        // if (compareISOTimestamps(period, this.firstDistributionPeriod) < 0) break
 
         const paymentDetails = await this.getPaymentDetailsByPeriod(period)
         const { lastAdjustedDistribution } = await this.getPeriodPayment(period)
@@ -67,7 +67,11 @@ export default ({
 
         this.history.unshift({
           total: doneCount === 0 ? 0 : doneCount / (doneCount + missedCount),
-          title: this.getPeriodFromStartToDueDate(period)
+          title: this.getPeriodFromStartToDueDate(period),
+          tooltipContent: [
+            this.L('Total: {total}', { total: doneCount + missedCount }),
+            this.L('Completed: {completed}', { completed: doneCount })
+          ]
         })
       }
     }
