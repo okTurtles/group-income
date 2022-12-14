@@ -81,6 +81,6 @@ export default ({
 
 <style lang="scss" scoped>
 .c-total-distribution-txt {
-   margin-top: 0.5rem;
+  margin-top: 0.5rem;
 }
 </style>
