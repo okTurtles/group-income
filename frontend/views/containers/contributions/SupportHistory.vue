@@ -20,6 +20,7 @@ div(:class='isReady ? "" : "c-ready"')
 
 <script>
 import { mapGetters } from 'vuex'
+import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
@@ -39,14 +40,22 @@ export default ({
   computed: {
     ...mapGetters([
       'currentPaymentPeriod',
+      'periodStampGivenDate',
       'periodBeforePeriod',
       'withGroupCurrency',
-      'groupTotalPledgeAmount'
+      'groupTotalPledgeAmount',
+      'groupCreatedDate'
     ]),
+    firstDistributionPeriod () {
+      // group's first distribution period
+      return this.periodStampGivenDate(this.groupCreatedDate)
+    },
     periods () {
       const periods = [this.currentPaymentPeriod]
       for (let i = 0; i < MAX_HISTORY_PERIODS - 1; i++) {
-        periods.unshift(this.periodBeforePeriod(periods[0]))
+        const period = this.periodBeforePeriod(periods[0])
+        if (compareISOTimestamps(period, this.firstDistributionPeriod) < 0) break
+        else periods.unshift(period)
       }
       return periods
     }
