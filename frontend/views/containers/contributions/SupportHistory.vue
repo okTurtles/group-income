@@ -12,6 +12,10 @@ div(:class='isReady ? "" : "c-ready"')
   div(v-else)
     bar-graph(:bars='history')
     i18n.has-text-1(tag='p') * This month contains delayed payments for prior months.
+    i18n.has-text-bold.c-total-distribution-txt(
+      tag='p'
+      :args='{ amount: withGroupCurrency(groupTotalPledgeAmount) }'
+    ) Total distributed since start: {amount}
 </template>
 
 <script>
@@ -36,7 +40,8 @@ export default ({
     ...mapGetters([
       'currentPaymentPeriod',
       'periodBeforePeriod',
-      'withGroupCurrency'
+      'withGroupCurrency',
+      'groupTotalPledgeAmount'
     ]),
     periods () {
       const periods = [this.currentPaymentPeriod]
@@ -73,3 +78,9 @@ export default ({
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+.c-total-distribution-txt {
+   margin-top: 0.5rem;
+}
+</style>

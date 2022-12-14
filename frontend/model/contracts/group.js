@@ -426,6 +426,9 @@ sbp('chelonia/defineContract', {
     groupStreaks (state, getters): Object {
       return getters.currentGroupState.streaks || {}
     },
+    groupTotalPledgeAmount (state, getters): number {
+      return getters.currentGroupState.totalPledgeAmount || 0
+    },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
       //       USD, then calling this function is probably an error which should be reported.
@@ -539,7 +542,8 @@ sbp('chelonia/defineContract', {
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
           },
-          chatRooms: {}
+          chatRooms: {},
+          totalPledgeAmount: 0
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -622,6 +626,10 @@ sbp('chelonia/defineContract', {
           } else {
             updateCurrentDistribution({ contractID, meta, state, getters })
           }
+
+          // TODO: when 'PAYMENT_CANCELED' is completely implemented,
+          //       deduce the amount from 'totalPledgeAmount'.
+          state.totalPledgeAmount += payment.data.amount
         }
       },
       sideEffect ({ meta, contractID, data }, { state, getters }) {
