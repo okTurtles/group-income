@@ -170,7 +170,7 @@ export default ({
     }
   },
   created () {
-    // TODO #492 create a global Vue Responsive just for media queries.
+    // TODO: #492 create a global Vue Responsive just for media queries.
     this.config.mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
     this.config.mediaIsPhone.onchange = (e) => {
       this.config.isPhone = e.matches
