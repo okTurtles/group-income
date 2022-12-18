@@ -50,7 +50,6 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isOn
               i18n Delete channel
 
   template(#description='' v-if='!isOnDirectMessage')
-
     .c-header-description
       i18n.is-unstyled.c-link(
         tag='button'
@@ -130,6 +129,8 @@ export default ({
   computed: {
     ...mapGetters([
       'chatRoomsInDetail',
+      'globalProfile',
+      'groupProfiles',
       'isJoinedChatRoom',
       'getGroupChatRooms',
       'ourUsername',
@@ -243,6 +244,28 @@ export default ({
 
   .c-menu {
     margin-left: 0.5rem;
+  }
+
+  .c-header {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: $text_1;
+    padding-bottom: 0;
+    @include tablet {
+      padding-top: 0;
+    }
+  }
+
+  .c-content {
+    min-width: 17.5rem;
+    font-size: 0.875rem;
+    font-weight: 400;
+
+    @extend %floating-panel;
+
+    @include desktop {
+      left: -6.8rem;
+    }
   }
 
   .c-menu-i {
