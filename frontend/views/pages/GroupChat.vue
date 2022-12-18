@@ -50,7 +50,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isOn
               i18n Delete channel
 
   template(#description='' v-if='!isOnDirectMessage')
-  
+
     .c-header-description
       i18n.is-unstyled.c-link(
         tag='button'
@@ -130,8 +130,6 @@ export default ({
   computed: {
     ...mapGetters([
       'chatRoomsInDetail',
-      'globalProfile',
-      'groupProfiles',
       'isJoinedChatRoom',
       'getGroupChatRooms',
       'ourUsername',

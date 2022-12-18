@@ -152,7 +152,8 @@ export default ({
   data () {
     return {
       config: {
-        isPhone: null
+        isPhone: null,
+        mediaIsPhone: null
       },
       latestEvents: [],
       messages: [],
@@ -170,9 +171,11 @@ export default ({
   },
   created () {
     // TODO #492 create a global Vue Responsive just for media queries.
-    const mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
-    this.config.isPhone = mediaIsPhone.matches
-    mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
+    this.config.mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
+    this.config.mediaIsPhone.onchange = (e) => {
+      this.config.isPhone = e.matches
+    }
+    this.config.isPhone = this.config.mediaIsPhone.matches
   },
   mounted () {
     this.setMessageEventListener({ force: true })
@@ -182,6 +185,7 @@ export default ({
   beforeDestroy () {
     sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
+    this.config.mediaIsPhone.onchange = null
   },
   computed: {
     ...mapGetters([
