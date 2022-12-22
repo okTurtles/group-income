@@ -16,7 +16,8 @@
     "flow:vue": "eslint --cache --plugin flowtype-errors --rule 'flowtype-errors/show-errors: error' './frontend/views/**/*.vue'",
     "double": "PORT_SHIFT=1 grunt dev",
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
-    "docker": "./scripts/docker.sh"
+    "docker": "./scripts/docker.sh",
+    "dev:dashboard": "grunt --gruntfile ./backend/dashboard/Gruntfile.js"
   },
   "eslintConfig": {
     "root": true,
