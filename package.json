@@ -17,7 +17,7 @@
     "double": "PORT_SHIFT=1 grunt dev",
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh",
-    "dev:dashboard": "grunt --gruntfile ./backend/dashboard/Gruntfile.js"
+    "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js"
   },
   "eslintConfig": {
     "root": true,
