@@ -1,7 +1,6 @@
-<template>
-  <div class="c-image">
-    <img src="assets/images/group-income-icon-transparent.png"></img>
-  </div>
+<template lang="pug">
+.c-image
+  img(src='/assets/images/group-income-icon-transparent.png')
 </template>
 
 <script>
