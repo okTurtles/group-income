@@ -1,6 +1,7 @@
 # Build artifacts
 /node_modules/
 /dist/
+/backend/dashboard/dist/
 *?rollup-plugin-vue=script.js
 
 # prevent accidental addition of yarn.lock from making Travis builds longer
