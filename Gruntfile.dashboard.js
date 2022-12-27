@@ -5,13 +5,14 @@
 // ========================================
 
 const path = require('path')
+const chalk = require('chalk')
 const crypto = require('crypto')
-const { copyFile } = require('fs/promises')
+const { copyFile, readFile } = require('fs/promises')
 const { NODE_ENV = 'development' } = process.env
 
 // paths
 const dashboardRootDir = path.resolve(__dirname, 'backend/dashboard')
-const resolvePathFromRoot = relPath => path.join(dashboardRootDir, relPath)
+const resolvePathFromRoot = relPath => path.join(dashboardRootDir, relPath) // resolve a relative path against backend/dashboard folder
 const distDir = resolvePathFromRoot('dist')
 const distAssets = path.join(distDir, 'assets')
 const distCSS = path.join(distDir, 'assets/css')
@@ -43,6 +44,7 @@ module.exports = (grunt) => {
       chunkNames: '[name]-[hash]-cached'
     },
     mainJS: {
+      // main.js -> dist/assets/js/main.js
       entryPoints: [mainSrc],
       outdir: distJS,
       define: {
@@ -53,33 +55,10 @@ module.exports = (grunt) => {
       format: 'esm'
     },
     mainCss: {
+      // assets/style/main.scss -> dist/assets/css/main.css
       entryPoints: [mainScss],
       outfile: path.join(distCSS, 'main.css')
     }
-  }
-  const esbuildOptions = {
-    bundle: true,
-    entryPoints: [mainSrc],
-    outdir: distJS,
-    define: {
-      'process.env.NODE_ENV': `'${NODE_ENV}'`
-    },
-    external: ['*.eot', '*.ttf', '*woff', '*.woff2'],
-    format: 'esm',
-    incremental: true,
-    loader: {
-      '.eot': 'file',
-      '.ttf': 'file',
-      '.woff': 'file',
-      '.woff2': 'file'
-    },
-    minifyIdentifiers: isProduction,
-    minifySyntax: isProduction,
-    minifyWhitespace: isProduction,
-    sourcemap: isDevelopment,
-    watch: false,
-    splitting: !grunt.option('no-chunks'),
-    chunkNames: '[name]-[hash]-cached'
   }
 
   // Used by both the alias plugin and the Vue plugin.
@@ -88,7 +67,7 @@ module.exports = (grunt) => {
       '@assets': './backend/dashboard/assets',
       '@views': './backend/dashboard/views',
       '@components': './backend/dashboard/views/components',
-      'vue': './node_modules/vue/dist/vue.esm.js',
+      'vue': './node_modules/vue/dist/vue.esm.js', // without this, the app gets "[Vue warn]: You are using the runtime-only build of Vue" in the console.
       '~': '.'
     }
   }
@@ -101,10 +80,9 @@ module.exports = (grunt) => {
       `${distAssets}/**/*`,
       `${distCSS}/**/*`
     ],
-    ghostMode: false,
     logLevel: 'info',
-    open: true,
-    port: 3000,
+    open: false,
+    port: 3030,
     server: distDir,
     reloadDelay: 100,
     reloadThrottle: 2000,
@@ -130,6 +108,23 @@ module.exports = (grunt) => {
     // while its values will be corresponding compiled JS strings.
     cache: new Map(),
     debug: false
+  }
+
+  const puglintOptions = {}
+
+  const eslintOptions = {
+    format: 'stylish',
+    throwOnError: false,
+    throwOnWarning: false
+  }
+
+  const stylelintOptions = {
+    cache: true,
+    config: require('./package.json').stylelint,
+    formatter: 'string',
+    syntax: 'scss',
+    throwOnError: false,
+    throwOnWarning: false
   }
 
   grunt.initConfig({
@@ -196,6 +191,9 @@ module.exports = (grunt) => {
       ...esbuildOptionsBag.mainJS,
       plugins: [aliasPlugin, sassPlugin, vuePlugin]
     })
+    // importing main.scss directly into .js or .vue file requires an additional post-build operation where
+    // we have to manually copy the main.css sitting next to main.js to assets/css folder. (refer to esbuildOtherOptionBags.main in Gruntfile.js)
+    // That works great but we can avoid this additional task by building & emitting main.css seperately.
     const buildMainCss = createEsbuildTask({
       ...esbuildOptionsBag.default,
       ...esbuildOptionsBag.mainCss,
@@ -214,7 +212,74 @@ module.exports = (grunt) => {
       return done()
     }
 
-    const browserSync = require('browser-sync').create('dashboard-test')
+    const browserSync = require('browser-sync').create('dashboard')
     browserSync.init(browserSyncOptions)
+
+    const eslint = require('./scripts/esbuild-plugins/utils.js').createEslinter(eslintOptions)
+    const puglint = require('./scripts/esbuild-plugins/utils.js').createPuglinter(puglintOptions)
+    const stylelint = require('./scripts/esbuild-plugins/utils.js').createStylelinter(stylelintOptions)
+    const { chalkFileEvent, chalkLintingTime } = require('./scripts/esbuild-plugins/utils.js')
+
+    ;[
+      [['backend/dashboard/index.html'], ['copy:indexHtml']],
+      [['backend/dashboard/assets/{fonts,images}/**/*'], ['copy:assets']],
+      // if file changes in dashboard/dist is watched, browser-sync gets into the infinite loop of reloading for some reason.
+      [['backend/dashboard/assets/style/**/*.scss'], [stylelint]],
+      [['backend/dashboard/main.js', 'backend/dashboard/views/**/*.js'], [eslint]],
+      [['backend/dashboard/views/**/*.vue'], [puglint, stylelint, eslint]]
+    ].forEach(([globs, tasks]) => {
+      for (const glob of globs) {
+        browserSync.watch(glob, { ignoreInitial: true }, async (fileEventName, filePath) => {
+          const extension = path.extname(filePath)
+          grunt.log.writeln(chalkFileEvent(fileEventName, filePath))
+
+          if (['add', 'change'].includes(fileEventName)) {
+            const code = await readFile(filePath, 'utf8')
+            const linters = tasks.filter(task => typeof task === 'object')
+            const lintingStartMs = Date.now()
+
+            await Promise.all(linters.map(linter => linter.lintCode(code, filePath)))
+              // Don't crash the Grunt process on lint errors.
+              .catch(() => {})
+
+            // Log the linting time, formatted with Chalk.
+            grunt.log.writeln(chalkLintingTime(Date.now() - lintingStartMs, linters, [filePath]))
+          }
+
+          if (['change', 'unlink'].includes(fileEventName)) {
+            // Remove the corresponding plugin cache entry, if any.
+
+            if (extension === '.vue') {
+              vuePluginOptions.cache.delete(filePath)
+            }
+
+            // Clear the whole Vue plugin cache if a Sass or SVG file was
+            // changed since some compiled Vue files might include it.
+            if (['.sass', '.scss', '.svg'].includes(extension)) {
+              vuePluginOptions.cache.clear()
+            }
+          }
+
+          // Only rebuild the relevant entry point.
+          try {
+            if (['.scss', '.sass'].includes(extension)) { 
+              buildMainCss.run({ fileEventName, filePath })
+            } else {
+              buildMainJS.run({ fileEventName, filePath })
+            }
+          } catch (err) {
+            grunt.log.error(err.message)
+          }
+
+          grunt.task.run(tasks.filter(task => typeof task === 'string'))
+          grunt.task.run(['keepalive'])
+
+          // Allow the task queue to move forward.
+          killKeepAlive && killKeepAlive()
+        })
+      }
+    })
+    grunt.log.writeln(chalk`{green browsersync:} setup done!`)
+    done()
   })
 }

@@ -3,7 +3,7 @@
   img(src='/assets/images/group-income-icon-transparent.png')
 
   p
-    span random string
+    span random string hahah12321
     i.icon-comments
 </template>
 
