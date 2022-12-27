@@ -1,5 +1,6 @@
-$bg-color: rgba(255, 0, 0, 0.5);
+@charset "utf-8";
 
-body {
-  background-color: $bg-color;
-}
+@import "_reset";
+@import "_variables";
+@import "_typography";
+@import "_icons";

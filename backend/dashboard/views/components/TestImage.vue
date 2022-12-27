@@ -1,6 +1,10 @@
 <template lang="pug">
 .c-image
   img(src='/assets/images/group-income-icon-transparent.png')
+
+  p
+    span random string
+    i.icon-comments
 </template>
 
 <script>

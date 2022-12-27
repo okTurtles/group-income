@@ -5,6 +5,7 @@
 // ========================================
 
 const path = require('path')
+const crypto = require('crypto')
 const { copyFile } = require('fs/promises')
 const { NODE_ENV = 'development' } = process.env
 
@@ -14,8 +15,9 @@ const resolvePathFromRoot = relPath => path.join(dashboardRootDir, relPath)
 const distDir = resolvePathFromRoot('dist')
 const distAssets = path.join(distDir, 'assets')
 const distCSS = path.join(distDir, 'assets/css')
-const distJS = path.join(distDir, 'js')
+const distJS = path.join(distDir, 'assets/js')
 const mainSrc = resolvePathFromRoot('main.js')
+const mainScss = resolvePathFromRoot('assets/style/main.scss')
 
 const isDevelopment = NODE_ENV === 'development'
 const isProduction = !isDevelopment
@@ -23,6 +25,38 @@ const isProduction = !isDevelopment
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
+  const esbuildOptionsBag = {
+    default: {
+      bundle: true,
+      incremental: true,
+      loader: {
+        '.eot': 'file',
+        '.ttf': 'file',
+        '.woff': 'file',
+        '.woff2': 'file'
+      },
+      minifyIdentifiers: isProduction,
+      minifySyntax: isProduction,
+      minifyWhitespace: isProduction,
+      sourcemap: isDevelopment,
+      watch: false,
+      chunkNames: '[name]-[hash]-cached'
+    },
+    mainJS: {
+      entryPoints: [mainSrc],
+      outdir: distJS,
+      define: {
+        'process.env.NODE_ENV': `'${NODE_ENV}'`
+      },
+      external: ['*.eot', '*.ttf', '*woff', '*.woff2'],
+      splitting: !grunt.option('no-chunks'),
+      format: 'esm'
+    },
+    mainCss: {
+      entryPoints: [mainScss],
+      outfile: path.join(distCSS, 'main.css')
+    }
+  }
   const esbuildOptions = {
     bundle: true,
     entryPoints: [mainSrc],
@@ -48,6 +82,35 @@ module.exports = (grunt) => {
     chunkNames: '[name]-[hash]-cached'
   }
 
+  // Used by both the alias plugin and the Vue plugin.
+  const aliasPluginOptions = {
+    entries: {
+      '@assets': './backend/dashboard/assets',
+      '@views': './backend/dashboard/views',
+      '@components': './backend/dashboard/views/components',
+      'vue': './node_modules/vue/dist/vue.esm.js',
+      '~': '.'
+    }
+  }
+
+  const browserSyncOptions = {
+    cors: true,
+    files: [
+      `${distJS}/main.js`,
+      `${distDir}/index.html`,
+      `${distAssets}/**/*`,
+      `${distCSS}/**/*`
+    ],
+    ghostMode: false,
+    logLevel: 'info',
+    open: true,
+    port: 3000,
+    server: distDir,
+    reloadDelay: 100,
+    reloadThrottle: 2000,
+    tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
+  }
+
   const sassPluginOptions = {
     cache: false,
     sourceMap: isDevelopment,
@@ -59,8 +122,7 @@ module.exports = (grunt) => {
 
   const vuePluginOptions = {
     aliases: {
-      '@assets': './backend/dashboard/assets',
-      '@components': './backend/dashboard/views/components',
+      ...aliasPluginOptions.entries,
       // So we can write @import 'vue-slider-component/lib/theme/default.scss'; in .vue <style>.
       'vue-slider-component': './node_modules/vue-slider-component'
     },
@@ -99,17 +161,25 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev-dashboard'])
 
+  let killKeepAlive = null
+  grunt.registerTask('keepalive', function () {
+    // This keeps grunt running after other async tasks have completed.
+    // eslint-disable-next-line no-unused-vars
+    killKeepAlive = this.async()
+  })
+
   grunt.registerTask('dev-dashboard', [
     'checkDependencies',
-    'build'
+    'build:watch',
+    'keepalive'
   ])
 
   grunt.registerTask('build', function () {
     grunt.task.run([
+      'clean:dist',
       'exec:eslint',
       'exec:puglint',
       'exec:stylelint',
-      'clean:dist',
       'copy',
       this.flags.watch ? 'esbuild:watch' : 'esbuild'
     ])
@@ -118,36 +188,33 @@ module.exports = (grunt) => {
   grunt.registerTask('esbuild', async function () {
     const done = this.async()
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js') 
+    const aliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')(aliasPluginOptions)
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
-    const buildTask = createEsbuildTask(
-      {
-        ...esbuildOptions,
-        plugins: [sassPlugin, vuePlugin]
-      },
-      {
-        // Our `index.html` file is designed to load its CSS from `dist/assets/css`;
-        // however, esbuild outputs `main.css` and `main.css.map` along `main.js`,
-        // making a post-build copying operation necessary.
-        postoperation: async ({ fileEventName, filePath } = {}) => {
-          // Only after a fresh build or a rebuild caused by a CSS file event.
-          if (!fileEventName || ['.css', '.sass', '.scss'].includes(path.extname(filePath))) {
-            await copyFile(`${distJS}/main.css`, `${distCSS}/main.css`)
-            if (isDevelopment) {
-              await copyFile(`${distJS}/main.css.map`, `${distCSS}/main.css.map`)
-            }
-          }
-        }
-      }
-    )
+    const buildMainJS = createEsbuildTask({
+      ...esbuildOptionsBag.default,
+      ...esbuildOptionsBag.mainJS,
+      plugins: [aliasPlugin, sassPlugin, vuePlugin]
+    })
+    const buildMainCss = createEsbuildTask({
+      ...esbuildOptionsBag.default,
+      ...esbuildOptionsBag.mainCss,
+      plugins: [sassPlugin]
+    })
 
     try {
-      await buildTask.run()
+      await buildMainJS.run()
+      await buildMainCss.run()
     } catch (err) {
       grunt.log.error(err.message)
       process.exit(1)
     }
 
-    return done()
+    if (!this.flags.watch) {
+      return done()
+    }
+
+    const browserSync = require('browser-sync').create('dashboard-test')
+    browserSync.init(browserSyncOptions)
   })
 }
