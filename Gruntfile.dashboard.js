@@ -108,6 +108,19 @@ module.exports = (grunt) => {
     tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
   }
 
+  const puglintOptions = {}
+
+  const eslintOptions = {
+    format: 'stylish',
+    throwOnError: false,
+    throwOnWarning: false
+  }
+
+  const flowRemoveTypesPluginOptions = {
+    all: true,
+    cache: new Map()
+  }
+
   const sassPluginOptions = {
     cache: false,
     sourceMap: isDevelopment,
@@ -126,15 +139,8 @@ module.exports = (grunt) => {
     // This map's keys will be relative Vue file paths without leading dot,
     // while its values will be corresponding compiled JS strings.
     cache: new Map(),
-    debug: false
-  }
-
-  const puglintOptions = {}
-
-  const eslintOptions = {
-    format: 'stylish',
-    throwOnError: false,
-    throwOnWarning: false
+    debug: false,
+    flowtype: flowRemoveTypesPluginOptions
   }
 
   const stylelintOptions = {
@@ -244,12 +250,13 @@ module.exports = (grunt) => {
     const done = this.async()
     const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
     const aliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')(aliasPluginOptions)
+    const flowRemoveTypesPlugin = require('./scripts/esbuild-plugins/flow-remove-types-plugin.js')(flowRemoveTypesPluginOptions)
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
     const buildMainJS = createEsbuildTask({
       ...esbuildOptionsBag.default,
       ...esbuildOptionsBag.mainJS,
-      plugins: [aliasPlugin, sassPlugin, vuePlugin]
+      plugins: [aliasPlugin, flowRemoveTypesPlugin, sassPlugin, vuePlugin]
     })
     // importing main.scss directly into .js or .vue file requires an additional post-build operation where
     // we have to manually copy the main.css sitting next to main.js to assets/css folder. (refer to esbuildOtherOptionBags.main in Gruntfile.js)
@@ -257,7 +264,7 @@ module.exports = (grunt) => {
     const buildMainCss = createEsbuildTask({
       ...esbuildOptionsBag.default,
       ...esbuildOptionsBag.mainCss,
-      plugins: [sassPlugin]
+      plugins: [aliasPlugin, sassPlugin]
     })
 
     try {
