@@ -83,6 +83,8 @@ module.exports = (grunt) => {
       '@assets': './backend/dashboard/assets',
       '@views': './backend/dashboard/views',
       '@components': './backend/dashboard/views/components',
+      '@containers': './backend/dashboard/views/containers',
+      '@pages': './backend/dashboard/views/pages',
       'vue': './node_modules/vue/dist/vue.esm.js', // without this, the app gets "[Vue warn]: You are using the runtime-only build of Vue" in the console.
       '~': '.'
     }

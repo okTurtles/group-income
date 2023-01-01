@@ -1,0 +1,66 @@
+$bannerGeneralHeight: 2rem;
+
+.app-layout {
+  display: grid;
+  height: 100%;
+  overflow: hidden;
+  grid-template-rows: min-content auto;
+  grid-template-areas:
+    "l-banner"
+    "l-page";
+
+  @include tablet {
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "l-banner l-banner"
+      "l-navigation l-page";
+  }
+}
+
+.l-banner {
+  grid-area: l-banner;
+  position: sticky;
+  height: $bannerGeneralHeight;
+  width: 100%;
+  z-index: $zindex-banner;
+
+  & ~ .l-navigation {
+    height: calc(100% - #{$bannerGeneralHeight});
+
+    @include touch {
+      margin-top: $bannerGeneralHeight;
+    }
+  }
+
+  & ~ .l-page {
+    height: calc(100% - #{$bannerGeneralHeight});
+  }
+}
+
+.l-navigation {
+  grid-area: l-navigation;
+  height: 100%;
+
+  @include until($desktop) {
+    position: absolute;
+    z-index: $zindex-sidebar;
+    transform: translateX(-100%);
+    transition: transform $transitionSpeed;
+
+    &.is-active {
+      transform: translateX(0);
+    }
+  }
+}
+
+.l-page {
+  grid-area: l-page;
+  position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+}
+
+.l-modal {
+  position: absolute;
+}

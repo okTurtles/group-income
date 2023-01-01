@@ -41,3 +41,5 @@ $rightSideWidth: 16.5rem;
 // classes, because these files are often included in the <style>
 // tag of .vue components, and so those classes would end up being
 // duplicated across all the injected component CSS
+
+@import "_mixins";

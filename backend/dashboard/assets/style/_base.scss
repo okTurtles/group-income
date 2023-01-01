@@ -1,0 +1,30 @@
+html {
+  background-color: white;
+  min-height: 19rem;
+}
+
+body,
+html {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+article,
+header,
+aside,
+footer,
+section {
+  display: block;
+}
+
+img {
+  height: auto;
+  max-width: 100%;
+  display: block;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  vertical-align: baseline;
+}

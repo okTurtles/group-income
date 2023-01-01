@@ -1,0 +1,48 @@
+// Screen reader only
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.hide-desktop {
+  @include desktop {
+    display: none !important;
+  }
+}
+
+.hide-touch {
+  @include touch {
+    display: none !important;
+  }
+}
+
+.hide-phone {
+  @include phone {
+    display: none !important;
+  }
+}
+
+.hide-tablet {
+  @include tablet {
+    display: none !important;
+  }
+}
+
+// reference: https://ferie.medium.com/detect-a-touch-device-with-only-css-9f8e30fa1134
+.hide-touch-device {
+  @media (hover: none) and (pointer: coarse) {
+    display: none !important;
+  }
+}
+
+.hide-hoverable-device {
+  @media (hover: hover) and (pointer: fine) {
+    display: none !important;
+  }
+}

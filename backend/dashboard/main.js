@@ -1,13 +1,15 @@
 import Vue from 'vue'
-import TestImage from './views/components/TestImage.vue'
+import Navigation from '@containers/navigation/Navigation.vue'
+import router from './controller/router.js'
 
 Vue.config.errorHandler = function (err, vm, info) {
   console.error(`uncaught Vue error in ${info}: `, err)
 }
 
 new Vue({
+  router: router,
   components: {
-    TestImage
+    Navigation
   },
   data () {
     return {
