@@ -23,8 +23,6 @@ const applyPortShift = (env) => {
 
 Object.assign(process.env, applyPortShift(process.env))
 
-const { NODE_ENV = 'development' } = process.env
-
 // paths
 const dashboardRootDir = path.resolve(__dirname, 'backend/dashboard')
 const resolvePathFromRoot = relPath => path.join(dashboardRootDir, relPath) // resolve a relative path against backend/dashboard folder
@@ -36,10 +34,10 @@ const mainSrc = resolvePathFromRoot('main.js')
 const mainScss = resolvePathFromRoot('assets/style/main.scss')
 const backendIndex = 'backend/index.js'
 
-const isDevelopment = NODE_ENV === 'development'
-const isProduction = !isDevelopment
-
 module.exports = (grunt) => {
+  const isDevelopment = grunt.option('development') === true
+  const isProduction = grunt.option('production') === true
+
   require('load-grunt-tasks')(grunt)
 
   const esbuildOptionsBag = {
@@ -66,7 +64,7 @@ module.exports = (grunt) => {
       entryPoints: [mainSrc],
       outdir: distJS,
       define: {
-        'process.env.NODE_ENV': `'${NODE_ENV}'`
+        'process.env.NODE_ENV': `'${process.env.NODE_ENV}'`
       },
       splitting: !grunt.option('no-chunks')
     },
@@ -102,8 +100,8 @@ module.exports = (grunt) => {
     open: false,
     port: 3030,
     proxy: {
-      target: process.env.API_URL
-      // ws: true
+      target: process.env.API_URL,
+      ws: true
     },
     reloadDelay: 100,
     reloadThrottle: 2000,

@@ -26,7 +26,7 @@ export default {
       ephemeral: {
         isActive: false,
         navList: [
-          { id: 'dashboard', name: 'Dashboard', to: '/home' },
+          { id: 'dashboard', name: 'Dashboard', to: '/' },
           { id: 'contacts', name: 'Contacts', to: '/contacts' },
           { id: 'users', name: 'Users', to: '/users' },
           { id: 'accounts', name: 'Accounts', to: '/accounts' },
@@ -60,12 +60,22 @@ export default {
 
 .c-logo {
   display: inline-block;
-  width: 1.8rem;
+  width: 1.6rem;
   margin-right: 0.75rem;
 }
 
 .c-nav-item {
   margin-bottom: 0.25rem;
   font-size: 1rem;
+
+  > a {
+    text-decoration: none;
+    color: #000;
+    cursor: pointer;
+
+    &.router-link-exact-active {
+      font-weight: 600;
+    }
+  }
 }
 </style>
