@@ -102,8 +102,8 @@ module.exports = (grunt) => {
     open: false,
     port: 3030,
     proxy: {
-      target: process.env.API_URL,
-      ws: true
+      target: process.env.API_URL
+      // ws: true
     },
     reloadDelay: 100,
     reloadThrottle: 2000,
