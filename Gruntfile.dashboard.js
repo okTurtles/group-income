@@ -7,18 +7,34 @@
 const path = require('path')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { copyFile, readFile } = require('fs/promises')
+const { readFile } = require('fs/promises')
+const { fork } = require('child_process')
+
+const applyPortShift = (env) => {
+  // TODO: implement automatic port selection when `PORT_SHIFT` is 'auto'.
+  const API_PORT = 8000 + Number.parseInt(env.PORT_SHIFT || '0')
+  const API_URL = 'http://127.0.0.1:' + API_PORT
+
+  if (Number.isNaN(API_PORT) || API_PORT < 8000 || API_PORT > 65535) {
+    throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
+  }
+  return { ...env, API_PORT, API_URL }
+}
+
+Object.assign(process.env, applyPortShift(process.env))
+
 const { NODE_ENV = 'development' } = process.env
 
 // paths
 const dashboardRootDir = path.resolve(__dirname, 'backend/dashboard')
 const resolvePathFromRoot = relPath => path.join(dashboardRootDir, relPath) // resolve a relative path against backend/dashboard folder
-const distDir = resolvePathFromRoot('dist')
+const distDir = path.resolve('dist-dashboard')
 const distAssets = path.join(distDir, 'assets')
 const distCSS = path.join(distDir, 'assets/css')
 const distJS = path.join(distDir, 'assets/js')
 const mainSrc = resolvePathFromRoot('main.js')
 const mainScss = resolvePathFromRoot('assets/style/main.scss')
+const backendIndex = 'backend/index.js'
 
 const isDevelopment = NODE_ENV === 'development'
 const isProduction = !isDevelopment
@@ -40,6 +56,8 @@ module.exports = (grunt) => {
       minifySyntax: isProduction,
       minifyWhitespace: isProduction,
       sourcemap: isDevelopment,
+      format: 'esm',
+      external: ['*.eot', '*.ttf', '*woff', '*.woff2'],
       watch: false,
       chunkNames: '[name]-[hash]-cached'
     },
@@ -50,9 +68,7 @@ module.exports = (grunt) => {
       define: {
         'process.env.NODE_ENV': `'${NODE_ENV}'`
       },
-      external: ['*.eot', '*.ttf', '*woff', '*.woff2'],
-      splitting: !grunt.option('no-chunks'),
-      format: 'esm'
+      splitting: !grunt.option('no-chunks')
     },
     mainCss: {
       // assets/style/main.scss -> dist/assets/css/main.css
@@ -83,7 +99,10 @@ module.exports = (grunt) => {
     logLevel: 'info',
     open: false,
     port: 3030,
-    server: distDir,
+    proxy: {
+      target: process.env.API_URL,
+      ws: true
+    },
     reloadDelay: 100,
     reloadThrottle: 2000,
     tunnel: grunt.option('tunnel') && `gi${crypto.randomBytes(2).toString('hex')}`
@@ -166,6 +185,7 @@ module.exports = (grunt) => {
   grunt.registerTask('dev-dashboard', [
     'checkDependencies',
     'build:watch',
+    'backend:relaunch',
     'keepalive'
   ])
 
@@ -180,9 +200,49 @@ module.exports = (grunt) => {
     ])
   })
 
+  let child = null
+  grunt.registerTask('backend:relaunch', '[internal]', function () {
+    const done = this.async() // Tell Grunt we're async.
+    const fork2 = function () {
+      grunt.log.writeln('backend: forking...')
+      child = fork(backendIndex, process.argv, {
+        env: {
+          ...process.env,
+          IS_CHELONIA_DASHBOARD_DEV: true
+        },
+        execArgv: ['--require', '@babel/register']
+      })
+      child.on('error', (err) => {
+        if (err) {
+          console.error('error starting or sending message to child:', err)
+          process.exit(1)
+        }
+      })
+      child.on('exit', (c) => {
+        if (c !== 0) {
+          grunt.log.error(`child exited with error code: ${c}`.bold)
+          // ^C can cause c to be null, which is an OK error.
+          process.exit(c || 0)
+        }
+      })
+      done()
+    }
+    if (child) {
+      grunt.log.writeln('Killing child!')
+      // Wait for successful shutdown to avoid EADDRINUSE errors.
+      child.on('message', () => {
+        child = null
+        fork2()
+      })
+      child.send({ shutdown: 1 })
+    } else {
+      fork2()
+    }
+  })
+
   grunt.registerTask('esbuild', async function () {
     const done = this.async()
-    const { createEsbuildTask } = require('./scripts/esbuild-commands.js') 
+    const { createEsbuildTask } = require('./scripts/esbuild-commands.js')
     const aliasPlugin = require('./scripts/esbuild-plugins/alias-plugin.js')(aliasPluginOptions)
     const sassPlugin = require('esbuild-sass-plugin').sassPlugin(sassPluginOptions)
     const vuePlugin = require('./scripts/esbuild-plugins/vue-plugin.js')(vuePluginOptions)
@@ -262,7 +322,7 @@ module.exports = (grunt) => {
 
           // Only rebuild the relevant entry point.
           try {
-            if (['.scss', '.sass'].includes(extension)) { 
+            if (['.scss', '.sass'].includes(extension)) {
               buildMainCss.run({ fileEventName, filePath })
             } else {
               buildMainJS.run({ fileEventName, filePath })

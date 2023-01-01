@@ -54,6 +54,7 @@
     "historical/*",
     "shared/types.js",
     "dist/*",
+    "dist-dashboard/*",
     "ignored/*",
     "node_modules/*",
     "test/cypress/cache/*",

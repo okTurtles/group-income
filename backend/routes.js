@@ -13,6 +13,14 @@ import './database.js'
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
 
+const isCheloniaDashboard = process.env.IS_CHELONIA_DASHBOARD_DEV
+const staticServeConfig = {
+  routePath: isCheloniaDashboard ? '/dashboard/{path*}' : '/app/{path*}',
+  distAssets: path.resolve(isCheloniaDashboard ? 'dist-dashboard/assets' : 'dist/assets'),
+  distIndexHtml: path.resolve(isCheloniaDashboard ? './dist-dashboard/index.html' : './dist/index.html'),
+  redirect: isCheloniaDashboard ? '/dashboard/' : '/app/'
+}
+
 const route = new Proxy({}, {
   get: function (obj, prop) {
     return function (path: string, options: Object, handler: Function | Object) {
@@ -221,7 +229,7 @@ route.GET('/assets/{subpath*}', {
     }
   },
   files: {
-    relativeTo: path.resolve('dist/assets')
+    relativeTo: staticServeConfig.distAssets
   }
 }, function (request, h) {
   const { subpath } = request.params
@@ -240,10 +248,10 @@ route.GET('/assets/{subpath*}', {
   return h.file(subpath)
 })
 
-route.GET('/app/{path*}', {}, {
-  file: path.resolve('./dist/index.html')
+route.GET(staticServeConfig.routePath, {}, {
+  file: staticServeConfig.distIndexHtml
 })
 
 route.GET('/', {}, function (req, h) {
-  return h.redirect('/app/')
+  return h.redirect(staticServeConfig.redirect)
 })

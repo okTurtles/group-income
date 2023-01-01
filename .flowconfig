@@ -7,7 +7,9 @@
 # - https://flowtype.org/docs/objects.html
 # - https://flowtype.org/docs/functions.html
 .*/Gruntfile.js
+.*/Gruntfile.dashboard.js
 .*/dist/.*
+.*/dist-dashboard/.*
 <PROJECT_ROOT>/contracts/.*
 .*/frontend/assets/.*
 .*/frontend/controller/service-worker.js
