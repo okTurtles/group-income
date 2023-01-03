@@ -12,7 +12,7 @@ import Billing from '@pages/Billing.vue'
 
 Vue.use(Router)
 
-const router = new Router({
+const router: any = new Router({
   mode: 'history',
   base: '/dashboard',
   scrollBehavior (to, from, savedPosition) {
