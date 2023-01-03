@@ -132,9 +132,7 @@ module.exports = (grunt) => {
 
   const vuePluginOptions = {
     aliases: {
-      ...aliasPluginOptions.entries,
-      // So we can write @import 'vue-slider-component/lib/theme/default.scss'; in .vue <style>.
-      'vue-slider-component': './node_modules/vue-slider-component'
+      ...aliasPluginOptions.entries
     },
     // This map's keys will be relative Vue file paths without leading dot,
     // while its values will be corresponding compiled JS strings.
