@@ -11,6 +11,7 @@
 .*/dist/.*
 .*/dist-dashboard/.*
 <PROJECT_ROOT>/contracts/.*
+<PROJECT_ROOT>/backend/dashboard/.*
 .*/frontend/assets/.*
 .*/frontend/controller/service-worker.js
 .*/frontend/utils/blockies.js
