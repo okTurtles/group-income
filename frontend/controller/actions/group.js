@@ -519,6 +519,7 @@ export default (sbp('sbp/selectors/register', {
 
     if (isNoSelected) {
       // if a user doesn't make more than the changed mincome, let them decide whether they want to update their income details.
+      // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because, at this point in time 'Prompt.vue' modal has been opened.
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
   },

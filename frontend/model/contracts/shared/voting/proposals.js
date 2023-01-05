@@ -154,11 +154,7 @@ const proposals: Object = {
       //       this code will need to be updated
       const message = {
         meta,
-        data: {
-          [setting]: setting === 'mincomeAmount'
-            ? { from: sbp('state/vuex/getters').groupMincomeAmount, to: proposedValue }
-            : proposedValue
-        },
+        data: { [setting]: proposedValue },
         contractID
       }
       sbp('gi.contracts/group/updateSettings/process', message, state)

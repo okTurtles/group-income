@@ -1012,34 +1012,32 @@ sbp('chelonia/defineContract', {
         groupName: x => typeof x === 'string',
         groupPicture: x => typeof x === 'string',
         sharedValues: x => typeof x === 'string',
-        mincomeAmount: objectOf({
-          from: x => typeof x === 'number' && x > 0,
-          to: x => typeof x === 'number' && x > 0
-        }),
+        mincomeAmount: x => typeof x === 'number' && x > 0,
         mincomeCurrency: x => typeof x === 'string'
       }),
-      process ({ meta, data }, { state }) {
+      process ({ contractID, meta, data }, { state, getters }) {
+        const mincomeCache = 'mincomeAmount' in data ? state.settings.mincomeAmount : null
+
         for (const key in data) {
-          const value = key === 'mincomeAmount' ? data[key].to : data[key]
-          Vue.set(state.settings, key, value)
+          Vue.set(state.settings, key, data[key])
         }
-      },
-      sideEffect ({ contractID, meta, data }, { getters }) {
-        if (data.mincomeAmount && data.mincomeAmount.to > data.mincomeAmount.from) {
-          // if the mincome has increased, emit a notification
-          // letting any members (who has already set up income details) know of it
+
+        if (mincomeCache !== null && data.mincomeAmount > mincomeCache) {
+          // if mincome has been increased, and the user has set up their income details,
+          // emit 'MINCOME_INCREASED' notification, which prompts the user to choose whether they want to update income details or not.
           const { loggedIn } = sbp('state/vuex/state')
           const myProfile = getters.groupProfile(loggedIn.username)
 
           if (isActionYoungerThanUser(meta, myProfile) && myProfile.incomeDetailsType) {
-            sbp('gi.notifications/emit', 'MINCOME_INCREASED', {
-              groupID: contractID,
-              creator: meta.username,
-              to: data.mincomeAmount.to
-            })
+            sbp('gi.contracts/group/pushSideEffect', contractID,
+              ['gi.contracts/group/sendMincomeNotification',
+                contractID,
+                { creator: meta.username, to: data.mincomeAmount }
+              ]
+            )
           }
         }
-      } // @@@
+      }
     },
     'gi.contracts/group/groupProfileUpdate': {
       validate: objectMaybeOf({
@@ -1295,6 +1293,13 @@ sbp('chelonia/defineContract', {
         await sbp('gi.db/archive/save', archPaymentsKey, archPayments)
       }
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
+    },
+    'gi.contracts/group/sendMincomeNotification': function (contractID, data) {
+      sbp('gi.notifications/emit', 'MINCOME_INCREASED', {
+        groupID: contractID,
+        creator: data.creator,
+        to: data.to
+      })
     }
   }
 })
