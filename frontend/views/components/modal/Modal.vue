@@ -1,7 +1,7 @@
 <template lang='pug'>
   div
     component(:is='content' ref='content' v-bind='childData')
-    component(:is='subcontent[subcontent.length-1]')
+    component(:is='subcontent[subcontent.length-1]' v-bind='childData')
 </template>
 <script>
 import sbp from '@sbp/sbp'

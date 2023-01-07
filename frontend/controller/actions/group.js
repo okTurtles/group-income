@@ -509,17 +509,17 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to notify expiring proposals.'))
     }
   },
-  'gi.actions/group/displayMincomeIncreasedPrompt': async function (params: Object) {
+  'gi.actions/group/displayMincomeChangedPrompt': async function (params: Object) {
     const isNoSelected = await sbp('gi.ui/prompt', {
       question: L('Do you make at least {amount} per month?', { amount: params.amount }),
-      heading: L('Mincome increased'), // TODO: discuss if this heading is fine. currently just a placeholder.
+      heading: L('Mincome changed'), // TODO: discuss if this heading is fine. currently just a placeholder.
       yesButton: L('No'),
       noButton: L('Yes')
     })
+    const showPromptIncomeDetails = params.memberType === 'pledging' ? isNoSelected : !isNoSelected
 
-    if (isNoSelected) {
-      // if a user doesn't make more than the changed mincome, let them decide whether they want to update their income details.
-      // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because, at this point in time 'Prompt.vue' modal has been opened.
+    if (showPromptIncomeDetails) {
+      // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
   },

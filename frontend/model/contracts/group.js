@@ -1022,19 +1022,33 @@ sbp('chelonia/defineContract', {
           Vue.set(state.settings, key, data[key])
         }
 
-        if (mincomeCache !== null && data.mincomeAmount > mincomeCache) {
-          // if mincome has been increased, and the user has set up their income details,
-          // emit 'MINCOME_INCREASED' notification, which prompts the user to choose whether they want to update income details or not.
+        if (mincomeCache !== null) {
+          // if mincome has changed and the user has set up their income details,
+          // emit 'MINCOME_CHANGED' notification, which prompts the user to choose whether they want to update income details or not.
           const { loggedIn } = sbp('state/vuex/state')
           const myProfile = getters.groupProfile(loggedIn.username)
 
           if (isActionYoungerThanUser(meta, myProfile) && myProfile.incomeDetailsType) {
-            sbp('gi.contracts/group/pushSideEffect', contractID,
-              ['gi.contracts/group/sendMincomeNotification',
-                contractID,
-                { creator: meta.username, to: data.mincomeAmount }
-              ]
-            )
+            const memberType = myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledging' : 'receiving'
+            // Updating income details is only required when,
+            // user is pledging member && mincome has increased
+            // user is receving member && mincome is less than user's income
+            const actionNeeded = memberType === 'pledging'
+              ? data.mincomeAmount > mincomeCache
+              : data.mincomeAmount < mincomeCache && data.mincomeAmount < myProfile.incomeAmount
+
+            if (actionNeeded) {
+              sbp('gi.contracts/group/pushSideEffect', contractID,
+                ['gi.contracts/group/sendMincomeChangedNotification',
+                  contractID,
+                  {
+                    creator: meta.username,
+                    toAmount: data.mincomeAmount,
+                    memberType
+                  }
+                ]
+              )
+            }
           }
         }
       }
@@ -1294,11 +1308,22 @@ sbp('chelonia/defineContract', {
       }
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
     },
-    'gi.contracts/group/sendMincomeNotification': function (contractID, data) {
-      sbp('gi.notifications/emit', 'MINCOME_INCREASED', {
+    'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, data) {
+      if (data.memberType === 'receiving') {
+        await sbp('gi.actions/group/groupProfileUpdate', {
+          contractID,
+          data: {
+            incomeDetailsType: 'pledgeAmount',
+            pledgeAmount: 0
+          }
+        })
+      }
+
+      await sbp('gi.notifications/emit', 'MINCOME_CHANGED', {
         groupID: contractID,
         creator: data.creator,
-        to: data.to
+        to: data.toAmount,
+        memberType: data.memberType
       })
     }
   }

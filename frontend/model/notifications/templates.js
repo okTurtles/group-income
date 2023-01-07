@@ -201,7 +201,7 @@ export default ({
       scope: 'group'
     }
   },
-  MINCOME_INCREASED (data: { creator: string, to: number }) {
+  MINCOME_CHANGED (data: { creator: string, to: number, memberType: string }) {
     const { withGroupCurrency } = sbp('state/vuex/getters')
     const formattedAmountTo = withGroupCurrency(data.to)
     return {
@@ -211,7 +211,7 @@ export default ({
       icon: '',
       level: 'info',
       scope: 'group',
-      sbpInvocation: ['gi.actions/group/displayMincomeIncreasedPrompt', { amount: formattedAmountTo }]
+      sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', { amount: formattedAmountTo, memberType: data.memberType }]
     }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })
