@@ -208,7 +208,7 @@ export default (sbp('sbp/selectors/register', {
           contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
           contract.actions[action].process(message, { state, ...gProxy })
         },
-        // 'mutation' is an object that's very similar to 'message', but not identical
+        // 'mutation' is an object that's similar to 'message', but not identical
         [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
           const sideEffects = this.sideEffectStack(mutation.contractID)
           while (sideEffects.length > 0) {
