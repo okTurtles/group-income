@@ -104,7 +104,7 @@ async function startApp () {
           'state/vuex/state', 'state/vuex/settings', 'state/vuex/commit', 'state/vuex/getters',
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'controller/router',
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
-          'gi.actions/chatroom/leave', 'gi.notifications/emit'
+          'gi.actions/chatroom/leave', 'gi.actions/group/groupProfileUpdate', 'gi.notifications/emit'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,

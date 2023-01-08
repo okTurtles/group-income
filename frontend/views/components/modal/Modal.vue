@@ -1,7 +1,7 @@
 <template lang='pug'>
   div
     component(:is='content' ref='content' v-bind='childData')
-    component(:is='subcontent[subcontent.length-1]' v-bind='childData')
+    component(:is='subcontent[subcontent.length-1]' ref='subcontent' v-bind='childData')
 </template>
 <script>
 import sbp from '@sbp/sbp'
@@ -150,7 +150,8 @@ export default ({
       if (queries) {
         this.replacementQueries[componentName] = queries
       }
-      this.$refs['content'].$children[0].close()
+
+      this.$refs[this.activeSubcontent() ? 'subcontent' : 'content'].$children[0].close()
     },
     setModalQueries (componentName, queries) {
       this.queries[componentName] = queries
