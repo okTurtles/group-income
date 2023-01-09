@@ -391,25 +391,26 @@ export default (sbp('sbp/selectors/register', {
 
     // Signature verification
     // TODO: Temporary. Skip verifying default signatures
-    if (isNaN(NaN) && signature.type !== 'default') {
+    if (!isNaN(NaN) && signature.type !== 'default') {
       // This sync code has potential issues
       // The first issue is that it can deadlock if there are circular references
       // The second issue is that it doesn't handle key rotation. If the key used for signing is invalidated / removed from the originating contract, we won't have it in the state
       // Both of these issues can be resolved by introducing a parameter with the message ID the state is based on. This requires implementing a separate, ephemeral, state container for operations that refer to a different contract.
       // The difficulty of this is how to securely determine the message ID to use.
       // The server can assist with this.
-      if (message.originatingContractID() !== message.contractID()) {
+
+      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys) : state._vm.authorizedKeys
+      let signingKey = authorizedKeys?.[signature.keyId]
+
+      if (!signingKey && opT !== GIMessage.OP_CONTRACT && message.originatingContractID() !== message.contractID()) {
         await sbp('okTurtles.eventQueue/queueEvent', message.originatingContractID(), [
           'chelonia/private/in/syncContract', message.originatingContractID()
         ])
+
+        const originatingContractState = sbp(this.config.stateSelector)[message.originatingContractID()]
+
+        signingKey = originatingContractState._vm?.authorizedKeys?.[signature.keyId]
       }
-
-      const contractState = message.originatingContractID() === message.contractID()
-        ? state
-        : sbp(this.config.stateSelector).contracts[message.originatingContractID()]
-
-      const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys) : contractState._vm.authorizedKeys
-      const signingKey = authorizedKeys?.[signature.keyId]
 
       if (!signingKey || !Array.isArray(signingKey.permissions) || !signingKey.permissions.includes(opT)) {
         throw new Error('No matching signing key was defined')
@@ -533,6 +534,8 @@ export default (sbp('sbp/selectors/register', {
         await sbp('chelonia/out/keyShare', {
           destinationContractID: originatingContractID,
           destinationContractName: recipientContractName,
+          originatingContractName: contractName,
+          originatingContractID: contractID,
           data: {
             contractID: contractID,
             keys: Object.entries(keys).map(([keyId, key]: [string, mixed]) => ({
@@ -677,10 +680,10 @@ const handleEvent = {
       // Flow doesn't understand that a first message must be a contract,
       // so we have to help it a bit in order to acces the 'type' property.
       const { type } = ((message.opValue(): any): GIOpContract)
-      if (!state[contractID]) {
+      if (!state[contractID] || !state.contracts[contractID]) {
         console.debug(`contract ${type} registered for ${contractID}`)
-        this.config.reactiveSet(state, contractID, {})
-        this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID })
+        state[contractID] || this.config.reactiveSet(state, contractID, {})
+        state.contracts[contractID] || this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID })
       }
       // we've successfully received it back, so remove it from expectation pending
       const index = state.pending.indexOf(contractID)

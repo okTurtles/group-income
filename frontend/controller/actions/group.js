@@ -142,7 +142,7 @@ export default (sbp('sbp/selectors/register', {
             id: CSKid,
             type: CSK.type,
             data: CSKp,
-            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH],
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEYSHARE],
             meta: {
               type: 'csk',
               private: {
@@ -262,7 +262,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       sbp('okTurtles.data/set', 'JOINING_GROUP', true)
       // sync the group's contract state
-      await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: true }, ['chelonia/contract/sync', params.contractID])
+      await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: !params?.options?.skipInviteAccept }, ['chelonia/contract/sync', params.contractID])
       // post acceptance event to the group contract, unless this is being called
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {
