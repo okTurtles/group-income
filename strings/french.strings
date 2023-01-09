@@ -3,11 +3,23 @@
 /* MISSING TRANSLATION - controller/actions/group.js */
 "Failed to send a payment thank you note." = "Failed to send a payment thank you note.";
 
+/* MISSING TRANSLATION - controller/actions/group.js */
+"Failed to update \"lastLoggedIn\" in a group profile." = "Failed to update \"lastLoggedIn\" in a group profile.";
+
+/* MISSING TRANSLATION - controller/actions/group.js */
+"Failed to update group distribution date." = "Failed to update group distribution date.";
+
 /* MISSING TRANSLATION - controller/actions/identity.js */
 "Error during login contract sync: {err}" = "Error during login contract sync: {err}";
 
 /* MISSING TRANSLATION - controller/actions/identity.js */
 "Failed to set login state." = "Failed to set login state.";
+
+/* MISSING TRANSLATION - controller/actions/mailbox.js */
+"Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
+
+/* MISSING TRANSLATION - controller/actions/mailbox.js */
+"Failed to join a new direct message channel." = "Failed to join a new direct message channel.";
 
 /* MISSING TRANSLATION - controller/router.js */
 "Design System" = "Design System";
@@ -17,6 +29,9 @@
 
 /* MISSING TRANSLATION - controller/router.js */
 "Group Income" = "Group Income";
+
+/* MISSING TRANSLATION - controller/router.js */
+"Pending Approval" = "Pending Approval";
 
 /* MISSING TRANSLATION - controller/router.js, views/containers/contributions/ContributionsWidget.vue, views/containers/navigation/Navigation.vue, views/pages/Contributions.vue */
 "Contributions" = "Contributions";
@@ -29,6 +44,9 @@
 
 /* MISSING TRANSLATION - model/contracts/identity.js */
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
+
+/* MISSING TRANSLATION - model/contracts/mailbox.js */
+"Incorrect mailbox creator to join direct message channel." = "Incorrect mailbox creator to join direct message channel.";
 
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "1d" = "1d";
@@ -65,6 +83,15 @@
 
 /* MISSING TRANSLATION - views/components/VotingRulesInput.vue */
 "What percentage of members need to agree to pass a proposal?" = "What percentage of members need to agree to pass a proposal?";
+
+/* MISSING TRANSLATION - views/components/avatar-editor/AvatarEditorModal.vue */
+"Click and drag to reposition" = "Click and drag to reposition";
+
+/* MISSING TRANSLATION - views/components/avatar-editor/AvatarEditorModal.vue */
+"Edit avatar" = "Edit avatar";
+
+/* MISSING TRANSLATION - views/components/avatar-editor/AvatarEditorModal.vue */
+"Pinch to zoom, drag to reposition" = "Pinch to zoom, drag to reposition";
 
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupMincome.vue */
 "Choose your group's distribution date" = "Choose your group's distribution date";
@@ -153,6 +180,9 @@
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to change the groups voting system." = "{from} wants to change the groups voting system.";
 
+/* MISSING TRANSLATION - views/containers/chatroom/NewDirectMessageModal.vue */
+"{ourNewContactsCount} members" = "{ourNewContactsCount} members";
+
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed." = "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.";
 
@@ -184,7 +214,7 @@
 "Todo %" = "Todo %";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"Group has a streak of {strong_} {pourcent}% Support of {timeframe}{_strong}" = "Group has a streak of {strong_} {pourcent}% Support of {timeframe}{_strong}";
+"Group has a streak of {strong_} 100% Support of {streak} months{_strong}" = "Group has a streak of {strong_} 100% Support of {streak} months{_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
 "Inactivity" = "Inactivity";
@@ -199,16 +229,16 @@
 "have {strong_} missed payments {_strong}" = "have {strong_} missed payments {_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"have {strong_} streaks of more than {streaks}{_strong}" = "have {strong_} streaks of more than {streaks}{_strong}";
+"have {strong_} on-time payment streaks{_strong}" = "have {strong_} on-time payment streaks{_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"haven´t {strong_} logged in past week {_strong}" = "haven´t {strong_} logged in past week {_strong}";
+"haven't {strong_} entered income details{_strong}" = "haven't {strong_} entered income details{_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}" = "haven´t {strong_} voted in the last {proposalNumber} proposals {_strong}";
+"haven't {strong_} logged in past {daysCount} days or more {_strong}" = "haven't {strong_} logged in past {daysCount} days or more {_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"{members} members" = "{members} members";
+"haven't {strong_} voted in the last {proposalNumber} proposals {_strong}" = "haven't {strong_} voted in the last {proposalNumber} proposals {_strong}";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{count}{_b}" = "{b_}{count}{_b}";
@@ -453,6 +483,12 @@
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "Payment date" = "Payment date";
 
+/* MISSING TRANSLATION - views/pages/PendingApproval.vue */
+"Waiting for approval to join {groupName}!" = "Waiting for approval to join {groupName}!";
+
+/* MISSING TRANSLATION - views/pages/PendingApproval.vue */
+"You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group." = "You have used a public link to join a group. Once a member of the group approves your member request you’ll be able to access the group.";
+
 /* common/translations.js */
 "\"{errorMsg}\". You can {a_}report the error{_a}." = "\"{errorMsg}\". Vous pouvez {a_}signaler l’erreur{_a}.";
 
@@ -543,7 +579,7 @@
 /* controller/actions/group.js */
 "Only channel members can invite others to join." = "Seuls les membres de la chaîne peuvent inviter d'autres personnes à la rejoindre.";
 
-/* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue */
+/* controller/actions/group.js, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Duplicate channel name" = "Nom de canal dupliqué";
 
 /* controller/actions/identity.js */
@@ -571,13 +607,22 @@
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
 
 /* controller/actions/mailbox.js */
-"Failed to post message to mailbox." = "L’envoi du message a échoué.";
+"Failed to leave direct message channel." = "Impossible de quitter le canal de messagerie directe.";
+
+/* controller/actions/mailbox.js */
+"Failed to set mailbox attributes." = "Impossible de définir les attributs de la boîte aux lettres.";
+
+/* controller/actions/mailbox.js */
+"Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";
 
 /* controller/router.js */
 "Group Chat" = "Conversation du groupe";
 
 /* controller/router.js */
 "Group Dashboard" = "Tableau de bord";
+
+/* controller/router.js, views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
+"Loading" = "Chargement";
 
 /* controller/router.js, views/containers/contributions/ContributionsWidget.vue, views/containers/navigation/Navigation.vue, views/pages/Payments.vue */
 "Payments" = "Paiements";
@@ -627,6 +672,24 @@
 /* model/contracts/group.js */
 "There is an identical open proposal." = "Une proposition identique a déjà été créée.";
 
+/* model/contracts/mailbox.js */
+"Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
+
+/* model/contracts/mailbox.js */
+"Never created or already joined direct message channel." = "Jamais créé ou déjà rejoint le canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
+"Not joined or already left direct message channel." = "Pas rejoint ou déjà quitté le canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can create direct message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can leave direct message channel." = "Seul le créateur de la boîte aux lettres peut quitter le canal de messagerie directe.";
+
+/* model/contracts/mailbox.js */
+"Only the mailbox creator can set attributes." = "Seul le créateur de la boîte aux lettres peut définir des attributs.";
+
 /* model/contracts/shared/time.js */
 "Today" = "Aujourd’hui";
 
@@ -674,9 +737,6 @@
 
 /* views/components/Badge.vue */
 "{num} new notifications" = "{num} nouvelles notifications";
-
-/* views/components/ButtonSubmit.vue, views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/LoadingBaseModal.vue, views/containers/loading-error/LoadingModal.vue */
-"Loading" = "Chargement";
 
 /* views/components/CopyableInput.vue, views/components/LinkToCopy.vue */
 "Copied to clipboard!" = "Copié dans le presse-papiers !";
@@ -741,7 +801,7 @@
 /* views/components/Search.vue */
 "Clear search" = "Effacer la recherche";
 
-/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search..." = "Recherche...";
 
 /* views/components/Toggle.vue */
@@ -752,6 +812,12 @@
 
 /* views/components/VotingRulesInput.vue */
 "\"No\" votes required to block a proposal" = "Nombre de votes négatifs requis pour bloquer une proposition";
+
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/access/PasswordModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
+"Cancel" = "Annuler";
+
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+"Save" = "Enregistrer";
 
 /* views/components/banners/BannerScoped.vue */
 "Dismiss message" = "Ignorer le message";
@@ -882,9 +948,6 @@
 /* views/containers/access/PasswordModal.vue */
 "New Password" = "Nouveau Mot de Passe";
 
-/* views/containers/access/PasswordModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
-"Cancel" = "Annuler";
-
 /* views/containers/access/SignupForm.vue */
 "This username is already being used." = "Ce nom d’utilisateur est déjà utilisé.";
 
@@ -903,8 +966,14 @@
 /* views/containers/access/SignupModal.vue, views/pages/Join.vue */
 "Already have an account?" = "Vous avez déjà un compte ?";
 
-/* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ConversationsList.vue, views/containers/dashboard/GroupMembers.vue */
+/* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue, views/containers/dashboard/GroupMembers.vue */
 "New" = "Nouveau";
+
+/* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+"{name} (you)" = "{name} (vous)";
+
+/* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/pages/GroupChat.vue */
+"Members" = "Membres";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue */
 "Channel members" = "Membres du salon";
@@ -918,32 +987,26 @@
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/CreateNewChannelModal.vue */
 "Private channel" = "Salon privé";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"{name} (you)" = "{name} (vous)";
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+"Others ({nbMembers})" = "Autres ({nbMembers})";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search" = "Rechercher";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Showing {searchCount} {strong_}results{_strong} for \"{searchTerm}\"" = "{searchCount} {strong_}résultats{_strong} correspondant à la recherche \"{searchTerm}\"";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Showing {strong_}1 result{_strong} for \"{searchTerm}\"" = "{strong_}1 résultat{_strong} correspond à la recherche \"{searchTerm}\"";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Sorry, we couldn't find anyone called \"{searchTerm}\"" = "Désolé, nous n’avons trouvé personne dont le nom soit \"{searchTerm}\"";
-
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/pages/GroupChat.vue */
-"Members" = "Membres";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Add {span_} to channel{_span}" = "Ajouter {span_} au salon{_span}";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Channel members ({nbMembers})" = "Membres du salon ({nbMembers})";
-
-/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"Others ({nbMembers})" = "Autres ({nbMembers})";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/proposals/MemberRequest.vue */
 "Undo" = "Annuler";
@@ -987,6 +1050,9 @@
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description of the channel" = "Description du salon";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
+"Reached character limit." = "Limite de caractères atteinte.";
+
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Name" = "Nom";
 
@@ -1020,32 +1086,11 @@
 /* views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Channel description" = "Description du salon";
 
-/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
-"Reached character limit." = "Limite de caractères atteinte.";
-
-/* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
-"Save" = "Enregistrer";
-
 /* views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/group-settings/GroupDeletionModal.vue */
 "DELETE {GROUP_NAME}" = "SUPPRIMER {GROUP_NAME}";
 
 /* views/containers/chatroom/EditChannelNameModal.vue */
 "Rename channel" = "Renommer le salon";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue */
-"Direct messages" = "Conversations privées";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"new" = "nouveau";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"pending" = "en cours";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue */
-"{groupMembersCount} members" = "{groupMembersCount} membres";
-
-/* views/containers/chatroom/GroupMembersDirectMessages.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
-"Group members" = "Membres du groupe";
 
 /* views/containers/chatroom/GroupsShortcut.vue */
 "Groups chat shortcut" = "Raccourci vers la conversation de groupe";
@@ -1190,6 +1235,15 @@
 
 /* views/containers/chatroom/MessageReactions.vue */
 "{userList} reacted with {emotiName}" = "{userList} a/ont réagi avec {emotiName}";
+
+/* views/containers/chatroom/NewDirectMessageModal.vue */
+"New Direct Message" = "Nouveau Message Privé";
+
+/* views/containers/chatroom/NewDirectMessageModal.vue */
+"Recent Conversations ({nbMembers})" = "Conversations récentes ({nbMembers})";
+
+/* views/containers/chatroom/NewDirectMessageModal.vue, views/pages/GroupChat.vue */
+"Direct Messages" = "Conversations privées";
 
 /* views/containers/chatroom/SendArea.vue */
 "Create poll" = "Créer un sondage";
@@ -1451,6 +1505,18 @@
 
 /* views/containers/dashboard/GroupMembers.vue */
 "See all {groupMembersCount} members" = "Afficher les {groupMembersCount} membres";
+
+/* views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+"new" = "nouveau";
+
+/* views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+"pending" = "en cours";
+
+/* views/containers/dashboard/GroupMembersAllModal.vue */
+"{groupMembersCount} members" = "{groupMembersCount} membres";
+
+/* views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
+"Group members" = "Membres du groupe";
 
 /* views/containers/dashboard/GroupMembersTooltipPending.vue */
 "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy} (you)." = "Ce membre n’a pas encore utilisé son lien d’invitation pour rejoindre le groupe. Ce lien devrait lui être communiqué par {invitedBy} (vous).";
@@ -2242,9 +2308,6 @@
 "Channels" = "Canaux de discussion";
 
 /* views/pages/GroupChat.vue */
-"Direct Messages" = "Conversations privées";
-
-/* views/pages/GroupChat.vue */
 "Notifications settings" = "Paramètres des notifications";
 
 /* views/pages/GroupChat.vue */
@@ -2404,6 +2467,9 @@
 "Delete" = "Effacer";
 
 /* Not currently used */
+"Direct messages" = "Conversations privées";
+
+/* Not currently used */
 "Due in" = "Échéance dans";
 
 /* Not currently used */
@@ -2420,6 +2486,9 @@
 
 /* Not currently used */
 "Failed to create payment. {reportError}" = "Erreur lors de la création du paiement. {reportError}";
+
+/* Not currently used */
+"Failed to post message to mailbox." = "L’envoi du message a échoué.";
 
 /* Not currently used */
 "Failed to propose mincome change: {reportError}" = "La proposition de changement du revenu minimum a échoué : {reportError}";
@@ -2453,6 +2522,9 @@
 
 /* Not currently used */
 "Inbox" = "Boîte de réception";
+
+/* Not currently used */
+"Incorrect mailbox creator to join direct message channel" = "Créateur de boîte aux lettres incorrect pour rejoindre le canal de messagerie directe.";
 
 /* Not currently used */
 "Invalid Username" = "Nom d’utilisateur invalide";
@@ -2531,6 +2603,9 @@
 
 /* Not currently used */
 "Return" = "Retour en arrière";
+
+/* Not currently used */
+"Same attribute is already set." = "Le même attribut est déjà défini.";
 
 /* Not currently used */
 "Search for a channel" = "Rechercher un groupe de discussion";

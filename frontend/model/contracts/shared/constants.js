@@ -28,12 +28,21 @@ export const PROPOSAL_GENERIC = 'generic'
 
 export const PROPOSAL_ARCHIVED = 'proposal-archived'
 export const MAX_ARCHIVED_PROPOSALS = 100
+export const PAYMENTS_ARCHIVED = 'payments-archived'
+export const MAX_ARCHIVED_PERIODS = 100
+export const MAX_SAVED_PERIODS = 2
+export const MAX_HISTORY_PERIODS = 6
 
 export const STATUS_OPEN = 'open'
 export const STATUS_PASSED = 'passed'
 export const STATUS_FAILED = 'failed'
 export const STATUS_EXPIRED = 'expired'
 export const STATUS_CANCELLED = 'cancelled'
+
+export const STREAK_ON_TIME_PAYMENTS = 2
+export const STREAK_MISSED_PAYMENTS = 2
+export const STREAK_MISSED_PROPSAL_VOTE = 2
+export const STREAK_NOT_LOGGED_IN_DAYS = 14
 
 // chatroom.js related
 
@@ -55,16 +64,16 @@ export const CHATROOM_TYPES = {
 }
 
 export const CHATROOM_PRIVACY_LEVEL = {
-  GROUP: 'chatroom-privacy-level-group',
-  PRIVATE: 'chatroom-privacy-level-private',
-  PUBLIC: 'chatroom-privacy-level-public'
+  GROUP: 'group',
+  PRIVATE: 'private',
+  PUBLIC: 'public'
 }
 
 export const MESSAGE_TYPES = {
-  POLL: 'message-poll',
-  TEXT: 'message-text',
-  INTERACTIVE: 'message-interactive',
-  NOTIFICATION: 'message-notification'
+  POLL: 'poll',
+  TEXT: 'text',
+  INTERACTIVE: 'interactive',
+  NOTIFICATION: 'notification'
 }
 
 export const INVITE_EXPIRES_IN_DAYS = {
@@ -91,14 +100,9 @@ export const MESSAGE_VARIANTS = {
 }
 
 export const PROPOSAL_VARIANTS = {
-  CREATED: 'proposal-created',
-  EXPIRING: 'proposal-expiring',
-  ACCEPTED: 'proposal-accepted',
-  REJECTED: 'proposal-rejected',
-  EXPIRED: 'proposal-expired'
+  CREATED: 'created',
+  EXPIRING: 'expiring',
+  ACCEPTED: 'accepted',
+  REJECTED: 'rejected',
+  EXPIRED: 'expired'
 }
-
-// mailbox.js related
-
-export const MAIL_TYPE_MESSAGE = 'message'
-export const MAIL_TYPE_FRIEND_REQ = 'friend-request'

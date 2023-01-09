@@ -63,6 +63,7 @@ declare module 'lru-cache' { declare module.exports: any }
 declare module '@assets/style/main.scss' { declare module.exports: any }
 // Other .js files.
 declare module '@common/common.js' { declare module.exports: any }
+declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
 declare module '@utils/blockies.js' { declare module.exports: Object }
 declare module '~/frontend/model/contracts/misc/flowTyper.js' { declare module.exports: Object }
 declare module '~/frontend/model/contracts/shared/time.js' { declare module.exports: Object }

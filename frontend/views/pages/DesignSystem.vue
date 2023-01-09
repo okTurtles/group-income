@@ -180,6 +180,7 @@ page(
               i.icon-coins icon-coins
               i.icon-columns icon-columns
               i.icon-comment icon-comment
+              i.icon-comment-dollar icon-comment-dollar
               i.icon-comments icon-comments
               i.icon-copy icon-copy
               i.icon-dollar-sign icon-dollar-sign
@@ -1362,7 +1363,7 @@ import SvgMoney from '@svgs/money.svg'
 import SvgProposal from '@svgs/proposal.svg'
 import SvgVote from '@svgs/vote.svg'
 import { mapGetters, mapMutations } from 'vuex'
-import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
+import { THEME_LIGHT, THEME_DARK } from '~/frontend/model/settings/themes.js'
 
 export default ({
   name: 'DesignSystemView',

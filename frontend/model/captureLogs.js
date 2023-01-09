@@ -76,7 +76,7 @@ function captureLogsStart (userLogged: string) {
   // Save the new config.
   setItem('config', config)
 
-  setAppLogsFilter(sbp('state/vuex/state').appLogsFilter ?? [])
+  setAppLogsFilter(sbp('state/vuex/state').settings?.appLogsFilter ?? [])
 
   // Subscribe to `appLogsFilter` changes.
   sbp('okTurtles.events/on', SET_APP_LOGS_FILTER, setAppLogsFilter)

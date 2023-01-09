@@ -93,7 +93,7 @@ export default ({
       return Object.values(this.groupProfiles).filter(profile => profile.incomeDetailsType).length > 0
     },
     hasIncomeDetails () {
-      return !!this.ourGroupProfile.incomeDetailsType
+      return !!this.ourGroupProfile?.incomeDetailsType
     },
     isCloseToDistributionTime () {
       const dDay = new Date(this.groupSettings.distributionDate)

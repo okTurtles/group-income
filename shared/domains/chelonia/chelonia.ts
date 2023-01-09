@@ -103,6 +103,7 @@ export type CheloniaInstance = {
   config: CheloniaConfig;
   contractsModifiedListener?: () => void;
   contractSBP?: unknown;
+  currentSyncs: Record<string, boolean>;
   defContract: ContractDefinition;
   defContractManifest?: string;
   defContractSBP?: SBP;
@@ -231,6 +232,7 @@ export default sbp('sbp/selectors/register', {
         pubsubError: null // (e:Error, socket: Socket)
       }
     }
+    this.currentSyncs = {}
     this.state = {
       contracts: {}, // contractIDs => { type, HEAD } (contracts we've subscribed to)
       pending: [] // prevents processing unexpected data from a malicious server
@@ -426,6 +428,9 @@ export default sbp('sbp/selectors/register', {
         throw err // re-throw the error
       })
     }))
+  },
+  'chelonia/contract/isSyncing': function (contractID: string): boolean {
+    return !!this.currentSyncs[contractID]
   },
   // TODO: implement 'chelonia/contract/release' (see #828)
   // safer version of removeImmediately that waits to finish processing events for contractIDs

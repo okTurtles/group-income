@@ -3,6 +3,7 @@
     "fmt/": "https://deno.land/std@0.161.0/fmt/",
     "path": "https://deno.land/std@0.161.0/path/mod.ts",
 
+    "node:fs": "https://deno.land/std@0.161.0/node/fs/promises.ts",
     "asserts": "https://deno.land/std@0.161.0/testing/asserts.ts",
     "blakejs": "https://cdn.skypack.dev/blakejs@1.2.1",
     "browser-sync": "https://esm.sh/browser-sync@2.27.10",

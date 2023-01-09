@@ -14,11 +14,11 @@ nav.c-navigation(
       router-link(to='/home')
         img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
-      notification-bell(data-test='notificationBell')
+      notification-bell(v-if='!notApprovedToGroupYet' data-test='notificationBell')
 
     .c-navigation-body(
       @click.self='enableTimeTravel'
-      v-if='groupsByName.length'
+      v-if='!notApprovedToGroupYet && groupsByName.length'
     )
       .c-navigation-body-top
         ul.c-menu-list
@@ -85,7 +85,7 @@ import GroupsList from './GroupsList.vue'
 import Profile from './Profile.vue'
 import Toggle from '@components/Toggle.vue'
 import ListItem from '@components/ListItem.vue'
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
 import { debounce } from '@model/contracts/shared/giLodash.js'
@@ -131,17 +131,15 @@ export default ({
     }
   },
   computed: {
+    ...mapState(['currentGroupId']),
     ...mapGetters([
       'groupsByName',
       'colors',
       'totalUnreadNotificationCount',
-      'getChatRooms',
-      'chatRoomUnreadMentions'
+      'groupUnreadMessages'
     ]),
     currentGroupUnreadMentionsCount () {
-      return Object.keys(this.getChatRooms || {})
-        .map(cId => this.chatRoomUnreadMentions(cId).length)
-        .reduce((a, b) => a + b, 0)
+      return this.groupUnreadMessages(this.currentGroupId)
     },
     logo () {
       const name = this.colors.theme === 'dark' ? '-white' : ''
@@ -149,6 +147,10 @@ export default ({
     },
     isInert () {
       return !this.ephemeral.isActive && this.ephemeral.isTouch
+    },
+    notApprovedToGroupYet () {
+      // TODO: once the relevant work is implemented on back-end, this check logic needs to be updated accordingly
+      return this.$route.path === '/pending-approval'
     }
   },
   methods: {
@@ -185,6 +187,8 @@ export default ({
   display: flex;
   flex-direction: column;
   min-width: 14.375rem;
+  justify-content: space-between;
+  height: 100%;
 }
 
 .c-navigation-header {

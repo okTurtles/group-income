@@ -23,7 +23,6 @@ import {
   proposals,
   INVITE_INITIAL_CREATOR,
   INVITE_EXPIRES_IN_DAYS,
-  MAIL_TYPE_MESSAGE,
   PAYMENT_PENDING,
   PAYMENT_TYPE_MANUAL,
   PROPOSAL_INVITE_MEMBER,
@@ -36,7 +35,7 @@ import {
 import '~/frontend/controller/namespace.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import manifests from '~/frontend/model/contracts/manifests.json' assert { type: 'json' }
-import { THEME_LIGHT } from '~/frontend/utils/themes.js'
+import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
 
 import packageJSON from '~/package.json' assert { type: 'json' }
 
@@ -233,9 +232,10 @@ Deno.test({
     }
 
     async function createMailboxFor (user: TestUser): Promise<GIMessage> {
+      const { username } = decryptedValue(users.bob).data.attributes
       const mailbox = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/mailbox',
-        data: {}
+        data: { username }
       })
       await sbp('chelonia/out/actionEncrypted', {
         action: 'gi.contracts/identity/setAttributes',
@@ -320,30 +320,6 @@ Deno.test({
         //    we don't need latest state for it just latest hash
         const res = await sbp('chelonia/out/latestHash', state.attributes.mailbox)
         assertEquals(res, bob.mailbox.hash())
-      })
-
-      await t.step("Should invite Bob to Alice's group", async function () {
-        const mailbox = users.bob.mailbox
-        return new Promise((resolve, reject) => {
-          sbp('chelonia/out/actionEncrypted', {
-            action: 'gi.contracts/mailbox/postMessage',
-            data: {
-              from: decryptedValue(users.bob).data.attributes.username,
-              messageType: MAIL_TYPE_MESSAGE,
-              message: groups.group1.contractID()
-            },
-            contractID: mailbox.contractID(),
-            hooks: {
-              prepublish (invite: GIMessage) {
-                sbp('okTurtles.events/once', invite.hash(), (contractID: string, entry: GIMessage) => {
-                  console.debug('Bob successfully got invite!')
-                  assertEquals(decryptedValue(entry).data.message, groups.group1.contractID())
-                  resolve()
-                })
-              }
-            }
-          })
-        })
       })
 
       await t.step('Should post an event', async function () {

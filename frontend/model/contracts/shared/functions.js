@@ -22,6 +22,33 @@ import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // group.js related
 
+export function paymentHashesFromPaymentPeriod (periodPayments: Object): string[] {
+  let hashes = []
+  if (periodPayments) {
+    const { paymentsFrom } = periodPayments
+    for (const fromUser in paymentsFrom) {
+      for (const toUser in paymentsFrom[fromUser]) {
+        hashes = hashes.concat(paymentsFrom[fromUser][toUser])
+      }
+    }
+  }
+
+  return hashes
+}
+
+export function createPaymentInfo (paymentHash: string, payment: Object): {
+  from: string, to: string, hash: string, amount: number, isLate: boolean, when: string
+} {
+  return {
+    from: payment.meta.username,
+    to: payment.data.toUser,
+    hash: paymentHash,
+    amount: payment.data.amount,
+    isLate: !!payment.data.isLate,
+    when: payment.data.completedDate
+  }
+}
+
 export function createInvite ({ quantity = 1, creator, expires, invitee }: {
   quantity: number, creator: string, expires: number, invitee?: string
 }): {|

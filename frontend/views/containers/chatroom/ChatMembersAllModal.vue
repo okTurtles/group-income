@@ -1,5 +1,10 @@
 <template lang='pug'>
-modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Channel members")')
+modal-base-template.has-background(
+  ref='modal'
+  :fullscreen='true'
+  :a11yTitle='L("Channel members")'
+  :autofocus='false'
+)
   .c-container
     .c-header
       div
@@ -10,8 +15,10 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 
     .card.c-card
       search(
+        ref='search'
         :placeholder='L("Search...")'
         :label='L("Search")'
+        :autofocus='true'
         v-model='searchText'
       )
 
