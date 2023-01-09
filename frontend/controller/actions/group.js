@@ -510,15 +510,23 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/group/displayMincomeChangedPrompt': async function (params: Object) {
-    const isNoSelected = await sbp('gi.ui/prompt', {
-      question: L('Do you make at least {amount} per month?', { amount: params.amount }),
-      heading: L('Mincome changed'), // TODO: discuss if this heading is fine. currently just a placeholder.
-      yesButton: L('No'),
-      noButton: L('Yes')
-    })
-    const showPromptIncomeDetails = params.memberType === 'pledging' ? isNoSelected : !isNoSelected
+    const { withGroupCurrency } = sbp('state/vuex/getters')
+    const promptOptions = params.memberType === 'pledging'
+      ? {
+          heading: L('Mincome changed'),
+          question: L('Do you make at least {amount} per month?', { amount: withGroupCurrency(params.amount) }),
+          yesButton: L('No'),
+          noButton: L('Yes')
+        }
+      : {
+          heading: L('Automatically switched to pledging {zero}', { zero: withGroupCurrency(0) }),
+          question: L('You now make more than the mincome. Would you like to increase your pledge?'),
+          yesButton: L('Yes'),
+          noButton: L('No')
+        }
 
-    if (showPromptIncomeDetails) {
+    const yesButtonSelected = await sbp('gi.ui/prompt', promptOptions)
+    if (yesButtonSelected) {
       // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }

@@ -203,15 +203,14 @@ export default ({
   },
   MINCOME_CHANGED (data: { creator: string, to: number, memberType: string }) {
     const { withGroupCurrency } = sbp('state/vuex/getters')
-    const formattedAmountTo = withGroupCurrency(data.to)
     return {
       avatarUsername: data.creator,
-      body: L('The mincome has changed to {amount}.', { amount: formattedAmountTo }),
+      body: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
       creator: data.creator,
       icon: '',
       level: 'info',
       scope: 'group',
-      sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', { amount: formattedAmountTo, memberType: data.memberType }]
+      sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', { amount: data.to, memberType: data.memberType }]
     }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })
