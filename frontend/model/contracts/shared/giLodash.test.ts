@@ -1,5 +1,5 @@
 // Can run directly with:
-// deno test --import-map=import-map.json frontend/model/contracts/shared/giLodash.test.ts
+// deno test --import-map=import_map.json frontend/model/contracts/shared/giLodash.test.ts
 
 import { assertEquals, assertThrows } from 'asserts'
 import sinon from 'sinon'

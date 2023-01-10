@@ -64,7 +64,7 @@ const {
 
 const backendIndex = './backend/index.ts'
 const contractsDir = 'frontend/model/contracts'
-const denoImportMap = 'import-map.json'
+const denoImportMap = 'import_map.json'
 const denoRunPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
 const denoTestPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
 const distAssets = 'dist/assets'

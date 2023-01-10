@@ -347,7 +347,7 @@ export default sbp('sbp/selectors/register', {
           contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
           contract.actions[action].process(message, { state, ...gProxy })
         },
-        [`${contract.manifest}/${action}/sideEffect`]: async (message: Mutation, state: CheloniaState?) => {
+        [`${contract.manifest}/${action}/sideEffect`]: async (message: Mutation, state: CheloniaState | void) => {
           const sideEffects = this.sideEffectStack(message.contractID)
           while (sideEffects.length > 0) {
             const sideEffect = sideEffects.shift()
