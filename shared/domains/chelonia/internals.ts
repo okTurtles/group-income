@@ -434,7 +434,7 @@ const handleEvent = {
       const manifestHash = message.manifest()
       const hash = message.hash()
       const { action, data, meta } = message.decryptedValue() as GIOpActionUnencrypted
-      const mutation = { data, meta, hash, contractID }
+      const mutation = { data, meta, hash, contractID, description: message.description() }
       await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }
   },
