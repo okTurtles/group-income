@@ -1294,21 +1294,23 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data) {
       // NOTE: When group's mincome has changed, below actions should be taken.
-      // - pledging member: If mincome has increased, 'MINCOME_CHANGED' notification has to be sent.
-      // - receiving member: If mincome has decreased and the value is below his/her monthly income,
-      //                     they has to be automatically switched to a 'pledging' member with the contribution amount being set to 0.
-      //                     And also 'MINCOME_CHANGED' notification has to be sent.
+      // - When mincome has increased, send 'MINCOME_CHANGED' notification to both receiving/pledging members.
+      // - When mincome has decreased, automatically switch a receiving member to a 'pledging' member with 0 contribution send 'MINCOME_CHANGED' notification
+      //   if the changed mincome is below their monthly income.
       const myProfile = sbp('state/vuex/getters').ourGroupProfile
 
       if (isActionYoungerThanUser(meta, myProfile) && myProfile.incomeDetailsType) {
         const memberType = myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledging' : 'receiving'
-        const actionNeeded = memberType === 'pledging'
-          ? data.toAmount > data.fromAmount
-          : data.toAmount < data.fromAmount && data.toAmount < myProfile.incomeAmount
+        const mincomeIncreased = data.toAmount > data.fromAmount
+        const actionNeeded = mincomeIncreased ||
+          (memberType === 'receiving' &&
+          !mincomeIncreased &&
+          myProfile.incomeAmount < data.fromAmount &&
+          myProfile.incomeAmount > data.toAmount)
 
         if (!actionNeeded) { return }
 
-        if (memberType === 'receiving') {
+        if (memberType === 'receiving' && !mincomeIncreased) {
           await sbp('gi.actions/group/groupProfileUpdate', {
             contractID,
             data: {
@@ -1322,7 +1324,8 @@ sbp('chelonia/defineContract', {
           groupID: contractID,
           creator: meta.username,
           to: data.toAmount,
-          memberType
+          memberType,
+          increased: mincomeIncreased
         })
       }
     }

@@ -511,12 +511,12 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/displayMincomeChangedPrompt': async function (params: Object) {
     const { withGroupCurrency } = sbp('state/vuex/getters')
-    const promptOptions = params.memberType === 'pledging'
+    const promptOptions = params.increased
       ? {
           heading: L('Mincome changed'),
           question: L('Do you make at least {amount} per month?', { amount: withGroupCurrency(params.amount) }),
-          yesButton: L('No'),
-          noButton: L('Yes')
+          yesButton: params.memberType === 'pledging' ? L('No') : L('Yes'),
+          noButton: params.memberType === 'pledging' ? L('Yes') : L('No')
         }
       : {
           heading: L('Automatically switched to pledging {zero}', { zero: withGroupCurrency(0) }),
