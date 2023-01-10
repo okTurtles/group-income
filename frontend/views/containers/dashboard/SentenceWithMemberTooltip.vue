@@ -5,8 +5,9 @@ component(
   triggerElementSelector='.t-trigger'
   direction='bottom-end'
 )
-  // The reason for not directly using <tooltip /> component and specifying 'key' attr here is,
-  // to fix a bug where the tooltip content(which is emplate(slot='tooltip') below) is lost when 'slot' is updated.
+  // The reason for using <component /> tag here instead of <tooltip /> and specifying 'key' attr is,
+  // to fix the bug where the link between the tooltip content(template(slot='tooltip') below) and the trigger target element(.t-trigger)
+  // gets broken when 'members' prop is updated. Tooltip gets destoryed and re-mounted in response to the prop change this way.
   slot
 
   template(v-if='members' slot='tooltip')

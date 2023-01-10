@@ -660,9 +660,10 @@ page(
               |   i.icon-* Basic
           td
             tooltip(text='A simple text inside' triggerElementSelector='.trigger-target' direction='bottom-end')
-              i18n(
-                :args='{ ...LTags("strong"), membercount: `<span class="link trigger-target">${5 + " members"}</span>` }'
-              ) {membercount} &nbsp;have {strong_} on-time payment streaks{_strong}
+              span
+                span.link.trigger-target 5 members
+                | &nbsp;have&nbsp;
+                strong on-time payment streaks
 
   article#InviteLink
     section.card
@@ -1391,7 +1392,6 @@ import SvgProposal from '@svgs/proposal.svg'
 import SvgVote from '@svgs/vote.svg'
 import { mapGetters, mapMutations } from 'vuex'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/model/settings/themes.js'
-import { LTags } from '@common/common.js'
 
 export default ({
   name: 'DesignSystemView',
@@ -1562,7 +1562,6 @@ export default ({
     ...mapMutations([
       'setTheme'
     ]),
-    LTags,
     login () {
       console.error('unimplemented, try using the actual Login.vue modal')
     },
