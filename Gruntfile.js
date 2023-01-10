@@ -64,7 +64,6 @@ const {
 
 const backendIndex = './backend/index.ts'
 const contractsDir = 'frontend/model/contracts'
-const denoImportMap = 'import_map.json'
 const denoRunPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
 const denoTestPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
 const distAssets = 'dist/assets'
@@ -382,8 +381,8 @@ module.exports = (grunt) => {
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
       // Test anything that ends with `.test.{js|ts}` in the specified folders, e.g. unit tests for SBP domains kept in the domain folder.
-      test: `deno test ${denoTestPermissions.join(' ')} --import-map=${denoImportMap} frontend shared test`,
-      ts: `deno check --import-map=${denoImportMap} backend/*.ts shared/*.ts shared/domains/chelonia/*.ts`
+      test: `deno test ${denoTestPermissions.join(' ')} frontend shared test`,
+      ts: 'deno check backend/*.ts shared/*.ts shared/domains/chelonia/*.ts'
     }
   })
 
@@ -462,7 +461,7 @@ module.exports = (grunt) => {
     const done = this.async() // Tell Grunt we're async.
     child = spawn(
       'deno',
-      ['run', ...denoRunPermissions, `--import-map=${denoImportMap}`, backendIndex],
+      ['run', ...denoRunPermissions, backendIndex],
       {
         stdio: 'inherit'
       }
