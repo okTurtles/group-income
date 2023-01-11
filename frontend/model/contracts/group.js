@@ -1295,8 +1295,10 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data) {
       // NOTE: When group's mincome has changed, below actions should be taken.
       // - When mincome has increased, send 'MINCOME_CHANGED' notification to both receiving/pledging members.
-      // - When mincome has decreased, automatically switch a receiving member to a 'pledging' member with 0 contribution send 'MINCOME_CHANGED' notification
-      //   if the changed mincome is below their monthly income.
+      // - When mincome has decreased, and the changed mincome is below the monthly income of a receiving member, then
+      //   1) automatically switch that user to a 'pledging' member with 0 contribution,
+      //   2) pop out the prompt message notifying them of this automatic change,
+      //   3) and send 'MINCOME_CHANGED' notification.
       const myProfile = sbp('state/vuex/getters').ourGroupProfile
 
       if (isActionYoungerThanUser(meta, myProfile) && myProfile.incomeDetailsType) {
@@ -1316,6 +1318,15 @@ sbp('chelonia/defineContract', {
             data: {
               incomeDetailsType: 'pledgeAmount',
               pledgeAmount: 0
+            }
+          })
+
+          await sbp('gi.actions/group/displayMincomeChangedPrompt', {
+            contractID,
+            data: {
+              amount: data.toAmount,
+              memberType,
+              increased: mincomeIncreased
             }
           })
         }

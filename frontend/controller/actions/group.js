@@ -509,14 +509,14 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to notify expiring proposals.'))
     }
   },
-  'gi.actions/group/displayMincomeChangedPrompt': async function (params: Object) {
+  'gi.actions/group/displayMincomeChangedPrompt': async function ({ data }: GIActionParams) {
     const { withGroupCurrency } = sbp('state/vuex/getters')
-    const promptOptions = params.increased
+    const promptOptions = data.increased
       ? {
           heading: L('Mincome changed'),
-          question: L('Do you make at least {amount} per month?', { amount: withGroupCurrency(params.amount) }),
-          yesButton: params.memberType === 'pledging' ? L('No') : L('Yes'),
-          noButton: params.memberType === 'pledging' ? L('Yes') : L('No')
+          question: L('Do you make at least {amount} per month?', { amount: withGroupCurrency(data.amount) }),
+          yesButton: data.memberType === 'pledging' ? L('No') : L('Yes'),
+          noButton: data.memberType === 'pledging' ? L('Yes') : L('No')
         }
       : {
           heading: L('Automatically switched to pledging {zero}', { zero: withGroupCurrency(0) }),

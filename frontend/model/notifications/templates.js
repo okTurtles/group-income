@@ -210,7 +210,14 @@ export default ({
       icon: '',
       level: 'info',
       scope: 'group',
-      sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', { amount: data.to, memberType: data.memberType, increased: data.increased }]
+      sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', {
+        contractID: sbp('state/vuex/state').currentGroupId,
+        data: {
+          amount: data.to,
+          memberType: data.memberType,
+          increased: data.increased
+        }
+      }]
     }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })
