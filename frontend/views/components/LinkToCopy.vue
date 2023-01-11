@@ -47,20 +47,13 @@ export default ({
     }
   },
   methods: {
-    // FIXME: probably needs to be defined centrally somewhere else
-    isMacSafari () {
-      // NB: Chrome, Edge, Brave on Macintosh tacks on the 'Safari/537.36' string in its userAgent
-      // so we have to ensure that were not mistaking those browsers instead when matching for Safari on Macintosh
-      const userAgent = navigator.userAgent
-      const safari = /Macintosh.*Safari/
-      const chrome = /Macintosh.*Chrome/
-      const edge = /Macintosh.*Edg/
-      return userAgent.match(safari) &&
-              !(userAgent.match(chrome) || userAgent.match(edge))
+    isMobile () {
+      // https://stackoverflow.com/questions/11381673/detecting-a-mobile-browser#comment95674193_51774045
+      return !window.matchMedia('(any-pointer:fine)').matches
     },
     copyToClipboard () {
-      // if the user is using the device that supports web share API, use it and then skip the other logics below.
-      if (navigator.share && !this.isMacSafari()) {
+      // if the device supports the Web Share API, use it and then skip other logic below.
+      if (navigator.share && this.isMobile()) {
         navigator.share({
           title: this.L('Your invite'),
           url: this.link
