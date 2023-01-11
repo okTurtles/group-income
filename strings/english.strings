@@ -594,6 +594,9 @@
 /* views/components/ProfileCard.vue */
 "Edit bio" = "Edit bio";
 
+/* views/containers/contributions/Contribution.vue */
+"Edit contribution settings" = "Edit contribution settings";
+
 /* views/components/ProfileCard.vue */
 "Edit payment info" = "Edit payment info";
 
@@ -1395,6 +1398,9 @@
 /* views/containers/proposals/ProposalItem.vue */
 "Proposal rejected on {date} with {nay} against out of {total} total votes." = "Proposal rejected on {date} with {nay} against out of {total} total votes.";
 
+/* views/containers/proposals/ProposalsWidget.vue */
+"Proposals" = "Proposals";
+
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Proposals are accepted when the required percentage of members agree to the proposal." = "Proposals are accepted when the required percentage of members agree to the proposal.";
 
@@ -2142,7 +2148,7 @@
 /* views/containers/contributions/IncomeDetails.vue */
 "Your income must be lower than the group mincome" = "Your income must be lower than the group mincome";
 
-/* views/containers/group-settings/InvitationsTable.vue */
+/* views/components/LinkToCopy.vue, views/containers/group-settings/InvitationsTable.vue */
 "Your invite" = "Your invite";
 
 /* views/containers/user-settings/Troubleshooting.vue */
@@ -2388,6 +2394,36 @@
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "{span_}Group{_span} goal" = "{span_}Group{_span} goal";
 
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} members{_span} have {strong_} missed payments {_strong}" = "{span_}{membercount} members{_span} have {strong_} missed payments {_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} members{_span} have {strong_} on-time payment streaks{_strong}" = "{span_}{membercount} members{_span} have {strong_} on-time payment streaks{_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} members{_span} haven't {strong_} entered income details{_strong}" = "{span_}{membercount} members{_span} haven't {strong_} entered income details{_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} members{_span} haven't {strong_} logged in past {days} days or more {_strong}" = "{span_}{membercount} members{_span} haven't {strong_} logged in past {days} days or more {_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} members{_span} haven't {strong_} voted in the last {proposalcount} proposals {_strong}" = "{span_}{membercount} members{_span} haven't {strong_} voted in the last {proposalcount} proposals {_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} member{_span} have {strong_} missed payments {_strong}" = "{span_}{membercount} member{_span} have {strong_} missed payments {_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} member{_span} have {strong_} on-time payment streaks{_strong}" = "{span_}{membercount} member{_span} have {strong_} on-time payment streaks{_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} member{_span} haven't {strong_} entered income details{_strong}" = "{span_}{membercount} member{_span} haven't {strong_} entered income details{_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} member{_span} haven't {strong_} logged in past {days} days or more {_strong}" = "{span_}{membercount} member{_span} haven't {strong_} logged in past {days} days or more {_strong}";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} member{_span} haven't {strong_} voted in the last {proposalcount} proposals {_strong}" = "{span_}{membercount} member{_span} haven't {strong_} voted in the last {proposalcount} proposals {_strong}";
+
 /* views/containers/chatroom/MessageReactions.vue */
 "{userList} reacted with {emotiName}" = "{userList} reacted with {emotiName}";
 
@@ -2400,8 +2436,23 @@
 /* views/containers/proposals/ProposalItem.vue */
 "{username} proposed" = "{username} proposed";
 
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{user} missed {streak} payment" = "{user} missed {streak} payment";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{user} missed {streak} payments" = "{user} missed {streak} payments";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{user} missed {streak} vote" = "{user} missed {streak} vote";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"{user} missed {streak} votes" = "{user} missed {streak} votes";
+
 /* views/containers/contributions/ContributionsWidget.vue, views/containers/payments/MonthOverview.vue */
 "{value} out of {max}" = "{value} out of {max}";
+
+/* views/containers/contributions/ContributionItem.vue */
+"{who0} and {who1}" = "{who0} and {who1}";
 
 /* views/pages/Join.vue */
 "{who} invited you to join their group!" = "{who} invited you to join their group!";

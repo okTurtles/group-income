@@ -2,6 +2,7 @@
 component(
   is='Tooltip'
   :key='members.length'
+  :opacity='members.length === 0 ? 0 : 0.95'
   triggerElementSelector='.t-trigger'
   direction='bottom-end'
 )
@@ -10,7 +11,7 @@ component(
   // gets broken when "members" prop is updated. Tooltip gets destoryed and re-mounted in response to the prop change this way.
   slot
 
-  template(v-if='members' slot='tooltip')
+  template(v-if='members && members.length' slot='tooltip')
     div(
       v-for='(name, index) in members'
       :key='`member-${index}`'
@@ -30,3 +31,9 @@ export default ({
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+.has-zero-members ::v-deep .c-tooltip {
+  display: none !important;
+}
+</style>

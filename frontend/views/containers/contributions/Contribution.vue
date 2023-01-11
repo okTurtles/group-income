@@ -117,7 +117,7 @@ export default ({
       return this.variant === 'unfilled'
     },
     editAriaLabel () {
-      return this.L('Edit contribution settings')
+      return L('Edit contribution settings')
     },
     randomPlaceholder () {
       return this.placeholders[Math.floor(Math.random() * this.placeholders.length)]
