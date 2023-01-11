@@ -208,22 +208,23 @@ export default (sbp('sbp/selectors/register', {
           contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
           contract.actions[action].process(message, { state, ...gProxy })
         },
-        [`${contract.manifest}/${action}/sideEffect`]: async (message: Object, state: ?Object) => {
-          const sideEffects = this.sideEffectStack(message.contractID)
+        // 'mutation' is an object that's similar to 'message', but not identical
+        [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
+          const sideEffects = this.sideEffectStack(mutation.contractID)
           while (sideEffects.length > 0) {
             const sideEffect = sideEffects.shift()
             try {
               await contract.sbp(...sideEffect)
             } catch (e) {
-              console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${message.description()}:`, sideEffect)
-              this.sideEffectStacks[message.contractID] = [] // clear the side effects
+              console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${mutation.description}:`, sideEffect)
+              this.sideEffectStacks[mutation.contractID] = [] // clear the side effects
               throw e
             }
           }
           if (contract.actions[action].sideEffect) {
-            state = state || contract.state(message.contractID)
+            state = state || contract.state(mutation.contractID)
             const gProxy = gettersProxy(state, contract.getters)
-            await contract.actions[action].sideEffect(message, { state, ...gProxy })
+            await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
           }
         }
       }))
