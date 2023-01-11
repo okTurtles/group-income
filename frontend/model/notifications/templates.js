@@ -200,5 +200,24 @@ export default ({
       linkTo: `dashboard?modal=ThankYouNoteModal&from=${data.fromUser}&to=${data.toUser}`,
       scope: 'group'
     }
+  },
+  MINCOME_CHANGED (data: { creator: string, to: number, memberType: string, increased: boolean }) {
+    const { withGroupCurrency } = sbp('state/vuex/getters')
+    return {
+      avatarUsername: data.creator,
+      body: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
+      creator: data.creator,
+      icon: '',
+      level: 'info',
+      scope: 'group',
+      sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', {
+        contractID: sbp('state/vuex/state').currentGroupId,
+        data: {
+          amount: data.to,
+          memberType: data.memberType,
+          increased: data.increased
+        }
+      }]
+    }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })
