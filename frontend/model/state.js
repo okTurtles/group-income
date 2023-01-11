@@ -548,7 +548,7 @@ const getters = {
   },
   groupUnreadMessages (state, getters) {
     return (groupID: string) => Object.keys(getters.ourUnreadMessages)
-      .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID].chatRooms).includes(cID))
+      .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID]?.chatRooms || {}).includes(cID))
       .map(cID => getters.ourUnreadMessages[cID].mentions.length)
       .reduce((sum, n) => sum + n, 0)
   },
