@@ -9671,9 +9671,7 @@ ${this.getErrorInfo()}`;
         const { setting, proposedValue } = proposal.data.proposalData;
         const message = {
           meta,
-          data: {
-            [setting]: setting === "mincomeAmount" ? { from: (0, import_sbp2.default)("state/vuex/getters").groupMincomeAmount, to: proposedValue } : proposedValue
-          },
+          data: { [setting]: proposedValue },
           contractID
         };
         (0, import_sbp2.default)("gi.contracts/group/updateSettings/process", message, state);
@@ -10713,29 +10711,24 @@ ${this.getErrorInfo()}`;
           groupName: (x) => typeof x === "string",
           groupPicture: (x) => typeof x === "string",
           sharedValues: (x) => typeof x === "string",
-          mincomeAmount: objectOf({
-            from: (x) => typeof x === "number" && x > 0,
-            to: (x) => typeof x === "number" && x > 0
-          }),
+          mincomeAmount: (x) => typeof x === "number" && x > 0,
           mincomeCurrency: (x) => typeof x === "string"
         }),
-        process({ meta, data }, { state }) {
+        process({ contractID, meta, data }, { state, getters }) {
+          const mincomeCache = "mincomeAmount" in data ? state.settings.mincomeAmount : null;
           for (const key in data) {
-            const value = key === "mincomeAmount" ? data[key].to : data[key];
-            vue_esm_default.set(state.settings, key, value);
+            vue_esm_default.set(state.settings, key, data[key]);
           }
-        },
-        sideEffect({ contractID, meta, data }, { getters }) {
-          if (data.mincomeAmount && data.mincomeAmount.to > data.mincomeAmount.from) {
-            const { loggedIn } = (0, import_sbp4.default)("state/vuex/state");
-            const myProfile = getters.groupProfile(loggedIn.username);
-            if (isActionYoungerThanUser(meta, myProfile) && myProfile.incomeDetailsType) {
-              (0, import_sbp4.default)("gi.notifications/emit", "MINCOME_INCREASED", {
-                groupID: contractID,
-                creator: meta.username,
-                to: data.mincomeAmount.to
-              });
-            }
+          if (mincomeCache !== null) {
+            (0, import_sbp4.default)("gi.contracts/group/pushSideEffect", contractID, [
+              "gi.contracts/group/sendMincomeChangedNotification",
+              contractID,
+              meta,
+              {
+                toAmount: data.mincomeAmount,
+                fromAmount: mincomeCache
+              }
+            ]);
           }
         }
       },
@@ -10959,6 +10952,41 @@ ${this.getErrorInfo()}`;
           await (0, import_sbp4.default)("gi.db/archive/save", archPaymentsKey, archPayments);
         }
         (0, import_sbp4.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, { paymentsByPeriod, payments });
+      },
+      "gi.contracts/group/sendMincomeChangedNotification": async function(contractID, meta, data) {
+        const myProfile = (0, import_sbp4.default)("state/vuex/getters").ourGroupProfile;
+        if (isActionYoungerThanUser(meta, myProfile) && myProfile.incomeDetailsType) {
+          const memberType = myProfile.incomeDetailsType === "pledgeAmount" ? "pledging" : "receiving";
+          const mincomeIncreased = data.toAmount > data.fromAmount;
+          const actionNeeded = mincomeIncreased || memberType === "receiving" && !mincomeIncreased && myProfile.incomeAmount < data.fromAmount && myProfile.incomeAmount > data.toAmount;
+          if (!actionNeeded) {
+            return;
+          }
+          if (memberType === "receiving" && !mincomeIncreased) {
+            await (0, import_sbp4.default)("gi.actions/group/groupProfileUpdate", {
+              contractID,
+              data: {
+                incomeDetailsType: "pledgeAmount",
+                pledgeAmount: 0
+              }
+            });
+            await (0, import_sbp4.default)("gi.actions/group/displayMincomeChangedPrompt", {
+              contractID,
+              data: {
+                amount: data.toAmount,
+                memberType,
+                increased: mincomeIncreased
+              }
+            });
+          }
+          await (0, import_sbp4.default)("gi.notifications/emit", "MINCOME_CHANGED", {
+            groupID: contractID,
+            creator: meta.username,
+            to: data.toAmount,
+            memberType,
+            increased: mincomeIncreased
+          });
+        }
       }
     }
   });
