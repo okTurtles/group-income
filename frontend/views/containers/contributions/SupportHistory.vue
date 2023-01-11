@@ -48,7 +48,7 @@ export default ({
       'groupCreatedDate'
     ]),
     firstDistributionPeriod () {
-      // group's first distribution period.
+      // group's first distribution period
       return this.periodStampGivenDate(this.groupCreatedDate)
     },
     periods () {
