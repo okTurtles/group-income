@@ -631,6 +631,7 @@
   "Total": "Total",
   "Total Pledged": "Total Pledged",
   "Total covered": "Total covered",
+  "Total distributed since start: {amount}": "Total distributed since start: {amount}",
   "Total given": "Total given",
   "Total needed": "Total needed",
   "Total space used": "Total space used",

@@ -20,8 +20,9 @@ div(:class='isReady ? "" : "c-ready"')
 
 <script>
 import { mapGetters } from 'vuex'
-import { compareISOTimestamps } from '@model/contracts/shared/time.js'
+import { comparePeriodStamps } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 
@@ -54,7 +55,7 @@ export default ({
       const periods = [this.currentPaymentPeriod]
       for (let i = 0; i < MAX_HISTORY_PERIODS - 1; i++) {
         const period = this.periodBeforePeriod(periods[0])
-        if (compareISOTimestamps(period, this.firstDistributionPeriod) < 0) break
+        if (comparePeriodStamps(period, this.firstDistributionPeriod) < 0) break
         else periods.unshift(period)
       }
       return periods
@@ -73,8 +74,8 @@ export default ({
           total: totalDone === 0 ? 0 : totalDone / totalTodo,
           title: this.getPeriodFromStartToDueDate(period),
           tooltipContent: [
-            this.L('Needed: {todo}', { todo: this.withGroupCurrency(totalTodo) }),
-            this.L('Distributed: {done}', { done: this.withGroupCurrency(totalDone) })
+            L('Needed: {todo}', { todo: this.withGroupCurrency(totalTodo) }),
+            L('Distributed: {done}', { done: this.withGroupCurrency(totalDone) })
           ]
         }
       }))

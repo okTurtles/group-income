@@ -192,6 +192,9 @@
 /* MISSING TRANSLATION - views/containers/contributions/SupportHistory.vue */
 "Percentage of the group income goal reached by the group." = "Percentage of the group income goal reached by the group.";
 
+/* MISSING TRANSLATION - views/containers/contributions/SupportHistory.vue */
+"Total distributed since start: {amount}" = "Total distributed since start: {amount}";
+
 /* MISSING TRANSLATION - views/containers/contributions/SupportHistory.vue, views/containers/contributions/TodoHistory.vue */
 "* This month contains delayed payments for prior months." = "* This month contains delayed payments for prior months.";
 

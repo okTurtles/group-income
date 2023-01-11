@@ -63,6 +63,7 @@
   "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.": "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.",
   "Payment details required. Please let people know how they can pay you.": "Payment details required. Please let people know how they can pay you.",
   "Percentage of the group income goal reached by the group.": "Percentage of the group income goal reached by the group.",
+  "Total distributed since start: {amount}": "Total distributed since start: {amount}",
   "* This month contains delayed payments for prior months.": "* This month contains delayed payments for prior months.",
   "Percentage of payments completed by those pledging.": "Percentage of payments completed by those pledging.",
   "TODO history": "TODO history",

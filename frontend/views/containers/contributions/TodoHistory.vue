@@ -20,9 +20,10 @@ import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
+import { L } from '@common/common.js'
 
 export default ({
-  name: 'GroupTodoHistory',
+  name: 'TodoHistory',
   data () {
     return {
       isReady: false,
@@ -69,8 +70,8 @@ export default ({
           total: doneCount === 0 ? 0 : doneCount / (doneCount + missedCount),
           title: this.getPeriodFromStartToDueDate(period),
           tooltipContent: [
-            this.L('Total: {total}', { total: doneCount + missedCount }),
-            this.L('Completed: {completed}', { completed: doneCount })
+            L('Total: {total}', { total: doneCount + missedCount }),
+            L('Completed: {completed}', { completed: doneCount })
           ]
         })
       }

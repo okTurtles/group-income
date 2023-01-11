@@ -1896,6 +1896,9 @@
 /* views/components/graphs/Overview.vue */
 "Total covered" = "Total covered";
 
+/* views/containers/contributions/SupportHistory.vue */
+"Total distributed since start: {amount}" = "Total distributed since start: {amount}";
+
 /* views/components/graphs/Overview.vue */
 "Total given" = "Total given";
 
