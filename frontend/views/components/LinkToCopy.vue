@@ -25,6 +25,7 @@ component.c-wrapper(
 
 <script>
 import Tooltip from '@components/Tooltip.vue'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'LinkToCopy',
@@ -62,7 +63,7 @@ export default ({
       // if the user is using the device that supports web share API, use it and then skip the other logics below.
       if (navigator.share && !this.isMacSafari()) {
         navigator.share({
-          title: this.L('Your invite'),
+          title: L('Your invite'),
           url: this.link
         }).catch((error) => console.error('navigator.share failed with:', error))
         return
