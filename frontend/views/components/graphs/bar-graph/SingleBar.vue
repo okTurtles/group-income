@@ -1,37 +1,24 @@
 <template lang='pug'>
-.bar-graph-container(:class='{"c-getting-ready": !isReady}')
-  .bar-graph(
-    v-for='(bar, index) in bars'
-    :key='`percentage-${index}`'
-  )
-    .bar-graph-column(:class='`has-background-${getResult(bar.total)}`')
-      .bar-graph-progress(
-        :style='{height: getPercentage(bar.total), width: getPercentage(bar.total)}'
-        :class='[{ isLow: isLow(bar.total) }, `has-background-${getResult(bar.total)}-solid`]'
-      )
-        h4.bar-graph-title {{ bar.title }}
-        p.bar-graph-txt {{ bar.total | toPercent }}%
-
+.bar-graph
+  .bar-graph-column(:class='`has-background-${getResult(data.total)}`')
+    .bar-graph-progress(
+      :style='{height: getPercentage(data.total), width: getPercentage(data.total)}'
+      :class='[{ isLow: isLow(data.total) }, `has-background-${getResult(data.total)}-solid`]'
+    )
+      h4.bar-graph-title {{ data.title }}
+      p.bar-graph-txt {{ data.total | toPercent }}%
 </template>
 
 <script>
 import { toPercent } from '@view-utils/filters.js'
 
 export default ({
-  name: 'BarGraph',
+  name: 'SingleBar',
   props: {
-    bars: {
-      type: Array, // [{ total, value }]
-      default () { return [] }
+    data: {
+      type: Object, // { total: number, title: string }
+      required: true
     }
-  },
-  data () {
-    return {
-      isReady: false
-    }
-  },
-  mounted () {
-    setTimeout(() => { this.isReady = true }, 0)
   },
   methods: {
     getPercentage (percentage) {
@@ -60,17 +47,6 @@ export default ({
 
   @include tablet {
     max-width: 7.5rem;
-  }
-
-  &-container {
-    display: flex;
-    margin: 1.5rem 0 1rem 0;
-    gap: 1rem;
-    overflow: hidden;
-
-    @include phone {
-      flex-direction: column-reverse;
-    }
   }
 
   &-column {
@@ -132,6 +108,7 @@ export default ({
 
     @include phone {
       top: 10%;
+      width: max-content;
     }
   }
 
@@ -168,22 +145,6 @@ export default ({
     @include from($tablet) {
       margin-top: -3.3rem;
     }
-  }
-}
-
-.c-getting-ready .bar-graph {
-  &-progress {
-    height: 0% !important;
-
-    @include phone {
-      width: 0% !important;
-      height: 100% !important;
-    }
-  }
-
-  &-title,
-  &-txt {
-    opacity: 0;
   }
 }
 </style>

@@ -2,6 +2,7 @@ import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import { PAYMENT_COMPLETED } from '@model/contracts/shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from '@model/contracts/shared/functions.js'
+import { humanDate, dateFromPeriodStamp } from '@model/contracts/shared/time.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 
 // NOTE: this mixin combines payment information
@@ -14,7 +15,8 @@ const PaymentsMixin: Object = {
       'ourUsername',
       'ourPayments',
       'groupPeriodPayments',
-      'paymentHashesForPeriod'
+      'paymentHashesForPeriod',
+      'dueDateForPeriod'
     ])
   },
   methods: {
@@ -122,6 +124,10 @@ const PaymentsMixin: Object = {
       const archPaymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
       const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
       return archPaymentsByPeriod[period] || {}
+    },
+    getPeriodFromStartToDueDate (period) {
+      const dueDate = this.dueDateForPeriod(period)
+      return `${humanDate(dateFromPeriodStamp(period))} - ${humanDate(dateFromPeriodStamp(dueDate))}`
     }
   }
 }

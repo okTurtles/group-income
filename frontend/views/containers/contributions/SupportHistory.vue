@@ -16,10 +16,9 @@ div(:class='isReady ? "" : "c-ready"')
 
 <script>
 import { mapGetters } from 'vuex'
-import { humanDate } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
-import BarGraph from '@components/graphs/BarGraph.vue'
+import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 
 export default ({
   name: 'GroupSupportHistory',
@@ -73,7 +72,7 @@ export default ({
         return {
           total: numReceivers === 0 ? 0 : totalDistributionAmount / (this.mincome * numReceivers),
           delayedPayment: payments.some(payment => payment.isLate),
-          title: humanDate(period, { month: 'long' })
+          title: this.getPeriodFromStartToDueDate(period)
         }
       }))
     }

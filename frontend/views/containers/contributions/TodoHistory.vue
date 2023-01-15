@@ -19,7 +19,7 @@ import { mapGetters } from 'vuex'
 import { humanDate, compareISOTimestamps, dateFromPeriodStamp } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
-import BarGraph from '@components/graphs/BarGraph.vue'
+import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 
 export default ({
   name: 'GroupTodoHistory',
@@ -38,7 +38,8 @@ export default ({
       'currentPaymentPeriod',
       'periodStampGivenDate',
       'periodBeforePeriod',
-      'groupCreatedDate'
+      'groupCreatedDate',
+      'dueDateForPeriod'
     ]),
     firstDistributionPeriod () {
       // group's first distribution period
@@ -51,6 +52,7 @@ export default ({
   methods: {
     async initHistory () {
       let period = this.currentPaymentPeriod
+      const getLen = obj => Object.keys(obj).length
 
       for (let i = 0; i < MAX_HISTORY_PERIODS; i++) {
         period = this.periodBeforePeriod(period)
@@ -58,13 +60,12 @@ export default ({
 
         const paymentDetails = await this.getPaymentDetailsByPeriod(period)
         const { lastAdjustedDistribution } = await this.getPeriodPayment(period)
-        const getLen = obj => Object.keys(obj).length
-        const done = getLen(paymentDetails)
-        const missed = getLen(lastAdjustedDistribution || {})
+        const doneCount = getLen(paymentDetails)
+        const missedCount = getLen(lastAdjustedDistribution || {})
 
         this.history.unshift({
-          total: done === 0 ? 0 : done / (done + missed),
-          title: humanDate(dateFromPeriodStamp(period), { month: 'long' })
+          total: doneCount === 0 ? 0 : doneCount / (doneCount + missedCount),
+          title: this.getPeriodFromStartToDueDate(period)
         })
       }
     }
