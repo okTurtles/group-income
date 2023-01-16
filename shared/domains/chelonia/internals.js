@@ -40,7 +40,7 @@ export default (sbp('sbp/selectors/register', {
       throw new Error(`bad hash ${sourceHash} for contract '${contractInfo.file}'! Should be: ${contractInfo.hash}`)
     }
     function reduceAllow (acc, v) { acc[v] = true; return acc }
-    const allowedSels = ['okTurtles.events/on', 'chelonia/defineContract']
+    const allowedSels = ['okTurtles.events/on', 'chelonia/defineContract', 'chelonia/out/keyRequest']
       .concat(this.config.contracts.defaults.allowedSelectors)
       .reduce(reduceAllow, {})
     const allowedDoms = this.config.contracts.defaults.allowedDomains
@@ -499,6 +499,8 @@ export default (sbp('sbp/selectors/register', {
 
       const wasSubscribed = !!state.contracts[originatingContractID]
 
+      // TODO: We can use chelonia/latestContractState but need state.contracts
+
       // 1. Sync (originating) identity contract
       await sbp('chelonia/withEnv', originatingContractID, { skipActionProcessing: true }, [
         'chelonia/private/in/syncContract', originatingContractID
@@ -680,11 +682,13 @@ const handleEvent = {
       // Flow doesn't understand that a first message must be a contract,
       // so we have to help it a bit in order to acces the 'type' property.
       const { type } = ((message.opValue(): any): GIOpContract)
-      if (!state[contractID] || !state.contracts[contractID]) {
-        console.debug(`contract ${type} registered for ${contractID}`)
-        state[contractID] || this.config.reactiveSet(state, contractID, {})
-        state.contracts[contractID] || this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID })
+      // Allow having _volatile but nothing else
+      if (state[contractID] && Object.keys(state[contractID]).length > 0 && !('_volatile' in state[contractID])) {
+        throw new ChelErrorUnrecoverable(`state[contractID] (contractID ${contractID}) is already set`)
       }
+      console.debug(`contract ${type} registered for ${contractID}`)
+      if (!state[contractID]) this.config.reactiveSet(state, contractID, {})
+      this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID })
       // we've successfully received it back, so remove it from expectation pending
       const index = state.pending.indexOf(contractID)
       index !== -1 && state.pending.splice(index, 1)

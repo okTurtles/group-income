@@ -673,7 +673,10 @@ export default (sbp('sbp/selectors/register', {
     if (!contract) {
       throw new Error('Contract name not found')
     }
-    const state = contract.state(contractID)
+    const rootState = sbp(this.config.stateSelector)
+    if (!rootState[contractID]) this.config.reactiveSet(rootState, contractID, {})
+    const state = rootState[contractID]
+    contract.state(contractID)
     const originatingState = originatingContract.state(originatingContractID)
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
     const meta = contract.metadata.create()
@@ -699,7 +702,7 @@ export default (sbp('sbp/selectors/register', {
       signatureFn: signingKey ? signatureFnBuilder(signingKey) : undefined
     })
     hooks && hooks.prepublish && hooks.prepublish(msg)
-    await sbp('chelonia/private/out/publishEvent', msg, publishOptions).then(() => (state._volatile = { ...state._volatile, pendingKeys: true }))
+    await sbp('chelonia/private/out/publishEvent', msg, publishOptions).then(() => (state && (state._volatile = { ...state._volatile, pendingKeys: true })))
     hooks && hooks.postpublish && hooks.postpublish(msg)
     return msg
   },

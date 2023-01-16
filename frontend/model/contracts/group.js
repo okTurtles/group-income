@@ -999,6 +999,31 @@ sbp('chelonia/defineContract', {
         if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
+      },
+      async sideEffect ({ data, meta, contractID }) {
+        const rootState = sbp('state/vuex/state')
+        const contracts = rootState.contracts || {}
+        const { identityContractID } = rootState.loggedIn
+        const userState = rootState[identityContractID]
+        const state = rootState[contractID]
+
+        if (rootState[data.chatRoomID]?._volatile) {
+          return
+        }
+
+        await sbp('chelonia/out/keyRequest', {
+          originatingContractID: identityContractID,
+          originatingContractName: contracts[identityContractID].type,
+          contractID: data.chatRoomID,
+          contractName: 'gi.contracts/chatroom',
+          signingKey: state._volatile?.keys?.[(((Object.values(Object(state._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)],
+          innerSigningKeyId: Object.values(userState._vm.authorizedKeys).find((k) => k.meta?.type === 'csk').id,
+          encryptionKeyId: Object.values(userState._vm.authorizedKeys).find((k) => k.meta?.type === 'cek').id,
+          hooks: {
+            prepublish: null,
+            postpublish: null
+          }
+        })
       }
     },
     'gi.contracts/group/deleteChatRoom': {

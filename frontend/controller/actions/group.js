@@ -233,6 +233,13 @@ export default (sbp('sbp/selectors/register', {
             privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP
           }
         },
+        options: {
+          joinKey: {
+            id: CSKid,
+            type: CSK.type,
+            data: CSKp
+          }
+        },
         signingKeyId: CSKid,
         encryptionKeyId: CEKid
       })
@@ -346,6 +353,7 @@ export default (sbp('sbp/selectors/register', {
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: params.data,
+      options: params.options,
       hooks: {
         prepublish: params.hooks?.prepublish,
         postpublish: null
@@ -416,6 +424,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
       ...omit(params, ['options']),
+      options: { joinKey: params.options?.joinKey },
       hooks: {
         prepublish: params.hooks?.prepublish,
         postpublish: null
