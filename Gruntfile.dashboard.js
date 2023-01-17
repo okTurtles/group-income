@@ -34,10 +34,11 @@ const mainSrc = resolvePathFromRoot('main.js')
 const mainScss = resolvePathFromRoot('assets/style/main.scss')
 const backendIndex = 'backend/index.js'
 
-module.exports = (grunt) => {
-  const isDevelopment = grunt.option('development') === true
-  const isProduction = grunt.option('production') === true
+const { NODE_ENV = 'development' } = process.env
+const isDevelopment = NODE_ENV === 'development'
+const isProduction = !isDevelopment
 
+module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
   const esbuildOptionsBag = {

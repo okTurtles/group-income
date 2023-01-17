@@ -7,7 +7,7 @@ div
 
 <script>
 export default {
-  name: 'PageBilling'
+  name: 'Billing'
 }
 </script>
 

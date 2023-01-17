@@ -4,11 +4,7 @@ nav.c-navigation(
 )
   .c-navigation-header
     h1.sr-only Navigation menu
-
-    router-link(to='/home')
-      img.c-logo(src='/assets/images/group-income-icon-transparent.png')
-
-    h1.c-header Chelonia
+    h1.c-header(@click='toHome') Chelonia
 
   ul.c-menu
     li.c-nav-item(
@@ -34,6 +30,9 @@ export default {
         ]
       }
     }
+  },
+  methods: {
+    toHome () { this.$router.push({ path: '/' }) }
   }
 }
 </script>
@@ -56,6 +55,11 @@ export default {
 
 .c-header {
   font-size: 1.4rem;
+  cursor: pointer;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .c-logo {

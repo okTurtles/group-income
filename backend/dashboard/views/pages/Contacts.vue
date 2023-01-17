@@ -7,7 +7,7 @@ div
 
 <script>
 export default {
-  name: 'PageContacts'
+  name: 'Contacts'
 }
 </script>
 

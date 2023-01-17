@@ -7,7 +7,7 @@ div
 
 <script>
 export default {
-  name: 'PageUsers'
+  name: 'Users'
 }
 </script>
 

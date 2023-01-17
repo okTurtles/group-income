@@ -17,8 +17,8 @@
     "double": "PORT_SHIFT=1 grunt dev",
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh",
-    "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js --development",
-    "build:dashboard": "grunt build --gruntfile Gruntfile.dashboard.js --production"
+    "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js",
+    "build:dashboard": "cross-env NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js"
   },
   "eslintConfig": {
     "root": true,
@@ -143,6 +143,7 @@
     "babel-plugin-module-resolver": "4.1.0",
     "babel-plugin-root-import": "6.6.0",
     "browser-sync": "2.27.10",
+    "cross-env": "7.0.3",
     "cypress": "7.7.0",
     "cypress-file-upload": "5.0.8",
     "cypress-pipe": "2.0.0",

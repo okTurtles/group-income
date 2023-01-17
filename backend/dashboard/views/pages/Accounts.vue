@@ -7,7 +7,7 @@ div
 
 <script>
 export default ({
-  name: 'PageAccounts'
+  name: 'Accounts'
 }: Object)
 </script>
 
