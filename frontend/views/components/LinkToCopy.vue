@@ -26,6 +26,9 @@ component.c-wrapper(
 <script>
 import Tooltip from '@components/Tooltip.vue'
 
+// https://stackoverflow.com/questions/11381673/detecting-a-mobile-browser#comment95674193_51774045
+const isMobile = !window.matchMedia('(any-pointer:fine)').matches
+
 export default ({
   name: 'LinkToCopy',
   components: {
@@ -47,13 +50,9 @@ export default ({
     }
   },
   methods: {
-    isMobile () {
-      // https://stackoverflow.com/questions/11381673/detecting-a-mobile-browser#comment95674193_51774045
-      return !window.matchMedia('(any-pointer:fine)').matches
-    },
     copyToClipboard () {
       // if the device supports the Web Share API, use it and then skip other logic below.
-      if (navigator.share && this.isMobile()) {
+      if (navigator.share && isMobile) {
         navigator.share({
           title: this.L('Your invite'),
           url: this.link
