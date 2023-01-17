@@ -443,7 +443,7 @@ async function outEncryptedOrUnencryptedAction (
   const { contract } = this.manifestToContract[manifestHash]
   const state = contract.state(contractID)
   const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-  const meta = contract.metadata.create()
+  const meta = await contract.metadata.create()
   const gProxy = gettersProxy(state, contract.getters)
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
