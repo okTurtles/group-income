@@ -1,8 +1,8 @@
 <template lang='pug'>
 div
-  h1.c-page-header Billing
+  i18n.c-page-header(tag='h1') Billing
 
-  p this is 'billing' page
+  i18n(tag='p') This is 'billing' page
 </template>
 
 <script>

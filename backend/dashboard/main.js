@@ -4,6 +4,7 @@ import Vue from 'vue'
 import Navigation from '@containers/navigation/Navigation.vue'
 import router from './controller/router.js'
 import './views/utils/vSafeHtml.js'
+import './controller/backend.js'
 import '@common/translations.js'
 
 Vue.config.errorHandler = function (err, vm, info) {

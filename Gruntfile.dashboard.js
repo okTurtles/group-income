@@ -172,6 +172,11 @@ module.exports = (grunt) => {
         src: ['**/*', '!style/**'],
         dest: distAssets,
         expand: true
+      },
+      copy: {
+        src: ['strings-dashboard/*.json'],
+        dest: distAssets,
+        expand: true
       }
     }
   })
@@ -293,7 +298,7 @@ module.exports = (grunt) => {
       [['backend/dashboard/assets/{fonts,images}/**/*'], ['copy:assets']],
       // if file changes in dashboard/dist is watched, browser-sync gets into the infinite loop of reloading for some reason.
       [['backend/dashboard/assets/style/**/*.scss'], [stylelint]],
-      [['backend/dashboard/main.js', 'backend/dashboard/views/**/*.js'], [eslint]],
+      [['backend/dashboard/**/*.js'], [eslint]],
       [['backend/dashboard/views/**/*.vue'], [puglint, stylelint, eslint]]
     ].forEach(([globs, tasks]) => {
       for (const glob of globs) {
