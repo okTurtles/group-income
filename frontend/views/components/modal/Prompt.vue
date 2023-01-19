@@ -66,4 +66,13 @@ export default ({
   }
 }
 
+::v-deep .c-modal-header {
+  max-width: 37rem;
+  align-self: center;
+  text-align: center;
+
+  h1 {
+    padding: 1.2rem 0;
+  }
+}
 </style>

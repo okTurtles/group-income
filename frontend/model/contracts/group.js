@@ -1,3 +1,5 @@
+/* globals fetchServerTime */
+
 'use strict'
 
 import sbp from '@sbp/sbp'
@@ -241,14 +243,10 @@ sbp('chelonia/defineContract', {
       username: string,
       identityContractID: string
     }),
-    create () {
+    async create () {
       const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
-        // TODO: We may want to get the time from the server instead of relying on
-        // the client in case the client's clock isn't set correctly.
-        // the only issue here is that it involves an async function...
-        // See: https://github.com/okTurtles/group-income/issues/531
-        createdDate: new Date().toISOString(),
+        createdDate: await fetchServerTime(),
         username,
         identityContractID
       }
@@ -1015,9 +1013,25 @@ sbp('chelonia/defineContract', {
         mincomeAmount: x => typeof x === 'number' && x > 0,
         mincomeCurrency: x => typeof x === 'string'
       }),
-      process ({ meta, data }, { state }) {
+      process ({ contractID, meta, data }, { state, getters }) {
+        // If mincome has been updated, cache the old value and use it later to determine if the user should get a 'MINCOME_CHANGED' notification.
+        const mincomeCache = 'mincomeAmount' in data ? state.settings.mincomeAmount : null
+
         for (const key in data) {
           Vue.set(state.settings, key, data[key])
+        }
+
+        if (mincomeCache !== null) {
+          sbp('gi.contracts/group/pushSideEffect', contractID,
+            ['gi.contracts/group/sendMincomeChangedNotification',
+              contractID,
+              meta,
+              {
+                toAmount: data.mincomeAmount,
+                fromAmount: mincomeCache
+              }
+            ]
+          )
         }
       }
     },
@@ -1275,6 +1289,54 @@ sbp('chelonia/defineContract', {
         await sbp('gi.db/archive/save', archPaymentsKey, archPayments)
       }
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
+    },
+    'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data) {
+      // NOTE: When group's mincome has changed, below actions should be taken.
+      // - When mincome has increased, send 'MINCOME_CHANGED' notification to both receiving/pledging members.
+      // - When mincome has decreased, and the changed mincome is below the monthly income of a receiving member, then
+      //   1) automatically switch that user to a 'pledging' member with 0 contribution,
+      //   2) pop out the prompt message notifying them of this automatic change,
+      //   3) and send 'MINCOME_CHANGED' notification.
+      const myProfile = sbp('state/vuex/getters').ourGroupProfile
+
+      if (isActionYoungerThanUser(meta, myProfile) && myProfile.incomeDetailsType) {
+        const memberType = myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledging' : 'receiving'
+        const mincomeIncreased = data.toAmount > data.fromAmount
+        const actionNeeded = mincomeIncreased ||
+          (memberType === 'receiving' &&
+          !mincomeIncreased &&
+          myProfile.incomeAmount < data.fromAmount &&
+          myProfile.incomeAmount > data.toAmount)
+
+        if (!actionNeeded) { return }
+
+        if (memberType === 'receiving' && !mincomeIncreased) {
+          await sbp('gi.actions/group/groupProfileUpdate', {
+            contractID,
+            data: {
+              incomeDetailsType: 'pledgeAmount',
+              pledgeAmount: 0
+            }
+          })
+
+          await sbp('gi.actions/group/displayMincomeChangedPrompt', {
+            contractID,
+            data: {
+              amount: data.toAmount,
+              memberType,
+              increased: mincomeIncreased
+            }
+          })
+        }
+
+        await sbp('gi.notifications/emit', 'MINCOME_CHANGED', {
+          groupID: contractID,
+          creator: meta.username,
+          to: data.toAmount,
+          memberType,
+          increased: mincomeIncreased
+        })
+      }
     }
   }
 })
