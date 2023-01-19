@@ -16,7 +16,7 @@ export function handleFetchResult (type: string): ((r: any) => any) {
 }
 
 sbp('sbp/selectors/register', {
-  async 'backend/translations/get' (language: string): Promise<?JSONObject> {
+  async 'backend/translations/get' (language: string): Promise<mixed> {
     // The language code is usually the first part of the language tag.
     const [languageCode] = language.toLowerCase().split('-')
     const languageFileName = languageFileMap.get(languageCode) || ''

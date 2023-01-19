@@ -165,7 +165,7 @@ module.exports = (grunt) => {
     },
     clean: {
       dist: [`${distDir}/*`],
-      strings: [`./strings/*`]
+      strings: ['./strings/*']
     },
     copy: {
       indexHtml: {
@@ -393,8 +393,7 @@ module.exports = (grunt) => {
       try {
         await access(resolvePathFromRoot(`assets/strings/${filename}`), constants.F_OK)
         return true
-      }
-      catch (err) { return false }
+      } catch (err) { return false }
     }
     const readJSON = async filename => { // read the target .json file and parse it
       const fileString = await readFile(resolvePathFromRoot(`assets/strings/${filename}`), 'utf8')
