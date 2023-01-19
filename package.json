@@ -18,7 +18,8 @@
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh",
     "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js",
-    "build:dashboard": "cross-env NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js"
+    "build:dashboard": "cross-env NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js",
+    "translation:dashboard": "grunt prep-translation --gruntfile Gruntfile.dashboard.js"
   },
   "eslintConfig": {
     "root": true,

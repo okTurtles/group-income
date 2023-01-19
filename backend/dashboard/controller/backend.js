@@ -22,7 +22,7 @@ sbp('sbp/selectors/register', {
     const languageFileName = languageFileMap.get(languageCode) || ''
 
     if (languageFileName !== '') {
-      return await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/assets/strings-dashboard/${languageFileName}`)
+      return await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/assets/strings/${languageFileName}`)
         .then(handleFetchResult('json'))
     }
   }

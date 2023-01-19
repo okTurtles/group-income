@@ -15,6 +15,8 @@ nav.c-navigation(
 </template>
 
 <script>
+import L from '@common/translations.js'
+
 export default {
   name: 'Navigation',
   data () {
@@ -22,11 +24,11 @@ export default {
       ephemeral: {
         isActive: false,
         navList: [
-          { id: 'dashboard', name: 'Dashboard', to: '/' },
-          { id: 'contacts', name: 'Contacts', to: '/contacts' },
-          { id: 'users', name: 'Users', to: '/users' },
-          { id: 'accounts', name: 'Accounts', to: '/accounts' },
-          { id: 'billing', name: 'Billing', to: '/billing' }
+          { id: 'dashboard', name: L('Dashboard'), to: '/' },
+          { id: 'contacts', name: L('Contacts'), to: '/contacts' },
+          { id: 'users', name: L('Users'), to: '/users' },
+          { id: 'accounts', name: L('Accounts'), to: '/accounts' },
+          { id: 'billing', name: L('Billing'), to: '/billing' }
         ]
       }
     }
