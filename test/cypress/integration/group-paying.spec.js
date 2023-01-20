@@ -97,9 +97,15 @@ describe('Group Payments', () => {
   it('user1 sends $250 to user3 (total)', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
 
-    cy.giForceDistributionDateToNow()
+    // NOTE: TWO HEISENBUGS ARE IN THIS TEST! PLEASE LEAVE THESE COMMENTS FOR FUTURE
+    //       REFERENCE IN CASE WE RUN INTO MORE!
+    // NOTE: when we had this command here, Cypress would sometimes fail because cy.window() would
+    //       for some reason return a promise that wouldn't resolve.
+    // cy.giForceDistributionDateToNow()
 
     cy.getByDT('paymentsLink').click()
+    // Moving it here seems to have fixed things.
+    cy.giForceDistributionDateToNow()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
 
     assertNavTabs(['Todo1', 'Completed'])
@@ -109,7 +115,15 @@ describe('Group Payments', () => {
     ])
 
     cy.getByDT('recordPayment').should('be.disabled')
-    cy.getByDT('todoCheck').click()
+    // NOTE: keep this comment around just to show the lengths we have to go to
+    //       to get Cypress tests working consistently sometimes, before figuring
+    //       out a cleaner workaround
+    // cy.getByDT('payList').within(() => {
+    //   cy.getByDT('todoCheck').find('[type="checkbox"]').check({ force: true })
+    // })
+    // NOTE: this is what I finally settled on to get around a timeout error
+    //       related to a nonsensical "detached element" error in Cypress
+    cy.getByDT('todoCheck').click({ force: true })
     cy.getByDT('recordPayment').should('not.be.disabled').click()
     cy.getByDT('modal').within(() => {
       cy.getByDT('payRecord').find('tbody').children().should('have.length', 1)
