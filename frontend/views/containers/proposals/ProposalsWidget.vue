@@ -45,6 +45,7 @@ import PageSection from '@components/PageSection.vue'
 import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { STATUS_OPEN, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
 import { OPEN_MODAL } from '@utils/events.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'ProposalsWidget',
@@ -93,9 +94,9 @@ export default ({
       return {
         type: this.hasProposals ? PageSection : CalloutCard,
         props: this.hasProposals
-          ? { title: this.L('Proposals') }
+          ? { title: L('Proposals') }
           : {
-              title: this.L('Proposals'),
+              title: L('Proposals'),
               svg: SvgVote,
               isCard: true
             }

@@ -1,3 +1,5 @@
+/* globals fetchServerTime */
+
 'use strict'
 
 import sbp from '@sbp/sbp'
@@ -241,14 +243,10 @@ sbp('chelonia/defineContract', {
       username: string,
       identityContractID: string
     }),
-    create () {
+    async create () {
       const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
-        // TODO: We may want to get the time from the server instead of relying on
-        // the client in case the client's clock isn't set correctly.
-        // the only issue here is that it involves an async function...
-        // See: https://github.com/okTurtles/group-income/issues/531
-        createdDate: new Date().toISOString(),
+        createdDate: await fetchServerTime(),
         username,
         identityContractID
       }

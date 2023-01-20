@@ -183,6 +183,12 @@
 /* MISSING TRANSLATION - views/containers/chatroom/NewDirectMessageModal.vue */
 "{ourNewContactsCount} members" = "{ourNewContactsCount} members";
 
+/* MISSING TRANSLATION - views/containers/contributions/Contribution.vue */
+"Edit contribution settings" = "Edit contribution settings";
+
+/* MISSING TRANSLATION - views/containers/contributions/ContributionItem.vue */
+"{who0} and {who1}" = "{who0} and {who1}";
+
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed." = "Define up to how much you pledge to contribute to the group every 30 days. Only the minimum amount needed will be distributed.";
 
@@ -229,19 +235,46 @@
 "Streaks" = "Streaks";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"have {strong_} missed payments {_strong}" = "have {strong_} missed payments {_strong}";
+"{span_}{membercount} members{_span} have {strong_} missed payments {_strong}" = "{span_}{membercount} members{_span} have {strong_} missed payments {_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"have {strong_} on-time payment streaks{_strong}" = "have {strong_} on-time payment streaks{_strong}";
+"{span_}{membercount} members{_span} have {strong_} on-time payment streaks{_strong}" = "{span_}{membercount} members{_span} have {strong_} on-time payment streaks{_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"haven't {strong_} entered income details{_strong}" = "haven't {strong_} entered income details{_strong}";
+"{span_}{membercount} members{_span} haven't {strong_} entered income details{_strong}" = "{span_}{membercount} members{_span} haven't {strong_} entered income details{_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"haven't {strong_} logged in past {daysCount} days or more {_strong}" = "haven't {strong_} logged in past {daysCount} days or more {_strong}";
+"{span_}{membercount} members{_span} haven't {strong_} logged in past {days} days or more {_strong}" = "{span_}{membercount} members{_span} haven't {strong_} logged in past {days} days or more {_strong}";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"haven't {strong_} voted in the last {proposalNumber} proposals {_strong}" = "haven't {strong_} voted in the last {proposalNumber} proposals {_strong}";
+"{span_}{membercount} members{_span} haven't {strong_} voted in the last {proposalcount} proposals {_strong}" = "{span_}{membercount} members{_span} haven't {strong_} voted in the last {proposalcount} proposals {_strong}";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} member{_span} have {strong_} missed payments {_strong}" = "{span_}{membercount} member{_span} have {strong_} missed payments {_strong}";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} member{_span} have {strong_} on-time payment streaks{_strong}" = "{span_}{membercount} member{_span} have {strong_} on-time payment streaks{_strong}";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} member{_span} haven't {strong_} entered income details{_strong}" = "{span_}{membercount} member{_span} haven't {strong_} entered income details{_strong}";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} member{_span} haven't {strong_} logged in past {days} days or more {_strong}" = "{span_}{membercount} member{_span} haven't {strong_} logged in past {days} days or more {_strong}";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"{span_}{membercount} member{_span} haven't {strong_} voted in the last {proposalcount} proposals {_strong}" = "{span_}{membercount} member{_span} haven't {strong_} voted in the last {proposalcount} proposals {_strong}";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"{user} missed {streak} payment" = "{user} missed {streak} payment";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"{user} missed {streak} payments" = "{user} missed {streak} payments";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"{user} missed {streak} vote" = "{user} missed {streak} vote";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"{user} missed {streak} votes" = "{user} missed {streak} votes";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupRulesSettings.vue */
 "{b_}{count}{_b}" = "{b_}{count}{_b}";
@@ -758,6 +791,9 @@
 
 /* views/components/LinkToCopy.vue, views/containers/group-settings/InvitationsTable.vue */
 "Copy link" = "Copier le lien";
+
+/* views/components/LinkToCopy.vue, views/containers/group-settings/InvitationsTable.vue */
+"Your invite" = "Votre invitation";
 
 /* views/components/Loading.vue */
 "Hang in there" = "Un instant...";
@@ -1762,9 +1798,6 @@
 "Used" = "Utilisée";
 
 /* views/containers/group-settings/InvitationsTable.vue */
-"Your invite" = "Votre invitation";
-
-/* views/containers/group-settings/InvitationsTable.vue */
 "created for" = "créée pour";
 
 /* views/containers/group-settings/InvitationsTable.vue */
@@ -2111,6 +2144,9 @@
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "yes" = "oui";
+
+/* views/containers/proposals/ProposalsWidget.vue */
+"Proposals" = "Propositions";
 
 /* views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
 "In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others." = "Sur Group Income, chaque membre du groupe peut voter lors des décisions importantes, comme par exemple l’ajout ou l’exclusion d’un membre, ou la modification du revenu mimimum.";
@@ -2588,9 +2624,6 @@
 
 /* Not currently used */
 "Proposal refused." = "Proposition refusée.";
-
-/* Not currently used */
-"Proposals" = "Propositions";
 
 /* Not currently used */
 "Propose changing to this voting system" = "Proposer d’adopter ce système de vote";
