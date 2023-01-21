@@ -13,10 +13,6 @@ import {
 // How much time a notification can stay in the "new" state.
 export const NEW_STATUS_DURATION = 2 * ONE_HOUR
 
-export function age (notification: Notification): number {
-  return Date.now() - notification.timestamp
-}
-
 /*
  * Creates a copy of the given notification list, possibly sorted and/or truncated to
  * make it suitable for offline storage.
@@ -66,12 +62,12 @@ export function applyStorageRules (notifications: Notification[]): Notification[
     items.length = MAX_COUNT
   }
   // Sort items in chronological order, newest items first.
-  return items.sort(compareOnAge)
+  return items.sort(compareOnTimestamp)
 }
 
 // Compares notifications, so that newer ones come first.
-export function compareOnAge (notificationA: Notification, notificationB: Notification): -1 | 1 {
-  return age(notificationA) <= age(notificationB) ? -1 : 1
+export function compareOnTimestamp (notificationA: Notification, notificationB: Notification): number {
+  return notificationA.timestamp - notificationB.timestamp
 }
 
 // Compares notifications, so that higher priority ones come first.
@@ -84,7 +80,7 @@ export function compareOnPriority (notificationA: Notification, notificationB: N
 
   // If the given notifications are both read or both unread, then prefer the newer one.
   if (notificationA.read === notificationB.read) {
-    return age(notificationA) <= age(notificationB) ? preferA : preferB
+    return notificationA.timestamp > notificationB.timestamp ? preferA : preferB
   } else {
     // Here, one notification is read, the other is unread.
     const read = notificationA.read ? notificationA : notificationB
@@ -96,8 +92,8 @@ export function compareOnPriority (notificationA: Notification, notificationB: N
     // However, under certain conditions we might want to keep the already read one instead.
     // Note: use a condition array so that it is easy to add/remove conditions later.
     const conditions = [
-      (read, unread) => age(read) < ONE_DAY && age(unread) > FIFTEEN_DAYS,
-      (read, unread) => age(read) < TWO_DAYS && age(unread) > THREE_WEEKS
+      (read, unread) => Date.now() - read.timestamp < ONE_DAY && Date.now() - unread.timestamp > FIFTEEN_DAYS,
+      (read, unread) => Date.now() - read.timestamp < TWO_DAYS && Date.now() - unread.timestamp > THREE_WEEKS
     ]
     if (conditions.some(condition => condition(read, unread))) {
       preferred = read
@@ -107,7 +103,7 @@ export function compareOnPriority (notificationA: Notification, notificationB: N
 }
 
 export function isExpired (notification: Notification): boolean {
-  return age(notification) > maxAge(notification)
+  return Date.now() - notification.timestamp > maxAge(notification)
 }
 
 export function isNew (notification: Notification): boolean {

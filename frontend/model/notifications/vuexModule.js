@@ -5,7 +5,7 @@ import type { Notification } from './types.flow.js'
 import sbp from '@sbp/sbp'
 
 import './selectors.js'
-import { compareOnAge, isNew, isOlder } from './utils.js'
+import { compareOnTimestamp, isNew, isOlder } from './utils.js'
 import * as keys from './mutationKeys.js'
 
 const getters = {
@@ -78,7 +78,7 @@ const mutations = {
     }
     state.push(notification)
     // Sort items in chronological order, newest items first.
-    state.sort(compareOnAge)
+    state.sort(compareOnTimestamp)
   },
 
   [keys.MARK_NOTIFICATION_AS_READ] (state, notification: Notification) {
