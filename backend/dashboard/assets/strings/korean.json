@@ -1,12 +1,12 @@
 {
   "Accounts": "계정",
   "Billing": "청구서",
-  "Contacts": "연락처",
+  "Contacts": "컨트랙트",
   "Dashboard": "대시보드",
-  "This is 'accounts' page": "'계정' 페이지 입니다.",
-  "This is 'billing' page": "'청구서' 페이지 입니다.",
-  "This is 'contacts' page": "'연락처' 페이지 입니다.",
-  "This is 'users' page": "'사용자' 페이지 입니다.",
   "Users": "사용자",
-  "this is 'dashboard' page": "'대시보드' 페이지 입니다."
+  "This is 'accounts' page": "'계정' 페이지입니다",
+  "This is 'billing' page": "'청구서' 페이지입니다",
+  "This is 'contacts' page": "'컨트랙트' 페이지입니다",
+  "this is 'dashboard' page": "'대시보드' 페이지입니다",
+  "This is 'users' page": "'사용자' 페이지입니다"
 }

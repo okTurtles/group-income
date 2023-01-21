@@ -7,7 +7,7 @@
 const path = require('path')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { readFile, access, writeFile } = require('fs/promises')
+const { readFile } = require('fs/promises')
 const { fork } = require('child_process')
 
 const applyPortShift = (env) => {
@@ -65,7 +65,7 @@ module.exports = (grunt) => {
       entryPoints: [mainSrc],
       outdir: distJS,
       define: {
-        'process.env.NODE_ENV': `'${process.env.NODE_ENV}'`
+        'process.env.NODE_ENV': `'${NODE_ENV}'`
       },
       splitting: !grunt.option('no-chunks')
     },
@@ -160,8 +160,7 @@ module.exports = (grunt) => {
       eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "backend/dashboard/**/*.{js,vue}"',
       puglint: '"./node_modules/.bin/pug-lint-vue" backend/dashboard/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "backend/dashboard/assets/style/**/*.{css,sass,scss}" "backend/dashboard/views/**/*.vue"',
-      strings_dashboard: './strings.mac ./backend/dashboard',
-      strings_groupincome: './strings.mac ./frontend'
+      strings: './strings.mac ./backend/dashboard --output ./backend/dashboard/assets/strings'
     },
     clean: {
       dist: [`${distDir}/*`],
@@ -177,14 +176,9 @@ module.exports = (grunt) => {
         src: [
           '**/*',
           '!style/**',
-          '!strings/*.strings' // don't need to copy files with .strings extention
+          '!strings/*.strings' // don't need to copy files with .strings extention (only *.json files are used as translation tables in the app)
         ],
         dest: distAssets,
-        expand: true
-      },
-      strings_translation: {
-        src: ['strings/*'],
-        dest: resolvePathFromRoot('assets'),
         expand: true
       }
     }
@@ -211,15 +205,18 @@ module.exports = (grunt) => {
   ])
 
   grunt.registerTask('build', function () {
+    const isDevBuild = this.flags.watch
+
     grunt.task.run([
       'clean:dist',
       'exec:eslint',
+      !isDevBuild && 'exec:strings',
       'exec:puglint',
       'exec:stylelint',
       'copy:indexHtml',
       'copy:assets',
-      this.flags.watch ? 'esbuild:watch' : 'esbuild'
-    ])
+      isDevBuild ? 'esbuild:watch' : 'esbuild'
+    ].filter(Boolean))
   })
 
   let child = null
@@ -363,52 +360,6 @@ module.exports = (grunt) => {
       }
     })
     grunt.log.writeln(chalk`{green browsersync:} setup done!`)
-    done()
-  })
-
-  grunt.registerTask('prep-translation', async function () {
-    const { constants } = require('fs')
-    const jsonFilesToMerge = [
-      'korean.json'
-    ]
-
-    grunt.task.run([
-      // 1. run 'strings' command for backend/dashboard
-      // 2. copy the generated files over to backend/dashboard/assets/strings
-      // 3. restore the '/strings' folder in the root back for 'groupincome' project.
-      'clean:strings',
-      'exec:strings_dashboard',
-      'copy:strings_translation',
-      'clean:strings',
-      'exec:strings_groupincome'
-    ])
-
-    // * post-actions *
-    // if the generated english.json file have new fields that other json files(specified in jsonFilesToMerge) don't have,
-    // copy those fields into the other json files.
-
-    const done = this.async()
-    const clone = obj => JSON.parse(JSON.stringify(obj))
-    const jsonExists = async filename => { // check if the target file exists in ./backend/dashboard/assets/strings
-      try {
-        await access(resolvePathFromRoot(`assets/strings/${filename}`), constants.F_OK)
-        return true
-      } catch (err) { return false }
-    }
-    const readJSON = async filename => { // read the target .json file and parse it
-      const fileString = await readFile(resolvePathFromRoot(`assets/strings/${filename}`), 'utf8')
-      return JSON.parse(fileString)
-    }
-    const englishJSON = readJSON('english.json')
-    for (const targetJsonFile of jsonFilesToMerge) {
-      if (await jsonExists(targetJsonFile)) {
-        const targetJSON = await readJSON(targetJsonFile)
-        const overwrittenJSON = Object.assign(clone(englishJSON), targetJSON)
-
-        await writeFile(resolvePathFromRoot(`assets/strings/${targetJsonFile}`), JSON.stringify(overwrittenJSON, null, 2), 'utf8')
-      }
-    }
-
     done()
   })
 }
