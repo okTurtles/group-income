@@ -160,7 +160,7 @@ module.exports = (grunt) => {
       eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "backend/dashboard/**/*.{js,vue}"',
       puglint: '"./node_modules/.bin/pug-lint-vue" backend/dashboard/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "backend/dashboard/assets/style/**/*.{css,sass,scss}" "backend/dashboard/views/**/*.vue"',
-      strings: './strings.mac ./backend/dashboard --output ./backend/dashboard/assets/strings'
+      strings: './strings.mac ./backend/dashboard --output ./backend/dashboard/assets/strings' // prep translation
     },
     clean: {
       dist: [`${distDir}/*`],
