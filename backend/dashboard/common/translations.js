@@ -26,7 +26,7 @@ sbp('sbp/selectors/register', {
     // language code is usually the first part of a language tag
     const [languageCode] = language.toLowerCase().split('-')
 
-     // No need to do anything if the requested language is already in use
+    // No need to do anything if the requested language is already in use
     if (language.toLowerCase() === currentLanguage.toLowerCase()) return
 
     if (languageCode === currentLanguageCode) return
