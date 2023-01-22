@@ -185,7 +185,7 @@ export default ({
   beforeDestroy () {
     sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${this.currentChatRoomId}`, this.listenChatRoomActions)
     window.removeEventListener('resize', this.resizeEventHandler)
-    // making sure to destroy the listener for the matchMedia istance as well.
+    // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
   },
   computed: {
