@@ -92,7 +92,8 @@ function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
 function initGroupStreaks () {
   return {
     lastStreakPeriod: null,
-    fullMonthlyPledges: 0,
+    fullMonthlyPledges: 0, // group streaks for 100% monthly payments - every pledging members have completed their payments
+    fullMonthlySupport: 0, // group streaks for 100% monthly supports - total amount of pledges done is equal to the group's monthly contribution goal
     onTimePayments: {}, // { username: number, ... }
     missedPayments: {}, // { username: number, ... }
     noVotes: {} // { username: number, ... }
@@ -195,17 +196,30 @@ function updateGroupStreaks ({ state, getters }) {
         : 0
   )
 
-  // --- update 'onTimePayments' & 'missedPayments' streaks for 'pledging' members of the group ---
   const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod)
+  const thisPeriodHaveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod)
   const filterMyItems = (array, username) => array.filter(item => item.from === username)
-  const isPledgingMember = username => {
-    const haveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod)
-    return haveNeeds.some(entry => entry.name === username && entry.haveNeed > 0)
-  }
+  const isPledgingMember = username => thisPeriodHaveNeeds.some(entry => entry.name === username && entry.haveNeed > 0)
 
+  // --- update 'fullMonthlySupport' streak ---
+  const totalContributionGoal = thisPeriodHaveNeeds.reduce(
+    (total, item) => item.haveNeed < 0 ? total + (-1 * item.haveNeed) : total, 0
+  )
+  const totalPledgesDone = thisPeriodPaymentDetails.reduce(
+    (total, paymentItem) => paymentItem.amount + total, 0
+  )
+
+  Vue.set(
+    streaks,
+    'fullMonthlySupport',
+    totalPledgesDone > 0 && totalPledgesDone >= totalContributionGoal ? streaks.fullMonthlySupport + 1 : 0
+  )
+
+  // --- update 'onTimePayments' & 'missedPayments' streaks for 'pledging' members of the group ---
   for (const username in getters.groupProfiles) {
     if (!isPledgingMember(username)) continue
 
+    // 1) update 'onTimePayments'
     const myMissedPaymentsInThisPeriod = filterMyItems(thisPeriodDistribution, username)
     const userCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0)
     Vue.set(
