@@ -10013,6 +10013,7 @@ ${this.getErrorInfo()}`;
     return {
       lastStreakPeriod: null,
       fullMonthlyPledges: 0,
+      fullMonthlySupport: 0,
       onTimePayments: {},
       missedPayments: {},
       noVotes: {}
@@ -10079,11 +10080,12 @@ ${this.getErrorInfo()}`;
     });
     vue_esm_default.set(streaks, "fullMonthlyPledges", noPaymentsAtAll ? 0 : thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0);
     const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod);
+    const thisPeriodHaveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod);
     const filterMyItems = (array, username) => array.filter((item) => item.from === username);
-    const isPledgingMember = (username) => {
-      const haveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod);
-      return haveNeeds.some((entry) => entry.name === username && entry.haveNeed > 0);
-    };
+    const isPledgingMember = (username) => thisPeriodHaveNeeds.some((entry) => entry.name === username && entry.haveNeed > 0);
+    const totalContributionGoal = thisPeriodHaveNeeds.reduce((total, item) => item.haveNeed < 0 ? total + -1 * item.haveNeed : total, 0);
+    const totalPledgesDone = thisPeriodPaymentDetails.reduce((total, paymentItem) => paymentItem.amount + total, 0);
+    vue_esm_default.set(streaks, "fullMonthlySupport", totalPledgesDone > 0 && totalPledgesDone >= totalContributionGoal ? streaks.fullMonthlySupport + 1 : 0);
     for (const username in getters.groupProfiles) {
       if (!isPledgingMember(username))
         continue;
