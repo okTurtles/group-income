@@ -142,7 +142,7 @@ export default (sbp('sbp/selectors/register', {
             id: CSKid,
             type: CSK.type,
             data: CSKp,
-            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEYSHARE],
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEYSHARE, GIMessage.OP_KEY_REQUEST_RESPONSE],
             meta: {
               type: 'csk',
               private: {
@@ -257,7 +257,7 @@ export default (sbp('sbp/selectors/register', {
     const state = await sbp('chelonia/latestContractState', contractID)
     return {
       signingKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string),
-      keys: state._volatile.keys
+      keys: state._volatile?.keys
     }
   },
   'gi.actions/group/createAndSwitch': async function (params: GIActionParams) {

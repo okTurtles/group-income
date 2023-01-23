@@ -191,6 +191,7 @@ export default (sbp('sbp/selectors/register', {
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
+        state._vm.type = v.type
         state._vm.authorizedKeys = keysToMap(v.keys)
 
         for (const key of v.keys) {
@@ -212,7 +213,7 @@ export default (sbp('sbp/selectors/register', {
               initialQuantity: key.meta.quantity,
               quantity: key.meta.quantity,
               expires: key.meta.expires,
-              inviteSecret: state._volatile?.keys[key.id],
+              inviteSecret: state._volatile?.keys?.[key.id],
               responses: []
             }
           }
@@ -365,7 +366,7 @@ export default (sbp('sbp/selectors/register', {
               initialQuantity: key.meta.quantity,
               quantity: key.meta.quantity,
               expires: key.meta.expires,
-              inviteSecret: state._volatile?.keys[key.id],
+              inviteSecret: state._volatile?.keys?.[key.id],
               responses: []
             }
           }
@@ -391,7 +392,7 @@ export default (sbp('sbp/selectors/register', {
 
     // Signature verification
     // TODO: Temporary. Skip verifying default signatures
-    if (!isNaN(NaN) && signature.type !== 'default') {
+    if (!isNaN(0) && signature.type !== 'default') {
       // This sync code has potential issues
       // The first issue is that it can deadlock if there are circular references
       // The second issue is that it doesn't handle key rotation. If the key used for signing is invalidated / removed from the originating contract, we won't have it in the state
@@ -403,11 +404,9 @@ export default (sbp('sbp/selectors/register', {
       let signingKey = authorizedKeys?.[signature.keyId]
 
       if (!signingKey && opT !== GIMessage.OP_CONTRACT && message.originatingContractID() !== message.contractID()) {
-        await sbp('okTurtles.eventQueue/queueEvent', message.originatingContractID(), [
-          'chelonia/private/in/syncContract', message.originatingContractID()
+        const originatingContractState = await sbp('chelonia/withEnv', message.originatingContractID(), { skipActionProcessing: true }, [
+          'chelonia/latestContractState', message.originatingContractID()
         ])
-
-        const originatingContractState = sbp(this.config.stateSelector)[message.originatingContractID()]
 
         signingKey = originatingContractState._vm?.authorizedKeys?.[signature.keyId]
       }
@@ -497,23 +496,18 @@ export default (sbp('sbp/selectors/register', {
 
       const [originatingContractID, previousHEAD, v] = ((entry: any): [string, string, GIOpKeyRequest])
 
-      const wasSubscribed = !!state.contracts[originatingContractID]
-
-      // TODO: We can use chelonia/latestContractState but need state.contracts
-
       // 1. Sync (originating) identity contract
-      await sbp('chelonia/withEnv', originatingContractID, { skipActionProcessing: true }, [
-        'chelonia/private/in/syncContract', originatingContractID
+
+      const originatingState = await sbp('chelonia/withEnv', originatingContractID, { skipActionProcessing: true }, [
+        'chelonia/latestContractState', originatingContractID
       ])
 
       const contractName = state.contracts[contractID].type
-      const recipientContractName = state.contracts[originatingContractID].type
+      const originatingContractName = originatingState._vm.type
 
       try {
         // 2. Verify 'data'
         const { data, keyId, encryptionKeyId, outerKeyId } = v
-
-        const originatingState = state[originatingContractID]
 
         const signingKey = originatingState._vm?.authorizedKeys[keyId]
 
@@ -532,10 +526,15 @@ export default (sbp('sbp/selectors/register', {
 
         const { keys, signingKeyId } = await sbp(`${contractName}/getShareableKeys`, contractID)
 
+        if (!signingKeyId || !keys || Object.keys(keys).length === 0) {
+          console.info('respondToKeyRequests: no keys to share', { contractID, originatingContractID })
+          return
+        }
+
         // 3. Send OP_KEYSHARE to identity contract
         await sbp('chelonia/out/keyShare', {
           destinationContractID: originatingContractID,
-          destinationContractName: recipientContractName,
+          destinationContractName: originatingContractName,
           originatingContractName: contractName,
           originatingContractID: contractID,
           data: {
@@ -556,11 +555,7 @@ export default (sbp('sbp/selectors/register', {
         console.error('Error at respondToKeyRequests', e)
       } finally {
         // 4. Remove originating contract and update current contract with information
-        await Promise.all([
-          // TODO: Remove only if not previously subscribed
-          wasSubscribed ? Promise.resolve() : sbp('chelonia/contract/removeImmediately', originatingContractID),
-          sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: hash })
-        ])
+        sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: hash })
       }
     }))
   },

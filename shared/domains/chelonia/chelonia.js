@@ -475,6 +475,11 @@ export default (sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
+  'chelonia/currentContractState': function (contractID: string) {
+    if (sbp(this.config.stateSelector)[contractID]) {
+      return cloneDeep(sbp(this.config.stateSelector)[contractID])
+    }
+  },
   'chelonia/latestContractState': async function (contractID: string) {
     if (sbp(this.config.stateSelector)[contractID]) {
       return cloneDeep(sbp(this.config.stateSelector)[contractID])
@@ -513,16 +518,17 @@ export default (sbp('sbp/selectors/register', {
     if (!contractInfo) throw new Error(`contract not defined: ${contractName}`)
     const signingKey = this.config.transientSecretKeys?.[signingKeyId]
     const signatureFn = signingKey ? signatureFnBuilder(signingKey) : undefined
+    const payload = ({
+      type: contractName,
+      keys: keys,
+      nonce: generateSalt()
+    }: GIOpContract)
     const contractMsg = GIMessage.createV1_0({
       contractID: null,
       previousHEAD: null,
       op: [
         GIMessage.OP_CONTRACT,
-        ({
-          type: contractName,
-          keys: keys,
-          nonce: generateSalt()
-        }: GIOpContract)
+        payload
       ],
       manifest: manifestHash,
       signatureFn
@@ -588,7 +594,7 @@ export default (sbp('sbp/selectors/register', {
     destinationContract.metadata.validate(destinationMeta, { state: destinationState, ...destinationGProxy, destinationContractID })
     const payload = (data: GIOpKeyShare)
 
-    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || ((originatingContractID ? originatingState : destinationState)?._volatile?.keys[params.signingKeyId])
+    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || ((originatingContractID ? originatingState : destinationState)?._volatile?.keys?.[params.signingKeyId])
 
     const msg = GIMessage.createV1_0({
       contractID: destinationContractID,
@@ -619,7 +625,7 @@ export default (sbp('sbp/selectors/register', {
     const gProxy = gettersProxy(state, contract.getters)
     contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const payload = (data: GIOpKeyAdd)
-    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
@@ -648,7 +654,7 @@ export default (sbp('sbp/selectors/register', {
     const gProxy = gettersProxy(state, contract.getters)
     contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const payload = (data: GIOpKeyDel)
-    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
@@ -683,7 +689,7 @@ export default (sbp('sbp/selectors/register', {
     const gProxy = gettersProxy(state, contract.getters)
     contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const outerKeyId = keyId(signingKey)
-    const innerSigningKey = this.config.transientSecretKeys?.[innerSigningKeyId] || originatingState?._volatile?.keys[innerSigningKeyId]
+    const innerSigningKey = this.config.transientSecretKeys?.[innerSigningKeyId] || originatingState?._volatile?.keys?.[innerSigningKeyId]
     const payload = ({
       keyId: innerSigningKeyId,
       outerKeyId: outerKeyId,
@@ -719,7 +725,7 @@ export default (sbp('sbp/selectors/register', {
     const gProxy = gettersProxy(state, contract.getters)
     contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const payload = (data: GIOpKeyRequestResponse)
-    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
@@ -768,15 +774,17 @@ async function outEncryptedOrUnencryptedAction (
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
-  const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys[params.signingKeyId]
+  const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
   const payload = opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn.call(this, unencMessage, params.encryptionKeyId, state)
+  // TODO: Remove this console.log
   console.log({ unencMessage, ekid: params.encryptionKeyId, state, payload })
   const message = GIMessage.createV1_0({
     contractID,
     previousHEAD,
     op: [
       opType,
-      payload
+      payload,
+      unencMessage
     ],
     manifest: manifestHash,
     signatureFn: signingKey ? signatureFnBuilder(signingKey) : undefined

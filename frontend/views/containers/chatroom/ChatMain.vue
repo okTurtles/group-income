@@ -272,7 +272,7 @@ export default ({
         data: !replyingMessage ? data : { ...data, replyingMessage },
         hooks: {
           prepublish: (message) => {
-            const msgValue = JSON.parse(message.opValue())
+            const msgValue = message.decryptedValue()
             const { meta, data } = msgValue
             this.messages.push({
               ...createMessage({ meta, data, hash: message.hash() }),

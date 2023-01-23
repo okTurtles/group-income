@@ -33,7 +33,9 @@ export default (sbp('sbp/selectors/register', {
 
       const rootState = sbp('state/vuex/state')
 
-      if (!params.options?.joinKey) {
+      const joinKey = params.options?.joinKey
+
+      if (!joinKey) {
         throw new ChelErrorUnexpected('joinKey is required to create a chatroom')
       }
 
@@ -70,9 +72,9 @@ export default (sbp('sbp/selectors/register', {
             }
           },
           {
-            id: params.options.joinKey.id,
-            type: params.options.joinKey.type,
-            data: params.options.joinKey.data,
+            id: joinKey.id,
+            type: joinKey.type,
+            data: joinKey.data,
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
               type: 'joinKey'
@@ -122,9 +124,9 @@ export default (sbp('sbp/selectors/register', {
             }
           },
           {
-            id: params.options.joinKey.id,
-            type: params.options.joinKey.type,
-            data: params.options.joinKey.data,
+            id: joinKey.id,
+            type: joinKey.type,
+            data: joinKey.data,
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
               type: 'joinKey'
@@ -148,10 +150,10 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.contracts/chatroom/getShareableKeys': async function (contractID) {
-    const state = await sbp('chelonia/latestContractState', contractID)
+    const state = await sbp('chelonia/currentContractState', contractID)
     return {
       signingKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string),
-      keys: state._volatile.keys
+      keys: state._volatile?.keys
     }
   },
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),

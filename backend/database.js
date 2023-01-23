@@ -74,7 +74,7 @@ export default (sbp('sbp/selectors/register', {
             this.push(prefix + json)
             prefix = ','
             limit--
-            currentHEAD = entry.message().previousHEAD
+            currentHEAD = entry.head().previousHEAD
           }
         } catch (e) {
           // TODO: properly return an error to caller, see https://nodejs.org/api/stream.html#errors-while-reading
@@ -109,7 +109,7 @@ export default (sbp('sbp/selectors/register', {
             offset--
           }
 
-          currentHEAD = entry.message().previousHEAD
+          currentHEAD = entry.head().previousHEAD
           if (!currentHEAD || (isMet && !offset)) {
             this.push(']')
             this.push(null)

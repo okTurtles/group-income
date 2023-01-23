@@ -34,7 +34,7 @@ export type GIOpKeyRequestResponse = string
 
 export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krr'
 export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestResponse
-export type GIOp = [GIOpType, GIOpValue]
+export type GIOp = [GIOpType, GIOpValue] | [GIOpType, GIOpValue, GIOpValue]
 
 export class GIMessage {
   // flow type annotations to make flow happy
@@ -105,6 +105,7 @@ export class GIMessage {
       mapping: { key: blake32Hash(value), value },
       head,
       message,
+      decryptedValue: op.length === 3 ? op[2] : op[1],
       signature,
       signedPayload
     })
@@ -123,12 +124,15 @@ export class GIMessage {
     })
   }
 
-  constructor ({ mapping, head, message, signature, signedPayload }: { mapping: Object, head: Object, message: Object, signature: string, signedPayload: string }) {
+  constructor ({ mapping, head, message, signature, signedPayload, decryptedValue }: { mapping: Object, head: Object, message: Object, signature: string, signedPayload: string, decryptedValue?: Object }) {
     this._mapping = mapping
     this._head = head
     this._message = message
     this._signature = signature
     this._signedPayload = signedPayload
+    if (decryptedValue) {
+      this._decrypted = decryptedValue
+    }
     // perform basic sanity check
     const type = this.opType()
     switch (type) {
@@ -161,7 +165,7 @@ export class GIMessage {
 
   message (): Object { return this._message }
 
-  op (): GIOp { return [this.head().op, this.message()] }
+  op (): GIOp { return [this.head().op, this.message(), this.decryptedValue()] }
 
   opType (): GIOpType { return this.head().op }
 
