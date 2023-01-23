@@ -201,7 +201,7 @@ function updateGroupStreaks ({ state, getters }) {
   const filterMyItems = (array, username) => array.filter(item => item.from === username)
   const isPledgingMember = username => thisPeriodHaveNeeds.some(entry => entry.name === username && entry.haveNeed > 0)
 
-  // --- update 'fullMonthlySupport' streak ---
+  // --- update 'fullMonthlySupport' streak. ---
   const totalContributionGoal = thisPeriodHaveNeeds.reduce(
     (total, item) => item.haveNeed < 0 ? total + (-1 * item.haveNeed) : total, 0
   )
