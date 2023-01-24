@@ -17,6 +17,7 @@
 
 // Our globals.
 declare function logger(err: Error): void
+declare function fetchServerTime(): Promise<string>
 // Nodejs globals.
 declare var process: any
 // Third-party globals

@@ -26,6 +26,7 @@ import { encryptedAction } from './utils.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
 import type { GIMessage } from '~/shared/domains/chelonia/types.flow.js'
+import { REPLACE_MODAL } from '@utils/events.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -506,6 +507,28 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error('gi.actions/group/noticeExpiringProposal failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to notify expiring proposals.'))
+    }
+  },
+  'gi.actions/group/displayMincomeChangedPrompt': async function ({ data }: GIActionParams) {
+    const { withGroupCurrency } = sbp('state/vuex/getters')
+    const promptOptions = data.increased
+      ? {
+          heading: L('Mincome changed'),
+          question: L('Do you make at least {amount} per month?', { amount: withGroupCurrency(data.amount) }),
+          yesButton: data.memberType === 'pledging' ? L('No') : L('Yes'),
+          noButton: data.memberType === 'pledging' ? L('Yes') : L('No')
+        }
+      : {
+          heading: L('Automatically switched to pledging {zero}', { zero: withGroupCurrency(0) }),
+          question: L('You now make more than the mincome. Would you like to increase your pledge?'),
+          yesButton: L('Yes'),
+          noButton: L('No')
+        }
+
+    const yesButtonSelected = await sbp('gi.ui/prompt', promptOptions)
+    if (yesButtonSelected) {
+      // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
+      sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
