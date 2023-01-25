@@ -17,7 +17,7 @@
  */
 import dompurify from 'dompurify'
 import Vue from 'vue'
-import { cloneDeep } from './cdLodash.js'
+import { cloneDeep } from '@common/cdLodash.js'
 
 export const defaultConfig = {
   ALLOWED_ATTR: ['class'],

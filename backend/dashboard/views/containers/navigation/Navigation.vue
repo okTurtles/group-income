@@ -4,7 +4,7 @@ nav.c-navigation(
 )
   .c-navigation-header
     h1.sr-only Navigation menu
-    h1.c-header(@click='toHome') Chelonia
+    h1.c-header.is-title-1(@click='toHome') Chelonia
 
   ul.c-menu
     li.c-nav-item(
@@ -40,13 +40,15 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
 .c-navigation {
-  background-color: #e6ebef;
   padding: 3rem 1.5rem;
   width: 17.5rem;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
+  border-right: 1px solid $border;
 }
 
 .c-navigation-header {

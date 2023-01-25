@@ -1,13 +1,13 @@
 @font-face {
-  src: url(../fonts/Lato/Lato-Bold.ttf);
-  font-family: "Lato";
-  font-weight: 700;
+  src: url(../fonts/Inter/Inter_Regular.woff2) format('woff2');
+  font-family: "Inter";
+  font-weight: 400;
 }
 
 @font-face {
-  src: url(../fonts/Lato/Lato-Regular.ttf);
-  font-family: "Lato";
-  font-weight: 400;
+  src: url(../fonts/Inter/Inter-SemiBold.ttf) format('woff2');
+  font-family: "Inter";
+  font-weight: 600;
 }
 
 @font-face {
@@ -31,7 +31,7 @@ html {
 }
 
 body {
-  font-family: "Lato", "Helvetica Neue", "sans-serif";
+  font-family: "Inter", "Helvetica Neue", "sans-serif";
   font-style: normal;
   font-weight: normal;
   font-size: $size_4; // 14px

@@ -83,6 +83,7 @@ module.exports = (grunt) => {
       '@views': './backend/dashboard/views',
       '@view-utils': './backend/dashboard/views/utils',
       '@common': './backend/dashboard/common',
+      '@model': './backend/dashboard/model',
       '@components': './backend/dashboard/views/components',
       '@containers': './backend/dashboard/views/containers',
       '@pages': './backend/dashboard/views/pages',
