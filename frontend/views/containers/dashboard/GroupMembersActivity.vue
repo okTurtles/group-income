@@ -148,19 +148,19 @@ export default ({
 
       return {
         'onTimePayments': this.onTimePayments.length === 1
-          ? L('{span_}{membercount} member{_span} has {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments'])
+          ? L('{span_}1 member{_span} has {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments'])
           : L('{span_}{membercount} members{_span} have {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments']),
         'haventLoggedIn': this.haventLoggedIn.length === 1
-          ? L('{span_}{membercount} member{_span} hasn\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn'])
+          ? L('{span_}1 member{_span} hasn\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn'])
           : L('{span_}{membercount} members{_span} haven\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn']),
         'noIncomeDetails': this.noIncomeDetails.length === 1
-          ? L('{span_}{membercount} member{_span} hasn\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails'])
+          ? L('{span_}1 member{_span} hasn\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails'])
           : L('{span_}{membercount} members{_span} haven\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails']),
         'missedPayments': this.missedPayments.length === 1
-          ? L('{span_}{membercount} member{_span} has {strong_} missed payments {_strong}', argsMap['missedPayments'])
+          ? L('{span_}1 member{_span} has {strong_} missed payments {_strong}', argsMap['missedPayments'])
           : L('{span_}{membercount} members{_span} have {strong_} missed payments {_strong}', argsMap['missedPayments']),
         'noVotes': this.noVotes.length === 1
-          ? L('{span_}{membercount} member{_span} hsn\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
+          ? L('{span_}1 member{_span} hasn\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
           : L('{span_}{membercount} members{_span} haven\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
       }
     }

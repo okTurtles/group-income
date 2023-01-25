@@ -208,11 +208,12 @@ function updateGroupStreaks ({ state, getters }) {
   const totalPledgesDone = thisPeriodPaymentDetails.reduce(
     (total, paymentItem) => paymentItem.amount + total, 0
   )
+  const fullMonthlySupportCurrent = vueFetchInitKV(streaks, 'fullMonthlySupport', 0)
 
   Vue.set(
     streaks,
     'fullMonthlySupport',
-    totalPledgesDone > 0 && totalPledgesDone >= totalContributionGoal ? streaks.fullMonthlySupport + 1 : 0
+    totalPledgesDone > 0 && totalPledgesDone >= totalContributionGoal ? fullMonthlySupportCurrent + 1 : 0
   )
 
   // --- update 'onTimePayments' & 'missedPayments' streaks for 'pledging' members of the group ---
@@ -639,9 +640,10 @@ sbp('chelonia/defineContract', {
             updateCurrentDistribution({ contractID, meta, state, getters })
           }
 
-          // TODO: when 'PAYMENT_CANCELED' is completely implemented,
-          //       deduce the amount from 'totalPledgeAmount'.
-          state.totalPledgeAmount += payment.data.amount
+          // NOTE: if 'PAYMENT_REVERSED' is implemented, subtract
+          //       the amount from 'totalPledgeAmount'.
+          const currentTotalPledgeAmount = vueFetchInitKV(state, 'totalPledgeAmount', 0)
+          state.totalPledgeAmount = currentTotalPledgeAmount + payment.data.amount
         }
       },
       sideEffect ({ meta, contractID, data }, { state, getters }) {

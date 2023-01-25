@@ -961,7 +961,8 @@ ${this.getErrorInfo()}`;
     const isPledgingMember = (username) => thisPeriodHaveNeeds.some((entry) => entry.name === username && entry.haveNeed > 0);
     const totalContributionGoal = thisPeriodHaveNeeds.reduce((total, item) => item.haveNeed < 0 ? total + -1 * item.haveNeed : total, 0);
     const totalPledgesDone = thisPeriodPaymentDetails.reduce((total, paymentItem) => paymentItem.amount + total, 0);
-    import_common3.Vue.set(streaks, "fullMonthlySupport", totalPledgesDone > 0 && totalPledgesDone >= totalContributionGoal ? streaks.fullMonthlySupport + 1 : 0);
+    const fullMonthlySupportCurrent = vueFetchInitKV(streaks, "fullMonthlySupport", 0);
+    import_common3.Vue.set(streaks, "fullMonthlySupport", totalPledgesDone > 0 && totalPledgesDone >= totalContributionGoal ? fullMonthlySupportCurrent + 1 : 0);
     for (const username in getters.groupProfiles) {
       if (!isPledgingMember(username))
         continue;
@@ -1294,7 +1295,8 @@ ${this.getErrorInfo()}`;
             } else {
               updateCurrentDistribution({ contractID, meta, state, getters });
             }
-            state.totalPledgeAmount += payment.data.amount;
+            const currentTotalPledgeAmount = vueFetchInitKV(state, "totalPledgeAmount", 0);
+            state.totalPledgeAmount = currentTotalPledgeAmount + payment.data.amount;
           }
         },
         sideEffect({ meta, contractID, data }, { state, getters }) {
