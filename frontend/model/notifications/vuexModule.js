@@ -74,7 +74,8 @@ const mutations = {
 
   [keys.ADD_NOTIFICATION] (state, notification: Notification) {
     if (state.includes(notification)) {
-      throw new Error('This notification is already in the store.')
+      // We cannot throw here, as this code might be called from within a contract side effect.
+      return console.error('This notification is already in the store.')
     }
     state.push(notification)
     // Sort items in chronological order, newest items first.
