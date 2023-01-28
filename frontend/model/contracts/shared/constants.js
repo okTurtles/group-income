@@ -39,7 +39,7 @@ export const STATUS_FAILED = 'failed'
 export const STATUS_EXPIRED = 'expired'
 export const STATUS_CANCELLED = 'cancelled'
 
-export const STREAK_ON_TIME_PAYMENTS = 2
+export const STREAK_ON_TIME_PAYMENTS = 1
 export const STREAK_MISSED_PAYMENTS = 2
 export const STREAK_MISSED_PROPSAL_VOTE = 2
 export const STREAK_NOT_LOGGED_IN_DAYS = 14

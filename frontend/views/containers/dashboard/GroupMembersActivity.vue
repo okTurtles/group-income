@@ -96,6 +96,7 @@ export default ({
     onTimePayments () {
       return Object.entries(this.groupStreaks.onTimePayments || {})
         .filter(([username, streak]) => streak >= STREAK_ON_TIME_PAYMENTS)
+        .sort((a, b) => b[1] - a[1])
         .map(([username, streak]) => L('{user} - {count} month streak', { user: this.userDisplayName(username), count: streak }))
     },
     missedPayments () {
