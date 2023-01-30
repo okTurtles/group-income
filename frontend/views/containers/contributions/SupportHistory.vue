@@ -12,14 +12,19 @@ div(:class='isReady ? "" : "c-ready"')
   div(v-else)
     bar-graph(:bars='history')
     i18n.has-text-1(tag='p') * This month contains delayed payments for prior months.
+    i18n.has-text-bold.c-total-distribution-txt(
+      tag='p'
+      :args='{ amount: withGroupCurrency(groupTotalPledgeAmount) }'
+    ) Total distributed since start: {amount}
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import { humanDate } from '@model/contracts/shared/time.js'
+import { comparePeriodStamps } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
-import BarGraph from '@components/graphs/BarGraph.vue'
+import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 
 export default ({
   name: 'GroupSupportHistory',
@@ -35,17 +40,23 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupSettings',
       'currentPaymentPeriod',
-      'periodBeforePeriod'
+      'periodStampGivenDate',
+      'periodBeforePeriod',
+      'withGroupCurrency',
+      'groupTotalPledgeAmount',
+      'groupCreatedDate'
     ]),
-    mincome () {
-      return this.groupSettings.mincomeAmount
+    firstDistributionPeriod () {
+      // group's first distribution period
+      return this.periodStampGivenDate(this.groupCreatedDate)
     },
     periods () {
       const periods = [this.currentPaymentPeriod]
       for (let i = 0; i < MAX_HISTORY_PERIODS - 1; i++) {
-        periods.unshift(this.periodBeforePeriod(periods[0]))
+        const period = this.periodBeforePeriod(periods[0])
+        if (comparePeriodStamps(period, this.firstDistributionPeriod) < 0) break
+        else periods.unshift(period)
       }
       return periods
     }
@@ -54,26 +65,18 @@ export default ({
     this.updateHistory()
   },
   methods: {
-    parsePayments (payments) {
-      const list = {}
-      payments.forEach(payment => {
-        const { from, to, amount } = payment
-        list[from] = (list[from] || 0) + amount
-        list[to] = (list[to] || 0) - amount
-      })
-      return {
-        numReceivers: Object.values(list).filter(amount => amount < 0).length,
-        totalDistributionAmount: Object.values(list).filter(amount => amount > 0).reduce((total, curValue) => total + curValue, 0)
-      }
-    },
     async updateHistory () {
       this.history = await Promise.all(this.periods.map(async (period, i) => {
-        const payments = await this.getPaymentsByPeriod(period)
-        const { totalDistributionAmount, numReceivers } = this.parsePayments(payments)
+        const totalTodo = await this.getTotalTodoAmountForPeriod(period)
+        const totalDone = await this.getTotalPledgesDoneForPeriod(period)
+
         return {
-          total: numReceivers === 0 ? 0 : totalDistributionAmount / (this.mincome * numReceivers),
-          delayedPayment: payments.some(payment => payment.isLate),
-          title: humanDate(period, { month: 'long' })
+          total: totalDone === 0 ? 0 : totalDone / totalTodo,
+          title: this.getPeriodFromStartToDueDate(period),
+          tooltipContent: [
+            L('Needed: {todo}', { todo: this.withGroupCurrency(totalTodo) }),
+            L('Distributed: {done}', { done: this.withGroupCurrency(totalDone) })
+          ]
         }
       }))
     }
@@ -85,3 +88,9 @@ export default ({
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+.c-total-distribution-txt {
+  margin-top: 0.5rem;
+}
+</style>
