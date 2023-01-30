@@ -22,6 +22,7 @@
 </template>
 <script>
 import sbp from '@sbp/sbp'
+import { OPEN_MODAL, AVATAR_EDITED } from '@utils/events.js'
 import { L, LError } from '@common/common.js'
 import { imageUpload } from '@utils/image.js'
 import Avatar from '@components/Avatar.vue'
@@ -41,13 +42,17 @@ export default ({
     BannerScoped
   },
   methods: {
-    async fileChange (fileList) {
+    fileChange (fileList) {
       if (!fileList.length) return
-      const fileReceived = fileList[0]
+      const imageUrl = URL.createObjectURL(fileList[0])
+
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'AvatarEditorModal', { imageUrl })
+    },
+    async uploadEditedImage ({ blob }) {
       let picture
 
       try {
-        picture = await imageUpload(fileReceived)
+        picture = await imageUpload(blob)
       } catch (e) {
         console.error('AvatarUpload imageUpload() error:', e)
         this.$refs.formMsg.danger(L('Failed to upload avatar. {reportError}', LError(e)))
@@ -57,13 +62,23 @@ export default ({
       try {
         const { selector, contractID, key } = this.sbpParams
         await sbp(selector, { contractID, data: { [key]: picture } })
-        this.$refs.picture.setFromBlob(fileReceived)
+        // calling `setFromBlob` seems unnecessary here since the bound :avatar
+        // parameter should get updated after the upload completes.
+        // also, calling it here prevents the avatar from switching in Group Settings if we
+        // just uploaded a new image and then switch groups (see #1425)
+        // this.$refs.picture.setFromBlob(fileReceived)
         this.$refs.formMsg.success(L('Avatar updated!'))
       } catch (e) {
         console.error('AvatarUpload fileChange() error:', e)
         this.$refs.formMsg.danger(L('Failed to save avatar. {reportError}', LError(e)))
       }
     }
+  },
+  beforeMount () {
+    sbp('okTurtles.events/on', AVATAR_EDITED, this.uploadEditedImage)
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', AVATAR_EDITED, this.uploadEditedImage)
   }
 }: Object)
 </script>

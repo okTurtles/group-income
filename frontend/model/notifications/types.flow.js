@@ -37,7 +37,8 @@ export type NotificationTemplate = {
   +body: string;
   +icon: string;
   +level: NotificationLevel;
-  +linkTo: string;
+  +linkTo?: string;
+  +sbpInvocation?: Array<string | Object>;
   +scope: NotificationScope;
   +creator?: string;
   +subtype?: string;

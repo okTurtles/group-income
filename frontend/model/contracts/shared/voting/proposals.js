@@ -19,7 +19,10 @@ import {
   // STATUS_CANCELLED
 } from '../constants.js'
 
-export function archiveProposal ({ state, proposalHash, proposal, contractID }) {
+export function archiveProposal (
+  { state, proposalHash, proposal, contractID }: {
+    state: Object, proposalHash: string, proposal: any, contractID: string
+  }) {
   Vue.delete(state.proposals, proposalHash)
   sbp('gi.contracts/group/pushSideEffect', contractID,
     ['gi.contracts/group/archiveProposal', contractID, proposalHash, proposal]
@@ -27,7 +30,7 @@ export function archiveProposal ({ state, proposalHash, proposal, contractID }) 
 }
 
 export function buildInvitationUrl (groupId: string, inviteSecret: string): string {
-  return `${location.origin}/app/join?${new URLSearchParams({ groupId: groupId, secret: inviteSecret })}`
+  return `${location.origin}/app/join?${(new URLSearchParams({ groupId: groupId, secret: inviteSecret })).toString()}`
 }
 
 export const proposalSettingsType: any = objectOf({
@@ -155,6 +158,8 @@ const proposals: Object = {
         contractID
       }
       sbp('gi.contracts/group/updateSettings/process', message, state)
+      sbp('gi.contracts/group/pushSideEffect', contractID,
+        ['gi.contracts/group/updateSettings/sideEffect', { ...message, meta: { ...message.meta, username: proposal.meta.username } }])
       archiveProposal({ state, proposalHash, proposal, contractID })
     },
     [VOTE_AGAINST]: voteAgainst

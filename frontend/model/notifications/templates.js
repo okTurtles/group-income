@@ -171,13 +171,12 @@ export default ({
     }
   },
   PAYMENT_RECEIVED (data: { creator: string, amount: string, paymentHash: string }) {
-    const { globalProfile } = sbp('state/vuex/getters')
-    const getDisplayName = username => globalProfile(username)?.displayName || username
+    const { userDisplayName } = sbp('state/vuex/getters')
 
     return {
       avatarUsername: data.creator,
       body: L('{fromUser} sent you a {amount} mincome contribution. {strong_}Review and send a thank you note.{_strong}', {
-        fromUser: getDisplayName(data.creator), // displayName of the sender
+        fromUser: userDisplayName(data.creator), // displayName of the sender
         amount: data.amount,
         ...LTags('strong')
       }),
@@ -200,6 +199,25 @@ export default ({
       level: 'info',
       linkTo: `dashboard?modal=ThankYouNoteModal&from=${data.fromUser}&to=${data.toUser}`,
       scope: 'group'
+    }
+  },
+  MINCOME_CHANGED (data: { creator: string, to: number, memberType: string, increased: boolean }) {
+    const { withGroupCurrency } = sbp('state/vuex/getters')
+    return {
+      avatarUsername: data.creator,
+      body: L('The mincome has changed to {amount}.', { amount: withGroupCurrency(data.to) }),
+      creator: data.creator,
+      icon: '',
+      level: 'info',
+      scope: 'group',
+      sbpInvocation: ['gi.actions/group/displayMincomeChangedPrompt', {
+        contractID: sbp('state/vuex/state').currentGroupId,
+        data: {
+          amount: data.to,
+          memberType: data.memberType,
+          increased: data.increased
+        }
+      }]
     }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })

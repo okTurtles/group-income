@@ -111,7 +111,15 @@ export default (sbp('sbp/selectors/register', {
           ? contractSBP
           : this.config.contracts.defaults.modules[dep]
       },
-      sbp: contractSBP
+      sbp: contractSBP,
+      fetchServerTime: () => {
+        // If contracts need the current timestamp (for example, for metadata 'createdDate')
+        // they must call this function so that clients are kept synchronized to the server's
+        // clock, for consistency, so that if one client's clock is off, it doesn't conflict
+        // with other client's clocks.
+        // See: https://github.com/okTurtles/group-income/issues/531
+        return fetch(`${this.config.connectionURL}/time`).then(handleFetchResult('text'))
+      }
     })
     contractName = this.defContract.name
     this.defContractSelectors.forEach(s => { allowedSels[s] = true })
@@ -458,6 +466,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
+    this.currentSyncs[contractID] = true
     try {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
@@ -474,9 +483,11 @@ export default (sbp('sbp/selectors/register', {
       }
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
       await sbp('chelonia/private/respondToKeyRequests', contractID)
+      this.currentSyncs[contractID] = false
     } catch (e) {
       console.error(`[chelonia] syncContract error: ${e.message || e}`, e)
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
+      this.currentSyncs[contractID] = false
       this.config.hooks.syncContractError?.(e, contractID)
       throw e
     }
@@ -701,7 +712,7 @@ const handleEvent = {
       const manifestHash = message.manifest()
       const hash = message.hash()
       const { action, data, meta } = this.config.decryptFn.call(this, message.opValue(), state)
-      const mutation = { data, meta, hash, contractID }
+      const mutation = { data, meta, hash, contractID, description: message.description() }
       await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }
   },

@@ -180,6 +180,7 @@ page(
               i.icon-coins icon-coins
               i.icon-columns icon-columns
               i.icon-comment icon-comment
+              i.icon-comment-dollar icon-comment-dollar
               i.icon-comments icon-comments
               i.icon-copy icon-copy
               i.icon-dollar-sign icon-dollar-sign
@@ -223,6 +224,8 @@ page(
               i.icon-reply icon-reply
               i.icon-trash-alt icon-trash-alt
               i.icon-exclamation-triangle icon-exclamation-triangle
+              i.icon-magnifying-plus icon-magnifying-plus
+              i.icon-magnifying-minus icon-magnifying-minus
         tr
           td
             pre
@@ -610,29 +613,57 @@ page(
   article#tooltips
     section.card
       h2.is-title-2.card-header Tooltips
-      tooltip(
-        text='A simple text inside'
-        )
-        i.icon-exclamation-triangle Basic
 
-      | &nbsp;&nbsp;&nbsp;&nbsp;
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | tooltip(text='A simple text inside')
+              |   i.icon-* Basic
+          td
+            tooltip(text='A simple text inside')
+              i.icon-exclamation-triangle Basic
 
-      tooltip
-        i.icon-exclamation-triangle Complete
-        template(slot='tooltip')
-          p.has-text-bold Custom markdown
-          | It has a maximum width of&nbsp;
-          strong 14rem
-          |  (224px).
+        tr
+          td
+            pre
+              | tooltip
+              |   i.icon-* Complete
+              |   template(slot='tooltip') ...
+          td
+            tooltip
+              i.icon-exclamation-triangle Complete
+              template(slot='tooltip')
+                p.has-text-bold Custom markdown
+                | It has a maximum width of&nbsp;
+                strong 14rem
+                |  (224px).
 
-      | &nbsp;&nbsp;&nbsp;&nbsp;
+        tr
+          td
+            pre
+              | tooltip(direction='right')
+              |   ...
+          td
+            tooltip(direction='right')
+              i.icon-exclamation-triangle Custom Direction
+              template(slot='tooltip')
+                | It accepts multiple directions. Check sourcecode to know more.
 
-      tooltip(
-        direction='right'
-        )
-        i.icon-exclamation-triangle Custom Direction
-        template(slot='tooltip')
-          | It accepts multiple directions. Check sourcecode to know more.
+        tr
+          td
+            pre
+              | tooltip(triggerElementCss='.trigger-target')
+              |   i.icon-* Basic
+          td
+            tooltip(text='A simple text inside' triggerElementSelector='.trigger-target' direction='bottom-end')
+              span
+                span.link.trigger-target 5 members
+                | &nbsp;have&nbsp;
+                strong on-time payment streaks
 
   article#InviteLink
     section.card
@@ -1360,7 +1391,7 @@ import SvgMoney from '@svgs/money.svg'
 import SvgProposal from '@svgs/proposal.svg'
 import SvgVote from '@svgs/vote.svg'
 import { mapGetters, mapMutations } from 'vuex'
-import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
+import { THEME_LIGHT, THEME_DARK } from '~/frontend/model/settings/themes.js'
 
 export default ({
   name: 'DesignSystemView',

@@ -217,6 +217,7 @@ export default (sbp('sbp/selectors/register', {
     }
     this.manifestToContract = {}
     this.whitelistedActions = {}
+    this.currentSyncs = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
     this.env = {}
     this.sideEffectStack = (contractID: string): Array<*> => {
@@ -343,22 +344,23 @@ export default (sbp('sbp/selectors/register', {
           contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
           contract.actions[action].process(message, { state, ...gProxy })
         },
-        [`${contract.manifest}/${action}/sideEffect`]: async (message: Object, state: ?Object) => {
-          const sideEffects = this.sideEffectStack(message.contractID)
+        // 'mutation' is an object that's similar to 'message', but not identical
+        [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
+          const sideEffects = this.sideEffectStack(mutation.contractID)
           while (sideEffects.length > 0) {
             const sideEffect = sideEffects.shift()
             try {
               await contract.sbp(...sideEffect)
             } catch (e) {
-              console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${message.description()}:`, sideEffect)
-              this.sideEffectStacks[message.contractID] = [] // clear the side effects
+              console.error(`[chelonia] ERROR: '${e.name}' ${e.message}, for pushed sideEffect of ${mutation.description}:`, sideEffect)
+              this.sideEffectStacks[mutation.contractID] = [] // clear the side effects
               throw e
             }
           }
           if (contract.actions[action].sideEffect) {
-            state = state || contract.state(message.contractID)
+            state = state || contract.state(mutation.contractID)
             const gProxy = gettersProxy(state, contract.getters)
-            await contract.actions[action].sideEffect(message, { state, ...gProxy })
+            await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
           }
         }
       }))
@@ -421,6 +423,9 @@ export default (sbp('sbp/selectors/register', {
         throw err // re-throw the error
       })
     }))
+  },
+  'chelonia/contract/isSyncing': function (contractID: string): boolean {
+    return !!this.currentSyncs[contractID]
   },
   // TODO: implement 'chelonia/contract/release' (see #828)
   // safer version of removeImmediately that waits to finish processing events for contractIDs
@@ -592,17 +597,11 @@ export default (sbp('sbp/selectors/register', {
 
     if (originatingContractID && originatingContract) {
       originatingState = originatingContract.state(originatingContractID)
-      const originatingGProxy = gettersProxy(originatingState, originatingContract.getters)
-      const originatingMeta = originatingContract.metadata.create()
-      originatingContract.metadata.validate(originatingMeta, { state: originatingState, ...originatingGProxy, originatingContractID })
     }
 
     const destinationState = destinationContract.state(destinationContractID)
     const previousHEAD = await sbp('chelonia/private/out/latestHash', destinationContractID)
 
-    const destinationGProxy = gettersProxy(destinationState, destinationContract.getters)
-    const destinationMeta = destinationContract.metadata.create()
-    destinationContract.metadata.validate(destinationMeta, { state: destinationState, ...destinationGProxy, destinationContractID })
     const payload = (data: GIOpKeyShare)
 
     const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || ((originatingContractID ? originatingState : destinationState)?._volatile?.keys?.[params.signingKeyId])
@@ -632,9 +631,6 @@ export default (sbp('sbp/selectors/register', {
     }
     const state = contract.state(contractID)
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
-    const meta = contract.metadata.create()
-    const gProxy = gettersProxy(state, contract.getters)
-    contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const payload = (data: GIOpKeyAdd)
     const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
     const msg = GIMessage.createV1_0({
@@ -661,9 +657,6 @@ export default (sbp('sbp/selectors/register', {
     }
     const state = contract.state(contractID)
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
-    const meta = contract.metadata.create()
-    const gProxy = gettersProxy(state, contract.getters)
-    contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const payload = (data: GIOpKeyDel)
     const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
     const msg = GIMessage.createV1_0({
@@ -697,9 +690,6 @@ export default (sbp('sbp/selectors/register', {
     if (!rootState[contractID]) this.config.reactiveSet(rootState, contractID, state)
     const originatingState = originatingContract.state(originatingContractID)
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
-    const meta = contract.metadata.create()
-    const gProxy = gettersProxy(state, contract.getters)
-    contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const outerKeyId = keyId(signingKey)
     const innerSigningKey = this.config.transientSecretKeys?.[innerSigningKeyId] || originatingState?._volatile?.keys?.[innerSigningKeyId]
     const payload = ({
@@ -740,9 +730,6 @@ export default (sbp('sbp/selectors/register', {
     }
     const state = contract.state(contractID)
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
-    const meta = contract.metadata.create()
-    const gProxy = gettersProxy(state, contract.getters)
-    contract.metadata.validate(meta, { state, ...gProxy, contractID })
     const payload = (data: GIOpKeyRequestResponse)
     const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
     const msg = GIMessage.createV1_0({
@@ -788,7 +775,7 @@ async function outEncryptedOrUnencryptedAction (
   const { contract } = this.manifestToContract[manifestHash]
   const state = contract.state(contractID)
   const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-  const meta = contract.metadata.create()
+  const meta = await contract.metadata.create()
   const gProxy = gettersProxy(state, contract.getters)
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })

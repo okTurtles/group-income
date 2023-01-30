@@ -6,8 +6,7 @@ import {
 } from '~/frontend/model/contracts/misc/flowTyper.js'
 import {
   CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL,
-  MESSAGE_TYPES, MESSAGE_NOTIFICATIONS, PROPOSAL_VARIANTS,
-  MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ
+  MESSAGE_TYPES, MESSAGE_NOTIFICATIONS, PROPOSAL_VARIANTS
 } from './constants.js'
 
 // group.js related
@@ -54,7 +53,3 @@ export const messageType: any = objectMaybeOf({
   onlyVisibleTo: arrayOf(string) // list of usernames, only necessary when type is NOTIFICATION
   // TODO: need to consider POLL and add more down here
 })
-
-// mailbox.js related
-
-export const mailType: any = unionOf(...[MAIL_TYPE_MESSAGE, MAIL_TYPE_FRIEND_REQ].map(k => literalOf(k)))

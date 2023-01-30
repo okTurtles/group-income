@@ -1,3 +1,5 @@
+/* globals fetchServerTime */
+
 'use strict'
 
 import sbp from '@sbp/sbp'
@@ -8,6 +10,7 @@ import {
   CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MESSAGES_PER_PAGE,
+  CHATROOM_TYPES,
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS,
   CHATROOM_MESSAGE_ACTION,
@@ -47,13 +50,9 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
   username: string,
   chatRoomName: string
 }): void {
-  /**
-   * If 'READY_TO_JOIN_CHATROOM' is false, it means not syncing chatroom
-  */
-  if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+  if (sbp('chelonia/contract/isSyncing', contractID)) {
     return
   }
-
   sbp('state/vuex/commit', 'addChatRoomUnreadMention', {
     chatRoomId: contractID,
     messageId,
@@ -61,13 +60,16 @@ function addMention ({ contractID, messageId, datetime, text, username, chatRoom
   })
 
   const rootGetters = sbp('state/vuex/getters')
-  const groupID = rootGetters.groupIdFromChatRoomId(contractID)
+  const isDMContact = rootGetters.isDirectMessage(contractID)
+  const partnerProfile = rootGetters.ourContactProfiles[username]
+  // NOTE: partner identity contract could not be synced at the time of use
+  const title = isDMContact ? `# ${partnerProfile?.displayName || username}` : `# ${chatRoomName}`
   const path = `/group-chat/${contractID}`
 
   makeNotification({
-    title: `# ${chatRoomName}`,
+    title,
     body: text,
-    icon: rootGetters.globalProfile2(groupID, username)?.picture,
+    icon: partnerProfile?.picture,
     path
   })
 
@@ -98,10 +100,10 @@ sbp('chelonia/defineContract', {
       username: string, // action creator
       identityContractID: string // action creator identityContractID
     }),
-    create () {
+    async create () {
       const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
-        createdDate: new Date().toISOString(),
+        createdDate: await fetchServerTime(),
         username,
         identityContractID
       }
@@ -165,7 +167,7 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
-        if (!state.saveMessage) {
+        if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
           return
         }
 
@@ -180,8 +182,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
 
-        if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM') || // Join by himself or Login in another device
-          sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID') === contractID) { // Be added by another
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
           updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
@@ -204,7 +205,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
 
-        if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
           updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
@@ -229,7 +230,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
 
-        if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
           updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
@@ -247,7 +248,7 @@ sbp('chelonia/defineContract', {
         }
         Vue.delete(state.users, member)
 
-        if (!state.saveMessage) {
+        if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
           return
         }
 
@@ -264,10 +265,8 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, hash, contractID, meta }, { state }) {
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
-          if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+          if (sbp('chelonia/contract/isSyncing', contractID)) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
-          }
-          if (sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')) {
             return
           }
           leaveChatRoom({ contractID })
@@ -288,7 +287,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ meta, contractID }, { state }) {
-        if (sbp('okTurtles.data/get', 'JOINING_CHATROOM_ID')) {
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
           return
         }
         leaveChatRoom({ contractID })
@@ -318,8 +317,11 @@ sbp('chelonia/defineContract', {
         }
         const newMessage = createMessage({ meta, data, hash, state })
         const mentions = makeMentionFromUsername(me)
-        if (data.type === MESSAGE_TYPES.TEXT &&
-          (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))) {
+
+        const isDirectMessage = state.attributes.type === CHATROOM_TYPES.INDIVIDUAL
+        const isTextMessage = data.type === MESSAGE_TYPES.TEXT
+        const isMentionedMe = isTextMessage && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
+        if (isDirectMessage || isMentionedMe) {
           addMention({
             contractID,
             messageId: newMessage.id,
@@ -330,7 +332,7 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        if (sbp('okTurtles.data/get', 'READY_TO_JOIN_CHATROOM')) {
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
           updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }

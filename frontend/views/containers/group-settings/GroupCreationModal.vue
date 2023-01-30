@@ -158,6 +158,13 @@ export default ({
       }
     }
   },
+  mounted () {
+    if (this.currentStep !== 0 && !this.form.groupName) {
+      // when the modal has been opened with the queried step not being the first one,
+      // check if groupName has been set and redirect to the the first step if not.
+      this.redirect('GroupName')
+    }
+  },
   validations: {
     form: {
       groupName: { required },

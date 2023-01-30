@@ -21,6 +21,7 @@ const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
 const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
 const lazyMessages = lazyPage(() => import('@pages/Messages.vue'))
 const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
+const lazyPendingApproval = lazyPage(() => import('@pages/PendingApproval.vue'))
 
 Vue.use(Router)
 
@@ -132,16 +133,17 @@ const router: any = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
+      path: '/group-chat/:chatRoomId',
+      component: lazyGroupChat,
+      name: 'GroupChatConversation',
+      meta: { title: L('Loading') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
+    },
+    {
       path: '/group-settings',
       component: lazyGroupSettings,
       name: 'GroupSettings',
       meta: { title: L('Group Settings') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
-    },
-    {
-      path: '/group-chat/:chatRoomId',
-      component: lazyGroupChat,
-      name: 'GroupChatConversation',
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
@@ -151,6 +153,13 @@ const router: any = new Router({
       meta: { title: L('Join a Group') },
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
       beforeEnter: createEnterGuards(inviteGuard)
+    },
+    {
+      path: '/pending-approval',
+      component: lazyPendingApproval,
+      name: 'PendingApproval',
+      meta: { title: L('Pending Approval') },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     ...(process.env.NODE_ENV === 'development'
       ? [{
@@ -168,6 +177,15 @@ const router: any = new Router({
 })
 
 router.beforeEach((to, from, next) => {
+  if (to.query.modal &&
+    !['SignupModal', 'LoginModal'].includes(to.query.modal) &&
+    !store.state.loggedIn) {
+    // if modal is queried and,
+    // the requested modal is only meant to be used post authentication and,
+    // the user is not logged in now, discard the navigation.
+    return next(from)
+  }
+
   document.title = to.meta.title
   next()
 })

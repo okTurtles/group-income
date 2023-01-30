@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { MESSAGE_TYPES } from './constants.js'
+import { INVITE_STATUS, MESSAGE_TYPES, DAYS_MILLIS } from './constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // !!!!!!!!!!!!!!!
@@ -18,6 +18,57 @@ import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 // THIS, AND SHOULD INCLUDE THOSE FUNCTIONS (WITHOUT EXPORTING THEM),
 // DIRECTLY IN YOUR CONTRACT DEFINITION FILE. THEN YOU CAN MODIFY
 // THEM AS MUCH AS YOU LIKE (and generate new contract versions out of them).
+
+// group.js related
+
+export function paymentHashesFromPaymentPeriod (periodPayments: Object): string[] {
+  let hashes = []
+  if (periodPayments) {
+    const { paymentsFrom } = periodPayments
+    for (const fromUser in paymentsFrom) {
+      for (const toUser in paymentsFrom[fromUser]) {
+        hashes = hashes.concat(paymentsFrom[fromUser][toUser])
+      }
+    }
+  }
+
+  return hashes
+}
+
+export function createPaymentInfo (paymentHash: string, payment: Object): {
+  from: string, to: string, hash: string, amount: number, isLate: boolean, when: string
+} {
+  return {
+    from: payment.meta.username,
+    to: payment.data.toUser,
+    hash: paymentHash,
+    amount: payment.data.amount,
+    isLate: !!payment.data.isLate,
+    when: payment.data.completedDate
+  }
+}
+
+export function createInvite ({ quantity = 1, creator, expires, invitee }: {
+  quantity: number, creator: string, expires: number, invitee?: string
+}): {|
+  creator: string,
+  expires: number,
+  inviteSecret: string,
+  invitee: void | string,
+  quantity: number,
+  responses: {...},
+  status: string,
+|} {
+  return {
+    inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
+    quantity,
+    creator,
+    invitee,
+    status: INVITE_STATUS.VALID,
+    responses: {}, // { bob: true } list of usernames that accepted the invite.
+    expires: Date.now() + DAYS_MILLIS * expires
+  }
+}
 
 // chatroom.js related
 

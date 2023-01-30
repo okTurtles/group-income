@@ -1,9 +1,12 @@
 <template lang='pug'>
 .wrapper
-  label.label(:for='`range${uid}`') {{ label }}
+  label.label(v-if='label' :for='`range${uid}`') {{ label }}
 
   span.marks
-    span.edge(aria-hidden='true') {{ min }}
+    span.edge(
+      v-if='!hideText'
+      aria-hidden='true'
+    ) {{ min }}
 
     span.slider(:style='ephemeral.styleVars')
       input.sInput(
@@ -15,11 +18,15 @@
         @input='handleChange'
       )
       output.sOutput(
+        v-if='!hideText'
         :for='`range${uid}`'
         :style='ephemeral.outputStyle'
       ) {{ value + unit }}
 
-    span.edge(aria-hidden='true') {{ max }}
+    span.edge(
+      v-if='!hideText'
+      aria-hidden='true'
+    ) {{ max }}
 </template>
 
 <script>
@@ -35,7 +42,8 @@ export default ({
     min: [String, Number],
     max: [String, Number],
     unit: String,
-    value: [String, Number]
+    value: [String, Number],
+    hideText: Boolean
   },
   data: () => ({
     ephemeral: {

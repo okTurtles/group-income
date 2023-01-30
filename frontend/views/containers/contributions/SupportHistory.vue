@@ -12,11 +12,19 @@ div(:class='isReady ? "" : "c-ready"')
   div(v-else)
     bar-graph(:bars='history')
     i18n.has-text-1(tag='p') * This month contains delayed payments for prior months.
+    i18n.has-text-bold.c-total-distribution-txt(
+      tag='p'
+      :args='{ amount: withGroupCurrency(groupTotalPledgeAmount) }'
+    ) Total distributed since start: {amount}
 </template>
 
 <script>
-import { humanDate } from '@model/contracts/shared/time.js'
-import BarGraph from '@components/graphs/BarGraph.vue'
+import { mapGetters } from 'vuex'
+import { comparePeriodStamps } from '@model/contracts/shared/time.js'
+import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
+import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
 
 export default ({
   name: 'GroupSupportHistory',
@@ -26,20 +34,63 @@ export default ({
       history: []
     }
   },
+  mixins: [PaymentsMixin],
   components: {
     BarGraph
   },
-  created () {
-    // Todo replace history with real data
-    const testNumber = 6
-    for (let i = testNumber; i > 0; i--) {
-      const date = new Date()
-      date.setMonth(date.getMonth() - i)
-      this.history.push({
-        total: 1 / testNumber * (testNumber - i + 1),
-        title: humanDate(date, { month: 'long' })
-      })
+  computed: {
+    ...mapGetters([
+      'currentPaymentPeriod',
+      'periodStampGivenDate',
+      'periodBeforePeriod',
+      'withGroupCurrency',
+      'groupTotalPledgeAmount',
+      'groupCreatedDate'
+    ]),
+    firstDistributionPeriod () {
+      // group's first distribution period
+      return this.periodStampGivenDate(this.groupCreatedDate)
+    },
+    periods () {
+      const periods = [this.currentPaymentPeriod]
+      for (let i = 0; i < MAX_HISTORY_PERIODS - 1; i++) {
+        const period = this.periodBeforePeriod(periods[0])
+        if (comparePeriodStamps(period, this.firstDistributionPeriod) < 0) break
+        else periods.unshift(period)
+      }
+      return periods
+    }
+  },
+  mounted () {
+    this.updateHistory()
+  },
+  methods: {
+    async updateHistory () {
+      this.history = await Promise.all(this.periods.map(async (period, i) => {
+        const totalTodo = await this.getTotalTodoAmountForPeriod(period)
+        const totalDone = await this.getTotalPledgesDoneForPeriod(period)
+
+        return {
+          total: totalDone === 0 ? 0 : totalDone / totalTodo,
+          title: this.getPeriodFromStartToDueDate(period),
+          tooltipContent: [
+            L('Needed: {todo}', { todo: this.withGroupCurrency(totalTodo) }),
+            L('Distributed: {done}', { done: this.withGroupCurrency(totalDone) })
+          ]
+        }
+      }))
+    }
+  },
+  watch: {
+    periods () {
+      this.updateHistory()
     }
   }
 }: Object)
 </script>
+
+<style lang="scss" scoped>
+.c-total-distribution-txt {
+  margin-top: 0.5rem;
+}
+</style>

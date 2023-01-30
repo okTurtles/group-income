@@ -20,11 +20,21 @@ describe('Signup, Profile and Login', () => {
 
   it('user1 changes avatar and profile settings', () => {
     const profilePicture = 'imageTest.png' // at fixtures/imageTest
+    let profilePictureDataURI
 
     cy.getByDT('settingsBtn').click()
 
     cy.fixture(profilePicture, 'base64').then(fileContent => {
+      profilePictureDataURI = `data:image/jpeg;base64, ${fileContent}`
       cy.getByDT('avatar').attachFile({ fileContent, fileName: profilePicture, mimeType: 'image/png' }, { subjectType: 'input' })
+    })
+
+    cy.log('Avatar editor modal shoul pop up. image is saved with no edit.')
+    cy.getByDT('AvatarEditorModal').within(() => {
+      cy.getByDT('modal-header-title').should('contain', 'Edit avatar')
+      cy.getByDT('imageHelperTag').invoke('attr', 'src', profilePictureDataURI)
+      cy.getByDT('imageCanvas').should('exist')
+      cy.getByDT('saveBtn').click()
     })
 
     cy.getByDT('avatarMsg').should('contain', 'Avatar updated!')

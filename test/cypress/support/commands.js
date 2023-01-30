@@ -173,13 +173,27 @@ Cypress.Commands.add('giCreateGroup', (name, {
     return
   }
 
+  let groupPictureDataURI
+
   cy.getByDT('createGroup').click()
 
   cy.getByDT('groupCreationModal').within(() => {
     cy.getByDT('groupName').type(name)
     cy.fixture(image, 'base64').then(fileContent => {
+      groupPictureDataURI = `data:image/jpeg;base64, ${fileContent}`
       cy.getByDT('groupPicture').attachFile({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
     })
+  })
+
+  cy.log('Avatar editor modal shoul pop up. image is saved with no edit.')
+  cy.get('[data-test="AvatarEditorModal"]').within(() => {
+    cy.getByDT('modal-header-title').should('contain', 'Edit avatar')
+    cy.getByDT('imageHelperTag').invoke('attr', 'src', groupPictureDataURI)
+    cy.getByDT('imageCanvas').should('exist')
+    cy.getByDT('saveBtn').click()
+  })
+
+  cy.getByDT('groupCreationModal').within(() => {
     cy.getByDT('nextBtn').click()
 
     if (sharedValues) {

@@ -29,6 +29,7 @@ import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import type { GIActionParams } from './types.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
+import { REPLACE_MODAL } from '@utils/events.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -313,15 +314,7 @@ export default (sbp('sbp/selectors/register', {
         const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
           .filter(cId => rootState[params.contractID].chatRooms?.[cId].users.includes(me))
 
-        /**
-         * flag READY_TO_JOIN_CHATROOM is not necessary to sync actually
-         * But just this is only for checking if syncing chatrooms or not
-         * Especially inside addMention in model/contracts/chatroom.js
-         */
-        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
         await sbp('chelonia/contract/sync', chatRoomIds)
-        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
-
         sbp('state/vuex/commit', 'setCurrentChatRoomId', {
           groupId: params.contractID,
           chatRoomId: rootState[params.contractID].generalChatRoomId
@@ -330,7 +323,6 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     } catch (e) {
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
-      sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', false)
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     }
@@ -342,6 +334,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
+    sbp('gi.actions/group/updateLastLoggedIn', { contractID: groupId })
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
     const contractState = sbp('state/vuex/state')[params.contractID]
@@ -397,15 +390,15 @@ export default (sbp('sbp/selectors/register', {
       })
 
       if (username === me) {
-        // 'READY_TO_JOIN_CHATROOM' is necessary to identify the joining chatroom action is NEW or OLD
+        // 'JOINING_GROUP_CHAT' is necessary to identify the joining chatroom action is NEW or OLD
         // Users join the chatroom thru group making group actions
         // But when user joins the group, he needs to ignore all the actions about chatroom
         // Because the user is joining group, not joining chatroom
         // and he is going to make a new action to join 'General' chatroom AGAIN
-        // While joining group, we don't set this flag because Joining chatroom actions are all OLD ones, which needs to be ignored
-        // Joining 'General' chatroom is one of the step to join group
-        // So setting 'READY_TO_JOIN_CHATROOM' can not be out of the 'JOINING_GROUP' scope
-        sbp('okTurtles.data/set', 'READY_TO_JOIN_CHATROOM', true)
+        // While joining group, we don't set this flag because Joining chatroom actions are all OLD ones, which need to be ignored
+        // Joining 'General' chatroom is one of the steps to join group
+        // So setting 'JOINING_GROUP_CHAT' can not be out of the 'JOINING_GROUP' scope
+        sbp('okTurtles.data/set', 'JOINING_GROUP_CHAT', true)
       }
       await sbp('chelonia/out/actionEncrypted', {
         ...omit(params, ['options']),
@@ -613,6 +606,28 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to notify expiring proposals.'))
     }
   },
+  'gi.actions/group/displayMincomeChangedPrompt': async function ({ data }: GIActionParams) {
+    const { withGroupCurrency } = sbp('state/vuex/getters')
+    const promptOptions = data.increased
+      ? {
+          heading: L('Mincome changed'),
+          question: L('Do you make at least {amount} per month?', { amount: withGroupCurrency(data.amount) }),
+          yesButton: data.memberType === 'pledging' ? L('No') : L('Yes'),
+          noButton: data.memberType === 'pledging' ? L('Yes') : L('No')
+        }
+      : {
+          heading: L('Automatically switched to pledging {zero}', { zero: withGroupCurrency(0) }),
+          question: L('You now make more than the mincome. Would you like to increase your pledge?'),
+          yesButton: L('Yes'),
+          noButton: L('No')
+        }
+
+    const yesButtonSelected = await sbp('gi.ui/prompt', promptOptions)
+    if (yesButtonSelected) {
+      // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
+      sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
+    }
+  },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
@@ -625,6 +640,8 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/proposalCancel', L('Failed to cancel proposal.')),
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
+  ...encryptedAction('gi.actions/group/updateLastLoggedIn', L('Failed to update "lastLoggedIn" in a group profile.')),
+  ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
   })

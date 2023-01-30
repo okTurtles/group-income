@@ -54,13 +54,15 @@ export default ({
     ...mapGetters([
       'groupsByName',
       'ourUnreadMessages',
+      'isDirectMessage',
+      'groupUnreadMessages',
       'unreadGroupNotificationCountFor'
     ]),
     badgeVisiblePerGroup () {
       return Object.fromEntries(
         this.groupsByName.map(group => ([
           group.contractID,
-          this.shouldSetBadgeOnGroup(group.contractID)
+          this.groupUnreadMessages(group.contractID) + this.unreadGroupNotificationCountFor(group.contractID) > 0
         ]))
       )
     }
@@ -73,13 +75,7 @@ export default ({
       id && this.changeGroup(id)
     },
     changeGroup (hash) {
-      this.$store.commit('setCurrentGroupId', hash)
-    },
-    shouldSetBadgeOnGroup (groupID) {
-      return Object.keys(this.ourUnreadMessages)
-        .filter(cID => Object.keys(this.$store.state[groupID].chatRooms).includes(cID))
-        .map(cID => this.ourUnreadMessages[cID].mentions.length)
-        .reduce((a, b) => a + b, 0) + this.unreadGroupNotificationCountFor(groupID) > 0
+      sbp('gi.actions/group/switch', hash)
     }
   }
 }: Object)

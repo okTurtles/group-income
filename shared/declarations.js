@@ -17,6 +17,7 @@
 
 // Our globals.
 declare function logger(err: Error): void
+declare function fetchServerTime(): Promise<string>
 // Nodejs globals.
 declare var process: any
 // Third-party globals
@@ -83,3 +84,4 @@ declare module '@model/contracts/shared/voting/proposals.js' { declare module.ex
 declare module '@model/contracts/shared/functions.js' { declare module.exports: any }
 declare module '@common/common.js' { declare module.exports: any }
 declare module './model/contracts/manifests.json' { declare module.exports: any }
+declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }

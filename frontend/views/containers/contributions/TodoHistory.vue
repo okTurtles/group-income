@@ -15,30 +15,71 @@ div(:class='isReady ? "" : "c-ready"')
 </template>
 
 <script>
-import { humanDate } from '@model/contracts/shared/time.js'
-import BarGraph from '@components/graphs/BarGraph.vue'
+import { mapGetters } from 'vuex'
+import { comparePeriodStamps } from '@model/contracts/shared/time.js'
+import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
+import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
+import { L } from '@common/common.js'
 
 export default ({
-  name: 'GroupSupportHistory',
+  name: 'TodoHistory',
   data () {
     return {
       isReady: false,
-      history: []
+      history: null
     }
   },
+  mixins: [PaymentsMixin],
   components: {
     BarGraph
   },
+  computed: {
+    ...mapGetters([
+      'currentPaymentPeriod',
+      'periodStampGivenDate',
+      'periodBeforePeriod',
+      'groupCreatedDate',
+      'dueDateForPeriod'
+    ]),
+    firstDistributionPeriod () {
+      // group's first distribution period
+      return this.periodStampGivenDate(this.groupCreatedDate)
+    }
+  },
   created () {
-    // Todo replace history with real data
-    const testNumber = 6
-    for (let i = testNumber; i > 0; i--) {
-      const date = new Date()
-      date.setMonth(date.getMonth() - i)
-      this.history.push({
-        total: 1 / testNumber * (testNumber - i + 1),
-        title: humanDate(date, { month: 'long' })
-      })
+    this.updateHistory()
+  },
+  methods: {
+    async updateHistory () {
+      this.history = []
+
+      let period = null
+      const getLen = obj => Object.keys(obj).length
+
+      for (let i = 0; i < MAX_HISTORY_PERIODS; i++) {
+        period = period === null ? this.currentPaymentPeriod : this.periodBeforePeriod(period)
+        if (comparePeriodStamps(period, this.firstDistributionPeriod) < 0) break
+
+        const paymentDetails = await this.getPaymentDetailsByPeriod(period)
+        const { lastAdjustedDistribution } = await this.getPeriodPayment(period)
+        const doneCount = getLen(paymentDetails)
+        const missedCount = getLen(lastAdjustedDistribution || {})
+
+        this.history.unshift({
+          total: doneCount === 0 ? 0 : doneCount / (doneCount + missedCount),
+          title: this.getPeriodFromStartToDueDate(period),
+          tooltipContent: [
+            L('Total: {total}', { total: doneCount + missedCount }),
+            L('Completed: {completed}', { completed: doneCount })
+          ]
+        })
+      }
+    }
+  },
+  watch: {
+    currentPaymentPeriod () {
+      this.updateHistory()
     }
   }
 }: Object)

@@ -1,9 +1,15 @@
 <template lang='pug'>
-page(pageTestName='groupChat' pageTestHeaderName='channelName')
+page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isOnDirectMessage')
   template(#title='')
     .c-header
+      avatar(
+        v-if='summary.picture'
+        :src='summary.picture'
+        alt='Partner Picture'
+        size='sm'
+      )
       i(
-        v-if='summary.private !== undefined'
+        v-else
         :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
       )
       | {{summary.title}}
@@ -17,12 +23,12 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
 
           ul
             menu-item(
-              v-if='!summary.general && ourUsername === summary.creator'
+              v-if='!summary.general && ourUsername === summary.creator && !isOnDirectMessage'
               @click='openModal("EditChannelNameModal")'
               data-test='renameChannel'
             )
               i18n Rename
-            menu-item(@click='openModal("ChatMembersAllModal")')
+            menu-item(v-if='!isOnDirectMessage' @click='openModal("ChatMembersAllModal")')
               i18n Members
             menu-item(
               :class='`${!summary.general ? "c-separator" : ""}`'
@@ -37,13 +43,13 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
-              v-if='!summary.general && ourUsername === summary.creator'
+              v-if='!summary.general && ourUsername === summary.creator && !isOnDirectMessage'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )
               i18n Delete channel
 
-  template(#description='')
+  template(#description='' v-if='!isOnDirectMessage')
     .c-header-description
       i18n.is-unstyled.c-link(
         tag='button'
@@ -79,13 +85,12 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
         route-name='GroupChatConversation'
       )
 
-      group-members(:title='L("Direct Messages")' action='chat')
+      chat-members(:title='L("Direct Messages")' action='addDirectMessage')
 
   .card.c-card
     chat-main(
       :summary='summary'
       :details='details'
-      :type='type.groups'
     )
 </template>
 
@@ -93,26 +98,28 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName')
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
+import Avatar from '@components/Avatar.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
-import chatroom from '@containers/chatroom/chatroom.js'
-import GroupMembers from '@containers/dashboard/GroupMembers.vue'
+import ChatroomMixin from '@containers/chatroom/ChatroomMixin.js'
+import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'GroupChat',
   mixins: [
-    chatroom
+    ChatroomMixin
   ],
   components: {
     Page,
+    Avatar,
     ChatNav,
     ChatMain,
     ConversationsList,
-    GroupMembers,
+    ChatMembers,
     MenuParent,
     MenuHeader,
     MenuTrigger,
@@ -125,13 +132,14 @@ export default ({
       'globalProfile',
       'groupProfiles',
       'isJoinedChatRoom',
-      'getChatRooms',
-      'ourUsername'
+      'getGroupChatRooms',
+      'ourUsername',
+      'isDirectMessage'
     ]),
     getChatRoomIDsInSort () {
-      return Object.keys(this.getChatRooms || {}).map(chatRoomID => ({
-        name: this.getChatRooms[chatRoomID].name,
-        privacyLevel: this.getChatRooms[chatRoomID].privacyLevel,
+      return Object.keys(this.getGroupChatRooms || {}).map(chatRoomID => ({
+        name: this.getGroupChatRooms[chatRoomID].name,
+        privacyLevel: this.getGroupChatRooms[chatRoomID].privacyLevel,
         joined: this.isJoinedChatRoom(chatRoomID),
         id: chatRoomID
       })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {
@@ -160,11 +168,8 @@ export default ({
         size: this.details.numberOfParticipants
       }
     },
-    type () {
-      return {
-        members: CHATROOM_TYPES.INDIVIDUAL,
-        groups: CHATROOM_TYPES.GROUP
-      }
+    isOnDirectMessage () {
+      return this.isDirectMessage(this.currentChatRoomId)
     }
   },
   methods: {
@@ -183,11 +188,13 @@ export default ({
       this.$nextTick(() => {
         this.refreshTitle()
       })
-      if (chatRoomId) {
+      if (this.isDirectMessage(chatRoomId)) {
+        this.updateCurrentChatRoomID(chatRoomId)
+      } else if (chatRoomId) {
         if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
           this.redirectChat('GroupChatConversation')
         } else {
-          this.updateCurrentChatRoomID(to.params.chatRoomId)
+          this.updateCurrentChatRoomID(chatRoomId)
           if (!this.isJoinedChatRoom(chatRoomId)) {
             this.loadSummaryAndDetails()
           }
