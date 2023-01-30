@@ -422,6 +422,7 @@ export default (sbp('sbp/selectors/register', {
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
       await sbp('chelonia/contract/remove', Object.keys(state.contracts))
       await sbp('gi.db/settings/delete', username)
+      await sbp('chelonia/configure', { transientSecretKeys: null })
       console.info('successfully logged out')
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)

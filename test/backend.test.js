@@ -282,7 +282,7 @@ describe('Full walkthrough', function () {
           prepublish (invite: GIMessage) {
             sbp('okTurtles.events/once', invite.hash(), (contractID: string, entry: GIMessage) => {
               console.debug('Bob successfully got invite!')
-              should(entry.decryptedValue(JSON.parse).data.message).equal(groups.group1.contractID())
+              should(JSON.parse(entry.decryptedValue()).data.message).equal(groups.group1.contractID())
               done()
             })
           }

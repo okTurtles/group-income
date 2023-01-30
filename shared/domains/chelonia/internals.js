@@ -235,6 +235,7 @@ export default (sbp('sbp/selectors/register', {
         }
       },
       [GIMessage.OP_KEYSHARE] (v: GIOpKeyShare) {
+        console.log('Processing OP_KEYSHARE')
         // TODO: Prompt to user if contract not in pending
         if (message.originatingContractID() !== contractID && v.contractID !== message.originatingContractID()) {
           throw new Error('External contracts can only set keys for themselves')
@@ -243,7 +244,7 @@ export default (sbp('sbp/selectors/register', {
         const cheloniaState = sbp(self.config.stateSelector)
 
         if (!cheloniaState[v.contractID]) {
-          cheloniaState[v.contractID] = Object.create(null)
+          config.reactiveSet(cheloniaState, v.contractID, Object.create(null))
         }
         const targetState = cheloniaState[v.contractID]
 
@@ -267,7 +268,9 @@ export default (sbp('sbp/selectors/register', {
           }
         }
         new Promise((resolve, reject) => {
+          console.log('Processing OP_KEYSHARE (inside promise)')
           if (targetState._volatile?.pendingKeys) {
+            console.log('Inside pendingKeys if')
             sbp('chelonia/contract/removeImmediately', v.contractID)
             // Sync...
             sbp('chelonia/configure', {
@@ -283,6 +286,7 @@ export default (sbp('sbp/selectors/register', {
               ]))
             ).catch(reject)
           } else {
+            console.log('No pendingKeys')
             resolve()
           }
         }).then(() => {
@@ -555,7 +559,7 @@ export default (sbp('sbp/selectors/register', {
         console.error('Error at respondToKeyRequests', e)
       } finally {
         // 4. Remove originating contract and update current contract with information
-        sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: hash })
+        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: hash })
       }
     }))
   },

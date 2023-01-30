@@ -245,7 +245,11 @@ export default (sbp('sbp/selectors/register', {
     // because they are functions and cloneDeep doesn't clone functions
     Object.assign(this.config.hooks, config.hooks || {})
     // The same goes for transientSecretKeys, as cloneDeep will not work properly with Key objects (Uint8Array is converted to Object, and non-enumerable properties fail to be merged)
-    Object.assign(this.config.transientSecretKeys, config.transientSecretKeys || {})
+    if (config.transientSecretKeys === null) {
+      this.config.transientSecretKeys = {}
+    } else {
+      Object.assign(this.config.transientSecretKeys, config.transientSecretKeys || {})
+    }
     // using Object.assign here instead of merge to avoid stripping away imported modules
     if (config.contracts) {
       Object.assign(this.config.contracts.defaults, config.contracts.defaults || {})
@@ -481,11 +485,15 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'chelonia/latestContractState': async function (contractID: string) {
-    if (sbp(this.config.stateSelector)[contractID]) {
-      return cloneDeep(sbp(this.config.stateSelector)[contractID])
+    const rootState = sbp(this.config.stateSelector)
+    if (rootState[contractID] && Object.keys(rootState[contractID]).some((x) => x !== '_volatile')) {
+      return cloneDeep(rootState[contractID])
     }
     const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
     let state = Object.create(null)
+    if (rootState[contractID]?._volatile?.keys) {
+      state._volatile = { keys: rootState[contractID]._volatile.keys }
+    }
     // fast-path
     try {
       for (const event of events) {
@@ -495,6 +503,9 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.warn(`[chelonia] latestContractState(${contractID}): fast-path failed due to ${e.name}: ${e.message}`, e.stack)
       state = Object.create(null)
+      if (rootState[contractID]?._volatile?.keys) {
+        state._volatile = { keys: rootState[contractID]._volatile.keys }
+      }
     }
     // more error-tolerant but slower due to cloning state on each message
     for (const event of events) {
@@ -680,9 +691,10 @@ export default (sbp('sbp/selectors/register', {
       throw new Error('Contract name not found')
     }
     const rootState = sbp(this.config.stateSelector)
-    if (!rootState[contractID]) this.config.reactiveSet(rootState, contractID, {})
-    const state = rootState[contractID]
-    contract.state(contractID)
+    const state = await sbp('chelonia/withEnv', contractID, { skipActionProcessing: true }, [
+      'chelonia/latestContractState', contractID
+    ])
+    if (!rootState[contractID]) this.config.reactiveSet(rootState, contractID, state)
     const originatingState = originatingContract.state(originatingContractID)
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
     const meta = contract.metadata.create()
@@ -708,7 +720,14 @@ export default (sbp('sbp/selectors/register', {
       signatureFn: signingKey ? signatureFnBuilder(signingKey) : undefined
     })
     hooks && hooks.prepublish && hooks.prepublish(msg)
-    await sbp('chelonia/private/out/publishEvent', msg, publishOptions).then(() => (state && (state._volatile = { ...state._volatile, pendingKeys: true })))
+    const keyShareKeys = ((Object.values(state._vm?.authorizedKeys ?? {}): any): GIKey[]).filter((k) => k?.permissions.includes(GIMessage.OP_KEY_REQUEST_RESPONSE)).map((k) => ({ ...k, permissions: [GIMessage.OP_KEYSHARE], meta: undefined }))
+    console.log({ keyShareKeys, originatingContractID, contractID, st: state, svm: state._vm?.authorizedKeys })
+    keyShareKeys.length && await sbp('chelonia/out/keyAdd', {
+      contractID: originatingContractID,
+      contractName: originatingContractName,
+      data: keyShareKeys
+    })
+    await sbp('chelonia/private/out/publishEvent', msg, publishOptions).then(() => (rootState[contractID] && (rootState[contractID]._volatile = ({ ...rootState[contractID]._volatile, pendingKeys: true }))))
     hooks && hooks.postpublish && hooks.postpublish(msg)
     return msg
   },

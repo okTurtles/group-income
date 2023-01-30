@@ -1000,7 +1000,7 @@ sbp('chelonia/defineContract', {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
       },
-      async sideEffect ({ data, meta, contractID }) {
+      async sideEffect ({ data, meta, contractID }, { state: Rstate }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
         const { identityContractID } = rootState.loggedIn
@@ -1009,6 +1009,9 @@ sbp('chelonia/defineContract', {
 
         if (rootState[data.chatRoomID]?._volatile) {
           return
+        } else {
+          console.log('>>>>>>>>> 1ROOT STATE data.chatroomid ' + data.chatRoomID, JSON.parse(JSON.stringify(rootState[data.chatRoomID] ?? '[undefined]')))
+          console.log('>>>>>>>>> 2ROOT STATE data.chatroomid ' + data.chatRoomID, JSON.parse(JSON.stringify(Rstate[data.chatRoomID] ?? '[undefined]')))
         }
 
         await sbp('chelonia/out/keyRequest', {

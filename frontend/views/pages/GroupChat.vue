@@ -183,7 +183,7 @@ export default ({
       this.$nextTick(() => {
         this.refreshTitle()
       })
-      if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+      if (chatRoomId) {
         if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
           this.redirectChat('GroupChatConversation')
         } else {

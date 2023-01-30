@@ -144,14 +144,21 @@ const chatroom: Object = {
       this.ephemeral.loadedDetails = initChatChannelDetails
       const { chatRoomId } = this.$route.params
       const state = await sbp('chelonia/latestContractState', chatRoomId)
-      const { name, type, description, picture, creator, privacyLevel } = state.attributes
+
+      console.log('ls&d', { state })
+
+      if (!state.attributes || !state.users) {
+        return
+      }
+
+      const { name, type, description, picture, creator, privacyLevel } = state.attributes ?? {}
 
       this.ephemeral.loadedSummary = {
         type,
         title: name,
         description,
         routerBack: type === CHATROOM_TYPES.INDIVIDUAL ? '/messages' : '/group-chat',
-        private: state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
+        private: state?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         privacyLevel,
         joined: false,
         picture,
@@ -163,7 +170,7 @@ const chatroom: Object = {
       for (const username in this.currentGroupState.profiles) {
         const { displayName, picture, email } = this.globalProfile(username) || {}
         participants[username] = {
-          ...state.users[username],
+          ...state.users?.[username],
           username: username || '',
           displayName: displayName || '',
           picture: picture || '',
