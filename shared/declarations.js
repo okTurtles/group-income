@@ -28,10 +28,6 @@ declare var Compartment: Function
 // TODO: Proper fix is to use:
 // https://github.com/okTurtles/group-income/issues/157
 // =======================
-declare module '@hapi/boom' { declare module.exports: any }
-declare module '@hapi/hapi' { declare module.exports: any }
-declare module '@hapi/inert' { declare module.exports: any }
-declare module '@hapi/joi' { declare module.exports: any }
 declare module 'blakejs' { declare module.exports: any }
 declare module 'buffer' { declare module.exports: any }
 declare module 'chalk' { declare module.exports: any }
@@ -67,21 +63,18 @@ declare module 'lru-cache' { declare module.exports: any }
 // Only necessary because `AppStyles.vue` imports it from its script tag rather than its style tag.
 declare module '@assets/style/main.scss' { declare module.exports: any }
 // Other .js files.
+declare module '@common/common.js' { declare module.exports: any }
+declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
 declare module '@utils/blockies.js' { declare module.exports: Object }
 declare module '~/frontend/model/contracts/misc/flowTyper.js' { declare module.exports: Object }
 declare module '~/frontend/model/contracts/shared/time.js' { declare module.exports: Object }
-declare module '@model/contracts/shared/time.js' { declare module.exports: Object }
-// HACK: declared three files below but not sure why it's necessary
-declare module '~/shared/domains/chelonia/events.js' { declare module.exports: Object }
-declare module '~/shared/domains/chelonia/errors.js' { declare module.exports: Object }
-declare module '~/shared/domains/chelonia/internals.js' { declare module.exports: Object }
-declare module '~/frontend/model/contracts/shared/giLodash.js' { declare module.exports: any }
-declare module '@model/contracts/shared/giLodash.js' { declare module.exports: any }
-declare module '@model/contracts/shared/constants.js' { declare module.exports: any }
-declare module '@model/contracts/shared/distribution/distribution.js' { declare module.exports: any }
-declare module '@model/contracts/shared/voting/rules.js' { declare module.exports: any }
-declare module '@model/contracts/shared/voting/proposals.js' { declare module.exports: any }
-declare module '@model/contracts/shared/functions.js' { declare module.exports: any }
-declare module '@common/common.js' { declare module.exports: any }
+// HACK: declared some shared files below but not sure why it's necessary
+declare module '~/shared/domains/chelonia/chelonia.ts' { declare module.exports: any }
+declare module '~/shared/domains/chelonia/errors.ts' { declare module.exports: Object }
+declare module '~/shared/domains/chelonia/events.ts' { declare module.exports: Object }
+declare module '~/shared/domains/chelonia/internals.ts' { declare module.exports: Object }
+declare module '~/shared/functions.ts' { declare module.exports: any }
+declare module '~/shared/pubsub.ts' { declare module.exports: any }
+// JSON files.
 declare module './model/contracts/manifests.json' { declare module.exports: any }
-declare module '@model/contracts/shared/payments/index.js' { declare module.exports: any }
+

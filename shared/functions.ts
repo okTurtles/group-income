@@ -4,14 +4,11 @@ import multihash from 'multihashes'
 import nacl from 'tweetnacl'
 import blake from 'blakejs'
 
-// Makes the `Buffer` global available in the browser if needed.
-if (typeof window === 'object' && typeof Buffer === 'undefined') {
-  // Only import `Buffer` to hopefully help treeshaking.
-  const { Buffer } = require('buffer')
-  window.Buffer = Buffer
-}
+import { Buffer } from 'buffer'
 
-export function blake32Hash (data: string | Buffer | Uint8Array): string {
+(self as typeof self & { Buffer: typeof Buffer }).Buffer = Buffer
+
+export function blake32Hash (data: unknown) {
   // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
   const uint8array = blake.blake2b(data, null, 32)
   // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
@@ -26,18 +23,23 @@ export function blake32Hash (data: string | Buffer | Uint8Array): string {
 //       and you have to jump through some hoops to get it to work:
 //       https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/btoa#Unicode_strings
 //       These hoops might result in inconsistencies between Node.js and the frontend.
-export const b64ToBuf = (b64: string): Buffer => Buffer.from(b64, 'base64')
-export const b64ToStr = (b64: string): string => b64ToBuf(b64).toString('utf8')
-export const bufToB64 = (buf: Buffer): string => Buffer.from(buf).toString('base64')
-export const strToBuf = (str: string): Buffer => Buffer.from(str, 'utf8')
-export const strToB64 = (str: string): string => strToBuf(str).toString('base64')
-export const bytesToB64 = (ary: Uint8Array): string => Buffer.from(ary).toString('base64')
+export const b64ToBuf = (b64: string) => Buffer.from(b64, 'base64')
+export const b64ToStr = (b64: string) => b64ToBuf(b64).toString('utf8')
+export const bufToB64 = (buf: ArrayBuffer) => Buffer.from(buf).toString('base64')
+export const strToBuf = (str: string) => Buffer.from(str, 'utf8')
+export const strToB64 = (str: string) => strToBuf(str).toString('base64')
+export const bytesToB64 = (ary: ArrayBuffer) => Buffer.from(ary).toString('base64')
+
+type KeyPair = {
+  publicKey: string
+  secretKey: string
+}
 
 export function sign (
-  { publicKey, secretKey }: {publicKey: string, secretKey: string},
-  msg: string = 'hello!',
-  futz: string = ''
-): string {
+  { publicKey, secretKey }: KeyPair,
+  msg = 'hello!',
+  futz = ''
+) {
   return strToB64(JSON.stringify({
     msg: msg + futz,
     key: publicKey,
@@ -47,6 +49,6 @@ export function sign (
 
 export function verify (
   msg: string, key: string, sig: string
-): any {
+) {
   return nacl.sign.detached.verify(strToBuf(msg), b64ToBuf(sig), b64ToBuf(key))
 }

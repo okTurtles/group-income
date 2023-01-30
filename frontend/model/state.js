@@ -5,7 +5,7 @@
 
 import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
-import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
+import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.ts'
 import Vuex from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { MINS_MILLIS } from '@model/contracts/shared/time.js'

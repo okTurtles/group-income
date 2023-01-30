@@ -1,5 +1,6 @@
 'use strict'
 
+/*::
 type Currency = {|
   decimalsMax: number;
   displayWithCurrency(n: number): string;
@@ -8,6 +9,7 @@ type Currency = {|
   symbolWithCode: string;
   validate(n: string): boolean;
 |}
+*/
 
 // https://github.com/okTurtles/group-income/issues/813#issuecomment-593680834
 // round all accounting to DECIMALS_MAX decimal places max to avoid consensus
@@ -16,55 +18,55 @@ type Currency = {|
 // this value, switch to a different currency base, e.g. from BTC to mBTC.
 export const DECIMALS_MAX = 8
 
-function commaToDots (value: string | number): string {
+function commaToDots (value /*: string | number */) /*: string */ {
   // ex: "1,55" -> "1.55"
   return typeof value === 'string' ? value.replace(/,/, '.') : value.toString()
 }
 
-function isNumeric (nr: string): boolean {
-  return !isNaN((nr: any) - parseFloat(nr))
+function isNumeric (nr /*: string */) /*: boolean */ {
+  return !isNaN((nr /*: any */) - parseFloat(nr))
 }
 
-function isInDecimalsLimit (nr: string, decimalsMax: number) {
+function isInDecimalsLimit (nr /*: string */, decimalsMax /*: number */) {
   const decimals = nr.split('.')[1]
   return !decimals || decimals.length <= decimalsMax
 }
 
 // NOTE: Unsure whether this is *always* string; it comes from 'validators' in other files
-function validateMincome (value: string, decimalsMax: number) {
+function validateMincome (value /*: string */, decimalsMax /*: number */) {
   const nr = commaToDots(value)
   return isNumeric(nr) && isInDecimalsLimit(nr, decimalsMax)
 }
 
-function decimalsOrInt (num: number, decimalsMax: number): string {
+function decimalsOrInt (num /*: number */, decimalsMax /*: number */) /*: string */ {
   // ex: 12.5 -> "12.50", but 250 -> "250"
   return num.toFixed(decimalsMax).replace(/\.0+$/, '')
 }
 
-export function saferFloat (value: number): number {
+export function saferFloat (value /*: number */) /*: number */ {
   // ex: 1.333333333333333333 -> 1.33333333
   return parseFloat(value.toFixed(DECIMALS_MAX))
 }
 
-export function normalizeCurrency (value: string): number {
+export function normalizeCurrency (value /*: string */) /*: number */ {
   // ex: "1,333333333333333333" -> 1.33333333
   return saferFloat(parseFloat(commaToDots(value)))
 }
 
 // NOTE: Unsure whether this is *always* string; it comes from 'validators' in other files
-export function mincomePositive (value: string): boolean {
+export function mincomePositive (value /*: string */) /*: boolean */ {
   return parseFloat(commaToDots(value)) > 0
 }
 
-function makeCurrency (options): Currency {
+function makeCurrency (options) /*: Currency */ {
   const { symbol, symbolWithCode, decimalsMax, formatCurrency } = options
   return {
     symbol,
     symbolWithCode,
     decimalsMax,
-    displayWithCurrency: (n: number) => formatCurrency(decimalsOrInt(n, decimalsMax)),
-    displayWithoutCurrency: (n: number) => decimalsOrInt(n, decimalsMax),
-    validate: (n: string) => validateMincome(n, decimalsMax)
+    displayWithCurrency: (n /*: number */) => formatCurrency(decimalsOrInt(n, decimalsMax)),
+    displayWithoutCurrency: (n /*: number */) => decimalsOrInt(n, decimalsMax),
+    validate: (n /*: string */) => validateMincome(n, decimalsMax)
   }
 }
 
@@ -72,7 +74,7 @@ function makeCurrency (options): Currency {
 //       a json file that's read in and generates this object. For
 //       example, that would allow the addition of currencies without
 //       having to "recompile" a new version of the app.
-const currencies: { [string]: Currency } = {
+const currencies /*: { [string]: Currency } */ = {
   USD: makeCurrency({
     symbol: '$',
     symbolWithCode: '$ USD',

@@ -7,22 +7,26 @@
 # - https://flowtype.org/docs/objects.html
 # - https://flowtype.org/docs/functions.html
 .*/Gruntfile.js
-.*/dist/.*
+# Backend files use TypeScript instead of Flow since they run using Deno.
+<PROJECT_ROOT>/backend/.*
 <PROJECT_ROOT>/contracts/.*
+# Shared files must be imported by Deno backend files, so they better not contain Flowtype annotations.
+<PROJECT_ROOT>/shared/.*
+.*/dist/.*
 .*/frontend/assets/.*
 .*/frontend/controller/service-worker.js
+.*/frontend/model/contracts/misc/flowTyper.js
 .*/frontend/utils/blockies.js
 .*/frontend/utils/crypto.js
 .*/frontend/utils/vuexQueue.js
-.*/frontend/model/contracts/misc/flowTyper.js
 .*/historical/.*
 .*/ignored/.*
 .*/node_modules/.*
 .*/scripts/.*
-.*/test/backend.js
 .*/test/.*
-.*/test/frontend.js
 .*.test.js
+# Don't ignore declaration files.
+!.*/types.flow.js
 
 [libs]
 ./shared/declarations.js

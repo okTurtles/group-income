@@ -12,7 +12,7 @@ Vue.prototype.LTags = LTags
 
 const defaultLanguage = 'en-US'
 const defaultLanguageCode = 'en'
-const defaultTranslationTable: { [string]: string } = {}
+const defaultTranslationTable /*: { [string]: string } */ = {}
 
 /**
  * Allow 'href' and 'target' attributes to avoid breaking our hyperlinks,
@@ -41,7 +41,7 @@ let currentTranslationTable = defaultTranslationTable
  * @see https://tools.ietf.org/rfc/bcp/bcp47.txt
  */
 sbp('sbp/selectors/register', {
-  'translations/init': async function init (language: string): Promise<void> {
+  'translations/init': async function init (language /*: string */) /*: Promise<void> */ {
     // A language code is usually the first part of a language tag.
     const [languageCode] = language.toLowerCase().split('-')
 
@@ -111,7 +111,7 @@ String with Vue components inside:
   ) Invite {count} members to the party!
 */
 
-export function LTags (...tags: string[]): {|br_: string|} {
+export function LTags (...tags /*: string[] */) /*: {|br_: string|} */ {
   const o = {
     'br_': '<br/>'
   }
@@ -123,15 +123,15 @@ export function LTags (...tags: string[]): {|br_: string|} {
 }
 
 export default function L (
-  key: string,
-  args: Array<*> | Object | void
-): string {
+  key /*: string */,
+  args /*: Array<*> | Object | void */
+) /*: string */ {
   return template(currentTranslationTable[key] || key, args)
     // Avoid inopportune linebreaks before certain punctuations.
     .replace(/\s(?=[;:?!])/g, '&nbsp;')
 }
 
-export function LError (error: Error): {|reportError: any|} {
+export function LError (error /*: Error */) /*: {|reportError: any|} */ {
   let url = `/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(error.message)}`
   if (!sbp('state/vuex/state').loggedIn) {
     url = 'https://github.com/okTurtles/group-income/issues'

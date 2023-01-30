@@ -6,7 +6,11 @@ import { handleFetchResult } from './utils/misc.js'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {
-  'namespace/register': (name: string, value: string) => {
+  /*
+   * @param {string} name
+   * @param {string} value
+   */
+  'namespace/register': (name /*: string */, value /*: string */) => {
     return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name`, {
       method: 'POST',
       body: JSON.stringify({ name, value }),
@@ -18,13 +22,16 @@ sbp('sbp/selectors/register', {
       return result
     })
   },
-  'namespace/lookup': (name: string) => {
+  /*
+   * @param {string} name
+   */
+  'namespace/lookup': (name /*: string */) => {
     // TODO: should `name` be encodeURI'd?
     const cache = sbp('state/vuex/state').namespaceLookups
     if (name in cache) {
       return cache[name]
     }
-    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${name}`).then((r: Object) => {
+    return fetch(`${sbp('okTurtles.data/get', 'API_URL')}/name/${name}`).then((r) => {
       if (!r.ok) {
         console.warn(`namespace/lookup: ${r.status} for ${name}`)
         if (r.status !== 404) {
@@ -32,7 +39,7 @@ sbp('sbp/selectors/register', {
         }
         return null
       }
-      return r['text']()
+      return r.text()
     }).then(value => {
       if (value !== null) {
         Vue.set(cache, name, value)

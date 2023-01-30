@@ -5,7 +5,7 @@
   "private": true,
   "description": "",
   "scripts": {
-    "backend": "npx nodemon --watch backend/ -- --require ./Gruntfile.js --require @babel/register ./backend/index.js",
+    "backend": "deno run --allow-env --allow-net --allow-read --allow-write --import-map=import_map.json --watch backend/index.ts",
     "sass-dev": "node-sass --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/style",
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "cy:open": "cypress open",
@@ -18,46 +18,6 @@
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh"
   },
-  "eslintConfig": {
-    "root": true,
-    "parserOptions": {
-      "parser": "@babel/eslint-parser"
-    },
-    "extends": [
-      "plugin:cypress/recommended",
-      "plugin:flowtype/recommended",
-      "plugin:vue/essential",
-      "standard"
-    ],
-    "plugins": [
-      "cypress",
-      "flowtype",
-      "import"
-    ],
-    "rules": {
-      "require-await": "error",
-      "vue/max-attributes-per-line": "off",
-      "vue/html-indent": "off",
-      "flowtype/no-types-missing-file-annotation": "off",
-      "quote-props": "off",
-      "dot-notation": "off",
-      "import/extensions": [
-        2,
-        "ignorePackages"
-      ]
-    }
-  },
-  "eslintIgnore": [
-    "frontend/assets/*",
-    "frontend/model/contracts/misc/flowTyper.js",
-    "historical/*",
-    "shared/types.js",
-    "dist/*",
-    "ignored/*",
-    "node_modules/*",
-    "test/cypress/cache/*",
-    "contracts/*"
-  ],
   "browserslist": "> 1% and since 2018 and not dead",
   "stylelint": {
     "extends": "stylelint-config-standard",
@@ -135,6 +95,8 @@
     "@babel/register": "7.12.1",
     "@babel/runtime": "7.12.5",
     "@chelonia/cli": "1.1.3",
+    "@typescript-eslint/eslint-plugin": "5.37.0",
+    "@typescript-eslint/parser": "5.37.0",
     "@vue/component-compiler": "4.2.4",
     "acorn": "8.0.4",
     "babel-plugin-module-resolver": "4.1.0",
@@ -162,7 +124,6 @@
     "grunt-contrib-copy": "1.0.0",
     "grunt-exec": "3.0.0",
     "load-grunt-tasks": "5.1.0",
-    "mocha": "8.4.0",
     "pug-lint-vue": "git+https://git@github.com/okTurtles/pug-lint-vue.git#619952b834296a98e807691019ef6c2f70540df0",
     "sass": "1.37.5",
     "should": "13.2.3",
@@ -170,6 +131,7 @@
     "sinon": "9.2.1",
     "stylelint": "13.8.0",
     "stylelint-config-standard": "20.0.0",
+    "typescript": "4.8.3",
     "vue-cli-plugin-pug": "2.0.0",
     "vue-template-compiler": "2.6.12",
     "vue-template-es2015-compiler": "1.9.1"

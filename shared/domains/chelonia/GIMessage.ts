@@ -1,23 +1,47 @@
-'use strict'
-
 // TODO: rename GIMessage to CMessage or something similar
 
-import { blake32Hash } from '~/shared/functions.js'
-import type { JSONType, JSONObject } from '~/shared/types.js'
+import { blake32Hash } from '~/shared/functions.ts'
+import type { JSONObject } from '~/shared/types.ts'
+
+type JSONType = ReturnType<typeof JSON.parse>
+
+type Mapping = {
+  key: string
+  value: string
+}
+
+type Message = {
+  contractID: string | null
+  manifest: string
+  // The nonce makes it difficult to predict message contents
+  // and makes it easier to prevent conflicts during development.
+  nonce: number
+  op: GIOp
+  previousHEAD: string | null
+  version: string // Semver version string
+}
+
+type Signature = {
+  sig: string
+  type: string
+}
+
+type DecryptFunction = (v: GIOpActionEncrypted) => GIOpActionUnencrypted
+type SignatureFunction = (data: string) => Signature
 
 export type GIKeyType = ''
 
 export type GIKey = {
-  type: GIKeyType;
-  data: Object; // based on GIKeyType this will change
-  meta: Object;
+  type: GIKeyType
+  data: JSONType // based on GIKeyType this will change
+  meta: JSONObject
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
 export type GIOpContract = { type: string; keyJSON: string, parentContract?: string }
 export type GIOpActionEncrypted = string // encrypted version of GIOpActionUnencrypted
 export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
-export type GIOpKeyAdd = { keyHash: string, keyJSON: ?string, context: string }
+export type GIOpKeyAdd = { keyHash: string, keyJSON: string | null | void, context: string }
 export type GIOpPropSet = { key: string, value: JSONType }
 
 export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd'
@@ -25,19 +49,18 @@ export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypt
 export type GIOp = [GIOpType, GIOpValue]
 
 export class GIMessage {
-  // flow type annotations to make flow happy
-  _decrypted: GIOpValue
-  _mapping: Object
-  _message: Object
+  _decrypted?: GIOpValue
+  _mapping: Mapping
+  _message: Message
 
-  static OP_CONTRACT: 'c' = 'c'
-  static OP_ACTION_ENCRYPTED: 'ae' = 'ae' // e2e-encrypted action
-  static OP_ACTION_UNENCRYPTED: 'au' = 'au' // publicly readable action
-  static OP_KEY_ADD: 'ka' = 'ka' // add this key to the list of keys allowed to write to this contract, or update an existing key
-  static OP_KEY_DEL: 'kd' = 'kd' // remove this key from authorized keys
-  static OP_PROTOCOL_UPGRADE: 'pu' = 'pu'
-  static OP_PROP_SET: 'ps' = 'ps' // set a public key/value pair
-  static OP_PROP_DEL: 'pd' = 'pd' // delete a public key/value pair
+  static OP_CONTRACT = 'c' as const
+  static OP_ACTION_ENCRYPTED = 'ae' as const // e2e-encrypted action
+  static OP_ACTION_UNENCRYPTED = 'au' as const // publicly readable action
+  static OP_KEY_ADD = 'ka' as const // add this key to the list of keys allowed to write to this contract, or update an existing key
+  static OP_KEY_DEL = 'kd' as const // remove this key from authorized keys
+  static OP_PROTOCOL_UPGRADE = 'pu' as const
+  static OP_PROP_SET = 'ps' as const // set a public key/value pair
+  static OP_PROP_DEL = 'pd' as const // delete a public key/value pair
 
   // eslint-disable-next-line camelcase
   static createV1_0 (
@@ -45,9 +68,9 @@ export class GIMessage {
     previousHEAD: string | null = null,
     op: GIOp,
     manifest: string,
-    signatureFn?: Function = defaultSignatureFn
-  ): this {
-    const message = {
+    signatureFn: SignatureFunction = defaultSignatureFn
+  ): GIMessage {
+    const message: Message = {
       version: '1.0.0',
       previousHEAD,
       contractID,
@@ -73,7 +96,7 @@ export class GIMessage {
   }
 
   // TODO: we need signature verification upon decryption somewhere...
-  static deserialize (value: string): this {
+  static deserialize (value: string): GIMessage {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     return new this({
       mapping: { key: blake32Hash(value), value },
@@ -81,7 +104,7 @@ export class GIMessage {
     })
   }
 
-  constructor ({ mapping, message }: { mapping: Object, message: Object }) {
+  constructor ({ mapping, message }: { mapping: Mapping, message: Message }) {
     this._mapping = mapping
     this._message = message
     // perform basic sanity check
@@ -98,18 +121,18 @@ export class GIMessage {
     }
   }
 
-  decryptedValue (fn?: Function): any {
+  decryptedValue (fn?: DecryptFunction): GIOpValue {
     if (!this._decrypted) {
       this._decrypted = (
         this.opType() === GIMessage.OP_ACTION_ENCRYPTED && fn !== undefined
-          ? fn(this.opValue())
+          ? fn(this.opValue() as string)
           : this.opValue()
       )
     }
     return this._decrypted
   }
 
-  message (): Object { return this._message }
+  message (): Message { return this._message }
 
   op (): GIOp { return this.message().op }
 
@@ -124,13 +147,13 @@ export class GIMessage {
     let desc = `<op_${type}`
     if (type === GIMessage.OP_ACTION_ENCRYPTED && this._decrypted) {
       const { _decrypted } = this
-      if (typeof _decrypted.type === 'string') {
-        desc += `|${_decrypted.type}`
+      if (typeof (_decrypted as GIOpContract).type === 'string') {
+        desc += `|${(_decrypted as GIOpContract).type}`
       }
     } else if (type === GIMessage.OP_ACTION_UNENCRYPTED) {
       const value = this.opValue()
-      if (typeof value.type === 'string') {
-        desc += `|${value.type}`
+      if (typeof (value as GIOpContract).type === 'string') {
+        desc += `|${(value as GIOpContract).type}`
       }
     }
     return `${desc}|${this.hash()} of ${this.contractID()}>`
@@ -145,7 +168,7 @@ export class GIMessage {
   hash (): string { return this._mapping.key }
 }
 
-function defaultSignatureFn (data: string) {
+function defaultSignatureFn (data: string): Signature {
   return {
     type: 'default',
     sig: blake32Hash(data)

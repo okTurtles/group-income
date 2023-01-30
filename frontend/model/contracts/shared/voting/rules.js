@@ -30,7 +30,7 @@ export const RULE_MULTI_CHOICE = 'multi-choice'
 
 const getPopulation = (state) => Object.keys(state.profiles).filter(p => state.profiles[p].status === PROFILE_STATUS.ACTIVE).length
 
-const rules: Object = {
+const rules /*: Object */ = {
   [RULE_PERCENTAGE]: function (state, proposalType, votes) {
     votes = Object.values(votes)
     let population = getPopulation(state)
@@ -85,7 +85,7 @@ const rules: Object = {
 
 export default rules
 
-export const ruleType: any = unionOf(...Object.keys(rules).map(k => literalOf(k)))
+export const ruleType /*: any */ = unionOf(...Object.keys(rules).map(k => literalOf(k)))
 
 /**
  *
@@ -99,7 +99,7 @@ export const ruleType: any = unionOf(...Object.keys(rules).map(k => literalOf(k)
  * @example ('percentage', 0.1, 10) => 0.2
  * @example ('percentage', 0.3, 10) => 0.3
  */
-export const getThresholdAdjusted = (rule: string, threshold: number, groupSize: number): number => {
+export const getThresholdAdjusted = (rule /*: string */, threshold /*: number */, groupSize /*: number */) /*: number */ => {
   const groupSizeVoting = Math.max(3, groupSize) // 3 = minimum groupSize to vote
 
   return {
@@ -121,12 +121,12 @@ export const getThresholdAdjusted = (rule: string, threshold: number, groupSize:
  * @example (3, 0.8) => 3
  * @example (1, 0.6) => 2
  */
-export const getCountOutOfMembers = (groupSize: number, decimal: number): number => {
+export const getCountOutOfMembers = (groupSize /*: number */, decimal /*: number */) /*: number */ => {
   const minGroupSize = 3 // when group can vote
   return Math.ceil(Math.max(minGroupSize, groupSize) * decimal)
 }
 
-export const getPercentFromDecimal = (decimal: number): number => {
+export const getPercentFromDecimal = (decimal /*: number */) /*: number */ => {
   // convert decimal to percentage avoiding weird decimals results.
   // e.g. 0.58 -> 58 instead of 57.99999
   return Math.round(decimal * 100)

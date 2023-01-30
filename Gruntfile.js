@@ -1,11 +1,13 @@
 'use strict'
 
+if (process.env['CI']) process.exit(1)
+
 // =======================
 // Entry point.
 //
 // Ensures:
 //
-// - Babel support is available on the backend, in Mocha tests, etc.
+// - Babel support is available in Mocha tests, etc.
 // - Environment variables are set to different values depending
 //   on whether we're in a production environment or otherwise.
 //
@@ -14,7 +16,7 @@
 const util = require('util')
 const chalk = require('chalk')
 const crypto = require('crypto')
-const { exec, fork } = require('child_process')
+const { exec, spawn } = require('child_process')
 const execP = util.promisify(exec)
 const { copyFile, readFile } = require('fs/promises')
 const fs = require('fs')
@@ -31,23 +33,17 @@ const packageJSON = require('./package.json')
 // See https://esbuild.github.io/api/#define
 // =======================
 
-/**
- * Creates a modified copy of the given `process.env` object, according to its `PORT_SHIFT` variable.
- *
- * The `API_PORT` and `API_URL` variables will be updated.
- * TODO: make the protocol (http vs https) variable based on environment var.
- * @param {Object} env
- * @returns {Object}
- */
-const applyPortShift = (env) => {
-  // TODO: implement automatic port selection when `PORT_SHIFT` is 'auto'.
+// Nodejs version of `~/scripts/applyPortShift.ts`. See comments there.
+// TODO: dedupe this.
+function applyPortShift (env) {
+  const API_HOSTNAME = env.NODE_ENV === 'production' || require('os').platform() === 'linux' ? 'localhost' : '127.0.0.1'
   const API_PORT = 8000 + Number.parseInt(env.PORT_SHIFT || '0')
-  const API_URL = 'http://127.0.0.1:' + API_PORT
+  const API_URL = `http://${API_HOSTNAME}:${API_PORT}`
 
   if (Number.isNaN(API_PORT) || API_PORT < 8000 || API_PORT > 65535) {
     throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
   }
-  return { ...env, API_PORT, API_URL }
+  return { ...env, API_HOSTNAME, API_PORT: String(API_PORT), API_URL }
 }
 
 Object.assign(process.env, applyPortShift(process.env))
@@ -66,17 +62,20 @@ const {
   EXPOSE_SBP = ''
 } = process.env
 
-const backendIndex = './backend/index.js'
+const backendIndex = './backend/index.ts'
+const contractsDir = 'frontend/model/contracts'
+const denoRunPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
+const denoTestPermissions = ['--allow-env', '--allow-net', '--allow-read', '--allow-write']
 const distAssets = 'dist/assets'
 const distCSS = 'dist/assets/css'
 const distDir = 'dist'
 const distContracts = 'dist/contracts'
 const distJS = 'dist/assets/js'
-const serviceWorkerDir = 'frontend/controller/serviceworkers'
-const srcDir = 'frontend'
-const contractsDir = 'frontend/model/contracts'
-const mainSrc = path.join(srcDir, 'main.js')
 const manifestJSON = path.join(contractsDir, 'manifests.json')
+const srcDir = 'frontend'
+const serviceWorkerDir = 'frontend/controller/serviceworkers'
+
+const mainSrc = path.join(srcDir, 'main.js')
 
 const development = NODE_ENV === 'development'
 const production = !development
@@ -226,6 +225,7 @@ module.exports = (grunt) => {
       entryPoints: ['./frontend/controller/serviceworkers/primary.js']
     }
   }
+
   esbuildOptionBags.contracts = {
     ...pick(clone(esbuildOptionBags.default), [
       'define', 'bundle', 'watch', 'incremental'
@@ -237,7 +237,12 @@ module.exports = (grunt) => {
     // },
     splitting: false,
     outdir: distContracts,
-    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`],
+    entryPoints: [
+      'chatroom.js',
+      'group.js',
+      'identity.js',
+      'mailbox.js'
+    ].map(s => `${contractsDir}/${s}`),
     external: ['@sbp/sbp']
   }
   // prevent contract hash from changing each time we build them
@@ -245,6 +250,20 @@ module.exports = (grunt) => {
   esbuildOptionBags.contractsSlim = clone(esbuildOptionBags.contracts)
   esbuildOptionBags.contractsSlim.entryNames = '[name]-slim'
   esbuildOptionBags.contractsSlim.external = ['@common/common.js', '@sbp/sbp']
+
+  esbuildOptionBags.testContractsShared = {
+    ...esbuildOptionBags.default,
+    bundle: true,
+    entryNames: 'shared',
+    entryPoints: [`${contractsDir}/shared/index.js`],
+    external: ['dompurify', 'vue'],
+    minifyIdentifiers: false,
+    minifySyntax: false,
+    minifyWhitespace: false,
+    outdir: './test/contracts',
+    sourcemap: false,
+    splitting: false
+  }
 
   // Additional options which are not part of the esbuild API.
   const esbuildOtherOptionBags = {
@@ -356,19 +375,14 @@ module.exports = (grunt) => {
     },
 
     exec: {
-      eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,vue}"',
+      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data',
+      eslint: 'node ./node_modules/eslint/bin/eslint.js --cache "**/*.{js,ts,vue}"',
       flow: '"./node_modules/.bin/flow" --quiet || echo The Flow check failed!',
       puglint: '"./node_modules/.bin/pug-lint-vue" frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js --cache "frontend/assets/style/**/*.{css,sass,scss}" "frontend/views/**/*.vue"',
-      // Test files:
-      // - anything in the `/test` folder, e.g. integration tests;
-      // - anything that ends with `.test.js`, e.g. unit tests for SBP domains kept in the domain folder.
-      // The `--require` flag ensures custom Babel support in our test files.
-      test: {
-        cmd: 'node --experimental-fetch node_modules/mocha/bin/mocha --require ./scripts/mocha-helper.js --exit -R spec --bail "./{test/,!(node_modules|ignored|dist|historical|test)/**/}*.test.js"',
-        options: { env: process.env }
-      },
-      chelDeployAll: 'find contracts -iname "*.manifest.json" | xargs -r ./node_modules/.bin/chel deploy ./data'
+      // Test anything that ends with `.test.{js|ts}` in the specified folders, e.g. unit tests for SBP domains kept in the domain folder.
+      test: `deno test ${denoTestPermissions.join(' ')} frontend shared test`,
+      ts: 'deno check backend/*.ts shared/*.ts shared/domains/chelonia/*.ts'
     }
   })
 
@@ -378,58 +392,11 @@ module.exports = (grunt) => {
 
   let child = null
 
-  // Useful helper task for `grunt test`.
-  grunt.registerTask('backend:launch', '[internal]', function () {
-    const done = this.async()
-    grunt.log.writeln('backend: launching...')
-    // Provides Babel support for the backend files.
-    require('@babel/register')
-    require(backendIndex).then(done).catch(done)
-  })
-
-  // Used with `grunt dev` only, makes it possible to restart just the server when
-  // backend or shared files are modified.
-  grunt.registerTask('backend:relaunch', '[internal]', function () {
-    const done = this.async() // Tell Grunt we're async.
-    const fork2 = function () {
-      grunt.log.writeln('backend: forking...')
-      child = fork(backendIndex, process.argv, {
-        env: process.env,
-        execArgv: ['--require', '@babel/register']
-      })
-      child.on('error', (err) => {
-        if (err) {
-          console.error('error starting or sending message to child:', err)
-          process.exit(1)
-        }
-      })
-      child.on('exit', (c) => {
-        if (c !== 0) {
-          grunt.log.error(`child exited with error code: ${c}`.bold)
-          // ^C can cause c to be null, which is an OK error.
-          process.exit(c || 0)
-        }
-      })
-      done()
-    }
-    if (child) {
-      grunt.log.writeln('Killing child!')
-      // Wait for successful shutdown to avoid EADDRINUSE errors.
-      child.on('message', () => {
-        child = null
-        fork2()
-      })
-      child.send({ shutdown: 1 })
-    } else {
-      fork2()
-    }
-  })
-
   grunt.registerTask('build', function () {
     const esbuild = this.flags.watch ? 'esbuild:watch' : 'esbuild'
 
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'clean', 'copy', esbuild])
+      grunt.task.run(['exec:eslint', 'exec:flow', 'exec:puglint', 'exec:stylelint', 'exec:ts', 'clean', 'copy', esbuild])
     }
   })
 
@@ -489,8 +456,56 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('default', ['dev'])
+
+  grunt.registerTask('deno:start', function () {
+    const done = this.async() // Tell Grunt we're async.
+    child = spawn(
+      'deno',
+      ['run', ...denoRunPermissions, backendIndex],
+      {
+        stdio: 'inherit'
+      }
+    )
+    child.on('error', (err) => {
+      if (err) {
+        console.error('Error starting or sending message to child:', err)
+        process.exit(1)
+      }
+    })
+    child.on('exit', (c) => {
+      // ^C can cause c to be null, which is an OK error.
+      if (c === null) {
+        grunt.log.writeln('Backend process exited with null code.')
+      } else if (c !== 0) {
+        grunt.log.error(`Backend process exited with error code: ${c}`.bold)
+        process.exit(c)
+      } else {
+        grunt.log.writeln('Backend process exited normally.')
+      }
+    })
+    child.on('close', (code) => {
+      console.log(`Backend process closed with code ${code}`)
+    })
+    child.on('spawn', () => {
+      grunt.log.writeln('Backend process spawned.')
+      done()
+    })
+  })
+
+  grunt.registerTask('deno:stop', function () {
+    if (child) {
+      const killed = child.kill()
+      if (killed) {
+        grunt.log.writeln('Deno backend stopped.')
+        child = null
+      } else {
+        grunt.log.error('Failed to quit dangling child!')
+      }
+    }
+  })
+
   // TODO: add 'deploy' as per https://github.com/okTurtles/group-income/issues/10
-  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'backend:relaunch', 'keepalive'])
+  grunt.registerTask('dev', ['checkDependencies', 'exec:chelDeployAll', 'build:watch', 'deno:start', 'keepalive'])
   grunt.registerTask('dist', ['build'])
 
   // --------------------
@@ -525,6 +540,9 @@ module.exports = (grunt) => {
     const buildContractsSlim = createEsbuildTask({
       ...esbuildOptionBags.contractsSlim, plugins: defaultPlugins
     })
+    const buildTestContractsShared = createEsbuildTask({
+      ...esbuildOptionBags.testContractsShared, plugins: defaultPlugins
+    })
 
     // first we build the contracts since genManifestsAndDeploy depends on that
     // and then we build the main bundle since it depends on manifests.json
@@ -535,6 +553,7 @@ module.exports = (grunt) => {
       .then(() => {
         return Promise.all([buildMain.run(), buildServiceWorkers.run()])
       })
+      .then(() => buildTestContractsShared.run())
       .catch(error => {
         grunt.log.error(error.message)
         process.exit(1)
@@ -554,7 +573,7 @@ module.exports = (grunt) => {
 
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.js', 'shared/**/*.js'], [eslint, 'backend:relaunch']],
+      [['backend/**/*.ts', 'shared/**/*.ts'], [eslint, 'deno:stop', 'deno:start']],
       [['frontend/**/*.html'], ['copy']],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], ['copy']],
@@ -627,6 +646,19 @@ module.exports = (grunt) => {
     done()
   })
 
+  // Stops the Flowtype server.
+  grunt.registerTask('flow:stop', function () {
+    const done = this.async()
+    exec('./node_modules/.bin/flow stop', (err, stdout, stderr) => {
+      if (!err) {
+        grunt.log.writeln('Flowtype server stopped')
+      } else {
+        grunt.log.error('Could not stop Flowtype server:', err.message)
+      }
+      done(err)
+    })
+  })
+
   // eslint-disable-next-line no-unused-vars
   let killKeepAlive = null
   grunt.registerTask('keepalive', function () {
@@ -635,14 +667,15 @@ module.exports = (grunt) => {
     killKeepAlive = this.async()
   })
 
-  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'backend:launch', 'exec:test', 'cypress'])
-  grunt.registerTask('test:unit', ['backend:launch', 'exec:test'])
+  grunt.registerTask('test', ['build', 'exec:chelDeployAll', 'deno:start', 'exec:test', 'cypress', 'deno:stop', 'flow:stop'])
+  grunt.registerTask('test:unit', ['deno:start', 'exec:test', 'deno:stop'])
 
   // -------------------------------------------------------------------------
   //  Process event handlers
   // -------------------------------------------------------------------------
 
-  process.on('exit', () => {
+  process.on('exit', (code, signal) => {
+    console.log('[node] Exiting with code:', code, 'signal:', signal)
     // Note: 'beforeExit' doesn't work.
     // In cases where 'watch' fails while child (server) is still running
     // we will exit and child will continue running in the background.
@@ -650,12 +683,14 @@ module.exports = (grunt) => {
     // the PORT_SHIFT envar. If grunt-contrib-watch livereload process
     // cannot bind to the port for some reason, then the parent process
     // will exit leaving a dangling child server process.
-    if (child) {
+    if (child && !child.killed) {
       grunt.log.writeln('Quitting dangling child!')
-      child.send({ shutdown: 2 })
+      child.kill()
     }
-    // Stops the Flowtype server.
-    exec('./node_modules/.bin/flow stop')
+    // Make sure to stop the Flowtype server in case `flow:stop` wasn't called.
+    exec('./node_modules/.bin/flow stop', () => {
+      grunt.log.writeln('Flowtype server stopped in process exit handler')
+    })
   })
 
   process.on('uncaughtException', (err) => {

@@ -1,0 +1,77 @@
+{
+  "root": true,
+  "parserOptions": {
+    "parser": "@babel/eslint-parser"
+  },
+  "extends": [
+    "plugin:cypress/recommended",
+    "plugin:flowtype/recommended",
+    "plugin:vue/essential",
+    "standard"
+  ],
+  "ignorePatterns": [
+    "contracts/*",
+    "dist/*",
+    "frontend/assets/*",
+    "frontend/model/contracts/misc/flowTyper.js",
+    "historical/*",
+    "ignored/*",
+    "node_modules/*",
+    "shared/**/*.flow.js",
+    "shared/declarations.js",
+    "test/common/*",
+    "test/contracts/*",
+    "test/cypress/cache/*"
+  ],
+  "overrides": [
+    {
+      "files": "*.ts",
+      "parserOptions": {
+        "parser": "@typescript-eslint/parser"
+      },
+      "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+      "plugins": [
+        "@typescript-eslint",
+        "import"
+      ],
+      "rules": {
+        "@typescript-eslint/no-this-alias": "off",
+        "@typescript-eslint/no-empty-function": "off",
+        "@typescript-eslint/no-unused-vars": ["error", { "args": "none" }],
+        "dot-notation": "off",
+        "import/extensions": [
+          2,
+          "ignorePackages"
+        ],
+        "no-use-before-define": "off",
+        "quote-props": "off"
+      }
+    },
+    {
+      "files": "*.test.ts",
+      "globals": {
+        "Deno": true
+      },
+      "rules": {
+        "require-await": "off"
+      }
+    }
+  ],
+  "plugins": [
+    "cypress",
+    "flowtype",
+    "import"
+  ],
+  "rules": {
+    "require-await": "error",
+    "vue/max-attributes-per-line": "off",
+    "vue/html-indent": "off",
+    "flowtype/no-types-missing-file-annotation": "off",
+    "quote-props": "off",
+    "dot-notation": "off",
+    "import/extensions": [
+      2,
+      "ignorePackages"
+    ]
+  }
+}

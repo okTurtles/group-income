@@ -5,8 +5,8 @@ import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { omit } from '@model/contracts/shared/giLodash.js'
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
 import { encryptedAction } from './utils.js'
+import type { GIMessage } from '~/shared/domains/chelonia/types.flow.js'
 import type { GIActionParams } from './types.js'
-import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/mailbox/create': async function ({
