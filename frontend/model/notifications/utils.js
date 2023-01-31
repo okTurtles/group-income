@@ -13,6 +13,10 @@ import {
 // How much time a notification can stay in the "new" state.
 export const NEW_STATUS_DURATION = 2 * ONE_HOUR
 
+export function age (notification: Notification): number {
+  return Date.now() - notification.timestamp
+}
+
 /*
  * Creates a copy of the given notification list, possibly sorted and/or truncated to
  * make it suitable for offline storage.
@@ -92,8 +96,8 @@ export function compareOnPriority (notificationA: Notification, notificationB: N
     // However, under certain conditions we might want to keep the already read one instead.
     // Note: use a condition array so that it is easy to add/remove conditions later.
     const conditions = [
-      (read, unread) => Date.now() - read.timestamp < ONE_DAY && Date.now() - unread.timestamp > FIFTEEN_DAYS,
-      (read, unread) => Date.now() - read.timestamp < TWO_DAYS && Date.now() - unread.timestamp > THREE_WEEKS
+      (read, unread) => age(read) < ONE_DAY && age(unread) > FIFTEEN_DAYS,
+      (read, unread) => age(read) < TWO_DAYS && age(unread) > THREE_WEEKS
     ]
     if (conditions.some(condition => condition(read, unread))) {
       preferred = read
@@ -103,11 +107,11 @@ export function compareOnPriority (notificationA: Notification, notificationB: N
 }
 
 export function isExpired (notification: Notification): boolean {
-  return Date.now() - notification.timestamp > maxAge(notification)
+  return age(notification) > maxAge(notification)
 }
 
 export function isNew (notification: Notification): boolean {
-  return Date.now() - notification.timestamp < NEW_STATUS_DURATION
+  return age(notification) < NEW_STATUS_DURATION
 }
 
 export function isOlder (notification: Notification): boolean {
