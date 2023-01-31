@@ -889,6 +889,7 @@ ${this.getErrorInfo()}`;
     return {
       lastStreakPeriod: null,
       fullMonthlyPledges: 0,
+      fullMonthlySupport: 0,
       onTimePayments: {},
       missedPayments: {},
       noVotes: {}
@@ -955,11 +956,13 @@ ${this.getErrorInfo()}`;
     });
     import_common3.Vue.set(streaks, "fullMonthlyPledges", noPaymentsAtAll ? 0 : thisPeriodDistribution.length === 0 ? streaks.fullMonthlyPledges + 1 : 0);
     const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod);
+    const thisPeriodHaveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod);
     const filterMyItems = (array, username) => array.filter((item) => item.from === username);
-    const isPledgingMember = (username) => {
-      const haveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod);
-      return haveNeeds.some((entry) => entry.name === username && entry.haveNeed > 0);
-    };
+    const isPledgingMember = (username) => thisPeriodHaveNeeds.some((entry) => entry.name === username && entry.haveNeed > 0);
+    const totalContributionGoal = thisPeriodHaveNeeds.reduce((total, item) => item.haveNeed < 0 ? total + -1 * item.haveNeed : total, 0);
+    const totalPledgesDone = thisPeriodPaymentDetails.reduce((total, paymentItem) => paymentItem.amount + total, 0);
+    const fullMonthlySupportCurrent = vueFetchInitKV(streaks, "fullMonthlySupport", 0);
+    import_common3.Vue.set(streaks, "fullMonthlySupport", totalPledgesDone > 0 && totalPledgesDone >= totalContributionGoal ? fullMonthlySupportCurrent + 1 : 0);
     for (const username in getters.groupProfiles) {
       if (!isPledgingMember(username))
         continue;
@@ -1009,6 +1012,10 @@ ${this.getErrorInfo()}`;
           }
         }
         return profiles;
+      },
+      groupCreatedDate(state, getters) {
+        const creator = getters.groupSettings.groupCreator;
+        return getters.groupProfile(creator).joinedDate;
       },
       groupMincomeAmount(state, getters) {
         return getters.groupSettings.mincomeAmount;
@@ -1127,6 +1134,9 @@ ${this.getErrorInfo()}`;
       groupStreaks(state, getters) {
         return getters.currentGroupState.streaks || {};
       },
+      groupTotalPledgeAmount(state, getters) {
+        return getters.currentGroupState.totalPledgeAmount || 0;
+      },
       withGroupCurrency(state, getters) {
         return getters.groupCurrency?.displayWithCurrency;
       },
@@ -1215,7 +1225,8 @@ ${this.getErrorInfo()}`;
             profiles: {
               [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
             },
-            chatRooms: {}
+            chatRooms: {},
+            totalPledgeAmount: 0
           }, data);
           for (const key in initialState) {
             import_common3.Vue.set(state, key, initialState[key]);
@@ -1284,6 +1295,8 @@ ${this.getErrorInfo()}`;
             } else {
               updateCurrentDistribution({ contractID, meta, state, getters });
             }
+            const currentTotalPledgeAmount = vueFetchInitKV(state, "totalPledgeAmount", 0);
+            state.totalPledgeAmount = currentTotalPledgeAmount + payment.data.amount;
           }
         },
         sideEffect({ meta, contractID, data }, { state, getters }) {
@@ -1292,7 +1305,6 @@ ${this.getErrorInfo()}`;
             const payment = state.payments[data.paymentHash];
             if (loggedIn.username === payment.data.toUser) {
               (0, import_sbp3.default)("gi.notifications/emit", "PAYMENT_RECEIVED", {
-                createdDate: meta.createdDate,
                 groupID: contractID,
                 creator: meta.username,
                 paymentHash: data.paymentHash,
@@ -1316,7 +1328,6 @@ ${this.getErrorInfo()}`;
           const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
           if (data.toUser === loggedIn.username) {
             (0, import_sbp3.default)("gi.notifications/emit", "PAYMENT_THANKYOU_SENT", {
-              createdDate: meta.createdDate,
               groupID: contractID,
               creator: meta.username,
               fromUser: data.fromUser,
@@ -1366,7 +1377,6 @@ ${this.getErrorInfo()}`;
           const myProfile = getters.groupProfile(loggedIn.username);
           if (isActionYoungerThanUser(meta, myProfile)) {
             (0, import_sbp3.default)("gi.notifications/emit", "NEW_PROPOSAL", {
-              createdDate: meta.createdDate,
               groupID: contractID,
               creator: meta.username,
               subtype: typeToSubTypeMap[data.proposalType]
@@ -1410,7 +1420,6 @@ ${this.getErrorInfo()}`;
           const myProfile = getters.groupProfile(loggedIn.username);
           if (proposal?.dateClosed && isActionYoungerThanUser(meta, myProfile)) {
             (0, import_sbp3.default)("gi.notifications/emit", "PROPOSAL_CLOSED", {
-              createdDate: meta.createdDate,
               groupID: contractID,
               creator: meta.username,
               proposalStatus: proposal.status
@@ -1508,7 +1517,6 @@ ${this.getErrorInfo()}`;
             if (isActionYoungerThanUser(meta, myProfile)) {
               const memberRemovedThemselves = data.member === meta.username;
               (0, import_sbp3.default)("gi.notifications/emit", memberRemovedThemselves ? "MEMBER_LEFT" : "MEMBER_REMOVED", {
-                createdDate: meta.createdDate,
                 groupID: contractID,
                 username: memberRemovedThemselves ? meta.username : data.member
               });
@@ -1566,7 +1574,6 @@ ${this.getErrorInfo()}`;
             await (0, import_sbp3.default)("chelonia/contract/sync", meta.identityContractID);
             if (isActionYoungerThanUser(meta, myProfile)) {
               (0, import_sbp3.default)("gi.notifications/emit", "MEMBER_ADDED", {
-                createdDate: meta.createdDate,
                 groupID: contractID,
                 username: meta.username
               });
