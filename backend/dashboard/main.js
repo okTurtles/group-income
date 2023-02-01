@@ -18,7 +18,7 @@ Vue.config.errorHandler = function (err, vm, info) {
 
 async function startApp () {
   sbp('okTurtles.data/set', 'API_URL', window.location.origin)
-  await sbp('translations/init', navigator.language)
+  await sbp('translations/init', 'en-US' /* navigator.language */)
 
   new Vue({
     router,

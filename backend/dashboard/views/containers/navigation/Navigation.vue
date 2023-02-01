@@ -7,28 +7,28 @@ nav.c-navigation(
     h1.c-header.is-title-1(@click='toHome') Chelonia
 
   ul.c-menu
-    li.c-nav-item(
-      v-for='item in ephemeral.navList'
-      :key='item.id'
-    )
-      router-link(:to='item.to') {{ item.name }}
+    NavItem(v-for='item in ephemeral.navList' :key='item.id' v-bind='item')
 </template>
 
 <script>
 import L from '@common/translations.js'
+import NavItem from './NavItem.vue'
 
 export default {
   name: 'Navigation',
+  components: {
+    NavItem
+  },
   data () {
     return {
       ephemeral: {
         isActive: false,
         navList: [
-          { id: 'dashboard', name: L('Dashboard'), to: '/' },
-          { id: 'contacts', name: L('Contacts'), to: '/contacts' },
-          { id: 'users', name: L('Users'), to: '/users' },
-          { id: 'accounts', name: L('Accounts'), to: '/accounts' },
-          { id: 'billing', name: L('Billing'), to: '/billing' }
+          { id: 'dashboard', name: L('Dashboard'), to: '/', icon: 'chalkboard' },
+          { id: 'contacts', name: L('Contacts'), to: '/contacts', icon: 'address-book' },
+          { id: 'users', name: L('Users'), to: '/users', icon: 'users' },
+          { id: 'accounts', name: L('Accounts'), to: '/accounts', icon: 'suitcase' },
+          { id: 'billing', name: L('Billing'), to: '/billing', icon: 'list-bullets' }
         ]
       }
     }
@@ -43,12 +43,13 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-navigation {
-  padding: 3rem 1.5rem;
-  width: 17.5rem;
+  padding: 3rem 0;
+  width: max-content;
   height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
   border-right: 1px solid $border;
+  background-color: $background_0;
 }
 
 .c-navigation-header {
@@ -60,6 +61,8 @@ export default {
 .c-header {
   font-size: 1.4rem;
   cursor: pointer;
+  width: 100%;
+  padding-left: 1.4rem;
 
   &:hover {
     text-decoration: underline;
@@ -70,20 +73,5 @@ export default {
   display: inline-block;
   width: 1.6rem;
   margin-right: 0.75rem;
-}
-
-.c-nav-item {
-  margin-bottom: 0.25rem;
-  font-size: 1rem;
-
-  > a {
-    text-decoration: none;
-    color: #000;
-    cursor: pointer;
-
-    &.router-link-exact-active {
-      font-weight: 600;
-    }
-  }
 }
 </style>

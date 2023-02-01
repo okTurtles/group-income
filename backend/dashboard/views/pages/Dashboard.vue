@@ -1,5 +1,5 @@
 <template lang='pug'>
-div
+main
   i18n.c-page-header(tag='h1') Dashboard
 
   i18n(tag='p') this is 'dashboard' page

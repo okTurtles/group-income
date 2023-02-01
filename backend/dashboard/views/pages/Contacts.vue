@@ -1,5 +1,5 @@
 <template lang='pug'>
-div
+main
   i18n.c-page-header(tag='h1') Contacts
 
   i18n(tag='p') This is 'contacts' page

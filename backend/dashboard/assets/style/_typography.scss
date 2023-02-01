@@ -1,11 +1,11 @@
 @font-face {
-  src: url(../fonts/Inter/Inter_Regular.woff2) format('woff2');
+  src: url(../fonts/Inter/Inter_Regular.woff2) format("woff2");
   font-family: "Inter";
   font-weight: 400;
 }
 
 @font-face {
-  src: url(../fonts/Inter/Inter-SemiBold.ttf) format('woff2');
+  src: url(../fonts/Inter/Inter_SemiBold.woff2) format("woff2");
   font-family: "Inter";
   font-weight: 600;
 }
@@ -68,4 +68,8 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
     font-size: $size;
     line-height: #{nth($lineHeight, $i)}rem;
   }
+}
+
+.has-text-bold {
+  font-weight: 600;
 }

@@ -41,7 +41,7 @@ $bannerGeneralHeight: 2rem;
   grid-area: l-navigation;
   height: 100%;
 
-  @include until($desktop) {
+  @include until($tablet) {
     position: absolute;
     z-index: $zindex-sidebar;
     transform: translateX(-100%);
