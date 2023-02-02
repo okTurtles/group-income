@@ -1,0 +1,95 @@
+[1mdiff --git a/frontend/model/contracts/manifests.json b/frontend/model/contracts/manifests.json[m
+[1mindex 98fad76b..2ae0c013 100644[m
+[1m--- a/frontend/model/contracts/manifests.json[m
+[1m+++ b/frontend/model/contracts/manifests.json[m
+[36m@@ -1,7 +1,7 @@[m
+ {[m
+   "manifests": {[m
+     "gi.contracts/chatroom": "21XWnNY7UtqVpH4GFi7MeXLHwY9wNjXqYtcLs88Dw2YdPMTfTf",[m
+[31m-    "gi.contracts/group": "21XWnNSk3XLo5oH2ad1ptE4jX6xu8XaYbNxs14srPsbFoU8yNi",[m
+[32m+[m[32m    "gi.contracts/group": "21XWnNK3R4N8oQtswLk9wbH23agqYiHWM7KbbKeVCHUUCVbiTv",[m
+     "gi.contracts/identity": "21XWnNQcokaP76xh4SVnW5wE1KjuwCYgiPFmqEvr2BEnMuMSHZ",[m
+     "gi.contracts/mailbox": "21XWnNKPBQz9LSHLWk41VzqCj3JHfgujkgyVjgPcArtFSXtNyY"[m
+   }[m
+[1mdiff --git a/test/cypress/integration/group-paying.spec.js b/test/cypress/integration/group-paying.spec.js[m
+[1mindex e538a4d6..0c781945 100644[m
+[1m--- a/test/cypress/integration/group-paying.spec.js[m
+[1m+++ b/test/cypress/integration/group-paying.spec.js[m
+[36m@@ -64,6 +64,22 @@[m [mfunction openNotificationCard ({[m
+   })[m
+ }[m
+ [m
+[32m+[m[32mfunction makePayment (date, amount, paymentsCount = 1) {[m
+[32m+[m[32m  cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(date))[m
+[32m+[m[32m  cy.getByDT('recordPayment').should('be.disabled')[m
+[32m+[m[32m  cy.getByDT('todoCheck').click()[m
+[32m+[m[32m  cy.getByDT('recordPayment').should('not.be.disabled').click()[m
+[32m+[m[32m  cy.getByDT('modal').within(() => {[m
+[32m+[m[32m    cy.getByDT('payRecord').find('tbody').children().should('have.length', paymentsCount)[m
+[32m+[m[32m    cy.getByDT('payRow').eq(0).find('input[data-test="amount"]').should('have.value', `${amount}`)[m
+[32m+[m[32m    cy.getByDT('payRow').eq(0).find('label[data-test="check"]').click()[m
+[32m+[m
+[32m+[m[32m    cy.get('button[type="submit"]').click()[m
+[32m+[m[32m    cy.getByDT('successClose').click()[m
+[32m+[m[32m    cy.getByDT('closeModal').should('not.exist')[m
+[32m+[m[32m  })[m
+[32m+[m[32m}[m
+[32m+[m
+ describe('Group Payments', () => {[m
+   const invitationLinks = {}[m
+ [m
+[36m@@ -373,6 +389,54 @@[m [mdescribe('Group Payments', () => {[m
+     })[m
+   })[m
+ [m
+[32m+[m[32m  it.skip('three months\'s of payments are made and support history graph displays the histories', () => {[m
+[32m+[m[32m    cy.clock(timeStart, ['Date'])[m
+[32m+[m[32m    cy.visit('/')[m
+[32m+[m
+[32m+[m[32m    cy.tick(timeOneMonth)[m
+[32m+[m[32m    cy.getByDT('paymentsLink').click()[m
+[32m+[m
+[32m+[m[32m    cy.giForceDistributionDateToNow()[m
+[32m+[m[32m    makePayment(timeStart + timeOneMonth, 250)[m
+[32m+[m
+[32m+[m[32m    cy.tick(timeOneMonth)[m
+[32m+[m[32m    cy.getByDT('dashboard').click()[m
+[32m+[m[32m    cy.getByDT('paymentsLink').click()[m
+[32m+[m
+[32m+[m[32m    cy.giForceDistributionDateToNow()[m
+[32m+[m[32m    makePayment(timeStart + timeOneMonth * 2, 250)[m
+[32m+[m
+[32m+[m[32m    cy.tick(timeOneMonth)[m
+[32m+[m[32m    cy.getByDT('dashboard').click()[m
+[32m+[m[32m    cy.getByDT('paymentsLink').click()[m
+[32m+[m
+[32m+[m[32m    cy.giForceDistributionDateToNow()[m
+[32m+[m[32m    makePayment(timeStart + timeOneMonth * 3, 250)[m
+[32m+[m
+[32m+[m[32m    cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })[m
+[32m+[m[32m    cy.getByDT('paymentsLink').click()[m
+[32m+[m
+[32m+[m[32m    cy.giForceDistributionDateToNow()[m
+[32m+[m[32m    makePayment(timeStart + timeOneMonth * 3, 100)[m
+[32m+[m
+[32m+[m[32m    cy.getByDT('dashboard').click()[m
+[32m+[m[32m    cy.getByDT('link-SupportHistory').click()[m
+[32m+[m[32m    cy.get('.bar-graph-container').should('exist')[m
+[32m+[m
+[32m+[m[32m    // TODO: need to check the percentage[m
+[32m+[m[32m    // cy.get('.bar-graph-container').find('.bar-graph:nth-child(4)').within(() => {[m
+[32m+[m[32m    //   cy.get('.bar-graph-txt').should('contain', '25%')[m
+[32m+[m[32m    // })[m
+[32m+[m
+[32m+[m[32m    // cy.get('.bar-graph-container').find('.bar-graph:nth-child(5)').within(() => {[m
+[32m+[m[32m    //   cy.get('.bar-graph-txt').should('contain', '25%')[m
+[32m+[m[32m    // })[m
+[32m+[m
+[32m+[m[32m    // cy.get('.bar-graph-container').find('.bar-graph:nth-child(6)').within(() => {[m
+[32m+[m[32m    //   cy.get('.bar-graph-txt').should('contain', '42%')[m
+[32m+[m[32m    // })[m
+[32m+[m[32m  })[m
+[32m+[m
+   it('log out', () => {[m
+     cy.giLogout()[m
+   })[m
