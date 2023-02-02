@@ -1,6 +1,6 @@
 <template lang="pug">
 .c-toolbar
-  button.is-icon.c-nav-menu-icon(v-if='showHamburgerMenu')
+  button.is-icon.hide-tablet.c-nav-menu-icon(@click='$emit("open-nav")')
     i.icon-list-checks
 
   .c-app-title
@@ -11,12 +11,7 @@
 
 <script>
 export default {
-  name: 'Toolbar',
-  computed: {
-    showHamburgerMenu () {
-      return false
-    }
-  }
+  name: 'Toolbar'
 }
 </script>
 
@@ -49,8 +44,8 @@ export default {
 
 .c-nav-menu-icon {
   margin-right: 1rem;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
   font-size: 0.675rem;
   border-radius: 6px;
 }

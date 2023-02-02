@@ -21,10 +21,25 @@ button,
   font-size: $size_4;
   outline: none;
 
+  &.is-small {
+    min-height: 1.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+
   &.is-outlined {
     border: 1px solid var(--button-outline-border-color);
     background-color: var(--button-outline-bg-color);
     color: var(--button-outline-text-color);
+
+    &:active,
+    &:hover {
+      border: 1px solid var(--button-outline-text-color);
+    }
+
+    &:focus,
+    &:active {
+      background-color: $background_active;
+    }
   }
 
   &.is-icon {
@@ -35,6 +50,16 @@ button,
     border: 1px solid var(--button-outline-border-color);
     background-color: var(--button-outline-bg-color);
     color: var(--button-outline-text-color);
+
+    &:active,
+    &:hover {
+      border: 1px solid var(--button-outline-text-color);
+    }
+
+    &:focus,
+    &:active {
+      background-color: $background_active;
+    }
 
     > i {
       font-size: 1.25rem;

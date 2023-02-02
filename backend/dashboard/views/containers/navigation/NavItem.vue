@@ -42,10 +42,7 @@ export default {
   border-radius: 0.5rem;
   overflow: hidden;
   margin-bottom: 0.25rem;
-
-  @include from($desktop) {
-    min-width: 12.5rem;
-  }
+  min-width: 12.5rem;
 
   &:hover,
   &.is-active {

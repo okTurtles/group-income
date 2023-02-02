@@ -28,6 +28,16 @@ async function startApp () {
       Toolbar,
       Navigation,
       AppStyles
+    },
+    data () {
+      return {
+        isNavOpen: false
+      }
+    },
+    methods: {
+      openNav () {
+        this.$refs.navigation.open()
+      }
     }
   }).$mount('#app')
 }

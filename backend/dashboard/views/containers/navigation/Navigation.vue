@@ -6,6 +6,8 @@ nav.c-navigation(
     h3.sr-only Navigation menu
     h3.is-title-4.c-header Navigation
 
+    button.hide-tablet.is-icon.c-close-btn(@click='close') X
+
   ul.c-menu
     NavItem(v-for='item in ephemeral.navList' :key='item.id' v-bind='item')
 </template>
@@ -34,7 +36,13 @@ export default {
     }
   },
   methods: {
-    toHome () { this.$router.push({ path: '/' }) }
+    toHome () { this.$router.push({ path: '/' }) },
+    open () {
+      this.ephemeral.isActive = true
+    },
+    close () {
+      this.ephemeral.isActive = false
+    }
   }
 }
 </script>
@@ -43,7 +51,6 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-navigation {
-  padding: 1.5rem 0;
   width: max-content;
   overflow-y: auto;
   overflow-x: hidden;
@@ -53,16 +60,29 @@ export default {
 }
 
 .c-navigation-header {
-  display: block;
-  margin-bottom: 1.25rem;
+  position: relative;
+  align-items: center;
+  padding: 0.35rem 0;
+
+  @include tablet {
+    padding: 1.5rem 0 0.5rem;
+  }
+
+  .c-close-btn {
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+  }
 }
 
 .c-header {
   position: relative;
-  font-weight: 600;
-  letter-spacing: 3px;
+  font-weight: 400;
+  letter-spacing: 1px;
   display: flex;
   align-items: center;
+  text-decoration: underline;
   color: $text_1;
   width: 100%;
   height: 2rem;

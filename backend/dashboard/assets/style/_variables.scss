@@ -1,11 +1,9 @@
 // z-index constants
 // Why: https://css-tricks.com/handling-z-index/
-$zindex-banner: 70;
-$zindex-mask: 60;
 $zindex-tooltip: 50;
 $zindex-modal: 40;
 $zindex-sidebar: 40;
-$zindex-header: 30;
+$zindex-toolbar: 30;
 
 // Used for typography
 $size_0: 4rem;     // 64px
