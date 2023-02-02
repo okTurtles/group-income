@@ -19,3 +19,36 @@ $background_1: var(--background_1);
 $background_active: var(--background_active);
 $text_0: var(--text_0);
 $text_1: var(--text_1);
+
+$colors_map: (
+  /* NOTE: <variable-name> : (<light-theme-value>, <dark-theme-value>) */
+  button-primary-bg-color: (#1c1c1c, #c6c7f8),
+  button-primary-text-color: (#fff, #1c1c1c),
+  button-outline-bg-color: (rgba(0, 0, 0, 0), rgba(0, 0, 0, 0)),
+  button-outline-text-color: (#1c1c1c, #fff),
+  button-outline-border-color: (#1c1c1c, #fff)
+);
+
+// "light-theme" custom-variable declarations
+:root {
+  @each $name, $values in $colors_map {
+    $light_value: nth($values, 1);
+
+    --#{$name}: #{$light_value};
+  }
+}
+
+// "dark-theme" custom-variable declarations
+:root[data-theme="dark"] {
+  @each $name, $values in $colors_map {
+    $dark_value: nth($values, 2);
+
+    --#{$name}: #{$dark_value};
+  }
+}
+
+@mixin if-dark-theme {
+  :root[data-theme="dark"] & {
+    @content;
+  }
+}

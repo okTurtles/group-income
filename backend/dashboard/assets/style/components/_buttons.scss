@@ -1,0 +1,44 @@
+button,
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  @extend %unselectable;
+  height: auto;
+  min-height: 2.75rem;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--button-primary-bg-color);
+  background-color: var(--button-primary-bg-color);
+  color: var(--button-primary-text-color);
+  white-space: nowrap;
+  font-family: "Inter";
+  font-size: $size_4;
+  outline: none;
+
+  &.is-outlined {
+    border: 1px solid var(--button-outline-border-color);
+    background-color: var(--button-outline-bg-color);
+    color: var(--button-outline-text-color);
+  }
+
+  &.is-icon {
+    min-height: unset;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--button-outline-border-color);
+    background-color: var(--button-outline-bg-color);
+    color: var(--button-outline-text-color);
+
+    > i {
+      font-size: 1.25rem;
+      line-height: 1.25rem;
+    }
+  }
+}

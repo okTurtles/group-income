@@ -9,6 +9,7 @@ import './controller/backend.js'
 import '@common/translations.js'
 
 // vue-components
+import Toolbar from '@containers/toolbar/Toolbar.vue'
 import Navigation from '@containers/navigation/Navigation.vue'
 import AppStyles from '@components/AppStyles.vue'
 
@@ -24,6 +25,7 @@ async function startApp () {
     router,
     store,
     components: {
+      Toolbar,
       Navigation,
       AppStyles
     }

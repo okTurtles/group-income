@@ -1,5 +1,8 @@
 <template lang="pug">
-  li.c-nav-item.has-text-bold(@click='navigateTo(to)')
+  li.c-nav-item.has-text-bold(
+    :class='{ "is-active": isActive }'
+    @click='navigate'
+  )
     i(:class='`icon-${icon} is-prefix c-nav-item-icon`')
     span.c-nav-item-name {{ name }}
 </template>
@@ -12,9 +15,14 @@ export default {
     name: String,
     icon: String
   },
+  computed: {
+    isActive () {
+      return this.$route.path === this.to
+    }
+  },
   methods: {
-    navigateTo (to) {
-      this.$router.push({ path: to })
+    navigate () {
+      this.$router.push({ path: this.to })
     }
   }
 }
@@ -27,16 +35,33 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
-  height: 3.6rem;
-  padding: 0 1.4rem;
-  font-size: 1rem;
+  height: 3rem;
+  padding: 0 1rem;
+  font-size: $size_4;
   cursor: pointer;
-  border-bottom: 1px solid $border;
-  border-top: 1px solid $border;
-  margin-bottom: 4px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
 
   @include from($desktop) {
-    min-width: 17.5rem;
+    min-width: 12.5rem;
+  }
+
+  &:hover,
+  &.is-active {
+    background-color: $background_active;
+  }
+
+  &.is-active::before {
+    content: "";
+    display: block;
+    position: absolute;
+    height: 100%;
+    width: 8px;
+    top: 0;
+    left: 0;
+    background-color: $text_1;
+    border-radius: 8px;
   }
 
   &-icon {
@@ -45,16 +70,9 @@ export default {
     font-size: 1.3em;
     line-height: 1.4;
   }
+}
 
-  &::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    display: block;
-    width: 10px;
-    height: 100%;
-    background-color: $primary_purple;
-  }
+.is-active .c-nav-item-name {
+  text-decoration: underline;
 }
 </style>
