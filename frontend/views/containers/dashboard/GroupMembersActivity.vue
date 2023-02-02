@@ -9,12 +9,14 @@
         li.c-item-wrapper
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
-            .c-item-copy(v-safe-html='groupStreaksSentences.fullMonthlyPledges')
+            .c-item-copy
+              strong(v-safe-html='groupStreaksSentences.fullMonthlyPledges')
 
         li.c-item.wrapper
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
-            .c-item-copy(v-safe-html='groupStreaksSentences.fullMonthlySupport')
+            .c-item-copy
+              strong(v-safe-html='groupStreaksSentences.fullMonthlySupport')
 
         li.c-item-wrapper
           .c-item
@@ -64,7 +66,7 @@ import { mapGetters } from 'vuex'
 import SentenceWithMemberTooltip from './SentenceWithMemberTooltip.vue'
 import { compareISOTimestamps, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { STREAK_MISSED_PROPSAL_VOTE, STREAK_NOT_LOGGED_IN_DAYS, STREAK_ON_TIME_PAYMENTS, STREAK_MISSED_PAYMENTS } from '@model/contracts/shared/constants.js'
-import { L, LTags } from '@common/common.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'GroupMembersActivity',
@@ -128,18 +130,13 @@ export default ({
         })
     },
     groupStreaksSentences () {
-      const args = {
-        fullMonthlyPledges: { ...LTags('strong'), streak: this.groupStreaks.fullMonthlyPledges || 0 },
-        fullMonthlySupport: { ...LTags('strong'), streak: this.groupStreaks.fullMonthlySupport || 0 }
-      }
-
       return {
         'fullMonthlyPledges': this.groupStreaks.fullMonthlyPledges === 1
-          ? L('{strong_}100% completed TODO streak of: {streak} month{_strong}', args.fullMonthlyPledges)
-          : L('{strong_}100% completed TODO streak of: {streak} months{_strong}', args.fullMonthlyPledges),
+          ? L('100% completed TODO streak of: 1 month')
+          : L('100% completed TODO streak of: {streak} months', { streak: this.groupStreaks.fullMonthlyPledges || 0 }),
         'fullMonthlySupport': this.groupStreaks.fullMonthlySupport === 1
-          ? L('{strong_}Mincome goal streak of: {streak} month{_strong}', args.fullMonthlySupport)
-          : L('{strong_}Mincome goal streak of: {streak} months{_strong}', args.fullMonthlySupport)
+          ? L('Mincome goal streak of: 1 month')
+          : L('Mincome goal streak of: {streak} months', { streak: this.groupStreaks.fullMonthlySupport || 0 })
       }
     },
     memberCountSentences () {
