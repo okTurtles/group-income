@@ -7,6 +7,7 @@
 import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
+import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
 
 // util funcs
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
@@ -411,8 +412,16 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
       sbp('gi.actions/group/forceDistributionDate', {
         contractID: sbp('state/vuex/state').currentGroupId,
         hooks: {
+          // Setup a hook to resolve the promise when the action has been processed locally.
           prepublish: (message) => {
-            sbp('okTurtles.events/on', message.hash(), resolve)
+            const thisPreviousHEAD = message.message().previousHEAD
+            // Note: `EVENT_HANDLED` must be used here rather than the message hash:
+            // https://github.com/okTurtles/group-income/issues/1487
+            sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
+              if (message.message().previousHEAD === thisPreviousHEAD) {
+                resolve()
+              }
+            })
           }
         }
       })
