@@ -23,6 +23,7 @@ export default {
   methods: {
     navigate () {
       this.$router.push({ path: this.to })
+      this.$emit('navigate')
     }
   }
 }
@@ -35,13 +36,13 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
-  height: 3rem;
+  height: 2.6rem;
   padding: 0 1rem;
   font-size: $size_4;
   cursor: pointer;
   border-radius: 0.5rem;
   overflow: hidden;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.2rem;
   min-width: 12.5rem;
 
   &:hover,
@@ -64,8 +65,8 @@ export default {
   &-icon {
     margin-top: 4px;
     flex-shrink: 0;
-    font-size: 1.3em;
-    line-height: 1.4;
+    font-size: 1.5em;
+    line-height: 1;
   }
 }
 

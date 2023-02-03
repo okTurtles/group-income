@@ -1,10 +1,10 @@
 <template lang="pug">
 .c-toolbar
-  button.is-icon.hide-tablet.c-nav-menu-icon(@click='$emit("open-nav")')
-    i.icon-list-checks
+  button.is-icon.hide-tablet.c-nav-menu(@click='$emit("open-nav")')
+    i.icon-menu.c-menu-icon
 
   .c-app-title
-    i.icon-suitcase.c-logo
+    i.icon-moonstar.c-logo
     h1.is-title-3 Chelonia
 
 </template>
@@ -39,14 +39,21 @@ export default {
   display: inline-block;
   font-weight: 600;
   font-size: 1.5rem;
+  line-height: 1;
+  margin-top: 2px;
   margin-right: 0.25rem;
 }
 
-.c-nav-menu-icon {
+.c-nav-menu {
   margin-right: 1rem;
   width: 1.75rem;
   height: 1.75rem;
-  font-size: 0.675rem;
   border-radius: 6px;
+}
+
+.c-menu-icon {
+  display: inline-block;
+  margin-top: 2px;
+  font-size: 1.2rem;
 }
 </style>

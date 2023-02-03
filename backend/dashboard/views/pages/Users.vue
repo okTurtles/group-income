@@ -1,19 +1,17 @@
 <template lang='pug'>
-main
-  i18n.c-page-header(tag='h1') Users
+page-template
+  template(#title='') {{ L('Users') }}
 
-  i18n(tag='p') This is 'users' page
+  i18n(tag='p') This is 'Users' page
 </template>
 
 <script>
+import PageTemplate from './PageTemplate.vue'
+
 export default {
-  name: 'Users'
+  name: 'Users',
+  components: {
+    PageTemplate
+  }
 }
 </script>
-
-<style lang='scss' scoped>
-.c-page-header {
-  margin-top: 2rem;
-  margin-bottom: 4.5rem;
-}
-</style>

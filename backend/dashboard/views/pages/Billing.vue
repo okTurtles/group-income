@@ -17,3 +17,21 @@ export default {
   margin-bottom: 4.5rem;
 }
 </style>
+
+<template lang='pug'>
+page-template
+  template(#title='') {{ L('Billing') }}
+
+  i18n(tag='p') This is 'billing' page
+</template>
+
+<script>
+import PageTemplate from './PageTemplate.vue'
+
+export default {
+  name: 'Billing',
+  components: {
+    PageTemplate
+  }
+}
+</script>

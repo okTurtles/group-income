@@ -1,15 +1,21 @@
 <template lang="pug">
-nav.c-navigation(
-  :class='{ "is-active": ephemeral.isActive }'
-)
-  .c-navigation-header
-    h3.sr-only Navigation menu
-    h3.is-title-4.c-header Navigation
+nav.c-navigation(:class='{ "is-active": ephemeral.isActive }')
+  .c-navigation-wrapper
+    .c-navigation-header
+      h3.sr-only Navigation menu
+      h3.is-title-4.c-header Navigation
 
-    button.hide-tablet.is-icon.c-close-btn(@click='close') X
+      button.hide-tablet.is-icon.c-close-btn(@click='close')
+        i.icon-cross
 
-  ul.c-menu
-    NavItem(v-for='item in ephemeral.navList' :key='item.id' v-bind='item')
+    ul.c-menu
+      NavItem(v-for='item in ephemeral.navList'
+        :key='item.id'
+        v-bind='item'
+        @navigate='close'
+      )
+
+  .c-navigation-overlay(@click='close')
 </template>
 
 <script>
@@ -51,12 +57,30 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-navigation {
-  width: max-content;
   overflow-y: auto;
   overflow-x: hidden;
+  width: 100vw;
+
+  @include tablet {
+    width: 100%;
+  }
+}
+
+.c-navigation-wrapper {
+  background-color: $background_0;
   border-right: 1px solid $border;
   border-left: 1px solid $border;
-  background-color: $background_0;
+  width: max-content;
+  height: 100%;
+}
+
+.c-navigation-overlay {
+  display: block;
+  background-color: rgba(0, 0, 0, 0);
+
+  .is-active & {
+    flex-grow: 1;
+  }
 }
 
 .c-navigation-header {
@@ -73,6 +97,12 @@ export default {
     top: 50%;
     right: 0.75rem;
     transform: translateY(-50%);
+
+    i {
+      display: inline-block;
+      font-size: 1rem;
+      margin-top: 2px;
+    }
   }
 }
 

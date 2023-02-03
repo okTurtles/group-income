@@ -1,19 +1,17 @@
 <template lang='pug'>
-main
-  i18n.c-page-header(tag='h1') Dashboard
+page-template
+  template(#title='') {{ L('Dashboard') }}
 
-  i18n(tag='p') this is 'dashboard' page
+  i18n(tag='p') This is 'dashboard' page
 </template>
 
 <script>
+import PageTemplate from './PageTemplate.vue'
+
 export default {
-  name: 'Dashboard'
+  name: 'Dashboard',
+  components: {
+    PageTemplate
+  }
 }
 </script>
-
-<style lang='scss' scoped>
-.c-page-header {
-  margin-top: 2rem;
-  margin-bottom: 4.5rem;
-}
-</style>

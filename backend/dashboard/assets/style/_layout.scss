@@ -28,6 +28,8 @@ $toolbarHeight: 2.75rem;
 .l-navigation {
   grid-area: l-navigation;
   height: 100%;
+  display: flex;
+  align-items: stretch;
 
   @include until($tablet) {
     position: absolute;
@@ -47,7 +49,6 @@ $toolbarHeight: 2.75rem;
   overflow-y: auto;
   overflow-x: hidden;
   height: calc(100% - #{$toolbarHeight});
-  padding: 1rem;
 }
 
 .l-modal {
