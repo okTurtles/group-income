@@ -70,6 +70,16 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
   }
 }
 
+.section-title {
+  position: relative;
+  display: block;
+  color: $text_1;
+  font-size: 1rem;
+  font-family: "Poppins";
+  letter-spacing: 1px;
+  margin-bottom: 0.5rem;
+}
+
 .has-text-bold {
   font-weight: 600;
 }
