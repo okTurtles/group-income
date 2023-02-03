@@ -24,6 +24,12 @@
 /* views/containers/group-settings/GroupJoinModal.vue */
 "1. Get an invitation" = "1. Get an invitation";
 
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"100% completed TODO streak of: 1 month" = "100% completed TODO streak of: 1 month";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"100% completed TODO streak of: {streak} months" = "100% completed TODO streak of: {streak} months";
+
 /* model/contracts/shared/time.js */
 "1d" = "1d";
 
@@ -819,12 +825,6 @@
 /* views/components/group-creation-steps/GroupName.vue */
 "Group avatar" = "Group avatar";
 
-/* views/containers/dashboard/GroupMembersActivity.vue */
-"Group has a streak of {strong_} 100% Support of {streak} months{_strong}" = "Group has a streak of {strong_} 100% Support of {streak} months{_strong}";
-
-/* views/containers/dashboard/GroupMembersActivity.vue */
-"Group has a streak of {strong_} 100% TODO payments of {streak} months{_strong}" = "Group has a streak of {strong_} 100% TODO payments of {streak} months{_strong}";
-
 /* views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
 "Group members" = "Group members";
 
@@ -1052,6 +1052,12 @@
 
 /* controller/actions/group.js */
 "Mincome changed" = "Mincome changed";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"Mincome goal streak of: 1 month" = "Mincome goal streak of: 1 month";
+
+/* views/containers/dashboard/GroupMembersActivity.vue */
+"Mincome goal streak of: {streak} months" = "Mincome goal streak of: {streak} months";
 
 /* views/containers/dashboard/GroupMincome.vue */
 "Minimum Income" = "Minimum Income";
