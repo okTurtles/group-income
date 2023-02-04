@@ -414,11 +414,11 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
         hooks: {
           // Setup a hook to resolve the promise when the action has been processed locally.
           prepublish: (message) => {
-            const thisPreviousHEAD = message.message().previousHEAD
-            // Note: `EVENT_HANDLED` must be used here rather than the message hash:
+            const thisOpValue = JSON.stringify(message.opValue())
+            // Note: `opValue()` must be used here rather than the message hash:
             // https://github.com/okTurtles/group-income/issues/1487
             sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
-              if (message.message().previousHEAD === thisPreviousHEAD) {
+              if (thisOpValue === JSON.stringify(message.opValue())) {
                 resolve()
               }
             })
