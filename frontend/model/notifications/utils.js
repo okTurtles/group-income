@@ -71,7 +71,7 @@ export function applyStorageRules (notifications: Notification[]): Notification[
 
 // Compares notifications, so that newer ones come first.
 export function compareOnTimestamp (notificationA: Notification, notificationB: Notification): number {
-  return notificationA.timestamp - notificationB.timestamp
+  return notificationB.timestamp - notificationA.timestamp
 }
 
 // Compares notifications, so that higher priority ones come first.
