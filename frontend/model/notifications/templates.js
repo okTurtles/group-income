@@ -183,7 +183,7 @@ export default ({
       creator: data.creator,
       icon: '',
       level: 'info',
-      linkTo: `dashboard?modal=PaymentDetail&id=${data.paymentHash}`,
+      linkTo: `/payments?modal=PaymentDetail&id=${data.paymentHash}`,
       scope: 'group'
     }
   },
@@ -197,7 +197,7 @@ export default ({
       creator: data.creator,
       icon: '',
       level: 'info',
-      linkTo: `dashboard?modal=ThankYouNoteModal&from=${data.fromUser}&to=${data.toUser}`,
+      linkTo: `/payments?modal=ThankYouNoteModal&from=${data.fromUser}&to=${data.toUser}`,
       scope: 'group'
     }
   },
