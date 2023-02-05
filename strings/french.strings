@@ -250,16 +250,22 @@
 "Todo %" = "Todo %";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"Group has a streak of {strong_} 100% Support of {streak} months{_strong}" = "Group has a streak of {strong_} 100% Support of {streak} months{_strong}";
+"100% completed TODO streak of: 1 month" = "100% completed TODO streak of: 1 month";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
-"Group has a streak of {strong_} 100% TODO payments of {streak} months{_strong}" = "Group has a streak of {strong_} 100% TODO payments of {streak} months{_strong}";
+"100% completed TODO streak of: {streak} months" = "100% completed TODO streak of: {streak} months";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
 "Inactivity" = "Inactivity";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
 "Information about your pledges streaks and other streak members appears here." = "Information about your pledges streaks and other streak members appears here.";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"Mincome goal streak of: 1 month" = "Mincome goal streak of: 1 month";
+
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
+"Mincome goal streak of: {streak} months" = "Mincome goal streak of: {streak} months";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersActivity.vue */
 "Streaks" = "Streaks";

@@ -66,12 +66,12 @@ export function applyStorageRules (notifications: Notification[]): Notification[
     items.length = MAX_COUNT
   }
   // Sort items in chronological order, newest items first.
-  return items.sort(compareOnAge)
+  return items.sort(compareOnTimestamp)
 }
 
 // Compares notifications, so that newer ones come first.
-export function compareOnAge (notificationA: Notification, notificationB: Notification): -1 | 1 {
-  return age(notificationA) <= age(notificationB) ? -1 : 1
+export function compareOnTimestamp (notificationA: Notification, notificationB: Notification): number {
+  return notificationB.timestamp - notificationA.timestamp
 }
 
 // Compares notifications, so that higher priority ones come first.
@@ -84,7 +84,7 @@ export function compareOnPriority (notificationA: Notification, notificationB: N
 
   // If the given notifications are both read or both unread, then prefer the newer one.
   if (notificationA.read === notificationB.read) {
-    return age(notificationA) <= age(notificationB) ? preferA : preferB
+    return notificationA.timestamp > notificationB.timestamp ? preferA : preferB
   } else {
     // Here, one notification is read, the other is unread.
     const read = notificationA.read ? notificationA : notificationB
@@ -111,7 +111,7 @@ export function isExpired (notification: Notification): boolean {
 }
 
 export function isNew (notification: Notification): boolean {
-  return Date.now() - notification.timestamp < NEW_STATUS_DURATION
+  return age(notification) < NEW_STATUS_DURATION
 }
 
 export function isOlder (notification: Notification): boolean {

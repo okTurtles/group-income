@@ -10,17 +10,13 @@
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
-              i18n(
-                :args='{ ...LTags("strong"), streak: groupStreaks.fullMonthlyPledges || 0 }'
-              ) Group has a streak of {strong_} 100% TODO payments of {streak} months{_strong}
+              strong(v-safe-html='groupStreaksSentences.fullMonthlyPledges')
 
         li.c-item.wrapper
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
-              i18n(
-                :args='{ ...LTags("strong"), streak: groupStreaks.fullMonthlySupport || 0 }'
-              ) Group has a streak of {strong_} 100% Support of {streak} months{_strong}
+              strong(v-safe-html='groupStreaksSentences.fullMonthlySupport')
 
         li.c-item-wrapper
           .c-item
@@ -132,6 +128,16 @@ export default ({
             ? L('{user} missed {streak} votes', Largs)
             : L('{user} missed {streak} vote', Largs)
         })
+    },
+    groupStreaksSentences () {
+      return {
+        'fullMonthlyPledges': this.groupStreaks.fullMonthlyPledges === 1
+          ? L('100% completed TODO streak of: 1 month')
+          : L('100% completed TODO streak of: {streak} months', { streak: this.groupStreaks.fullMonthlyPledges || 0 }),
+        'fullMonthlySupport': this.groupStreaks.fullMonthlySupport === 1
+          ? L('Mincome goal streak of: 1 month')
+          : L('Mincome goal streak of: {streak} months', { streak: this.groupStreaks.fullMonthlySupport || 0 })
+      }
     },
     memberCountSentences () {
       const argsCommon = {

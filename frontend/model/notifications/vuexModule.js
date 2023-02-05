@@ -5,7 +5,7 @@ import type { Notification } from './types.flow.js'
 import sbp from '@sbp/sbp'
 
 import './selectors.js'
-import { age, isNew, isOlder } from './utils.js'
+import { compareOnTimestamp, isNew, isOlder } from './utils.js'
 import * as keys from './mutationKeys.js'
 
 const getters = {
@@ -74,13 +74,12 @@ const mutations = {
 
   [keys.ADD_NOTIFICATION] (state, notification: Notification) {
     if (state.includes(notification)) {
-      throw new Error('This notification is already in the store.')
+      // We cannot throw here, as this code might be called from within a contract side effect.
+      return console.error('This notification is already in the store.')
     }
-    if (state[0] && age(notification) > age(state[0])) {
-      throw new Error('This notification is older than the latest one in the store.')
-    }
-    // Using `unshift()` here to insert the new item before older ones.
-    state.unshift(notification)
+    state.push(notification)
+    // Sort items in chronological order, newest items first.
+    state.sort(compareOnTimestamp)
   },
 
   [keys.MARK_NOTIFICATION_AS_READ] (state, notification: Notification) {
