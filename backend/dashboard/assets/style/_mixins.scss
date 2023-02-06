@@ -24,6 +24,12 @@
   }
 }
 
+@mixin phone_narrow {
+  @media screen and (max-width: $phone_narrow - 1px) {
+    @content;
+  }
+}
+
 @mixin phone {
   @media screen and (max-width: $tablet - 1px) {
     @content;
