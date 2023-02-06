@@ -26,7 +26,8 @@ sbp('sbp/selectors/register', {
       // Sets 'groupID' if this notification only pertains to a certain group.
       ...(template.scope === 'group' ? { groupID: data.groupID } : {}),
       read: false,
-      timestamp: Date.now(),
+      // Store integer timestamps rather than ISO strings here to make age comparisons easier.
+      timestamp: data.createdDate ? new Date(data.createdDate).getTime() : Date.now(),
       type
     }
     sbp('state/vuex/commit', keys.ADD_NOTIFICATION, notification)
