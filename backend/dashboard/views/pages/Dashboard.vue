@@ -92,7 +92,7 @@ export default {
   background-color: $background_1;
   padding: 1.5rem;
   border-radius: 1rem;
-  min-width: 18.5rem;
+  min-width: 20.25rem;
 }
 
 .c-user-list-label {
@@ -113,7 +113,7 @@ export default {
   margin-bottom: 0.25rem;
 }
 
-.c-user-list-item  {
+.c-user-list-item {
   line-height: 1.8;
 }
 </style>
