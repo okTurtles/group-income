@@ -9675,6 +9675,7 @@ ${this.getErrorInfo()}`;
           contractID
         };
         (0, import_sbp2.default)("gi.contracts/group/updateSettings/process", message, state);
+        (0, import_sbp2.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/updateSettings/sideEffect", { ...message, meta: { ...message.meta, username: proposal.meta.username } }]);
         archiveProposal({ state, proposalHash, proposal, contractID });
       },
       [VOTE_AGAINST]: voteAgainst
@@ -10101,10 +10102,10 @@ ${this.getErrorInfo()}`;
         username: string,
         identityContractID: string
       }),
-      create() {
+      async create() {
         const { username, identityContractID } = (0, import_sbp4.default)("state/vuex/state").loggedIn;
         return {
-          createdDate: new Date().toISOString(),
+          createdDate: await fetchServerTime(),
           username,
           identityContractID
         };
@@ -10713,9 +10714,21 @@ ${this.getErrorInfo()}`;
           mincomeAmount: (x) => typeof x === "number" && x > 0,
           mincomeCurrency: (x) => typeof x === "string"
         }),
-        process({ meta, data }, { state }) {
+        process({ contractID, meta, data }, { state, getters }) {
+          const mincomeCache = "mincomeAmount" in data ? state.settings.mincomeAmount : null;
           for (const key in data) {
             vue_esm_default.set(state.settings, key, data[key]);
+          }
+          if (mincomeCache !== null) {
+            (0, import_sbp4.default)("gi.contracts/group/pushSideEffect", contractID, [
+              "gi.contracts/group/sendMincomeChangedNotification",
+              contractID,
+              meta,
+              {
+                toAmount: data.mincomeAmount,
+                fromAmount: mincomeCache
+              }
+            ]);
           }
         }
       },
@@ -10939,6 +10952,41 @@ ${this.getErrorInfo()}`;
           await (0, import_sbp4.default)("gi.db/archive/save", archPaymentsKey, archPayments);
         }
         (0, import_sbp4.default)("okTurtles.events/emit", PAYMENTS_ARCHIVED, { paymentsByPeriod, payments });
+      },
+      "gi.contracts/group/sendMincomeChangedNotification": async function(contractID, meta, data) {
+        const myProfile = (0, import_sbp4.default)("state/vuex/getters").ourGroupProfile;
+        if (isActionYoungerThanUser(meta, myProfile) && myProfile.incomeDetailsType) {
+          const memberType = myProfile.incomeDetailsType === "pledgeAmount" ? "pledging" : "receiving";
+          const mincomeIncreased = data.toAmount > data.fromAmount;
+          const actionNeeded = mincomeIncreased || memberType === "receiving" && !mincomeIncreased && myProfile.incomeAmount < data.fromAmount && myProfile.incomeAmount > data.toAmount;
+          if (!actionNeeded) {
+            return;
+          }
+          if (memberType === "receiving" && !mincomeIncreased) {
+            await (0, import_sbp4.default)("gi.actions/group/groupProfileUpdate", {
+              contractID,
+              data: {
+                incomeDetailsType: "pledgeAmount",
+                pledgeAmount: 0
+              }
+            });
+            await (0, import_sbp4.default)("gi.actions/group/displayMincomeChangedPrompt", {
+              contractID,
+              data: {
+                amount: data.toAmount,
+                memberType,
+                increased: mincomeIncreased
+              }
+            });
+          }
+          await (0, import_sbp4.default)("gi.notifications/emit", "MINCOME_CHANGED", {
+            groupID: contractID,
+            creator: meta.username,
+            to: data.toAmount,
+            memberType,
+            increased: mincomeIncreased
+          });
+        }
       }
     }
   });

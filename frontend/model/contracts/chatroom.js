@@ -1,3 +1,5 @@
+/* globals fetchServerTime */
+
 'use strict'
 
 import sbp from '@sbp/sbp'
@@ -114,10 +116,10 @@ sbp('chelonia/defineContract', {
       username: string, // action creator
       identityContractID: string // action creator identityContractID
     }),
-    create () {
+    async create () {
       const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
-        createdDate: new Date().toISOString(),
+        createdDate: await fetchServerTime(),
         username,
         identityContractID
       }

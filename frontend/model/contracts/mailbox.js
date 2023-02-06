@@ -1,3 +1,5 @@
+/* globals fetchServerTime */
+
 'use strict'
 
 import sbp from '@sbp/sbp'
@@ -15,15 +17,16 @@ sbp('chelonia/defineContract', {
       username: optional(string), // action creator
       identityContractID: optional(string) // action creator identityContractID
     }),
-    create () {
+    async create () {
+      const createdDate = await fetchServerTime()
       // NOTE: mailbox contract is created before user logs in and also registers either.
       // so username and identityContractID could be undefined at this time
       if (!sbp('state/vuex/state').loggedIn) {
-        return { createdDate: new Date().toISOString() }
+        return { createdDate }
       }
       const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
-        createdDate: new Date().toISOString(),
+        createdDate,
         username,
         identityContractID
       }

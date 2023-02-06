@@ -600,7 +600,7 @@ const getters = {
   },
   groupUnreadMessages (state, getters) {
     return (groupID: string) => Object.keys(getters.ourUnreadMessages)
-      .filter(cID => getters.isOneToOneDirectMessage(cID) || Object.keys(state[groupID].chatRooms).includes(cID))
+      .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID]?.chatRooms || {}).includes(cID))
       .map(cID => getters.ourUnreadMessages[cID].mentions.length)
       .reduce((sum, n) => sum + n, 0)
   },
@@ -717,6 +717,10 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
           if (!oldPeriod || !newPeriod) return
 
+          // Note: if this code gets called when we're in the period before the 1st distribution
+          //       period, then the distributionDate will get updated to the previous distribution date
+          //       (incorrectly). That in turn will cause the Payments page to update and display TODOs
+          //       before it should.
           const distributionDateInSettings = store.getters.groupSettings.distributionDate
           if (newPeriod !== oldPeriod && (newPeriod !== distributionDateInSettings)) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })

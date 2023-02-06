@@ -6,74 +6,72 @@
       i18n.has-text-1.c-para Information about your pledges streaks and other streak members appears here.
 
       ul.spacer
-        li.c-item-wrapper(v-if='groupStreaks.fullMonthlyPledges > 1')
+        li.c-item-wrapper
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
-              i18n(
-                :args='{ ...LTags("strong"), streak: groupStreaks.fullMonthlyPledges }'
-              ) Group has a streak of {strong_} 100% Support of {streak} months{_strong}
+              strong(v-safe-html='groupStreaksSentences.fullMonthlyPledges')
 
-        li.c-item-wrapper(v-if='onTimePayments.length > 0')
+        li.c-item.wrapper
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='onTimePayments')
+              strong(v-safe-html='groupStreaksSentences.fullMonthlySupport')
 
+        li.c-item-wrapper
+          .c-item
+            .icon-star.icon-round.has-background-success.has-text-success
+            .c-item-copy
               //- Todo: discuss if tooltip better than toggle
-              //- i18n.link(
-              //-   tag='button'
-              //-   :aria-label='L("See members")'
-              //-   :args='{  members: 3 }'
-              //-   @click='openModal("todoSeeMembers")'
-              //- ) {members} members
-              i18n(:args='{ ...LTags("strong") }') have {strong_} on-time payment streaks{_strong}
+              sentence-with-member-tooltip(:members='onTimePayments')
+                .member-count-sentence(v-safe-html='memberCountSentences["onTimePayments"]')
 
     .c-column
       i18n.is-title-3(tag='h2') Inactivity
       .has-text-1.c-para Members that haven’t logged in, missed their pledges or haven´t voted last proposals will appear here.
 
       ul.spacer
-        li.c-item-wrapper(v-if='haventLoggedIn.length > 0')
+        li.c-item-wrapper
           .c-item
             .icon-user.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='haventLoggedIn')
-              i18n(:args='{ ...LTags("strong"), daysCount: config.notLoggedInDays }') haven't {strong_} logged in past {daysCount} days or more {_strong}
+              sentence-with-member-tooltip(:members='haventLoggedIn')
+                .member-count-sentence(v-safe-html='memberCountSentences["haventLoggedIn"]')
 
-        li.c-item-wrapper(v-if='noIncomeDetails.length > 0')
+        li.c-item-wrapper
           .c-item
             .icon-comment-dollar.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='noIncomeDetails')
-              i18n(:args='LTags("strong")') haven't {strong_} entered income details{_strong}
+              sentence-with-member-tooltip(:members='noIncomeDetails')
+                .member-count-sentence(v-safe-html='memberCountSentences["noIncomeDetails"]')
 
-        li.c-item-wrapper(v-if='missedPayments.length > 0')
+        li.c-item-wrapper
           .c-item
             .icon-dollar-sign.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='missedPayments')
-              i18n(:args='LTags("strong")') have {strong_} missed payments {_strong}
+              sentence-with-member-tooltip(:members='missedPayments')
+                .member-count-sentence(v-safe-html='memberCountSentences["missedPayments"]')
 
-        li.c-item-wrapper(v-if='noVotes.length > 0')
+        li.c-item-wrapper
           .c-item
             .icon-vote-yea.icon-round.has-background-general
             .c-item-copy
-              member-count-tooltip.c-member-count(:members='noVotes')
-              i18n(:args='{ ...LTags("strong"), proposalNumber: config.proposalNumber }') haven't {strong_} voted in the last {proposalNumber} proposals {_strong}
+              sentence-with-member-tooltip(:members='noVotes')
+                .member-count-sentence(v-safe-html='memberCountSentences["noVotes"]')
 
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
-import MemberCountTooltip from './MemberCountTooltip.vue'
+import SentenceWithMemberTooltip from './SentenceWithMemberTooltip.vue'
 import { compareISOTimestamps, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { STREAK_MISSED_PROPSAL_VOTE, STREAK_NOT_LOGGED_IN_DAYS, STREAK_ON_TIME_PAYMENTS, STREAK_MISSED_PAYMENTS } from '@model/contracts/shared/constants.js'
+import { L } from '@common/common.js'
 
 export default ({
   name: 'GroupMembersActivity',
   components: {
-    MemberCountTooltip
+    SentenceWithMemberTooltip
   },
   data () {
     return {
@@ -92,19 +90,20 @@ export default ({
       'groupProfiles'
     ]),
     onTimePayments () {
-      return Object.entries(this.groupStreaks.onTimePayments)
+      return Object.entries(this.groupStreaks.onTimePayments || {})
         .filter(([username, streak]) => streak >= STREAK_ON_TIME_PAYMENTS)
-        .map(([username]) => this.userDisplayName(username))
+        .sort((a, b) => b[1] - a[1])
+        .map(([username, streak]) => L('{user} - {count} month streak', { user: this.userDisplayName(username), count: streak }))
     },
     missedPayments () {
-      return Object.entries(this.groupStreaks.missedPayments)
+      return Object.entries(this.groupStreaks.missedPayments || {})
         .filter(([username, streak]) => streak >= STREAK_MISSED_PAYMENTS)
         .map(([username, streak]) => {
           const Largs = { user: this.userDisplayName(username), streak }
 
           return streak >= 2
-            ? this.L('{user} missed {streak} payments', Largs)
-            : this.L('{user} missed {streak} payment', Largs)
+            ? L('{user} missed {streak} payments', Largs)
+            : L('{user} missed {streak} payment', Largs)
         })
     },
     haventLoggedIn () { // group members that haven't logged in for the past 14 days or more
@@ -120,15 +119,57 @@ export default ({
         .map(([username]) => this.userDisplayName(username))
     },
     noVotes () {
-      return Object.entries(this.groupStreaks.noVotes)
+      return Object.entries(this.groupStreaks.noVotes || {})
         .filter(([username, streak]) => streak >= STREAK_MISSED_PROPSAL_VOTE)
         .map(([username, streak]) => {
           const Largs = { user: this.userDisplayName(username), streak }
 
           return streak >= 2
-            ? this.L('{user} missed {streak} votes', Largs)
-            : this.L('{user} missed {streak} vote', Largs)
+            ? L('{user} missed {streak} votes', Largs)
+            : L('{user} missed {streak} vote', Largs)
         })
+    },
+    groupStreaksSentences () {
+      return {
+        'fullMonthlyPledges': this.groupStreaks.fullMonthlyPledges === 1
+          ? L('100% completed TODO streak of: 1 month')
+          : L('100% completed TODO streak of: {streak} months', { streak: this.groupStreaks.fullMonthlyPledges || 0 }),
+        'fullMonthlySupport': this.groupStreaks.fullMonthlySupport === 1
+          ? L('Mincome goal streak of: 1 month')
+          : L('Mincome goal streak of: {streak} months', { streak: this.groupStreaks.fullMonthlySupport || 0 })
+      }
+    },
+    memberCountSentences () {
+      const argsCommon = {
+        ...this.LTags('strong'),
+        'span_': '<span class="link t-trigger">',
+        '_span': '</span>'
+      }
+      const argsMap = {
+        'onTimePayments': { ...argsCommon, membercount: this.onTimePayments.length },
+        'haventLoggedIn': { ...argsCommon, days: this.config.notLoggedInDays, membercount: this.haventLoggedIn.length },
+        'noIncomeDetails': { ...argsCommon, membercount: this.noIncomeDetails.length },
+        'missedPayments': { ...argsCommon, membercount: this.missedPayments.length },
+        'noVotes': { ...argsCommon, membercount: this.noVotes.length, proposalcount: this.config.proposalNumber }
+      }
+
+      return {
+        'onTimePayments': this.onTimePayments.length === 1
+          ? L('{span_}1 member{_span} has {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments'])
+          : L('{span_}{membercount} members{_span} have {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments']),
+        'haventLoggedIn': this.haventLoggedIn.length === 1
+          ? L('{span_}1 member{_span} hasn\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn'])
+          : L('{span_}{membercount} members{_span} haven\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn']),
+        'noIncomeDetails': this.noIncomeDetails.length === 1
+          ? L('{span_}1 member{_span} hasn\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails'])
+          : L('{span_}{membercount} members{_span} haven\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails']),
+        'missedPayments': this.missedPayments.length === 1
+          ? L('{span_}1 member{_span} has {strong_} missed payments {_strong}', argsMap['missedPayments'])
+          : L('{span_}{membercount} members{_span} have {strong_} missed payments {_strong}', argsMap['missedPayments']),
+        'noVotes': this.noVotes.length === 1
+          ? L('{span_}1 member{_span} hasn\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
+          : L('{span_}{membercount} members{_span} haven\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
+      }
     }
   }
 }: Object)

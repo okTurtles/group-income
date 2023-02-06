@@ -112,7 +112,7 @@ export default ({
     firstWho () {
       const who = this.who
       if (!Array.isArray(who)) return who
-      return who.length === 2 ? this.L('{who0} and {who1}', { who0: who[0], who1: who[1] }) : who[0]
+      return who.length === 2 ? L('{who0} and {who1}', { who0: who[0], who1: who[1] }) : who[0]
     },
 
     otherContributor () {

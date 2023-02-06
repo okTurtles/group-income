@@ -76,13 +76,18 @@ export default ({
     }
   },
   methods: {
-    ageTag (item: Object): number {
+    ageTag (item: Object): string {
       return timeSince(item.timestamp)
     },
     handleItemClick (item) {
       if (!this.ephemeral.isSelectingText) {
         this.markAsRead(item)
-        this.$router.push(item.linkTo).catch(console.warn)
+
+        if (item.sbpInvocation) {
+          sbp(...item.sbpInvocation)
+        } else if (item.linkTo) {
+          this.$router.push(item.linkTo).catch(console.warn)
+        }
         this.$emit('select')
       }
       this.ephemeral.isSelectingText = false

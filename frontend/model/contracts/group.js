@@ -1,3 +1,5 @@
+/* globals fetchServerTime */
+
 'use strict'
 
 import sbp from '@sbp/sbp'
@@ -90,7 +92,8 @@ function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
 function initGroupStreaks () {
   return {
     lastStreakPeriod: null,
-    fullMonthlyPledges: 0,
+    fullMonthlyPledges: 0, // group streaks for 100% monthly payments - every pledging members have completed their payments
+    fullMonthlySupport: 0, // group streaks for 100% monthly supports - total amount of pledges done is equal to the group's monthly contribution goal
     onTimePayments: {}, // { username: number, ... }
     missedPayments: {}, // { username: number, ... }
     noVotes: {} // { username: number, ... }
@@ -123,8 +126,8 @@ function updateAdjustedDistribution ({ period, getters }) {
   if (payments && payments.haveNeedsSnapshot) {
     const minimize = getters.groupSettings.minimizeDistribution
 
-    // We call updateLastLoggedIn in this else clause, instead of outside of it because
-    // in the `if` above, updateLastLoggedIn will get called by 'gi.actions/group/switch'
+    // IMPORTANT! This code must be kept in sync with updateAdjustedDistribution!
+    // TODO: see if it's possible to DRY this with the code inside of updateAdjustedDistribution
     payments.lastAdjustedDistribution = adjustedDistribution({
       distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize }),
       payments: getters.paymentsForPeriod(period),
@@ -193,17 +196,31 @@ function updateGroupStreaks ({ state, getters }) {
         : 0
   )
 
-  // --- update 'onTimePayments' & 'missedPayments' streaks for 'pledging' members of the group ---
   const thisPeriodPaymentDetails = getters.paymentsForPeriod(cPeriod)
+  const thisPeriodHaveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod)
   const filterMyItems = (array, username) => array.filter(item => item.from === username)
-  const isPledgingMember = username => {
-    const haveNeeds = thisPeriodPayments?.haveNeedsSnapshot || getters.haveNeedsForThisPeriod(cPeriod)
-    return haveNeeds.some(entry => entry.name === username && entry.haveNeed > 0)
-  }
+  const isPledgingMember = username => thisPeriodHaveNeeds.some(entry => entry.name === username && entry.haveNeed > 0)
 
+  // --- update 'fullMonthlySupport' streak. ---
+  const totalContributionGoal = thisPeriodHaveNeeds.reduce(
+    (total, item) => item.haveNeed < 0 ? total + (-1 * item.haveNeed) : total, 0
+  )
+  const totalPledgesDone = thisPeriodPaymentDetails.reduce(
+    (total, paymentItem) => paymentItem.amount + total, 0
+  )
+  const fullMonthlySupportCurrent = vueFetchInitKV(streaks, 'fullMonthlySupport', 0)
+
+  Vue.set(
+    streaks,
+    'fullMonthlySupport',
+    totalPledgesDone > 0 && totalPledgesDone >= totalContributionGoal ? fullMonthlySupportCurrent + 1 : 0
+  )
+
+  // --- update 'onTimePayments' & 'missedPayments' streaks for 'pledging' members of the group ---
   for (const username in getters.groupProfiles) {
     if (!isPledgingMember(username)) continue
 
+    // 1) update 'onTimePayments'
     const myMissedPaymentsInThisPeriod = filterMyItems(thisPeriodDistribution, username)
     const userCurrentStreak = vueFetchInitKV(streaks.onTimePayments, username, 0)
     Vue.set(
@@ -241,14 +258,10 @@ sbp('chelonia/defineContract', {
       username: string,
       identityContractID: string
     }),
-    create () {
+    async create () {
       const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
-        // TODO: We may want to get the time from the server instead of relying on
-        // the client in case the client's clock isn't set correctly.
-        // the only issue here is that it involves an async function...
-        // See: https://github.com/okTurtles/group-income/issues/531
-        createdDate: new Date().toISOString(),
+        createdDate: await fetchServerTime(),
         username,
         identityContractID
       }
@@ -287,6 +300,10 @@ sbp('chelonia/defineContract', {
         }
       }
       return profiles
+    },
+    groupCreatedDate (state, getters) {
+      const creator = getters.groupSettings.groupCreator
+      return getters.groupProfile(creator).joinedDate
     },
     groupMincomeAmount (state, getters) {
       return getters.groupSettings.mincomeAmount
@@ -422,6 +439,9 @@ sbp('chelonia/defineContract', {
     groupStreaks (state, getters): Object {
       return getters.currentGroupState.streaks || {}
     },
+    groupTotalPledgeAmount (state, getters): number {
+      return getters.currentGroupState.totalPledgeAmount || 0
+    },
     withGroupCurrency (state, getters) {
       // TODO: If this group has no defined mincome currency, not even a default one like
       //       USD, then calling this function is probably an error which should be reported.
@@ -535,7 +555,8 @@ sbp('chelonia/defineContract', {
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
           },
-          chatRooms: {}
+          chatRooms: {},
+          totalPledgeAmount: 0
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -618,6 +639,11 @@ sbp('chelonia/defineContract', {
           } else {
             updateCurrentDistribution({ contractID, meta, state, getters })
           }
+
+          // NOTE: if 'PAYMENT_REVERSED' is implemented, subtract
+          //       the amount from 'totalPledgeAmount'.
+          const currentTotalPledgeAmount = vueFetchInitKV(state, 'totalPledgeAmount', 0)
+          state.totalPledgeAmount = currentTotalPledgeAmount + payment.data.amount
         }
       },
       sideEffect ({ meta, contractID, data }, { state, getters }) {
@@ -627,6 +653,7 @@ sbp('chelonia/defineContract', {
 
           if (loggedIn.username === payment.data.toUser) {
             sbp('gi.notifications/emit', 'PAYMENT_RECEIVED', {
+              createdDate: meta.createdDate,
               groupID: contractID,
               creator: meta.username,
               paymentHash: data.paymentHash,
@@ -651,6 +678,7 @@ sbp('chelonia/defineContract', {
 
         if (data.toUser === loggedIn.username) {
           sbp('gi.notifications/emit', 'PAYMENT_THANKYOU_SENT', {
+            createdDate: meta.createdDate,
             groupID: contractID,
             creator: meta.username, // username of the from user. to be used with sbp('namespace/lookup') in 'AvatarUser.vue'
             fromUser: data.fromUser, // display name of the from user
@@ -711,6 +739,7 @@ sbp('chelonia/defineContract', {
 
         if (isActionYoungerThanUser(meta, myProfile)) {
           sbp('gi.notifications/emit', 'NEW_PROPOSAL', {
+            createdDate: meta.createdDate,
             groupID: contractID,
             creator: meta.username,
             subtype: typeToSubTypeMap[data.proposalType]
@@ -765,6 +794,7 @@ sbp('chelonia/defineContract', {
         if (proposal?.dateClosed &&
           isActionYoungerThanUser(meta, myProfile)) {
           sbp('gi.notifications/emit', 'PROPOSAL_CLOSED', {
+            createdDate: meta.createdDate,
             groupID: contractID,
             creator: meta.username,
             proposalStatus: proposal.status
@@ -895,6 +925,7 @@ sbp('chelonia/defineContract', {
             sbp('gi.notifications/emit', // emit a notification for a member removal.
               memberRemovedThemselves ? 'MEMBER_LEFT' : 'MEMBER_REMOVED',
               {
+                createdDate: meta.createdDate,
                 groupID: contractID,
                 username: memberRemovedThemselves ? meta.username : data.member
               })
@@ -983,6 +1014,7 @@ sbp('chelonia/defineContract', {
 
           if (isActionYoungerThanUser(meta, myProfile)) {
             sbp('gi.notifications/emit', 'MEMBER_ADDED', { // emit a notification for a member addition.
+              createdDate: meta.createdDate,
               groupID: contractID,
               username: meta.username
             })
@@ -1015,9 +1047,25 @@ sbp('chelonia/defineContract', {
         mincomeAmount: x => typeof x === 'number' && x > 0,
         mincomeCurrency: x => typeof x === 'string'
       }),
-      process ({ meta, data }, { state }) {
+      process ({ contractID, meta, data }, { state, getters }) {
+        // If mincome has been updated, cache the old value and use it later to determine if the user should get a 'MINCOME_CHANGED' notification.
+        const mincomeCache = 'mincomeAmount' in data ? state.settings.mincomeAmount : null
+
         for (const key in data) {
           Vue.set(state.settings, key, data[key])
+        }
+
+        if (mincomeCache !== null) {
+          sbp('gi.contracts/group/pushSideEffect', contractID,
+            ['gi.contracts/group/sendMincomeChangedNotification',
+              contractID,
+              meta,
+              {
+                toAmount: data.mincomeAmount,
+                fromAmount: mincomeCache
+              }
+            ]
+          )
         }
       }
     },
@@ -1275,6 +1323,54 @@ sbp('chelonia/defineContract', {
         await sbp('gi.db/archive/save', archPaymentsKey, archPayments)
       }
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
+    },
+    'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data) {
+      // NOTE: When group's mincome has changed, below actions should be taken.
+      // - When mincome has increased, send 'MINCOME_CHANGED' notification to both receiving/pledging members.
+      // - When mincome has decreased, and the changed mincome is below the monthly income of a receiving member, then
+      //   1) automatically switch that user to a 'pledging' member with 0 contribution,
+      //   2) pop out the prompt message notifying them of this automatic change,
+      //   3) and send 'MINCOME_CHANGED' notification.
+      const myProfile = sbp('state/vuex/getters').ourGroupProfile
+
+      if (isActionYoungerThanUser(meta, myProfile) && myProfile.incomeDetailsType) {
+        const memberType = myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledging' : 'receiving'
+        const mincomeIncreased = data.toAmount > data.fromAmount
+        const actionNeeded = mincomeIncreased ||
+          (memberType === 'receiving' &&
+          !mincomeIncreased &&
+          myProfile.incomeAmount < data.fromAmount &&
+          myProfile.incomeAmount > data.toAmount)
+
+        if (!actionNeeded) { return }
+
+        if (memberType === 'receiving' && !mincomeIncreased) {
+          await sbp('gi.actions/group/groupProfileUpdate', {
+            contractID,
+            data: {
+              incomeDetailsType: 'pledgeAmount',
+              pledgeAmount: 0
+            }
+          })
+
+          await sbp('gi.actions/group/displayMincomeChangedPrompt', {
+            contractID,
+            data: {
+              amount: data.toAmount,
+              memberType,
+              increased: mincomeIncreased
+            }
+          })
+        }
+
+        await sbp('gi.notifications/emit', 'MINCOME_CHANGED', {
+          groupID: contractID,
+          creator: meta.username,
+          to: data.toAmount,
+          memberType,
+          increased: mincomeIncreased
+        })
+      }
     }
   }
 })
