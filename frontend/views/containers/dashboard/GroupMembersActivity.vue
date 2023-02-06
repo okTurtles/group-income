@@ -10,9 +10,13 @@
           .c-item
             .icon-star.icon-round.has-background-success.has-text-success
             .c-item-copy
-              i18n(
-                :args='{ ...LTags("strong"), streak: groupStreaks.fullMonthlyPledges || 0 }'
-              ) Group has a streak of {strong_} 100% Support of {streak} months{_strong}
+              strong(v-safe-html='groupStreaksSentences.fullMonthlyPledges')
+
+        li.c-item.wrapper
+          .c-item
+            .icon-star.icon-round.has-background-success.has-text-success
+            .c-item-copy
+              strong(v-safe-html='groupStreaksSentences.fullMonthlySupport')
 
         li.c-item-wrapper
           .c-item
@@ -88,7 +92,8 @@ export default ({
     onTimePayments () {
       return Object.entries(this.groupStreaks.onTimePayments || {})
         .filter(([username, streak]) => streak >= STREAK_ON_TIME_PAYMENTS)
-        .map(([username]) => this.userDisplayName(username))
+        .sort((a, b) => b[1] - a[1])
+        .map(([username, streak]) => L('{user} - {count} month streak', { user: this.userDisplayName(username), count: streak }))
     },
     missedPayments () {
       return Object.entries(this.groupStreaks.missedPayments || {})
@@ -124,6 +129,16 @@ export default ({
             : L('{user} missed {streak} vote', Largs)
         })
     },
+    groupStreaksSentences () {
+      return {
+        'fullMonthlyPledges': this.groupStreaks.fullMonthlyPledges === 1
+          ? L('100% completed TODO streak of: 1 month')
+          : L('100% completed TODO streak of: {streak} months', { streak: this.groupStreaks.fullMonthlyPledges || 0 }),
+        'fullMonthlySupport': this.groupStreaks.fullMonthlySupport === 1
+          ? L('Mincome goal streak of: 1 month')
+          : L('Mincome goal streak of: {streak} months', { streak: this.groupStreaks.fullMonthlySupport || 0 })
+      }
+    },
     memberCountSentences () {
       const argsCommon = {
         ...this.LTags('strong'),
@@ -139,20 +154,20 @@ export default ({
       }
 
       return {
-        'onTimePayments': this.onTimePayments.length <= 1
-          ? L('{span_}{membercount} member{_span} have {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments'])
+        'onTimePayments': this.onTimePayments.length === 1
+          ? L('{span_}1 member{_span} has {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments'])
           : L('{span_}{membercount} members{_span} have {strong_} on-time payment streaks{_strong}', argsMap['onTimePayments']),
-        'haventLoggedIn': this.haventLoggedIn.length <= 1
-          ? L('{span_}{membercount} member{_span} haven\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn'])
+        'haventLoggedIn': this.haventLoggedIn.length === 1
+          ? L('{span_}1 member{_span} hasn\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn'])
           : L('{span_}{membercount} members{_span} haven\'t {strong_} logged in past {days} days or more {_strong}', argsMap['haventLoggedIn']),
-        'noIncomeDetails': this.noIncomeDetails.length <= 1
-          ? L('{span_}{membercount} member{_span} haven\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails'])
+        'noIncomeDetails': this.noIncomeDetails.length === 1
+          ? L('{span_}1 member{_span} hasn\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails'])
           : L('{span_}{membercount} members{_span} haven\'t {strong_} entered income details{_strong}', argsMap['noIncomeDetails']),
-        'missedPayments': this.missedPayments.length <= 1
-          ? L('{span_}{membercount} member{_span} have {strong_} missed payments {_strong}', argsMap['missedPayments'])
+        'missedPayments': this.missedPayments.length === 1
+          ? L('{span_}1 member{_span} has {strong_} missed payments {_strong}', argsMap['missedPayments'])
           : L('{span_}{membercount} members{_span} have {strong_} missed payments {_strong}', argsMap['missedPayments']),
-        'noVotes': this.noVotes.length <= 1
-          ? L('{span_}{membercount} member{_span} haven\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
+        'noVotes': this.noVotes.length === 1
+          ? L('{span_}1 member{_span} hasn\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
           : L('{span_}{membercount} members{_span} haven\'t {strong_} voted in the last {proposalcount} proposals {_strong}', argsMap['noVotes'])
       }
     }
