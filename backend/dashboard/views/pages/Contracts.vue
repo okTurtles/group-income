@@ -1,15 +1,15 @@
 <template lang='pug'>
 page-template
-  template(#title='') {{ L('Contacts') }}
+  template(#title='') {{ L('Contracts') }}
 
-  i18n(tag='p') This is 'contacts' page
+  i18n(tag='p') This is 'contracts' page
 </template>
 
 <script>
 import PageTemplate from './PageTemplate.vue'
 
 export default {
-  name: 'Contacts',
+  name: 'Contracts',
   components: {
     PageTemplate
   }

@@ -3,6 +3,7 @@ v-style.
   :root {
     --black: {{colors.black}};
     --white: {{colors.white}};
+    --text_black: {{colors.text_black}};
     --primary_blue: {{colors.primary_blue}};
     --primary_purple: {{colors.primary_purple}};
     --secondary_purple_0: {{colors.secondary_purple_0}};

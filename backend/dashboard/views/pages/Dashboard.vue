@@ -18,22 +18,22 @@ page-template
     i18n.section-title Users / Space
 
     .c-flex-container
-      .c-joined-users
-        i18n.c-user-list-label.is-title-4 Recent users
+      .summary-list
+        i18n.summary-list-label Recent users
 
-        ul.c-user-list
-          li.c-user-list-ths
+        ul
+          li.summary-list-item.c-user-list-ths
             i18n(tag='label') Name
             i18n(tag='label') Joined on
-          li.c-list-item(v-for='user in ephemeral.recentUsers' :key='user.name')
-            .c-username {{ user.name }}
-            .c-joined-date {{ humanDate(user.joined) }}
+          li.summary-list-item(v-for='user in ephemeral.recentUsers' :key='user.name')
+            span {{ user.name }}
+            span {{ humanDate(user.joined) }}
 
-      .c-space-usage-summary
-        i18n.c-space-usage-label.is-title-4 Sapce usage
+      .summary-list.is-outlined
+        i18n.summary-list-label Sapce usage
 
-        ul.c-space-usage-list
-          li.c-list-item(v-for='(item, key) in ephemeral.spaceUsage' :key='key')
+        ul
+          li.summary-list-item(v-for='(item, key) in ephemeral.spaceUsage' :key='key')
             label {{ item.name }}
             span.c-usage-value {{ item.value }} {{ item.unit }}
 </template>
@@ -105,53 +105,10 @@ export default {
   gap: 1.75rem;
 }
 
-.c-joined-users,
-.c-space-usage-summary {
-  position: relative;
-  padding: 1.5rem;
-  border-radius: 1rem;
-  width: 100%;
-
-  @include from($phone_narrow) {
-    max-width: 22.25rem;
-  }
-}
-
-.c-joined-users {
-  background-color: $background_1;
-}
-
-.c-space-usage-summary {
-  background-color: $background_0;
-  border: 1px solid $text_0;
-}
-
-.c-user-list-label,
-.c-space-usage-label {
-  display: block;
-  padding-bottom: 0.5rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid $border;
-  text-transform: uppercase;
-}
-
-.c-user-list-ths,
-.c-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  > * { display: inline-block; }
-}
-
 .c-user-list-ths {
   font-weight: 600;
-  font-size: 0.9em;
+  font-size: $size_5;
   margin-bottom: 0.25rem;
-}
-
-.c-list-item {
-  line-height: 1.8;
 }
 
 .c-usage-value {

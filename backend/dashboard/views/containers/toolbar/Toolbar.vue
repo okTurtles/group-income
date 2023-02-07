@@ -1,17 +1,35 @@
 <template lang="pug">
 .c-toolbar
-  button.is-icon.hide-tablet.c-nav-menu(@click='$emit("open-nav")')
-    i.icon-menu.c-menu-icon
+  .c-flex-block
+    button.is-icon.hide-tablet.c-nav-menu(@click='$emit("open-nav")')
+      i.icon-menu.c-btn-icon
 
-  .c-app-title
-    i.icon-moonstar.c-logo
-    h1.is-title-3 Chelonia
+    .c-app-title
+      i.icon-moonstar.c-logo
+      h1.is-title-3 Chelonia
 
+  .c-flex-block
+    button.is-icon.c-theme-toggle(@click='toggleTheme')
+      i(:class='`icon-${themeToggleIcon} c-btn-icon`')
 </template>
 
 <script>
+import { mapState } from 'vuex'
+import { THEME_LIGHT, THEME_DARK } from '@model/themes.js'
+
 export default {
-  name: 'Toolbar'
+  name: 'Toolbar',
+  computed: {
+    ...mapState(['theme']),
+    themeToggleIcon () {
+      return this.theme === THEME_LIGHT ? 'moon' : 'sun'
+    }
+  },
+  methods: {
+    toggleTheme () {
+      this.$store.commit('setTheme', this.theme === THEME_LIGHT ? THEME_DARK : THEME_LIGHT)
+    }
+  }
 }
 </script>
 
@@ -22,26 +40,32 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   border-bottom: 1px solid $border;
   padding: 0 1rem;
 }
 
-.c-app-title {
-  display: flex;
+.c-flex-block {
+  display: block;
   align-items: center;
-
-  h1 {
-    letter-spacing: 1px;
-  }
 }
 
-.c-logo {
-  display: inline-block;
-  font-weight: 600;
-  font-size: 1.5rem;
-  line-height: 1;
-  margin-top: 2px;
-  margin-right: 0.25rem;
+.c-app-title {
+  h1 {
+    display: inline-block;
+    letter-spacing: 1px;
+  }
+
+  .c-logo {
+    position: relative;
+    display: inline-block;
+    color: inherit;
+    font-weight: 600;
+    font-size: 1.5rem;
+    line-height: 1;
+    margin-right: 0.25rem;
+    transform: translateY(4px);
+  }
 }
 
 .c-nav-menu {
@@ -51,7 +75,7 @@ export default {
   border-radius: 6px;
 }
 
-.c-menu-icon {
+.c-btn-icon {
   display: inline-block;
   margin-top: 2px;
   font-size: 1.2rem;

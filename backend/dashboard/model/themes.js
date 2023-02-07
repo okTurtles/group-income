@@ -1,6 +1,7 @@
 const common = {
   black: '#000000',
   white: '#FFFFFF',
+  text_black: '#1C1C1C',
   primary_blue: '#E3F5FF',
   primary_purple: '#E5ECF6',
   secondary_purple_0: '#95A4FC',
@@ -35,6 +36,8 @@ const dark = {
   emphasis: '#C6C7F8'
 }
 
+export const THEME_LIGHT = 'light'
+export const THEME_DARK = 'dark'
 export default {
   light,
   dark

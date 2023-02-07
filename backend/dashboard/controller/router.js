@@ -5,7 +5,7 @@ import Router from 'vue-router'
 
 // pages
 import Dashboard from '@pages/Dashboard.vue'
-import Contacts from '@pages/Contacts.vue'
+import Contracts from '@pages/Contracts.vue'
 import Users from '@pages/Users.vue'
 import Accounts from '@pages/Accounts.vue'
 import Billing from '@pages/Billing.vue'
@@ -26,10 +26,10 @@ const router: any = new Router({
       component: Dashboard
     },
     {
-      path: '/contacts',
-      meta: { title: 'Contacts' },
-      name: 'Contacts',
-      component: Contacts
+      path: '/contracts',
+      meta: { title: 'Contracts' },
+      name: 'Contracts',
+      component: Contracts
     },
     {
       path: '/users',

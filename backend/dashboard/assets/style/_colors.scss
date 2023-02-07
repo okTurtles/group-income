@@ -1,5 +1,6 @@
 $black: var(--black);
 $white: var(--white);
+$text_black: var(--text_black);
 $warning: var(--warning);
 $danger: var(--danger);
 $border: var(--border);
@@ -20,13 +21,14 @@ $background_active: var(--background_active);
 $text_0: var(--text_0);
 $text_1: var(--text_1);
 
+/* NOTE: <variable-name> : (<light-theme-value>, <dark-theme-value>) */
 $colors_map: (
-  /* NOTE: <variable-name> : (<light-theme-value>, <dark-theme-value>) */
   button-primary-bg-color: (#1c1c1c, #c6c7f8),
   button-primary-text-color: (#fff, #1c1c1c),
   button-outline-bg-color: (rgba(0, 0, 0, 0), rgba(0, 0, 0, 0)),
   button-outline-text-color: (#1c1c1c, #fff),
-  button-outline-border-color: (rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1))
+  button-outline-border-color: (rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)),
+  stat-card-icon-color: (var(--text_1), var(--text_black))
 );
 
 // "light-theme" custom-variable declarations

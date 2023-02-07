@@ -34,8 +34,9 @@ body {
   font-family: "Inter", "Helvetica Neue", "sans-serif";
   font-style: normal;
   font-weight: normal;
-  font-size: $size_4; // 14px
+  font-size: $size_5; // 14px
   line-height: 1.5; // 21/14
+  color: $text_0;
 }
 
 h1,
@@ -55,8 +56,8 @@ p {
 // $size_4 = 0.875rem = 14px = $size_normal
 // $size_5 =  0.75rem = 12px = $size_small
 
-$titles: $size_1, $size_2, $size_3, $size_4;
-$lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
+$titles: $size_1, $size_2, $size_3, $size_4, $size_5;
+$lineHeight: 3, 2.25, 1.6875, 1.3125, 1.175, 1;
 // From line height: 48px, 36px, 27px, 21px, 16px
 
 @each $size in $titles {
@@ -68,17 +69,6 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
     font-size: $size;
     line-height: #{nth($lineHeight, $i)}rem;
   }
-}
-
-.section-title {
-  position: relative;
-  display: block;
-  color: $text_1;
-  font-size: 1rem;
-  font-family: "Poppins";
-  letter-spacing: 1px;
-  margin-bottom: 0.75rem;
-  padding-left: 0.25rem;
 }
 
 .has-text-bold {

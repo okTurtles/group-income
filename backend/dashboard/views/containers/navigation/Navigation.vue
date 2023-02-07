@@ -3,7 +3,7 @@ nav.c-navigation(:class='{ "is-active": ephemeral.isActive }')
   .c-navigation-wrapper
     .c-navigation-header
       h3.sr-only Navigation menu
-      h3.is-title-4.c-header Navigation
+      i18n.section-title.c-header Navigation
 
       button.hide-tablet.is-icon.c-close-btn(@click='close')
         i.icon-cross
@@ -33,10 +33,10 @@ export default {
         isActive: false,
         navList: [
           { id: 'dashboard', name: L('Dashboard'), to: '/', icon: 'chalkboard' },
-          { id: 'contacts', name: L('Contacts'), to: '/contacts', icon: 'address-book' },
+          { id: 'contracts', name: L('Contracts'), to: '/contracts', icon: 'network' },
           { id: 'users', name: L('Users'), to: '/users', icon: 'users' },
-          { id: 'accounts', name: L('Accounts'), to: '/accounts', icon: 'suitcase' },
-          { id: 'billing', name: L('Billing'), to: '/billing', icon: 'list-bullets' }
+          { id: 'accounts', name: L('Accounts'), to: '/accounts', icon: 'address-book' },
+          { id: 'billing', name: L('Billing'), to: '/billing', icon: 'currency-circle' }
         ]
       }
     }
@@ -85,11 +85,11 @@ export default {
 
 .c-navigation-header {
   position: relative;
-  align-items: center;
-  padding: 0.35rem 0;
+  display: flex;
+  padding: 0.7rem 0;
 
   @include tablet {
-    padding: 1.5rem 0 0.5rem;
+    padding: 1.75rem 0 0.75rem;
   }
 
   .c-close-btn {
@@ -97,6 +97,8 @@ export default {
     top: 50%;
     right: 0.75rem;
     transform: translateY(-50%);
+    width: 1.75rem;
+    height: 1.75rem;
 
     i {
       display: inline-block;
@@ -108,16 +110,12 @@ export default {
 
 .c-header {
   position: relative;
-  font-weight: 400;
+  display: block;
   letter-spacing: 1px;
-  display: flex;
-  align-items: center;
-  text-decoration: underline;
-  color: $text_1;
   width: 100%;
-  height: 2rem;
-  line-height: 2rem;
   padding-left: 1.4rem;
+  margin-bottom: 0;
+  font-size: 1em;
 }
 
 .c-logo {

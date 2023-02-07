@@ -38,7 +38,7 @@ export default {
   align-items: center;
   height: 2.6rem;
   padding: 0 1rem;
-  font-size: $size_4;
+  font-size: $size_5;
   cursor: pointer;
   border-radius: 0.5rem;
   overflow: hidden;
@@ -65,7 +65,7 @@ export default {
   &-icon {
     margin-top: 4px;
     flex-shrink: 0;
-    font-size: 1.5em;
+    font-size: 1.65em;
     line-height: 1;
   }
 }

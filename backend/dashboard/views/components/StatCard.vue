@@ -62,6 +62,8 @@ export default {
 
 .c-stat-desc {
   display: inline-block;
+  font-size: $size_5;
+  color: $text_black;
 
   @include from($phone_narrow) {
     margin-bottom: 0.25rem;
@@ -71,6 +73,7 @@ export default {
 .c-stat-value {
   letter-spacing: 1px;
   line-height: 1;
+  color: $text_black;
 
   @include from($phone_narrow) {
     line-height: 1.2;
@@ -82,7 +85,7 @@ export default {
   bottom: 0.2rem;
   right: 0.85rem;
   display: block;
-  color: $text_1;
+  color: var(--stat-card-icon-color);
   opacity: 0.225;
   font: {
     size: 2.875rem;
