@@ -5,7 +5,8 @@
 
     form(novalidate @submit.prevent='' data-test='updateNotificationSettings')
       fieldset.is-column
-        legend.legend Send notifications for:
+        legend.legend
+          i18n Send notifications for:
         label.radio
           input.input(
             type='radio'
@@ -13,7 +14,7 @@
             :value='options.ALL_MESSAGES'
             v-model='$v.form.messageNotification.$model'
           )
-          span All new messages
+          i18n All new messages
         label.radio
           input.input(
             type='radio'
@@ -21,7 +22,7 @@
             :value='options.DIRECT_MESSAGES'
             v-model='$v.form.messageNotification.$model'
           )
-          span Direct messages and mentions
+          i18n Direct messages and mentions
         label.radio
           input.input(
             type='radio'
@@ -29,10 +30,11 @@
             :value='options.NOTHING'
             v-model='$v.form.messageNotification.$model'
           )
-          span Nothing
+          i18n Nothing
 
       fieldset.is-column
-        legend.legend Sounds:
+        legend.legend
+          i18n Sounds:
         label.radio
           input.input(
             type='radio'
@@ -40,7 +42,7 @@
             :value='options.ALL_MESSAGES'
             v-model='$v.form.messageSound.$model'
           )
-          span Play sounds for all new messages
+          i18n Play sounds for all new messages
         label.radio
           input.input(
             type='radio'
@@ -48,7 +50,7 @@
             :value='options.DIRECT_MESSAGES'
             v-model='$v.form.messageSound.$model'
           )
-          span Play sounds for direct messages and mentions
+          i18n Play sounds for direct messages and mentions
         label.radio
           input.input(
             type='radio'
@@ -56,7 +58,7 @@
             :value='options.NOTHING'
             v-model='$v.form.messageSound.$model'
           )
-          span Mute all sounds from chat notifications
+          i18n Mute all sounds from chat notifications
 
       .buttons
         i18n.is-outlined(tag='button' @click='close') Cancel

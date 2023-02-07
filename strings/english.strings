@@ -210,6 +210,12 @@
 /* views/containers/proposals/PropositionsAllModal.vue */
 "All proposals" = "All proposals";
 
+/* views/containers/user-settings/NotificationSettings.vue */
+"Allow email notifications" = "Allow email notifications";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Allow push notifications" = "Allow push notifications";
+
 /* model/contracts/mailbox.js */
 "Already existing direct message channel." = "Already existing direct message channel.";
 
@@ -315,7 +321,7 @@
 /* views/containers/navigation/Navigation.vue */
 "Blog" = "Blog";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/access/PasswordModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
 "Cancel" = "Cancel";
 
 /* views/containers/payments/PaymentDetail.vue */
@@ -402,7 +408,7 @@
 /* views/pages/GroupChat.vue */
 "Channels" = "Channels";
 
-/* views/containers/navigation/Navigation.vue, views/pages/GroupChat.vue */
+/* views/containers/navigation/Navigation.vue, views/containers/user-settings/NotificationSettings.vue, views/pages/GroupChat.vue */
 "Chat" = "Chat";
 
 /* views/components/group-creation-steps/GroupMincome.vue */
@@ -627,8 +633,11 @@
 /* views/components/ProfileCard.vue */
 "Edit payment info" = "Edit payment info";
 
-/* views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
+/* views/containers/access/SignupForm.vue, views/containers/user-settings/NotificationSettings.vue, views/containers/user-settings/UserProfile.vue */
 "Email" = "Email";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Emails sent" = "Emails sent";
 
 /* views/pages/Home.vue */
 "Enter an existing group using your username." = "Enter an existing group using your username.";
@@ -810,6 +819,12 @@
 /* views/containers/proposals/GenericProposal.vue */
 "Generic Proposal" = "Generic Proposal";
 
+/* views/containers/user-settings/NotificationSettings.vue */
+"Get notified when other members sent you messages. You can also change frequency of these emails." = "Get notified when other members sent you messages. You can also change frequency of these emails.";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Get push notifications to find out what's going on when you're not on Group Income. You can turn them off anytime." = "Get push notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.";
+
 /* views/pages/Contributions.vue */
 "Giving" = "Giving";
 
@@ -966,6 +981,12 @@
 /* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Kicked a member from {title}: {displayName}";
 
+/* views/containers/user-settings/NotificationSettings.vue */
+"Know when new payments are due or when other members sent contributions your way." = "Know when new payments are due or when other members sent contributions your way.";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Know when new proposals are created, their income and get a reminder to vote if they are about to expire." = "Know when new proposals are created, their income and get a reminder to vote if they are about to expire.";
+
 /* views/containers/group-settings/GroupLeaveModal.vue */
 "LEAVE {GROUP_NAME}" = "LEAVE {GROUP_NAME}";
 
@@ -1089,9 +1110,6 @@
 /* views/containers/chatroom/MessageActions.vue */
 "More options" = "More options";
 
-/* views/containers/chatroom/ChatNav.vue */
-"Mute chat" = "Mute chat";
-
 /* views/containers/user-settings/settings.js */
 "My account" = "My account";
 
@@ -1203,14 +1221,11 @@
 /* views/containers/notifications/NotificationList.vue */
 "Nothing to see here... yet!" = "Nothing to see here... yet!";
 
-/* views/containers/user-settings/NotificationSettings.vue */
-"Notification Permission" = "Notification Permission";
-
-/* views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/settings.js */
-"Notifications" = "Notifications";
-
 /* views/pages/GroupChat.vue */
 "Notification settings" = "Notification settings";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/settings.js */
+"Notifications" = "Notifications";
 
 /* views/containers/notifications/NotificationList.vue */
 "OLDER" = "OLDER";
@@ -1350,6 +1365,9 @@
 /* views/containers/payments/PaymentsHistoryModal.vue */
 "Payments History" = "Payments History";
 
+/* views/containers/user-settings/NotificationSettings.vue */
+"Payments and contributions" = "Payments and contributions";
+
 /* views/containers/contributions/ContributionsWidget.vue, views/containers/payments/MonthOverview.vue */
 "Payments received" = "Payments received";
 
@@ -1449,7 +1467,7 @@
 /* views/containers/proposals/ProposalItem.vue */
 "Proposal rejected on {date} with {nay} against out of {total} total votes." = "Proposal rejected on {date} with {nay} against out of {total} total votes.";
 
-/* views/containers/proposals/ProposalsWidget.vue */
+/* views/containers/proposals/ProposalsWidget.vue, views/containers/user-settings/NotificationSettings.vue */
 "Proposals" = "Proposals";
 
 /* views/containers/group-settings/GroupRulesSettings.vue */
@@ -1469,6 +1487,9 @@
 
 /* views/containers/chatroom/ChatMembersAllModal.vue */
 "Public channel" = "Public channel";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Push notifications" = "Push notifications";
 
 /* views/containers/payments/SendPaymentsViaLightning.vue */
 "QR code payment" = "QR code payment";
@@ -1560,9 +1581,6 @@
 /* views/containers/chatroom/SendArea.vue */
 "Replying to {replyingTo}: \"{replyingMessage}\"" = "Replying to {replyingTo}: \"{replyingMessage}\"";
 
-/* views/containers/chatroom/ChatNav.vue */
-"Report a problem" = "Report a problem";
-
 /* views/containers/proposals/MemberRequest.vue */
 "Request Approved." = "Request Approved.";
 
@@ -1584,7 +1602,7 @@
 /* views/containers/group-settings/InvitationsTable.vue */
 "Revoked" = "Revoked";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Save";
 
 /* views/containers/user-settings/UserProfile.vue */
@@ -1683,7 +1701,7 @@
 /* views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/ErrorPage.vue */
 "Server error" = "Server error";
 
-/* views/components/tabs/TabWrapper.vue, views/containers/chatroom/ChatNav.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/NotificationSettings.vue, views/containers/user-settings/UserSettingsModal.vue */
+/* views/components/tabs/TabWrapper.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/UserSettingsModal.vue */
 "Settings" = "Settings";
 
 /* views/containers/user-settings/AppLogs.vue */
@@ -1863,7 +1881,7 @@
 /* views/containers/contributions/Contribution.vue */
 "This contribution already exists." = "This contribution already exists.";
 
-/* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/proposals/Mincome.vue, views/pages/GroupSettings.vue */
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/proposals/Mincome.vue, views/pages/GroupSettings.vue */
 "This field is required" = "This field is required";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
@@ -2072,9 +2090,6 @@
 
 /* views/pages/Contributions.vue */
 "When other members pledge a monetary or non-monetary contribution, they will appear here." = "When other members pledge a monetary or non-monetary contribution, they will appear here.";
-
-/* views/containers/user-settings/NotificationSettings.vue */
-"When you get chat mentions, browser notification will pop up." = "When you get chat mentions, browser notification will pop up.";
 
 /* views/containers/payments/RecordPayment.vue */
 "Who did you send money to?" = "Who did you send money to?";

@@ -236,17 +236,12 @@ export default ({
       if (this.isDirectMessage()) {
         this.addedMembers = Object.keys(this.chatRoomUsers)
           .map(username => {
-            return username === this.ourUsername
-              ? {
-                  displayName: this.globalProfile(username).displayName,
-                  username,
-                  departedDate: null
-                }
-              : {
-                  displayName: this.ourContactProfiles[username].displayName,
-                  username,
-                  departedDate: null
-                }
+            const profile = username === this.ourUsername ? this.globalProfile(username) : this.ourContactProfiles[username]
+            return {
+              displayName: profile.displayName,
+              username,
+              departedDate: null
+            }
           })
         // TODO: every user needs to sync his contacts and also users from group messages
         // https://okturtles.slack.com/archives/C0EH7P20Y/p1669109352107659
