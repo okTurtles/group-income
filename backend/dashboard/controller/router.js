@@ -9,6 +9,7 @@ import Contracts from '@pages/Contracts.vue'
 import Users from '@pages/Users.vue'
 import Accounts from '@pages/Accounts.vue'
 import Billing from '@pages/Billing.vue'
+import DesignSystem from '@pages/design-system/CheloniaDesignSystem.vue'
 
 Vue.use(Router)
 
@@ -48,6 +49,12 @@ const router: any = new Router({
       meta: { title: 'Billing' },
       name: 'Billing',
       component: Billing
+    },
+    {
+      path: '/design-system',
+      meta: { title: 'Design system' },
+      name: 'DesignSystem',
+      component: DesignSystem
     },
     {
       path: '*',

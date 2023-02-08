@@ -47,7 +47,7 @@ button,
     width: 2rem;
     height: 2rem;
     padding: 0;
-    border: 1px solid var(--button-outline-border-color);
+    border: 1px solid $border;
     background-color: var(--button-outline-bg-color);
     color: var(--button-outline-text-color);
 

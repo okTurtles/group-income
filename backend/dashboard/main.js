@@ -34,6 +34,11 @@ async function startApp () {
         isNavOpen: false
       }
     },
+    computed: {
+      noNavigation () {
+        return ['/design-system'].includes(this.$route.path)
+      }
+    },
     methods: {
       openNav () {
         this.$refs.navigation.open()

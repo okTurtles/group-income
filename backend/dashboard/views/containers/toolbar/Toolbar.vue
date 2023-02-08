@@ -1,12 +1,12 @@
 <template lang="pug">
 .c-toolbar
   .c-flex-block
-    button.is-icon.hide-tablet.c-nav-menu(@click='$emit("open-nav")')
+    button.is-icon.hide-tablet.c-nav-menu(v-if='!noNavigation' @click='$emit("open-nav")')
       i.icon-menu.c-btn-icon
 
     .c-app-title
       i.icon-moonstar.c-logo
-      h1.is-title-3 Chelonia
+      h1.is-title-3(@click='$router.push({ path: "/" })') Chelonia
 
   .c-flex-block
     button.is-icon.c-theme-toggle(@click='toggleTheme')
@@ -19,6 +19,9 @@ import { THEME_LIGHT, THEME_DARK } from '@model/themes.js'
 
 export default {
   name: 'Toolbar',
+  props: {
+    noNavigation: Boolean
+  },
   computed: {
     ...mapState(['theme']),
     themeToggleIcon () {
@@ -46,7 +49,7 @@ export default {
 }
 
 .c-flex-block {
-  display: block;
+  display: flex;
   align-items: center;
 }
 
@@ -54,6 +57,8 @@ export default {
   h1 {
     display: inline-block;
     letter-spacing: 1px;
+    cursor: pointer;
+    @extend %unselectable;
   }
 
   .c-logo {

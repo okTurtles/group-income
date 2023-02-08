@@ -40,6 +40,7 @@ export default {
   border-radius: 1rem;
   padding: 0.75rem 1.5rem;
   overflow: hidden;
+  box-shadow: 0 0 16px rgba(219, 219, 219, 0.5);
 
   @include from($phone_narrow) {
     width: 13.25rem;

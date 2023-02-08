@@ -53,8 +53,8 @@ p {
 // $size_1 = 2rem     = 32px
 // $size_2 = 1.5rem   = 24px = $size_large
 // $size_3 = 1.125rem = 18px = $size_medium
-// $size_4 = 0.875rem = 14px = $size_normal
-// $size_5 =  0.75rem = 12px = $size_small
+// $size_4 = 1rem = 16px = $size_normal
+// $size_5 = 0.875rem = 14px = $size_small
 
 $titles: $size_1, $size_2, $size_3, $size_4, $size_5;
 $lineHeight: 3, 2.25, 1.6875, 1.3125, 1.175, 1;
@@ -68,6 +68,7 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1.175, 1;
     font-weight: bold;
     font-size: $size;
     line-height: #{nth($lineHeight, $i)}rem;
+    letter-spacing: 1px;
   }
 }
 

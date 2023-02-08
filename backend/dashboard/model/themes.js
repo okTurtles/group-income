@@ -31,8 +31,8 @@ const dark = {
   background_1: 'rgba(255, 255, 255, 0.05)',
   background_active: 'rgba(255, 255, 255, 0.1)',
   text_0: '#FFFFFF',
-  text_1: 'rgba(255, 255, 255, 0.4)',
-  border: 'rgba(255, 255, 255, 0.1)',
+  text_1: 'rgba(255, 255, 255, 0.45)',
+  border: 'rgba(255, 255, 255, 0.15)',
   emphasis: '#C6C7F8'
 }
 
