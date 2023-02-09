@@ -23,10 +23,7 @@ const initialState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageId
   chatRoomUnread: {}, // [chatRoomId]: { since: { messageId, createdDate }, mentions: [{ messageId, createdDate }] }
-  notificationSettings: {
-    messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
-    messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
-  },
+  notificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
@@ -82,10 +79,7 @@ sbp('sbp/selectors/register', {
       state.namespaceLookups = Object.create(null)
     }
     if (!state.notificationSettings) {
-      state.notificationSettings = {
-        messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
-        messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
-      }
+      state.notificationSettings = {}
     }
   },
   'state/vuex/save': async function () {
@@ -138,9 +132,14 @@ const mutations = {
       mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
     })
   },
-  setNotificationSettings (state, settings) {
-    for (const key in settings) {
-      Vue.set(state.notificationSettings, key, settings[key])
+  setNotificationSettings (state, { chatRoomId, settings }) {
+    if (chatRoomId) {
+      if (!state.notificationSettings[chatRoomId]) {
+        Vue.set(state.notificationSettings, chatRoomId, {})
+      }
+      for (const key in settings) {
+        Vue.set(state.notificationSettings[chatRoomId], key, settings[key])
+      }
     }
   },
   deleteChatRoomUnreadSince (state, { chatRoomId, deletedDate }) {
@@ -219,7 +218,12 @@ const getters = {
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
   },
   notificationSettings (state) {
-    return state.notificationSettings || {}
+    return Object.assign({
+      default: {
+        messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
+        messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
+      }
+    }, state.notificationSettings || {})
   },
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
@@ -518,7 +522,9 @@ const getters = {
       .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
       .forEach(contractID => {
         const attributes = state[contractID].attributes
-        profiles[attributes.username] = { ...attributes, contractID }
+        if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
+          profiles[attributes.username] = { ...attributes, contractID }
+        }
       })
     return profiles
   },

@@ -85,7 +85,7 @@ export default ({
     ModalTemplate
   },
   computed: {
-    ...mapGetters(['notificationSettings'])
+    ...mapGetters(['notificationSettings', 'currentChatRoomId'])
   },
   data () {
     return {
@@ -97,15 +97,24 @@ export default ({
     }
   },
   created () {
-    this.form.messageNotification = this.notificationSettings.messageNotification
-    this.form.messageSound = this.notificationSettings.messageSound
+    let settingsFromState
+    if (this.notificationSettings[this.currentChatRoomId]) {
+      settingsFromState = this.notificationSettings[this.currentChatRoomId]
+    } else {
+      settingsFromState = this.notificationSettings.default
+    }
+    this.form.messageNotification = settingsFromState.messageNotification
+    this.form.messageSound = settingsFromState.messageSound
   },
   methods: {
     close () {
       this.$refs.modal.close()
     },
     submit () {
-      sbp('state/vuex/commit', 'setNotificationSettings', this.form)
+      sbp('state/vuex/commit', 'setNotificationSettings', {
+        chatRoomId: this.currentChatRoomId,
+        settings: this.form
+      })
       this.close()
     }
   },
