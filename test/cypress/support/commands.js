@@ -119,6 +119,7 @@ Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
     cy.window().its('sbp').then(sbp => sbp('gi.actions/identity/logout'))
   } else {
     cy.getByDT('settingsBtn').click()
+    cy.get('[data-test="modal"] .tab-wrapper .tab-section .main-title').should('contain', 'My account')
     cy.getByDT('link-logout').click()
     cy.getByDT('closeModal').should('not.exist')
   }
