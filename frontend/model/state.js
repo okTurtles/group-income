@@ -373,7 +373,7 @@ const getters = {
           }
         }
       }
-      return payments.sort((paymentA, paymentB) => paymentA.meta.createdDate < paymentB.meta.createdDate ? 1 : -1)
+      return payments.sort((paymentA, paymentB) => compareISOTimestamps(paymentB.meta.createdDate, paymentA.meta.createdDate))
     }
   },
   ourPayments (state, getters) {
