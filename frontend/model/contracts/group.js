@@ -1300,16 +1300,21 @@ sbp('chelonia/defineContract', {
       const { paymentsByPeriod, payments } = archivingPayments
       const { username } = sbp('state/vuex/state').loggedIn
 
+      // NOTE: we save payments by period and also in types of 'Sent' and 'Received' as well
+      // because it's not efficient to find all sent/received payments from the payments list
       const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`
       const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
       const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`
       const archSentOrReceivedPayments = await sbp('gi.db/archive/load', archSentOrReceivedPaymentsKey) || { sent: [], received: [] }
 
+      // sort payments in order to keep the same sorting format as the recent data in vuex
       const sortPayments = payments => payments.sort((f, l) => compareISOTimestamps(l.meta.createdDate, f.meta.createdDate))
 
+      // prepare to archive by the period
       for (const period of Object.keys(paymentsByPeriod).sort()) {
         archPaymentsByPeriod[period] = paymentsByPeriod[period]
 
+        // filter sent/received payments from the current period
         const newSentOrReceivedPayments = { sent: [], received: [] }
         const { paymentsFrom } = paymentsByPeriod[period]
         for (const fromUser of Object.keys(paymentsFrom)) {
@@ -1324,6 +1329,7 @@ sbp('chelonia/defineContract', {
           }
         }
 
+        // merge sent/received payments by their types
         archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent]
         archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received]
 
@@ -1331,6 +1337,7 @@ sbp('chelonia/defineContract', {
         const hashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period])
         const archPayments = Object.fromEntries(hashes.map(hash => [hash, payments[hash]]))
 
+        // remove exceeded payments data in storage
         while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
           const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift()
           const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod])

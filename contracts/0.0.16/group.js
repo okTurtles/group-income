@@ -10956,7 +10956,7 @@ ${this.getErrorInfo()}`;
         const archPaymentsByPeriod = await (0, import_sbp4.default)("gi.db/archive/load", archPaymentsByPeriodKey) || {};
         const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`;
         const archSentOrReceivedPayments = await (0, import_sbp4.default)("gi.db/archive/load", archSentOrReceivedPaymentsKey) || { sent: [], received: [] };
-        const sortPayments = (payments2) => payments2.sort((f, l) => f.meta.createdDate < l.meta.createdDate ? 1 : -1);
+        const sortPayments = (payments2) => payments2.sort((f, l) => compareISOTimestamps(l.meta.createdDate, f.meta.createdDate));
         for (const period of Object.keys(paymentsByPeriod).sort()) {
           archPaymentsByPeriod[period] = paymentsByPeriod[period];
           const newSentOrReceivedPayments = { sent: [], received: [] };
