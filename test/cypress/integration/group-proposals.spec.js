@@ -40,8 +40,8 @@ function tryUnsuccessfullyToProposeNewSimilarMincome () {
       .click()
     cy.getByDT('submitBtn').click()
     cy.getByDT('proposalError').contains('Failed to create proposal. "There is an identical open proposal.". You can report the error.')
-    cy.getByDT('closeModal').click()
-    cy.getByDT('closeModal').should('not.exist')
+
+    cy.closeModal()
   })
 }
 
@@ -232,11 +232,12 @@ describe('Proposals - Add members', () => {
     }
 
     cy.getByDT('openAllProposals').click()
+    cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {
       assertInvitationLinkFor(2, 'user4')
       assertInvitationLinkFor(1, 'user6')
     })
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
   })
 
   it(`user1 votes "yes" to the new mincome ($${groupMincome}) and proposal is accepted.`, () => {
@@ -303,6 +304,7 @@ describe('Proposals - Add members', () => {
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     cy.clock(Date.now() + 1000 * 86400 * groupInviteLinkExpiry.proposal)
+
     cy.getByDT('groupSettingsLink').click()
     cy.get('td.c-name:contains("user6")').should('not.exist')
     cy.get('.c-title-wrapper select').select('All links')
@@ -311,6 +313,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('dashboard').click()
     cy.getByDT('proposalsWidget').should('not.exist')
     cy.getByDT('openAllProposals').click()
+    cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {
       getProposalItems().eq(2).within(() => {
         cy.getByDT('title', 'p').should('contain', 'You proposed')
@@ -323,7 +326,11 @@ describe('Proposals - Add members', () => {
         })
       })
     })
-    cy.getByDT('closeModal').click()
+    cy.clock().then((clock) => {
+      clock.restore()
+    })
+
+    cy.closeModal()
     cy.giLogout()
   })
 
@@ -364,6 +371,7 @@ describe('Proposals - Add members', () => {
     // OPTIMIZE: Maybe we should adopt Visual Testing in these cases
     // https://docs.cypress.io/guides/tooling/visual-testing.html#Functional-vs-visual-testing#article
     cy.getByDT('openAllProposals').click()
+    cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
     cy.getByDT('modal').within(() => {
       getProposalItems().eq(2).within(() => {
         cy.getByDT('title', 'p').should('contain', 'You proposed')
@@ -396,8 +404,7 @@ describe('Proposals - Add members', () => {
           .should('contain', 'Proposal accepted')
       })
 
-      cy.getByDT('closeModal').click()
-      cy.getByDT('closeModal').should('not.exist')
+      cy.closeModal()
     })
 
     cy.getByDT('groupMembers').find('ul')

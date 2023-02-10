@@ -8,6 +8,7 @@ import { Vue } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
+import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -371,11 +372,11 @@ const getters = {
         for (const toUser in paymentsFrom[ourUsername]) {
           for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
-            payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+            payments.push({ hash: paymentHash, data, meta, amount: data.amount })
           }
         }
       }
-      return payments
+      return payments.sort((paymentA, paymentB) => compareISOTimestamps(paymentB.meta.createdDate, paymentA.meta.createdDate))
     }
   },
   ourPaymentsReceivedInPeriod (state, getters) {
@@ -393,13 +394,13 @@ const getters = {
             if (toUser === ourUsername) {
               for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
-                payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+                payments.push({ hash: paymentHash, data, meta, amount: data.amount })
               }
             }
           }
         }
       }
-      return payments
+      return payments.sort((paymentA, paymentB) => compareISOTimestamps(paymentB.meta.createdDate, paymentA.meta.createdDate))
     }
   },
   ourPayments (state, getters) {

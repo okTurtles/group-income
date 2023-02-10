@@ -86,11 +86,6 @@
     REJECTED: "rejected",
     EXPIRED: "expired"
   };
-  var MESSAGE_NOTIFY_SETTINGS = {
-    ALL_MESSAGES: "all-messages",
-    DIRECT_MESSAGES: "direct-messages",
-    NOTHING: "nothing"
-  };
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -426,44 +421,30 @@ ${this.getErrorInfo()}`;
   function emitMessageEvent({ contractID, hash }) {
     (0, import_sbp3.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
   }
-  function messageReceivePostEffect({ contractID, messageId, datetime, text, isAlreadyAdded, isMentionedMe, username, chatRoomName }) {
+  function addMention({ contractID, messageId, datetime, text, username, chatRoomName }) {
     if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
       return;
     }
+    (0, import_sbp3.default)("state/vuex/commit", "addChatRoomUnreadMention", {
+      chatRoomId: contractID,
+      messageId,
+      createdDate: datetime
+    });
     const rootGetters = (0, import_sbp3.default)("state/vuex/getters");
-    const isOneToOneDM = rootGetters.isOneToOneDirectMessage(contractID);
-    const isDMOrMention = isMentionedMe || isOneToOneDM;
-    if (!isAlreadyAdded && isDMOrMention) {
-      (0, import_sbp3.default)("state/vuex/commit", "addChatRoomUnreadMention", {
-        chatRoomId: contractID,
-        messageId,
-        createdDate: datetime
-      });
-    }
-    let title = `# ${chatRoomName}`;
-    let partnerProfile;
-    if (isOneToOneDM) {
-      partnerProfile = rootGetters.ourContactProfiles[username];
-      title = `# ${partnerProfile?.displayName || username}`;
-    } else if (rootGetters.isOneToManyDirectMessage(contractID)) {
-      title = `# ${rootGetters.oneToManyMessageInfo(contractID).title}`;
-    }
+    const isDMContact = rootGetters.isDirectMessage(contractID);
+    const partnerProfile = rootGetters.ourContactProfiles[username];
+    const title = isDMContact ? `# ${partnerProfile?.displayName || username}` : `# ${chatRoomName}`;
     const path = `/group-chat/${contractID}`;
-    const notificationSettings = rootGetters.notificationSettings[contractID] || rootGetters.notificationSettings.default;
-    const { messageNotification, messageSound } = notificationSettings;
-    const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
-    const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
-    if (!isAlreadyAdded && shouldNotifyMessage) {
-      makeNotification({
-        title,
-        body: text,
-        icon: partnerProfile?.picture,
-        path
-      });
-    }
-    if (!isAlreadyAdded && shouldSoundMessage) {
-      (0, import_sbp3.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
-    }
+    makeNotification({
+      title,
+      body: text,
+      icon: partnerProfile?.picture,
+      path
+    });
+    (0, import_sbp3.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
+  }
+  function deleteMention({ contractID, messageId }) {
+    (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadMention", { chatRoomId: contractID, messageId });
   }
   function updateUnreadPosition({ contractID, hash, createdDate }) {
     (0, import_sbp3.default)("state/vuex/commit", "setChatRoomUnreadSince", {
@@ -543,7 +524,7 @@ ${this.getErrorInfo()}`;
             return;
           }
           import_common2.Vue.set(state.users, username, { joinedDate: meta.createdDate });
-          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
             return;
           }
           const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
@@ -676,17 +657,19 @@ ${this.getErrorInfo()}`;
           }
           const newMessage = createMessage({ meta, data, hash, state });
           const mentions = makeMentionFromUsername(me);
+          const isDirectMessage = state.attributes.type === CHATROOM_TYPES.INDIVIDUAL;
           const isTextMessage = data.type === MESSAGE_TYPES.TEXT;
           const isMentionedMe = isTextMessage && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all));
-          messageReceivePostEffect({
-            contractID,
-            messageId: newMessage.id,
-            datetime: newMessage.datetime,
-            text: newMessage.text,
-            isMentionedMe,
-            username: meta.username,
-            chatRoomName: getters.chatRoomAttributes.name
-          });
+          if (isDirectMessage || isMentionedMe) {
+            addMention({
+              contractID,
+              messageId: newMessage.id,
+              datetime: newMessage.datetime,
+              text: newMessage.text,
+              username: meta.username,
+              chatRoomName: getters.chatRoomAttributes.name
+            });
+          }
           if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
             updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate });
           }
@@ -722,22 +705,18 @@ ${this.getErrorInfo()}`;
           }
           const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageId === data.id);
           const mentions = makeMentionFromUsername(me);
-          const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all);
-          messageReceivePostEffect({
-            contractID,
-            messageId: data.id,
-            datetime: data.createdDate,
-            text: data.text,
-            isAlreadyAdded,
-            isMentionedMe,
-            username: meta.username,
-            chatRoomName: getters.chatRoomAttributes.name
-          });
-          if (isAlreadyAdded && !isMentionedMe) {
-            (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadMention", {
-              chatRoomId: contractID,
-              messageId: data.id
+          const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all);
+          if (!isAlreadyAdded && isIncludeMention) {
+            addMention({
+              contractID,
+              messageId: data.id,
+              datetime: data.createdDate,
+              text: data.text,
+              username: meta.username,
+              chatRoomName: getters.chatRoomAttributes.name
             });
+          } else if (isAlreadyAdded && !isIncludeMention) {
+            deleteMention({ contractID, messageId: data.id });
           }
         }
       },
@@ -782,10 +761,7 @@ ${this.getErrorInfo()}`;
             return;
           }
           if (rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageId === data.id)) {
-            (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadMention", {
-              chatRoomId: contractID,
-              messageId: data.id
-            });
+            deleteMention({ contractID, messageId: data.id });
           }
           emitMessageEvent({ contractID, hash });
         }

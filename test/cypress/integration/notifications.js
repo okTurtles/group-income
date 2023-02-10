@@ -368,7 +368,7 @@ describe('Notifications - markAsUnread and markAllAsUnread', () => {
 
       // click on 'mark all as read' button in the modal & close out of it
       cy.getByDT('MarkAllAsRead_In_Modal').click()
-      cy.getByDT('closeModal').click()
+      cy.closeModal()
 
       cyCheckBellsBadge(0)
       cyCheckDreamersBadge(0)

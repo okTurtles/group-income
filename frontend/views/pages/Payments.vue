@@ -226,7 +226,6 @@ export default ({
   computed: {
     ...mapGetters([
       'groupIncomeDistribution',
-      'paymentTotalFromUserToUser',
       'periodStampGivenDate',
       'currentPaymentPeriod',
       'ourGroupProfile',
@@ -319,43 +318,21 @@ export default ({
       return [notReceived, payments].flat()
     },
     paymentsSent () {
-      const payments = []
-
-      for (const payment of this.historicalPayments.sent) {
-        const { hash, data, meta } = payment
-        payments.push({
-          hash,
-          data,
-          meta,
-          username: data.toUser,
-          displayName: this.userDisplayName(data.toUser),
-          date: meta.createdDate,
-          monthstamp: dateToMonthstamp(meta.createdDate),
-          amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate,
-        })
-      }
-
-      // TODO: implement better / more correct sorting
-      return payments.sort((a, b) => a.date < b.date)
+      return this.historicalPayments.sent.map(payment => ({
+        ...payment,
+        username: payment.data.toUser,
+        displayName: this.userDisplayName(payment.data.toUser),
+        monthstamp: dateToMonthstamp(payment.meta.createdDate),
+        date: payment.meta.createdDate
+      }))
     },
     paymentsReceived () {
-      const payments = []
-
-      for (const payment of this.historicalPayments.received) {
-        const { hash, data, meta } = payment
-        const fromUser = meta.username
-        payments.push({
-          hash,
-          data,
-          meta,
-          username: fromUser,
-          displayName: this.userDisplayName(fromUser),
-          date: meta.createdDate,
-          amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate
-        })
-      }
-      // TODO: implement better / more correct sorting
-      return payments.sort((a, b) => a.date < b.date)
+      return this.historicalPayments.received.map(payment => ({
+        ...payment,
+        username: payment.meta.username, // fromUser
+        displayName: this.userDisplayName(payment.meta.username),
+        date: payment.meta.createdDate
+      }))
     },
     paymentsListData () {
       return {
