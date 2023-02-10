@@ -1305,7 +1305,7 @@ sbp('chelonia/defineContract', {
       const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`
       const archSentOrReceivedPayments = await sbp('gi.db/archive/load', archSentOrReceivedPaymentsKey) || { sent: [], received: [] }
 
-      const sortPayments = payments => payments.sort((f, l) => f.meta.createdDate < l.meta.createdDate ? 1 : -1)
+      const sortPayments = payments => payments.sort((f, l) => compareISOTimestamps(l.meta.createdDate, f.meta.createdDate))
 
       for (const period of Object.keys(paymentsByPeriod).sort()) {
         archPaymentsByPeriod[period] = paymentsByPeriod[period]

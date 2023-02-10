@@ -8,7 +8,7 @@ import { Vue } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { MINS_MILLIS } from '@model/contracts/shared/time.js'
+import { compareISOTimestamps, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -349,7 +349,7 @@ const getters = {
           }
         }
       }
-      return payments.sort((paymentA, paymentB) => paymentA.meta.createdDate < paymentB.meta.createdDate ? 1 : -1)
+      return payments.sort((paymentA, paymentB) => compareISOTimestamps(paymentB.meta.createdDate, paymentA.meta.createdDate))
     }
   },
   ourPaymentsReceivedInPeriod (state, getters) {
