@@ -142,7 +142,7 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
       cy.getByDT('recentConversations').children().should('have.length', 0)
       cy.getByDT('others').children().should('have.length', 1)
     })
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
 
     createDirectMessage(user1)
 
@@ -237,7 +237,7 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
       cy.getByDT('recentConversations').find('li:first-child').should('contain', user3)
       cy.getByDT('recentConversations').find('li:last-child').should('contain', user2)
     })
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
 
     cy.giLogout()
   })

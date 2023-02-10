@@ -100,8 +100,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('unjoinedChannelMembersList').within(() => {
       cy.getByDT('addToChannel-' + username).click()
     })
-    cy.getByDT('closeModal').click()
-    cy.getByDT('closeModal').should('not.exist')
+    cy.closeModal()
     checkIfJoined(channelName, null, username)
   }
 
@@ -126,8 +125,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('joinedChannelMembersList').within(() => {
       cy.getByDT('removeMember-' + username).click()
     })
-    cy.getByDT('closeModal').click()
-    cy.getByDT('closeModal').should('not.exist')
+    cy.closeModal()
     checkIfLeaved(channelName, null, username)
   }
 
@@ -330,8 +328,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelMembers').click()
     cy.get('[data-test^="addToChannel-"]').should('not.exist')
     cy.get('[data-test^="removeMember-"]').should('not.exist')
-    cy.getByDT('closeModal').click()
-    cy.getByDT('closeModal').should('not.exist')
+    cy.closeModal()
 
     cy.log(`users can not change name of "${CHATROOM_GENERAL_NAME}" chatroom even creator`)
     switchChannel(CHATROOM_GENERAL_NAME)

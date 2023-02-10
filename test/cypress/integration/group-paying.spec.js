@@ -202,10 +202,8 @@ describe('Group Payments', () => {
 
     cy.getByDT('modal').within(() => {
       cy.getByDT('modal-header-title').should('contain', 'Payment details')
-      cy.getByDT('closeModal').click()
     })
-
-    cy.getByDT('closeModal').should('not.exist')
+    cy.closeModal()
   })
 
   it('user3 sends a thank you note to user1 for their payment', () => {
@@ -241,11 +239,8 @@ describe('Group Payments', () => {
     cy.getByDT('modal').within(() => {
       cy.getByDT('memoLabel').should('contain', `user3-${userId} Note:`)
       cy.getByDT('memo').should('contain', thankYouText)
-
-      cy.getByDT('closeModal').click()
     })
-
-    cy.getByDT('closeModal').should('not.exist')
+    cy.closeModal()
   })
 
   it('user4 sends $50 to user2 (partial)', () => {
