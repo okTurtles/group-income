@@ -18,7 +18,8 @@ button,
   color: var(--button-primary-text-color);
   white-space: nowrap;
   font-family: "Inter";
-  font-size: $size_5;
+  font-size: $size_4;
+  line-height: 1;
   outline: none;
 
   &.is-small {
