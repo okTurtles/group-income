@@ -3,30 +3,78 @@
 /* views/containers/navigation/Navigation.vue, views/pages/Accounts.vue */
 "Accounts" = "Accounts";
 
+/* views/pages/Contracts.vue */
+"All contracts" = "All contracts";
+
 /* views/containers/navigation/Navigation.vue, views/pages/Billing.vue */
 "Billing" = "Billing";
 
-/* views/containers/navigation/Navigation.vue, views/pages/Contacts.vue */
-"Contacts" = "Contacts";
+/* views/containers/navigation/Navigation.vue, views/pages/Contracts.vue */
+"Contracts" = "Contracts";
 
 /* views/containers/navigation/Navigation.vue, views/pages/Dashboard.vue */
 "Dashboard" = "Dashboard";
 
+/* views/pages/Dashboard.vue */
+"Database" = "Database";
+
+/* views/pages/Dashboard.vue */
+"Joined on" = "Joined on";
+
+/* views/pages/Dashboard.vue */
+"Media/Images" = "Media/Images";
+
+/* views/pages/Dashboard.vue */
+"Name" = "Name";
+
+/* views/containers/navigation/Navigation.vue */
+"Navigation" = "Navigation";
+
+/* views/pages/Contracts.vue */
+"Option 2" = "Option 2";
+
+/* views/pages/Contracts.vue */
+"Option 3" = "Option 3";
+
+/* views/pages/Contracts.vue */
+"Option 4" = "Option 4";
+
+/* views/pages/Dashboard.vue */
+"Recent users" = "Recent users";
+
+/* views/pages/Dashboard.vue */
+"Sapce usage" = "Sapce usage";
+
+/* views/components/Dropdown.vue */
+"Select Item" = "Select Item";
+
+/* views/pages/Dashboard.vue */
+"Stats" = "Stats";
+
 /* views/pages/Accounts.vue */
-"This is 'accounts' page" = "This is 'accounts' page";
+"This is 'Accounts' page" = "This is 'Accounts' page";
+
+/* views/pages/Users.vue */
+"This is 'Users' page" = "This is 'Users' page";
 
 /* views/pages/Billing.vue */
 "This is 'billing' page" = "This is 'billing' page";
 
-/* views/pages/Contacts.vue */
-"This is 'contacts' page" = "This is 'contacts' page";
+/* views/pages/Contracts.vue */
+"This is 'contracts' page" = "This is 'contracts' page";
 
-/* views/pages/Users.vue */
-"This is 'users' page" = "This is 'users' page";
+/* views/pages/Dashboard.vue */
+"Total groups" = "Total groups";
+
+/* views/pages/Dashboard.vue */
+"Total storage" = "Total storage";
+
+/* views/pages/Dashboard.vue */
+"Total users" = "Total users";
 
 /* views/containers/navigation/Navigation.vue, views/pages/Users.vue */
 "Users" = "Users";
 
 /* views/pages/Dashboard.vue */
-"this is 'dashboard' page" = "this is 'dashboard' page";
+"Users / Space" = "Users / Space";
 

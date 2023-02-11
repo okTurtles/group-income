@@ -23,9 +23,10 @@ export default {
       ephemeral: {
         dummyFilterOptions: [
           { id: 'all-contracts', name: L('All contracts') },
-          { id: 'option-2', name: L('Option 2') },
-          { id: 'option-3', name: L('Option 3') },
-          { id: 'option-4', name: L('Option 4') }
+          { id: 'mailbox', name: L('Mailbox') },
+          { id: 'chatroom', name: L('Chatroom') },
+          { id: 'identity', name: L('Identity') },
+          { id: 'group', name: L('Group') }
         ]
       }
     }
@@ -38,5 +39,11 @@ export default {
 
 .c-page-contracts {
   position: relative;
+}
+
+.c-filter-menu {
+  position: absolute !important;
+  top: 2rem;
+  right: 1rem;
 }
 </style>
