@@ -40,7 +40,7 @@ export default {
     return {
       ephemeral: {
         selectedId: this.defaultItemId || '',
-        isActive: true
+        isActive: false
       }
     }
   },

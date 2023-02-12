@@ -2,15 +2,17 @@
 page-template.c-page-contracts
   template(#title='') {{ L('Contracts') }}
 
-  i18n(tag='p') This is 'contracts' page
+  dropdown.c-filter-menu(defaultItemId='all-contracts' :options='ephemeral.filterOptions')
 
-  dropdown.c-filter-menu(defaultItemId='all-contracts' :options='ephemeral.dummyFilterOptions')
+  .c-contracts-table
+    .c-para(v-for='item in ephemeral.contractsDummyData') {{ item.type }}
 </template>
 
 <script>
 import PageTemplate from './PageTemplate.vue'
 import Dropdown from '@components/Dropdown.vue'
 import L from '@common/translations.js'
+import { contractsDummyData } from '@view-utils/dummy-data.js'
 
 export default {
   name: 'Contracts',
@@ -21,13 +23,14 @@ export default {
   data () {
     return {
       ephemeral: {
-        dummyFilterOptions: [
+        filterOptions: [
           { id: 'all-contracts', name: L('All contracts') },
           { id: 'mailbox', name: L('Mailbox') },
           { id: 'chatroom', name: L('Chatroom') },
           { id: 'identity', name: L('Identity') },
           { id: 'group', name: L('Group') }
-        ]
+        ],
+        contractsDummyData
       }
     }
   }
