@@ -69,7 +69,7 @@ function clearOldPayments ({ contractID, state, getters }) {
   const archivingPayments = { paymentsByPeriod: {}, payments: {} }
   while (sortedPeriodKeys.length > MAX_SAVED_PERIODS) {
     const period = sortedPeriodKeys.shift()
-    archivingPayments.paymentsByPeriod[period] = state.paymentsByPeriod[period]
+    archivingPayments.paymentsByPeriod[period] = cloneDeep(state.paymentsByPeriod[period])
     for (const paymentHash of getters.paymentHashesForPeriod(period)) {
       archivingPayments.payments[paymentHash] = cloneDeep(state.payments[paymentHash])
       Vue.delete(state.payments, paymentHash)
@@ -1300,28 +1300,61 @@ sbp('chelonia/defineContract', {
       const { paymentsByPeriod, payments } = archivingPayments
       const { username } = sbp('state/vuex/state').loggedIn
 
+      // NOTE: we save payments by period and also in types of 'Sent' and 'Received' as well
+      // because it's not efficient to find all sent/received payments from the payments list
+      const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`
+      const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
+      const archSentOrReceivedPaymentsKey = `sentOrReceivedPayments/${username}/${contractID}`
+      const archSentOrReceivedPayments = await sbp('gi.db/archive/load', archSentOrReceivedPaymentsKey) || { sent: [], received: [] }
+
+      // sort payments in order to keep the same sorting format as the recent data in vuex
+      const sortPayments = payments => payments.sort((f, l) => compareISOTimestamps(l.meta.createdDate, f.meta.createdDate))
+
+      // prepare to archive by the period
       for (const period of Object.keys(paymentsByPeriod).sort()) {
-        const archPaymentsByPeriodKey = `paymentsByPeriod/${username}/${contractID}`
-        const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
-        const archPaymentsKey = `payments/${username}/${contractID}`
-        let archPayments = await sbp('gi.db/archive/load', archPaymentsKey) || {}
-
         archPaymentsByPeriod[period] = paymentsByPeriod[period]
-        archPayments = merge(archPayments, payments)
 
+        // filter sent/received payments from the current period
+        const newSentOrReceivedPayments = { sent: [], received: [] }
+        const { paymentsFrom } = paymentsByPeriod[period]
+        for (const fromUser of Object.keys(paymentsFrom)) {
+          for (const toUser of Object.keys(paymentsFrom[fromUser])) {
+            if (toUser === username || fromUser === username) {
+              const receivedOrSent = toUser === username ? 'received' : 'sent'
+              for (const hash of paymentsFrom[fromUser][toUser]) {
+                const { data, meta } = payments[hash]
+                newSentOrReceivedPayments[receivedOrSent].push({ hash, period, data, meta, amount: data.amount })
+              }
+            }
+          }
+        }
+
+        // merge sent/received payments by their types
+        archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent]
+        archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received]
+
+        const archPaymentsKey = `payments/${period}/${username}/${contractID}`
+        const hashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period])
+        const archPayments = Object.fromEntries(hashes.map(hash => [hash, payments[hash]]))
+
+        // remove exceeded payments data in storage
         while (Object.keys(archPaymentsByPeriod).length > MAX_ARCHIVED_PERIODS) {
           const shouldBeDeletedPeriod = Object.keys(archPaymentsByPeriod).sort().shift()
           const paymentHashes = paymentHashesFromPaymentPeriod(archPaymentsByPeriod[shouldBeDeletedPeriod])
 
-          for (const hash of paymentHashes) {
-            delete archPayments[hash]
-          }
+          await sbp('gi.db/archive/delete', `payments/${shouldBeDeletedPeriod}/${username}/${contractID}`)
           delete archPaymentsByPeriod[shouldBeDeletedPeriod]
+
+          archSentOrReceivedPayments.sent = archSentOrReceivedPayments.sent.filter(payment => !paymentHashes.includes(payment.hash))
+          archSentOrReceivedPayments.received = archSentOrReceivedPayments.received.filter(payment => !paymentHashes.includes(payment.hash))
         }
 
-        await sbp('gi.db/archive/save', archPaymentsByPeriodKey, archPaymentsByPeriod)
         await sbp('gi.db/archive/save', archPaymentsKey, archPayments)
       }
+
+      await sbp('gi.db/archive/save', archPaymentsByPeriodKey, archPaymentsByPeriod)
+      await sbp('gi.db/archive/save', archSentOrReceivedPaymentsKey, archSentOrReceivedPayments)
+
       sbp('okTurtles.events/emit', PAYMENTS_ARCHIVED, { paymentsByPeriod, payments })
     },
     'gi.contracts/group/sendMincomeChangedNotification': async function (contractID, meta, data) {

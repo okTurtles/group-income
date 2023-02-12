@@ -261,7 +261,7 @@ describe('Contributions', () => {
     // <BEGIN> HACK FOR A BIZARRE HEISENBUGG!!! </BEGIN>
     // Description: without this, sometimes the payment methods do not appear
     // in the list for some reason, but they re-appear if we close and open the modal
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
     cy.getByDT('openIncomeDetailsModal').click()
     // <END> HACK FOR A BIZARRE HEISENBUGG!!! </END>
     cy.getByDT('paymentMethods').within(() => {
