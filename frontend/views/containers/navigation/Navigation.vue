@@ -139,7 +139,7 @@ export default ({
       'groupUnreadMessages'
     ]),
     currentGroupUnreadMentionsCount () {
-      return this.currentGroupId ? this.groupUnreadMessages(this.currentGroupId) : 0
+      return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
     },
     logo () {
       const name = this.colors.theme === 'dark' ? '-white' : ''
