@@ -381,12 +381,7 @@ export default ({
     deleteMessage (message) {
       sbp('gi.actions/chatroom/deleteMessage', {
         contractID: this.currentChatRoomId,
-        data: { id: message.id },
-        hooks: {
-          prepublish: (msg) => {
-            // need to do something
-          }
-        }
+        data: { id: message.id }
       })
     },
     changeDay (index) {
@@ -403,12 +398,7 @@ export default ({
     addEmoticon (message, emoticon) {
       sbp('gi.actions/chatroom/makeEmotion', {
         contractID: this.currentChatRoomId,
-        data: { id: message.id, emoticon },
-        hooks: {
-          prepublish: (msg) => {
-            // need to do something
-          }
-        }
+        data: { id: message.id, emoticon }
       })
     },
     getSimulatedState (initialize = true) {
