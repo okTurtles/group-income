@@ -14,7 +14,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
+import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS, MONTHS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
@@ -37,7 +37,13 @@ function initGroupProfile (contractID: string, joinedDate: string) {
     lastLoggedIn: joinedDate,
     nonMonetaryContributions: [],
     status: PROFILE_STATUS.ACTIVE,
-    departedDate: null
+    departedDate: null,
+    incomeDetailsLastUpdated: {
+      // For users who haven't updated their income details in over 6 months,
+      // the app sends a notification('INCOME_DETAILS_OLD') encouraging them to do so. This field holds the data related to it.
+      date: null, // date on which the user last updated their income details.
+      notificationSent: false // says if 'INCOME_DETAILS_OLD' notification has been sent for the above date.
+    }
   }
 }
 
@@ -1108,6 +1114,7 @@ sbp('chelonia/defineContract', {
         }
         if (data.incomeDetailsType) {
           // someone updated their income details, create a snapshot of the haveNeeds
+          Vue.set(groupProfile, 'incomeDetailsLastUpdated', { date: meta.createdDate, notificationSent: false })
           updateCurrentDistribution({ contractID, meta, state, getters })
         }
       }
@@ -1228,6 +1235,23 @@ sbp('chelonia/defineContract', {
 
         if (profile) {
           Vue.set(profile, 'lastLoggedIn', meta.createdDate)
+        }
+      },
+      sideEffect ({ meta }, { getters }) {
+        const profile = getters.groupProfiles[meta.username]
+        const { lastLoggedIn, incomeDetailsLastUpdated = null } = profile
+
+        // check if it's been over 6 months since the last time the user updated their income details.
+        // also, check if the notification has not already been sent. (so that the app doesn't send the same notification over and over again)
+        if (incomeDetailsLastUpdated?.date &&
+          compareISOTimestamps(lastLoggedIn, incomeDetailsLastUpdated.date) > 6 * MONTHS_MILLIS &&
+          !incomeDetailsLastUpdated.notificationSent
+        ) {
+          Vue.set(incomeDetailsLastUpdated, 'notificationSent', true)
+          sbp('gi.notifications/emit', 'INCOME_DETAILS_OLD', {
+            createdDate: meta.createdDate,
+            months: 6
+          })
         }
       }
     },
