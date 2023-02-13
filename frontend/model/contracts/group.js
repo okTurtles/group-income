@@ -116,6 +116,10 @@ function updateCurrentDistribution ({ contractID, meta, state, getters }) {
   if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
     updateGroupStreaks({ state, getters })
     getters.groupSettings.distributionDate = period
+
+    sbp('gi.contracts/group/pushSideEffect', contractID,
+      ['gi.contracts/group/updateDistributionDate/sideEffect', { meta, contractID }]
+    )
   }
   // save haveNeeds if there are no payments or the haveNeeds haven't been saved yet
   if (noPayments || !curPeriodPayments.haveNeedsSnapshot) {
@@ -1266,13 +1270,30 @@ sbp('chelonia/defineContract', {
           updateGroupStreaks({ state, getters })
           getters.groupSettings.distributionDate = period
         }
+      },
+      sideEffect ({ meta, contractID }, { getters }) {
+        const { loggedIn } = sbp('state/vuex/state')
+        const myProfile = getters.groupProfile(loggedIn.username)
+
+        if (myProfile.incomeDetailsType === 'pledgeAmount' &&
+          isActionYoungerThanUser(meta, myProfile)) {
+          sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
+            creator: meta.username,
+            createdDate: meta.createdDate,
+            groupID: contractID
+          })
+        }
       }
     },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
       'gi.contracts/group/forceDistributionDate': {
         validate: optional,
-        process ({ meta }, { state, getters }) {
+        process ({ meta, contractID }, { state, getters }) {
           getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate)
+
+          sbp('gi.contracts/group/pushSideEffect', contractID,
+            ['gi.contracts/group/updateDistributionDate/sideEffect', { meta, contractID }]
+          )
         }
       },
       'gi.contracts/group/malformedMutation': {

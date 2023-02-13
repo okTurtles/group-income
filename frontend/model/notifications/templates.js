@@ -219,5 +219,15 @@ export default ({
         }
       }]
     }
+  },
+  NEW_DISTRIBUTION_PERIOD (data: { creator: string }) {
+    return {
+      avatarUsername: data.creator,
+      body: L('A new distribution period has started. Would you like to check your payment TODOs?'),
+      level: 'info',
+      icon: 'coins',
+      linkTo: '/payments',
+      scope: 'group'
+    }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })
