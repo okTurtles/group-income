@@ -185,6 +185,9 @@ export default ({
   watch: {
     '$route' (to: Object, from: Object) {
       const { chatRoomId } = to.params
+      if (chatRoomId === from.params.chatRoomId) {
+        return
+      }
       this.$nextTick(() => {
         this.refreshTitle()
       })
