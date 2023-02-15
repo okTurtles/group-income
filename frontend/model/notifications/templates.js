@@ -234,5 +234,15 @@ export default ({
       linkTo: data.memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
       scope: 'group'
     }
+  },
+  NEAR_DISTRIBUTION_END (data: { period: string }) {
+    return {
+      body: L("Less than 1 week left before the distribution period ends - don't forget to send payments!"),
+      level: 'info',
+      icon: 'coins',
+      linkTo: '/payments',
+      scope: 'group',
+      data
+    }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })

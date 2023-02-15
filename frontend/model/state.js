@@ -685,7 +685,7 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           } else if (oldPeriod) {
             // Even if the manual syncing of distributionDate is not needed,
             // the notification emittion is required if the user has entered the income details because payment period has changed.
-            const userIncomeDetailsType = store.getters.ourGroupProfile.incomeDetailsType
+            const userIncomeDetailsType = store.getters.ourGroupProfile?.incomeDetailsType
 
             if (userIncomeDetailsType) {
               sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {

@@ -1242,11 +1242,16 @@ sbp('chelonia/defineContract', {
           Vue.set(profile, 'lastLoggedIn', meta.createdDate)
         }
       },
-      sideEffect ({ meta }, { getters }) {
-        const profile = getters.groupProfiles[meta.username]
-        const { lastLoggedIn, incomeDetailsLastUpdated = null } = profile
+      sideEffect ({ meta, contractID }, { getters }) {
+        // Upon user's log-in, check for two possible notification emissions are executed here.
+        // 1. INCOME_DETAILS_OLD
+        // 2. NEAR_DISTRIBUTION_END
+        const { ourPayments, currentNotifications } = sbp('state/vuex/getters')
+        const { lastLoggedIn, incomeDetailsLastUpdated, incomeDetailsType } = getters.groupProfiles[meta.username]
+        const now = meta.createdDate
 
-        // check if it's been over 6 months since the last time the user updated their income details.
+        // 1. INCOME_DETAILS_OLD
+        //    - check if it's been over 6 months since the last time the user updated their income details.
         if (incomeDetailsLastUpdated?.date &&
           compareISOTimestamps(lastLoggedIn, incomeDetailsLastUpdated.date) > 6 * MONTHS_MILLIS &&
           // Also, check if the notification has already been sent for the recorded date.
@@ -1255,8 +1260,25 @@ sbp('chelonia/defineContract', {
         ) {
           Vue.set(incomeDetailsLastUpdated, 'notificationSent', true)
           sbp('gi.notifications/emit', 'INCOME_DETAILS_OLD', {
-            createdDate: meta.createdDate,
+            createdDate: now,
             months: 6
+          })
+        }
+
+        // 2. NEAR_DISTRIBUTION_END
+        //    - check if it's within less than a week before the distribution period end and
+        //      let the pledging members know they have outstanding payment todo items if any.
+        const currentPeriod = getters.groupSettings.distributionDate
+        const nextPeriod = getters.periodAfterPeriod(currentPeriod)
+        if (incomeDetailsType === 'pledgeAmount' &&
+          comparePeriodStamps(nextPeriod, now) < DAYS_MILLIS * 7 &&
+          (ourPayments && ourPayments.todo?.length > 0) &&
+          currentNotifications.findIndex(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === currentPeriod) === -1
+        ) {
+          sbp('gi.notifications/emit', 'NEAR_DISTRIBUTION_END', {
+            createdDate: now,
+            groupID: contractID,
+            period: currentPeriod
           })
         }
       }
