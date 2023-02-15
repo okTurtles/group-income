@@ -79,6 +79,15 @@
 "{minutes}m" = "{minutes}m";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
+"A new distribution period has started. Please check Payment TODOs." = "A new distribution period has started. Please check Payment TODOs.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"A new distribution period has started. Please update your income details if they have changed." = "A new distribution period has started. Please update your income details if they have changed.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Less than 1 week left before the distribution period ends - don't forget to send payments!" = "Less than 1 week left before the distribution period ends - don't forget to send payments!";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
 "The mincome has changed to {amount}." = "The mincome has changed to {amount}.";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
@@ -972,7 +981,7 @@
 /* views/components/modal/ModalClose.vue */
 "close modal" = "fermer le dialogue";
 
-/* views/components/tabs/TabWrapper.vue, views/containers/chatroom/ChatNav.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/NotificationSettings.vue, views/containers/user-settings/UserSettingsModal.vue */
+/* views/components/tabs/TabWrapper.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/NotificationSettings.vue, views/containers/user-settings/UserSettingsModal.vue */
 "Settings" = "Paramètres";
 
 /* views/containers/access/LoginForm.vue */
@@ -1088,12 +1097,6 @@
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/proposals/MemberRequest.vue */
 "Undo" = "Annuler";
-
-/* views/containers/chatroom/ChatNav.vue */
-"Mute chat" = "Suspendre les notifications";
-
-/* views/containers/chatroom/ChatNav.vue */
-"Report a problem" = "Signaler un problème";
 
 /* views/containers/chatroom/ConversationGreetings.vue */
 "Add a description" = "Ajouter une description";
@@ -2629,6 +2632,9 @@
 "Members of your group will now be asked to vote.{br_} You need {strong_}{numVotes} yes votes{_strong} for your proposal to be accepted." = "Les membres de votre groupe vont maintenant être invités à voter.{br_} Il faut {strong_}{numVotes} votes favorables{_strong} pour que votre proposition soit acceptée.";
 
 /* Not currently used */
+"Mute chat" = "Suspendre les notifications";
+
+/* Not currently used */
 "New Message" = "Nouveau message";
 
 /* Not currently used */
@@ -2675,6 +2681,9 @@
 
 /* Not currently used */
 "Remove {user} from the group." = "Exclure {user} du groupe.";
+
+/* Not currently used */
+"Report a problem" = "Signaler un problème";
 
 /* Not currently used */
 "Return" = "Retour en arrière";

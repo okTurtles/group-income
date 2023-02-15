@@ -60,6 +60,12 @@
 /* views/containers/contributions/Contribution.vue */
 "A contribution is required." = "A contribution is required.";
 
+/* model/notifications/templates.js */
+"A new distribution period has started. Please check Payment TODOs." = "A new distribution period has started. Please check Payment TODOs.";
+
+/* model/notifications/templates.js */
+"A new distribution period has started. Please update your income details if they have changed." = "A new distribution period has started. Please update your income details if they have changed.";
+
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
 "A password is required." = "A password is required.";
 
@@ -981,6 +987,9 @@
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Left {title}";
 
+/* model/notifications/templates.js */
+"Less than 1 week left before the distribution period ends - don't forget to send payments!" = "Less than 1 week left before the distribution period ends - don't forget to send payments!";
+
 /* views/pages/Home.vue */
 "Let’s get this party started" = "Let’s get this party started";
 
@@ -1070,9 +1079,6 @@
 
 /* views/containers/chatroom/MessageActions.vue */
 "More options" = "More options";
-
-/* views/containers/chatroom/ChatNav.vue */
-"Mute chat" = "Mute chat";
 
 /* views/containers/user-settings/settings.js */
 "My account" = "My account";
@@ -1536,9 +1542,6 @@
 /* views/containers/chatroom/SendArea.vue */
 "Replying to {replyingTo}: \"{replyingMessage}\"" = "Replying to {replyingTo}: \"{replyingMessage}\"";
 
-/* views/containers/chatroom/ChatNav.vue */
-"Report a problem" = "Report a problem";
-
 /* views/containers/proposals/MemberRequest.vue */
 "Request Approved." = "Request Approved.";
 
@@ -1659,7 +1662,7 @@
 /* views/containers/loading-error/ErrorModal.vue, views/containers/loading-error/ErrorPage.vue */
 "Server error" = "Server error";
 
-/* views/components/tabs/TabWrapper.vue, views/containers/chatroom/ChatNav.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/NotificationSettings.vue, views/containers/user-settings/UserSettingsModal.vue */
+/* views/components/tabs/TabWrapper.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/NotificationSettings.vue, views/containers/user-settings/UserSettingsModal.vue */
 "Settings" = "Settings";
 
 /* views/containers/user-settings/AppLogs.vue */
