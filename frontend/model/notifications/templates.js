@@ -75,7 +75,7 @@ export default ({
       scope: 'user'
     }
   },
-  INCOME_DETAILS_OLD (data: { months: number }) {
+  INCOME_DETAILS_OLD (data: { months: number, lastUpdatedDate: string }) {
     return {
       body: L("You haven't updated your income details in more than {months} months. Would you like to review them now?", {
         // Avoid displaying decimals.
@@ -84,7 +84,8 @@ export default ({
       icon: 'coins',
       level: 'info',
       linkTo: '/contributions?modal=IncomeDetails',
-      scope: 'user'
+      scope: 'user',
+      data: { lastUpdatedDate: data.lastUpdatedDate }
     }
   },
   MEMBER_ADDED (data: { groupID: string, username: string }) {

@@ -38,12 +38,7 @@ function initGroupProfile (contractID: string, joinedDate: string) {
     nonMonetaryContributions: [],
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null,
-    incomeDetailsLastUpdated: {
-      // For users who haven't updated their income details in over 6 months,
-      // the app sends a notification('INCOME_DETAILS_OLD') encouraging them to do so. This field holds the data related to it.
-      date: null, // date on which the user last updated their income details.
-      notificationSent: false // says if 'INCOME_DETAILS_OLD' notification has been sent for the above date.
-    }
+    incomeDetailsLastUpdatedDate: null
   }
 }
 
@@ -1119,7 +1114,7 @@ sbp('chelonia/defineContract', {
         }
         if (data.incomeDetailsType) {
           // someone updated their income details, create a snapshot of the haveNeeds
-          Vue.set(groupProfile, 'incomeDetailsLastUpdated', { date: meta.createdDate, notificationSent: false })
+          Vue.set(groupProfile, 'incomeDetailsLastUpdatedDate', meta.createdDate)
           updateCurrentDistribution({ contractID, meta, state, getters })
         }
       }
@@ -1247,21 +1242,21 @@ sbp('chelonia/defineContract', {
         // 1. INCOME_DETAILS_OLD
         // 2. NEAR_DISTRIBUTION_END
         const { ourPayments, currentNotifications } = sbp('state/vuex/getters')
-        const { lastLoggedIn, incomeDetailsLastUpdated, incomeDetailsType } = getters.groupProfiles[meta.username]
+        const { lastLoggedIn, incomeDetailsLastUpdatedDate, incomeDetailsType } = getters.groupProfiles[meta.username]
+        const myNotificationHas = checkFunc => currentNotifications.some(item => checkFunc(item))
         const now = meta.createdDate
 
         // 1. INCOME_DETAILS_OLD
         //    - check if it's been over 6 months since the last time the user updated their income details.
-        if (incomeDetailsLastUpdated?.date &&
-          compareISOTimestamps(lastLoggedIn, incomeDetailsLastUpdated.date) > 6 * MONTHS_MILLIS &&
-          // Also, check if the notification has already been sent for the recorded date.
-          // - prevents sending the same notification over and over again every time the user logs in.
-          !incomeDetailsLastUpdated.notificationSent
+        if (incomeDetailsLastUpdatedDate &&
+          compareISOTimestamps(lastLoggedIn, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS &&
+          // Also, check if the notification has already been sent for the recorded date. - prevents sending the same notification multiple times.
+          !myNotificationHas(item => item.type === 'INCOME_DETAILS_OLD' && item.data.lastUpdatedDate === incomeDetailsLastUpdatedDate)
         ) {
-          Vue.set(incomeDetailsLastUpdated, 'notificationSent', true)
           sbp('gi.notifications/emit', 'INCOME_DETAILS_OLD', {
             createdDate: now,
-            months: 6
+            months: 6,
+            lastUpdatedDate: incomeDetailsLastUpdatedDate
           })
         }
 
@@ -1273,7 +1268,8 @@ sbp('chelonia/defineContract', {
         if (incomeDetailsType === 'pledgeAmount' &&
           comparePeriodStamps(nextPeriod, now) < DAYS_MILLIS * 7 &&
           (ourPayments && ourPayments.todo?.length > 0) &&
-          currentNotifications.findIndex(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === currentPeriod) === -1
+          // Also, check if the notification has already been sent for the target period. - prevents sending the same notification multiple times.
+          !myNotificationHas(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === currentPeriod)
         ) {
           sbp('gi.notifications/emit', 'NEAR_DISTRIBUTION_END', {
             createdDate: now,
