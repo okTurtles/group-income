@@ -158,7 +158,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state }) {
         const { username } = data
-        if (!state.saveMessage && state.users[username]) {
+        if (!state.onlyRenderMessage && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
           console.warn('Can not join the chatroom which you are already part of')
           return
@@ -166,7 +166,7 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
-        if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
           return
         }
 
@@ -193,7 +193,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
 
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
 
@@ -216,7 +216,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
 
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
 
@@ -242,12 +242,12 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
-        if (!state.saveMessage && !state.users[member]) {
+        if (!state.onlyRenderMessage && !state.users[member]) {
           throw new Error(`Can not leave the chatroom which ${member} are not part of`)
         }
         Vue.delete(state.users, member)
 
-        if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
           return
         }
 
@@ -295,7 +295,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/chatroom/addMessage': {
       validate: messageType,
       process ({ data, meta, hash }, { state }) {
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
         const pendingMsg = state.messages.find(msg => msg.id === hash && msg.pending)
@@ -348,14 +348,14 @@ sbp('chelonia/defineContract', {
         // to check if the meta.username is creator seems like too heavy
       },
       process ({ data, meta }, { state }) {
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
         const msgIndex = findMessageIdx(data.id, state.messages)
         if (msgIndex >= 0 && meta.username === state.messages[msgIndex].from) {
           state.messages[msgIndex].text = data.text
           state.messages[msgIndex].updatedDate = meta.createdDate
-          if (state.saveMessage && state.messages[msgIndex].pending) {
+          if (state.onlyRenderMessage && state.messages[msgIndex].pending) {
             delete state.messages[msgIndex].pending
           }
         }
@@ -397,7 +397,7 @@ sbp('chelonia/defineContract', {
         id: string
       }),
       process ({ data, meta }, { state }) {
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
         const msgIndex = findMessageIdx(data.id, state.messages)
@@ -449,7 +449,7 @@ sbp('chelonia/defineContract', {
         emoticon: string
       }),
       process ({ data, meta, contractID }, { state }) {
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
         const { id, emoticon } = data
