@@ -1,8 +1,9 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
-import { createInvite } from '@model/contracts/shared/functions.js'
 import {
   INVITE_INITIAL_CREATOR,
   INVITE_EXPIRES_IN_DAYS,
@@ -23,9 +24,11 @@ import { imageUpload } from '@utils/image.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { encryptedAction } from './utils.js'
+import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
+import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import type { GIActionParams } from './types.js'
-import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { REPLACE_MODAL } from '@utils/events.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
@@ -81,12 +84,30 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
+    // Create the necessary keys to initialise the contract
+    // eslint-disable-next-line camelcase
+    const CSK = keygen(EDWARDS25519SHA512BATCH)
+    const CEK = keygen(CURVE25519XSALSA20POLY1305)
+    const inviteKey = keygen(EDWARDS25519SHA512BATCH)
+
+    // Key IDs
+    const CSKid = keyId(CSK)
+    const CEKid = keyId(CEK)
+    const inviteKeyId = keyId(inviteKey)
+
+    // Public keys to be stored in the contract
+    const CSKp = serializeKey(CSK, false)
+    const CEKp = serializeKey(CEK, false)
+    const inviteKeyP = serializeKey(inviteKey, false)
+
+    // Secret keys to be stored encrypted in the contract
+    const CSKs = encrypt(CEK, serializeKey(CSK, true))
+    const CEKs = encrypt(CEK, serializeKey(CEK, true))
+    const inviteKeyS = encrypt(CEK, serializeKey(inviteKey, true))
+
+    const rootState = sbp('state/vuex/state')
+
     try {
-      const initialInvite = createInvite({
-        quantity: 60,
-        creator: INVITE_INITIAL_CREATOR,
-        expires: INVITE_EXPIRES_IN_DAYS.ON_BOARDING
-      })
       const proposalSettings = {
         rule: ruleName,
         ruleSettings: {
@@ -102,13 +123,66 @@ export default (sbp('sbp/selectors/register', {
         // handle Flowtype annotations, even though our .babelrc should make it work.
         distributionDate = dateToPeriodStamp(addTimeToDate(new Date(), 3 * DAYS_MILLIS))
       }
+
+      await sbp('chelonia/configure', {
+        transientSecretKeys: {
+          [CSKid]: CSK,
+          [CEKid]: CEK,
+          [inviteKeyId]: inviteKey
+        }
+      })
+
       const message = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/group',
         publishOptions,
-        data: {
-          invites: {
-            [initialInvite.inviteSecret]: initialInvite
+        signingKeyId: CSKid,
+        actionSigningKeyId: CSKid,
+        actionEncryptionKeyId: CEKid,
+        keys: [
+          {
+            id: CSKid,
+            type: CSK.type,
+            data: CSKp,
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEYSHARE, GIMessage.OP_KEY_REQUEST_RESPONSE],
+            meta: {
+              type: 'csk',
+              private: {
+                keyId: CEKid,
+                content: CSKs
+              }
+            }
           },
+          {
+            id: CEKid,
+            type: CEK.type,
+            data: CEKp,
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEYSHARE],
+            meta: {
+              type: 'cek',
+              private: {
+                keyId: CEKid,
+                content: CEKs
+              }
+            }
+          },
+          {
+            id: inviteKeyId,
+            type: inviteKey.type,
+            data: inviteKeyP,
+            permissions: [GIMessage.OP_KEY_REQUEST],
+            meta: {
+              type: 'inviteKey',
+              quantity: 60,
+              creator: INVITE_INITIAL_CREATOR,
+              expires: Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
+              private: {
+                keyId: CEKid,
+                content: inviteKeyS
+              }
+            }
+          }
+        ],
+        data: {
           settings: {
             // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
             groupName: name,
@@ -144,12 +218,14 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
-      await sbp('chelonia/contract/sync', message.contractID())
-      saveLoginState('creating', message.contractID())
+      const contractID = message.contractID()
+
+      await sbp('chelonia/contract/sync', contractID)
+      saveLoginState('creating', contractID)
 
       // create a 'General' chatroom contract and let the creator join
       await sbp('gi.actions/group/addAndJoinChatRoom', {
-        contractID: message.contractID(),
+        contractID,
         data: {
           attributes: {
             name: CHATROOM_GENERAL_NAME,
@@ -157,8 +233,20 @@ export default (sbp('sbp/selectors/register', {
             description: '',
             privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP
           }
-        }
+        },
+        options: {
+          joinKey: {
+            id: CSKid,
+            type: CSK.type,
+            data: CSKp
+          }
+        },
+        signingKeyId: CSKid,
+        encryptionKeyId: CEKid
       })
+
+      const userID = rootState.loggedIn.identityContractID
+      await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID })
 
       return message
     } catch (e) {
@@ -166,31 +254,38 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to create the group: {reportError}', LError(e)))
     }
   },
+  'gi.contracts/group/getShareableKeys': async function (contractID) {
+    const state = await sbp('chelonia/latestContractState', contractID)
+    return {
+      signingKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string),
+      keys: state._volatile?.keys
+    }
+  },
   'gi.actions/group/createAndSwitch': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/create', params)
     sbp('gi.actions/group/switch', message.contractID())
     return message
   },
-  'gi.actions/group/join': async function (params: $Exact<GIActionParams>) {
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept: boolean } }) {
     try {
       sbp('okTurtles.data/set', 'JOINING_GROUP', true)
+      // sync the group's contract state
+      await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: !params?.options?.skipInviteAccept }, ['chelonia/contract/sync', params.contractID])
       // post acceptance event to the group contract, unless this is being called
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {
-        await sbp('chelonia/out/actionEncrypted', {
+        await sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
-          action: 'gi.contracts/group/inviteAccept',
           hooks: {
             prepublish: params.hooks?.prepublish,
             postpublish: null
           }
         })
       }
-      // sync the group's contract state
-      await sbp('chelonia/contract/sync', params.contractID)
 
       const rootState = sbp('state/vuex/state')
       if (!params.options?.skipInviteAccept) {
+        /*
         // join the 'General' chatroom by default
         const generalChatRoomId = rootState[params.contractID].generalChatRoomId
         if (generalChatRoomId) {
@@ -206,7 +301,7 @@ export default (sbp('sbp/selectors/register', {
           })
         } else {
           alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
-        }
+        } */
 
         saveLoginState('joining', params.contractID)
       } else {
@@ -216,8 +311,8 @@ export default (sbp('sbp/selectors/register', {
          * but he should sync all the contracts he was syncing in the previous device
          */
         const me = rootState.loggedIn.username
-        const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms)
-          .filter(cId => rootState[params.contractID].chatRooms[cId].users.includes(me))
+        const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
+          .filter(cId => rootState[params.contractID].chatRooms?.[cId].users.includes(me))
 
         await sbp('chelonia/contract/sync', chatRoomIds)
         sbp('state/vuex/commit', 'setCurrentChatRoomId', {
@@ -232,7 +327,7 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     }
   },
-  'gi.actions/group/joinAndSwitch': async function (params: GIActionParams) {
+  'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept: boolean } }) {
     await sbp('gi.actions/group/join', params)
     // after joining, we can set the current group
     sbp('gi.actions/group/switch', params.contractID)
@@ -251,6 +346,7 @@ export default (sbp('sbp/selectors/register', {
 
     const message = await sbp('gi.actions/chatroom/create', {
       data: params.data,
+      options: params.options,
       hooks: {
         prepublish: params.hooks?.prepublish,
         postpublish: null
@@ -321,6 +417,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
       ...omit(params, ['options']),
+      options: { joinKey: params.options?.joinKey },
       hooks: {
         prepublish: params.hooks?.prepublish,
         postpublish: null

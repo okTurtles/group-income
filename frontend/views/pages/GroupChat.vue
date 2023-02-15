@@ -190,7 +190,7 @@ export default ({
       })
       if (this.isDirectMessage(chatRoomId)) {
         this.updateCurrentChatRoomID(chatRoomId)
-      } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+      } else if (chatRoomId) {
         if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
           this.redirectChat('GroupChatConversation')
         } else {

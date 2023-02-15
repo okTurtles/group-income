@@ -12,7 +12,7 @@ const contractName = (contractID) => sbp('state/vuex/state').contracts[contractI
 // Note: this escaping is not intended as a protection against XSS.
 // It is only done to enable correct rendering of special characters in usernames.
 // To guard against XSS when rendering usernames, use the `v-safe-html` directive.
-const escapeForHtml = (text) => text.replace(/[<>&]/g, '\\$&')
+const escapeForHtml = (text) => text.replace(/[<>&]/g, (c) => ('&#' + c.codePointAt(0) + ';'))
 const strong = (text) => `<strong>${escapeForHtml(text)}</strong>`
 
 export default ({

@@ -1,8 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { INVITE_STATUS, MESSAGE_TYPES } from './constants.js'
-import { DAYS_MILLIS } from './time.js'
+import { INVITE_STATUS, MESSAGE_TYPES, DAYS_MILLIS } from './constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 // !!!!!!!!!!!!!!!

@@ -64,7 +64,7 @@ export default (sbp('sbp/selectors/register', {
   // NEVER call this directly yourself! _always_ call 'chelonia/db/addEntry' instead
   'chelonia/private/db/addEntry': async function (entry: GIMessage): Promise<string> {
     try {
-      const { previousHEAD } = entry.message()
+      const { previousHEAD } = entry.head()
       const contractID: string = entry.contractID()
       if (await sbp('chelonia/db/get', entry.hash())) {
         console.warn(`[chelonia.db] entry exists: ${entry.hash()}`)

@@ -201,7 +201,9 @@ export default ({
       'currentChatRoomScrollPosition',
       'currentChatRoomUnreadSince',
       'currentGroupNotifications',
-      'currentChatRoomUnreadMentions'
+      'currentChatRoomUnreadMentions',
+      'currentChatVolatile',
+      'currentChatVm'
     ]),
     currentUserAttr () {
       return {
@@ -281,7 +283,7 @@ export default ({
         data: !replyingMessage ? data : { ...data, replyingMessage },
         hooks: {
           prepublish: (message) => {
-            const msgValue = JSON.parse(message.opValue())
+            const msgValue = message.decryptedValue()
             const { meta, data } = msgValue
             this.messages.push({
               ...createMessage({ meta, data, hash: message.hash() }),
@@ -417,7 +419,9 @@ export default ({
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
         messages: initialize ? [] : this.messages,
-        saveMessage: true
+        saveMessage: true,
+        _volatile: cloneDeep(this.currentChatVolatile),
+        _vm: cloneDeep(this.currentChatVm)
       }
     },
     async renderMoreMessages (refresh = false) {

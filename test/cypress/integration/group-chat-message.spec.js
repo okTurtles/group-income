@@ -143,6 +143,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
   it(`user2 joins ${groupName} group`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
+      existingMemberUsername: user1,
       groupName: groupName,
       shouldLogoutAfter: false,
       bypassUI: true

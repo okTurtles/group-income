@@ -169,13 +169,18 @@ const ChatroomMixin: Object = {
       this.ephemeral.loadedDetails = initChatChannelDetails
       const { chatRoomId } = this.$route.params
       const state = await sbp('chelonia/latestContractState', chatRoomId)
-      const { name, type, description, creator, privacyLevel } = state.attributes
+
+      if (!state.attributes || !state.users) {
+        return
+      }
+
+      const { name, type, description, creator, privacyLevel } = state.attributes ?? {}
 
       this.ephemeral.loadedSummary = {
         type,
         title: name,
         description,
-        private: state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
+        private: state.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         privacyLevel,
         joined: false,
         creator
@@ -186,7 +191,7 @@ const ChatroomMixin: Object = {
       for (const username in this.currentGroupState.profiles) {
         const { displayName, picture, email } = this.globalProfile(username) || {}
         participants[username] = {
-          ...state.users[username],
+          ...state.users?.[username],
           username: username || '',
           displayName: displayName || '',
           picture: picture || '',

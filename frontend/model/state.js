@@ -529,6 +529,12 @@ const getters = {
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
   },
+  currentChatVolatile (state, getters) {
+    return state?.[getters.currentChatRoomId]?._volatile || null
+  },
+  currentChatVm (state, getters) {
+    return state?.[getters.currentChatRoomId]?._vm || null
+  },
   currentChatRoomScrollPosition (state, getters) {
     return state.chatRoomScrollPosition[getters.currentChatRoomId] // undefined means to the latest
   },
@@ -571,7 +577,7 @@ const getters = {
   },
   isPrivateChatRoom (state, getters) {
     return (chatRoomId: string) => {
-      return state[chatRoomId]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+      return state[chatRoomId]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     }
   },
   isJoinedChatRoom (state, getters) {

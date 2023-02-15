@@ -18,7 +18,8 @@ import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodS
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
-import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
+import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
@@ -395,7 +396,7 @@ sbp('chelonia/defineContract', {
       return getters.groupMembersByUsername.length
     },
     groupMembersPending (state, getters) {
-      const invites = getters.currentGroupState.invites
+      const invites = getters.currentGroupState._vm.invites
       const pendingMembers = {}
       for (const inviteId in invites) {
         const invite = invites[inviteId]
@@ -517,7 +518,6 @@ sbp('chelonia/defineContract', {
     // this is the constructor
     'gi.contracts/group': {
       validate: objectMaybeOf({
-        invites: mapOf(string, inviteType),
         settings: objectMaybeOf({
           // TODO: add 'groupPubkey'
           groupName: string,
@@ -1028,7 +1028,7 @@ sbp('chelonia/defineContract', {
           inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
         })(data)
 
-        if (!state.invites[data.inviteSecret]) {
+        if (!state._vm.invites[data.inviteSecret]) {
           throw new TypeError(L('The link does not exist.'))
         }
       },
@@ -1153,6 +1153,31 @@ sbp('chelonia/defineContract', {
         if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
+      },
+      async sideEffect ({ data, meta, contractID }, { state: Rstate }) {
+        const rootState = sbp('state/vuex/state')
+        const contracts = rootState.contracts || {}
+        const { identityContractID } = rootState.loggedIn
+        const userState = rootState[identityContractID]
+        const state = rootState[contractID]
+
+        if (rootState[data.chatRoomID]?._volatile) {
+          return
+        }
+
+        await sbp('chelonia/out/keyRequest', {
+          originatingContractID: identityContractID,
+          originatingContractName: contracts[identityContractID].type,
+          contractID: data.chatRoomID,
+          contractName: 'gi.contracts/chatroom',
+          signingKey: state._volatile?.keys?.[(((Object.values(Object(state._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)],
+          innerSigningKeyId: ((Object.values(userState._vm.authorizedKeys): any): GIKey[]).find((k) => k.meta?.type === 'csk')?.id,
+          encryptionKeyId: ((Object.values(userState._vm.authorizedKeys): any): GIKey[]).find((k) => k.meta?.type === 'cek')?.id,
+          hooks: {
+            prepublish: null,
+            postpublish: null
+          }
+        })
       }
     },
     'gi.contracts/group/deleteChatRoom': {

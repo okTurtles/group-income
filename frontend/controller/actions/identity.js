@@ -1,12 +1,18 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, deriveKeyFromPassword, deserializeKey, serializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { imageUpload } from '@utils/image.js'
 import { pickWhere, difference } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { encryptedAction } from './utils.js'
+import { handleFetchResult } from '../utils/misc.js'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
+import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 
 function generatedLoginState () {
   const { contracts } = sbp('state/vuex/state')
@@ -25,6 +31,27 @@ function diffLoginStates (s1: ?Object, s2: ?Object) {
 }
 
 export default (sbp('sbp/selectors/register', {
+  'gi.actions/identity/retrieveSalt': async (username: string, password: string) => {
+    const r = randomNonce()
+    const b = hash(r)
+    const authHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}/auth_hash?b=${encodeURIComponent(b)}`)
+      .then(handleFetchResult('json'))
+
+    const { authSalt, s, sig } = authHash
+
+    const h = await hashPassword(password, authSalt)
+
+    const [c, hc] = computeCAndHc(r, s, h)
+
+    const contractHash = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}/contract_hash?${(new URLSearchParams({
+      'r': r,
+      's': s,
+      'sig': sig,
+      'hc': Buffer.from(hc).toString('base64').replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
+    })).toString()}`).then(handleFetchResult('text'))
+
+    return decryptContractSalt(c, contractHash)
+  },
   'gi.actions/identity/create': async function ({
     data: { username, email, password, picture },
     publishOptions
@@ -57,23 +84,172 @@ export default (sbp('sbp/selectors/register', {
       options: { sync: true }
     })
     const mailboxID = mailbox.contractID()
+
+    const keyPair = boxKeyPair()
+    const r = Buffer.from(keyPair.publicKey).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')
+    const b = hash(r)
+    const registrationRes = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
+      },
+      body: `b=${encodeURIComponent(b)}`
+    })
+      .then(handleFetchResult('json'))
+
+    const { p, s, sig } = registrationRes
+
+    const [contractSalt, Eh] = await buildRegisterSaltRequest(p, keyPair.secretKey, password)
+
+    const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded'
+      },
+      body: new URLSearchParams({
+        'r': r,
+        's': s,
+        'sig': sig,
+        'Eh': Eh
+      })
+    })
+
+    if (!res.ok) {
+      throw new Error('Unable to register hash')
+    }
+
+    // Create the necessary keys to initialise the contract
+    const IPK = await deriveKeyFromPassword(EDWARDS25519SHA512BATCH, password, contractSalt)
+    const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, contractSalt)
+    const CSK = keygen(EDWARDS25519SHA512BATCH)
+    const CEK = keygen(CURVE25519XSALSA20POLY1305)
+
+    // Key IDs
+    const IPKid = keyId(IPK)
+    const IEKid = keyId(IEK)
+    const CSKid = keyId(CSK)
+    const CEKid = keyId(CEK)
+
+    // Public keys to be stored in the contract
+    const IPKp = serializeKey(IPK, false)
+    const IEKp = serializeKey(IEK, false)
+    const CSKp = serializeKey(CSK, false)
+    const CEKp = serializeKey(CEK, false)
+
+    // Secret keys to be stored encrypted in the contract
+    const CSKs = encrypt(IEK, serializeKey(CSK, true))
+    const CEKs = encrypt(IEK, serializeKey(CEK, true))
+
     let userID
     // next create the identity contract itself and associate it with the mailbox
     try {
+      await sbp('chelonia/configure', {
+        transientSecretKeys: {
+          [IPKid]: IPK,
+          [IEKid]: IEK,
+          [CSKid]: CSK,
+          [CEKid]: CEK
+        }
+      })
+
       const user = await sbp('chelonia/out/registerContract', {
         contractName: 'gi.contracts/identity',
         publishOptions,
+        signingKeyId: IPKid,
+        actionSigningKeyId: CSKid,
+        actionEncryptionKeyId: CEKid,
+        keys: [
+          {
+            id: IPKid,
+            type: IPK.type,
+            data: IPKp,
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL],
+            meta: {
+              type: 'ipk'
+            }
+          },
+          {
+            id: IEKid,
+            type: IEK.type,
+            data: IEKp,
+            permissions: ['gi.contracts/identity/keymeta'],
+            meta: {
+              type: 'iek'
+            }
+          },
+          {
+            id: CSKid,
+            type: CSK.type,
+            data: CSKp,
+            permissions: [GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEYSHARE],
+            meta: {
+              type: 'csk',
+              private: {
+                keyId: IEKid,
+                content: CSKs
+              }
+            }
+          },
+          {
+            id: CEKid,
+            type: CEK.type,
+            data: CEKp,
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEYSHARE],
+            meta: {
+              type: 'cek',
+              private: {
+                keyId: IEKid,
+                content: CEKs
+              }
+            }
+          }
+        ],
         data: {
           attributes: { username, email, picture: finalPicture, mailbox: mailboxID }
         }
       })
+
       userID = user.contractID()
+
       await sbp('chelonia/contract/sync', userID)
     } catch (e) {
       console.error('gi.actions/identity/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create user identity: {reportError}', LError(e)))
     }
     return [userID, mailboxID]
+  },
+  'gi.actions/identity/shareKeysWithSelf': async function ({ userID, contractID }) {
+    if (userID === contractID) {
+      return
+    }
+
+    const contractState = await sbp('chelonia/latestContractState', contractID)
+
+    if (contractState?._volatile?.keys) {
+      const state = await sbp('chelonia/latestContractState', userID)
+
+      const CEKid = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'cek')?.id: ?string)
+      const CSKid = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)
+      const CEK = deserializeKey(state?._volatile?.keys?.[CEKid])
+
+      await sbp('chelonia/out/keyShare', {
+        destinationContractID: userID,
+        destinationContractName: 'gi.contracts/identity',
+        data: {
+          contractID: contractID,
+          keys: Object.entries(contractState._volatile.keys).map(([keyId, key]: [string, mixed]) => ({
+            id: keyId,
+            meta: {
+              private: {
+                keyId: CEKid,
+                content: encrypt(CEK, (key: any))
+              }
+            }
+          }))
+        },
+        signingKeyId: CSKid
+      })
+    }
   },
   'gi.actions/identity/signup': async function ({ username, email, password }, publishOptions) {
     try {
@@ -169,13 +345,25 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/identity/login': async function ({ username, password }: {
-    username: string, password?: string
+    username: string, password: ?string
   }) {
     // TODO: Insert cryptography here
     const identityContractID = await sbp('namespace/lookup', username)
+
     if (!identityContractID) {
       throw new GIErrorUIRuntimeError(L('Invalid username or password'))
     }
+
+    const transientSecretKeys = password
+      ? await (async () => {
+        const salt = await sbp('gi.actions/identity/retrieveSalt', username, password)
+        const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, salt)
+        const IEKid = keyId(IEK)
+
+        return { [IEKid]: IEK }
+      })()
+      : {}
+
     try {
       sbp('appLogs/startCapture', username)
       const state = await sbp('gi.db/settings/load', username)
@@ -194,6 +382,7 @@ export default (sbp('sbp/selectors/register', {
       }
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, username)
       sbp('state/vuex/commit', 'login', { username, identityContractID })
+      await sbp('chelonia/configure', { transientSecretKeys })
       // IMPORTANT: we avoid using 'await' on the syncs so that Vue.js can proceed
       //            loading the website instead of stalling out.
       sbp('chelonia/contract/sync', contractIDs).then(async function () {
@@ -232,8 +421,11 @@ export default (sbp('sbp/selectors/register', {
       console.info('logging out, waiting for any events to finish...')
       await sbp('chelonia/contract/wait')
       await sbp('state/vuex/save')
+      const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
       await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
       await sbp('chelonia/contract/remove', Object.keys(state.contracts))
+      await sbp('gi.db/settings/delete', username)
+      await sbp('chelonia/configure', { transientSecretKeys: null })
       console.info('successfully logged out')
     } catch (e) {
       console.error(`${e.name} during logout: ${e.message}`, e)

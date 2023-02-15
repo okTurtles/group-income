@@ -152,19 +152,24 @@ export default ({
       'currentGroupId'
     ]),
     invitesToShow () {
-      const { invites } = this.currentGroupState
+      const { invites } = this.currentGroupState._vm
 
       if (!invites) { return [] }
 
       const invitesList = Object.values(invites)
         .filter(invite => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
         .map(this.mapInvite)
-      const options = {
+
+      return invitesList
+
+      // TODO: Make active and all work
+
+      /* const options = {
         Active: () => invitesList.filter(invite => invite.status.isActive || (invite.status.isRevoked && invite.inviteSecret === this.ephemeral.inviteRevokedNow)),
         All: () => invitesList
-      }
+      } */
 
-      return options[this.ephemeral.selectbox.selectedOption]()
+      // return options[this.ephemeral.selectbox.selectedOption]()
     }
   },
   methods: {
@@ -218,15 +223,15 @@ export default ({
       expires: expiryTime,
       invitee,
       inviteSecret,
+      initialQuantity,
       quantity,
-      responses,
       status
     }) {
       const isAnyoneLink = creator === INVITE_INITIAL_CREATOR
       const isInviteExpired = expiryTime < Date.now()
       const isInviteRevoked = status === INVITE_STATUS.REVOKED
-      const numberOfResponses = Object.keys(responses).length
-      const isAllInviteUsed = numberOfResponses === quantity
+      const numberOfResponses = initialQuantity - quantity
+      const isAllInviteUsed = (quantity === 0)
 
       return {
         isAnyoneLink,
@@ -234,7 +239,7 @@ export default ({
         inviteSecret,
         inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
         description: this.inviteStatusDescription({
-          isAnyoneLink, isInviteExpired, isInviteRevoked, isAllInviteUsed, quantity, numberOfResponses
+          isAnyoneLink, isInviteExpired, isInviteRevoked, isAllInviteUsed, quantity: initialQuantity, numberOfResponses
         }),
         expiryInfo: isInviteExpired ? L('Expired') : isInviteRevoked ? L('Revoked') : isAllInviteUsed ? '' : this.readableExpiryInfo(expiryTime),
         status: {

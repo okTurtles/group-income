@@ -274,6 +274,7 @@ Cypress.Commands.add('giInviteMember', (
 
 Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   username,
+  existingMemberUsername,
   groupName,
   isLoggedIn,
   inviteCreator,
@@ -286,13 +287,35 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     if (!isLoggedIn) {
       cy.giSignup(username, { bypassUI: true })
     }
+
     const params = new URLSearchParams(new URL(invitationLink).search)
     const groupId = params.get('groupId')
     const inviteSecret = params.get('secret')
 
     cy.window().its('sbp').then(async sbp => {
-      await sbp('gi.actions/group/joinAndSwitch', { contractID: groupId, data: { inviteSecret } })
-      await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+      const state = await sbp('state/vuex/state')
+      const originatingContractID = state['loggedIn']['identityContractID']
+      const userState = state[originatingContractID]
+
+      await sbp('gi.actions/group/joinAndSwitch', {
+        originatingContractID,
+        originatingContractName: 'gi.contracts/identity',
+        contractID: groupId,
+        contractName: 'gi.contracts/group',
+        signingKey: inviteSecret,
+        innerSigningKeyId: Object.values(userState._vm.authorizedKeys).find((k) => k.meta?.type === 'csk').id,
+        encryptionKeyId: Object.values(userState._vm.authorizedKeys).find((k) => k.meta?.type === 'cek').id
+      })
+
+      for (let i = 0; i < 2; i++) {
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        await sbp('gi.actions/identity/logout')
+        await sbp('gi.actions/identity/login', { username: existingMemberUsername, password: '123456789' })
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        await sbp('gi.actions/identity/logout')
+        await sbp('gi.actions/identity/login', { username: username, password: '123456789' })
+        await sbp('controller/router').push({ path: '/dashboard' }).catch(e => {})
+      }
     })
   } else {
     cy.visit(invitationLink)

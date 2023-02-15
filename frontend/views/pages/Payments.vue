@@ -342,7 +342,7 @@ export default ({
       }[this.ephemeral.activeTab]()
     },
     hasIncomeDetails () {
-      return !!this.ourGroupProfile.incomeDetailsType
+      return !!this.ourGroupProfile?.incomeDetailsType
     },
     paymentsFiltered () {
       return this.paymentsListData.filter(this.filterPayment)
