@@ -1242,7 +1242,8 @@ sbp('chelonia/defineContract', {
         // 1. INCOME_DETAILS_OLD
         // 2. NEAR_DISTRIBUTION_END
         const { ourPayments, currentNotifications } = sbp('state/vuex/getters')
-        const { lastLoggedIn, incomeDetailsLastUpdatedDate, incomeDetailsType } = getters.groupProfiles[meta.username]
+        // NOTE: {} below is a temporary fix for a weird cypress bug that getters.groupProfiles[meta.username] is undefined when a user rejoins the same group after getting kicked out.
+        const { lastLoggedIn, incomeDetailsLastUpdatedDate, incomeDetailsType } = (getters.groupProfiles[meta.username] || {})
         const myNotificationHas = checkFunc => currentNotifications.some(item => checkFunc(item))
         const now = meta.createdDate
 
@@ -1295,7 +1296,9 @@ sbp('chelonia/defineContract', {
         const { loggedIn } = sbp('state/vuex/state')
         const myProfile = getters.groupProfile(loggedIn.username)
 
-        if (isActionYoungerThanUser(meta, myProfile)) {
+        if (isActionYoungerThanUser(meta, myProfile) &&
+          myProfile.incomeDetailsType // if the user has entered their income details
+        ) {
           sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
             creator: meta.username,
             createdDate: meta.createdDate,

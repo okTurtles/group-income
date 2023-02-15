@@ -47,19 +47,19 @@ function assertMonthOverview (items) {
 
 function openNotificationCard ({
   messageToAssert = '',
-  clickTheLatestItem = true
+  clickItemIndex = null
 } = {}) {
   cy.getByDT('notificationBell').click()
   cy.getByDT('notificationCard').should('be.visible')
 
   cy.getByDT('notificationCard').within(() => {
-    cy.getByDT('notificationList').find('ul > li:nth-child(1)').as('topMostItem')
+    cy.getByDT('notificationList').find('ul > li').as('items')
 
     if (messageToAssert) {
-      cy.get('@topMostItem').should('contain', messageToAssert)
+      cy.get('@items').should('contain', messageToAssert)
     }
-    if (clickTheLatestItem) {
-      cy.get('@topMostItem').click()
+    if (clickItemIndex !== null) {
+      cy.get('@items').eq(clickItemIndex).click()
     }
   })
 }
@@ -197,7 +197,8 @@ describe('Group Payments', () => {
 
     cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
     openNotificationCard({
-      messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
+      messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`,
+      clickItemIndex: 1
     })
 
     cy.getByDT('modal').within(() => {
@@ -232,7 +233,8 @@ describe('Group Payments', () => {
     cy.log('user1 receives a notification for a thank you note')
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
     openNotificationCard({
-      messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`
+      messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`,
+      clickItemIndex: 0
     })
 
     cy.getByDT('modal-header-title').should('contain', 'Thank you note!') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
