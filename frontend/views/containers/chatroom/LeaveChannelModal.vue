@@ -38,7 +38,7 @@ export default ({
     ...mapGetters([
       'currentChatRoomId',
       'currentChatRoomState',
-      'isOneToOneDirectMessage',
+      'isPrivateDirectMessage',
       'currentIdentityState',
       'usernameFromDirectMessageID',
       'ourContactProfiles'
@@ -61,7 +61,7 @@ export default ({
     },
     async submit () {
       try {
-        if (this.isOneToOneDirectMessage()) {
+        if (this.isPrivateDirectMessage()) {
           const mailboxID = this.currentIdentityState.attributes.mailbox
           const username = this.usernameFromDirectMessageID(this.currentChatRoomId)
           await sbp('gi.actions/mailbox/leaveDirectMessage', {

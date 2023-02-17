@@ -204,6 +204,9 @@
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "All messages will be deleted;" = "All messages will be deleted;";
 
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"All new messages" = "All new messages";
+
 /* views/containers/user-settings/Troubleshooting.vue */
 "All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information." = "All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information.";
 
@@ -216,14 +219,14 @@
 /* views/containers/user-settings/NotificationSettings.vue */
 "Allow push notifications" = "Allow push notifications";
 
-/* model/contracts/mailbox.js */
+/* controller/actions/mailbox.js */
 "Already existing direct message channel." = "Already existing direct message channel.";
-
-/* model/contracts/mailbox.js */
-"Already existing group message channel." = "Already existing group message channel.";
 
 /* views/containers/access/SignupModal.vue, views/pages/Join.vue */
 "Already have an account?" = "Already have an account?";
+
+/* model/contracts/mailbox.js */
+"Already joined direct message." = "Already joined direct message.";
 
 /* views/containers/payments/PaymentRowReceived.vue */
 "Already marked as not received!" = "Already marked as not received!";
@@ -564,6 +567,9 @@
 /* views/containers/chatroom/NewDirectMessageModal.vue, views/pages/GroupChat.vue */
 "Direct Messages" = "Direct Messages";
 
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Direct messages and mentions" = "Direct messages and mentions";
+
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Disagreement number" = "Disagreement number";
 
@@ -700,10 +706,7 @@
 "Failed to force distribution date." = "Failed to force distribution date.";
 
 /* controller/actions/mailbox.js */
-"Failed to join a direct message channel." = "Failed to join a direct message channel.";
-
-/* controller/actions/mailbox.js */
-"Failed to join a group message channel." = "Failed to join a group message channel.";
+"Failed to join a direct message." = "Failed to join a direct message.";
 
 /* controller/actions/chatroom.js, controller/actions/group.js */
 "Failed to join chat channel." = "Failed to join chat channel.";
@@ -716,9 +719,6 @@
 
 /* controller/actions/chatroom.js, controller/actions/group.js */
 "Failed to leave chat channel." = "Failed to leave chat channel.";
-
-/* controller/actions/mailbox.js */
-"Failed to leave direct message channel." = "Failed to leave direct message channel.";
 
 /* controller/actions/group.js */
 "Failed to leave group. {codeError}" = "Failed to leave group. {codeError}";
@@ -746,6 +746,9 @@
 
 /* controller/actions/group.js */
 "Failed to send a payment thank you note." = "Failed to send a payment thank you note.";
+
+/* controller/actions/mailbox.js */
+"Failed to set direct message visibility." = "Failed to set direct message visibility.";
 
 /* controller/actions/identity.js */
 "Failed to set login state." = "Failed to set login state.";
@@ -923,6 +926,9 @@
 
 /* views/containers/contributions/IncomeDetails.vue */
 "Income Details" = "Income Details";
+
+/* controller/actions/mailbox.js */
+"Incorrect number of usernames provided." = "Incorrect number of usernames provided.";
 
 /* controller/actions/mailbox.js */
 "Incorrect username to create direct message." = "Incorrect username to create direct message.";
@@ -1110,6 +1116,9 @@
 /* views/containers/chatroom/MessageActions.vue */
 "More options" = "More options";
 
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Mute all sounds from chat notifications" = "Mute all sounds from chat notifications";
+
 /* views/containers/user-settings/settings.js */
 "My account" = "My account";
 
@@ -1127,9 +1136,6 @@
 
 /* views/containers/contributions/SupportHistory.vue */
 "Needed: {todo}" = "Needed: {todo}";
-
-/* model/contracts/mailbox.js */
-"Never created or already joined direct message channel." = "Never created or already joined direct message channel.";
 
 /* views/containers/chatroom/ChatMain.vue, views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ConversationsList.vue, views/containers/dashboard/GroupMembers.vue */
 "New" = "New";
@@ -1198,7 +1204,7 @@
 "Not enough usernames provided." = "Not enough usernames provided.";
 
 /* model/contracts/mailbox.js */
-"Not joined or already left direct message channel." = "Not joined or already left direct message channel.";
+"Not existing direct message." = "Not existing direct message.";
 
 /* views/containers/access/LoginModal.vue, views/pages/Join.vue */
 "Not on Group Income yet?" = "Not on Group Income yet?";
@@ -1217,6 +1223,9 @@
 
 /* views/containers/payments/PaymentDetail.vue */
 "Notes" = "Notes";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Nothing" = "Nothing";
 
 /* views/containers/notifications/NotificationList.vue */
 "Nothing to see here... yet!" = "Nothing to see here... yet!";
@@ -1267,10 +1276,7 @@
 "Only the mailbox creator can create direct message channel." = "Only the mailbox creator can create direct message channel.";
 
 /* model/contracts/mailbox.js */
-"Only the mailbox creator can create group message channel." = "Only the mailbox creator can create group message channel.";
-
-/* model/contracts/mailbox.js */
-"Only the mailbox creator can leave direct message channel." = "Only the mailbox creator can leave direct message channel.";
+"Only the mailbox creator can hide direct message channel." = "Only the mailbox creator can hide direct message channel.";
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can set attributes." = "Only the mailbox creator can set attributes.";
@@ -1394,6 +1400,12 @@
 
 /* views/components/avatar-editor/AvatarEditorModal.vue */
 "Pinch to zoom, drag to reposition" = "Pinch to zoom, drag to reposition";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Play sounds for all new messages" = "Play sounds for all new messages";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Play sounds for direct messages and mentions" = "Play sounds for direct messages and mentions";
 
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "Please confirm that you want to delete this channel" = "Please confirm that you want to delete this channel";
@@ -1671,6 +1683,9 @@
 /* views/components/ProfileCard.vue */
 "Send message" = "Send message";
 
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Send notifications for:" = "Send notifications for:";
+
 /* views/containers/payments/SendPaymentsViaLightning.vue */
 "Send payment" = "Send payment";
 
@@ -1754,6 +1769,9 @@
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Sorry, you should reset browser notification permission again." = "Sorry, you should reset browser notification permission again.";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Sounds:" = "Sounds:";
 
 /* views/containers/dashboard/StartInvitingWidget.vue */
 "Start sharing your resources with the ones who matter to you!" = "Start sharing your resources with the ones who matter to you!";

@@ -31,10 +31,18 @@ export default (sbp('sbp/selectors/register', {
     try {
       const rootState = sbp('state/vuex/state')
       const rootGetters = sbp('state/vuex/getters')
-      const partnerProfile = rootGetters.ourContactProfiles[params.data.username]
+      const partnerProfiles = params.data.usernames.map(username => rootGetters.ourContactProfiles[username])
+      const isPrivacyLevelPrivate = params.data.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
 
-      if (!partnerProfile) {
+      const hasEmptyProfile = partnerProfiles.some(profile => !profile)
+      if (hasEmptyProfile) {
         throw new GIErrorUIRuntimeError(L('Incorrect username to create direct message.'))
+      } else if (!partnerProfiles.length) {
+        throw new GIErrorUIRuntimeError(L('Not enough usernames provided.'))
+      } else if (isPrivacyLevelPrivate && partnerProfiles.length !== 1) {
+        throw new GIErrorUIRuntimeError(L('Incorrect number of usernames provided.')) // TODO: need to add translation
+      } else if (isPrivacyLevelPrivate && rootGetters.ourPrivateDirectMessages[params.data.usernames[0]]) {
+        throw new GIErrorUIRuntimeError(L('Already existing direct message channel.'))
       }
 
       const message = await sbp('gi.actions/chatroom/create', {
@@ -42,7 +50,7 @@ export default (sbp('sbp/selectors/register', {
           attributes: {
             name: '',
             description: '',
-            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
+            privacyLevel: params.data.privacyLevel, // CHATROOM_PRIVACY_LEVEL.PRIVATE | CHATROOM_PRIVACY_LEVEL.GROUP
             type: CHATROOM_TYPES.INDIVIDUAL
           }
         },
@@ -58,73 +66,6 @@ export default (sbp('sbp/selectors/register', {
         data: { username: rootState.loggedIn.username }
       })
 
-      await sbp('gi.actions/chatroom/join', {
-        ...omit(params, ['options', 'data', 'hook']),
-        contractID: message.contractID(),
-        data: { username: partnerProfile.username }
-      })
-
-      await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options', 'data', 'hook']),
-        data: {
-          username: params.data.username,
-          contractID: message.contractID()
-        },
-        action: 'gi.contracts/mailbox/createDirectMessage'
-      })
-
-      await sbp('gi.actions/mailbox/joinDirectMessage', {
-        ...omit(params, ['options', 'data', 'hook']),
-        contractID: partnerProfile.mailbox,
-        data: {
-          username: rootState.loggedIn.username,
-          contractID: message.contractID()
-        },
-        hooks: {
-          prepublish: null,
-          postpublish: params.hooks?.postpublish
-        }
-      })
-    } catch (e) {
-      console.error('gi.actions/mailbox/createDirectMessage failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to create a new direct message channel.'))
-    }
-  },
-  'gi.actions/mailbox/createGroupMessage': async function (params: GIActionParams) {
-    try {
-      const rootState = sbp('state/vuex/state')
-      const rootGetters = sbp('state/vuex/getters')
-      const me = rootState.loggedIn.username
-      const partnerProfiles = params.data.usernames.map(username => rootGetters.ourContactProfiles[username])
-
-      const hasEmptyProfile = partnerProfiles.some(profile => !profile)
-      if (partnerProfiles.length < 2) {
-        throw new GIErrorUIRuntimeError(L('Not enough usernames provided.'))
-      } else if (hasEmptyProfile) {
-        throw new GIErrorUIRuntimeError(L('Incorrect username to create group message.'))
-      }
-
-      const message = await sbp('gi.actions/chatroom/create', {
-        data: {
-          attributes: {
-            name: '',
-            description: '',
-            privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
-            type: CHATROOM_TYPES.INDIVIDUAL
-          }
-        },
-        hooks: {
-          prepublish: params.hooks?.prepublish,
-          postpublish: null
-        }
-      })
-
-      await sbp('gi.actions/chatroom/join', {
-        ...omit(params, ['options', 'data', 'hook']),
-        contractID: message.contractID(),
-        data: { username: me }
-      })
-
       for (const profile of partnerProfiles) {
         await sbp('gi.actions/chatroom/join', {
           ...omit(params, ['options', 'data', 'hook']),
@@ -135,26 +76,31 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('chelonia/out/actionEncrypted', {
         ...omit(params, ['options', 'data', 'hook']),
-        data: { contractID: message.contractID() },
-        action: 'gi.contracts/mailbox/createGroupMessage'
+        data: {
+          privacyLevel: params.data.privacyLevel,
+          contractID: message.contractID()
+        },
+        action: 'gi.contracts/mailbox/createDirectMessage'
       })
 
       for (const [index, profile] of partnerProfiles.entries()) {
         const hooks = index < partnerProfiles.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
-        await sbp('gi.actions/mailbox/joinGroupMessage', {
+        await sbp('gi.actions/mailbox/joinDirectMessage', {
           ...omit(params, ['options', 'data', 'hook']),
           contractID: profile.mailbox,
-          data: { contractID: message.contractID() },
+          data: {
+            privacyLevel: params.data.privacyLevel,
+            contractID: message.contractID()
+          },
           hooks
         })
       }
     } catch (e) {
-      console.error('gi.actions/mailbox/createGroupMessage failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to create a new group message channel.'))
+      console.error('gi.actions/mailbox/createDirectMessage failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to create a new direct message channel.'))
     }
   },
-  ...encryptedAction('gi.actions/mailbox/joinDirectMessage', L('Failed to join a direct message channel.')),
-  ...encryptedAction('gi.actions/mailbox/leaveDirectMessage', L('Failed to leave direct message channel.')),
-  ...encryptedAction('gi.actions/mailbox/joinGroupMessage', L('Failed to join a group message channel.')),
+  ...encryptedAction('gi.actions/mailbox/joinDirectMessage', L('Failed to join a direct message.')),
+  ...encryptedAction('gi.actions/mailbox/setDirectMessageVisibility', L('Failed to set direct message visibility.')),
   ...encryptedAction('gi.actions/mailbox/setAttributes', L('Failed to set mailbox attributes.'))
 }): string[])

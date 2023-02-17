@@ -167,14 +167,14 @@ export default ({
       'ourUsername',
       'globalProfile',
       'isDirectMessage',
-      'isOneToOneDirectMessage',
-      'isOneToManyDirectMessage',
-      'oneToManyMessageInfo',
+      'isPrivateDirectMessage',
+      'isGroupDirectMessage',
+      'groupDirectMessageInfo',
       'usernameFromDirectMessageID',
       'isJoinedChatRoom',
       'ourContactProfiles',
       'ourContacts',
-      'ourOneToManyDirectMessages'
+      'ourGroupDirectMessages'
     ]),
     ...mapState([
       'currentGroupId'
@@ -204,11 +204,11 @@ export default ({
     attributes () {
       const { name, description, privacyLevel } = this.currentChatRoomState.attributes || this.details
       let title = name
-      if (this.isOneToOneDirectMessage()) {
+      if (this.isPrivateDirectMessage()) {
         const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
         title = this.ourContactProfiles[partnerUsername].displayName || partnerUsername
-      } else if (this.isOneToManyDirectMessage()) {
-        title = this.oneToManyMessageInfo(this.currentChatRoomId).title
+      } else if (this.isGroupDirectMessage()) {
+        title = this.groupDirectMessageInfo(this.currentChatRoomId).title
       }
       const privacy = {
         [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
@@ -315,7 +315,7 @@ export default ({
       if (this.isDirectMessage()) {
         if (this.isPrivacyLevelPrivate) {
           const usernames = [this.usernameFromDirectMessageID(this.currentChatRoomId), username]
-          const existingChatRoomId = Object.keys(this.ourOneToManyDirectMessages).find(contractID => {
+          const existingChatRoomId = Object.keys(this.ourGroupDirectMessages).find(contractID => {
             const users = Object.keys(this.$store.state[contractID]?.users || {})
             if (users.length === usernames.length + 1) {
               return [...usernames, this.ourUsername].reduce((existing, un) => existing && users.includes(un), true)
@@ -325,9 +325,12 @@ export default ({
           if (existingChatRoomId) {
             this.$router.push({ name: 'GroupChatConversation', params: { chatRoomId: existingChatRoomId } })
           } else {
-            sbp('gi.actions/mailbox/createGroupMessage', {
+            sbp('gi.actions/mailbox/createDirectMessage', {
               contractID: this.currentIdentityState.attributes.mailbox,
-              data: { usernames }
+              data: {
+                privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
+                usernames
+              }
             })
           }
           this.closeModal()
@@ -338,10 +341,10 @@ export default ({
             data: { username },
             hooks: {
               postpublish: (message) => {
-                sbp('gi.actions/mailbox/joinGroupMessage', {
+                sbp('gi.actions/mailbox/joinDirectMessage', {
                   contractID: profile.mailbox,
                   data: {
-                    creator: this.currentChatRoomState.attributes.creator,
+                    privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
                     contractID: this.currentChatRoomId
                   }
                 })

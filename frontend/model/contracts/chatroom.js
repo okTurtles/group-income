@@ -57,8 +57,8 @@ function messageReceivePostEffect ({ contractID, messageId, datetime, text, isAl
     return
   }
   const rootGetters = sbp('state/vuex/getters')
-  const isOneToOneDM = rootGetters.isOneToOneDirectMessage(contractID)
-  const isDMOrMention = isMentionedMe || isOneToOneDM
+  const isPrivateDM = rootGetters.isPrivateDirectMessage(contractID)
+  const isDMOrMention = isMentionedMe || isPrivateDM
 
   if (!isAlreadyAdded && isDMOrMention) {
     sbp('state/vuex/commit', 'addChatRoomUnreadMention', {
@@ -70,11 +70,11 @@ function messageReceivePostEffect ({ contractID, messageId, datetime, text, isAl
 
   let title = `# ${chatRoomName}`
   let partnerProfile
-  if (isOneToOneDM) {
+  if (isPrivateDM) {
     partnerProfile = rootGetters.ourContactProfiles[username] // NOTE: partner identity contract could not be synced at the time of use
     title = `# ${partnerProfile?.displayName || username}`
-  } else if (rootGetters.isOneToManyDirectMessage(contractID)) {
-    title = `# ${rootGetters.oneToManyMessageInfo(contractID).title}`
+  } else if (rootGetters.isGroupDirectMessage(contractID)) {
+    title = `# ${rootGetters.groupDirectMessageInfo(contractID).title}`
   }
   const path = `/group-chat/${contractID}`
 

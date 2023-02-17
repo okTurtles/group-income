@@ -64,10 +64,10 @@ const ChatroomMixin: Object = {
       'isPrivateChatRoom',
       'ourContactProfiles',
       'isDirectMessage',
-      'isOneToOneDirectMessage',
-      'isOneToManyDirectMessage',
+      'isPrivateDirectMessage',
+      'isGroupDirectMessage',
       'usernameFromDirectMessageID',
-      'oneToManyMessageInfo'
+      'groupDirectMessageInfo'
     ]),
     ...mapState(['currentGroupId']),
     summary (): Object {
@@ -80,13 +80,13 @@ const ChatroomMixin: Object = {
 
       let title = name
       let picture
-      if (this.isOneToOneDirectMessage(this.currentChatRoomId)) {
+      if (this.isPrivateDirectMessage(this.currentChatRoomId)) {
         const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
         const partner = this.ourContactProfiles[partnerUsername]
         title = partner?.displayName || partnerUsername
         picture = partner?.picture
-      } else if (this.isOneToManyDirectMessage(this.currentChatRoomId)) {
-        title = this.oneToManyMessageInfo(this.currentChatRoomId).title
+      } else if (this.isGroupDirectMessage(this.currentChatRoomId)) {
+        title = this.groupDirectMessageInfo(this.currentChatRoomId).title
       }
 
       return {
@@ -162,12 +162,12 @@ const ChatroomMixin: Object = {
     },
     refreshTitle (title?: string): void {
       if (!title) {
-        if (this.isOneToOneDirectMessage(this.currentChatRoomId)) {
+        if (this.isPrivateDirectMessage(this.currentChatRoomId)) {
           const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
           const partner = this.ourContactProfiles[partnerUsername]
           title = partner.displayName || partnerUsername
-        } else if (this.isOneToManyDirectMessage(this.currentChatRoomId)) {
-          title = this.oneToManyMessageInfo(this.currentChatRoomId).title
+        } else if (this.isGroupDirectMessage(this.currentChatRoomId)) {
+          title = this.groupDirectMessageInfo(this.currentChatRoomId).title
         } else {
           title = this.currentChatRoomState.attributes?.name
         }

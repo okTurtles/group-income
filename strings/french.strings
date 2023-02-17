@@ -36,6 +36,9 @@
 /* MISSING TRANSLATION - controller/actions/mailbox.js */
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
+/* MISSING TRANSLATION - controller/actions/mailbox.js */
+"Incorrect number of usernames provided." = "Incorrect number of usernames provided.";
+
 /* MISSING TRANSLATION - controller/router.js */
 "Design System" = "Design System";
 
@@ -59,6 +62,9 @@
 
 /* MISSING TRANSLATION - model/contracts/identity.js */
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
+
+/* MISSING TRANSLATION - model/contracts/mailbox.js */
+"Only the mailbox creator can hide direct message channel." = "Only the mailbox creator can hide direct message channel.";
 
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "1d" = "1d";
@@ -700,19 +706,19 @@
 "Invalid username or password" = "Nom d’utilisateur ou mot de passe invalide";
 
 /* controller/actions/mailbox.js */
+"Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
+
+/* controller/actions/mailbox.js */
 "Failed to create a new group message channel." = "Échec de la création d'un nouveau canal de message de groupe.";
 
 /* controller/actions/mailbox.js */
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
 
 /* controller/actions/mailbox.js */
-"Failed to join a direct message channel." = "Échec de la connexion à un canal de messagerie directe.";
+"Failed to join a direct message." = "Impossible de rejoindre un message privé.";
 
 /* controller/actions/mailbox.js */
-"Failed to join a group message channel." = "Impossible de rejoindre un canal de messagerie de groupe.";
-
-/* controller/actions/mailbox.js */
-"Failed to leave direct message channel." = "Impossible de quitter le canal de messagerie directe.";
+"Failed to set direct message visibility." = "Échec de la définition de la visibilité des messages directs.";
 
 /* controller/actions/mailbox.js */
 "Failed to set mailbox attributes." = "Impossible de définir les attributs de la boîte aux lettres.";
@@ -784,25 +790,13 @@
 "There is an identical open proposal." = "Une proposition identique a déjà été créée.";
 
 /* model/contracts/mailbox.js */
-"Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
+"Already joined direct message." = "Message direct déjà rejoint.";
 
 /* model/contracts/mailbox.js */
-"Already existing group message channel." = "Canal de messagerie de groupe déjà existant.";
-
-/* model/contracts/mailbox.js */
-"Never created or already joined direct message channel." = "Jamais créé ou déjà rejoint le canal de messagerie directe.";
-
-/* model/contracts/mailbox.js */
-"Not joined or already left direct message channel." = "Pas rejoint ou déjà quitté le canal de messagerie directe.";
+"Not existing direct message." = "Message direct inexistant.";
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can create direct message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie directe.";
-
-/* model/contracts/mailbox.js */
-"Only the mailbox creator can create group message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie de groupe.";
-
-/* model/contracts/mailbox.js */
-"Only the mailbox creator can leave direct message channel." = "Seul le créateur de la boîte aux lettres peut quitter le canal de messagerie directe.";
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can set attributes." = "Seul le créateur de la boîte aux lettres peut définir des attributs.";
@@ -1130,6 +1124,30 @@
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/proposals/MemberRequest.vue */
 "Undo" = "Annuler";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"All new messages" = "Tous les nouveaux messages";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Direct messages and mentions" = "Messages directs et mentions";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Mute all sounds from chat notifications" = "Couper tous les sons des notifications de chat";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Nothing" = "Rien";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Play sounds for all new messages" = "Jouer des sons pour tous les nouveaux messages";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Play sounds for direct messages and mentions" = "Jouer des sons pour les messages directs et les mentions";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Send notifications for:" = "Envoyer des notifications pour:";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Sounds:" = "Des sons:";
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/proposals/Mincome.vue, views/pages/GroupSettings.vue */
 "This field is required" = "Ce champ est requis";
@@ -2551,7 +2569,7 @@
 "According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this." = "Selon vos règles de vote, {strong_}{value} membres sur {total}{_strong} devront approuver ceci.";
 
 /* Not currently used */
-"All new messages" = "Tous les nouveaux messages";
+"Already existing group message channel." = "Canal de messagerie de groupe déjà existant.";
 
 /* Not currently used */
 "Amout sent" = "Montant envoyé";
@@ -2587,9 +2605,6 @@
 "Delete" = "Effacer";
 
 /* Not currently used */
-"Direct messages and mentions" = "Messages directs et mentions";
-
-/* Not currently used */
 "Direct messages" = "Conversations privées";
 
 /* Not currently used */
@@ -2609,6 +2624,15 @@
 
 /* Not currently used */
 "Failed to create payment. {reportError}" = "Erreur lors de la création du paiement. {reportError}";
+
+/* Not currently used */
+"Failed to join a direct message channel." = "Échec de la connexion à un canal de messagerie directe.";
+
+/* Not currently used */
+"Failed to join a group message channel." = "Impossible de rejoindre un canal de messagerie de groupe.";
+
+/* Not currently used */
+"Failed to leave direct message channel." = "Impossible de quitter le canal de messagerie directe.";
 
 /* Not currently used */
 "Failed to post message to mailbox." = "L’envoi du message a échoué.";
@@ -2671,10 +2695,10 @@
 "Members of your group will now be asked to vote.{br_} You need {strong_}{numVotes} yes votes{_strong} for your proposal to be accepted." = "Les membres de votre groupe vont maintenant être invités à voter.{br_} Il faut {strong_}{numVotes} votes favorables{_strong} pour que votre proposition soit acceptée.";
 
 /* Not currently used */
-"Mute all sounds from chat notifications" = "Couper tous les sons des notifications de chat";
+"Mute chat" = "Suspendre les notifications";
 
 /* Not currently used */
-"Mute chat" = "Suspendre les notifications";
+"Never created or already joined direct message channel." = "Jamais créé ou déjà rejoint le canal de messagerie directe.";
 
 /* Not currently used */
 "New Message" = "Nouveau message";
@@ -2692,7 +2716,7 @@
 "Not joined or already deleted group message channel." = "Canal de messagerie de groupe non rejoint ou déjà supprimé.";
 
 /* Not currently used */
-"Nothing" = "Rien";
+"Not joined or already left direct message channel." = "Pas rejoint ou déjà quitté le canal de messagerie directe.";
 
 /* Not currently used */
 "Notification Permission" = "Autorisation de notification";
@@ -2707,6 +2731,12 @@
 "Only creator can delete group message channel." = "Seul le créateur peut supprimer le canal de message de groupe.";
 
 /* Not currently used */
+"Only the mailbox creator can create group message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie de groupe.";
+
+/* Not currently used */
+"Only the mailbox creator can leave direct message channel." = "Seul le créateur de la boîte aux lettres peut quitter le canal de messagerie directe.";
+
+/* Not currently used */
 "Payments Received" = "Paiements Reçus";
 
 /* Not currently used */
@@ -2717,12 +2747,6 @@
 
 /* Not currently used */
 "Percentage of the goal reached by the group." = "Pourcentage de l’objectif atteint par le groupe.";
-
-/* Not currently used */
-"Play sounds for all new messages" = "Jouer des sons pour tous les nouveaux messages";
-
-/* Not currently used */
-"Play sounds for direct messages and mentions" = "Jouer des sons pour les messages directs et les mentions";
 
 /* Not currently used */
 "Proposal accepted!" = "Proposition acceptée!";
@@ -2755,9 +2779,6 @@
 "Search for a channel" = "Rechercher un groupe de discussion";
 
 /* Not currently used */
-"Send notifications for:" = "Envoyer des notifications pour:";
-
-/* Not currently used */
 "Send to" = "Envoyer à";
 
 /* Not currently used */
@@ -2768,9 +2789,6 @@
 
 /* Not currently used */
 "Show payment menu" = "Afficher le menu de paiement";
-
-/* Not currently used */
-"Sounds:" = "Des sons:";
 
 /* Not currently used */
 "Support History" = "Historique du Support";

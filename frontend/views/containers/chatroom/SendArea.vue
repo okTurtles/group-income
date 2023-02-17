@@ -204,7 +204,7 @@ export default ({
   computed: {
     ...mapGetters([
       'chatRoomUsers',
-      'isOneToOneDirectMessage',
+      'isPrivateDirectMessage',
       'currentChatRoomId',
       'ourContactProfiles'
     ]),
@@ -368,7 +368,7 @@ export default ({
     },
     startMention (keyword, position) {
       const all = makeMentionFromUsername('').all.slice(1)
-      const availableMentions = this.isOneToOneDirectMessage()
+      const availableMentions = this.isPrivateDirectMessage()
         ? this.users
         : [
             ...this.users,

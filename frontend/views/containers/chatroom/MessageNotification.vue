@@ -42,7 +42,7 @@ export default ({
     isCurrentUser: Boolean
   },
   computed: {
-    ...mapGetters(['userDisplayName', 'isOneToManyDirectMessage', 'currentChatRoomId']),
+    ...mapGetters(['userDisplayName', 'isGroupDirectMessage', 'currentChatRoomId']),
     message () {
       const { username, channelName, channelDescription } = this.notification.params
       const displayName = this.userDisplayName(username)
@@ -64,7 +64,7 @@ export default ({
         }
       }
 
-      const notificationSelector = this.isOneToManyDirectMessage() ? 'onOneToManyDirectMessage' : 'default'
+      const notificationSelector = this.isGroupDirectMessage() ? 'onOneToManyDirectMessage' : 'default'
       const text = notificationTemplates[notificationSelector][this.notification.type]
 
       // let variant = 'simple'

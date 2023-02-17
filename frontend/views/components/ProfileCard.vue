@@ -90,7 +90,7 @@ import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
-import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
+import { PROFILE_STATUS, CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
@@ -122,7 +122,7 @@ export default ({
       'globalProfile',
       'groupShouldPropose',
       'ourContributionSummary',
-      'ourOneToOneDirectMessages',
+      'ourPrivateDirectMessages',
       'currentIdentityState',
       'directMessageIDFromUsername'
     ]),
@@ -160,12 +160,13 @@ export default ({
       this.$refs.tooltip.toggle()
     },
     sendMessage () {
-      const isExistingDM = this.ourOneToOneDirectMessages[this.username]?.joinedDate
-      if (!isExistingDM) {
-        const actionName = this.ourOneToOneDirectMessages[this.username] ? 'joinDirectMessage' : 'createDirectMessage'
-        sbp(`gi.actions/mailbox/${actionName}`, {
+      if (!this.ourPrivateDirectMessages[this.username]) {
+        sbp('gi.actions/mailbox/createDirectMessage', {
           contractID: this.currentIdentityState.attributes.mailbox,
-          data: { username: this.username }
+          data: {
+            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
+            usernames: [this.username]
+          }
         })
       } else {
         const chatRoomId = this.directMessageIDFromUsername(this.username)

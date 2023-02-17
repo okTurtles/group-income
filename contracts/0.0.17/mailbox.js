@@ -9147,6 +9147,13 @@
   // frontend/model/contracts/shared/functions.js
   var import_sbp2 = __toESM(__require("@sbp/sbp"));
 
+  // frontend/model/contracts/shared/constants.js
+  var CHATROOM_PRIVACY_LEVEL = {
+    GROUP: "group",
+    PRIVATE: "private",
+    PUBLIC: "public"
+  };
+
   // frontend/model/contracts/shared/time.js
   var MINS_MILLIS = 6e4;
   var HOURS_MILLIS = 60 * MINS_MILLIS;
@@ -9183,6 +9190,7 @@
   var isEmpty = (v) => v === EMPTY_VALUE;
   var isNil = (v) => v === null;
   var isUndef2 = (v) => typeof v === "undefined";
+  var isBoolean2 = (v) => typeof v === "boolean";
   var isString = (v) => typeof v === "string";
   var isObject2 = (v) => !isNil(v) && typeof v === "object";
   var isFunction = (v) => typeof v === "function";
@@ -9228,6 +9236,20 @@ ${this.getErrorInfo()}`;
   };
   var validatorError = (typeFn, value, scope, message, expectedType, valueType) => {
     return new TypeValidatorError(message, expectedType || getType2(typeFn), valueType || typeof value, JSON.stringify(value), typeFn.name, scope);
+  };
+  var literalOf = (primitive) => {
+    function literal(value, _scope = "") {
+      if (isEmpty(value) || value === primitive)
+        return primitive;
+      throw validatorError(literal, value, _scope);
+    }
+    literal.type = () => {
+      if (isBoolean2(primitive))
+        return `${primitive ? "true" : "false"}`;
+      else
+        return `"${primitive}"`;
+    };
+    return literal;
   };
   var object = function(value) {
     if (isEmpty(value))
@@ -9287,6 +9309,13 @@ ${this.getErrorInfo()}`;
     throw validatorError(undef, value, _scope);
   }
   undef.type = () => "void";
+  var boolean = function boolean2(value, _scope = "") {
+    if (isEmpty(value))
+      return false;
+    if (isBoolean2(value))
+      return value;
+    throw validatorError(boolean2, value, _scope);
+  };
   var string = function string2(value, _scope = "") {
     if (isEmpty(value))
       return "";
@@ -9337,28 +9366,6 @@ ${this.getErrorInfo()}`;
       },
       ourDirectMessages(state, getters) {
         return getters.currentMailboxState.chatRooms || {};
-      },
-      ourOneToOneDirectMessages(state, getters) {
-        const oneToOneMessages = {};
-        for (const contractID of Object.keys(getters.ourDirectMessages)) {
-          const partner = getters.ourDirectMessages[contractID].partner;
-          if (partner) {
-            oneToOneMessages[partner] = {
-              ...getters.ourDirectMessages[contractID],
-              contractID
-            };
-          }
-        }
-        return oneToOneMessages;
-      },
-      ourOneToManyDirectMessages(state, getters) {
-        const oneToManyMessages = {};
-        for (const contractID of Object.keys(getters.ourDirectMessages)) {
-          if (!getters.ourDirectMessages[contractID].partner) {
-            oneToManyMessages[contractID] = getters.ourDirectMessages[contractID];
-          }
-        }
-        return oneToManyMessages;
       }
     },
     actions: {
@@ -9395,20 +9402,17 @@ ${this.getErrorInfo()}`;
       "gi.contracts/mailbox/createDirectMessage": {
         validate: (data, { state, getters, meta }) => {
           objectOf({
-            username: string,
+            privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v))),
             contractID: string
           })(data);
           if (state.attributes.creator !== meta.username) {
             throw new TypeError(L("Only the mailbox creator can create direct message channel."));
-          } else if (getters.ourOneToOneDirectMessages[data.username]) {
-            throw new TypeError(L("Already existing direct message channel."));
           }
         },
         process({ meta, data }, { state }) {
           vue_esm_default.set(state.chatRooms, data.contractID, {
-            partner: data.username,
-            hidden: false,
-            joinedDate: meta.createdDate
+            privacyLevel: data.privacyLevel,
+            hidden: false
           });
         },
         async sideEffect({ contractID, data }) {
@@ -9420,103 +9424,42 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/mailbox/joinDirectMessage": {
         validate: objectOf({
-          username: string,
-          contractID: optional(string)
+          privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v))),
+          contractID: string
         }),
         process({ meta, data }, { state, getters }) {
-          const me = state.attributes.creator;
-          if (me !== meta.username && getters.ourOneToOneDirectMessages[data.username]) {
-            throw new TypeError(L("Already existing direct message channel."));
-          } else if (me === meta.username) {
-            if (!getters.ourOneToOneDirectMessages[data.username] || getters.ourOneToOneDirectMessages[data.username].joinedDate) {
-              throw new TypeError(L("Never created or already joined direct message channel."));
-            }
+          if (getters.ourDirectMessages[data.contractID]) {
+            throw new TypeError(L("Already joined direct message."));
           }
-          const joinedDate = !state.attributes.autoJoinAllowance && me !== meta.username ? null : meta.createdDate;
-          if (me !== meta.username) {
-            vue_esm_default.set(state.chatRooms, data.contractID, {
-              partner: data.username,
-              hidden: false,
-              joinedDate
-            });
-          } else {
-            const contractID = getters.ourOneToOneDirectMessages[data.username].contractID;
-            vue_esm_default.set(state.chatRooms[contractID], "joinedDate", joinedDate);
-          }
+          vue_esm_default.set(state.chatRooms, data.contractID, {
+            privacyLevel: data.privacyLevel,
+            hidden: !state.attributes.autoJoinAllowance
+          });
         },
-        async sideEffect({ contractID, meta, data }, { state, getters }) {
-          const me = state.attributes.creator;
-          let chatRoomId;
-          if (me === meta.username) {
-            chatRoomId = getters.ourOneToOneDirectMessages[data.username].contractID;
-          } else if (state.attributes.autoJoinAllowance) {
-            chatRoomId = data.contractID;
-          }
-          if (chatRoomId) {
-            await (0, import_sbp3.default)("chelonia/contract/sync", chatRoomId);
-          }
-          if (me === meta.username && !(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
-            await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId } }).catch(logExceptNavigationDuplicated);
+        sideEffect({ contractID, meta, data }, { state, getters }) {
+          if (state.attributes.autoJoinAllowance) {
+            (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
           }
         }
       },
-      "gi.contracts/mailbox/leaveDirectMessage": {
+      "gi.contracts/mailbox/setDirectMessageVisibility": {
         validate: (data, { state, getters, meta }) => {
-          objectOf({ username: string })(data);
+          objectOf({
+            contractID: string,
+            hidden: boolean
+          })(data);
           if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can leave direct message channel."));
-          } else if (!getters.ourOneToOneDirectMessages[data.username]?.joinedDate) {
-            throw new TypeError(L("Not joined or already left direct message channel."));
+            throw new TypeError(L("Only the mailbox creator can hide direct message channel."));
+          } else if (!getters.ourDirectMessages[data.contractID]) {
+            throw new TypeError(L("Not existing direct message."));
           }
         },
         process({ data }, { state, getters }) {
-          const contractID = getters.ourOneToOneDirectMessages[data.username].contractID;
-          vue_esm_default.set(state.chatRooms[contractID], "joinedDate", null);
+          vue_esm_default.set(state.chatRooms[data.contractID], "hidden", data.hidden);
         },
-        sideEffect({ data }, { getters }) {
-          leaveChatRoom({ contractID: getters.ourOneToOneDirectMessages[data.username].contractID });
-        }
-      },
-      "gi.contracts/mailbox/createGroupMessage": {
-        validate: (data, { state, meta }) => {
-          objectOf({ contractID: string })(data);
-          if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can create group message channel."));
-          } else if (state.chatRooms[data.contractID]) {
-            throw new TypeError(L("Already existing group message channel."));
-          }
-        },
-        process({ meta, data }, { state }) {
-          vue_esm_default.set(state.chatRooms, data.contractID, {
-            hidden: false,
-            joinedDate: meta.createdDate
-          });
-        },
-        async sideEffect({ contractID, data }) {
-          await (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
-          if (!(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
-            await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: data.contractID } }).catch(logExceptNavigationDuplicated);
-          }
-        }
-      },
-      "gi.contracts/mailbox/joinGroupMessage": {
-        validate: (data, { state, getters, meta }) => {
-          objectOf({ contractID: string });
-        },
-        process({ meta, data }, { state }) {
-          if (state.chatRooms[data.contractID]) {
-            throw new TypeError(L("Already existing group message channel."));
-          }
-          const joinedDate = state.attributes.autoJoinAllowance ? meta.createdDate : null;
-          vue_esm_default.set(state.chatRooms, data.contractID, {
-            hidden: false,
-            joinedDate
-          });
-        },
-        async sideEffect({ data }, { state }) {
-          if (state.attributes.autoJoinAllowance) {
-            await (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
-          }
+        sideEffect({ data }) {
+          const { contractID, hidden } = data;
+          hidden ? leaveChatRoom({ contractID }) : (0, import_sbp3.default)("chelonia/contract/sync", contractID);
         }
       }
     }

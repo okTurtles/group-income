@@ -35,13 +35,13 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
             menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
               i18n Add People
             menu-item(
-              :class='`${!summary.general ? "c-separator" : ""}`'
+              :class='`${!summary.general && !isDirectMessage() ? "c-separator" : ""}`'
               @click='openModal("ChatNotificationSettingsModal")'
               data-test='notificationsSettings'
             )
               i18n Notification settings
             menu-item(
-              v-if='!summary.general'
+              v-if='!summary.general && !isDirectMessage()'
               @click='openModal("LeaveChannelModal")'
               data-test='leaveChannel'
             )

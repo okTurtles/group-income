@@ -12,7 +12,7 @@
 
   ul.c-group-list
     list-item(
-      v-for='{username, displayName, picture} in directMessages'
+      v-for='{username, displayName, picture} in priateDirectMessages'
       tag='router-link'
       :to='buildUrl(username)'
       :data-test='username'
@@ -29,7 +29,7 @@
         ) {{limitedUnreadCount(getUnreadMessagesCountFromUsername(username))}}
 
     list-item(
-      v-for='{contractID, title, othersCount, picture} in groupMessages'
+      v-for='{contractID, title, othersCount, picture} in groupDirectMessages'
       tag='router-link'
       :to='buildUrl(contractID, false)'
       :data-test='contractID'
@@ -83,23 +83,23 @@ export default ({
       'groupShouldPropose',
       'ourUsername',
       'userDisplayName',
-      'ourOneToOneDirectMessages',
-      'ourOneToManyDirectMessages',
+      'ourPrivateDirectMessages',
+      'ourGroupDirectMessages',
       'chatRoomUnreadMentions',
       'directMessageIDFromUsername',
-      'oneToManyMessageInfo'
+      'groupDirectMessageInfo'
     ]),
-    directMessages () {
-      return Object.keys(this.ourOneToOneDirectMessages)
-        .filter(username => this.ourOneToOneDirectMessages[username].joinedDate)
+    priateDirectMessages () {
+      return Object.keys(this.ourPrivateDirectMessages)
+        .filter(username => !this.ourPrivateDirectMessages[username].hidden)
         .map(username => this.ourContactProfiles[username])
     },
-    groupMessages () {
-      return Object.keys(this.ourOneToManyDirectMessages)
+    groupDirectMessages () {
+      return Object.keys(this.ourGroupDirectMessages)
         .filter(contractID => this.$store.state.contracts[contractID] &&
-          Object.keys(this.$store.state[contractID]?.users || {}).length > 1 // NOTE: this is when contract is syncing
+          Object.keys(this.$store.state[contractID]?.users || {}).length > 1 // NOTE: presence check is for considering contract is syncing
         )
-        .map(contractID => this.oneToManyMessageInfo(contractID))
+        .map(contractID => this.groupDirectMessageInfo(contractID))
     }
   },
   methods: {
