@@ -220,13 +220,18 @@ export default ({
       }]
     }
   },
-  NEW_DISTRIBUTION_PERIOD (data: { creator: string }) {
+  NEW_DISTRIBUTION_PERIOD (data: { creator: string, memberType: string }) {
+    const bodyTemplate = {
+      'pledger': L('A new distribution period has started. Please check Payment TODOs.'),
+      'receiver': L('A new distribution period has started. Please update your income details if they have changed.')
+    }
+
     return {
       avatarUsername: data.creator,
-      body: L('A new distribution period has started. Would you like to check your payment TODOs?'),
+      body: bodyTemplate[data.memberType],
       level: 'info',
       icon: 'coins',
-      linkTo: '/payments',
+      linkTo: data.memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
       scope: 'group'
     }
   }

@@ -117,6 +117,7 @@ function updateCurrentDistribution ({ contractID, meta, state, getters }) {
     updateGroupStreaks({ state, getters })
     getters.groupSettings.distributionDate = period
 
+    // distributionDate has been updated by this point, so make sure to emit 'NEW_DISTRIBUTION_PERIOD' notification.
     sbp('gi.contracts/group/pushSideEffect', contractID,
       ['gi.contracts/group/updateDistributionDate/sideEffect', { meta, contractID }]
     )
@@ -1246,9 +1247,10 @@ sbp('chelonia/defineContract', {
         const { lastLoggedIn, incomeDetailsLastUpdated = null } = profile
 
         // check if it's been over 6 months since the last time the user updated their income details.
-        // also, check if the notification has not already been sent. (so that the app doesn't send the same notification over and over again)
         if (incomeDetailsLastUpdated?.date &&
           compareISOTimestamps(lastLoggedIn, incomeDetailsLastUpdated.date) > 6 * MONTHS_MILLIS &&
+          // Also, check if the notification has already been sent for the recorded date.
+          // - prevents sending the same notification over and over again every time the user logs in.
           !incomeDetailsLastUpdated.notificationSent
         ) {
           Vue.set(incomeDetailsLastUpdated, 'notificationSent', true)
@@ -1275,12 +1277,12 @@ sbp('chelonia/defineContract', {
         const { loggedIn } = sbp('state/vuex/state')
         const myProfile = getters.groupProfile(loggedIn.username)
 
-        if (myProfile.incomeDetailsType === 'pledgeAmount' &&
-          isActionYoungerThanUser(meta, myProfile)) {
+        if (isActionYoungerThanUser(meta, myProfile)) {
           sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
             creator: meta.username,
             createdDate: meta.createdDate,
-            groupID: contractID
+            groupID: contractID,
+            memberType: myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledger' : 'receiver'
           })
         }
       }

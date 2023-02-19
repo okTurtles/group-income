@@ -674,15 +674,27 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           // 'currentPaymentPeriod': gets auto-updated(t1) in response to the change of 'reactiveDate.date' when it passes into the new period.
           // 'groupSettings.distributionDate': gets updated manually by calling 'updateCurrentDistribution' function(t2) in group.js
           // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
-          if (!oldPeriod || !newPeriod) return
 
           // Note: if this code gets called when we're in the period before the 1st distribution
           //       period, then the distributionDate will get updated to the previous distribution date
           //       (incorrectly). That in turn will cause the Payments page to update and display TODOs
           //       before it should.
           const distributionDateInSettings = store.getters.groupSettings.distributionDate
-          if (newPeriod !== oldPeriod && (newPeriod !== distributionDateInSettings)) {
+          if (oldPeriod && newPeriod && (newPeriod !== distributionDateInSettings)) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
+          } else if (oldPeriod) {
+            // Even if the manual syncing of distributionDate is not needed,
+            // the notification emittion is required if the user has entered the income details because payment period has changed.
+            const userIncomeDetailsType = store.getters.ourGroupProfile.incomeDetailsType
+
+            if (userIncomeDetailsType) {
+              sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
+                creator: store.getters.ourUsername,
+                createdDate: new Date().toISOString(),
+                groupID: store.state.currentGroupId,
+                memberType: userIncomeDetailsType === 'pledgeAmount' ? 'pledger' : 'receiver'
+              })
+            }
           }
         }
       )
