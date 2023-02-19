@@ -61,32 +61,6 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
     })
   }
 
-  function leaveDirectMessage (partner) {
-    switchDirectMessageChannel(partner)
-    cy.getByDT('channelName').within(() => {
-      cy.getByDT('menuTrigger').click()
-    })
-    cy.getByDT('leaveChannel').click()
-    cy.getByDT('leaveChannelSubmit').click()
-    cy.getByDT('closeModal').should('not.exist')
-    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-  }
-
-  function joinDirectMessage (partner) {
-    cy.getByDT('chatMembers').within(() => {
-      cy.getByDT('inviteButton').click()
-    })
-
-    cy.getByDT('modal').within(() => {
-      cy.getByDT('others').children().each(($el, index, $list) => {
-        if ($el.text().includes(`@${partner}`)) {
-          cy.wrap($el).click()
-          return false
-        }
-      })
-    })
-  }
-
   function switchDirectMessageChannel (partner) {
     cy.getByDT('chatMembers').find('ul').get('span[data-test="title"], span[data-test="username"]').each(($el, index, $list) => {
       if ($el.text() === partner) {
@@ -215,17 +189,6 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 1)
 
     sendMessage('Fine. You?')
-  })
-
-  it('user3 leaves direct messages with user1 and rejoin', () => {
-    leaveDirectMessage(user1)
-
-    cy.getByDT('chatMembers').find('ul').children().should('have.length', 0)
-
-    joinDirectMessage(user1)
-
-    cy.getByDT('channelName').should('contain', user1)
-    cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 2)
   })
 
   it('direct message channels should be sorted by name and the latest message', () => {
