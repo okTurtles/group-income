@@ -89,6 +89,5 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   ...encryptedAction('gi.actions/mailbox/setAttributes', L('Failed to set mailbox attributes.')),
-  ...encryptedAction('gi.actions/mailbox/joinDirectMessage', L('Failed to join a new direct message channel.')),
-  ...encryptedAction('gi.actions/mailbox/leaveDirectMessage', L('Failed to leave direct message channel.'))
+  ...encryptedAction('gi.actions/mailbox/joinDirectMessage', L('Failed to join a new direct message channel.'))
 }): string[])

@@ -64,7 +64,7 @@
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
 
 /* MISSING TRANSLATION - model/contracts/mailbox.js */
-"Incorrect mailbox creator to join direct message channel." = "Incorrect mailbox creator to join direct message channel.";
+"Incorrect mailbox creator to join direct message channel." = "Créateur de boîte aux lettres incorrect pour rejoindre le canal de messagerie directe.";
 
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "1d" = "1d";

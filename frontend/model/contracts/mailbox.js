@@ -5,7 +5,6 @@
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
-import { leaveChatRoom } from './shared/functions.js'
 import { object, objectOf, string, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
@@ -137,24 +136,6 @@ sbp('chelonia/defineContract', {
             .push({ name: 'GroupChatConversation', params: { chatRoomId } })
             .catch(logExceptNavigationDuplicated)
         }
-      }
-    },
-    'gi.contracts/mailbox/leaveDirectMessage': {
-      validate: (data, { state, meta }) => {
-        objectOf({
-          username: string
-        })(data)
-        if (state.attributes.creator !== meta.username) {
-          throw new TypeError(L('Only the mailbox creator can leave direct message channel.'))
-        } else if (!state.users[data.username]?.joinedDate) {
-          throw new TypeError(L('Not joined or already left direct message channel.'))
-        }
-      },
-      process ({ data }, { state }) {
-        Vue.set(state.users[data.username], 'joinedDate', null)
-      },
-      sideEffect ({ contractID, data }, { state }) {
-        leaveChatRoom({ contractID: state.users[data.username].contractID })
       }
     }
   }

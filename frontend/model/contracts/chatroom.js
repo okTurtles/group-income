@@ -337,16 +337,11 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/chatroom/editMessage': {
-      validate: (data, { state, meta }) => {
-        objectOf({
-          id: string,
-          createdDate: string,
-          text: string
-        })(data)
-        // TODO: Actually NOT SURE it's needed to check if the meta.username === message.from
-        // there is no messagess in vuex state
-        // to check if the meta.username is creator seems like too heavy
-      },
+      validate: objectOf({
+        id: string,
+        createdDate: string,
+        text: string
+      }),
       process ({ data, meta }, { state }) {
         if (!state.onlyRenderMessage) {
           return

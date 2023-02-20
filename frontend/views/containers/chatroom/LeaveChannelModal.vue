@@ -61,14 +61,8 @@ export default ({
     },
     async submit () {
       try {
-        if (this.isDirectMessage(this.currentChatRoomId)) {
-          const mailboxID = this.currentIdentityState.attributes.mailbox
-          const username = this.usernameFromDirectMessageID(this.currentChatRoomId)
-          await sbp('gi.actions/mailbox/leaveDirectMessage', {
-            contractID: mailboxID,
-            data: { username }
-          })
-        } else {
+        // NOTE: users can not leave their direct messages once joined
+        if (!this.isDirectMessage(this.currentChatRoomId)) {
           await sbp('gi.actions/group/leaveChatRoom', {
             contractID: this.currentGroupId,
             data: {
