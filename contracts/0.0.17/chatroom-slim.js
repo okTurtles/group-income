@@ -538,12 +538,12 @@ ${this.getErrorInfo()}`;
         }),
         process({ data, meta, hash }, { state }) {
           const { username } = data;
-          if (!state.onlyRenderMessage && state.users[username]) {
+          if (!state.saveMessage && state.users[username]) {
             console.warn("Can not join the chatroom which you are already part of");
             return;
           }
           import_common2.Vue.set(state.users, username, { joinedDate: meta.createdDate });
-          if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
             return;
           }
           const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
@@ -564,7 +564,7 @@ ${this.getErrorInfo()}`;
         }),
         process({ data, meta, hash }, { state }) {
           import_common2.Vue.set(state.attributes, "name", data.name);
-          if (!state.onlyRenderMessage) {
+          if (!state.saveMessage) {
             return;
           }
           const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {});
@@ -584,7 +584,7 @@ ${this.getErrorInfo()}`;
         }),
         process({ data, meta, hash }, { state }) {
           import_common2.Vue.set(state.attributes, "description", data.description);
-          if (!state.onlyRenderMessage) {
+          if (!state.saveMessage) {
             return;
           }
           const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {});
@@ -606,11 +606,11 @@ ${this.getErrorInfo()}`;
         process({ data, meta, hash }, { state }) {
           const { member } = data;
           const isKicked = data.username && member !== data.username;
-          if (!state.onlyRenderMessage && !state.users[member]) {
+          if (!state.saveMessage && !state.users[member]) {
             throw new Error(`Can not leave the chatroom which ${member} are not part of`);
           }
           import_common2.Vue.delete(state.users, member);
-          if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
             return;
           }
           const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER;
@@ -657,7 +657,7 @@ ${this.getErrorInfo()}`;
       "gi.contracts/chatroom/addMessage": {
         validate: messageType,
         process({ data, meta, hash }, { state }) {
-          if (!state.onlyRenderMessage) {
+          if (!state.saveMessage) {
             return;
           }
           const pendingMsg = state.messages.find((msg) => msg.id === hash && msg.pending);
@@ -693,20 +693,22 @@ ${this.getErrorInfo()}`;
         }
       },
       "gi.contracts/chatroom/editMessage": {
-        validate: objectOf({
-          id: string,
-          createdDate: string,
-          text: string
-        }),
+        validate: (data, { state, meta }) => {
+          objectOf({
+            id: string,
+            createdDate: string,
+            text: string
+          })(data);
+        },
         process({ data, meta }, { state }) {
-          if (!state.onlyRenderMessage) {
+          if (!state.saveMessage) {
             return;
           }
           const msgIndex = findMessageIdx(data.id, state.messages);
           if (msgIndex >= 0 && meta.username === state.messages[msgIndex].from) {
             state.messages[msgIndex].text = data.text;
             state.messages[msgIndex].updatedDate = meta.createdDate;
-            if (state.onlyRenderMessage && state.messages[msgIndex].pending) {
+            if (state.saveMessage && state.messages[msgIndex].pending) {
               delete state.messages[msgIndex].pending;
             }
           }
@@ -744,7 +746,7 @@ ${this.getErrorInfo()}`;
           id: string
         }),
         process({ data, meta }, { state }) {
-          if (!state.onlyRenderMessage) {
+          if (!state.saveMessage) {
             return;
           }
           const msgIndex = findMessageIdx(data.id, state.messages);
@@ -794,7 +796,7 @@ ${this.getErrorInfo()}`;
           emoticon: string
         }),
         process({ data, meta, contractID }, { state }) {
-          if (!state.onlyRenderMessage) {
+          if (!state.saveMessage) {
             return;
           }
           const { id, emoticon } = data;

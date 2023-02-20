@@ -789,8 +789,8 @@
     }
   });
 
-  // frontend/model/contracts/mailbox.js
-  var import_sbp3 = __toESM(__require("@sbp/sbp"));
+  // frontend/model/contracts/chatroom.js
+  var import_sbp4 = __toESM(__require("@sbp/sbp"));
 
   // node_modules/vue/dist/vue.esm.js
   var emptyObject = Object.freeze({});
@@ -5622,14 +5622,14 @@
   }
   function genComponentModel(el, value, modifiers) {
     var ref2 = modifiers || {};
-    var number = ref2.number;
+    var number3 = ref2.number;
     var trim = ref2.trim;
     var baseValueExpression = "$$v";
     var valueExpression = baseValueExpression;
     if (trim) {
       valueExpression = "(typeof " + baseValueExpression + " === 'string'? " + baseValueExpression + ".trim(): " + baseValueExpression + ")";
     }
-    if (number) {
+    if (number3) {
       valueExpression = "_n(" + valueExpression + ")";
     }
     var assignment = genAssignmentCode(value, valueExpression);
@@ -5758,23 +5758,23 @@
     return true;
   }
   function genCheckboxModel(el, value, modifiers) {
-    var number = modifiers && modifiers.number;
+    var number3 = modifiers && modifiers.number;
     var valueBinding = getBindingAttr(el, "value") || "null";
     var trueValueBinding = getBindingAttr(el, "true-value") || "true";
     var falseValueBinding = getBindingAttr(el, "false-value") || "false";
     addProp(el, "checked", "Array.isArray(" + value + ")?_i(" + value + "," + valueBinding + ")>-1" + (trueValueBinding === "true" ? ":(" + value + ")" : ":_q(" + value + "," + trueValueBinding + ")"));
-    addHandler(el, "change", "var $$a=" + value + ",$$el=$event.target,$$c=$$el.checked?(" + trueValueBinding + "):(" + falseValueBinding + ");if(Array.isArray($$a)){var $$v=" + (number ? "_n(" + valueBinding + ")" : valueBinding) + ",$$i=_i($$a,$$v);if($$el.checked){$$i<0&&(" + genAssignmentCode(value, "$$a.concat([$$v])") + ")}else{$$i>-1&&(" + genAssignmentCode(value, "$$a.slice(0,$$i).concat($$a.slice($$i+1))") + ")}}else{" + genAssignmentCode(value, "$$c") + "}", null, true);
+    addHandler(el, "change", "var $$a=" + value + ",$$el=$event.target,$$c=$$el.checked?(" + trueValueBinding + "):(" + falseValueBinding + ");if(Array.isArray($$a)){var $$v=" + (number3 ? "_n(" + valueBinding + ")" : valueBinding) + ",$$i=_i($$a,$$v);if($$el.checked){$$i<0&&(" + genAssignmentCode(value, "$$a.concat([$$v])") + ")}else{$$i>-1&&(" + genAssignmentCode(value, "$$a.slice(0,$$i).concat($$a.slice($$i+1))") + ")}}else{" + genAssignmentCode(value, "$$c") + "}", null, true);
   }
   function genRadioModel(el, value, modifiers) {
-    var number = modifiers && modifiers.number;
+    var number3 = modifiers && modifiers.number;
     var valueBinding = getBindingAttr(el, "value") || "null";
-    valueBinding = number ? "_n(" + valueBinding + ")" : valueBinding;
+    valueBinding = number3 ? "_n(" + valueBinding + ")" : valueBinding;
     addProp(el, "checked", "_q(" + value + "," + valueBinding + ")");
     addHandler(el, "change", genAssignmentCode(value, valueBinding), null, true);
   }
   function genSelect(el, value, modifiers) {
-    var number = modifiers && modifiers.number;
-    var selectedVal = 'Array.prototype.filter.call($event.target.options,function(o){return o.selected}).map(function(o){var val = "_value" in o ? o._value : o.value;return ' + (number ? "_n(val)" : "val") + "})";
+    var number3 = modifiers && modifiers.number;
+    var selectedVal = 'Array.prototype.filter.call($event.target.options,function(o){return o.selected}).map(function(o){var val = "_value" in o ? o._value : o.value;return ' + (number3 ? "_n(val)" : "val") + "})";
     var assignment = "$event.target.multiple ? $$selectedVal : $$selectedVal[0]";
     var code = "var $$selectedVal = " + selectedVal + ";";
     code = code + " " + genAssignmentCode(value, assignment);
@@ -5792,7 +5792,7 @@
     }
     var ref2 = modifiers || {};
     var lazy = ref2.lazy;
-    var number = ref2.number;
+    var number3 = ref2.number;
     var trim = ref2.trim;
     var needCompositionGuard = !lazy && type !== "range";
     var event = lazy ? "change" : type === "range" ? RANGE_TOKEN : "input";
@@ -5800,7 +5800,7 @@
     if (trim) {
       valueExpression = "$event.target.value.trim()";
     }
-    if (number) {
+    if (number3) {
       valueExpression = "_n(" + valueExpression + ")";
     }
     var code = genAssignmentCode(value, valueExpression);
@@ -5809,7 +5809,7 @@
     }
     addProp(el, "value", "(" + value + ")");
     addHandler(el, event, code, null, true);
-    if (trim || number) {
+    if (trim || number3) {
       addHandler(el, "blur", "$forceUpdate()");
     }
   }
@@ -9144,46 +9144,50 @@
     }
   });
 
-  // frontend/model/contracts/shared/functions.js
-  var import_sbp2 = __toESM(__require("@sbp/sbp"));
-
   // frontend/model/contracts/shared/constants.js
+  var CHATROOM_NAME_LIMITS_IN_CHARS = 50;
+  var CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280;
+  var CHATROOM_ACTIONS_PER_PAGE = 40;
+  var CHATROOM_MESSAGES_PER_PAGE = 20;
+  var CHATROOM_MESSAGE_ACTION = "chatroom-message-action";
+  var MESSAGE_RECEIVE = "message-receive";
+  var CHATROOM_TYPES = {
+    INDIVIDUAL: "individual",
+    GROUP: "group"
+  };
   var CHATROOM_PRIVACY_LEVEL = {
     GROUP: "group",
     PRIVATE: "private",
     PUBLIC: "public"
   };
-
-  // frontend/model/contracts/shared/time.js
-  var MINS_MILLIS = 6e4;
-  var HOURS_MILLIS = 60 * MINS_MILLIS;
-  var DAYS_MILLIS = 24 * HOURS_MILLIS;
-  var MONTHS_MILLIS = 30 * DAYS_MILLIS;
-
-  // frontend/views/utils/misc.js
-  function logExceptNavigationDuplicated(err) {
-    err.name !== "NavigationDuplicated" && console.error(err);
-  }
-
-  // frontend/model/contracts/shared/functions.js
-  async function leaveChatRoom({ contractID }) {
-    const rootState = (0, import_sbp2.default)("state/vuex/state");
-    const rootGetters = (0, import_sbp2.default)("state/vuex/getters");
-    if (contractID === rootGetters.currentChatRoomId) {
-      (0, import_sbp2.default)("state/vuex/commit", "setCurrentChatRoomId", {
-        groupId: rootState.currentGroupId
-      });
-      const curRouteName = (0, import_sbp2.default)("controller/router").history.current.name;
-      if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
-        await (0, import_sbp2.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
-      }
-    }
-    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
-    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
-    (0, import_sbp2.default)("chelonia/contract/remove", contractID).catch((e) => {
-      console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
-    });
-  }
+  var MESSAGE_TYPES = {
+    POLL: "poll",
+    TEXT: "text",
+    INTERACTIVE: "interactive",
+    NOTIFICATION: "notification"
+  };
+  var MESSAGE_NOTIFICATIONS = {
+    ADD_MEMBER: "add-member",
+    JOIN_MEMBER: "join-member",
+    LEAVE_MEMBER: "leave-member",
+    KICK_MEMBER: "kick-member",
+    UPDATE_DESCRIPTION: "update-description",
+    UPDATE_NAME: "update-name",
+    DELETE_CHANNEL: "delete-channel",
+    VOTE: "vote"
+  };
+  var PROPOSAL_VARIANTS = {
+    CREATED: "created",
+    EXPIRING: "expiring",
+    ACCEPTED: "accepted",
+    REJECTED: "rejected",
+    EXPIRED: "expired"
+  };
+  var MESSAGE_NOTIFY_SETTINGS = {
+    ALL_MESSAGES: "all-messages",
+    DIRECT_MESSAGES: "direct-messages",
+    NOTHING: "nothing"
+  };
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -9191,6 +9195,7 @@
   var isNil = (v) => v === null;
   var isUndef2 = (v) => typeof v === "undefined";
   var isBoolean2 = (v) => typeof v === "boolean";
+  var isNumber = (v) => typeof v === "number";
   var isString = (v) => typeof v === "string";
   var isObject2 = (v) => !isNil(v) && typeof v === "object";
   var isFunction = (v) => typeof v === "function";
@@ -9237,6 +9242,19 @@ ${this.getErrorInfo()}`;
   var validatorError = (typeFn, value, scope, message, expectedType, valueType) => {
     return new TypeValidatorError(message, expectedType || getType2(typeFn), valueType || typeof value, JSON.stringify(value), typeFn.name, scope);
   };
+  var arrayOf = (typeFn, _scope = "Array") => {
+    function array(value) {
+      if (isEmpty(value))
+        return [typeFn(value)];
+      if (Array.isArray(value)) {
+        let index2 = 0;
+        return value.map((v) => typeFn(v, `${_scope}[${index2++}]`));
+      }
+      throw validatorError(array, value, _scope);
+    }
+    array.type = () => `Array<${getType2(typeFn)}>`;
+    return array;
+  };
   var literalOf = (primitive) => {
     function literal(value, _scope = "") {
       if (isEmpty(value) || value === primitive)
@@ -9250,6 +9268,19 @@ ${this.getErrorInfo()}`;
         return `"${primitive}"`;
     };
     return literal;
+  };
+  var mapOf = (keyTypeFn, typeFn) => {
+    function mapOf2(value) {
+      if (isEmpty(value))
+        return {};
+      const o = object(value);
+      const reducer = (acc, key) => Object.assign(acc, {
+        [keyTypeFn(key, "Map[_]")]: typeFn(o[key], `Map.${key}`)
+      });
+      return Object.keys(o).reduce(reducer, {});
+    }
+    mapOf2.type = () => `{ [_:${getType2(keyTypeFn)}]: ${getType2(typeFn)} }`;
+    return mapOf2;
   };
   var object = function(value) {
     if (isEmpty(value))
@@ -9295,6 +9326,15 @@ ${this.getErrorInfo()}`;
     };
     return object2;
   };
+  function objectMaybeOf(validations, _scope = "Object") {
+    return function(data) {
+      object(data);
+      for (const key in data) {
+        validations[key]?.(data[key], `${_scope}.${key}`);
+      }
+      return data;
+    };
+  }
   var optional = (typeFn) => {
     const unionFn = unionOf(typeFn, undef);
     function optional2(v) {
@@ -9309,12 +9349,12 @@ ${this.getErrorInfo()}`;
     throw validatorError(undef, value, _scope);
   }
   undef.type = () => "void";
-  var boolean = function boolean2(value, _scope = "") {
+  var number = function number2(value, _scope = "") {
     if (isEmpty(value))
-      return false;
-    if (isBoolean2(value))
+      return 0;
+    if (isNumber(value))
       return value;
-    throw validatorError(boolean2, value, _scope);
+    throw validatorError(number2, value, _scope);
   };
   var string = function string2(value, _scope = "") {
     if (isEmpty(value))
@@ -9338,128 +9378,552 @@ ${this.getErrorInfo()}`;
   }
   var unionOf = unionOf_;
 
-  // frontend/model/contracts/mailbox.js
-  (0, import_sbp3.default)("chelonia/defineContract", {
-    name: "gi.contracts/mailbox",
+  // frontend/model/contracts/shared/types.js
+  var inviteType = objectOf({
+    inviteSecret: string,
+    quantity: number,
+    creator: string,
+    invitee: optional(string),
+    status: string,
+    responses: mapOf(string, string),
+    expires: number
+  });
+  var chatRoomAttributesType = objectOf({
+    name: string,
+    description: string,
+    type: unionOf(...Object.values(CHATROOM_TYPES).map((v) => literalOf(v))),
+    privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v)))
+  });
+  var messageType = objectMaybeOf({
+    type: unionOf(...Object.values(MESSAGE_TYPES).map((v) => literalOf(v))),
+    text: string,
+    proposal: objectMaybeOf({
+      proposalId: string,
+      proposalType: string,
+      expires_date_ms: number,
+      createdDate: string,
+      creator: string,
+      variant: unionOf(...Object.values(PROPOSAL_VARIANTS).map((v) => literalOf(v)))
+    }),
+    notification: objectMaybeOf({
+      type: unionOf(...Object.values(MESSAGE_NOTIFICATIONS).map((v) => literalOf(v))),
+      params: mapOf(string, string)
+    }),
+    replyingMessage: objectOf({
+      id: string,
+      text: string
+    }),
+    emoticons: mapOf(string, arrayOf(string)),
+    onlyVisibleTo: arrayOf(string)
+  });
+
+  // frontend/model/contracts/shared/functions.js
+  var import_sbp2 = __toESM(__require("@sbp/sbp"));
+
+  // frontend/model/contracts/shared/time.js
+  var MINS_MILLIS = 6e4;
+  var HOURS_MILLIS = 60 * MINS_MILLIS;
+  var DAYS_MILLIS = 24 * HOURS_MILLIS;
+  var MONTHS_MILLIS = 30 * DAYS_MILLIS;
+
+  // frontend/views/utils/misc.js
+  function logExceptNavigationDuplicated(err) {
+    err.name !== "NavigationDuplicated" && console.error(err);
+  }
+
+  // frontend/model/contracts/shared/functions.js
+  function createMessage({ meta, data, hash: hash2, state }) {
+    const { type, text: text2, replyingMessage } = data;
+    const { createdDate } = meta;
+    let newMessage = {
+      type,
+      datetime: new Date(createdDate).toISOString(),
+      id: hash2,
+      from: meta.username
+    };
+    if (type === MESSAGE_TYPES.TEXT) {
+      newMessage = !replyingMessage ? { ...newMessage, text: text2 } : { ...newMessage, text: text2, replyingMessage };
+    } else if (type === MESSAGE_TYPES.POLL) {
+    } else if (type === MESSAGE_TYPES.NOTIFICATION) {
+      const params = {
+        channelName: state?.attributes.name,
+        channelDescription: state?.attributes.description,
+        ...data.notification
+      };
+      delete params.type;
+      newMessage = {
+        ...newMessage,
+        notification: { type: data.notification.type, params }
+      };
+    } else if (type === MESSAGE_TYPES.INTERACTIVE) {
+      newMessage = {
+        ...newMessage,
+        proposal: data.proposal
+      };
+    }
+    return newMessage;
+  }
+  async function leaveChatRoom({ contractID }) {
+    const rootState = (0, import_sbp2.default)("state/vuex/state");
+    const rootGetters = (0, import_sbp2.default)("state/vuex/getters");
+    if (contractID === rootGetters.currentChatRoomId) {
+      (0, import_sbp2.default)("state/vuex/commit", "setCurrentChatRoomId", {
+        groupId: rootState.currentGroupId
+      });
+      const curRouteName = (0, import_sbp2.default)("controller/router").history.current.name;
+      if (curRouteName === "GroupChat" || curRouteName === "GroupChatConversation") {
+        await (0, import_sbp2.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: rootGetters.currentChatRoomId } }).catch(logExceptNavigationDuplicated);
+      }
+    }
+    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomUnread", { chatRoomId: contractID });
+    (0, import_sbp2.default)("state/vuex/commit", "deleteChatRoomScrollPosition", { chatRoomId: contractID });
+    (0, import_sbp2.default)("chelonia/contract/remove", contractID).catch((e) => {
+      console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
+    });
+  }
+  function findMessageIdx(id, messages) {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].id === id) {
+        return i;
+      }
+    }
+    return -1;
+  }
+  function makeMentionFromUsername(username) {
+    return {
+      me: `@${username}`,
+      all: "@all"
+    };
+  }
+
+  // frontend/model/contracts/shared/nativeNotification.js
+  var import_sbp3 = __toESM(__require("@sbp/sbp"));
+  function makeNotification({ title, body, icon, path }) {
+    if (Notification?.permission === "granted" && (0, import_sbp3.default)("state/vuex/settings").notificationEnabled) {
+      const notification = new Notification(title, { body, icon });
+      if (path) {
+        notification.onclick = function(event) {
+          (0, import_sbp3.default)("controller/router").push({ path }).catch(console.warn);
+        };
+      }
+    }
+  }
+
+  // frontend/model/contracts/chatroom.js
+  function createNotificationData(notificationType, moreParams = {}) {
+    return {
+      type: MESSAGE_TYPES.NOTIFICATION,
+      notification: {
+        type: notificationType,
+        ...moreParams
+      }
+    };
+  }
+  function emitMessageEvent({ contractID, hash: hash2 }) {
+    (0, import_sbp4.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash: hash2 });
+  }
+  function messageReceivePostEffect({ contractID, messageId, datetime, text: text2, isAlreadyAdded, isMentionedMe, username, chatRoomName }) {
+    if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+      return;
+    }
+    const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
+    const isPrivateDM = rootGetters.isPrivateDirectMessage(contractID);
+    const isDMOrMention = isMentionedMe || isPrivateDM;
+    if (!isAlreadyAdded && isDMOrMention) {
+      (0, import_sbp4.default)("state/vuex/commit", "addChatRoomUnreadMention", {
+        chatRoomId: contractID,
+        messageId,
+        createdDate: datetime
+      });
+    }
+    let title = `# ${chatRoomName}`;
+    let partnerProfile;
+    if (isPrivateDM) {
+      partnerProfile = rootGetters.ourContactProfiles[username];
+      title = `# ${partnerProfile?.displayName || username}`;
+    } else if (rootGetters.isGroupDirectMessage(contractID)) {
+      title = `# ${rootGetters.groupDirectMessageInfo(contractID).title}`;
+    }
+    const path = `/group-chat/${contractID}`;
+    const notificationSettings = rootGetters.notificationSettings[contractID] || rootGetters.notificationSettings.default;
+    const { messageNotification, messageSound } = notificationSettings;
+    const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
+    const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
+    if (!isAlreadyAdded && shouldNotifyMessage) {
+      makeNotification({
+        title,
+        body: text2,
+        icon: partnerProfile?.picture,
+        path
+      });
+    }
+    if (!isAlreadyAdded && shouldSoundMessage) {
+      (0, import_sbp4.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
+    }
+  }
+  function updateUnreadPosition({ contractID, hash: hash2, createdDate }) {
+    (0, import_sbp4.default)("state/vuex/commit", "setChatRoomUnreadSince", {
+      chatRoomId: contractID,
+      messageId: hash2,
+      createdDate
+    });
+  }
+  (0, import_sbp4.default)("chelonia/defineContract", {
+    name: "gi.contracts/chatroom",
     metadata: {
       validate: objectOf({
         createdDate: string,
-        username: optional(string),
-        identityContractID: optional(string)
+        username: string,
+        identityContractID: string
       }),
       async create() {
-        const createdDate = await fetchServerTime();
-        if (!(0, import_sbp3.default)("state/vuex/state").loggedIn) {
-          return { createdDate };
-        }
-        const { username, identityContractID } = (0, import_sbp3.default)("state/vuex/state").loggedIn;
+        const { username, identityContractID } = (0, import_sbp4.default)("state/vuex/state").loggedIn;
         return {
-          createdDate,
+          createdDate: await fetchServerTime(),
           username,
           identityContractID
         };
       }
     },
     getters: {
-      currentMailboxState(state) {
+      currentChatRoomState(state) {
         return state;
       },
-      ourDirectMessages(state, getters) {
-        return getters.currentMailboxState.chatRooms || {};
+      chatRoomSettings(state, getters) {
+        return getters.currentChatRoomState.settings || {};
+      },
+      chatRoomAttributes(state, getters) {
+        return getters.currentChatRoomState.attributes || {};
+      },
+      chatRoomUsers(state, getters) {
+        return getters.currentChatRoomState.users || {};
+      },
+      chatRoomLatestMessages(state, getters) {
+        return getters.currentChatRoomState.messages || [];
       }
     },
     actions: {
-      "gi.contracts/mailbox": {
+      "gi.contracts/chatroom": {
         validate: objectOf({
-          username: string
+          attributes: chatRoomAttributesType
         }),
-        process({ data }, { state }) {
+        process({ meta, data }, { state }) {
           const initialState = merge({
-            attributes: {
-              creator: data.username,
-              autoJoinAllowance: true
+            settings: {
+              actionsPerPage: CHATROOM_ACTIONS_PER_PAGE,
+              messagesPerPage: CHATROOM_MESSAGES_PER_PAGE,
+              maxNameLength: CHATROOM_NAME_LIMITS_IN_CHARS,
+              maxDescriptionLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
             },
-            chatRooms: {}
+            attributes: {
+              creator: meta.username,
+              deletedDate: null,
+              archivedDate: null
+            },
+            users: {},
+            messages: []
           }, data);
           for (const key in initialState) {
             vue_esm_default.set(state, key, initialState[key]);
           }
         }
       },
-      "gi.contracts/mailbox/setAttributes": {
+      "gi.contracts/chatroom/join": {
+        validate: objectOf({
+          username: string
+        }),
+        process({ data, meta, hash: hash2 }, { state }) {
+          const { username } = data;
+          if (!state.saveMessage && state.users[username]) {
+            console.warn("Can not join the chatroom which you are already part of");
+            return;
+          }
+          vue_esm_default.set(state.users, username, { joinedDate: meta.createdDate });
+          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL && state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+            return;
+          }
+          const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
+          const notificationData = createNotificationData(notificationType, notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { username } : {});
+          const newMessage = createMessage({ meta, hash: hash2, data: notificationData, state });
+          state.messages.push(newMessage);
+        },
+        sideEffect({ contractID, hash: hash2, meta }) {
+          emitMessageEvent({ contractID, hash: hash2 });
+          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
+          }
+        }
+      },
+      "gi.contracts/chatroom/rename": {
+        validate: objectOf({
+          name: string
+        }),
+        process({ data, meta, hash: hash2 }, { state }) {
+          vue_esm_default.set(state.attributes, "name", data.name);
+          if (!state.saveMessage) {
+            return;
+          }
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {});
+          const newMessage = createMessage({ meta, hash: hash2, data: notificationData, state });
+          state.messages.push(newMessage);
+        },
+        sideEffect({ contractID, hash: hash2, meta }) {
+          emitMessageEvent({ contractID, hash: hash2 });
+          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
+          }
+        }
+      },
+      "gi.contracts/chatroom/changeDescription": {
+        validate: objectOf({
+          description: string
+        }),
+        process({ data, meta, hash: hash2 }, { state }) {
+          vue_esm_default.set(state.attributes, "description", data.description);
+          if (!state.saveMessage) {
+            return;
+          }
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {});
+          const newMessage = createMessage({ meta, hash: hash2, data: notificationData, state });
+          state.messages.push(newMessage);
+        },
+        sideEffect({ contractID, hash: hash2, meta }) {
+          emitMessageEvent({ contractID, hash: hash2 });
+          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
+          }
+        }
+      },
+      "gi.contracts/chatroom/leave": {
+        validate: objectOf({
+          username: optional(string),
+          member: string
+        }),
+        process({ data, meta, hash: hash2 }, { state }) {
+          const { member } = data;
+          const isKicked = data.username && member !== data.username;
+          if (!state.saveMessage && !state.users[member]) {
+            throw new Error(`Can not leave the chatroom which ${member} are not part of`);
+          }
+          vue_esm_default.delete(state.users, member);
+          if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+            return;
+          }
+          const notificationType = !isKicked ? MESSAGE_NOTIFICATIONS.LEAVE_MEMBER : MESSAGE_NOTIFICATIONS.KICK_MEMBER;
+          const notificationData = createNotificationData(notificationType, isKicked ? { username: member } : {});
+          const newMessage = createMessage({
+            meta: isKicked ? meta : { ...meta, username: member },
+            hash: hash2,
+            data: notificationData,
+            state
+          });
+          state.messages.push(newMessage);
+        },
+        sideEffect({ data, hash: hash2, contractID, meta }, { state }) {
+          const rootState = (0, import_sbp4.default)("state/vuex/state");
+          if (data.member === rootState.loggedIn.username) {
+            if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+              updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
+              return;
+            }
+            leaveChatRoom({ contractID });
+          }
+          emitMessageEvent({ contractID, hash: hash2 });
+        }
+      },
+      "gi.contracts/chatroom/delete": {
         validate: (data, { state, meta }) => {
           if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can set attributes."));
+            throw new TypeError(L("Only the channel creator can delete channel."));
           }
-          object(data);
         },
-        process({ meta, data }, { state }) {
-          for (const key in data) {
-            vue_esm_default.set(state.attributes, key, data[key]);
+        process({ data, meta }, { state, rootState }) {
+          vue_esm_default.set(state.attributes, "deletedDate", meta.createdDate);
+          for (const username in state.users) {
+            vue_esm_default.delete(state.users, username);
           }
+        },
+        sideEffect({ meta, contractID }, { state }) {
+          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+            return;
+          }
+          leaveChatRoom({ contractID });
         }
       },
-      "gi.contracts/mailbox/createDirectMessage": {
-        validate: (data, { state, getters, meta }) => {
-          objectOf({
-            privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v))),
-            contractID: string
-          })(data);
-          if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can create direct message channel."));
+      "gi.contracts/chatroom/addMessage": {
+        validate: messageType,
+        process({ data, meta, hash: hash2 }, { state }) {
+          if (!state.saveMessage) {
+            return;
+          }
+          const pendingMsg = state.messages.find((msg) => msg.id === hash2 && msg.pending);
+          if (pendingMsg) {
+            delete pendingMsg.pending;
+          } else {
+            state.messages.push(createMessage({ meta, data, hash: hash2, state }));
           }
         },
-        process({ meta, data }, { state }) {
-          vue_esm_default.set(state.chatRooms, data.contractID, {
-            privacyLevel: data.privacyLevel,
-            hidden: false
+        sideEffect({ contractID, hash: hash2, meta, data }, { state, getters }) {
+          emitMessageEvent({ contractID, hash: hash2 });
+          const rootState = (0, import_sbp4.default)("state/vuex/state");
+          const me = rootState.loggedIn.username;
+          if (me === meta.username) {
+            return;
+          }
+          const newMessage = createMessage({ meta, data, hash: hash2, state });
+          const mentions = makeMentionFromUsername(me);
+          const isTextMessage = data.type === MESSAGE_TYPES.TEXT;
+          const isMentionedMe = isTextMessage && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all));
+          messageReceivePostEffect({
+            contractID,
+            messageId: newMessage.id,
+            datetime: newMessage.datetime,
+            text: newMessage.text,
+            isMentionedMe,
+            username: meta.username,
+            chatRoomName: getters.chatRoomAttributes.name
           });
-        },
-        async sideEffect({ contractID, data }) {
-          await (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
-          if (!(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
-            await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: data.contractID } }).catch(logExceptNavigationDuplicated);
+          if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+            updateUnreadPosition({ contractID, hash: hash2, createdDate: meta.createdDate });
           }
         }
       },
-      "gi.contracts/mailbox/joinDirectMessage": {
+      "gi.contracts/chatroom/editMessage": {
+        validate: (data, { state, meta }) => {
+          objectOf({
+            id: string,
+            createdDate: string,
+            text: string
+          })(data);
+        },
+        process({ data, meta }, { state }) {
+          if (!state.saveMessage) {
+            return;
+          }
+          const msgIndex = findMessageIdx(data.id, state.messages);
+          if (msgIndex >= 0 && meta.username === state.messages[msgIndex].from) {
+            state.messages[msgIndex].text = data.text;
+            state.messages[msgIndex].updatedDate = meta.createdDate;
+            if (state.saveMessage && state.messages[msgIndex].pending) {
+              delete state.messages[msgIndex].pending;
+            }
+          }
+        },
+        sideEffect({ contractID, hash: hash2, meta, data }, { getters }) {
+          emitMessageEvent({ contractID, hash: hash2 });
+          const rootState = (0, import_sbp4.default)("state/vuex/state");
+          const me = rootState.loggedIn.username;
+          if (me === meta.username) {
+            return;
+          }
+          const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageId === data.id);
+          const mentions = makeMentionFromUsername(me);
+          const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all);
+          messageReceivePostEffect({
+            contractID,
+            messageId: data.id,
+            datetime: data.createdDate,
+            text: data.text,
+            isAlreadyAdded,
+            isMentionedMe,
+            username: meta.username,
+            chatRoomName: getters.chatRoomAttributes.name
+          });
+          if (isAlreadyAdded && !isMentionedMe) {
+            (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomUnreadMention", {
+              chatRoomId: contractID,
+              messageId: data.id
+            });
+          }
+        }
+      },
+      "gi.contracts/chatroom/deleteMessage": {
         validate: objectOf({
-          privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map((v) => literalOf(v))),
-          contractID: string
+          id: string
         }),
-        process({ meta, data }, { state, getters }) {
-          if (getters.ourDirectMessages[data.contractID]) {
-            throw new TypeError(L("Already joined direct message."));
+        process({ data, meta }, { state }) {
+          if (!state.saveMessage) {
+            return;
           }
-          vue_esm_default.set(state.chatRooms, data.contractID, {
-            privacyLevel: data.privacyLevel,
-            hidden: !state.attributes.autoJoinAllowance
-          });
+          const msgIndex = findMessageIdx(data.id, state.messages);
+          if (msgIndex >= 0) {
+            state.messages.splice(msgIndex, 1);
+          }
+          for (const message of state.messages) {
+            if (message.replyingMessage?.id === data.id) {
+              message.replyingMessage.id = null;
+              message.replyingMessage.text = L("Original message was removed by {username}", {
+                username: makeMentionFromUsername(meta.username).me
+              });
+            }
+          }
         },
-        sideEffect({ contractID, meta, data }, { state, getters }) {
-          if (state.attributes.autoJoinAllowance) {
-            (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
+        sideEffect({ data, contractID, hash: hash2, meta }) {
+          emitMessageEvent({ contractID, hash: hash2 });
+          const rootState = (0, import_sbp4.default)("state/vuex/state");
+          const me = rootState.loggedIn.username;
+          if (rootState.chatRoomScrollPosition[contractID] === data.id) {
+            (0, import_sbp4.default)("state/vuex/commit", "setChatRoomScrollPosition", {
+              chatRoomId: contractID,
+              messageId: null
+            });
           }
+          if (rootState.chatRoomUnread[contractID].since.messageId === data.id) {
+            (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomUnreadSince", {
+              chatRoomId: contractID,
+              deletedDate: meta.createdDate
+            });
+          }
+          if (me === meta.username) {
+            return;
+          }
+          if (rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageId === data.id)) {
+            (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomUnreadMention", {
+              chatRoomId: contractID,
+              messageId: data.id
+            });
+          }
+          emitMessageEvent({ contractID, hash: hash2 });
         }
       },
-      "gi.contracts/mailbox/setDirectMessageVisibility": {
-        validate: (data, { state, getters, meta }) => {
-          objectOf({
-            contractID: string,
-            hidden: boolean
-          })(data);
-          if (state.attributes.creator !== meta.username) {
-            throw new TypeError(L("Only the mailbox creator can hide direct message channel."));
-          } else if (!getters.ourDirectMessages[data.contractID]) {
-            throw new TypeError(L("Not existing direct message."));
+      "gi.contracts/chatroom/makeEmotion": {
+        validate: objectOf({
+          id: string,
+          emoticon: string
+        }),
+        process({ data, meta, contractID }, { state }) {
+          if (!state.saveMessage) {
+            return;
+          }
+          const { id, emoticon } = data;
+          const msgIndex = findMessageIdx(id, state.messages);
+          if (msgIndex >= 0) {
+            let emoticons = cloneDeep(state.messages[msgIndex].emoticons || {});
+            if (emoticons[emoticon]) {
+              const alreadyAdded = emoticons[emoticon].indexOf(meta.username);
+              if (alreadyAdded >= 0) {
+                emoticons[emoticon].splice(alreadyAdded, 1);
+                if (!emoticons[emoticon].length) {
+                  delete emoticons[emoticon];
+                  if (!Object.keys(emoticons).length) {
+                    emoticons = null;
+                  }
+                }
+              } else {
+                emoticons[emoticon].push(meta.username);
+              }
+            } else {
+              emoticons[emoticon] = [meta.username];
+            }
+            if (emoticons) {
+              vue_esm_default.set(state.messages[msgIndex], "emoticons", emoticons);
+            } else {
+              vue_esm_default.delete(state.messages[msgIndex], "emoticons");
+            }
           }
         },
-        process({ data }, { state, getters }) {
-          vue_esm_default.set(state.chatRooms[data.contractID], "hidden", data.hidden);
-        },
-        sideEffect({ data }) {
-          const { contractID, hidden } = data;
-          hidden ? leaveChatRoom({ contractID }) : (0, import_sbp3.default)("chelonia/contract/sync", contractID);
+        sideEffect({ contractID, hash: hash2 }) {
+          emitMessageEvent({ contractID, hash: hash2 });
         }
       }
     }

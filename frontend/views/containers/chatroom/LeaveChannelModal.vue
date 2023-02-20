@@ -61,8 +61,7 @@ export default ({
     },
     async submit () {
       try {
-        // NOTE: users can not leave their direct messages once joined
-        if (!this.isDirectMessage(this.currentChatRoomId)) {
+        if (!this.isDirectMessage()) {
           await sbp('gi.actions/group/leaveChatRoom', {
             contractID: this.currentGroupId,
             data: {

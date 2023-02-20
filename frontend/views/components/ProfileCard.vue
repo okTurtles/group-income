@@ -90,7 +90,7 @@ import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
-import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
+import { PROFILE_STATUS, CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
@@ -113,35 +113,6 @@ export default ({
     UserName,
     Tooltip
   },
-  methods: {
-    openModal (modal, props) {
-      if (this.deactivated) {
-        return
-      }
-      this.toggleTooltip()
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
-    },
-    toggleTooltip () {
-      this.$refs.tooltip.toggle()
-    },
-    sendMessage () {
-      const isExistingDM = this.mailboxContract.users[this.username]?.joinedDate
-      if (!isExistingDM) {
-        const actionName = this.mailboxContract.users[this.username] ? 'joinDirectMessage' : 'createDirectMessage'
-        sbp(`gi.actions/mailbox/${actionName}`, {
-          contractID: this.currentIdentityState.attributes.mailbox,
-          data: { username: this.username }
-        })
-      } else {
-        const chatRoomId = this.directMessageIDFromUsername(this.username)
-        this.$router.push({
-          name: 'GroupChatConversation',
-          params: { chatRoomId }
-        }).catch(logExceptNavigationDuplicated)
-      }
-      this.toggleTooltip()
-    }
-  },
   computed: {
     ...mapGetters([
       'ourUsername',
@@ -151,7 +122,7 @@ export default ({
       'globalProfile',
       'groupShouldPropose',
       'ourContributionSummary',
-      'mailboxContract',
+      'ourPrivateDirectMessages',
       'currentIdentityState',
       'directMessageIDFromUsername'
     ]),
@@ -175,6 +146,36 @@ export default ({
     },
     receivingMonetary () {
       return !!this.ourContributionSummary.receivingMonetary
+    }
+  },
+  methods: {
+    openModal (modal, props) {
+      if (this.deactivated) {
+        return
+      }
+      this.toggleTooltip()
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    },
+    toggleTooltip () {
+      this.$refs.tooltip.toggle()
+    },
+    sendMessage () {
+      if (!this.ourPrivateDirectMessages[this.username]) {
+        sbp('gi.actions/mailbox/createDirectMessage', {
+          contractID: this.currentIdentityState.attributes.mailbox,
+          data: {
+            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
+            usernames: [this.username]
+          }
+        })
+      } else {
+        const chatRoomId = this.directMessageIDFromUsername(this.username)
+        this.$router.push({
+          name: 'GroupChatConversation',
+          params: { chatRoomId }
+        }).catch(logExceptNavigationDuplicated)
+      }
+      this.toggleTooltip()
     }
   }
 }: Object)

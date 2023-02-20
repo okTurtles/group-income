@@ -5,7 +5,9 @@
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
-import { object, objectOf, string, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { leaveChatRoom } from './shared/functions.js'
+import { object, objectOf, string, boolean, unionOf, literalOf, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { CHATROOM_PRIVACY_LEVEL } from './shared/constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 sbp('chelonia/defineContract', {
@@ -31,6 +33,14 @@ sbp('chelonia/defineContract', {
       }
     }
   },
+  getters: {
+    currentMailboxState (state) {
+      return state
+    },
+    ourDirectMessages (state, getters) {
+      return getters.currentMailboxState.chatRooms || {}
+    }
+  },
   actions: {
     'gi.contracts/mailbox': {
       validate: objectOf({
@@ -40,9 +50,9 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           attributes: {
             creator: data.username,
-            autoJoinAllowance: true
+            autoJoinAllowance: true // this attribute could be used to block him to be joined direct/group messages automatically by another
           },
-          users: {}
+          chatRooms: {}
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
@@ -63,23 +73,19 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/mailbox/createDirectMessage': {
-      validate: (data, { state, meta }) => {
+      validate: (data, { state, getters, meta }) => {
         objectOf({
-          username: string,
+          privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
           contractID: string
         })(data)
         if (state.attributes.creator !== meta.username) {
           throw new TypeError(L('Only the mailbox creator can create direct message channel.'))
-        } else if (state.users[data.username]) {
-          throw new TypeError(L('Already existing direct message channel.'))
         }
       },
       process ({ meta, data }, { state }) {
-        Vue.set(state.users, data.username, {
-          contractID: data.contractID,
-          creator: meta.username,
-          hidden: false,
-          joinedDate: meta.createdDate
+        Vue.set(state.chatRooms, data.contractID, {
+          privacyLevel: data.privacyLevel,
+          hidden: false // NOTE: this attr is used to hide/show direct message
         })
       },
       async sideEffect ({ contractID, data }) {
@@ -94,48 +100,44 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/mailbox/joinDirectMessage': {
       validate: objectOf({
-        username: string,
-        contractID: optional(string)
+        privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
+        contractID: string
       }),
-      process ({ meta, data }, { state }) {
-        if (state.attributes.creator === data.username) {
-          if (state.users[meta.username]) {
-            throw new TypeError(L('Already existing direct message channel.'))
-          }
-        } else if (state.attributes.creator === meta.username) {
-          if (!state.users[data.username] || state.users[data.username].joinedDate) {
-            throw new TypeError(L('Never created or already joined direct message channel.'))
-          }
-        } else {
-          throw new TypeError(L('Incorrect mailbox creator to join direct message channel.'))
+      process ({ meta, data }, { state, getters }) {
+        // NOTE: this method is always created by another
+        if (getters.ourDirectMessages[data.contractID]) {
+          throw new TypeError(L('Already joined direct message.'))
         }
-        const joinedDate = state.attributes.autoJoinAllowance ? meta.createdDate : null
-        if (state.attributes.creator === data.username) {
-          Vue.set(state.users, meta.username, {
-            contractID: data.contractID,
-            creator: meta.username,
-            hidden: false,
-            joinedDate
-          })
-        } else {
-          Vue.set(state.users[data.username], 'joinedDate', joinedDate)
+
+        Vue.set(state.chatRooms, data.contractID, {
+          privacyLevel: data.privacyLevel,
+          hidden: !state.attributes.autoJoinAllowance
+        })
+      },
+      sideEffect ({ contractID, meta, data }, { state, getters }) {
+        if (state.attributes.autoJoinAllowance) {
+          sbp('chelonia/contract/sync', data.contractID)
+        }
+      }
+    },
+    'gi.contracts/mailbox/setDirectMessageVisibility': {
+      validate: (data, { state, getters, meta }) => {
+        objectOf({
+          contractID: string,
+          hidden: boolean
+        })(data)
+        if (state.attributes.creator !== meta.username) {
+          throw new TypeError(L('Only the mailbox creator can hide direct message channel.'))
+        } else if (!getters.ourDirectMessages[data.contractID]) {
+          throw new TypeError(L('Not existing direct message.'))
         }
       },
-      async sideEffect ({ contractID, meta, data }, { state }) {
-        let chatRoomId
-        if (state.attributes.creator === meta.username) {
-          chatRoomId = state.users[data.username].contractID
-        } else if (state.attributes.autoJoinAllowance) {
-          chatRoomId = data.contractID
-        }
-        if (chatRoomId) {
-          await sbp('chelonia/contract/sync', chatRoomId)
-        }
-        if (state.attributes.creator === meta.username && !sbp('chelonia/contract/isSyncing', contractID)) {
-          await sbp('controller/router')
-            .push({ name: 'GroupChatConversation', params: { chatRoomId } })
-            .catch(logExceptNavigationDuplicated)
-        }
+      process ({ data }, { state, getters }) {
+        Vue.set(state.chatRooms[data.contractID], 'hidden', data.hidden)
+      },
+      sideEffect ({ data }) {
+        const { contractID, hidden } = data
+        hidden ? leaveChatRoom({ contractID }) : sbp('chelonia/contract/sync', contractID)
       }
     }
   }

@@ -5,10 +5,12 @@ const userId = Math.floor(Math.random() * 10000)
 const user1 = `user1${userId}`
 const user2 = `user2${userId}`
 const user3 = `user3${userId}`
+const user4 = `user4${userId}`
+const user5 = `user5${userId}`
 let invitationLinkAnyone
 let me
 
-describe('Create/Join/Leave direct messages and orders of direct message channels', () => {
+describe('Create/Join direct messages and orders of direct message channels', () => {
   function switchUser (username) {
     cy.giSwitchUser(username)
     me = username
@@ -59,39 +61,35 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
     })
   }
 
-  function leaveDirectMessage (partner) {
-    switchDirectMessageChannel(partner)
-    cy.getByDT('channelName').within(() => {
-      cy.getByDT('menuTrigger').click()
-    })
-    cy.getByDT('leaveChannel').click()
-    cy.getByDT('leaveChannelSubmit').click()
-    cy.getByDT('closeModal').should('not.exist')
-    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-  }
-
-  function joinDirectMessage (partner) {
-    cy.getByDT('chatMembers').within(() => {
-      cy.getByDT('inviteButton').click()
-    })
-
-    cy.getByDT('modal').within(() => {
-      cy.getByDT('others').children().each(($el, index, $list) => {
-        if ($el.text().includes(`@${partner}`)) {
-          cy.wrap($el).click()
-          return false
-        }
-      })
-    })
-  }
-
   function switchDirectMessageChannel (partner) {
-    cy.getByDT('chatMembers').find('ul').children().each(($el, index, $list) => {
+    cy.getByDT('chatMembers').find('ul').get('span[data-test="title"], span[data-test="username"]').each(($el, index, $list) => {
       if ($el.text() === partner) {
         cy.wrap($el).click()
         return false
       }
     })
+  }
+
+  function joinUser (username, shouldLogoutAfter = true) {
+    cy.giAcceptGroupInvite(invitationLinkAnyone, {
+      username: username,
+      groupName: groupName,
+      shouldLogoutAfter: false,
+      bypassUI: true
+    })
+    me = username
+    cy.giRedirectToGroupChat()
+
+    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+    checkIfJoined(CHATROOM_GENERAL_NAME)
+
+    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
+      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
+    })
+
+    if (shouldLogoutAfter) {
+      cy.giLogout()
+    }
   }
 
   it(`user1 creats "${groupName}"" group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
@@ -156,21 +154,7 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
   })
 
   it(`user3 joins "${groupName}" group`, () => {
-    cy.giAcceptGroupInvite(invitationLinkAnyone, {
-      username: user3,
-      groupName: groupName,
-      shouldLogoutAfter: false,
-      bypassUI: true
-    })
-    me = user3
-    cy.giRedirectToGroupChat()
-
-    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    checkIfJoined(CHATROOM_GENERAL_NAME)
-
-    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
-      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
-    })
+    joinUser(user3, false)
   })
 
   it('user1 checks direct messages from user2 and replies', () => {
@@ -207,17 +191,6 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
     sendMessage('Fine. You?')
   })
 
-  it('user3 leaves direct messages with user1 and rejoin', () => {
-    leaveDirectMessage(user1)
-
-    cy.getByDT('chatMembers').find('ul').children().should('have.length', 0)
-
-    joinDirectMessage(user1)
-
-    cy.getByDT('channelName').should('contain', user1)
-    cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 2)
-  })
-
   it('direct message channels should be sorted by name and the latest message', () => {
     switchUser(user1)
     cy.giRedirectToGroupChat()
@@ -238,6 +211,65 @@ describe('Create/Join/Leave direct messages and orders of direct message channel
       cy.getByDT('recentConversations').find('li:last-child').should('contain', user2)
     })
     cy.closeModal()
+
+    cy.giLogout()
+  })
+
+  it(`user4 and user5 joins the "${groupName}"`, () => {
+    joinUser(user4)
+    joinUser(user5, false)
+  })
+
+  it('user1 adds user4 to DM which is with user3', () => {
+    switchUser(user1)
+    cy.giRedirectToGroupChat()
+
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('addPeople').click()
+    cy.getByDT('unjoinedChannelMembersList').within(() => {
+      cy.getByDT('addToChannel-' + user4).click()
+    })
+
+    cy.getByDT('channelName').should('contain', `${user3}, ${user4}`)
+    cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 3) // 3 means user1, user3, user4
+
+    cy.url().then(url => url).as('groupMessageLink')
+
+    switchDirectMessageChannel(user3)
+
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('addPeople').click()
+    cy.getByDT('unjoinedChannelMembersList').within(() => {
+      cy.getByDT('addToChannel-' + user4).click()
+    })
+
+    cy.getByDT('channelName').should('contain', `${user3}, ${user4}`)
+    cy.url().then(url => {
+      cy.get('@groupMessageLink').should('eq', url) // NOTE: this checks the possibility to create gm for same users
+    })
+  })
+
+  it('user3 adds user5 to the channel again', () => {
+    switchUser(user3)
+    cy.giRedirectToGroupChat()
+
+    switchDirectMessageChannel(`${user1}, ${user4}`)
+
+    cy.getByDT('channelName').within(() => {
+      cy.getByDT('menuTrigger').click()
+    })
+    cy.getByDT('addPeople').click()
+    cy.getByDT('unjoinedChannelMembersList').within(() => {
+      cy.getByDT('addToChannel-' + user5).click()
+    })
+    cy.getByDT('closeModal').click()
+
+    cy.getByDT('channelName').should('contain', `${user1}, ${user4}, ${user5}`)
+    cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 4) // 3 means user1, user3, user4, user5
 
     cy.giLogout()
   })
