@@ -4,6 +4,8 @@
       i18n Leave Channel
 
     form(novalidate @submit.prevent='' data-test='leaveChannel')
+      //- TODO: need to update design if ourUsername is chatroom creator
+      //- and make it 'Leave and Archive'
       i18n(
         tag='strong'
         :args='{ channelName: channelName }'
