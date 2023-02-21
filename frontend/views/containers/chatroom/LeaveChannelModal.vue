@@ -72,6 +72,7 @@ export default ({
               leavingGroup: false
             }
           })
+          // TODO: ourUsername is channel creator, this channel should be archived too
         }
       } catch (e) {
         console.error('LeaveChannelModal submit() error:', e)
