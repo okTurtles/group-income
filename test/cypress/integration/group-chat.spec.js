@@ -496,7 +496,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelMembers').should('contain', '1 members')
   })
 
-  it ('usrer1 leaves and archives chatroom', () => {
+  it('user1 leaves and archives chatroom', () => {
     const channel = chatRooms.filter(c => c.name.startsWith('Channel1')).map(c => c.name)[0]
     leaveChannel(channel, 'Leave and Archive')
 
