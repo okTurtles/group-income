@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { omit } from '@model/contracts/shared/giLodash.js'
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
+import { CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
 import { encryptedAction } from './utils.js'
 import type { GIActionParams } from './types.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
@@ -32,18 +32,6 @@ export default (sbp('sbp/selectors/register', {
       const rootState = sbp('state/vuex/state')
       const rootGetters = sbp('state/vuex/getters')
       const partnerProfiles = params.data.usernames.map(username => rootGetters.ourContactProfiles[username])
-      const isPrivacyLevelPrivate = params.data.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-
-      const hasEmptyProfile = partnerProfiles.some(profile => !profile)
-      if (hasEmptyProfile) {
-        throw new GIErrorUIRuntimeError(L('Incorrect username to create direct message.'))
-      } else if (!partnerProfiles.length) {
-        throw new GIErrorUIRuntimeError(L('Not enough usernames provided.'))
-      } else if (isPrivacyLevelPrivate && partnerProfiles.length !== 1) {
-        throw new GIErrorUIRuntimeError(L('Incorrect number of usernames provided.')) // TODO: need to add translation
-      } else if (isPrivacyLevelPrivate && rootGetters.ourPrivateDirectMessages[params.data.usernames[0]]) {
-        throw new GIErrorUIRuntimeError(L('Already existing direct message channel.'))
-      }
 
       const message = await sbp('gi.actions/chatroom/create', {
         data: {

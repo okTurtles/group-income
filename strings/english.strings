@@ -219,9 +219,6 @@
 /* views/containers/user-settings/NotificationSettings.vue */
 "Allow push notifications" = "Allow push notifications";
 
-/* controller/actions/mailbox.js */
-"Already existing direct message channel." = "Already existing direct message channel.";
-
 /* views/containers/access/SignupModal.vue, views/pages/Join.vue */
 "Already have an account?" = "Already have an account?";
 
@@ -669,9 +666,6 @@
 /* controller/actions/mailbox.js */
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
-/* controller/actions/mailbox.js */
-"Failed to create a new group message channel." = "Failed to create a new group message channel.";
-
 /* controller/actions/chatroom.js */
 "Failed to create chat channel." = "Failed to create chat channel.";
 
@@ -926,15 +920,6 @@
 
 /* views/containers/contributions/IncomeDetails.vue */
 "Income Details" = "Income Details";
-
-/* controller/actions/mailbox.js */
-"Incorrect number of usernames provided." = "Incorrect number of usernames provided.";
-
-/* controller/actions/mailbox.js */
-"Incorrect username to create direct message." = "Incorrect username to create direct message.";
-
-/* controller/actions/mailbox.js */
-"Incorrect username to create group message." = "Incorrect username to create group message.";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Info" = "Info";
@@ -1199,9 +1184,6 @@
 
 /* views/containers/contributions/ContributionsWidget.vue */
 "Non-monetary" = "Non-monetary";
-
-/* controller/actions/mailbox.js */
-"Not enough usernames provided." = "Not enough usernames provided.";
 
 /* model/contracts/mailbox.js */
 "Not existing direct message." = "Not existing direct message.";
@@ -2056,7 +2038,7 @@
 "Vote yes" = "Vote yes";
 
 /* views/containers/chatroom/MessageNotification.vue */
-"Voted on “{}”" = "Voted on “{}”";
+"Voted on “{title}”" = "Voted on “{title}”";
 
 /* views/pages/GroupSettings.vue */
 "Voting System" = "Voting System";

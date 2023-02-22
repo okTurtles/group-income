@@ -31,8 +31,7 @@ const initialState = {
   namespaceLookups: Object.create(null) // { [username]: sbp('namespace/lookup') }
 }
 
-if (window
-  .matchMedia) {
+if (window.matchMedia) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     if (sbp('state/vuex/getters').theme === 'system') {
       store.commit('setTheme', 'system')

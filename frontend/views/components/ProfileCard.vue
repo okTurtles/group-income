@@ -170,10 +170,20 @@ export default ({
         })
       } else {
         const chatRoomId = this.directMessageIDFromUsername(this.username)
-        this.$router.push({
-          name: 'GroupChatConversation',
-          params: { chatRoomId }
-        }).catch(logExceptNavigationDuplicated)
+        if (this.ourPrivateDirectMessages[this.username].hidden) {
+          sbp('gi.actions/mailbox/setDirectMessageVisibility', {
+            contractID: this.currentIdentityState.attributes.mailbox,
+            data: {
+              contractID: chatRoomId,
+              hidden: false
+            }
+          })
+        } else {
+          this.$router.push({
+            name: 'GroupChatConversation',
+            params: { chatRoomId }
+          }).catch(logExceptNavigationDuplicated)
+        }
       }
       this.toggleTooltip()
     }
