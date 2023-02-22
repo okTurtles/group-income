@@ -669,9 +669,6 @@
 /* controller/actions/mailbox.js */
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
-/* controller/actions/mailbox.js */
-"Failed to create a new group message channel." = "Failed to create a new group message channel.";
-
 /* controller/actions/chatroom.js */
 "Failed to create chat channel." = "Failed to create chat channel.";
 
@@ -932,9 +929,6 @@
 
 /* controller/actions/mailbox.js */
 "Incorrect username to create direct message." = "Incorrect username to create direct message.";
-
-/* controller/actions/mailbox.js */
-"Incorrect username to create group message." = "Incorrect username to create group message.";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Info" = "Info";

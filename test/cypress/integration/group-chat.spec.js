@@ -89,6 +89,10 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     }
   }
 
+  function checkIfArchived (channelName) {
+    // TODO: need to be implemented
+  }
+
   function joinChannel (channelName) {
     cy.getByDT('joinChannel').click()
     checkIfJoined(channelName)
@@ -104,12 +108,14 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     checkIfJoined(channelName, null, username)
   }
 
-  function leaveChannel (channelName) {
+  function leaveChannel (channelName, submitButtonTitle) {
+    submitButtonTitle = submitButtonTitle || 'Leave Channel'
     switchChannel(channelName)
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
     })
     cy.getByDT('leaveChannel').click()
+    cy.getByDT('leaveChannelSubmit').should('contain', submitButtonTitle)
     cy.getByDT('leaveChannelSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
@@ -206,6 +212,16 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       cy.get('ul').children().should('have.length', 1)
     })
     checkIfJoined(CHATROOM_GENERAL_NAME)
+  })
+
+  it('user1 tries to open incorrect chatroom URL and it redirects to the dashboard', () => {
+    cy.url().then(url => {
+      cy.visit(url)
+      cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+      cy.visit(url + 'incorrect-suffix')
+      cy.getByDT('groupName').should('contain', groupName1)
+    })
+    cy.giRedirectToGroupChat()
   })
 
   it('user1 creates several channels and logout', () => {
@@ -480,8 +496,15 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelMembers').should('contain', '1 members')
   })
 
-  it('user1 deletes a channel and logout', () => {
+  it ('usrer1 leaves and archives chatroom', () => {
     const channel = chatRooms.filter(c => c.name.startsWith('Channel1')).map(c => c.name)[0]
+    leaveChannel(channel, 'Leave and Archive')
+
+    checkIfArchived(channel)
+  })
+
+  it('user1 deletes a channel and logout', () => {
+    const channel = chatRooms.filter(c => c.name.startsWith('Channel1')).map(c => c.name)[1]
     deleteChannel(channel)
 
     cy.giLogout()

@@ -709,9 +709,6 @@
 "Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
 
 /* controller/actions/mailbox.js */
-"Failed to create a new group message channel." = "Échec de la création d'un nouveau canal de message de groupe.";
-
-/* controller/actions/mailbox.js */
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
 
 /* controller/actions/mailbox.js */
@@ -725,9 +722,6 @@
 
 /* controller/actions/mailbox.js */
 "Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";
-
-/* controller/actions/mailbox.js */
-"Incorrect username to create group message." = "Nom d'utilisateur incorrect pour créer un message de groupe.";
 
 /* controller/actions/mailbox.js */
 "Not enough usernames provided." = "Pas assez de noms d'utilisateur fournis.";
@@ -2623,6 +2617,9 @@
 "Failed to change mincome: {reportError}" = "La modification du revenu minimum a échoué: {reportError}";
 
 /* Not currently used */
+"Failed to create a new group message channel." = "Échec de la création d'un nouveau canal de message de groupe.";
+
+/* Not currently used */
 "Failed to create payment. {reportError}" = "Erreur lors de la création du paiement. {reportError}";
 
 /* Not currently used */
@@ -2671,6 +2668,9 @@
 "Inbox" = "Boîte de réception";
 
 /* Not currently used */
+"Incorrect username to create group message." = "Nom d'utilisateur incorrect pour créer un message de groupe.";
+
+/* Not currently used */
 "Invalid Username" = "Nom d’utilisateur invalide";
 
 /* Not currently used */
@@ -2678,6 +2678,9 @@
 
 /* Not currently used */
 "Join channel" = "Rejoignez la chaîne";
+
+/* Not currently used */
+"Leave and Archive" = "Quitter et archiver";
 
 /* Not currently used */
 "Leave {groupName}" = "Quitter {groupName}";
