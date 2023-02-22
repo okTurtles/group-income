@@ -184,10 +184,10 @@ export default ({
   },
   watch: {
     '$route' (to: Object, from: Object) {
-      const { chatRoomId } = to.params
       this.$nextTick(() => {
         this.refreshTitle()
       })
+      const { chatRoomId } = to.params
       if (this.isDirectMessage(chatRoomId)) {
         this.updateCurrentChatRoomID(chatRoomId)
       } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
