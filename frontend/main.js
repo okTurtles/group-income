@@ -249,7 +249,6 @@ async function startApp () {
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
       sbp('okTurtles.events/on', SWITCH_GROUP, () => {
-        console.log('@@@ listener of SWITCH_GROUP')
         this.initOrResetPeriodicNotifications()
         this.checkAndEmitOneTimeNotifications()
       })

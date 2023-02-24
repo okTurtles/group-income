@@ -43,20 +43,19 @@ const myNotificationHas = checkFunc => {
 const oneTimeNotificationEntries = [
   {
     name: 'INCOME_DETAILS_OLD',
-    emitCondition: () => {
-      const { ourGroupProfile } = sbp('state/vuex/getters')
-      const { incomeDetailsLastUpdatedDate } = (ourGroupProfile || {})
+    emitCondition ({ rootGetters }) {
+      const { incomeDetailsLastUpdatedDate } = (rootGetters.ourGroupProfile || {})
       const now = new Date().toISOString()
 
       return incomeDetailsLastUpdatedDate &&
         compareISOTimestamps(now, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS &&
         !myNotificationHas(item => item.type === 'INCOME_DETAILS_OLD' && item.data.lastUpdatedDate === incomeDetailsLastUpdatedDate)
     },
-    emit: () => {
+    emit ({ rootGetters }) {
       sbp('gi.notifications/emit', 'INCOME_DETAILS_OLD', {
         createdDate: new Date().toISOString(),
         months: 6,
-        lastUpdatedDate: sbp('state/vuex/getters').ourGroupProfile.incomeDetailsLastUpdatedDate
+        lastUpdatedDate: rootGetters.ourGroupProfile.incomeDetailsLastUpdatedDate
       })
     }
   }
@@ -67,26 +66,67 @@ const periodicNotificationEntries = [
     type: PERIODIC_NOTIFICATION_TYPE.MIN1,
     notificationData: {
       stateKey: 'nearDistributionEnd',
-      emitCondition: () => {
-        const getters = sbp('state/vuex/getters')
-        const currentPeriod = getters.groupSettings.distributionDate
-        const nextPeriod = getters.periodAfterPeriod(currentPeriod)
+      emitCondition ({ rootGetters }) {
+        const currentPeriod = rootGetters.groupSettings.distributionDate
+        const nextPeriod = rootGetters.periodAfterPeriod(currentPeriod)
         const now = new Date().toISOString()
+        const comparison = comparePeriodStamps(nextPeriod, now)
 
-        return getters.ourGroupProfile.incomeDetailsType === 'pledgeAmount' &&
-          comparePeriodStamps(nextPeriod, now) < DAYS_MILLIS * 7 &&
-          (getters.ourPayments && getters.ourPayments.todo.length > 0) &&
+        return rootGetters.ourGroupProfile.incomeDetailsType === 'pledgeAmount' &&
+          (comparison > 0 && comparison < DAYS_MILLIS * 7) &&
+          (rootGetters.ourPayments && rootGetters.ourPayments.todo.length > 0) &&
           !myNotificationHas(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === currentPeriod)
       },
-      emit: () => {
+      emit ({ rootState, rootGetters }) {
         sbp('gi.notifications/emit', 'NEAR_DISTRIBUTION_END', {
           createdDate: new Date().toISOString(),
-          groupID: sbp('state/vuex/state').currentGroupId,
-          period: sbp('state/vuex/getters').groupSettings.distributionDate
+          groupID: rootState.currentGroupId,
+          period: rootGetters.groupSettings.distributionDate
         })
       },
-      shouldClearStateKey: () => false
+      shouldClearStateKey ({ rootGetters }) {
+        const currentPeriod = rootGetters.groupSettings.distributionDate
+        return rootGetters.currentNotifications.filter(item => item.type === 'NEAR_DISTRIBUTION_END')
+          .every(item => item.data.period !== currentPeriod)
+      }
       // once 'NEAR_DISTRIBUTION_END' is sent, don't clear the stateKey so the emitCondition doesn't get executed over and over again unecessarily.
+    }
+  },
+  {
+    type: PERIODIC_NOTIFICATION_TYPE.MIN1,
+    notificationData: {
+      stateKey: 'nextDistributionPeriod',
+      emitCondition ({ rootGetters }) {
+        if (!rootGetters.ourGroupProfile.incomeDetailsType) return false // if income-details are not set yet, ignore.
+
+        const currentPeriod = rootGetters.groupSettings.distributionDate
+        const now = new Date().toISOString()
+        let check = false
+
+        if (this.distPeriodRecords &&
+          comparePeriodStamps(this.distPeriodRecords.prevPeriod, this.distPeriodRecords.prevNow) > 0 &&
+          comparePeriodStamps(currentPeriod, now) < 0) { check = true }
+
+        if (this.distPeriodRecords && comparePeriodStamps(currentPeriod, this.distPeriodRecords.prevPeriod) > 0) { check = true }
+
+        this.distPeriodRecords = {
+          prevPeriod: currentPeriod,
+          prevNow: now
+        }
+
+        return check
+      },
+      emit ({ rootState, rootGetters }) {
+        sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
+          createdDate: new Date().toISOString(),
+          groupID: rootState.currentGroupId,
+          creator: rootGetters.ourUsername,
+          memberType: rootGetters.ourGroupProfile.incomeDetailsType === 'pledgeAmount' ? 'pledger' : 'receiver'
+        })
+      },
+      shouldClearStateKey ({ rootGetters }) {
+        return comparePeriodStamps(new Date().toISOString(), rootGetters.groupSettings.distributionDate) > 0
+      }
     }
   }
 ]
@@ -94,15 +134,15 @@ const periodicNotificationEntries = [
 const notificationMixin = {
   methods: {
     initOrResetPeriodicNotifications () {
-      console.log('@@@ init or reset!!')
-
       sbp('gi.periodicNotifications/destroyAll') // make sure to destroy the recursive timeout loop for previous user, if any.
       sbp('gi.periodicNotifications/init')
     },
     async checkAndEmitOneTimeNotifications () {
+      const arg = { rootState: sbp('state/vuex/state'), rootGetters: sbp('state/vuex/getters') }
+
       for (const entry of oneTimeNotificationEntries) {
-        if (entry.emitCondition()) {
-          await entry.emit()
+        if (entry.emitCondition(arg)) {
+          await entry.emit(arg)
         }
       }
     }

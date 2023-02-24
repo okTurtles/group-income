@@ -8,15 +8,15 @@ import { MINS_MILLIS } from '@model/contracts/shared/time.js'
 import { PERIODIC_NOTIFICATION_TYPE } from './constants.js'
 
 const { MIN1, MIN5, MIN30 } = PERIODIC_NOTIFICATION_TYPE
-let timeoutId1Min, timeoutId5Min, timeoutId30Min
-const every1MinQueue = []
-const every5MinQueue = []
-const every30MinQueue = []
 
-const typeToQueueMap = {
-  [MIN1]: every1MinQueue,
-  [MIN5]: every5MinQueue,
-  [MIN30]: every30MinQueue
+const every1MinTimeout = { queue: [], state: {}, delay: 0.2 * MINS_MILLIS }
+const every5MinTimeout = { queue: [], state: {}, delay: 5 * MINS_MILLIS }
+const every30MinTimeout = { queue: [], state: {}, delay: 30 * MINS_MILLIS }
+
+const typeToObjectMap = {
+  [MIN1]: every1MinTimeout,
+  [MIN5]: every5MinTimeout,
+  [MIN30]: every30MinTimeout
 }
 
 const validateNotificationData = objectOf({
@@ -26,58 +26,50 @@ const validateNotificationData = objectOf({
   shouldClearStateKey: isFunction
 })
 
-/*
-  --- notification entry object ---
-  1) stateKey: a key name used to store a boolean in rootState.periodicNotificationAlreadyFiredMap.
-                          Being undefined in the rootState means the notification hasn't been fired, and setting it to 'true' means it has.
+async function runQueueRecursive (data) {
+  const rootState = sbp('state/vuex/state')
+  const rootGetters = sbp('state/vuex/getters')
+  const firedMap = rootState.periodicNotificationAlreadyFiredMap
+  const callWithStates = func => func.call(data.state, { rootState, rootGetters })
 
-  2) emitCondition: a function that returns a boolean that determines whether or not to emit a notification
-  3) emit: logic to emit a notification
-  4) shouldClearStateKey: a function that returns true to delete the stateKey from rootState, which marks the notification as 'has not been fired' again.
-*/
-
-async function runNotificationQueue (queue) {
-  console.log('@@@ runnint notification queue!!: ', queue)
-  const firedMap = sbp('state/vuex/state').periodicNotificationAlreadyFiredMap
-
-  for (const entry of queue) {
-    if (!firedMap[entry.stateKey] && entry.emitCondition()) {
-      await entry.emit()
+  for (const entry of data.queue) {
+    if (!firedMap[entry.stateKey] && callWithStates(entry.emitCondition)) {
+      await callWithStates(entry.emit)
       Vue.set(firedMap, entry.stateKey, true)
     }
 
-    if (firedMap[entry.stateKey] && entry.shouldClearStateKey()) {
+    if (firedMap[entry.stateKey] && callWithStates(entry.shouldClearStateKey)) {
       Vue.delete(firedMap, entry.stateKey)
     }
   }
+
+  data.state.timeoutId = setTimeout(() => runQueueRecursive(data), data.delay)
 }
 
-function runQueueRecursive (queue, timeout, id) {
-  id = setTimeout(() => {
-    runNotificationQueue(queue)
-    runQueueRecursive(queue, timeout, id)
-  }, timeout)
+function clearTimeoutObject (data) {
+  clearTimeout(data.state.timeoutId)
+  data.state = {}
 }
 
 sbp('sbp/selectors/register', {
   'gi.periodicNotifications/init': function () {
-    runQueueRecursive(every1MinQueue, MINS_MILLIS, timeoutId1Min)
-    runQueueRecursive(every5MinQueue, 5 * MINS_MILLIS, timeoutId5Min)
-    runQueueRecursive(every30MinQueue, 30 * MINS_MILLIS, timeoutId30Min)
+    runQueueRecursive(every1MinTimeout)
+    runQueueRecursive(every5MinTimeout)
+    runQueueRecursive(every30MinTimeout)
   },
   'gi.periodicNotifications/destroyAll': function () {
     const rootState = sbp('state/vuex/state')
 
     Vue.set(rootState, 'periodicNotificationAlreadyFiredMap', {})
-    clearTimeout(timeoutId1Min)
-    clearTimeout(timeoutId5Min)
-    clearTimeout(timeoutId30Min)
+    clearTimeoutObject(every1MinTimeout)
+    clearTimeoutObject(every5MinTimeout)
+    clearTimeoutObject(every30MinTimeout)
   },
   'gi.periodicNotifications/createEntry': function ({ type, notificationData }) {
     if (!type || !notificationData) throw new Error('A required argument is missing for "gi.periodicNotifications/createEntry"')
     validateNotificationData(notificationData)
 
-    const queue = typeToQueueMap[type]
+    const queue = typeToObjectMap[type].queue
     queue.push(notificationData)
 
     return queue
