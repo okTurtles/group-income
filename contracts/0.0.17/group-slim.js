@@ -903,7 +903,6 @@ ${this.getErrorInfo()}`;
     if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
       updateGroupStreaks({ state, getters });
       getters.groupSettings.distributionDate = period;
-      (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/updateDistributionDate/sideEffect", { meta, contractID }]);
     }
     if (noPayments || !curPeriodPayments.haveNeedsSnapshot) {
       curPeriodPayments.haveNeedsSnapshot = getters.haveNeedsForThisPeriod(period);
@@ -1773,28 +1772,6 @@ ${this.getErrorInfo()}`;
           if (profile) {
             import_common3.Vue.set(profile, "lastLoggedIn", meta.createdDate);
           }
-        },
-        sideEffect({ meta, contractID }, { getters }) {
-          const { ourPayments, currentNotifications } = (0, import_sbp3.default)("state/vuex/getters");
-          const { lastLoggedIn, incomeDetailsLastUpdatedDate, incomeDetailsType } = getters.groupProfiles[meta.username];
-          const myNotificationHas = (checkFunc) => currentNotifications.some((item) => checkFunc(item));
-          const now = meta.createdDate;
-          if (incomeDetailsLastUpdatedDate && compareISOTimestamps(lastLoggedIn, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS && !myNotificationHas((item) => item.type === "INCOME_DETAILS_OLD" && item.data.lastUpdatedDate === incomeDetailsLastUpdatedDate)) {
-            (0, import_sbp3.default)("gi.notifications/emit", "INCOME_DETAILS_OLD", {
-              createdDate: now,
-              months: 6,
-              lastUpdatedDate: incomeDetailsLastUpdatedDate
-            });
-          }
-          const currentPeriod = getters.groupSettings.distributionDate;
-          const nextPeriod = getters.periodAfterPeriod(currentPeriod);
-          if (incomeDetailsType === "pledgeAmount" && comparePeriodStamps(nextPeriod, now) < DAYS_MILLIS * 7 && (ourPayments && ourPayments.todo?.length > 0) && !myNotificationHas((item) => item.type === "NEAR_DISTRIBUTION_END" && item.data.period === currentPeriod)) {
-            (0, import_sbp3.default)("gi.notifications/emit", "NEAR_DISTRIBUTION_END", {
-              createdDate: now,
-              groupID: contractID,
-              period: currentPeriod
-            });
-          }
         }
       },
       "gi.contracts/group/updateDistributionDate": {
@@ -1806,18 +1783,6 @@ ${this.getErrorInfo()}`;
             updateGroupStreaks({ state, getters });
             getters.groupSettings.distributionDate = period;
           }
-        },
-        sideEffect({ meta, contractID }, { getters }) {
-          const { loggedIn } = (0, import_sbp3.default)("state/vuex/state");
-          const myProfile = getters.groupProfile(loggedIn.username);
-          if (isActionYoungerThanUser(meta, myProfile)) {
-            (0, import_sbp3.default)("gi.notifications/emit", "NEW_DISTRIBUTION_PERIOD", {
-              creator: meta.username,
-              createdDate: meta.createdDate,
-              groupID: contractID,
-              memberType: myProfile.incomeDetailsType === "pledgeAmount" ? "pledger" : "receiver"
-            });
-          }
         }
       },
       ...{
@@ -1825,7 +1790,6 @@ ${this.getErrorInfo()}`;
           validate: optional,
           process({ meta, contractID }, { state, getters }) {
             getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate);
-            (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, ["gi.contracts/group/updateDistributionDate/sideEffect", { meta, contractID }]);
           }
         },
         "gi.contracts/group/malformedMutation": {
