@@ -198,7 +198,7 @@ describe('Group Payments', () => {
     cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
     openNotificationCard({
       messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`,
-      clickItemIndex: 1
+      clickItemIndex: 0
     })
 
     cy.getByDT('modal').within(() => {
