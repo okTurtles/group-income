@@ -14,7 +14,7 @@ import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_IS_SYNCING } from '~/shared/domains/chelonia/events.js'
 import * as Common from '@common/common.js'
-import { LOGIN, LOGOUT } from './utils/events.js'
+import { LOGIN, LOGOUT, SWITCH_GROUP } from './utils/events.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
 import './controller/backend.js'
@@ -38,6 +38,8 @@ import './views/utils/vError.js'
 // import './views/utils/vSafeHtml.js' // this gets imported by translations, which is part of common.js
 import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
+import './model/notifications/periodicNotifications/index.js'
+import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 
 const { Vue, L } = Common
 
@@ -195,6 +197,7 @@ async function startApp () {
   /* eslint-disable no-new */
   new Vue({
     router: router,
+    mixins: [notificationsMixin],
     components: {
       AppStyles,
       BackgroundSounds,
@@ -245,6 +248,12 @@ async function startApp () {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
+      sbp('okTurtles.events/on', SWITCH_GROUP, () => {
+        console.log('@@@ listener of SWITCH_GROUP')
+        this.initOrResetPeriodicNotifications()
+        this.checkAndEmitOneTimeNotifications()
+      })
+
       sbp('okTurtles.data/apply', PUBSUB_INSTANCE, (pubsub) => {
         // Allow access to `L` inside event handlers.
         const L = this.L.bind(this)

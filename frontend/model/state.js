@@ -27,7 +27,8 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  namespaceLookups: Object.create(null) // { [username]: sbp('namespace/lookup') }
+  namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
+  periodicNotificationAlreadyFiredMap: {} // { notificationKey: boolean }
 }
 
 if (window.matchMedia) {
@@ -682,19 +683,6 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           const distributionDateInSettings = store.getters.groupSettings.distributionDate
           if (oldPeriod && newPeriod && (newPeriod !== distributionDateInSettings)) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
-          } else if (oldPeriod) {
-            // Even if the manual syncing of distributionDate is not needed,
-            // the notification emittion is required if the user has entered the income details because payment period has changed.
-            const userIncomeDetailsType = store.getters.ourGroupProfile?.incomeDetailsType
-
-            if (userIncomeDetailsType) {
-              sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
-                creator: store.getters.ourUsername,
-                createdDate: new Date().toISOString(),
-                groupID: store.state.currentGroupId,
-                memberType: userIncomeDetailsType === 'pledgeAmount' ? 'pledger' : 'receiver'
-              })
-            }
           }
         }
       )

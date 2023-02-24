@@ -14,7 +14,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
 import { merge, deepEqualJSONType, omit, cloneDeep } from './shared/giLodash.js'
-import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS, MONTHS_MILLIS } from './shared/time.js'
+import { addTimeToDate, dateToPeriodStamp, compareISOTimestamps, dateFromPeriodStamp, isPeriodStamp, comparePeriodStamps, periodStampGivenDate, dateIsWithinPeriod, DAYS_MILLIS } from './shared/time.js'
 import { unadjustedDistribution, adjustedDistribution } from './shared/distribution/distribution.js'
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
@@ -111,11 +111,6 @@ function updateCurrentDistribution ({ contractID, meta, state, getters }) {
   if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
     updateGroupStreaks({ state, getters })
     getters.groupSettings.distributionDate = period
-
-    // distributionDate has been updated by this point, so make sure to emit 'NEW_DISTRIBUTION_PERIOD' notification.
-    sbp('gi.contracts/group/pushSideEffect', contractID,
-      ['gi.contracts/group/updateDistributionDate/sideEffect', { meta, contractID }]
-    )
   }
   // save haveNeeds if there are no payments or the haveNeeds haven't been saved yet
   if (noPayments || !curPeriodPayments.haveNeedsSnapshot) {
@@ -1236,48 +1231,6 @@ sbp('chelonia/defineContract', {
         if (profile) {
           Vue.set(profile, 'lastLoggedIn', meta.createdDate)
         }
-      },
-      sideEffect ({ meta, contractID }, { getters }) {
-        // Upon user's log-in, check for two possible notification emissions are executed here.
-        // 1. INCOME_DETAILS_OLD
-        // 2. NEAR_DISTRIBUTION_END
-        const { ourPayments, currentNotifications } = sbp('state/vuex/getters')
-        // NOTE: {} below is a temporary fix for a weird cypress bug that getters.groupProfiles[meta.username] is undefined when a user rejoins the same group after getting kicked out.
-        const { lastLoggedIn, incomeDetailsLastUpdatedDate, incomeDetailsType } = (getters.groupProfiles[meta.username] || {})
-        const myNotificationHas = checkFunc => currentNotifications.some(item => checkFunc(item))
-        const now = meta.createdDate
-
-        // 1. INCOME_DETAILS_OLD
-        //    - check if it's been over 6 months since the last time the user updated their income details.
-        if (incomeDetailsLastUpdatedDate &&
-          compareISOTimestamps(lastLoggedIn, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS &&
-          // Also, check if the notification has already been sent for the recorded date. - prevents sending the same notification multiple times.
-          !myNotificationHas(item => item.type === 'INCOME_DETAILS_OLD' && item.data.lastUpdatedDate === incomeDetailsLastUpdatedDate)
-        ) {
-          sbp('gi.notifications/emit', 'INCOME_DETAILS_OLD', {
-            createdDate: now,
-            months: 6,
-            lastUpdatedDate: incomeDetailsLastUpdatedDate
-          })
-        }
-
-        // 2. NEAR_DISTRIBUTION_END
-        //    - check if it's within less than a week before the distribution period end and
-        //      let the pledging members know they have outstanding payment todo items if any.
-        const currentPeriod = getters.groupSettings.distributionDate
-        const nextPeriod = getters.periodAfterPeriod(currentPeriod)
-        if (incomeDetailsType === 'pledgeAmount' &&
-          comparePeriodStamps(nextPeriod, now) < DAYS_MILLIS * 7 &&
-          (ourPayments && ourPayments.todo?.length > 0) &&
-          // Also, check if the notification has already been sent for the target period. - prevents sending the same notification multiple times.
-          !myNotificationHas(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === currentPeriod)
-        ) {
-          sbp('gi.notifications/emit', 'NEAR_DISTRIBUTION_END', {
-            createdDate: now,
-            groupID: contractID,
-            period: currentPeriod
-          })
-        }
       }
     },
     'gi.contracts/group/updateDistributionDate': {
@@ -1291,21 +1244,6 @@ sbp('chelonia/defineContract', {
           updateGroupStreaks({ state, getters })
           getters.groupSettings.distributionDate = period
         }
-      },
-      sideEffect ({ meta, contractID }, { getters }) {
-        const { loggedIn } = sbp('state/vuex/state')
-        const myProfile = getters.groupProfile(loggedIn.username)
-
-        if (isActionYoungerThanUser(meta, myProfile) &&
-          myProfile.incomeDetailsType // if the user has entered their income details
-        ) {
-          sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
-            creator: meta.username,
-            createdDate: meta.createdDate,
-            groupID: contractID,
-            memberType: myProfile.incomeDetailsType === 'pledgeAmount' ? 'pledger' : 'receiver'
-          })
-        }
       }
     },
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
@@ -1313,10 +1251,6 @@ sbp('chelonia/defineContract', {
         validate: optional,
         process ({ meta, contractID }, { state, getters }) {
           getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate)
-
-          sbp('gi.contracts/group/pushSideEffect', contractID,
-            ['gi.contracts/group/updateDistributionDate/sideEffect', { meta, contractID }]
-          )
         }
       },
       'gi.contracts/group/malformedMutation': {

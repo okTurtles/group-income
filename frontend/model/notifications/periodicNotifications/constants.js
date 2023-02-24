@@ -1,0 +1,5 @@
+export const PERIODIC_NOTIFICATION_TYPE = {
+  MIN1: '1MIN',
+  MIN5: '5MIN',
+  MIN30: '30MIN'
+}
