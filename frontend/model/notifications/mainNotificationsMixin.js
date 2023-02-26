@@ -67,6 +67,8 @@ const periodicNotificationEntries = [
     notificationData: {
       stateKey: 'nearDistributionEnd',
       emitCondition ({ rootGetters }) {
+        if (!rootGetters.groupSettings.distributionDate) { return false }
+
         const currentPeriod = rootGetters.groupSettings.distributionDate
         const nextPeriod = rootGetters.periodAfterPeriod(currentPeriod)
         const now = new Date().toISOString()
@@ -89,7 +91,6 @@ const periodicNotificationEntries = [
         return rootGetters.currentNotifications.filter(item => item.type === 'NEAR_DISTRIBUTION_END')
           .every(item => item.data.period !== currentPeriod)
       }
-      // once 'NEAR_DISTRIBUTION_END' is sent, don't clear the stateKey so the emitCondition doesn't get executed over and over again unecessarily.
     }
   },
   {
@@ -97,7 +98,7 @@ const periodicNotificationEntries = [
     notificationData: {
       stateKey: 'nextDistributionPeriod',
       emitCondition ({ rootGetters }) {
-        if (!rootGetters.ourGroupProfile.incomeDetailsType) return false // if income-details are not set yet, ignore.
+        if (!rootGetters.ourGroupProfile?.incomeDetailsType) return false // if income-details are not set yet, ignore.
 
         const currentPeriod = rootGetters.groupSettings.distributionDate
         const now = new Date().toISOString()
