@@ -72,7 +72,7 @@ const periodicNotificationEntries = [
         const now = new Date().toISOString()
         const comparison = comparePeriodStamps(nextPeriod, now)
 
-        return rootGetters.ourGroupProfile.incomeDetailsType === 'pledgeAmount' &&
+        return rootGetters.ourGroupProfile?.incomeDetailsType === 'pledgeAmount' &&
           (comparison > 0 && comparison < DAYS_MILLIS * 7) &&
           (rootGetters.ourPayments && rootGetters.ourPayments.todo.length > 0) &&
           !myNotificationHas(item => item.type === 'NEAR_DISTRIBUTION_END' && item.data.period === currentPeriod)
