@@ -21,7 +21,7 @@ const myNotificationHas = checkFunc => {
   *-*-*-* notification entry structure *-*-*-*
 
   1. oneTimeNotification: { name?: string, emitCondition: function, emit: function }
-    - name: An optional identifier of the entry
+    - name: An optional identifier of the entry.
     - emitCondition: a function that returns a boolean that determines whether or not to emit a notification
     - emit: logic to emit a notification
 
