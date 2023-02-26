@@ -67,8 +67,6 @@ const periodicNotificationEntries = [
     notificationData: {
       stateKey: 'nearDistributionEnd',
       emitCondition ({ rootGetters }) {
-        if (!rootGetters.groupSettings.distributionDate) { return false }
-
         const currentPeriod = rootGetters.groupSettings.distributionDate
         const nextPeriod = rootGetters.periodAfterPeriod(currentPeriod)
         const now = new Date().toISOString()
