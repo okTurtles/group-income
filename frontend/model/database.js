@@ -92,3 +92,27 @@ sbp('sbp/selectors/register', {
     return archive.clear()
   }
 })
+
+// ======================================
+// Recent messages for all the chatrooms
+// ======================================
+
+const messages = localforage.createInstance({
+  name: 'Group Income',
+  storeName: 'Messages'
+})
+
+sbp('sbp/selectors/register', {
+  'gi.db/messages/save': function (key: string, value: any): Promise<*> {
+    return messages.setItem(key, value)
+  },
+  'gi.db/messages/load': function (key: string): Promise<any> {
+    return messages.getItem(key)
+  },
+  'gi.db/messages/delete': function (key: string): Promise<Object> {
+    return messages.removeItem(key)
+  },
+  'gi.db/messages/clear': function (): Promise<any> {
+    return messages.clear()
+  }
+})
