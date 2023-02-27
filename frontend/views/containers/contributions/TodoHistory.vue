@@ -16,7 +16,7 @@ div(:class='isReady ? "" : "c-ready"')
 
 <script>
 import { mapGetters } from 'vuex'
-import { compareISOTimestamps } from '@model/contracts/shared/time.js'
+import { comparePeriodStamps } from '@model/contracts/shared/time.js'
 import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/bar-graph/BarGraph.vue'
@@ -54,12 +54,12 @@ export default ({
     async updateHistory () {
       this.history = []
 
-      let period = this.currentPaymentPeriod
+      let period = null
       const getLen = obj => Object.keys(obj).length
 
       for (let i = 0; i < MAX_HISTORY_PERIODS; i++) {
-        period = this.periodBeforePeriod(period)
-        if (compareISOTimestamps(period, this.firstDistributionPeriod) < 0) break
+        period = period === null ? this.currentPaymentPeriod : this.periodBeforePeriod(period)
+        if (comparePeriodStamps(period, this.firstDistributionPeriod) < 0) break
 
         const paymentDetails = await this.getPaymentDetailsByPeriod(period)
         const { lastAdjustedDistribution } = await this.getPeriodPayment(period)
