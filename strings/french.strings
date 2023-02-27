@@ -168,7 +168,7 @@
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
 "Your password must be at least {minChars} characters long." = "Your password must be at least {minChars} characters long.";
 
-/* MISSING TRANSLATION - views/containers/access/SignupForm.vue, views/containers/user-settings/NotificationSettings.vue, views/containers/user-settings/UserProfile.vue */
+/* MISSING TRANSLATION - views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
 "Email" = "Email";
 
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMembersAllModal.vue */
@@ -523,28 +523,13 @@
 "Allow email notifications" = "Allow email notifications";
 
 /* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Allow push notifications" = "Allow push notifications";
+"Email notifications" = "Email notifications";
 
 /* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Emails sent" = "Emails sent";
-
-/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Get notified when other members sent you messages. You can also change frequency of these emails." = "Get notified when other members sent you messages. You can also change frequency of these emails.";
-
-/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Get push notifications to find out what's going on when you're not on Group Income. You can turn them off anytime." = "Get push notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.";
-
-/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Know when new payments are due or when other members sent contributions your way." = "Know when new payments are due or when other members sent contributions your way.";
+"Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime." = "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.";
 
 /* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
 "Know when new proposals are created, their income and get a reminder to vote if they are about to expire." = "Know when new proposals are created, their income and get a reminder to vote if they are about to expire.";
-
-/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Payments and contributions" = "Payments and contributions";
-
-/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
-"Push notifications" = "Push notifications";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Theme.vue */
 "Use system settings" = "Use system settings";
@@ -1226,6 +1211,9 @@
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "Leave Channel" = "Quitter le salon";
+
+/* views/containers/chatroom/LeaveChannelModal.vue */
+"Leave and Archive" = "Quitter et archiver";
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "You will no longer be able to send or see messages in this channel." = "Vous ne pourrez plus envoyer ni recevoir des messages dans ce salon.";
@@ -1950,7 +1938,7 @@
 /* views/containers/navigation/Navigation.vue */
 "Main" = "Page principale";
 
-/* views/containers/navigation/Navigation.vue, views/containers/user-settings/NotificationSettings.vue, views/pages/GroupChat.vue */
+/* views/containers/navigation/Navigation.vue, views/pages/GroupChat.vue */
 "Chat" = "Conversations";
 
 /* views/containers/notifications/NotificationCard.vue */
@@ -2238,7 +2226,7 @@
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "yes" = "oui";
 
-/* views/containers/proposals/ProposalsWidget.vue, views/containers/user-settings/NotificationSettings.vue */
+/* views/containers/proposals/ProposalsWidget.vue */
 "Proposals" = "Propositions";
 
 /* views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
@@ -2288,6 +2276,12 @@
 
 /* views/containers/user-settings/Appearence.vue */
 "When enabled the amount of animations you see around are reduced." = "Ceci réduit le nombre d’animations affichées.";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Allow browser notifications" = "Autoriser les notifications du navigateur";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Browser notifications" = "Notifications du navigateur";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "Congratulations" = "Toutes nos félicitations";
@@ -2678,9 +2672,6 @@
 
 /* Not currently used */
 "Join channel" = "Rejoignez la chaîne";
-
-/* Not currently used */
-"Leave and Archive" = "Quitter et archiver";
 
 /* Not currently used */
 "Leave {groupName}" = "Quitter {groupName}";
