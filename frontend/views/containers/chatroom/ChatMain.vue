@@ -497,9 +497,11 @@ export default ({
     async rerenderEvents (events, refresh) {
       if (refresh) {
         this.latestEvents = events
-      } else {
-        events.pop() // remove duplication
+      } else if (events.length > 1) {
+        events.pop() // remove duplication. For more detail, check sbp('chelonia/out/eventsBetween')
         this.latestEvents.unshift(...events)
+      } else {
+        return
       }
 
       this.initializeState()
@@ -511,7 +513,6 @@ export default ({
     async setInitMessages () {
       const prevState = await sbp('gi.db/messages/load', this.currentChatRoomId)
       const latestEvents = prevState ? JSON.parse(prevState) : []
-      this.initializeState()
       this.messageState.prevFrom = latestEvents.length ? GIMessage.deserialize(latestEvents[0]).hash() : null
       this.messageState.prevTo = latestEvents.length
         ? GIMessage.deserialize(latestEvents[latestEvents.length - 1]).hash()
