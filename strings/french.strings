@@ -36,9 +36,6 @@
 /* MISSING TRANSLATION - controller/actions/mailbox.js */
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
-/* MISSING TRANSLATION - controller/actions/mailbox.js */
-"Incorrect number of usernames provided." = "Incorrect number of usernames provided.";
-
 /* MISSING TRANSLATION - controller/router.js */
 "Design System" = "Design System";
 
@@ -197,6 +194,9 @@
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to change the groups voting system." = "{from} wants to change the groups voting system.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
+"Voted on “{title}”" = "Voted on “{title}”";
 
 /* MISSING TRANSLATION - views/containers/chatroom/NewDirectMessageModal.vue */
 "{ourNewContactsCount} members" = "{ourNewContactsCount} members";
@@ -691,9 +691,6 @@
 "Invalid username or password" = "Nom d’utilisateur ou mot de passe invalide";
 
 /* controller/actions/mailbox.js */
-"Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
-
-/* controller/actions/mailbox.js */
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
 
 /* controller/actions/mailbox.js */
@@ -704,12 +701,6 @@
 
 /* controller/actions/mailbox.js */
 "Failed to set mailbox attributes." = "Impossible de définir les attributs de la boîte aux lettres.";
-
-/* controller/actions/mailbox.js */
-"Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";
-
-/* controller/actions/mailbox.js */
-"Not enough usernames provided." = "Pas assez de noms d'utilisateur fournis.";
 
 /* controller/router.js */
 "Group Chat" = "Conversation du groupe";
@@ -1346,9 +1337,6 @@
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Updated the channel name to: {title}" = "Le nom du salon a été mis à jour : {title}";
-
-/* views/containers/chatroom/MessageNotification.vue */
-"Voted on “{}”" = "A voté sur “{}”";
 
 /* views/containers/chatroom/MessageReactions.vue */
 "You" = "Vous";
@@ -2557,6 +2545,9 @@
 "According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this." = "Selon vos règles de vote, {strong_}{value} membres sur {total}{_strong} devront approuver ceci.";
 
 /* Not currently used */
+"Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
+
+/* Not currently used */
 "Already existing group message channel." = "Canal de messagerie de groupe déjà existant.";
 
 /* Not currently used */
@@ -2662,6 +2653,9 @@
 "Inbox" = "Boîte de réception";
 
 /* Not currently used */
+"Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";
+
+/* Not currently used */
 "Incorrect username to create group message." = "Nom d'utilisateur incorrect pour créer un message de groupe.";
 
 /* Not currently used */
@@ -2705,6 +2699,9 @@
 
 /* Not currently used */
 "No Messages" = "Pas de message";
+
+/* Not currently used */
+"Not enough usernames provided." = "Pas assez de noms d'utilisateur fournis.";
 
 /* Not currently used */
 "Not joined or already deleted group message channel." = "Canal de messagerie de groupe non rejoint ou déjà supprimé.";
@@ -2828,6 +2825,9 @@
 
 /* Not currently used */
 "Updated the channel description to: {title}" = "La description du salon a été mise à jour : {title}";
+
+/* Not currently used */
+"Voted on “{}”" = "A voté sur “{}”";
 
 /* Not currently used */
 "We couldn’t register your vote. {reportError}" = "Nous n’avons pas pu enregistrer votre vote. {reportError}";

@@ -179,13 +179,24 @@ export default ({
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     createNewDirectMessage (username) {
-      sbp('gi.actions/mailbox/createDirectMessage', {
-        contractID: this.currentIdentityState.attributes.mailbox,
-        data: {
-          privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
-          usernames: [username]
-        }
-      })
+      if (!this.ourPrivateDirectMessages[username]) {
+        sbp('gi.actions/mailbox/createDirectMessage', {
+          contractID: this.currentIdentityState.attributes.mailbox,
+          data: {
+            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
+            usernames: [username]
+          }
+        })
+      } else if (this.ourPrivateDirectMessages[username].hidden) {
+        const chatRoomId = this.directMessageIDFromUsername(username)
+        sbp('gi.actions/mailbox/setDirectMessageVisibility', {
+          contractID: this.currentIdentityState.attributes.mailbox,
+          data: {
+            contractID: chatRoomId,
+            hidden: false
+          }
+        })
+      }
       this.closeModal()
     },
     openDirectMessage (username) {

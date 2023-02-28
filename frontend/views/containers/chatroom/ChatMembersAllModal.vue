@@ -338,17 +338,13 @@ export default ({
           const profile = this.ourContactProfiles[username]
           await sbp('gi.actions/chatroom/join', {
             contractID: this.currentChatRoomId,
-            data: { username },
-            hooks: {
-              postpublish: (message) => {
-                sbp('gi.actions/mailbox/joinDirectMessage', {
-                  contractID: profile.mailbox,
-                  data: {
-                    privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
-                    contractID: this.currentChatRoomId
-                  }
-                })
-              }
+            data: { username }
+          })
+          await sbp('gi.actions/mailbox/joinDirectMessage', {
+            contractID: profile.mailbox,
+            data: {
+              privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
+              contractID: this.currentChatRoomId
             }
           })
           this.canAddMembers = this.canAddMembers.map(member =>

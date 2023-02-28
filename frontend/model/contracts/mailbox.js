@@ -50,7 +50,9 @@ sbp('chelonia/defineContract', {
         const initialState = merge({
           attributes: {
             creator: data.username,
-            autoJoinAllowance: true // this attribute could be used to block him to be joined direct/group messages automatically by another
+            // NOTE: autoJoinAllownace is used to block the other's requests to create DMs
+            // and to avoid automatic syncing the chatroom contracts
+            autoJoinAllowance: true
           },
           chatRooms: {}
         }, data)
