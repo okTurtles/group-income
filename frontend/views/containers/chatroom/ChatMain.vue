@@ -605,6 +605,11 @@ export default ({
     },
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
+      // NOTE: this infinite handler runs once before all the component state are not initialized
+      // should ignore the first handler
+      if (this.shouldRefreshMessages === undefined) {
+        return
+      }
       this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
         if (completed) {
           $state.complete()
@@ -685,6 +690,9 @@ export default ({
       }
     }, 500),
     archiveMessageState (chatRoomId = null) {
+      if (!this.isJoinedChatRoom(chatRoomId)) {
+        return
+      }
       const unit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       const from = this.latestEvents.length ? GIMessage.deserialize(this.latestEvents[0]).hash() : null
       const to = this.latestEvents.length
