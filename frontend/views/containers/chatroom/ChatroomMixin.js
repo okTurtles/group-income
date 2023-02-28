@@ -180,7 +180,15 @@ const ChatroomMixin: Object = {
     async loadSummaryAndDetails (): Promise<void> {
       this.ephemeral.loadedDetails = initChatChannelDetails
       const { chatRoomId } = this.$route.params
-      const state = await sbp('chelonia/latestContractState', chatRoomId)
+      let state
+      try {
+        // NOTE: it could be failed to get the latest contract state
+        // when the chatRoomId is incorrect [e.g. chatRoomId = 1234]
+        state = await sbp('chelonia/latestContractState', chatRoomId)
+      } catch (e) {
+        this.$router.push({ path: '/dashboard' }).catch(console.warn)
+        return
+      }
       const { name, type, description, creator, privacyLevel } = state.attributes
 
       this.ephemeral.loadedSummary = {
@@ -234,10 +242,13 @@ const ChatroomMixin: Object = {
         sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
       } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
         const groupID = this.groupIdFromChatRoomId(chatRoomId)
-        if (this.currentGroupId !== groupID) {
-          sbp('state/vuex/commit', 'setCurrentGroupId', groupID)
+        // NOTE: groupID could be undefined when the chatRoomId is incorrect
+        if (groupID) {
+          if (this.currentGroupId !== groupID) {
+            sbp('state/vuex/commit', 'setCurrentGroupId', groupID)
+          }
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
         }
-        sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
       }
     }
   },

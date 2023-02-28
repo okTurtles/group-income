@@ -188,15 +188,17 @@ export default ({
         this.refreshTitle()
       })
       const { chatRoomId } = to.params
-      if (this.isDirectMessage(chatRoomId)) {
-        this.updateCurrentChatRoomID(chatRoomId)
-      } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
-        if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
-          this.redirectChat('GroupChatConversation')
-        } else {
+      if (chatRoomId !== from.params.chatRoomId) {
+        if (this.isDirectMessage(chatRoomId)) {
           this.updateCurrentChatRoomID(chatRoomId)
-          if (!this.isJoinedChatRoom(chatRoomId)) {
-            this.loadSummaryAndDetails()
+        } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+          if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
+            this.redirectChat('GroupChatConversation')
+          } else {
+            this.updateCurrentChatRoomID(chatRoomId)
+            if (!this.isJoinedChatRoom(chatRoomId)) {
+              this.loadSummaryAndDetails()
+            }
           }
         }
       }

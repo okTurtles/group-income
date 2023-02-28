@@ -1,12 +1,12 @@
 <template lang='pug'>
   .settings-container
     section.card
-      i18n.is-title-3.c-title(tag='h2') Push notifications
+      i18n.is-title-3.c-title(tag='h2') Browser notifications
       .c-divider
       .c-subcontent
         .c-text-content
-          i18n.c-smaller-title(tag='h3') Allow push notifications
-          i18n.c-description(tag='p') Get push notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
+          i18n.c-smaller-title(tag='h3') Allow browser notifications
+          i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
         label
           input.switch(
             type='checkbox'
@@ -14,8 +14,7 @@
             :checked='pushNotificationGranted'
             @change='handleNotificationSettings'
           )
-      .c-divider
-      i18n.is-title-3.c-title(tag='h2') Email
+      i18n.is-title-3.c-title(tag='h2') Email notifications
       .c-divider
       .c-subcontent
         .c-text-content
@@ -27,42 +26,37 @@
             name='switch'
             :checked='emailNotificationGranted'
           )
-      .c-divider
-      i18n.c-name(tag='p') Emails sent
-      .c-divider
-      .c-subcontent
-        .c-text-content
-          i18n.c-smaller-title(tag='h3') Proposals
-          i18n.c-description(tag='p') Know when new proposals are created, their income and get a reminder to vote if they are about to expire.
-        label
-          input.switch(
-            type='checkbox'
-            name='switch'
-            :checked='proposalsGranted'
-          )
-      .c-divider
-      .c-subcontent
-        .c-text-content
-          i18n.c-smaller-title(tag='h3') Payments and contributions
-          i18n.c-description(tag='p') Know when new payments are due or when other members sent contributions your way.
-        label
-          input.switch(
-            type='checkbox'
-            name='switch'
-            :checked='paymentsAndContributionsGranted'
-          )
-      .c-divider
-      .c-subcontent
-        .c-text-content
-          i18n.c-smaller-title(tag='h3') Chat
-          i18n.c-description(tag='p') Get notified when other members sent you messages. You can also change frequency of these emails.
-        label
-          input.switch(
-            type='checkbox'
-            name='switch'
-            :checked='chatGranted'
-          )
-      .c-divider
+      //- i18n.c-name(tag='p') Emails sent
+      //- .c-subcontent
+      //-   .c-text-content
+      //-     i18n.c-smaller-title(tag='h3') Proposals
+      //-     i18n.c-description(tag='p') Know when new proposals are created, their income and get a reminder to vote if they are about to expire.
+      //-   label
+      //-     input.switch(
+      //-       type='checkbox'
+      //-       name='switch'
+      //-       :checked='proposalsGranted'
+      //-     )
+      //- .c-subcontent
+      //-   .c-text-content
+      //-     i18n.c-smaller-title(tag='h3') Payments and contributions
+      //-     i18n.c-description(tag='p') Know when new payments are due or when other members sent contributions your way.
+      //-   label
+      //-     input.switch(
+      //-       type='checkbox'
+      //-       name='switch'
+      //-       :checked='paymentsAndContributionsGranted'
+      //-     )
+      //- .c-subcontent
+      //-   .c-text-content
+      //-     i18n.c-smaller-title(tag='h3') Chat
+      //-     i18n.c-description(tag='p') Get notified when other members sent you messages. You can also change frequency of these emails.
+      //-   label
+      //-     input.switch(
+      //-       type='checkbox'
+      //-       name='switch'
+      //-       :checked='chatGranted'
+      //-     )
 </template>
 
 <script>

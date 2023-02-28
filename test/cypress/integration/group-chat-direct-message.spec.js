@@ -10,7 +10,7 @@ const user5 = `user5${userId}`
 let invitationLinkAnyone
 let me
 
-describe('Create/Join/Leave direct messages and orders of direct message channels', () => {
+describe('Create/Join direct messages and orders of direct message channels', () => {
   function switchUser (username) {
     cy.giSwitchUser(username)
     me = username
