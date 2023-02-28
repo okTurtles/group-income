@@ -518,16 +518,9 @@ export default ({
         : null
 
       this.shouldRefreshMessages = true
-      if (latestEvents.length) {
-        await this.rerenderEvents(latestEvents, true)
-        this.$forceUpdate()
-      }
+      await this.rerenderEvents(latestEvents, true)
       if (this.ephemeral.infiniteLoading) {
-        if (latestEvents.length) {
-          this.ephemeral.infiniteLoading.loaded()
-        } else {
-          this.ephemeral.infiniteLoading.reset()
-        }
+        this.ephemeral.infiniteLoading.reset()
       }
     },
     setStartNewMessageIndex () {
@@ -610,7 +603,7 @@ export default ({
       const vh = window.innerHeight * 0.01
       document.documentElement.style.setProperty('--vh', `${vh}px`)
     },
-    infiniteHandler: debounce(function ($state) {
+    infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
         if (completed) {
@@ -630,7 +623,7 @@ export default ({
         }
         this.shouldRefreshMessages = false
       })
-    }, 250),
+    },
     onChatScroll: debounce(function () {
       if (!this.$refs.conversation) {
         return
@@ -691,17 +684,21 @@ export default ({
         })
       }
     }, 500),
-    archiveMessageState () {
+    archiveMessageState (chatRoomId = null) {
       const unit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       const from = this.latestEvents.length ? GIMessage.deserialize(this.latestEvents[0]).hash() : null
       const to = this.latestEvents.length
         ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1]).hash()
         : null
+
+      // this.currentChatRoomId could be wrong when the channels are switched very fast
+      // so it's good to initiate with input parameter chatRoomId
+      const curChatRoomId = chatRoomId || this.currentChatRoomId // sbp functions are async
       // NOTE: save messages in the browser storage, but not more than 5 times of actions unit
       if (this.latestEvents.length >= 5 * unit) {
-        sbp('gi.db/messages/delete', this.currentChatRoomId)
+        sbp('gi.db/messages/delete', curChatRoomId)
       } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
-        sbp('gi.db/messages/save', this.currentChatRoomId, JSON.stringify(this.latestEvents))
+        sbp('gi.db/messages/save', curChatRoomId, JSON.stringify(this.latestEvents))
       }
     }
   },
@@ -709,7 +706,7 @@ export default ({
     currentChatRoomId (to, from) {
       const force = sbp('chelonia/contract/isSyncing', to)
       this.setMessageEventListener({ from, to, force })
-      this.archiveMessageState()
+      this.archiveMessageState(from)
       this.setInitMessages()
     },
     'summary.joined' (to, from) {
