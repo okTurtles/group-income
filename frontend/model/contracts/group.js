@@ -177,7 +177,6 @@ function updateGroupStreaks ({ state, getters }) {
     return getters.groupProfile(todo.to).status === PROFILE_STATUS.ACTIVE
   })
 
-  console.log('updating group streaks!! @@@ thisPeriodDistribution: ', thisPeriodDistribution, noPaymentsAtAll)
   // --- update 'fullMonthlyPledgesCount' streak ---
   // if the group has made 100% pledges in this period, +1 the streak value.
   // or else, reset the value to '0'
@@ -1186,10 +1185,10 @@ sbp('chelonia/defineContract', {
       validate: optional,
       process ({ meta }, { state, getters }) {
         const period = getters.periodStampGivenDate(meta.createdDate)
-        const current = getters.groupSettings.distributionDate
-        // right before updating to the new distribution period, make sure to update various payment-related group streaks.
-        console.log('common is it from here?? @@@')
+        const current = getters.groupSettings?.distributionDate
+
         if (current !== period) {
+          // right before updating to the new distribution period, make sure to update various payment-related group streaks.
           updateGroupStreaks({ state, getters })
           getters.groupSettings.distributionDate = period
         }

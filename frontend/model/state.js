@@ -629,7 +629,6 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
         (state, getters) => getters.currentPaymentPeriod,
         (newPeriod, oldPeriod) => {
           if (oldPeriod && newPeriod) {
-            console.log('oldPeriod, newPeriod: ', oldPeriod, newPeriod)
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
           }
         }
