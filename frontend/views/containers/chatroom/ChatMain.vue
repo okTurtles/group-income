@@ -192,17 +192,7 @@ export default ({
     // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
 
-    const unit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
-    const from = this.latestEvents.length ? GIMessage.deserialize(this.latestEvents[0]).hash() : null
-    const to = this.latestEvents.length
-      ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1]).hash()
-      : null
-    // NOTE: save messages in the browser storage, but not more than 5 times of actions unit
-    if (this.latestEvents.length >= 5 * unit) {
-      sbp('gi.db/messages/delete', this.currentChatRoomId)
-    } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
-      sbp('gi.db/messages/save', this.currentChatRoomId, JSON.stringify(this.latestEvents))
-    }
+    this.archiveMessageState()
   },
   computed: {
     ...mapGetters([
@@ -463,7 +453,6 @@ export default ({
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
       let events = null
-      console.log('#############################', this.latestEvents.length)
       const isLoadedFromStorage = refresh && this.latestEvents.length
       if (isLoadedFromStorage) {
         const prevLastEventHash = this.messageState.prevTo // NOTE: check setInitMessages function
@@ -489,9 +478,7 @@ export default ({
         return
       }
 
-      console.log('&&&&&&&&&&&&&&&&&')
       if (!isLoadedFromStorage) {
-        console.log(refresh, '@@@@@@@@@@@@@@')
         // NOTE: already rendered in setInitMessages and above in this function
         await this.rerenderEvents(events, refresh)
       }
@@ -529,13 +516,14 @@ export default ({
       this.messageState.prevTo = latestEvents.length
         ? GIMessage.deserialize(latestEvents[latestEvents.length - 1]).hash()
         : null
-      console.log(this.messageState.prevFrom, '-------------', this.messageState.prevTo)
 
       this.shouldRefreshMessages = true
+      if (latestEvents.length) {
+        await this.rerenderEvents(latestEvents, true)
+        this.$forceUpdate()
+      }
       if (this.ephemeral.infiniteLoading) {
         if (latestEvents.length) {
-          await this.rerenderEvents(latestEvents, true)
-          this.$forceUpdate()
           this.ephemeral.infiniteLoading.loaded()
         } else {
           this.ephemeral.infiniteLoading.reset()
@@ -623,7 +611,6 @@ export default ({
       document.documentElement.style.setProperty('--vh', `${vh}px`)
     },
     infiniteHandler: debounce(function ($state) {
-      console.log('================== Inifinite Handler ===============')
       this.ephemeral.infiniteLoading = $state
       this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
         if (completed) {
@@ -643,7 +630,7 @@ export default ({
         }
         this.shouldRefreshMessages = false
       })
-    }, 500),
+    }, 250),
     onChatScroll: debounce(function () {
       if (!this.$refs.conversation) {
         return
@@ -703,12 +690,26 @@ export default ({
           messageId: null
         })
       }
-    }, 500)
+    }, 500),
+    archiveMessageState () {
+      const unit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+      const from = this.latestEvents.length ? GIMessage.deserialize(this.latestEvents[0]).hash() : null
+      const to = this.latestEvents.length
+        ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1]).hash()
+        : null
+      // NOTE: save messages in the browser storage, but not more than 5 times of actions unit
+      if (this.latestEvents.length >= 5 * unit) {
+        sbp('gi.db/messages/delete', this.currentChatRoomId)
+      } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
+        sbp('gi.db/messages/save', this.currentChatRoomId, JSON.stringify(this.latestEvents))
+      }
+    }
   },
   watch: {
     currentChatRoomId (to, from) {
       const force = sbp('chelonia/contract/isSyncing', to)
       this.setMessageEventListener({ from, to, force })
+      this.archiveMessageState()
       this.setInitMessages()
     },
     'summary.joined' (to, from) {
