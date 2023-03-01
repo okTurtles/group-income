@@ -1,8 +1,9 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications/constants.js'
+import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
 import { compareISOTimestamps, comparePeriodStamps, DAYS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
+import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
 
 // util functions
 const myNotificationHas = checkFunc => {
@@ -47,6 +48,9 @@ const oneTimeNotificationEntries = [
       const { incomeDetailsLastUpdatedDate } = (rootGetters.ourGroupProfile || {})
       const now = new Date().toISOString()
 
+      console.log('@@@ incomeDetailsLastUpdatedDate: ', incomeDetailsLastUpdatedDate)
+      console.log('@@@ now: ', now)
+      console.log('@@@ compareISOTimestamps(now, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS: ', compareISOTimestamps(now, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS)
       return incomeDetailsLastUpdatedDate &&
         compareISOTimestamps(now, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS &&
         !myNotificationHas(item => item.type === 'INCOME_DETAILS_OLD' && item.data.lastUpdatedDate === incomeDetailsLastUpdatedDate)
@@ -127,13 +131,60 @@ const periodicNotificationEntries = [
         return comparePeriodStamps(new Date().toISOString(), rootGetters.groupSettings.distributionDate) > 0
       }
     }
+  },
+  {
+    type: PERIODIC_NOTIFICATION_TYPE.MIN15,
+    notificationData: {
+      stateKey: 'expiringProposals',
+      emitCondition ({ rootGetters }) {
+        this.expiringProposalsByGroup = rootGetters.groupsByName.map(group => {
+          const { contractID } = group
+          const expiringProposals = []
+          const groupProposals = rootGetters.groupProposals(contractID) || {}
+          for (const proposalId in groupProposals) {
+            const proposal = groupProposals[proposalId]
+            if (proposal.status === STATUS_OPEN &&
+              !proposal.notifiedBeforeExpire &&
+              proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS)) {
+              expiringProposals.push({
+                proposalId,
+                proposalType: proposal.data.proposalType,
+                proposalData: proposal.data.proposalData,
+                expires_date_ms: proposal.data.expires_date_ms,
+                createdDate: proposal.meta.createdDate,
+                creator: proposal.meta.username
+              })
+            }
+          }
+
+          return { contractID, proposals: expiringProposals }
+        }).filter(entry => entry.proposals.length)
+
+        return this.expiringProposalsByGroup.length
+      },
+      async emit () {
+        for (const { contractID, proposals } of this.expiringProposalsByGroup) {
+          await sbp('gi.actions/group/notifyExpiringProposals', {
+            contractID,
+            data: { proposals }
+          })
+        }
+      },
+      shouldClearStateKey: () => true
+    }
   }
 ]
 
 const notificationMixin = {
   methods: {
     initOrResetPeriodicNotifications () {
-      sbp('gi.periodicNotifications/destroyAll') // make sure to destroy the recursive timeout loop for previous user, if any.
+      if (this.ephemeral.syncs.length) { // If contracts are still syncing, delay the initialisation
+        setTimeout(() => this.initOrResetPeriodicNotifications(), 1000)
+        return
+      }
+
+      // make sure clear the states and timers for either previous user or previous group of the user, and re-init them.
+      sbp('gi.periodicNotifications/clearStatesAndStopTimers')
       sbp('gi.periodicNotifications/init')
     },
     async checkAndEmitOneTimeNotifications () {
@@ -147,9 +198,7 @@ const notificationMixin = {
     }
   },
   mounted () {
-    for (const entry of periodicNotificationEntries) {
-      sbp('gi.periodicNotifications/createEntry', entry)
-    }
+    sbp('gi.periodicNotifications/importNotifications', periodicNotificationEntries)
   }
 }
 
