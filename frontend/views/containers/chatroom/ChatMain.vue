@@ -709,14 +709,17 @@ export default ({
       } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
         sbp('gi.db/messages/save', curChatRoomId, JSON.stringify(this.latestEvents))
       }
-    }
-  },
-  watch: {
-    currentChatRoomId (to, from) {
+    },
+    refreshContent: debounce(function (from, to) {
       const force = sbp('chelonia/contract/isSyncing', to)
       this.setMessageEventListener({ from, to, force })
       this.archiveMessageState(from)
       this.setInitMessages()
+    }, 250)
+  },
+  watch: {
+    currentChatRoomId (to, from) {
+      this.refreshContent(from, to)
     },
     'summary.joined' (to, from) {
       if (to) {
