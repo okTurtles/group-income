@@ -11,7 +11,7 @@ div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-s
       )
       slot(name='title')
 
-    toggle(@toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
+    toggle(v-if='$scopedSlots.sidebar' @toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
     slot(name='description')
 
   main.p-main(:class='mainClass')
