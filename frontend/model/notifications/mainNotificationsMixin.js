@@ -48,9 +48,6 @@ const oneTimeNotificationEntries = [
       const { incomeDetailsLastUpdatedDate } = (rootGetters.ourGroupProfile || {})
       const now = new Date().toISOString()
 
-      console.log('@@@ incomeDetailsLastUpdatedDate: ', incomeDetailsLastUpdatedDate)
-      console.log('@@@ now: ', now)
-      console.log('@@@ compareISOTimestamps(now, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS: ', compareISOTimestamps(now, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS)
       return incomeDetailsLastUpdatedDate &&
         compareISOTimestamps(now, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS &&
         !myNotificationHas(item => item.type === 'INCOME_DETAILS_OLD' && item.data.lastUpdatedDate === incomeDetailsLastUpdatedDate)
@@ -71,7 +68,9 @@ const periodicNotificationEntries = [
     notificationData: {
       stateKey: 'nearDistributionEnd',
       emitCondition ({ rootGetters }) {
-        const currentPeriod = rootGetters.groupSettings.distributionDate
+        const currentPeriod = rootGetters.groupSettings?.distributionDate
+        if (!currentPeriod) { return false }
+
         const nextPeriod = rootGetters.periodAfterPeriod(currentPeriod)
         const now = new Date().toISOString()
         const comparison = comparePeriodStamps(nextPeriod, now)
@@ -102,7 +101,7 @@ const periodicNotificationEntries = [
       emitCondition ({ rootGetters }) {
         if (!rootGetters.ourGroupProfile?.incomeDetailsType) return false // if income-details are not set yet, ignore.
 
-        const currentPeriod = rootGetters.groupSettings.distributionDate
+        const currentPeriod = rootGetters.groupSettings?.distributionDate
         const now = new Date().toISOString()
         let check = false
 

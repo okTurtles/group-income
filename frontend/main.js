@@ -252,7 +252,6 @@ async function startApp () {
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
       })
       sbp('okTurtles.events/on', SWITCH_GROUP, () => {
-        console.log('@@@ hello')
         this.initOrResetPeriodicNotifications()
         this.checkAndEmitOneTimeNotifications()
       })
