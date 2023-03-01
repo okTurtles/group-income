@@ -431,8 +431,8 @@ ${this.getErrorInfo()}`;
       return;
     }
     const rootGetters = (0, import_sbp3.default)("state/vuex/getters");
-    const isPrivateDM = rootGetters.isPrivateDirectMessage(contractID);
-    const isDMOrMention = isMentionedMe || isPrivateDM;
+    const isDirectMessage = rootGetters.isDirectMessage(contractID);
+    const isDMOrMention = isMentionedMe || isDirectMessage;
     if (!isAlreadyAdded && isDMOrMention) {
       (0, import_sbp3.default)("state/vuex/commit", "addChatRoomUnreadMention", {
         chatRoomId: contractID,
@@ -442,11 +442,13 @@ ${this.getErrorInfo()}`;
     }
     let title = `# ${chatRoomName}`;
     let partnerProfile;
-    if (isPrivateDM) {
-      partnerProfile = rootGetters.ourContactProfiles[username];
-      title = `# ${partnerProfile?.displayName || username}`;
-    } else if (rootGetters.isGroupDirectMessage(contractID)) {
-      title = `# ${rootGetters.groupDirectMessageInfo(contractID).title}`;
+    if (isDirectMessage) {
+      if (rootGetters.isGroupDirectMessage(contractID)) {
+        title = `# ${rootGetters.groupDirectMessageInfo(contractID).title}`;
+      } else {
+        partnerProfile = rootGetters.ourContactProfiles[username];
+        title = `# ${partnerProfile?.displayName || username}`;
+      }
     }
     const path = `/group-chat/${contractID}`;
     const notificationSettings = rootGetters.notificationSettings[contractID] || rootGetters.notificationSettings.default;
