@@ -511,7 +511,7 @@ export default ({
       this.$forceUpdate()
     },
     async setInitMessages () {
-      const prevState = await sbp('gi.db/messages/load', this.currentChatRoomId)
+      const prevState = await sbp('gi.db/archive/load', this.getKeyFromChatRoomId())
       const latestEvents = prevState ? JSON.parse(prevState) : []
       this.messageState.prevFrom = latestEvents.length ? GIMessage.deserialize(latestEvents[0]).hash() : null
       this.messageState.prevTo = latestEvents.length
@@ -700,15 +700,18 @@ export default ({
         ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1]).hash()
         : null
 
-      // this.currentChatRoomId could be wrong when the channels are switched very fast
-      // so it's good to initiate with input parameter chatRoomId
-      const curChatRoomId = chatRoomId || this.currentChatRoomId // sbp functions are async
-      // NOTE: save messages in the browser storage, but not more than 5 times of actions unit
+      // NOTE: save messages in the browser storage, but not more than 5 times
       if (this.latestEvents.length >= 5 * unit) {
-        sbp('gi.db/messages/delete', curChatRoomId)
+        sbp('gi.db/archive/delete', this.getKeyFromChatRoomId(chatRoomId))
       } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
-        sbp('gi.db/messages/save', curChatRoomId, JSON.stringify(this.latestEvents))
+        // this.currentChatRoomId could be wrong when the channels are switched very fast
+        // so it's good to initiate using input parameter chatRoomId
+        sbp('gi.db/archive/save', this.getKeyFromChatRoomId(chatRoomId), JSON.stringify(this.latestEvents))
       }
+    },
+    getKeyFromChatRoomId (chatRoomId) {
+      const curChatRoomId = chatRoomId || this.currentChatRoomId
+      return `messages/${curChatRoomId}`
     },
     refreshContent: debounce(function (from, to) {
       const force = sbp('chelonia/contract/isSyncing', to)
