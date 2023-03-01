@@ -26,37 +26,6 @@
             name='switch'
             :checked='emailNotificationGranted'
           )
-      //- i18n.c-name(tag='p') Emails sent
-      //- .c-subcontent
-      //-   .c-text-content
-      //-     i18n.c-smaller-title(tag='h3') Proposals
-      //-     i18n.c-description(tag='p') Know when new proposals are created, their income and get a reminder to vote if they are about to expire.
-      //-   label
-      //-     input.switch(
-      //-       type='checkbox'
-      //-       name='switch'
-      //-       :checked='proposalsGranted'
-      //-     )
-      //- .c-subcontent
-      //-   .c-text-content
-      //-     i18n.c-smaller-title(tag='h3') Payments and contributions
-      //-     i18n.c-description(tag='p') Know when new payments are due or when other members sent contributions your way.
-      //-   label
-      //-     input.switch(
-      //-       type='checkbox'
-      //-       name='switch'
-      //-       :checked='paymentsAndContributionsGranted'
-      //-     )
-      //- .c-subcontent
-      //-   .c-text-content
-      //-     i18n.c-smaller-title(tag='h3') Chat
-      //-     i18n.c-description(tag='p') Get notified when other members sent you messages. You can also change frequency of these emails.
-      //-   label
-      //-     input.switch(
-      //-       type='checkbox'
-      //-       name='switch'
-      //-       :checked='chatGranted'
-      //-     )
 </template>
 
 <script>
@@ -72,10 +41,7 @@ export default ({
   data () {
     return {
       pushNotificationGranted: false,
-      emailNotificationGranted: true,
-      proposalsGranted: true,
-      paymentsAndContributionsGranted: true,
-      chatGranted: true
+      emailNotificationGranted: true
     }
   },
   mounted () {

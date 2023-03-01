@@ -284,10 +284,12 @@ export default ({
             const msgValue = JSON.parse(message.opValue())
             const { meta, data } = msgValue
             this.messages.push({
-              ...createMessage({ meta, data, hash: message.hash() }),
-              // TODO: message.hash could be different from the message on event listener
+              // TODO: message.hash() could be different from this message on event listener
               // https://github.com/okTurtles/group-income/issues/1487
               // so that the message.hash() can't be used as the identifier of this message
+              // https://github.com/okTurtles/group-income/issues/1503
+              // After this issue is fixed, we can fix this TODO and identity messages using message.id() instead of hash()
+              ...createMessage({ meta, data, hash: message.hash() }),
               // TODO: pending is useful to turn the message gray meaning failed (just like Slack)
               // when we don't get event after a certain period
               pending: true

@@ -7,7 +7,6 @@
 import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
-import { LOGIN } from '../../../frontend/utils/events.js'
 import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
 
 // util funcs
@@ -91,10 +90,6 @@ Cypress.Commands.add('giLogin', (username, {
       }
       await sbp('gi.actions/identity/login', { username, password })
       await sbp('controller/router').push({ path: '/' }).catch(e => {})
-
-      return new Promise((resolve) => {
-        sbp('okTurtles.events/on', LOGIN, resolve)
-      })
     })
     cy.get('nav').within(() => {
       cy.getByDT('dashboard').click()

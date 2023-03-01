@@ -12,7 +12,7 @@
 
   ul.c-group-list
     list-item(
-      v-for='{username, displayName, picture} in priateDirectMessages'
+      v-for='{username, displayName, picture} in privateDirectMessages'
       tag='router-link'
       :to='buildUrl(username)'
       :data-test='username'
@@ -89,7 +89,7 @@ export default ({
       'directMessageIDFromUsername',
       'groupDirectMessageInfo'
     ]),
-    priateDirectMessages () {
+    privateDirectMessages () {
       return Object.keys(this.ourPrivateDirectMessages)
         .filter(username => !this.ourPrivateDirectMessages[username].hidden)
         .map(username => this.ourContactProfiles[username])
