@@ -700,7 +700,7 @@ export default ({
         ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1]).hash()
         : null
 
-      // NOTE: save messages in the browser storage, but not more than 5 times
+      // NOTE: save messages in the browser storage, but not more than 5 pages of evnets
       if (this.latestEvents.length >= 5 * unit) {
         sbp('gi.db/archive/delete', this.getKeyFromChatRoomId(chatRoomId))
       } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
