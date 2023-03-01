@@ -25,8 +25,8 @@
 
       .c-unreadcount-wrapper
         .pill.is-danger(
-          v-if='getUnreadMessagesCountFromUsername(username)'
-        ) {{limitedUnreadCount(getUnreadMessagesCountFromUsername(username))}}
+          v-if='getUnreadMsgCountOnPrivateDM(username)'
+        ) {{limitedUnreadCount(getUnreadMsgCountOnPrivateDM(username))}}
 
     list-item(
       v-for='{contractID, title, othersCount, picture} in groupDirectMessages'
@@ -35,14 +35,19 @@
       :data-test='contractID'
       :key='contractID'
     )
-      .picture-wrapper
-        avatar(
-          :src='picture'
-          :alt='title'
-          size='xs'
-        )
-        .c-badge {{ othersCount }}
-      span.is-unstyled.c-name.has-ellipsis(data-test='title') {{ title }}
+      .group-wrapper
+        .picture-wrapper
+          avatar(
+            :src='picture'
+            :alt='title'
+            size='xs'
+          )
+          .c-badge {{ othersCount }}
+        span.is-unstyled.c-name.has-ellipsis(data-test='title') {{ title }}
+      .c-unreadcount-wrapper
+        .pill.is-danger(
+          v-if='getUnreadMsgCount(contractID)'
+        ) {{limitedUnreadCount(getUnreadMsgCount(contractID))}}
 </template>
 
 <script>
@@ -127,8 +132,11 @@ export default ({
         this.openModal(modalAction)
       }
     },
-    getUnreadMessagesCountFromUsername (username) {
+    getUnreadMsgCountOnPrivateDM (username) {
       const chatRoomId = this.directMessageIDFromUsername(username)
+      return this.getUnreadMsgCount(chatRoomId)
+    },
+    getUnreadMsgCount (chatRoomId) {
       return this.chatRoomUnreadMentions(chatRoomId).length
     },
     limitedUnreadCount (n) {
@@ -197,8 +205,16 @@ export default ({
   width: 100px;
 }
 
+.group-wrapper {
+  display: flex;
+  flex: auto;
+  width: 100px;
+}
+
 .picture-wrapper {
   position: relative;
+  min-width: 2rem;
+  margin-right: 0.5rem;
 }
 
 .c-badge {
