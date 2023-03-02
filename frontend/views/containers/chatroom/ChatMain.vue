@@ -565,6 +565,9 @@ export default ({
       }
 
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
+        if (sbp('chelonia/contract/isSyncing', contractID)) {
+          return
+        }
         if (contractID === this.currentChatRoomId) {
           await sbp('chelonia/private/in/processMessage', message, this.messageState.contract)
           this.latestEvents.push(message.serialize())
