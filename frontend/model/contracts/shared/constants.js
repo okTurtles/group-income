@@ -106,3 +106,9 @@ export const PROPOSAL_VARIANTS = {
   REJECTED: 'rejected',
   EXPIRED: 'expired'
 }
+
+export const MESSAGE_NOTIFY_SETTINGS = {
+  ALL_MESSAGES: 'all-messages',
+  DIRECT_MESSAGES: 'direct-messages',
+  NOTHING: 'nothing'
+}

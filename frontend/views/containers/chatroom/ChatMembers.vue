@@ -12,7 +12,7 @@
 
   ul.c-group-list
     list-item(
-      v-for='{username, displayName, picture } in directMessages'
+      v-for='{username, displayName, picture} in privateDirectMessages'
       tag='router-link'
       :to='buildUrl(username)'
       :data-test='username'
@@ -25,8 +25,29 @@
 
       .c-unreadcount-wrapper
         .pill.is-danger(
-          v-if='getUnreadMessagesCountFromUsername(username)'
-        ) {{limitedUnreadCount(getUnreadMessagesCountFromUsername(username))}}
+          v-if='getUnreadMsgCountOnPrivateDM(username)'
+        ) {{limitedUnreadCount(getUnreadMsgCountOnPrivateDM(username))}}
+
+    list-item(
+      v-for='{contractID, title, othersCount, picture} in groupDirectMessages'
+      tag='router-link'
+      :to='buildUrl(contractID, false)'
+      :data-test='contractID'
+      :key='contractID'
+    )
+      .group-wrapper
+        .picture-wrapper
+          avatar(
+            :src='picture'
+            :alt='title'
+            size='xs'
+          )
+          .c-badge {{ othersCount }}
+        span.is-unstyled.c-name.has-ellipsis(data-test='title') {{ title }}
+      .c-unreadcount-wrapper
+        .pill.is-danger(
+          v-if='getUnreadMsgCount(contractID)'
+        ) {{limitedUnreadCount(getUnreadMsgCount(contractID))}}
 </template>
 
 <script>
@@ -63,20 +84,27 @@ export default ({
   computed: {
     ...mapGetters([
       'groupMembersCount',
-      'ourContacts',
       'ourContactProfiles',
       'groupShouldPropose',
       'ourUsername',
       'userDisplayName',
-      'mailboxContract',
+      'ourPrivateDirectMessages',
+      'ourGroupDirectMessages',
       'chatRoomUnreadMentions',
-      'directMessageIDFromUsername'
+      'directMessageIDFromUsername',
+      'groupDirectMessageInfo'
     ]),
-    directMessages () {
-      return this.ourContacts
-        .filter(username => Object.keys(this.mailboxContract.users).includes(username) &&
-          this.mailboxContract.users[username].joinedDate)
+    privateDirectMessages () {
+      return Object.keys(this.ourPrivateDirectMessages)
+        .filter(username => !this.ourPrivateDirectMessages[username].hidden)
         .map(username => this.ourContactProfiles[username])
+    },
+    groupDirectMessages () {
+      return Object.keys(this.ourGroupDirectMessages)
+        .filter(contractID => this.$store.state.contracts[contractID] &&
+          Object.keys(this.$store.state[contractID]?.users || {}).length > 1 // NOTE: presence check is for considering contract is syncing
+        )
+        .map(contractID => this.groupDirectMessageInfo(contractID))
     }
   },
   methods: {
@@ -90,8 +118,8 @@ export default ({
       const name = displayName || this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
-    buildUrl (username) {
-      const chatRoomId = this.directMessageIDFromUsername(username)
+    buildUrl (username, isPrivacyLevelPrivate = true) {
+      const chatRoomId = isPrivacyLevelPrivate ? this.directMessageIDFromUsername(username) : username
       return {
         name: 'GroupChatConversation',
         params: { chatRoomId }
@@ -104,8 +132,11 @@ export default ({
         this.openModal(modalAction)
       }
     },
-    getUnreadMessagesCountFromUsername (username) {
+    getUnreadMsgCountOnPrivateDM (username) {
       const chatRoomId = this.directMessageIDFromUsername(username)
+      return this.getUnreadMsgCount(chatRoomId)
+    },
+    getUnreadMsgCount (chatRoomId) {
       return this.chatRoomUnreadMentions(chatRoomId).length
     },
     limitedUnreadCount (n) {
@@ -172,5 +203,29 @@ export default ({
 .profile-wrapper {
   flex: auto;
   width: 100px;
+}
+
+.group-wrapper {
+  display: flex;
+  flex: auto;
+  width: 100px;
+}
+
+.picture-wrapper {
+  position: relative;
+  min-width: 2rem;
+  margin-right: 0.5rem;
+}
+
+.c-badge {
+  position: absolute;
+  bottom: -0.25rem;
+  right: 0;
+  border-radius: 0.5rem;
+  background-color: $general_0;
+  color: $text_0;
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.75rem;
 }
 </style>

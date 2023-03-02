@@ -36,9 +36,6 @@
 /* MISSING TRANSLATION - controller/actions/mailbox.js */
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
-/* MISSING TRANSLATION - controller/actions/mailbox.js */
-"Failed to join a new direct message channel." = "Failed to join a new direct message channel.";
-
 /* MISSING TRANSLATION - controller/router.js */
 "Design System" = "Design System";
 
@@ -64,7 +61,7 @@
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
 
 /* MISSING TRANSLATION - model/contracts/mailbox.js */
-"Incorrect mailbox creator to join direct message channel." = "Incorrect mailbox creator to join direct message channel.";
+"Only the mailbox creator can hide direct message channel." = "Only the mailbox creator can hide direct message channel.";
 
 /* MISSING TRANSLATION - model/contracts/shared/time.js */
 "1d" = "1d";
@@ -186,6 +183,9 @@
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMembersAllModal.vue */
 "Removed." = "Removed.";
 
+/* MISSING TRANSLATION - views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/settings.js */
+"Notifications" = "Notifications";
+
 /* MISSING TRANSLATION - views/containers/chatroom/ConversationGreetings.vue */
 "I’m here to keep you update while you are away." = "I’m here to keep you update while you are away.";
 
@@ -203,6 +203,9 @@
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to change the groups voting system." = "{from} wants to change the groups voting system.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
+"Voted on “{title}”" = "Voted on “{title}”";
 
 /* MISSING TRANSLATION - views/containers/chatroom/NewDirectMessageModal.vue */
 "{ourNewContactsCount} members" = "{ourNewContactsCount} members";
@@ -344,9 +347,6 @@
 
 /* MISSING TRANSLATION - views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue */
 "Mark all as read" = "Mark all as read";
-
-/* MISSING TRANSLATION - views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/settings.js */
-"Notifications" = "Notifications";
 
 /* MISSING TRANSLATION - views/containers/notifications/NotificationList.vue */
 "OLDER" = "OLDER";
@@ -528,6 +528,18 @@
 /* MISSING TRANSLATION - views/containers/user-settings/Appearence.vue */
 "Animations" = "Animations";
 
+/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
+"Allow email notifications" = "Allow email notifications";
+
+/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
+"Email notifications" = "Email notifications";
+
+/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
+"Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime." = "Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.";
+
+/* MISSING TRANSLATION - views/containers/user-settings/NotificationSettings.vue */
+"Know when new proposals are created, their income and get a reminder to vote if they are about to expire." = "Know when new proposals are created, their income and get a reminder to vote if they are about to expire.";
+
 /* MISSING TRANSLATION - views/containers/user-settings/Theme.vue */
 "Use system settings" = "Use system settings";
 
@@ -691,13 +703,13 @@
 "Failed to create mailbox: {reportError}" = "La création de la boîte de réception a échoué : {reportError}";
 
 /* controller/actions/mailbox.js */
-"Failed to leave direct message channel." = "Impossible de quitter le canal de messagerie directe.";
+"Failed to join a direct message." = "Impossible de rejoindre un message privé.";
+
+/* controller/actions/mailbox.js */
+"Failed to set direct message visibility." = "Échec de la définition de la visibilité des messages directs.";
 
 /* controller/actions/mailbox.js */
 "Failed to set mailbox attributes." = "Impossible de définir les attributs de la boîte aux lettres.";
-
-/* controller/actions/mailbox.js */
-"Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";
 
 /* controller/router.js */
 "Group Chat" = "Conversation du groupe";
@@ -757,19 +769,13 @@
 "There is an identical open proposal." = "Une proposition identique a déjà été créée.";
 
 /* model/contracts/mailbox.js */
-"Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
+"Already joined direct message." = "Message direct déjà rejoint.";
 
 /* model/contracts/mailbox.js */
-"Never created or already joined direct message channel." = "Jamais créé ou déjà rejoint le canal de messagerie directe.";
-
-/* model/contracts/mailbox.js */
-"Not joined or already left direct message channel." = "Pas rejoint ou déjà quitté le canal de messagerie directe.";
+"Not existing direct message." = "Message direct inexistant.";
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can create direct message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie directe.";
-
-/* model/contracts/mailbox.js */
-"Only the mailbox creator can leave direct message channel." = "Seul le créateur de la boîte aux lettres peut quitter le canal de messagerie directe.";
 
 /* model/contracts/mailbox.js */
 "Only the mailbox creator can set attributes." = "Seul le créateur de la boîte aux lettres peut définir des attributs.";
@@ -900,10 +906,10 @@
 /* views/components/VotingRulesInput.vue */
 "\"No\" votes required to block a proposal" = "Nombre de votes négatifs requis pour bloquer une proposition";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/access/PasswordModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
 "Cancel" = "Annuler";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
+/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue */
 "Save" = "Enregistrer";
 
 /* views/components/banners/BannerScoped.vue */
@@ -981,7 +987,7 @@
 /* views/components/modal/ModalClose.vue */
 "close modal" = "fermer le dialogue";
 
-/* views/components/tabs/TabWrapper.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/NotificationSettings.vue, views/containers/user-settings/UserSettingsModal.vue */
+/* views/components/tabs/TabWrapper.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/UserSettingsModal.vue */
 "Settings" = "Paramètres";
 
 /* views/containers/access/LoginForm.vue */
@@ -1098,6 +1104,33 @@
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/proposals/MemberRequest.vue */
 "Undo" = "Annuler";
 
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"All new messages" = "Tous les nouveaux messages";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Direct messages and mentions" = "Messages directs et mentions";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Mute all sounds from chat notifications" = "Couper tous les sons des notifications de chat";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Nothing" = "Rien";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Play sounds for all new messages" = "Jouer des sons pour tous les nouveaux messages";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Play sounds for direct messages and mentions" = "Jouer des sons pour les messages directs et les mentions";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Send notifications for:" = "Envoyer des notifications pour:";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue */
+"Sounds:" = "Des sons:";
+
+/* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/proposals/Mincome.vue, views/pages/GroupSettings.vue */
+"This field is required" = "Ce champ est requis";
+
 /* views/containers/chatroom/ConversationGreetings.vue */
 "Add a description" = "Ajouter une description";
 
@@ -1136,9 +1169,6 @@
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue */
 "Name" = "Nom";
-
-/* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/proposals/Mincome.vue, views/pages/GroupSettings.vue */
-"This field is required" = "Ce champ est requis";
 
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "All messages will be deleted;" = "Tous les messages seront effacés ;";
@@ -1181,6 +1211,9 @@
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "Leave Channel" = "Quitter le salon";
+
+/* views/containers/chatroom/LeaveChannelModal.vue */
+"Leave and Archive" = "Quitter et archiver";
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "You will no longer be able to send or see messages in this channel." = "Vous ne pourrez plus envoyer ni recevoir des messages dans ce salon.";
@@ -1294,10 +1327,16 @@
 "Added a member to {title}: {displayName}" = "Membre ajouté à {title} : {displayName}";
 
 /* views/containers/chatroom/MessageNotification.vue */
+"Added a member: {displayName}" = "Membre ajouté: {displayName}";
+
+/* views/containers/chatroom/MessageNotification.vue */
 "Deleted the channel: {title}" = "Le salon {title} a été supprimé";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Joined {title}" = "Joint {title}";
+
+/* views/containers/chatroom/MessageNotification.vue */
+"Joined" = "Joint";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Membre expulsé de {title} : {displayName}";
@@ -1307,9 +1346,6 @@
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Updated the channel name to: {title}" = "Le nom du salon a été mis à jour : {title}";
-
-/* views/containers/chatroom/MessageNotification.vue */
-"Voted on “{}”" = "A voté sur “{}”";
 
 /* views/containers/chatroom/MessageReactions.vue */
 "You" = "Vous";
@@ -2239,16 +2275,16 @@
 "When enabled the amount of animations you see around are reduced." = "Ceci réduit le nombre d’animations affichées.";
 
 /* views/containers/user-settings/NotificationSettings.vue */
+"Allow browser notifications" = "Autoriser les notifications du navigateur";
+
+/* views/containers/user-settings/NotificationSettings.vue */
+"Browser notifications" = "Notifications du navigateur";
+
+/* views/containers/user-settings/NotificationSettings.vue */
 "Congratulations" = "Toutes nos félicitations";
 
 /* views/containers/user-settings/NotificationSettings.vue */
-"Notification Permission" = "Autorisation de notification";
-
-/* views/containers/user-settings/NotificationSettings.vue */
 "Sorry, you should reset browser notification permission again." = "Désolé, vous devez réinitialiser à nouveau l'autorisation de notification du navigateur.";
-
-/* views/containers/user-settings/NotificationSettings.vue */
-"When you get chat mentions, browser notification will pop up." = "Lorsque vous recevez des mentions de chat, la notification du navigateur apparaîtra.";
 
 /* views/containers/user-settings/NotificationSettings.vue */
 "You have granted browser notification!" = "Vous avez autorisé la notification du navigateur!";
@@ -2383,13 +2419,16 @@
 "Show info" = "Afficher les informations";
 
 /* views/pages/GroupChat.vue */
+"Add People" = "Ajouter des personnes";
+
+/* views/pages/GroupChat.vue */
 "Channel Options" = "Options du salon";
 
 /* views/pages/GroupChat.vue */
 "Channels" = "Canaux de discussion";
 
 /* views/pages/GroupChat.vue */
-"Notifications settings" = "Paramètres des notifications";
+"Notification settings" = "Paramètres des notification";
 
 /* views/pages/GroupChat.vue */
 "Rename" = "Renommer";
@@ -2515,6 +2554,12 @@
 "According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this." = "Selon vos règles de vote, {strong_}{value} membres sur {total}{_strong} devront approuver ceci.";
 
 /* Not currently used */
+"Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
+
+/* Not currently used */
+"Already existing group message channel." = "Canal de messagerie de groupe déjà existant.";
+
+/* Not currently used */
 "Amout sent" = "Montant envoyé";
 
 /* Not currently used */
@@ -2566,7 +2611,19 @@
 "Failed to change mincome: {reportError}" = "La modification du revenu minimum a échoué: {reportError}";
 
 /* Not currently used */
+"Failed to create a new group message channel." = "Échec de la création d'un nouveau canal de message de groupe.";
+
+/* Not currently used */
 "Failed to create payment. {reportError}" = "Erreur lors de la création du paiement. {reportError}";
+
+/* Not currently used */
+"Failed to join a direct message channel." = "Échec de la connexion à un canal de messagerie directe.";
+
+/* Not currently used */
+"Failed to join a group message channel." = "Impossible de rejoindre un canal de messagerie de groupe.";
+
+/* Not currently used */
+"Failed to leave direct message channel." = "Impossible de quitter le canal de messagerie directe.";
 
 /* Not currently used */
 "Failed to post message to mailbox." = "L’envoi du message a échoué.";
@@ -2605,7 +2662,10 @@
 "Inbox" = "Boîte de réception";
 
 /* Not currently used */
-"Incorrect mailbox creator to join direct message channel" = "Créateur de boîte aux lettres incorrect pour rejoindre le canal de messagerie directe.";
+"Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";
+
+/* Not currently used */
+"Incorrect username to create group message." = "Nom d'utilisateur incorrect pour créer un message de groupe.";
 
 /* Not currently used */
 "Invalid Username" = "Nom d’utilisateur invalide";
@@ -2635,6 +2695,9 @@
 "Mute chat" = "Suspendre les notifications";
 
 /* Not currently used */
+"Never created or already joined direct message channel." = "Jamais créé ou déjà rejoint le canal de messagerie directe.";
+
+/* Not currently used */
 "New Message" = "Nouveau message";
 
 /* Not currently used */
@@ -2647,10 +2710,31 @@
 "No Messages" = "Pas de message";
 
 /* Not currently used */
+"Not enough usernames provided." = "Pas assez de noms d'utilisateur fournis.";
+
+/* Not currently used */
+"Not joined or already deleted group message channel." = "Canal de messagerie de groupe non rejoint ou déjà supprimé.";
+
+/* Not currently used */
+"Not joined or already left direct message channel." = "Pas rejoint ou déjà quitté le canal de messagerie directe.";
+
+/* Not currently used */
+"Notification Permission" = "Autorisation de notification";
+
+/* Not currently used */
 "Oh no! {br_}Something went wrong." = "Oh non ! {br_}Une erreur s’est produite.";
 
 /* Not currently used */
 "Oh no! {br_}Your link has expired." = "Oh non ! {br_}Votre lien a expiré.";
+
+/* Not currently used */
+"Only creator can delete group message channel." = "Seul le créateur peut supprimer le canal de message de groupe.";
+
+/* Not currently used */
+"Only the mailbox creator can create group message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie de groupe.";
+
+/* Not currently used */
+"Only the mailbox creator can leave direct message channel." = "Seul le créateur de la boîte aux lettres peut quitter le canal de messagerie directe.";
 
 /* Not currently used */
 "Payments Received" = "Paiements Reçus";
@@ -2752,6 +2836,9 @@
 "Updated the channel description to: {title}" = "La description du salon a été mise à jour : {title}";
 
 /* Not currently used */
+"Voted on “{}”" = "A voté sur “{}”";
+
+/* Not currently used */
 "We couldn’t register your vote. {reportError}" = "Nous n’avons pas pu enregistrer votre vote. {reportError}";
 
 /* Not currently used */
@@ -2759,6 +2846,9 @@
 
 /* Not currently used */
 "What percentage of members need to agree?" = "Quel est le pourcentage de votes positifs nécessaire ?";
+
+/* Not currently used */
+"When you get chat mentions, browser notification will pop up." = "Lorsque vous recevez des mentions de chat, la notification du navigateur apparaîtra.";
 
 /* Not currently used */
 "Which voting system would you like to use?" = "Quel système de vote souhaitez-vous utiliser ?";
