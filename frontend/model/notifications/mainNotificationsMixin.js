@@ -11,6 +11,7 @@ const myNotificationHas = checkFunc => {
 }
 
 /*
+
  *** NOTE: This mixin is imported into the root Vue instance in 'main.js'. feel free to extend the notification entry lists
            for defining more notifications
 
