@@ -1,13 +1,15 @@
 <template lang='pug'>
-page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isOnDirectMessage')
+page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDirectMessage()')
   template(#title='')
     .c-header
-      avatar(
+      .avatar-wrapper(
         v-if='summary.picture'
-        :src='summary.picture'
-        alt='Partner Picture'
-        size='sm'
       )
+        avatar(
+          :src='summary.picture'
+          alt='Partner Picture'
+          size='sm'
+        )
       i(
         v-else
         :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
@@ -23,33 +25,35 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isOn
 
           ul
             menu-item(
-              v-if='!summary.general && ourUsername === summary.creator && !isOnDirectMessage'
+              v-if='!summary.general && ourUsername === summary.creator && !isDirectMessage()'
               @click='openModal("EditChannelNameModal")'
               data-test='renameChannel'
             )
               i18n Rename
-            menu-item(v-if='!isOnDirectMessage' @click='openModal("ChatMembersAllModal")')
+            menu-item(v-if='!isDirectMessage()' @click='openModal("ChatMembersAllModal")')
               i18n Members
+            menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
+              i18n Add People
             menu-item(
-              :class='`${!summary.general ? "c-separator" : ""}`'
-              @click='openModal("UserSettingsModal", {section: "notifications"})'
+              :class='`${!summary.general && !isDirectMessage() ? "c-separator" : ""}`'
+              @click='openModal("ChatNotificationSettingsModal")'
               data-test='notificationsSettings'
             )
-              i18n Notifications settings
+              i18n Notification settings
             menu-item(
-              v-if='!summary.general'
+              v-if='!summary.general && !isDirectMessage()'
               @click='openModal("LeaveChannelModal")'
               data-test='leaveChannel'
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
-              v-if='!summary.general && ourUsername === summary.creator && !isOnDirectMessage'
+              v-if='!summary.general && ourUsername === summary.creator && !isDirectMessage()'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )
               i18n Delete channel
 
-  template(#description='' v-if='!isOnDirectMessage')
+  template(#description='' v-if='!isDirectMessage()')
     .c-header-description
       i18n.is-unstyled.c-link(
         tag='button'
@@ -133,8 +137,7 @@ export default ({
       'groupProfiles',
       'isJoinedChatRoom',
       'getGroupChatRooms',
-      'ourUsername',
-      'isDirectMessage'
+      'ourUsername'
     ]),
     getChatRoomIDsInSort () {
       return Object.keys(this.getGroupChatRooms || {}).map(chatRoomID => ({
@@ -167,9 +170,6 @@ export default ({
         users: this.details.participants,
         size: this.details.numberOfParticipants
       }
-    },
-    isOnDirectMessage () {
-      return this.isDirectMessage(this.currentChatRoomId)
     }
   },
   methods: {
@@ -184,19 +184,21 @@ export default ({
   },
   watch: {
     '$route' (to: Object, from: Object) {
-      const { chatRoomId } = to.params
       this.$nextTick(() => {
         this.refreshTitle()
       })
-      if (this.isDirectMessage(chatRoomId)) {
-        this.updateCurrentChatRoomID(chatRoomId)
-      } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
-        if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
-          this.redirectChat('GroupChatConversation')
-        } else {
+      const { chatRoomId } = to.params
+      if (chatRoomId !== from.params.chatRoomId) {
+        if (this.isDirectMessage(chatRoomId)) {
           this.updateCurrentChatRoomID(chatRoomId)
-          if (!this.isJoinedChatRoom(chatRoomId)) {
-            this.loadSummaryAndDetails()
+        } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+          if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
+            this.redirectChat('GroupChatConversation')
+          } else {
+            this.updateCurrentChatRoomID(chatRoomId)
+            if (!this.isJoinedChatRoom(chatRoomId)) {
+              this.loadSummaryAndDetails()
+            }
           }
         }
       }
@@ -326,5 +328,9 @@ export default ({
   .c-menu-i {
     transform: rotate(180deg);
   }
+}
+
+.avatar-wrapper {
+  margin-right: 0.5rem;
 }
 </style>

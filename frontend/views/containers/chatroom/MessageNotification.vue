@@ -42,29 +42,31 @@ export default ({
     isCurrentUser: Boolean
   },
   computed: {
-    ...mapGetters(['userDisplayName']),
+    ...mapGetters(['userDisplayName', 'isGroupDirectMessage', 'currentChatRoomId']),
     message () {
       const { username, channelName, channelDescription } = this.notification.params
       const displayName = this.userDisplayName(username)
 
-      const text = {
-        [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member to {title}: {displayName}', { displayName, title: channelName }),
-        [MESSAGE_NOTIFICATIONS.JOIN_MEMBER]: L('Joined {title}', { title: channelName }),
-        [MESSAGE_NOTIFICATIONS.LEAVE_MEMBER]: L('Left {title}', { title: channelName }),
-        [MESSAGE_NOTIFICATIONS.KICK_MEMBER]: L('Kicked a member from {title}: {displayName}', { displayName, title: channelName }),
-        [MESSAGE_NOTIFICATIONS.UPDATE_NAME]: L('Updated the channel name to: {title}', { title: channelName }),
-        [MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION]: L('Updated the channel description to: {description}', { description: channelDescription }),
-        [MESSAGE_NOTIFICATIONS.DELETE_CHANNEL]: L('Deleted the channel: {title}', { title: channelName }),
-        [MESSAGE_NOTIFICATIONS.VOTE]: L('Voted on “{}”')
-      }[this.notification.type]
+      const notificationTemplates = {
+        onGroupDM: {
+          [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member: {displayName}', { displayName }),
+          [MESSAGE_NOTIFICATIONS.JOIN_MEMBER]: L('Joined')
+        },
+        default: {
+          [MESSAGE_NOTIFICATIONS.ADD_MEMBER]: L('Added a member to {title}: {displayName}', { displayName, title: channelName }),
+          [MESSAGE_NOTIFICATIONS.JOIN_MEMBER]: L('Joined {title}', { title: channelName }),
+          [MESSAGE_NOTIFICATIONS.LEAVE_MEMBER]: L('Left {title}', { title: channelName }),
+          [MESSAGE_NOTIFICATIONS.KICK_MEMBER]: L('Kicked a member from {title}: {displayName}', { displayName, title: channelName }),
+          [MESSAGE_NOTIFICATIONS.UPDATE_NAME]: L('Updated the channel name to: {title}', { title: channelName }),
+          [MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION]:
+            L('Updated the channel description to: {description}', { description: channelDescription }),
+          [MESSAGE_NOTIFICATIONS.DELETE_CHANNEL]: L('Deleted the channel: {title}', { title: channelName }),
+          [MESSAGE_NOTIFICATIONS.VOTE]: L('Voted on “{title}”', { title: '' }) // TODO: polls are not implemented yet
+        }
+      }
 
-      // let variant = 'simple'
-      // if (this.notification.type === MESSAGE_NOTIFICATIONS.DELETE_CHANNEL) {
-      //   variant = 'tooltip'
-      // } else if (this.notification.type === MESSAGE_NOTIFICATIONS.VOTE) {
-      //   variant = 'poll'
-      // }
-
+      const notificationSelector = this.isGroupDirectMessage() ? 'onGroupDM' : 'default'
+      const text = notificationTemplates[notificationSelector][this.notification.type]
       return { text }
     }
   },
