@@ -47,7 +47,7 @@ function assertMonthOverview (items) {
 
 function openNotificationCard ({
   messageToAssert = '',
-  clickItemIndex = null
+  clickItem = true
 } = {}) {
   cy.getByDT('notificationBell').click()
   cy.getByDT('notificationCard').should('be.visible')
@@ -57,9 +57,15 @@ function openNotificationCard ({
 
     if (messageToAssert) {
       cy.get('@items').should('contain', messageToAssert)
-    }
-    if (clickItemIndex !== null) {
-      cy.get('@items').eq(clickItemIndex).click()
+
+      if (clickItem) {
+        cy.get('@items').each(($el) => {
+          if ($el.text().includes(messageToAssert)) {
+            cy.wrap($el).click()
+            return false // if the targeting item is found, prematurely leave the loop.
+          }
+        })
+      }
     }
   })
 }
@@ -197,8 +203,7 @@ describe('Group Payments', () => {
 
     cy.log('user3 receives a notification for the payment and clicking on it opens a "Payment details" modal.')
     openNotificationCard({
-      messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`,
-      clickItemIndex: 0
+      messageToAssert: `user1-${userId} sent you a $250 mincome contribution. Review and send a thank you note.`
     })
 
     cy.getByDT('modal').within(() => {
@@ -233,8 +238,7 @@ describe('Group Payments', () => {
     cy.log('user1 receives a notification for a thank you note')
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
     openNotificationCard({
-      messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`,
-      clickItemIndex: 0
+      messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`
     })
 
     cy.getByDT('modal-header-title').should('contain', 'Thank you note!') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
