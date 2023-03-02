@@ -11,10 +11,12 @@ import {
   CHATROOM_ACTIONS_PER_PAGE,
   CHATROOM_MESSAGES_PER_PAGE,
   CHATROOM_TYPES,
+  CHATROOM_PRIVACY_LEVEL,
   MESSAGE_TYPES,
   MESSAGE_NOTIFICATIONS,
   CHATROOM_MESSAGE_ACTION,
-  MESSAGE_RECEIVE
+  MESSAGE_RECEIVE,
+  MESSAGE_NOTIFY_SETTINGS
 } from './shared/constants.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
 import { createMessage, leaveChatRoom, findMessageIdx, makeMentionFromUsername } from './shared/functions.js'
@@ -41,44 +43,62 @@ function emitMessageEvent ({ contractID, hash }: {
   sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash })
 }
 
-function addMention ({ contractID, messageId, datetime, text, username, chatRoomName }: {
+function messageReceivePostEffect ({ contractID, messageId, datetime, text, isAlreadyAdded, isMentionedMe, username, chatRoomName }: {
   contractID: string,
   messageId: string,
   datetime: string,
   text: string,
+  isAlreadyAdded?: boolean,
+  isMentionedMe: boolean,
   username: string,
   chatRoomName: string
 }): void {
   if (sbp('chelonia/contract/isSyncing', contractID)) {
     return
   }
-  sbp('state/vuex/commit', 'addChatRoomUnreadMention', {
-    chatRoomId: contractID,
-    messageId,
-    createdDate: datetime
-  })
-
   const rootGetters = sbp('state/vuex/getters')
-  const isDMContact = rootGetters.isDirectMessage(contractID)
-  const partnerProfile = rootGetters.ourContactProfiles[username]
-  // NOTE: partner identity contract could not be synced at the time of use
-  const title = isDMContact ? `# ${partnerProfile?.displayName || username}` : `# ${chatRoomName}`
+  const isDirectMessage = rootGetters.isDirectMessage(contractID)
+  const isDMOrMention = isMentionedMe || isDirectMessage
+
+  if (!isAlreadyAdded && isDMOrMention) {
+    sbp('state/vuex/commit', 'addChatRoomUnreadMention', {
+      chatRoomId: contractID,
+      messageId,
+      createdDate: datetime
+    })
+  }
+
+  let title = `# ${chatRoomName}`
+  let partnerProfile
+  if (isDirectMessage) {
+    if (rootGetters.isGroupDirectMessage(contractID)) {
+      title = `# ${rootGetters.groupDirectMessageInfo(contractID).title}`
+    } else {
+      partnerProfile = rootGetters.ourContactProfiles[username] // NOTE: partner identity contract could not be synced at the time of use
+      title = `# ${partnerProfile?.displayName || username}`
+    }
+  }
   const path = `/group-chat/${contractID}`
 
-  makeNotification({
-    title,
-    body: text,
-    icon: partnerProfile?.picture,
-    path
-  })
+  const notificationSettings = rootGetters.notificationSettings[contractID] || rootGetters.notificationSettings.default
+  const { messageNotification, messageSound } = notificationSettings
+  const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+    (messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
+  const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
+    (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
 
-  sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
-}
+  if (!isAlreadyAdded && shouldNotifyMessage) {
+    makeNotification({
+      title,
+      body: text,
+      icon: partnerProfile?.picture,
+      path
+    })
+  }
 
-function deleteMention ({ contractID, messageId }: {
-  contractID: string, messageId: string
-}): void {
-  sbp('state/vuex/commit', 'deleteChatRoomUnreadMention', { chatRoomId: contractID, messageId })
+  if (!isAlreadyAdded && shouldSoundMessage) {
+    sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
+  }
 }
 
 function updateUnreadPosition ({ contractID, hash, createdDate }: {
@@ -158,7 +178,7 @@ sbp('chelonia/defineContract', {
       }),
       process ({ data, meta, hash }, { state }) {
         const { username } = data
-        if (!state.saveMessage && state.users[username]) {
+        if (!state.onlyRenderMessage && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
           console.warn('Can not join the chatroom which you are already part of')
           return
@@ -166,7 +186,8 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
-        if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+        if (!state.onlyRenderMessage || (state.attributes.type === CHATROOM_TYPES.INDIVIDUAL &&
+          state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE)) {
           return
         }
 
@@ -193,7 +214,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
 
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
 
@@ -216,7 +237,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
 
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
 
@@ -242,12 +263,12 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
-        if (!state.saveMessage && !state.users[member]) {
+        if (!state.onlyRenderMessage && !state.users[member]) {
           throw new Error(`Can not leave the chatroom which ${member} are not part of`)
         }
         Vue.delete(state.users, member)
 
-        if (!state.saveMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
+        if (!state.onlyRenderMessage || state.attributes.type === CHATROOM_TYPES.INDIVIDUAL) {
           return
         }
 
@@ -295,7 +316,7 @@ sbp('chelonia/defineContract', {
     'gi.contracts/chatroom/addMessage': {
       validate: messageType,
       process ({ data, meta, hash }, { state }) {
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
         const pendingMsg = state.messages.find(msg => msg.id === hash && msg.pending)
@@ -316,46 +337,38 @@ sbp('chelonia/defineContract', {
         }
         const newMessage = createMessage({ meta, data, hash, state })
         const mentions = makeMentionFromUsername(me)
-
-        const isDirectMessage = state.attributes.type === CHATROOM_TYPES.INDIVIDUAL
         const isTextMessage = data.type === MESSAGE_TYPES.TEXT
         const isMentionedMe = isTextMessage && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
-        if (isDirectMessage || isMentionedMe) {
-          addMention({
-            contractID,
-            messageId: newMessage.id,
-            datetime: newMessage.datetime,
-            text: newMessage.text,
-            username: meta.username,
-            chatRoomName: getters.chatRoomAttributes.name
-          })
-        }
 
+        messageReceivePostEffect({
+          contractID,
+          messageId: newMessage.id,
+          datetime: newMessage.datetime,
+          text: newMessage.text,
+          isMentionedMe,
+          username: meta.username,
+          chatRoomName: getters.chatRoomAttributes.name
+        })
         if (sbp('chelonia/contract/isSyncing', contractID)) {
           updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
         }
       }
     },
     'gi.contracts/chatroom/editMessage': {
-      validate: (data, { state, meta }) => {
-        objectOf({
-          id: string,
-          createdDate: string,
-          text: string
-        })(data)
-        // TODO: Actually NOT SURE it's needed to check if the meta.username === message.from
-        // there is no messagess in vuex state
-        // to check if the meta.username is creator seems like too heavy
-      },
+      validate: objectOf({
+        id: string,
+        createdDate: string,
+        text: string
+      }),
       process ({ data, meta }, { state }) {
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
         const msgIndex = findMessageIdx(data.id, state.messages)
         if (msgIndex >= 0 && meta.username === state.messages[msgIndex].from) {
           state.messages[msgIndex].text = data.text
           state.messages[msgIndex].updatedDate = meta.createdDate
-          if (state.saveMessage && state.messages[msgIndex].pending) {
+          if (state.onlyRenderMessage && state.messages[msgIndex].pending) {
             delete state.messages[msgIndex].pending
           }
         }
@@ -371,24 +384,30 @@ sbp('chelonia/defineContract', {
         }
         const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentions.find(m => m.messageId === data.id)
         const mentions = makeMentionFromUsername(me)
-        const isIncludeMention = data.text.includes(mentions.me) || data.text.includes(mentions.all)
-        if (!isAlreadyAdded && isIncludeMention) {
-          addMention({
-            contractID,
-            messageId: data.id,
-            /*
-            * the following datetime is the time when the message(which made mention) is created
-            * the reason why it is it instead of datetime when the mention created is because
-            * it is compared to the datetime of other messages when user scrolls
-            * to decide if it should be removed from the list of mentions or not
-            */
-            datetime: data.createdDate,
-            text: data.text,
-            username: meta.username,
-            chatRoomName: getters.chatRoomAttributes.name
+        const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
+
+        messageReceivePostEffect({
+          contractID,
+          messageId: data.id,
+          /*
+          * the following datetime is the time when the message(which made mention) is created
+          * the reason why it is it instead of datetime when the mention created is because
+          * it is compared to the datetime of other messages when user scrolls
+          * to decide if it should be removed from the list of mentions or not
+          */
+          datetime: data.createdDate,
+          text: data.text,
+          isAlreadyAdded,
+          isMentionedMe,
+          username: meta.username,
+          chatRoomName: getters.chatRoomAttributes.name
+        })
+
+        if (isAlreadyAdded && !isMentionedMe) {
+          sbp('state/vuex/commit', 'deleteChatRoomUnreadMention', {
+            chatRoomId: contractID,
+            messageId: data.id
           })
-        } else if (isAlreadyAdded && !isIncludeMention) {
-          deleteMention({ contractID, messageId: data.id })
         }
       }
     },
@@ -397,7 +416,7 @@ sbp('chelonia/defineContract', {
         id: string
       }),
       process ({ data, meta }, { state }) {
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
         const msgIndex = findMessageIdx(data.id, state.messages)
@@ -437,7 +456,10 @@ sbp('chelonia/defineContract', {
           return
         }
         if (rootState.chatRoomUnread[contractID].mentions.find(m => m.messageId === data.id)) {
-          deleteMention({ contractID, messageId: data.id })
+          sbp('state/vuex/commit', 'deleteChatRoomUnreadMention', {
+            chatRoomId: contractID,
+            messageId: data.id
+          })
         }
 
         emitMessageEvent({ contractID, hash })
@@ -449,7 +471,7 @@ sbp('chelonia/defineContract', {
         emoticon: string
       }),
       process ({ data, meta, contractID }, { state }) {
-        if (!state.saveMessage) {
+        if (!state.onlyRenderMessage) {
           return
         }
         const { id, emoticon } = data

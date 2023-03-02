@@ -65,6 +65,7 @@ lazyModal('CreateNewChannelModal', () => import('../views/containers/chatroom/Cr
 lazyModal('DeleteChannelModal', () => import('../views/containers/chatroom/DeleteChannelModal.vue'))
 lazyModal('EditChannelDescriptionModal', () => import('../views/containers/chatroom/EditChannelDescriptionModal.vue'))
 lazyModal('EditChannelNameModal', () => import('../views/containers/chatroom/EditChannelNameModal.vue'))
+lazyModal('ChatNotificationSettingsModal', () => import('../views/containers/chatroom/ChatNotificationSettingsModal.vue'))
 lazyModal('GroupLeaveModal', () => import('../views/containers/group-settings/GroupLeaveModal.vue'))
 lazyModal('GroupDeletionModal', () => import('../views/containers/group-settings/GroupDeletionModal.vue'))
 lazyModal('InvitationLinkModal', () => import('../views/containers/group-settings/InvitationLinkModal.vue'))

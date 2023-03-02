@@ -94,6 +94,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
+import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
@@ -115,24 +116,23 @@ export default ({
       'userDisplayName',
       'ourContacts',
       'ourContactProfiles',
-      'mailboxContract',
+      'ourPrivateDirectMessages',
       'currentIdentityState',
       'ourUnreadMessages',
       'directMessageIDFromUsername'
     ]),
     ourNewDMContacts () {
       return this.ourContacts
-        .filter(username => !Object.keys(this.mailboxContract.users).includes(username) ||
-          !this.mailboxContract.users[username].joinedDate)
+        .filter(username => username !== this.ourUsername &&
+          (!this.ourPrivateDirectMessages[username] || this.ourPrivateDirectMessages[username].hidden))
         .map(username => this.ourContactProfiles[username])
     },
     ourNewContactsCount () {
       return this.ourNewDMContacts.length
     },
     ourRecentConversations () {
-      return this.ourContacts
-        .filter(username => Object.keys(this.mailboxContract.users).includes(username) &&
-          this.mailboxContract.users[username].joinedDate)
+      return Object.keys(this.ourPrivateDirectMessages)
+        .filter(username => !this.ourPrivateDirectMessages[username].hidden)
         .map(username => {
           const chatRoomId = this.directMessageIDFromUsername(username)
           // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined
@@ -179,11 +179,24 @@ export default ({
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     createNewDirectMessage (username) {
-      const actionName = this.mailboxContract.users[username] ? 'joinDirectMessage' : 'createDirectMessage'
-      sbp(`gi.actions/mailbox/${actionName}`, {
-        contractID: this.currentIdentityState.attributes.mailbox,
-        data: { username }
-      })
+      if (!this.ourPrivateDirectMessages[username]) {
+        sbp('gi.actions/mailbox/createDirectMessage', {
+          contractID: this.currentIdentityState.attributes.mailbox,
+          data: {
+            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
+            usernames: [username]
+          }
+        })
+      } else if (this.ourPrivateDirectMessages[username].hidden) {
+        const chatRoomId = this.directMessageIDFromUsername(username)
+        sbp('gi.actions/mailbox/setDirectMessageVisibility', {
+          contractID: this.currentIdentityState.attributes.mailbox,
+          data: {
+            contractID: chatRoomId,
+            hidden: false
+          }
+        })
+      }
       this.closeModal()
     },
     openDirectMessage (username) {
