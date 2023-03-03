@@ -211,7 +211,8 @@ export default (sbp('sbp/selectors/register', {
         }
       }))).reduce((a, b) => a && b, true)
       if (!isAllContractsExist) {
-        // should remove namespace, for better understanding check `namespace/lookup` sbp function
+        // should remove namespace for the next calling namespace function
+        // for better understanding check sbp(`namespace/lookup`)
         Vue.delete(sbp('state/vuex/state').namespaceLookups, username)
         console.error('gi.actions/identity/login failed!')
         const humanErr = L('Failed to login: {reason}', { reason: L('Incorrect contractIDs found') })
