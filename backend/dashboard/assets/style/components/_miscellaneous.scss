@@ -22,6 +22,11 @@
     max-width: 22.25rem;
   }
 
+  &.is-background-blue {
+    background-color: $primary_blue;
+    color: $text_black;
+  }
+
   &.is-outlined {
     background-color: $background_0;
     border: 1px solid $text_0;

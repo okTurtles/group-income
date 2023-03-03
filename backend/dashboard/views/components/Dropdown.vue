@@ -1,6 +1,6 @@
 <template lang="pug">
 .c-dropdown-wrapper(:class='{ "is-active": ephemeral.isActive }')
-  button.is-outlined.c-dropdown-trigger(@click='toggle')
+  button.is-outlined.c-dropdown-trigger(ref='button' @click='toggle')
     span.c-trigger-btn-text {{ buttonText }}
     i.icon-caret-down.c-trigger-btn-arrow
 
@@ -69,6 +69,8 @@ export default {
       this.ephemeral.selectedId = item.id
       this.$emit('select', item)
       this.close()
+
+      this.$refs.button.focus()
     }
   }
 }
@@ -89,12 +91,17 @@ export default {
   display: flex;
   justify-content: flex-start;
   min-width: inherit;
-  border: 1px solid $text_0;
+  border: 1px solid $text_1;
   min-height: 2.25rem;
   padding: 0.25rem 2.25rem 0.25rem 0.625rem;
   font-size: $size_5;
   line-height: 1;
-  box-shadow: var(--button-box-shadow);
+
+  &:focus,
+  .is-active & {
+    background-color: var(--background_active);
+    box-shadow: var(--button-box-shadow);
+  }
 }
 
 .c-trigger-btn-arrow {
@@ -104,6 +111,7 @@ export default {
   right: 0.75rem;
   transform: translateY(-50%);
   font-size: 1.1em;
+  font-weight: 600;
   margin-left: 1rem;
   transition: transform 300ms ease-out;
 }
