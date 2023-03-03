@@ -565,10 +565,9 @@ export default ({
       }
 
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
-        if (sbp('chelonia/contract/isSyncing', contractID)) {
-          return
-        }
-        if (contractID === this.currentChatRoomId) {
+        // NOTE: users could open chat page, while syncing the chatroom contract
+        // while syncing the chatroom contract, we should ignore all the events
+        if (!sbp('chelonia/contract/isSyncing', contractID) && contractID === this.currentChatRoomId) {
           await sbp('chelonia/private/in/processMessage', message, this.messageState.contract)
           this.latestEvents.push(message.serialize())
 

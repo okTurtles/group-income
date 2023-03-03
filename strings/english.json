@@ -239,6 +239,7 @@
   "Failed to join the group: {codeError}": "Failed to join the group: {codeError}",
   "Failed to leave chat channel.": "Failed to leave chat channel.",
   "Failed to leave group. {codeError}": "Failed to leave group. {codeError}",
+  "Failed to login: {reason}": "Failed to login: {reason}",
   "Failed to login: {reportError}": "Failed to login: {reportError}",
   "Failed to make emotion.": "Failed to make emotion.",
   "Failed to notify expiring proposals.": "Failed to notify expiring proposals.",

@@ -31,6 +31,9 @@
 "Error during login contract sync: {err}" = "Error during login contract sync: {err}";
 
 /* MISSING TRANSLATION - controller/actions/identity.js */
+"Failed to login: {reason}" = "Failed to login: {reason}";
+
+/* MISSING TRANSLATION - controller/actions/identity.js */
 "Failed to set login state." = "Failed to set login state.";
 
 /* MISSING TRANSLATION - controller/actions/mailbox.js */
@@ -2651,6 +2654,9 @@
 
 /* Not currently used */
 "Inbox" = "Boîte de réception";
+
+/* Not currently used */
+"Incorrect contractIDs found" = "ID de contrat incorrects trouvés";
 
 /* Not currently used */
 "Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";

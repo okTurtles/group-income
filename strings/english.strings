@@ -721,6 +721,9 @@
 "Failed to leave group. {codeError}" = "Failed to leave group. {codeError}";
 
 /* controller/actions/identity.js */
+"Failed to login: {reason}" = "Failed to login: {reason}";
+
+/* controller/actions/identity.js */
 "Failed to login: {reportError}" = "Failed to login: {reportError}";
 
 /* controller/actions/chatroom.js */
