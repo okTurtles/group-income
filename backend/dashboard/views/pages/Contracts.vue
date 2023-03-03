@@ -103,7 +103,7 @@ export default {
 .c-th-contract-id,
 .c-cell-contract-id {
   position: sticky;
-  left: 0px;
+  left: 0;
   padding: 0 0.8rem 0 0.2rem;
   background-color: $primary_blue;
 }
