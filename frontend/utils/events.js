@@ -28,3 +28,5 @@ export const INCOME_DETAILS_UPDATE = 'income-details-update'
 export const PAYMENTS_RECORDED = 'payments-recorded'
 
 export const AVATAR_EDITED = 'avatar-edited'
+
+export const SWITCH_GROUP = 'switch-group'

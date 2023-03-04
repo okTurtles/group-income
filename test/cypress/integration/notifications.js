@@ -90,7 +90,8 @@ const fakePrivateNotifications = [
   {
     type: 'INCOME_DETAILS_OLD',
     data: {
-      months: 6
+      months: 6,
+      lastUpdatedDate: new Date().toISOString()
     }
   }
 ]
@@ -299,7 +300,7 @@ describe('Notifications - category subtitles', () => {
 
     cy.window().its('sbp').then(sbp => {
       // Emit a new notification.
-      emitPrivateNotifications([{ type: 'INCOME_DETAILS_OLD', data: { months: 3 } }], sbp)
+      emitPrivateNotifications([{ type: 'INCOME_DETAILS_OLD', data: { months: 3, lastUpdatedDate: new Date().toISOString() } }], sbp)
       // Both subtitles should now be visible since "new" as well as "older" notifications are listed.
       cy.get('.is-subtitle').should('have.length', 2)
       cy.get('.is-subtitle').eq(0).should('have.text', 'NEW')

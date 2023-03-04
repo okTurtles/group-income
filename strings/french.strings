@@ -76,6 +76,15 @@
 "{minutes}m" = "{minutes}m";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
+"A new distribution period has started. Please check Payment TODOs." = "A new distribution period has started. Please check Payment TODOs.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"A new distribution period has started. Please update your income details if they have changed." = "A new distribution period has started. Please update your income details if they have changed.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Less than 1 week left before the distribution period ends - don't forget to send payments!" = "Less than 1 week left before the distribution period ends - don't forget to send payments!";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
 "The mincome has changed to {amount}." = "The mincome has changed to {amount}.";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
