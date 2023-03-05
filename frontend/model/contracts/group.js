@@ -38,7 +38,8 @@ function initGroupProfile (contractID: string, joinedDate: string) {
     lastLoggedIn: joinedDate,
     nonMonetaryContributions: [],
     status: PROFILE_STATUS.ACTIVE,
-    departedDate: null
+    departedDate: null,
+    incomeDetailsLastUpdatedDate: null
   }
 }
 
@@ -1108,6 +1109,7 @@ sbp('chelonia/defineContract', {
         }
         if (data.incomeDetailsType) {
           // someone updated their income details, create a snapshot of the haveNeeds
+          Vue.set(groupProfile, 'incomeDetailsLastUpdatedDate', meta.createdDate)
           updateCurrentDistribution({ contractID, meta, state, getters })
         }
       }
@@ -1272,7 +1274,7 @@ sbp('chelonia/defineContract', {
     ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
       'gi.contracts/group/forceDistributionDate': {
         validate: optional,
-        process ({ meta }, { state, getters }) {
+        process ({ meta, contractID }, { state, getters }) {
           getters.groupSettings.distributionDate = dateToPeriodStamp(meta.createdDate)
         }
       },

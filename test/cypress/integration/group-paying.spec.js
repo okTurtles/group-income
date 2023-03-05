@@ -47,19 +47,25 @@ function assertMonthOverview (items) {
 
 function openNotificationCard ({
   messageToAssert = '',
-  clickTheLatestItem = true
+  clickItem = true
 } = {}) {
   cy.getByDT('notificationBell').click()
   cy.getByDT('notificationCard').should('be.visible')
 
   cy.getByDT('notificationCard').within(() => {
-    cy.getByDT('notificationList').find('ul > li:nth-child(1)').as('topMostItem')
+    cy.getByDT('notificationList').find('ul > li').as('items')
 
     if (messageToAssert) {
-      cy.get('@topMostItem').should('contain', messageToAssert)
-    }
-    if (clickTheLatestItem) {
-      cy.get('@topMostItem').click()
+      cy.get('@items').should('contain', messageToAssert)
+
+      if (clickItem) {
+        cy.get('@items').each(($el) => {
+          if ($el.text().includes(messageToAssert)) {
+            cy.wrap($el).click()
+            return false // if the targeting item is found, prematurely leave the loop.
+          }
+        })
+      }
     }
   })
 }

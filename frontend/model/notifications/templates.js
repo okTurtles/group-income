@@ -75,7 +75,7 @@ export default ({
       scope: 'user'
     }
   },
-  INCOME_DETAILS_OLD (data: { months: number }) {
+  INCOME_DETAILS_OLD (data: { months: number, lastUpdatedDate: string }) {
     return {
       body: L("You haven't updated your income details in more than {months} months. Would you like to review them now?", {
         // Avoid displaying decimals.
@@ -84,7 +84,8 @@ export default ({
       icon: 'coins',
       level: 'info',
       linkTo: '/contributions?modal=IncomeDetails',
-      scope: 'user'
+      scope: 'user',
+      data: { lastUpdatedDate: data.lastUpdatedDate }
     }
   },
   MEMBER_ADDED (data: { groupID: string, username: string }) {
@@ -218,6 +219,35 @@ export default ({
           increased: data.increased
         }
       }]
+    }
+  },
+  NEW_DISTRIBUTION_PERIOD (data: { creator: string, memberType: string }) {
+    const bodyTemplate = {
+      'pledger': L('A new distribution period has started. Please check Payment TODOs.'),
+      'receiver': L('A new distribution period has started. Please update your income details if they have changed.')
+    }
+
+    return {
+      avatarUsername: data.creator,
+      body: bodyTemplate[data.memberType],
+      level: 'info',
+      icon: 'coins',
+      linkTo: data.memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
+      scope: 'group',
+      data: {
+        // is used to check if a notification has already been sent for a particular dist-period
+        period: sbp('state/vuex/getters').groupSettings?.distributionDate
+      }
+    }
+  },
+  NEAR_DISTRIBUTION_END (data: { period: string }) {
+    return {
+      body: L("Less than 1 week left before the distribution period ends - don't forget to send payments!"),
+      level: 'info',
+      icon: 'coins',
+      linkTo: '/payments',
+      scope: 'group',
+      data
     }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })

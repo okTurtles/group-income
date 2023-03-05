@@ -28,7 +28,8 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  namespaceLookups: Object.create(null) // { [username]: sbp('namespace/lookup') }
+  namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
+  periodicNotificationAlreadyFiredMap: {} // { notificationKey: boolean }
 }
 
 if (window.matchMedia) {
@@ -753,14 +754,13 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           // 'currentPaymentPeriod': gets auto-updated(t1) in response to the change of 'reactiveDate.date' when it passes into the new period.
           // 'groupSettings.distributionDate': gets updated manually by calling 'updateCurrentDistribution' function(t2) in group.js
           // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
-          if (!oldPeriod || !newPeriod) return
 
           // Note: if this code gets called when we're in the period before the 1st distribution
           //       period, then the distributionDate will get updated to the previous distribution date
           //       (incorrectly). That in turn will cause the Payments page to update and display TODOs
           //       before it should.
           const distributionDateInSettings = store.getters.groupSettings.distributionDate
-          if (newPeriod !== oldPeriod && (newPeriod !== distributionDateInSettings)) {
+          if (oldPeriod && newPeriod && (newPeriod !== distributionDateInSettings)) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
           }
         }

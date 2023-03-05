@@ -29,7 +29,7 @@ import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import type { GIActionParams } from './types.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
-import { REPLACE_MODAL } from '@utils/events.js'
+import { REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -335,6 +335,8 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
     sbp('gi.actions/group/updateLastLoggedIn', { contractID: groupId })
+
+    sbp('okTurtles.events/emit', SWITCH_GROUP)
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
     const contractState = sbp('state/vuex/state')[params.contractID]
