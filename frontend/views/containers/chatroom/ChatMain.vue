@@ -286,6 +286,11 @@ export default ({
             const msgValue = message.decryptedValue()
             const { meta, data } = msgValue
             this.messages.push({
+              // TODO: message.hash() could be different from this message on event listener
+              // https://github.com/okTurtles/group-income/issues/1487
+              // so that the message.hash() can't be used as the identifier of this message
+              // https://github.com/okTurtles/group-income/issues/1503
+              // After this issue is fixed, we can fix this TODO and identity messages using message.id() instead of hash()
               ...createMessage({ meta, data, hash: message.hash() }),
               // TODO: pending is useful to turn the message gray meaning failed (just like Slack)
               // when we don't get event after a certain period
@@ -365,30 +370,21 @@ export default ({
       this.ephemeral.replyingTo = this.who(message)
     },
     editMessage (message, newMessage) {
+      message.text = newMessage
+      message.pending = true
       sbp('gi.actions/chatroom/editMessage', {
         contractID: this.currentChatRoomId,
         data: {
           id: message.id,
           createdDate: message.datetime,
           text: newMessage
-        },
-        hooks: {
-          prepublish: (msg) => {
-            message.text = newMessage
-            message.pending = true
-          }
         }
       })
     },
     deleteMessage (message) {
       sbp('gi.actions/chatroom/deleteMessage', {
         contractID: this.currentChatRoomId,
-        data: { id: message.id },
-        hooks: {
-          prepublish: (msg) => {
-            // need to do something
-          }
-        }
+        data: { id: message.id }
       })
     },
     changeDay (index) {
@@ -405,12 +401,7 @@ export default ({
     addEmoticon (message, emoticon) {
       sbp('gi.actions/chatroom/makeEmotion', {
         contractID: this.currentChatRoomId,
-        data: { id: message.id, emoticon },
-        hooks: {
-          prepublish: (msg) => {
-            // need to do something
-          }
-        }
+        data: { id: message.id, emoticon }
       })
     },
     getSimulatedState (initialize = true) {
@@ -419,7 +410,7 @@ export default ({
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
         messages: initialize ? [] : this.messages,
-        saveMessage: true,
+        onlyRenderMessage: true,
         _volatile: cloneDeep(this.currentChatVolatile),
         _vm: cloneDeep(this.currentChatVm)
       }

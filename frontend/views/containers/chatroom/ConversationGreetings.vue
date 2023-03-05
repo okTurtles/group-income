@@ -4,7 +4,7 @@
   p {{text}}
   .buttons
     i18n.button.is-outlined.is-small.is-primary(
-      v-if='!isDirectMessage && joined && members < 2'
+      v-if='!isDirectMessage() && joined && members < 2'
       tag='button'
       @click='openModal("ChatMembersAllModal")'
       data-test='addMembers'
@@ -12,7 +12,7 @@
 
     i18n.button.is-outlined.is-small(
       tag='button'
-      v-if='!isDirectMessage && joined && !description && creator === ourUsername'
+      v-if='!isDirectMessage() && joined && !description && creator === ourUsername'
       @click.prevent='openModal("EditChannelDescriptionModal")'
       data-test='addDescription'
     ) Add a description
@@ -55,7 +55,7 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters(['ourUsername']),
+    ...mapGetters(['ourUsername', 'isDirectMessage']),
     text () {
       return {
         GIBot: L('I’m here to keep you update while you are away.'),
@@ -64,9 +64,6 @@ export default ({
         [CHATROOM_TYPES.INDIVIDUAL]: L('You and {name} can chat in private here.', { name: this.name }),
         [CHATROOM_TYPES.GROUP]: L('This is the beginning of {name}.', { name: this.name })
       }[this.type]
-    },
-    isDirectMessage () {
-      return this.type === CHATROOM_TYPES.INDIVIDUAL
     }
   },
   methods: {

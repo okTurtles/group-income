@@ -94,7 +94,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     sendMessage(message)
   }
 
-  it(`user1 creates '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default and sends 25 messages`, () => {
+  it(`user1 creates '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default and sends 15 messages`, () => {
     cy.visit('/')
     cy.giSignup(user1)
     me = user1
@@ -117,7 +117,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     cy.giLogout()
   })
 
-  it(`user2 joins ${groupName1} group and sends another 25 messages and reply a message`, () => {
+  it(`user2 joins ${groupName1} group and sends another 15 messages and reply a message`, () => {
     cy.giAcceptGroupInvite(invitationLinkAnyone, {
       username: user2,
       groupName: groupName1,
