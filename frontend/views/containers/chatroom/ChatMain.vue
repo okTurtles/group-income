@@ -413,7 +413,7 @@ export default ({
     },
     initializeState () {
       // NOTE: this state is rendered using the chatroom contract functions
-      // so should be CAREFUL of updating
+      // so should be CAREFUL of updating the fields
       this.messageState.contract = {
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
