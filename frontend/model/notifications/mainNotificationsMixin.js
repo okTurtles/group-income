@@ -47,7 +47,7 @@ const oneTimeNotificationEntries = [
     name: 'INCOME_DETAILS_OLD',
     emitCondition ({ rootGetters }) {
       const { incomeDetailsLastUpdatedDate } = (rootGetters.ourGroupProfile || {})
-      const now = new Date().toISOString()
+      const now = dateToPeriodStamp(new Date())
 
       return incomeDetailsLastUpdatedDate &&
         compareISOTimestamps(now, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS &&
@@ -73,7 +73,7 @@ const periodicNotificationEntries = [
         if (!currentPeriod) { return false }
 
         const nextPeriod = rootGetters.periodAfterPeriod(currentPeriod)
-        const now = new Date().toISOString()
+        const now = dateToPeriodStamp(new Date())
         const comparison = comparePeriodStamps(nextPeriod, now)
 
         return rootGetters.ourGroupProfile?.incomeDetailsType === 'pledgeAmount' &&
