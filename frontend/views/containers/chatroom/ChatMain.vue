@@ -412,12 +412,14 @@ export default ({
       })
     },
     initializeState () {
+      // NOTE: this state is rendered using the chatroom contract functions
+      // so should be CAREFUL of updating
       this.messageState.contract = {
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
         messages: [],
-        onlyRenderMessage: true
+        onlyRenderMessage: true // NOTE: DO NOT CHANGE THIS, OR CHATROOM COULD BREAK
       }
     },
     async renderMoreMessages (refresh = false) {
