@@ -2,14 +2,14 @@
 page-template.c-page-contracts
   template(#title='') {{ L('Contracts') }}
 
-  dropdown.c-filter-menu(defaultItemId='all-contracts' :options='ephemeral.filterOptions')
+  dropdown.c-filter-menu(defaultItemId='all-contracts' :options='ephemeral.filterOptions' @select='onFilterSelect')
 
   .c-contracts-list-container
     .summary-list.is-background-blue.c-contracts-list
       .c-table-wrapper
         table.table.c-contract-ids-table
           thead
-            tr
+            tr.c-thead
               i18n.c-th-contract-id(tag='th') contractID
               i18n.c-th-type(tag='th') Type
               i18n.c-th-size(tag='th') Size (MB)
@@ -18,7 +18,7 @@ page-template.c-page-contracts
               i18n.c-th-action(tag='th') Action
 
           tbody
-            tr(v-for='item in ephemeral.contractDummyData' :key='item.contractId')
+            tr(v-for='item in filteredContracts' :key='item.contractId')
               td.c-cell-contract-id {{ item.contractId }}
               td.c-cell-type {{ item.type }}
               td.c-cell-size {{ (item.size).toFixed(2) }}
@@ -44,6 +44,7 @@ export default {
   data () {
     return {
       ephemeral: {
+        contractFilter: { id: 'all-contracts', name: L('All contracts') },
         filterOptions: [
           { id: 'all-contracts', name: L('All contracts') },
           { id: 'mailbox', name: L('Mailbox') },
@@ -55,9 +56,19 @@ export default {
       }
     }
   },
+  computed: {
+    filteredContracts () {
+      const filterId = this.ephemeral.contractFilter.id
+      return this.ephemeral.contractDummyData
+        .filter(item => filterId === 'all-contracts' || (item.type === `gi.contracts/${filterId}`))
+    }
+  },
   methods: {
     transformDate (date) {
       return humanDate(date, { month: 'short', day: 'numeric', year: 'numeric' })
+    },
+    onFilterSelect (item) {
+      this.ephemeral.contractFilter = item
     }
   }
 }
@@ -96,6 +107,9 @@ export default {
 }
 
 .c-contract-ids-table {
+  position: relative;
+  height: max-content;
+
   th { font-size: 0.85rem; }
   td { font-size: 0.8rem; }
 }
@@ -180,5 +194,11 @@ button.c-view-btn {
   &:active {
     border: 1px solid $text_black;
   }
+}
+
+.c-thead {
+  position: sticky;
+  top: 0;
+  left: 0;
 }
 </style>

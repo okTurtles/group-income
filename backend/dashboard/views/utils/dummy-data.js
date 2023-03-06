@@ -20,7 +20,7 @@ const manifestDummy = {
   'gi.contracts/group': '{"head":{"manifestVersion":"1.0.0"},"body":"{\"version\":\"0.0.1\",\"contract\":{\"hash\":\"21XWnNXo4eU77dCQuWkPZtNTXST4hxd1DGnGMiBsaBB6vkdTZk\",\"file\":\"group.js\"},\"authors\":[{\"cipher\":\"algo\",\"key\":\"<pubkey from deploy-key.json>\"},{\"cipher\":\"algo\",\"key\":\"<pubkey from alex.json>\"}],\"contractSlim\":{\"file\":\"group-slim.js\",\"hash\":\"21XWnNSmnNSZZ6oZfsRmss2KKCSQS5QqVh62Ub7iojRAYwcxRr\"}}","signature":{"key":"<which of the \'authors\' keys was used to sign \'body\'>","signature":"<signature>"}}'
 }
 
-for (let i=0; i<20; i++) {
+for (let i=0; i<30; i++) {
   const item = {
     contractId: randomHash(),
     type: randomFromArray(['gi.contracts/identity', 'gi.contracts/mailbox', 'gi.contracts/chatroom', 'gi.contracts/group']),
