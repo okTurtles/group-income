@@ -60,6 +60,12 @@
 /* views/containers/contributions/Contribution.vue */
 "A contribution is required." = "A contribution is required.";
 
+/* model/notifications/templates.js */
+"A new distribution period has started. Please check Payment TODOs." = "A new distribution period has started. Please check Payment TODOs.";
+
+/* model/notifications/templates.js */
+"A new distribution period has started. Please update your income details if they have changed." = "A new distribution period has started. Please update your income details if they have changed.";
+
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
 "A password is required." = "A password is required.";
 
@@ -1013,6 +1019,9 @@
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Left {title}";
+
+/* model/notifications/templates.js */
+"Less than 1 week left before the distribution period ends - don't forget to send payments!" = "Less than 1 week left before the distribution period ends - don't forget to send payments!";
 
 /* views/pages/Home.vue */
 "Let’s get this party started" = "Let’s get this party started";
