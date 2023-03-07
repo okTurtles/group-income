@@ -84,6 +84,7 @@ sbp('sbp/selectors/register', {
       state.notificationSettings = {}
     }
 
+    // NOTE: this is hack for handling older version of mailbox contract
     sbp('okTurtles.events/on', LOGIN, ({ username, identityContractID }) => {
       const getters = sbp('state/vuex/getters')
       if (!getters.currentMailboxState.attributes) {
