@@ -16,6 +16,7 @@ import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
 import settingsModule, { defaultSettings } from '~/frontend/model/settings/vuexModule.js'
+import { LOGIN } from '~/frontend/utils/events.js'
 
 Vue.use(Vuex)
 
@@ -82,6 +83,19 @@ sbp('sbp/selectors/register', {
     if (!state.notificationSettings) {
       state.notificationSettings = {}
     }
+
+    sbp('okTurtles.events/on', LOGIN, ({ username, identityContractID }) => {
+      const getters = sbp('state/vuex/getters')
+      if (!getters.currentMailboxState.attributes) {
+        sbp('gi.actions/mailbox/setAttributes', {
+          contractID: getters.currentIdentityState.attributes.mailbox,
+          data: {
+            creator: username,
+            autoJoinAllowance: true
+          }
+        })
+      }
+    })
   },
   'state/vuex/save': async function () {
     const state = store.state

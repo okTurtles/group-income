@@ -301,7 +301,7 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/mailbox/setAttributes": {
         validate: (data, { state, meta }) => {
-          if (state.attributes.creator !== meta.username) {
+          if (state.attributes && state.attributes.creator !== meta.username) {
             throw new TypeError((0, import_common2.L)("Only the mailbox creator can set attributes."));
           }
           object(data);
