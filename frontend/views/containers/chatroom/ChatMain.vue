@@ -478,10 +478,7 @@ export default ({
 
       if (refresh) {
         this.setStartNewMessageIndex()
-        const scrollTargetMessage = refresh && messageIdToScroll
-          ? messageIdToScroll
-          : null
-        this.updateScroll(scrollTargetMessage)
+        this.updateScroll(refresh && messageIdToScroll ? messageIdToScroll : null)
         return false
       }
 
@@ -504,7 +501,7 @@ export default ({
       this.$forceUpdate()
     },
     async setInitMessages () {
-      const prevState = await sbp('gi.db/archive/load', this.getKeyFromChatRoomId())
+      const prevState = await sbp('gi.db/archive/load', this.getArchiveKeyFromChatRoomId())
       const latestEvents = prevState ? JSON.parse(prevState) : []
       this.messageState.prevFrom = latestEvents.length ? GIMessage.deserialize(latestEvents[0]).hash() : null
       this.messageState.prevTo = latestEvents.length
@@ -567,8 +564,7 @@ export default ({
       }
 
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
-        // NOTE: users could open chat page, while syncing the chatroom contract
-        // while syncing the chatroom contract, we should ignore all the events
+        // NOTE: while syncing the chatroom contract, we should ignore all the events
         if (!sbp('chelonia/contract/isSyncing', contractID) && contractID === this.currentChatRoomId) {
           await sbp('chelonia/private/in/processMessage', message, this.messageState.contract)
           this.latestEvents.push(message.serialize())
@@ -601,9 +597,9 @@ export default ({
     },
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
-      // NOTE: this infinite handler runs once before all the component state are not initialized
-      // should ignore the first handler
       if (this.shouldRefreshMessages === undefined) {
+        // NOTE: this infinite handler is being called once
+        // before the component state is not initialized, which should be ignored
         return
       }
       this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
@@ -695,20 +691,21 @@ export default ({
         ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1]).hash()
         : null
 
-      // NOTE: save messages in the browser storage, but not more than 5 pages of evnets
-      if (this.latestEvents.length >= 5 * unit) {
-        sbp('gi.db/archive/delete', this.getKeyFromChatRoomId(chatRoomId))
+      // NOTE: save messages in the browser storage, but not more than 3 pages of events
+      if (this.latestEvents.length >= 3 * unit) {
+        sbp('gi.db/archive/delete', this.getArchiveKeyFromChatRoomId(chatRoomId))
       } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
         // this.currentChatRoomId could be wrong when the channels are switched very fast
         // so it's good to initiate using input parameter chatRoomId
-        sbp('gi.db/archive/save', this.getKeyFromChatRoomId(chatRoomId), JSON.stringify(this.latestEvents))
+        sbp('gi.db/archive/save', this.getArchiveKeyFromChatRoomId(chatRoomId), JSON.stringify(this.latestEvents))
       }
     },
-    getKeyFromChatRoomId (chatRoomId) {
+    getArchiveKeyFromChatRoomId (chatRoomId) {
       const curChatRoomId = chatRoomId || this.currentChatRoomId
       return `messages/${curChatRoomId}`
     },
     refreshContent: debounce(function (from, to) {
+      // NOTE: using debounce we can skip unnecessary rendering contents
       const force = sbp('chelonia/contract/isSyncing', to)
       this.setMessageEventListener({ from, to, force })
       this.archiveMessageState(from)
