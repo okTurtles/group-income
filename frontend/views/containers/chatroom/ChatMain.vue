@@ -599,7 +599,7 @@ export default ({
       this.ephemeral.infiniteLoading = $state
       if (this.shouldRefreshMessages === undefined) {
         // NOTE: this infinite handler is being called once
-        // before the component state is not initialized, which should be ignored
+        // before the component state is initialized, which should be ignored
         return
       }
       this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
