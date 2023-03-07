@@ -125,38 +125,30 @@ const periodicNotificationEntries = [
     notificationData: {
       stateKey: 'expiringProposals',
       emitCondition ({ rootGetters }) {
-        this.expiringProposalsByGroup = rootGetters.groupsByName.map(group => {
-          const { contractID } = group
-          const expiringProposals = []
-          const groupProposals = rootGetters.groupProposals(contractID) || {}
-          for (const proposalId in groupProposals) {
-            const proposal = groupProposals[proposalId]
-            if (proposal.status === STATUS_OPEN &&
-              !proposal.notifiedBeforeExpire &&
-              proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS)) {
-              expiringProposals.push({
-                proposalId,
-                proposalType: proposal.data.proposalType,
-                proposalData: proposal.data.proposalData,
-                expires_date_ms: proposal.data.expires_date_ms,
-                createdDate: proposal.meta.createdDate,
-                creator: proposal.meta.username
-              })
-            }
-          }
+        const groupProposals = Object.entries(rootGetters.currentGroupState.proposals || {})
 
-          return { contractID, proposals: expiringProposals }
-        }).filter(entry => entry.proposals.length)
-
-        return this.expiringProposalsByGroup.length
-      },
-      async emit () {
-        for (const { contractID, proposals } of this.expiringProposalsByGroup) {
-          await sbp('gi.actions/group/notifyExpiringProposals', {
-            contractID,
-            data: { proposals }
+        this.expiringProposals = groupProposals
+          .filter(([proposalId, proposal]) => {
+            return proposal.status === STATUS_OPEN &&
+              proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS) &&
+              !myNotificationHas(item => item.type === 'PROPOSAL_EXPIRING' && item.data.proposalId === proposalId)
           })
-        }
+          .map(([proposalId, proposal]) => ({
+            proposalId,
+            proposalType: proposal.data.proposalType,
+            proposalData: proposal.data.proposalData,
+            expires_date_ms: proposal.data.expires_date_ms,
+            createdDate: proposal.meta.createdDate,
+            creator: proposal.meta.username
+          }))
+
+        return this.expiringProposals.length
+      },
+      async emit ({ rootState }) {
+        await sbp('gi.actions/group/notifyExpiringProposals', {
+          contractID: rootState.currentGroupId,
+          data: { proposals: this.expiringProposals }
+        })
       },
       shouldClearStateKey: () => true
     }
