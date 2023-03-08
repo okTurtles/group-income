@@ -203,21 +203,6 @@ export default (sbp('sbp/selectors/register', {
         sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
         contractIDs = Object.keys(state.contracts)
       }
-      const isAllContractsExist = (await Promise.all(contractIDs.map(async (contractID) => {
-        try {
-          return !!await sbp('chelonia/out/latestHash', contractID)
-        } catch (err) {
-          return false
-        }
-      }))).reduce((a, b) => a && b, true)
-      if (!isAllContractsExist) {
-        // should remove namespace for the next calling namespace function
-        // for better understanding check sbp(`namespace/lookup`)
-        Vue.delete(sbp('state/vuex/state').namespaceLookups, username)
-        console.error('gi.actions/identity/login failed!')
-        const humanErr = L('Failed to login: {reason}', { reason: L('Incorrect contractIDs found') })
-        throw new GIErrorUIRuntimeError(humanErr)
-      }
       if (!contractIDs.includes(identityContractID)) {
         contractIDs.push(identityContractID)
       }

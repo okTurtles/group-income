@@ -9,7 +9,6 @@
   "No": "No",
   "Yes": "Yes",
   "Error during login contract sync: {err}": "Error during login contract sync: {err}",
-  "Failed to login: {reason}": "Failed to login: {reason}",
   "Failed to set login state.": "Failed to set login state.",
   "Failed to create a new direct message channel.": "Failed to create a new direct message channel.",
   "Design System": "Design System",
