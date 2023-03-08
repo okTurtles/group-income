@@ -125,24 +125,26 @@ const periodicNotificationEntries = [
     notificationData: {
       stateKey: 'expiringProposals',
       emitCondition ({ rootGetters }) {
-        const groupProposals = Object.entries(rootGetters.currentGroupState.proposals || {})
+        const groupProposals = rootGetters.currentGroupState.proposals || {}
+        this.expiringProposals = []
 
-        this.expiringProposals = groupProposals
-          .filter(([proposalId, proposal]) => {
-            return proposal.status === STATUS_OPEN &&
-              !proposal.notifiedBeforeExpire &&
-              proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS)
-          })
-          .map(([proposalId, proposal]) => ({
-            proposalId,
-            proposalType: proposal.data.proposalType,
-            proposalData: proposal.data.proposalData,
-            expires_date_ms: proposal.data.expires_date_ms,
-            createdDate: proposal.meta.createdDate,
-            creator: proposal.meta.username
-          }))
+        for (const proposalId in groupProposals) {
+          const proposal = groupProposals[proposalId]
 
-        console.log('@@@ this.expiringProposals: ', this.expiringProposals)
+          if (proposal.status === STATUS_OPEN &&
+            !proposal.notifiedBeforeExpire &&
+            proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS)) {
+            this.expiringProposals.push({
+              proposalId,
+              proposalType: proposal.data.proposalType,
+              proposalData: proposal.data.proposalData,
+              expires_date_ms: proposal.data.expires_date_ms,
+              createdDate: proposal.meta.createdDate,
+              creator: proposal.meta.username
+            })
+          }
+        }
+
         return this.expiringProposals.length
       },
       async emit ({ rootState }) {

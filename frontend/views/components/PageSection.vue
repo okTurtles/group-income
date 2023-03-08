@@ -31,7 +31,7 @@ export default ({
   watch: {
     '$route': {
       immediate: true,
-      handler (to, from)  {
+      handler (to, from) {
         if (to.hash &&
           (from?.hash !== to.hash) &&
           `#${this.anchor}` === to.hash) {

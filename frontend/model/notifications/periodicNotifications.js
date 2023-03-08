@@ -15,7 +15,7 @@ export const PERIODIC_NOTIFICATION_TYPE = {
 
 const every1MinTimeout = { notifications: [], state: {}, delay: MINS_MILLIS }
 const every5MinTimeout = { notifications: [], state: {}, delay: 5 * MINS_MILLIS }
-const every15MinTimeout = { notifications: [], state: {}, delay: 0.2 * MINS_MILLIS } // TODO!!: 0.2 -> 15 once the test is done
+const every15MinTimeout = { notifications: [], state: {}, delay: 15 * MINS_MILLIS }
 const every30MinTimeout = { notifications: [], state: {}, delay: 30 * MINS_MILLIS }
 
 const typeToObjectMap = {
