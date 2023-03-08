@@ -1,7 +1,6 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import Vue from 'vue'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { imageUpload } from '@utils/image.js'
 import { pickWhere, difference, uniq } from '@model/contracts/shared/giLodash.js'
