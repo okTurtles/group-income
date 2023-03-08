@@ -130,8 +130,8 @@ const periodicNotificationEntries = [
         this.expiringProposals = groupProposals
           .filter(([proposalId, proposal]) => {
             return proposal.status === STATUS_OPEN &&
-              proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS) &&
-              !myNotificationHas(item => item.type === 'PROPOSAL_EXPIRING' && item.data.proposalId === proposalId)
+              !proposal.notifiedBeforeExpire &&
+              proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS)
           })
           .map(([proposalId, proposal]) => ({
             proposalId,
@@ -142,6 +142,7 @@ const periodicNotificationEntries = [
             creator: proposal.meta.username
           }))
 
+        console.log('@@@ this.expiringProposals: ', this.expiringProposals)
         return this.expiringProposals.length
       },
       async emit ({ rootState }) {

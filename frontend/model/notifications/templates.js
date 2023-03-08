@@ -153,7 +153,7 @@ export default ({
       creator: data.creator,
       icon: iconMap[data.subtype],
       level: 'info',
-      linkTo: '/dashboard#TODO-proposals',
+      linkTo: '/dashboard#proposals',
       subtype: data.subtype,
       scope: 'group'
     }
@@ -169,13 +169,14 @@ export default ({
 
     return {
       avatarUsername: data.creator,
-      body: L('Proposal about to expire: {i_}{proposalTitle}{_i}. please vote!', {
+      body: L('Proposal about to expire: {i_}"{proposalTitle}"{_i}. please vote!', {
         ...LTags('i'),
         proposalTitle: typeToTitleMap[data.proposalType]
       }),
       level: 'info',
       icon: 'exclamation-triangle',
       scope: 'group',
+      linkTo: '/dashboard#proposals',
       data: { proposalId: data.proposalId }
     }
   },
@@ -191,7 +192,7 @@ export default ({
       body: bodyTemplateMap[data.proposalStatus](data.creator),
       icon: 'cog', // TODO : to be decided.
       level: 'info',
-      linkTo: '/dashboard#TODO-proposals', // TODO: to be decided.
+      linkTo: '/dashboard#proposals',
       scope: 'group'
     }
   },
