@@ -419,7 +419,7 @@ export default ({
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
         messages: [],
-        onlyRenderMessage: true // NOTE: DO NOT CHANGE THIS, OR CHATROOM COULD BREAK
+        onlyRenderMessage: true // NOTE: DO NOT RENAME THIS, OR CHATROOM COULD BREAK
       }
     },
     async renderMoreMessages (refresh = false) {

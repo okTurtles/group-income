@@ -69,6 +69,11 @@ sbp('chelonia/defineContract', {
         object(data)
       },
       process ({ meta, data }, { state }) {
+        // TODO: remove this hack before releasing version 1
+        if (!state.attributes) {
+          Vue.set(state, 'attributes', {})
+        }
+
         for (const key in data) {
           Vue.set(state.attributes, key, data[key])
         }
