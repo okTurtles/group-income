@@ -149,8 +149,8 @@ const periodicNotificationEntries = [
                 })
               }
 
-              if (!Object.keys(proposal.votes).includes(rootGetters.ourUsername) && // check if the user hasn't voted for this proposal
-                !myNotificationHas(item => item.type === 'PROPOSAL_EXPIRING' && item.data.proposalId === proposalId, contractID) // the user hasn't received the notification
+              if (!Object.keys(proposal.votes).includes(rootGetters.ourUsername) && // check if the user hasn't voted for this proposal.
+                !myNotificationHas(item => item.type === 'PROPOSAL_EXPIRING' && item.data.proposalId === proposalId, contractID) // the user hasn't received the notification.
               ) {
                 groupNotificationItems.push({
                   proposalId,
