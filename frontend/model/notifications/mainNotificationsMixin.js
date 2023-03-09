@@ -116,7 +116,7 @@ const periodicNotificationEntries = [
         })
       },
       shouldClearStateKey ({ rootGetters }) {
-        return comparePeriodStamps(new Date().toISOString(), rootGetters.groupSettings.distributionDate) > 0
+        return comparePeriodStamps(dateToPeriodStamp(new Date()), rootGetters.groupSettings.distributionDate) > 0
       }
     }
   },
