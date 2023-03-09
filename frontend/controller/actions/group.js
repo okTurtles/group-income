@@ -490,7 +490,6 @@ export default (sbp('sbp/selectors/register', {
       const { generalChatRoomId } = rootState[params.contractID]
 
       for (const proposal of proposals) {
-        // Add a notifying message to the chatroom
         await sbp('gi.actions/chatroom/addMessage', {
           ...omit(params, ['options']),
           contractID: generalChatRoomId,
@@ -505,16 +504,6 @@ export default (sbp('sbp/selectors/register', {
             prepublish: params.hooks?.prepublish,
             postpublish: null
           }
-        })
-
-        // send a group notification to the members
-        sbp('gi.notifications/emit', 'PROPOSAL_EXPIRING', {
-          createdDate: new Date().toISOString(),
-          groupID: params.contractID,
-          creator: proposal.creator,
-          proposalId: proposal.proposalId,
-          proposalType: proposal.proposalType,
-          title: proposal.proposalType === PROPOSAL_GENERIC ? proposal.proposalData.name : ''
         })
       }
     } catch (e) {
