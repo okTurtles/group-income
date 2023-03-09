@@ -13,7 +13,7 @@ message-base(v-bind='$props' @wrapperAction='action')
   template(#body='')
     .c-text
       | {{interactiveMessage.text}}
-      i18n.c-link See proposal
+      i18n.c-link(@click='$router.push({ path: "/dashboard#proposals" })') See proposal
 </template>
 
 <script>

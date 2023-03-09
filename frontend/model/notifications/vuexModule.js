@@ -14,6 +14,11 @@ const getters = {
     return state.filter(item => item.groupID === rootState.currentGroupId)
   },
 
+  // Notifications relevant to a specific group.
+  notificationsByGroup (state) {
+    return groupID => state.filter(item => item.groupID === groupID)
+  },
+
   currentGroupUnreadNotificationCount (state, getters) {
     return getters.currentGroupUnreadNotifications.length
   },
