@@ -118,6 +118,7 @@ import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
   CHATROOM_ACTIONS_PER_PAGE,
+  CHATROOM_MAX_ARCHIVE_ACTION_PAGES,
   CHATROOM_MESSAGE_ACTION
 } from '@model/contracts/shared/constants.js'
 import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
@@ -550,6 +551,8 @@ export default ({
       }
     },
     listenChatRoomActions ({ hash }) {
+      // NOTE: this function should be synchronous function
+      // Or the listener couldn't catch the event because it could be emitted in advance
       const isAddedNewMessage = (message: GIMessage): boolean => {
         const { action, meta } = message.decryptedValue()
         const rootState = sbp('state/vuex/state')
@@ -691,8 +694,8 @@ export default ({
         ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1]).hash()
         : null
 
-      // NOTE: save messages in the browser storage, but not more than 3 pages of events
-      if (this.latestEvents.length >= 3 * unit) {
+      // NOTE: save messages in the browser storage, but not more than CHATROOM_MAX_ARCHIVE_ACTION_PAGES pages of events
+      if (this.latestEvents.length >= CHATROOM_MAX_ARCHIVE_ACTION_PAGES * unit) {
         sbp('gi.db/archive/delete', this.getArchiveKeyFromChatRoomId(chatRoomId))
       } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
         // this.currentChatRoomId could be wrong when the channels are switched very fast

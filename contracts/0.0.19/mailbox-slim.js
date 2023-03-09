@@ -307,6 +307,9 @@ ${this.getErrorInfo()}`;
           object(data);
         },
         process({ meta, data }, { state }) {
+          if (!state.attributes) {
+            import_common2.Vue.set(state, "attributes", {});
+          }
           for (const key in data) {
             import_common2.Vue.set(state.attributes, key, data[key]);
           }

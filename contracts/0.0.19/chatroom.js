@@ -9148,7 +9148,6 @@
   var CHATROOM_NAME_LIMITS_IN_CHARS = 50;
   var CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280;
   var CHATROOM_ACTIONS_PER_PAGE = 40;
-  var CHATROOM_MESSAGES_PER_PAGE = 20;
   var CHATROOM_MESSAGE_ACTION = "chatroom-message-action";
   var MESSAGE_RECEIVE = "message-receive";
   var CHATROOM_TYPES = {
@@ -9613,7 +9612,6 @@ ${this.getErrorInfo()}`;
           const initialState = merge({
             settings: {
               actionsPerPage: CHATROOM_ACTIONS_PER_PAGE,
-              messagesPerPage: CHATROOM_MESSAGES_PER_PAGE,
               maxNameLength: CHATROOM_NAME_LIMITS_IN_CHARS,
               maxDescriptionLength: CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
             },

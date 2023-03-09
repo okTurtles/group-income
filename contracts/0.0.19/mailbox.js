@@ -9403,6 +9403,9 @@ ${this.getErrorInfo()}`;
           object(data);
         },
         process({ meta, data }, { state }) {
+          if (!state.attributes) {
+            vue_esm_default.set(state, "attributes", {});
+          }
           for (const key in data) {
             vue_esm_default.set(state.attributes, key, data[key]);
           }
