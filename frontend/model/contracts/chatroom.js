@@ -39,6 +39,9 @@ function emitMessageEvent ({ contractID, hash }: {
   contractID: string,
   hash: string
 }): void {
+  if (sbp('chelonia/contract/isSyncing', contractID)) {
+    return
+  }
   sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash })
 }
 
@@ -103,6 +106,9 @@ function messageReceivePostEffect ({ contractID, messageId, datetime, text, isAl
 function updateUnreadPosition ({ contractID, hash, createdDate }: {
   contractID: string, hash: string, createdDate: string
 }): void {
+  if (sbp('chelonia/contract/isSyncing', contractID)) {
+    return
+  }
   sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
     chatRoomId: contractID,
     messageId: hash,
@@ -199,10 +205,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
-
-        if (sbp('chelonia/contract/isSyncing', contractID)) {
-          updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
-        }
+        updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/rename': {
@@ -222,10 +225,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
-
-        if (sbp('chelonia/contract/isSyncing', contractID)) {
-          updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
-        }
+        updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/changeDescription': {
@@ -247,10 +247,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
-
-        if (sbp('chelonia/contract/isSyncing', contractID)) {
-          updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
-        }
+        updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/leave': {
@@ -283,8 +280,8 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, hash, contractID, meta }, { state }) {
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
+          updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
           if (sbp('chelonia/contract/isSyncing', contractID)) {
-            updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
             return
           }
           leaveChatRoom({ contractID })
@@ -347,9 +344,7 @@ sbp('chelonia/defineContract', {
           username: meta.username,
           chatRoomName: getters.chatRoomAttributes.name
         })
-        if (sbp('chelonia/contract/isSyncing', contractID)) {
-          updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
-        }
+        updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/editMessage': {
