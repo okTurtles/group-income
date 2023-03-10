@@ -470,9 +470,9 @@ export default ({
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
       if (curChatRoomId !== this.currentChatRoomId) {
-        // this.currentChatRoomId is a vuex getter and it could be changed
-        // while we get events from backend. This happens when users switch chatrooms very quickly
-        // In this case, we should avoid the previous events and only necessary to render the last events
+        // NOTE: To avoid rendering the incorrect events for the currentChatRoom
+        // While getting the events from the backend, this.currentChatRoomId could be changed
+        // In this case, we should avoid the previous events because they are for another channel, not current channel
         return
       }
 
