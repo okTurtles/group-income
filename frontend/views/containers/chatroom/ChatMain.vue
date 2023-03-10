@@ -472,7 +472,7 @@ export default ({
       if (curChatRoomId !== this.currentChatRoomId) {
         // NOTE: To avoid rendering the incorrect events for the currentChatRoom
         // While getting the events from the backend, this.currentChatRoomId could be changed
-        // In this case, we should avoid the previous events because they are for another channel, not current channel
+        // In this case, we should avoid the previous events because they are for another channel, not the current channel
         return
       }
 
