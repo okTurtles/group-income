@@ -94,7 +94,10 @@ export default ({
       return {
         type: this.hasProposals ? PageSection : CalloutCard,
         props: this.hasProposals
-          ? { title: L('Proposals') }
+          ? {
+              title: L('Proposals'),
+              anchor: 'proposals'
+            }
           : {
               title: L('Proposals'),
               svg: SvgVote,
