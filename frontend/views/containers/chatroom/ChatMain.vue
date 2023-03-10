@@ -192,7 +192,6 @@ export default ({
     window.removeEventListener('resize', this.resizeEventHandler)
     // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
-
     this.archiveMessageState(this.currentChatRoomId)
   },
   computed: {
