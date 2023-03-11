@@ -4,11 +4,14 @@ import Vue from 'vue'
 import router from './controller/router.js'
 import store from './model/state.js'
 import './views/utils/vStyle.js'
-import './views/utils/vSafeHtml.js'
 import './controller/backend.js'
 import '@common/translations.js'
 
+// custom directive declarations
+import './views/utils/custom-directives/index.js'
+
 // vue-components
+import Modal from '@containers/modal/Modal.vue'
 import Toolbar from '@containers/toolbar/Toolbar.vue'
 import Navigation from '@containers/navigation/Navigation.vue'
 import AppStyles from '@components/AppStyles.vue'
@@ -27,7 +30,8 @@ async function startApp () {
     components: {
       Toolbar,
       Navigation,
-      AppStyles
+      AppStyles,
+      Modal
     },
     data () {
       return {
