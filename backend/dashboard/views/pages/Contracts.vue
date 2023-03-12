@@ -25,15 +25,17 @@ page-template.c-page-contracts
               td.c-cell-space {{ (item.spaceUsed).toFixed(2) }}%
               td.c-cell-created-date {{ transformDate(item.createdDate) }}
               td.c-cell-action
-                i18n.is-extra-small.c-view-btn(tag='button') view
+                i18n.is-extra-small.c-view-btn(tag='button' @click='viewManifest(item)') view
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import PageTemplate from './PageTemplate.vue'
 import Dropdown from '@components/Dropdown.vue'
 import L from '@common/translations.js'
 import { humanDate } from '@common/cdTime.js'
 import { contractDummyData } from '@view-utils/dummy-data.js'
+import { OPEN_MODAL } from '@view-utils/events.js'
 
 export default {
   name: 'Contracts',
@@ -69,6 +71,9 @@ export default {
     },
     onFilterSelect (item) {
       this.ephemeral.contractFilter = item
+    },
+    viewManifest (item) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'ViewContractManifestModal', { contract: item })
     }
   }
 }

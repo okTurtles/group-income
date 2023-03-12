@@ -29,7 +29,6 @@ for (let i=0; i<30; i++) {
     createdDate: randomPastDate()
   }
 
-  // random hahaha
   item.manifestJSON = manifestDummy[item.type]
   contractDummyData.push(item)
 }

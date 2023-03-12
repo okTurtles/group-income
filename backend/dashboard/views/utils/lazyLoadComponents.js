@@ -8,3 +8,6 @@ export function lazyComponent (name, lazyImport) {
   // NOTE: will be expanded to Vue.component(name, () => ({ component: ... , loading: ..., error: ... })) format
   //       once error & loading page & modal skeletons are implemented.
 }
+
+// register modals
+lazyComponent('ViewContractManifestModal', () => import('../containers/modal/ViewContractManifestModal.vue'))

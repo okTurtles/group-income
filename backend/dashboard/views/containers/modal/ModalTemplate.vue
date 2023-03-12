@@ -5,9 +5,9 @@
   v-focus=''
 )
   transition(name='fade' appear)
-    .c-modal-background(v-if='isActive' @click='closeModal')
+    .c-modal-background(v-if='isActive' @click='close')
 
-  transition(name='slide-left' appear @after-leave='closeModal')
+  transition(name='slide-left' appear @after-leave='onLeaveEnd')
     .c-modal-content(v-if='isActive')
       header.c-modal-header(v-if='$scopedSlots.title')
         h1.is-title-2
@@ -18,22 +18,23 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
+import { CLOSE_MODAL } from '@view-utils/events.js'
+
 export default {
   name: 'ModalTemplate',
-  props: {
-    title: {
-      type: String,
-      required: false
-    }
-  },
   data () {
     return {
-      isActive: false
+      isActive: true
     }
   },
   methods: {
-    closeModal () {
+    close () {
       this.isActive = false
+    },
+    onLeaveEnd () {
+      // let Modal.vue to unload currently active modal
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   }
 }
@@ -61,6 +62,7 @@ export default {
 
   @include desktop {
     position: fixed;
+    display: block;
     top: 0;
     bottom: 0;
     left: 0;
