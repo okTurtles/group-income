@@ -47,7 +47,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       })
     })
     cy.getByDT('channelName').should('contain', channelName)
-    waitUntilMessageLoaded()
+    cy.giWaitUntilMessagesLoaded()
   }
 
   function checkIfJoined (channelName, inviter, invitee) {
@@ -67,6 +67,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
       const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
       cy.get('div.c-message:last-child .c-notification').should('contain', message)
     })
+    // cy.getByDT('conversationWrapper').get('div.c-message:last-child .c-who > span:first-child').should('contain', inviter)
+    // const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
+    // cy.getByDT('conversationWrapper').get('div.c-message:last-child .c-notification').should('contain', message)
   }
 
   function checkIfLeaved (channelName, kicker, leaver) {
@@ -120,7 +123,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('closeModal').should('not.exist')
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
 
-    waitUntilMessageLoaded()
+    cy.giWaitUntilMessagesLoaded()
 
     checkIfLeaved(channelName)
   }
@@ -186,15 +189,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('div.c-message:last-child .c-notification').should('contain', `Updated the channel description to: ${description}`)
     })
-  }
-
-  function waitUntilMessageLoaded () {
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.infinite-status-prompt:first-child')
-        .invoke('attr', 'style')
-        .should('include', 'display: none')
-    })
-    cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
   }
 
   it(`user1 creats '${groupName1}' group and joins "${CHATROOM_GENERAL_NAME}" channel by default`, () => {
@@ -386,12 +380,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     // Change from group1 to group2 group chat page
     cy.getByDT('groupsList').find('li:nth-child(2) button').click()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    waitUntilMessageLoaded()
+    cy.giWaitUntilMessagesLoaded()
 
     // Change from group2 to group1 group chat page
     cy.getByDT('groupsList').find('li:first-child button').click()
     cy.getByDT('channelName').should('contain', channelsOf2For1[0])
-    waitUntilMessageLoaded()
+    cy.giWaitUntilMessagesLoaded()
   })
 
   it('user1 kicks user2 from a channel and user2 leaves a channel by himself', () => {

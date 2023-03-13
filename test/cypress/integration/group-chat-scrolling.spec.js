@@ -28,22 +28,13 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       })
     }
 
-    waitUntilMessageLoaded()
+    cy.giWaitUntilMessagesLoaded()
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
       const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
       cy.get('.c-message:last-child .c-notification').should('contain', message)
     })
-  }
-
-  function waitUntilMessageLoaded () {
-    cy.getByDT('conversationWrapper').within(() => {
-      cy.get('.infinite-status-prompt:first-child')
-        .invoke('attr', 'style')
-        .should('include', 'display: none')
-    })
-    cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
   }
 
   function switchChannel (channelName) {
@@ -57,7 +48,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
     cy.getByDT('channelName').should('contain', channelName)
 
-    waitUntilMessageLoaded()
+    cy.giWaitUntilMessagesLoaded()
   }
 
   function sendMessage (message) {
@@ -186,7 +177,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     switchUser(user1)
     cy.giRedirectToGroupChat()
 
-    waitUntilMessageLoaded()
+    cy.giWaitUntilMessagesLoaded()
 
     cy.getByDT('conversationWrapper').scrollTo(0)
 
@@ -195,7 +186,7 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
       cy.get('.c-message:nth-child(2) .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
     })
 
-    waitUntilMessageLoaded()
+    cy.giWaitUntilMessagesLoaded()
 
     cy.giLogout()
   })

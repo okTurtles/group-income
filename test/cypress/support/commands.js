@@ -438,3 +438,13 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
   })
   cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
 })
+
+Cypress.Commands.add('giWaitUntilMessagesLoaded', () => {
+  cy.getByDT('conversationWrapper').within(() => {
+    cy.get('.infinite-status-prompt:first-child').should('exist')
+    cy.get('.infinite-status-prompt:first-child')
+      .invoke('attr', 'style')
+      .should('include', 'display: none')
+  })
+  cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+})
