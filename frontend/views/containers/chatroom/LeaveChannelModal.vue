@@ -70,19 +70,13 @@ export default ({
     },
     async submit () {
       try {
-        const postpublish = this.isChannelCreator
-          ? (msg) => {
-              // TODO: archive channel
-            }
-          : undefined
         await sbp('gi.actions/group/leaveChatRoom', {
           contractID: this.currentGroupId,
           data: {
             chatRoomID: this.currentChatRoomId,
             member: this.loggedIn.username,
             leavingGroup: false
-          },
-          hooks: { postpublish }
+          }
         })
       } catch (e) {
         console.error('LeaveChannelModal submit() error:', e)

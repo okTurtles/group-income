@@ -1172,8 +1172,8 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/leaveChatRoom': {
       validate: objectOf({
         chatRoomID: string,
-        member: string,
-        leavingGroup: boolean // if kicker exists, it means group leaving
+        member: string, // NOTE: user to leave
+        leavingGroup: boolean // NOTE: leaving all the chatrooms of the group by leaving the group
       }),
       process ({ data, meta }, { state }) {
         Vue.set(state.chatRooms[data.chatRoomID], 'users',
