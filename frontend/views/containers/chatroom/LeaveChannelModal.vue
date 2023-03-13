@@ -70,6 +70,8 @@ export default ({
     },
     async submit () {
       try {
+        // NOTE: if creator leaves channel, the channel should be archived
+        // in other words, if creator is not part of the channel, it means archived
         await sbp('gi.actions/group/leaveChatRoom', {
           contractID: this.currentGroupId,
           data: {
