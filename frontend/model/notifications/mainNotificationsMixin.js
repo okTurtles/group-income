@@ -3,11 +3,15 @@
 import sbp from '@sbp/sbp'
 import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
 import { compareISOTimestamps, comparePeriodStamps, dateToPeriodStamp, DAYS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
-import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
+import { STATUS_OPEN, PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
 
 // util functions
-const myNotificationHas = checkFunc => {
-  return sbp('state/vuex/getters').currentNotifications.some(item => checkFunc(item))
+const myNotificationHas = (checkFunc, groupId = '') => {
+  const myNotifications = groupId
+    ? sbp('state/vuex/getters').notificationsByGroup(groupId)
+    : sbp('state/vuex/getters').currentNotifications
+
+  return myNotifications.some(item => checkFunc(item))
 }
 
 /*
@@ -47,7 +51,7 @@ const oneTimeNotificationEntries = [
     name: 'INCOME_DETAILS_OLD',
     emitCondition ({ rootGetters }) {
       const { incomeDetailsLastUpdatedDate } = (rootGetters.ourGroupProfile || {})
-      const now = new Date().toISOString()
+      const now = dateToPeriodStamp(new Date())
 
       return incomeDetailsLastUpdatedDate &&
         compareISOTimestamps(now, incomeDetailsLastUpdatedDate) > 6 * MONTHS_MILLIS &&
@@ -73,7 +77,7 @@ const periodicNotificationEntries = [
         if (!currentPeriod) { return false }
 
         const nextPeriod = rootGetters.periodAfterPeriod(currentPeriod)
-        const now = new Date().toISOString()
+        const now = dateToPeriodStamp(new Date())
         const comparison = comparePeriodStamps(nextPeriod, now)
 
         return rootGetters.ourGroupProfile?.incomeDetailsType === 'pledgeAmount' &&
@@ -116,7 +120,7 @@ const periodicNotificationEntries = [
         })
       },
       shouldClearStateKey ({ rootGetters }) {
-        return comparePeriodStamps(new Date().toISOString(), rootGetters.groupSettings.distributionDate) > 0
+        return comparePeriodStamps(dateToPeriodStamp(new Date()), rootGetters.groupSettings.distributionDate) > 0
       }
     }
   },
@@ -128,34 +132,62 @@ const periodicNotificationEntries = [
         this.expiringProposalsByGroup = rootGetters.groupsByName.map(group => {
           const { contractID } = group
           const expiringProposals = []
+          const groupNotificationItems = []
           const groupProposals = rootGetters.groupProposals(contractID) || {}
           for (const proposalId in groupProposals) {
             const proposal = groupProposals[proposalId]
             if (proposal.status === STATUS_OPEN &&
-              !proposal.notifiedBeforeExpire &&
               proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS)) {
-              expiringProposals.push({
-                proposalId,
-                proposalType: proposal.data.proposalType,
-                proposalData: proposal.data.proposalData,
-                expires_date_ms: proposal.data.expires_date_ms,
-                createdDate: proposal.meta.createdDate,
-                creator: proposal.meta.username
-              })
+              if (!proposal.notifiedBeforeExpire) {
+                expiringProposals.push({
+                  proposalId,
+                  proposalType: proposal.data.proposalType,
+                  proposalData: proposal.data.proposalData,
+                  expires_date_ms: proposal.data.expires_date_ms,
+                  createdDate: proposal.meta.createdDate,
+                  creator: proposal.meta.username
+                })
+              }
+
+              if (!Object.keys(proposal.votes).includes(rootGetters.ourUsername) && // check if the user hasn't voted for this proposal.
+                !myNotificationHas(item => item.type === 'PROPOSAL_EXPIRING' && item.data.proposalId === proposalId, contractID) // the user hasn't received the notification.
+              ) {
+                groupNotificationItems.push({
+                  proposalId,
+                  creator: proposal.meta.username,
+                  proposalType: proposal.data.proposalType,
+                  proposalData: proposal.data.proposalData
+                })
+              }
             }
           }
 
-          return { contractID, proposals: expiringProposals }
-        }).filter(entry => entry.proposals.length)
+          return { contractID, proposals: expiringProposals, groupNotificationItems }
+        }).filter(entry => entry.proposals.length || entry.groupNotificationItems.length)
 
         return this.expiringProposalsByGroup.length
       },
       async emit () {
-        for (const { contractID, proposals } of this.expiringProposalsByGroup) {
-          await sbp('gi.actions/group/notifyExpiringProposals', {
-            contractID,
-            data: { proposals }
-          })
+        for (const { contractID, proposals, groupNotificationItems } of this.expiringProposalsByGroup) {
+          if (proposals.length) {
+            await sbp('gi.actions/group/notifyExpiringProposals', {
+              contractID,
+              data: { proposals }
+            })
+          }
+
+          if (groupNotificationItems.length) {
+            groupNotificationItems.forEach(proposal => {
+              sbp('gi.notifications/emit', 'PROPOSAL_EXPIRING', {
+                createdDate: new Date().toISOString(),
+                groupID: contractID,
+                creator: proposal.creator,
+                proposalId: proposal.proposalId,
+                proposalType: proposal.proposalType,
+                title: proposal.proposalType === PROPOSAL_GENERIC ? proposal.proposalData.name : ''
+              })
+            })
+          }
         }
       },
       shouldClearStateKey: () => true
