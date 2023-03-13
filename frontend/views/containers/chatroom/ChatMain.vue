@@ -95,8 +95,9 @@
     )
     view-area(
       v-else
-      :joined='summary.joined'
       :title='summary.title'
+      :joined='summary.joined'
+      :archived='summary.archived'
     )
 </template>
 

@@ -35,24 +35,12 @@ export default ({
     Avatar
   },
   props: {
-    members: {
-      type: Number
-    },
-    joined: {
-      type: Boolean
-    },
-    creator: {
-      type: String
-    },
-    type: {
-      type: String
-    },
-    name: {
-      type: String
-    },
-    description: {
-      type: String
-    }
+    members: Number,
+    joined: Boolean,
+    creator: String,
+    type: String,
+    name: String,
+    description: String
   },
   computed: {
     ...mapGetters(['ourUsername', 'isDirectMessage']),
