@@ -477,7 +477,7 @@ export default ({
       }
 
       if (!isLoadedFromStorage) {
-        // NOTE: already rendered in setInitMessages and above in this function
+        // NOTE: already rendered above in this function
         await this.rerenderEvents(events, refresh)
       }
 
