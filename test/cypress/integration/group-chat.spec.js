@@ -351,19 +351,20 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     })
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
 
-    // Change from group2 to group1 group chat page
+    // Switch from group2 to group1 on the group chat page
     cy.getByDT('groupsList').find('li:first-child button').click()
+    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, user2)
     switchChannel(channelsOf2For1[0])
 
-    // Change from group1 to group2 group chat page
+    // Switch from group1 to group2 on the group chat page
     cy.getByDT('groupsList').find('li:nth-child(2) button').click()
+    cy.giWaitUntilMessagesLoaded()
     cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    cy.giWaitUntilMessagesLoaded()
 
-    // Change from group2 to group1 group chat page
+    // Switch from group2 to group1 on the group chat page
     cy.getByDT('groupsList').find('li:first-child button').click()
-    cy.getByDT('channelName').should('contain', channelsOf2For1[0])
     cy.giWaitUntilMessagesLoaded()
+    cy.getByDT('channelName').should('contain', channelsOf2For1[0])
   })
 
   it('user1 kicks user2 from a channel and user2 leaves a channel by himself', () => {
