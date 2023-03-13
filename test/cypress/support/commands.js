@@ -442,7 +442,7 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
 Cypress.Commands.add('giCheckIfJoinedChatroom', (
   channelName, me, inviter, invitee
 ) => {
-  // Attention: need to check just after joined, not after making other activities
+  // NOTE: need to check just after joined, not after making other activities
   inviter = inviter || me
   invitee = invitee || me
   const selfJoin = inviter === invitee
