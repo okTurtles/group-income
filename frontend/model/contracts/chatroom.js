@@ -315,13 +315,16 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/addMessage': {
       validate: messageType,
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash, id }, { state }) {
         if (!state.onlyRenderMessage) {
           return
         }
-        const pendingMsg = state.messages.find(msg => msg.id === hash && msg.pending)
+        // NOTE: id(GIMessage.id()) should be used as identifier for GIMessages, but not hash(GIMessage.hash())
+        //       https://github.com/okTurtles/group-income/issues/1503
+        const pendingMsg = state.messages.find(msg => msg.giMsgID === id && msg.pending)
         if (pendingMsg) {
           delete pendingMsg.pending
+          delete pendingMsg.giMsgID
         } else {
           state.messages.push(createMessage({ meta, data, hash, state }))
         }

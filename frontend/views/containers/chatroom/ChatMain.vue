@@ -292,7 +292,8 @@ export default ({
               ...createMessage({ meta, data, hash: message.hash() }),
               // TODO: pending is useful to turn the message gray meaning failed (just like Slack)
               // when we don't get event after a certain period
-              pending: true
+              pending: true, // NOTE: do not RENAME this as it's being used inside the contract
+              giMsgID: message.id() // NOTE: do not RENAME this as it's being used inside the contract
             })
             this.stopReplying()
             this.updateScroll()

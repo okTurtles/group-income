@@ -169,6 +169,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object) {
     const [opT, opV] = message.op()
     const hash = message.hash()
+    const id = message.id()
     const contractID = message.contractID()
     const manifestHash = message.manifest()
     const config = this.config
@@ -192,7 +193,7 @@ export default (sbp('sbp/selectors/register', {
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
-          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, contractID }, state)
+          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, id, contractID }, state)
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
