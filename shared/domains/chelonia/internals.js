@@ -157,7 +157,7 @@ export default (sbp('sbp/selectors/register', {
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
           const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op(), entry.manifest())
+          entry = GIMessage.assign(entry, { previousHEAD })
         }
       } else {
         const message = (await r.json())?.message

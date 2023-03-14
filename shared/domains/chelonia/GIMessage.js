@@ -63,12 +63,11 @@ export class GIMessage {
   // GIMessage.assign is necessary when make an GIMessage object having the same identity id()
   // https://github.com/okTurtles/group-income/issues/1503
   static assign (
-    stringifiedTarget: string,
+    target: GIMessage,
     sources: Object, // TODO: type check is needed
     signatureFn?: Function = defaultSignatureFn
   ): this {
-    const { _message } = this.deserialize(stringifiedTarget)
-    const message = Object.assign(_message, sources)
+    const message = Object.assign({}, target.message(), sources)
     return generateGIMessage(message, signatureFn)
   }
 
