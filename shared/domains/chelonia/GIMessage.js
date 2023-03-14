@@ -57,16 +57,19 @@ export class GIMessage {
       // and makes it easier to prevent conflicts during development
       nonce: Math.random()
     }
-    return this.generate(message, signatureFn)
+    return generateGIMessage(message, signatureFn)
   }
 
+  // GIMessage.assign is necessary when make an GIMessage object having the same identity id()
+  // https://github.com/okTurtles/group-income/issues/1503
   static assign (
     stringifiedTarget: string,
     sources: Object, // TODO: type check is needed
     signatureFn?: Function = defaultSignatureFn
   ): this {
     const { _message } = this.deserialize(stringifiedTarget)
-    return this.generate(Object.assign(_message, sources), signatureFn)
+    const message = Object.assign(_message, sources)
+    return generateGIMessage(message, signatureFn)
   }
 
   // TODO: we need signature verification upon decryption somewhere...
@@ -75,22 +78,6 @@ export class GIMessage {
     return new this({
       mapping: { key: blake32Hash(value), value },
       message: JSON.parse(JSON.parse(value).message)
-    })
-  }
-
-  static generate (message: Object, signatureFn: Function): this {
-    // NOTE: the JSON strings generated here must be preserved forever.
-    //       do not ever regenerate this message using the contructor.
-    //       instead store it using serialize() and restore it using
-    //       deserialize().
-    const messageJSON = JSON.stringify(message)
-    const value = JSON.stringify({
-      message: messageJSON,
-      sig: signatureFn(messageJSON)
-    })
-    return new this({
-      mapping: { key: blake32Hash(value), value },
-      message
     })
   }
 
@@ -156,6 +143,17 @@ export class GIMessage {
   serialize (): string { return this._mapping.value }
 
   hash (): string { return this._mapping.key }
+
+  id (): string {
+    const data: string = JSON.stringify({
+      contractID: this.contractID(),
+      op: this.op(),
+      manifest: this.manifest(),
+      nonce: this._message.nonce
+    })
+
+    return blake32Hash(data)
+  }
 }
 
 function defaultSignatureFn (data: string) {
@@ -163,4 +161,20 @@ function defaultSignatureFn (data: string) {
     type: 'default',
     sig: blake32Hash(data)
   }
+}
+
+function generateGIMessage (message: Object, signatureFn: Function): GIMessage {
+  // NOTE: the JSON strings generated here must be preserved forever.
+  //       do not ever regenerate this message using the contructor.
+  //       instead store it using serialize() and restore it using
+  //       deserialize().
+  const messageJSON = JSON.stringify(message)
+  const value = JSON.stringify({
+    message: messageJSON,
+    sig: signatureFn(messageJSON)
+  })
+  return new GIMessage({
+    mapping: { key: blake32Hash(value), value },
+    message
+  })
 }
