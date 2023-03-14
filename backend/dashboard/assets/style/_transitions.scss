@@ -19,12 +19,12 @@
 .slide-left-leave-to {
   transform: translate3d(100%, 0, 0);
 
-  @include desktop {
+  @include tablet {
     transform: none;
   }
 }
 
-@include desktop {
+@include tablet {
   .slide-left-enter {
     animation: zoom 0.3s;
   }

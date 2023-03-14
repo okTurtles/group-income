@@ -1,7 +1,5 @@
 <template lang="pug">
-modal-template
-  template(#title='')
-    i18n Contract manifest
+modal-template(:title='L("Contract manifest")' icon='suitcase')
 
   i18n(tag='p') This is a random content...
   p {{ contract.type }}

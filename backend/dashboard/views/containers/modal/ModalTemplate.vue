@@ -9,12 +9,19 @@
 
   transition(name='slide-left' appear @after-leave='onLeaveEnd')
     .c-modal-content(v-if='isActive')
-      header.c-modal-header(v-if='$scopedSlots.title')
-        h1.is-title-2
-          slot(name='title')
+      header.c-modal-header
+        template(v-if='title')
+          i(:class='`icon-${icon} c-icon`')
+          h1.is-title-2 {{ title }}
+
+        button.is-icon.c-close-btn(@click='close')
+          i.icon-close
 
       section.c-modal-body
         slot
+
+      footer.c-modal-footer
+        i18n.c-dismiss-btn(tag='button' @click='close') Close
 </template>
 
 <script>
@@ -23,6 +30,14 @@ import { CLOSE_MODAL } from '@view-utils/events.js'
 
 export default {
   name: 'ModalTemplate',
+  props: {
+    title: String,
+    icon: {
+      type: String,
+      required: false,
+      default: 'info'
+    }
+  },
   data () {
     return {
       isActive: true
@@ -55,38 +70,90 @@ export default {
   align-items: center;
   max-width: 100vw;
   overflow: auto;
-}
 
-.c-modal-background {
-  display: none;
+  &-background {
+    display: none;
 
-  @include desktop {
-    position: fixed;
-    display: block;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: rgba(10, 10, 10, 0.86);
+    @include tablet {
+      position: fixed;
+      display: block;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(10, 10, 10, 0.86);
+    }
   }
-}
 
-.c-modal-content {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  width: 100%;
-  height: 100%;
-  margin: 0 auto;
-  background: $background_0;
+  &-content {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+    margin: 0 auto;
+    background: $background_0;
 
-  @include desktop {
+    @include tablet {
+      position: relative;
+      border-radius: 0.375rem;
+      width: 46rem;
+      max-width: calc(100vw - 4rem);
+      height: auto;
+      margin: auto;
+    }
+  }
+
+  &-header {
     position: relative;
-    border-radius: 0.375rem;
-    max-width: 40rem;
-    height: auto;
-    margin: auto;
+    display: flex;
+    align-items: center;
+    padding: 0 1.25rem;
+    height: 4.25rem;
+    border-bottom: 1px solid $border;
   }
+
+  &-body {
+    padding: 1.25rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    word-break: break-word;
+    min-height: 10.25rem;
+    flex-grow: 1;
+
+    @include desktop {
+      max-height: 18.75rem;
+    }
+  }
+
+  &-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 4.25rem;
+    padding: 0 1.25rem;
+    background-color: $background_active;
+  }
+}
+
+.c-icon {
+  display: inline-block;
+  margin-top: 2px;
+  margin-right: 0.5rem;
+  font: {
+    size: 1.75rem;
+    weight: 600;
+  }
+}
+
+.c-close-btn {
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  width: 2.25rem;
+  height: 2.25rem;
 }
 </style>
