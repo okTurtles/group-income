@@ -15,30 +15,58 @@ div(:class='isReady ? "" : "c-ready"')
 </template>
 
 <script>
-import { humanDate } from '@model/contracts/shared/time.js'
+import { mapGetters } from 'vuex'
+import { humanDate, compareISOTimestamps, dateFromPeriodStamp } from '@model/contracts/shared/time.js'
+import { MAX_HISTORY_PERIODS } from '@model/contracts/shared/constants.js'
+import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import BarGraph from '@components/graphs/BarGraph.vue'
 
 export default ({
-  name: 'GroupSupportHistory',
+  name: 'GroupTodoHistory',
   data () {
     return {
       isReady: false,
       history: []
     }
   },
+  mixins: [PaymentsMixin],
   components: {
     BarGraph
   },
+  computed: {
+    ...mapGetters([
+      'currentPaymentPeriod',
+      'periodStampGivenDate',
+      'periodBeforePeriod',
+      'groupCreatedDate'
+    ]),
+    firstDistributionPeriod () {
+      // group's first distribution period
+      return this.periodStampGivenDate(this.groupCreatedDate)
+    }
+  },
   created () {
-    // Todo replace history with real data
-    const testNumber = 6
-    for (let i = testNumber; i > 0; i--) {
-      const date = new Date()
-      date.setMonth(date.getMonth() - i)
-      this.history.push({
-        total: 1 / testNumber * (testNumber - i + 1),
-        title: humanDate(date, { month: 'long' })
-      })
+    this.initHistory()
+  },
+  methods: {
+    async initHistory () {
+      let period = this.currentPaymentPeriod
+
+      for (let i = 0; i < MAX_HISTORY_PERIODS; i++) {
+        period = this.periodBeforePeriod(period)
+        if (compareISOTimestamps(period, this.firstDistributionPeriod) < 0) break
+
+        const paymentDetails = await this.getPaymentDetailsByPeriod(period)
+        const { lastAdjustedDistribution } = await this.getPeriodPayment(period)
+        const getLen = obj => Object.keys(obj).length
+        const done = getLen(paymentDetails)
+        const missed = getLen(lastAdjustedDistribution || {})
+
+        this.history.unshift({
+          total: done === 0 ? 0 : done / (done + missed),
+          title: humanDate(dateFromPeriodStamp(period), { month: 'long' })
+        })
+      }
     }
   }
 }: Object)

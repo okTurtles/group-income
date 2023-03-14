@@ -58,6 +58,10 @@ export default ({
 .bar-graph {
   width: 100%;
 
+  @include tablet {
+    max-width: 7.5rem;
+  }
+
   &-container {
     display: flex;
     margin: 1.5rem 0 1rem 0;

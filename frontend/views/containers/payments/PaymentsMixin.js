@@ -55,7 +55,7 @@ const PaymentsMixin: Object = {
       let detailedPayments = {}
       if (Object.keys(this.groupPeriodPayments).includes(period)) {
         const paymentHashes = this.paymentHashesForPeriod(period) || []
-        detailedPayments = paymentHashes.map(hash => this.currentGroupState.payments[hash])
+        detailedPayments = Object.fromEntries(paymentHashes.map(hash => [hash, this.currentGroupState.payments[hash]]))
       } else {
         const paymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
         const paymentsByPeriod = await sbp('gi.db/archive/load', paymentsByPeriodKey) || {}
@@ -84,6 +84,44 @@ const PaymentsMixin: Object = {
       const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
       const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
       return payments[hash]
+    },
+    async getHaveNeedsSnapshotByPeriod (period: string) {
+      if (Object.keys(this.groupPeriodPayments).includes(period)) {
+        return this.groupPeriodPayments[period].haveNeedsSnapshot || []
+      }
+
+      const paymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
+      const paymentsByPeriod = await sbp('gi.db/archive/load', paymentsByPeriodKey) || {}
+      return Object.keys(paymentsByPeriod).includes(period)
+        ? paymentsByPeriod[period].haveNeedsSnapshot || []
+        : []
+    },
+    async getTotalTodoAmountForPeriod (period: string) {
+      const haveNeeds = await this.getHaveNeedsSnapshotByPeriod(period)
+      let total = 0
+
+      for (const { haveNeed } of haveNeeds) {
+        if (haveNeed < 0) { total += -1 * haveNeed }
+      }
+      return total
+    },
+    async getTotalPledgesDoneForPeriod (period: string) {
+      const payments = await this.getPaymentsByPeriod(period)
+      let total = 0
+
+      for (const { amount } of payments) {
+        total += amount
+      }
+      return total
+    },
+    async getPeriodPayment (period: string) {
+      if (Object.keys(this.groupPeriodPayments).includes(period)) {
+        return this.groupPeriodPayments[period] || {}
+      }
+
+      const archPaymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
+      const archPaymentsByPeriod = await sbp('gi.db/archive/load', archPaymentsByPeriodKey) || {}
+      return archPaymentsByPeriod[period] || {}
     }
   }
 }

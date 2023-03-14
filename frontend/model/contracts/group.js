@@ -123,8 +123,8 @@ function updateAdjustedDistribution ({ period, getters }) {
   if (payments && payments.haveNeedsSnapshot) {
     const minimize = getters.groupSettings.minimizeDistribution
 
-    // We call updateLastLoggedIn in this else clause, instead of outside of it because
-    // in the `if` above, updateLastLoggedIn will get called by 'gi.actions/group/switch'
+    // IMPORTANT! This code must be kept in sync with updateAdjustedDistribution!
+    // TODO: see if it's possible to DRY this with the code inside of updateAdjustedDistribution
     payments.lastAdjustedDistribution = adjustedDistribution({
       distribution: unadjustedDistribution({ haveNeeds: payments.haveNeedsSnapshot, minimize }),
       payments: getters.paymentsForPeriod(period),
@@ -287,6 +287,10 @@ sbp('chelonia/defineContract', {
         }
       }
       return profiles
+    },
+    groupCreatedDate (state, getters) {
+      const creator = getters.groupSettings.groupCreator
+      return getters.groupProfile(creator).joinedDate
     },
     groupMincomeAmount (state, getters) {
       return getters.groupSettings.mincomeAmount
