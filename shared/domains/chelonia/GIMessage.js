@@ -57,6 +57,28 @@ export class GIMessage {
       // and makes it easier to prevent conflicts during development
       nonce: Math.random()
     }
+    return this.generate(message, signatureFn)
+  }
+
+  static assign (
+    stringifiedTarget: string,
+    sources: Object, // TODO: type check is needed
+    signatureFn?: Function = defaultSignatureFn
+  ): this {
+    const { _message } = this.deserialize(stringifiedTarget)
+    return this.generate(Object.assign(_message, sources), signatureFn)
+  }
+
+  // TODO: we need signature verification upon decryption somewhere...
+  static deserialize (value: string): this {
+    if (!value) throw new Error(`deserialize bad value: ${value}`)
+    return new this({
+      mapping: { key: blake32Hash(value), value },
+      message: JSON.parse(JSON.parse(value).message)
+    })
+  }
+
+  static generate (message: Object, signatureFn: Function): this {
     // NOTE: the JSON strings generated here must be preserved forever.
     //       do not ever regenerate this message using the contructor.
     //       instead store it using serialize() and restore it using
@@ -69,15 +91,6 @@ export class GIMessage {
     return new this({
       mapping: { key: blake32Hash(value), value },
       message
-    })
-  }
-
-  // TODO: we need signature verification upon decryption somewhere...
-  static deserialize (value: string): this {
-    if (!value) throw new Error(`deserialize bad value: ${value}`)
-    return new this({
-      mapping: { key: blake32Hash(value), value },
-      message: JSON.parse(JSON.parse(value).message)
     })
   }
 
