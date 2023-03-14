@@ -57,7 +57,19 @@ export class GIMessage {
       // and makes it easier to prevent conflicts during development
       nonce: Math.random()
     }
-    return generateGIMessage(message, signatureFn)
+    // NOTE: the JSON strings generated here must be preserved forever.
+    //       do not ever regenerate this message using the contructor.
+    //       instead store it using serialize() and restore it using
+    //       deserialize().
+    const messageJSON = JSON.stringify(message)
+    const value = JSON.stringify({
+      message: messageJSON,
+      sig: signatureFn(messageJSON)
+    })
+    return new this({
+      mapping: { key: blake32Hash(value), value },
+      message
+    })
   }
 
   // GIMessage.assign is necessary when make an GIMessage object having the same identity id()
@@ -68,7 +80,17 @@ export class GIMessage {
     signatureFn?: Function = defaultSignatureFn
   ): this {
     const message = Object.assign({}, target.message(), sources)
-    return generateGIMessage(message, signatureFn)
+    // NOTE: same process to create GIMessage as the above function createV1_0.
+    //       it breaks the DRY principle, but not necessary to create more static function.
+    const messageJSON = JSON.stringify(message)
+    const value = JSON.stringify({
+      message: messageJSON,
+      sig: signatureFn(messageJSON)
+    })
+    return new this({
+      mapping: { key: blake32Hash(value), value },
+      message
+    })
   }
 
   // TODO: we need signature verification upon decryption somewhere...
@@ -160,20 +182,4 @@ function defaultSignatureFn (data: string) {
     type: 'default',
     sig: blake32Hash(data)
   }
-}
-
-function generateGIMessage (message: Object, signatureFn: Function): GIMessage {
-  // NOTE: the JSON strings generated here must be preserved forever.
-  //       do not ever regenerate this message using the contructor.
-  //       instead store it using serialize() and restore it using
-  //       deserialize().
-  const messageJSON = JSON.stringify(message)
-  const value = JSON.stringify({
-    message: messageJSON,
-    sig: signatureFn(messageJSON)
-  })
-  return new GIMessage({
-    mapping: { key: blake32Hash(value), value },
-    message
-  })
 }
