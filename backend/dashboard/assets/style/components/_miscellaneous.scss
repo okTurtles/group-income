@@ -53,3 +53,15 @@
     > * { display: inline-block; }
   }
 }
+
+.custom-pre {
+  position: relative;
+  background-color: $primary_purple;
+  color: $text_black;
+  border-radius: 0.2rem;
+  border: 1px solid $border;
+  font-size: $size_6;
+  line-height: 1.2;
+  padding: 0.6rem;
+  white-space: pre-wrap;
+}

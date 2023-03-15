@@ -12,7 +12,7 @@
       header.c-modal-header
         template(v-if='title')
           i(:class='`icon-${icon} c-icon`')
-          h1.is-title-2 {{ title }}
+          h1.is-title-2.c-title {{ title }}
 
         button.is-icon.c-close-btn(@click='close')
           i.icon-close
@@ -110,6 +110,7 @@ export default {
     display: flex;
     align-items: center;
     padding: 0 1.25rem;
+    padding-right: 3.75rem;
     height: 4.25rem;
     border-bottom: 1px solid $border;
   }
@@ -137,6 +138,14 @@ export default {
   }
 }
 
+.c-title {
+  line-height: 1.1;
+
+  @include phone_narrow {
+    font-size: $size_3;
+  }
+}
+
 .c-icon {
   display: inline-block;
   margin-top: 2px;
@@ -144,6 +153,11 @@ export default {
   font: {
     size: 1.75rem;
     weight: 600;
+  }
+
+  @include phone_narrow {
+    font-size: 1.5rem;
+    margin-right: 0.25rem;
   }
 }
 
@@ -155,5 +169,10 @@ export default {
   border-radius: 50%;
   width: 2.25rem;
   height: 2.25rem;
+}
+
+.c-dismiss-btn {
+  background-color: $secondary_blue_0;
+  color: $text_black;
 }
 </style>
