@@ -30,7 +30,7 @@
         i18n.pill.is-neutral Manual
 
     template(slot='cellActions')
-      .cpr-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{ humanDate(payment.date) }}
+      .cpr-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{ humanDateTime(payment.date) }}
       payment-actions-menu
         menu-item(
           tag='button'
@@ -86,7 +86,15 @@ export default ({
     }
   },
   methods: {
-    humanDate,
+    humanDateTime (dateTime) {
+      return humanDate(dateTime, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      })
+    },
     // TODO: make multiple payments
     async cancelPayment () {
       try {

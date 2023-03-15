@@ -14,10 +14,10 @@ export default ({
     ...mapGetters([
       'groupSettings',
       'currentPaymentPeriod',
-      'dueDateForPeriod'
+      'periodAfterPeriod'
     ]),
     nextDistributionDateShort () {
-      const nextDisDate = this.dueDateForPeriod(this.currentPaymentPeriod)
+      const nextDisDate = this.periodAfterPeriod(this.currentPaymentPeriod)
 
       return humanDate(nextDisDate, { month: 'short', day: 'numeric' })
     }

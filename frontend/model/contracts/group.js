@@ -345,7 +345,7 @@ sbp('chelonia/defineContract', {
         return dateToPeriodStamp(
           addTimeToDate(
             dateFromPeriodStamp(getters.periodAfterPeriod(periodStamp)),
-            -DAYS_MILLIS
+            -1
           )
         )
       }
