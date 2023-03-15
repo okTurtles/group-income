@@ -20,6 +20,7 @@ if (!fs.existsSync(dataFolder)) {
   fs.mkdirSync(dataFolder, { mode: 0o750 })
 }
 
+const persistence = process.env.GI_PERSIST
 const production = process.env.NODE_ENV === 'production'
 
 export default (sbp('sbp/selectors/register', {
@@ -172,6 +173,51 @@ export default (sbp('sbp/selectors/register', {
   }
 }): any)
 
+if (persistence === 'fs') {
+  sbp('sbp/selectors/register', {
+    'backend/db/readString': async function (key: string): Promise<string | null> {
+      const bufferOrError = await sbp('backend/db/readFile', key)
+      if (Boom.isBoom(bufferOrError)) {
+        return null
+      }
+      return bufferOrError.toString('utf8')
+    },
+    'backend/db/writeString': async function (key: string, value: string): Promise<void> {
+      // eslint-disable-next-line no-useless-catch
+      try {
+        return await sbp('backend/db/writeFile', key, value)
+      } catch (err) {
+        throw err
+      }
+    }
+  })
+} else if (persistence === 'sqlite') {
+  sbp('sbp/selectors/register', {
+    'backend/db/readString': function (key: string): Promise<string> {
+      return new Promise((resolve, reject) => {
+        db.get('SELECT value FROM Strings WHERE key = ?', [key], (err, row) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve(row?.value)
+          }
+        })
+      })
+    },
+    'backend/db/writeString': function (key, value) {
+      return new Promise((resolve, reject) => {
+        db.run('REPLACE INTO Strings(key, value) VALUES(?, ?)', [key, value], (err) => {
+          if (err) {
+            reject(err)
+          } else {
+            resolve()
+          }
+        })
+      })
+    }
+  })
+}
+
 function namespaceKey (name: string): string {
   return 'name=' + name
 }
@@ -184,6 +230,31 @@ function throwIfFileOutsideDataDir (filename: string): string {
   return filepath
 }
 
+let db: any = null
+
+if (persistence === 'sqlite') {
+  const filename = './data/groupincome.db'
+  const sqlite3 = require('sqlite3')
+
+  db = new sqlite3.Database(filename, (err) => {
+    if (err) {
+      return console.error(err.message)
+    }
+    console.log('Connected to the %s SQlite database.', filename)
+  })
+  ;(async function () {
+    await new Promise((resolve, reject) => {
+      db.run('CREATE TABLE IF NOT EXISTS Strings(key TEXT UNIQUE NOT NULL, value TEXT NOT NULL)', [], (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
+    })
+  })()
+}
+
 if (production || process.env.GI_PERSIST) {
   // https://github.com/isaacs/node-lru-cache#usage
   const cache = new LRU({
@@ -191,27 +262,20 @@ if (production || process.env.GI_PERSIST) {
   })
 
   sbp('sbp/selectors/overwrite', {
-    // we cannot simply map this to readFile, because 'chelonia/db/getEntry'
-    // calls this and expects a string, not a Buffer
-    // 'chelonia/db/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
-    'chelonia/db/get': async function (filename: string) {
-      const lookupValue = cache.get(filename)
+    'chelonia/db/get': async function (key: string) {
+      const lookupValue = cache.get(key)
       if (lookupValue !== undefined) {
         return lookupValue
       }
-      const bufferOrError = await sbp('backend/db/readFile', filename)
-      if (Boom.isBoom(bufferOrError)) {
-        return null
-      }
-      const value = bufferOrError.toString('utf8')
-      cache.set(filename, value)
+      const value = await sbp('backend/db/readString', key)
+      cache.set(key, value)
       return value
     },
-    'chelonia/db/set': async function (filename: string, data: any): Promise<*> {
+    'chelonia/db/set': async function (key: string, value: any): Promise<*> {
       // eslint-disable-next-line no-useless-catch
       try {
-        const result = await sbp('backend/db/writeFile', filename, data)
-        cache.set(filename, data)
+        const result = await sbp('backend/db/writeString', key, value)
+        cache.set(key, value)
         return result
       } catch (err) {
         throw err

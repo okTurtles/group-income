@@ -127,7 +127,7 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 3 } = {}) {
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}) {
     const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay

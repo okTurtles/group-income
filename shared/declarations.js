@@ -42,6 +42,7 @@ declare module 'form-data' { declare module.exports: any }
 declare module 'localforage' { declare module.exports: any }
 declare module 'multihashes' { declare module.exports: any }
 declare module 'scrypt-async' { declare module.exports: any }
+declare module 'sqlite3' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
 declare module 'tweetnacl-util' { declare module.exports: any }
 declare module 'vue' { declare module.exports: any }
