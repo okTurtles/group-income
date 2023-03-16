@@ -28,7 +28,12 @@ $colors_map: (
   button-outline-bg-color: (rgba(0, 0, 0, 0), rgba(0, 0, 0, 0)),
   button-outline-text-color: (#1c1c1c, #fff),
   button-box-shadow: (0 0 16px rgba(219, 219, 219, 0.5), 0 0 16px rgba(132, 132, 132, 0.45)),
-  button-box-shadow-small: (0 0 10px rgba(182, 182, 182, 0.65), 0 0 10px rgba(132, 132, 132, 0.325)),
+  button-box-shadow-small: (0 0 7px rgba(182, 182, 182, 0.5), 0 0 7px rgba(132, 132, 132, 0.325)),
+  summary-list-bg-color: (#f7f9fb, #2a2a2a),
+  custom-pre-bg-color: (#f2f2f2, #1c1c1c),
+  custom-pre-text-color: (#1c1c1c, #f2f2f2),
+  custom-pre-border-color: (rgba(0, 0, 0, 0.1), rgb(65, 65, 65)),
+  modal-bg-color: (#fff, #2a2a2a),
   stat-card-icon-color: (var(--text_1), var(--text_black))
 );
 

@@ -1,7 +1,7 @@
 <template lang="pug">
 modal-template(:title='L("Contract manifest")' icon='suitcase')
   .c-contract-id-container
-    span.c-id-label ContractID :
+    span.c-id-label.has-family-poppins contractID :
     i.c-id-value {{ contract.contractId }}
 
   .c-code-demo-container
@@ -11,7 +11,7 @@ modal-template(:title='L("Contract manifest")' icon='suitcase')
 
     .c-code-demo-block
       .c-code-demo-label body
-      pre.custom-pre {{ content.body }}
+      pre.custom-pre {{ content.body }}}
 
     .c-code-demo-block
       .c-code-demo-label signature
@@ -68,7 +68,7 @@ export default {
     display: inline-block;
     margin-right: 0.4rem;
     font-weight: 600;
-    font-size: $size_4;
+    font-size: $size_5;
   }
 
   .c-id-value {
@@ -95,6 +95,8 @@ export default {
   display: block;
   font-weight: 600;
   font-size: $size_5;
+  font-family: "Poppins";
   margin-bottom: 0.4rem;
+  margin-left: 0.2rem;
 }
 </style>

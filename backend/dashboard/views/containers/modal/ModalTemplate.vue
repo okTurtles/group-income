@@ -21,7 +21,7 @@
         slot
 
       footer.c-modal-footer
-        i18n.c-dismiss-btn(tag='button' @click='close') Close
+        i18n.has-blue-background.c-dismiss-btn(tag='button' @click='close') Close
 </template>
 
 <script>
@@ -93,7 +93,7 @@ export default {
     width: 100%;
     height: 100%;
     margin: 0 auto;
-    background: $background_0;
+    background: var(--modal-bg-color);
 
     @include tablet {
       position: relative;
@@ -112,6 +112,7 @@ export default {
     padding: 0 1.25rem;
     padding-right: 3.75rem;
     height: 4.25rem;
+    flex-shrink: 0;
     border-bottom: 1px solid $border;
   }
 
@@ -124,7 +125,7 @@ export default {
     flex-grow: 1;
 
     @include desktop {
-      max-height: 18.75rem;
+      max-height: 26.75rem;
     }
   }
 
@@ -133,8 +134,9 @@ export default {
     align-items: center;
     justify-content: flex-end;
     height: 4.25rem;
+    flex-shrink: 0;
     padding: 0 1.25rem;
-    background-color: $background_active;
+    border-top: 1px solid $border;
   }
 }
 
@@ -169,10 +171,5 @@ export default {
   border-radius: 50%;
   width: 2.25rem;
   height: 2.25rem;
-}
-
-.c-dismiss-btn {
-  background-color: $secondary_blue_0;
-  color: $text_black;
 }
 </style>

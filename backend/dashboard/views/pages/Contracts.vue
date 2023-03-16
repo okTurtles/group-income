@@ -5,7 +5,7 @@ page-template.c-page-contracts
   dropdown.c-filter-menu(defaultItemId='all-contracts' :options='ephemeral.filterOptions' @select='onFilterSelect')
 
   .c-contracts-list-container
-    .summary-list.is-background-blue.c-contracts-list
+    .summary-list.c-contracts-list
       .c-table-wrapper
         table.table.c-contract-ids-table
           thead
@@ -102,7 +102,6 @@ export default {
   flex-direction: row;
   align-items: flex-start;
   max-width: max-content;
-  box-shadow: 0 0 16px rgba(219, 219, 219, 0.5);
 }
 
 .c-table-wrapper {
@@ -124,7 +123,7 @@ export default {
   position: sticky;
   left: 0;
   padding: 0 0.8rem 0 0.2rem;
-  background-color: $primary_blue;
+  background-color: var(--summary-list-bg-color);
 }
 
 .c-cell-contract-id {
@@ -183,21 +182,15 @@ export default {
 }
 
 button.c-view-btn {
-  background-color: $secondary_green_0;
-  border: 1px solid $secondary_green_1;
+  background-color: $secondary_blue_1;
+  border-color: rgba(0, 0, 0, 0);
   color: $text_black;
-  transition:
-    border-color 120ms linear,
-    box-shadow 200ms ease-out;
+  transition: box-shadow 200ms ease-out;
 
   &:hover,
-  &:focus {
-    box-shadow: var(--button-box-shadow-small);
-  }
-
   &:focus,
   &:active {
-    border: 1px solid $text_black;
+    box-shadow: var(--button-box-shadow-small);
   }
 }
 
