@@ -1,9 +1,7 @@
 <template lang='pug'>
 .c-view-wrapper
   p.c-view-label
-    i18n(
-      :args='{title: title, ...LTags("b")}'
-    ) You are viewing {b_} # {title}{_b}
+    span(v-safe-html='subTitle')
   .c-view-actions-wrapper
     button.button.is-small.is-outlined(
       @click='see'
@@ -11,6 +9,7 @@
     )
       i18n Channel Description
     button-submit.is-success.is-small(
+      v-if='!joined'
       @click='join'
       data-test='joinChannel'
     )
@@ -21,20 +20,25 @@
 import sbp from '@sbp/sbp'
 import { mapState, mapGetters } from 'vuex'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
+import { L, LTags } from '@common/common.js'
 
 export default ({
   name: 'ViewArea',
   components: {
     ButtonSubmit
   },
-  computed: {
-    ...mapState(['currentGroupId']),
-    ...mapGetters(['currentChatRoomId'])
-  },
   props: {
     title: String,
-    joined: Boolean,
-    archived: Boolean
+    joined: Boolean // false: not-yet-joined, true: joined-but-archived
+  },
+  computed: {
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['currentChatRoomId']),
+    subTitle () {
+      return this.joined
+        ? L('{b_} # {title}{_b} is archived', { title: this.title, ...LTags('b') })
+        : L('You are viewing {b_} # {title}{_b}', { title: this.title, ...LTags('b') })
+    }
   },
   methods: {
     join: async function () {

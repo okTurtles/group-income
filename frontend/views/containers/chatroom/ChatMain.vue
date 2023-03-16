@@ -81,8 +81,13 @@
         )
 
   .c-footer
+    view-area(
+      v-if='!summary.joined || summary.archived'
+      :title='summary.title'
+      :joined='summary.joined'
+    )
     send-area(
-      v-if='summary.joined'
+      v-else
       :loading='details.isLoading'
       :replying-message='ephemeral.replyingMessage'
       :replying-message-id='ephemeral.replyingMessageId'
@@ -92,12 +97,6 @@
       @send='handleSendMessage'
       @jump-to-latest='updateScroll'
       @stop-replying='stopReplying'
-    )
-    view-area(
-      v-else
-      :title='summary.title'
-      :joined='summary.joined'
-      :archived='summary.archived'
     )
 </template>
 
