@@ -5,6 +5,9 @@ page-template
   section.c-stats-section
     i18n.section-title Stats
 
+    .c-temp
+      text-to-copy(textToCopy='This is a random text to copy!')
+
     .c-stat-cards
       stat-card.c-stat-card(v-for='(item, index) in ephemeral.stats'
         :key='item.id'
@@ -41,6 +44,7 @@ page-template
 <script>
 import PageTemplate from './PageTemplate.vue'
 import StatCard from '@components/StatCard.vue'
+import TextToCopy from '@components/TextToCopy.vue'
 import L from '@common/translations.js'
 import { addTimeToDate, MONTHS_MILLIS, humanDate } from '@common/cdTimeUtils.js'
 
@@ -51,7 +55,8 @@ export default {
   name: 'Dashboard',
   components: {
     PageTemplate,
-    StatCard
+    StatCard,
+    TextToCopy
   },
   data () {
     return {

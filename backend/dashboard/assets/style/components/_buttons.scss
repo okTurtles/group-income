@@ -23,7 +23,7 @@ button,
   font-size: $size_4;
   line-height: 1.25;
   outline: none;
-  transition: 
+  transition:
     box-shadow 150ms linear,
     background-color 150ms linear;
 
@@ -73,11 +73,12 @@ button,
 
     &:active,
     &:hover {
-      box-shadow: 0px 0px 6px 3px rgba(168, 197, 218, 0.35);
+      box-shadow: 0 0 6px 3px rgba(168, 197, 218, 0.35);
     }
   }
 
-  &.is-icon {
+  &.is-icon,
+  &.is-icon-small {
     min-height: unset;
     width: 2rem;
     height: 2rem;
@@ -99,6 +100,16 @@ button,
     > i {
       font-size: 1.25rem;
       line-height: 1.25rem;
+    }
+  }
+
+  &.is-icon-small {
+    width: 1.625rem;
+    height: 1.625rem;
+
+    > i {
+      font-size: 1rem;
+      line-height: 1rem;
     }
   }
 }
