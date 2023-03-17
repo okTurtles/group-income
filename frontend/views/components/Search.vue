@@ -31,18 +31,15 @@ import { L } from '@common/common.js'
 
 export default ({
   name: 'Search',
-
   props: {
     value: {
       type: String,
       required: false
     },
-
     placeholder: {
       type: String,
       default: L('Search...')
     },
-
     label: {
       type: String,
       required: true
