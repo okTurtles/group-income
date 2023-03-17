@@ -90,10 +90,10 @@ export default ({
       margin-top: 1rem;
     }
 
-    button:first-child {
-      margin-right: 1rem;
+    button:not(:first-child) {
+      margin-left: 1rem;
       @include phone {
-        margin-right: 0.5rem;
+        margin-left: 0.5rem;
       }
     }
   }
