@@ -2,7 +2,8 @@
 modal-template(:title='L("Contract manifest")' icon='suitcase')
   .c-contract-id-container
     span.c-id-label.has-family-poppins contractID :
-    i.c-id-value {{ contract.contractId }}
+    text-to-copy.c-id-copy(:text='contract.contractId')
+      .c-id-value {{ contract.contractId }}
 
   .c-code-demo-container
     .c-code-demo-block
@@ -20,11 +21,13 @@ modal-template(:title='L("Contract manifest")' icon='suitcase')
 
 <script>
 import ModalTemplate from './ModalTemplate.vue'
+import TextToCopy from '@components/TextToCopy.vue'
 
 export default {
   name: 'ViewContractManifestModal',
   components: {
-    ModalTemplate
+    ModalTemplate,
+    TextToCopy
   },
   props: {
     contract: Object
@@ -78,7 +81,7 @@ export default {
     white-space: nowrap;
     text-overflow: ellipsis;
     direction: rtl;
-    padding-right: 1rem;
+    margin-top: 2px;
 
     @include phone_narrow {
       max-width: 7.5rem;

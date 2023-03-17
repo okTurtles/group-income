@@ -1,5 +1,6 @@
 // Various global classes for styling UI elements that are used across the app
 
+// section-title
 .section-title {
   position: relative;
   display: block;
@@ -11,6 +12,7 @@
   padding-left: 0.25rem;
 }
 
+// summary-list
 .summary-list {
   position: relative;
   padding: 1.5rem;
@@ -54,6 +56,7 @@
   }
 }
 
+// custom-pre
 .custom-pre {
   position: relative;
   background-color: var(--custom-pre-bg-color);
@@ -65,4 +68,31 @@
   line-height: 1.5;
   padding: 0.6rem;
   white-space: pre-wrap;
+}
+
+// tooltip
+.tooltip {
+  position: absolute;
+  z-index: 1;
+  bottom: -0.5rem;
+  left: 50%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  width: max-content;
+  max-width: 16rem;
+  transform: translate(-50%, 100%);
+  font-size: $size_5;
+  color: var(--tooltip-text-color);
+  background-color: var(--tooltip-bg-color);
+  word-break: break-all;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0;
+
+  &.font-small { font-size: $size_6; }
+  &.font-extra-small { font-size: 0.7rem; }
+
+  &.is-active {
+    opacity: 1;
+  }
 }

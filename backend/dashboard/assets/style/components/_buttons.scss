@@ -32,10 +32,6 @@ button,
     box-shadow: var(--button-box-shadow);
   }
 
-  &:active {
-    margin-top: 1px;
-  }
-
   &.is-small {
     min-height: 1.75rem;
     padding: 0.25rem 0.5rem;

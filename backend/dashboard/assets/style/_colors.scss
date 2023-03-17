@@ -22,20 +22,36 @@ $text_0: var(--text_0);
 $text_1: var(--text_1);
 
 /* NOTE: <variable-name> : (<light-theme-value>, <dark-theme-value>) */
+
+/* stylelint-disable */
 $colors_map: (
+  // buttons
   button-primary-bg-color: (#1c1c1c, #c6c7f8),
   button-primary-text-color: (#fff, #1c1c1c),
   button-outline-bg-color: (rgba(0, 0, 0, 0), rgba(0, 0, 0, 0)),
   button-outline-text-color: (#1c1c1c, #fff),
   button-box-shadow: (0 0 16px rgba(219, 219, 219, 0.5), 0 0 16px rgba(132, 132, 132, 0.45)),
   button-box-shadow-small: (0 0 7px rgba(182, 182, 182, 0.5), 0 0 7px rgba(132, 132, 132, 0.325)),
+
+  // summary-list
   summary-list-bg-color: (#f7f9fb, #2a2a2a),
+
+  // custom-pre
   custom-pre-bg-color: (#f2f2f2, #1c1c1c),
   custom-pre-text-color: (#1c1c1c, #f2f2f2),
   custom-pre-border-color: (rgba(0, 0, 0, 0.1), rgb(65, 65, 65)),
+
+  // modal
   modal-bg-color: (#fff, #2a2a2a),
-  stat-card-icon-color: (var(--text_1), var(--text_black))
+
+  // stat-card
+  stat-card-icon-color: (var(--text_1), var(--text_black)),
+
+  // tooltip
+  tooltip-bg-color: (rgba(28, 28, 28, 0.875), rgba(242, 244, 247, 0.925)),
+  tooltip-text-color: (#fff, #1c1c1c)
 );
+/* stylelint-enable */
 
 // "light-theme" custom-variable declarations
 :root {

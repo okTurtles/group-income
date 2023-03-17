@@ -2,23 +2,28 @@
 component.c-text-to-copy-container(
   :is='tag'
 )
-  slot
-    span.c-text-content {{ textToCopy }}
+  span.c-text-content(@click='copyToClipBoard')
+    slot(v-if='$slots.default')
+    span(v-else) {{ text }}
 
-  button.is-icon-small.c-copy-btn
+  button.is-icon-small.c-copy-btn(@click='copyToClipBoard')
     i.icon-copy
+
+  .tooltip.font-small.c-tooltip(:class='{ "is-active": isCopied }') {{ tooltipText }}
 </template>
 
 <script>
+import L from '@common/translations.js'
+
 export default {
-  name: 'LTextToCopy',
+  name: 'TextToCopy',
   props: {
     tag: {
       type: String,
       required: false,
       default: 'span'
     },
-    textToCopy: {
+    text: {
       type: String,
       required: true,
       default: ''
@@ -26,19 +31,21 @@ export default {
   },
   data () {
     return {
-      isMobile: false
+      isCopied: false
+    }
+  },
+  computed: {
+    tooltipText () {
+      return this.isCopied ? L('Copied to clipboard') : this.text
     }
   },
   methods: {
     copyToClipBoard () {
-      if (navigator.share && this.isMobile) {
-        console.log('TODO! copy to clipboard!')
-      }
+      navigator.clipboard.writeText(this.text).then(() => {
+        this.isCopied = true
+        setTimeout(() => { this.isCopied = false }, 1200)
+      })
     }
-  },
-  created () {
-    // https://stackoverflow.com/questions/11381673/detecting-a-mobile-browser#comment95674193_51774045
-    this.isMobile = !window.matchMedia('(any-pointer:fine)').matches
   }
 }
 </script>
@@ -53,7 +60,7 @@ export default {
   width: max-content;
   height: auto;
   min-width: 0;
-  padding: 0.25rem;
+  padding: 0.25rem 0.25rem 0.25rem 0.5rem;
   border-radius: 0.5rem;
   border: 1px solid $border;
 }
@@ -71,5 +78,9 @@ export default {
 .c-copy-btn {
   margin-left: 0.4rem;
   border-color: $text_1;
+}
+
+.c-text-content:hover ~ .c-tooltip {
+  opacity: 1;
 }
 </style>
