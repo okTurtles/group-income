@@ -4,12 +4,12 @@ page-template.c-page-contracts
 
   dropdown.c-filter-menu(defaultItemId='all-contracts' :options='ephemeral.filterOptions' @select='onFilterSelect')
 
-  .c-contracts-list-container
+  section.c-contracts-list-container
     .summary-list.c-contracts-list
       .c-table-wrapper
         table.table.c-contract-ids-table
           thead
-            tr.c-thead
+            tr
               i18n.c-th-contract-id(tag='th') contractID
               i18n.c-th-type(tag='th') Type
               i18n.c-th-size(tag='th') Size (MB)
@@ -25,7 +25,7 @@ page-template.c-page-contracts
               td.c-cell-space {{ (item.spaceUsed).toFixed(2) }}%
               td.c-cell-created-date {{ transformDate(item.createdDate) }}
               td.c-cell-action
-                i18n.is-extra-small.c-view-btn(tag='button' @click='viewManifest(item)') view
+                i18n.is-extra-small.has-blue-background(tag='button' @click='viewManifest(item)') view
 </template>
 
 <script>
@@ -113,9 +113,6 @@ export default {
 .c-contract-ids-table {
   position: relative;
   height: max-content;
-
-  th { font-size: 0.85rem; }
-  td { font-size: 0.8rem; }
 }
 
 .c-th-contract-id,
@@ -179,24 +176,5 @@ export default {
   min-width: 6.75rem;
   text-align: right;
   padding-right: 0.75rem;
-}
-
-button.c-view-btn {
-  background-color: $secondary_blue_1;
-  border-color: rgba(0, 0, 0, 0);
-  color: $text_black;
-  transition: box-shadow 200ms ease-out;
-
-  &:hover,
-  &:focus,
-  &:active {
-    box-shadow: var(--button-box-shadow-small);
-  }
-}
-
-.c-thead {
-  position: sticky;
-  top: 0;
-  left: 0;
 }
 </style>
