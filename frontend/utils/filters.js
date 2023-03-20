@@ -1,4 +1,9 @@
-export const filterByKeyword = (list, keyword, keys, caseSensitive = false) => {
+export const filterByKeyword = (
+  list: Object,
+  keyword: string,
+  keys: Object,
+  caseSensitive: boolean = false
+): Object => {
   if (!Array.isArray(list) || typeof keyword !== 'string') { return [] }
 
   if (!keyword) {
@@ -7,7 +12,7 @@ export const filterByKeyword = (list, keyword, keys, caseSensitive = false) => {
     keyword = keyword.toUpperCase()
   }
 
-  const isMatched = (n) => {
+  const isKeywordContained = (n) => {
     if (!caseSensitive) { n = n.toUpperCase() }
     return n.indexOf(keyword) > -1
   }
@@ -16,7 +21,7 @@ export const filterByKeyword = (list, keyword, keys, caseSensitive = false) => {
       .filter(value => value !== undefined && value !== null)
 
     for (const value of values) {
-      if (isMatched(String(value))) { return true }
+      if (isKeywordContained(String(value))) { return true }
     }
     return false
   })
