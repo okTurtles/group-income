@@ -161,8 +161,10 @@ export default ({
 
       const searchTextCaps = this.searchText.toUpperCase()
       const isInList = (n) => n.toUpperCase().indexOf(searchTextCaps) > -1
-      return this.ourNewDMContacts.filter(({ username, displayName }) =>
-        (!searchTextCaps || isInList(username) || isInList(displayName))
+      return this.ourNewDMContacts.filter(({ username, displayName }) => {
+        const isUsernameMatched = !searchTextCaps || isInList(username)
+        return displayName ? isUsernameMatched || isInList(displayName) : isUsernameMatched
+      }
       )
     },
     searchCount () {
