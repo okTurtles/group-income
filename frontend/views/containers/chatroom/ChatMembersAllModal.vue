@@ -186,9 +186,11 @@ export default ({
       const isInList = (n) => n.toUpperCase().indexOf(searchTextCaps) > -1
       return this.canAddMembers.filter(({ username, displayName }) => {
         const isUsernameMatched = !searchTextCaps || isInList(username)
-        return displayName ? isUsernameMatched || isInList(displayName) : isUsernameMatched
-      }
-      )
+        if (!isUsernameMatched && displayName) {
+          return isInList(displayName)
+        }
+        return isUsernameMatched
+      })
     },
     searchCount () {
       return Object.keys(this.searchResult).length
