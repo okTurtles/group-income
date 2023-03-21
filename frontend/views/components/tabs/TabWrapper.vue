@@ -1,9 +1,6 @@
 <template lang='pug'>
   .tab-wrapper(:class='{"open": open}')
-    nav.tab-nav-sidebar(
-      aria-label='navigation'
-      @click='open = false'
-    )
+    nav.tab-nav-sidebar(aria-label='navigation')
       .tab-nav-header
         i18n.is-title-2.menu-title(tag='h2') Settings
 
@@ -90,12 +87,13 @@ export default ({
     tabClick (tabItem) {
       this.title = tabItem.title
       this.activeComponent = tabItem.component
+      this.open = false
       if (tabItem.index !== undefined) {
         const query = {
           ...this.$route.query,
           section: tabItem.url
         }
-        this.$router.push({ query })
+        this.$router.push({ query }).catch(logExceptNavigationDuplicated)
         this.changeTab(tabItem.index)
       } else {
         sbp(tabItem.action)
@@ -269,7 +267,7 @@ export default ({
   }
 
   .tab-section {
-    transform: translateX(10%);
+    // transform: translateX(10%);
 
     @include desktop {
       transform: translateX(0);
