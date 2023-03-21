@@ -25,6 +25,8 @@ export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd'
 export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpPropSet
 export type GIOp = [GIOpType, GIOpValue]
 
+type GIMsgParams = { mapping: Object, message: Object }
+
 export class GIMessage {
   // flow type annotations to make flow happy
   _decrypted: GIOpValue
@@ -58,19 +60,7 @@ export class GIMessage {
       // and makes it easier to prevent conflicts during development
       nonce: uuidv4()
     }
-    // NOTE: the JSON strings generated here must be preserved forever.
-    //       do not ever regenerate this message using the contructor.
-    //       instead store it using serialize() and restore it using
-    //       deserialize().
-    const messageJSON = JSON.stringify(message)
-    const value = JSON.stringify({
-      message: messageJSON,
-      sig: signatureFn(messageJSON)
-    })
-    return new this({
-      mapping: { key: blake32Hash(value), value },
-      message
-    })
+    return new this(messageToParams(message, signatureFn))
   }
 
   // GIMessage.cloneWith is necessary when make an GIMessage object having the same identity id()
@@ -81,17 +71,7 @@ export class GIMessage {
     signatureFn?: Function = defaultSignatureFn
   ): this {
     const message = Object.assign({}, target.message(), sources)
-    // NOTE: same process to create GIMessage as the above function createV1_0.
-    //       it breaks the DRY principle, but not necessary to create more static function.
-    const messageJSON = JSON.stringify(message)
-    const value = JSON.stringify({
-      message: messageJSON,
-      sig: signatureFn(messageJSON)
-    })
-    return new this({
-      mapping: { key: blake32Hash(value), value },
-      message
-    })
+    return new this(messageToParams(message, signatureFn))
   }
 
   // TODO: we need signature verification upon decryption somewhere...
@@ -103,7 +83,7 @@ export class GIMessage {
     })
   }
 
-  constructor ({ mapping, message }: { mapping: Object, message: Object }) {
+  constructor ({ mapping, message }: GIMsgParams) {
     this._mapping = mapping
     this._message = message
     // perform basic sanity check
@@ -179,5 +159,21 @@ function defaultSignatureFn (data: string) {
   return {
     type: 'default',
     sig: blake32Hash(data)
+  }
+}
+
+function messageToParams (message: Object, signatureFn: Function): GIMsgParams {
+  // NOTE: the JSON strings generated here must be preserved forever.
+  //       do not ever regenerate this message using the contructor.
+  //       instead store it using serialize() and restore it using
+  //       deserialize().
+  const messageJSON = JSON.stringify(message)
+  const value = JSON.stringify({
+    message: messageJSON,
+    sig: signatureFn(messageJSON)
+  })
+  return {
+    mapping: { key: blake32Hash(value), value },
+    message
   }
 }
