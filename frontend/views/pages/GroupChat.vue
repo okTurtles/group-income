@@ -239,7 +239,7 @@ export default ({
   }
 
   .c-header {
-    font-size: 0.75rem;
+    font-size: $size_5;
     font-weight: 400;
     color: $text_1;
     padding-bottom: 0;
@@ -250,7 +250,7 @@ export default ({
 
   .c-content {
     min-width: 17.5rem;
-    font-size: 0.875rem;
+    font-size: $size_4;
     font-weight: 400;
 
     @extend %floating-panel;
