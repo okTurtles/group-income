@@ -2,6 +2,7 @@
 
 // TODO: rename GIMessage to CMessage or something similar
 
+import { v4 as uuidv4 } from 'uuid'
 import { blake32Hash } from '~/shared/functions.js'
 import type { JSONType, JSONObject } from '~/shared/types.js'
 
@@ -55,7 +56,7 @@ export class GIMessage {
       manifest,
       // the nonce makes it difficult to predict message contents
       // and makes it easier to prevent conflicts during development
-      nonce: Math.random()
+      nonce: uuidv4()
     }
     // NOTE: the JSON strings generated here must be preserved forever.
     //       do not ever regenerate this message using the contructor.
@@ -72,9 +73,9 @@ export class GIMessage {
     })
   }
 
-  // GIMessage.assign is necessary when make an GIMessage object having the same identity id()
+  // GIMessage.cloneWith is necessary when make an GIMessage object having the same identity id()
   // https://github.com/okTurtles/group-income/issues/1503
-  static assign (
+  static cloneWith (
     target: GIMessage,
     sources: Object, // TODO: type check is needed
     signatureFn?: Function = defaultSignatureFn
@@ -166,14 +167,11 @@ export class GIMessage {
   hash (): string { return this._mapping.key }
 
   id (): string {
-    const data: string = JSON.stringify({
-      contractID: this.contractID(),
-      op: this.op(),
-      manifest: this.manifest(),
-      nonce: this._message.nonce
-    })
-
-    return blake32Hash(data)
+    // NOTE: nonce can be used as GIMessage identifier
+    // https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
+    // it is generally considered close enough to zero to be negligible,
+    // while the probability that a UUID will be duplicated is not zero
+    return this._message.nonce
   }
 }
 
