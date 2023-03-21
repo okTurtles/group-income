@@ -5,6 +5,7 @@ $warning: var(--warning);
 $danger: var(--danger);
 $border: var(--border);
 $emphasis: var(--emphasis);
+$helper: var(--helper);
 
 $primary_blue: var(--primary_blue);
 $primary_purple: var(--primary_purple);
@@ -32,8 +33,14 @@ $colors_map: (
   button-outline-text-color: (#1c1c1c, #fff),
   button-box-shadow: (0 0 16px rgba(219, 219, 219, 0.5), 0 0 16px rgba(132, 132, 132, 0.45)),
 
+  // forms - styled-input
+  styled-input-border-color: (rgba(0, 0, 0, 0.1), rgb(65, 65, 65)),
+  styled-input-background-color: (#fff, #2a2a2a),
+  styled-input-placeholder-color: (rgba(0, 0, 0, 0.4), rgba(255, 255, 255, 0.45)),
+  styled-input-label-color: (#9747ff, #b1e3ff),
+
   // summary-list
-  summary-list-bg-color: (#f7f9fb, #2a2a2a),
+  summary-list-bg-color: (#fff, #2a2a2a),
 
   // custom-pre
   custom-pre-bg-color: (#f2f2f2, #1c1c1c),

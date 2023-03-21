@@ -21,6 +21,7 @@ v-style.
     --text_1: {{colors.text_1}};
     --border: {{colors.border}};
     --emphasis: {{colors.emphasis}};
+    --helper: {{colors.helper}};
   }
 </template>
 

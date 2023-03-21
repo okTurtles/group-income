@@ -19,6 +19,7 @@
   border-radius: 1rem;
   width: 100%;
   background-color: var(--summary-list-bg-color);
+  border: 1px solid $border;
 
   @include from($phone_narrow) {
     max-width: 22.25rem;
