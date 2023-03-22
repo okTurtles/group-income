@@ -16,13 +16,14 @@ const common = {
 
 const light = {
   ...common,
-  background_0: '#FFFFFF',
+  background_0: '#F7F9FB',
   background_1: '#F7F9FB',
   background_active: 'rgba(0, 0, 0, 0.05)',
   text_0: '#1C1C1C',
   text_1: 'rgba(0, 0, 0, 0.4)',
   border: 'rgba(0, 0, 0, 0.1)',
-  emphasis: '#1C1C1C'
+  emphasis: '#1C1C1C',
+  helper: '#9747FF'
 }
 
 const dark = {
@@ -33,7 +34,8 @@ const dark = {
   text_0: '#FFFFFF',
   text_1: 'rgba(255, 255, 255, 0.45)',
   border: 'rgba(255, 255, 255, 0.15)',
-  emphasis: '#C6C7F8'
+  emphasis: '#C6C7F8',
+  helper: '#9747FF'
 }
 
 export const THEME_LIGHT = 'light'

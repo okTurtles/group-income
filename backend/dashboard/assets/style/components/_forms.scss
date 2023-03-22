@@ -1,0 +1,34 @@
+/* styled-input */
+.inputgroup {
+  position: relative;
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+
+  .input-label {
+    position: absolute;
+    font-size: 0.825rem;
+    top: 0.75rem;
+    left: 1.25rem;
+    cursor: default;
+    user-select: none;
+    color: var(--styled-input-label-color);
+  }
+
+  .input {
+    display: block;
+    height: 4.125rem;
+    width: 100%;
+    padding: 2rem 1.25rem 0.75rem;
+    color: $text_0;
+    font-size: $size_5;
+    border-radius: 0.5rem;
+    border: 1px solid var(--styled-input-border-color);
+    background-color: var(--styled-input-background-color);
+
+    @include placeholder {
+      font-size: $size_5;
+      color: var(--styled-input-placeholder-color);
+    }
+  }
+}

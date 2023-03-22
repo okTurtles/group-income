@@ -21,10 +21,13 @@ export default {
 .c-page {
   padding: 1.75rem 1rem;
   width: 100%;
-  max-width: 96rem;
 
   @include tablet {
     padding: 1.75rem 2rem;
+  }
+
+  &-main {
+    max-width: 96rem;
   }
 }
 

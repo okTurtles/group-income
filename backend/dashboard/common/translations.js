@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { defaultConfig as defaultDompurifyConfig } from '@view-utils/vSafeHtml.js'
+import { defaultConfig as defaultDompurifyConfig } from '@view-utils/custom-directives/vSafeHtml.js'
 import dompurify from 'dompurify'
 import Vue from 'vue'
 import template from './stringTemplate.js'

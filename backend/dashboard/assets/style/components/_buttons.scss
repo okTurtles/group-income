@@ -18,9 +18,19 @@ button,
   color: var(--button-primary-text-color);
   white-space: nowrap;
   font-family: "Inter";
+  letter-spacing: 1px;
+  font-weight: 600;
   font-size: $size_4;
-  line-height: 1;
+  line-height: 1.25;
   outline: none;
+  transition:
+    box-shadow 150ms linear,
+    background-color 150ms linear;
+
+  &:focus,
+  &:hover {
+    box-shadow: var(--button-box-shadow);
+  }
 
   &.is-small {
     min-height: 1.75rem;
@@ -52,7 +62,19 @@ button,
     }
   }
 
-  &.is-icon {
+  &.has-blue-background {
+    background-color: $secondary_blue_1;
+    border-color: rgba(0, 0, 0, 0);
+    color: $text_black;
+
+    &:active,
+    &:hover {
+      box-shadow: 0 0 6px 3px rgba(168, 197, 218, 0.35);
+    }
+  }
+
+  &.is-icon,
+  &.is-icon-small {
     min-height: unset;
     width: 2rem;
     height: 2rem;
@@ -74,6 +96,16 @@ button,
     > i {
       font-size: 1.25rem;
       line-height: 1.25rem;
+    }
+  }
+
+  &.is-icon-small {
+    width: 1.625rem;
+    height: 1.625rem;
+
+    > i {
+      font-size: 1rem;
+      line-height: 1rem;
     }
   }
 }

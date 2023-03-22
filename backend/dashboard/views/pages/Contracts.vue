@@ -4,12 +4,12 @@ page-template.c-page-contracts
 
   dropdown.c-filter-menu(defaultItemId='all-contracts' :options='ephemeral.filterOptions' @select='onFilterSelect')
 
-  .c-contracts-list-container
-    .summary-list.is-background-blue.c-contracts-list
+  section.c-contracts-list-container
+    .summary-list.c-contracts-list
       .c-table-wrapper
         table.table.c-contract-ids-table
           thead
-            tr.c-thead
+            tr
               i18n.c-th-contract-id(tag='th') contractID
               i18n.c-th-type(tag='th') Type
               i18n.c-th-size(tag='th') Size (MB)
@@ -25,15 +25,17 @@ page-template.c-page-contracts
               td.c-cell-space {{ (item.spaceUsed).toFixed(2) }}%
               td.c-cell-created-date {{ transformDate(item.createdDate) }}
               td.c-cell-action
-                i18n.is-extra-small.c-view-btn(tag='button') view
+                i18n.is-extra-small.has-blue-background(tag='button' @click='viewManifest(item)') view
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import PageTemplate from './PageTemplate.vue'
-import Dropdown from '@components/Dropdown.vue'
+import Dropdown from '@forms/Dropdown.vue'
 import L from '@common/translations.js'
 import { humanDate } from '@common/cdTime.js'
 import { contractDummyData } from '@view-utils/dummy-data.js'
+import { OPEN_MODAL } from '@view-utils/events.js'
 
 export default {
   name: 'Contracts',
@@ -69,6 +71,9 @@ export default {
     },
     onFilterSelect (item) {
       this.ephemeral.contractFilter = item
+    },
+    viewManifest (item) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'ViewContractManifestModal', { contract: item })
     }
   }
 }
@@ -97,7 +102,6 @@ export default {
   flex-direction: row;
   align-items: flex-start;
   max-width: max-content;
-  box-shadow: 0 0 16px rgba(219, 219, 219, 0.5);
 }
 
 .c-table-wrapper {
@@ -109,9 +113,6 @@ export default {
 .c-contract-ids-table {
   position: relative;
   height: max-content;
-
-  th { font-size: 0.85rem; }
-  td { font-size: 0.8rem; }
 }
 
 .c-th-contract-id,
@@ -119,7 +120,7 @@ export default {
   position: sticky;
   left: 0;
   padding: 0 0.8rem 0 0.2rem;
-  background-color: $primary_blue;
+  background-color: var(--summary-list-bg-color);
 }
 
 .c-cell-contract-id {
@@ -175,30 +176,5 @@ export default {
   min-width: 6.75rem;
   text-align: right;
   padding-right: 0.75rem;
-}
-
-button.c-view-btn {
-  background-color: $secondary_green_0;
-  border: 1px solid $secondary_green_1;
-  color: $text_black;
-  transition:
-    border-color 120ms linear,
-    box-shadow 200ms ease-out;
-
-  &:hover,
-  &:focus {
-    box-shadow: var(--button-box-shadow-small);
-  }
-
-  &:focus,
-  &:active {
-    border: 1px solid $text_black;
-  }
-}
-
-.c-thead {
-  position: sticky;
-  top: 0;
-  left: 0;
 }
 </style>

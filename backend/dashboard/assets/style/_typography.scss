@@ -75,3 +75,15 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1.175, 1;
 .has-text-bold {
   font-weight: 600;
 }
+
+.has-text-warning {
+  color: $warning;
+}
+
+.has-text-danger {
+  color: $danger;
+}
+
+.has-family-poppins {
+  font-family: "Poppins";
+}
