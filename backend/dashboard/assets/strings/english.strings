@@ -3,14 +3,50 @@
 /* views/containers/navigation/Navigation.vue, views/pages/Accounts.vue */
 "Accounts" = "Accounts";
 
+/* views/pages/Contracts.vue, views/pages/Users.vue */
+"Action" = "Action";
+
+/* views/utils/dummy-data.js */
+"Active users" = "Active users";
+
+/* views/pages/Users.vue */
+"Activity stats" = "Activity stats";
+
 /* views/pages/Contracts.vue */
 "All contracts" = "All contracts";
 
 /* views/containers/navigation/Navigation.vue, views/pages/Billing.vue */
 "Billing" = "Billing";
 
+/* views/pages/Contracts.vue */
+"Chatroom" = "Chatroom";
+
+/* views/containers/modal/ModalTemplate.vue */
+"Close" = "Close";
+
+/* views/containers/modal/ViewContractManifestModal.vue */
+"Contract manifest" = "Contract manifest";
+
+/* views/pages/Users.vue */
+"Contract size (MB)" = "Contract size (MB)";
+
 /* views/containers/navigation/Navigation.vue, views/pages/Contracts.vue */
 "Contracts" = "Contracts";
+
+/* views/pages/Users.vue */
+"Contracts owned" = "Contracts owned";
+
+/* views/components/TextToCopy.vue */
+"Copied to clipboard" = "Copied to clipboard";
+
+/* views/pages/Accounts.vue */
+"Create a new instance" = "Create a new instance";
+
+/* views/pages/Contracts.vue */
+"Created on" = "Created on";
+
+/* views/pages/Users.vue */
+"Credits" = "Credits";
 
 /* views/containers/navigation/Navigation.vue, views/pages/Dashboard.vue */
 "Dashboard" = "Dashboard";
@@ -18,8 +54,26 @@
 /* views/pages/Dashboard.vue */
 "Database" = "Database";
 
+/* views/pages/Contracts.vue */
+"Group" = "Group";
+
+/* views/pages/Users.vue */
+"Groups" = "Groups";
+
+/* views/pages/Contracts.vue */
+"Identity" = "Identity";
+
+/* views/utils/dummy-data.js */
+"Inactive users" = "Inactive users";
+
+/* views/pages/Accounts.vue */
+"Instance name" = "Instance name";
+
 /* views/pages/Dashboard.vue */
 "Joined on" = "Joined on";
+
+/* views/pages/Contracts.vue */
+"Mailbox" = "Mailbox";
 
 /* views/pages/Dashboard.vue */
 "Media/Images" = "Media/Images";
@@ -30,38 +84,29 @@
 /* views/containers/navigation/Navigation.vue */
 "Navigation" = "Navigation";
 
-/* views/pages/Contracts.vue */
-"Option 2" = "Option 2";
-
-/* views/pages/Contracts.vue */
-"Option 3" = "Option 3";
-
-/* views/pages/Contracts.vue */
-"Option 4" = "Option 4";
-
 /* views/pages/Dashboard.vue */
 "Recent users" = "Recent users";
 
 /* views/pages/Dashboard.vue */
 "Sapce usage" = "Sapce usage";
 
-/* views/components/Dropdown.vue */
+/* views/components/forms/Dropdown.vue */
 "Select Item" = "Select Item";
+
+/* views/pages/Contracts.vue */
+"Size (MB)" = "Size (MB)";
+
+/* views/pages/Contracts.vue */
+"Space Used(%)" = "Space Used(%)";
+
+/* views/pages/Users.vue */
+"Space used (%)" = "Space used (%)";
 
 /* views/pages/Dashboard.vue */
 "Stats" = "Stats";
 
-/* views/pages/Accounts.vue */
-"This is 'Accounts' page" = "This is 'Accounts' page";
-
-/* views/pages/Users.vue */
-"This is 'Users' page" = "This is 'Users' page";
-
 /* views/pages/Billing.vue */
 "This is 'billing' page" = "This is 'billing' page";
-
-/* views/pages/Contracts.vue */
-"This is 'contracts' page" = "This is 'contracts' page";
 
 /* views/pages/Dashboard.vue */
 "Total groups" = "Total groups";
@@ -69,12 +114,27 @@
 /* views/pages/Dashboard.vue */
 "Total storage" = "Total storage";
 
-/* views/pages/Dashboard.vue */
+/* views/pages/Dashboard.vue, views/utils/dummy-data.js */
 "Total users" = "Total users";
+
+/* views/pages/Contracts.vue */
+"Type" = "Type";
+
+/* views/pages/Users.vue */
+"User" = "User";
+
+/* views/pages/Users.vue */
+"User usage summary" = "User usage summary";
 
 /* views/containers/navigation/Navigation.vue, views/pages/Users.vue */
 "Users" = "Users";
 
 /* views/pages/Dashboard.vue */
 "Users / Space" = "Users / Space";
+
+/* views/pages/Contracts.vue */
+"contractID" = "contractID";
+
+/* views/pages/Contracts.vue, views/pages/Users.vue */
+"view" = "view";
 
