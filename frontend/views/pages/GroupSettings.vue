@@ -56,8 +56,25 @@ page.c-page
 
   invitations-table
 
+  page-section(
+    v-if='isGroupAdmin'
+    :title='L("Public Channels")'
+  )
+    .c-subcontent
+      .c-text-content
+        i18n.c-smaller-title(tag='h3') Allow members to create public channels
+        i18n.c-description(tag='p') Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels.
+      label
+        input.switch(
+          type='checkbox'
+          name='switch'
+          :checked='publicChannelCreateAllowance'
+          @change='togglePublicChannelCreateAllownace'
+        )
+
   page-section(:title='L("Voting System")')
     group-rules-settings
+
   page-section(:title='L("Leave Group")')
     i18n.has-text-1(
       tag='p'
@@ -126,17 +143,13 @@ export default ({
         groupName,
         sharedValues,
         mincomeCurrency
-      }
+      },
+      publicChannelCreateAllowance: false
     }
   },
   computed: {
-    ...mapState([
-      'currentGroupId'
-    ]),
-    ...mapGetters([
-      'groupSettings',
-      'groupMembersCount'
-    ]),
+    ...mapState(['currentGroupId']),
+    ...mapGetters(['groupSettings', 'groupMembersCount', 'ourUsername']),
     currencies () {
       return currencies
     },
@@ -146,7 +159,16 @@ export default ({
         contractID: this.$store.state.currentGroupId,
         key: 'groupPicture'
       }
+    },
+    isGroupAdmin () {
+      // TODO: group admin doesn't mean group creator
+      // https://github.com/okTurtles/group-income/issues/202
+      return this.groupSettings.groupCreator === this.ourUsername
     }
+  },
+  mounted () {
+    // TODO: need to remove double exclamation mark after release version 1
+    this.publicChannelCreateAllowance = !!this.groupSettings.publicChannelCreateAllowance
   },
   methods: {
     openProposal (component) {
@@ -189,6 +211,18 @@ export default ({
         sharedValues,
         mincomeCurrency
       }
+    },
+    async togglePublicChannelCreateAllownace (v) {
+      const checked = v.target.checked
+      if (this.groupSettings.publicChannelCreateAllowance !== checked) {
+        await sbp('gi.actions/group/updateSettings', {
+          contractID: this.currentGroupId,
+          data: {
+            publicChannelCreateAllowance: checked
+          }
+        })
+        this.publicChannelCreateAllowance = checked
+      }
     }
   },
   validations: {
@@ -228,5 +262,28 @@ export default ({
   @include desktop {
     display: block;
   }
+}
+
+.c-subcontent {
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+
+  &:last-child {
+    margin-bottom: 1.5rem;
+  }
+}
+
+.c-smaller-title {
+  font-size: $size_4;
+  font-weight: bold;
+}
+
+.c-description {
+  margin-top: 0.125rem;
+  font-size: $size_4;
+  color: $text_1;
 }
 </style>
