@@ -92,6 +92,24 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 
+const privacyLevelToDisplay = {
+  [CHATROOM_PRIVACY_LEVEL.GROUP]: {
+    label: L('Group channel'),
+    description: L('All group members will be added to this channel.'),
+    icon: 'hashtag'
+  },
+  [CHATROOM_PRIVACY_LEVEL.PRIVATE]: {
+    label: L('Private channel'),
+    description: L('Only added members will have access.'),
+    icon: 'lock'
+  },
+  [CHATROOM_PRIVACY_LEVEL.PUBLIC]: {
+    label: L('Public channel'),
+    description: L('People from outside the group can see the channel\'s content'),
+    icon: 'unlock-alt'
+  }
+}
+
 export default ({
   name: 'CreateNewChannelModal',
   mixins: [validationMixin, validationsDebouncedMixins],
@@ -112,13 +130,8 @@ export default ({
       return this.groupSettings.publicChannelCreateAllowance
     },
     privacyLevels () {
-      const privacyLabels = {
-        [CHATROOM_PRIVACY_LEVEL.GROUP]: L('Group channel'),
-        [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
-        [CHATROOM_PRIVACY_LEVEL.PUBLIC]: L('Public channel')
-      }
       return Object.values(CHATROOM_PRIVACY_LEVEL).map(value => ({
-        value, label: privacyLabels[value]
+        value, label: privacyLevelToDisplay[value].label
       }))
     },
     privacyLevel () {
@@ -127,18 +140,10 @@ export default ({
         : !this.form.private ? CHATROOM_PRIVACY_LEVEL.GROUP : CHATROOM_PRIVACY_LEVEL.PRIVATE
     },
     privacyLevelDescription () {
-      return {
-        [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Only added members will have access.'),
-        [CHATROOM_PRIVACY_LEVEL.GROUP]: L('All group members will be added to this channel.'),
-        [CHATROOM_PRIVACY_LEVEL.PUBLIC]: L('People from outside the group can see the channel\'s content')
-      }[this.privacyLevel]
+      return privacyLevelToDisplay[this.privacyLevel].description
     },
     privacyLevelIcon () {
-      return {
-        [CHATROOM_PRIVACY_LEVEL.PRIVATE]: 'lock',
-        [CHATROOM_PRIVACY_LEVEL.GROUP]: 'hashtag',
-        [CHATROOM_PRIVACY_LEVEL.PUBLIC]: 'unlock-alt'
-      }[this.privacyLevel]
+      return privacyLevelToDisplay[this.privacyLevel].icon
     }
   },
   data () {
