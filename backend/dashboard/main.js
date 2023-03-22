@@ -5,6 +5,7 @@ import Vue from 'vue'
 import router from './controller/router.js'
 import store from './model/state.js'
 import './views/utils/vStyle.js'
+import './views/utils/vError.js'
 import './controller/backend.js'
 import '@common/translations.js'
 
