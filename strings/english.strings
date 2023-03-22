@@ -408,6 +408,9 @@
 /* views/pages/GroupChat.vue */
 "Channel Options" = "Channel Options";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Channel Privacy" = "Channel Privacy";
+
 /* views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Channel description" = "Channel description";
 
@@ -860,6 +863,9 @@
 
 /* views/components/group-creation-steps/GroupName.vue */
 "Group avatar" = "Group avatar";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Group channel" = "Group channel";
 
 /* views/containers/dashboard/GroupMembersAllModal.vue, views/containers/notifications/NotificationModal.vue */
 "Group members" = "Group members";
@@ -1389,6 +1395,9 @@
 /* controller/router.js */
 "Pending Approval" = "Pending Approval";
 
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"People from outside the group can see the channel's content" = "People from outside the group can see the channel's content";
+
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Percentage based" = "Percentage based";
 
@@ -1415,6 +1424,9 @@
 
 /* views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
 "Please enter a valid email." = "Please enter a valid email.";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Please select" = "Please select";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Please send the following link to {user} so they can join the group:" = "Please send the following link to {user} so they can join the group:";
@@ -1506,7 +1518,7 @@
 /* views/pages/GroupSettings.vue */
 "Public Channels" = "Public Channels";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue */
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/CreateNewChannelModal.vue */
 "Public channel" = "Public channel";
 
 /* views/containers/payments/SendPaymentsViaLightning.vue */

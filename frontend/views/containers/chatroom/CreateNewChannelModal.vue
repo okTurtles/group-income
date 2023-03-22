@@ -36,18 +36,22 @@
 
       label.field(v-if='isPublicChannelCreateAllowed')
         i18n.label Channel Privacy
-        select.select(
-          :aria-label='L("Channel Privacy")'
-          name='privacy'
-          required
-          :value='form.privacy'
-          @change='handlePrivacyLevel'
+        .selectbox(
+          :class='{ error: $v.form.privacy.$error }'
         )
-          option(
-            v-for='(pLevel, index) in privacyLevels'
-            :value='pLevel.value'
-            :key='index'
-          ) {{ pLevel.label }}
+          select.select(
+            :aria-label='L("Please select")'
+            name='privacy'
+            :value='form.privacy'
+            @change='handlePrivacyLevel'
+            @blur='updateField("privacy")'
+          )
+            option.placeholder(value='' disabled) {{L("Please select")}}
+            option(
+              v-for='(pLevel, index) in privacyLevels'
+              :value='pLevel.value'
+              :key='index'
+            ) {{ pLevel.label }}
 
       label.c-inline-input(v-else)
         i18n.label Private channel
@@ -58,9 +62,9 @@
           @change='toggleChannelPrivate'
         )
 
-      hr
+      hr(v-if='privacyLevel')
 
-      .c-helper
+      .c-helper(v-if='privacyLevel')
         i(:class='`icon-${ privacyLevelIcon } c-group-i`')
 
         .helper(tag='p') {{ privacyLevelDescription }}
@@ -143,7 +147,7 @@ export default ({
         name: '',
         description: '',
         private: false,
-        privacy: CHATROOM_PRIVACY_LEVEL.GROUP,
+        privacy: '',
         existingNames: []
       }
     }
@@ -204,6 +208,11 @@ export default ({
         [L('Reached character limit.')]: function (value) {
           return !value || Number(value.length) <= this.maxDescriptionCharacters
         }
+      },
+      privacy: {
+        [L('This field is required')]: function (value) {
+          return !this.isPublicChannelCreateAllowed || !!value
+        }
       }
     }
   }
@@ -243,5 +252,9 @@ hr {
 
 .c-group-i {
   margin-right: 0.5rem;
+}
+
+.select option.placeholder {
+  display: none;
 }
 </style>
