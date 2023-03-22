@@ -34,31 +34,36 @@
         )
         i18n.helper This is optional.
 
-      label.c-inline-input
+      label.field(v-if='isPublicChannelCreateAllowed')
+        i18n.label Channel Privacy
+        select.select(
+          :aria-label='L("Channel Privacy")'
+          name='privacy'
+          required
+          :value='form.privacy'
+          @change='handlePrivacyLevel'
+        )
+          option(
+            v-for='(pLevel, index) in privacyLevels'
+            :value='pLevel.value'
+            :key='index'
+          ) {{ pLevel.label }}
+
+      label.c-inline-input(v-else)
         i18n.label Private channel
         input.switch(
           type='checkbox'
           :checked='form.private'
           data-test='createChannelPrivate'
-          @change='handleChannelPrivate'
+          @change='toggleChannelPrivate'
         )
 
       hr
 
       .c-helper
-        i(
-          :class='`icon-${ form.private ? "lock" : "hashtag" } c-group-i`'
-        )
+        i(:class='`icon-${ privacyLevelIcon } c-group-i`')
 
-        i18n.helper(
-          v-if='form.private'
-          tag='p'
-        ) Only added members will have access.
-
-        i18n.helper(
-          v-else
-          tag='p'
-        ) All group members will be added to this channel.
+        .helper(tag='p') {{ privacyLevelDescription }}
 
       banner-scoped(ref='formMsg')
 
@@ -92,12 +97,44 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['currentChatRoomState', 'getGroupChatRooms']),
+    ...mapGetters(['groupSettings', 'currentChatRoomState', 'getGroupChatRooms']),
     maxNameCharacters () {
       return this.currentChatRoomState.settings.maxNameLength
     },
     maxDescriptionCharacters () {
       return this.currentChatRoomState.settings.maxDescriptionLength
+    },
+    isPublicChannelCreateAllowed () {
+      return this.groupSettings.publicChannelCreateAllowance
+    },
+    privacyLevels () {
+      const privacyLabels = {
+        [CHATROOM_PRIVACY_LEVEL.GROUP]: L('Group channel'),
+        [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Private channel'),
+        [CHATROOM_PRIVACY_LEVEL.PUBLIC]: L('Public channel')
+      }
+      return Object.values(CHATROOM_PRIVACY_LEVEL).map(value => ({
+        value, label: privacyLabels[value]
+      }))
+    },
+    privacyLevel () {
+      return this.isPublicChannelCreateAllowed
+        ? this.form.privacy
+        : !this.form.private ? CHATROOM_PRIVACY_LEVEL.GROUP : CHATROOM_PRIVACY_LEVEL.PRIVATE
+    },
+    privacyLevelDescription () {
+      return {
+        [CHATROOM_PRIVACY_LEVEL.PRIVATE]: L('Only added members will have access.'),
+        [CHATROOM_PRIVACY_LEVEL.GROUP]: L('All group members will be added to this channel.'),
+        [CHATROOM_PRIVACY_LEVEL.PUBLIC]: L('People from outside the group can see the channel\'s content')
+      }[this.privacyLevel]
+    },
+    privacyLevelIcon () {
+      return {
+        [CHATROOM_PRIVACY_LEVEL.PRIVATE]: 'lock',
+        [CHATROOM_PRIVACY_LEVEL.GROUP]: 'hashtag',
+        [CHATROOM_PRIVACY_LEVEL.PUBLIC]: 'unlock-alt'
+      }[this.privacyLevel]
     }
   },
   data () {
@@ -106,6 +143,7 @@ export default ({
         name: '',
         description: '',
         private: false,
+        privacy: CHATROOM_PRIVACY_LEVEL.GROUP,
         existingNames: []
       }
     }
@@ -129,7 +167,7 @@ export default ({
             attributes: {
               name,
               description,
-              privacyLevel: !this.form.private ? CHATROOM_PRIVACY_LEVEL.GROUP : CHATROOM_PRIVACY_LEVEL.PRIVATE,
+              privacyLevel: this.privacyLevel,
               type: CHATROOM_TYPES.GROUP
             }
           }
@@ -139,8 +177,11 @@ export default ({
       }
       this.close()
     },
-    handleChannelPrivate (e) {
+    toggleChannelPrivate (e) {
       this.form.private = e.target.checked
+    },
+    handlePrivacyLevel (e) {
+      this.form.privacy = e.target.value
     }
   },
   validations: {

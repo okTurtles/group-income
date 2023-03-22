@@ -2602,6 +2602,9 @@
 "Change voting [xxxx]" = "Changer le vote [xxxx]";
 
 /* Not currently used */
+"Channel Privacy" = "Confidentialité de la chaîne";
+
+/* Not currently used */
 "Compose:" = "Composer :";
 
 /* Not currently used */
@@ -2678,6 +2681,9 @@
 
 /* Not currently used */
 "For now, the only way to join a group is to get an invitation. Don’t know anyone using GroupIncome?" = "Pour le moment, le seul moyen de rejoindre un groupe est de recevoir une invitation. Connaissez-vous quelqu’un qui utilise GroupIncome ?";
+
+/* Not currently used */
+"Group channel" = "Chaîne de groupe";
 
 /* Not currently used */
 "Inbox (deprecated)" = "Boîte de réception (obsolète)";
