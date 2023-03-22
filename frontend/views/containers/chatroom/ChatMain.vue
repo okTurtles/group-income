@@ -680,13 +680,9 @@ export default ({
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
-  height: calc(var(--vh, 1vh) * 100 - 18rem);
   width: calc(100% + 1rem);
   position: relative;
-
-  @include tablet {
-    height: calc(var(--vh, 1vh) * 100 - 16rem);
-  }
+  min-height: 0;
 
   &::before {
     content: "";
@@ -748,5 +744,9 @@ export default ({
   .c-new {
     font-weight: bold;
   }
+}
+
+.c-footer {
+  flex-shrink: 0;
 }
 </style>

@@ -425,7 +425,7 @@ export default ({
     overflow: hidden;
     height: 2.75rem;
     min-height: 2.75rem;
-    max-height: 5.5rem;
+    // max-height: 5.5rem;
     background-color: transparent;
     border: none;
 
