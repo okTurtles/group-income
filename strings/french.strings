@@ -1402,6 +1402,9 @@
 "Stop replying" = "Ne plus répondre";
 
 /* views/containers/chatroom/SendArea.vue */
+"This channel is public and everyone on the internet can see its content." = "Cette chaîne est publique et tout le monde sur Internet peut voir son contenu.";
+
+/* views/containers/chatroom/SendArea.vue */
 "Write your message..." = "Envoyer un message...";
 
 /* views/containers/chatroom/SendArea.vue, views/pages/GroupSettings.vue */
@@ -2386,6 +2389,9 @@
 "Your changes were saved!" = "Vos modifications ont été enregistrées !";
 
 /* views/containers/user-settings/settings.js */
+"Advanced" = "Avancée";
+
+/* views/containers/user-settings/settings.js */
 "App settings" = "Paramètres";
 
 /* views/containers/user-settings/settings.js */
@@ -2588,9 +2594,6 @@
 
 /* Not currently used */
 "According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this." = "Selon vos règles de vote, {strong_}{value} membres sur {total}{_strong} devront approuver ceci.";
-
-/* Not currently used */
-"Advanced" = "Avancée";
 
 /* Not currently used */
 "Already existing direct message channel." = "Canal de messagerie directe déjà existant.";

@@ -195,6 +195,9 @@
 /* model/contracts/group.js */
 "Admin credentials needed and not implemented yet." = "Admin credentials needed and not implemented yet.";
 
+/* views/containers/user-settings/settings.js */
+"Advanced" = "Advanced";
+
 /* views/containers/group-settings/InvitationLinkModal.vue */
 "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!";
 
@@ -1910,6 +1913,9 @@
 
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "This amount will not be used until someone needs it." = "This amount will not be used until someone needs it.";
+
+/* views/containers/chatroom/SendArea.vue */
+"This channel is public and everyone on the internet can see its content." = "This channel is public and everyone on the internet can see its content.";
 
 /* views/containers/chatroom/DeleteChannelModal.vue */
 "This channel will no longer be visible." = "This channel will no longer be visible.";

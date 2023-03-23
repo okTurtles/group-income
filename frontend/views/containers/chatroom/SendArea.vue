@@ -2,6 +2,10 @@
 .c-send-wrapper(
   :class='{"is-public": isPublicChannel}'
 )
+  .c-public-helper(v-if='isPublicChannel')
+    i.icon-exclamation-triangle.is-prefix
+    i18n.has-text-bold This channel is public and everyone on the internet can see its content.
+
   .c-send.inputgroup(
     :class='{"is-editing": isEditing}'
     data-test='messageInputWrapper'
@@ -418,6 +422,19 @@ export default ({
 
   &.is-public {
     background-color: var(--warning_1);
+
+    .c-public-helper {
+      color: $text_0;
+      margin-bottom: 1rem;
+
+      i {
+        color: var(--warning_0);
+      }
+    }
+
+    .inputgroup {
+      border-color: var(--warning_0);
+    }
   }
 }
 
