@@ -4,9 +4,8 @@
   .c-body
     .c-body-loading(v-if='details.isLoading')
       loading
-        //
-          TODO later - Design a cool skeleton loading
-          - this should be done only after knowing exactly how server gets each conversation data
+        // TODO later - Design a cool skeleton loading
+           this should be done only after knowing exactly how server gets each conversation data
 
     .c-body-conversation(
       v-else
