@@ -301,15 +301,12 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/mailbox/setAttributes": {
         validate: (data, { state, meta }) => {
-          if (state.attributes && state.attributes.creator !== meta.username) {
+          if (state.attributes.creator !== meta.username) {
             throw new TypeError((0, import_common2.L)("Only the mailbox creator can set attributes."));
           }
           object(data);
         },
         process({ meta, data }, { state }) {
-          if (!state.attributes) {
-            import_common2.Vue.set(state, "attributes", {});
-          }
           for (const key in data) {
             import_common2.Vue.set(state.attributes, key, data[key]);
           }
