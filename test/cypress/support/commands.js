@@ -438,3 +438,36 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
   })
   cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
 })
+
+Cypress.Commands.add('giCheckIfJoinedChatroom', (
+  channelName, me, inviter, invitee
+) => {
+  // NOTE: need to check just after joined, not after making other activities
+  inviter = inviter || me
+  invitee = invitee || me
+  const selfJoin = inviter === invitee
+  const selfCheck = me === invitee
+  if (selfCheck) {
+    cy.getByDT('messageInputWrapper').within(() => {
+      cy.get('textarea').should('exist')
+    })
+  }
+
+  cy.giWaitUntilMessagesLoaded()
+
+  cy.getByDT('conversationWrapper').within(() => {
+    cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
+    const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
+    cy.get('.c-message:last-child .c-notification').should('contain', message)
+  })
+})
+
+Cypress.Commands.add('giWaitUntilMessagesLoaded', () => {
+  cy.getByDT('conversationWrapper').within(() => {
+    cy.get('.infinite-status-prompt:first-child').should('exist')
+    cy.get('.infinite-status-prompt:first-child')
+      .invoke('attr', 'style')
+      .should('include', 'display: none')
+  })
+  cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+})

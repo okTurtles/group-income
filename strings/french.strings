@@ -2680,6 +2680,9 @@
 "Inbox" = "Boîte de réception";
 
 /* Not currently used */
+"Incorrect contractIDs found" = "ID de contrat incorrects trouvés";
+
+/* Not currently used */
 "Incorrect username to create direct message." = "Nom d'utilisateur incorrect pour créer un message direct.";
 
 /* Not currently used */

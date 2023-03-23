@@ -106,7 +106,7 @@ import Avatar from '@components/Avatar.vue'
 import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 import ChatNav from '@containers/chatroom/ChatNav.vue'
 import ChatMain from '@containers/chatroom/ChatMain.vue'
-import ChatroomMixin from '@containers/chatroom/ChatroomMixin.js'
+import ChatMixin from '@containers/chatroom/ChatMixin.js'
 import ChatMembers from '@containers/chatroom/ChatMembers.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@components/menu/index.js'
@@ -115,7 +115,7 @@ import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 export default ({
   name: 'GroupChat',
   mixins: [
-    ChatroomMixin
+    ChatMixin
   ],
   components: {
     Page,
