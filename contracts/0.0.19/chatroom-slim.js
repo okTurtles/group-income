@@ -656,14 +656,13 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/addMessage": {
         validate: messageType,
-        process({ data, meta, hash, id }, { state }) {
+        process({ data, meta, hash }, { state }) {
           if (!state.onlyRenderMessage) {
             return;
           }
-          const pendingMsg = state.messages.find((msg) => msg.giMsgID === id && msg.pending);
+          const pendingMsg = state.messages.find((msg) => msg.id === hash && msg.pending);
           if (pendingMsg) {
             delete pendingMsg.pending;
-            delete pendingMsg.giMsgID;
           } else {
             state.messages.push(createMessage({ meta, data, hash, state }));
           }
