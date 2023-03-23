@@ -36,8 +36,13 @@ $colors_map: (
   // forms - styled-input
   styled-input-border-color: (rgba(0, 0, 0, 0.1), rgb(65, 65, 65)),
   styled-input-background-color: (#fff, #2a2a2a),
-  styled-input-placeholder-color: (rgba(0, 0, 0, 0.275), rgba(255, 255, 255, 0.45)),
+  styled-input-placeholder-color: (rgba(0, 0, 0, 0.275), rgba(255, 255, 255, 0.325)),
   styled-input-label-color: (#9747ff, #b1e3ff),
+
+  // forms - radio button
+  radio-outer-border-color: (rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.275)),
+  radio-outer-border-color_active: (#1C1C1C, #b1e3ff),
+  radio-inner-bg-color: (#1C1C1C, #b1e3ff),
 
   // summary-list
   summary-list-bg-color: (#fff, #2a2a2a),

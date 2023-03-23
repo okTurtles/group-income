@@ -2,7 +2,12 @@
 page-template.c-page-contracts
   template(#title='') {{ L('Contracts') }}
 
-  dropdown.c-filter-menu(defaultItemId='all-contracts' :options='ephemeral.filterOptions' @select='onFilterSelect')
+  dropdown.c-filter-menu(
+    defaultItemId='all-contracts'
+    :isOverlayStyle='true'
+    :options='ephemeral.filterOptions'
+    @select='onFilterSelect'
+  )
 
   section.c-contracts-list-container
     .summary-list.c-contracts-list

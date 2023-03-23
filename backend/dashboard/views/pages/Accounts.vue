@@ -1,11 +1,17 @@
 <template lang='pug'>
 page-template
-  template(#title='') {{ L('Accounts') }}
+  template(#title='') {{ L('Create a new instance') }}
 
   section.c-create-instance-section
-    i18n.section-title Create a new instance
-
     form.c-forms(@submit.prevent='')
+      .field
+        label.label {{ L('Software / Application') }}
+
+        dropdown.c-type-dropdown(
+          :options='ephemeral.fakeApplicationOptions'
+          @select='onDropdownSelect'
+        )
+
       .field
         StyledInput(
           v-model='form.instanceName'
@@ -34,8 +40,7 @@ page-template
         i18n.helper The domain name (or subdomain) where you’ll host your instance. It cannot be changed later.
 
       fieldset.field
-        legend.label
-          | {{ L('Allow unencrypted data on contracts?') }}
+        legend.label {{ L('Allow unencrypted data on contracts?') }}
 
         label.radio
           input.input(
@@ -59,23 +64,33 @@ page-template
 <script>
 import PageTemplate from './PageTemplate.vue'
 import StyledInput from '@forms/StyledInput.vue'
-import { validationMixin } from 'vuelidate'
+import Dropdown from '@forms/Dropdown.vue'
+import { fakeApplicationOptions } from '@view-utils/dummy-data.js'
 
 export default {
   name: 'Accounts',
-  mixins: [validationMixin],
   components: {
     PageTemplate,
-    StyledInput
+    StyledInput,
+    Dropdown
   },
   data () {
     return {
+      ephemeral: {
+        fakeApplicationOptions
+      },
       form: {
+        application: '',
         instanceName: '',
         displayName: '',
         domain: '',
         allowUnencryptedData: null
       }
+    }
+  },
+  methods: {
+    onDropdownSelect (item) {
+      this.form.application = item
     }
   }
 }

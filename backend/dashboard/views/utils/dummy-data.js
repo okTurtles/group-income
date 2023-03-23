@@ -51,9 +51,17 @@ const fakeUserTableData = fakeUsers.map((name) => ({
   credits: { used: 1 + Math.floor(Math.random() * 25), limit: 20 }
 }))
 
+// Accounts.vue
+const fakeApplicationOptions = [
+  { id: 'groupincome', name: L('Group income') },
+  { id: 'app-2', name: L('Application 2') },
+  { id: 'app-3', name: L('Application 3') }
+]
+
 
 export {
   contractDummyData,
   fakeUserStats,
-  fakeUserTableData
+  fakeUserTableData,
+  fakeApplicationOptions
 }

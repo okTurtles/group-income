@@ -17,7 +17,7 @@ const common = {
 const light = {
   ...common,
   background_0: '#F7F9FB',
-  background_1: '#F7F9FB',
+  background_1: '#FFFFFF',
   background_active: 'rgba(0, 0, 0, 0.05)',
   text_0: '#1C1C1C',
   text_1: 'rgba(0, 0, 0, 0.4)',

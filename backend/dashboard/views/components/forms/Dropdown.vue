@@ -1,5 +1,5 @@
 <template lang="pug">
-.c-dropdown-wrapper(:class='{ "is-active": ephemeral.isActive }')
+.c-dropdown-wrapper(:class='{ "is-active": ephemeral.isActive, "is-overlay-style": isOverlayStyle }')
   button.is-outlined.c-dropdown-trigger(ref='button' @click='toggle')
     span.c-trigger-btn-text {{ buttonText }}
     i.icon-caret-down.c-trigger-btn-arrow
@@ -34,6 +34,11 @@ export default {
       // The format of the list must be { id: string, name: string, ... }
       type: Array,
       required: true
+    },
+    isOverlayStyle: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   data () {
@@ -82,25 +87,36 @@ export default {
 .c-dropdown-wrapper {
   position: relative;
   min-width: 7.75rem;
-  width: max-content;
+  width: 100%;
   height: max-content;
+
+  &.is-overlay-style {
+    width: max-content;
+  }
 }
 
 .c-dropdown-trigger {
   position: relative;
   display: flex;
   justify-content: flex-start;
+  width: 100%;
   min-width: inherit;
   border: 1px solid $text_1;
   min-height: 2.25rem;
-  padding: 0.25rem 2.25rem 0.25rem 0.625rem;
+  padding: 0.75rem 2.25rem 0.75rem 0.625rem;
   font-size: $size_5;
+  font-weight: normal;
   line-height: 1;
+  background-color: $background_0;
 
   &:focus,
   .is-active & {
-    background-color: var(--background_active);
+    background-color: $background_1;
     box-shadow: var(--button-box-shadow);
+  }
+
+  .is-overlay-style & {
+    width: unset;
   }
 }
 
@@ -117,9 +133,8 @@ export default {
 }
 
 .c-dropdown-options-list {
-  position: absolute;
-  right: 0;
-  top: 100%;
+  position: relative;
+  margin-top: 0.25rem;
   min-width: 100%;
   border-radius: 0.5rem;
   border: 1px solid $border;
@@ -131,20 +146,27 @@ export default {
   opacity: 0;
   transform: translateY(1.5rem);
 
+  .is-overlay-style & {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 0;
+  }
+
   &-item {
     display: flex;
     align-items: center;
     text-align: right;
     width: 100%;
     min-height: 2.25rem;
-    padding: 0.25rem 0.625rem;
+    padding: 0.75rem 0.625rem;
     user-select: none;
     cursor: pointer;
-    background-color: $background_0;
+    background-color: $background_1;
 
     &:hover,
     &:active {
-      background-color: $background_active;
+      background-color: $background_0;
     }
 
     &:not(:last-child) {
