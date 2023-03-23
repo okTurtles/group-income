@@ -4,9 +4,8 @@
   .c-body
     .c-body-loading(v-if='details.isLoading')
       loading
-        //
-          TODO later - Design a cool skeleton loading
-          - this should be done only after knowing exactly how server gets each conversation data
+        // TODO later - Design a cool skeleton loading
+           this should be done only after knowing exactly how server gets each conversation data
 
     .c-body-conversation(
       v-else
@@ -118,6 +117,7 @@ import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
   CHATROOM_ACTIONS_PER_PAGE,
+  CHATROOM_MAX_ARCHIVE_ACTION_PAGES,
   CHATROOM_MESSAGE_ACTION
 } from '@model/contracts/shared/constants.js'
 import { createMessage, findMessageIdx } from '@model/contracts/shared/functions.js'
@@ -155,7 +155,6 @@ export default ({
         isPhone: null
       },
       latestEvents: [],
-      messages: [],
       ephemeral: {
         unreadFromBeginning: false,
         startedUnreadMessageId: null,
@@ -165,6 +164,11 @@ export default ({
         replyingMessage: null,
         replyingMessageId: null,
         replyingTo: null
+      },
+      messageState: {
+        contract: {},
+        prevFrom: null,
+        prevTo: null
       }
     }
   },
@@ -187,6 +191,7 @@ export default ({
     window.removeEventListener('resize', this.resizeEventHandler)
     // making sure to destroy the listener for the matchMedia istance as well
     this.matchMediaPhone.onchange = null
+    this.archiveMessageState(this.currentChatRoomId)
   },
   computed: {
     ...mapGetters([
@@ -214,6 +219,9 @@ export default ({
         return false
       }
       return this.ephemeral.scrolledDistance > 500
+    },
+    messages () {
+      return this.messageState.contract?.messages || []
     }
   },
   methods: {
@@ -283,7 +291,7 @@ export default ({
           prepublish: (message) => {
             const msgValue = JSON.parse(message.opValue())
             const { meta, data } = msgValue
-            this.messages.push({
+            this.messageState.contract.messages.push({
               // TODO: message.hash() could be different from this message on event listener
               // https://github.com/okTurtles/group-income/issues/1487
               // so that the message.hash() can't be used as the identifier of this message
@@ -402,16 +410,21 @@ export default ({
         data: { id: message.id, emoticon }
       })
     },
-    getSimulatedState (initialize = true) {
-      return {
+    initializeState () {
+      // NOTE: this state is rendered using the chatroom contract functions
+      // so should be CAREFUL of updating the fields
+      this.messageState.contract = {
         settings: cloneDeep(this.chatRoomSettings),
         attributes: cloneDeep(this.chatRoomAttributes),
         users: cloneDeep(this.chatRoomUsers),
-        messages: initialize ? [] : this.messages,
-        onlyRenderMessage: true
+        messages: [],
+        onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },
     async renderMoreMessages (refresh = false) {
+      if (refresh) {
+        await this.loadMessagesFromStorage()
+      }
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
        * if the removed message was the starting position of unread messages
@@ -435,25 +448,41 @@ export default ({
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
       let events = null
-      if (refresh && messageIdToScroll) {
-        events = await sbp('chelonia/out/eventsBetween', messageIdToScroll, latestHash, limit / 2)
+      const isLoadedFromStorage = refresh && this.latestEvents.length
+      if (isLoadedFromStorage) {
+        const prevLastEventHash = this.messageState.prevTo // NOTE: check setInitMessages function
+        let newEvents = []
+        if (latestHash !== prevLastEventHash) {
+          newEvents = await sbp('chelonia/out/eventsBetween', prevLastEventHash, latestHash, 0)
+          newEvents.shift() // NOTE: already exists in this.latestEvents
+        }
+        if (newEvents.length) {
+          for (const event of newEvents) {
+            await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), this.messageState.contract)
+            this.latestEvents.push(event)
+          }
+          this.$forceUpdate()
+        }
+      } else if (refresh && messageIdToScroll) {
+        events = await sbp('chelonia/out/eventsBetween', messageIdToScroll, latestHash, limit)
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
       }
       if (curChatRoomId !== this.currentChatRoomId) {
-        // this.currentChatRoomId is a vuex getter and it could be changed
-        // while we get events from backend. This happens when users switch chatrooms very quickly
-        // In this case, we should avoid the previous events and only necessary to render the last events
+        // NOTE: To avoid rendering the incorrect events for the currentChatRoom
+        // While getting the events from the backend, this.currentChatRoomId could be changed
+        // In this case, we should avoid the previous events because they are for another channel, not the current channel
         return
       }
-      await this.rerenderEvents(events, refresh)
+
+      if (!isLoadedFromStorage) {
+        // NOTE: already rendered above in this function
+        await this.rerenderEvents(events, refresh)
+      }
 
       if (refresh) {
         this.setStartNewMessageIndex()
-        const scrollTargetMessage = refresh && messageIdToScroll
-          ? messageIdToScroll
-          : null
-        this.updateScroll(scrollTargetMessage)
+        this.updateScroll(messageIdToScroll)
         return false
       }
 
@@ -462,21 +491,32 @@ export default ({
     async rerenderEvents (events, refresh) {
       if (refresh) {
         this.latestEvents = events
-      } else {
-        events.pop() // remove duplication
+      } else if (events.length > 1) {
+        events.pop() // remove duplication. For more detail, check sbp('chelonia/out/eventsBetween')
         this.latestEvents.unshift(...events)
+      } else {
+        return
       }
 
-      const state = this.getSimulatedState(true)
+      this.initializeState()
       for (const event of this.latestEvents) {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), this.messageState.contract)
       }
-      this.messages = state.messages
       this.$forceUpdate()
     },
+    async loadMessagesFromStorage () {
+      const prevState = await sbp('gi.db/archive/load', this.getArchiveKeyFromChatRoomId())
+      const latestEvents = prevState ? JSON.parse(prevState) : []
+      this.messageState.prevFrom = latestEvents.length ? GIMessage.deserialize(latestEvents[0]).hash() : null
+      this.messageState.prevTo = latestEvents.length
+        ? GIMessage.deserialize(latestEvents[latestEvents.length - 1]).hash()
+        : null
+
+      await this.rerenderEvents(latestEvents, true)
+    },
     setInitMessages () {
+      this.initializeState()
       this.shouldRefreshMessages = true
-      this.messages = []
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
       }
@@ -517,6 +557,8 @@ export default ({
       }
     },
     listenChatRoomActions ({ hash }) {
+      // NOTE: this function should be synchronous function
+      // Or the listener couldn't catch the event because it could be emitted in advance
       const isAddedNewMessage = (message: GIMessage): boolean => {
         const { action, meta } = message.decryptedValue()
         const rootState = sbp('state/vuex/state')
@@ -530,10 +572,12 @@ export default ({
         return { added: false, self: false }
       }
 
+      // we use this listener here so that we can get access to the GIMessage
+      // it will be called immediately after this function is called as long as listenChatRoomActions is sync function
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
+        // NOTE: while syncing the chatroom contract, we should ignore all the events
         if (contractID === this.currentChatRoomId) {
-          const state = this.getSimulatedState(false)
-          await sbp('chelonia/private/in/processMessage', message, state)
+          await sbp('chelonia/private/in/processMessage', message, this.messageState.contract)
           this.latestEvents.push(message.serialize())
 
           this.$forceUpdate()
@@ -564,6 +608,11 @@ export default ({
     },
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
+      if (this.shouldRefreshMessages === undefined) {
+        // NOTE: this infinite handler is being called once
+        // before the component state is initialized, which should be ignored
+        return
+      }
       this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
         if (completed) {
           $state.complete()
@@ -642,13 +691,41 @@ export default ({
           messageId: null
         })
       }
-    }, 500)
+    }, 500),
+    archiveMessageState (chatRoomId) {
+      if (!this.isJoinedChatRoom(chatRoomId)) {
+        return
+      }
+      const unit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
+      const from = this.latestEvents.length ? GIMessage.deserialize(this.latestEvents[0]).hash() : null
+      const to = this.latestEvents.length
+        ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1]).hash()
+        : null
+
+      // NOTE: save messages in the browser storage, but not more than CHATROOM_MAX_ARCHIVE_ACTION_PAGES pages of events
+      if (this.latestEvents.length >= CHATROOM_MAX_ARCHIVE_ACTION_PAGES * unit) {
+        sbp('gi.db/archive/delete', this.getArchiveKeyFromChatRoomId(chatRoomId))
+      } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
+        // this.currentChatRoomId could be wrong when the channels are switched very fast
+        // so it's good to initiate using input parameter chatRoomId
+        sbp('gi.db/archive/save', this.getArchiveKeyFromChatRoomId(chatRoomId), JSON.stringify(this.latestEvents))
+      }
+    },
+    getArchiveKeyFromChatRoomId (chatRoomId) {
+      const curChatRoomId = chatRoomId || this.currentChatRoomId
+      return `messages/${curChatRoomId}`
+    },
+    refreshContent: debounce(function (from, to) {
+      // NOTE: using debounce we can skip unnecessary rendering contents
+      const force = sbp('chelonia/contract/isSyncing', to)
+      this.setMessageEventListener({ from, to, force })
+      this.archiveMessageState(from)
+      this.setInitMessages()
+    }, 250)
   },
   watch: {
     currentChatRoomId (to, from) {
-      const force = sbp('chelonia/contract/isSyncing', to)
-      this.setMessageEventListener({ from, to, force })
-      this.setInitMessages()
+      this.refreshContent(from, to)
     },
     'summary.joined' (to, from) {
       if (to) {
