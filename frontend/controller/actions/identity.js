@@ -228,6 +228,7 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error('gi.actions/identity/login failed!', e)
       const humanErr = L('Failed to login: {reportError}', LError(e))
+      alert(humanErr)
       sbp('gi.actions/identity/logout')
       throw new GIErrorUIRuntimeError(humanErr)
     }
