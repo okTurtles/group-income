@@ -574,7 +574,7 @@ export default ({
       }
 
       // we use this listener here so that we can get access to the GIMessage
-      // it will be called immediately after this function is called as long as listenChatRoomActions function is sync
+      // it will be called immediately after this function is called as long as listenChatRoomActions is sync function
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
         // NOTE: while syncing the chatroom contract, we should ignore all the events
         if (contractID === this.currentChatRoomId) {
