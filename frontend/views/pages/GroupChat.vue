@@ -2,18 +2,13 @@
 page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDirectMessage()')
   template(#title='')
     .c-header
-      .avatar-wrapper(
-        v-if='summary.picture'
-      )
+      .avatar-wrapper(v-if='summary.picture')
         avatar(
           :src='summary.picture'
           alt='Partner Picture'
           size='sm'
         )
-      i(
-        v-else
-        :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`'
-      )
+      i(v-else :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`')
       | {{summary.title}}
       menu-parent(v-if='summary.joined')
         menu-trigger.c-menu-trigger.is-icon-small
@@ -79,9 +74,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
       ) Add description
 
   template(#sidebar='')
-    chat-nav(
-      :title='L("Chat")'
-    )
+    chat-nav(:title='L("Chat")')
       conversations-list(
         :title='L("Channels")'
         routepath='/group-chat/'
@@ -92,10 +85,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
       chat-members(:title='L("Direct Messages")' action='addDirectMessage')
 
   .card.c-card
-    chat-main(
-      :summary='summary'
-      :details='details'
-    )
+    chat-main(:summary='summary' :details='details')
 </template>
 
 <script>
@@ -249,7 +239,7 @@ export default ({
   }
 
   .c-header {
-    font-size: 0.75rem;
+    font-size: $size_5;
     font-weight: 400;
     color: $text_1;
     padding-bottom: 0;
@@ -260,7 +250,7 @@ export default ({
 
   .c-content {
     min-width: 17.5rem;
-    font-size: 0.875rem;
+    font-size: $size_4;
     font-weight: 400;
 
     @extend %floating-panel;

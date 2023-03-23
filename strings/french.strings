@@ -2590,6 +2590,9 @@
 "According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this." = "Selon vos règles de vote, {strong_}{value} membres sur {total}{_strong} devront approuver ceci.";
 
 /* Not currently used */
+"Advanced" = "Avancée";
+
+/* Not currently used */
 "Already existing direct message channel." = "Canal de messagerie directe déjà existant.";
 
 /* Not currently used */

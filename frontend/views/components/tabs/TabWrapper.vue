@@ -1,9 +1,6 @@
 <template lang='pug'>
   .tab-wrapper(:class='{"open": open}')
-    nav.tab-nav-sidebar(
-      aria-label='navigation'
-      @click='open = false'
-    )
+    nav.tab-nav-sidebar(aria-label='navigation')
       .tab-nav-header
         i18n.is-title-2.menu-title(tag='h2') Settings
 
@@ -12,7 +9,6 @@
         :key='index'
       )
         legend.tab-legend(v-if='tabItem.legend') {{ tabItem.legend }}
-        hr.tab-nav-separator(v-else)
 
         a.tab-link.no-border(
           v-for='(link, index) in tabItem.links'
@@ -24,6 +20,11 @@
           | {{ link.title }}
           .c-icons
             i.icon-chevron-right
+
+        hr.tab-nav-separator
+
+      .tab-nav-list.is-subtitle Version 1.6.0
+      .tab-nav-list.tab-nav-ack.is-subtitle Acknowledgements
 
     section.tab-section
       tab-item
@@ -90,12 +91,13 @@ export default ({
     tabClick (tabItem) {
       this.title = tabItem.title
       this.activeComponent = tabItem.component
+      this.open = false
       if (tabItem.index !== undefined) {
         const query = {
           ...this.$route.query,
           section: tabItem.url
         }
-        this.$router.push({ query })
+        this.$router.push({ query }).catch(logExceptNavigationDuplicated)
         this.changeTab(tabItem.index)
       } else {
         sbp(tabItem.action)
@@ -228,6 +230,21 @@ export default ({
   }
 }
 
+.tab-nav-list.is-subtitle {
+  padding-top: 1rem;
+  padding-left: 1rem;
+  text-transform: unset;
+}
+
+.tab-nav-ack {
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover {
+    color: $text_0;
+  }
+}
+
 .tab-nav-header + .tab-nav-list {
   padding-top: 3rem;
 }
@@ -245,7 +262,7 @@ export default ({
 
 .tab-nav-separator {
   height: 1px;
-  margin: -0.5rem 1rem 1rem;
+  margin: 1rem 1rem 0;
   background: $general_0;
 
   @include desktop {
@@ -269,7 +286,7 @@ export default ({
   }
 
   .tab-section {
-    transform: translateX(10%);
+    // transform: translateX(10%);
 
     @include desktop {
       transform: translateX(0);
