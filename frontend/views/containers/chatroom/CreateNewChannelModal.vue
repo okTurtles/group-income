@@ -44,6 +44,7 @@
             name='privacy'
             :value='form.privacy'
             @change='handlePrivacyLevel'
+            data-test='createChannelPrivacyLevel'
             @blur='updateField("privacy")'
           )
             option.placeholder(value='' disabled) {{L("Please select")}}

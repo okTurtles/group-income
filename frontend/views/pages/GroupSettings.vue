@@ -60,7 +60,7 @@ page.c-page
     v-if='isGroupAdmin'
     :title='L("Public Channels")'
   )
-    .c-subcontent
+    .c-subcontent(data-test='publicChannelCreateAllowance')
       .c-text-content
         i18n.c-smaller-title(tag='h3') Allow members to create public channels
         i18n.c-description(tag='p') Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels.

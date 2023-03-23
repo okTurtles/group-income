@@ -378,7 +378,6 @@ Cypress.Commands.add('giAddNewChatroom', (
   cy.getByDT('newChannelButton').click()
   cy.getByDT('modal-header-title').should('contain', 'Create a channel') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
   cy.getByDT('modal').within(() => {
-    cy.getByDT('modal-header-title').should('contain', 'Create a channel')
     cy.getByDT('createChannelName').clear().type(name)
     if (description) {
       cy.getByDT('createChannelDescription').clear().type(description)
