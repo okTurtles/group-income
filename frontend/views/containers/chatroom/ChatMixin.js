@@ -234,6 +234,7 @@ const ChatMixin: Object = {
           description: this.summary.description,
           privacyLevel: this.summary.privacyLevel
         })
+        // TODO: need to remove 'GROUPCHAT_DETAILS' when no longer needed
         sbp('okTurtles.events/emit', CHATROOM_DETAILS_UPDATED)
       }
     },
