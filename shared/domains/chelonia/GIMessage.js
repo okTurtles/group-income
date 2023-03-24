@@ -171,6 +171,7 @@ function messageToParams (message: Object, signatureFn: Function): GIMsgParams {
   //       and that would lead to different hashes resulting from blake32Hash.
   //       So to get around this we save the serialized string upon creation
   //       and keep a copy of it (instead of regenerating it as needed).
+  //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
   const messageJSON = JSON.stringify(message)
   const value = JSON.stringify({
     message: messageJSON,
