@@ -1,6 +1,10 @@
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
+import {
+  CHATROOM_TYPES,
+  CHATROOM_PRIVACY_LEVEL,
+  CHATROOM_DETAILS_UPDATED
+} from '@model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const initChatChannelDetails = {
@@ -73,6 +77,9 @@ const ChatMixin: Object = {
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
         const joined = sbp('chelonia/contract/isSyncing', this.currentChatRoomId)
+        // NOTE: not sure when this.ephemeral.loadedSummary is null and joined is true
+        // need to debug and determine `archived` in that case
+        // since `archived` field is used when `joined` is true
         return Object.assign(this.ephemeral.loadedSummary || {}, { joined })
       }
 
@@ -88,6 +95,8 @@ const ChatMixin: Object = {
       } else if (this.isGroupDirectMessage(this.currentChatRoomId)) {
         title = this.groupDirectMessageInfo(this.currentChatRoomId).title
       }
+      // NOTE: archived doesn't work for DMs
+      const archived = type !== CHATROOM_TYPES.INDIVIDUAL && !this.isJoinedChatRoom(this.currentChatRoomId, creator)
 
       return {
         type,
@@ -97,6 +106,7 @@ const ChatMixin: Object = {
         privacyLevel,
         general: this.generalChatRoomId === this.currentChatRoomId,
         joined: true,
+        archived,
         picture,
         creator
       }
@@ -190,6 +200,8 @@ const ChatMixin: Object = {
         return
       }
       const { name, type, description, creator, privacyLevel } = state.attributes
+      // NOTE: archived doesn't work for DMs
+      const archived = type !== CHATROOM_TYPES.INDIVIDUAL && !state.users[creator]
 
       this.ephemeral.loadedSummary = {
         type,
@@ -198,6 +210,7 @@ const ChatMixin: Object = {
         private: state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         privacyLevel,
         joined: false,
+        archived,
         creator
       }
 

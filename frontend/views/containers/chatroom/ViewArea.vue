@@ -36,6 +36,7 @@ export default ({
     ...mapGetters(['currentChatRoomId']),
     subTitle () {
       return this.joined
+        // TODO: Message for archived channels are not there in design, this is temporary message
         ? L('{b_} # {title}{_b} is archived', { title: this.title, ...LTags('b') })
         : L('You are viewing {b_} # {title}{_b}', { title: this.title, ...LTags('b') })
     }
