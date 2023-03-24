@@ -165,8 +165,12 @@ function defaultSignatureFn (data: string) {
 function messageToParams (message: Object, signatureFn: Function): GIMsgParams {
   // NOTE: the JSON strings generated here must be preserved forever.
   //       do not ever regenerate this message using the contructor.
-  //       instead store it using serialize() and restore it using
-  //       deserialize().
+  //       instead store it using serialize() and restore it using deserialize().
+  //       The issue is that different implementations of JavaScript engines might generate different strings
+  //       when serializing JS objects using JSON.stringify
+  //       and that would lead to different hashes resulting from blake32Hash.
+  //       So to get around this we save the serialized string upon creation
+  //       and keep a copy of it (instead of regenerating it as needed).
   const messageJSON = JSON.stringify(message)
   const value = JSON.stringify({
     message: messageJSON,
