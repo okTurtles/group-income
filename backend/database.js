@@ -175,10 +175,10 @@ export default (sbp('sbp/selectors/register', {
 
 if (persistence === 'fs') {
   sbp('sbp/selectors/register', {
-    'backend/db/readString': async function (key: string): Promise<string | null> {
+    'backend/db/readString': async function (key: string): Promise<string | void> {
       const bufferOrError = await sbp('backend/db/readFile', key)
       if (Boom.isBoom(bufferOrError)) {
-        return null
+        return
       }
       return bufferOrError.toString('utf8')
     },
@@ -193,7 +193,7 @@ if (persistence === 'fs') {
   })
 } else if (persistence === 'sqlite') {
   sbp('sbp/selectors/register', {
-    'backend/db/readString': function (key: string): Promise<string> {
+    'backend/db/readString': function (key: string): Promise<string | void> {
       return new Promise((resolve, reject) => {
         db.get('SELECT value FROM Strings WHERE key = ?', [key], (err, row) => {
           if (err) {
@@ -204,7 +204,7 @@ if (persistence === 'fs') {
         })
       })
     },
-    'backend/db/writeString': function (key, value) {
+    'backend/db/writeString': function (key: string, value: string): Promise<void> {
       return new Promise((resolve, reject) => {
         db.run('REPLACE INTO Strings(key, value) VALUES(?, ?)', [key, value], (err) => {
           if (err) {
@@ -255,20 +255,22 @@ if (persistence === 'sqlite') {
   })()
 }
 
-if (production || process.env.GI_PERSIST) {
+if (production || persistence) {
   // https://github.com/isaacs/node-lru-cache#usage
   const cache = new LRU({
     max: Number(process.env.GI_LRU_NUM_ITEMS) || 10000
   })
 
   sbp('sbp/selectors/overwrite', {
-    'chelonia/db/get': async function (key: string) {
+    'chelonia/db/get': async function (key: string): Promise<string | void> {
       const lookupValue = cache.get(key)
       if (lookupValue !== undefined) {
         return lookupValue
       }
       const value = await sbp('backend/db/readString', key)
-      cache.set(key, value)
+      if (value !== undefined) {
+        cache.set(key, value)
+      }
       return value
     },
     'chelonia/db/set': async function (key: string, value: any): Promise<*> {
