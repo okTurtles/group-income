@@ -63,7 +63,7 @@ export class GIMessage {
     return new this(messageToParams(message, signatureFn))
   }
 
-  // GIMessage.cloneWith is necessary when make an GIMessage object having the same identity id()
+  // GIMessage.cloneWith could be used when make a GIMessage object having the same id()
   // https://github.com/okTurtles/group-income/issues/1503
   static cloneWith (
     target: GIMessage,
