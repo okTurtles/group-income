@@ -27,11 +27,12 @@ $text_1: var(--text_1);
 /* stylelint-disable */
 $colors_map: (
   // buttons
-  button-primary-bg-color: (#1c1c1c, #c6c7f8),
+  button-primary-bg-color: (#1c1c1c, #b1e3ff),
   button-primary-text-color: (#fff, #1c1c1c),
   button-outline-bg-color: (rgba(0, 0, 0, 0), rgba(0, 0, 0, 0)),
+  button-outline-border-color: (rgba(0, 0, 0, 0.4), rgb(65, 65, 65)),
   button-outline-text-color: (#1c1c1c, #fff),
-  button-box-shadow: (0 0 16px rgba(219, 219, 219, 0.5), 0 0 16px rgba(132, 132, 132, 0.45)),
+  button-box-shadow: (0 0 16px rgba(219, 219, 219, 0.5), 0 0 12px rgba(132, 132, 132, 0.35)),
 
   // forms - styled-input
   styled-input-border-color: (rgba(0, 0, 0, 0.1), rgb(65, 65, 65)),
@@ -43,6 +44,11 @@ $colors_map: (
   radio-outer-border-color: (rgba(0, 0, 0, 0.2), rgba(255, 255, 255, 0.275)),
   radio-outer-border-color_active: (#1C1C1C, #b1e3ff),
   radio-inner-bg-color: (#1C1C1C, #b1e3ff),
+
+  // forms - dropdown
+  dropdown-bg-color: (#FFFFFF, #1c1c1c),
+  dropdown-active-bg-color: (#F7F9FB, #2a2a2a),
+  dropdown-box-shadow: (0 0 16px rgba(219, 219, 219, 0.5), 0 0 1px rgba(0, 0, 0, 0)),
 
   // summary-list
   summary-list-bg-color: (#fff, #2a2a2a),
@@ -57,6 +63,11 @@ $colors_map: (
 
   // stat-card
   stat-card-icon-color: (var(--text_1), var(--text_black)),
+
+  // info-card
+  info-card-bg-color: (#fff, rgba(255, 255, 255, 0.05)),
+  info-card-feature-color: (#1c1c1c, #b1e3ff),
+  info-card-content-color: (rgba(0, 0, 0, 0.5), #fff),
 
   // tooltip
   tooltip-bg-color: (rgba(28, 28, 28, 0.875), rgba(242, 244, 247, 0.925)),

@@ -33,5 +33,6 @@ export default {
 
 .c-page-header {
   margin-bottom: 2rem;
+  padding-right: 1rem;
 }
 </style>

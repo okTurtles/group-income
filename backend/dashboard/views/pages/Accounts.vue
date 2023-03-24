@@ -5,10 +5,16 @@ page-template
   section.c-create-instance-section
     form.c-forms(@submit.prevent='')
       .field
+        InfoCard.c-info-card(:heading='L("Note")')
+          | In order to create a new Application Instance, you’ll need a domain name. If you don’t already have one,
+          |  you can find an available one and register for a fee with a hosting website and then proceed to create your instance.
+
+      .field
         label.label {{ L('Software / Application') }}
 
         dropdown.c-type-dropdown(
           :options='ephemeral.fakeApplicationOptions'
+          :disable-click-away='true'
           @select='onDropdownSelect'
         )
 
@@ -59,12 +65,17 @@ page-template
             v-model='form.allowUnencryptedData'
           )
           i18n Don’t allow unencrypted contracts
+
+      .c-btn-container
+        i18n.is-outlined(tag='button' @click='onCancelClick') cancel
+        i18n(tag='button') Save
 </template>
 
 <script>
 import PageTemplate from './PageTemplate.vue'
 import StyledInput from '@forms/StyledInput.vue'
 import Dropdown from '@forms/Dropdown.vue'
+import InfoCard from '@components/InfoCard.vue'
 import { fakeApplicationOptions } from '@view-utils/dummy-data.js'
 
 export default {
@@ -72,7 +83,8 @@ export default {
   components: {
     PageTemplate,
     StyledInput,
-    Dropdown
+    Dropdown,
+    InfoCard
   },
   data () {
     return {
@@ -91,17 +103,37 @@ export default {
   methods: {
     onDropdownSelect (item) {
       this.form.application = item
+    },
+    onCancelClick () {
+      this.$router.push({ path: '/' })
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.c-create-instance-section {
+  @include phone {
+    max-width: max-content;
+    margin: 0 auto;
+  }
+}
+
 .c-forms {
   position: relative;
 }
 
 .mb-15 {
   margin-bottom: 1.5rem;
+}
+
+.c-btn-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 2.5rem;
+  padding: 0 0.5rem;
 }
 </style>

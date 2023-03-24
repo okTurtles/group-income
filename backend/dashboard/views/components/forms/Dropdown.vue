@@ -1,5 +1,8 @@
 <template lang="pug">
-.c-dropdown-wrapper(:class='{ "is-active": ephemeral.isActive, "is-overlay-style": isOverlayStyle }')
+.c-dropdown-wrapper(
+  :class='{ "is-active": ephemeral.isActive, "is-overlay-style": isOverlayStyle }'
+  v-on-clickaway='onClickedAway'
+)
   button.is-outlined.c-dropdown-trigger(ref='button' @click='toggle')
     span.c-trigger-btn-text {{ buttonText }}
     i.icon-caret-down.c-trigger-btn-arrow
@@ -16,9 +19,11 @@
 
 <script>
 import L from '@common/translations.js'
+import { mixin as clickaway } from 'vue-clickaway'
 
 export default {
   name: 'Dropdown',
+  mixins: [clickaway],
   props: {
     defaultText: {
       type: String,
@@ -38,6 +43,10 @@ export default {
     isOverlayStyle: {
       type: Boolean,
       required: false,
+      default: false
+    },
+    disableClickAway: {
+      type: Boolean,
       default: false
     }
   },
@@ -76,6 +85,11 @@ export default {
       this.close()
 
       this.$refs.button.focus()
+    },
+    onClickedAway () {
+      if (!this.disableClickAway) {
+        this.close()
+      }
     }
   }
 }
@@ -107,12 +121,13 @@ export default {
   font-size: $size_5;
   font-weight: normal;
   line-height: 1;
-  background-color: $background_0;
+  background-color: var(--dropdown-bg-color);
+  transition: none;
 
   &:focus,
-  .is-active & {
-    background-color: $background_1;
-    box-shadow: var(--button-box-shadow);
+  &:hover {
+    background-color: var(--dropdown-bg-color);
+    box-shadow: var(--dropdown-box-shadow);
   }
 
   .is-overlay-style & {
@@ -137,11 +152,12 @@ export default {
   margin-top: 0.25rem;
   min-width: 100%;
   border-radius: 0.5rem;
-  border: 1px solid $border;
+  border: 1px solid $text_1;
   overflow: hidden;
   height: auto;
   width: max-content;
-  box-shadow: var(--button-box-shadow);
+  box-shadow: var(--dropdown-box-shadow);
+  background-color: var(--dropdown-bg-color);
   z-index: 10;
   opacity: 0;
   transform: translateY(1.5rem);
@@ -162,11 +178,10 @@ export default {
     padding: 0.75rem 0.625rem;
     user-select: none;
     cursor: pointer;
-    background-color: $background_1;
 
     &:hover,
     &:active {
-      background-color: $background_0;
+      background-color: var(--dropdown-active-bg-color);
     }
 
     &:not(:last-child) {
