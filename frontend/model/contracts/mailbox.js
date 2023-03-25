@@ -6,7 +6,7 @@ import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
 import { leaveChatRoom } from './shared/functions.js'
-import { object, objectOf, string, boolean, unionOf, literalOf, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { object, objectOf, objectMaybeOf, string, boolean, unionOf, literalOf, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { CHATROOM_PRIVACY_LEVEL } from './shared/constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
@@ -43,7 +43,7 @@ sbp('chelonia/defineContract', {
   },
   actions: {
     'gi.contracts/mailbox': {
-      validate: objectOf({
+      validate: objectMaybeOf({
         username: string
       }),
       process ({ data }, { state }) {
@@ -63,12 +63,17 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/mailbox/setAttributes': {
       validate: (data, { state, meta }) => {
-        if (state.attributes.creator !== meta.username) {
+        if (state.attributes && state.attributes.creator !== meta.username) {
           throw new TypeError(L('Only the mailbox creator can set attributes.'))
         }
         object(data)
       },
       process ({ meta, data }, { state }) {
+        // TODO: remove this hack before releasing version 1
+        if (!state.attributes) {
+          Vue.set(state, 'attributes', {})
+        }
+
         for (const key in data) {
           Vue.set(state.attributes, key, data[key])
         }
