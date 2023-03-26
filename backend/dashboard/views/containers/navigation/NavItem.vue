@@ -44,6 +44,7 @@ export default {
   overflow: hidden;
   margin-bottom: 0.2rem;
   min-width: 12.5rem;
+  user-select: none;
 
   &:hover,
   &.is-active {

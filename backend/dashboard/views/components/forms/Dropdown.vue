@@ -198,6 +198,7 @@ export default {
 
 .c-dropdown-wrapper.is-active {
   margin-bottom: 1rem;
+
   .c-trigger-btn-arrow {
     transform: translateY(-50%) rotate(180deg);
   }
