@@ -4,7 +4,7 @@ import sbp from '@sbp/sbp'
 import { strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
 import fs from 'fs'
-import util from 'util'
+import { readFile, writeFile } from 'fs/promises'
 import path from 'path'
 import '@sbp/okturtles.data'
 import '~/shared/domains/chelonia/db.js'
@@ -12,8 +12,6 @@ import LRU from 'lru-cache'
 
 const Boom = require('@hapi/boom')
 
-const writeFileAsync = util.promisify(fs.writeFile)
-const readFileAsync = util.promisify(fs.readFile)
 const dataFolder = path.resolve('./data')
 
 if (!fs.existsSync(dataFolder)) {
@@ -149,27 +147,27 @@ export default (sbp('sbp/selectors/register', {
   //
   // TODO: add encryption
   // =======================
-  'backend/db/readFile': async function (filename: string): Promise<*> {
+  'backend/db/readFile': async function (filename: string): Promise<Buffer | Error> {
     const filepath = throwIfFileOutsideDataDir(filename)
     if (!fs.existsSync(filepath)) {
       return Boom.notFound()
     }
-    return await readFileAsync(filepath)
+    return await readFile(filepath)
   },
-  'backend/db/writeFile': async function (filename: string, data: any): Promise<*> {
+  'backend/db/writeFile': async function (filename: string, data: any): Promise<void> {
     // TODO: check for how much space we have, and have a server setting
     //       that determines how much of the disk space we're allowed to
     //       use. If the size of the file would cause us to exceed this
     //       amount, throw an exception
-    return await writeFileAsync(throwIfFileOutsideDataDir(filename), data)
+    return await writeFile(throwIfFileOutsideDataDir(filename), data)
   },
-  'backend/db/writeFileOnce': async function (filename: string, data: any): Promise<*> {
+  'backend/db/writeFileOnce': async function (filename: string, data: any): Promise<void> {
     const filepath = throwIfFileOutsideDataDir(filename)
     if (fs.existsSync(filepath)) {
       console.warn('writeFileOnce: exists:', filepath)
       return
     }
-    return await writeFileAsync(filepath, data)
+    return await writeFile(filepath, data)
   }
 }): any)
 
