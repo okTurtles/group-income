@@ -39,6 +39,7 @@ declare module 'dompurify' { declare module.exports: any }
 declare module 'emoji-mart-vue-fast' { declare module.exports: any }
 declare module 'emoji-mart-vue-fast/data/apple.json' { declare module.exports: any }
 declare module 'form-data' { declare module.exports: any }
+declare module 'fs/promises' { declare module.exports: any }
 declare module 'localforage' { declare module.exports: any }
 declare module 'multihashes' { declare module.exports: any }
 declare module 'scrypt-async' { declare module.exports: any }

@@ -15,21 +15,21 @@ sbp('sbp/selectors/unsafe', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/
 
 const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
-      'chelonia/db/get': function (key): Promise<*> {
+      'chelonia/db/get': function (key: string): Promise<string | void> {
         const id = sbp('chelonia/db/contractIdFromLogHEAD', key)
-        return Promise.resolve(id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : null)
+        return Promise.resolve(id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : undefined)
       },
-      'chelonia/db/set': function (key, value): Promise<void> { return Promise.resolve(value) },
-      'chelonia/db/delete': function (): Promise<void> { return Promise.resolve() }
+      'chelonia/db/set': function (key: string, value: string): Promise<string> { return Promise.resolve(value) },
+      'chelonia/db/delete': function (key: string): Promise<boolean> { return Promise.resolve(true) }
     }
   : {
-      'chelonia/db/get': function (key: string): Promise<*> {
+      'chelonia/db/get': function (key: string): Promise<string | void> {
         return Promise.resolve(sbp('okTurtles.data/get', key))
       },
-      'chelonia/db/set': function (key: string, value: string): Promise<void> {
+      'chelonia/db/set': function (key: string, value: string): Promise<string> {
         return Promise.resolve(sbp('okTurtles.data/set', key, value))
       },
-      'chelonia/db/delete': function (key: string): Promise<void> {
+      'chelonia/db/delete': function (key: string): Promise<boolean> {
         return Promise.resolve(sbp('okTurtles.data/delete', key))
       }
     }
@@ -42,7 +42,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/db/contractIdFromLogHEAD': function (key: string): ?string {
     return key.endsWith(headSuffix) ? key.slice(0, -headSuffix.length) : null
   },
-  'chelonia/db/latestHash': function (contractID: string): Promise<string> {
+  'chelonia/db/latestHash': function (contractID: string): Promise<string | void> {
     return sbp('chelonia/db/get', sbp('chelonia/db/logHEAD', contractID))
   },
   'chelonia/db/getEntry': async function (hash: string): Promise<GIMessage> {

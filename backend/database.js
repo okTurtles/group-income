@@ -138,7 +138,7 @@ export default (sbp('sbp/selectors/register', {
     await sbp('chelonia/db/set', namespaceKey(name), value)
     return { name, value }
   },
-  'backend/db/lookupName': async function (name: string): Promise<*> {
+  'backend/db/lookupName': async function (name: string): Promise<string | Error> {
     const value = await sbp('chelonia/db/get', namespaceKey(name))
     return value || Boom.notFound()
   },
