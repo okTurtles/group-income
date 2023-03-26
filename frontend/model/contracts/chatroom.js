@@ -320,6 +320,7 @@ sbp('chelonia/defineContract', {
         if (pendingMsg) {
           delete pendingMsg.pending
           delete pendingMsg.giMsgID
+          pendingMsg.id = hash // NOTE: hash could be different from pendingMsg.id
         } else {
           state.messages.push(createMessage({ meta, data, hash, state }))
         }

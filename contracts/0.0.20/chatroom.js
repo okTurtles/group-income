@@ -9760,6 +9760,7 @@ ${this.getErrorInfo()}`;
           if (pendingMsg) {
             delete pendingMsg.pending;
             delete pendingMsg.giMsgID;
+            pendingMsg.id = hash2;
           } else {
             state.messages.push(createMessage({ meta, data, hash: hash2, state }));
           }

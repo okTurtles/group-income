@@ -664,6 +664,7 @@ ${this.getErrorInfo()}`;
           if (pendingMsg) {
             delete pendingMsg.pending;
             delete pendingMsg.giMsgID;
+            pendingMsg.id = hash;
           } else {
             state.messages.push(createMessage({ meta, data, hash, state }));
           }
