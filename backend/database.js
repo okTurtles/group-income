@@ -183,12 +183,7 @@ if (persistence === 'fs') {
       return bufferOrError.toString('utf8')
     },
     'backend/db/writeString': async function (key: string, value: string): Promise<void> {
-      // eslint-disable-next-line no-useless-catch
-      try {
-        return await sbp('backend/db/writeFile', key, value)
-      } catch (err) {
-        throw err
-      }
+      return await sbp('backend/db/writeFile', key, value)
     }
   })
 } else if (persistence === 'sqlite') {
@@ -240,7 +235,7 @@ if (persistence === 'sqlite') {
     if (err) {
       return console.error(err.message)
     }
-    console.log('Connected to the %s SQlite database.', filename)
+    console.log('Connected to the %s SQLite database.', filename)
   })
   ;(async function () {
     await new Promise((resolve, reject) => {
@@ -273,15 +268,9 @@ if (production || persistence) {
       }
       return value
     },
-    'chelonia/db/set': async function (key: string, value: any): Promise<*> {
-      // eslint-disable-next-line no-useless-catch
-      try {
-        const result = await sbp('backend/db/writeString', key, value)
-        cache.set(key, value)
-        return result
-      } catch (err) {
-        throw err
-      }
+    'chelonia/db/set': async function (key: string, value: string): Promise<void> {
+      await sbp('backend/db/writeString', key, value)
+      cache.set(key, value)
     }
   })
   sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
