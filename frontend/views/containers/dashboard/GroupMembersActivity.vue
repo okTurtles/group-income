@@ -12,6 +12,14 @@
             .c-item-copy
               i18n(
                 :args='{ ...LTags("strong"), streak: groupStreaks.fullMonthlyPledges || 0 }'
+              ) Group has a streak of {strong_} 100% TODO payments of {streak} months{_strong}
+
+        li.c-item.wrapper
+          .c-item
+            .icon-star.icon-round.has-background-success.has-text-success
+            .c-item-copy
+              i18n(
+                :args='{ ...LTags("strong"), streak: groupStreaks.fullMonthlySupport || 0 }'
               ) Group has a streak of {strong_} 100% Support of {streak} months{_strong}
 
         li.c-item-wrapper
