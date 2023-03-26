@@ -31,6 +31,12 @@ button,
     box-shadow: var(--button-box-shadow);
   }
 
+  &[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
   &.is-small {
     min-height: 1.75rem;
     padding: 0.25rem 0.5rem;

@@ -90,6 +90,8 @@ export default {
       if (!this.disableClickAway) {
         this.close()
       }
+
+      this.$emit('blur')
     }
   }
 }
@@ -195,12 +197,19 @@ export default {
 }
 
 .c-dropdown-wrapper.is-active {
+  margin-bottom: 1rem;
   .c-trigger-btn-arrow {
     transform: translateY(-50%) rotate(180deg);
   }
 
   .c-dropdown-options-list {
     animation: dropdown-menu-reveal 300ms ease-out forwards;
+  }
+}
+
+.c-dropdown-wrapper.is-error {
+  .c-dropdown-trigger {
+    border-color: $danger;
   }
 }
 

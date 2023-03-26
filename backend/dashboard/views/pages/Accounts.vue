@@ -13,34 +13,46 @@ page-template
         label.label {{ L('Software / Application') }}
 
         dropdown.c-type-dropdown(
+          :class='{ "is-error": $v.form.application.$error }'
           :options='ephemeral.fakeApplicationOptions'
+          v-error:application=''
           :disable-click-away='true'
           @select='onDropdownSelect'
+          @blur='updateField("application", form.application)'
         )
 
       .field
         StyledInput(
+          :class='{ "is-error": $v.form.instanceName.$error }'
           v-model='form.instanceName'
+          v-error:instanceName=''
           :label='L("Instance name")'
           :placeholder='L("Enter instance name")'
+          @blur='updateField("instanceName", form.instanceName)'
         )
 
         i18n.helper A short alphanumeric name to identify your instance internally. It cannot be changed later and must be unique.
 
       .field
         StyledInput(
+          :class='{ "is-error": $v.form.displayName.$error }'
           v-model='form.displayName'
+          v-error:displayName=''
           :label='L("Display name")'
           :placeholder='L("Enter display name")'
+          @blur='updateField("displayName", form.displayName)'
         )
 
         i18n.helper Used on this dashboard to represent your instance.
 
       .field.mb-15
         StyledInput(
+          :class='{ "is-error": $v.form.domain.$error }'
+          v-error:domain=''
           v-model='form.domain'
           :label='L("Domain")'
           :placeholder='L("Enter domain")'
+          @blur='updateField("domain", form.domain)'
         )
 
         i18n.helper The domain name (or subdomain) where you’ll host your instance. It cannot be changed later.
@@ -68,18 +80,22 @@ page-template
 
       .c-btn-container
         i18n.is-outlined(tag='button' @click='onCancelClick') cancel
-        i18n(tag='button') Save
+        i18n(tag='button' @click='onSaveClick' :disabled='$v.form.$invalid') Save
 </template>
 
 <script>
+import L from '@common/translations.js'
 import PageTemplate from './PageTemplate.vue'
 import StyledInput from '@forms/StyledInput.vue'
 import Dropdown from '@forms/Dropdown.vue'
 import InfoCard from '@components/InfoCard.vue'
 import { fakeApplicationOptions } from '@view-utils/dummy-data.js'
+import validationMixin from '@view-utils/validationMixin.js'
+import { required } from '@validators'
 
 export default {
   name: 'Accounts',
+  mixins: [validationMixin],
   components: {
     PageTemplate,
     StyledInput,
@@ -92,7 +108,7 @@ export default {
         fakeApplicationOptions
       },
       form: {
-        application: '',
+        application: null,
         instanceName: '',
         displayName: '',
         domain: '',
@@ -106,6 +122,18 @@ export default {
     },
     onCancelClick () {
       this.$router.push({ path: '/' })
+    },
+    onSaveClick () {
+      this.$v.$touch()
+      console.log('isError?: ', this.$v.$error)
+    }
+  },
+  validations: {
+    form: {
+      application: { [L('An application has to be selected.')]: required },
+      instanceName: { [L('An instance name is required.')]: required },
+      displayName: { [L('A display name is required.')]: required },
+      domain: { [L('A domain address is required.')]: required }
     }
   }
 }

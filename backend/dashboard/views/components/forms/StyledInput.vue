@@ -7,6 +7,7 @@ label.inputgroup
     :value='value'
     :placeholder='placeholder'
     @input='onInput'
+    @blur='$emit("blur")'
     v-focus='autofocus'
   )
 </template>

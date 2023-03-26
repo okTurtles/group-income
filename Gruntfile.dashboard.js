@@ -88,6 +88,7 @@ module.exports = (grunt) => {
       '@forms': './backend/dashboard/views/components/forms',
       '@containers': './backend/dashboard/views/containers',
       '@pages': './backend/dashboard/views/pages',
+      '@validators': './node_modules/vuelidate/dist/validators.min.js', // without this, the app gets the mistery 'process() is not defined' runtime error.
       'vue': './node_modules/vue/dist/vue.esm.js', // without this, the app gets "[Vue warn]: You are using the runtime-only build of Vue" in the console.
       '~': '.'
     }

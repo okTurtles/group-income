@@ -67,6 +67,10 @@ form {
       color: var(--styled-input-placeholder-color);
     }
   }
+
+  &.is-error .input {
+    border-color: $danger;
+  }
 }
 
 /* radio-button */
@@ -159,14 +163,23 @@ p.error {
   margin-top: 0.5rem;
   margin-bottom: 0;
   color: $danger;
+  user-select: none;
 
   &::before {
     @include icon(close-circle);
+    position: relative;
+    top: 2px;
+    display: inline-block;
+    font-size: 1.15em;
     margin-right: 0.25rem;
   }
 
   & + .helper {
     // When the error and a helper are visisble at the same time
     margin-top: 0.5rem;
+  }
+
+  &.is-hidden {
+    display: none;
   }
 }
