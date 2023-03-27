@@ -159,7 +159,7 @@ export default (sbp('sbp/selectors/register', {
         await sbp('chelonia/contract/sync', identityContractID)
       }
 
-      // NOTE: users could notice that he leave the group by someone else when he logs in
+      // NOTE: users could notice that they leave the group by someone else when they log in
       if (!state.currentGroupId) {
         const { contracts } = state
         const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
