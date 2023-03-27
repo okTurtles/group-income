@@ -432,6 +432,8 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
 Cypress.Commands.add('giRedirectToGroupChat', () => {
   cy.getByDT('groupChatLink').click()
   cy.getByDT('conversationWrapper').within(() => {
+    // NOTE: '.infinite-status-prompt:first-child' is the spinner css selector
+    cy.get('.infinite-status-prompt:first-child').should('exist')
     cy.get('.infinite-status-prompt:first-child')
       .invoke('attr', 'style')
       .should('include', 'display: none')
