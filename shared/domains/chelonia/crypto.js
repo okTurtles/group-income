@@ -31,7 +31,7 @@ export const keygen = (type: string): Key => {
       type: type,
       publicKey: key.publicKey
     }
-
+    // prevents 'secretKey' from being enumerated or appearing in JSON
     Object.defineProperty(res, 'secretKey', { value: key.secretKey })
 
     return res

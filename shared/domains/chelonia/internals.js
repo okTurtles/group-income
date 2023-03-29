@@ -415,6 +415,7 @@ export default (sbp('sbp/selectors/register', {
       const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys) : state._vm.authorizedKeys
       let signingKey = authorizedKeys?.[signature.keyId]
 
+      // TODO: add comment here explaining what scenario is being covered.
       if (!signingKey && opT !== GIMessage.OP_CONTRACT && message.originatingContractID() !== message.contractID()) {
         const originatingContractState = await sbp('chelonia/withEnv', message.originatingContractID(), { skipActionProcessing: true }, [
           'chelonia/latestContractState', message.originatingContractID()

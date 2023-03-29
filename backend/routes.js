@@ -249,6 +249,7 @@ route.GET('/', {}, function (req, h) {
   return h.redirect('/app/')
 })
 
+// TODO: name this properly
 route.POST('/zkpp/{contract}', {
   validate: {
     payload: Joi.alternatives([
@@ -286,11 +287,11 @@ route.POST('/zkpp/{contract}', {
   return Boom.internal('internal error')
 })
 
-route.GET('/zkpp/{contract}/auth_hash', {}, async function (req, h) {
-  if (!req.query['b']) {
-    return Boom.badRequest('b query param required')
+route.GET('/zkpp/{contract}/auth_hash', {
+  validate: {
+    query: { b: Joi.string().required() }
   }
-
+}, async function (req, h) {
   try {
     const challenge = await getChallenge(req.params['contract'], req.query['b'])
 
@@ -305,23 +306,16 @@ route.GET('/zkpp/{contract}/auth_hash', {}, async function (req, h) {
   return Boom.internal('internal error')
 })
 
-route.GET('/zkpp/{contract}/contract_hash', {}, async function (req, h) {
-  if (!req.query['r']) {
-    return Boom.badRequest('r query param required')
+route.GET('/zkpp/{contract}/contract_hash', {
+  validate: {
+    query: {
+      r: Joi.string().required(),
+      s: Joi.string().required(),
+      sig: Joi.string().required(),
+      hc: Joi.string().required()
+    }
   }
-
-  if (!req.query['s']) {
-    return Boom.badRequest('s query param required')
-  }
-
-  if (!req.query['sig']) {
-    return Boom.badRequest('sig query param required')
-  }
-
-  if (!req.query['hc']) {
-    return Boom.badRequest('hc query param required')
-  }
-
+}, async function (req, h) {
   try {
     const salt = await getContractSalt(req.params['contract'], req.query['r'], req.query['s'], req.query['sig'], req.query['hc'])
 
@@ -336,6 +330,7 @@ route.GET('/zkpp/{contract}/contract_hash', {}, async function (req, h) {
   return Boom.internal('internal error')
 })
 
+// TODO: name this properly
 route.PUT('/zkpp/{contract}', {
   validate: {
     payload: Joi.object({
