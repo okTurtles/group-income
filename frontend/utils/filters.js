@@ -12,16 +12,17 @@ export const filterByKeyword = (
     keyword = keyword.toUpperCase()
   }
 
-  const isKeywordContained = (n) => {
-    if (!caseSensitive) { n = n.toUpperCase() }
-    return n.indexOf(keyword) > -1
-  }
   return list.filter(item => {
     const values = (typeof item === 'object' ? keys.map(key => item[key]) : [item])
       .filter(value => value !== undefined && value !== null)
 
-    for (const value of values) {
-      if (isKeywordContained(String(value))) { return true }
+    for (let value of values) {
+      if (!caseSensitive) {
+        value = String(value).toUpperCase()
+      }
+      if (value.indexOf(keyword) > -1) {
+        return true
+      }
     }
     return false
   })
