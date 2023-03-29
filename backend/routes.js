@@ -249,16 +249,18 @@ route.GET('/', {}, function (req, h) {
   return h.redirect('/app/')
 })
 
-// TODO: name this properly
+// TODO: name this using a high-level description
+// e.g. route.POST('/zkpp/register/{contract}', {
 route.POST('/zkpp/{contract}', {
   validate: {
     payload: Joi.alternatives([
       {
+        // what b is
         b: Joi.string().required()
       },
       {
-        r: Joi.string().required(),
-        s: Joi.string().required(),
+        r: Joi.string().required(), // what r is
+        s: Joi.string().required(), // what s is
         sig: Joi.string().required(),
         Eh: Joi.string().required()
       }
@@ -330,7 +332,8 @@ route.GET('/zkpp/{contract}/contract_hash', {
   return Boom.internal('internal error')
 })
 
-// TODO: name this properly
+// TODO: name this using a high-level description, and use POST
+//       suggestion: route.POST('/zkpp/updatePasswordHash/{contract}', {
 route.PUT('/zkpp/{contract}', {
   validate: {
     payload: Joi.object({
