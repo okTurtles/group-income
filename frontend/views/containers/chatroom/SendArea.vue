@@ -154,7 +154,6 @@ export default ({
       default: false
     },
     replyingMessage: String,
-    replyingMessageId: String,
     replyingTo: String,
     isEditing: {
       type: Boolean,

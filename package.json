@@ -1,7 +1,7 @@
 {
   "name": "group-income",
   "version": "0.0.1",
-  "contractsVersion": "0.0.19",
+  "contractsVersion": "0.0.20",
   "private": true,
   "description": "",
   "scripts": {
@@ -114,6 +114,7 @@
     "scrypt-async": "2.0.1",
     "tweetnacl": "1.0.3",
     "tweetnacl-util": "0.15.1",
+    "uuid": "9.0.0",
     "vue": "2.6.12",
     "vue-clickaway": "2.2.2",
     "vue-infinite-loading": "2.4.5",

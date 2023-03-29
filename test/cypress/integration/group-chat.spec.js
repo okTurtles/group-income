@@ -46,8 +46,8 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
         }
       })
     })
-    cy.getByDT('channelName').should('contain', channelName)
     cy.giWaitUntilMessagesLoaded()
+    cy.getByDT('channelName').should('contain', channelName)
   }
 
   function checkIfLeaved (channelName, kicker, leaver) {
@@ -76,6 +76,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   function joinChannel (channelName) {
     cy.getByDT('joinChannel').click()
+    cy.giWaitUntilMessagesLoaded()
     cy.giCheckIfJoinedChatroom(channelName, me)
   }
 
@@ -353,6 +354,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     // Switch from group2 to group1 on the group chat page
     cy.getByDT('groupsList').find('li:first-child button').click()
+    cy.giWaitUntilMessagesLoaded()
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, user2)
     switchChannel(channelsOf2For1[0])
 
@@ -465,7 +467,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giRedirectToGroupChat()
 
-    switchChannel(CHATROOM_GENERAL_NAME)
+    // switchChannel(CHATROOM_GENERAL_NAME)
     cy.getByDT('channelMembers').should('contain', '1 members')
   })
 
