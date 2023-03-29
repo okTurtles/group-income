@@ -9953,7 +9953,7 @@ ${this.getErrorInfo()}`;
       params: mapOf(string, string)
     }),
     replyingMessage: objectOf({
-      id: string,
+      hash: string,
       text: string
     }),
     emoticons: mapOf(string, arrayOf(string)),
@@ -10344,8 +10344,7 @@ ${this.getErrorInfo()}`;
               groupCreator: meta.username,
               distributionPeriodLength: 30 * DAYS_MILLIS,
               inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
-              inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL,
-              publicChannelCreateAllowance: false
+              inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
             },
             streaks: initGroupStreaks(),
             profiles: {
@@ -10733,8 +10732,7 @@ ${this.getErrorInfo()}`;
           groupPicture: (x) => typeof x === "string",
           sharedValues: (x) => typeof x === "string",
           mincomeAmount: (x) => typeof x === "number" && x > 0,
-          mincomeCurrency: (x) => typeof x === "string",
-          publicChannelCreateAllowance: (x) => typeof x === "boolean"
+          mincomeCurrency: (x) => typeof x === "string"
         }),
         process({ contractID, meta, data }, { state, getters }) {
           const mincomeCache = "mincomeAmount" in data ? state.settings.mincomeAmount : null;

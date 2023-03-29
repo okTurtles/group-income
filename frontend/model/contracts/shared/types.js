@@ -46,7 +46,7 @@ export const messageType: any = objectMaybeOf({
     params: mapOf(string, string) // { username }
   }),
   replyingMessage: objectOf({
-    id: string, // scroll to the original message and highlight
+    hash: string, // scroll to the original message and highlight
     text: string // display text(if too long, truncate)
   }),
   emoticons: mapOf(string, arrayOf(string)), // mapping of emoticons and usernames
