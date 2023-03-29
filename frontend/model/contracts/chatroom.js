@@ -45,9 +45,9 @@ function emitMessageEvent ({ contractID, hash }: {
   sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash })
 }
 
-function messageReceivePostEffect ({ contractID, messageId, datetime, text, isAlreadyAdded, isMentionedMe, username, chatRoomName }: {
+function messageReceivePostEffect ({ contractID, messageHash, datetime, text, isAlreadyAdded, isMentionedMe, username, chatRoomName }: {
   contractID: string,
-  messageId: string,
+  messageHash: string,
   datetime: string,
   text: string,
   isAlreadyAdded?: boolean,
@@ -65,7 +65,7 @@ function messageReceivePostEffect ({ contractID, messageId, datetime, text, isAl
   if (!isAlreadyAdded && isDMOrMention) {
     sbp('state/vuex/commit', 'addChatRoomUnreadMention', {
       chatRoomId: contractID,
-      messageId,
+      messageHash,
       createdDate: datetime
     })
   }
@@ -111,7 +111,7 @@ function updateUnreadPosition ({ contractID, hash, createdDate }: {
   }
   sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
     chatRoomId: contractID,
-    messageId: hash,
+    messageHash: hash,
     createdDate
   })
 }
@@ -180,7 +180,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         username: string // username of joining member
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash, id }, { state }) {
         const { username } = data
         if (!state.onlyRenderMessage && state.users[username]) {
           // this can happen when we're logging in on another machine, and also in other circumstances
@@ -200,7 +200,7 @@ sbp('chelonia/defineContract', {
           notificationType,
           notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { username } : {}
         )
-        const newMessage = createMessage({ meta, hash, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
@@ -212,7 +212,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         name: string
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash, id }, { state }) {
         Vue.set(state.attributes, 'name', data.name)
 
         if (!state.onlyRenderMessage) {
@@ -220,7 +220,7 @@ sbp('chelonia/defineContract', {
         }
 
         const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {})
-        const newMessage = createMessage({ meta, hash, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
@@ -232,7 +232,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         description: string
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash, id }, { state }) {
         Vue.set(state.attributes, 'description', data.description)
 
         if (!state.onlyRenderMessage) {
@@ -242,7 +242,7 @@ sbp('chelonia/defineContract', {
         const notificationData = createNotificationData(
           MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {}
         )
-        const newMessage = createMessage({ meta, hash, data: notificationData, state })
+        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
         state.messages.push(newMessage)
       },
       sideEffect ({ contractID, hash, meta }) {
@@ -255,7 +255,7 @@ sbp('chelonia/defineContract', {
         username: optional(string), // coming from the gi.contracts/group/leaveChatRoom
         member: string // username to be removed
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash, id }, { state }) {
         const { member } = data
         const isKicked = data.username && member !== data.username
         if (!state.onlyRenderMessage && !state.users[member]) {
@@ -272,6 +272,7 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({
           meta: isKicked ? meta : { ...meta, username: member },
           hash,
+          id,
           data: notificationData,
           state
         })
@@ -310,18 +311,21 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/addMessage': {
       validate: messageType,
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash, id }, { state }) {
         if (!state.onlyRenderMessage) {
           return
         }
-        const pendingMsg = state.messages.find(msg => msg.id === hash && msg.pending)
+        // NOTE: id(GIMessage.id()) should be used as identifier for GIMessages, but not hash(GIMessage.hash())
+        //       https://github.com/okTurtles/group-income/issues/1503
+        const pendingMsg = state.messages.find(msg => msg.id === id && msg.pending)
         if (pendingMsg) {
           delete pendingMsg.pending
+          pendingMsg.hash = hash // NOTE: hash could be different from the one before publishEvent
         } else {
-          state.messages.push(createMessage({ meta, data, hash, state }))
+          state.messages.push(createMessage({ meta, data, hash, id, state }))
         }
       },
-      sideEffect ({ contractID, hash, meta, data }, { state, getters }) {
+      sideEffect ({ contractID, hash, id, meta, data }, { state, getters }) {
         emitMessageEvent({ contractID, hash })
 
         const rootState = sbp('state/vuex/state')
@@ -330,14 +334,14 @@ sbp('chelonia/defineContract', {
         if (me === meta.username) {
           return
         }
-        const newMessage = createMessage({ meta, data, hash, state })
+        const newMessage = createMessage({ meta, data, hash, id, state })
         const mentions = makeMentionFromUsername(me)
         const isTextMessage = data.type === MESSAGE_TYPES.TEXT
         const isMentionedMe = isTextMessage && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
 
         messageReceivePostEffect({
           contractID,
-          messageId: newMessage.id,
+          messageHash: newMessage.hash,
           datetime: newMessage.datetime,
           text: newMessage.text,
           isMentionedMe,
@@ -349,7 +353,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/editMessage': {
       validate: objectOf({
-        id: string,
+        hash: string,
         createdDate: string,
         text: string
       }),
@@ -357,7 +361,7 @@ sbp('chelonia/defineContract', {
         if (!state.onlyRenderMessage) {
           return
         }
-        const msgIndex = findMessageIdx(data.id, state.messages)
+        const msgIndex = findMessageIdx(data.hash, state.messages)
         if (msgIndex >= 0 && meta.username === state.messages[msgIndex].from) {
           state.messages[msgIndex].text = data.text
           state.messages[msgIndex].updatedDate = meta.createdDate
@@ -375,13 +379,13 @@ sbp('chelonia/defineContract', {
         if (me === meta.username) {
           return
         }
-        const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentions.find(m => m.messageId === data.id)
+        const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentions.find(m => m.messageHash === data.hash)
         const mentions = makeMentionFromUsername(me)
         const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
 
         messageReceivePostEffect({
           contractID,
-          messageId: data.id,
+          messageHash: data.hash,
           /*
           * the following datetime is the time when the message(which made mention) is created
           * the reason why it is it instead of datetime when the mention created is because
@@ -399,27 +403,25 @@ sbp('chelonia/defineContract', {
         if (isAlreadyAdded && !isMentionedMe) {
           sbp('state/vuex/commit', 'deleteChatRoomUnreadMention', {
             chatRoomId: contractID,
-            messageId: data.id
+            messageHash: data.hash
           })
         }
       }
     },
     'gi.contracts/chatroom/deleteMessage': {
-      validate: objectOf({
-        id: string
-      }),
+      validate: objectOf({ hash: string }),
       process ({ data, meta }, { state }) {
         if (!state.onlyRenderMessage) {
           return
         }
-        const msgIndex = findMessageIdx(data.id, state.messages)
+        const msgIndex = findMessageIdx(data.hash, state.messages)
         if (msgIndex >= 0) {
           state.messages.splice(msgIndex, 1)
         }
         // filter replied messages and check if the current message is original
         for (const message of state.messages) {
-          if (message.replyingMessage?.id === data.id) {
-            message.replyingMessage.id = null
+          if (message.replyingMessage?.hash === data.hash) {
+            message.replyingMessage.hash = null
             message.replyingMessage.text = L('Original message was removed by {username}', {
               username: makeMentionFromUsername(meta.username).me
             })
@@ -432,13 +434,13 @@ sbp('chelonia/defineContract', {
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
 
-        if (rootState.chatRoomScrollPosition[contractID] === data.id) {
+        if (rootState.chatRoomScrollPosition[contractID] === data.hash) {
           sbp('state/vuex/commit', 'setChatRoomScrollPosition', {
-            chatRoomId: contractID, messageId: null
+            chatRoomId: contractID, messageHash: null
           })
         }
 
-        if (rootState.chatRoomUnread[contractID].since.messageId === data.id) {
+        if (rootState.chatRoomUnread[contractID].since.messageHash === data.hash) {
           sbp('state/vuex/commit', 'deleteChatRoomUnreadSince', {
             chatRoomId: contractID,
             deletedDate: meta.createdDate
@@ -448,10 +450,10 @@ sbp('chelonia/defineContract', {
         if (me === meta.username) {
           return
         }
-        if (rootState.chatRoomUnread[contractID].mentions.find(m => m.messageId === data.id)) {
+        if (rootState.chatRoomUnread[contractID].mentions.find(m => m.messageHash === data.hash)) {
           sbp('state/vuex/commit', 'deleteChatRoomUnreadMention', {
             chatRoomId: contractID,
-            messageId: data.id
+            messageHash: data.hash
           })
         }
 
@@ -460,15 +462,15 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/chatroom/makeEmotion': {
       validate: objectOf({
-        id: string,
+        hash: string,
         emoticon: string
       }),
       process ({ data, meta, contractID }, { state }) {
         if (!state.onlyRenderMessage) {
           return
         }
-        const { id, emoticon } = data
-        const msgIndex = findMessageIdx(id, state.messages)
+        const { hash, emoticon } = data
+        const msgIndex = findMessageIdx(hash, state.messages)
         if (msgIndex >= 0) {
           let emoticons = cloneDeep(state.messages[msgIndex].emoticons || {})
           if (emoticons[emoticon]) {
