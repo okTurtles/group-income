@@ -22,29 +22,6 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
   return cy.get(`${otherSelector}[data-test="${element}"]`)
 })
 
-function checkIfJoinedGeneralChannel (groupName, username) {
-  cy.giRedirectToGroupChat()
-  cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-
-  cy.getByDT('messageInputWrapper').within(() => {
-    cy.get('textarea').should('exist')
-  })
-  cy.getByDT('conversationWrapper').within(() => {
-    if (username) {
-      cy.get('div.c-message:last-child .c-who > span:first-child').should('contain', username)
-    }
-    cy.get('div.c-message:last-child .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
-  })
-
-  cy.getByDT('channelsList').within(() => {
-    cy.get('ul > li:first-child').should('contain', CHATROOM_GENERAL_NAME)
-    cy.get('ul > li:first-child i').should('have.class', 'icon-hashtag')
-  })
-
-  cy.getByDT('dashboard').click()
-  cy.getByDT('groupName').should('contain', groupName)
-}
-
 Cypress.Commands.add('giSignup', (username, {
   password = '123456789',
   isInvitation = false,
@@ -230,7 +207,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.get(el).should('have.attr', 'data-sync', '')
   })
 
-  checkIfJoinedGeneralChannel(name)
+  cy.giCheckIfJoinedGeneralChatroom(name)
 })
 
 function inviteUser (invitee, index) {
@@ -317,7 +294,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
 
-    checkIfJoinedGeneralChannel(groupName, username)
+    cy.giCheckIfJoinedGeneralChatroom(groupName)
   }
 
   if (displayName) {
@@ -393,6 +370,7 @@ Cypress.Commands.add('giAddNewChatroom', (
     cy.getByDT('createChannelSubmit').click()
     cy.getByDT('closeModal').should('not.exist')
   })
+  cy.giWaitUntilMessagesLoaded()
   cy.getByDT('channelName').should('contain', name)
   cy.getByDT('conversationWrapper').within(() => {
     cy.get('.c-greetings .is-title-4').should('contain', 'Welcome!')
@@ -429,14 +407,12 @@ Cypress.Commands.add('giForceDistributionDateToNow', () => {
   })
 })
 
-Cypress.Commands.add('giRedirectToGroupChat', () => {
-  cy.getByDT('groupChatLink').click()
-  cy.getByDT('conversationWrapper').within(() => {
-    cy.get('.infinite-status-prompt:first-child')
-      .invoke('attr', 'style')
-      .should('include', 'display: none')
-  })
-  cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
+Cypress.Commands.add('giCheckIfJoinedGeneralChatroom', (groupName) => {
+  cy.giRedirectToGroupChat()
+  cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
+  cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME)
+  cy.getByDT('dashboard').click()
+  cy.getByDT('groupName').should('contain', groupName)
 })
 
 Cypress.Commands.add('giCheckIfJoinedChatroom', (
@@ -453,18 +429,26 @@ Cypress.Commands.add('giCheckIfJoinedChatroom', (
     })
   }
 
-  cy.giWaitUntilMessagesLoaded()
-
   cy.getByDT('conversationWrapper').within(() => {
-    cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
+    if (inviter) {
+      cy.get('.c-message:last-child .c-who > span:first-child').should('contain', inviter)
+    }
     const message = selfJoin ? `Joined ${channelName}` : `Added a member to ${channelName}: ${invitee}`
     cy.get('.c-message:last-child .c-notification').should('contain', message)
   })
 })
 
-Cypress.Commands.add('giWaitUntilMessagesLoaded', () => {
+Cypress.Commands.add('giRedirectToGroupChat', () => {
+  cy.getByDT('groupChatLink').click()
+  cy.giWaitUntilMessagesLoaded()
+})
+
+Cypress.Commands.add('giWaitUntilMessagesLoaded', (isJoined = true) => {
   cy.getByDT('conversationWrapper').within(() => {
-    cy.get('.infinite-status-prompt:first-child').should('exist')
+    // NOTE: '.infinite-status-prompt:first-child' is the spinner css selector
+    cy.get('.infinite-status-prompt:first-child')
+      .invoke('attr', 'style')
+      .should('not.include', 'display: none')
     cy.get('.infinite-status-prompt:first-child')
       .invoke('attr', 'style')
       .should('include', 'display: none')
