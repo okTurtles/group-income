@@ -22,8 +22,8 @@ Vue.use(Vuex)
 const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
-  chatRoomScrollPosition: {}, // [chatRoomId]: messageId
-  chatRoomUnread: {}, // [chatRoomId]: { since: { messageId, createdDate }, mentions: [{ messageId, createdDate }] }
+  chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
+  chatRoomUnread: {}, // [chatRoomId]: { since: { messageHash, createdDate }, mentions: [{ messageHash, createdDate }] }
   notificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
@@ -120,16 +120,16 @@ const mutations = {
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
     }
   },
-  setChatRoomScrollPosition (state, { chatRoomId, messageId }) {
-    Vue.set(state.chatRoomScrollPosition, chatRoomId, messageId)
+  setChatRoomScrollPosition (state, { chatRoomId, messageHash }) {
+    Vue.set(state.chatRoomScrollPosition, chatRoomId, messageHash)
   },
   deleteChatRoomScrollPosition (state, { chatRoomId }) {
     Vue.delete(state.chatRoomScrollPosition, chatRoomId)
   },
-  setChatRoomUnreadSince (state, { chatRoomId, messageId, createdDate }) {
+  setChatRoomUnreadSince (state, { chatRoomId, messageHash, createdDate }) {
     const prevMentions = state.chatRoomUnread[chatRoomId] ? state.chatRoomUnread[chatRoomId].mentions : []
     Vue.set(state.chatRoomUnread, chatRoomId, {
-      since: { messageId, createdDate, deletedDate: null },
+      since: { messageHash, createdDate, deletedDate: null },
       mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
     })
   },
@@ -149,24 +149,24 @@ const mutations = {
       deletedDate
     })
   },
-  addChatRoomUnreadMention (state, { chatRoomId, messageId, createdDate }) {
+  addChatRoomUnreadMention (state, { chatRoomId, messageHash, createdDate }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
     if (!prevUnread) {
       Vue.set(state.chatRoomUnread, chatRoomId, {
-        since: { messageId, createdDate, deletedDate: null, fromBeginning: true },
-        mentions: [{ messageId, createdDate }]
+        since: { messageHash, createdDate, deletedDate: null, fromBeginning: true },
+        mentions: [{ messageHash, createdDate }]
       })
     } else {
-      prevUnread.mentions.push({ messageId, createdDate })
+      prevUnread.mentions.push({ messageHash, createdDate })
     }
   },
-  deleteChatRoomUnreadMention (state, { chatRoomId, messageId }) {
+  deleteChatRoomUnreadMention (state, { chatRoomId, messageHash }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
     if (!prevUnread) {
       return
     }
 
-    prevUnread.mentions = prevUnread.mentions.filter(m => m.messageId !== messageId)
+    prevUnread.mentions = prevUnread.mentions.filter(m => m.messageHash !== messageHash)
   },
   deleteChatRoomUnread (state, { chatRoomId }) {
     Vue.delete(state.chatRoomUnread, chatRoomId)
