@@ -3,7 +3,7 @@
   :class='{ "is-active": ephemeral.isActive, "is-overlay-style": isOverlayStyle }'
   v-on-clickaway='onClickedAway'
 )
-  button.is-outlined.c-dropdown-trigger(ref='button' @click='toggle')
+  button.is-outlined.c-dropdown-trigger(ref='button' @click='toggle' @blur='$emit("blur")')
     span.c-trigger-btn-text {{ buttonText }}
     i.icon-caret-down.c-trigger-btn-arrow
 
@@ -89,9 +89,8 @@ export default {
     onClickedAway () {
       if (!this.disableClickAway) {
         this.close()
+        this.$emit('blur')
       }
-
-      this.$emit('blur')
     }
   }
 }
@@ -130,6 +129,7 @@ export default {
   &:hover {
     background-color: var(--dropdown-bg-color);
     box-shadow: var(--dropdown-box-shadow);
+    border: 1px solid var(--button-outline-text-color);
   }
 
   .is-overlay-style & {
@@ -197,7 +197,9 @@ export default {
 }
 
 .c-dropdown-wrapper.is-active {
-  margin-bottom: 1rem;
+  &:not(.is-overlay-style) {
+    margin-bottom: 1rem;
+  }
 
   .c-trigger-btn-arrow {
     transform: translateY(-50%) rotate(180deg);

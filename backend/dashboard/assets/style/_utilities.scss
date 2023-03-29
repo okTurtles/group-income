@@ -10,6 +10,30 @@
   border: 0;
 }
 
+.is-inline-block {
+  display: inline-block;
+}
+
+.is-unstyled {
+  background: none;
+  border: none;
+  border-radius: 0;
+  font-size: inherit;
+  min-height: auto;
+  color: inherit;
+  text-align: inherit;
+  padding: 0;
+
+  &:focus,
+  &:hover {
+    outline: none;
+    border: none;
+    color: inherit;
+    background: none;
+    box-shadow: none;
+  }
+}
+
 .hide-desktop {
   @include desktop {
     display: none !important;

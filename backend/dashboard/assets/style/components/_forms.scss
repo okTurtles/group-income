@@ -20,7 +20,7 @@ form {
     color: $text_0;
     margin-top: 0.5rem;
     font-size: $size_6;
-    padding: 0 0.25rem;
+    padding: 0;
   }
 }
 
@@ -28,6 +28,7 @@ form {
 .legend {
   display: block;
   font-size: 0.825rem;
+  font-weight: 600;
   color: var(--styled-input-label-color);
   line-height: 1.5rem;
   margin-bottom: 0.5rem;
@@ -43,6 +44,7 @@ form {
   .input-label {
     position: absolute;
     font-size: 0.825rem;
+    font-weight: 600;
     top: 0.75rem;
     left: 1.25rem;
     cursor: default;
@@ -60,6 +62,16 @@ form {
     border-radius: 0.5rem;
     border: 1px solid var(--styled-input-border-color);
     background-color: var(--styled-input-background-color);
+    transition: border-color 150ms;
+
+    &:focus {
+      border-color: $text_0 !important;
+    }
+
+    &.no-label {
+      height: 2.875rem;
+      padding: 0.75rem 1.25rem;
+    }
 
     @include placeholder {
       font-size: $size_5;
@@ -68,7 +80,7 @@ form {
     }
   }
 
-  &.is-error .input {
+  &.is-error .input:not(:focus) {
     border-color: $danger;
   }
 }

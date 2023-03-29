@@ -10,7 +10,7 @@ page-template
           |  you can find an available one and register for a fee with a hosting website and then proceed to create your instance.
 
       .field
-        label.label {{ L('Software / Application') }}
+        i18n.label(tag='label') Software / Application
 
         dropdown.c-type-dropdown(
           :class='{ "is-error": $v.form.application.$error }'
@@ -31,7 +31,7 @@ page-template
           @blur='updateField("instanceName", form.instanceName)'
         )
 
-        i18n.helper A short alphanumeric name to identify your instance internally. It cannot be changed later and must be unique.
+        i18n.helper.c-helper A short alphanumeric name to identify your instance internally. It cannot be changed later and must be unique.
 
       .field
         StyledInput(
@@ -43,7 +43,7 @@ page-template
           @blur='updateField("displayName", form.displayName)'
         )
 
-        i18n.helper Used on this dashboard to represent your instance.
+        i18n.helper.c-helper Used on this dashboard to represent your instance.
 
       .field.mb-15
         StyledInput(
@@ -55,7 +55,7 @@ page-template
           @blur='updateField("domain", form.domain)'
         )
 
-        i18n.helper The domain name (or subdomain) where you’ll host your instance. It cannot be changed later.
+        i18n.helper.c-helper The domain name (or subdomain) where you’ll host your instance. It cannot be changed later.
 
       fieldset.field
         legend.label {{ L('Allow unencrypted data on contracts?') }}
@@ -125,7 +125,6 @@ export default {
     },
     onSaveClick () {
       this.$v.$touch()
-      console.log('isError?: ', this.$v.$error)
     }
   },
   validations: {
@@ -163,5 +162,9 @@ export default {
   align-items: center;
   margin-top: 2.5rem;
   padding: 0 0.5rem;
+}
+
+.c-helper {
+  padding: 0 0.25rem;
 }
 </style>

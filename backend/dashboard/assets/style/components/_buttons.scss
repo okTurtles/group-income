@@ -68,13 +68,14 @@ button,
   }
 
   &.has-blue-background {
-    background-color: $secondary_blue_1;
+    background-color: $primary_blue;
     border-color: rgba(0, 0, 0, 0);
     color: $text_black;
 
     &:active,
     &:hover {
-      box-shadow: 0 0 6px 3px rgba(168, 197, 218, 0.35);
+      box-shadow: 0 0 6px $primary_blue;
+      border-color: $border;
     }
   }
 
