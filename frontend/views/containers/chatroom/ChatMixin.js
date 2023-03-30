@@ -77,10 +77,7 @@ const ChatMixin: Object = {
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
         const joined = sbp('chelonia/contract/isSyncing', this.currentChatRoomId)
-        // NOTE: not sure when this.ephemeral.loadedSummary is null and joined is true
-        // need to debug and determine `archived` in that case
-        // since `archived` field is used when `joined` is true
-        return Object.assign(this.ephemeral.loadedSummary || {}, { joined })
+        return Object.assign(this.ephemeral.loadedSummary || { archived: false }, { joined })
       }
 
       const { name, type, description, creator, privacyLevel } = this.currentChatRoomState.attributes
