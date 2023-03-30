@@ -124,7 +124,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import { CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
-import { filterByKeyword } from '@utils/filters.js'
+import { filterByKeyword } from '@view-utils/filters.js'
 
 const initDetails = {
   name: '',
