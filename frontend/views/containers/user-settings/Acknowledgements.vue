@@ -59,32 +59,32 @@ export default ({
           {
             title: 'Voting',
             name: 'By Nikita Kozin',
-            url: ''
+            url: '#'
           },
           {
             title: 'Broken Link',
             name: 'By HeadsOfBirds',
-            url: ''
+            url: '#'
           },
           {
             title: 'Send',
             name: 'By Gregor Cresnar',
-            url: ''
+            url: '#'
           },
           {
             title: 'Hello',
             name: 'By Allie',
-            url: ''
+            url: '#'
           },
           {
             title: 'Conversation',
             name: 'By Gregor Cresnar',
-            url: ''
+            url: '#'
           },
           {
             title: 'Vote',
             name: 'By HeadsOfBirds',
-            url: ''
+            url: '#'
           }
         ]
       }]
