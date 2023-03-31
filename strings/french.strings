@@ -540,6 +540,9 @@
 /* MISSING TRANSLATION - views/containers/proposals/PropositionsAllModal.vue */
 "{groupProposalsCount} proposals" = "{groupProposalsCount} proposals";
 
+/* MISSING TRANSLATION - views/containers/user-settings/Acknowledgements.vue */
+"Illustrations" = "Illustrations";
+
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
 "Info" = "Info";
 
@@ -2258,6 +2261,15 @@
 
 /* views/containers/proposals/RemoveMember.vue */
 "Remove {name} from the group" = "Exclure {name} du groupe";
+
+/* views/containers/user-settings/Acknowledgements.vue */
+"Group Income is developed by the {a_}okTurtles Foundation{_a} and is funded entirely by individual contributions." = "Group Income est développé par la {a_}okTurtles Foundation{_a} et est entièrement financé par des contributions individuelles.";
+
+/* views/containers/user-settings/Acknowledgements.vue */
+"Libraries" = "Bibliothèques";
+
+/* views/containers/user-settings/Acknowledgements.vue */
+"Support this project" = "Soutenez ce projet";
 
 /* views/containers/user-settings/AppLogs.vue */
 "Debug" = "Débogage";

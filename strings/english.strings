@@ -849,6 +849,9 @@
 /* controller/router.js */
 "Group Income" = "Group Income";
 
+/* views/containers/user-settings/Acknowledgements.vue */
+"Group Income is developed by the {a_}okTurtles Foundation{_a} and is funded entirely by individual contributions." = "Group Income is developed by the {a_}okTurtles Foundation{_a} and is funded entirely by individual contributions.";
+
 /* views/containers/proposals/ProposalItem.vue */
 "Group Income system is proposing" = "Group Income system is proposing";
 
@@ -920,6 +923,9 @@
 
 /* views/containers/group-settings/GroupLeaveModal.vue */
 "If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}." = "If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}.";
+
+/* views/containers/user-settings/Acknowledgements.vue */
+"Illustrations" = "Illustrations";
 
 /* views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
 "In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others." = "In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.";
@@ -1028,6 +1034,9 @@
 
 /* views/pages/Home.vue */
 "Let’s get this party started" = "Let’s get this party started";
+
+/* views/containers/user-settings/Acknowledgements.vue */
+"Libraries" = "Libraries";
 
 /* views/containers/payments/PaymentRowSendLightning.vue, views/pages/Payments.vue */
 "Lightning" = "Lightning";
@@ -1796,6 +1805,9 @@
 
 /* views/containers/contributions/SupportHistory.vue */
 "Support history" = "Support history";
+
+/* views/containers/user-settings/Acknowledgements.vue */
+"Support this project" = "Support this project";
 
 /* views/components/graphs/Overview.vue, views/containers/contributions/GroupPledgesGraph.vue */
 "Surplus" = "Surplus";

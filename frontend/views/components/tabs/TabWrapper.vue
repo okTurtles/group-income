@@ -26,7 +26,7 @@
       .tab-nav-list.is-subtitle(
         v-for='(tabItem, index) in subNav'
         :key='"sub-" + index'
-        :class='{ "sub-tab-link": tabItem.url }'
+        :class='{ "sublink": tabItem.url }'
         :data-test='`link-${tabItem.url}`'
         @click='tabClick(tabItem)'
       ) {{ tabItem.title }}
@@ -258,15 +258,7 @@ export default ({
   padding-top: 1rem;
   padding-left: 1rem;
   text-transform: unset;
-}
-
-.sub-tab-link {
-  cursor: pointer;
-  text-decoration: underline;
-
-  &:hover {
-    color: $text_0;
-  }
+  font-family: "Lato";
 }
 
 .tab-nav-header + .tab-nav-list {
