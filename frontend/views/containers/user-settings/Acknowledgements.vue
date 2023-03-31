@@ -35,22 +35,22 @@ export default ({
           {
             title: 'Vue',
             name: 'vuejs.org',
-            url: ''
+            url: 'https://vuejs.org'
           },
           {
             title: 'Grunt',
             name: 'gruntjs.com',
-            url: ''
+            url: 'https://gruntjs.com'
           },
           {
             title: 'Cypress',
             name: 'cypress.io',
-            url: ''
+            url: 'https://www.cypress.io'
           },
           {
             title: 'Hapi',
             name: 'hapi.dev',
-            url: ''
+            url: 'https://hapi.dev'
           }
         ]
       }, {
