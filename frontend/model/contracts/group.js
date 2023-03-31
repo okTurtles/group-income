@@ -342,12 +342,10 @@ sbp('chelonia/defineContract', {
     },
     dueDateForPeriod (state, getters) {
       return (periodStamp: string) => {
-        return dateToPeriodStamp(
-          addTimeToDate(
-            dateFromPeriodStamp(getters.periodAfterPeriod(periodStamp)),
-            -1
-          )
-        )
+        // NOTE: logically it's should be 1 milisecond before the periodAfterPeriod
+        //       1 mili-second doesn't make any difference to the users
+        //       so periodAfterPeriod is used to make it simple
+        return getters.periodAfterPeriod(periodStamp)
       }
     },
     paymentTotalFromUserToUser (state, getters) {
