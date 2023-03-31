@@ -1,3 +1,21 @@
+// spacing utiltity classes
+// utility classes for margins
+@for $n from 0 through 6 {
+  $value: $n * 1rem;
+
+  // .mt-0 { margin-top: 0; } ..... .mt-6 { margin-top: 6rem; }
+  .mt-#{$n} { margin-top: $value !important; }
+
+  // .mb-0 { margin-bottom: 0; } ..... .mb-6 { margin-bottom: 6rem; }
+  .mb-#{$n} { margin-bottom: $value !important; }
+
+  // .ml-0 { margin-left: 0; } ..... .ml-6 { margin-left: 6rem; }
+  .ml-#{$n} { margin-left: $value !important; }
+
+  // .mr-0 { margin-right: 0; } ..... .mr-6 { margin-right: 6rem; }
+  .mr-#{$n} { margin-right: $value !important; }
+}
+
 // Screen reader only
 .sr-only {
   position: absolute;

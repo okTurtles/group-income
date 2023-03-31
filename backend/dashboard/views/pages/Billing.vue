@@ -5,7 +5,7 @@ page-template
   section.c-section
     form.c-form(@submit.prevent='')
       .field
-        i18n.label.c-mb-0(tag='label') Accepted payment methods
+        i18n.label.mb-0(tag='label') Accepted payment methods
         i18n.helper.c-helper What payment methods you will accept from your users.
 
         payment-methods.c-payment-methods(
@@ -108,10 +108,6 @@ export default {
 .c-page-header {
   margin-top: 2rem;
   margin-bottom: 4.5rem;
-}
-
-.c-mb-0 {
-  margin-bottom: 0;
 }
 
 .c-helper {

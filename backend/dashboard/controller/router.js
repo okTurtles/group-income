@@ -11,6 +11,8 @@ import Accounts from '@pages/Accounts.vue'
 import Billing from '@pages/Billing.vue'
 import DesignSystem from '@pages/design-system/CheloniaDesignSystem.vue'
 
+import L from '@common/translations.js'
+
 Vue.use(Router)
 
 const router: any = new Router({
@@ -22,37 +24,37 @@ const router: any = new Router({
   routes: [
     {
       path: '/',
-      meta: { title: 'Chelonia Dashboard' },
+      meta: { title: L('Chelonia Dashboard') },
       name: 'Dashboard',
       component: Dashboard
     },
     {
       path: '/contracts',
-      meta: { title: 'Contracts' },
+      meta: { title: L('Contracts') },
       name: 'Contracts',
       component: Contracts
     },
     {
       path: '/users',
-      meta: { title: 'Users' },
+      meta: { title: L('Users') },
       name: 'Users',
       component: Users
     },
     {
       path: '/accounts',
-      meta: { title: 'Accounts' },
+      meta: { title: L('Accounts') },
       name: 'Accounts',
       component: Accounts
     },
     {
       path: '/billing',
-      meta: { title: 'Billing' },
+      meta: { title: L('Billing') },
       name: 'Billing',
       component: Billing
     },
     {
       path: '/design-system',
-      meta: { title: 'Design system' },
+      meta: { title: L('Design system') },
       name: 'DesignSystem',
       component: DesignSystem
     },
