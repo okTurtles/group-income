@@ -35,6 +35,7 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import TabItem from '@components/tabs/TabItem.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import packageJSON from '~/package.json'
 
 export default ({
   name: 'TabWrapper',
@@ -52,7 +53,7 @@ export default ({
       title: '',
       transitionName: '',
       open: true,
-      version: '1.6.0'
+      version: packageJSON.contractsVersion
     }
   },
   computed: {
