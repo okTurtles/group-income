@@ -156,6 +156,9 @@
 /* MISSING TRANSLATION - views/components/modal/ModalClose.vue */
 "ESC" = "ESC";
 
+/* MISSING TRANSLATION - views/components/tabs/TabWrapper.vue */
+"Version" = "Version";
+
 /* MISSING TRANSLATION - views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
 "A username cannot contain whitespace." = "A username cannot contain whitespace.";
 
@@ -1001,6 +1004,9 @@
 
 /* views/components/modal/ModalClose.vue */
 "close modal" = "fermer le dialogue";
+
+/* views/components/tabs/TabWrapper.vue */
+"Acknowledgements" = "Remerciements";
 
 /* views/components/tabs/TabWrapper.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/UserSettingsModal.vue */
 "Settings" = "Paramètres";
@@ -2374,6 +2380,9 @@
 "Your changes were saved!" = "Vos modifications ont été enregistrées !";
 
 /* views/containers/user-settings/settings.js */
+"Advanced" = "Avancée";
+
+/* views/containers/user-settings/settings.js */
 "App settings" = "Paramètres";
 
 /* views/containers/user-settings/settings.js */
@@ -2567,9 +2576,6 @@
 
 /* Not currently used */
 "According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this." = "Selon vos règles de vote, {strong_}{value} membres sur {total}{_strong} devront approuver ceci.";
-
-/* Not currently used */
-"Advanced" = "Avancée";
 
 /* Not currently used */
 "Already existing direct message channel." = "Canal de messagerie directe déjà existant.";

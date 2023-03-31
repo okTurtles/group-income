@@ -111,6 +111,9 @@
 /* views/pages/Payments.vue */
 "Accepted methods" = "Accepted methods";
 
+/* views/components/tabs/TabWrapper.vue */
+"Acknowledgements" = "Acknowledgements";
+
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Active" = "Active";
 
@@ -194,6 +197,9 @@
 
 /* model/contracts/group.js */
 "Admin credentials needed and not implemented yet." = "Admin credentials needed and not implemented yet.";
+
+/* views/containers/user-settings/settings.js */
+"Advanced" = "Advanced";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
 "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!";
@@ -2042,6 +2048,9 @@
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "Username" = "Username";
+
+/* views/components/tabs/TabWrapper.vue */
+"Version" = "Version";
 
 /* views/containers/payments/ThankYouNoteModal.vue */
 "View Thank You Modal" = "View Thank You Modal";

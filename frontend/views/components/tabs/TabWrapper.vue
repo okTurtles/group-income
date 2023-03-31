@@ -23,8 +23,8 @@
 
         hr.tab-nav-separator
 
-      .tab-nav-list.is-subtitle Version 1.6.0
-      .tab-nav-list.tab-nav-ack.is-subtitle Acknowledgements
+      .tab-nav-list.is-subtitle {{ L('Version') }} {{ version }}
+      i18n.tab-nav-list.tab-nav-ack.is-subtitle Acknowledgements
 
     section.tab-section
       tab-item
@@ -51,7 +51,8 @@ export default ({
       activeComponent: null,
       title: '',
       transitionName: '',
-      open: true
+      open: true,
+      version: '1.6.0'
     }
   },
   computed: {
