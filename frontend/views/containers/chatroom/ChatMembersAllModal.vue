@@ -15,7 +15,6 @@ modal-base-template.has-background(
 
     .card.c-card
       search(
-        ref='search'
         :placeholder='L("Search...")'
         :label='L("Search")'
         :autofocus='true'

@@ -1,5 +1,10 @@
 <template lang='pug'>
-modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Group members")')
+modal-base-template.has-background(
+  ref='modal'
+  :fullscreen='true'
+  :a11yTitle='L("Group members")'
+  :autofocus='false'
+)
   .c-container
     .c-header
       div(v-if='canAddMember')
@@ -17,6 +22,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
       search(
         :placeholder='L("Search...")'
         :label='L("Search")'
+        :autofocus='true'
         v-model='searchText'
       )
 
