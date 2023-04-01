@@ -829,7 +829,7 @@ ${this.getErrorInfo()}`;
       params: mapOf(string, string)
     }),
     replyingMessage: objectOf({
-      id: string,
+      hash: string,
       text: string
     }),
     emoticons: mapOf(string, arrayOf(string)),

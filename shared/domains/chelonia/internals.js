@@ -405,8 +405,9 @@ const handleEvent = {
       const contractID = message.contractID()
       const manifestHash = message.manifest()
       const hash = message.hash()
+      const id = message.id()
       const { action, data, meta } = message.decryptedValue()
-      const mutation = { data, meta, hash, contractID, description: message.description() }
+      const mutation = { data, meta, hash, id, contractID, description: message.description() }
       await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }
   },

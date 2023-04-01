@@ -312,7 +312,7 @@ ${this.getErrorInfo()}`;
       params: mapOf(string, string)
     }),
     replyingMessage: objectOf({
-      id: string,
+      hash: string,
       text: string
     }),
     emoticons: mapOf(string, arrayOf(string)),
@@ -335,14 +335,15 @@ ${this.getErrorInfo()}`;
   }
 
   // frontend/model/contracts/shared/functions.js
-  function createMessage({ meta, data, hash, state }) {
+  function createMessage({ meta, data, hash, id, state }) {
     const { type, text, replyingMessage } = data;
     const { createdDate } = meta;
     let newMessage = {
       type,
-      datetime: new Date(createdDate).toISOString(),
-      id: hash,
-      from: meta.username
+      id,
+      hash,
+      from: meta.username,
+      datetime: new Date(createdDate).toISOString()
     };
     if (type === MESSAGE_TYPES.TEXT) {
       newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage };
@@ -384,9 +385,9 @@ ${this.getErrorInfo()}`;
       console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
     });
   }
-  function findMessageIdx(id, messages) {
+  function findMessageIdx(hash, messages) {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].id === id) {
+      if (messages[i].hash === hash) {
         return i;
       }
     }
@@ -428,7 +429,7 @@ ${this.getErrorInfo()}`;
     }
     (0, import_sbp3.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
   }
-  function messageReceivePostEffect({ contractID, messageId, datetime, text, isAlreadyAdded, isMentionedMe, username, chatRoomName }) {
+  function messageReceivePostEffect({ contractID, messageHash, datetime, text, isAlreadyAdded, isMentionedMe, username, chatRoomName }) {
     if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
       return;
     }
@@ -438,7 +439,7 @@ ${this.getErrorInfo()}`;
     if (!isAlreadyAdded && isDMOrMention) {
       (0, import_sbp3.default)("state/vuex/commit", "addChatRoomUnreadMention", {
         chatRoomId: contractID,
-        messageId,
+        messageHash,
         createdDate: datetime
       });
     }
@@ -475,7 +476,7 @@ ${this.getErrorInfo()}`;
     }
     (0, import_sbp3.default)("state/vuex/commit", "setChatRoomUnreadSince", {
       chatRoomId: contractID,
-      messageId: hash,
+      messageHash: hash,
       createdDate
     });
   }
@@ -542,7 +543,7 @@ ${this.getErrorInfo()}`;
         validate: objectOf({
           username: string
         }),
-        process({ data, meta, hash }, { state }) {
+        process({ data, meta, hash, id }, { state }) {
           const { username } = data;
           if (!state.onlyRenderMessage && state.users[username]) {
             console.warn("Can not join the chatroom which you are already part of");
@@ -554,7 +555,7 @@ ${this.getErrorInfo()}`;
           }
           const notificationType = username === meta.username ? MESSAGE_NOTIFICATIONS.JOIN_MEMBER : MESSAGE_NOTIFICATIONS.ADD_MEMBER;
           const notificationData = createNotificationData(notificationType, notificationType === MESSAGE_NOTIFICATIONS.ADD_MEMBER ? { username } : {});
-          const newMessage = createMessage({ meta, hash, data: notificationData, state });
+          const newMessage = createMessage({ meta, hash, id, data: notificationData, state });
           state.messages.push(newMessage);
         },
         sideEffect({ contractID, hash, meta }) {
@@ -566,13 +567,13 @@ ${this.getErrorInfo()}`;
         validate: objectOf({
           name: string
         }),
-        process({ data, meta, hash }, { state }) {
+        process({ data, meta, hash, id }, { state }) {
           import_common2.Vue.set(state.attributes, "name", data.name);
           if (!state.onlyRenderMessage) {
             return;
           }
           const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_NAME, {});
-          const newMessage = createMessage({ meta, hash, data: notificationData, state });
+          const newMessage = createMessage({ meta, hash, id, data: notificationData, state });
           state.messages.push(newMessage);
         },
         sideEffect({ contractID, hash, meta }) {
@@ -584,13 +585,13 @@ ${this.getErrorInfo()}`;
         validate: objectOf({
           description: string
         }),
-        process({ data, meta, hash }, { state }) {
+        process({ data, meta, hash, id }, { state }) {
           import_common2.Vue.set(state.attributes, "description", data.description);
           if (!state.onlyRenderMessage) {
             return;
           }
           const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION, {});
-          const newMessage = createMessage({ meta, hash, data: notificationData, state });
+          const newMessage = createMessage({ meta, hash, id, data: notificationData, state });
           state.messages.push(newMessage);
         },
         sideEffect({ contractID, hash, meta }) {
@@ -603,7 +604,7 @@ ${this.getErrorInfo()}`;
           username: optional(string),
           member: string
         }),
-        process({ data, meta, hash }, { state }) {
+        process({ data, meta, hash, id }, { state }) {
           const { member } = data;
           const isKicked = data.username && member !== data.username;
           if (!state.onlyRenderMessage && !state.users[member]) {
@@ -618,6 +619,7 @@ ${this.getErrorInfo()}`;
           const newMessage = createMessage({
             meta: isKicked ? meta : { ...meta, username: member },
             hash,
+            id,
             data: notificationData,
             state
           });
@@ -660,29 +662,28 @@ ${this.getErrorInfo()}`;
           if (!state.onlyRenderMessage) {
             return;
           }
-          const pendingMsg = state.messages.find((msg) => msg.giMsgID === id && msg.pending);
+          const pendingMsg = state.messages.find((msg) => msg.id === id && msg.pending);
           if (pendingMsg) {
             delete pendingMsg.pending;
-            delete pendingMsg.giMsgID;
-            pendingMsg.id = hash;
+            pendingMsg.hash = hash;
           } else {
-            state.messages.push(createMessage({ meta, data, hash, state }));
+            state.messages.push(createMessage({ meta, data, hash, id, state }));
           }
         },
-        sideEffect({ contractID, hash, meta, data }, { state, getters }) {
+        sideEffect({ contractID, hash, id, meta, data }, { state, getters }) {
           emitMessageEvent({ contractID, hash });
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (me === meta.username) {
             return;
           }
-          const newMessage = createMessage({ meta, data, hash, state });
+          const newMessage = createMessage({ meta, data, hash, id, state });
           const mentions = makeMentionFromUsername(me);
           const isTextMessage = data.type === MESSAGE_TYPES.TEXT;
           const isMentionedMe = isTextMessage && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all));
           messageReceivePostEffect({
             contractID,
-            messageId: newMessage.id,
+            messageHash: newMessage.hash,
             datetime: newMessage.datetime,
             text: newMessage.text,
             isMentionedMe,
@@ -694,7 +695,7 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/editMessage": {
         validate: objectOf({
-          id: string,
+          hash: string,
           createdDate: string,
           text: string
         }),
@@ -702,7 +703,7 @@ ${this.getErrorInfo()}`;
           if (!state.onlyRenderMessage) {
             return;
           }
-          const msgIndex = findMessageIdx(data.id, state.messages);
+          const msgIndex = findMessageIdx(data.hash, state.messages);
           if (msgIndex >= 0 && meta.username === state.messages[msgIndex].from) {
             state.messages[msgIndex].text = data.text;
             state.messages[msgIndex].updatedDate = meta.createdDate;
@@ -718,12 +719,12 @@ ${this.getErrorInfo()}`;
           if (me === meta.username) {
             return;
           }
-          const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageId === data.id);
+          const isAlreadyAdded = rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageHash === data.hash);
           const mentions = makeMentionFromUsername(me);
           const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all);
           messageReceivePostEffect({
             contractID,
-            messageId: data.id,
+            messageHash: data.hash,
             datetime: data.createdDate,
             text: data.text,
             isAlreadyAdded,
@@ -734,26 +735,24 @@ ${this.getErrorInfo()}`;
           if (isAlreadyAdded && !isMentionedMe) {
             (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadMention", {
               chatRoomId: contractID,
-              messageId: data.id
+              messageHash: data.hash
             });
           }
         }
       },
       "gi.contracts/chatroom/deleteMessage": {
-        validate: objectOf({
-          id: string
-        }),
+        validate: objectOf({ hash: string }),
         process({ data, meta }, { state }) {
           if (!state.onlyRenderMessage) {
             return;
           }
-          const msgIndex = findMessageIdx(data.id, state.messages);
+          const msgIndex = findMessageIdx(data.hash, state.messages);
           if (msgIndex >= 0) {
             state.messages.splice(msgIndex, 1);
           }
           for (const message of state.messages) {
-            if (message.replyingMessage?.id === data.id) {
-              message.replyingMessage.id = null;
+            if (message.replyingMessage?.hash === data.hash) {
+              message.replyingMessage.hash = null;
               message.replyingMessage.text = (0, import_common2.L)("Original message was removed by {username}", {
                 username: makeMentionFromUsername(meta.username).me
               });
@@ -764,13 +763,13 @@ ${this.getErrorInfo()}`;
           emitMessageEvent({ contractID, hash });
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
-          if (rootState.chatRoomScrollPosition[contractID] === data.id) {
+          if (rootState.chatRoomScrollPosition[contractID] === data.hash) {
             (0, import_sbp3.default)("state/vuex/commit", "setChatRoomScrollPosition", {
               chatRoomId: contractID,
-              messageId: null
+              messageHash: null
             });
           }
-          if (rootState.chatRoomUnread[contractID].since.messageId === data.id) {
+          if (rootState.chatRoomUnread[contractID].since.messageHash === data.hash) {
             (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadSince", {
               chatRoomId: contractID,
               deletedDate: meta.createdDate
@@ -779,10 +778,10 @@ ${this.getErrorInfo()}`;
           if (me === meta.username) {
             return;
           }
-          if (rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageId === data.id)) {
+          if (rootState.chatRoomUnread[contractID].mentions.find((m) => m.messageHash === data.hash)) {
             (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadMention", {
               chatRoomId: contractID,
-              messageId: data.id
+              messageHash: data.hash
             });
           }
           emitMessageEvent({ contractID, hash });
@@ -790,15 +789,15 @@ ${this.getErrorInfo()}`;
       },
       "gi.contracts/chatroom/makeEmotion": {
         validate: objectOf({
-          id: string,
+          hash: string,
           emoticon: string
         }),
         process({ data, meta, contractID }, { state }) {
           if (!state.onlyRenderMessage) {
             return;
           }
-          const { id, emoticon } = data;
-          const msgIndex = findMessageIdx(id, state.messages);
+          const { hash, emoticon } = data;
+          const msgIndex = findMessageIdx(hash, state.messages);
           if (msgIndex >= 0) {
             let emoticons = cloneDeep(state.messages[msgIndex].emoticons || {});
             if (emoticons[emoticon]) {
