@@ -157,7 +157,7 @@ export default (sbp('sbp/selectors/register', {
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
           const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-          entry = GIMessage.createV1_0(contractID, previousHEAD, entry.op(), entry.manifest())
+          entry = GIMessage.cloneWith(entry, { previousHEAD })
         }
       } else {
         const message = (await r.json())?.message
@@ -169,6 +169,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object) {
     const [opT, opV] = message.op()
     const hash = message.hash()
+    const id = message.id()
     const contractID = message.contractID()
     const manifestHash = message.manifest()
     const config = this.config
@@ -192,7 +193,7 @@ export default (sbp('sbp/selectors/register', {
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
-          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, contractID }, state)
+          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, id, contractID }, state)
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -404,8 +405,9 @@ const handleEvent = {
       const contractID = message.contractID()
       const manifestHash = message.manifest()
       const hash = message.hash()
+      const id = message.id()
       const { action, data, meta } = message.decryptedValue()
-      const mutation = { data, meta, hash, contractID, description: message.description() }
+      const mutation = { data, meta, hash, id, contractID, description: message.description() }
       await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }
   },
