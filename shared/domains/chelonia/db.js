@@ -19,15 +19,16 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
         const id = sbp('chelonia/db/contractIdFromLogHEAD', key)
         return Promise.resolve(id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : undefined)
       },
-      'chelonia/db/set': function (key: string, value: string): Promise<string> { return Promise.resolve(value) },
+      'chelonia/db/set': function (key: string, value: string): Promise<void> { return Promise.resolve() },
       'chelonia/db/delete': function (key: string): Promise<boolean> { return Promise.resolve(true) }
     }
   : {
       'chelonia/db/get': function (key: string): Promise<string | void> {
         return Promise.resolve(sbp('okTurtles.data/get', key))
       },
-      'chelonia/db/set': function (key: string, value: string): Promise<string> {
-        return Promise.resolve(sbp('okTurtles.data/set', key, value))
+      'chelonia/db/set': function (key: string, value: string): Promise<void> {
+        sbp('okTurtles.data/set', key, value)
+        return Promise.resolve()
       },
       'chelonia/db/delete': function (key: string): Promise<boolean> {
         return Promise.resolve(sbp('okTurtles.data/delete', key))
