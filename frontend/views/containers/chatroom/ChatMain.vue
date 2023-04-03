@@ -39,9 +39,6 @@
             :description='summary.description'
           )
 
-      .c-divider.is-new(v-if='ephemeral.unreadFromBeginning')
-        i18n.c-new.is-new-date New
-
       template(v-for='(message, index) in messages')
         .c-divider(
           v-if='changeDay(index) || isNew(message.hash)'
@@ -155,7 +152,6 @@ export default ({
       },
       latestEvents: [],
       ephemeral: {
-        unreadFromBeginning: false,
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
         infiniteLoading: null,
@@ -203,7 +199,7 @@ export default ({
       'isJoinedChatRoom',
       'setChatRoomScrollPosition',
       'currentChatRoomScrollPosition',
-      'currentChatRoomUnreadSince',
+      'currentChatRoomReadUntil',
       'currentGroupNotifications',
       'currentChatRoomUnreadMentions'
     ]),
@@ -421,7 +417,7 @@ export default ({
       }
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
-       * if the removed message was the starting position of unread messages
+       * if the removed message was the first unread messages(currentChatRoomReadUntil)
        * we can load message of that hash(messageHash) but not scroll
        * because it doesn't exist in this.messages
        * So in this case, we will load messages until the first unread mention
@@ -429,9 +425,9 @@ export default ({
        */
       const curChatRoomId = this.currentChatRoomId
       let unreadPosition = null
-      if (this.currentChatRoomUnreadSince && !this.currentChatRoomUnreadSince.fromBeginning) {
-        if (!this.currentChatRoomUnreadSince.deletedDate) {
-          unreadPosition = this.currentChatRoomUnreadSince.messageHash
+      if (this.currentChatRoomReadUntil) {
+        if (!this.currentChatRoomReadUntil.deletedDate) {
+          unreadPosition = this.currentChatRoomReadUntil.messageHash
         } else if (this.currentChatRoomUnreadMentions.length) {
           unreadPosition = this.currentChatRoomUnreadMentions[0].messageHash
         }
@@ -517,17 +513,11 @@ export default ({
     },
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageHash = null
-      this.ephemeral.unreadFromBeginning = false
-      if (this.currentChatRoomUnreadSince) {
-        const { fromBeginning } = this.currentChatRoomUnreadSince
-        if (fromBeginning) {
-          this.ephemeral.unreadFromBeginning = true
-        } else {
-          const startUnreadMessage = this.messages
-            .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
-          if (startUnreadMessage) {
-            this.ephemeral.startedUnreadMessageHash = startUnreadMessage.hash
-          }
+      if (this.currentChatRoomReadUntil) {
+        const startUnreadMessage = this.messages
+          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomReadUntil.createdDate).getTime())
+        if (startUnreadMessage) {
+          this.ephemeral.startedUnreadMessageHash = startUnreadMessage.hash
         }
       }
     },
@@ -543,7 +533,7 @@ export default ({
     },
     updateUnreadMessageHash ({ messageHash, createdDate }) {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
+        sbp('state/vuex/commit', 'setChatRoomReadUntil', {
           chatRoomId: this.currentChatRoomId,
           messageHash,
           createdDate
@@ -652,9 +642,7 @@ export default ({
         const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
         if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
-          const latestMessageCreatedAt = this.currentChatRoomUnreadSince && !this.currentChatRoomUnreadSince.fromBeginning
-            ? this.currentChatRoomUnreadSince.createdDate
-            : undefined
+          const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
           if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
             this.updateUnreadMessageHash({
               messageHash: msg.hash,

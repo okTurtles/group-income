@@ -1039,6 +1039,25 @@ page(
         tr
           td
             tr
+              h3.is-title-3 MultiSearch (component)
+          tr
+            td
+              pre
+                | multi-search(
+                |   label='Search for matching users'
+                |   placeholder='Search...'
+                |   value=""
+                | )
+
+            td
+              multi-search(
+                label='Search for matching users'
+                placeholder='Search...'
+                v-model='form.searchUsers'
+              )
+        tr
+          td
+            tr
               h3.is-title-3 SliderContinuous (component)
           tr
             td
@@ -1376,6 +1395,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@com
 import Tooltip from '@components/Tooltip.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import Search from '@components/Search.vue'
+import MultiSearch from '@components/MultiSearch.vue'
 import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
@@ -1499,6 +1519,7 @@ export default ({
       },
       form: {
         searchValue: '',
+        searchUsers: '',
         selectPayment: 'choose',
         copyableInput: '',
         sliderValue: 25
@@ -1529,6 +1550,7 @@ export default ({
     MenuItem,
     ButtonDropdownMenu,
     Search,
+    MultiSearch,
     Tooltip,
     SvgHello,
     SliderContinuous

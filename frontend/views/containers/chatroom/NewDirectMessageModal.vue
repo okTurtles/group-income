@@ -139,10 +139,10 @@ export default ({
           // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined
           // just after new parter made direct message with me
           // so the mailbox contract is updated, but chatroom contract is not synced yet and vuex state as well
-          const { since, mentions } = this.ourUnreadMessages[chatRoomId] || {}
+          const { readUntil, mentions } = this.ourUnreadMessages[chatRoomId] || {}
           const lastMessageDate = mentions && mentions.length
             ? mentions[mentions.length - 1].createdDate
-            : since?.createdDate
+            : readUntil?.createdDate
           return { username, lastMessageDate }
         })
         .sort((former, latter) => {

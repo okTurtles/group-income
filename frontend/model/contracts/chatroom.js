@@ -103,19 +103,6 @@ function messageReceivePostEffect ({ contractID, messageHash, datetime, text, is
   }
 }
 
-function updateUnreadPosition ({ contractID, hash, createdDate }: {
-  contractID: string, hash: string, createdDate: string
-}): void {
-  if (sbp('chelonia/contract/isSyncing', contractID)) {
-    return
-  }
-  sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
-    chatRoomId: contractID,
-    messageHash: hash,
-    createdDate
-  })
-}
-
 sbp('chelonia/defineContract', {
   name: 'gi.contracts/chatroom',
   metadata: {
@@ -174,6 +161,13 @@ sbp('chelonia/defineContract', {
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
+      },
+      sideEffect ({ contractID }) {
+        const rootState = sbp('state/vuex/state')
+        Vue.set(rootState.chatRoomUnread, contractID, {
+          readUntil: undefined,
+          mentions: []
+        })
       }
     },
     'gi.contracts/chatroom/join': {
@@ -190,8 +184,9 @@ sbp('chelonia/defineContract', {
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })
 
-        if (!state.onlyRenderMessage || (state.attributes.type === CHATROOM_TYPES.INDIVIDUAL &&
-          state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE)) {
+        const { type, privacyLevel } = state.attributes
+        const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+        if (!state.onlyRenderMessage || isPrivateDM) {
           return
         }
 
@@ -203,9 +198,26 @@ sbp('chelonia/defineContract', {
         const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
         state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash, meta }) {
+      sideEffect ({ data, contractID, hash, meta }, { state }) {
         emitMessageEvent({ contractID, hash })
-        updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
+        const rootState = sbp('state/vuex/state')
+        if (data.username === rootState.loggedIn.username) {
+          sbp('state/vuex/commit', 'setChatRoomReadUntil', {
+            chatRoomId: contractID,
+            messageHash: hash,
+            createdDate: meta.createdDate
+          })
+          const { type, privacyLevel } = state.attributes
+          const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+          if (isPrivateDM) {
+            // NOTE: To ignore scroll to the message of this hash
+            //       since we don't create notification for join activity in privateDM
+            sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
+              chatRoomId: contractID,
+              deletedDate: meta.createdDate
+            })
+          }
+        }
       }
     },
     'gi.contracts/chatroom/rename': {
@@ -225,7 +237,6 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
-        updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/changeDescription': {
@@ -247,7 +258,6 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
-        updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/leave': {
@@ -281,7 +291,6 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, hash, contractID, meta }, { state }) {
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
-          updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
           if (sbp('chelonia/contract/isSyncing', contractID)) {
             return
           }
@@ -348,7 +357,6 @@ sbp('chelonia/defineContract', {
           username: meta.username,
           chatRoomName: getters.chatRoomAttributes.name
         })
-        updateUnreadPosition({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/editMessage': {
@@ -440,8 +448,8 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        if (rootState.chatRoomUnread[contractID].since.messageHash === data.hash) {
-          sbp('state/vuex/commit', 'deleteChatRoomUnreadSince', {
+        if (rootState.chatRoomUnread[contractID].readUntil?.messageHash === data.hash) {
+          sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
             chatRoomId: contractID,
             deletedDate: meta.createdDate
           })
