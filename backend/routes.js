@@ -291,7 +291,7 @@ route.POST('/zkpp/{contract}', {
 
 route.GET('/zkpp/{contract}/auth_hash', {
   validate: {
-    query: { b: Joi.string().required() }
+    query: Joi.object({ b: Joi.string().required() })
   }
 }, async function (req, h) {
   try {
@@ -310,12 +310,12 @@ route.GET('/zkpp/{contract}/auth_hash', {
 
 route.GET('/zkpp/{contract}/contract_hash', {
   validate: {
-    query: {
+    query: Joi.object({
       r: Joi.string().required(),
       s: Joi.string().required(),
       sig: Joi.string().required(),
       hc: Joi.string().required()
-    }
+    })
   }
 }, async function (req, h) {
   try {
