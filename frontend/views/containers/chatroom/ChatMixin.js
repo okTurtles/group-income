@@ -34,12 +34,16 @@ const ChatMixin: Object = {
       this.ephemeral.loadedSummary = null
       this.redirectChat('GroupChatConversation')
     } else if (!this.isJoinedChatRoom(chatRoomId)) {
-      if (this.isPrivateChatRoom(chatRoomId)) {
-        this.ephemeral.loadedSummary = null
-        this.redirectChat('GroupChatConversation')
-      } else {
-        this.loadSummaryAndDetails()
-      }
+      // TODO: can not decide it's private or not because the contract is not synced
+      // so it could be better to redirect to General chatroom
+      this.ephemeral.loadedSummary = null
+      this.redirectChat('GroupChatConversation')
+      // if (this.isPrivateChatRoom(chatRoomId)) {
+      //   this.ephemeral.loadedSummary = null
+      //   this.redirectChat('GroupChatConversation')
+      // } else {
+      //   this.loadSummaryAndDetails()
+      // }
     } else {
       this.refreshTitle()
     }
