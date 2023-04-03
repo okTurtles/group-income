@@ -187,12 +187,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
   })
 
-  it('user1 tries to open incorrect chatroom URL and it redirects to the dashboard', () => {
+  it('user1 tries to open incorrect chatroom URL and it redirects to the previous/general chatroom', () => {
     cy.url().then(url => {
       cy.visit(url)
       cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
       cy.visit(url + 'incorrect-suffix')
-      cy.getByDT('groupName').should('contain', groupName1)
+      cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     })
     cy.giRedirectToGroupChat()
   })
