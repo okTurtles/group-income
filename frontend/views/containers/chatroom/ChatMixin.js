@@ -28,10 +28,7 @@ const ChatMixin: Object = {
     this.config.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
 
-    /**
-     * TODO
-     * show toast or dialog that the chatRoomId in URL is not incorrect or that is not-yet-joined chatRoomId
-    **/
+    // TODO: alert that the chatRoomId in URL is incorrect or not-yet-joined
     const { chatRoomId } = this.$route.params
     if (!chatRoomId) {
       this.ephemeral.loadedSummary = null
