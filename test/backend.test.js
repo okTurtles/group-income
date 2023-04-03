@@ -16,6 +16,9 @@ import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
 import manifests from '~/frontend/model/contracts/manifests.json'
 
+import initDB from '~/backend/database.js'
+initDB()
+
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
 global.WebSocket = require('ws')
 const should = require('should') // eslint-disable-line
@@ -236,7 +239,9 @@ describe('Full walkthrough', function () {
     it('Should create mailboxes for Alice and Bob and subscribe', async function () {
       // Object.values(users).forEach(async user => await createMailboxFor(user))
       await createMailboxFor(users.alice)
+      console.log('alice ok')
       await createMailboxFor(users.bob)
+      console.log('bob ok')
     })
   })
 

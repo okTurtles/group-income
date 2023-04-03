@@ -4,24 +4,39 @@ import sbp from '@sbp/sbp'
 import { strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
 import fs from 'fs'
-import { readFile, writeFile } from 'fs/promises'
-import path from 'path'
+import { readFile, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import '@sbp/okturtles.data'
 import '~/shared/domains/chelonia/db.js'
 import LRU from 'lru-cache'
 
 const Boom = require('@hapi/boom')
 
-const dataFolder = path.resolve('./data')
+const production = process.env.NODE_ENV === 'production'
+// Defaults to `fs` in production.
+const persistence = process.env.GI_PERSIST || (production ? 'fs' : undefined)
 
+// Default database options. Other values may be used e.g. in tests.
+const options = {
+  fs: {
+    dirname: './data'
+  },
+  sqlite: {
+    dirname: './data',
+    filename: 'groupincome.db'
+  }
+}
+
+// Used by `throwIfFileOutsideDataDir()`.
+const dataFolder = path.resolve(options.fs.dirname)
+
+// Create our data folder if it doesn't exist yet.
+// This is currently necessary even when not using persistence, e.g. to store file uploads.
 if (!fs.existsSync(dataFolder)) {
   fs.mkdirSync(dataFolder, { mode: 0o750 })
 }
 
-const persistence = process.env.GI_PERSIST
-const production = process.env.NODE_ENV === 'production'
-
-export default (sbp('sbp/selectors/register', {
+sbp('sbp/selectors/register', {
   'backend/db/streamEntriesSince': async function (contractID: string, hash: string): Promise<*> {
     let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
     if (!currentHEAD) {
@@ -169,52 +184,19 @@ export default (sbp('sbp/selectors/register', {
     }
     return await writeFile(filepath, data)
   }
-}): any)
+})
 
-if (persistence === 'fs') {
-  sbp('sbp/selectors/register', {
-    'backend/db/readString': async function (key: string): Promise<string | void> {
-      const bufferOrError = await sbp('backend/db/readFile', key)
-      if (Boom.isBoom(bufferOrError)) {
-        return
-      }
-      return bufferOrError.toString('utf8')
-    },
-    'backend/db/writeString': async function (key: string, value: string): Promise<void> {
-      return await sbp('backend/db/writeFile', key, value)
-    }
-  })
-} else if (persistence === 'sqlite') {
-  sbp('sbp/selectors/register', {
-    'backend/db/readString': function (key: string): Promise<string | void> {
-      return new Promise((resolve, reject) => {
-        db.get('SELECT value FROM Strings WHERE key = ?', [key], (err, row) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve(row?.value)
-          }
-        })
-      })
-    },
-    'backend/db/writeString': function (key: string, value: string): Promise<void> {
-      return new Promise((resolve, reject) => {
-        db.run('REPLACE INTO Strings(key, value) VALUES(?, ?)', [key, value], (err) => {
-          if (err) {
-            reject(err)
-          } else {
-            resolve()
-          }
-        })
-      })
-    }
-  })
+export function checkKey (key: string): void {
+  if (/[/\\]/.test(key)) {
+    throw Boom.badRequest(`bad name: ${key}`)
+  }
 }
 
 function namespaceKey (name: string): string {
   return 'name=' + name
 }
 
+// Used to thwart path traversal attacks.
 function throwIfFileOutsideDataDir (filename: string): string {
   const filepath = path.resolve(path.join(dataFolder, filename))
   if (filepath.indexOf(dataFolder) !== 0) {
@@ -223,53 +205,42 @@ function throwIfFileOutsideDataDir (filename: string): string {
   return filepath
 }
 
-let db: any = null
+export default async () => {
+  // If persistence must be enabled:
+  // - load and initialize the selected storage backend
+  // - register `readString` and `writeString` selectors
+  // - overwrite 'chelonia/db/get' and '-set' to use an LRU cache
+  if (persistence) {
+    const { initStorage, readString, writeString } = await import(`./${persistence}-backend.js`)
 
-if (persistence === 'sqlite') {
-  const filename = './data/groupincome.db'
-  const sqlite3 = require('sqlite3')
-
-  db = new sqlite3.Database(filename, (err) => {
-    if (err) {
-      return console.error(err.message)
-    }
-    console.log('Connected to the %s SQLite database.', filename)
-  })
-  ;(async function () {
-    await new Promise((resolve, reject) => {
-      db.run('CREATE TABLE IF NOT EXISTS Strings(key TEXT UNIQUE NOT NULL, value TEXT NOT NULL)', [], (err) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
+    await initStorage(options[persistence])
+    sbp('sbp/selectors/register', {
+      'backend/db/readString': readString,
+      'backend/db/writeString': writeString
     })
-  })()
-}
 
-if (production || persistence) {
-  // https://github.com/isaacs/node-lru-cache#usage
-  const cache = new LRU({
-    max: Number(process.env.GI_LRU_NUM_ITEMS) || 10000
-  })
+    // https://github.com/isaacs/node-lru-cache#usage
+    const cache = new LRU({
+      max: Number(process.env.GI_LRU_NUM_ITEMS) || 10000
+    })
 
-  sbp('sbp/selectors/overwrite', {
-    'chelonia/db/get': async function (key: string): Promise<string | void> {
-      const lookupValue = cache.get(key)
-      if (lookupValue !== undefined) {
-        return lookupValue
-      }
-      const value = await sbp('backend/db/readString', key)
-      if (value !== undefined) {
+    sbp('sbp/selectors/overwrite', {
+      'chelonia/db/get': async function (key: string): Promise<string | void> {
+        const lookupValue = cache.get(key)
+        if (lookupValue !== undefined) {
+          return lookupValue
+        }
+        const value = await sbp('backend/db/readString', key)
+        if (value !== undefined) {
+          cache.set(key, value)
+        }
+        return value
+      },
+      'chelonia/db/set': async function (key: string, value: string): Promise<void> {
+        await sbp('backend/db/writeString', key, value)
         cache.set(key, value)
       }
-      return value
-    },
-    'chelonia/db/set': async function (key: string, value: string): Promise<void> {
-      await sbp('backend/db/writeString', key, value)
-      cache.set(key, value)
-    }
-  })
-  sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
+    })
+    sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
+  }
 }
