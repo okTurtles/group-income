@@ -188,18 +188,11 @@ export default ({
         this.refreshTitle()
       })
       const { chatRoomId } = to.params
-      if (chatRoomId !== from.params.chatRoomId) {
-        if (this.isDirectMessage(chatRoomId)) {
-          this.updateCurrentChatRoomID(chatRoomId)
-        } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
-          if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
-            this.redirectChat('GroupChatConversation')
-          } else {
-            this.updateCurrentChatRoomID(chatRoomId)
-            if (!this.isJoinedChatRoom(chatRoomId)) {
-              this.loadSummaryAndDetails()
-            }
-          }
+      if (chatRoomId && chatRoomId !== from.params.chatRoomId) {
+        this.updateCurrentChatRoomID(chatRoomId)
+        // NOTE: No need to consider not-joined private chatroom because it's impossible
+        if (!this.isJoinedChatRoom(chatRoomId)) {
+          this.loadSummaryAndDetails()
         }
       }
     }

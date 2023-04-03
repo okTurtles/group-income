@@ -30,14 +30,12 @@ const ChatMixin: Object = {
 
     // TODO: alert that the chatRoomId in URL is incorrect or not-yet-joined
     const { chatRoomId } = this.$route.params
-    if (!chatRoomId) {
+    if (!chatRoomId || !this.isJoinedChatRoom(chatRoomId)) {
       this.ephemeral.loadedSummary = null
       this.redirectChat('GroupChatConversation')
-    } else if (!this.isJoinedChatRoom(chatRoomId)) {
+
       // TODO: can not decide it's private or not because the contract is not synced
       // so it could be better to redirect to General chatroom
-      this.ephemeral.loadedSummary = null
-      this.redirectChat('GroupChatConversation')
       // if (this.isPrivateChatRoom(chatRoomId)) {
       //   this.ephemeral.loadedSummary = null
       //   this.redirectChat('GroupChatConversation')
@@ -241,7 +239,7 @@ const ChatMixin: Object = {
     updateCurrentChatRoomID (chatRoomId: string) {
       if (this.isDirectMessage(chatRoomId)) {
         sbp('state/vuex/commit', 'setCurrentChatRoomId', { chatRoomId })
-      } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
+      } else {
         const groupID = this.groupIdFromChatRoomId(chatRoomId)
         // NOTE: groupID could be undefined when the chatRoomId is incorrect
         if (groupID) {
