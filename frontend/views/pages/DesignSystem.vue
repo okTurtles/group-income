@@ -1046,14 +1046,15 @@ page(
                 | multi-search(
                 |   label='Search for matching users'
                 |   placeholder='Search...'
-                |   value=""
+                |   :usernames='["alexjin", "greg", "andrea"]'
                 | )
 
             td
               multi-search(
                 label='Search for matching users'
                 placeholder='Search...'
-                v-model='form.searchUsers'
+                :usernames='form.searchUsers'
+                @remove='onRemoveFromMultiSearch'
               )
         tr
           td
@@ -1519,7 +1520,7 @@ export default ({
       },
       form: {
         searchValue: '',
-        searchUsers: '',
+        searchUsers: ['alexjin', 'greg', 'andrea'],
         selectPayment: 'choose',
         copyableInput: '',
         sliderValue: 25
@@ -1622,6 +1623,9 @@ export default ({
     },
     onButtonDropdownItemSelect (itemId) {
       console.log('selected item id: ', itemId)
+    },
+    onRemoveFromMultiSearch (username) {
+      this.form.searchUsers = this.form.searchUsers.filter(un => un !== username)
     }
   },
   computed: {

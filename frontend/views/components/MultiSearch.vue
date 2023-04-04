@@ -2,33 +2,47 @@
 form.c-search-form(@submit.prevent='')
   label.field
     .sr-only {{label}}
-    .inputgroup.c-search
+    .inputgroup.c-search(
+      @click='focusOnInput'
+    )
       .is-icon.prefix(aria-hidden='true')
         i.icon-search
-      input.input(
+      .input(
         type='text'
         name='search'
-        data-test='search'
-        :placeholder='placeholder'
-        :value='value'
-        @keyup.esc='$emit("input", "")'
-        @input='$emit("input", $event.target.value)'
-        v-focus='autofocus'
+        data-test='multi-users'
       )
-      .addons
-        .button.c-clear.is-icon-small(
-          v-if='value !== ""'
-          :aria-label='L("Clear search")'
-          @click='$emit("input", "")'
+        .profile-wrapper(
+          contenteditable='false'
+          v-for='(username, index) in usernames'
+          :key='index'
         )
-          i.icon-times
+          .profile(
+            @click.prevent.stop='selectUser(username)'
+          )
+            avatar-user(:username='username' size='xs')
+            .c-name.has-text-bold {{ displayName(username) }}
+            .button.is-icon-small(
+              @click.prevent.stop='removeUser(username)'
+              :aria-label='L("Clear search")'
+            )
+              i.icon-times
+        .c-keyword(
+          contenteditable
+          ref='input'
+        ) type
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+import AvatarUser from '@components/AvatarUser.vue'
 import { L } from '@common/common.js'
 
 export default ({
   name: 'MultiSearch',
+  components: {
+    AvatarUser
+  },
   props: {
     value: {
       type: String,
@@ -42,9 +56,34 @@ export default ({
       type: String,
       required: true
     },
-    autofocus: {
-      type: Boolean,
-      default: false
+    usernames: {
+      type: Array,
+      default: []
+    }
+  },
+  data () {
+    return {
+      selected: null
+    }
+  },
+  computed: {
+    ...mapGetters(['ourContactProfiles'])
+  },
+  methods: {
+    remove (username) {
+      console.log('TODO:', username)
+    },
+    displayName (username) {
+      return this.ourContactProfiles[username].displayName || username
+    },
+    focusOnInput () {
+      this.$refs.input.focus()
+    },
+    selectUser (username) {
+      this.selected = username
+    },
+    removeUser (username) {
+      this.$emit('remove', username)
     }
   },
   watch: {
@@ -65,21 +104,51 @@ export default ({
     margin-right: 0.5rem;
   }
 
-  // visible when interacted
-  .input:focus + .addons .c-clear,
-  .input:hover + .addons .c-clear {
-    opacity: 1;
+  .input {
+    padding: 0 0 5px 2.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    min-height: 2.75rem;
+    height: fit-content;
+
+    p {
+      display: inline;
+    }
   }
 
-  .c-clear {
-    // hide close by default...
-    opacity: 0;
-    background-color: $general_2;
+  .profile-wrapper {
+    display: inline-flex;
+    margin: 5px 5px 0 0;
 
-    &:hover,
+    .profile {
+      display: flex;
+      align-items: center;
+      border-radius: 3px;
+      background-color: $general_0;
+      line-height: 1;
+      padding: 0.3rem;
+      width: fit-content;
+
+      .c-name {
+        margin-left: 0.5rem;
+        color: $text_0;
+      }
+
+      .button {
+        margin-left: 0.5rem;
+      }
+    }
+  }
+
+  .c-keyword {
+    margin-top: 5px;
+    display: block;
+    line-height: 2.2rem;
+    overflow-wrap: anywhere;
+    min-width: 1rem;
+
     &:focus {
-      opacity: 1;
-      background-color: $general_1;
+      outline: none;
     }
   }
 }
