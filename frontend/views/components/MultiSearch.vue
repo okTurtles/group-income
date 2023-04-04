@@ -124,10 +124,14 @@ export default ({
       display: flex;
       align-items: center;
       border-radius: 3px;
-      background-color: $general_0;
+      background-color: $general_1;
       line-height: 1;
       padding: 0.3rem;
       width: fit-content;
+
+      &:hover {
+        background-color: $general_0;
+      }
 
       .c-name {
         margin-left: 0.5rem;
