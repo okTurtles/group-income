@@ -1044,9 +1044,8 @@ page(
             td
               pre
                 | multi-search(
-                |   label='Search for matching users'
-                |   placeholder='Search...'
                 |   :usernames='["alexjin", "greg", "andrea"]'
+                |   @remove='onRemove'
                 | )
 
             td

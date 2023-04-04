@@ -23,7 +23,7 @@ form.c-search-form(@submit.prevent='')
             avatar-user(:username='username' size='xs')
             .c-name.has-text-bold {{ displayName(username) }}
             .button.is-icon-small(
-              @click.prevent.stop='removeUser(username)'
+              @click.prevent.stop='remove(username)'
               :aria-label='L("Clear search")'
             )
               i.icon-times
@@ -71,7 +71,7 @@ export default ({
   },
   methods: {
     remove (username) {
-      console.log('TODO:', username)
+      this.$emit('remove', username)
     },
     displayName (username) {
       return this.ourContactProfiles[username].displayName || username
@@ -81,9 +81,6 @@ export default ({
     },
     selectUser (username) {
       this.selected = username
-    },
-    removeUser (username) {
-      this.$emit('remove', username)
     }
   },
   watch: {
