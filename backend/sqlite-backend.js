@@ -7,6 +7,8 @@ import sqlite3 from 'sqlite3'
 import { checkKey } from './database.js'
 
 let db: any = null
+let readStatement: any = null
+let writeStatement: any = null
 
 export async function initStorage (options: Object = {}): Promise<void> {
   const { dirname, filename } = options
@@ -14,7 +16,7 @@ export async function initStorage (options: Object = {}): Promise<void> {
 
   await mkdir(dataFolder, { mode: 0o750, recursive: true })
 
-  return new Promise((resolve, reject) => {
+  await new Promise((resolve, reject) => {
     if (db) {
       reject(new Error(`The ${filename} SQLite database is already open.`))
     }
@@ -32,12 +34,14 @@ export async function initStorage (options: Object = {}): Promise<void> {
       }
     })
   })
+  readStatement = db.prepare('SELECT value FROM Strings WHERE key = ?')
+  writeStatement = db.prepare('REPLACE INTO Strings(key, value) VALUES(?, ?)')
 }
 
 export function readString (key: string): Promise<string | void> {
   return new Promise((resolve, reject) => {
     checkKey(key)
-    db.get('SELECT value FROM Strings WHERE key = ?', [key], (err, row) => {
+    readStatement.run([key], (err, row) => {
       if (err) {
         reject(err)
       } else {
@@ -50,7 +54,7 @@ export function readString (key: string): Promise<string | void> {
 export function writeString (key: string, value: string): Promise<void> {
   return new Promise((resolve, reject) => {
     checkKey(key)
-    db.run('REPLACE INTO Strings(key, value) VALUES(?, ?)', [key, value], (err) => {
+    writeStatement.run([key, value], (err) => {
       if (err) {
         reject(err)
       } else {
