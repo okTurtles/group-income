@@ -17,9 +17,7 @@ form.c-search-form(@submit.prevent='')
           v-for='(username, index) in usernames'
           :key='index'
         )
-          .profile(
-            @click.prevent.stop='selectUser(username)'
-          )
+          .profile
             avatar-user(:username='username' size='xs')
             .c-name.has-text-bold {{ displayName(username) }}
             .button.is-icon-small(
@@ -30,6 +28,8 @@ form.c-search-form(@submit.prevent='')
         .c-keyword(
           contenteditable
           ref='input'
+          @keydown='onHandleKeyDown'
+          @keyup='onHandleKeyUp'
         ) type
 </template>
 
@@ -78,9 +78,38 @@ export default ({
     },
     focusOnInput () {
       this.$refs.input.focus()
+      this.$refs.input.innerHTML = ''
+
+      // NOTE: uncomment not to delete innerHTML and to focus at end
+      // if (typeof window.getSelection !== 'undefined' && typeof document.createRange !== 'undefined') {
+      //   const range = document.createRange()
+      //   range.selectNodeContents(this.$refs.input)
+      //   range.collapse(false)
+      //   const sel = window.getSelection()
+      //   sel.removeAllRanges()
+      //   sel.addRange(range)
+      // } else if (typeof document.body.createTextRange !== 'undefined') {
+      //   const textRange = document.body.createTextRange()
+      //   textRange.moveToElementText(this.$refs.input)
+      //   textRange.collapse(false)
+      //   textRange.select()
+      // }
     },
-    selectUser (username) {
-      this.selected = username
+    onHandleKeyDown (e: KeyboardEvent) {
+      const { keyCode } = e
+      if (keyCode === 13 || keyCode === 39) { // Enter
+        e.preventDefault()
+      } else if (keyCode === 8) { // Backspace
+        console.log('Remove')
+      }
+    },
+    onHandleKeyUp (e: KeyboardEvent) {
+      const { keyCode } = e
+      if (keyCode === 13 || keyCode === 39) { // Enter
+        e.preventDefault()
+      } else if (keyCode === 8) { // Backspace
+        console.log('Remove')
+      }
     }
   },
   watch: {
