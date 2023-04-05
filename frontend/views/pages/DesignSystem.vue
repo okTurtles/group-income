@@ -1044,16 +1044,18 @@ page(
             td
               pre
                 | multi-search(
+                |   label='Search for users'
                 |   :usernames='["alexjin", "greg", "andrea"]'
+                |   defaultKeyword='alexjin'
                 |   @remove='onRemove'
+                |   @change='onChange'
                 | )
 
             td
               multi-search(
-                label='Search for matching users'
-                placeholder='Search...'
+                label='Search for users'
                 :usernames='form.searchUsers'
-                @remove='onRemoveFromMultiSearch'
+                defaultKeyword='alexjin'
               )
         tr
           td
@@ -1519,7 +1521,7 @@ export default ({
       },
       form: {
         searchValue: '',
-        searchUsers: ['alexjin', 'greg', 'andrea'],
+        searchUsers: [],
         selectPayment: 'choose',
         copyableInput: '',
         sliderValue: 25
@@ -1622,9 +1624,6 @@ export default ({
     },
     onButtonDropdownItemSelect (itemId) {
       console.log('selected item id: ', itemId)
-    },
-    onRemoveFromMultiSearch (username) {
-      this.form.searchUsers = this.form.searchUsers.filter(un => un !== username)
     }
   },
   computed: {

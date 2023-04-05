@@ -30,13 +30,13 @@ form.c-search-form(@submit.prevent='')
           ref='input'
           @keydown='onHandleKeyDown'
           @keyup='onHandleKeyUp'
-        ) type
+        )
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
-import { L } from '@common/common.js'
+import { decode } from 'html-entities'
 
 export default ({
   name: 'MultiSearch',
@@ -44,14 +44,6 @@ export default ({
     AvatarUser
   },
   props: {
-    value: {
-      type: String,
-      required: false
-    },
-    placeholder: {
-      type: String,
-      default: L('Search...')
-    },
     label: {
       type: String,
       required: true
@@ -59,19 +51,31 @@ export default ({
     usernames: {
       type: Array,
       default: []
+    },
+    defaultKeyword: {
+      type: String,
+      default: ''
     }
   },
   data () {
     return {
-      selected: null
+      keyword: ''
     }
   },
   computed: {
     ...mapGetters(['ourContactProfiles'])
   },
+  mounted () {
+    this.$refs.input.innerHTML = this.defaultKeyword
+    this.change(this.defaultKeyword)
+  },
   methods: {
     remove (username) {
       this.$emit('remove', username)
+    },
+    getCurrentKeyword () {
+      // NOTE: this.$refs.input.innerHTML could contains HTML entities
+      return decode(this.$refs.input.innerHTML)
     },
     displayName (username) {
       return this.ourContactProfiles[username].displayName || username
@@ -79,36 +83,26 @@ export default ({
     focusOnInput () {
       this.$refs.input.focus()
       this.$refs.input.innerHTML = ''
-
-      // NOTE: uncomment not to delete innerHTML and to focus at end
-      // if (typeof window.getSelection !== 'undefined' && typeof document.createRange !== 'undefined') {
-      //   const range = document.createRange()
-      //   range.selectNodeContents(this.$refs.input)
-      //   range.collapse(false)
-      //   const sel = window.getSelection()
-      //   sel.removeAllRanges()
-      //   sel.addRange(range)
-      // } else if (typeof document.body.createTextRange !== 'undefined') {
-      //   const textRange = document.body.createTextRange()
-      //   textRange.moveToElementText(this.$refs.input)
-      //   textRange.collapse(false)
-      //   textRange.select()
-      // }
+      this.change('')
     },
     onHandleKeyDown (e: KeyboardEvent) {
       const { keyCode } = e
       if (keyCode === 13 || keyCode === 39) { // Enter
         e.preventDefault()
-      } else if (keyCode === 8) { // Backspace
-        console.log('Remove')
       }
     },
     onHandleKeyUp (e: KeyboardEvent) {
       const { keyCode } = e
-      if (keyCode === 13 || keyCode === 39) { // Enter
-        e.preventDefault()
-      } else if (keyCode === 8) { // Backspace
-        console.log('Remove')
+
+      if (keyCode === 8 && !this.keyword && this.usernames.length) { // Backspace
+        this.remove(this.usernames[this.usernames.length - 1])
+      }
+      this.change(this.getCurrentKeyword())
+    },
+    change (keyword: string) {
+      if (this.keyword !== keyword) {
+        this.$emit('change', keyword)
+        this.keyword = keyword
       }
     }
   },
