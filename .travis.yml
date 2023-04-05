@@ -1,10 +1,9 @@
 language: node_js
 node_js:
   - "16"
-dist: trusty
+dist: xenial
 compiler: clang # per: https://docs.travis-ci.com/user/languages/c
 env:
-  - NO_PERSIST
   - GI_PERSIST
 branches:
   only:
