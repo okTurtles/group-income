@@ -332,7 +332,9 @@ module.exports = (grunt) => {
           if (['change', 'unlink'].includes(fileEventName)) {
             // Remove the corresponding plugin cache entry, if any.
 
-            if (extension === '.vue') {
+            if (extension === '.js') {
+              flowRemoveTypesPluginOptions.cache.delete(filePath)
+            } else if (extension === '.vue') {
               vuePluginOptions.cache.delete(filePath)
             }
 

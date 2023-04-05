@@ -10,8 +10,8 @@
 <body>
   <div id="app" class="app-layout">
     <app-styles></app-styles>
-    <toolbar class="l-toolbar" :noNavigation="noNavigation" @open-nav="openNav"></toolbar>
-    <navigation v-if="!noNavigation" class="l-navigation" ref="navigation"></navigation>
+    <toolbar v-if='!hideToolbar' class="l-toolbar" :noNavigation="hideNavigation" @open-nav="openNav"></toolbar>
+    <navigation v-if="!hideNavigation" class="l-navigation" ref="navigation"></navigation>
     <router-view class="l-page"></router-view>
     <modal class="l-modal"></modal>
   </div>

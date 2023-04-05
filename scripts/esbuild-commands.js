@@ -36,7 +36,7 @@ const createEsbuildTask = (esbuildOptions = {}, otherOptions = {}) => {
         if (!fileEventName || !filePath) {
           throw new Error('Arguments `fileEventName` and `filePath` must be provided when rerunning this task.')
         }
-        await state.result.rebuild()
+        state.result = await state.result.rebuild()
       }
       if (postoperation) {
         await postoperation({ fileEventName, filePath })

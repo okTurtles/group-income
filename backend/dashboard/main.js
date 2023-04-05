@@ -44,8 +44,11 @@ async function startApp () {
       }
     },
     computed: {
-      noNavigation () {
-        return ['/design-system'].includes(this.$route.path)
+      hideNavigation () {
+        return ['/design-system', '/landing'].includes(this.$route.path)
+      },
+      hideToolbar () {
+        return this.$route.path === '/landing'
       }
     },
     methods: {

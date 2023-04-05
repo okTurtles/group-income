@@ -4,6 +4,7 @@ import Vue from 'vue'
 import Router from 'vue-router'
 
 // pages
+import Landing from '@pages/Landing.vue'
 import Dashboard from '@pages/Dashboard.vue'
 import Contracts from '@pages/Contracts.vue'
 import Users from '@pages/Users.vue'
@@ -24,9 +25,15 @@ const router: any = new Router({
   routes: [
     {
       path: '/',
-      meta: { title: L('Chelonia Dashboard') },
+      meta: { title: L('Dashboard') },
       name: 'Dashboard',
       component: Dashboard
+    },
+    {
+      path: '/landing',
+      meta: { title: L('Chelonia dashboard') },
+      name: 'Landing',
+      component: Landing
     },
     {
       path: '/contracts',
