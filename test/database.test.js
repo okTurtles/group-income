@@ -4,6 +4,7 @@
 import assert from 'node:assert'
 import { rm } from 'node:fs/promises'
 
+const names = ['FS', 'SQLite']
 const options = {
   fs: {
     dirname: './test/data/fs'
@@ -14,7 +15,7 @@ const options = {
   }
 }
 
-;['FS', 'SQLite'].forEach((name) => {
+names.forEach((name) => {
   const lowerCaseName = name.toLowerCase()
   const {
     initStorage,

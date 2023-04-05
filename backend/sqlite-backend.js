@@ -41,7 +41,7 @@ export async function initStorage (options: Object = {}): Promise<void> {
 export function readString (key: string): Promise<string | void> {
   return new Promise((resolve, reject) => {
     checkKey(key)
-    readStatement.run([key], (err, row) => {
+    readStatement.get([key], (err, row) => {
       if (err) {
         reject(err)
       } else {
