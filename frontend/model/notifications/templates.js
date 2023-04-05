@@ -233,7 +233,11 @@ export default ({
       level: 'info',
       icon: 'coins',
       linkTo: data.memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
-      scope: 'group'
+      scope: 'group',
+      data: {
+        // is used to check if a notification has already been sent for a particular dist-period
+        period: sbp('state/vuex/getters').groupSettings?.distributionDate
+      }
     }
   },
   NEAR_DISTRIBUTION_END (data: { period: string }) {

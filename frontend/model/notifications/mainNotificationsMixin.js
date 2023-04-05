@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
-import { compareISOTimestamps, comparePeriodStamps, DAYS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
+import { compareISOTimestamps, comparePeriodStamps, dateToPeriodStamp, DAYS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
 import { STATUS_OPEN } from '@model/contracts/shared/constants.js'
 
 // util functions
@@ -102,21 +102,9 @@ const periodicNotificationEntries = [
         if (!rootGetters.ourGroupProfile?.incomeDetailsType) return false // if income-details are not set yet, ignore.
 
         const currentPeriod = rootGetters.groupSettings?.distributionDate
-        const now = new Date().toISOString()
-        let check = false
-
-        if (this.distPeriodRecords &&
-          comparePeriodStamps(this.distPeriodRecords.prevPeriod, this.distPeriodRecords.prevNow) > 0 &&
-          comparePeriodStamps(currentPeriod, now) < 0) { check = true }
-
-        if (this.distPeriodRecords && comparePeriodStamps(currentPeriod, this.distPeriodRecords.prevPeriod) > 0) { check = true }
-
-        this.distPeriodRecords = {
-          prevPeriod: currentPeriod,
-          prevNow: now
-        }
-
-        return check
+        return currentPeriod &&
+          comparePeriodStamps(dateToPeriodStamp(new Date()), currentPeriod) > 0 &&
+          !myNotificationHas(item => item.type === 'NEW_DISTRIBUTION_PERIOD' && item.data.period === currentPeriod)
       },
       emit ({ rootState, rootGetters }) {
         sbp('gi.notifications/emit', 'NEW_DISTRIBUTION_PERIOD', {
