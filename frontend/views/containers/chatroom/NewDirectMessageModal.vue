@@ -210,13 +210,17 @@ export default ({
       this.selections = this.selections.filter(un => un !== username)
     },
     onSubmit () {
-      const profile = this.filteredRecents[0] || this.filteredOthers[0]
-      if (profile) {
-        const { username } = profile
-        if (this.ourPrivateDirectMessages[username]) {
-          this.openDirectMessage(username)
-        } else {
-          this.createNewDirectMessage(username)
+      if (this.selections.length) {
+        // TODO: need to create group DM
+      } else {
+        const profile = this.filteredRecents[0] || this.filteredOthers[0]
+        if (profile) {
+          const { username } = profile
+          if (this.ourPrivateDirectMessages[username]) {
+            this.openDirectMessage(username)
+          } else {
+            this.createNewDirectMessage(username)
+          }
         }
       }
     },
