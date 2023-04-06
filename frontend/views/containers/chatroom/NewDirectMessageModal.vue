@@ -205,7 +205,15 @@ export default ({
       this.selections = this.selections.filter(un => un !== username)
     },
     onSubmit () {
-      console.log('Submit Action')
+      const profile = this.filteredRecents[0] || this.filteredOthers[0]
+      if (profile) {
+        const { username } = profile
+        if (this.ourPrivateDirectMessages[username]) {
+          this.openDirectMessage(username)
+        } else {
+          this.createNewDirectMessage(username)
+        }
+      }
     },
     closeModal () {
       this.$refs.modal.close()
