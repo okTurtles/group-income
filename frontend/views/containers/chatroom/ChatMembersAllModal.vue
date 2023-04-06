@@ -37,7 +37,7 @@ modal-base-template.has-background(
         .is-subtitle
           i18n(
             tag='h3'
-            :args='{  nbMembers: chatRoomUsersInSort.length }'
+            :args='{  nbMembers: filteredRecents.length }'
           ) Channel members ({nbMembers})
 
         transition-group(
@@ -74,7 +74,7 @@ modal-base-template.has-background(
         .is-subtitle.c-second-section
           i18n(
             tag='h3'
-            :args='{ nbMembers: canAddMembers.length }'
+            :args='{ nbMembers: filteredOthers.length }'
           ) Others ({nbMembers})
 
       transition-group(
