@@ -1,7 +1,6 @@
 import {
   LineBasicMaterial, LineDashedMaterial, BufferGeometry, CircleGeometry, CylinderGeometry,
-  Group, Line, Vector3, MeshBasicMaterial, Mesh, EdgesGeometry, LineSegments, DoubleSide,
-  CatmullRomCurve3, TubeGeometry, SphereGeometry
+  Group, Line, Vector3, MeshLambertMaterial, Mesh, EdgesGeometry, LineSegments, DoubleSide
 } from 'three'
 
 class LineMesh extends Line {
@@ -82,7 +81,7 @@ class Column extends Group {
     radius = 1,
     height = 1
   }) {
-    const MaterialCommon = MeshBasicMaterial
+    const MaterialCommon = MeshLambertMaterial
 
     const faceGeometry = new CircleGeometry(radius, 64, 0, 2 * Math.PI)
     const faceMaterial = new MaterialCommon({
@@ -109,40 +108,6 @@ class Column extends Group {
   }
 }
 
-class Graph extends Group {
-  constructor ({
-    points = [],
-    tubeColor = '#000000',
-    sphereColor = '#000000',
-    edgeColor = '#000000',
-    tubeRadius = 0.5,
-    sphereRadius = 1
-  }) {
-    const MaterialCommon = MeshBasicMaterial
-    const curve = new CatmullRomCurve3(points, false)
-
-    const tubeGeometry = new TubeGeometry(curve, 120, tubeRadius, 3, false)
-    const tubeMaterial = new MaterialCommon({ color: tubeColor, side: DoubleSide })
-    const tubeMesh = new Mesh(tubeGeometry, tubeMaterial)
-
-    const spheres = new Group()
-    const sphereGeometry = new SphereGeometry(sphereRadius, 64, 32)
-    const sphereMaterial = new MaterialCommon({ color: sphereColor })
-
-    spheres.add(
-      ...points.map(point => {
-        const dot = new Mesh(sphereGeometry, sphereMaterial)
-        dot.position.copy(point)
-
-        return dot
-      })
-    )
-
-    super()
-    super.add(tubeMesh, spheres)
-  }
-}
-
 function resizeRendererToDisplaySize (renderer) {
   const pixelRatio = window.devicePixelRatio || 1
   const canvasEl = renderer.domElement
@@ -161,13 +126,17 @@ function adjustCameraAspect (canvasEl, camera) {
   camera.updateProjectionMatrix()
 }
 
+function randomFromMinMax (min = 0, max = 0) {
+  return min + (max - min) * Math.random()
+}
+
 export {
   resizeRendererToDisplaySize,
   adjustCameraAspect,
+  randomFromMinMax,
   LineMesh,
   CombineWithEdge,
   Edgify,
   Column,
-  Axes,
-  Graph
+  Axes
 }

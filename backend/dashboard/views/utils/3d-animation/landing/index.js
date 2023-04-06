@@ -1,13 +1,14 @@
 import * as Three from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import {
-  resizeRendererToDisplaySize, adjustCameraAspect, Axes, Column,
-  Edgify, Graph
-} from './animation-utils.js'
+  resizeRendererToDisplaySize, adjustCameraAspect, Axes, Column, Edgify
+} from '../animation-utils.js'
+import CurveGraph from './CurveGraph.js'
+import BarGraphs from './BarGraphs.js'
 
 const {
   WebGLRenderer, Scene, Group, PerspectiveCamera,
-  BoxGeometry, Vector3
+  BoxGeometry, Vector3, AmbientLight, DirectionalLight
 } = Three
 
 // constants & settings
@@ -21,7 +22,9 @@ const COLORS = {
   grey_2: '#f2f2f2',
   dim_purple: '#e5ecf6',
   tube: '#FFE999',
-  sphere: '#ff4747'
+  sphere: '#ff4747',
+  ambLight: '#f7f9fb',
+  dirLight: '#f7f9fb'
 }
 const cameraSettings = { pos: { x: 30, y: 30, z: 30 }, lookAt: [0, 0, 0] }
 let animationId
@@ -51,6 +54,13 @@ function initAnimation (canvasEl) {
   })
   scene.add(axes)
 
+  // lights
+  const ambLight = new AmbientLight(COLORS.ambLight, 1)
+  const dirLight = new DirectionalLight(COLORS.dirLight, 0.725)
+  dirLight.position.set(40, 40, 0)
+  dirLight.target.position.set(0, 2, 0)
+  scene.add(ambLight, dirLight)
+
   // --- add objects to the scene --- //
 
   // a flat cylinder
@@ -64,28 +74,37 @@ function initAnimation (canvasEl) {
   scene.root.add(plane)
 
   // box
-  const boxDepth = 16
+  const boxDepth = 18
   const box = new Edgify({
-    geometry: new BoxGeometry(10, boxDepth, 28),
+    geometry: new BoxGeometry(14, boxDepth, 30),
     color: COLORS.grey_0
   })
   box.position.y = boxDepth / 2 + PLANE_HEIGHT + 0.15
   scene.root.add(box)
 
-  // graph
-  const graph = new Graph({
+  // curve-graph
+  const curveGraph = new CurveGraph({
     points: [
       new Vector3(0, 5.75, 10.25),
       new Vector3(0, 9.75, 3.25),
       new Vector3(0, 7.75, -4.25),
       new Vector3(0, 12.25, -11)
     ],
-    tubeRadius: 0.425,
-    sphereRadius: 1.425,
+    tubeRadius: 0.5,
+    sphereRadius: 1.325,
     tubeColor: COLORS.tube,
     sphereColor: COLORS.sphere
   })
-  scene.root.add(graph)
+  curveGraph.position.x = 4
+  scene.root.add(curveGraph)
+
+  // bar-graphs
+  const barGraphs = new BarGraphs({
+    pairColors: ['#ff0000', '#0000ff'],
+    pairCounts: 5
+  })
+  barGraphs.position.y = PLANE_HEIGHT
+  scene.root.add(barGraphs)
 
   // add orbit-controls
   const orbitControl = new OrbitControls(camera, canvasEl)

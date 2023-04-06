@@ -4,7 +4,7 @@
 </template>
 
 <script>
-import { initAnimation, terminateAnimation } from '@view-utils/3d-animation/landing-animation.js'
+import { initAnimation, terminateAnimation } from '@view-utils/3d-animation/landing/index.js'
 
 export default {
   name: 'Landing',
