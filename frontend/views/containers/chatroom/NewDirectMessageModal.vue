@@ -43,7 +43,6 @@ modal-base-template.has-background(
           :args='{  nbMembers: ourRecentConversations.length }'
         ) Recent Conversations ({nbMembers})
       transition-group(
-        v-if='ourRecentConversations'
         name='slide-list'
         data-test='recentConversations'
         tag='ul'
@@ -67,7 +66,6 @@ modal-base-template.has-background(
           :args='{  nbMembers: searchResult.length }'
         ) Others ({nbMembers})
       transition-group(
-        v-if='searchResult'
         name='slide-list'
         data-test='others'
         tag='ul'
