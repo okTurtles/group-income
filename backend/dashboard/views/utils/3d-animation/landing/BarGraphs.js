@@ -9,7 +9,7 @@ export default class BarGraphs extends Group {
   constructor ({
     pairColors = ['#000000', '#000000'],
     pairCount = 5
-  }= {}) {
+  } = {}) {
     const MaterialCommon = MeshLambertMaterial
     const bgThickness = 0.1
     const bgMesh = new GraphBackground({ lineCount: 6, bgThickness })
