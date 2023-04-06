@@ -79,19 +79,20 @@ modal-base-template.has-background(
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import UsersSelector from '@components/UsersSelector.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import DMMixin from './DMMixin.js'
 import { filterByKeyword } from '@view-utils/filters.js'
 
 export default ({
   name: 'NewDirectMessageModal',
+  mixins: [
+    DMMixin
+  ],
   components: {
     ModalBaseTemplate,
     UsersSelector,
@@ -106,14 +107,8 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourUsername',
       'userDisplayName',
-      'ourContacts',
-      'ourContactProfiles',
-      'ourPrivateDirectMessages',
-      'currentIdentityState',
-      'ourUnreadMessages',
-      'directMessageIDFromUsername'
+      'ourUnreadMessages'
     ]),
     ourNewDMContacts () {
       return this.ourContacts
@@ -128,7 +123,7 @@ export default ({
       return Object.keys(this.ourPrivateDirectMessages)
         .filter(username => !this.ourPrivateDirectMessages[username].hidden)
         .map(username => {
-          const chatRoomId = this.directMessageIDFromUsername(username)
+          const chatRoomId = this.getPrivateDMByUser(username)
           // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined
           // just after new parter made direct message with me
           // so the mailbox contract is updated, but chatroom contract is not synced yet and vuex state as well
@@ -172,29 +167,14 @@ export default ({
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     openPrivateDM (username) {
-      const chatRoomId = this.directMessageIDFromUsername(username)
+      const chatRoomId = this.getPrivateDMByUser(username)
       if (!chatRoomId) { // Not created DM
-        sbp('gi.actions/mailbox/createDirectMessage', {
-          contractID: this.currentIdentityState.attributes.mailbox,
-          data: {
-            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
-            usernames: [username]
-          }
-        })
+        this.createPrivateDM(username)
       } else if (this.ourPrivateDirectMessages[username].hidden) {
-        sbp('gi.actions/mailbox/setDirectMessageVisibility', {
-          contractID: this.currentIdentityState.attributes.mailbox,
-          data: {
-            contractID: chatRoomId,
-            hidden: false
-          }
-        })
+        this.setDMVisibility(chatRoomId, false)
         // TODO: need to redirect
       } else if (this.ourPrivateDirectMessages[username]) {
-        this.$router.push({
-          name: 'GroupChatConversation',
-          params: { chatRoomId }
-        }).catch(logExceptNavigationDuplicated)
+        this.redirect(chatRoomId)
       }
 
       this.closeModal()
@@ -210,7 +190,16 @@ export default ({
     },
     onSubmit () {
       if (this.selections.length) {
-        // TODO: need to create group DM
+        if (this.selections.length === 1) {
+          this.openPrivateDM(this.selections[0])
+        } else {
+          const chatRoomId = this.getGroupDMByUsers(this.selections)
+          if (chatRoomId) {
+            this.redirect(chatRoomId)
+          } else {
+            this.createGroupDM(this.selections)
+          }
+        }
       } else if (this.searchText) {
         const profile = this.filteredRecents[0] || this.filteredOthers[0]
         if (profile) {
