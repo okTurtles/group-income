@@ -39,7 +39,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import { decode } from 'html-entities'
 
 export default ({
-  name: 'MultiSearch',
+  name: 'UsersSelector',
   components: {
     AvatarUser
   },

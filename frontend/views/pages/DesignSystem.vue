@@ -1039,11 +1039,11 @@ page(
         tr
           td
             tr
-              h3.is-title-3 MultiSearch (component)
+              h3.is-title-3 UsersSelector (component)
           tr
             td
               pre
-                | multi-search(
+                | users-selector(
                 |   label='Search for users'
                 |   :usernames='["alexjin", "greg", "andrea"]'
                 |   defaultKeyword='alexjin'
@@ -1052,7 +1052,7 @@ page(
                 | )
 
             td
-              multi-search(
+              users-selector(
                 label='Search for users'
                 :usernames='form.searchUsers'
                 defaultKeyword='alexjin'
@@ -1397,7 +1397,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@com
 import Tooltip from '@components/Tooltip.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import Search from '@components/Search.vue'
-import MultiSearch from '@components/MultiSearch.vue'
+import UsersSelector from '@components/UsersSelector.vue'
 import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
@@ -1552,7 +1552,7 @@ export default ({
     MenuItem,
     ButtonDropdownMenu,
     Search,
-    MultiSearch,
+    UsersSelector,
     Tooltip,
     SvgHello,
     SliderContinuous
