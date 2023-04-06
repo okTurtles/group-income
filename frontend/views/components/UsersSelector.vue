@@ -10,7 +10,6 @@ form.c-search-form(@submit.prevent='')
       .input(
         type='text'
         name='search'
-        data-test='multi-users'
       )
         .profile-wrapper(
           contenteditable='false'
@@ -28,6 +27,7 @@ form.c-search-form(@submit.prevent='')
         .c-keyword(
           contenteditable
           ref='input'
+          data-test='users-selector'
           @keydown='onHandleKeyDown'
           @keyup='onHandleKeyUp'
         )

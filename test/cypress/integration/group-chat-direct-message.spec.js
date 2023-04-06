@@ -39,6 +39,8 @@ describe('Create/Join direct messages and orders of direct message channels', ()
           return false
         }
       })
+
+      cy.getByDT('users-selector').type('{enter}')
     })
   }
 
@@ -116,8 +118,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     })
 
     cy.getByDT('modal').within(() => {
-      cy.getByDT('search').should('be.focused')
-      cy.getByDT('memberCount').should('contain', '1 members')
+      cy.getByDT('users-selector').should('be.focused')
       cy.getByDT('recentConversations').children().should('have.length', 0)
       cy.getByDT('others').children().should('have.length', 1)
     })
