@@ -3,7 +3,7 @@ form.c-search-form(@submit.prevent='')
   label.field
     .sr-only {{label}}
     .inputgroup.c-search(
-      @click='focusOnInput'
+      @click='onHandleClick'
     )
       .is-icon.prefix(aria-hidden='true')
         i.icon-search
@@ -55,6 +55,10 @@ export default ({
     defaultKeyword: {
       type: String,
       default: ''
+    },
+    autofocus: {
+      type: Boolean,
+      default: false
     }
   },
   data () {
@@ -68,6 +72,9 @@ export default ({
   mounted () {
     this.$refs.input.innerHTML = this.defaultKeyword
     this.change(this.defaultKeyword)
+    if (this.autofocus) {
+      this.$refs.input.focus()
+    }
   },
   methods: {
     remove (username) {
@@ -80,7 +87,7 @@ export default ({
     displayName (username) {
       return this.ourContactProfiles[username].displayName || username
     },
-    focusOnInput () {
+    onHandleClick () {
       this.$refs.input.focus()
       this.$refs.input.innerHTML = ''
       this.change('')
@@ -94,7 +101,9 @@ export default ({
     onHandleKeyUp (e: KeyboardEvent) {
       const { keyCode } = e
 
-      if (keyCode === 8 && !this.keyword && this.usernames.length) { // Backspace
+      if (keyCode === 13 || keyCode === 39) { // Enter
+        this.$emit('submit')
+      } else if (keyCode === 8 && !this.keyword && this.usernames.length) { // Backspace
         this.remove(this.usernames[this.usernames.length - 1])
       }
       this.change(this.getCurrentKeyword())

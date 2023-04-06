@@ -1047,8 +1047,10 @@ page(
                 |   label='Search for users'
                 |   :usernames='["alexjin", "greg", "andrea"]'
                 |   defaultKeyword='alexjin'
-                |   @remove='onRemove'
+                |   :autofocus='true'
                 |   @change='onChange'
+                |   @remove='onRemove'
+                |   @submit='onSubmit'
                 | )
 
             td
