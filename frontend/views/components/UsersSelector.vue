@@ -3,7 +3,7 @@ form.c-search-form(@submit.prevent='')
   label.field
     .sr-only {{label}}
     .inputgroup.c-search(
-      @click='onHandleClick'
+      @click='clear'
     )
       .is-icon.prefix(aria-hidden='true')
         i.icon-search
@@ -83,7 +83,7 @@ export default ({
     displayName (username) {
       return this.ourContactProfiles[username].displayName || username
     },
-    onHandleClick () {
+    clear () {
       this.$refs.input.focus()
       this.$refs.input.innerHTML = ''
       this.value = ''
@@ -111,6 +111,9 @@ export default ({
   watch: {
     value () {
       this.$emit('change', this.value)
+    },
+    usernames () {
+      this.clear()
     }
   }
 }: Object)
