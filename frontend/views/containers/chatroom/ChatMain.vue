@@ -546,9 +546,7 @@ export default ({
 
             // NOTE: waiting for the animation is done
             //       it's duration is 500ms described in MessageBase.vue
-            await new Promise((resolve, reject) => {
-              setTimeout(resolve, 500)
-            })
+            await new Promise(resolve => setTimeout(resolve, 500))
           }
 
           await sbp('chelonia/private/in/processMessage', message, state)
