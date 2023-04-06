@@ -10,12 +10,13 @@ modal-base-template.has-background(
       i18n.is-title-2.c-title(tag='h2') Direct Messages
 
     .card.c-card
-      search(
-        ref='search'
-        :placeholder='L("Search...")'
+      users-selector(
         :label='L("Search")'
+        :usernames='selections'
         :autofocus='true'
-        v-model='searchText'
+        @change='onChangeKeyword'
+        @remove='onRemoveSelection'
+        @submit='onSubmit'
       )
 
       .c-member-count.has-text-1(
@@ -82,7 +83,7 @@ import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import Search from '@components/Search.vue'
+import UsersSelector from '@components/UsersSelector.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
@@ -93,13 +94,14 @@ export default ({
   name: 'NewDirectMessageModal',
   components: {
     ModalBaseTemplate,
-    Search,
+    UsersSelector,
     ProfileCard,
     AvatarUser
   },
   data () {
     return {
-      searchText: ''
+      searchText: '',
+      selections: ['alexjin']
     }
   },
   computed: {
@@ -195,6 +197,15 @@ export default ({
         params: { chatRoomId }
       }).catch(logExceptNavigationDuplicated)
       this.closeModal()
+    },
+    onChangeKeyword (keyword) {
+      this.searchText = keyword
+    },
+    onRemoveSelection (username) {
+      this.selections = this.selections.filter(un => un !== username)
+    },
+    onSubmit () {
+      console.log('Submit Action')
     },
     closeModal () {
       this.$refs.modal.close()

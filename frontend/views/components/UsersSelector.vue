@@ -143,6 +143,11 @@ export default ({
     p {
       display: inline;
     }
+
+    &:focus-within {
+      box-shadow: 0 0 0 2px var(--primary_1);
+      border-color: var(--primary_0);
+    }
   }
 
   .profile-wrapper {
