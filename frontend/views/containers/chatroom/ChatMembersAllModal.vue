@@ -42,13 +42,12 @@ modal-base-template.has-background(
           ) Channel members ({nbMembers})
 
         transition-group(
-          v-if='addedMembers'
           name='slide-list'
           tag='ul'
           data-test='joinedChannelMembersList'
         )
           li.c-search-member(
-            v-for='{username, displayName, departedDate} in addedMembers'
+            v-for='{username, displayName, departedDate} in filteredRecents'
             :key='username'
           )
             profile-card(:username='username' direction='top-left')
@@ -80,13 +79,12 @@ modal-base-template.has-background(
           ) Others ({nbMembers})
 
       transition-group(
-        v-if='searchResult'
         name='slide-list'
         tag='ul'
         data-test='unjoinedChannelMembersList'
       )
         li.c-search-member(
-          v-for='{username, displayName, joinedDate} in searchResult'
+          v-for='{username, displayName, joinedDate} in filteredOthers'
           :key='username'
         )
           profile-card(:username='username' direction='top-left')
@@ -180,11 +178,14 @@ export default ({
     ...mapState([
       'currentGroupId'
     ]),
-    searchResult () {
+    filteredRecents () {
+      return filterByKeyword(this.addedMembers, this.searchText, ['username', 'displayName'])
+    },
+    filteredOthers () {
       return filterByKeyword(this.canAddMembers, this.searchText, ['username', 'displayName'])
     },
     searchCount () {
-      return Object.keys(this.searchResult).length
+      return Object.keys(this.filteredOthers).length + Object.keys(this.filteredRecents).length
     },
     resultsCopy () {
       const args = {
