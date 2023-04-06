@@ -211,7 +211,7 @@ export default ({
     onSubmit () {
       if (this.selections.length) {
         // TODO: need to create group DM
-      } else {
+      } else if (this.searchText) {
         const profile = this.filteredRecents[0] || this.filteredOthers[0]
         if (profile) {
           this.openPrivateDM(profile.username)
