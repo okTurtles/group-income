@@ -43,7 +43,7 @@ modal-base-template.has-background(
       )
         li.c-search-member(
           v-for='{username, displayName} in filteredRecents'
-          @click='openDirectMessage(username)'
+          @click='onAddSelection(username)'
           :key='username'
         )
           profile-card(:username='username' deactivated direction='top-left')
@@ -66,7 +66,7 @@ modal-base-template.has-background(
       )
         li.c-search-member(
           v-for='{username, displayName} in filteredOthers'
-          @click='createNewDirectMessage(username)'
+          @click='onAddSelection(username)'
           :key='username'
         )
           profile-card(:username='username' deactivated direction='top-left')
@@ -101,7 +101,7 @@ export default ({
   data () {
     return {
       searchText: '',
-      selections: ['alexjin']
+      selections: []
     }
   },
   computed: {
@@ -152,9 +152,11 @@ export default ({
     },
     filteredRecents () {
       return filterByKeyword(this.ourRecentConversations, this.searchText, ['username', 'displayName'])
+        .filter(profile => !this.selections.includes(profile.username))
     },
     filteredOthers () {
       return filterByKeyword(this.ourNewDMContacts, this.searchText, ['username', 'displayName'])
+        .filter(profile => !this.selections.includes(profile.username))
     },
     searchCount () {
       return Object.keys(this.filteredOthers).length + Object.keys(this.filteredRecents).length
@@ -200,6 +202,9 @@ export default ({
     },
     onChangeKeyword (keyword) {
       this.searchText = keyword
+    },
+    onAddSelection (username) {
+      this.selections.push(username)
     },
     onRemoveSelection (username) {
       this.selections = this.selections.filter(un => un !== username)

@@ -52,7 +52,7 @@ export default ({
       type: Array,
       default: []
     },
-    defaultKeyword: {
+    defaultValue: {
       type: String,
       default: ''
     },
@@ -63,15 +63,15 @@ export default ({
   },
   data () {
     return {
-      keyword: ''
+      value: ''
     }
   },
   computed: {
     ...mapGetters(['ourContactProfiles'])
   },
   mounted () {
-    this.$refs.input.innerHTML = this.defaultKeyword
-    this.change(this.defaultKeyword)
+    this.$refs.input.innerHTML = this.defaultValue
+    this.value = this.defaultValue
     if (this.autofocus) {
       this.$refs.input.focus()
     }
@@ -80,17 +80,13 @@ export default ({
     remove (username) {
       this.$emit('remove', username)
     },
-    getCurrentKeyword () {
-      // NOTE: this.$refs.input.innerHTML could contains HTML entities
-      return decode(this.$refs.input.innerHTML)
-    },
     displayName (username) {
       return this.ourContactProfiles[username].displayName || username
     },
     onHandleClick () {
       this.$refs.input.focus()
       this.$refs.input.innerHTML = ''
-      this.change('')
+      this.value = ''
     },
     onHandleKeyDown (e: KeyboardEvent) {
       const { keyCode } = e
@@ -103,21 +99,18 @@ export default ({
 
       if (keyCode === 13 || keyCode === 39) { // Enter
         this.$emit('submit')
-      } else if (keyCode === 8 && !this.keyword && this.usernames.length) { // Backspace
+        return
+      } else if (keyCode === 8 && !this.value && this.usernames.length) { // Backspace
         this.remove(this.usernames[this.usernames.length - 1])
       }
-      this.change(this.getCurrentKeyword())
-    },
-    change (keyword: string) {
-      if (this.keyword !== keyword) {
-        this.$emit('change', keyword)
-        this.keyword = keyword
-      }
+
+      // NOTE: this.$refs.input.innerHTML could contains HTML entities
+      this.value = decode(this.$refs.input.innerHTML)
     }
   },
   watch: {
     value () {
-      this.$emit('input', this.value)
+      this.$emit('change', this.value)
     }
   }
 }: Object)

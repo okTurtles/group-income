@@ -1046,7 +1046,7 @@ page(
                 | users-selector(
                 |   label='Search for users'
                 |   :usernames='["alexjin", "greg", "andrea"]'
-                |   defaultKeyword='alexjin'
+                |   defaultValue='alexjin'
                 |   :autofocus='true'
                 |   @change='onChange'
                 |   @remove='onRemove'
@@ -1057,7 +1057,7 @@ page(
               users-selector(
                 label='Search for users'
                 :usernames='form.searchUsers'
-                defaultKeyword='alexjin'
+                defaultValue='alexjin'
               )
         tr
           td
