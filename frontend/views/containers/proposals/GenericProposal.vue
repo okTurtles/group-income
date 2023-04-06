@@ -22,6 +22,7 @@ proposal-template(
     input.input(
       :class='{error: $v.form.proposalName.$error}'
       name='proposalname'
+      ref='proposalname'
       v-model='form.proposalName'
       @input='debounceField("proposalName")'
       @blur='updateField("proposalName")'
@@ -70,6 +71,9 @@ export default ({
     ...mapGetters([
       'groupSettings'
     ])
+  },
+  mounted () {
+    this.$refs.proposalname.focus()
   },
   methods: {
     async submit ({ reason }) {

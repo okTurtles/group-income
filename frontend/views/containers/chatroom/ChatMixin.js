@@ -9,7 +9,7 @@ const initChatChannelDetails = {
   participants: []
 }
 
-const ChatroomMixin: Object = {
+const ChatMixin: Object = {
   data (): Object {
     return {
       config: {
@@ -169,7 +169,7 @@ const ChatroomMixin: Object = {
         } else if (this.isGroupDirectMessage(this.currentChatRoomId)) {
           title = this.groupDirectMessageInfo(this.currentChatRoomId).title
         } else {
-          title = this.currentChatRoomState.attributes?.name
+          title = this.summary.title
         }
       }
 
@@ -264,4 +264,4 @@ const ChatroomMixin: Object = {
   }
 }
 
-export default ChatroomMixin
+export default ChatMixin

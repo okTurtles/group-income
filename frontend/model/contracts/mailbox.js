@@ -6,7 +6,7 @@ import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
 import { leaveChatRoom } from './shared/functions.js'
-import { object, objectOf, string, boolean, unionOf, literalOf, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { object, objectOf, objectMaybeOf, string, boolean, unionOf, literalOf, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { CHATROOM_PRIVACY_LEVEL } from './shared/constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
@@ -43,7 +43,7 @@ sbp('chelonia/defineContract', {
   },
   actions: {
     'gi.contracts/mailbox': {
-      validate: objectOf({
+      validate: objectMaybeOf({
         username: string
       }),
       process ({ data }, { state }) {
