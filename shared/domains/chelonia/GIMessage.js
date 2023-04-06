@@ -64,6 +64,8 @@ export class GIMessage {
   static createV1_0 (
     {
       contractID,
+      // originatingContractID is used when one contract writes to another. in this case
+      // originatingContractID is the one sending the message to contractID.
       originatingContractID,
       previousHEAD = null,
       op,
@@ -105,6 +107,7 @@ export class GIMessage {
       mapping: { key: blake32Hash(value), value },
       head,
       message,
+      // provide the decrypted value so that pre/postpublish hooks have access to it if needed
       decryptedValue: op.length === 3 ? op[2] : op[1],
       signature,
       signedPayload

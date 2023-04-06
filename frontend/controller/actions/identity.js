@@ -88,7 +88,8 @@ export default (sbp('sbp/selectors/register', {
     const keyPair = boxKeyPair()
     const r = Buffer.from(keyPair.publicKey).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')
     const b = hash(r)
-    const registrationRes = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}`, {
+    // TODO: use the contractID instead, and move this code down below the registration
+    const registrationRes = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/user=${encodeURIComponent(username)}`, {
       method: 'POST',
       headers: {
         'content-type': 'application/x-www-form-urlencoded'
@@ -100,8 +101,8 @@ export default (sbp('sbp/selectors/register', {
     const { p, s, sig } = registrationRes
 
     const [contractSalt, Eh] = await buildRegisterSaltRequest(p, keyPair.secretKey, password)
-
-    const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}`, {
+    // TODO: use the contractID instead, and move this code down below the registration
+    const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/user=${encodeURIComponent(username)}`, {
       method: 'POST',
       headers: {
         'content-type': 'application/x-www-form-urlencoded'
