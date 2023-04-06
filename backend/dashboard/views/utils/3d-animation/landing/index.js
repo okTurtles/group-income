@@ -1,32 +1,28 @@
 import * as Three from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import {
-  resizeRendererToDisplaySize, adjustCameraAspect, Axes, Column, Edgify
+  resizeRendererToDisplaySize, adjustCameraAspect, degreeToRadian, Edgify
 } from '../animation-utils.js'
 import CurveGraph from './CurveGraph.js'
 import BarGraphs from './BarGraphs.js'
 
 const {
   WebGLRenderer, Scene, Group, PerspectiveCamera,
-  BoxGeometry, Vector3, AmbientLight, DirectionalLight
+  BoxGeometry, Vector3, AmbientLight
 } = Three
 
 // constants & settings
 const PLANE_HEIGHT = 0.5
+const SCENE_ROTATION_SPEED = degreeToRadian(0.35) * -1 // per frame
 const COLORS = {
   bg_0: '#f7f9fb',
-  black_0: '#1c1c1c',
-  black_1: '#2a2a2a',
   grey_0: '#414141',
-  grey_1: '#848484',
-  grey_2: '#f2f2f2',
-  dim_purple: '#e5ecf6',
-  tube: '#FFE999',
-  sphere: '#ff4747',
-  ambLight: '#f7f9fb',
-  dirLight: '#f7f9fb'
+  tube: '#95a4fc',
+  sphere: '#baedbd',
+  bar_1: '#95a4fc',
+  bar_2: '#baedbd',
+  ambLight: '#f7f9fb'
 }
-const cameraSettings = { pos: { x: 30, y: 30, z: 30 }, lookAt: [0, 0, 0] }
+const cameraSettings = { pos: { x: 40, y: 30, z: 20 }, lookAt: new Vector3(0, 8, 0) }
 let animationId
 
 function initAnimation (canvasEl) {
@@ -39,44 +35,24 @@ function initAnimation (canvasEl) {
   // create a camera
   const camera = new PerspectiveCamera(75, canvasEl.clientWidth / canvasEl.clientHeight, 0.1, 1000)
   camera.position.set(cameraSettings.pos.x, cameraSettings.pos.y, cameraSettings.pos.z)
-  camera.lookAt(...cameraSettings.lookAt)
+  camera.lookAt(cameraSettings.lookAt)
+  camera.updateProjectionMatrix()
 
   // create a renderer
   const renderer = new WebGLRenderer({ canvas: canvasEl, alpha: true, antialias: true })
   const renderScene = () => renderer.render(scene, camera)
   resizeRendererToDisplaySize(renderer)
 
-  // add objects to the scene
-  const axes = new Axes({
-    length: 100,
-    dashed: true,
-    dashOpts: { dashSize: 0.5, gapSize: 0.175 }
-  })
-  scene.add(axes)
-
-  // lights
+  // light
   const ambLight = new AmbientLight(COLORS.ambLight, 1)
-  const dirLight = new DirectionalLight(COLORS.dirLight, 0.725)
-  dirLight.position.set(40, 40, 0)
-  dirLight.target.position.set(0, 2, 0)
-  scene.add(ambLight, dirLight)
+  scene.add(ambLight)
 
   // --- add objects to the scene --- //
 
-  // a flat cylinder
-  const plane = new Column({
-    radius: 25,
-    faceColor: COLORS.grey_2,
-    sideColor: COLORS.grey_0,
-    edgeColor: COLORS.grey_0,
-    height: PLANE_HEIGHT
-  })
-  scene.root.add(plane)
-
   // box
-  const boxDepth = 18
+  const boxDepth = 20
   const box = new Edgify({
-    geometry: new BoxGeometry(14, boxDepth, 30),
+    geometry: new BoxGeometry(18, boxDepth, 38),
     color: COLORS.grey_0
   })
   box.position.y = boxDepth / 2 + PLANE_HEIGHT + 0.15
@@ -85,37 +61,37 @@ function initAnimation (canvasEl) {
   // curve-graph
   const curveGraph = new CurveGraph({
     points: [
-      new Vector3(0, 5.75, 10.25),
-      new Vector3(0, 9.75, 3.25),
-      new Vector3(0, 7.75, -4.25),
-      new Vector3(0, 12.25, -11)
+      new Vector3(0, 12.25, 12.25),
+      new Vector3(0, 8.5, 8.25),
+      new Vector3(0, 9.75, 4.25),
+      new Vector3(0, 7.25, -0.25),
+      new Vector3(0, 10.25, -4.25),
+      new Vector3(0, 7.75, -8.25),
+      new Vector3(0, 3.75, -12.25)
     ],
-    tubeRadius: 0.5,
-    sphereRadius: 1.325,
+    tubeRadius: 0.325,
+    sphereRadius: 0.85,
     tubeColor: COLORS.tube,
     sphereColor: COLORS.sphere
   })
-  curveGraph.position.x = 4
+  curveGraph.position.x = -2.5
   scene.root.add(curveGraph)
 
   // bar-graphs
   const barGraphs = new BarGraphs({
-    pairColors: ['#ff0000', '#0000ff'],
-    pairCounts: 5
+    pairColors: [COLORS.bar_1, COLORS.bar_2],
+    pairCount: 8
   })
-  barGraphs.position.y = PLANE_HEIGHT
+  barGraphs.position.set(2.5, PLANE_HEIGHT, 0)
   scene.root.add(barGraphs)
-
-  // add orbit-controls
-  const orbitControl = new OrbitControls(camera, canvasEl)
-  orbitControl.enableDamping = true
 
   function animate () {
     if (resizeRendererToDisplaySize(renderer)) {
       adjustCameraAspect(canvasEl, camera)
     }
 
-    orbitControl.update()
+    root.rotation.y += SCENE_ROTATION_SPEED
+
     renderScene()
     animationId = requestAnimationFrame(animate)
   }

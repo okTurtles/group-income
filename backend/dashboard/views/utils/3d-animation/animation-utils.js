@@ -19,6 +19,8 @@ class LineMesh extends Line {
 
     super(geometry, material)
     this.data = { geometry, material }
+
+    if (dashed) { this.computeLineDistances() }
   }
 }
 
@@ -42,7 +44,7 @@ class Axes extends Group {
 class CombineWithEdge extends Group {
   constructor ({
     mesh = null, geometry = null, material = null,
-    edgeColor = '#000000', shadow = false
+    edgeColor = '#000000', shadow = false, edgeOpacity = 1
   }) {
     const originalMesh = mesh || new Mesh(geometry, material)
     if (mesh) {
@@ -53,7 +55,7 @@ class CombineWithEdge extends Group {
 
     // edges
     const edges = new EdgesGeometry(geometry)
-    const edgesMesh = new LineSegments(edges, new LineBasicMaterial({ color: edgeColor }))
+    const edgesMesh = new LineSegments(edges, new LineBasicMaterial({ color: edgeColor, transparent: true, opacity: edgeOpacity }))
 
     super()
     this.add(originalMesh, edgesMesh)
@@ -130,10 +132,15 @@ function randomFromMinMax (min = 0, max = 0) {
   return min + (max - min) * Math.random()
 }
 
+function degreeToRadian (deg) {
+  return deg * Math.PI / 180
+}
+
 export {
   resizeRendererToDisplaySize,
   adjustCameraAspect,
   randomFromMinMax,
+  degreeToRadian,
   LineMesh,
   CombineWithEdge,
   Edgify,
