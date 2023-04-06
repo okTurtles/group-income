@@ -94,7 +94,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
-import { filterByKeyword } from '@utils/filters.js'
+import { filterByKeyword } from '@view-utils/filters.js'
 
 export default ({
   name: 'NewDirectMessageModal',
