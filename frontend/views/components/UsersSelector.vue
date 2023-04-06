@@ -160,7 +160,7 @@ export default ({
       border-radius: 3px;
       background-color: $general_1;
       line-height: 1;
-      padding: 0.3rem;
+      padding: 0.25rem;
       width: fit-content;
 
       &:hover {
