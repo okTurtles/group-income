@@ -171,8 +171,9 @@ export default ({
       const name = displayName || this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
-    createNewDirectMessage (username) {
-      if (!this.ourPrivateDirectMessages[username]) {
+    openPrivateDM (username) {
+      const chatRoomId = this.directMessageIDFromUsername(username)
+      if (!chatRoomId) { // Not created DM
         sbp('gi.actions/mailbox/createDirectMessage', {
           contractID: this.currentIdentityState.attributes.mailbox,
           data: {
@@ -181,7 +182,6 @@ export default ({
           }
         })
       } else if (this.ourPrivateDirectMessages[username].hidden) {
-        const chatRoomId = this.directMessageIDFromUsername(username)
         sbp('gi.actions/mailbox/setDirectMessageVisibility', {
           contractID: this.currentIdentityState.attributes.mailbox,
           data: {
@@ -189,15 +189,14 @@ export default ({
             hidden: false
           }
         })
+        // TODO: need to redirect
+      } else if (this.ourPrivateDirectMessages[username]) {
+        this.$router.push({
+          name: 'GroupChatConversation',
+          params: { chatRoomId }
+        }).catch(logExceptNavigationDuplicated)
       }
-      this.closeModal()
-    },
-    openDirectMessage (username) {
-      const chatRoomId = this.directMessageIDFromUsername(username)
-      this.$router.push({
-        name: 'GroupChatConversation',
-        params: { chatRoomId }
-      }).catch(logExceptNavigationDuplicated)
+
       this.closeModal()
     },
     onChangeKeyword (keyword) {
@@ -215,12 +214,7 @@ export default ({
       } else {
         const profile = this.filteredRecents[0] || this.filteredOthers[0]
         if (profile) {
-          const { username } = profile
-          if (this.ourPrivateDirectMessages[username]) {
-            this.openDirectMessage(username)
-          } else {
-            this.createNewDirectMessage(username)
-          }
+          this.openPrivateDM(profile.username)
         }
       }
     },
