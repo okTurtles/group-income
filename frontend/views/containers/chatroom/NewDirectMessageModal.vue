@@ -30,17 +30,10 @@ modal-base-template.has-background(
         :args='{searchTerm: `<strong>${searchText}</strong>`}'
       ) Sorry, we couldn't find anyone called "{searchTerm}"
 
-      i18n.c-member-count.has-text-1(
-        v-if='!searchText'
-        tag='div'
-        :args='{ ourNewContactsCount }'
-        data-test='memberCount'
-      ) {ourNewContactsCount} members
-
       .is-subtitle
         i18n(
           tag='h3'
-          :args='{  nbMembers: ourRecentConversations.length }'
+          :args='{  nbMembers: filteredRecents.length }'
         ) Recent Conversations ({nbMembers})
       transition-group(
         name='slide-list'
@@ -48,7 +41,7 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName} in ourRecentConversations'
+          v-for='{username, displayName} in filteredRecents'
           @click='openDirectMessage(username)'
           :key='username'
         )
@@ -63,7 +56,7 @@ modal-base-template.has-background(
       .is-subtitle
         i18n(
           tag='h3'
-          :args='{  nbMembers: searchResult.length }'
+          :args='{  nbMembers: filteredOthers.length }'
         ) Others ({nbMembers})
       transition-group(
         name='slide-list'
@@ -71,7 +64,7 @@ modal-base-template.has-background(
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName} in searchResult'
+          v-for='{username, displayName} in filteredOthers'
           @click='createNewDirectMessage(username)'
           :key='username'
         )
@@ -155,11 +148,14 @@ export default ({
         })
         .map(({ username }) => this.ourContactProfiles[username])
     },
-    searchResult () {
+    filteredRecents () {
+      return filterByKeyword(this.ourRecentConversations, this.searchText, ['username', 'displayName'])
+    },
+    filteredOthers () {
       return filterByKeyword(this.ourNewDMContacts, this.searchText, ['username', 'displayName'])
     },
     searchCount () {
-      return Object.keys(this.searchResult).length
+      return Object.keys(this.filteredOthers).length + Object.keys(this.filteredRecents).length
     },
     resultsCopy () {
       const args = { searchCount: `<strong>${this.searchCount}</strong>`, searchTerm: `<strong>${this.searchText}</strong>`, ...LTags('strong') }
