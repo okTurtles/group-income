@@ -491,6 +491,8 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/latestContractState': async function (contractID: string) {
     const rootState = sbp(this.config.stateSelector)
+    // return a copy of the state if we already have it, unless the only key that's in it is _volatile,
+    // in which case it means we should sync the contract to get more info.
     if (rootState[contractID] && Object.keys(rootState[contractID]).some((x) => x !== '_volatile')) {
       return cloneDeep(rootState[contractID])
     }
