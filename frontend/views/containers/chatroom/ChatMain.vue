@@ -517,31 +517,47 @@ export default ({
       }
     },
     listenChatRoomActions ({ hash }) {
-      const isAddedNewMessage = (message: GIMessage): boolean => {
+      const isMessageAddedOrDeleted = (message: GIMessage) => {
         const { action, meta } = message.decryptedValue()
         const rootState = sbp('state/vuex/state')
-        const me = rootState.loggedIn.username
+        let addedOrDeleted = 'NONE'
 
         if (/.*(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
           // we add new pending message in 'handleSendMessage' function so we skip when I added a new message
-          return { added: true, self: me === meta.username }
+          addedOrDeleted = 'ADDED'
+        } else if (/.*(deleteMessage)$/.test(action)) {
+          addedOrDeleted = 'DELETED'
         }
 
-        return { added: false, self: false }
+        return { addedOrDeleted, self: rootState.loggedIn.username === meta.username }
       }
 
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
         if (contractID === this.currentChatRoomId) {
           const state = this.getSimulatedState(false)
+          const { addedOrDeleted, self } = isMessageAddedOrDeleted(message)
+
+          if (addedOrDeleted === 'DELETED') {
+            // NOTE: Message will be deleted in processMessage function
+            //       but need to make animation to delete it, probably here
+            const messageId = message.decryptedValue().data.id
+            const msgIndex = findMessageIdx(messageId, this.messages)
+            document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
+
+            // NOTE: waiting for the animation is done
+            //       it's duration is 500ms described in MessageBase.vue
+            await new Promise((resolve, reject) => {
+              setTimeout(resolve, 500)
+            })
+          }
+
           await sbp('chelonia/private/in/processMessage', message, state)
           this.latestEvents.push(message.serialize())
 
           this.$forceUpdate()
 
-          // TODO: Need to scroll to the bottom only when new message is ADDED by ANOTHER
           if (this.ephemeral.scrolledDistance < 50) {
-            const { added, self } = isAddedNewMessage(message)
-            if (added) {
+            if (addedOrDeleted === 'ADDED') {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               if (!self && isScrollable) {

@@ -273,6 +273,10 @@ export default ({
   animation: focused 1s linear 0.5s;
 }
 
+.c-disappeared {
+  animation: disappeared 0.5s linear;
+}
+
 .c-replying {
   border-left: 2px;
   border-color: #dbdbdb; // var(--text_1);
