@@ -162,20 +162,6 @@ sbp('sbp/selectors/register', {
   //
   // TODO: add encryption
   // =======================
-  'backend/db/readFile': async function (filename: string): Promise<Buffer | Error> {
-    const filepath = throwIfFileOutsideDataDir(filename)
-    if (!fs.existsSync(filepath)) {
-      return Boom.notFound()
-    }
-    return await readFile(filepath)
-  },
-  'backend/db/writeFile': async function (filename: string, data: any): Promise<void> {
-    // TODO: check for how much space we have, and have a server setting
-    //       that determines how much of the disk space we're allowed to
-    //       use. If the size of the file would cause us to exceed this
-    //       amount, throw an exception
-    return await writeFile(throwIfFileOutsideDataDir(filename), data)
-  },
   'backend/db/writeFileOnce': async function (filename: string, data: any): Promise<void> {
     const filepath = throwIfFileOutsideDataDir(filename)
     if (fs.existsSync(filepath)) {
