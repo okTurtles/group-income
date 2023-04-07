@@ -1,5 +1,6 @@
 {
   "$ USD per Credit": "$ USD per Credit",
+  "404 Not found": "404 Not found",
   "A display name is required.": "A display name is required.",
   "A domain address is required.": "A domain address is required.",
   "A short alphanumeric name to identify your instance internally. It cannot be changed later and must be unique.": "A short alphanumeric name to identify your instance internally. It cannot be changed later and must be unique.",
@@ -19,6 +20,8 @@
   "At least one payment method has to be specified": "At least one payment method has to be specified",
   "Billing": "Billing",
   "Chatroom": "Chatroom",
+  "Chelonia": "Chelonia",
+  "Chelonia dashboard": "Chelonia dashboard",
   "Choose...": "Choose...",
   "Close": "Close",
   "Contract manifest": "Contract manifest",
@@ -26,6 +29,7 @@
   "Contracts": "Contracts",
   "Contracts owned": "Contracts owned",
   "Copied to clipboard": "Copied to clipboard",
+  "Could not find the resource or page": "Could not find the resource or page",
   "Create a new instance": "Create a new instance",
   "Created on": "Created on",
   "Credits": "Credits",
@@ -33,6 +37,7 @@
   "Dashboard": "Dashboard",
   "Database": "Database",
   "Days": "Days",
+  "Design system": "Design system",
   "Display name": "Display name",
   "Domain": "Domain",
   "Don’t allow unencrypted contracts": "Don’t allow unencrypted contracts",
@@ -65,6 +70,7 @@
   "Stats": "Stats",
   "The domain name (or subdomain) where you’ll host your instance. It cannot be changed later.": "The domain name (or subdomain) where you’ll host your instance. It cannot be changed later.",
   "This field is required": "This field is required",
+  "To dashboard": "To dashboard",
   "Total groups": "Total groups",
   "Total storage": "Total storage",
   "Total users": "Total users",
@@ -77,5 +83,6 @@
   "What payment methods you will accept from your users.": "What payment methods you will accept from your users.",
   "cancel": "cancel",
   "contractID": "contractID",
+  "error": "error",
   "view": "view"
 }

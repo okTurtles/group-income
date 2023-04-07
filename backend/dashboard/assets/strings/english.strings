@@ -3,6 +3,9 @@
 /* views/pages/Billing.vue */
 "$ USD per Credit" = "$ USD per Credit";
 
+/* views/pages/miscellaneous/Error.vue */
+"404 Not found" = "404 Not found";
+
 /* views/pages/Accounts.vue */
 "A display name is required." = "A display name is required.";
 
@@ -15,7 +18,7 @@
 /* views/pages/Billing.vue */
 "Accepted payment methods" = "Accepted payment methods";
 
-/* views/containers/navigation/Navigation.vue */
+/* controller/router.js, views/containers/navigation/Navigation.vue */
 "Accounts" = "Accounts";
 
 /* views/pages/Contracts.vue, views/pages/Users.vue */
@@ -54,11 +57,17 @@
 /* views/pages/Billing.vue */
 "At least one payment method has to be specified" = "At least one payment method has to be specified";
 
-/* views/containers/navigation/Navigation.vue, views/pages/Billing.vue */
+/* controller/router.js, views/containers/navigation/Navigation.vue, views/pages/Billing.vue */
 "Billing" = "Billing";
 
 /* views/pages/Contracts.vue */
 "Chatroom" = "Chatroom";
+
+/* views/pages/miscellaneous/Landing.vue */
+"Chelonia" = "Chelonia";
+
+/* controller/router.js */
+"Chelonia dashboard" = "Chelonia dashboard";
 
 /* views/components/PaymentMethods.vue */
 "Choose..." = "Choose...";
@@ -72,7 +81,7 @@
 /* views/pages/Users.vue */
 "Contract size (MB)" = "Contract size (MB)";
 
-/* views/containers/navigation/Navigation.vue, views/pages/Contracts.vue */
+/* controller/router.js, views/containers/navigation/Navigation.vue, views/pages/Contracts.vue */
 "Contracts" = "Contracts";
 
 /* views/pages/Users.vue */
@@ -80,6 +89,9 @@
 
 /* views/components/TextToCopy.vue */
 "Copied to clipboard" = "Copied to clipboard";
+
+/* views/pages/miscellaneous/Error.vue */
+"Could not find the resource or page" = "Could not find the resource or page";
 
 /* views/pages/Accounts.vue */
 "Create a new instance" = "Create a new instance";
@@ -93,7 +105,7 @@
 /* views/pages/Billing.vue */
 "Credits per Gb" = "Credits per Gb";
 
-/* views/containers/navigation/Navigation.vue, views/pages/Dashboard.vue */
+/* controller/router.js, views/containers/navigation/Navigation.vue, views/pages/Dashboard.vue, views/pages/miscellaneous/Landing.vue */
 "Dashboard" = "Dashboard";
 
 /* views/pages/Dashboard.vue */
@@ -101,6 +113,9 @@
 
 /* views/pages/Billing.vue */
 "Days" = "Days";
+
+/* controller/router.js */
+"Design system" = "Design system";
 
 /* views/pages/Accounts.vue */
 "Display name" = "Display name";
@@ -198,6 +213,9 @@
 /* views/pages/Billing.vue */
 "This field is required" = "This field is required";
 
+/* views/pages/miscellaneous/Landing.vue */
+"To dashboard" = "To dashboard";
+
 /* views/pages/Dashboard.vue */
 "Total groups" = "Total groups";
 
@@ -219,7 +237,7 @@
 /* views/pages/Users.vue */
 "User usage summary" = "User usage summary";
 
-/* views/containers/navigation/Navigation.vue, views/pages/Users.vue */
+/* controller/router.js, views/containers/navigation/Navigation.vue, views/pages/Users.vue */
 "Users" = "Users";
 
 /* views/pages/Dashboard.vue */
@@ -233,6 +251,9 @@
 
 /* views/pages/Contracts.vue */
 "contractID" = "contractID";
+
+/* controller/router.js */
+"error" = "error";
 
 /* views/pages/Contracts.vue, views/pages/Users.vue */
 "view" = "view";

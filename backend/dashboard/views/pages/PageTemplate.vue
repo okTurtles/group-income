@@ -1,6 +1,6 @@
 <template lang="pug">
 .c-page
-  header.c-page-header
+  header.c-page-header(v-if='!noHeader')
     slot(name='header')
     h2.is-title-2(v-if='$slots.title')
       slot(name='title')
@@ -11,7 +11,13 @@
 
 <script>
 export default {
-  name: 'PageTemplate'
+  name: 'PageTemplate',
+  props: {
+    noHeader: {
+      type: Boolean,
+      default: false
+    }
+  }
 }
 </script>
 

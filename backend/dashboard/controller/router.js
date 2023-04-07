@@ -4,12 +4,14 @@ import Vue from 'vue'
 import Router from 'vue-router'
 
 // pages
-import Landing from '@pages/Landing.vue'
 import Dashboard from '@pages/Dashboard.vue'
 import Contracts from '@pages/Contracts.vue'
 import Users from '@pages/Users.vue'
 import Accounts from '@pages/Accounts.vue'
 import Billing from '@pages/Billing.vue'
+
+import Landing from '@pages/miscellaneous/Landing.vue'
+import Error from '@pages/miscellaneous/Error.vue'
 import DesignSystem from '@pages/design-system/CheloniaDesignSystem.vue'
 
 import L from '@common/translations.js'
@@ -64,6 +66,12 @@ const router: any = new Router({
       meta: { title: L('Design system') },
       name: 'DesignSystem',
       component: DesignSystem
+    },
+    {
+      path: '/err',
+      meta: { title: L('error') },
+      name: 'Error',
+      component: Error
     },
     {
       path: '*',
