@@ -15,7 +15,7 @@ export async function initStorage (options: Object = {}): Promise<void> {
 // eslint-disable-next-line require-await
 export async function readString (key: string): Promise<string | void> {
   checkKey(key)
-  return readFile(`${dataFolder}/${key}`)
+  return readFile(path.join(dataFolder, key))
     .then(buffer => buffer.toString('utf8'))
     .catch(err => undefined) // eslint-disable-line node/handle-callback-err
 }
