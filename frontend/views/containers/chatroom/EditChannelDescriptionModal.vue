@@ -13,6 +13,7 @@
           ) {{ maxDescriptionCharacters - form.description.length }}
 
         textarea.textarea(
+          ref='description'
           name='description'
           :placeholder='L("Description of the channel")'
           maxlength='maxDescriptionCharacters'
@@ -28,7 +29,7 @@
       banner-scoped(ref='formMsg')
 
       .buttons
-        i18n.is-outlined(tag='button' @click.prevent='close') Cancel
+        i18n.button.is-outlined(@click.prevent='close') Cancel
         i18n.is-success(
           tag='button'
           @click='submit'
@@ -73,6 +74,9 @@ export default ({
   },
   created () {
     this.form.description = this.currentChatRoomState.attributes.description
+  },
+  mounted () {
+    this.$refs.description.focus()
   },
   methods: {
     close () {

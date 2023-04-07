@@ -154,7 +154,6 @@ export default ({
       default: false
     },
     replyingMessage: String,
-    replyingMessageId: String,
     replyingTo: String,
     isEditing: {
       type: Boolean,
@@ -179,7 +178,17 @@ export default ({
   },
   watch: {
     replyingMessage () {
-      this.$refs.textarea.focus()
+      this.focusOnTextArea()
+    },
+    currentChatRoomId () {
+      this.focusOnTextArea()
+    },
+    loading (newValue, oldValue) {
+      if (newValue) {
+        this.$nextTick(() => {
+          this.focusOnTextArea()
+        })
+      }
     }
   },
   created () {
@@ -194,7 +203,7 @@ export default ({
     // so those actions don't be above the textarea's value
     this.ephemeral.actionsWidth = this.isEditing ? 0 : this.$refs.actions.offsetWidth
     this.updateTextArea()
-    if (!this.ephemeral.isPhone) this.$refs.textarea.focus()
+    this.focusOnTextArea()
 
     window.addEventListener('click', this.onWindowMouseClicked)
   },
@@ -229,6 +238,11 @@ export default ({
     }
   },
   methods: {
+    focusOnTextArea () {
+      if (this.$refs.textarea) {
+        this.$refs.textarea.focus()
+      }
+    },
     textAreaBlur (event) {
       if (!this.ephemeral.isPhone) {
         return

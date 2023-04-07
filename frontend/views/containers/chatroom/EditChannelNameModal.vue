@@ -12,6 +12,7 @@
         ) {{maxNameCharacters - form.name.length}}
 
         input.input(
+          ref='name'
           type='text'
           name='name'
           maxlength='maxNameCharacters'
@@ -26,7 +27,7 @@
       banner-scoped(ref='formMsg')
 
       .buttons
-        i18n.is-outlined(tag='button' @click='close') Cancel
+        i18n.button.is-outlined(@click='close') Cancel
         i18n.is-success(
           tag='button'
           @click='submit'
@@ -77,6 +78,7 @@ export default ({
     if (this.generalChatRoomId === this.currentChatRoomId) {
       this.close()
     }
+    this.$refs.name.focus()
   },
   methods: {
     close () {

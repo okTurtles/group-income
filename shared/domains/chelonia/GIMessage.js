@@ -1,8 +1,9 @@
 'use strict'
 
-// TODO: rename GIMessage to CMessage or something similar
+// TODO: rename GIMessage to ChelMessage
 
 import { EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305 } from './crypto.js'
+import { v4 as uuidv4 } from 'uuid'
 import { blake32Hash } from '~/shared/functions.js'
 import type { JSONType, JSONObject } from '~/shared/types.js'
 
@@ -17,13 +18,13 @@ export type GIKey = {
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
-export type GIOpContract = { type: string; keys: GIKey[], nonce: string, parentContract?: string }
+export type GIOpContract = { type: string; keys: GIKey[]; nonce: string; parentContract?: string }
 export type GIOpActionEncrypted = string // encrypted version of GIOpActionUnencrypted
 export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
 export type GIOpKeyAdd = GIKey[]
 export type GIOpKeyDel = string[]
-export type GIOpPropSet = { key: string, value: JSONType }
-export type GIOpKeyShare = { contractID: string, keys: GIKey[] }
+export type GIOpPropSet = { key: string; value: JSONType }
+export type GIOpKeyShare = { contractID: string; keys: GIKey[] }
 export type GIOpKeyRequest = {
   keyId: string;
   outerKeyId: string;
@@ -35,6 +36,8 @@ export type GIOpKeyRequestResponse = string
 export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krr'
 export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestResponse
 export type GIOp = [GIOpType, GIOpValue] | [GIOpType, GIOpValue, GIOpValue]
+
+type GIMsgParams = { mapping: Object; head: Object; message: GIOpValue; decryptedValue?: GIOpValue; signature: string; signedPayload: string }
 
 export class GIMessage {
   // flow type annotations to make flow happy
@@ -86,32 +89,26 @@ export class GIMessage {
       contractID,
       originatingContractID,
       op: op[0],
-      manifest
+      manifest,
+      // the nonce makes it easier to prevent conflicts during development
+      // when using the same data, and also makes it possible to identify
+      // same-content/different-previousHEAD messages that are
+      // cloned using the cloneWith method
+      nonce: uuidv4()
     }
     console.log('createV1_0', { op, head })
-    const message = op[1]
-    // NOTE: the JSON strings generated here must be preserved forever.
-    //       do not ever regenerate this message using the contructor.
-    //       instead store it using serialize() and restore it using
-    //       deserialize().
-    const headJSON = JSON.stringify(head)
-    const messageJSON = JSON.stringify(message)
-    const signedPayload = blake32Hash(`${blake32Hash(headJSON)}${blake32Hash(messageJSON)}`)
-    const signature = signatureFn(signedPayload)
-    const value = JSON.stringify({
-      head: headJSON,
-      message: messageJSON,
-      sig: signature
-    })
-    return new this({
-      mapping: { key: blake32Hash(value), value },
-      head,
-      message,
-      // provide the decrypted value so that pre/postpublish hooks have access to it if needed
-      decryptedValue: op.length === 3 ? op[2] : op[1],
-      signature,
-      signedPayload
-    })
+    return new this(messageToParams(head, op, signatureFn))
+  }
+
+  // GIMessage.cloneWith could be used when make a GIMessage object having the same id()
+  // https://github.com/okTurtles/group-income/issues/1503
+  static cloneWith (
+    target: GIMessage,
+    sources: Object,
+    signatureFn?: Function = defaultSignatureFn
+  ): this {
+    const head = Object.assign({}, target.head(), sources)
+    return new this(messageToParams(head, target.op(), signatureFn))
   }
 
   // TODO: we need signature verification upon decryption somewhere...
@@ -127,7 +124,7 @@ export class GIMessage {
     })
   }
 
-  constructor ({ mapping, head, message, signature, signedPayload, decryptedValue }: { mapping: Object, head: Object, message: Object, signature: string, signedPayload: string, decryptedValue?: Object }) {
+  constructor ({ mapping, head, message, signature, signedPayload, decryptedValue }: GIMsgParams) {
     this._mapping = mapping
     this._head = head
     this._message = message
@@ -207,11 +204,48 @@ export class GIMessage {
   serialize (): string { return this._mapping.value }
 
   hash (): string { return this._mapping.key }
+
+  id (): string {
+    // NOTE: nonce can be used as GIMessage identifier
+    // https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
+    return this.head().nonce
+  }
 }
 
 function defaultSignatureFn (data: string) {
   return {
     type: 'default',
     sig: blake32Hash(data)
+  }
+}
+
+function messageToParams (head: Object, op: GIOp, signatureFn: Function): GIMsgParams {
+  // NOTE: the JSON strings generated here must be preserved forever.
+  //       do not ever regenerate this message using the contructor.
+  //       instead store it using serialize() and restore it using deserialize().
+  //       The issue is that different implementations of JavaScript engines might generate different strings
+  //       when serializing JS objects using JSON.stringify
+  //       and that would lead to different hashes resulting from blake32Hash.
+  //       So to get around this we save the serialized string upon creation
+  //       and keep a copy of it (instead of regenerating it as needed).
+  //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
+  const message = op[1]
+  const headJSON = JSON.stringify(head)
+  const messageJSON = JSON.stringify(message)
+  const signedPayload = blake32Hash(`${blake32Hash(headJSON)}${blake32Hash(messageJSON)}`)
+  const signature = signatureFn(signedPayload)
+  const value = JSON.stringify({
+    head: headJSON,
+    message: messageJSON,
+    sig: signature
+  })
+  return {
+    mapping: { key: blake32Hash(value), value },
+    head,
+    message,
+    // provide the decrypted value so that pre/postpublish hooks have access to it if needed
+    decryptedValue: op.length === 3 ? op[2] : op[1],
+    signature,
+    signedPayload
   }
 }
