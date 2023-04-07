@@ -573,14 +573,13 @@ export default ({
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
         // NOTE: while syncing the chatroom contract, we should ignore all the events
         if (contractID === this.currentChatRoomId) {
-          const state = this.getSimulatedState(false)
           const { addedOrDeleted, self } = isMessageAddedOrDeleted(message)
 
           if (addedOrDeleted === 'DELETED') {
             // NOTE: Message will be deleted in processMessage function
             //       but need to make animation to delete it, probably here
-            const messageId = message.decryptedValue().data.id
-            const msgIndex = findMessageIdx(messageId, this.messages)
+            const messageHash = message.decryptedValue().data.hash
+            const msgIndex = findMessageIdx(messageHash, this.messages)
             document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
 
             // NOTE: waiting for the animation is done
