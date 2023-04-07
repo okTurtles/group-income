@@ -25,15 +25,15 @@ const router: any = new Router({
   routes: [
     {
       path: '/',
-      meta: { title: L('Dashboard') },
-      name: 'Dashboard',
-      component: Dashboard
-    },
-    {
-      path: '/landing',
       meta: { title: L('Chelonia dashboard') },
       name: 'Landing',
       component: Landing
+    },
+    {
+      path: '/main',
+      meta: { title: L('Dashboard') },
+      name: 'Dashboard',
+      component: Dashboard
     },
     {
       path: '/contracts',

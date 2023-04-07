@@ -121,7 +121,7 @@ export default {
       this.form.application = item
     },
     onCancelClick () {
-      this.$router.push({ path: '/' })
+      this.$router.push({ path: '/main' })
     },
     onSaveClick () {
       this.$v.$touch()

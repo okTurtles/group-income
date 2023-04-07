@@ -6,7 +6,7 @@
 
     .c-app-title
       i.icon-moonstar.c-logo
-      h1.is-title-3(@click='$router.push({ path: "/" })') Chelonia
+      h1.is-title-3(@click='$router.push({ path: "/main" })') Chelonia
 
   .c-flex-block
     button.is-icon.c-theme-toggle(@click='toggleTheme')
@@ -46,6 +46,8 @@ export default {
   justify-content: space-between;
   border-bottom: 1px solid $border;
   padding: 0 1rem;
+  opacity: 0;
+  animation: opacity-in 500ms ease-out forwards;
 }
 
 .c-flex-block {

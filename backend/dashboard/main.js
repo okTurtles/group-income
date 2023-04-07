@@ -45,10 +45,10 @@ async function startApp () {
     },
     computed: {
       hideNavigation () {
-        return ['/design-system', '/landing'].includes(this.$route.path)
+        return ['/design-system', '/'].includes(this.$route.path)
       },
       hideToolbar () {
-        return this.$route.path === '/landing'
+        return this.$route.path === '/'
       }
     },
     methods: {

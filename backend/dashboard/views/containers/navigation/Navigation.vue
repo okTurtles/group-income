@@ -32,7 +32,7 @@ export default {
       ephemeral: {
         isActive: false,
         navList: [
-          { id: 'dashboard', name: L('Dashboard'), to: '/', icon: 'chalkboard' },
+          { id: 'dashboard', name: L('Dashboard'), to: '/main', icon: 'chalkboard' },
           { id: 'contracts', name: L('Contracts'), to: '/contracts', icon: 'network' },
           { id: 'users', name: L('Users'), to: '/users', icon: 'users' },
           { id: 'accounts', name: L('Accounts'), to: '/accounts', icon: 'address-book' },
@@ -60,6 +60,8 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   width: 100vw;
+  opacity: 0;
+  animation: opacity-in 500ms ease-out forwards;
 
   @include tablet {
     width: 100%;

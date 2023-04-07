@@ -12,7 +12,9 @@
     <app-styles></app-styles>
     <toolbar v-if='!hideToolbar' class="l-toolbar" :noNavigation="hideNavigation" @open-nav="openNav"></toolbar>
     <navigation v-if="!hideNavigation" class="l-navigation" ref="navigation"></navigation>
-    <router-view class="l-page"></router-view>
+    <transition appear name="page-fade">
+      <router-view class="l-page"></router-view>
+    </transition>
     <modal class="l-modal"></modal>
   </div>
   <script type="module" src="/assets/js/main.js"></script>
