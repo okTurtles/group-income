@@ -3,18 +3,16 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 
-// pages
-import Dashboard from '@pages/Dashboard.vue'
-import Contracts from '@pages/Contracts.vue'
-import Users from '@pages/Users.vue'
-import Accounts from '@pages/Accounts.vue'
-import Billing from '@pages/Billing.vue'
-
 import Landing from '@pages/miscellaneous/Landing.vue'
-import Error from '@pages/miscellaneous/Error.vue'
-import DesignSystem from '@pages/design-system/CheloniaDesignSystem.vue'
-
 import L from '@common/translations.js'
+import { lazyPage } from '@view-utils/lazyLoadComponents.js'
+
+const lazyDashboard = lazyPage(() => import('@pages/Dashboard.vue'))
+const lazyContracts = lazyPage(() => import('@pages/Contracts.vue'))
+const lazyUsers = lazyPage(() => import('@pages/Users.vue'))
+const lazyBilling = lazyPage(() => import('@pages/Billing.vue'))
+const lazyAccounts = lazyPage(() => import('@pages/Accounts.vue'))
+const lazyDesignSystem = lazyPage(() => import('@pages/design-system/CheloniaDesignSystem.vue'))
 
 Vue.use(Router)
 
@@ -35,47 +33,41 @@ const router: any = new Router({
       path: '/main',
       meta: { title: L('Dashboard') },
       name: 'Dashboard',
-      component: Dashboard
+      component: lazyDashboard
     },
     {
       path: '/contracts',
       meta: { title: L('Contracts') },
       name: 'Contracts',
-      component: Contracts
+      component: lazyContracts
     },
     {
       path: '/users',
       meta: { title: L('Users') },
       name: 'Users',
-      component: Users
+      component: lazyUsers
     },
     {
       path: '/accounts',
       meta: { title: L('Accounts') },
       name: 'Accounts',
-      component: Accounts
+      component: lazyAccounts
     },
     {
       path: '/billing',
       meta: { title: L('Billing') },
       name: 'Billing',
-      component: Billing
+      component: lazyBilling
     },
     {
       path: '/design-system',
       meta: { title: L('Design system') },
       name: 'DesignSystem',
-      component: DesignSystem
-    },
-    {
-      path: '/err',
-      meta: { title: L('error') },
-      name: 'Error',
-      component: Error
+      component: lazyDesignSystem
     },
     {
       path: '*',
-      redirect: '/'
+      redirect: '/main'
     }
   ]
 })
