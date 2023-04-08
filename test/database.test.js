@@ -21,7 +21,7 @@ names.forEach((name) => {
     initStorage,
     readString,
     writeString
-  } = require(`~/backend/${lowerCaseName}-backend.js`)
+  } = require(`~/backend/database-${lowerCaseName}.js`)
 
   describe(`Test ${name} storage API`, function () {
     before('storage backend initialization', async function () {

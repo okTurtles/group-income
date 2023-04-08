@@ -197,7 +197,7 @@ export default async () => {
   // - register `readString` and `writeString` selectors
   // - overwrite 'chelonia/db/get' and '-set' to use an LRU cache
   if (persistence) {
-    const { initStorage, readString, writeString } = await import(`./${persistence}-backend.js`)
+    const { initStorage, readString, writeString } = await import(`./database-${persistence}.js`)
 
     await initStorage(options[persistence])
     sbp('sbp/selectors/register', {
