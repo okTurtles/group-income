@@ -18,7 +18,7 @@ Vue.use(Router)
 
 const router: any = new Router({
   mode: 'history',
-  base: '/dashboard',
+  base: process.env.NODE_ENV === 'production' ? '' : '/dashboard',
   scrollBehavior (to, from, savedPosition) {
     return { x: 0, y: 0 }
   },
@@ -67,7 +67,9 @@ const router: any = new Router({
     },
     {
       path: '*',
-      redirect: '/main'
+      meta: { title: L('Chelonia dashboard') },
+      name: 'Landing',
+      component: Landing
     }
   ]
 })
