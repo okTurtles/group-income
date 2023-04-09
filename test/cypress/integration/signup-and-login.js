@@ -72,7 +72,7 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('passwordConfirm').clear().type(password)
     cy.getByDT('signSubmit').should('not.be.disabled')
 
-    cy.getByDT('closeModal').click().should('not.exist')
+    cy.closeModal()
   })
 
   it('prevent incorrect logins/signup actions', () => {

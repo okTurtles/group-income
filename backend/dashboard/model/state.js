@@ -3,13 +3,12 @@
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import Colors from './colors.js'
+import Colors, { THEME_LIGHT } from './themes.js'
 import { cloneDeep } from '@common/cdLodash.js'
 
 Vue.use(Vuex)
 
-const defaultTheme = 'light'
-
+const defaultTheme = THEME_LIGHT
 const initialState = {
   theme: defaultTheme
 }
@@ -34,6 +33,12 @@ const store = new Vuex.Store({
   getters,
   actions
 })
+
+// watchers
+store.watch(
+  state => state.theme,
+  (theme) => { document.documentElement.dataset.theme = theme }
+)
 
 sbp('sbp/selectors/register', {
   'state/vuex/state': () => store.state,

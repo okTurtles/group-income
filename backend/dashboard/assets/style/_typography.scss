@@ -1,11 +1,11 @@
 @font-face {
-  src: url(../fonts/Inter/Inter_Regular.woff2) format('woff2');
+  src: url(../fonts/Inter/Inter_Regular.woff2) format("woff2");
   font-family: "Inter";
   font-weight: 400;
 }
 
 @font-face {
-  src: url(../fonts/Inter/Inter-SemiBold.ttf) format('woff2');
+  src: url(../fonts/Inter/Inter_SemiBold.woff2) format("woff2");
   font-family: "Inter";
   font-weight: 600;
 }
@@ -34,8 +34,9 @@ body {
   font-family: "Inter", "Helvetica Neue", "sans-serif";
   font-style: normal;
   font-weight: normal;
-  font-size: $size_4; // 14px
+  font-size: $size_5; // 14px
   line-height: 1.5; // 21/14
+  color: $text_0;
 }
 
 h1,
@@ -52,11 +53,11 @@ p {
 // $size_1 = 2rem     = 32px
 // $size_2 = 1.5rem   = 24px = $size_large
 // $size_3 = 1.125rem = 18px = $size_medium
-// $size_4 = 0.875rem = 14px = $size_normal
-// $size_5 =  0.75rem = 12px = $size_small
+// $size_4 = 1rem = 16px = $size_normal
+// $size_5 = 0.875rem = 14px = $size_small
 
-$titles: $size_1, $size_2, $size_3, $size_4;
-$lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
+$titles: $size_1, $size_2, $size_3, $size_4, $size_5;
+$lineHeight: 3, 2.25, 1.6875, 1.3125, 1.175, 1;
 // From line height: 48px, 36px, 27px, 21px, 16px
 
 @each $size in $titles {
@@ -67,5 +68,26 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
     font-weight: bold;
     font-size: $size;
     line-height: #{nth($lineHeight, $i)}rem;
+    letter-spacing: 1px;
   }
+}
+
+.has-text-bold {
+  font-weight: 600;
+}
+
+.has-text-warning {
+  color: $warning;
+}
+
+.has-text-color-1 {
+  color: $text_1;
+}
+
+.has-text-danger {
+  color: $danger;
+}
+
+.has-family-poppins {
+  font-family: "Poppins";
 }

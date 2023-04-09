@@ -6,7 +6,10 @@ import type {
 
 import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
-import { STATUS_PASSED, STATUS_FAILED } from '@model/contracts/shared/constants.js'
+import {
+  STATUS_PASSED, STATUS_FAILED, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER,
+  PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC
+} from '@model/contracts/shared/constants.js'
 
 const contractName = (contractID) => sbp('state/vuex/state').contracts[contractID]?.type ?? contractID
 // Note: this escaping is not intended as a protection against XSS.
@@ -75,7 +78,7 @@ export default ({
       scope: 'user'
     }
   },
-  INCOME_DETAILS_OLD (data: { months: number }) {
+  INCOME_DETAILS_OLD (data: { months: number, lastUpdatedDate: string }) {
     return {
       body: L("You haven't updated your income details in more than {months} months. Would you like to review them now?", {
         // Avoid displaying decimals.
@@ -84,7 +87,8 @@ export default ({
       icon: 'coins',
       level: 'info',
       linkTo: '/contributions?modal=IncomeDetails',
-      scope: 'user'
+      scope: 'user',
+      data: { lastUpdatedDate: data.lastUpdatedDate }
     }
   },
   MEMBER_ADDED (data: { groupID: string, username: string }) {
@@ -149,9 +153,31 @@ export default ({
       creator: data.creator,
       icon: iconMap[data.subtype],
       level: 'info',
-      linkTo: '/dashboard#TODO-proposals',
+      linkTo: '/dashboard#proposals',
       subtype: data.subtype,
       scope: 'group'
+    }
+  },
+  PROPOSAL_EXPIRING (data: { creator: string, proposalType: string, title?: string, proposalId: string }) {
+    const typeToTitleMap = {
+      [PROPOSAL_INVITE_MEMBER]: L('Member addition'),
+      [PROPOSAL_REMOVE_MEMBER]: L('Member removal'),
+      [PROPOSAL_GROUP_SETTING_CHANGE]: L('Mincome change'),
+      [PROPOSAL_PROPOSAL_SETTING_CHANGE]: L('Voting rule change'),
+      [PROPOSAL_GENERIC]: data.title
+    }
+
+    return {
+      avatarUsername: data.creator,
+      body: L('Proposal about to expire: {i_}"{proposalTitle}"{_i}. please vote!', {
+        ...LTags('i'),
+        proposalTitle: typeToTitleMap[data.proposalType]
+      }),
+      level: 'info',
+      icon: 'exclamation-triangle',
+      scope: 'group',
+      linkTo: '/dashboard#proposals',
+      data: { proposalId: data.proposalId }
     }
   },
   PROPOSAL_CLOSED (data: { groupID: string, creator: string, proposalStatus: string }) {
@@ -166,7 +192,7 @@ export default ({
       body: bodyTemplateMap[data.proposalStatus](data.creator),
       icon: 'cog', // TODO : to be decided.
       level: 'info',
-      linkTo: '/dashboard#TODO-proposals', // TODO: to be decided.
+      linkTo: '/dashboard#proposals',
       scope: 'group'
     }
   },
@@ -218,6 +244,35 @@ export default ({
           increased: data.increased
         }
       }]
+    }
+  },
+  NEW_DISTRIBUTION_PERIOD (data: { creator: string, memberType: string }) {
+    const bodyTemplate = {
+      'pledger': L('A new distribution period has started. Please check Payment TODOs.'),
+      'receiver': L('A new distribution period has started. Please update your income details if they have changed.')
+    }
+
+    return {
+      avatarUsername: data.creator,
+      body: bodyTemplate[data.memberType],
+      level: 'info',
+      icon: 'coins',
+      linkTo: data.memberType === 'pledger' ? '/payments' : '/contributions?modal=IncomeDetails',
+      scope: 'group',
+      data: {
+        // is used to check if a notification has already been sent for a particular dist-period
+        period: sbp('state/vuex/getters').groupSettings?.distributionDate
+      }
+    }
+  },
+  NEAR_DISTRIBUTION_END (data: { period: string }) {
+    return {
+      body: L("Less than 1 week left before the distribution period ends - don't forget to send payments!"),
+      level: 'info',
+      icon: 'coins',
+      linkTo: '/payments',
+      scope: 'group',
+      data
     }
   }
 }: { [key: string]: ((data: Object) => NotificationTemplate) })

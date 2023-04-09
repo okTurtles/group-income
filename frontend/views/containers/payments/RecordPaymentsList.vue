@@ -76,7 +76,6 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'paymentTotalFromUserToUser',
       'groupIncomeAdjustedDistribution',
       'ourGroupProfile',
       'groupSettings',

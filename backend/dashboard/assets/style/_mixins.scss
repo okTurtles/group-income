@@ -12,6 +12,17 @@
   -webkit-overflow-scrolling: touch;
 }
 
+@mixin placeholder {
+  $placeholders: ":-moz" ":-webkit-input" "-moz" "-ms-input";
+  @each $placeholder in $placeholders {
+    &:#{$placeholder}-placeholder {
+      @content;
+    }
+  }
+}
+
+// media-queries
+
 @mixin from($device) {
   @media screen and (min-width: $device) {
     @content;
@@ -20,6 +31,12 @@
 
 @mixin until($device) {
   @media screen and (max-width: $device - 1px) {
+    @content;
+  }
+}
+
+@mixin phone_narrow {
+  @media screen and (max-width: $phone_narrow - 1px) {
     @content;
   }
 }

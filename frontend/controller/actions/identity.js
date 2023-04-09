@@ -3,7 +3,7 @@
 import sbp from '@sbp/sbp'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { imageUpload } from '@utils/image.js'
-import { pickWhere, difference } from '@model/contracts/shared/giLodash.js'
+import { pickWhere, difference, uniq } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { encryptedAction } from './utils.js'
@@ -146,7 +146,20 @@ export default (sbp('sbp/selectors/register', {
           }
         }
       }
-      // note: leaving groups will happen when we sync the removeOurselves message
+      // NOTE: should sync all the identity contracts which are not part of same group
+      // but from the direct messages invited by another
+      const chatRoomUsers = uniq(Object.keys(
+        pickWhere(state.contracts, ({ type }) => type === 'gi.contracts/chatroom')
+      ).map(cID => Object.keys(state[cID].users)).flat())
+      const additionalIdentityContractIDs = await Promise.all(chatRoomUsers.filter(username => {
+        return getters.ourUsername !== username && !getters.ourContacts.includes(username)
+      }).map(username => sbp('namespace/lookup', username)))
+
+      for (const identityContractID of additionalIdentityContractIDs) {
+        await sbp('chelonia/contract/sync', identityContractID)
+      }
+
+      // NOTE: users could notice that they leave the group by someone else when they log in
       if (!state.currentGroupId) {
         const { contracts } = state
         const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
@@ -162,7 +175,7 @@ export default (sbp('sbp/selectors/register', {
       } else {
         // We call updateLastLoggedIn in this else clause, instead of outside of it because
         // in the `if` above, updateLastLoggedIn will get called by 'gi.actions/group/switch'
-        sbp('gi.actions/group/updateLastLoggedIn', { contractID: state.currentGroupId })
+        await sbp('gi.actions/group/updateLastLoggedIn', { contractID: state.currentGroupId })
       }
     } catch (e) {
       console.error(`updateLoginState: ${e.name}: '${e.message}'`, e)

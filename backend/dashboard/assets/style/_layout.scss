@@ -1,47 +1,37 @@
-$bannerGeneralHeight: 2rem;
+$toolbarHeight: 2.75rem;
 
 .app-layout {
   display: grid;
   height: 100%;
   overflow: hidden;
-  grid-template-rows: min-content auto;
+  grid-template-rows: #{$toolbarHeight} auto;
   grid-template-areas:
-    "l-banner"
+    "l-toolbar"
     "l-page";
 
   @include tablet {
     grid-template-columns: auto 1fr;
     grid-template-areas:
-      "l-banner l-banner"
+      "l-toolbar l-toolbar"
       "l-navigation l-page";
   }
 }
 
-.l-banner {
-  grid-area: l-banner;
+.l-toolbar {
+  grid-area: l-toolbar;
   position: sticky;
-  height: $bannerGeneralHeight;
+  height: $toolbarHeight;
   width: 100%;
-  z-index: $zindex-banner;
-
-  & ~ .l-navigation {
-    height: calc(100% - #{$bannerGeneralHeight});
-
-    @include touch {
-      margin-top: $bannerGeneralHeight;
-    }
-  }
-
-  & ~ .l-page {
-    height: calc(100% - #{$bannerGeneralHeight});
-  }
+  z-index: $zindex-toolbar;
 }
 
 .l-navigation {
   grid-area: l-navigation;
   height: 100%;
+  display: flex;
+  align-items: stretch;
 
-  @include until($desktop) {
+  @include until($tablet) {
     position: absolute;
     z-index: $zindex-sidebar;
     transform: translateX(-100%);
@@ -58,7 +48,6 @@ $bannerGeneralHeight: 2rem;
   position: relative;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 1rem;
 }
 
 .l-modal {

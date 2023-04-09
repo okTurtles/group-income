@@ -29,7 +29,7 @@
           tag='button'
           item-id='message'
           icon='info'
-          @click='openModal("PaymentDetail", { id: payment.hash })'
+          @click='openModal("PaymentDetail", { id: payment.hash, period: payment.period })'
         )
           i18n Payment details
 

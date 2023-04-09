@@ -7,8 +7,8 @@ import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
-import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { MINS_MILLIS } from '@model/contracts/shared/time.js'
+import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
+import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
 import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
@@ -22,12 +22,14 @@ Vue.use(Vuex)
 const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
-  chatRoomScrollPosition: {}, // [chatRoomId]: messageId
-  chatRoomUnread: {}, // [chatRoomId]: { since: { messageId, createdDate }, mentions: [{ messageId, createdDate }] }
+  chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
+  chatRoomUnread: {}, // [chatRoomId]: { since: { messageHash, createdDate }, mentions: [{ messageHash, createdDate }] }
+  notificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  namespaceLookups: Object.create(null) // { [username]: sbp('namespace/lookup') }
+  namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
+  periodicNotificationAlreadyFiredMap: {} // { notificationKey: boolean }
 }
 
 if (window.matchMedia) {
@@ -40,10 +42,11 @@ if (window.matchMedia) {
 
 const reactiveDate = Vue.observable({ date: new Date() })
 setInterval(function () {
-  const date = new Date()
-  // payments recalculation happen within a minute of day switchover
-  if (Math.abs(reactiveDate.date.getTime() - date.getTime()) >= MINS_MILLIS) {
-    reactiveDate.date = date
+  // We want the getters to recalculate all of the payments within 1 minute of us entering a new period.
+  const rememberedPeriodStamp = store.getters.periodStampGivenDate?.(reactiveDate.date)
+  const currentPeriodStamp = store.getters.periodStampGivenDate?.(new Date())
+  if (rememberedPeriodStamp !== currentPeriodStamp) {
+    reactiveDate.date = new Date()
   }
 }, 60 * 1000)
 
@@ -75,6 +78,9 @@ sbp('sbp/selectors/register', {
     }
     if (!state.namespaceLookups) {
       state.namespaceLookups = Object.create(null)
+    }
+    if (!state.notificationSettings) {
+      state.notificationSettings = {}
     }
   },
   'state/vuex/save': async function () {
@@ -114,18 +120,28 @@ const mutations = {
       Vue.set(state.currentChatRoomIDs, state.currentGroupId, null)
     }
   },
-  setChatRoomScrollPosition (state, { chatRoomId, messageId }) {
-    Vue.set(state.chatRoomScrollPosition, chatRoomId, messageId)
+  setChatRoomScrollPosition (state, { chatRoomId, messageHash }) {
+    Vue.set(state.chatRoomScrollPosition, chatRoomId, messageHash)
   },
   deleteChatRoomScrollPosition (state, { chatRoomId }) {
     Vue.delete(state.chatRoomScrollPosition, chatRoomId)
   },
-  setChatRoomUnreadSince (state, { chatRoomId, messageId, createdDate }) {
+  setChatRoomUnreadSince (state, { chatRoomId, messageHash, createdDate }) {
     const prevMentions = state.chatRoomUnread[chatRoomId] ? state.chatRoomUnread[chatRoomId].mentions : []
     Vue.set(state.chatRoomUnread, chatRoomId, {
-      since: { messageId, createdDate, deletedDate: null },
+      since: { messageHash, createdDate, deletedDate: null },
       mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
     })
+  },
+  setNotificationSettings (state, { chatRoomId, settings }) {
+    if (chatRoomId) {
+      if (!state.notificationSettings[chatRoomId]) {
+        Vue.set(state.notificationSettings, chatRoomId, {})
+      }
+      for (const key in settings) {
+        Vue.set(state.notificationSettings[chatRoomId], key, settings[key])
+      }
+    }
   },
   deleteChatRoomUnreadSince (state, { chatRoomId, deletedDate }) {
     Vue.set(state.chatRoomUnread[chatRoomId], 'since', {
@@ -133,24 +149,24 @@ const mutations = {
       deletedDate
     })
   },
-  addChatRoomUnreadMention (state, { chatRoomId, messageId, createdDate }) {
+  addChatRoomUnreadMention (state, { chatRoomId, messageHash, createdDate }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
     if (!prevUnread) {
       Vue.set(state.chatRoomUnread, chatRoomId, {
-        since: { messageId, createdDate, deletedDate: null, fromBeginning: true },
-        mentions: [{ messageId, createdDate }]
+        since: { messageHash, createdDate, deletedDate: null, fromBeginning: true },
+        mentions: [{ messageHash, createdDate }]
       })
     } else {
-      prevUnread.mentions.push({ messageId, createdDate })
+      prevUnread.mentions.push({ messageHash, createdDate })
     }
   },
-  deleteChatRoomUnreadMention (state, { chatRoomId, messageId }) {
+  deleteChatRoomUnreadMention (state, { chatRoomId, messageHash }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]
     if (!prevUnread) {
       return
     }
 
-    prevUnread.mentions = prevUnread.mentions.filter(m => m.messageId !== messageId)
+    prevUnread.mentions = prevUnread.mentions.filter(m => m.messageHash !== messageHash)
   },
   deleteChatRoomUnread (state, { chatRoomId }) {
     Vue.delete(state.chatRoomUnread, chatRoomId)
@@ -198,9 +214,17 @@ const getters = {
   currentChatRoomState (state, getters) {
     return state[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
   },
-  mailboxContract (state, getters) {
+  currentMailboxState (state, getters) {
     const contract = getters.currentIdentityState
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
+  },
+  notificationSettings (state) {
+    return Object.assign({
+      default: {
+        messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
+        messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
+      }
+    }, state.notificationSettings || {})
   },
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
@@ -287,7 +311,10 @@ const getters = {
   },
   userDisplayName (state, getters) {
     return (username) => {
-      const profile = getters.globalProfile(username) || {}
+      if (username === getters.ourUsername) {
+        return getters.ourUserDisplayName
+      }
+      const profile = getters.ourContactProfiles[username] || {}
       return profile.displayName || username
     }
   },
@@ -345,11 +372,11 @@ const getters = {
         for (const toUser in paymentsFrom[ourUsername]) {
           for (const paymentHash of paymentsFrom[ourUsername][toUser]) {
             const { data, meta } = allPayments[paymentHash]
-            payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+            payments.push({ hash: paymentHash, data, meta, amount: data.amount })
           }
         }
       }
-      return payments
+      return payments.sort((paymentA, paymentB) => compareISOTimestamps(paymentB.meta.createdDate, paymentA.meta.createdDate))
     }
   },
   ourPaymentsReceivedInPeriod (state, getters) {
@@ -367,13 +394,13 @@ const getters = {
             if (toUser === ourUsername) {
               for (const paymentHash of paymentsFrom[fromUser][toUser]) {
                 const { data, meta } = allPayments[paymentHash]
-                payments.push({ hash: paymentHash, data, meta, amount: data.amount, username: toUser })
+                payments.push({ hash: paymentHash, data, meta, amount: data.amount })
               }
             }
           }
         }
       }
-      return payments
+      return payments.sort((paymentA, paymentB) => compareISOTimestamps(paymentB.meta.createdDate, paymentA.meta.createdDate))
     }
   },
   ourPayments (state, getters) {
@@ -490,26 +517,16 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
-  globalProfilesForGroup (state, getters) {
-    return contractID => {
-      const profiles = state[contractID]?.profiles || {}
-      return Object.keys(profiles).map(username => {
-        return getters.globalProfile2(contractID, username)
-      })
-    }
-  },
   ourContactProfiles (state, getters) {
     const profiles = {}
-    const allProfiles = getters.groupsByName
-      .map(({ groupName, contractID }) => getters.globalProfilesForGroup(contractID))
-      .flat()
-
-    allProfiles.forEach((profile, pos) => {
-      if (profile && profile.username !== getters.ourUsername &&
-        allProfiles.findIndex(p => p.username === profile.username) === pos) {
-        profiles[profile.username] = profile
-      }
-    })
+    Object.keys(state.contracts)
+      .filter(contractID => state.contracts[contractID].type === 'gi.contracts/identity')
+      .forEach(contractID => {
+        const attributes = state[contractID].attributes
+        if (attributes) { // NOTE: this is for fixing the error while syncing the identity contracts
+          profiles[attributes.username] = { ...attributes, contractID }
+        }
+      })
     return profiles
   },
   ourContacts (state, getters) {
@@ -520,11 +537,78 @@ const getters = {
         return nameA > nameB ? 1 : -1
       })
   },
+  ourPrivateDirectMessages (state, getters) {
+    const privateDMs = {}
+    const contractIDs = Object.keys(getters.ourDirectMessages)
+      .filter(cID => getters.ourDirectMessages[cID].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE && state[cID])
+    for (const contractID of contractIDs) {
+      const usernames = Object.keys(state[contractID].users || {}) // NOTE: empty object is used while syncing the contract
+      const partner = usernames[0] === getters.ourUsername ? usernames[1] : usernames[0]
+      if (partner) {
+        privateDMs[partner] = {
+          ...getters.ourDirectMessages[contractID],
+          contractID
+        }
+      }
+    }
+    return privateDMs
+  },
+  ourGroupDirectMessages (state, getters) {
+    const groupDMs = {}
+    for (const cID of Object.keys(getters.ourDirectMessages)) {
+      if (getters.ourDirectMessages[cID].privacyLevel === CHATROOM_PRIVACY_LEVEL.GROUP && state[cID]) {
+        groupDMs[cID] = getters.ourDirectMessages[cID]
+      }
+    }
+    return groupDMs
+  },
   isDirectMessage (state, getters) {
     // NOTE: mailbox contract could not be synced at the time of calling this getter
-    return chatRoomId => Object.keys(getters.mailboxContract.users || {})
-      .map(username => getters.mailboxContract.users[username].contractID)
-      .includes(chatRoomId)
+    return chatRoomId => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return getters.isJoinedChatRoom(contractID) && !!getters.ourDirectMessages[contractID]
+    }
+  },
+  isPrivateDirectMessage (state, getters) {
+    // NOTE: mailbox contract could not be synced at the time of calling this getter
+    return chatRoomId => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return getters.ourDirectMessages[contractID]?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+    }
+  },
+  isGroupDirectMessage (state, getters) {
+    return chatRoomId => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return getters.ourDirectMessages[contractID]?.privacyLevel === CHATROOM_PRIVACY_LEVEL.GROUP
+    }
+  },
+  isPrivateChatRoom (state, getters) {
+    return (chatRoomId: string) => {
+      const contractID = chatRoomId || getters.currentChatRoomId
+      return state[contractID]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+    }
+  },
+  isJoinedChatRoom (state, getters) {
+    return (chatRoomId: string, username?: string) => {
+      username = username || state.loggedIn.username
+      return !!state[chatRoomId]?.users?.[username]
+    }
+  },
+  groupDirectMessageInfo (state, getters) {
+    return chatRoomId => {
+      const usernames = Object.keys(state[chatRoomId].users).filter(username => username !== getters.ourUsername)
+      const lastJoined = usernames.reduce((lastJoined, username) => {
+        const lastJoinedDate = state[chatRoomId].users[lastJoined].joinedDate
+        const currentJoinedDate = state[chatRoomId].users[username].joinedDate
+        return lastJoinedDate > currentJoinedDate ? lastJoined : username
+      }, usernames[0])
+      return {
+        contractID: chatRoomId,
+        title: usernames.join(', '),
+        othersCount: usernames.length,
+        picture: getters.ourContactProfiles[lastJoined]?.picture
+      }
+    }
   },
   currentChatRoomId (state, getters) {
     return state.currentChatRoomIDs[state.currentGroupId] || null
@@ -553,32 +637,21 @@ const getters = {
       .reduce((sum, n) => sum + n, 0)
   },
   directMessageIDFromUsername (state, getters) {
-    return (username: string) => getters.mailboxContract.users[username]?.contractID
+    return (username: string) => getters.ourPrivateDirectMessages[username]?.contractID
   },
   usernameFromDirectMessageID (state, getters) {
     return (chatRoomId: string) => {
-      if (!getters.isDirectMessage(chatRoomId)) {
-        return
+      for (const username of Object.keys(getters.ourPrivateDirectMessages)) {
+        if (getters.ourPrivateDirectMessages[username].contractID === chatRoomId) {
+          return username
+        }
       }
-      return Object.keys(getters.mailboxContract.users)
-        .find(username => getters.directMessageIDFromUsername(username) === chatRoomId)
     }
   },
   groupIdFromChatRoomId (state, getters) {
     return (chatRoomId: string) => Object.keys(state.contracts)
       .find(cId => state.contracts[cId].type === 'gi.contracts/group' &&
         Object.keys(state[cId].chatRooms).includes(chatRoomId))
-  },
-  isPrivateChatRoom (state, getters) {
-    return (chatRoomId: string) => {
-      return state[chatRoomId]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-    }
-  },
-  isJoinedChatRoom (state, getters) {
-    return (chatRoomId: string, username?: string) => {
-      username = username || state.loggedIn.username
-      return !!state[chatRoomId]?.users?.[username]
-    }
   },
   chatRoomsInDetail (state, getters) {
     const chatRoomsInDetail = merge({}, getters.getGroupChatRooms)
@@ -653,7 +726,8 @@ if (process.env.NODE_ENV === 'development') {
 const omitGetters = {
   'gi.contracts/group': ['currentGroupState'],
   'gi.contracts/identity': ['currentIdentityState'],
-  'gi.contracts/chatroom': ['currentChatRoomState']
+  'gi.contracts/chatroom': ['currentChatRoomState'],
+  'gi.contracts/mailbox': ['currentMailboxState']
 }
 sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
   const { contracts: { manifests } } = sbp('chelonia/config')
@@ -674,14 +748,13 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           // 'currentPaymentPeriod': gets auto-updated(t1) in response to the change of 'reactiveDate.date' when it passes into the new period.
           // 'groupSettings.distributionDate': gets updated manually by calling 'updateCurrentDistribution' function(t2) in group.js
           // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
-          if (!oldPeriod || !newPeriod) return
 
           // Note: if this code gets called when we're in the period before the 1st distribution
           //       period, then the distributionDate will get updated to the previous distribution date
           //       (incorrectly). That in turn will cause the Payments page to update and display TODOs
           //       before it should.
           const distributionDateInSettings = store.getters.groupSettings.distributionDate
-          if (newPeriod !== oldPeriod && (newPeriod !== distributionDateInSettings)) {
+          if (oldPeriod && newPeriod && (newPeriod !== distributionDateInSettings)) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
           }
         }

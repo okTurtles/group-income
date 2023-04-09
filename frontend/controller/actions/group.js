@@ -26,7 +26,7 @@ import { encryptedAction } from './utils.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import { REPLACE_MODAL } from '@utils/events.js'
+import { REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -178,7 +178,7 @@ export default (sbp('sbp/selectors/register', {
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {
         await sbp('chelonia/out/actionEncrypted', {
-          ...omit(params, ['options']),
+          ...omit(params, ['options', 'action', 'hooks']),
           action: 'gi.contracts/group/inviteAccept',
           hooks: {
             prepublish: params.hooks?.prepublish,
@@ -195,7 +195,7 @@ export default (sbp('sbp/selectors/register', {
         const generalChatRoomId = rootState[params.contractID].generalChatRoomId
         if (generalChatRoomId) {
           await sbp('gi.actions/group/joinChatRoom', {
-            ...omit(params, ['options']),
+            ...omit(params, ['options', 'data', 'hooks']),
             data: {
               chatRoomID: generalChatRoomId
             },
@@ -240,6 +240,8 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
     sbp('gi.actions/group/updateLastLoggedIn', { contractID: groupId })
+
+    sbp('okTurtles.events/emit', SWITCH_GROUP)
   },
   'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
     const contractState = sbp('state/vuex/state')[params.contractID]
@@ -258,7 +260,7 @@ export default (sbp('sbp/selectors/register', {
     })
 
     await sbp('chelonia/out/actionEncrypted', {
-      ...omit(params, ['options']),
+      ...omit(params, ['options', 'action', 'data', 'hooks']),
       action: 'gi.contracts/group/addChatRoom',
       data: {
         ...params.data,
@@ -284,7 +286,7 @@ export default (sbp('sbp/selectors/register', {
       }
 
       const message = await sbp('gi.actions/chatroom/join', {
-        ...omit(params, ['options']),
+        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: params.data.chatRoomID,
         data: { username },
         hooks: {
@@ -305,7 +307,7 @@ export default (sbp('sbp/selectors/register', {
         sbp('okTurtles.data/set', 'JOINING_GROUP_CHAT', true)
       }
       await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options']),
+        ...omit(params, ['options', 'action', 'hooks']),
         action: 'gi.contracts/group/joinChatRoom',
         hooks: {
           prepublish: null,
@@ -320,7 +322,7 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
-      ...omit(params, ['options']),
+      ...omit(params, ['options', 'hooks']),
       hooks: {
         prepublish: params.hooks?.prepublish,
         postpublish: null
@@ -328,7 +330,7 @@ export default (sbp('sbp/selectors/register', {
     })
 
     await sbp('gi.actions/group/joinChatRoom', {
-      ...omit(params, ['options']),
+      ...omit(params, ['options', 'data', 'hooks']),
       data: {
         chatRoomID: message.contractID()
       },
@@ -347,7 +349,7 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/renameChatRoom': async function (params: GIActionParams) {
     try {
       await sbp('gi.actions/chatroom/rename', {
-        ...omit(params, ['options']),
+        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: params.data.chatRoomID,
         data: {
           name: params.data.name
@@ -359,7 +361,7 @@ export default (sbp('sbp/selectors/register', {
       })
 
       return await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options']),
+        ...omit(params, ['options', 'action', 'hooks']),
         action: 'gi.contracts/group/renameChatRoom',
         hooks: {
           prepublish: null,
@@ -376,7 +378,7 @@ export default (sbp('sbp/selectors/register', {
 
     try {
       return await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options']),
+        ...omit(params, ['options', 'action']),
         action: 'gi.contracts/group/removeMember'
       })
     } catch (e) {
@@ -389,7 +391,7 @@ export default (sbp('sbp/selectors/register', {
 
     try {
       return await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options']),
+        ...omit(params, ['options', 'action']),
         action: 'gi.contracts/group/removeOurselves'
       })
     } catch (e) {
@@ -475,7 +477,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       const { proposals } = params.data
       await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options']),
+        ...omit(params, ['options', 'data', 'action', 'hooks']),
         data: proposals.map(p => p.proposalId),
         action: 'gi.contracts/group/notifyExpiringProposals',
         hooks: {
@@ -489,7 +491,7 @@ export default (sbp('sbp/selectors/register', {
 
       for (const proposal of proposals) {
         await sbp('gi.actions/chatroom/addMessage', {
-          ...omit(params, ['options']),
+          ...omit(params, ['options', 'contractID', 'data', 'hooks']),
           contractID: generalChatRoomId,
           data: {
             type: MESSAGE_TYPES.INTERACTIVE,

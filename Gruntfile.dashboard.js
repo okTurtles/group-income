@@ -85,8 +85,10 @@ module.exports = (grunt) => {
       '@common': './backend/dashboard/common',
       '@model': './backend/dashboard/model',
       '@components': './backend/dashboard/views/components',
+      '@forms': './backend/dashboard/views/components/forms',
       '@containers': './backend/dashboard/views/containers',
       '@pages': './backend/dashboard/views/pages',
+      '@validators': './node_modules/vuelidate/dist/validators.min.js', // without this, the app gets the mistery 'process() is not defined' runtime error.
       'vue': './node_modules/vue/dist/vue.esm.js', // without this, the app gets "[Vue warn]: You are using the runtime-only build of Vue" in the console.
       '~': '.'
     }
@@ -330,7 +332,9 @@ module.exports = (grunt) => {
           if (['change', 'unlink'].includes(fileEventName)) {
             // Remove the corresponding plugin cache entry, if any.
 
-            if (extension === '.vue') {
+            if (extension === '.js') {
+              flowRemoveTypesPluginOptions.cache.delete(filePath)
+            } else if (extension === '.vue') {
               vuePluginOptions.cache.delete(filePath)
             }
 

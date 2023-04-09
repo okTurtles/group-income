@@ -5,6 +5,7 @@ form(data-test='signup' @submit.prevent='')
     input.input(
       :class='{error: $v.form.username.$error}'
       name='username'
+      ref='username'
       v-model.trim='form.username'
       @input='debounceField("username")'
       @blur='updateField("username")'
@@ -81,6 +82,12 @@ export default ({
     PasswordForm,
     BannerScoped,
     ButtonSubmit
+  },
+  mounted () {
+    // NOTE: nextTick is needed because debounceField is called once after the form is mounted
+    this.$nextTick(() => {
+      this.$refs.username.focus()
+    })
   },
   data () {
     return {

@@ -1,10 +1,13 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { defaultConfig as defaultDompurifyConfig } from '@view-utils/vSafeHtml.js'
+import { defaultConfig as defaultDompurifyConfig } from '@view-utils/custom-directives/vSafeHtml.js'
 import dompurify from 'dompurify'
 import Vue from 'vue'
 import template from './stringTemplate.js'
+
+Vue.prototype.L = L
+Vue.prototype.LTags = LTags
 
 const defaultLanguage = 'en-US'
 const defaultLanguageCode = 'en'
@@ -48,7 +51,7 @@ sbp('sbp/selectors/register', {
   }
 })
 
-export function Ltags (...tags: string[]): {br_: string} {
+export function LTags (...tags: string[]): {br_: string} {
   const o: {[string]: string} = {
     'br_': '<br />'
   }

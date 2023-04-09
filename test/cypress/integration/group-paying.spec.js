@@ -47,19 +47,25 @@ function assertMonthOverview (items) {
 
 function openNotificationCard ({
   messageToAssert = '',
-  clickTheLatestItem = true
+  clickItem = true
 } = {}) {
   cy.getByDT('notificationBell').click()
   cy.getByDT('notificationCard').should('be.visible')
 
   cy.getByDT('notificationCard').within(() => {
-    cy.getByDT('notificationList').find('ul > li:nth-child(1)').as('topMostItem')
+    cy.getByDT('notificationList').find('ul > li').as('items')
 
     if (messageToAssert) {
-      cy.get('@topMostItem').should('contain', messageToAssert)
-    }
-    if (clickTheLatestItem) {
-      cy.get('@topMostItem').click()
+      cy.get('@items').should('contain', messageToAssert)
+
+      if (clickItem) {
+        cy.get('@items').each(($el) => {
+          if ($el.text().includes(messageToAssert)) {
+            cy.wrap($el).click()
+            return false // if the targeting item is found, prematurely leave the loop.
+          }
+        })
+      }
     }
   })
 }
@@ -202,10 +208,8 @@ describe('Group Payments', () => {
 
     cy.getByDT('modal').within(() => {
       cy.getByDT('modal-header-title').should('contain', 'Payment details')
-      cy.getByDT('closeModal').click()
     })
-
-    cy.getByDT('closeModal').should('not.exist')
+    cy.closeModal()
   })
 
   it('user3 sends a thank you note to user1 for their payment', () => {
@@ -237,16 +241,12 @@ describe('Group Payments', () => {
       messageToAssert: `user3-${userId} sent you a thank you note for your contribution.`
     })
 
+    cy.getByDT('modal-header-title').should('contain', 'Thank you note!') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
     cy.getByDT('modal').within(() => {
-      cy.getByDT('modal-header-title').should('contain', 'Thank you note!')
-
       cy.getByDT('memoLabel').should('contain', `user3-${userId} Note:`)
       cy.getByDT('memo').should('contain', thankYouText)
-
-      cy.getByDT('closeModal').click()
     })
-
-    cy.getByDT('closeModal').should('not.exist')
+    cy.closeModal()
   })
 
   it('user4 sends $50 to user2 (partial)', () => {
@@ -373,6 +373,7 @@ describe('Group Payments', () => {
       cy.getByDT('payRow').eq(1).find('td:nth-child(2)').should('contain', '$178.57')
     })
   })
+
   it('log out', () => {
     cy.giLogout()
   })

@@ -2,6 +2,7 @@
 
 // TODO: rename GIMessage to CMessage or something similar
 
+import { v4 as uuidv4 } from 'uuid'
 import { blake32Hash } from '~/shared/functions.js'
 import type { JSONType, JSONObject } from '~/shared/types.js'
 
@@ -23,6 +24,8 @@ export type GIOpPropSet = { key: string, value: JSONType }
 export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd'
 export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpPropSet
 export type GIOp = [GIOpType, GIOpValue]
+
+type GIMsgParams = { mapping: Object, message: Object }
 
 export class GIMessage {
   // flow type annotations to make flow happy
@@ -55,21 +58,20 @@ export class GIMessage {
       manifest,
       // the nonce makes it difficult to predict message contents
       // and makes it easier to prevent conflicts during development
-      nonce: Math.random()
+      nonce: uuidv4()
     }
-    // NOTE: the JSON strings generated here must be preserved forever.
-    //       do not ever regenerate this message using the contructor.
-    //       instead store it using serialize() and restore it using
-    //       deserialize().
-    const messageJSON = JSON.stringify(message)
-    const value = JSON.stringify({
-      message: messageJSON,
-      sig: signatureFn(messageJSON)
-    })
-    return new this({
-      mapping: { key: blake32Hash(value), value },
-      message
-    })
+    return new this(messageToParams(message, signatureFn))
+  }
+
+  // GIMessage.cloneWith could be used when make a GIMessage object having the same id()
+  // https://github.com/okTurtles/group-income/issues/1503
+  static cloneWith (
+    target: GIMessage,
+    sources: Object, // TODO: type check is needed
+    signatureFn?: Function = defaultSignatureFn
+  ): this {
+    const message = Object.assign({}, target.message(), sources)
+    return new this(messageToParams(message, signatureFn))
   }
 
   // TODO: we need signature verification upon decryption somewhere...
@@ -81,7 +83,7 @@ export class GIMessage {
     })
   }
 
-  constructor ({ mapping, message }: { mapping: Object, message: Object }) {
+  constructor ({ mapping, message }: GIMsgParams) {
     this._mapping = mapping
     this._message = message
     // perform basic sanity check
@@ -143,11 +145,40 @@ export class GIMessage {
   serialize (): string { return this._mapping.value }
 
   hash (): string { return this._mapping.key }
+
+  id (): string {
+    // NOTE: nonce can be used as GIMessage identifier
+    // https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
+    // it is generally considered close enough to zero to be negligible,
+    // while the probability that a UUID will be duplicated is not zero
+    return this._message.nonce
+  }
 }
 
 function defaultSignatureFn (data: string) {
   return {
     type: 'default',
     sig: blake32Hash(data)
+  }
+}
+
+function messageToParams (message: Object, signatureFn: Function): GIMsgParams {
+  // NOTE: the JSON strings generated here must be preserved forever.
+  //       do not ever regenerate this message using the contructor.
+  //       instead store it using serialize() and restore it using deserialize().
+  //       The issue is that different implementations of JavaScript engines might generate different strings
+  //       when serializing JS objects using JSON.stringify
+  //       and that would lead to different hashes resulting from blake32Hash.
+  //       So to get around this we save the serialized string upon creation
+  //       and keep a copy of it (instead of regenerating it as needed).
+  //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
+  const messageJSON = JSON.stringify(message)
+  const value = JSON.stringify({
+    message: messageJSON,
+    sig: signatureFn(messageJSON)
+  })
+  return {
+    mapping: { key: blake32Hash(value), value },
+    message
   }
 }
