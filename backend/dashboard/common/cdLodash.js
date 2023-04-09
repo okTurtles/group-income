@@ -20,6 +20,24 @@ export function merge (obj: Object, src: Object): any {
   return obj
 }
 
+export function throttle (func: Function, delay: number): Function {
+  // reference: https://www.geeksforgeeks.org/javascript-throttling/
+
+  // Previously called time of the function
+  let prev = 0
+  return (...args) => {
+    // Current called time of the function
+    const now = new Date().getTime()
+
+    // If difference is greater than delay call
+    if (now - prev > delay) {
+      prev = now
+
+      return func(...args)
+    }
+  }
+}
+
 export function debounce (func: Function, wait: number, immediate: ?boolean): Function {
   let timeout, args, context, timestamp, result
   if (wait == null) wait = 100

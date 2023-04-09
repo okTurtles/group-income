@@ -1,4 +1,5 @@
 import * as Three from 'three'
+import { throttle } from '@common/cdLodash.js'
 import {
   resizeRendererToDisplaySize, adjustCameraAspect, degreeToRadian, Edgify
 } from '../animation-utils.js'
@@ -7,7 +8,7 @@ import BarGraphs from './BarGraphs.js'
 
 const {
   WebGLRenderer, Scene, Group, PerspectiveCamera,
-  BoxGeometry, Vector3, AmbientLight
+  BoxGeometry, Vector2, Vector3, AmbientLight
 } = Three
 
 // constants & settings
@@ -22,13 +23,17 @@ const COLORS = {
   bar_2: '#baedbd',
   ambLight: '#f7f9fb'
 }
-const cameraSettings = { pos: { x: 40, y: 30, z: 20 }, lookAt: new Vector3(0, 8, 0) }
+const pointer = new Vector2(0, 0)
+const cameraSettings = { pos: { x: 0, y: 15, z: 46 }, lookAt: new Vector3(0, -2.5, 0) }
 let animationId
 
 function initAnimation (canvasEl) {
-  // create a scene
+  addPointerMoveListener()
+
+  // create a scene & root
   const scene = new Scene()
   const root = new Group() // root object that contains all meshes
+  root.position.y = -10
   scene.add(root)
   scene.root = root
 
@@ -92,6 +97,9 @@ function initAnimation (canvasEl) {
 
     root.rotation.y += SCENE_ROTATION_SPEED
 
+    scene.rotation.z = degreeToRadian(8) * pointer.x
+    scene.rotation.x = degreeToRadian(8) * pointer.y
+
     renderScene()
     animationId = requestAnimationFrame(animate)
   }
@@ -99,8 +107,24 @@ function initAnimation (canvasEl) {
   animate()
 }
 
+const onPointerMove = throttle(e => {
+  const { clientX, clientY } = e
+  const halfX = innerWidth / 2
+  const halfY = innerHeight / 2
+
+  pointer.set(
+    (clientX - halfX) / halfX,
+    (clientY - halfY) / halfY
+  )
+}, 10)
+
 function terminateAnimation () {
   cancelAnimationFrame(animationId)
+  window.removeEventListener('pointermove', onPointerMove)
+}
+
+function addPointerMoveListener () {
+  window.addEventListener('pointermove', onPointerMove)
 }
 
 export {
