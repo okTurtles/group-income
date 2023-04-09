@@ -73,17 +73,18 @@ export function createInvite ({ quantity = 1, creator, expires, invitee }: {
 
 // chatroom.js related
 
-export function createMessage ({ meta, data, hash, state }: {
-  meta: Object, data: Object, hash: string, state?: Object
+export function createMessage ({ meta, data, hash, id, state }: {
+  meta: Object, data: Object, hash: string, id: string, state?: Object
 }): Object {
   const { type, text, replyingMessage } = data
   const { createdDate } = meta
 
   let newMessage = {
     type,
-    datetime: new Date(createdDate).toISOString(),
-    id: hash,
-    from: meta.username
+    id,
+    hash,
+    from: meta.username,
+    datetime: new Date(createdDate).toISOString()
   }
 
   if (type === MESSAGE_TYPES.TEXT) {
@@ -138,9 +139,9 @@ export async function leaveChatRoom ({ contractID }: {
   })
 }
 
-export function findMessageIdx (id: string, messages: Array<Object>): number {
+export function findMessageIdx (hash: string, messages: Array<Object>): number {
   for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].id === id) {
+    if (messages[i].hash === hash) {
       return i
     }
   }

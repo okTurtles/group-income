@@ -17,6 +17,7 @@
         input.input(
           v-model='$v.form.mincomeAmount.$model'
           name='mincomeAmount'
+          ref='mincomeAmount'
           inputmode='decimal'
           pattern='[0-9]*'
         )
@@ -97,6 +98,9 @@ export default ({
       'groupMincomeFormatted',
       'groupMincomeSymbolWithCode'
     ])
+  },
+  mounted () {
+    this.$refs.mincomeAmount.focus()
   },
   methods: {
     validateMincome () {

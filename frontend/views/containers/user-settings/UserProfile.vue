@@ -83,7 +83,7 @@ import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.j
 import { required, email } from 'vuelidate/lib/validators'
 import { OPEN_MODAL } from '@utils/events.js'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
@@ -118,16 +118,15 @@ export default ({
     }
   },
   computed: {
-    ...mapGetters([
-      'ourUsername'
-    ]),
+    ...mapState(['loggedIn']),
+    ...mapGetters(['ourUsername', 'currentIdentityState']),
     attributes () {
-      return this.$store.getters.currentIdentityState.attributes || {}
+      return this.currentIdentityState.attributes || {}
     },
     sbpParams () {
       return {
         selector: 'gi.actions/identity/setAttributes',
-        contractID: this.$store.state.loggedIn.identityContractID,
+        contractID: this.loggedIn.identityContractID,
         key: 'picture'
       }
     }
@@ -147,14 +146,16 @@ export default ({
         }
       }
 
-      try {
-        await sbp('gi.actions/identity/setAttributes', {
-          data: attrs, contractID: this.$store.state.loggedIn.identityContractID
-        })
-        this.$refs.formMsg.success(L('Your changes were saved!'))
-      } catch (e) {
-        console.error('UserProfile saveProfile() error:', e)
-        this.$refs.formMsg.danger(e.message)
+      if (Object.keys(attrs).length) {
+        try {
+          await sbp('gi.actions/identity/setAttributes', {
+            data: attrs, contractID: this.loggedIn.identityContractID
+          })
+          this.$refs.formMsg.success(L('Your changes were saved!'))
+        } catch (e) {
+          console.error('UserProfile saveProfile() error:', e)
+          this.$refs.formMsg.danger(e.message)
+        }
       }
     }
   }

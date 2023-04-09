@@ -49,21 +49,21 @@ export default (sbp('sbp/selectors/register', {
       })
 
       await sbp('gi.actions/chatroom/join', {
-        ...omit(params, ['options', 'data', 'hook']),
+        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: message.contractID(),
         data: { username: rootState.loggedIn.username }
       })
 
       for (const profile of partnerProfiles) {
         await sbp('gi.actions/chatroom/join', {
-          ...omit(params, ['options', 'data', 'hook']),
+          ...omit(params, ['options', 'contractID', 'data', 'hooks']),
           contractID: message.contractID(),
           data: { username: profile.username }
         })
       }
 
       await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options', 'data', 'hook']),
+        ...omit(params, ['options', 'data', 'action', 'hooks']),
         data: {
           privacyLevel: params.data.privacyLevel,
           contractID: message.contractID()
@@ -74,7 +74,7 @@ export default (sbp('sbp/selectors/register', {
       for (const [index, profile] of partnerProfiles.entries()) {
         const hooks = index < partnerProfiles.length - 1 ? undefined : { prepublish: null, postpublish: params.hooks?.postpublish }
         await sbp('gi.actions/mailbox/joinDirectMessage', {
-          ...omit(params, ['options', 'data', 'hook']),
+          ...omit(params, ['options', 'contractID', 'data', 'hooks']),
           contractID: profile.mailbox,
           data: {
             privacyLevel: params.data.privacyLevel,

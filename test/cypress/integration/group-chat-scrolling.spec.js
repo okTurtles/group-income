@@ -154,16 +154,12 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     switchUser(user1)
     cy.giRedirectToGroupChat()
 
-    cy.giWaitUntilMessagesLoaded()
-
     cy.getByDT('conversationWrapper').scrollTo(0)
 
     cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message:nth-child(2) .c-who > span:first-child').should('contain', user1)
       cy.get('.c-message:nth-child(2) .c-notification').should('contain', `Joined ${CHATROOM_GENERAL_NAME}`)
     })
-
-    cy.giWaitUntilMessagesLoaded()
 
     cy.giLogout()
   })
