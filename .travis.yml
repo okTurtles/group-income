@@ -1,7 +1,7 @@
 language: node_js
 node_js:
   - "18"
-dist: xenial
+dist: focal
 compiler: clang # per: https://docs.travis-ci.com/user/languages/c
 env:
   - GI_PERSIST
