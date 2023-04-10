@@ -16,9 +16,6 @@ import chalk from 'chalk'
 import { THEME_LIGHT } from '~/frontend/model/settings/themes.js'
 import manifests from '~/frontend/model/contracts/manifests.json'
 
-import initDB from '~/backend/database.js'
-initDB()
-
 // Necessary since we are going to use a WebSocket pubsub client in the backend.
 global.WebSocket = require('ws')
 const should = require('should') // eslint-disable-line
