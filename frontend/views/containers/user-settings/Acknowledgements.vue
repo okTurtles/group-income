@@ -6,7 +6,7 @@
           i18n(
             :args='{ a_: okTurtlesPageTag, _a: "</a>" }'
           ) Group Income is developed by the {a_}okTurtles Foundation{_a} and is funded entirely by individual contributions.
-      i18n.link(tag='button' @click='openSupport') Support this project
+      i18n.link(tag='button' @click='openURL(ALLOWED_URLS.OKTURTLES_SUPPORT_PAGE)') Support this project
 
       .c-wrapper(
         v-for='(item, index) in list'
@@ -17,7 +17,7 @@
           v-for='(link, idx) in item.links'
           :key='idx'
         ) {{ link.title }}
-          a.sublink(@click='redirectTo(link.url)') {{ link.name }}
+          a.sublink(@click='openURL(link.url)') {{ link.name }}
 </template>
 
 <script>
@@ -56,46 +56,43 @@ export default ({
       }, {
         legend: L('Illustrations'),
         links: [
-          {
-            title: 'Voting',
-            name: 'By Nikita Kozin',
-            url: '#'
-          },
-          {
-            title: 'Broken Link',
-            name: 'By HeadsOfBirds',
-            url: '#'
-          },
-          {
-            title: 'Send',
-            name: 'By Gregor Cresnar',
-            url: '#'
-          },
-          {
-            title: 'Hello',
-            name: 'By Allie',
-            url: '#'
-          },
-          {
-            title: 'Conversation',
-            name: 'By Gregor Cresnar',
-            url: '#'
-          },
-          {
-            title: 'Vote',
-            name: 'By HeadsOfBirds',
-            url: '#'
-          }
+          // {
+          //   title: 'Voting',
+          //   name: 'By Nikita Kozin',
+          //   url: '#'
+          // },
+          // {
+          //   title: 'Broken Link',
+          //   name: 'By HeadsOfBirds',
+          //   url: '#'
+          // },
+          // {
+          //   title: 'Send',
+          //   name: 'By Gregor Cresnar',
+          //   url: '#'
+          // },
+          // {
+          //   title: 'Hello',
+          //   name: 'By Allie',
+          //   url: '#'
+          // },
+          // {
+          //   title: 'Conversation',
+          //   name: 'By Gregor Cresnar',
+          //   url: '#'
+          // },
+          // {
+          //   title: 'Vote',
+          //   name: 'By HeadsOfBirds',
+          //   url: '#'
+          // }
         ]
       }]
     }
   },
   methods: {
-    openSupport () {
-      console.log('TODO')
-    },
-    redirectTo (url) {
-      console.log('TODO:', url)
+    openURL (url) {
+      window.open(url, '_blank').focus()
     }
   }
 }: Object)

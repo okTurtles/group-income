@@ -41,7 +41,7 @@ import { mapGetters } from 'vuex'
 import TabItem from '@components/tabs/TabItem.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 import { L } from '@common/common.js'
-import packageJSON from '~/package.json'
+import { contractsVersion } from '~/package.json'
 
 export default ({
   name: 'TabWrapper',
@@ -60,7 +60,7 @@ export default ({
       transitionName: '',
       open: true,
       subNav: [{
-        title: `${L('Version')} ${packageJSON.contractsVersion}`
+        title: `${L('Version')} ${contractsVersion}`
       }, {
         title: L('Acknowledgements'),
         url: 'acknowledgements',
