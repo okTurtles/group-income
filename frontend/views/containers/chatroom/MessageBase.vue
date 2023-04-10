@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-message(
-  :class='[variant, isSameSender && "sameSender"]'
+  :class='[variant, isSameSender && "same-sender"]'
   @click='$emit("wrapperAction")'
   v-touch:touchhold='openMenu'
   v-touch:swipe.left='reply'
@@ -211,7 +211,7 @@ export default ({
     }
   }
 
-  &.sameSender {
+  &.same-sender {
     margin-top: 0.25rem;
   }
 
@@ -239,7 +239,7 @@ export default ({
 
 .c-avatar {
   .isHidden &,
-  .sameSender & {
+  .same-sender & {
     visibility: hidden;
     height: 0;
   }

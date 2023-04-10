@@ -12,6 +12,7 @@
       ref='conversation'
       data-test='conversationWrapper'
       @scroll='onChatScroll'
+      :class='{"c-invisible": !ephemeral.messagesInitiated}'
     )
 
       infinite-loading(
@@ -78,6 +79,8 @@
           @delete-message='deleteMessage(message)'
           @add-emoticon='addEmoticon(message, $event)'
         )
+
+    .c-initializing(v-if='!ephemeral.messagesInitiated')
 
   .c-footer
     send-area(
@@ -159,7 +162,7 @@ export default ({
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
         infiniteLoading: null,
-        shouldRefreshMessages: true,
+        messagesInitiated: false,
         replyingMessage: null,
         replyingMessageHash: null,
         replyingTo: null
@@ -415,8 +418,8 @@ export default ({
         onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },
-    async renderMoreMessages (refresh = false) {
-      if (refresh) {
+    async renderMoreMessages (shouldInitiate = true) {
+      if (shouldInitiate) {
         await this.loadMessagesFromStorage()
       }
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
@@ -438,11 +441,11 @@ export default ({
       }
       const messageHashToScroll = this.currentChatRoomScrollPosition || unreadPosition
       const latestHash = await sbp('chelonia/out/latestHash', this.currentChatRoomId)
-      const before = refresh || !this.latestEvents.length
+      const before = shouldInitiate || !this.latestEvents.length
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
       let events = null
-      const isLoadedFromStorage = refresh && this.latestEvents.length
+      const isLoadedFromStorage = shouldInitiate && this.latestEvents.length
       if (isLoadedFromStorage) {
         const prevLastEventHash = this.messageState.prevTo // NOTE: check setInitMessages function
         let newEvents = []
@@ -457,7 +460,7 @@ export default ({
           }
           this.$forceUpdate()
         }
-      } else if (refresh && messageHashToScroll) {
+      } else if (shouldInitiate && messageHashToScroll) {
         events = await sbp('chelonia/out/eventsBetween', messageHashToScroll, latestHash, limit)
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
@@ -471,10 +474,10 @@ export default ({
 
       if (!isLoadedFromStorage) {
         // NOTE: already rendered above in this function
-        await this.rerenderEvents(events, refresh)
+        await this.rerenderEvents(events, shouldInitiate)
       }
 
-      if (refresh) {
+      if (shouldInitiate) {
         this.setStartNewMessageIndex()
         this.updateScroll(messageHashToScroll)
         return false
@@ -482,8 +485,8 @@ export default ({
 
       return events.length < limit
     },
-    async rerenderEvents (events, refresh) {
-      if (refresh) {
+    async rerenderEvents (events, shouldInitiate) {
+      if (shouldInitiate) {
         this.latestEvents = events
       } else if (events.length > 1) {
         events.pop() // remove duplication. For more detail, check sbp('chelonia/out/eventsBetween')
@@ -510,7 +513,7 @@ export default ({
     },
     setInitMessages () {
       this.initializeState()
-      this.shouldRefreshMessages = true
+      this.ephemeral.messagesInitiated = false
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
       }
@@ -617,12 +620,12 @@ export default ({
     },
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
-      if (this.shouldRefreshMessages === undefined) {
+      if (this.ephemeral.messagesInitiated === undefined) {
         // NOTE: this infinite handler is being called once
         // before the component state is initialized, which should be ignored
         return
       }
-      this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
+      this.renderMoreMessages(!this.ephemeral.messagesInitiated).then(completed => {
         if (completed) {
           $state.complete()
           if (!this.$refs.conversation ||
@@ -638,7 +641,7 @@ export default ({
         } else {
           $state.loaded()
         }
-        this.shouldRefreshMessages = false
+        this.ephemeral.messagesInitiated = true
       })
     },
     onChatScroll: debounce(function () {
@@ -834,5 +837,29 @@ export default ({
 
 .c-footer {
   flex-shrink: 0;
+}
+
+.c-invisible {
+  visibility: hidden;
+}
+
+.c-initializing {
+  position: absolute;
+  width: calc(100% - 1rem);
+  height: 3rem;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid;
+    border-top-color: transparent;
+    border-radius: 50%;
+    color: $general_0;
+    animation: loadSpin 1.75s infinite linear;
+  }
 }
 </style>
