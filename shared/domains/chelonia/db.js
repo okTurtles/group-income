@@ -31,7 +31,7 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
         const id = sbp('chelonia/db/contractIdFromLogHEAD', key)
         return Promise.resolve(id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : undefined)
       },
-      'chelonia/db/set': function (key: string, value: Buffer | string): Promise<void> {
+      'chelonia/db/set': function (key: string, value: Buffer | string): Promise<Error | void> {
         if (!validate(key, value)) {
           return reject(key)
         }
@@ -43,7 +43,7 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
       'chelonia/db/get': function (key: string): Promise<Buffer | string | void> {
         return Promise.resolve(sbp('okTurtles.data/get', key))
       },
-      'chelonia/db/set': function (key: string, value: Buffer | string): Promise<void> {
+      'chelonia/db/set': function (key: string, value: Buffer | string): Promise<Error | void> {
         if (!validate(key, value)) {
           return reject(key)
         }
