@@ -4,7 +4,6 @@ import sbp from '@sbp/sbp'
 import { strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
 import fs from 'fs'
-import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import '@sbp/okturtles.data'
 import '~/shared/domains/chelonia/db.js'
@@ -156,54 +155,28 @@ sbp('sbp/selectors/register', {
   'backend/db/lookupName': async function (name: string): Promise<string | Error> {
     const value = await sbp('chelonia/db/get', namespaceKey(name))
     return value || Boom.notFound()
-  },
-  // =======================
-  // Filesystem API
-  //
-  // TODO: add encryption
-  // =======================
-  'backend/db/writeFileOnce': async function (filename: string, data: any): Promise<void> {
-    const filepath = throwIfFileOutsideDataDir(filename)
-    if (fs.existsSync(filepath)) {
-      console.warn('writeFileOnce: exists:', filepath)
-      return
-    }
-    return await writeFile(filepath, data)
   }
 })
 
+// Used to thwart path traversal attacks.
 export function checkKey (key: string): void {
   if (/[/\\]/.test(key)) {
-    throw Boom.badRequest(`bad name: ${key}`)
+    throw Boom.badRequest(`bad key: ${key}`)
   }
 }
 
 function namespaceKey (name: string): string {
-  return 'name=' + name
-}
-
-// Used to thwart path traversal attacks.
-function throwIfFileOutsideDataDir (filename: string): string {
-  const filepath = path.resolve(path.join(dataFolder, filename))
-  if (filepath.indexOf(dataFolder) !== 0) {
-    throw Boom.badRequest(`bad name: ${filename}`)
-  }
-  return filepath
+  return 'name:' + name
 }
 
 export default async () => {
   // If persistence must be enabled:
   // - load and initialize the selected storage backend
-  // - register `readString` and `writeString` selectors
-  // - overwrite 'chelonia/db/get' and '-set' to use an LRU cache
+  // - then overwrite 'chelonia/db/get' and '-set' to use it with an LRU cache
   if (persistence) {
-    const { initStorage, readString, writeString } = await import(`./database-${persistence}.js`)
+    const { initStorage, readData, writeData } = await import(`./database-${persistence}.js`)
 
     await initStorage(options[persistence])
-    sbp('sbp/selectors/register', {
-      'backend/db/readString': readString,
-      'backend/db/writeString': writeString
-    })
 
     // https://github.com/isaacs/node-lru-cache#usage
     const cache = new LRU({
@@ -211,19 +184,19 @@ export default async () => {
     })
 
     sbp('sbp/selectors/overwrite', {
-      'chelonia/db/get': async function (key: string): Promise<string | void> {
+      'chelonia/db/get': async function (key: string): Promise<Buffer | string | void> {
         const lookupValue = cache.get(key)
         if (lookupValue !== undefined) {
           return lookupValue
         }
-        const value = await sbp('backend/db/readString', key)
+        const value = await readData(key)
         if (value !== undefined) {
           cache.set(key, value)
         }
         return value
       },
-      'chelonia/db/set': async function (key: string, value: string): Promise<void> {
-        await sbp('backend/db/writeString', key, value)
+      'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<void> {
+        await writeData(key, value)
         cache.set(key, value)
       }
     })

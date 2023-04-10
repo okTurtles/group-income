@@ -239,9 +239,7 @@ describe('Full walkthrough', function () {
     it('Should create mailboxes for Alice and Bob and subscribe', async function () {
       // Object.values(users).forEach(async user => await createMailboxFor(user))
       await createMailboxFor(users.alice)
-      console.log('alice ok')
       await createMailboxFor(users.bob)
-      console.log('bob ok')
     })
   })
 

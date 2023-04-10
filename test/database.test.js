@@ -19,8 +19,8 @@ names.forEach((name) => {
   const lowerCaseName = name.toLowerCase()
   const {
     initStorage,
-    readString,
-    writeString
+    readData,
+    writeData
   } = require(`~/backend/database-${lowerCaseName}.js`)
 
   describe(`Test ${name} storage API`, function () {
@@ -28,35 +28,69 @@ names.forEach((name) => {
       await initStorage(options[lowerCaseName])
     })
 
-    it('Should throw if the key is invalid', async function () {
-      const badKeys = ['../bad/key', '..\\bad\\key', 'bad/key', 'bad\\key']
+    it('should throw if the key is invalid', async function () {
+      const badKeys = [
+        '/badkey', './badkey', '../badkey',
+        'bad/key', 'bad/./key', 'bad/../key',
+        'badkey/', 'badkey/.', 'badkey/..'
+      ]
+      const windowsBadKeys = badKeys.map(k => k.replace(/\//g, '\\'))
+      badKeys.push(...windowsBadKeys)
 
       await Promise.all(badKeys.map(badKey => (
-        assert.rejects(readString(badKey), err => err.message === `bad name: ${badKey}`)
+        assert.rejects(readData(badKey), err => err.message === `bad key: ${badKey}`)
+      )))
+      await Promise.all(badKeys.map(badKey => (
+        assert.rejects(writeData(badKey, ''), err => err.message === `bad key: ${badKey}`)
       )))
     })
 
     it('Should return `undefined` if the key was not found', async function () {
-      const actual = await readString('foo')
+      const actual = await readData('foo')
       const expected = undefined
 
       assert.equal(actual, expected)
     })
 
-    it('Should return the value that has been written', async function () {
-      await writeString('newKey', 'newValue')
+    it('Should return the string that has been written', async function () {
+      await writeData('newKey', 'newValue')
 
-      const actual = await readString('newKey')
+      const actual = await readData('newKey')
       const expected = 'newValue'
 
       assert.equal(actual, expected)
     })
 
-    it('Should return the new value after an update', async function () {
-      await writeString('someKey', 'someValue')
-      await writeString('someKey', 'someOtherValue')
+    it('Should return the buffer that has been written', async function () {
+      const buffer = Buffer.from('contents')
+      const key = 'blob:key'
+      await writeData(key, buffer)
 
-      const actual = await readString('someKey')
+      const actual = await readData(key)
+      const expected = buffer
+
+      assert.equal(Buffer.compare(actual, expected), 0)
+    })
+
+    it('Should return the new buffer after an update', async function () {
+      const oldBuffer = Buffer.from('someValue')
+      const newBuffer = Buffer.from('someOtherValue')
+      const key = 'blob:key'
+
+      await writeData(key, oldBuffer)
+      await writeData(key, newBuffer)
+
+      const actual = await readData(key)
+      const expected = newBuffer
+
+      assert.equal(Buffer.compare(actual, expected), 0)
+    })
+
+    it('Should return the new string after an update', async function () {
+      await writeData('someKey', 'someValue')
+      await writeData('someKey', 'someOtherValue')
+
+      const actual = await readData('someKey')
       const expected = 'someOtherValue'
 
       assert.equal(actual, expected)

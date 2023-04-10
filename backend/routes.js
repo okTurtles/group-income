@@ -143,15 +143,15 @@ route.GET('/time', {}, function (request, h) {
   return new Date().toISOString()
 })
 
-// file upload related
-
 // TODO: if the browser deletes our cache then not everyone
 //       has a complete copy of the data and can act as a
 //       new coordinating server... I don't like that.
 
-const MEGABTYE = 1048576 // TODO: add settings for these
+const MEGABYTE = 1048576 // TODO: add settings for these
 const SECOND = 1000
 
+// File upload route.
+// If accepted, the file will be stored in Chelonia DB.
 route.POST('/file', {
   // TODO: only allow uploads from registered users
   payload: {
@@ -162,30 +162,50 @@ route.POST('/file', {
       console.error('failAction error:', err)
       return err
     },
-    maxBytes: 6 * MEGABTYE, // TODO: make this a configurable setting
+    maxBytes: 6 * MEGABYTE, // TODO: make this a configurable setting
     timeout: 10 * SECOND // TODO: make this a configurable setting
   }
 }, async function (request, h) {
   try {
     console.log('FILE UPLOAD!')
-    console.log(request.payload)
     const { hash, data } = request.payload
     if (!hash) return Boom.badRequest('missing hash')
     if (!data) return Boom.badRequest('missing data')
-    // console.log('typeof data:', typeof data)
     const ourHash = blake32Hash(data)
     if (ourHash !== hash) {
       console.error(`hash(${hash}) != ourHash(${ourHash})`)
       return Boom.badRequest('bad hash!')
     }
-    await sbp('backend/db/writeFileOnce', hash, data)
+    await sbp('chelonia/db/set', `blob:${hash}`, data)
     return '/file/' + hash
   } catch (err) {
     return logger(err)
   }
 })
 
+// Serve data from Chelonia DB.
+// Note that a `Last-Modified` header isn't included in the response.
 route.GET('/file/{hash}', {
+  cache: {
+    // Do not set other cache options here, to make sure the 'otherwise' option
+    // will be used so that the 'immutable' directive gets included.
+    otherwise: 'public,max-age=31536000,immutable'
+  }
+}, async function (request, h) {
+  const { hash } = request.params
+  console.debug(`GET /file/${hash}`)
+  const blob = await sbp('chelonia/db/get', `blob:${hash}`)
+  if (!blob) {
+    return Boom.notFound()
+  }
+  return h.response(blob).etag(hash)
+})
+
+// Used to serve contract source files and contract manifests.
+// These files are stored in the file system rather than the Chelonia db,
+// therefore `GET /file` could not be used since a different handler was needed.
+// This route is very similar to `GET /assets`, but for now a separate route must be used.
+route.GET('/contract/{hash}', {
   cache: {
     // Do not set other cache options here, to make sure the 'otherwise' option
     // will be used so that the 'immutable' directive gets included.
@@ -196,7 +216,7 @@ route.GET('/file/{hash}', {
   }
 }, function (request, h) {
   const { hash } = request.params
-  console.debug(`GET /file/${hash}`)
+  console.debug(`GET /contract/${hash}`)
   // Reusing the given `hash` parameter to set the ETag should be faster than
   // letting Hapi hash the file to compute an ETag itself.
   return h.file(hash, { etagMethod: false }).etag(hash)

@@ -1,7 +1,7 @@
 'use strict'
 
 import { mkdir } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { join, resolve } from 'node:path'
 import sqlite3 from 'sqlite3'
 
 import { checkKey } from './database.js'
@@ -20,12 +20,12 @@ export async function initStorage (options: Object = {}): Promise<void> {
     if (db) {
       reject(new Error(`The ${filename} SQLite database is already open.`))
     }
-    db = new sqlite3.Database(`${dataFolder}/${filename}`, (err) => {
+    db = new sqlite3.Database(join(dataFolder, filename), (err) => {
       if (err) {
         reject(err)
       }
     })
-    db.run('CREATE TABLE IF NOT EXISTS Strings(key TEXT UNIQUE NOT NULL, value TEXT NOT NULL)', [], (err) => {
+    db.run('CREATE TABLE IF NOT EXISTS Data(key TEXT UNIQUE NOT NULL, value TEXT NOT NULL)', [], (err) => {
       if (err) {
         reject(err)
       } else {
@@ -34,11 +34,11 @@ export async function initStorage (options: Object = {}): Promise<void> {
       }
     })
   })
-  readStatement = db.prepare('SELECT value FROM Strings WHERE key = ?')
-  writeStatement = db.prepare('REPLACE INTO Strings(key, value) VALUES(?, ?)')
+  readStatement = db.prepare('SELECT value FROM Data WHERE key = ?')
+  writeStatement = db.prepare('REPLACE INTO Data(key, value) VALUES(?, ?)')
 }
 
-export function readString (key: string): Promise<string | void> {
+export function readData (key: string): Promise<Buffer | string | void> {
   return new Promise((resolve, reject) => {
     checkKey(key)
     readStatement.get([key], (err, row) => {
@@ -51,7 +51,7 @@ export function readString (key: string): Promise<string | void> {
   })
 }
 
-export function writeString (key: string, value: string): Promise<void> {
+export function writeData (key: string, value: Buffer | string): Promise<void> {
   return new Promise((resolve, reject) => {
     checkKey(key)
     writeStatement.run([key, value], (err) => {

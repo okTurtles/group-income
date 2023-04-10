@@ -6,7 +6,7 @@ import '@sbp/okturtles.eventqueue'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
 
-const headSuffix = '-HEAD'
+const headPrefix = 'head:'
 
 // NOTE: To enable persistence of log use 'sbp/selectors/overwrite'
 //       to overwrite the following selectors:
@@ -15,18 +15,26 @@ sbp('sbp/selectors/unsafe', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/
 
 const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
-      'chelonia/db/get': function (key: string): Promise<string | void> {
+      'chelonia/db/get': function (key: string): Promise<Buffer | string | void> {
         const id = sbp('chelonia/db/contractIdFromLogHEAD', key)
         return Promise.resolve(id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : undefined)
       },
-      'chelonia/db/set': function (key: string, value: string): Promise<void> { return Promise.resolve() },
+      'chelonia/db/set': function (key: string, value: Buffer | string): Promise<void> {
+        if (key.startsWith('blob:') && !Buffer.isBuffer(value)) {
+          return Promise.reject(new Error('expected a buffer'))
+        }
+        return Promise.resolve()
+      },
       'chelonia/db/delete': function (key: string): Promise<boolean> { return Promise.resolve(true) }
     }
   : {
-      'chelonia/db/get': function (key: string): Promise<string | void> {
+      'chelonia/db/get': function (key: string): Promise<Buffer | string | void> {
         return Promise.resolve(sbp('okTurtles.data/get', key))
       },
-      'chelonia/db/set': function (key: string, value: string): Promise<void> {
+      'chelonia/db/set': function (key: string, value: Buffer | string): Promise<void> {
+        if (key.startsWith('blob:') && !Buffer.isBuffer(value)) {
+          return Promise.reject(new Error('expected a buffer'))
+        }
         sbp('okTurtles.data/set', key, value)
         return Promise.resolve()
       },
@@ -38,10 +46,10 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
 export default (sbp('sbp/selectors/register', {
   ...dbPrimitiveSelectors,
   'chelonia/db/logHEAD': function (contractID: string): string {
-    return `${contractID}${headSuffix}`
+    return `${headPrefix}${contractID}`
   },
   'chelonia/db/contractIdFromLogHEAD': function (key: string): ?string {
-    return key.endsWith(headSuffix) ? key.slice(0, -headSuffix.length) : null
+    return key.startsWith(headPrefix) ? key.slice(headPrefix.length) : null
   },
   'chelonia/db/latestHash': function (contractID: string): Promise<string | void> {
     return sbp('chelonia/db/get', sbp('chelonia/db/logHEAD', contractID))

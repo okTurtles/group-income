@@ -24,12 +24,12 @@ export default (sbp('sbp/selectors/register', {
       console.warn('[chelonia]: already loaded manifest', manifestHash)
       return
     }
-    const manifestURL = `${this.config.connectionURL}/file/${manifestHash}`
+    const manifestURL = `${this.config.connectionURL}/contract/${manifestHash}`
     const manifest = await fetch(manifestURL).then(handleFetchResult('json'))
     const body = JSON.parse(manifest.body)
     const contractInfo = (this.config.contracts.defaults.preferSlim && body.contractSlim) || body.contract
     console.info(`[chelonia] loading contract '${contractInfo.file}'@'${body.version}' from manifest: ${manifestHash}`)
-    const source = await fetch(`${this.config.connectionURL}/file/${contractInfo.hash}`)
+    const source = await fetch(`${this.config.connectionURL}/contract/${contractInfo.hash}`)
       .then(handleFetchResult('text'))
     const sourceHash = blake32Hash(source)
     if (sourceHash !== contractInfo.hash) {
