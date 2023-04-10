@@ -8,6 +8,18 @@ import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
 
 const headPrefix = 'head:'
 
+// Helper functions to avoid bad key-value pairs.
+const validate = (key: string, value: Buffer | string): boolean => {
+  if (key.startsWith('blob:')) {
+    return Buffer.isBuffer(value)
+  }
+  return typeof value === 'string'
+}
+const reject = (key: string): Promise<Error> => {
+  const type = key.startsWith('blob:') ? 'buffer' : 'string'
+  return Promise.reject(new Error(`expected a ${type}`))
+}
+
 // NOTE: To enable persistence of log use 'sbp/selectors/overwrite'
 //       to overwrite the following selectors:
 sbp('sbp/selectors/unsafe', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
@@ -20,8 +32,8 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
         return Promise.resolve(id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : undefined)
       },
       'chelonia/db/set': function (key: string, value: Buffer | string): Promise<void> {
-        if (key.startsWith('blob:') && !Buffer.isBuffer(value)) {
-          return Promise.reject(new Error('expected a buffer'))
+        if (!validate(key, value)) {
+          return reject(key)
         }
         return Promise.resolve()
       },
@@ -32,8 +44,8 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
         return Promise.resolve(sbp('okTurtles.data/get', key))
       },
       'chelonia/db/set': function (key: string, value: Buffer | string): Promise<void> {
-        if (key.startsWith('blob:') && !Buffer.isBuffer(value)) {
-          return Promise.reject(new Error('expected a buffer'))
+        if (!validate(key, value)) {
+          return reject(key)
         }
         sbp('okTurtles.data/set', key, value)
         return Promise.resolve()
