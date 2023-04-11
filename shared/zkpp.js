@@ -1,6 +1,7 @@
 import nacl from 'tweetnacl'
 import scrypt from 'scrypt-async'
 
+// .toString('base64url') only works in Node.js
 export const base64ToBase64url = (s: string): string => s.replace(/\//g, '_').replace(/\+/g, '-').replace(/=*$/, '')
 
 export const base64urlToBase64 = (s: string): string => s.replace(/_/g, '/').replace(/-/g, '+') + '='.repeat((4 - s.length % 4) % 4)

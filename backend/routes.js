@@ -9,7 +9,7 @@ import { SERVER_INSTANCE } from './instance-keys.js'
 import path from 'path'
 import chalk from 'chalk'
 import './database.js'
-import { registrationKey, register, getChallenge, getContractSalt, update } from './zkppSalt.js'
+import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
 
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
@@ -249,9 +249,7 @@ route.GET('/', {}, function (req, h) {
   return h.redirect('/app/')
 })
 
-// TODO: name this using a high-level description
-// e.g. route.POST('/zkpp/register/{contract}', {
-route.POST('/zkpp/{contract}', {
+route.POST('/zkpp/register/{contract}', {
   validate: {
     payload: Joi.alternatives([
       {
@@ -297,9 +295,7 @@ route.GET('/zkpp/{contract}/auth_hash', {
   try {
     const challenge = await getChallenge(req.params['contract'], req.query['b'])
 
-    if (challenge) {
-      return challenge
-    }
+    return challenge || Boom.notFound()
   } catch (e) {
     const ip = req.info.remoteAddress
     console.error('Error at GET /zkpp/{contract}/auth_hash: ' + e.message, { ip })
@@ -332,9 +328,7 @@ route.GET('/zkpp/{contract}/contract_hash', {
   return Boom.internal('internal error')
 })
 
-// TODO: name this using a high-level description, and use POST
-//       suggestion: route.POST('/zkpp/updatePasswordHash/{contract}', {
-route.PUT('/zkpp/{contract}', {
+route.POST('/zkpp/updatePasswordHash/{contract}', {
   validate: {
     payload: Joi.object({
       r: Joi.string().required(),
@@ -346,14 +340,14 @@ route.PUT('/zkpp/{contract}', {
   }
 }, async function (req, h) {
   try {
-    const result = await update(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
+    const result = await updateContractSalt(req.params['contract'], req.payload['r'], req.payload['s'], req.payload['sig'], req.payload['hc'], req.payload['Ea'])
 
     if (result) {
       return result
     }
   } catch (e) {
     const ip = req.info.remoteAddress
-    console.error('Error at GET /zkpp/{contract}/contract_hash: ' + e.message, { ip })
+    console.error('Error at POST /zkpp/updatePasswordHash/{contract}: ' + e.message, { ip })
   }
 
   return Boom.internal('internal error')

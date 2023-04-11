@@ -4,7 +4,7 @@ import nacl from 'tweetnacl'
 import should from 'should'
 import 'should-sinon'
 
-import { registrationKey, register, getChallenge, getContractSalt, update } from './zkppSalt.js'
+import { registrationKey, register, getChallenge, getContractSalt, updateContractSalt } from './zkppSalt.js'
 
 const saltsAndEncryptedHashedPassword = (p: string, secretKey: Uint8Array, hash: string) => {
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
@@ -75,7 +75,7 @@ describe('ZKPP Salt functions', () => {
     should(retrievedContractSalt).equal(contractSalt, 'mismatched contractSalt')
   })
 
-  it('update() conforms to the API to update salt', async () => {
+  it('updateContractSalt() conforms to the API to update salt', async () => {
     const keyPair = nacl.box.keyPair()
     const publicKey = Buffer.from(keyPair.publicKey).toString('base64url')
     const publicKeyHash = Buffer.from(nacl.hash(Buffer.from(publicKey))).toString('base64url')
@@ -105,7 +105,7 @@ describe('ZKPP Salt functions', () => {
 
     const encryptedArgs = Buffer.concat([nonce, encryptedArgsCiphertext]).toString('base64url')
 
-    const updateRes = await update(contract, r, challenge.s, challenge.sig, Buffer.from(hc).toString('base64url'), encryptedArgs)
-    should(updateRes).equal(true, 'update should be successful')
+    const updateRes = await updateContractSalt(contract, r, challenge.s, challenge.sig, Buffer.from(hc).toString('base64url'), encryptedArgs)
+    should(updateRes).equal(true, 'updateContractSalt should be successful')
   })
 })

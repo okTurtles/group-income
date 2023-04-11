@@ -6,10 +6,14 @@ import { boxKeyPair, encryptContractSalt, hashStringArray, hashRawStringArray, h
 
 // TODO HARDCODED VALUES
 // These values will eventually come from server the configuration
-const recordPepper = 'pepper'
-const recordMasterKey = 'masterKey'
-const challengeSecret = 'secret'
-const registrationSecret = 'secret'
+const recordPepper = 'pepper' // TODO: get rid of `recordPepper`, just use `private/rid/${contractID}`
+// used to encrypt salts in database
+const recordMasterKey = 'masterKey' // TODO: store in file that's got root privs (after dropping privs)
+// corresponds to the key for the keyed Hash function in "Log in / session establishment"
+const challengeSecret = 'secret' // TODO: generate randomly and store in DB under private prefix
+// corresponds to a component of s in Step 3 of "Salt registration"
+const registrationSecret = 'secret' // TODO: generate randomly and store in DB under private prefix
+
 const maxAge = 30
 
 const getZkppSaltRecord = async (contract: string) => {
@@ -55,6 +59,8 @@ const getZkppSaltRecord = async (contract: string) => {
 
 const setZkppSaltRecord = async (contract: string, hashedPassword: string, authSalt: string, contractSalt: string) => {
   const recordId = blake32Hash(hashStringArray('RID', contract, recordPepper))
+  // TODO: replace the above line with:
+  // const recordId = `private/rid/${contractID}`
   const encryptionKey = hashStringArray('REK', contract, recordMasterKey).slice(0, nacl.secretbox.keyLength)
   const nonce = nacl.randomBytes(nacl.secretbox.nonceLength)
   const recordPlaintext = JSON.stringify([hashedPassword, authSalt, contractSalt])
@@ -73,6 +79,9 @@ export const getChallenge = async (contract: string, b: string): Promise<false |
   const { authSalt } = record
   const s = randomNonce()
   const now = (Date.now() / 1000 | 0).toString(16)
+  // sig here refers to sigma (σ) in Step 3 of the "Log in / session establishment" part of the protocol.
+  // Also, we use base64ToBase64url() instead of .toString('base64url') because Buffer is not
+  // standard JS and the shim that we're using doesn't support it.
   const sig = [now, base64ToBase64url(Buffer.from(hashStringArray(contract, b, s, now, challengeSecret)).toString('base64'))].join(',')
 
   return {
@@ -85,6 +94,7 @@ export const getChallenge = async (contract: string, b: string): Promise<false |
 const verifyChallenge = (contract: string, r: string, s: string, userSig: string): boolean => {
   // Check sig has the right format
   if (!/^[a-fA-F0-9]{1,11},[a-zA-Z0-9_-]{86}(?:==)?$/.test(userSig)) {
+    console.info(`wrong signature format for challenge for contract: ${contract}`)
     return false
   }
 
@@ -126,14 +136,14 @@ export const registrationKey = async (contract: string, b: string): Promise<fals
 
 export const register = async (contract: string, clientPublicKey: string, encryptedSecretKey: string, userSig: string, encryptedHashedPassword: string): Promise<boolean> => {
   if (!verifyChallenge(contract, clientPublicKey, encryptedSecretKey, userSig)) {
-    console.debug('register: Error validating challenge: ' + JSON.stringify({ contract, clientPublicKey, userSig }))
+    console.warn('register: Error validating challenge: ' + JSON.stringify({ contract, clientPublicKey, userSig }))
     throw new Error('register: Invalid challenge')
   }
 
   const record = await getZkppSaltRecord(contract)
 
   if (record) {
-    console.error('register: Error: ZKPP salt record for contract ID ' + contract + ' already exists')
+    console.warn('register: Error: ZKPP salt record for contract ID ' + contract + ' already exists')
     return false
   }
 
@@ -143,7 +153,7 @@ export const register = async (contract: string, clientPublicKey: string, encryp
 
   // Likely a bad implementation on the client side
   if (!secretKeyBuf) {
-    console.debug(`register: Error decrypting arguments for contract ID ${contract} (${JSON.stringify({ clientPublicKey, userSig })})`)
+    console.warn(`register: Error decrypting arguments for contract ID ${contract} (${JSON.stringify({ clientPublicKey, userSig })})`)
     return false
   }
 
@@ -151,7 +161,7 @@ export const register = async (contract: string, clientPublicKey: string, encryp
 
   // Likely a bad implementation on the client side
   if (!parseRegisterSaltRes) {
-    console.debug(`register: Error parsing registration salt for contract ID ${contract} (${JSON.stringify({ clientPublicKey, userSig })})`)
+    console.warn(`register: Error parsing registration salt for contract ID ${contract} (${JSON.stringify({ clientPublicKey, userSig })})`)
     return false
   }
 
@@ -198,9 +208,9 @@ export const getContractSalt = async (contract: string, r: string, s: string, si
   return encryptContractSalt(c, contractSalt)
 }
 
-export const update = async (contract: string, r: string, s: string, sig: string, hc: string, encryptedArgs: string): Promise<boolean> => {
+export const updateContractSalt = async (contract: string, r: string, s: string, sig: string, hc: string, encryptedArgs: string): Promise<boolean> => {
   if (!verifyChallenge(contract, r, s, sig)) {
-    console.debug('update: Error validating challenge: ' + JSON.stringify({ contract, r, s, sig }))
+    console.warn('update: Error validating challenge: ' + JSON.stringify({ contract, r, s, sig }))
     throw new Error('update: Bad challenge')
   }
 

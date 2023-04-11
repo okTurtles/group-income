@@ -88,7 +88,8 @@ export default (sbp('sbp/selectors/register', {
     const keyPair = boxKeyPair()
     const r = Buffer.from(keyPair.publicKey).toString('base64').replace(/\//g, '_').replace(/\+/g, '-')
     const b = hash(r)
-    const registrationRes = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}`, {
+    // TODO: use the contractID instead, and move this code down below the registration
+    const registrationRes = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/user=${encodeURIComponent(username)}`, {
       method: 'POST',
       headers: {
         'content-type': 'application/x-www-form-urlencoded'
@@ -100,8 +101,8 @@ export default (sbp('sbp/selectors/register', {
     const { p, s, sig } = registrationRes
 
     const [contractSalt, Eh] = await buildRegisterSaltRequest(p, keyPair.secretKey, password)
-
-    const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/user=${encodeURIComponent(username)}`, {
+    // TODO: use the contractID instead, and move this code down below the registration
+    const res = await fetch(`${sbp('okTurtles.data/get', 'API_URL')}/zkpp/register/user=${encodeURIComponent(username)}`, {
       method: 'POST',
       headers: {
         'content-type': 'application/x-www-form-urlencoded'
@@ -335,7 +336,7 @@ export default (sbp('sbp/selectors/register', {
         await sbp('chelonia/contract/sync', identityContractID)
       }
 
-      // NOTE: leaving groups will happen when we sync the removeOurselves message
+      // NOTE: users could notice that they leave the group by someone else when they log in
       if (!state.currentGroupId) {
         const { contracts } = state
         const gId = Object.keys(contracts).find(cID => contracts[cID].type === 'gi.contracts/group')
@@ -351,7 +352,7 @@ export default (sbp('sbp/selectors/register', {
       } else {
         // We call updateLastLoggedIn in this else clause, instead of outside of it because
         // in the `if` above, updateLastLoggedIn will get called by 'gi.actions/group/switch'
-        sbp('gi.actions/group/updateLastLoggedIn', { contractID: state.currentGroupId })
+        await sbp('gi.actions/group/updateLastLoggedIn', { contractID: state.currentGroupId })
       }
     } catch (e) {
       console.error(`updateLoginState: ${e.name}: '${e.message}'`, e)

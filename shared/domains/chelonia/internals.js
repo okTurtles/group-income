@@ -160,8 +160,8 @@ export default (sbp('sbp/selectors/register', {
         await delay(randDelay) // wait half a second before sending it again
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
-          const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
-          entry = GIMessage.createV1_0({ contractID, previousHEAD, op: entry.op(), manifest: entry.manifest(), signatureFn })
+          const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
+          entry = GIMessage.cloneWith(entry, { previousHEAD }, signatureFn)
         }
       } else {
         const message = (await r.json())?.message
@@ -188,6 +188,7 @@ export default (sbp('sbp/selectors/register', {
   'chelonia/private/in/processMessage': async function (message: GIMessage, state: Object) {
     const [opT, opV] = message.op()
     const hash = message.hash()
+    const id = message.id()
     const contractID = message.contractID()
     const manifestHash = message.manifest()
     const config = this.config
@@ -202,6 +203,12 @@ export default (sbp('sbp/selectors/register', {
         state._vm.type = v.type
         state._vm.authorizedKeys = keysToMap(v.keys)
 
+        // Loop through the keys in the contract and try to decrypt all of the private keys
+        // Example: in the identity contract you have the IEK, IPK, CSK, and CEK.
+        // When you login you have the IEK which is derived from your password, and you
+        // will use it to decrypt the rest of the keys which are encrypted with that.
+        // Specifically, the IEK is used to decrypt the CSKs and the CEKs, which are
+        // the encrypted versions of the CSK and CEK.
         for (const key of v.keys) {
           if (key.meta?.private) {
             if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
@@ -211,6 +218,11 @@ export default (sbp('sbp/selectors/register', {
                 state._volatile.keys[key.id] = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
               } catch (e) {
                 console.error(`OP_CONTRACT decryption error '${e.message || e}':`, e)
+                // Ricardo feels this is an ambiguous situation, however if we rethrow it will
+                // render the contract unusable because it will undo all our changes to the state,
+                // and it's possible that an error here shouldn't necessarily break the entire
+                // contract. For example, in some situations we might read a contract as
+                // read-only and not have the key to write to it.
               }
             }
           }
@@ -239,7 +251,7 @@ export default (sbp('sbp/selectors/register', {
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }
-          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, contractID }, state)
+          sbp(`${manifestHash}/${action}/process`, { data, meta, hash, id, contractID }, state)
         }
       },
       [GIMessage.OP_KEYSHARE] (v: GIOpKeyShare) {
@@ -415,7 +427,10 @@ export default (sbp('sbp/selectors/register', {
       const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys) : state._vm.authorizedKeys
       let signingKey = authorizedKeys?.[signature.keyId]
 
-      // TODO: add comment here explaining what scenario is being covered.
+      // `signingKey` may not be present in the contract. This happens in cross-contract interactions,
+      // where a contract writes to another contract using its own keys. For example, when one requests
+      // to join a group, that message cannot be signed by the group because the secret key is only known
+      // to group members. Instead, it is signed with the keys of the person joining.
       if (!signingKey && opT !== GIMessage.OP_CONTRACT && message.originatingContractID() !== message.contractID()) {
         const originatingContractState = await sbp('chelonia/withEnv', message.originatingContractID(), { skipActionProcessing: true }, [
           'chelonia/latestContractState', message.originatingContractID()
@@ -540,7 +555,10 @@ export default (sbp('sbp/selectors/register', {
           throw new Error('Unable to find encryption key')
         }
 
-        const { keys, signingKeyId } = await sbp(`${contractName}/getShareableKeys`, contractID)
+        // TODO: discuss with Greg how to do this
+        // const { keys, signingKeyId } = await sbp(`${contractName}/getShareableKeys`, contractID)
+        const signingKeyId = (((Object.values(Object(contractState._vm.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)
+        const keys = contractState._volatile?.keys
 
         if (!signingKeyId || !keys || Object.keys(keys).length === 0) {
           console.info('respondToKeyRequests: no keys to share', { contractID, originatingContractID })
@@ -712,8 +730,9 @@ const handleEvent = {
       const contractID = message.contractID()
       const manifestHash = message.manifest()
       const hash = message.hash()
+      const id = message.id()
       const { action, data, meta } = this.config.decryptFn.call(this, message.opValue(), state)
-      const mutation = { data, meta, hash, contractID, description: message.description() }
+      const mutation = { data, meta, hash, id, contractID, description: message.description() }
       await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }
   },

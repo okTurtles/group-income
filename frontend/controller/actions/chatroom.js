@@ -7,7 +7,6 @@ import { L, GIErrorUIRuntimeError } from '@common/common.js'
 import { omit } from '@model/contracts/shared/giLodash.js'
 import { encryptedAction } from './utils.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import type { GIRegParams } from './types.js'
 import { ChelErrorUnexpected } from '../../../shared/domains/chelonia/errors.js'
 
@@ -147,13 +146,6 @@ export default (sbp('sbp/selectors/register', {
     } catch (e) {
       console.error('gi.actions/chatroom/register failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create chat channel.'))
-    }
-  },
-  'gi.contracts/chatroom/getShareableKeys': async function (contractID) {
-    const state = await sbp('chelonia/currentContractState', contractID)
-    return {
-      signingKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string),
-      keys: state._volatile?.keys
     }
   },
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),

@@ -1166,12 +1166,19 @@ sbp('chelonia/defineContract', {
         if (rootState[data.chatRoomID]?._volatile) {
           return
         }
-
+        // the specific scenario here is joining chatrooms (should be the general channel in this
+        // case) . This is required because joining a chatroom is a two-step process (i.e., first
+        // a group is joined, we get the list of chatrooms and then request to join) due to them
+        // being encrypted.
+        // TODO: This entire sideEffect needs to be deleted, because instead of using OP_KEY_REQUEST
+        //       we're going to use OP_KEYSHARE in advance so that the chatrooms are instantly
+        //       joinable.
         await sbp('chelonia/out/keyRequest', {
           originatingContractID: identityContractID,
           originatingContractName: contracts[identityContractID].type,
           contractID: data.chatRoomID,
           contractName: 'gi.contracts/chatroom',
+          // This is finding the CSK by name under the assumption that there is only one CSK (which holds for group contracts)
           signingKey: state._volatile?.keys?.[(((Object.values(Object(state._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)],
           innerSigningKeyId: ((Object.values(userState._vm.authorizedKeys): any): GIKey[]).find((k) => k.meta?.type === 'csk')?.id,
           encryptionKeyId: ((Object.values(userState._vm.authorizedKeys): any): GIKey[]).find((k) => k.meta?.type === 'cek')?.id,
