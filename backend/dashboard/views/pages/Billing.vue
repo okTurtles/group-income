@@ -26,7 +26,7 @@ page-template
           i18n.c-input-suffix $ USD per Credit
 
       label.field
-        i18n.label How many credits will you charge for Gigabite per month?
+        i18n.label How many credits will you charge for Gigabyte per month?
 
         .inputgroup.c-credit-per-gb(
           v-error:creditPerGiga=''

@@ -5,9 +5,7 @@ page-template
   section.c-create-instance-section
     form.c-forms(@submit.prevent='')
       .field
-        InfoCard.c-info-card(:heading='L("Note")')
-          | In order to create a new Application Instance, you’ll need a domain name. If you don’t already have one,
-          |  you can find an available one and register for a fee with a hosting website and then proceed to create your instance.
+        InfoCard.c-info-card(:heading='L("Note")') {{ L("In order to create a new Application Instance, you’ll need a domain name. If you don’t already have one, you can find an available one and register for a fee with a hosting website and then proceed to create your instance.") }}
 
       .field
         i18n.label(tag='label') Software / Application
