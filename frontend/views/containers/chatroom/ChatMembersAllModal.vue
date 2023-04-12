@@ -212,6 +212,9 @@ export default ({
       return this.chatRoomAttribute.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     }
   },
+  mounted () {
+    this.initializeMembers()
+  },
   methods: {
     initializeMembers () {
       if (this.isDirectMessage()) {
