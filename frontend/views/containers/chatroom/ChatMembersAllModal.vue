@@ -37,17 +37,16 @@ modal-base-template.has-background(
         .is-subtitle
           i18n(
             tag='h3'
-            :args='{  nbMembers: chatRoomUsersInSort.length }'
+            :args='{  nbMembers: filteredRecents.length }'
           ) Channel members ({nbMembers})
 
         transition-group(
-          v-if='addedMembers'
           name='slide-list'
           tag='ul'
           data-test='joinedChannelMembersList'
         )
           li.c-search-member(
-            v-for='{username, displayName, departedDate} in addedMembers'
+            v-for='{username, displayName, departedDate} in filteredRecents'
             :key='username'
           )
             profile-card(:username='username' direction='top-left')
@@ -75,17 +74,16 @@ modal-base-template.has-background(
         .is-subtitle.c-second-section
           i18n(
             tag='h3'
-            :args='{ nbMembers: canAddMembers.length }'
+            :args='{ nbMembers: filteredOthers.length }'
           ) Others ({nbMembers})
 
       transition-group(
-        v-if='searchResult'
         name='slide-list'
         tag='ul'
         data-test='unjoinedChannelMembersList'
       )
         li.c-search-member(
-          v-for='{username, displayName, joinedDate} in searchResult'
+          v-for='{username, displayName, joinedDate} in filteredOthers'
           :key='username'
         )
           profile-card(:username='username' direction='top-left')
@@ -121,12 +119,16 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
+import DMMixin from './DMMixin.js'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { filterByKeyword } from '@view-utils/filters.js'
 
 export default ({
   name: 'ChatMembersAllModal',
+  mixins: [
+    DMMixin
+  ],
   components: {
     ModalBaseTemplate,
     Search,
@@ -143,34 +145,26 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'currentIdentityState',
-      'currentChatRoomId',
       'currentChatRoomState',
       'currentGroupState',
       'groupMembersSorted',
       'getGroupChatRooms',
       'chatRoomUsers',
       'chatRoomUsersInSort',
-      'ourUsername',
       'globalProfile',
-      'isDirectMessage',
-      'isPrivateDirectMessage',
-      'isGroupDirectMessage',
-      'groupDirectMessageInfo',
-      'usernameFromDirectMessageID',
-      'isJoinedChatRoom',
-      'ourContactProfiles',
-      'ourContacts',
-      'ourGroupDirectMessages'
+      'isJoinedChatRoom'
     ]),
     ...mapState([
       'currentGroupId'
     ]),
-    searchResult () {
+    filteredRecents () {
+      return filterByKeyword(this.addedMembers, this.searchText, ['username', 'displayName'])
+    },
+    filteredOthers () {
       return filterByKeyword(this.canAddMembers, this.searchText, ['username', 'displayName'])
     },
     searchCount () {
-      return Object.keys(this.searchResult).length
+      return Object.keys(this.filteredOthers).length + Object.keys(this.filteredRecents).length
     },
     resultsCopy () {
       const args = {
@@ -300,38 +294,15 @@ export default ({
       if (this.isDirectMessage()) {
         if (this.isPrivacyLevelPrivate) {
           const usernames = [this.usernameFromDirectMessageID(this.currentChatRoomId), username]
-          const existingChatRoomId = Object.keys(this.ourGroupDirectMessages).find(contractID => {
-            const users = Object.keys(this.$store.state[contractID]?.users || {})
-            if (users.length === usernames.length + 1) {
-              return [...usernames, this.ourUsername].reduce((existing, un) => existing && users.includes(un), true)
-            }
-            return false
-          })
-          if (existingChatRoomId) {
-            this.$router.push({ name: 'GroupChatConversation', params: { chatRoomId: existingChatRoomId } })
+          const chatRoomId = this.getGroupDMByUsers(usernames)
+          if (chatRoomId) {
+            this.redirect(chatRoomId)
           } else {
-            sbp('gi.actions/mailbox/createDirectMessage', {
-              contractID: this.currentIdentityState.attributes.mailbox,
-              data: {
-                privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
-                usernames
-              }
-            })
+            this.createGroupDM(usernames)
           }
           this.closeModal()
         } else {
-          const profile = this.ourContactProfiles[username]
-          await sbp('gi.actions/chatroom/join', {
-            contractID: this.currentChatRoomId,
-            data: { username }
-          })
-          await sbp('gi.actions/mailbox/joinDirectMessage', {
-            contractID: profile.mailbox,
-            data: {
-              privacyLevel: CHATROOM_PRIVACY_LEVEL.GROUP,
-              contractID: this.currentChatRoomId
-            }
-          })
+          await this.addMemberToGroupDM(this.currentChatRoomId, username)
           this.canAddMembers = this.canAddMembers.map(member =>
             member.username === username ? { ...member, joinedDate: new Date().toISOString() } : member)
         }

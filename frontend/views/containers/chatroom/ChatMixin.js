@@ -105,17 +105,6 @@ const ChatMixin: Object = {
       }).catch(logExceptNavigationDuplicated)
     },
     refreshTitle (title?: string): void {
-      // if (!title) {
-      //   if (this.isPrivateDirectMessage(this.currentChatRoomId)) {
-      //     const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
-      //     const partner = this.ourContactProfiles[partnerUsername]
-      //     title = partner.displayName || partnerUsername
-      //   } else if (this.isGroupDirectMessage(this.currentChatRoomId)) {
-      //     title = this.groupDirectMessageInfo(this.currentChatRoomId).title
-      //   } else {
-      //     title = this.summary.title
-      //   }
-      // }
       document.title = title || this.summary.title
     },
     async loadLatestState (chatRoomId: string): Promise<void> {

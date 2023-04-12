@@ -10,12 +10,13 @@ modal-base-template.has-background(
       i18n.is-title-2.c-title(tag='h2') Direct Messages
 
     .card.c-card
-      search(
-        ref='search'
-        :placeholder='L("Search...")'
+      users-selector(
         :label='L("Search")'
+        :usernames='selections'
         :autofocus='true'
-        v-model='searchText'
+        @change='onChangeKeyword'
+        @remove='onRemoveSelection'
+        @submit='onSubmit'
       )
 
       .c-member-count.has-text-1(
@@ -30,27 +31,19 @@ modal-base-template.has-background(
         :args='{searchTerm: `<strong>${searchText}</strong>`}'
       ) Sorry, we couldn't find anyone called "{searchTerm}"
 
-      i18n.c-member-count.has-text-1(
-        v-if='!searchText'
-        tag='div'
-        :args='{ ourNewContactsCount }'
-        data-test='memberCount'
-      ) {ourNewContactsCount} members
-
       .is-subtitle
         i18n(
           tag='h3'
-          :args='{  nbMembers: ourRecentConversations.length }'
+          :args='{  nbMembers: filteredRecents.length }'
         ) Recent Conversations ({nbMembers})
       transition-group(
-        v-if='ourRecentConversations'
         name='slide-list'
         data-test='recentConversations'
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName} in ourRecentConversations'
-          @click='openDirectMessage(username)'
+          v-for='{username, displayName} in filteredRecents'
+          @click='onAddSelection(username)'
           :key='username'
         )
           profile-card(:username='username' deactivated direction='top-left')
@@ -64,17 +57,16 @@ modal-base-template.has-background(
       .is-subtitle
         i18n(
           tag='h3'
-          :args='{  nbMembers: searchResult.length }'
+          :args='{  nbMembers: filteredOthers.length }'
         ) Others ({nbMembers})
       transition-group(
-        v-if='searchResult'
         name='slide-list'
         data-test='others'
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName} in searchResult'
-          @click='createNewDirectMessage(username)'
+          v-for='{username, displayName} in filteredOthers'
+          @click='onAddSelection(username)'
           :key='username'
         )
           profile-card(:username='username' deactivated direction='top-left')
@@ -87,40 +79,36 @@ modal-base-template.has-background(
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
 import { L, LTags } from '@common/common.js'
 import { mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import Search from '@components/Search.vue'
+import UsersSelector from '@components/UsersSelector.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import DMMixin from './DMMixin.js'
 import { filterByKeyword } from '@view-utils/filters.js'
 
 export default ({
   name: 'NewDirectMessageModal',
+  mixins: [
+    DMMixin
+  ],
   components: {
     ModalBaseTemplate,
-    Search,
+    UsersSelector,
     ProfileCard,
     AvatarUser
   },
   data () {
     return {
-      searchText: ''
+      searchText: '',
+      selections: []
     }
   },
   computed: {
     ...mapGetters([
-      'ourUsername',
       'userDisplayName',
-      'ourContacts',
-      'ourContactProfiles',
-      'ourPrivateDirectMessages',
-      'currentIdentityState',
-      'ourUnreadMessages',
-      'directMessageIDFromUsername'
+      'ourUnreadMessages'
     ]),
     ourNewDMContacts () {
       return this.ourContacts
@@ -135,14 +123,14 @@ export default ({
       return Object.keys(this.ourPrivateDirectMessages)
         .filter(username => !this.ourPrivateDirectMessages[username].hidden)
         .map(username => {
-          const chatRoomId = this.directMessageIDFromUsername(username)
+          const chatRoomId = this.getPrivateDMByUser(username)
           // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined
           // just after new parter made direct message with me
           // so the mailbox contract is updated, but chatroom contract is not synced yet and vuex state as well
-          const { since, mentions } = this.ourUnreadMessages[chatRoomId] || {}
+          const { readUntil, mentions } = this.ourUnreadMessages[chatRoomId] || {}
           const lastMessageDate = mentions && mentions.length
             ? mentions[mentions.length - 1].createdDate
-            : since?.createdDate
+            : readUntil?.createdDate
           return { username, lastMessageDate }
         })
         .sort((former, latter) => {
@@ -157,11 +145,16 @@ export default ({
         })
         .map(({ username }) => this.ourContactProfiles[username])
     },
-    searchResult () {
+    filteredRecents () {
+      return filterByKeyword(this.ourRecentConversations, this.searchText, ['username', 'displayName'])
+        .filter(profile => !this.selections.includes(profile.username))
+    },
+    filteredOthers () {
       return filterByKeyword(this.ourNewDMContacts, this.searchText, ['username', 'displayName'])
+        .filter(profile => !this.selections.includes(profile.username))
     },
     searchCount () {
-      return Object.keys(this.searchResult).length
+      return Object.keys(this.filteredOthers).length + Object.keys(this.filteredRecents).length
     },
     resultsCopy () {
       const args = { searchCount: `<strong>${this.searchCount}</strong>`, searchTerm: `<strong>${this.searchText}</strong>`, ...LTags('strong') }
@@ -173,34 +166,46 @@ export default ({
       const name = displayName || this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
-    createNewDirectMessage (username) {
-      if (!this.ourPrivateDirectMessages[username]) {
-        sbp('gi.actions/mailbox/createDirectMessage', {
-          contractID: this.currentIdentityState.attributes.mailbox,
-          data: {
-            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
-            usernames: [username]
-          }
-        })
+    openPrivateDM (username) {
+      const chatRoomId = this.getPrivateDMByUser(username)
+      if (!chatRoomId) { // Not created DM
+        this.createPrivateDM(username)
       } else if (this.ourPrivateDirectMessages[username].hidden) {
-        const chatRoomId = this.directMessageIDFromUsername(username)
-        sbp('gi.actions/mailbox/setDirectMessageVisibility', {
-          contractID: this.currentIdentityState.attributes.mailbox,
-          data: {
-            contractID: chatRoomId,
-            hidden: false
-          }
-        })
+        this.setDMVisibility(chatRoomId, false)
+        // TODO: need to redirect
+      } else if (this.ourPrivateDirectMessages[username]) {
+        this.redirect(chatRoomId)
       }
+
       this.closeModal()
     },
-    openDirectMessage (username) {
-      const chatRoomId = this.directMessageIDFromUsername(username)
-      this.$router.push({
-        name: 'GroupChatConversation',
-        params: { chatRoomId }
-      }).catch(logExceptNavigationDuplicated)
-      this.closeModal()
+    onChangeKeyword (keyword) {
+      this.searchText = keyword
+    },
+    onAddSelection (username) {
+      this.selections.push(username)
+    },
+    onRemoveSelection (username) {
+      this.selections = this.selections.filter(un => un !== username)
+    },
+    onSubmit () {
+      if (this.selections.length) {
+        if (this.selections.length === 1) {
+          this.openPrivateDM(this.selections[0])
+        } else {
+          const chatRoomId = this.getGroupDMByUsers(this.selections)
+          if (chatRoomId) {
+            this.redirect(chatRoomId)
+          } else {
+            this.createGroupDM(this.selections)
+          }
+        }
+      } else if (this.searchText) {
+        const profile = this.filteredRecents[0] || this.filteredOthers[0]
+        if (profile) {
+          this.openPrivateDM(profile.username)
+        }
+      }
     },
     closeModal () {
       this.$refs.modal.close()
