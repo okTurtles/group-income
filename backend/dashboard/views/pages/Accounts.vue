@@ -5,9 +5,7 @@ page-template
   section.c-create-instance-section
     form.c-forms(@submit.prevent='')
       .field
-        InfoCard.c-info-card(:heading='L("Note")')
-          | In order to create a new Application Instance, you’ll need a domain name. If you don’t already have one,
-          |  you can find an available one and register for a fee with a hosting website and then proceed to create your instance.
+        InfoCard.c-info-card(:heading='L("Note")') {{ L("In order to create a new Application Instance, you’ll need a domain name. If you don’t already have one, you can find an available one and register for a fee with a hosting website and then proceed to create your instance.") }}
 
       .field
         i18n.label(tag='label') Software / Application
@@ -58,7 +56,12 @@ page-template
         i18n.helper.c-helper The domain name (or subdomain) where you’ll host your instance. It cannot be changed later.
 
       fieldset.field
-        legend.label {{ L('Allow unencrypted data on contracts?') }}
+        legend.label
+          span {{ L('Allow unencrypted data on contracts?') }}
+          tooltip.c-radio-tooltip(
+            :content='L("If you don\'t want to moderate public data you should disable unencrypted contract data.")'
+            position='bottom-right'
+          )
 
         label.radio
           input.input(
@@ -76,10 +79,10 @@ page-template
             value='no'
             v-model='form.allowUnencryptedData'
           )
-          i18n Don’t allow unencrypted contracts
+          i18n Forbid unencrypted data
 
       .c-btn-container
-        i18n.is-outlined(tag='button' @click='onCancelClick') cancel
+        i18n.is-outlined(tag='button' @click='onCancelClick') Cancel
         i18n(tag='button' @click='onSaveClick' :disabled='$v.form.$invalid') Save
 </template>
 
@@ -89,6 +92,7 @@ import PageTemplate from './PageTemplate.vue'
 import StyledInput from '@forms/StyledInput.vue'
 import Dropdown from '@forms/Dropdown.vue'
 import InfoCard from '@components/InfoCard.vue'
+import Tooltip from '@components/Tooltip.vue'
 import { fakeApplicationOptions } from '@view-utils/dummy-data.js'
 import validationMixin from '@view-utils/validationMixin.js'
 import { required } from '@validators'
@@ -100,7 +104,8 @@ export default {
     PageTemplate,
     StyledInput,
     Dropdown,
-    InfoCard
+    InfoCard,
+    Tooltip
   },
   data () {
     return {
@@ -166,5 +171,9 @@ export default {
 
 .c-helper {
   padding: 0 0.25rem;
+}
+
+.c-radio-tooltip {
+  margin-left: 0.325rem;
 }
 </style>

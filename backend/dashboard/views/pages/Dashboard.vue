@@ -30,7 +30,7 @@ page-template
             span {{ humanDate(user.joined) }}
 
       .summary-list.is-outlined
-        i18n.summary-list-label Sapce usage
+        i18n.summary-list-label Space usage
 
         ul
           li.summary-list-item(v-for='(item, key) in ephemeral.spaceUsage' :key='key')

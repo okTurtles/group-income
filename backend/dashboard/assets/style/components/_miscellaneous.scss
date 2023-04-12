@@ -85,7 +85,7 @@
   font-size: $size_5;
   color: var(--tooltip-text-color);
   background-color: var(--tooltip-bg-color);
-  word-break: break-all;
+  word-break: break-word;
   pointer-events: none;
   user-select: none;
   opacity: 0;

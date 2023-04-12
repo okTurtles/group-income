@@ -38,7 +38,7 @@ import sbp from '@sbp/sbp'
 import PageTemplate from './PageTemplate.vue'
 import Dropdown from '@forms/Dropdown.vue'
 import L from '@common/translations.js'
-import { humanDate } from '@common/cdTime.js'
+import { humanDate } from '@common/cdTimeUtils.js'
 import { contractDummyData } from '@view-utils/dummy-data.js'
 import { OPEN_MODAL } from '@view-utils/events.js'
 

@@ -71,6 +71,10 @@ $colors_map: (
   info-card-content-color: (rgba(0, 0, 0, 0.5), #fff),
 
   // tooltip
+  tooltip-trigger-bg-color: (#f7f9fb, #b1e3ff),
+  tooltip-trigger-text-color: (#1c1c1c, #1c1c1c),
+  tooltip-trigger-border-color: (#1c1c1c, #b1e3ff),
+  tooltip-trigger-box-shadow_hover: (0 0 5px rgba(0, 0, 0, 0.35), 0 0 7px #b1e3ff),
   tooltip-bg-color: (rgba(28, 28, 28, 0.875), rgba(242, 244, 247, 0.925)),
   tooltip-text-color: (#fff, #1c1c1c),
 
