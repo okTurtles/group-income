@@ -2,7 +2,7 @@
 .c-chat-main(v-if='summary.title')
   emoticons
   .c-body
-    .c-body-loading(v-if='details.isLoading')
+    .c-body-loading(v-if='summary.isLoading')
       loading
         // TODO later - Design a cool skeleton loading
            this should be done only after knowing exactly how server gets each conversation data
@@ -12,7 +12,7 @@
       ref='conversation'
       data-test='conversationWrapper'
       @scroll='onChatScroll'
-      :class='{"c-invisible": !ephemeral.messagesInitiated}'
+      :class='{"c-invisiblee": !ephemeral.messagesInitiated}'
     )
 
       infinite-loading(
@@ -23,21 +23,21 @@
       )
         div(slot='no-more')
           conversation-greetings(
-            :members='details.numberOfParticipants'
-            :creator='summary.creator'
-            :type='summary.type'
-            :joined='summary.joined'
+            :members='summary.numberOfUsers'
+            :creator='summary.attributes.creator'
+            :type='summary.attributes.type'
+            :joined='summary.isJoined'
             :name='summary.title'
-            :description='summary.description'
+            :description='summary.attributes.description'
           )
         div(slot='no-results')
           conversation-greetings(
-            :members='details.numberOfParticipants'
-            :creator='summary.creator'
-            :type='summary.type'
-            :joined='summary.joined'
+            :members='summary.numberOfUsers'
+            :creator='summary.attributes.creator'
+            :type='summary.attributes.type'
+            :joined='summary.isJoined'
             :name='summary.title'
-            :description='summary.description'
+            :description='summary.attributes.description'
           )
 
       .c-divider.is-new(v-if='ephemeral.unreadFromBeginning')
@@ -80,12 +80,12 @@
           @add-emoticon='addEmoticon(message, $event)'
         )
 
-    .c-initializing(v-if='!ephemeral.messagesInitiated')
+    //- .c-initializing(v-if='!ephemeral.messagesInitiated')
 
   .c-footer
     send-area(
-      v-if='summary.joined'
-      :loading='details.isLoading'
+      v-if='summary.isJoined'
+      :loading='summary.isLoading'
       :replying-message='ephemeral.replyingMessage'
       :replying-to='ephemeral.replyingTo'
       :title='summary.title'
@@ -96,7 +96,7 @@
     )
     view-area(
       v-else
-      :joined='summary.joined'
+      :joined='summary.isJoined'
       :title='summary.title'
     )
 </template>
@@ -143,12 +143,8 @@ export default ({
   },
   props: {
     summary: {
-      type: Object, // { type: String, title: String, description: String, routerBack: String }
-      default () { return {} }
-    },
-    details: {
-      type: Object, // { isLoading: Bool, participants: Object }
-      default () { return {} }
+      type: Object,
+      required: true
     }
   },
   data () {
@@ -240,7 +236,7 @@ export default ({
       return this.currentUserAttr.username === from
     },
     who (message) {
-      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.details.participants[message.from]
+      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.summary.participants[message.from]
       return user?.displayName || user?.username || message.from
     },
     variant (message) {
@@ -262,7 +258,7 @@ export default ({
       if (from === MESSAGE_TYPES.NOTIFICATION || from === MESSAGE_TYPES.INTERACTIVE) {
         return this.currentUserAttr.picture
       }
-      return this.details.participants[from]?.picture
+      return this.summary.participants[from]?.picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
@@ -621,8 +617,8 @@ export default ({
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {
-        // NOTE: this infinite handler is being called once
-        // before the component state is initialized, which should be ignored
+        // NOTE: this infinite handler is being called once which should be ignored
+        // before the component state is initialized
         return
       }
       this.renderMoreMessages(!this.ephemeral.messagesInitiated).then(completed => {
@@ -660,7 +656,7 @@ export default ({
         this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
       }
 
-      if (!this.summary.joined) {
+      if (!this.summary.isJoined) {
         return
       }
 
@@ -737,13 +733,14 @@ export default ({
   },
   watch: {
     currentChatRoomId (to, from) {
+      this.ephemeral.messagesInitiated = false
       this.refreshContent(from, to)
     },
-    'summary.joined' (to, from) {
+    'summary.isJoined' (to, from) {
       if (to) {
         sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
           if (contractID === this.currentChatRoomId && isSyncing === false) {
-            this.setInitMessages()
+            // this.setInitMessages()
             this.setMessageEventListener({ force: true })
           }
         })

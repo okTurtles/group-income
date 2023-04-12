@@ -54,7 +54,6 @@ export const CHATROOM_MAX_ARCHIVE_ACTION_PAGES = 2 // 2 pages of actions
 
 // chatroom events
 export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'
-export const CHATROOM_DETAILS_UPDATED = 'chatroom-details-updated'
 export const MESSAGE_RECEIVE = 'message-receive'
 export const MESSAGE_SEND = 'message-send'
 

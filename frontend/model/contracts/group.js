@@ -1143,10 +1143,11 @@ sbp('chelonia/defineContract', {
         attributes: chatRoomAttributesType
       }),
       process ({ data, meta }, { state }) {
-        const { name, type, privacyLevel } = data.attributes
+        const { name, type, privacyLevel, description } = data.attributes
         Vue.set(state.chatRooms, data.chatRoomID, {
           creator: meta.username,
           name,
+          description,
           type,
           privacyLevel,
           deletedDate: null,
@@ -1217,10 +1218,16 @@ sbp('chelonia/defineContract', {
         name: string
       }),
       process ({ data, meta }, { state, getters }) {
-        Vue.set(state.chatRooms, data.chatRoomID, {
-          ...getters.getGroupChatRooms[data.chatRoomID],
-          name: data.name
-        })
+        Vue.set(state.chatRooms[data.chatRoomID], 'name', data.name)
+      }
+    },
+    'gi.contracts/group/updateChatRoomDescription': {
+      validate: objectOf({
+        chatRoomID: string,
+        description: string
+      }),
+      process ({ data, meta }, { state, getters }) {
+        Vue.set(state.chatRooms[data.chatRoomID], 'description', data.description)
       }
     },
     'gi.contracts/group/updateLastLoggedIn': {
