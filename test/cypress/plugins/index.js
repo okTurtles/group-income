@@ -22,8 +22,24 @@
 //   on('file:preprocessor', browserify(options))
 // }
 
-// From https://docs.cypress.io/api/plugins/browser-launch-api#Set-screen-size-when-running-headless
+// This flag is used to avoid running further test specs in case a spec failed.
+// Note that just returning a rejection from 'after:spec' would prevent the spec
+// video from being processed, so we have to do it in the next 'before:spec'
+// hook instead.
+let lastSpecFailed = false
+
 module.exports = (on, config) => {
+  on('after:spec', (spec, results) => {
+    if (results?.stats?.failures > 0) {
+      lastSpecFailed = true
+    }
+  })
+  on('before:spec', (spec) => {
+    if (lastSpecFailed) {
+      return Promise.reject(new Error('exiting Cypress because a spec failed.'))
+    }
+  })
+  // From https://docs.cypress.io/api/plugins/browser-launch-api#Set-screen-size-when-running-headless
   on('before:browser:launch', (browser, launchOptions) => {
     if (browser.name === 'chrome' && browser.isHeadless) {
       launchOptions.args.push('--window-size=1280,720')
