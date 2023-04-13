@@ -18,13 +18,13 @@ export default ({
     ]),
     nextDistributionDateShort () {
       const nextDisDate = this.dueDateForPeriod(this.currentPaymentPeriod)
-      const localeTimeString = humanDate(nextDisDate, {
+      const localeDateTimeStrings = humanDate(nextDisDate, {
+        month: 'short',
+        day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit',
-        hour12: false
-      }, false)
-      const localeDateString = humanDate(nextDisDate, { month: 'short', day: 'numeric' })
-      return `${localeTimeString} - ${localeDateString}`
+        minute: '2-digit'
+      }).split(', ')
+      return `${localeDateTimeStrings[1]} - ${localeDateTimeStrings[0]}`
     }
   }
 })
