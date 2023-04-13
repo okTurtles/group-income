@@ -30,7 +30,8 @@ export default (sbp('sbp/selectors/register', {
       const CSKs = encrypt(CEK, serializeKey(CSK, true))
       const CEKs = encrypt(CEK, serializeKey(CEK, true))
 
-      const rootState = sbp('state/vuex/state')
+      // TODO: REMOVE
+      // const rootState = sbp('state/vuex/state')
 
       const joinKey = params.options?.joinKey
 
@@ -53,7 +54,8 @@ export default (sbp('sbp/selectors/register', {
               type: 'csk',
               private: {
                 keyId: CEKid,
-                content: CSKs
+                content: CSKs,
+                shareable: true
               }
             }
           },
@@ -66,7 +68,8 @@ export default (sbp('sbp/selectors/register', {
               type: 'cek',
               private: {
                 keyId: CEKid,
-                content: CEKs
+                content: CEKs,
+                shareable: true
               }
             }
           },
@@ -139,8 +142,9 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('chelonia/contract/sync', contractID)
 
+      /* TODO: REMOVE
       const userID = rootState.loggedIn.identityContractID
-      await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID })
+      await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID }) */
 
       return chatroom
     } catch (e) {

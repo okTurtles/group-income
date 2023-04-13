@@ -23,7 +23,7 @@ import proposals from '@model/contracts/shared/voting/proposals.js'
 import { imageUpload } from '@utils/image.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
-import { encryptedAction } from './utils.js'
+import { encryptedAction, shareKeysWithSelf } from './utils.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
@@ -147,7 +147,8 @@ export default (sbp('sbp/selectors/register', {
               type: 'csk',
               private: {
                 keyId: CEKid,
-                content: CSKs
+                content: CSKs,
+                shareable: true
               }
             }
           },
@@ -160,7 +161,8 @@ export default (sbp('sbp/selectors/register', {
               type: 'cek',
               private: {
                 keyId: CEKid,
-                content: CEKs
+                content: CEKs,
+                shareable: true
               }
             }
           },
@@ -245,7 +247,10 @@ export default (sbp('sbp/selectors/register', {
       })
 
       const userID = rootState.loggedIn.identityContractID
-      await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID })
+      await sbp('gi.actions/identity/shareKeysWithSelf', {
+        ourContractID: userID,
+        theirContractID: contractID
+      })
 
       return message
     } catch (e) {
@@ -262,7 +267,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       sbp('okTurtles.data/set', 'JOINING_GROUP', true)
       // sync the group's contract state
-      await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: !params?.options?.skipInviteAccept }, ['chelonia/contract/sync', params.contractID])
+      /// / TODO POSSIBLY READD await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: !params?.options?.skipInviteAccept }, ['chelonia/contract/sync', params.contractID])
       // post acceptance event to the group contract, unless this is being called
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {
@@ -290,6 +295,10 @@ export default (sbp('sbp/selectors/register', {
         // TODO: Note for Ricardo, with the new approach, I assume
         //       this code below will be uncommented and/or modified
         /*
+
+      console.log([params.options?.skipInviteAccept, rootState[params.contractID].generalChatRoomId], 'XXXXXXXX CCCCC')
+
+      if (!params.options?.skipInviteAccept && rootState[params.contractID].generalChatRoomId) {
         // join the 'General' chatroom by default
         const generalChatRoomId = rootState[params.contractID].generalChatRoomId
         if (generalChatRoomId) {
@@ -305,7 +314,7 @@ export default (sbp('sbp/selectors/register', {
           })
         } else {
           alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
-        } */
+        }
 
         saveLoginState('joining', params.contractID)
       } else {
@@ -314,6 +323,9 @@ export default (sbp('sbp/selectors/register', {
          * if he tries to login in another device, he should skip to make any actions
          * but he should sync all the contracts he was syncing in the previous device
          */
+
+        console.log([params.options?.skipInviteAccept, rootState[params.contractID].generalChatRoomId], 'UUUUUUU IIIIIIIIIIII')
+
         const me = rootState.loggedIn.username
         const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
           .filter(cId => rootState[params.contractID].chatRooms?.[cId].users.includes(me))
@@ -357,6 +369,11 @@ export default (sbp('sbp/selectors/register', {
         prepublish: params.hooks?.prepublish,
         postpublish: null
       }
+    })
+
+    await sbp('gi.actions/group/shareKeysWithSelf', {
+      ourContractID: params.contractID,
+      theirContractID: message.contractID()
     })
 
     await sbp('chelonia/out/actionEncrypted', {
@@ -648,6 +665,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateLastLoggedIn', L('Failed to update "lastLoggedIn" in a group profile.')),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
+  ...shareKeysWithSelf('gi.actions/group/shareKeysWithSelf', 'gi.contracts/group'),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
   })

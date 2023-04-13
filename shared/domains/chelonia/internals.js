@@ -547,7 +547,10 @@ export default (sbp('sbp/selectors/register', {
         }
 
         // sign(originatingContractID + GIMessage.OP_KEY_REQUEST + contractID + HEAD)
-        verifySignature(signingKey.data, [originatingContractID, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD].map(encodeURIComponent).join('|'), data)
+        const signedInnerData = [originatingContractID, encryptionKeyId, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD]
+        signedInnerData.forEach(x => { if (x.includes('|')) { throw Error(`contains '|': ${x}`) } })
+
+        verifySignature(signingKey.data, signedInnerData.join('|'), data)
 
         const encryptionKey = originatingState._vm.authorizedKeys[encryptionKeyId]
 
@@ -555,10 +558,8 @@ export default (sbp('sbp/selectors/register', {
           throw new Error('Unable to find encryption key')
         }
 
-        // TODO: discuss with Greg how to do this
-        // const { keys, signingKeyId } = await sbp(`${contractName}/getShareableKeys`, contractID)
-        const signingKeyId = (((Object.values(Object(contractState._vm.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)
-        const keys = contractState._volatile?.keys
+        const signingKeyId = contractState._volatile?.keys && (((Object.values(Object(contractState._vm.authorizedKeys)): any): GIKey[]).find((k) => contractState._volatile.keys[((k: any): GIKey)?.id] && ((k: any): GIKey)?.permissions?.includes(GIMessage.OP_KEYSHARE))?.id: ?string)
+        const keys = contractState._volatile?.keys && Object.fromEntries(Object.entries(contractState._volatile?.keys).filter(([kId]) => contractState._vm.authorizedKeys[kId]?.meta?.private?.shareable))
 
         if (!signingKeyId || !keys || Object.keys(keys).length === 0) {
           console.info('respondToKeyRequests: no keys to share', { contractID, originatingContractID })
@@ -578,7 +579,8 @@ export default (sbp('sbp/selectors/register', {
               meta: {
                 private: {
                   keyId: encryptionKeyId,
-                  content: encrypt(encryptionKey.data, (key: any))
+                  content: encrypt(encryptionKey.data, (key: any)),
+                  shareable: true
                 }
               }
             }))

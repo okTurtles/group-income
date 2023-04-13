@@ -2,16 +2,15 @@
 
 import sbp from '@sbp/sbp'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, deriveKeyFromPassword, deserializeKey, serializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, deriveKeyFromPassword, serializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import { imageUpload } from '@utils/image.js'
 import { pickWhere, difference, uniq } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
-import { encryptedAction } from './utils.js'
+import { encryptedAction, shareKeysWithSelf } from './utils.js'
 import { handleFetchResult } from '../utils/misc.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
-import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
 
 function generatedLoginState () {
@@ -219,39 +218,6 @@ export default (sbp('sbp/selectors/register', {
     }
     return [userID, mailboxID]
   },
-  'gi.actions/identity/shareKeysWithSelf': async function ({ userID, contractID }) {
-    if (userID === contractID) {
-      return
-    }
-
-    const contractState = await sbp('chelonia/latestContractState', contractID)
-
-    if (contractState?._volatile?.keys) {
-      const state = await sbp('chelonia/latestContractState', userID)
-
-      const CEKid = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'cek')?.id: ?string)
-      const CSKid = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)
-      const CEK = deserializeKey(state?._volatile?.keys?.[CEKid])
-
-      await sbp('chelonia/out/keyShare', {
-        destinationContractID: userID,
-        destinationContractName: 'gi.contracts/identity',
-        data: {
-          contractID: contractID,
-          keys: Object.entries(contractState._volatile.keys).map(([keyId, key]: [string, mixed]) => ({
-            id: keyId,
-            meta: {
-              private: {
-                keyId: CEKid,
-                content: encrypt(CEK, (key: any))
-              }
-            }
-          }))
-        },
-        signingKeyId: CSKid
-      })
-    }
-  },
   'gi.actions/identity/signup': async function ({ username, email, password }, publishOptions) {
     try {
       const randomAvatar = sbp('gi.utils/avatar/create')
@@ -450,5 +416,6 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.')),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
-  ...encryptedAction('gi.contracts/identity/setLoginState', L('Failed to set login state.'))
+  ...encryptedAction('gi.contracts/identity/setLoginState', L('Failed to set login state.')),
+  ...shareKeysWithSelf('gi.actions/identity/shareKeysWithSelf', 'gi.contracts/identity')
 }): string[])

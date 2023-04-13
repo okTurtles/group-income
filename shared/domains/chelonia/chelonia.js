@@ -694,11 +694,13 @@ export default (sbp('sbp/selectors/register', {
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
     const outerKeyId = keyId(signingKey)
     const innerSigningKey = this.config.transientSecretKeys?.[innerSigningKeyId] || originatingState?._volatile?.keys?.[innerSigningKeyId]
+    const signedInnerData = [originatingContractID, encryptionKeyId, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD]
+    signedInnerData.forEach(x => { if (x.includes('|')) { throw Error(`contains '|': ${x}`) } })
     const payload = ({
       keyId: innerSigningKeyId,
       outerKeyId: outerKeyId,
       encryptionKeyId: encryptionKeyId,
-      data: sign(innerSigningKey, [originatingContractID, outerKeyId, GIMessage.OP_KEY_REQUEST, contractID, previousHEAD].map(encodeURIComponent).join('|'))
+      data: sign(innerSigningKey, signedInnerData.join('|'))
     }: GIOpKeyRequest)
     const msg = GIMessage.createV1_0({
       originatingContractID,

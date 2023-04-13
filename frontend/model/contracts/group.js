@@ -19,7 +19,6 @@ import { unadjustedDistribution, adjustedDistribution } from './shared/distribut
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
-import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
@@ -1155,7 +1154,8 @@ sbp('chelonia/defineContract', {
         if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
-      },
+      }/*,
+      TODO REMOVE
       async sideEffect ({ data, meta, contractID }, { state: Rstate }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
@@ -1187,7 +1187,7 @@ sbp('chelonia/defineContract', {
             postpublish: null
           }
         })
-      }
+      } */
     },
     'gi.contracts/group/deleteChatRoom': {
       validate: (data, { getters, meta }) => {

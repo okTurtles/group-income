@@ -585,7 +585,7 @@ const getters = {
   isPrivateChatRoom (state, getters) {
     return (chatRoomId: string) => {
       const contractID = chatRoomId || getters.currentChatRoomId
-      return state[contractID]?.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+      return state[contractID]?.attributes?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     }
   },
   isJoinedChatRoom (state, getters) {
