@@ -80,6 +80,10 @@ export default {
   border-color: $text_1;
 }
 
+.c-tooltip {
+  word-break: break-all;
+}
+
 .c-text-content:hover ~ .c-tooltip {
   opacity: 1;
 }

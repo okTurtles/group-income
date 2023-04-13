@@ -2,15 +2,15 @@
 page-template(:noHeader='true')
   .c-404-text
     i.icon-info.c-404-icon
-    i18n.is-title-1.c-404-heading(tag='h1') 404 Not found
-    i18n.has-text-color-1(tag='p') Could not find the resource or page
+    i18n.is-title-1.c-404-heading(tag='h1') Error loading page
+    i18n.has-text-color-1(tag='p') Either our servers are having problems or your connection is down.
 </template>
 
 <script>
 import PageTemplate from '../PageTemplate.vue'
 
 export default {
-  name: 'Error',
+  name: 'ErrorLoading',
   components: {
     PageTemplate
   }
@@ -22,10 +22,11 @@ export default {
 
 .c-404-text {
   position: absolute;
-  top: 50%;
+  top: 40%;
   left: 50%;
-  padding: 2rem 1rem;
+  padding: 2rem 1.25rem;
   transform: translate(-50%, -60%);
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;

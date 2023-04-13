@@ -6,7 +6,7 @@
 
     .c-app-title
       i.icon-moonstar.c-logo
-      h1.is-title-3(@click='$router.push({ path: "/main" })') Chelonia
+      i18n.is-title-3(tag='h1' @click='$router.push({ path: "/main" })') Chelonia
 
   .c-flex-block
     button.is-icon.c-theme-toggle(@click='toggleTheme')
