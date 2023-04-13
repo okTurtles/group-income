@@ -4,13 +4,13 @@ import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const initSummary = {
+  chatRoomId: undefined,
   title: '',
   picture: undefined,
   attributes: {},
-  isPrivate: undefined,
+  isPrivate: false,
   isGeneral: false,
   isJoined: false,
-  isLoading: undefined,
   users: {},
   numberOfUsers: 0,
   participants: []
@@ -39,6 +39,7 @@ const ChatMixin: Object = {
       'groupIdFromChatRoomId',
       'chatRoomUsers',
       'generalChatRoomId',
+      'getGroupChatRooms',
       'globalProfile',
       'isJoinedChatRoom',
       'isPrivateChatRoom',
@@ -52,8 +53,7 @@ const ChatMixin: Object = {
     ...mapState(['currentGroupId']),
     summary (): Object {
       if (!this.isJoinedChatRoom(this.currentChatRoomId)) {
-        const isJoined = sbp('chelonia/contract/isSyncing', this.currentChatRoomId)
-        return Object.assign(this.loadedSummary, { isJoined })
+        return Object.assign({}, this.loadedSummary)
       }
 
       let title = this.currentChatRoomState.attributes.name
@@ -68,13 +68,13 @@ const ChatMixin: Object = {
       }
 
       return {
+        chatRoomId: this.currentChatRoomId,
         title,
         picture,
         attributes: Object.assign({}, this.currentChatRoomState.attributes),
         isPrivate: this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
         isGeneral: this.generalChatRoomId === this.currentChatRoomId,
         isJoined: true,
-        isLoading: false,
         users: Object.fromEntries(Object.keys(this.currentChatRoomState.users).map(username => {
           const { displayName, picture, email } = this.globalProfile(username) || {}
           return [username, { ...this.currentChatRoomState.users[username], displayName, picture, email }]
@@ -85,15 +85,7 @@ const ChatMixin: Object = {
     }
   },
   methods: {
-    redirectChat (name: string, chatRoomId: string, shouldReload: boolean) {
-      // NOTE: Vue re-renders the components when the query changes
-      // Force to do it too again after each consecutive reload
-      const query = {
-        ...this.$route.query
-      }
-      const reload = Number(this.$route.query.reload)
-      if (shouldReload) query.reload = reload ? reload + 1 : 1
-
+    redirectChat (name: string, chatRoomId: string) {
       // Temporarily blocked the chatrooms which the user is not part of
       // Need to open it later and display messages just like Slack
       chatRoomId = chatRoomId || (this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.generalChatRoomId)
@@ -101,42 +93,32 @@ const ChatMixin: Object = {
       this.$router.push({
         name,
         params: { chatRoomId },
-        query
+        query: { ...this.$route.query }
       }).catch(logExceptNavigationDuplicated)
     },
     refreshTitle (title?: string): void {
       document.title = title || this.summary.title
     },
-    async loadLatestState (chatRoomId: string): Promise<void> {
-      // TODO: init summary from getGroupChatRooms
-      this.loadedSummary = { ...initSummary, isLoading: true }
-      let state
-      try {
-        // NOTE: it could be failed to get the latest contract state
-        //       when incorrect chatRoomId is passed [e.g. chatRoomId = '1234']
-        // TODO: need to customize to loadLatestState
-        //       in order to get the list of participants who contributed this chatroom contract
-        state = await sbp('chelonia/latestContractState', chatRoomId)
-      } catch (e) {
-        // TODO: need to redirect to currentChatRoomId or generalChatRoomId
-        return this.$router.push({ path: '/dashboard' }).catch(console.warn)
+    loadLatestState (chatRoomId: string): void {
+      const summarizedAttr = this.getGroupChatRooms[chatRoomId]
+      if (summarizedAttr) {
+        const { creator, name, description, type, privacyLevel, users } = summarizedAttr
+        this.loadedSummary = {
+          ...initSummary,
+          chatRoomId,
+          title: name,
+          attributes: { creator, name, description, type, privacyLevel },
+          users: Object.fromEntries(users.map(username => {
+            const { displayName, picture, email } = this.globalProfile(username) || {}
+            return [username, { displayName, picture, email }]
+          })),
+          numberOfUsers: users.length,
+          participants: this.ourContactProfiles // TODO: return only historical contributors
+        }
+        this.refreshTitle(name)
+      } else {
+        this.redirectChat('GroupChatConversation')
       }
-
-      this.loadedSummary = {
-        title: state.attributes.name,
-        attributes: Object.assign({}, state.attributes),
-        isPrivate: state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE,
-        isGeneral: false,
-        isJoined: false,
-        isLoading: false,
-        users: Object.fromEntries(Object.keys(state.users).map(username => {
-          const { displayName, picture, email } = this.globalProfile(username) || {}
-          return [username, { ...state.users[username], displayName, picture, email }]
-        })), // current members
-        numberOfUsers: Object.keys(state.users).length,
-        participants: this.ourContactProfiles // TODO: return only historical contributors
-      }
-      this.refreshTitle(state.attributes.name)
     },
     updateCurrentChatRoomID (chatRoomId: string) {
       if (chatRoomId !== this.currentChatRoomId) {

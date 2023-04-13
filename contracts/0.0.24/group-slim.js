@@ -1762,7 +1762,7 @@ ${this.getErrorInfo()}`;
           import_common3.Vue.set(state.chatRooms[data.chatRoomID], "name", data.name);
         }
       },
-      "gi.contracts/group/updateChatRoomDescription": {
+      "gi.contracts/group/changeChatRoomDescription": {
         validate: objectOf({
           chatRoomID: string,
           description: string

@@ -2,17 +2,11 @@
 .c-chat-main(v-if='summary.title')
   emoticons
   .c-body
-    .c-body-loading(v-if='summary.isLoading')
-      loading
-        // TODO later - Design a cool skeleton loading
-           this should be done only after knowing exactly how server gets each conversation data
-
     .c-body-conversation(
-      v-else
       ref='conversation'
       data-test='conversationWrapper'
       @scroll='onChatScroll'
-      :class='{"c-invisiblee": !ephemeral.messagesInitiated}'
+      :class='{"c-invisible": !ephemeral.messagesInitiated}'
     )
 
       infinite-loading(
@@ -77,12 +71,14 @@
           @add-emoticon='addEmoticon(message, $event)'
         )
 
-    //- .c-initializing(v-if='!ephemeral.messagesInitiated')
+    .c-initializing(v-if='!ephemeral.messagesInitiated')
+    //-   TODO later - Design a cool skeleton loading
+    //-   this should be done only after knowing exactly how server gets each conversation data
 
   .c-footer
     send-area(
       v-if='summary.isJoined'
-      :loading='summary.isLoading'
+      :loading='!ephemeral.messagesInitiated'
       :replying-message='ephemeral.replyingMessage'
       :replying-to='ephemeral.replyingTo'
       :title='summary.title'
@@ -176,7 +172,7 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
-    this.setMessageEventListener({ force: true })
+    this.setMessageEventListener({ to: this.currentChatRoomId })
     this.setInitMessages()
     window.addEventListener('resize', this.resizeEventHandler)
   },
@@ -520,13 +516,11 @@ export default ({
         }
       }
     },
-    setMessageEventListener ({ force = false, from, to }) {
+    setMessageEventListener ({ from, to }) {
       if (from) {
-        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)
+        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`)
       }
-      if (force) {
-        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)
-      } else if (this.isJoinedChatRoom(to)) {
+      if (this.isJoinedChatRoom(to)) {
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
@@ -713,14 +707,13 @@ export default ({
     },
     refreshContent: debounce(function (from, to) {
       // NOTE: using debounce we can skip unnecessary rendering contents
-      const force = sbp('chelonia/contract/isSyncing', to)
-      this.setMessageEventListener({ from, to, force })
+      this.setMessageEventListener({ from, to })
       this.archiveMessageState(from)
       this.setInitMessages()
     }, 250)
   },
   watch: {
-    currentChatRoomId (to, from) {
+    'currentChatRoomId' (to, from) {
       this.ephemeral.messagesInitiated = false
       this.refreshContent(from, to)
     },
@@ -728,8 +721,8 @@ export default ({
       if (to) {
         sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
           if (contractID === this.currentChatRoomId && isSyncing === false) {
-            // this.setInitMessages()
-            this.setMessageEventListener({ force: true })
+            this.setMessageEventListener({ from: contractID, to: contractID })
+            this.setInitMessages()
           }
         })
       }
