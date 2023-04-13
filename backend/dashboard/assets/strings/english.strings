@@ -3,9 +3,6 @@
 /* views/pages/Billing.vue */
 "$ USD per Credit" = "$ USD per Credit";
 
-/* views/pages/miscellaneous/Error.vue */
-"404 Not found" = "404 Not found";
-
 /* views/pages/Accounts.vue */
 "A display name is required." = "A display name is required.";
 
@@ -60,10 +57,13 @@
 /* controller/router.js, views/containers/navigation/Navigation.vue, views/pages/Billing.vue */
 "Billing" = "Billing";
 
+/* views/pages/Accounts.vue */
+"Cancel" = "Cancel";
+
 /* views/pages/Contracts.vue */
 "Chatroom" = "Chatroom";
 
-/* views/pages/miscellaneous/Landing.vue */
+/* views/containers/toolbar/Toolbar.vue, views/pages/miscellaneous/Landing.vue */
 "Chelonia" = "Chelonia";
 
 /* controller/router.js */
@@ -89,9 +89,6 @@
 
 /* views/components/TextToCopy.vue */
 "Copied to clipboard" = "Copied to clipboard";
-
-/* views/pages/miscellaneous/Error.vue */
-"Could not find the resource or page" = "Could not find the resource or page";
 
 /* views/pages/Accounts.vue */
 "Create a new instance" = "Create a new instance";
@@ -123,8 +120,8 @@
 /* views/pages/Accounts.vue */
 "Domain" = "Domain";
 
-/* views/pages/Accounts.vue */
-"Don’t allow unencrypted contracts" = "Don’t allow unencrypted contracts";
+/* views/pages/miscellaneous/ErrorLoading.vue */
+"Either our servers are having problems or your connection is down." = "Either our servers are having problems or your connection is down.";
 
 /* views/pages/Accounts.vue */
 "Enter display name" = "Enter display name";
@@ -134,6 +131,12 @@
 
 /* views/pages/Accounts.vue */
 "Enter instance name" = "Enter instance name";
+
+/* views/pages/miscellaneous/ErrorLoading.vue */
+"Error loading page" = "Error loading page";
+
+/* views/pages/Accounts.vue */
+"Forbid unencrypted data" = "Forbid unencrypted data";
 
 /* views/pages/Contracts.vue */
 "Group" = "Group";
@@ -145,7 +148,7 @@
 "Groups" = "Groups";
 
 /* views/pages/Billing.vue */
-"How many credits will you charge for Gigabite per month?" = "How many credits will you charge for Gigabite per month?";
+"How many credits will you charge for Gigabyte per month?" = "How many credits will you charge for Gigabyte per month?";
 
 /* views/pages/Billing.vue */
 "How many days until data is deleted after credits run out?" = "How many days until data is deleted after credits run out?";
@@ -155,6 +158,12 @@
 
 /* views/pages/Contracts.vue */
 "Identity" = "Identity";
+
+/* views/pages/Accounts.vue */
+"If you don't want to moderate public data you should disable unencrypted contract data." = "If you don't want to moderate public data you should disable unencrypted contract data.";
+
+/* views/pages/Accounts.vue */
+"In order to create a new Application Instance, you’ll need a domain name. If you don’t already have one, you can find an available one and register for a fee with a hosting website and then proceed to create your instance." = "In order to create a new Application Instance, you’ll need a domain name. If you don’t already have one, you can find an available one and register for a fee with a hosting website and then proceed to create your instance.";
 
 /* views/utils/dummy-data.js */
 "Inactive users" = "Inactive users";
@@ -183,9 +192,6 @@
 /* views/pages/Dashboard.vue */
 "Recent users" = "Recent users";
 
-/* views/pages/Dashboard.vue */
-"Sapce usage" = "Sapce usage";
-
 /* views/pages/Accounts.vue, views/pages/Billing.vue */
 "Save" = "Save";
 
@@ -200,6 +206,9 @@
 
 /* views/pages/Contracts.vue */
 "Space Used(%)" = "Space Used(%)";
+
+/* views/pages/Dashboard.vue */
+"Space usage" = "Space usage";
 
 /* views/pages/Users.vue */
 "Space used (%)" = "Space used (%)";
@@ -246,11 +255,14 @@
 /* views/pages/Billing.vue */
 "What payment methods you will accept from your users." = "What payment methods you will accept from your users.";
 
-/* views/pages/Accounts.vue, views/pages/Billing.vue */
+/* views/pages/Billing.vue */
 "cancel" = "cancel";
 
 /* views/pages/Contracts.vue */
 "contractID" = "contractID";
+
+/* views/components/Tooltip.vue */
+"i" = "i";
 
 /* views/pages/Contracts.vue, views/pages/Users.vue */
 "view" = "view";
