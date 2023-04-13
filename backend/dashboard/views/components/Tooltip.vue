@@ -77,7 +77,7 @@ button.c-tooltip-trigger-btn {
   padding-left: 1px;
   font-size: 0.8rem;
   font-weight: 600;
-  font-family: 'Inter';
+  font-family: "Inter";
   background-color: var(--tooltip-trigger-bg-color);
   border: 1px solid var(--tooltip-trigger-border-color);
   color: var(--tooltip-trigger-text-color);
