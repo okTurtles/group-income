@@ -221,6 +221,17 @@ export default ({
         this.next()
       }
     }
+  },
+  watch: {
+    isReasonStep (newValue, oldValue) {
+      if (newValue) {
+        // NOTE: nextTick is necessary because `reason` textarea is created
+        //       when isReasonStep becomes true since v-if is used
+        this.$nextTick(() => {
+          this.$refs.reason.focus()
+        })
+      }
+    }
   }
 }: Object)
 </script>

@@ -5,12 +5,12 @@ form(data-test='login' @submit.prevent='')
     input.input(
       :class='{error: $v.form.username.$error}'
       name='username'
+      ref='username'
       v-model='form.username'
       @input='debounceField("username")'
       @blur='updateField("username")'
       data-test='loginName'
       v-error:username='{ attrs: { "data-test": "badUsername" } }'
-      autofocus
     )
 
   password-form(:label='L("Password")' name='password' :$v='$v')
@@ -66,8 +66,11 @@ export default ({
       }
     }
   },
-  inserted () {
-    this.$refs.username.focus()
+  mounted () {
+    // NOTE: nextTick is needed because debounceField is called once after the form is mounted
+    this.$nextTick(() => {
+      this.$refs.username.focus()
+    })
   },
   methods: {
     async login () {
