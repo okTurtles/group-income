@@ -9520,10 +9520,9 @@ ${this.getErrorInfo()}`;
     };
   }
   function emitMessageEvent({ contractID, hash: hash2 }) {
-    if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
-      return;
+    if (!(0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+      (0, import_sbp4.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash: hash2 });
     }
-    (0, import_sbp4.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash: hash2 });
   }
   function setReadUntilWhileJoining({ contractID, hash: hash2, createdDate }) {
     if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
@@ -9664,6 +9663,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ data, contractID, hash: hash2, meta }, { state }) {
           emitMessageEvent({ contractID, hash: hash2 });
+          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
           const rootState = (0, import_sbp4.default)("state/vuex/state");
           if (data.username === rootState.loggedIn.username) {
             const { type, privacyLevel } = state.attributes;
@@ -9675,7 +9675,6 @@ ${this.getErrorInfo()}`;
               });
             }
           }
-          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/rename": {
@@ -9692,8 +9691,8 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         sideEffect({ contractID, hash: hash2, meta }) {
-          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
           emitMessageEvent({ contractID, hash: hash2 });
+          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/changeDescription": {
@@ -9710,8 +9709,8 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         sideEffect({ contractID, hash: hash2, meta }) {
-          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
           emitMessageEvent({ contractID, hash: hash2 });
+          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/leave": {
@@ -9747,9 +9746,10 @@ ${this.getErrorInfo()}`;
               return;
             }
             leaveChatRoom({ contractID });
+          } else {
+            emitMessageEvent({ contractID, hash: hash2 });
+            setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
           }
-          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
-          emitMessageEvent({ contractID, hash: hash2 });
         }
       },
       "gi.contracts/chatroom/delete": {
@@ -9787,6 +9787,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash: hash2, id, meta, data }, { state, getters }) {
           emitMessageEvent({ contractID, hash: hash2 });
+          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
           const rootState = (0, import_sbp4.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (me === meta.username) {
@@ -9805,7 +9806,6 @@ ${this.getErrorInfo()}`;
             username: meta.username,
             chatRoomName: getters.chatRoomAttributes.name
           });
-          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/editMessage": {
@@ -9828,8 +9828,8 @@ ${this.getErrorInfo()}`;
           }
         },
         sideEffect({ contractID, hash: hash2, meta, data }, { getters }) {
-          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
           emitMessageEvent({ contractID, hash: hash2 });
+          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
           const rootState = (0, import_sbp4.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (me === meta.username) {
@@ -9900,7 +9900,6 @@ ${this.getErrorInfo()}`;
               messageHash: data.hash
             });
           }
-          emitMessageEvent({ contractID, hash: hash2 });
         }
       },
       "gi.contracts/chatroom/makeEmotion": {

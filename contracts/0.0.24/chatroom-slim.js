@@ -424,10 +424,9 @@ ${this.getErrorInfo()}`;
     };
   }
   function emitMessageEvent({ contractID, hash }) {
-    if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
-      return;
+    if (!(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
+      (0, import_sbp3.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
     }
-    (0, import_sbp3.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
   }
   function setReadUntilWhileJoining({ contractID, hash, createdDate }) {
     if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
@@ -568,6 +567,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ data, contractID, hash, meta }, { state }) {
           emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           if (data.username === rootState.loggedIn.username) {
             const { type, privacyLevel } = state.attributes;
@@ -579,7 +579,6 @@ ${this.getErrorInfo()}`;
               });
             }
           }
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/rename": {
@@ -596,8 +595,8 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         sideEffect({ contractID, hash, meta }) {
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/changeDescription": {
@@ -614,8 +613,8 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         sideEffect({ contractID, hash, meta }) {
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/leave": {
@@ -651,9 +650,10 @@ ${this.getErrorInfo()}`;
               return;
             }
             leaveChatRoom({ contractID });
+          } else {
+            emitMessageEvent({ contractID, hash });
+            setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           }
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
-          emitMessageEvent({ contractID, hash });
         }
       },
       "gi.contracts/chatroom/delete": {
@@ -691,6 +691,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, id, meta, data }, { state, getters }) {
           emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (me === meta.username) {
@@ -709,7 +710,6 @@ ${this.getErrorInfo()}`;
             username: meta.username,
             chatRoomName: getters.chatRoomAttributes.name
           });
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/editMessage": {
@@ -732,8 +732,8 @@ ${this.getErrorInfo()}`;
           }
         },
         sideEffect({ contractID, hash, meta, data }, { getters }) {
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (me === meta.username) {
@@ -804,7 +804,6 @@ ${this.getErrorInfo()}`;
               messageHash: data.hash
             });
           }
-          emitMessageEvent({ contractID, hash });
         }
       },
       "gi.contracts/chatroom/makeEmotion": {
