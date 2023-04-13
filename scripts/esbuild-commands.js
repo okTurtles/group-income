@@ -36,6 +36,8 @@ const createEsbuildTask = (esbuildOptions = {}, otherOptions = {}) => {
         if (!fileEventName || !filePath) {
           throw new Error('Arguments `fileEventName` and `filePath` must be provided when rerunning this task.')
         }
+        // Below line used to be just `await state.result.rebuild()` but changed like this as a bug-fix for Gruntfile.dashboard.js
+        // where execution of rebuild() in response to changes in '.js' files doesn't lead to browser UI updates.
         state.result = await state.result.rebuild()
       }
       if (postoperation) {
