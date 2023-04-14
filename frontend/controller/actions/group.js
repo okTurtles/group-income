@@ -262,7 +262,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       sbp('okTurtles.data/set', 'JOINING_GROUP', true)
       // sync the group's contract state
-      await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: !params?.options?.skipInviteAccept }, ['chelonia/contract/sync', params.contractID])
+      await sbp('chelonia/withEnv', { skipActionProcessing: !params?.options?.skipInviteAccept }, ['chelonia/contract/sync', params.contractID])
       // post acceptance event to the group contract, unless this is being called
       // by the loginState synchronization via the identity contract
       if (!params.options?.skipInviteAccept) {

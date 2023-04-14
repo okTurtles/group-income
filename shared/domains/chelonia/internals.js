@@ -131,6 +131,14 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
+  'chelonia/private/withEnv': function (env: Object, sbpInvocation: Array<*>) {
+    const savedEnv = this.env
+    try {
+      return sbp(...sbpInvocation)
+    } finally {
+      this.env = savedEnv
+    }
+  },
   'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 3 } = {}, signatureFn?: Function) {
     const contractID = entry.contractID()
     let attempt = 1
@@ -299,9 +307,8 @@ export default (sbp('sbp/selectors/register', {
                 ...sharedKeys
               }
             }).then(() =>
-              resolve(sbp('chelonia/withEnv', v.contractID, {
-                ...env
-              }, [
+              // WARNING! THIS MIGHT DEADLOCK!!!
+              resolve(sbp('chelonia/withEnv', env, [
                 'chelonia/private/in/syncContract', v.contractID
               ]))
             ).catch(reject)
@@ -432,7 +439,7 @@ export default (sbp('sbp/selectors/register', {
       // to join a group, that message cannot be signed by the group because the secret key is only known
       // to group members. Instead, it is signed with the keys of the person joining.
       if (!signingKey && opT !== GIMessage.OP_CONTRACT && message.originatingContractID() !== message.contractID()) {
-        const originatingContractState = await sbp('chelonia/withEnv', message.originatingContractID(), { skipActionProcessing: true }, [
+        const originatingContractState = await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
           'chelonia/latestContractState', message.originatingContractID()
         ])
 
@@ -529,7 +536,7 @@ export default (sbp('sbp/selectors/register', {
 
       // 1. Sync (originating) identity contract
 
-      const originatingState = await sbp('chelonia/withEnv', originatingContractID, { skipActionProcessing: true }, [
+      const originatingState = await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
         'chelonia/latestContractState', originatingContractID
       ])
 
