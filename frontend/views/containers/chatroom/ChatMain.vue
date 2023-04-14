@@ -81,7 +81,6 @@
       :loading='!ephemeral.messagesInitiated'
       :replying-message='ephemeral.replyingMessage'
       :replying-to='ephemeral.replyingTo'
-      :title='summary.title'
       :scrolledUp='isScrolledUp'
       @send='handleSendMessage'
       @jump-to-latest='updateScroll'
@@ -150,7 +149,7 @@ export default ({
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
         infiniteLoading: null,
-        messagesInitiated: false,
+        messagesInitiated: undefined,
         replyingMessage: null,
         replyingMessageHash: null,
         replyingTo: null
@@ -172,8 +171,10 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
-    this.setMessageEventListener({ to: this.currentChatRoomId })
-    this.setInitMessages()
+    if (this.currentChatRoomId) {
+      this.setMessageEventListener({ to: this.currentChatRoomId })
+      this.setInitMessages()
+    }
     window.addEventListener('resize', this.resizeEventHandler)
   },
   beforeDestroy () {
@@ -602,7 +603,7 @@ export default ({
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {
         // NOTE: this infinite handler is being called once which should be ignored
-        // before the component state is initialized
+        // before calling the setInitMessages function
         return
       }
       this.renderMoreMessages(!this.ephemeral.messagesInitiated).then(completed => {
