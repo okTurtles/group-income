@@ -6,17 +6,17 @@ import '@sbp/okturtles.eventqueue'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
 
-const headPrefix = 'head:'
+const headPrefix = 'head='
 
 // Helper functions to avoid bad key-value pairs.
 const validate = (key: string, value: Buffer | string): boolean => {
-  if (key.startsWith('blob:')) {
+  if (key.startsWith('blob=')) {
     return Buffer.isBuffer(value)
   }
   return typeof value === 'string'
 }
 const reject = (key: string): Promise<Error> => {
-  const type = key.startsWith('blob:') ? 'buffer' : 'string'
+  const type = key.startsWith('blob=') ? 'buffer' : 'string'
   return Promise.reject(new Error(`expected a ${type}`))
 }
 

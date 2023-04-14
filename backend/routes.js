@@ -176,7 +176,7 @@ route.POST('/file', {
       console.error(`hash(${hash}) != ourHash(${ourHash})`)
       return Boom.badRequest('bad hash!')
     }
-    await sbp('chelonia/db/set', `blob:${hash}`, data)
+    await sbp('chelonia/db/set', `blob=${hash}`, data)
     return '/file/' + hash
   } catch (err) {
     return logger(err)
@@ -194,7 +194,7 @@ route.GET('/file/{hash}', {
 }, async function (request, h) {
   const { hash } = request.params
   console.debug(`GET /file/${hash}`)
-  const blob = await sbp('chelonia/db/get', `blob:${hash}`)
+  const blob = await sbp('chelonia/db/get', `blob=${hash}`)
   if (!blob) {
     return Boom.notFound()
   }

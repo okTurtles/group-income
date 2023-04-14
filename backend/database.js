@@ -166,7 +166,7 @@ export function checkKey (key: string): void {
 }
 
 function namespaceKey (name: string): string {
-  return 'name:' + name
+  return 'name=' + name
 }
 
 export default async () => {

@@ -18,6 +18,9 @@ const options = {
 names.forEach((name) => {
   const lowerCaseName = name.toLowerCase()
   const {
+    clear,
+    exportToJSON,
+    importFromJSON,
     initStorage,
     readData,
     writeData
@@ -26,6 +29,9 @@ names.forEach((name) => {
   describe(`Test ${name} storage API`, function () {
     before('storage backend initialization', async function () {
       await initStorage(options[lowerCaseName])
+    })
+    beforeEach('storage clear', async function () {
+      await clear()
     })
 
     it('should throw if the key is invalid', async function () {
@@ -63,7 +69,7 @@ names.forEach((name) => {
 
     it('Should return the buffer that has been written', async function () {
       const buffer = Buffer.from('contents')
-      const key = 'blob:key'
+      const key = 'blob=key'
       await writeData(key, buffer)
 
       const actual = await readData(key)
@@ -75,7 +81,7 @@ names.forEach((name) => {
     it('Should return the new buffer after an update', async function () {
       const oldBuffer = Buffer.from('someValue')
       const newBuffer = Buffer.from('someOtherValue')
-      const key = 'blob:key'
+      const key = 'blob=key'
 
       await writeData(key, oldBuffer)
       await writeData(key, newBuffer)
@@ -94,6 +100,18 @@ names.forEach((name) => {
       const expected = 'someOtherValue'
 
       assert.equal(actual, expected)
+    })
+
+    it('Should roundtrip entries in bulk given a JSON object', async function () {
+      const json = Object.fromEntries(
+        [...new Array(100).keys()].map(key => [key, String(Math.random())])
+      )
+      await importFromJSON(json)
+
+      const actual = await exportToJSON()
+      const expected = json
+
+      assert.deepStrictEqual(actual, expected)
     })
 
     after('cleanup', async function () {

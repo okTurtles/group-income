@@ -10,6 +10,18 @@ let db: any = null
 let readStatement: any = null
 let writeStatement: any = null
 
+const run = (sql, args) => {
+  return new Promise((resolve, reject) => {
+    db.run(sql, args, (err) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve()
+      }
+    })
+  })
+}
+
 export async function initStorage (options: Object = {}): Promise<void> {
   const { dirname, filename } = options
   const dataFolder = resolve(dirname)
@@ -23,19 +35,48 @@ export async function initStorage (options: Object = {}): Promise<void> {
     db = new sqlite3.Database(join(dataFolder, filename), (err) => {
       if (err) {
         reject(err)
-      }
-    })
-    db.run('CREATE TABLE IF NOT EXISTS Data(key TEXT UNIQUE NOT NULL, value TEXT NOT NULL)', [], (err) => {
-      if (err) {
-        reject(err)
       } else {
-        console.log('Connected to the %s SQLite database.', filename)
         resolve()
       }
     })
   })
+  await run('CREATE TABLE IF NOT EXISTS Data(key TEXT UNIQUE NOT NULL, value TEXT NOT NULL)')
+  console.log('Connected to the %s SQLite database.', filename)
   readStatement = db.prepare('SELECT value FROM Data WHERE key = ?')
   writeStatement = db.prepare('REPLACE INTO Data(key, value) VALUES(?, ?)')
+}
+
+// Useful in test hooks.
+export function clear (): Promise<void> {
+  return run('DELETE FROM Data')
+}
+
+export function exportToJSON (): Promise<Object> {
+  return new Promise((resolve, reject) => {
+    db.all('SELECT key, value FROM Data', [], (err, rows) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(Object.fromEntries(rows.map(row => ([row.key, row.value]))))
+      }
+    })
+  })
+}
+
+export function importFromJSON (json: Object): Promise<void> {
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      db.run('BEGIN')
+      Object.keys(json).forEach(key => writeData(key, json[key]))
+      db.run('COMMIT', [], (err) => {
+        if (err) {
+          reject(err)
+        } else {
+          resolve()
+        }
+      })
+    })
+  })
 }
 
 export function readData (key: string): Promise<Buffer | string | void> {
