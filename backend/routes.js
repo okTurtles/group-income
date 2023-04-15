@@ -177,7 +177,7 @@ route.POST('/file', {
       return Boom.badRequest('bad hash!')
     }
     await sbp('chelonia/db/set', `blob=${hash}`, data)
-    return '/file/' + hash
+    return '/file/blob=' + hash
   } catch (err) {
     return logger(err)
   }
@@ -185,41 +185,21 @@ route.POST('/file', {
 
 // Serve data from Chelonia DB.
 // Note that a `Last-Modified` header isn't included in the response.
-route.GET('/file/{hash}', {
+route.GET('/file/{key}', {
   cache: {
     // Do not set other cache options here, to make sure the 'otherwise' option
     // will be used so that the 'immutable' directive gets included.
     otherwise: 'public,max-age=31536000,immutable'
   }
 }, async function (request, h) {
-  const { hash } = request.params
-  console.debug(`GET /file/${hash}`)
-  const blob = await sbp('chelonia/db/get', `blob=${hash}`)
-  if (!blob) {
+  const { key } = request.params
+  const hash = key.slice(key.indexOf('=') + 1)
+  console.debug(`GET /file/${key}`)
+  const blobOrString = await sbp('chelonia/db/get', key)
+  if (!blobOrString) {
     return Boom.notFound()
   }
-  return h.response(blob).etag(hash)
-})
-
-// Used to serve contract source files and contract manifests.
-// These files are stored in the file system rather than the Chelonia db,
-// therefore `GET /file` could not be used since a different handler was needed.
-// This route is very similar to `GET /assets`, but for now a separate route must be used.
-route.GET('/contract/{hash}', {
-  cache: {
-    // Do not set other cache options here, to make sure the 'otherwise' option
-    // will be used so that the 'immutable' directive gets included.
-    otherwise: 'public,max-age=31536000,immutable'
-  },
-  files: {
-    relativeTo: path.resolve('data')
-  }
-}, function (request, h) {
-  const { hash } = request.params
-  console.debug(`GET /contract/${hash}`)
-  // Reusing the given `hash` parameter to set the ETag should be faster than
-  // letting Hapi hash the file to compute an ETag itself.
-  return h.file(hash, { etagMethod: false }).etag(hash)
+  return h.response(blobOrString).etag(hash)
 })
 
 // SPA routes

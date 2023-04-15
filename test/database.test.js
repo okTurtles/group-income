@@ -99,7 +99,7 @@ names.forEach((name) => {
       const actual = await readData('someKey')
       const expected = 'someOtherValue'
 
-      assert.equal(actual, expected)
+      assert.strictEqual(actual, expected)
     })
 
     it('Should roundtrip entries in bulk given a JSON object', async function () {

@@ -4,6 +4,7 @@ import sbp from '@sbp/sbp'
 import { strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
 import fs from 'fs'
+import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import '@sbp/okturtles.data'
 import '~/shared/domains/chelonia/db.js'
@@ -201,5 +202,13 @@ export default async () => {
       }
     })
     sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
+  } else {
+    // Prelaod contract source files and contract manifests into Chelonia DB.
+    await readdir(dataFolder).then(filenames => Promise.all(
+      filenames.map(
+        filename => readFile(path.join(dataFolder, filename), 'utf8')
+          .then(value => sbp('chelonia/db/set', '=' + filename, value))
+      )
+    ).then(() => console.log(`Preloaded ${filenames.length} entries`)))
   }
 }

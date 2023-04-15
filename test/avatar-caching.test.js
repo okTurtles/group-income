@@ -8,19 +8,20 @@ const { readFile } = require('node:fs/promises')
 describe('avatar file serving', function () {
   const apiURL = process.env.API_URL
   const hash = '21XWnNX5exusmJoJNWNNqjhWPqxGURryWbkUhYVsGT5NFtSGKs'
+  let retPath = ''
 
   before('manually upload a test avatar to the file database', async () => {
     const fd = new FormData()
     fd.append('data', new Blob([await readFile(`./test/data/${hash}`)]))
     fd.append('hash', hash)
-    await fetch(`${apiURL}/file`, {
+    retPath = await fetch(`${apiURL}/file`, {
       method: 'POST',
       body: fd
-    })
+    }).then(r => r.text())
   })
 
   it('Should serve our test avatar with correct headers', async function () {
-    const { headers } = await fetch(`${apiURL}/file/${hash}`)
+    const { headers } = await fetch(`${apiURL}${retPath}`)
 
     assert.match(headers.get('cache-control'), /immutable/)
     assert.doesNotMatch(headers.get('cache-control'), /no-cache/)
