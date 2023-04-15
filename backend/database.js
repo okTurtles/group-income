@@ -202,13 +202,35 @@ export default async () => {
       }
     })
     sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
-  } else {
-    // Prelaod contract source files and contract manifests into Chelonia DB.
-    await readdir(dataFolder).then(filenames => Promise.all(
-      filenames.map(
-        filename => readFile(path.join(dataFolder, filename), 'utf8')
-          .then(value => sbp('chelonia/db/set', '=' + filename, value))
-      )
-    ).then(() => console.log(`Preloaded ${filenames.length} entries`)))
+  }
+  // TODO: Update this to only run when persistence is disabled when `¢hel deploy` can target SQLite.
+  if (persistence !== 'fs' || options.fs.dirname !== './data') {
+    const HASH_LENGTH = 50
+    // Preload contract source files and contract manifests into Chelonia DB.
+    // Note: the data folder may contain other files if the `fs` persistence mode
+    // has been used before. We won't load them here; that's the job of `chel migrate`.
+    // Note: our target files are currently deployed with unprefixed hashes as file names.
+    // We can take advantage of this to recognize them more easily.
+    // TODO: Update this code when `¢hel deploy` no longer generates unprefixed keys.
+    const keys = (await readdir(dataFolder))
+      // Skip some irrelevant files.
+      .filter(k => k.length === HASH_LENGTH)
+    // Use `Promise.all` to process files concurrently, not sequentially.
+    const newKeys = await Promise.all(
+      // Map every remaining key to a promise.
+      // The promise will resolve to the key if it was added to the DB,
+      // so that we can count how many entries have been added.
+      keys.map(async key => {
+        // Skip keys which are already in the DB.
+        if (!await sbp('chelonia/db/get', key)) {
+          const value = await readFile(path.join(dataFolder, key), 'utf8')
+          // Skip contract log entries.
+          if (!value.startsWith('{"message":')) {
+            return sbp('chelonia/db/set', key, value).then(() => key)
+          }
+        }
+      })
+    ).then(results => results.filter(Boolean))
+    newKeys.length && console.log(`[chelonia.db] Preloaded ${newKeys.length} new entries`)
   }
 }

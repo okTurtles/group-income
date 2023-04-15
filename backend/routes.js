@@ -193,8 +193,9 @@ route.GET('/file/{key}', {
   }
 }, async function (request, h) {
   const { key } = request.params
-  const hash = key.slice(key.indexOf('=') + 1)
   console.debug(`GET /file/${key}`)
+  // TODO: Simplify this when `¢hel deploy` no longer generates unprefixed keys.
+  const hash = key.includes('=') ? key.slice(key.indexOf('=') + 1) : key
   const blobOrString = await sbp('chelonia/db/get', key)
   if (!blobOrString) {
     return Boom.notFound()
