@@ -18,7 +18,6 @@ export default ({
     ]),
     nextDistributionDateShort () {
       const nextDisDate = this.dueDateForPeriod(this.currentPaymentPeriod)
-
       return humanDate(nextDisDate, {
         month: 'short',
         day: 'numeric',
