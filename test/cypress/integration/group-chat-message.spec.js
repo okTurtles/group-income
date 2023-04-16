@@ -124,6 +124,7 @@ describe('Sending messages and Create DMs ', () => {
       cy.giLogout()
     })
 
+<<<<<<< HEAD
     it(`user2 joins ${groupName} group`, () => {
       cy.giAcceptGroupInvite(invitationLinkAnyone, {
         username: user2,
@@ -133,6 +134,16 @@ describe('Sending messages and Create DMs ', () => {
       })
       me = user2
       cy.giRedirectToGroupChat()
+=======
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get(`.c-message:nth-child(${nth})`).should('have.class', 'c-disappeared')
+    })
+
+    cy.getByDT('conversationWrapper').within(() => {
+      cy.get('.c-message').should('have.length', countAfter)
+    })
+  }
+>>>>>>> master
 
       cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
       cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)

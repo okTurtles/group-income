@@ -23,8 +23,13 @@
 
         hr.tab-nav-separator
 
-      .tab-nav-list.is-subtitle Version 1.6.0
-      .tab-nav-list.tab-nav-ack.is-subtitle Acknowledgements
+      .tab-nav-list.is-subtitle(
+        v-for='(tabItem, index) in subNav'
+        :key='"sub-" + index'
+        :class='{ "sublink": tabItem.url }'
+        :data-test='`link-${tabItem.url}`'
+        @click='tabClick(tabItem)'
+      ) {{ tabItem.title }}
 
     section.tab-section
       tab-item
@@ -35,6 +40,8 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import TabItem from '@components/tabs/TabItem.vue'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { L } from '@common/common.js'
+import { contractsVersion } from '~/package.json'
 
 export default ({
   name: 'TabWrapper',
@@ -51,7 +58,15 @@ export default ({
       activeComponent: null,
       title: '',
       transitionName: '',
-      open: true
+      open: true,
+      subNav: [{
+        title: `${L('Version')} ${contractsVersion}`
+      }, {
+        title: L('Acknowledgements'),
+        url: 'acknowledgements',
+        component: 'Acknowledgements',
+        index: 11 // NOTE: index should not be duplicated with the link of tabNav
+      }]
     }
   },
   computed: {
@@ -89,6 +104,9 @@ export default ({
      * Tab click listener change active tab.
      */
     tabClick (tabItem) {
+      if (!tabItem.url) {
+        return
+      }
       this.title = tabItem.title
       this.activeComponent = tabItem.component
       this.open = false
@@ -108,14 +126,20 @@ export default ({
   mounted () {
     const defaultTab = this.$route.query.section || this.defaultTab
     if (defaultTab) {
+      const switchTabIfMatch = (link) => {
+        if (defaultTab === link.url) {
+          this.activeTab = link.index
+          this.title = link.title
+          this.activeComponent = link.component
+        }
+      }
       this.tabNav.forEach(item => {
         item.links.forEach(link => {
-          if (defaultTab === link.url) {
-            this.activeTab = link.index
-            this.title = link.title
-            this.activeComponent = link.component
-          }
+          switchTabIfMatch(link)
         })
+      })
+      this.subNav.forEach(navItem => {
+        switchTabIfMatch(navItem)
       })
     }
   },
@@ -234,15 +258,7 @@ export default ({
   padding-top: 1rem;
   padding-left: 1rem;
   text-transform: unset;
-}
-
-.tab-nav-ack {
-  cursor: pointer;
-  text-decoration: underline;
-
-  &:hover {
-    color: $text_0;
-  }
+  font-family: "Lato";
 }
 
 .tab-nav-header + .tab-nav-list {

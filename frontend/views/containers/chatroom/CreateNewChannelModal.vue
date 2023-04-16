@@ -8,6 +8,7 @@
         i18n.label.c-label-name Name
         .c-max-count(v-if='form.name') {{50 - form.name.length}}
         input.input(
+          ref='name'
           type='text'
           name='name'
           maxlength='50'
@@ -73,7 +74,7 @@
       banner-scoped(ref='formMsg')
 
       .buttons
-        i18n.is-outlined(tag='button' @click='close') Cancel
+        i18n.button.is-outlined(@click='close') Cancel
         i18n.is-success(
           tag='button'
           data-test='createChannelSubmit'
@@ -163,6 +164,9 @@ export default ({
     // as soon as a new channel is created
     this.form.existingNames = Object.keys(this.getGroupChatRooms)
       .map(cId => this.getGroupChatRooms[cId].name)
+  },
+  mounted () {
+    this.$refs.name.focus()
   },
   methods: {
     close () {

@@ -96,6 +96,7 @@ import ProfileCard from '@components/ProfileCard.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import { CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { filterByKeyword } from '@view-utils/filters.js'
 
 export default ({
   name: 'NewDirectMessageModal',
@@ -157,13 +158,7 @@ export default ({
         .map(({ username }) => this.ourContactProfiles[username])
     },
     searchResult () {
-      if (!this.searchText) { return this.ourNewDMContacts }
-
-      const searchTextCaps = this.searchText.toUpperCase()
-      const isInList = (n) => n.toUpperCase().indexOf(searchTextCaps) > -1
-      return this.ourNewDMContacts.filter(({ username, displayName }) =>
-        (!searchTextCaps || isInList(username) || isInList(displayName))
-      )
+      return filterByKeyword(this.ourNewDMContacts, this.searchText, ['username', 'displayName'])
     },
     searchCount () {
       return Object.keys(this.searchResult).length
