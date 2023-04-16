@@ -149,6 +149,8 @@ export default ({
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
         infiniteLoading: null,
+        // NOTE: messagesInitiated describes if the messages are fully re-rendered
+        //       according to this, we could display loading/skeleton component
         messagesInitiated: undefined,
         replyingMessage: null,
         replyingMessageHash: null,
@@ -408,6 +410,8 @@ export default ({
       }
     },
     async renderMoreMessages (shouldInitiate = true) {
+      // NOTE: shouldInitiate describes if the messages should be fully removed and re-rendered
+      //       it's true when user gets entered channel page or switches to another channel
       if (shouldInitiate) {
         await this.loadMessagesFromStorage()
       }

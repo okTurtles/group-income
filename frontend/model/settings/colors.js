@@ -28,16 +28,16 @@ export default {
     'theme': 'dark',
     primary_0: '#2CB1E5',
     primary_1: '#637D87',
-    primary_2: '#4E5254',
+    primary_2: '#4E5254', // TODO: need to be updated
     success_0: '#7BD199',
     success_1: '#647A70',
-    success_2: '#4E5254',
+    success_2: '#4E5254', // TODO: need to be updated
     warning_0: '#F28A2B',
     warning_1: '#615850',
-    warning_2: '#4E5254',
+    warning_2: '#4E5254', // TODO: need to be updated
     danger_0: '#FF938C',
     danger_1: '#807474',
-    danger_2: '#4E5254',
+    danger_2: '#4E5254', // TODO: need to be updated
     danger_3: '#FF4B40',
     text_0: '#E8E8E8',
     text_1: '#AEAEAE',
