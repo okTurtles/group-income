@@ -111,6 +111,9 @@
 /* views/pages/Payments.vue */
 "Accepted methods" = "Accepted methods";
 
+/* views/components/tabs/TabWrapper.vue */
+"Acknowledgements" = "Acknowledgements";
+
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Active" = "Active";
 
@@ -194,6 +197,9 @@
 
 /* model/contracts/group.js */
 "Admin credentials needed and not implemented yet." = "Admin credentials needed and not implemented yet.";
+
+/* views/containers/user-settings/settings.js */
+"Advanced" = "Advanced";
 
 /* views/containers/group-settings/InvitationLinkModal.vue */
 "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!";
@@ -843,6 +849,9 @@
 /* controller/router.js */
 "Group Income" = "Group Income";
 
+/* views/containers/user-settings/Acknowledgements.vue */
+"Group Income is developed by the {a_}okTurtles Foundation{_a} and is funded entirely by individual contributions." = "Group Income is developed by the {a_}okTurtles Foundation{_a} and is funded entirely by individual contributions.";
+
 /* views/containers/proposals/ProposalItem.vue */
 "Group Income system is proposing" = "Group Income system is proposing";
 
@@ -914,6 +923,9 @@
 
 /* views/containers/group-settings/GroupLeaveModal.vue */
 "If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}." = "If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}.";
+
+/* views/containers/user-settings/Acknowledgements.vue */
+"Illustrations" = "Illustrations";
 
 /* views/containers/proposals/ProposalsWidget.vue, views/pages/DesignSystem.vue */
 "In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others." = "In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.";
@@ -1023,6 +1035,9 @@
 /* views/pages/Home.vue */
 "Let’s get this party started" = "Let’s get this party started";
 
+/* views/containers/user-settings/Acknowledgements.vue */
+"Libraries" = "Libraries";
+
 /* views/containers/payments/PaymentRowSendLightning.vue, views/pages/Payments.vue */
 "Lightning" = "Lightning";
 
@@ -1074,6 +1089,12 @@
 /* views/containers/proposals/MemberRequest.vue */
 "Member Requests" = "Member Requests";
 
+/* model/notifications/templates.js */
+"Member addition" = "Member addition";
+
+/* model/notifications/templates.js */
+"Member removal" = "Member removal";
+
 /* views/containers/chatroom/ChatMembers.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue, views/pages/GroupChat.vue */
 "Members" = "Members";
 
@@ -1088,6 +1109,9 @@
 
 /* views/containers/payments/PaymentDetail.vue */
 "Mincome at the time" = "Mincome at the time";
+
+/* model/notifications/templates.js */
+"Mincome change" = "Mincome change";
 
 /* controller/actions/group.js */
 "Mincome changed" = "Mincome changed";
@@ -1430,6 +1454,9 @@
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "Proposal Accepted" = "Proposal Accepted";
+
+/* model/notifications/templates.js */
+"Proposal about to expire: {i_}\"{proposalTitle}\"{_i}. please vote!" = "Proposal about to expire: {i_}\"{proposalTitle}\"{_i}. please vote!";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Proposal accepted on {date} with {yay} in favor out of {total} total votes." = "Proposal accepted on {date} with {yay} in favor out of {total} total votes.";
@@ -1779,6 +1806,9 @@
 /* views/containers/contributions/SupportHistory.vue */
 "Support history" = "Support history";
 
+/* views/containers/user-settings/Acknowledgements.vue */
+"Support this project" = "Support this project";
+
 /* views/components/graphs/Overview.vue, views/containers/contributions/GroupPledgesGraph.vue */
 "Surplus" = "Surplus";
 
@@ -2031,6 +2061,9 @@
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "Username" = "Username";
 
+/* views/components/tabs/TabWrapper.vue */
+"Version" = "Version";
+
 /* views/containers/payments/ThankYouNoteModal.vue */
 "View Thank You Modal" = "View Thank You Modal";
 
@@ -2048,6 +2081,9 @@
 
 /* views/components/group-creation-steps/GroupRules.vue */
 "Voting on proposals" = "Voting on proposals";
+
+/* model/notifications/templates.js */
+"Voting rule change" = "Voting rule change";
 
 /* views/pages/PendingApproval.vue */
 "Waiting for approval to join {groupName}!" = "Waiting for approval to join {groupName}!";

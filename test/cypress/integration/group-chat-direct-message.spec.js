@@ -42,7 +42,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
           }
         })
 
-        cy.getByDT('users-selector').type(`{enter}`)
+        cy.getByDT('users-selector').type('{enter}')
       })
     } else {
       cy.getByDT('modal').within(() => {
@@ -66,11 +66,11 @@ describe('Create/Join direct messages and orders of direct message channels', ()
         .find('ul')
         .get('span[data-test="title"], span[data-test="username"]')
         .each(($el, index, $list) => {
-        if ($el.text() === title) {
-          cy.wrap($el).click()
-          return false
-        }
-      })
+          if ($el.text() === title) {
+            cy.wrap($el).click()
+            return false
+          }
+        })
     }
   }
 
