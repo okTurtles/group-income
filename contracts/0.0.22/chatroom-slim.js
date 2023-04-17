@@ -424,10 +424,18 @@ ${this.getErrorInfo()}`;
     };
   }
   function emitMessageEvent({ contractID, hash }) {
-    if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
-      return;
+    if (!(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
+      (0, import_sbp3.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
     }
-    (0, import_sbp3.default)("okTurtles.events/emit", `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash });
+  }
+  function setReadUntilWhileJoining({ contractID, hash, createdDate }) {
+    if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
+      (0, import_sbp3.default)("state/vuex/commit", "setChatRoomReadUntil", {
+        chatRoomId: contractID,
+        messageHash: hash,
+        createdDate
+      });
+    }
   }
   function messageReceivePostEffect({ contractID, messageHash, datetime, text, isAlreadyAdded, isMentionedMe, username, chatRoomName }) {
     if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
@@ -559,13 +567,9 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ data, contractID, hash, meta }, { state }) {
           emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           if (data.username === rootState.loggedIn.username) {
-            (0, import_sbp3.default)("state/vuex/commit", "setChatRoomReadUntil", {
-              chatRoomId: contractID,
-              messageHash: hash,
-              createdDate: meta.createdDate
-            });
             const { type, privacyLevel } = state.attributes;
             const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE;
             if (isPrivateDM) {
@@ -592,6 +596,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta }) {
           emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/changeDescription": {
@@ -609,6 +614,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta }) {
           emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/leave": {
@@ -637,15 +643,17 @@ ${this.getErrorInfo()}`;
           });
           state.messages.push(newMessage);
         },
-        sideEffect({ data, hash, contractID, meta }, { state }) {
+        sideEffect({ data, hash, contractID, meta }) {
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           if (data.member === rootState.loggedIn.username) {
             if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
               return;
             }
             leaveChatRoom({ contractID });
+          } else {
+            emitMessageEvent({ contractID, hash });
+            setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           }
-          emitMessageEvent({ contractID, hash });
         }
       },
       "gi.contracts/chatroom/delete": {
@@ -683,6 +691,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, id, meta, data }, { state, getters }) {
           emitMessageEvent({ contractID, hash });
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (me === meta.username) {
@@ -794,7 +803,6 @@ ${this.getErrorInfo()}`;
               messageHash: data.hash
             });
           }
-          emitMessageEvent({ contractID, hash });
         }
       },
       "gi.contracts/chatroom/makeEmotion": {
