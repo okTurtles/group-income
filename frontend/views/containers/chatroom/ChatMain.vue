@@ -174,6 +174,8 @@ export default ({
   },
   mounted () {
     if (this.currentChatRoomId) {
+      // NOTE: this.currentChatRoomId could be null when enter group chat page very soon
+      //       after the first opening the Group Income application
       this.setMessageEventListener({ to: this.currentChatRoomId })
       this.setInitMessages()
     }
