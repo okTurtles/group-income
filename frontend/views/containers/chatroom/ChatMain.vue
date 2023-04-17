@@ -437,7 +437,7 @@ export default ({
       const before = shouldInitiate || !this.latestEvents.length
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
-      let events = null
+      let events = []
       const isLoadedFromStorage = shouldInitiate && this.latestEvents.length
       if (isLoadedFromStorage) {
         const prevLastEventHash = this.messageState.prevTo // NOTE: check setInitMessages function

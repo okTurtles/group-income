@@ -394,7 +394,6 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, hash, meta, data }, { getters }) {
         emitMessageEvent({ contractID, hash })
-        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username

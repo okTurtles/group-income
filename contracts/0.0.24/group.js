@@ -10177,7 +10177,7 @@ ${this.getErrorInfo()}`;
       },
       dueDateForPeriod(state, getters) {
         return (periodStamp) => {
-          return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(getters.periodAfterPeriod(periodStamp)), -DAYS_MILLIS));
+          return getters.periodAfterPeriod(periodStamp);
         };
       },
       paymentTotalFromUserToUser(state, getters) {

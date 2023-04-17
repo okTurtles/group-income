@@ -733,7 +733,6 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ contractID, hash, meta, data }, { getters }) {
           emitMessageEvent({ contractID, hash });
-          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate });
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
           if (me === meta.username) {
