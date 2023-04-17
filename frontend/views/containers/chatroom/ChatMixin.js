@@ -28,7 +28,7 @@ const ChatMixin: Object = {
       this.refreshTitle()
       this.updateCurrentChatRoomID(chatRoomId)
     } else {
-      this.redirectChat('GroupChatConversation')
+      this.redirectChat()
     }
   },
   computed: {
@@ -85,7 +85,8 @@ const ChatMixin: Object = {
     }
   },
   methods: {
-    redirectChat (name: string, chatRoomId: string) {
+    redirectChat (chatRoomId: string) {
+      const name = 'GroupChatConversation'
       // Temporarily blocked the chatrooms which the user is not part of
       // Need to open it later and display messages just like Slack
       chatRoomId = chatRoomId || (this.isJoinedChatRoom(this.currentChatRoomId) ? this.currentChatRoomId : this.generalChatRoomId)
@@ -117,7 +118,7 @@ const ChatMixin: Object = {
         }
         this.refreshTitle(name)
       } else {
-        this.redirectChat('GroupChatConversation')
+        this.redirectChat()
       }
     },
     updateCurrentChatRoomID (chatRoomId: string) {
@@ -140,7 +141,7 @@ const ChatMixin: Object = {
   watch: {
     'currentChatRoomId' (to: string, from: string) {
       if (to) {
-        this.redirectChat('GroupChatConversation', to)
+        this.redirectChat(to)
       }
     }
   }
