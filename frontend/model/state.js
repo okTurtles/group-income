@@ -134,10 +134,7 @@ const mutations = {
     })
   },
   deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
-    Vue.set(state.chatRoomUnread[chatRoomId], 'readUntil', {
-      ...state.chatRoomUnread[chatRoomId].readUntil,
-      deletedDate
-    })
+    Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)
   },
   addChatRoomUnreadMention (state, { chatRoomId, messageHash, createdDate }) {
     const prevUnread = state.chatRoomUnread[chatRoomId]

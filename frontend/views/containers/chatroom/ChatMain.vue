@@ -2,13 +2,7 @@
 .c-chat-main(v-if='summary.title')
   emoticons
   .c-body
-    .c-body-loading(v-if='details.isLoading')
-      loading
-        // TODO later - Design a cool skeleton loading
-           this should be done only after knowing exactly how server gets each conversation data
-
     .c-body-conversation(
-      v-else
       ref='conversation'
       data-test='conversationWrapper'
       @scroll='onChatScroll'
@@ -23,21 +17,21 @@
       )
         div(slot='no-more')
           conversation-greetings(
-            :members='details.numberOfParticipants'
-            :creator='summary.creator'
-            :type='summary.type'
-            :joined='summary.joined'
+            :members='summary.numberOfUsers'
+            :creator='summary.attributes.creator'
+            :type='summary.attributes.type'
+            :joined='summary.isJoined'
             :name='summary.title'
-            :description='summary.description'
+            :description='summary.attributes.description'
           )
         div(slot='no-results')
           conversation-greetings(
-            :members='details.numberOfParticipants'
-            :creator='summary.creator'
-            :type='summary.type'
-            :joined='summary.joined'
+            :members='summary.numberOfUsers'
+            :creator='summary.attributes.creator'
+            :type='summary.attributes.type'
+            :joined='summary.isJoined'
             :name='summary.title'
-            :description='summary.description'
+            :description='summary.attributes.description'
           )
 
       template(v-for='(message, index) in messages')
@@ -78,14 +72,15 @@
         )
 
     .c-initializing(v-if='!ephemeral.messagesInitiated')
+    //-   TODO later - Design a cool skeleton loading
+    //-   this should be done only after knowing exactly how server gets each conversation data
 
   .c-footer
     send-area(
-      v-if='summary.joined'
-      :loading='details.isLoading'
+      v-if='summary.isJoined'
+      :loading='!ephemeral.messagesInitiated'
       :replying-message='ephemeral.replyingMessage'
       :replying-to='ephemeral.replyingTo'
-      :title='summary.title'
       :scrolledUp='isScrolledUp'
       @send='handleSendMessage'
       @jump-to-latest='updateScroll'
@@ -93,7 +88,7 @@
     )
     view-area(
       v-else
-      :joined='summary.joined'
+      :joined='summary.isJoined'
       :title='summary.title'
     )
 </template>
@@ -140,12 +135,8 @@ export default ({
   },
   props: {
     summary: {
-      type: Object, // { type: String, title: String, description: String, routerBack: String }
-      default () { return {} }
-    },
-    details: {
-      type: Object, // { isLoading: Bool, participants: Object }
-      default () { return {} }
+      type: Object,
+      required: true
     }
   },
   data () {
@@ -160,7 +151,7 @@ export default ({
         infiniteLoading: null,
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
-        messagesInitiated: false,
+        messagesInitiated: undefined,
         replyingMessage: null,
         replyingMessageHash: null,
         replyingTo: null
@@ -182,8 +173,10 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
-    this.setMessageEventListener({ force: true })
-    this.setInitMessages()
+    if (this.currentChatRoomId) {
+      this.setMessageEventListener({ to: this.currentChatRoomId })
+      this.setInitMessages()
+    }
     window.addEventListener('resize', this.resizeEventHandler)
   },
   beforeDestroy () {
@@ -238,7 +231,7 @@ export default ({
       return this.currentUserAttr.username === from
     },
     who (message) {
-      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.details.participants[message.from]
+      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.summary.participants[message.from]
       return user?.displayName || user?.username || message.from
     },
     variant (message) {
@@ -260,7 +253,7 @@ export default ({
       if (from === MESSAGE_TYPES.NOTIFICATION || from === MESSAGE_TYPES.INTERACTIVE) {
         return this.currentUserAttr.picture
       }
-      return this.details.participants[from]?.picture
+      return this.summary.participants[from]?.picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
@@ -444,7 +437,7 @@ export default ({
       const before = shouldInitiate || !this.latestEvents.length
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
-      let events = null
+      let events = []
       const isLoadedFromStorage = shouldInitiate && this.latestEvents.length
       if (isLoadedFromStorage) {
         const prevLastEventHash = this.messageState.prevTo // NOTE: check setInitMessages function
@@ -528,13 +521,11 @@ export default ({
         }
       }
     },
-    setMessageEventListener ({ force = false, from, to }) {
+    setMessageEventListener ({ from, to }) {
       if (from) {
-        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)
+        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`)
       }
-      if (force) {
-        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)
-      } else if (this.isJoinedChatRoom(to)) {
+      if (this.isJoinedChatRoom(to)) {
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
@@ -615,8 +606,8 @@ export default ({
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {
-        // NOTE: this infinite handler is being called once
-        // before the component state is initialized, which should be ignored
+        // NOTE: this infinite handler is being called once which should be ignored
+        // before calling the setInitMessages function
         return
       }
       this.renderMoreMessages(!this.ephemeral.messagesInitiated).then(completed => {
@@ -654,7 +645,7 @@ export default ({
         this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
       }
 
-      if (!this.summary.joined) {
+      if (!this.summary.isJoined) {
         return
       }
 
@@ -721,22 +712,22 @@ export default ({
     },
     refreshContent: debounce(function (from, to) {
       // NOTE: using debounce we can skip unnecessary rendering contents
-      const force = sbp('chelonia/contract/isSyncing', to)
-      this.setMessageEventListener({ from, to, force })
+      this.setMessageEventListener({ from, to })
       this.archiveMessageState(from)
       this.setInitMessages()
     }, 250)
   },
   watch: {
-    currentChatRoomId (to, from) {
+    'currentChatRoomId' (to, from) {
+      this.ephemeral.messagesInitiated = false
       this.refreshContent(from, to)
     },
-    'summary.joined' (to, from) {
+    'summary.isJoined' (to, from) {
       if (to) {
         sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
           if (contractID === this.currentChatRoomId && isSyncing === false) {
+            this.setMessageEventListener({ from: contractID, to: contractID })
             this.setInitMessages()
-            this.setMessageEventListener({ force: true })
           }
         })
       }

@@ -373,6 +373,33 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to rename chat channel.'))
     }
   },
+  'gi.actions/group/changeChatRoomDescription': async function (params: GIActionParams) {
+    try {
+      await sbp('gi.actions/chatroom/changeDescription', {
+        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
+        contractID: params.data.chatRoomID,
+        data: {
+          description: params.data.description
+        },
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
+      })
+
+      return await sbp('chelonia/out/actionEncrypted', {
+        ...omit(params, ['options', 'action', 'hooks']),
+        action: 'gi.contracts/group/changeChatRoomDescription',
+        hooks: {
+          prepublish: null,
+          postpublish: params.hooks?.postpublish
+        }
+      })
+    } catch (e) {
+      console.error('gi.actions/group/changeChatRoomDescription failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to update description of chat channel.'))
+    }
+  },
   'gi.actions/group/removeMember': async function (params: GIActionParams) {
     await leaveAllChatRooms(params.contractID, params.data.member)
 

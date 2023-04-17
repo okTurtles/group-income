@@ -121,15 +121,8 @@ import AvatarUser from '@components/AvatarUser.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import DMMixin from './DMMixin.js'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
-import { CHATROOM_PRIVACY_LEVEL, CHATROOM_DETAILS_UPDATED } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 import { filterByKeyword } from '@view-utils/filters.js'
-
-const initDetails = {
-  name: '',
-  description: '',
-  privacyLevel: CHATROOM_PRIVACY_LEVEL.PUBLIC,
-  participants: []
-}
 
 export default ({
   name: 'ChatMembersAllModal',
@@ -147,14 +140,7 @@ export default ({
     return {
       searchText: '',
       addedMembers: [],
-      canAddMembers: [],
-      details: initDetails
-    }
-  },
-  created () {
-    this.updateDetailsForUnjoinedChannel()
-    if (!this.isJoined && !this.attributes.name) {
-      sbp('okTurtles.events/on', CHATROOM_DETAILS_UPDATED, this.updateDetailsForUnjoinedChannel)
+      canAddMembers: []
     }
   },
   computed: {
@@ -162,6 +148,7 @@ export default ({
       'currentChatRoomState',
       'currentGroupState',
       'groupMembersSorted',
+      'getGroupChatRooms',
       'chatRoomUsers',
       'chatRoomUsersInSort',
       'globalProfile',
@@ -190,7 +177,7 @@ export default ({
         : L('Showing {searchCount} {strong_}results{_strong} for "{searchTerm}"', args)
     },
     attributes () {
-      const { name, description, privacyLevel } = this.currentChatRoomState.attributes || this.details
+      const { name, description, privacyLevel } = this.chatRoomAttribute
       let title = name
       if (this.isPrivateDirectMessage()) {
         const partnerUsername = this.usernameFromDirectMessageID(this.currentChatRoomId)
@@ -208,18 +195,27 @@ export default ({
     isJoined () {
       return this.isJoinedChatRoom(this.currentChatRoomId)
     },
+    chatRoomAttribute () {
+      // NOTE: Do not consider to get attributes of private chatroom which the user is not part of
+      //       because it couldn't be happened
+      // TODO: remove 'users', 'deletedDate' to keep consistency when this.isJoined === false
+      return this.isJoined ? this.currentChatRoomState.attributes : this.getGroupChatRooms[this.currentChatRoomId]
+    },
+    chatRoomUsersInOrder () {
+      return this.isJoined
+        ? this.chatRoomUsersInSort
+        : this.groupMembersSorted
+          .filter(member => this.getGroupChatRooms[this.currentChatRoomId].users.includes(member.username))
+          .map(member => ({ username: member.username, displayName: member.displayName }))
+    },
     isPrivacyLevelPrivate () {
-      return this.currentChatRoomState.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
+      return this.chatRoomAttribute.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
     }
   },
+  mounted () {
+    this.initializeMembers()
+  },
   methods: {
-    updateDetailsForUnjoinedChannel () {
-      const details = sbp('okTurtles.data/get', 'GROUPCHAT_DETAILS')
-      if (details?.name) {
-        this.details = details
-      }
-      this.initializeMembers()
-    },
     initializeMembers () {
       if (this.isDirectMessage()) {
         this.addedMembers = Object.keys(this.chatRoomUsers)
@@ -241,8 +237,7 @@ export default ({
             joinedDate: null
           }))
       } else {
-        const members = this.isJoined ? this.chatRoomUsersInSort : this.details.participants
-        this.addedMembers = members.map(member => ({ ...member, departedDate: null }))
+        this.addedMembers = this.chatRoomUsersInOrder.map(member => ({ ...member, departedDate: null }))
         this.canAddMembers = this.groupMembersSorted
           .filter(member => !this.addedMembers.find(mb => mb.username === member.username) && !member.invitedBy)
           .map(member => ({
@@ -258,13 +253,12 @@ export default ({
     },
     closeModal () {
       this.$refs.modal.close()
-      sbp('okTurtles.events/off', CHATROOM_DETAILS_UPDATED)
     },
     removable (username: string) {
       if (!this.isJoined) {
         return false
       }
-      const { creator } = this.currentChatRoomState.attributes
+      const { creator } = this.chatRoomAttribute
       if (this.currentGroupState.generalChatRoomId === this.currentChatRoomId) {
         return false
       } else if (this.ourUsername === creator) {

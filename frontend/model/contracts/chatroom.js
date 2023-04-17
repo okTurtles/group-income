@@ -39,10 +39,23 @@ function emitMessageEvent ({ contractID, hash }: {
   contractID: string,
   hash: string
 }): void {
-  if (sbp('chelonia/contract/isSyncing', contractID)) {
-    return
+  if (!sbp('chelonia/contract/isSyncing', contractID)) {
+    sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash })
   }
-  sbp('okTurtles.events/emit', `${CHATROOM_MESSAGE_ACTION}-${contractID}`, { hash })
+}
+
+function setReadUntilWhileJoining ({ contractID, hash, createdDate }: {
+  contractID: string,
+  hash: string,
+  createdDate: string
+}): void {
+  if (sbp('chelonia/contract/isSyncing', contractID)) {
+    sbp('state/vuex/commit', 'setChatRoomReadUntil', {
+      chatRoomId: contractID,
+      messageHash: hash,
+      createdDate: createdDate
+    })
+  }
 }
 
 function messageReceivePostEffect ({ contractID, messageHash, datetime, text, isAlreadyAdded, isMentionedMe, username, chatRoomName }: {
@@ -200,13 +213,9 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ data, contractID, hash, meta }, { state }) {
         emitMessageEvent({ contractID, hash })
+        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
         const rootState = sbp('state/vuex/state')
         if (data.username === rootState.loggedIn.username) {
-          sbp('state/vuex/commit', 'setChatRoomReadUntil', {
-            chatRoomId: contractID,
-            messageHash: hash,
-            createdDate: meta.createdDate
-          })
           const { type, privacyLevel } = state.attributes
           const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
           if (isPrivateDM) {
@@ -237,6 +246,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
+        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/changeDescription': {
@@ -258,6 +268,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
+        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/leave': {
@@ -288,15 +299,17 @@ sbp('chelonia/defineContract', {
         })
         state.messages.push(newMessage)
       },
-      sideEffect ({ data, hash, contractID, meta }, { state }) {
+      sideEffect ({ data, hash, contractID, meta }) {
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
           if (sbp('chelonia/contract/isSyncing', contractID)) {
             return
           }
           leaveChatRoom({ contractID })
+        } else {
+          emitMessageEvent({ contractID, hash })
+          setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
         }
-        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/delete': {
@@ -336,6 +349,7 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, hash, id, meta, data }, { state, getters }) {
         emitMessageEvent({ contractID, hash })
+        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
@@ -464,8 +478,6 @@ sbp('chelonia/defineContract', {
             messageHash: data.hash
           })
         }
-
-        emitMessageEvent({ contractID, hash })
       }
     },
     'gi.contracts/chatroom/makeEmotion': {
