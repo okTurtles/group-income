@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import LoadingPage from '@pages/miscellaneous/Loading.vue'
-import ErrorPage from '@pages/miscellaneous/Error.vue'
+import ErrorPage from '@pages/miscellaneous/ErrorLoading.vue'
 
 export function lazyComponent (name, lazyImport) {
   Vue.component(name, lazyImport)

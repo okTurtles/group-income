@@ -18,6 +18,9 @@
 /* MISSING TRANSLATION - views/components/TextToCopy.vue */
 "Copied to clipboard" = "Copied to clipboard";
 
+/* MISSING TRANSLATION - views/components/Tooltip.vue */
+"i" = "i";
+
 /* MISSING TRANSLATION - views/components/forms/Dropdown.vue */
 "Select Item" = "Select Item";
 
@@ -29,6 +32,9 @@
 
 /* MISSING TRANSLATION - views/containers/navigation/Navigation.vue */
 "Navigation" = "Navigation";
+
+/* MISSING TRANSLATION - views/containers/toolbar/Toolbar.vue, views/pages/miscellaneous/Landing.vue */
+"Chelonia" = "Chelonia";
 
 /* MISSING TRANSLATION - views/pages/Accounts.vue */
 "A display name is required." = "A display name is required.";
@@ -52,6 +58,9 @@
 "An instance name is required." = "An instance name is required.";
 
 /* MISSING TRANSLATION - views/pages/Accounts.vue */
+"Cancel" = "Cancel";
+
+/* MISSING TRANSLATION - views/pages/Accounts.vue */
 "Create a new instance" = "Create a new instance";
 
 /* MISSING TRANSLATION - views/pages/Accounts.vue */
@@ -61,9 +70,6 @@
 "Domain" = "Domain";
 
 /* MISSING TRANSLATION - views/pages/Accounts.vue */
-"Don’t allow unencrypted contracts" = "Don’t allow unencrypted contracts";
-
-/* MISSING TRANSLATION - views/pages/Accounts.vue */
 "Enter display name" = "Enter display name";
 
 /* MISSING TRANSLATION - views/pages/Accounts.vue */
@@ -71,6 +77,15 @@
 
 /* MISSING TRANSLATION - views/pages/Accounts.vue */
 "Enter instance name" = "Enter instance name";
+
+/* MISSING TRANSLATION - views/pages/Accounts.vue */
+"Forbid unencrypted data" = "Forbid unencrypted data";
+
+/* MISSING TRANSLATION - views/pages/Accounts.vue */
+"If you don't want to moderate public data you should disable unencrypted contract data." = "If you don't want to moderate public data you should disable unencrypted contract data.";
+
+/* MISSING TRANSLATION - views/pages/Accounts.vue */
+"In order to create a new Application Instance, you’ll need a domain name. If you don’t already have one, you can find an available one and register for a fee with a hosting website and then proceed to create your instance." = "In order to create a new Application Instance, you’ll need a domain name. If you don’t already have one, you can find an available one and register for a fee with a hosting website and then proceed to create your instance.";
 
 /* MISSING TRANSLATION - views/pages/Accounts.vue */
 "Instance name" = "Instance name";
@@ -90,9 +105,6 @@
 /* MISSING TRANSLATION - views/pages/Accounts.vue, views/pages/Billing.vue */
 "Save" = "Save";
 
-/* MISSING TRANSLATION - views/pages/Accounts.vue, views/pages/Billing.vue */
-"cancel" = "cancel";
-
 /* MISSING TRANSLATION - views/pages/Billing.vue */
 "$ USD per Credit" = "$ USD per Credit";
 
@@ -109,7 +121,7 @@
 "Days" = "Days";
 
 /* MISSING TRANSLATION - views/pages/Billing.vue */
-"How many credits will you charge for Gigabite per month?" = "How many credits will you charge for Gigabite per month?";
+"How many credits will you charge for Gigabyte per month?" = "How many credits will you charge for Gigabyte per month?";
 
 /* MISSING TRANSLATION - views/pages/Billing.vue */
 "How many days until data is deleted after credits run out?" = "How many days until data is deleted after credits run out?";
@@ -122,6 +134,9 @@
 
 /* MISSING TRANSLATION - views/pages/Billing.vue */
 "What payment methods you will accept from your users." = "What payment methods you will accept from your users.";
+
+/* MISSING TRANSLATION - views/pages/Billing.vue */
+"cancel" = "cancel";
 
 /* MISSING TRANSLATION - views/pages/Contracts.vue */
 "All contracts" = "All contracts";
@@ -175,7 +190,7 @@
 "Recent users" = "Recent users";
 
 /* MISSING TRANSLATION - views/pages/Dashboard.vue */
-"Sapce usage" = "Sapce usage";
+"Space usage" = "Space usage";
 
 /* MISSING TRANSLATION - views/pages/Dashboard.vue */
 "Stats" = "Stats";
@@ -216,14 +231,11 @@
 /* MISSING TRANSLATION - views/pages/Users.vue */
 "User" = "User";
 
-/* MISSING TRANSLATION - views/pages/miscellaneous/Error.vue */
-"404 Not found" = "404 Not found";
+/* MISSING TRANSLATION - views/pages/miscellaneous/ErrorLoading.vue */
+"Either our servers are having problems or your connection is down." = "Either our servers are having problems or your connection is down.";
 
-/* MISSING TRANSLATION - views/pages/miscellaneous/Error.vue */
-"Could not find the resource or page" = "Could not find the resource or page";
-
-/* MISSING TRANSLATION - views/pages/miscellaneous/Landing.vue */
-"Chelonia" = "Chelonia";
+/* MISSING TRANSLATION - views/pages/miscellaneous/ErrorLoading.vue */
+"Error loading page" = "Error loading page";
 
 /* MISSING TRANSLATION - views/pages/miscellaneous/Landing.vue */
 "To dashboard" = "To dashboard";

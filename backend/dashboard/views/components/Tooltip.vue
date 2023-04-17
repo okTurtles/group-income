@@ -12,8 +12,6 @@
 </template>
 
 <script>
-import L from '@common/translations.js'
-
 export default {
   name: 'Tooltip',
   props: {
@@ -27,7 +25,7 @@ export default {
     },
     char: {
       type: String,
-      default: L('i')
+      default: '?'
     },
     position: {
       type: String,
@@ -58,7 +56,7 @@ export default {
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
-$tooltip-side: 1.175rem;
+$tooltip-side: 1.125rem;
 
 .c-tooltip {
   position: relative;
@@ -74,10 +72,12 @@ button.c-tooltip-trigger-btn {
   justify-content: center;
   width: $tooltip-side;
   height: $tooltip-side;
+  line-height: $tooltip-side;
   border-radius: $tooltip-side;
-  padding-top: 0.2rem;
-  font-size: 0.815rem;
+  padding-left: 1px;
+  font-size: 0.8rem;
   font-weight: 600;
+  font-family: "Inter";
   background-color: var(--tooltip-trigger-bg-color);
   border: 1px solid var(--tooltip-trigger-border-color);
   color: var(--tooltip-trigger-text-color);
