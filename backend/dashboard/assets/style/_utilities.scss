@@ -52,6 +52,14 @@
   }
 }
 
+.is-centered-on-mobile {
+  @include phone {
+    max-width: $formWidthConstraint;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 .hide-desktop {
   @include desktop {
     display: none !important;

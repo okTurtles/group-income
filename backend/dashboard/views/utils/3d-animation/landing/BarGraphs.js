@@ -8,11 +8,18 @@ const BG_HEIGHT = 16
 export default class BarGraphs extends Group {
   constructor ({
     pairColors = ['#000000', '#000000'],
-    pairCount = 5
+    pairCount = 5,
+    isDarkTheme = false
   } = {}) {
     const MaterialCommon = MeshLambertMaterial
     const bgThickness = 0.1
-    const bgMesh = new GraphBackground({ lineCount: 6, bgThickness })
+    const bgMesh = new GraphBackground({
+      lineCount: 6,
+      bgColor: isDarkTheme ? '#1c1c1c' : '#f7f9fb',
+      edgeColor: isDarkTheme ? '#e3f5ff' : '#414141',
+      lineColor: isDarkTheme ? '#e3f5ff' : '#000000',
+      bgThickness
+    })
 
     // graph background - width: 28, height: 16
     const unitW = BG_WIDTH / pairCount

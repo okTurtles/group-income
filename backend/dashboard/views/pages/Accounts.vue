@@ -1,5 +1,5 @@
 <template lang='pug'>
-page-template
+PageTemplate
   template(#title='') {{ L('Create a new instance') }}
 
   section.c-create-instance-section
@@ -10,7 +10,7 @@ page-template
       .field
         i18n.label(tag='label') Software / Application
 
-        dropdown.c-type-dropdown(
+        Dropdown.c-type-dropdown(
           :class='{ "is-error": $v.form.application.$error }'
           :options='ephemeral.fakeApplicationOptions'
           v-error:application=''

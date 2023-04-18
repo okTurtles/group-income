@@ -44,7 +44,7 @@ export default {
 
 .c-para-skeletons {
   position: relative;
-  max-width: 36.5rem;
+  max-width: $formWidthConstraint;
 }
 
 .c-card-container {

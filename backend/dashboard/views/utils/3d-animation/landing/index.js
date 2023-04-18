@@ -15,8 +15,8 @@ const {
 const PLANE_HEIGHT = 0.5
 const SCENE_ROTATION_SPEED = degreeToRadian(0.35) * -1 // per frame
 const COLORS = {
-  bg_0: '#f7f9fb',
   grey_0: '#414141',
+  primary_blue: '#e3f5ff',
   tube: '#95a4fc',
   sphere: '#baedbd',
   bar_1: '#95a4fc',
@@ -27,10 +27,11 @@ const pointer = new Vector2(0, 0)
 const cameraSettings = { pos: { x: 0, y: 15, z: 46 }, lookAt: new Vector3(0, -2.5, 0) }
 let animationId
 
-function initAnimation (canvasEl) {
+function initAnimation (canvasEl, theme = 'light') {
   addPointerMoveListener()
 
   // create a scene & root
+  const isDarkTheme = theme === 'dark'
   const scene = new Scene()
   const root = new Group() // root object that contains all meshes
   root.position.y = -10
@@ -58,7 +59,7 @@ function initAnimation (canvasEl) {
   const boxDepth = 20
   const box = new Edgify({
     geometry: new BoxGeometry(18, boxDepth, 38),
-    color: COLORS.grey_0
+    color: isDarkTheme ? COLORS.primary_blue : COLORS.grey_0
   })
   box.position.y = boxDepth / 2 + PLANE_HEIGHT + 0.15
   scene.root.add(box)
@@ -77,7 +78,8 @@ function initAnimation (canvasEl) {
     tubeRadius: 0.325,
     sphereRadius: 0.85,
     tubeColor: COLORS.tube,
-    sphereColor: COLORS.sphere
+    sphereColor: COLORS.sphere,
+    isDarkTheme
   })
   curveGraph.position.x = -2.5
   scene.root.add(curveGraph)
@@ -85,7 +87,8 @@ function initAnimation (canvasEl) {
   // bar-graphs
   const barGraphs = new BarGraphs({
     pairColors: [COLORS.bar_1, COLORS.bar_2],
-    pairCount: 8
+    pairCount: 8,
+    isDarkTheme
   })
   barGraphs.position.set(2.5, PLANE_HEIGHT, 0)
   scene.root.add(barGraphs)

@@ -1,5 +1,5 @@
 <template lang="pug">
-page-template(:noHeader='true')
+PageTemplate(:noHeader='true')
   .c-404-text
     i.icon-info.c-404-icon
     i18n.is-title-1.c-404-heading(tag='h1') Error loading page

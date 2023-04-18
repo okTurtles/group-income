@@ -4,6 +4,7 @@ import '@sbp/okturtles.events'
 import Vue from 'vue'
 import router from './controller/router.js'
 import store from './model/state.js'
+import { checkThemeFromLocalStorage } from './model/themes.js'
 import './views/utils/vStyle.js'
 import './views/utils/vError.js'
 import './controller/backend.js'
@@ -55,6 +56,9 @@ async function startApp () {
       openNav () {
         this.$refs.navigation.open()
       }
+    },
+    created () {
+      checkThemeFromLocalStorage()
     }
   }).$mount('#app')
 }

@@ -11,6 +11,7 @@ export default class GraphBackground extends Group {
     bgThickness = 0.1,
     bgColor = '#f7f9fb',
     lineColor = '#000000',
+    edgeColor = '#414141',
     lineCount = 4
   } = {}) {
     // background plane
@@ -18,7 +19,7 @@ export default class GraphBackground extends Group {
     const bgMaterial = new MeshLambertMaterial({
       color: bgColor, side: DoubleSide, transparent: true, opacity: 0.625
     })
-    const bgMesh = new CombineWithEdge({ mesh: new Mesh(bgGeometry, bgMaterial), edgeColor: '#414141' })
+    const bgMesh = new CombineWithEdge({ mesh: new Mesh(bgGeometry, bgMaterial), edgeColor })
     bgMesh.position.y = height / 2
     bgMesh.position.x = (bgThickness + 0.05) * -1
 

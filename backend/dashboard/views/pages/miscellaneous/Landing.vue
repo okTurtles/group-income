@@ -27,7 +27,7 @@ export default {
     }
   },
   mounted () {
-    initAnimation(this.$refs.canvas)
+    initAnimation(this.$refs.canvas, this.$store.state.theme)
 
     setTimeout(() => { this.canvasIn = true }, 50)
     setTimeout(() => { this.contentIn = true }, 800)
@@ -85,6 +85,10 @@ $bezier: cubic-bezier(0.47, 0.47, 0.52, 0.86);
   align-items: center;
   justify-content: center;
   background-color: rgba(247, 249, 251, 0.45);
+
+  @include if-dark-theme {
+    background-color: rgba(47, 47, 47, 0.385);
+  }
 }
 
 .c-title {
@@ -128,12 +132,14 @@ $bezier: cubic-bezier(0.47, 0.47, 0.52, 0.86);
   transform: translateY(100%);
   transition:
     opacity 700ms $bezier,
-    transform 700ms $bezier;
+    transform 700ms $bezier,
+    box-shadow 120ms linear,
+    border-color 120ms linear;
 
   .in & {
     opacity: 1;
     transform: translateY(0);
-    transition-delay: 160ms;
+    transition-delay: 160ms, 160ms, 0ms, 0ms;
   }
 
   &:hover,
@@ -144,6 +150,17 @@ $bezier: cubic-bezier(0.47, 0.47, 0.52, 0.86);
 
   @include phone {
     padding: 0.625rem 1.125rem;
+  }
+
+  @include if-dark-theme {
+    background-color: $primary_blue;
+    color: $text_black;
+    box-shadow: none;
+
+    &:hover {
+      border-color: none;
+      box-shadow: 0 0 6px $primary_blue;
+    }
   }
 }
 </style>

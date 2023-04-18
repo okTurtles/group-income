@@ -11,7 +11,8 @@ export default class CurveGraph extends Group {
     sphereColor = '#000000',
     edgeColor = '#000000',
     tubeRadius = 0.5,
-    sphereRadius = 1
+    sphereRadius = 1,
+    isDarkTheme = false
   }) {
     const bgThickness = 0.1
     const MaterialCommon = MeshLambertMaterial
@@ -39,7 +40,13 @@ export default class CurveGraph extends Group {
     spheres.position.x = bgThickness * -1
 
     // bg
-    const bgMesh = new GraphBackground({ lineCount: 6, bgThickness })
+    const bgMesh = new GraphBackground({
+      lineCount: 6,
+      bgColor: isDarkTheme ? '#1c1c1c' : '#f7f9fb',
+      edgeColor: isDarkTheme ? '#e3f5ff' : '#414141',
+      lineColor: isDarkTheme ? '#e3f5ff' : '#000000',
+      bgThickness
+    })
 
     super()
     super.add(tubeMesh, spheres, bgMesh)

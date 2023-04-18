@@ -2,7 +2,7 @@
 nav.c-navigation(:class='{ "is-active": ephemeral.isActive }')
   .c-navigation-wrapper
     .c-navigation-header
-      h3.sr-only Navigation menu
+      i18n.sr-only(tag='h3') Navigation menu
       i18n.section-title.c-header Navigation
 
       button.hide-tablet.is-icon.c-close-btn(@click='close')

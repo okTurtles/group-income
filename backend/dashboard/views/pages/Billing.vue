@@ -1,5 +1,5 @@
 <template lang='pug'>
-page-template
+PageTemplate
   template(#title='') {{ L('Billing') }}
 
   section.c-section
@@ -8,7 +8,7 @@ page-template
         i18n.label.mb-0(tag='label') Accepted payment methods
         i18n.helper.c-helper What payment methods you will accept from your users.
 
-        payment-methods.c-payment-methods(
+        PaymentMethods.c-payment-methods(
           :methods.sync='form.paymentMethods'
           :class='{ "is-error": $v.form.paymentMethods.$error }'
           v-error:paymentMethods=''

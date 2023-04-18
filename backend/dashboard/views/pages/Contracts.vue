@@ -1,8 +1,8 @@
 <template lang='pug'>
-page-template.c-page-contracts
+PageTemplate.c-page-contracts
   template(#title='') {{ L('Contracts') }}
 
-  dropdown.c-filter-menu(
+  Dropdown.c-filter-menu(
     defaultItemId='all-contracts'
     :isOverlayStyle='true'
     :options='ephemeral.filterOptions'

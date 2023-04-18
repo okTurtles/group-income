@@ -1,41 +1,42 @@
 <template lang='pug'>
-page-template
+PageTemplate
   template(#title='') {{ L('Dashboard') }}
 
-  section.c-stats-section
-    i18n.section-title Stats
+  .is-centered-on-mobile
+    section.c-stats-section
+      i18n.section-title Stats
 
-    .c-stat-cards
-      stat-card.c-stat-card(v-for='(item, index) in ephemeral.stats'
-        :key='item.id'
-        :description='item.name'
-        :stat='item.value'
-        :icon='item.icon'
-        :color='index % 2 === 0 ? "blue" : "purple"'
-      )
+      .c-stat-cards
+        StatCard.c-stat-card(v-for='(item, index) in ephemeral.stats'
+          :key='item.id'
+          :description='item.name'
+          :stat='item.value'
+          :icon='item.icon'
+          :color='index % 2 === 0 ? "blue" : "purple"'
+        )
 
-  section.c-recent-and-summary
-    i18n.section-title Users / Space
+    section.c-recent-and-summary
+      i18n.section-title Users / Space
 
-    .c-flex-container
-      .summary-list
-        i18n.summary-list-label Recent users
+      .c-flex-container
+        .summary-list.c-summary-list
+          i18n.summary-list-label Recent users
 
-        ul
-          li.summary-list-item.c-user-list-ths
-            i18n(tag='label') Name
-            i18n(tag='label') Joined on
-          li.summary-list-item(v-for='user in ephemeral.recentUsers' :key='user.name')
-            span {{ user.name }}
-            span {{ humanDate(user.joined) }}
+          ul
+            li.summary-list-item.c-user-list-ths
+              i18n(tag='label') Name
+              i18n(tag='label') Joined on
+            li.summary-list-item(v-for='user in ephemeral.recentUsers' :key='user.name')
+              span {{ user.name }}
+              span {{ humanDate(user.joined) }}
 
-      .summary-list.is-outlined
-        i18n.summary-list-label Space usage
+        .summary-list.is-outlined.c-summary-list
+          i18n.summary-list-label Space usage
 
-        ul
-          li.summary-list-item(v-for='(item, key) in ephemeral.spaceUsage' :key='key')
-            label {{ item.name }}
-            span.c-usage-value {{ item.value }} {{ item.unit }}
+          ul
+            li.summary-list-item(v-for='(item, key) in ephemeral.spaceUsage' :key='key')
+              label {{ item.name }}
+              span.c-usage-value {{ item.value }} {{ item.unit }}
 </template>
 
 <script>
@@ -85,6 +86,14 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-sections-container {
+  @include phone {
+    max-width: $formWidthConstraint;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 .c-stats-section {
   margin-bottom: 3.2rem;
 }
@@ -114,5 +123,11 @@ export default {
 .c-usage-value {
   font-weight: 600;
   font-size: 1.25em;
+}
+
+.c-summary-list {
+  @include phone {
+    max-width: unset;
+  }
 }
 </style>

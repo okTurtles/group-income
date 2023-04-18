@@ -5,7 +5,7 @@
     :key='item.id'
   )
     .inputgroup.c-method-group
-      dropdown.c-method-dropdown(
+      Dropdown.c-method-dropdown(
         :defaultText='L("Choose...")'
         :options='config.methodOptions'
         :isOverlayStyle='true'
@@ -85,7 +85,6 @@ export default {
 
       this.syncDebounceId = setTimeout(() => {
         this.$emit('update:methods', cloneDeep(this.ephemeral.paymentMethods))
-        this.$emit('change')
       }, 800)
     }
   },

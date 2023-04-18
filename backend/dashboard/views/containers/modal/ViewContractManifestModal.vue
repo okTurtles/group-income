@@ -1,5 +1,5 @@
 <template lang="pug">
-modal-template(:title='L("Contract manifest")' icon='suitcase')
+ModalTemplate(:title='L("Contract manifest")' icon='suitcase')
   .c-contract-id-container
     span.c-id-label.has-family-poppins contractID :
     text-to-copy.c-id-copy(:text='contract.contractId')

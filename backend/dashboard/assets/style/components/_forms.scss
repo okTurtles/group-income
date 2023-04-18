@@ -1,7 +1,7 @@
 form {
   display: block;
   width: 100%;
-  max-width: 36.5rem;
+  max-width: $formWidthConstraint;
 }
 
 .field {

@@ -31,7 +31,7 @@ export default {
 
 .c-stat-card {
   position: relative;
-  display: flex;
+  display: inline-flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-end;
@@ -43,7 +43,7 @@ export default {
   box-shadow: 0 0 16px rgba(219, 219, 219, 0.5);
 
   @include from($phone_narrow) {
-    width: 13.25rem;
+    max-width: 13.25rem;
     height: 7rem;
     padding: 1.25rem 1.5rem;
   }

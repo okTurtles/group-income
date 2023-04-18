@@ -1,3 +1,5 @@
+import store from './state.js'
+
 const common = {
   black: '#000000',
   white: '#FFFFFF',
@@ -38,8 +40,25 @@ const dark = {
   helper: '#9747FF'
 }
 
+const THEME_STORAGE_KEY = 'chelonia-dashboard-theme'
 export const THEME_LIGHT = 'light'
 export const THEME_DARK = 'dark'
+export const checkSystemTheme = () => {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? THEME_DARK
+    : THEME_LIGHT
+}
+export const checkThemeFromLocalStorage = () => {
+  const fromStorage = window.localStorage.getItem(THEME_STORAGE_KEY)
+
+  if (fromStorage) {
+    store.commit('setTheme', fromStorage)
+  }
+}
+export const storeThemeToLocalStorage = (theme) => {
+  window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+}
+
 export default {
   light,
   dark

@@ -21,6 +21,12 @@
   }
 }
 
+@mixin if-dark-theme {
+  :root[data-theme="dark"] & {
+    @content;
+  }
+}
+
 // media-queries
 
 @mixin from($device) {
