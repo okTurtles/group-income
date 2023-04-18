@@ -18,9 +18,6 @@
 /* MISSING TRANSLATION - views/components/TextToCopy.vue */
 "Copied to clipboard" = "Copied to clipboard";
 
-/* MISSING TRANSLATION - views/components/Tooltip.vue */
-"i" = "i";
-
 /* MISSING TRANSLATION - views/components/forms/Dropdown.vue */
 "Select Item" = "Select Item";
 
@@ -29,6 +26,9 @@
 
 /* MISSING TRANSLATION - views/containers/modal/ViewContractManifestModal.vue */
 "Contract manifest" = "Contract manifest";
+
+/* MISSING TRANSLATION - views/containers/navigation/Navigation.vue */
+"Navigation menu" = "Navigation menu";
 
 /* MISSING TRANSLATION - views/containers/navigation/Navigation.vue */
 "Navigation" = "Navigation";

@@ -186,6 +186,9 @@
 /* views/containers/navigation/Navigation.vue */
 "Navigation" = "Navigation";
 
+/* views/containers/navigation/Navigation.vue */
+"Navigation menu" = "Navigation menu";
+
 /* views/pages/Accounts.vue */
 "Note" = "Note";
 
@@ -260,9 +263,6 @@
 
 /* views/pages/Contracts.vue */
 "contractID" = "contractID";
-
-/* views/components/Tooltip.vue */
-"i" = "i";
 
 /* views/pages/Contracts.vue, views/pages/Users.vue */
 "view" = "view";

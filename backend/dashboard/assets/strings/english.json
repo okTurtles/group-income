@@ -61,6 +61,7 @@
   "Media/Images": "Media/Images",
   "Name": "Name",
   "Navigation": "Navigation",
+  "Navigation menu": "Navigation menu",
   "Note": "Note",
   "Recent users": "Recent users",
   "Save": "Save",
@@ -86,6 +87,5 @@
   "What payment methods you will accept from your users.": "What payment methods you will accept from your users.",
   "cancel": "cancel",
   "contractID": "contractID",
-  "i": "i",
   "view": "view"
 }
