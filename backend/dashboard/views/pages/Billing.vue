@@ -57,7 +57,9 @@ import PaymentMethods from '@components/PaymentMethods.vue'
 import validationMixin from '@view-utils/validationMixin.js'
 import { required } from '@validators'
 
-const validatePaymentMethods = val => Array.isArray(val) && val.length > 1 && Boolean(val.method && val.detail)
+const validatePaymentMethods = val => Array.isArray(val) &&
+  val.length >= 1 &&
+  val.some(entry => Boolean(entry.method && entry.detail))
 
 export default {
   name: 'Billing',
