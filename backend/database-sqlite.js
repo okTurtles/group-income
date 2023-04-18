@@ -86,6 +86,8 @@ export function readData (key: string): Promise<Buffer | string | void> {
       if (err) {
         reject(err)
       } else {
+        // Note: sqlite remembers the type of every stored value, therefore we
+        // automatically get back the same JS value that has been inserted.
         resolve(row?.value)
       }
     })

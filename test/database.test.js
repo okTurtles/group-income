@@ -15,6 +15,10 @@ const options = {
   }
 }
 
+const isBadKeyError = badKey => err => err.message === `bad key: ${JSON.stringify(badKey)}`
+
+const range = (n) => [...new Array(n).keys()]
+
 names.forEach((name) => {
   const lowerCaseName = name.toLowerCase()
   const {
@@ -34,7 +38,7 @@ names.forEach((name) => {
       await clear()
     })
 
-    it('should throw if the key is invalid', async function () {
+    it('should throw if the key contains path components', async function () {
       const badKeys = [
         '/badkey', './badkey', '../badkey',
         'bad/key', 'bad/./key', 'bad/../key',
@@ -44,10 +48,21 @@ names.forEach((name) => {
       badKeys.push(...windowsBadKeys)
 
       await Promise.all(badKeys.map(badKey => (
-        assert.rejects(readData(badKey), err => err.message === `bad key: ${badKey}`)
+        assert.rejects(readData(badKey), isBadKeyError(badKey))
       )))
       await Promise.all(badKeys.map(badKey => (
-        assert.rejects(writeData(badKey, ''), err => err.message === `bad key: ${badKey}`)
+        assert.rejects(writeData(badKey, ''), isBadKeyError(badKey))
+      )))
+    })
+
+    it('should throw if the key contains any unprintable character', async function () {
+      const unprintableCharacters = [...String.fromCharCode(...range(32), 127)]
+
+      await Promise.all(unprintableCharacters.map(c => (
+        assert.rejects(readData(c), err => err.message === `bad key: ${JSON.stringify(c)}`)
+      )))
+      await Promise.all(unprintableCharacters.map(c => (
+        assert.rejects(writeData(c, ''), err => err.message === `bad key: ${JSON.stringify(c)}`)
       )))
     })
 
@@ -104,7 +119,7 @@ names.forEach((name) => {
 
     it('Should roundtrip entries in bulk given a JSON object', async function () {
       const json = Object.fromEntries(
-        [...new Array(100).keys()].map(key => [key, String(Math.random())])
+        range(100).map(key => [key, String(Math.random())])
       )
       await importFromJSON(json)
 

@@ -161,8 +161,9 @@ sbp('sbp/selectors/register', {
 
 // Used to thwart path traversal attacks.
 export function checkKey (key: string): void {
-  if (/[/\\]/.test(key)) {
-    throw Boom.badRequest(`bad key: ${key}`)
+  // Disallow unprintable characters, slashes, and TAB.
+  if (/[\x00-\x1f\x7f\t\\/]/.test(key)) { // eslint-disable-line no-control-regex
+    throw Boom.badRequest(`bad key: ${JSON.stringify(key)}`)
   }
 }
 
