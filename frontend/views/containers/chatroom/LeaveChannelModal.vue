@@ -27,7 +27,6 @@ import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
-import { L } from '@common/common.js'
 
 export default ({
   name: 'LeaveChannelModal',
@@ -52,7 +51,6 @@ export default ({
       } else {
         return this.currentChatRoomState.attributes.name
       }
-    }
     }
   },
   methods: {
