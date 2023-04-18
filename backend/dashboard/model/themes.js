@@ -49,6 +49,8 @@ export const checkSystemTheme = () => {
     : THEME_LIGHT
 }
 export const initTheme = () => {
+  // check if there is a value in local-storage that was stored from user previously toggling the theme in the app.
+  // if not, fallback to system preference, and lastly default to light-theme in case of no system preference in the browser.
   const fromStorage = window.localStorage.getItem(THEME_STORAGE_KEY)
   store.commit('setTheme', fromStorage || checkSystemTheme())
 }
