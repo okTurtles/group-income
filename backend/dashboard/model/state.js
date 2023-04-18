@@ -3,12 +3,12 @@
 import sbp from '@sbp/sbp'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import Colors, { checkSystemTheme, storeThemeToLocalStorage } from './themes.js'
+import Colors, { THEME_LIGHT, storeThemeToLocalStorage } from './themes.js'
 import { cloneDeep } from '@common/cdLodash.js'
 
 Vue.use(Vuex)
 
-const defaultTheme = checkSystemTheme()
+const defaultTheme = THEME_LIGHT
 const initialState = {
   theme: defaultTheme
 }
@@ -38,6 +38,7 @@ const store = new Vuex.Store({
 store.watch(
   state => state.theme,
   (theme) => {
+    console.log
     document.documentElement.dataset.theme = theme
     storeThemeToLocalStorage(theme)
   }

@@ -2,7 +2,7 @@
 PageTemplate
   template(#title='') {{ L('Billing') }}
 
-  section.c-section
+  section.c-section.is-centered-on-mobile
     form.c-form(@submit.prevent='')
       .field
         i18n.label.mb-0(tag='label') Accepted payment methods

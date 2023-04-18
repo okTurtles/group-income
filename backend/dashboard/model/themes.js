@@ -48,12 +48,12 @@ export const checkSystemTheme = () => {
     ? THEME_DARK
     : THEME_LIGHT
 }
-export const checkThemeFromLocalStorage = () => {
+export const initTheme = () => {
   const fromStorage = window.localStorage.getItem(THEME_STORAGE_KEY)
 
-  if (fromStorage) {
-    store.commit('setTheme', fromStorage)
-  }
+  console.log('fromStorage: ', fromStorage)
+  console.log('checkSystemTheme(): ', checkSystemTheme())
+  store.commit('setTheme', fromStorage || checkSystemTheme())
 }
 export const storeThemeToLocalStorage = (theme) => {
   window.localStorage.setItem(THEME_STORAGE_KEY, theme)
