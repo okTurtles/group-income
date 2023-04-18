@@ -38,7 +38,6 @@ const store = new Vuex.Store({
 store.watch(
   state => state.theme,
   (theme) => {
-    console.log
     document.documentElement.dataset.theme = theme
     storeThemeToLocalStorage(theme)
   }
