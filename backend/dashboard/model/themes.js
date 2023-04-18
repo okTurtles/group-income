@@ -50,9 +50,6 @@ export const checkSystemTheme = () => {
 }
 export const initTheme = () => {
   const fromStorage = window.localStorage.getItem(THEME_STORAGE_KEY)
-
-  console.log('fromStorage: ', fromStorage)
-  console.log('checkSystemTheme(): ', checkSystemTheme())
   store.commit('setTheme', fromStorage || checkSystemTheme())
 }
 export const storeThemeToLocalStorage = (theme) => {
