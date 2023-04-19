@@ -207,6 +207,9 @@ export default async () => {
   // TODO: Update this to only run when persistence is disabled when `¢hel deploy` can target SQLite.
   if (persistence !== 'fs' || options.fs.dirname !== './data') {
     const HASH_LENGTH = 50
+    // Remember to keep these values up-to-date.
+    const CONTRACT_MANIFEST_MAGIC = '{"head":{"manifestVersion"'
+    const CONTRACT_SOURCE_MAGIC = '"use strict";'
     // Preload contract source files and contract manifests into Chelonia DB.
     // Note: the data folder may contain other files if the `fs` persistence mode
     // has been used before. We won't load them here; that's the job of `chel migrate`.
@@ -216,22 +219,26 @@ export default async () => {
     const keys = (await readdir(dataFolder))
       // Skip some irrelevant files.
       .filter(k => k.length === HASH_LENGTH)
-    // Use `Promise.all` to process files concurrently, not sequentially.
-    const newKeys = await Promise.all(
-      // Map every remaining key to a promise.
-      // The promise will resolve to the key if it was added to the DB,
-      // so that we can count how many entries have been added.
-      keys.map(async key => {
-        // Skip keys which are already in the DB.
-        if (!await sbp('chelonia/db/get', key)) {
-          const value = await readFile(path.join(dataFolder, key), 'utf8')
-          // Skip contract log entries.
-          if (!value.startsWith('{"message":')) {
-            return sbp('chelonia/db/set', key, value).then(() => key)
-          }
+    const numKeys = keys.length
+    let numVisitedKeys = 0
+    let numNewKeys = 0
+
+    console.log('[chelonia.db] Preloading...')
+    for (const key of keys) {
+      // Skip keys which are already in the DB.
+      if (!await sbp('chelonia/db/get', key)) {
+        const value = await readFile(path.join(dataFolder, key), 'utf8')
+        // Load only contract source files and contract manifests.
+        if (value.startsWith(CONTRACT_MANIFEST_MAGIC) || value.startsWith(CONTRACT_SOURCE_MAGIC)) {
+          await sbp('chelonia/db/set', key, value)
+          numNewKeys++
         }
-      })
-    ).then(results => results.filter(Boolean))
-    newKeys.length && console.log(`[chelonia.db] Preloaded ${newKeys.length} new entries`)
+      }
+      numVisitedKeys++
+      if (numVisitedKeys % Math.floor(numKeys / 10) === 0) {
+        console.log(`[chelonia.db] Preloading... ${numVisitedKeys / Math.floor(numKeys / 10)}0% done`)
+      }
+    }
+    numNewKeys && console.log(`[chelonia.db] Preloaded ${numNewKeys} new entries`)
   }
 }
