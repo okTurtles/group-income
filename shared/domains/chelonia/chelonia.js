@@ -489,11 +489,11 @@ export default (sbp('sbp/selectors/register', {
       return cloneDeep(sbp(this.config.stateSelector)[contractID])
     }
   },
-  'chelonia/latestContractState': async function (contractID: string) {
+  'chelonia/latestContractState': async function (contractID: string, options = { forceSync: false }) {
     const rootState = sbp(this.config.stateSelector)
     // return a copy of the state if we already have it, unless the only key that's in it is _volatile,
     // in which case it means we should sync the contract to get more info.
-    if (rootState[contractID] && Object.keys(rootState[contractID]).some((x) => x !== '_volatile')) {
+    if (!options.forceSync && rootState[contractID] && Object.keys(rootState[contractID]).some((x) => x !== '_volatile')) {
       return cloneDeep(rootState[contractID])
     }
     const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
@@ -714,14 +714,15 @@ export default (sbp('sbp/selectors/register', {
       signatureFn: signingKey ? signatureFnBuilder(signingKey) : undefined
     })
     hooks && hooks.prepublish && hooks.prepublish(msg)
-    const keyShareKeys = ((Object.values(state._vm?.authorizedKeys ?? {}): any): GIKey[]).filter((k) => k?.permissions.includes(GIMessage.OP_KEY_REQUEST_RESPONSE)).map((k) => ({ ...k, permissions: [GIMessage.OP_KEYSHARE], meta: undefined }))
+    const keyShareKeys = ((Object.values(state._vm?.authorizedKeys ?? {}): any): GIKey[]).filter((k) => k?.permissions.includes(GIMessage.OP_KEY_REQUEST_RESPONSE)).map((k) => ({ ...k, permissions: [GIMessage.OP_KEYSHARE], meta: { keyRequest: { id: msg.id(), contractID, outerKeyId } } }))
+    // TODO: REMOVE THE console.log below
     console.log({ keyShareKeys, originatingContractID, contractID, st: state, svm: state._vm?.authorizedKeys })
     keyShareKeys.length && await sbp('chelonia/out/keyAdd', {
       contractID: originatingContractID,
       contractName: originatingContractName,
       data: keyShareKeys
     })
-    await sbp('chelonia/private/out/publishEvent', msg, publishOptions).then(() => (rootState[contractID] && (rootState[contractID]._volatile = ({ ...rootState[contractID]._volatile, pendingKeys: true }))))
+    await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
     hooks && hooks.postpublish && hooks.postpublish(msg)
     return msg
   },

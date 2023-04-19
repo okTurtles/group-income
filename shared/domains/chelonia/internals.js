@@ -287,27 +287,24 @@ export default (sbp('sbp/selectors/register', {
             }
           }
         }
-        new Promise((resolve, reject) => {
+
+        Promise.resolve().then(async () => {
           console.log('Processing OP_KEYSHARE (inside promise)')
-          if (targetState._volatile?.pendingKeys) {
-            console.log('Inside pendingKeys if')
-            sbp('chelonia/contract/removeImmediately', v.contractID)
+          if (targetState._volatile?.pendingKeyRequests) {
+            console.log('Inside pendingKeyRequests if')
+            await sbp('chelonia/contract/remove', v.contractID)
             // Sync...
-            sbp('chelonia/configure', {
+            await sbp('chelonia/configure', {
               transientSecretKeys: {
                 ...keys,
                 ...sharedKeys
               }
-            }).then(() =>
-              resolve(sbp('chelonia/withEnv', v.contractID, {
-                ...env
-              }, [
-                'chelonia/private/in/syncContract', v.contractID
-              ]))
-            ).catch(reject)
+            })
+            return sbp('chelonia/withEnv', v.contractID, env, [
+              'chelonia/contract/sync', v.contractID
+            ])
           } else {
-            console.log('No pendingKeys')
-            resolve()
+            console.log('No pendingKeyRequests')
           }
         }).then(() => {
           if (!targetState._volatile) targetState._volatile = Object.create(null)
@@ -336,28 +333,28 @@ export default (sbp('sbp/selectors/register', {
           }
         }
 
-        if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeys) {
+        if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeyRequests?.length) {
           return
         }
 
-        if (!state._vm.pending_key_requests) state._vm.pending_key_requests = Object.create(null)
-        state._vm.pending_key_requests[message.hash()] = [
+        if (!state._vm.pendingKeyshares) state._vm.pendingKeyshares = Object.create(null)
+        state._vm.pendingKeyshares[message.hash()] = [
           message.originatingContractID(),
           message.head().previousHEAD,
           v
         ]
       },
       [GIMessage.OP_KEY_REQUEST_RESPONSE] (v: GIOpKeyRequestResponse) {
-        if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeys) {
+        if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeyRequests?.length) {
           return
         }
 
-        if (state._vm.pending_key_requests && v in state._vm.pending_key_requests) {
-          const keyId = state._vm.pending_key_requests[v][2].outerKeyId
+        if (state._vm.pendingKeyshares && v in state._vm.pendingKeyshares) {
+          const keyId = state._vm.pendingKeyshares[v][2].outerKeyId
           if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
-            state._vm?.invites?.[keyId]?.responses.push(state._vm.pending_key_requests[v][0])
+            state._vm?.invites?.[keyId]?.responses.push(state._vm.pendingKeyshares[v][0])
           }
-          delete state._vm.pending_key_requests[v]
+          delete state._vm.pendingKeyshares[v]
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -392,6 +389,23 @@ export default (sbp('sbp/selectors/register', {
               expires: key.meta.expires,
               inviteSecret: state._volatile?.keys?.[key.id],
               responses: []
+            }
+          }
+          if (key.meta?.keyRequest) {
+            const { id, contractID, outerKeyId } = key.meta?.keyRequest
+
+            if (contractID) {
+              const rootState = sbp(config.stateSelector)
+
+              if (!rootState[contractID]) {
+                config.reactiveSet(rootState, contractID, { _volatile: { pendingKeyRequests: [] } })
+              } else if (!rootState[contractID]._volatile) {
+                config.reactiveSet(rootState[contractID], '_volatile', { pendingKeyRequests: [] })
+              } else if (!rootState[contractID]._volatile.pendingKeyRequests) {
+                config.reactiveSet(rootState[contractID]._volatile, 'pendingKeyRequests', [])
+              }
+
+              rootState[contractID]._volatile.pendingKeyRequests.push({ id, outerKeyId })
             }
           }
         }
@@ -512,13 +526,13 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp(this.config.stateSelector)
     const contractState = state[contractID] ?? {}
 
-    if (!contractState._vm || !contractState._vm.pending_key_requests) {
+    if (!contractState._vm || !contractState._vm.pendingKeyshares) {
       return
     }
 
-    const pending = contractState._vm.pending_key_requests
+    const pending = contractState._vm.pendingKeyshares
 
-    delete contractState._vm.pending_key_requests
+    delete contractState._vm.pendingKeyshares
 
     await Promise.all(Object.entries(pending).map(async ([hash, entry]) => {
       if (!Array.isArray(entry) || entry.length !== 3) {
