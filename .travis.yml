@@ -1,10 +1,9 @@
 language: node_js
 node_js:
-  - "16"
-dist: trusty
+  - "18"
+dist: focal
 compiler: clang # per: https://docs.travis-ci.com/user/languages/c
 env:
-  - NO_PERSIST
   - GI_PERSIST
 branches:
   only:
