@@ -402,9 +402,7 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        // TODO: should remove Optional Chaining(?.)
-        //       when all the previous version of contracts are not being used
-        const isAlreadyAdded = !!rootState.chatRoomUnread[contractID].mentions?.find(m => m.messageHash === data.hash)
+        const isAlreadyAdded = !!rootState.chatRoomUnread[contractID].mentions.find(m => m.messageHash === data.hash)
         const mentions = makeMentionFromUsername(me)
         const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
 
@@ -465,8 +463,6 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        // TODO: should remove Optional Chaining(?.)
-        //       when all the previous version of contracts are not being used
         if (rootState.chatRoomUnread[contractID].readUntil?.messageHash === data.hash) {
           sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
             chatRoomId: contractID,
@@ -478,9 +474,7 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        // TODO: should remove Optional Chaining(?.)
-        //       when all the previous version of contracts are not being used
-        if (rootState.chatRoomUnread[contractID].mentions?.find(m => m.messageHash === data.hash)) {
+        if (rootState.chatRoomUnread[contractID].mentions.find(m => m.messageHash === data.hash)) {
           sbp('state/vuex/commit', 'deleteChatRoomUnreadMention', {
             chatRoomId: contractID,
             messageHash: data.hash
