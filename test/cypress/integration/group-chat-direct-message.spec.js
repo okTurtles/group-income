@@ -116,21 +116,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
   })
 
   it(`user2 joins "${groupName}" group and create a direct message channel with user1 and sends two messages`, () => {
-    cy.giAcceptGroupInvite(invitationLinkAnyone, {
-      username: user2,
-      groupName: groupName,
-      shouldLogoutAfter: false,
-      bypassUI: true
-    })
-    me = user2
-    cy.giRedirectToGroupChat()
-
-    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
-
-    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
-      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
-    })
+    joinUser(user2, false)
 
     cy.getByDT('chatMembers').find('ul').children().should('have.length', 0)
 

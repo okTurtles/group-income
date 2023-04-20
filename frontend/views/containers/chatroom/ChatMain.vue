@@ -173,7 +173,7 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
-    if (this.currentChatRoomId) {
+    if (this.currentChatRoomId && this.isJoinedChatRoom(this.currentChatRoomId)) {
       // NOTE: this.currentChatRoomId could be null when enter group chat page very soon
       //       after the first opening the Group Income application
       this.setMessageEventListener({ to: this.currentChatRoomId })
@@ -714,14 +714,16 @@ export default ({
     },
     refreshContent: debounce(function (from, to) {
       // NOTE: using debounce we can skip unnecessary rendering contents
-      this.setMessageEventListener({ from, to })
       this.archiveMessageState(from)
       this.setInitMessages()
+      this.setMessageEventListener({ from, to })
     }, 250)
   },
   watch: {
     'currentChatRoomId' (to, from) {
-      this.ephemeral.messagesInitiated = false
+      if (from) {
+        this.ephemeral.messagesInitiated = false
+      }
       this.refreshContent(from, to)
     },
     'summary.isJoined' (to, from) {
