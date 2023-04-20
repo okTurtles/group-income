@@ -9884,7 +9884,7 @@ ${this.getErrorInfo()}`;
               messageHash: null
             });
           }
-          if (rootState.chatRoomUnread[contractID].readUntil?.messageHash === data.hash) {
+          if (rootState.chatRoomUnread[contractID].readUntil.messageHash === data.hash) {
             (0, import_sbp4.default)("state/vuex/commit", "deleteChatRoomReadUntil", {
               chatRoomId: contractID,
               deletedDate: meta.createdDate

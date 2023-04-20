@@ -463,7 +463,9 @@ sbp('chelonia/defineContract', {
           })
         }
 
-        if (rootState.chatRoomUnread[contractID].readUntil?.messageHash === data.hash) {
+        // NOTE: readUntil can't be undefined because it would be set in advance
+        //       while syncing the contracts events especially join, addMessage, ...
+        if (rootState.chatRoomUnread[contractID].readUntil.messageHash === data.hash) {
           sbp('state/vuex/commit', 'deleteChatRoomReadUntil', {
             chatRoomId: contractID,
             deletedDate: meta.createdDate
