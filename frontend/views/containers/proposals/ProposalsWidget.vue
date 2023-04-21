@@ -53,6 +53,10 @@ export default ({
     ProposalItem,
     ButtonDropdownMenu
   },
+  created () {
+    // check if there are expired proposals to archive
+    sbp('gi.actions/group/checkAndArchiveExpiredProposals', { contractID: this.$store.state.currentGroupId })
+  },
   mounted () {
     sbp('okTurtles.events/on', PROPOSAL_ARCHIVED, this.onProposalArchived)
   },
