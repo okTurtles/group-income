@@ -102,8 +102,7 @@ const mutations = {
     state.loggedIn = user
   },
   logout (state) {
-    state.loggedIn = false
-    state.currentGroupId = null
+    Object.assign(state, cloneDeep(initialState))
   },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group

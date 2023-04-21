@@ -148,6 +148,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
+
     return
   }
 
@@ -261,9 +262,6 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 }) => {
   if (bypassUI) {
     if (!isLoggedIn) {
-      cy.visit('/')
-      cy.url().should('eq', 'http://localhost:8000/app/')
-      cy.getByDT('welcomeHome').should('contain', 'Welcome to Group Income')
       cy.giSignup(username, { bypassUI: true })
     }
     const params = new URLSearchParams(new URL(invitationLink).search)
