@@ -86,14 +86,14 @@ Cypress.Commands.add('giLogin', (username, {
 
   // wait for contracts to finish syncing
   cy.getByDT('app').then(([el]) => {
-    cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+    cy.get(el).should('have.attr', 'data-logged-in', 'true')
     cy.get(el).should('have.attr', 'data-sync', '')
   })
 })
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   if (hasNoGroup) {
-    cy.window().its('sbp').then(sbp => sbp('gi.actions/identity/logout'))
+    cy.window().its('sbp').then(async sbp => await sbp('gi.actions/identity/logout'))
   } else {
     cy.getByDT('settingsBtn').click()
     cy.getByDT('link-logout').click()
@@ -290,13 +290,12 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
     cy.getByDT('app').then(([el]) => {
       if (!isLoggedIn) {
-        cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+        cy.get(el).should('have.attr', 'data-logged-in', 'true')
       }
       cy.get(el).should('have.attr', 'data-sync', '')
     })
-
-    cy.giCheckIfJoinedGeneralChatroom(groupName)
   }
+  cy.giCheckIfJoinedGeneralChatroom(groupName)
 
   if (displayName) {
     cy.giSetDisplayName(displayName)

@@ -207,8 +207,6 @@ async function startApp () {
       return {
         ephemeral: {
           syncs: [],
-          // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
-          finishedLogin: 'no',
           debouncedSyncBanner: null,
           isCorrupted: false // TODO #761
         }
@@ -239,7 +237,7 @@ async function startApp () {
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGIN, () => {
-        this.ephemeral.finishedLogin = 'yes'
+        sbp('state/vuex/commit', 'finishLogin')
 
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()
@@ -247,7 +245,6 @@ async function startApp () {
         }
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
-        this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
       })
@@ -296,7 +293,12 @@ async function startApp () {
       this.setBadgeOnTab()
     },
     computed: {
-      ...mapGetters(['groupsByName', 'ourUnreadMessages', 'totalUnreadNotificationCount']),
+      ...mapGetters([
+        'groupsByName',
+        'ourUnreadMessages',
+        'totalUnreadNotificationCount',
+        'finishedLogin'
+      ]),
       ...mapState(['contracts']),
       ourUnreadMessagesCount () {
         return Object.keys(this.ourUnreadMessages)

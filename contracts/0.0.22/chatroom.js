@@ -9525,7 +9525,8 @@ ${this.getErrorInfo()}`;
     }
   }
   function setReadUntilWhileJoining({ contractID, hash: hash2, createdDate }) {
-    if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
+    const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
+    if (rootGetters.finishedLogin && (0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
       (0, import_sbp4.default)("state/vuex/commit", "setChatRoomReadUntil", {
         chatRoomId: contractID,
         messageHash: hash2,

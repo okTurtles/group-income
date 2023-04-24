@@ -9,6 +9,10 @@ const groupInviteLinkExpiry = {
   proposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
 }
 
+function assertMembersCount (count) {
+  cy.getByDT('groupMembers').find('ul>li').should('have.length', count)
+}
+
 function assertProposalOpenState ({ description }) {
   cy.getByDT('statusDescription')
     .should('contain', description)
@@ -77,19 +81,16 @@ describe('Proposals - Add members', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user3-${userId}`, groupName })
   })
 
-  it('user1 proposes to add user4, user5 together to the group', () => {
+  it('user1 proposes to add user4, user5, user6 together to the group', () => {
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
-
+    assertMembersCount(3)
     cy.giInviteMember([`user4-${userId}`, `user5-${userId}`])
-  })
-
-  it('user1 proposes to add user6 to the group', () => {
     cy.giInviteMember([`user6-${userId}`])
   })
 
   it('user2 proposes to add user7 to the group', () => {
     cy.giSwitchUser(`user2-${userId}`)
-
+    assertMembersCount(3)
     cy.giInviteMember([`user7-${userId}`])
   })
 
