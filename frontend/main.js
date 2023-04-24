@@ -237,7 +237,7 @@ async function startApp () {
       sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initialSyncFn)
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, syncFn.bind(this))
       sbp('okTurtles.events/on', LOGIN, () => {
-        sbp('state/vuex/commit', 'finishLogin')
+        sbp('state/vuex/commit', 'setFinishedLogin', true)
 
         if (this.$store.state.currentGroupId) {
           this.initOrResetPeriodicNotifications()

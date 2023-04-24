@@ -199,6 +199,7 @@ export default (sbp('sbp/selectors/register', {
         // under an older version of the app where fewer/other Vuex modules were implemented.
         sbp('state/vuex/postUpgradeVerification', state)
         sbp('state/vuex/replace', state)
+        sbp('state/vuex/commit', 'setFinishedLogin', false)
         sbp('chelonia/pubsub/update') // resubscribe to contracts since we replaced the state
         contractIDs = Object.keys(state.contracts)
       }

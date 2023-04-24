@@ -102,8 +102,8 @@ const mutations = {
   login (state, user) {
     state.loggedIn = user
   },
-  finishLogin (state) {
-    state.finishedLogin = true
+  setFinishedLogin (state, finished) {
+    state.finishedLogin = finished
   },
   logout (state) {
     Object.assign(state, cloneDeep(initialState))
