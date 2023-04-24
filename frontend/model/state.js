@@ -28,7 +28,6 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  finishedLogin: false,
   namespaceLookups: Object.create(null), // { [username]: sbp('namespace/lookup') }
   periodicNotificationAlreadyFiredMap: {} // { notificationKey: boolean }
 }
@@ -101,9 +100,6 @@ sbp('sbp/selectors/register', {
 const mutations = {
   login (state, user) {
     state.loggedIn = user
-  },
-  setFinishedLogin (state, finished) {
-    state.finishedLogin = finished
   },
   logout (state) {
     Object.assign(state, cloneDeep(initialState))
@@ -221,9 +217,6 @@ const getters = {
         messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
       }
     }, state.notificationSettings || {})
-  },
-  finishedLogin (state) {
-    return state.finishedLogin
   },
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username

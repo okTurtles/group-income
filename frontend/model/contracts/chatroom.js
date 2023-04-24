@@ -49,8 +49,9 @@ function setReadUntilWhileJoining ({ contractID, hash, createdDate }: {
   hash: string,
   createdDate: string
 }): void {
-  const rootGetters = sbp('state/vuex/getters')
-  if (rootGetters.finishedLogin && sbp('chelonia/contract/isSyncing', contractID)) {
+  if (sbp('chelonia/contract/isSyncing', contractID)) {
+    // TODO: should not only syncing, it should be joining and first-signing in new device
+    //       https://github.com/okTurtles/group-income/issues/1553
     sbp('state/vuex/commit', 'setChatRoomReadUntil', {
       chatRoomId: contractID,
       messageHash: hash,
