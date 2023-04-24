@@ -2,7 +2,7 @@
 ModalTemplate(:title='L("Contract manifest")' icon='suitcase')
   .c-contract-id-container
     span.c-id-label.has-family-poppins contractID :
-    text-to-copy.c-id-copy(:text='contract.contractId')
+    TextToCopy.c-id-copy(:text='contract.contractId')
       .c-id-value {{ contract.contractId }}
 
   .c-code-demo-container
