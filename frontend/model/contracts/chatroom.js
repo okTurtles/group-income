@@ -18,7 +18,13 @@ import {
   MESSAGE_NOTIFY_SETTINGS
 } from './shared/constants.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
-import { createMessage, leaveChatRoom, findMessageIdx, makeMentionFromUsername } from './shared/functions.js'
+import {
+  createMessage,
+  leaveChatRoom,
+  findMessageIdx,
+  makeMentionFromUsername,
+  checkChatRoomJoining
+} from './shared/functions.js'
 import { makeNotification } from './shared/nativeNotification.js'
 import { objectOf, string, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 
@@ -49,9 +55,8 @@ function setReadUntilWhileJoining ({ contractID, hash, createdDate }: {
   hash: string,
   createdDate: string
 }): void {
-  if (sbp('chelonia/contract/isSyncing', contractID)) {
-    // TODO: should not only syncing, it should be joining and first-signing in new device
-    //       https://github.com/okTurtles/group-income/issues/1553
+  const isJoining = checkChatRoomJoining(contractID)
+  if (sbp('chelonia/contract/isSyncing', contractID) && isJoining) {
     sbp('state/vuex/commit', 'setChatRoomReadUntil', {
       chatRoomId: contractID,
       messageHash: hash,

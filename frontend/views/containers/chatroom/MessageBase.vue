@@ -124,6 +124,9 @@ export default ({
       return this.generateTextObjectsFromText(this.replyingMessage)
     }
   },
+  mounted () {
+    console.log('MessageBase Mounted:', this.text, '------------')
+  },
   methods: {
     humanDate,
     editMessage () {

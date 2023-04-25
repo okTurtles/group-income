@@ -156,3 +156,26 @@ export function makeMentionFromUsername (username: string): {
     all: '@all'
   }
 }
+
+// group.js, mailbox.js, chatroom.js related
+
+function setChatRoomJoiningState (contractID: string, finishedJoining: boolean) {
+  const joiningChatRooms = sbp('okTurtles.data/get', 'JOINING_CHATROOMS') || {}
+  if (finishedJoining) {
+    delete joiningChatRooms[contractID]
+  } else {
+    joiningChatRooms[contractID] = true
+  }
+  sbp('okTurtles.data/set', 'JOINING_CHATROOMS', joiningChatRooms)
+}
+
+export async function syncChatRoomContract (contractID: string) {
+  setChatRoomJoiningState(contractID, false)
+  await sbp('chelonia/contract/sync', contractID)
+  setChatRoomJoiningState(contractID, true)
+}
+
+export function checkChatRoomJoining (contractID: string): boolean {
+  const joiningChatRooms = sbp('okTurtles.data/get', 'JOINING_CHATROOMS') || {}
+  return !!joiningChatRooms[contractID]
+}

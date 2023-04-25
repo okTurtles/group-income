@@ -9747,6 +9747,20 @@ ${this.getErrorInfo()}`;
       when: payment.data.completedDate
     };
   }
+  function setChatRoomJoiningState(contractID, finishedJoining) {
+    const joiningChatRooms = (0, import_sbp3.default)("okTurtles.data/get", "JOINING_CHATROOMS") || {};
+    if (finishedJoining) {
+      delete joiningChatRooms[contractID];
+    } else {
+      joiningChatRooms[contractID] = true;
+    }
+    (0, import_sbp3.default)("okTurtles.data/set", "JOINING_CHATROOMS", joiningChatRooms);
+  }
+  async function syncChatRoomContract(contractID) {
+    setChatRoomJoiningState(contractID, false);
+    await (0, import_sbp3.default)("chelonia/contract/sync", contractID);
+    setChatRoomJoiningState(contractID, true);
+  }
 
   // frontend/model/contracts/shared/distribution/mincome-proportional.js
   function mincomeProportional(haveNeeds) {
@@ -10871,7 +10885,7 @@ ${this.getErrorInfo()}`;
           const username = data.username || meta.username;
           if (username === rootState.loggedIn.username) {
             if (!(0, import_sbp4.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp4.default)("okTurtles.data/get", "JOINING_GROUP_CHAT")) {
-              await (0, import_sbp4.default)("chelonia/contract/sync", data.chatRoomID);
+              await syncChatRoomContract(data.chatRoomID);
               (0, import_sbp4.default)("okTurtles.data/set", "JOINING_GROUP_CHAT", false);
             }
           }
