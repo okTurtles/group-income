@@ -62,6 +62,8 @@ export default ({
   },
   data () {
     return {
+      // NOTE: v-model can't be used here since it's only for limited elements; input, select, textarea
+      //       https://vuejs.org/api/built-in-directives.html#v-model
       value: ''
     }
   },
