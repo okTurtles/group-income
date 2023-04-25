@@ -12,7 +12,6 @@ form.c-search-form(@submit.prevent='')
         name='search'
       )
         .profile-wrapper(
-          contenteditable='false'
           v-for='(username, index) in usernames'
           :key='index'
         )
