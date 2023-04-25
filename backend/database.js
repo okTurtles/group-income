@@ -4,25 +4,39 @@ import sbp from '@sbp/sbp'
 import { strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
 import fs from 'fs'
-import util from 'util'
-import path from 'path'
+import { readdir, readFile } from 'node:fs/promises'
+import path from 'node:path'
 import '@sbp/okturtles.data'
 import '~/shared/domains/chelonia/db.js'
 import LRU from 'lru-cache'
 
 const Boom = require('@hapi/boom')
 
-const writeFileAsync = util.promisify(fs.writeFile)
-const readFileAsync = util.promisify(fs.readFile)
-const dataFolder = path.resolve('./data')
+const production = process.env.NODE_ENV === 'production'
+// Defaults to `fs` in production.
+const persistence = process.env.GI_PERSIST || (production ? 'fs' : undefined)
 
+// Default database options. Other values may be used e.g. in tests.
+const options = {
+  fs: {
+    dirname: './data'
+  },
+  sqlite: {
+    dirname: './data',
+    filename: 'groupincome.db'
+  }
+}
+
+// Used by `throwIfFileOutsideDataDir()`.
+const dataFolder = path.resolve(options.fs.dirname)
+
+// Create our data folder if it doesn't exist yet.
+// This is currently necessary even when not using persistence, e.g. to store file uploads.
 if (!fs.existsSync(dataFolder)) {
   fs.mkdirSync(dataFolder, { mode: 0o750 })
 }
 
-const production = process.env.NODE_ENV === 'production'
-
-export default (sbp('sbp/selectors/register', {
+sbp('sbp/selectors/register', {
   'backend/db/streamEntriesSince': async function (contractID: string, hash: string): Promise<*> {
     let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
     if (!currentHEAD) {
@@ -139,84 +153,92 @@ export default (sbp('sbp/selectors/register', {
     await sbp('chelonia/db/set', namespaceKey(name), value)
     return { name, value }
   },
-  'backend/db/lookupName': async function (name: string): Promise<*> {
+  'backend/db/lookupName': async function (name: string): Promise<string | Error> {
     const value = await sbp('chelonia/db/get', namespaceKey(name))
     return value || Boom.notFound()
-  },
-  // =======================
-  // Filesystem API
-  //
-  // TODO: add encryption
-  // =======================
-  'backend/db/readFile': async function (filename: string): Promise<*> {
-    const filepath = throwIfFileOutsideDataDir(filename)
-    if (!fs.existsSync(filepath)) {
-      return Boom.notFound()
-    }
-    return await readFileAsync(filepath)
-  },
-  'backend/db/writeFile': async function (filename: string, data: any): Promise<*> {
-    // TODO: check for how much space we have, and have a server setting
-    //       that determines how much of the disk space we're allowed to
-    //       use. If the size of the file would cause us to exceed this
-    //       amount, throw an exception
-    return await writeFileAsync(throwIfFileOutsideDataDir(filename), data)
-  },
-  'backend/db/writeFileOnce': async function (filename: string, data: any): Promise<*> {
-    const filepath = throwIfFileOutsideDataDir(filename)
-    if (fs.existsSync(filepath)) {
-      console.warn('writeFileOnce: exists:', filepath)
-      return
-    }
-    return await writeFileAsync(filepath, data)
   }
-}): any)
+})
+
+// Used to thwart path traversal attacks.
+export function checkKey (key: string): void {
+  // Disallow unprintable characters, slashes, and TAB.
+  if (/[\x00-\x1f\x7f\t\\/]/.test(key)) { // eslint-disable-line no-control-regex
+    throw Boom.badRequest(`bad key: ${JSON.stringify(key)}`)
+  }
+}
 
 function namespaceKey (name: string): string {
   return 'name=' + name
 }
 
-function throwIfFileOutsideDataDir (filename: string): string {
-  const filepath = path.resolve(path.join(dataFolder, filename))
-  if (filepath.indexOf(dataFolder) !== 0) {
-    throw Boom.badRequest(`bad name: ${filename}`)
+export default async () => {
+  // If persistence must be enabled:
+  // - load and initialize the selected storage backend
+  // - then overwrite 'chelonia/db/get' and '-set' to use it with an LRU cache
+  if (persistence) {
+    const { initStorage, readData, writeData } = await import(`./database-${persistence}.js`)
+
+    await initStorage(options[persistence])
+
+    // https://github.com/isaacs/node-lru-cache#usage
+    const cache = new LRU({
+      max: Number(process.env.GI_LRU_NUM_ITEMS) || 10000
+    })
+
+    sbp('sbp/selectors/overwrite', {
+      'chelonia/db/get': async function (key: string): Promise<Buffer | string | void> {
+        const lookupValue = cache.get(key)
+        if (lookupValue !== undefined) {
+          return lookupValue
+        }
+        const value = await readData(key)
+        if (value !== undefined) {
+          cache.set(key, value)
+        }
+        return value
+      },
+      'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<void> {
+        await writeData(key, value)
+        cache.set(key, value)
+      }
+    })
+    sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
   }
-  return filepath
-}
+  // TODO: Update this to only run when persistence is disabled when `¢hel deploy` can target SQLite.
+  if (persistence !== 'fs' || options.fs.dirname !== './data') {
+    const HASH_LENGTH = 50
+    // Remember to keep these values up-to-date.
+    const CONTRACT_MANIFEST_MAGIC = '{"head":{"manifestVersion"'
+    const CONTRACT_SOURCE_MAGIC = '"use strict";'
+    // Preload contract source files and contract manifests into Chelonia DB.
+    // Note: the data folder may contain other files if the `fs` persistence mode
+    // has been used before. We won't load them here; that's the job of `chel migrate`.
+    // Note: our target files are currently deployed with unprefixed hashes as file names.
+    // We can take advantage of this to recognize them more easily.
+    // TODO: Update this code when `¢hel deploy` no longer generates unprefixed keys.
+    const keys = (await readdir(dataFolder))
+      // Skip some irrelevant files.
+      .filter(k => k.length === HASH_LENGTH)
+    const numKeys = keys.length
+    let numVisitedKeys = 0
+    let numNewKeys = 0
 
-if (production || process.env.GI_PERSIST) {
-  // https://github.com/isaacs/node-lru-cache#usage
-  const cache = new LRU({
-    max: Number(process.env.GI_LRU_NUM_ITEMS) || 10000
-  })
-
-  sbp('sbp/selectors/overwrite', {
-    // we cannot simply map this to readFile, because 'chelonia/db/getEntry'
-    // calls this and expects a string, not a Buffer
-    // 'chelonia/db/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
-    'chelonia/db/get': async function (filename: string) {
-      const lookupValue = cache.get(filename)
-      if (lookupValue !== undefined) {
-        return lookupValue
+    console.log('[chelonia.db] Preloading...')
+    for (const key of keys) {
+      // Skip keys which are already in the DB.
+      if (!await sbp('chelonia/db/get', key)) {
+        const value = await readFile(path.join(dataFolder, key), 'utf8')
+        // Load only contract source files and contract manifests.
+        if (value.startsWith(CONTRACT_MANIFEST_MAGIC) || value.startsWith(CONTRACT_SOURCE_MAGIC)) {
+          await sbp('chelonia/db/set', key, value)
+          numNewKeys++
+        }
       }
-      const bufferOrError = await sbp('backend/db/readFile', filename)
-      if (Boom.isBoom(bufferOrError)) {
-        return null
-      }
-      const value = bufferOrError.toString('utf8')
-      cache.set(filename, value)
-      return value
-    },
-    'chelonia/db/set': async function (filename: string, data: any): Promise<*> {
-      // eslint-disable-next-line no-useless-catch
-      try {
-        const result = await sbp('backend/db/writeFile', filename, data)
-        cache.set(filename, data)
-        return result
-      } catch (err) {
-        throw err
+      numVisitedKeys++
+      if (numVisitedKeys % Math.floor(numKeys / 10) === 0) {
+        console.log(`[chelonia.db] Preloading... ${numVisitedKeys / Math.floor(numKeys / 10)}0% done`)
       }
     }
-  })
-  sbp('sbp/selectors/lock', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/delete'])
+    numNewKeys && console.log(`[chelonia.db] Preloaded ${numNewKeys} new entries`)
+  }
 }
