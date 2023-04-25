@@ -36,7 +36,6 @@ form.c-search-form(@submit.prevent='')
 <script>
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
-import { decode } from 'html-entities'
 
 export default ({
   name: 'UsersSelector',
@@ -104,8 +103,7 @@ export default ({
         this.remove(this.usernames[this.usernames.length - 1])
       }
 
-      // NOTE: this.$refs.input.innerHTML could contains HTML entities
-      this.value = decode(this.$refs.input.innerHTML)
+      this.value = this.$refs.input.textContent
     }
   },
   watch: {
