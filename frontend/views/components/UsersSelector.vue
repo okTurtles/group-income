@@ -134,6 +134,7 @@ export default ({
     justify-content: flex-start;
     min-height: 2.75rem;
     height: fit-content;
+    cursor: text;
 
     p {
       display: inline;
@@ -150,6 +151,7 @@ export default ({
     margin: 5px 5px 0 0;
 
     .profile {
+      cursor: default;
       display: flex;
       align-items: center;
       border-radius: 3px;
@@ -157,6 +159,7 @@ export default ({
       line-height: 1;
       padding: 0.25rem;
       width: fit-content;
+      cursor: default;
 
       &:hover {
         background-color: $general_0;
