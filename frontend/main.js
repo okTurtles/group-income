@@ -247,6 +247,7 @@ async function startApp () {
         }
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
+        this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
         sbp('gi.periodicNotifications/clearStatesAndStopTimers')
       })
