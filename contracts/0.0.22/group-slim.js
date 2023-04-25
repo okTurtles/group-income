@@ -575,19 +575,23 @@ ${this.getErrorInfo()}`;
       when: payment.data.completedDate
     };
   }
-  function setChatRoomJoiningState(contractID, finishedJoining) {
-    const joiningChatRooms = (0, import_sbp2.default)("okTurtles.data/get", "JOINING_CHATROOMS") || {};
+  function setContractJoining(contractID, finishedJoining) {
+    const joiningContracts = (0, import_sbp2.default)("okTurtles.data/get", "JOINING_CONTRACTS") || {};
     if (finishedJoining) {
-      delete joiningChatRooms[contractID];
+      delete joiningContracts[contractID];
     } else {
-      joiningChatRooms[contractID] = true;
+      joiningContracts[contractID] = true;
     }
-    (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CHATROOMS", joiningChatRooms);
+    (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CONTRACTS", joiningContracts);
   }
-  async function syncChatRoomContract(contractID) {
-    setChatRoomJoiningState(contractID, false);
+  async function syncContract(contractID, logJoining = false) {
+    if (logJoining) {
+      setContractJoining(contractID, false);
+    }
     await (0, import_sbp2.default)("chelonia/contract/sync", contractID);
-    setChatRoomJoiningState(contractID, true);
+    if (logJoining) {
+      setContractJoining(contractID, true);
+    }
   }
 
   // frontend/model/contracts/shared/giLodash.js
@@ -1761,7 +1765,7 @@ ${this.getErrorInfo()}`;
           const username = data.username || meta.username;
           if (username === rootState.loggedIn.username) {
             if (!(0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP") || (0, import_sbp3.default)("okTurtles.data/get", "JOINING_GROUP_CHAT")) {
-              await syncChatRoomContract(data.chatRoomID);
+              await syncContract(data.chatRoomID, true);
               (0, import_sbp3.default)("okTurtles.data/set", "JOINING_GROUP_CHAT", false);
             }
           }

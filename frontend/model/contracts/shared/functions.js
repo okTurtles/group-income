@@ -159,23 +159,27 @@ export function makeMentionFromUsername (username: string): {
 
 // group.js, mailbox.js, chatroom.js related
 
-function setChatRoomJoiningState (contractID: string, finishedJoining: boolean) {
-  const joiningChatRooms = sbp('okTurtles.data/get', 'JOINING_CHATROOMS') || {}
+function setContractJoining (contractID: string, finishedJoining: boolean) {
+  const joiningContracts = sbp('okTurtles.data/get', 'JOINING_CONTRACTS') || {}
   if (finishedJoining) {
-    delete joiningChatRooms[contractID]
+    delete joiningContracts[contractID]
   } else {
-    joiningChatRooms[contractID] = true
+    joiningContracts[contractID] = true
   }
-  sbp('okTurtles.data/set', 'JOINING_CHATROOMS', joiningChatRooms)
+  sbp('okTurtles.data/set', 'JOINING_CONTRACTS', joiningContracts)
 }
 
-export async function syncChatRoomContract (contractID: string) {
-  setChatRoomJoiningState(contractID, false)
+export async function syncContract (contractID: string, logJoining: boolean = false) {
+  if (logJoining) {
+    setContractJoining(contractID, false)
+  }
   await sbp('chelonia/contract/sync', contractID)
-  setChatRoomJoiningState(contractID, true)
+  if (logJoining) {
+    setContractJoining(contractID, true)
+  }
 }
 
-export function checkChatRoomJoining (contractID: string): boolean {
-  const joiningChatRooms = sbp('okTurtles.data/get', 'JOINING_CHATROOMS') || {}
-  return !!joiningChatRooms[contractID]
+export function checkContractJoining (contractID: string): boolean {
+  const joiningContracts = sbp('okTurtles.data/get', 'JOINING_CONTRACTS') || {}
+  return !!joiningContracts[contractID]
 }

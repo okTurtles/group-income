@@ -23,7 +23,7 @@ import {
   leaveChatRoom,
   findMessageIdx,
   makeMentionFromUsername,
-  checkChatRoomJoining
+  checkContractJoining
 } from './shared/functions.js'
 import { makeNotification } from './shared/nativeNotification.js'
 import { objectOf, string, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
@@ -55,7 +55,7 @@ function setReadUntilWhileJoining ({ contractID, hash, createdDate }: {
   hash: string,
   createdDate: string
 }): void {
-  const isJoining = checkChatRoomJoining(contractID)
+  const isJoining = checkContractJoining(contractID)
   if (sbp('chelonia/contract/isSyncing', contractID) && isJoining) {
     sbp('state/vuex/commit', 'setChatRoomReadUntil', {
       chatRoomId: contractID,

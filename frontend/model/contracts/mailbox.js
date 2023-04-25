@@ -5,7 +5,7 @@
 import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { merge } from './shared/giLodash.js'
-import { leaveChatRoom, syncChatRoomContract } from './shared/functions.js'
+import { leaveChatRoom, syncContract } from './shared/functions.js'
 import { object, objectOf, objectMaybeOf, string, boolean, unionOf, literalOf, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 import { CHATROOM_PRIVACY_LEVEL } from './shared/constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
@@ -91,7 +91,7 @@ sbp('chelonia/defineContract', {
         })
       },
       async sideEffect ({ contractID, data }) {
-        await syncChatRoomContract(data.contractID)
+        await syncContract(data.contractID, true)
 
         if (!sbp('chelonia/contract/isSyncing', contractID)) {
           await sbp('controller/router')
@@ -118,7 +118,7 @@ sbp('chelonia/defineContract', {
       },
       async sideEffect ({ contractID, meta, data }, { state, getters }) {
         if (state.attributes.autoJoinAllowance) {
-          await syncChatRoomContract(data.contractID)
+          await syncContract(data.contractID, true)
         }
       }
     },

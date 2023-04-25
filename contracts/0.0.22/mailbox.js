@@ -9184,19 +9184,23 @@
       console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
     });
   }
-  function setChatRoomJoiningState(contractID, finishedJoining) {
-    const joiningChatRooms = (0, import_sbp2.default)("okTurtles.data/get", "JOINING_CHATROOMS") || {};
+  function setContractJoining(contractID, finishedJoining) {
+    const joiningContracts = (0, import_sbp2.default)("okTurtles.data/get", "JOINING_CONTRACTS") || {};
     if (finishedJoining) {
-      delete joiningChatRooms[contractID];
+      delete joiningContracts[contractID];
     } else {
-      joiningChatRooms[contractID] = true;
+      joiningContracts[contractID] = true;
     }
-    (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CHATROOMS", joiningChatRooms);
+    (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CONTRACTS", joiningContracts);
   }
-  async function syncChatRoomContract(contractID) {
-    setChatRoomJoiningState(contractID, false);
+  async function syncContract(contractID, logJoining = false) {
+    if (logJoining) {
+      setContractJoining(contractID, false);
+    }
     await (0, import_sbp2.default)("chelonia/contract/sync", contractID);
-    setChatRoomJoiningState(contractID, true);
+    if (logJoining) {
+      setContractJoining(contractID, true);
+    }
   }
 
   // frontend/model/contracts/misc/flowTyper.js
@@ -9439,7 +9443,7 @@ ${this.getErrorInfo()}`;
           });
         },
         async sideEffect({ contractID, data }) {
-          await syncChatRoomContract(data.contractID);
+          await syncContract(data.contractID, true);
           if (!(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
             await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: data.contractID } }).catch(logExceptNavigationDuplicated);
           }
@@ -9461,7 +9465,7 @@ ${this.getErrorInfo()}`;
         },
         async sideEffect({ contractID, meta, data }, { state, getters }) {
           if (state.attributes.autoJoinAllowance) {
-            await syncChatRoomContract(data.contractID);
+            await syncContract(data.contractID, true);
           }
         }
       },
