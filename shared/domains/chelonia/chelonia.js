@@ -218,6 +218,7 @@ export default (sbp('sbp/selectors/register', {
     this.manifestToContract = {}
     this.whitelistedActions = {}
     this.currentSyncs = {}
+    this.postSyncOperations = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
     this.env = {}
     this.sideEffectStack = (contractID: string): Array<*> => {

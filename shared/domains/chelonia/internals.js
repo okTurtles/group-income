@@ -7,7 +7,7 @@ import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, G
 import { GIMessage } from './GIMessage.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/model/contracts/shared/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
-import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED } from './events.js'
+import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
 // import 'ses'
@@ -261,6 +261,8 @@ export default (sbp('sbp/selectors/register', {
           throw new Error('External contracts can only set keys for themselves')
         }
 
+        delete self.postSyncOperations[contractID]['pending-keys-for-' + v.contractID]
+
         const cheloniaState = sbp(self.config.stateSelector)
 
         if (!cheloniaState[v.contractID]) {
@@ -290,7 +292,11 @@ export default (sbp('sbp/selectors/register', {
 
         Promise.resolve().then(async () => {
           console.log('Processing OP_KEYSHARE (inside promise)')
-          if (targetState._volatile?.pendingKeyRequests) {
+          if (targetState._volatile?.pendingKeyRequests && targetState._volatile.pendingKeyRequests.length) {
+            if (!Object.keys(targetState).some((k) => k !== '_volatile')) {
+              // If the contract only has _volatile state, we don't force sync it
+              return
+            }
             console.log('Inside pendingKeyRequests if')
             await sbp('chelonia/contract/remove', v.contractID)
             // Sync...
@@ -313,6 +319,8 @@ export default (sbp('sbp/selectors/register', {
           } else {
             Object.entries((sharedKeys: any)).forEach(([k, v]) => { targetState._volatile.keys[k] = v })
           }
+          // TODO Instead of deleting all key requests, remove the current one only
+          targetState._volatile.pendingKeyRequests = []
         })
       },
       [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
@@ -343,6 +351,9 @@ export default (sbp('sbp/selectors/register', {
           message.head().previousHEAD,
           v
         ]
+
+        // Call 'chelonia/private/respondToKeyRequests' after sync
+        self.postSyncOperations[contractID]['respondToKeyRequests-' + message.contractID()] = ['chelonia/private/respondToKeyRequests', contractID]
       },
       [GIMessage.OP_KEY_REQUEST_RESPONSE] (v: GIOpKeyRequestResponse) {
         if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeyRequests?.length) {
@@ -391,6 +402,7 @@ export default (sbp('sbp/selectors/register', {
               responses: []
             }
           }
+          // Is this KEY_ADD the result of requesting keys for another contract?
           if (key.meta?.keyRequest) {
             const { id, contractID, outerKeyId } = key.meta?.keyRequest
 
@@ -405,7 +417,10 @@ export default (sbp('sbp/selectors/register', {
                 config.reactiveSet(rootState[contractID]._volatile, 'pendingKeyRequests', [])
               }
 
+              // Mark the contract for which keys were requested as pending keys
               rootState[contractID]._volatile.pendingKeyRequests.push({ id, outerKeyId })
+
+              self.postSyncOperations[message.contractID()]['pending-keys-for-' + contractID] = ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID }]
             }
           }
         }
@@ -476,8 +491,6 @@ export default (sbp('sbp/selectors/register', {
     const result = await sbp('okTurtles.eventQueue/queueEvent', event.contractID(), [
       'chelonia/private/in/handleEvent', event
     ])
-    // TODO: Handle race conditions
-    await sbp('chelonia/private/respondToKeyRequests', event.contractID())
     return result
   },
   'chelonia/private/in/syncContract': async function (contractID: string) {
@@ -497,6 +510,7 @@ export default (sbp('sbp/selectors/register', {
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     this.currentSyncs[contractID] = true
+    this.postSyncOperations[contractID] = this.postSyncOperations[contractID] ?? Object.create(null)
     try {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
@@ -511,15 +525,17 @@ export default (sbp('sbp/selectors/register', {
       } else {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
       }
-      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
-      await sbp('chelonia/private/respondToKeyRequests', contractID)
-      this.currentSyncs[contractID] = false
+      await Promise.all(Object.values(this.postSyncOperations[contractID]).map((op) => sbp.apply(sbp, op)))
+      // await sbp('chelonia/private/respondToKeyRequests', contractID)
+      // this.postSyncOperations[contractID]['respondToKeyRequests'] = ['chelonia/private/respondToKeyRequests', contractID]
     } catch (e) {
       console.error(`[chelonia] syncContract error: ${e.message || e}`, e)
-      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
-      this.currentSyncs[contractID] = false
       this.config.hooks.syncContractError?.(e, contractID)
       throw e
+    } finally {
+      delete this.currentSyncs[contractID]
+      this.postSyncOperations[contractID] = Object.create(null)
+      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
     }
   },
   'chelonia/private/respondToKeyRequests': async function (contractID: string) {
@@ -740,6 +756,11 @@ const handleEvent = {
       sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
     }
     await sbp('chelonia/private/in/processMessage', message, state[contractID])
+
+    // call contract sync again if we get a key request, so that we can respond to any unhandled key requests.
+    if (!sbp('chelonia/contract/isSyncing', contractID) && [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_REQUEST].includes(message.opType())) {
+      sbp('chelonia/contract/sync', contractID)
+    }
   },
   async processSideEffects (message: GIMessage, state: Object) {
     if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) {

@@ -58,6 +58,33 @@ async function saveLoginState (action: string, contractID: string) {
   }
 }
 
+// TODO: Check if pendingKeys gets sync simultanoeusly across devices
+// Replace with event listener
+// event onPendingKey requests
+// event listener that signs up to chat
+
+/*
+sbp('chelonia/configure', {
+  hooks: {
+    postHandleEvent: (message: GIMessage) => {
+      if (message.opType() === GIMessage.OP_KEYSHARE) {
+        sbp('chelonia/contract/sync', message.originatingContractID()).then(() => {
+          const state = sbp('state/vuex/state')
+
+          const generalChatRoomId = state[message.originatingContractID()].generalChatRoomId
+
+          sbp('gi.actions/group/joinChatRoom', {
+            data: {
+              chatRoomID: generalChatRoomId
+            }
+          })
+        })
+      }
+    }
+  }
+})
+*/
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
     data: {
@@ -263,14 +290,23 @@ export default (sbp('sbp/selectors/register', {
     sbp('gi.actions/group/switch', message.contractID())
     return message
   },
-  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept: boolean } }) {
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept?: boolean }, data?: { username?: string } }) {
+    sbp('okTurtles.data/set', 'JOINING_GROUP', true)
     try {
-      sbp('okTurtles.data/set', 'JOINING_GROUP', true)
-      // sync the group's contract state
-      /// / TODO POSSIBLY READD await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: !params?.options?.skipInviteAccept }, ['chelonia/contract/sync', params.contractID])
-      // post acceptance event to the group contract, unless this is being called
-      // by the loginState synchronization via the identity contract
-      if (!params.options?.skipInviteAccept) {
+      const rootState = sbp('state/vuex/state')
+      const state = sbp('state/vuex/state')?.[params.contractID]
+      const me = rootState.loggedIn.username
+      const username = params.data?.username || me
+
+      console.log('@@@@@@@@ AT join for ' + params.contractID)
+
+      if (!state) {
+        console.log('@@@@@@@@ AT join[!state] for ' + params.contractID)
+        await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: true }, ['chelonia/contract/sync', params.contractID])
+        if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
+          throw Error(`Contract ${params.contractID} is not a group`)
+        }
+
         await sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
           hooks: {
@@ -278,20 +314,56 @@ export default (sbp('sbp/selectors/register', {
             postpublish: null
           }
         })
-        // TODO: note for Ricardo: this is what was here before,
-        //       please double-check if this is still needed
-        // await sbp('chelonia/out/actionEncrypted', {
-        //   ...omit(params, ['options', 'action', 'hooks']),
-        //   action: 'gi.contracts/group/inviteAccept',
-        //   hooks: {
-        //     prepublish: params.hooks?.prepublish,
-        //     postpublish: null
-        //   }
-        // })
+      } else if (state._volatile?.keys && !state._volatile.pendingKeyRequests.length) {
+        console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID)
+        if (!state._vm) {
+          console.log('@@@@@@@@ AT join[_vm missing] for ' + params.contractID, { ...state })
+          return
+        }
+        // We're joining for the first time
+        if (!state.profiles || state.profiles[username]) {
+          const generalChatRoomId = rootState[params.contractID].generalChatRoomId
+
+          await sbp('chelonia/out/actionEncrypted', {
+            ...omit(params, ['options', 'action', 'hooks']),
+            action: 'gi.contracts/group/inviteAccept',
+            hooks: {
+              prepublish: params.hooks?.prepublish,
+              postpublish: null
+            }
+          })
+
+          if (generalChatRoomId) {
+            await sbp('gi.actions/group/joinChatRoom', {
+              ...omit(params, ['options', 'data', 'hooks']),
+              data: {
+                chatRoomID: generalChatRoomId
+              },
+              hooks: {
+                prepublish: null,
+                postpublish: params.hooks?.postpublish
+              }
+            })
+          } else {
+            setTimeout(() => alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME })))
+          }
+        } else {
+          console.log('@@@@@@@@ AT join[alreadyMember] for ' + params.contractID)
+          // We've already joined
+          const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
+            .filter(cId => rootState[params.contractID].chatRooms?.[cId].users.includes(me))
+
+          await sbp('chelonia/contract/sync', chatRoomIds)
+          sbp('state/vuex/commit', 'setCurrentChatRoomId', {
+            groupId: params.contractID,
+            chatRoomId: rootState[params.contractID].generalChatRoomId
+          })
+        }
+      } else {
+        console.log('@@@@@@@@ AT join[invalid state] for ' + params.contractID)
       }
 
-      const rootState = sbp('state/vuex/state')
-      if (!params.options?.skipInviteAccept) {
+      if (isNaN(0) && !params.options?.skipInviteAccept) {
         // TODO: Note for Ricardo, with the new approach, I assume
         //       this code below will be uncommented and/or modified
         /*
@@ -301,7 +373,7 @@ export default (sbp('sbp/selectors/register', {
       if (!params.options?.skipInviteAccept && rootState[params.contractID].generalChatRoomId) {
         // join the 'General' chatroom by default
         const generalChatRoomId = rootState[params.contractID].generalChatRoomId
-        if (generalChatRoomId) {
+        i\f (generalChatRoomId) {
           await sbp('gi.actions/group/joinChatRoom', {
             ...omit(params, ['options', 'data', 'hooks']),
             data: {
@@ -324,8 +396,6 @@ export default (sbp('sbp/selectors/register', {
          * but he should sync all the contracts he was syncing in the previous device
          */
 
-        console.log([params.options?.skipInviteAccept, rootState[params.contractID].generalChatRoomId], 'UUUUUUU IIIIIIIIIIII')
-
         const me = rootState.loggedIn.username
         const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
           .filter(cId => rootState[params.contractID].chatRooms?.[cId].users.includes(me))
@@ -336,11 +406,14 @@ export default (sbp('sbp/selectors/register', {
           chatRoomId: rootState[params.contractID].generalChatRoomId
         })
       }
+
       sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     } catch (e) {
-      sbp('okTurtles.data/set', 'JOINING_GROUP', false)
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
+    } finally {
+      saveLoginState('joining', params.contractID)
+      sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     }
   },
   'gi.actions/group/joinAndSwitch': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept: boolean } }) {
