@@ -16,7 +16,10 @@
     "flow:vue": "eslint --cache --plugin flowtype-errors --rule 'flowtype-errors/show-errors: error' './frontend/views/**/*.vue'",
     "double": "PORT_SHIFT=1 grunt dev",
     "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
-    "docker": "./scripts/docker.sh"
+    "docker": "./scripts/docker.sh",
+    "dev:dashboard": "grunt --gruntfile Gruntfile.dashboard.js",
+    "build:dashboard": "NODE_ENV=production grunt build --gruntfile Gruntfile.dashboard.js",
+    "translation:dashboard": "grunt exec:strings --gruntfile Gruntfile.dashboard.js"
   },
   "eslintConfig": {
     "root": true,
@@ -53,6 +56,7 @@
     "historical/*",
     "shared/types.js",
     "dist/*",
+    "dist-dashboard/*",
     "ignored/*",
     "node_modules/*",
     "test/cypress/cache/*",
@@ -112,6 +116,8 @@
     "multihashes": "0.4.15",
     "qrious": "4.0.2",
     "scrypt-async": "2.0.1",
+    "three": "0.151.3",
+    "sqlite3": "5.1.4",
     "tweetnacl": "1.0.3",
     "tweetnacl-util": "0.15.1",
     "uuid": "9.0.0",

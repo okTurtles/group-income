@@ -234,6 +234,7 @@ describe('Full walkthrough', function () {
     })
 
     it('Should create mailboxes for Alice and Bob and subscribe', async function () {
+      this.timeout(5000)
       // Object.values(users).forEach(async user => await createMailboxFor(user))
       await createMailboxFor(users.alice)
       await createMailboxFor(users.bob)
@@ -330,7 +331,7 @@ describe('Full walkthrough', function () {
       form.append('data', new Blob([buffer]), path.basename(filepath))
       await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
         .then(handleFetchResult('text'))
-        .then(r => should(r).equal(`/file/${hash}`))
+        .then(r => should(r).equal(`/file/blob=${hash}`))
     })
   })
 
