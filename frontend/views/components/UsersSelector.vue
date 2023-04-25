@@ -159,7 +159,6 @@ export default ({
       line-height: 1;
       padding: 0.25rem;
       width: fit-content;
-      cursor: default;
 
       &:hover {
         background-color: $general_0;
