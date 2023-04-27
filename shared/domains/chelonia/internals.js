@@ -7,7 +7,7 @@ import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, G
 import { GIMessage } from './GIMessage.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/model/contracts/shared/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
-import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
+import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_IS_PENDING_KEY_REQUESTS, CONTRACT_HAS_RECEIVED_KEYS } from './events.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
 // import 'ses'
@@ -315,6 +315,10 @@ export default (sbp('sbp/selectors/register', {
               }
             }).then(() => {
               // WARNING! THIS MIGHT DEADLOCK!!!
+              self.postSyncOperations[v.contractID] = self.postSyncOperations[v.contractID] || Object.create(null)
+
+              self.postSyncOperations[v.contractID]['received-keys'] = ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }]
+
               return sbp('chelonia/withEnv', env, [
                 'chelonia/private/in/syncContract', v.contractID
               ])

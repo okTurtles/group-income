@@ -29,6 +29,7 @@ import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -310,6 +311,17 @@ export default (sbp('sbp/selectors/register', {
 
       if (sendKeyRequest) {
         console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
+
+        const eventHandler = ({ contractID }) => {
+          if (contractID !== params.contractID) {
+            return
+          }
+
+          sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+          sbp('gi.actions/group/join', params)
+        }
+
+        sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
 
         await sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
