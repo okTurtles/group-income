@@ -100,6 +100,7 @@ export default (sbp('sbp/selectors/register', {
     this.manifestToContract = {}
     this.whitelistedActions = {}
     this.currentSyncs = {}
+    this.currentNewSyncs = {}
     this.sideEffectStacks = {} // [contractID]: Array<*>
     this.sideEffectStack = (contractID: string): Array<*> => {
       let stack = this.sideEffectStacks[contractID]
@@ -290,6 +291,9 @@ export default (sbp('sbp/selectors/register', {
   },
   'chelonia/contract/isSyncing': function (contractID: string): boolean {
     return !!this.currentSyncs[contractID]
+  },
+  'chelonia/contract/isNewSyncing': function (contractID: string): boolean {
+    return !!this.currentNewSyncs[contractID]
   },
   // TODO: implement 'chelonia/contract/release' (see #828)
   // safer version of removeImmediately that waits to finish processing events for contractIDs

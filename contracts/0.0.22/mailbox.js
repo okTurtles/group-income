@@ -9184,24 +9184,6 @@
       console.error(`leaveChatRoom(${contractID}): remove threw ${e.name}:`, e);
     });
   }
-  function setContractJoining(contractID, finishedJoining) {
-    const joiningContracts = (0, import_sbp2.default)("okTurtles.data/get", "JOINING_CONTRACTS") || {};
-    if (finishedJoining) {
-      delete joiningContracts[contractID];
-    } else {
-      joiningContracts[contractID] = true;
-    }
-    (0, import_sbp2.default)("okTurtles.data/set", "JOINING_CONTRACTS", joiningContracts);
-  }
-  async function syncContract(contractID, logJoining = false) {
-    if (logJoining) {
-      setContractJoining(contractID, false);
-    }
-    await (0, import_sbp2.default)("chelonia/contract/sync", contractID);
-    if (logJoining) {
-      setContractJoining(contractID, true);
-    }
-  }
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -9443,7 +9425,7 @@ ${this.getErrorInfo()}`;
           });
         },
         async sideEffect({ contractID, data }) {
-          await syncContract(data.contractID, true);
+          await (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
           if (!(0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
             await (0, import_sbp3.default)("controller/router").push({ name: "GroupChatConversation", params: { chatRoomId: data.contractID } }).catch(logExceptNavigationDuplicated);
           }
@@ -9465,7 +9447,7 @@ ${this.getErrorInfo()}`;
         },
         async sideEffect({ contractID, meta, data }, { state, getters }) {
           if (state.attributes.autoJoinAllowance) {
-            await syncContract(data.contractID, true);
+            await (0, import_sbp3.default)("chelonia/contract/sync", data.contractID);
           }
         }
       },

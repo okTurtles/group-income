@@ -156,30 +156,3 @@ export function makeMentionFromUsername (username: string): {
     all: '@all'
   }
 }
-
-// group.js, mailbox.js, chatroom.js related
-
-function setContractJoining (contractID: string, finishedJoining: boolean) {
-  const joiningContracts = sbp('okTurtles.data/get', 'JOINING_CONTRACTS') || {}
-  if (finishedJoining) {
-    delete joiningContracts[contractID]
-  } else {
-    joiningContracts[contractID] = true
-  }
-  sbp('okTurtles.data/set', 'JOINING_CONTRACTS', joiningContracts)
-}
-
-export async function syncContract (contractID: string, logJoining: boolean = false) {
-  if (logJoining) {
-    setContractJoining(contractID, false)
-  }
-  await sbp('chelonia/contract/sync', contractID)
-  if (logJoining) {
-    setContractJoining(contractID, true)
-  }
-}
-
-export function checkContractJoining (contractID: string): boolean {
-  const joiningContracts = sbp('okTurtles.data/get', 'JOINING_CONTRACTS') || {}
-  return !!joiningContracts[contractID]
-}

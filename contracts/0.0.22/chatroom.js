@@ -9495,10 +9495,6 @@ ${this.getErrorInfo()}`;
       all: "@all"
     };
   }
-  function checkContractJoining(contractID) {
-    const joiningContracts = (0, import_sbp2.default)("okTurtles.data/get", "JOINING_CONTRACTS") || {};
-    return !!joiningContracts[contractID];
-  }
 
   // frontend/model/contracts/shared/nativeNotification.js
   var import_sbp3 = __toESM(__require("@sbp/sbp"));
@@ -9529,8 +9525,7 @@ ${this.getErrorInfo()}`;
     }
   }
   function setReadUntilWhileJoining({ contractID, hash: hash2, createdDate }) {
-    const isJoining = checkContractJoining(contractID);
-    if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID) && isJoining) {
+    if ((0, import_sbp4.default)("chelonia/contract/isNewSyncing", contractID)) {
       (0, import_sbp4.default)("state/vuex/commit", "setChatRoomReadUntil", {
         chatRoomId: contractID,
         messageHash: hash2,
