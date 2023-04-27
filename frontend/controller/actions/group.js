@@ -387,6 +387,8 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
+      // NOTE: group contract should keep updated with all attributes of its chatrooms
+      //       so that group members can check chatroom details whether or not they are part of
       return await sbp('chelonia/out/actionEncrypted', {
         ...omit(params, ['options', 'action', 'hooks']),
         action: 'gi.contracts/group/changeChatRoomDescription',
