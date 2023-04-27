@@ -331,7 +331,7 @@ describe('Full walkthrough', function () {
       form.append('data', new Blob([buffer]), path.basename(filepath))
       await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
         .then(handleFetchResult('text'))
-        .then(r => should(r).equal(`/file/blob=${hash}`))
+        .then(r => should(r).equal(`/file/${hash}`))
     })
   })
 
