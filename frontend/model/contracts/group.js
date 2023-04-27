@@ -964,20 +964,8 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/inviteAccept': {
-      validate: objectOf({
-        inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
-      }),
+      validate: Boolean,
       process ({ data, meta }, { state }) {
-        console.debug('inviteAccept:', data, state.invites)
-        const invite = state.invites[data.inviteSecret]
-        if (invite.status !== INVITE_STATUS.VALID) {
-          console.error(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)
-          return
-        }
-        Vue.set(invite.responses, meta.username, true)
-        if (Object.keys(invite.responses).length === invite.quantity) {
-          invite.status = INVITE_STATUS.USED
-        }
         // TODO: ensure `meta.username` is unique for the lifetime of the username
         //       since we are making it possible for the same username to leave and
         //       rejoin the group. All of their past posts will be re-associated with
@@ -1003,7 +991,8 @@ sbp('chelonia/defineContract', {
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name in profiles) {
             if (name !== loggedIn.username) {
-              await sbp('chelonia/contract/sync', profiles[name].contractID)
+              // TODO skip for now since those contracts are encrypted
+              // await sbp('chelonia/contract/sync', profiles[name].contractID)
             }
           }
         } else {

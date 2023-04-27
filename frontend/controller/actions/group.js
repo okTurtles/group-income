@@ -294,18 +294,22 @@ export default (sbp('sbp/selectors/register', {
     sbp('okTurtles.data/set', 'JOINING_GROUP', true)
     try {
       const rootState = sbp('state/vuex/state')
-      const state = sbp('state/vuex/state')?.[params.contractID]
       const me = rootState.loggedIn.username
       const username = params.data?.username || me
 
       console.log('@@@@@@@@ AT join for ' + params.contractID)
 
-      if (!state) {
-        console.log('@@@@@@@@ AT join[!state] for ' + params.contractID)
-        await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: true }, ['chelonia/contract/sync', params.contractID])
-        if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
-          throw Error(`Contract ${params.contractID} is not a group`)
-        }
+      const sendKeyRequest = (!rootState[params.contractID] && params.originatingContractID)
+
+      await sbp('chelonia/withEnv', params.contractID, { skipActionProcessing: sendKeyRequest || rootState[params.contractID]?._volatile?.pendingKeyRequests?.length }, ['chelonia/contract/sync', params.contractID])
+      if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
+        throw Error(`Contract ${params.contractID} is not a group`)
+      }
+
+      const state = rootState[params.contractID]
+
+      if (sendKeyRequest) {
+        console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
 
         await sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
@@ -314,14 +318,17 @@ export default (sbp('sbp/selectors/register', {
             postpublish: null
           }
         })
-      } else if (state._volatile?.keys && !state._volatile.pendingKeyRequests.length) {
+      } else if (state._volatile?.keys && !state._volatile.pendingKeyRequests?.length) {
         console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID)
         if (!state._vm) {
           console.log('@@@@@@@@ AT join[_vm missing] for ' + params.contractID, { ...state })
           return
         }
+
+        console.log({ ...state })
+
         // We're joining for the first time
-        if (!state.profiles || state.profiles[username]) {
+        if (!state.profiles?.[username]) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
           await sbp('chelonia/out/actionEncrypted', {
