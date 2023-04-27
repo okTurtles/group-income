@@ -153,7 +153,7 @@ const mutations = {
   deleteChatRoomUnread (state, { chatRoomId }) {
     Vue.delete(state.chatRoomUnread, chatRoomId)
   },
-  setNotificationSettings (state, { chatRoomId, settings }) {
+  setChatroomNotificationSettings (state, { chatRoomId, settings }) {
     if (chatRoomId) {
       if (!state.notificationSettings[chatRoomId]) {
         Vue.set(state.notificationSettings, chatRoomId, {})
