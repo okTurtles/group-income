@@ -18,12 +18,7 @@ import {
   MESSAGE_NOTIFY_SETTINGS
 } from './shared/constants.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
-import {
-  createMessage,
-  leaveChatRoom,
-  findMessageIdx,
-  makeMentionFromUsername
-} from './shared/functions.js'
+import { createMessage, leaveChatRoom, findMessageIdx, makeMentionFromUsername } from './shared/functions.js'
 import { makeNotification } from './shared/nativeNotification.js'
 import { objectOf, string, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
 
@@ -181,8 +176,7 @@ sbp('chelonia/defineContract', {
         }
       },
       sideEffect ({ contractID }) {
-        const rootState = sbp('state/vuex/state')
-        Vue.set(rootState.chatRoomUnread, contractID, {
+        Vue.set(sbp('state/vuex/state').chatRoomUnread, contractID, {
           readUntil: undefined,
           mentions: []
         })
@@ -219,8 +213,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ data, contractID, hash, meta }, { state }) {
         emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
-        const rootState = sbp('state/vuex/state')
-        if (data.username === rootState.loggedIn.username) {
+        if (data.username === sbp('state/vuex/state').loggedIn.username) {
           const { type, privacyLevel } = state.attributes
           const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
           if (isPrivateDM) {
@@ -305,8 +298,7 @@ sbp('chelonia/defineContract', {
         state.messages.push(newMessage)
       },
       sideEffect ({ data, hash, contractID, meta }) {
-        const rootState = sbp('state/vuex/state')
-        if (data.member === rootState.loggedIn.username) {
+        if (data.member === sbp('state/vuex/state').loggedIn.username) {
           if (sbp('chelonia/contract/isSyncing', contractID)) {
             return
           }
@@ -323,7 +315,7 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('Only the channel creator can delete channel.'))
         }
       },
-      process ({ data, meta }, { state, rootState }) {
+      process ({ data, meta }, { state }) {
         Vue.set(state.attributes, 'deletedDate', meta.createdDate)
         for (const username in state.users) {
           Vue.delete(state.users, username)
@@ -356,8 +348,7 @@ sbp('chelonia/defineContract', {
         emitMessageEvent({ contractID, hash })
         setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
 
-        const rootState = sbp('state/vuex/state')
-        const me = rootState.loggedIn.username
+        const me = sbp('state/vuex/state').loggedIn.username
 
         if (me === meta.username) {
           return

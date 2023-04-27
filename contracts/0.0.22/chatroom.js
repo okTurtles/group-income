@@ -9633,8 +9633,7 @@ ${this.getErrorInfo()}`;
           }
         },
         sideEffect({ contractID }) {
-          const rootState = (0, import_sbp4.default)("state/vuex/state");
-          vue_esm_default.set(rootState.chatRoomUnread, contractID, {
+          vue_esm_default.set((0, import_sbp4.default)("state/vuex/state").chatRoomUnread, contractID, {
             readUntil: void 0,
             mentions: []
           });
@@ -9664,8 +9663,7 @@ ${this.getErrorInfo()}`;
         sideEffect({ data, contractID, hash: hash2, meta }, { state }) {
           emitMessageEvent({ contractID, hash: hash2 });
           setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
-          const rootState = (0, import_sbp4.default)("state/vuex/state");
-          if (data.username === rootState.loggedIn.username) {
+          if (data.username === (0, import_sbp4.default)("state/vuex/state").loggedIn.username) {
             const { type, privacyLevel } = state.attributes;
             const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE;
             if (isPrivateDM) {
@@ -9740,8 +9738,7 @@ ${this.getErrorInfo()}`;
           state.messages.push(newMessage);
         },
         sideEffect({ data, hash: hash2, contractID, meta }) {
-          const rootState = (0, import_sbp4.default)("state/vuex/state");
-          if (data.member === rootState.loggedIn.username) {
+          if (data.member === (0, import_sbp4.default)("state/vuex/state").loggedIn.username) {
             if ((0, import_sbp4.default)("chelonia/contract/isSyncing", contractID)) {
               return;
             }
@@ -9758,7 +9755,7 @@ ${this.getErrorInfo()}`;
             throw new TypeError(L("Only the channel creator can delete channel."));
           }
         },
-        process({ data, meta }, { state, rootState }) {
+        process({ data, meta }, { state }) {
           vue_esm_default.set(state.attributes, "deletedDate", meta.createdDate);
           for (const username in state.users) {
             vue_esm_default.delete(state.users, username);
@@ -9788,8 +9785,7 @@ ${this.getErrorInfo()}`;
         sideEffect({ contractID, hash: hash2, id, meta, data }, { state, getters }) {
           emitMessageEvent({ contractID, hash: hash2 });
           setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
-          const rootState = (0, import_sbp4.default)("state/vuex/state");
-          const me = rootState.loggedIn.username;
+          const me = (0, import_sbp4.default)("state/vuex/state").loggedIn.username;
           if (me === meta.username) {
             return;
           }
