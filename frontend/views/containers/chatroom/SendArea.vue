@@ -84,7 +84,7 @@
         )
           button.is-icon(
             :aria-label='L("Create poll")'
-            @click='createPool'
+            @click='createPoll'
           )
             i.icon-poll
         tooltip(
@@ -112,11 +112,13 @@
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
+import { OPEN_POLL } from '@utils/events.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -372,8 +374,8 @@ export default ({
       this.updateTextArea()
       this.endMention()
     },
-    createPool () {
-      console.log('TODO')
+    createPoll () {
+      sbp('okTurtles.events/emit', OPEN_POLL)
     },
     selectEmoticon (emoticon) {
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native

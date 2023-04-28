@@ -1,6 +1,8 @@
 <template lang='pug'>
 .c-chat-main(v-if='summary.title')
   emoticons
+  create-poll
+
   .c-body
     .c-body-loading(v-if='details.isLoading')
       loading
@@ -115,6 +117,7 @@ import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vu
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
 import Emoticons from './Emoticons.vue'
+import CreatePoll from './CreatePoll.vue'
 import {
   MESSAGE_TYPES,
   MESSAGE_VARIANTS,
@@ -132,6 +135,7 @@ export default ({
   components: {
     Avatar,
     ConversationGreetings,
+    CreatePoll,
     Emoticons,
     InfiniteLoading,
     Loading,
