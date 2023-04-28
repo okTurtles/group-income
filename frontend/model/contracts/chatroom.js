@@ -49,7 +49,7 @@ function setReadUntilWhileJoining ({ contractID, hash, createdDate }: {
   hash: string,
   createdDate: string
 }): void {
-  if (sbp('chelonia/contract/isNewSyncing', contractID)) {
+  if (sbp('chelonia/contract/isSyncing', contractID, { firstSync: true })) {
     sbp('state/vuex/commit', 'setChatRoomReadUntil', {
       chatRoomId: contractID,
       messageHash: hash,

@@ -250,10 +250,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
-    this.currentSyncs[contractID] = true
-    if (!state.contracts[contractID]) {
-      this.currentNewSyncs[contractID] = true
-    }
+    this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID] }
     try {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
@@ -269,13 +266,11 @@ export default (sbp('sbp/selectors/register', {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
       }
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
-      this.currentSyncs[contractID] = false
-      this.currentNewSyncs[contractID] = false
+      delete this.currentSyncs[contractID]
     } catch (e) {
       console.error(`[chelonia] syncContract error: ${e.message}`, e)
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
-      this.currentSyncs[contractID] = false
-      this.currentNewSyncs[contractID] = false
+      delete this.currentSyncs[contractID]
       this.config.hooks.syncContractError?.(e, contractID)
       throw e
     }
