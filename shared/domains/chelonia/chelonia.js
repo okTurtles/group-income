@@ -288,7 +288,7 @@ export default (sbp('sbp/selectors/register', {
       })
     }))
   },
-  'chelonia/contract/isSyncing': function (contractID: string, { firstSync = false }): boolean {
+  'chelonia/contract/isSyncing': function (contractID: string, { firstSync = false } = {}): boolean {
     const isSyncing = !!this.currentSyncs[contractID]
     return firstSync
       ? isSyncing && this.currentSyncs[contractID].firstSync
