@@ -604,9 +604,11 @@ const getters = {
     return state.chatRoomUnread
   },
   currentChatRoomReadUntil (state, getters) {
+    // NOTE: Optional Chaining (?) is necessary when user viewing the chatroom which he is not part of
     return getters.ourUnreadMessages[getters.currentChatRoomId]?.readUntil // undefined means to the latest
   },
   currentChatRoomUnreadMentions (state, getters) {
+    // NOTE: Optional Chaining (?) is necessary when user viewing the chatroom which he is not part of
     return getters.ourUnreadMessages[getters.currentChatRoomId]?.mentions || []
   },
   chatRoomUnreadMentions (state, getters) {

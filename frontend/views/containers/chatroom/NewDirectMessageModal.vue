@@ -121,16 +121,15 @@ export default ({
     },
     ourRecentConversations () {
       return Object.keys(this.ourPrivateDirectMessages)
-        .filter(username => !this.ourPrivateDirectMessages[username].hidden)
-        .map(username => {
+        .filter(username => {
           const chatRoomId = this.getPrivateDMByUser(username)
-          // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined
-          // just after new parter made direct message with me
-          // so the mailbox contract is updated, but chatroom contract is not synced yet and vuex state as well
-          const { readUntil, mentions } = this.ourUnreadMessages[chatRoomId] || {}
-          const lastMessageDate = mentions && mentions.length
-            ? mentions[mentions.length - 1].createdDate
-            : readUntil?.createdDate
+          return !this.ourPrivateDirectMessages[username].hidden &&
+            // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined just after new parter made direct message with me
+            // it's when the mailbox contract is updated, but chatroom contract is not fully synced yet
+            this.ourUnreadMessages[chatRoomId]
+        }).map(username => {
+          const chatRoomId = this.getPrivateDMByUser(username)
+          const lastMessageDate = this.ourUnreadMessages[chatRoomId].readUntil?.createdDate
           return { username, lastMessageDate }
         })
         .sort((former, latter) => {
