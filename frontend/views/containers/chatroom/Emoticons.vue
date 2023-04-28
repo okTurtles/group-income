@@ -89,8 +89,15 @@ export default ({
       }
     },
     closeEmoticonDlg () {
+      if (!this.isActive) { return }
+
       this.isActive = false
       sbp('okTurtles.events/emit', CLOSE_EMOTICON)
+
+      if (this.lastFocus) {
+        this.lastFocus.focus()
+        this.lastFocus = null
+      }
     }
   }
 }: Object)
