@@ -265,14 +265,13 @@ export default (sbp('sbp/selectors/register', {
       } else {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
       }
-      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
-      delete this.currentSyncs[contractID]
     } catch (e) {
       console.error(`[chelonia] syncContract error: ${e.message}`, e)
-      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
-      delete this.currentSyncs[contractID]
       this.config.hooks.syncContractError?.(e, contractID)
       throw e
+    } finally {
+      delete this.currentSyncs[contractID]
+      sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
     }
   },
   'chelonia/private/in/handleEvent': async function (message: GIMessage) {
