@@ -1,5 +1,7 @@
 'use strict'
 
+if (process.env.CI) process.exit(1)
+
 // =======================
 // Entry point.
 //
@@ -48,24 +50,6 @@ const applyPortShift = (env) => {
     throw new RangeError(`Invalid API_PORT value: ${API_PORT}.`)
   }
   return { ...env, API_PORT, API_URL }
-}
-
-const untilServerIsReady = () => {
-  console.log('waiting for the server to be ready')
-  // Wait for the server to be ready.
-  const t0 = Date.now()
-  const timeout = 30000
-  return new Promise((resolve, reject) => {
-    (function ping () {
-      fetch(process.env.API_URL).then(resolve).catch(() => {
-        if (Date.now() > t0 + timeout) {
-          reject(new Error('Server startup timed out.'))
-        } else {
-          setTimeout(ping, 100)
-        }
-      })
-    })()
-  })
 }
 
 Object.assign(process.env, applyPortShift(process.env))
@@ -396,27 +380,6 @@ module.exports = (grunt) => {
 
   const copyTo = (to) => (filepath) => copyFile(filepath, path.join(to, path.basename(filepath)))
 
-  const fork2 = () => {
-    console.log('backend: forking...')
-    child = fork(backendIndex, process.argv, {
-      env: process.env,
-      execArgv: ['--require', '@babel/register']
-    })
-    child.on('error', (err) => {
-      if (err) {
-        console.error('error starting or sending message to child:', err)
-        process.exit(1)
-      }
-    })
-    child.on('exit', (c) => {
-      if (c !== 0) {
-        console.error(`child exited with error code: ${c}`.bold)
-        // ^C can cause c to be null, which is an OK error.
-        process.exit(c || 0)
-      }
-    })
-  }
-
   const launch = () => {
     console.log('backend: launching...')
     // Provides Babel support for the backend files.
@@ -424,14 +387,38 @@ module.exports = (grunt) => {
     return require(backendIndex)
   }
 
-  const relaunch = async () => {
+  // Schedules a backend restart.
+  // Warning: this function returns immediately. If any, the older instance
+  // won't have stopped yet, `child` will still refer to it, and the new backend
+  // won't be ready yet.
+  const relaunch = () => {
     console.log('backend: relaunching...')
+    const fork2 = () => {
+      console.log('backend: forking...')
+      child = fork(backendIndex, process.argv, {
+        env: process.env,
+        execArgv: ['--require', '@babel/register']
+      })
+      child.on('error', (err) => {
+        if (err) {
+          console.error('error starting or sending message to child:', err)
+          process.exit(1)
+        }
+      })
+      child.on('exit', (c) => {
+        if (c !== 0) {
+          console.error(`child exited with error code: ${c}`.bold)
+          // ^C can cause c to be null, which is an OK error.
+          process.exit(c || 0)
+        }
+      })
+    }
     if (child) {
       // Wait for successful shutdown to avoid EADDRINUSE errors.
-      await stop()
+      stop().then(() => fork2())
+    } else {
+      fork2()
     }
-    fork2()
-    await untilServerIsReady()
   }
 
   const stop = () => new Promise((resolve, reject) => {
@@ -440,10 +427,28 @@ module.exports = (grunt) => {
       return resolve()
     }
     child.on('message', () => {
+      child = null
       resolve()
     })
     child.send({ shutdown: 1 })
   })
+
+  // Wait for the server to be ready.
+  const waitUntilServerIsReady = () => {
+    const t0 = Date.now()
+    const timeout = 30000
+    return new Promise((resolve, reject) => {
+      (function ping () {
+        fetch(process.env.API_URL).then(resolve).catch(() => {
+          if (Date.now() > t0 + timeout) {
+            reject(new Error('Server startup timed out.'))
+          } else {
+            setTimeout(ping, 100)
+          }
+        })
+      })()
+    })
+  }
 
   // -------------------------------------------------------------------------
   //  Grunt Tasks
@@ -458,8 +463,7 @@ module.exports = (grunt) => {
   // Used with `grunt dev` only, makes it possible to restart just the server when
   // backend or shared files are modified.
   grunt.registerTask('backend:relaunch', '[internal]', function () {
-    const done = this.async() // Tell Grunt we're async.
-    relaunch().then(done)
+    relaunch()
   })
 
   grunt.registerTask('backend:stop', function () {
@@ -593,13 +597,14 @@ module.exports = (grunt) => {
 
     ;[
       [['Gruntfile.js'], [eslint]],
-      [['backend/**/*.js', 'shared/**/*.js'], [eslint, relaunch]],
+      [['backend/**/*.js'], [eslint, relaunch]],
       [['frontend/**/*.html'], [copyTo(distDir)]],
       [['frontend/**/*.js'], [eslint]],
       [['frontend/assets/{fonts,images}/**/*'], [copyTo(distAssets)]],
       [['frontend/assets/style/**/*.scss'], [stylelint]],
       [['frontend/assets/svgs/**/*.svg'], []],
-      [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]]
+      [['frontend/views/**/*.vue'], [puglint, stylelint, eslint]],
+      [['shared/**/*.js'], [eslint, relaunch, waitUntilServerIsReady]]
     ].forEach(([globs, tasks]) => {
       globs.forEach(glob => {
         browserSync.watch(glob, { ignoreInitial: true }, async (fileEventName, filePath) => {
