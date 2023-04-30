@@ -445,13 +445,7 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
 
 Cypress.Commands.add('giWaitUntilMessagesLoaded', () => {
   cy.getByDT('conversationWrapper').within(() => {
-    // NOTE: '.infinite-status-prompt:first-child' is the spinner css selector
-    cy.get('.infinite-status-prompt:first-child')
-      .invoke('attr', 'style')
-      .should('not.include', 'display: none')
-    cy.get('.infinite-status-prompt:first-child')
-      .invoke('attr', 'style')
-      .should('include', 'display: none')
+    cy.get('.c-initializing').should('not.exist')
   })
   cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
 })
