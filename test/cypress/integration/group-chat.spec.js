@@ -70,10 +70,6 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     }
   }
 
-  function checkIfArchived (channelName) {
-    // TODO: need to be implemented
-  }
-
   function joinChannel (channelName) {
     cy.getByDT('joinChannel').click()
     cy.giWaitUntilMessagesLoaded()
@@ -187,12 +183,12 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
   })
 
-  it('user1 tries to open incorrect chatroom URL and it redirects to the dashboard', () => {
+  it('user1 tries to open incorrect chatroom URL and it redirects to the previous/general chatroom', () => {
     cy.url().then(url => {
       cy.visit(url)
       cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
       cy.visit(url + 'incorrect-suffix')
-      cy.getByDT('groupName').should('contain', groupName1)
+      cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
     })
     cy.giRedirectToGroupChat()
   })
@@ -471,11 +467,9 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('channelMembers').should('contain', '1 members')
   })
 
-  it('user1 leaves and archives chatroom', () => {
+  it('user1 leaves chatroom by himself', () => {
     const channel = chatRooms.filter(c => c.name.startsWith('Channel1')).map(c => c.name)[0]
-    leaveChannel(channel, 'Leave and Archive')
-
-    checkIfArchived(channel)
+    leaveChannel(channel, 'Leave Channel')
   })
 
   it('user1 deletes a channel and logout', () => {
