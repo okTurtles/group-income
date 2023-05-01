@@ -116,9 +116,9 @@ sbp('chelonia/defineContract', {
           hidden: !state.attributes.autoJoinAllowance
         })
       },
-      sideEffect ({ contractID, meta, data }, { state, getters }) {
+      async sideEffect ({ contractID, meta, data }, { state, getters }) {
         if (state.attributes.autoJoinAllowance) {
-          sbp('chelonia/contract/sync', data.contractID)
+          await sbp('chelonia/contract/sync', data.contractID)
         }
       }
     },

@@ -127,6 +127,7 @@ export default ({
     handleEditClick (e) {
       this.isEditing = true
       this.isFilled = !!this.initialValue
+      this.form.contribution = this.initialValue
     },
     verifyValue (event) {
       this.isFilled = !!event.target.value

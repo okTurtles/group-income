@@ -8,9 +8,9 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
           alt='Partner Picture'
           size='sm'
         )
-      i(v-else :class='`icon-${ summary.private ? "lock" : "hashtag" } c-group-i`')
+      i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
       | {{summary.title}}
-      menu-parent(v-if='summary.joined')
+      menu-parent(v-if='summary.isJoined')
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
 
@@ -20,7 +20,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
 
           ul
             menu-item(
-              v-if='!summary.general && ourUsername === summary.creator && !isDirectMessage()'
+              v-if='!summary.isGeneral && ourUsername === summary.attributes.creator && !isDirectMessage()'
               @click='openModal("EditChannelNameModal")'
               data-test='renameChannel'
             )
@@ -30,19 +30,19 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
             menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
               i18n Add People
             menu-item(
-              :class='`${!summary.general && !isDirectMessage() ? "c-separator" : ""}`'
+              :class='`${!summary.isGeneral && !isDirectMessage() ? "c-separator" : ""}`'
               @click='openModal("ChatNotificationSettingsModal")'
               data-test='notificationsSettings'
             )
               i18n Notification settings
             menu-item(
-              v-if='!summary.general && !isDirectMessage()'
+              v-if='!summary.isGeneral && !isDirectMessage()'
               @click='openModal("LeaveChannelModal")'
               data-test='leaveChannel'
             )
               i18n(:args='{ channelName: summary.title }') Leave {channelName}
             menu-item.has-text-danger(
-              v-if='!summary.general && ourUsername === summary.creator && !isDirectMessage()'
+              v-if='!summary.isGeneral && ourUsername === summary.attributes.creator && !isDirectMessage()'
               @click='openModal("DeleteChannelModal")'
               data-test='deleteChannel'
             )
@@ -53,22 +53,22 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
       i18n.is-unstyled.c-link(
         tag='button'
         @click='openModal("ChatMembersAllModal")'
-        :args='{ numMembers: members.size  }'
+        :args='{ numMembers: summary.numberOfUsers  }'
         data-test='channelMembers'
       ) {numMembers} members
       | ∙
       .is-unstyled(
-        :class='{"c-link": ourUsername === summary.creator}'
-        v-if='summary.description'
+        :class='{"c-link": ourUsername === summary.attributes.creator}'
+        v-if='summary.attributes.description'
         data-test='updateDescription'
         @click='editDescription'
       )
-        | {{ summary.description }}
+        | {{ summary.attributes.description }}
         i.icon-pencil-alt
 
       i18n.is-unstyled(
         v-else
-        :class='{"c-link": ourUsername === summary.creator}'
+        :class='{"c-link": ourUsername === summary.attributes.creator}'
         data-test='updateDescription'
         @click='editDescription'
       ) Add description
@@ -85,7 +85,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
       chat-members(:title='L("Direct Messages")' action='addDirectMessage')
 
   .card.c-card
-    chat-main(:summary='summary' :details='details')
+    chat-main(:summary='summary')
 </template>
 
 <script>
@@ -135,7 +135,7 @@ export default ({
         privacyLevel: this.getGroupChatRooms[chatRoomID].privacyLevel,
         joined: this.isJoinedChatRoom(chatRoomID),
         id: chatRoomID
-      })).filter(details => details.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || details.joined).sort((former, latter) => {
+      })).filter(attr => attr.privacyLevel !== CHATROOM_PRIVACY_LEVEL.PRIVATE || attr.joined).sort((former, latter) => {
         const formerName = former.name
         const latterName = latter.name
         if (former.joined === latter.joined) {
@@ -154,12 +154,6 @@ export default ({
         order: this.getChatRoomIDsInSort,
         channels: this.chatRoomsInDetail
       }
-    },
-    members () {
-      return {
-        users: this.details.participants,
-        size: this.details.numberOfParticipants
-      }
     }
   },
   methods: {
@@ -167,7 +161,7 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
     editDescription () {
-      if (this.ourUsername === this.summary.creator) {
+      if (this.ourUsername === this.summary.attributes.creator) {
         this.openModal('EditChannelDescriptionModal')
       }
     }
@@ -178,18 +172,11 @@ export default ({
         this.refreshTitle()
       })
       const { chatRoomId } = to.params
-      if (chatRoomId !== from.params.chatRoomId) {
-        if (this.isDirectMessage(chatRoomId)) {
-          this.updateCurrentChatRoomID(chatRoomId)
-        } else if (chatRoomId && chatRoomId !== this.currentChatRoomId) {
-          if (!this.isJoinedChatRoom(chatRoomId) && this.isPrivateChatRoom(chatRoomId)) {
-            this.redirectChat('GroupChatConversation')
-          } else {
-            this.updateCurrentChatRoomID(chatRoomId)
-            if (!this.isJoinedChatRoom(chatRoomId)) {
-              this.loadSummaryAndDetails()
-            }
-          }
+      if (chatRoomId && chatRoomId !== from.params.chatRoomId) {
+        this.updateCurrentChatRoomID(chatRoomId)
+        // NOTE: No need to consider not-joined private chatroom because it's impossible
+        if (!this.isJoinedChatRoom(chatRoomId)) {
+          this.loadLatestState(chatRoomId)
         }
       }
     }
