@@ -228,9 +228,6 @@
 /* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
 "Voted on “{title}”" = "Voted on “{title}”";
 
-/* MISSING TRANSLATION - views/containers/chatroom/NewDirectMessageModal.vue */
-"{ourNewContactsCount} members" = "{ourNewContactsCount} members";
-
 /* MISSING TRANSLATION - views/containers/contributions/Contribution.vue */
 "Edit contribution settings" = "Edit contribution settings";
 
@@ -679,6 +676,9 @@
 "Failed to revoke invite." = "La révocation de l’invitation a échoué.";
 
 /* controller/actions/group.js */
+"Failed to update description of chat channel." = "Échec de la mise à jour de la description du canal de chat.";
+
+/* controller/actions/group.js */
 "Failed to update group profile." = "La mise à jour du profil de groupe a échoué.";
 
 /* controller/actions/group.js */
@@ -915,10 +915,10 @@
 /* views/components/ProfileCard.vue, views/pages/DesignSystem.vue */
 "Remove member" = "Exclure un membre";
 
-/* views/components/Search.vue */
+/* views/components/Search.vue, views/components/UsersSelector.vue */
 "Clear search" = "Effacer la recherche";
 
-/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search..." = "Recherche...";
 
 /* views/components/Toggle.vue */

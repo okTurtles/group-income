@@ -27,28 +27,51 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     })
   }
 
-  function createDirectMessage (partner) {
+  function createPrivateDM (partner) {
     cy.getByDT('chatMembers').within(() => {
       cy.getByDT('inviteButton').click()
     })
 
-    cy.getByDT('modal').within(() => {
-      cy.getByDT('others').children().each(($el, index, $list) => {
-        if ($el.text().includes(`@${partner}`)) {
-          cy.wrap($el).click()
-          return false
-        }
+    const randBoolean = Math.random() > 0.5
+    if (randBoolean) {
+      cy.getByDT('modal').within(() => {
+        cy.getByDT('others').children().each(($el, index, $list) => {
+          if ($el.text().includes(`@${partner}`)) {
+            cy.wrap($el).click()
+            return false
+          }
+        })
+
+        cy.getByDT('users-selector').type('{enter}')
       })
-    })
+    } else {
+      cy.getByDT('modal').within(() => {
+        cy.getByDT('users-selector').type(`${partner}{enter}`)
+      })
+    }
   }
 
-  function switchDirectMessageChannel (partner) {
-    cy.getByDT('chatMembers').find('ul').get('span[data-test="title"], span[data-test="username"]').each(($el, index, $list) => {
-      if ($el.text() === partner) {
-        cy.wrap($el).click()
-        return false
-      }
-    })
+  function openDMByMembers (members) {
+    const randBoolean = Math.random() > 0.5
+    const title = members.join(', ')
+    if (members.length === 1 && randBoolean) {
+      cy.getByDT('chatMembers').within(() => {
+        cy.getByDT('inviteButton').click()
+      })
+      cy.getByDT('modal').within(() => {
+        cy.getByDT('users-selector').type(`${title}{enter}`)
+      })
+    } else {
+      cy.getByDT('chatMembers')
+        .find('ul')
+        .get('span[data-test="title"], span[data-test="username"]')
+        .each(($el, index, $list) => {
+          if ($el.text() === title) {
+            cy.wrap($el).click()
+            return false
+          }
+        })
+    }
   }
 
   function joinUser (username, shouldLogoutAfter = true) {
@@ -93,21 +116,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
   })
 
   it(`user2 joins "${groupName}" group and create a direct message channel with user1 and sends two messages`, () => {
-    cy.giAcceptGroupInvite(invitationLinkAnyone, {
-      username: user2,
-      groupName: groupName,
-      shouldLogoutAfter: false,
-      bypassUI: true
-    })
-    me = user2
-    cy.giRedirectToGroupChat()
-
-    cy.getByDT('channelName').should('contain', CHATROOM_GENERAL_NAME)
-    cy.giCheckIfJoinedChatroom(CHATROOM_GENERAL_NAME, me)
-
-    cy.getByDT('channelsList').find('ul>li:first-child').within(() => {
-      cy.get('[data-test]').should('contain', CHATROOM_GENERAL_NAME)
-    })
+    joinUser(user2, false)
 
     cy.getByDT('chatMembers').find('ul').children().should('have.length', 0)
 
@@ -116,14 +125,13 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     })
 
     cy.getByDT('modal').within(() => {
-      cy.getByDT('search').should('be.focused')
-      cy.getByDT('memberCount').should('contain', '1 members')
+      cy.getByDT('users-selector').should('be.focused')
       cy.getByDT('recentConversations').children().should('have.length', 0)
       cy.getByDT('others').children().should('have.length', 1)
     })
     cy.closeModal()
 
-    createDirectMessage(user1)
+    createPrivateDM(user1)
 
     cy.getByDT('chatMembers').find('ul').children().should('have.length', 1)
     cy.getByDT('channelName').should('contain', user1)
@@ -144,7 +152,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
 
     // NOTE: In another device, unread mentions are not saved, so no mentions here
     // cy.getByDT('chatMembers').find('ul > li:nth-child(0)').get('.c-unreadcount-wrapper').contains('2')
-    switchDirectMessageChannel(user2)
+    openDMByMembers([user2])
 
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 2)
 
@@ -152,7 +160,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
   })
 
   it('user1 creates a direct message channel with user3 and sends greetings', () => {
-    createDirectMessage(user3)
+    createPrivateDM(user3)
 
     cy.getByDT('chatMembers').find('ul').children().should('have.length', 2)
     cy.getByDT('channelName').should('contain', user3)
@@ -164,7 +172,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     switchUser(user3)
     cy.giRedirectToGroupChat()
 
-    switchDirectMessageChannel(user1)
+    openDMByMembers([user1])
 
     cy.getByDT('chatMembers').find('ul').children().should('have.length', 1)
     cy.getByDT('conversationWrapper').find('.c-message').should('have.length', 1)
@@ -218,7 +226,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
 
     cy.url().then(url => url).as('groupMessageLink')
 
-    switchDirectMessageChannel(user3)
+    openDMByMembers([user3])
 
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
@@ -238,7 +246,7 @@ describe('Create/Join direct messages and orders of direct message channels', ()
     switchUser(user3)
     cy.giRedirectToGroupChat()
 
-    switchDirectMessageChannel(`${user1}, ${user4}`)
+    openDMByMembers([user1, user4])
 
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()

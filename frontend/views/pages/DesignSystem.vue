@@ -1039,6 +1039,29 @@ page(
         tr
           td
             tr
+              h3.is-title-3 UsersSelector (component)
+          tr
+            td
+              pre
+                | users-selector(
+                |   label='Search for users'
+                |   :usernames='["alexjin", "greg", "andrea"]'
+                |   defaultValue='alexjin'
+                |   :autofocus='true'
+                |   @change='onChange'
+                |   @remove='onRemove'
+                |   @submit='onSubmit'
+                | )
+
+            td
+              users-selector(
+                label='Search for users'
+                :usernames='form.searchUsers'
+                defaultValue='alexjin'
+              )
+        tr
+          td
+            tr
               h3.is-title-3 SliderContinuous (component)
           tr
             td
@@ -1376,6 +1399,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem, MenuHeader } from '@com
 import Tooltip from '@components/Tooltip.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import Search from '@components/Search.vue'
+import UsersSelector from '@components/UsersSelector.vue'
 import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
@@ -1499,6 +1523,7 @@ export default ({
       },
       form: {
         searchValue: '',
+        searchUsers: [],
         selectPayment: 'choose',
         copyableInput: '',
         sliderValue: 25
@@ -1529,6 +1554,7 @@ export default ({
     MenuItem,
     ButtonDropdownMenu,
     Search,
+    UsersSelector,
     Tooltip,
     SvgHello,
     SliderContinuous

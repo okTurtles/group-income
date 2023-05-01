@@ -10816,10 +10816,11 @@ ${this.getErrorInfo()}`;
           attributes: chatRoomAttributesType
         }),
         process({ data, meta }, { state }) {
-          const { name, type, privacyLevel } = data.attributes;
+          const { name, type, privacyLevel, description } = data.attributes;
           vue_esm_default.set(state.chatRooms, data.chatRoomID, {
             creator: meta.username,
             name,
+            description,
             type,
             privacyLevel,
             deletedDate: null,
@@ -10884,10 +10885,16 @@ ${this.getErrorInfo()}`;
           name: string
         }),
         process({ data, meta }, { state, getters }) {
-          vue_esm_default.set(state.chatRooms, data.chatRoomID, {
-            ...getters.getGroupChatRooms[data.chatRoomID],
-            name: data.name
-          });
+          vue_esm_default.set(state.chatRooms[data.chatRoomID], "name", data.name);
+        }
+      },
+      "gi.contracts/group/changeChatRoomDescription": {
+        validate: objectOf({
+          chatRoomID: string,
+          description: string
+        }),
+        process({ data, meta }, { state, getters }) {
+          vue_esm_default.set(state.chatRooms[data.chatRoomID], "description", data.description);
         }
       },
       "gi.contracts/group/updateLastLoggedIn": {

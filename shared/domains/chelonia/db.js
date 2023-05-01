@@ -8,16 +8,37 @@ import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
 
 const headPrefix = 'head='
 
-// Helper functions to avoid bad key-value pairs.
-const validate = (key: string, value: Buffer | string): boolean => {
-  if (key.startsWith('blob=')) {
-    return Buffer.isBuffer(value)
+export const checkKey = (key: string): void => {
+  // Disallow unprintable characters, slashes, and TAB.
+  if (/[\x00-\x1f\x7f\t\\/]/.test(key)) { // eslint-disable-line no-control-regex
+    throw new Error(`bad key: ${JSON.stringify(key)}`)
   }
-  return typeof value === 'string'
 }
-const reject = (key: string): Promise<Error> => {
-  const type = key.startsWith('blob=') ? 'buffer' : 'string'
-  return Promise.reject(new Error(`expected a ${type}`))
+
+export const parsePrefixableKey = (key: string): [string, string] => {
+  const i = key.indexOf(':')
+  if (i === -1) {
+    return ['', key]
+  }
+  const prefix = key.slice(0, i + 1)
+  if (prefix in prefixHandlers) {
+    return [prefix, key.slice(prefix.length)]
+  }
+  throw new ChelErrorDBConnection(`Unknown prefix in '${key}'.`)
+}
+
+export const prefixHandlers: Object = {
+  // Decode buffers, but don't transform other values.
+  '': value => Buffer.isBuffer(value) ? value.toString('utf8') : value,
+  ':': value => Buffer.isBuffer(value) ? value.toString('utf8') : value,
+  'any:': value => value,
+  // Throw if the value if not a buffer.f
+  'blob:': value => {
+    if (Buffer.isBuffer(value)) {
+      return value
+    }
+    throw new ChelErrorDBConnection('Unexpected value: expected a buffer.')
+  }
 }
 
 // NOTE: To enable persistence of log use 'sbp/selectors/overwrite'
@@ -29,29 +50,32 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
       'chelonia/db/get': function (key: string): Promise<Buffer | string | void> {
         const id = sbp('chelonia/db/contractIdFromLogHEAD', key)
-        return Promise.resolve(id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : undefined)
+        const value = (id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : undefined)
+        return Promise.resolve(value)
       },
       'chelonia/db/set': function (key: string, value: Buffer | string): Promise<Error | void> {
-        if (!validate(key, value)) {
-          return reject(key)
-        }
         return Promise.resolve()
       },
       'chelonia/db/delete': function (key: string): Promise<boolean> { return Promise.resolve(true) }
     }
   : {
-      'chelonia/db/get': function (key: string): Promise<Buffer | string | void> {
-        return Promise.resolve(sbp('okTurtles.data/get', key))
-      },
-      'chelonia/db/set': function (key: string, value: Buffer | string): Promise<Error | void> {
-        if (!validate(key, value)) {
-          return reject(key)
+      // eslint-disable-next-line require-await
+      'chelonia/db/get': async function (prefixableKey: string): Promise<Buffer | Error | string | void> {
+        const [prefix, key] = parsePrefixableKey(prefixableKey)
+        const value = sbp('okTurtles.data/get', key)
+        if (value === undefined) {
+          return
         }
-        sbp('okTurtles.data/set', key, value)
-        return Promise.resolve()
+        return prefixHandlers[prefix](value)
       },
-      'chelonia/db/delete': function (key: string): Promise<boolean> {
-        return Promise.resolve(sbp('okTurtles.data/delete', key))
+      // eslint-disable-next-line require-await
+      'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<Error | void> {
+        checkKey(key)
+        sbp('okTurtles.data/set', key, value)
+      },
+      // eslint-disable-next-line require-await
+      'chelonia/db/delete': async function (key: string): Promise<boolean> {
+        return sbp('okTurtles.data/delete', key)
       }
     }
 

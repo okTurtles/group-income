@@ -7,7 +7,7 @@ import fs from 'fs'
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import '@sbp/okturtles.data'
-import '~/shared/domains/chelonia/db.js'
+import { checkKey, parsePrefixableKey, prefixHandlers } from '~/shared/domains/chelonia/db.js'
 import LRU from 'lru-cache'
 
 const Boom = require('@hapi/boom')
@@ -159,14 +159,6 @@ sbp('sbp/selectors/register', {
   }
 })
 
-// Used to thwart path traversal attacks.
-export function checkKey (key: string): void {
-  // Disallow unprintable characters, slashes, and TAB.
-  if (/[\x00-\x1f\x7f\t\\/]/.test(key)) { // eslint-disable-line no-control-regex
-    throw Boom.badRequest(`bad key: ${JSON.stringify(key)}`)
-  }
-}
-
 function namespaceKey (name: string): string {
   return 'name=' + name
 }
@@ -186,18 +178,22 @@ export default async () => {
     })
 
     sbp('sbp/selectors/overwrite', {
-      'chelonia/db/get': async function (key: string): Promise<Buffer | string | void> {
-        const lookupValue = cache.get(key)
+      'chelonia/db/get': async function (prefixableKey: string): Promise<Buffer | string | void> {
+        const lookupValue = cache.get(prefixableKey)
         if (lookupValue !== undefined) {
           return lookupValue
         }
-        const value = await readData(key)
-        if (value !== undefined) {
-          cache.set(key, value)
+        const [prefix, key] = parsePrefixableKey(prefixableKey)
+        let value = await readData(key)
+        if (value === undefined) {
+          return
         }
+        value = prefixHandlers[prefix](value)
+        cache.set(prefixableKey, value)
         return value
       },
       'chelonia/db/set': async function (key: string, value: Buffer | string): Promise<void> {
+        checkKey(key)
         await writeData(key, value)
         cache.set(key, value)
       }
@@ -226,7 +222,7 @@ export default async () => {
     console.log('[chelonia.db] Preloading...')
     for (const key of keys) {
       // Skip keys which are already in the DB.
-      if (!await sbp('chelonia/db/get', key)) {
+      if (!persistence || !await sbp('chelonia/db/get', key)) {
         const value = await readFile(path.join(dataFolder, key), 'utf8')
         // Load only contract source files and contract manifests.
         if (value.startsWith(CONTRACT_MANIFEST_MAGIC) || value.startsWith(CONTRACT_SOURCE_MAGIC)) {

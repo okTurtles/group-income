@@ -4,8 +4,6 @@
       i18n Leave Channel
 
     form(novalidate @submit.prevent='' data-test='leaveChannel')
-      //- TODO: need to update design if ourUsername is chatroom creator
-      //- and make it 'Leave and Archive'
       i18n(
         tag='strong'
         :args='{ channelName: channelName }'
@@ -20,7 +18,7 @@
         button-submit.is-danger(
           @click='submit'
           data-test='leaveChannelSubmit'
-        ) {{ submitButtonTitle }}
+        ) {{ L('Leave Channel') }}
 </template>
 
 <script>
@@ -29,7 +27,6 @@ import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import { CHATROOM_TYPES } from '@model/contracts/shared/constants.js'
-import { L } from '@common/common.js'
 
 export default ({
   name: 'LeaveChannelModal',
@@ -41,10 +38,8 @@ export default ({
     ...mapGetters([
       'currentChatRoomId',
       'currentChatRoomState',
-      'currentIdentityState',
       'usernameFromDirectMessageID',
-      'ourContactProfiles',
-      'ourUsername'
+      'ourContactProfiles'
     ]),
     ...mapState(['loggedIn', 'currentGroupId']),
     channelName () {
@@ -56,12 +51,6 @@ export default ({
       } else {
         return this.currentChatRoomState.attributes.name
       }
-    },
-    isChannelCreator () {
-      return this.ourUsername === this.currentChatRoomState.attributes.creator
-    },
-    submitButtonTitle () {
-      return !this.isChannelCreator ? L('Leave Channel') : L('Leave and Archive')
     }
   },
   methods: {
@@ -70,19 +59,13 @@ export default ({
     },
     async submit () {
       try {
-        const postpublish = this.isChannelCreator
-          ? (msg) => {
-              // TODO: archive channel
-            }
-          : undefined
         await sbp('gi.actions/group/leaveChatRoom', {
           contractID: this.currentGroupId,
           data: {
             chatRoomID: this.currentChatRoomId,
             member: this.loggedIn.username,
             leavingGroup: false
-          },
-          hooks: { postpublish }
+          }
         })
       } catch (e) {
         console.error('LeaveChannelModal submit() error:', e)

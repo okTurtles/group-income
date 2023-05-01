@@ -2,13 +2,7 @@
 .c-chat-main(v-if='summary.title')
   emoticons
   .c-body
-    .c-body-loading(v-if='details.isLoading')
-      loading
-        // TODO later - Design a cool skeleton loading
-           this should be done only after knowing exactly how server gets each conversation data
-
     .c-body-conversation(
-      v-else
       ref='conversation'
       data-test='conversationWrapper'
       @scroll='onChatScroll'
@@ -23,25 +17,22 @@
       )
         div(slot='no-more')
           conversation-greetings(
-            :members='details.numberOfParticipants'
-            :creator='summary.creator'
-            :type='summary.type'
-            :joined='summary.joined'
+            :members='summary.numberOfUsers'
+            :creator='summary.attributes.creator'
+            :type='summary.attributes.type'
+            :joined='summary.isJoined'
             :name='summary.title'
-            :description='summary.description'
+            :description='summary.attributes.description'
           )
         div(slot='no-results')
           conversation-greetings(
-            :members='details.numberOfParticipants'
-            :creator='summary.creator'
-            :type='summary.type'
-            :joined='summary.joined'
+            :members='summary.numberOfUsers'
+            :creator='summary.attributes.creator'
+            :type='summary.attributes.type'
+            :joined='summary.isJoined'
             :name='summary.title'
-            :description='summary.description'
+            :description='summary.attributes.description'
           )
-
-      .c-divider.is-new(v-if='ephemeral.unreadFromBeginning')
-        i18n.c-new.is-new-date New
 
       template(v-for='(message, index) in messages')
         .c-divider(
@@ -81,14 +72,15 @@
         )
 
     .c-initializing(v-if='!ephemeral.messagesInitiated')
+    //-   TODO later - Design a cool skeleton loading
+    //-   this should be done only after knowing exactly how server gets each conversation data
 
   .c-footer
     send-area(
-      v-if='summary.joined'
-      :loading='details.isLoading'
+      v-if='summary.isJoined'
+      :loading='!ephemeral.messagesInitiated'
       :replying-message='ephemeral.replyingMessage'
       :replying-to='ephemeral.replyingTo'
-      :title='summary.title'
       :scrolledUp='isScrolledUp'
       @send='handleSendMessage'
       @jump-to-latest='updateScroll'
@@ -96,7 +88,7 @@
     )
     view-area(
       v-else
-      :joined='summary.joined'
+      :joined='summary.isJoined'
       :title='summary.title'
     )
 </template>
@@ -143,12 +135,8 @@ export default ({
   },
   props: {
     summary: {
-      type: Object, // { type: String, title: String, description: String, routerBack: String }
-      default () { return {} }
-    },
-    details: {
-      type: Object, // { isLoading: Bool, participants: Object }
-      default () { return {} }
+      type: Object,
+      required: true
     }
   },
   data () {
@@ -158,13 +146,12 @@ export default ({
       },
       latestEvents: [],
       ephemeral: {
-        unreadFromBeginning: false,
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
         infiniteLoading: null,
         // NOTE: messagesInitiated describes if the messages are fully re-rendered
         //       according to this, we could display loading/skeleton component
-        messagesInitiated: false,
+        messagesInitiated: undefined,
         replyingMessage: null,
         replyingMessageHash: null,
         replyingTo: null
@@ -186,8 +173,12 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
-    this.setMessageEventListener({ force: true })
-    this.setInitMessages()
+    if (this.currentChatRoomId && this.isJoinedChatRoom(this.currentChatRoomId)) {
+      // NOTE: this.currentChatRoomId could be null when enter group chat page very soon
+      //       after the first opening the Group Income application
+      this.setMessageEventListener({ to: this.currentChatRoomId })
+      this.setInitMessages()
+    }
     window.addEventListener('resize', this.resizeEventHandler)
   },
   beforeDestroy () {
@@ -208,7 +199,7 @@ export default ({
       'isJoinedChatRoom',
       'setChatRoomScrollPosition',
       'currentChatRoomScrollPosition',
-      'currentChatRoomUnreadSince',
+      'currentChatRoomReadUntil',
       'currentGroupNotifications',
       'currentChatRoomUnreadMentions'
     ]),
@@ -242,7 +233,7 @@ export default ({
       return this.currentUserAttr.username === from
     },
     who (message) {
-      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.details.participants[message.from]
+      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.summary.participants[message.from]
       return user?.displayName || user?.username || message.from
     },
     variant (message) {
@@ -264,7 +255,7 @@ export default ({
       if (from === MESSAGE_TYPES.NOTIFICATION || from === MESSAGE_TYPES.INTERACTIVE) {
         return this.currentUserAttr.picture
       }
-      return this.details.participants[from]?.picture
+      return this.summary.participants[from]?.picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
@@ -428,7 +419,7 @@ export default ({
       }
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
-       * if the removed message was the starting position of unread messages
+       * if the removed message was the first unread messages(currentChatRoomReadUntil)
        * we can load message of that hash(messageHash) but not scroll
        * because it doesn't exist in this.messages
        * So in this case, we will load messages until the first unread mention
@@ -436,9 +427,9 @@ export default ({
        */
       const curChatRoomId = this.currentChatRoomId
       let unreadPosition = null
-      if (this.currentChatRoomUnreadSince && !this.currentChatRoomUnreadSince.fromBeginning) {
-        if (!this.currentChatRoomUnreadSince.deletedDate) {
-          unreadPosition = this.currentChatRoomUnreadSince.messageHash
+      if (this.currentChatRoomReadUntil) {
+        if (!this.currentChatRoomReadUntil.deletedDate) {
+          unreadPosition = this.currentChatRoomReadUntil.messageHash
         } else if (this.currentChatRoomUnreadMentions.length) {
           unreadPosition = this.currentChatRoomUnreadMentions[0].messageHash
         }
@@ -448,7 +439,7 @@ export default ({
       const before = shouldInitiate || !this.latestEvents.length
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
-      let events = null
+      let events = []
       const isLoadedFromStorage = shouldInitiate && this.latestEvents.length
       if (isLoadedFromStorage) {
         const prevLastEventHash = this.messageState.prevTo // NOTE: check setInitMessages function
@@ -524,33 +515,25 @@ export default ({
     },
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageHash = null
-      this.ephemeral.unreadFromBeginning = false
-      if (this.currentChatRoomUnreadSince) {
-        const { fromBeginning } = this.currentChatRoomUnreadSince
-        if (fromBeginning) {
-          this.ephemeral.unreadFromBeginning = true
-        } else {
-          const startUnreadMessage = this.messages
-            .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
-          if (startUnreadMessage) {
-            this.ephemeral.startedUnreadMessageHash = startUnreadMessage.hash
-          }
+      if (this.currentChatRoomReadUntil) {
+        const startUnreadMessage = this.messages
+          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomReadUntil.createdDate).getTime())
+        if (startUnreadMessage) {
+          this.ephemeral.startedUnreadMessageHash = startUnreadMessage.hash
         }
       }
     },
-    setMessageEventListener ({ force = false, from, to }) {
+    setMessageEventListener ({ from, to }) {
       if (from) {
-        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)
+        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`)
       }
-      if (force) {
-        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)
-      } else if (this.isJoinedChatRoom(to)) {
+      if (this.isJoinedChatRoom(to)) {
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
     updateUnreadMessageHash ({ messageHash, createdDate }) {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
+        sbp('state/vuex/commit', 'setChatRoomReadUntil', {
           chatRoomId: this.currentChatRoomId,
           messageHash,
           createdDate
@@ -625,8 +608,8 @@ export default ({
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
       if (this.ephemeral.messagesInitiated === undefined) {
-        // NOTE: this infinite handler is being called once
-        // before the component state is initialized, which should be ignored
+        // NOTE: this infinite handler is being called once which should be ignored
+        // before calling the setInitMessages function
         return
       }
       this.renderMoreMessages(!this.ephemeral.messagesInitiated).then(completed => {
@@ -664,7 +647,7 @@ export default ({
         this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
       }
 
-      if (!this.summary.joined) {
+      if (!this.summary.isJoined) {
         return
       }
 
@@ -674,9 +657,7 @@ export default ({
         const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
         if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
-          const latestMessageCreatedAt = this.currentChatRoomUnreadSince && !this.currentChatRoomUnreadSince.fromBeginning
-            ? this.currentChatRoomUnreadSince.createdDate
-            : undefined
+          const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
           if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
             this.updateUnreadMessageHash({
               messageHash: msg.hash,
@@ -733,22 +714,24 @@ export default ({
     },
     refreshContent: debounce(function (from, to) {
       // NOTE: using debounce we can skip unnecessary rendering contents
-      const force = sbp('chelonia/contract/isSyncing', to)
-      this.setMessageEventListener({ from, to, force })
       this.archiveMessageState(from)
       this.setInitMessages()
+      this.setMessageEventListener({ from, to })
     }, 250)
   },
   watch: {
-    currentChatRoomId (to, from) {
+    'currentChatRoomId' (to, from) {
+      if (from) {
+        this.ephemeral.messagesInitiated = false
+      }
       this.refreshContent(from, to)
     },
-    'summary.joined' (to, from) {
+    'summary.isJoined' (to, from) {
       if (to) {
         sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
           if (contractID === this.currentChatRoomId && isSyncing === false) {
+            this.setMessageEventListener({ from: contractID, to: contractID })
             this.setInitMessages()
-            this.setMessageEventListener({ force: true })
           }
         })
       }

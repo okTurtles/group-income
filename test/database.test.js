@@ -3,6 +3,7 @@
 
 import assert from 'node:assert'
 import { rm } from 'node:fs/promises'
+import { checkKey } from '~/shared/domains/chelonia/db.js'
 
 const names = ['FS', 'SQLite']
 const options = {
@@ -23,8 +24,6 @@ names.forEach((name) => {
   const lowerCaseName = name.toLowerCase()
   const {
     clear,
-    exportToJSON,
-    importFromJSON,
     initStorage,
     readData,
     writeData
@@ -38,7 +37,7 @@ names.forEach((name) => {
       await clear()
     })
 
-    it('should throw if the key contains path components', async function () {
+    it('should throw if the key contains a path component', function () {
       const badKeys = [
         '/badkey', './badkey', '../badkey',
         'bad/key', 'bad/./key', 'bad/../key',
@@ -47,23 +46,17 @@ names.forEach((name) => {
       const windowsBadKeys = badKeys.map(k => k.replace(/\//g, '\\'))
       badKeys.push(...windowsBadKeys)
 
-      await Promise.all(badKeys.map(badKey => (
-        assert.rejects(readData(badKey), isBadKeyError(badKey))
-      )))
-      await Promise.all(badKeys.map(badKey => (
-        assert.rejects(writeData(badKey, ''), isBadKeyError(badKey))
-      )))
+      badKeys.map(badKey => (
+        assert.throws(() => checkKey(badKey), isBadKeyError(badKey))
+      ))
     })
 
-    it('should throw if the key contains any unprintable character', async function () {
+    it('should throw if the key contains an unprintable character', function () {
       const unprintableCharacters = [...String.fromCharCode(...range(32), 127)]
 
-      await Promise.all(unprintableCharacters.map(c => (
-        assert.rejects(readData(c), err => err.message === `bad key: ${JSON.stringify(c)}`)
-      )))
-      await Promise.all(unprintableCharacters.map(c => (
-        assert.rejects(writeData(c, ''), err => err.message === `bad key: ${JSON.stringify(c)}`)
-      )))
+      unprintableCharacters.map(c => (
+        assert.throws(() => checkKey(c), err => err.message === `bad key: ${JSON.stringify(c)}`)
+      ))
     })
 
     it('Should return `undefined` if the key was not found', async function () {
@@ -76,7 +69,7 @@ names.forEach((name) => {
     it('Should return the string that has been written', async function () {
       await writeData('newKey', 'newValue')
 
-      const actual = await readData('newKey')
+      const actual = await readData('newKey').then(data => Buffer.isBuffer(data) ? data.toString('utf8') : data)
       const expected = 'newValue'
 
       assert.equal(actual, expected)
@@ -84,7 +77,7 @@ names.forEach((name) => {
 
     it('Should return the buffer that has been written', async function () {
       const buffer = Buffer.from('contents')
-      const key = 'blob=key'
+      const key = 'blobkey'
       await writeData(key, buffer)
 
       const actual = await readData(key)
@@ -96,7 +89,7 @@ names.forEach((name) => {
     it('Should return the new buffer after an update', async function () {
       const oldBuffer = Buffer.from('someValue')
       const newBuffer = Buffer.from('someOtherValue')
-      const key = 'blob=key'
+      const key = 'blobkey'
 
       await writeData(key, oldBuffer)
       await writeData(key, newBuffer)
@@ -111,22 +104,10 @@ names.forEach((name) => {
       await writeData('someKey', 'someValue')
       await writeData('someKey', 'someOtherValue')
 
-      const actual = await readData('someKey')
+      const actual = await readData('someKey').then(data => Buffer.isBuffer(data) ? data.toString('utf8') : data)
       const expected = 'someOtherValue'
 
       assert.strictEqual(actual, expected)
-    })
-
-    it('Should roundtrip entries in bulk given a JSON object', async function () {
-      const json = Object.fromEntries(
-        range(100).map(key => [key, String(Math.random())])
-      )
-      await importFromJSON(json)
-
-      const actual = await exportToJSON()
-      const expected = json
-
-      assert.deepStrictEqual(actual, expected)
     })
 
     after('cleanup', async function () {

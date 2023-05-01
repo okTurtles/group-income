@@ -438,7 +438,7 @@
 /* views/containers/contributions/PaymentMethods.vue */
 "Choose..." = "Choose...";
 
-/* views/components/Search.vue */
+/* views/components/Search.vue, views/components/UsersSelector.vue */
 "Clear search" = "Clear search";
 
 /* views/components/avatar-editor/AvatarEditorModal.vue */
@@ -779,6 +779,9 @@
 
 /* controller/actions/group.js */
 "Failed to update \"lastLoggedIn\" in a group profile." = "Failed to update \"lastLoggedIn\" in a group profile.";
+
+/* controller/actions/group.js */
+"Failed to update description of chat channel." = "Failed to update description of chat channel.";
 
 /* controller/actions/group.js */
 "Failed to update group distribution date." = "Failed to update group distribution date.";
@@ -1668,7 +1671,7 @@
 /* views/pages/Payments.vue */
 "Search payments..." = "Search payments...";
 
-/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search..." = "Search...";
 
 /* views/containers/notifications/NotificationCard.vue */
@@ -2516,9 +2519,6 @@
 
 /* views/components/Badge.vue */
 "{num} new notifications" = "{num} new notifications";
-
-/* views/containers/chatroom/NewDirectMessageModal.vue */
-"{ourNewContactsCount} members" = "{ourNewContactsCount} members";
 
 /* views/containers/payments/PaymentRowTodo.vue */
 "{partial_amount} out of {partial_total}" = "{partial_amount} out of {partial_total}";

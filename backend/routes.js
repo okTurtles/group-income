@@ -184,8 +184,8 @@ route.POST('/file', {
       console.error(`hash(${hash}) != ourHash(${ourHash})`)
       return Boom.badRequest('bad hash!')
     }
-    await sbp('chelonia/db/set', `blob=${hash}`, data)
-    return '/file/blob=' + hash
+    await sbp('chelonia/db/set', hash, data)
+    return '/file/' + hash
   } catch (err) {
     return logger(err)
   }
@@ -193,18 +193,17 @@ route.POST('/file', {
 
 // Serve data from Chelonia DB.
 // Note that a `Last-Modified` header isn't included in the response.
-route.GET('/file/{key}', {
+route.GET('/file/{hash}', {
   cache: {
     // Do not set other cache options here, to make sure the 'otherwise' option
     // will be used so that the 'immutable' directive gets included.
     otherwise: 'public,max-age=31536000,immutable'
   }
 }, async function (request, h) {
-  const { key } = request.params
-  console.debug(`GET /file/${key}`)
-  // TODO: Simplify this when `¢hel deploy` no longer generates unprefixed keys.
-  const hash = key.includes('=') ? key.slice(key.indexOf('=') + 1) : key
-  const blobOrString = await sbp('chelonia/db/get', key)
+  const { hash } = request.params
+  console.debug(`GET /file/${hash}`)
+
+  const blobOrString = await sbp('chelonia/db/get', `any:${hash}`)
   if (!blobOrString) {
     return Boom.notFound()
   }
