@@ -463,12 +463,39 @@ module.exports = (grunt) => {
   // Used with `grunt dev` only, makes it possible to restart just the server when
   // backend or shared files are modified.
   grunt.registerTask('backend:relaunch', '[internal]', function () {
-    relaunch()
-  })
-
-  grunt.registerTask('backend:stop', function () {
-    const done = this.async()
-    stop().then(done)
+    const done = this.async() // Tell Grunt we're async.
+    const fork2 = function () {
+      grunt.log.writeln('backend: forking...')
+      child = fork(backendIndex, process.argv, {
+        env: process.env,
+        execArgv: ['--require', '@babel/register']
+      })
+      child.on('error', (err) => {
+        if (err) {
+          console.error('error starting or sending message to child:', err)
+          process.exit(1)
+        }
+      })
+      child.on('exit', (c) => {
+        if (c !== 0) {
+          grunt.log.error(`child exited with error code: ${c}`.bold)
+          // ^C can cause c to be null, which is an OK error.
+          process.exit(c || 0)
+        }
+      })
+      done()
+    }
+    if (child) {
+      grunt.log.writeln('Killing child!')
+      // Wait for successful shutdown to avoid EADDRINUSE errors.
+      child.on('message', () => {
+        child = null
+        fork2()
+      })
+      child.send({ shutdown: 1 })
+    } else {
+      fork2()
+    }
   })
 
   grunt.registerTask('build', function () {
