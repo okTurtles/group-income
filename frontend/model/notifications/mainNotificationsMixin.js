@@ -35,6 +35,7 @@ const myNotificationHas = (checkFunc, groupId = '') => {
     * type: MIN1 | MIN5 | MIN30
       - MIN1: a notification that is validated&emitted every 1 min.
       - MIN5: a notification that is validated&emitted every 5 min.
+      - MIN15: a notification that is validated&emitted every 15 min.
       - MIN30: a notification that is validated&emitted every 30 min.
 
     * notificationData: { stateKey: string, emitCondition: function, emit: function, shouldClearStateKey: function }
