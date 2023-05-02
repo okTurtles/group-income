@@ -443,8 +443,11 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
 })
 
 Cypress.Commands.add('giWaitUntilMessagesLoaded', () => {
+  cy.get('.c-initializing').should('not.exist')
   cy.getByDT('conversationWrapper').within(() => {
-    cy.get('.c-initializing').should('not.exist')
+    cy.get('.infinite-status-prompt:first-child')
+      .invoke('attr', 'style')
+      .should('include', 'display: none')
   })
   cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
 })
