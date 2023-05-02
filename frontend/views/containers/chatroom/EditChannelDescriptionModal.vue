@@ -42,7 +42,7 @@
 import sbp from '@sbp/sbp'
 import { L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -64,6 +64,7 @@ export default ({
     }
   },
   computed: {
+    ...mapState(['currentGroupId']),
     ...mapGetters(['currentChatRoomId', 'groupSettings', 'currentChatRoomState']),
     maxDescriptionCharacters () {
       return this.currentChatRoomState.settings.maxDescriptionLength
@@ -84,9 +85,10 @@ export default ({
     },
     async submit () {
       try {
-        await sbp('gi.actions/chatroom/changeDescription', {
-          contractID: this.currentChatRoomId,
+        await sbp('gi.actions/group/changeChatRoomDescription', {
+          contractID: this.currentGroupId,
           data: {
+            chatRoomID: this.currentChatRoomId,
             description: this.form.description
           }
         })

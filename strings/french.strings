@@ -85,7 +85,22 @@
 "Less than 1 week left before the distribution period ends - don't forget to send payments!" = "Less than 1 week left before the distribution period ends - don't forget to send payments!";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
+"Member addition" = "Member addition";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Member removal" = "Member removal";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Mincome change" = "Mincome change";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Proposal about to expire: {i_}\"{proposalTitle}\"{_i}. please vote!" = "Proposal about to expire: {i_}\"{proposalTitle}\"{_i}. please vote!";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
 "The mincome has changed to {amount}." = "The mincome has changed to {amount}.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Voting rule change" = "Voting rule change";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'" = "{errName} during {activity} for '{action}' from {b_}{who}{_b} to '{contract}': '{errMsg}'";
@@ -140,6 +155,9 @@
 
 /* MISSING TRANSLATION - views/components/modal/ModalClose.vue */
 "ESC" = "ESC";
+
+/* MISSING TRANSLATION - views/components/tabs/TabWrapper.vue */
+"Version" = "Version";
 
 /* MISSING TRANSLATION - views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
 "A username cannot contain whitespace." = "A username cannot contain whitespace.";
@@ -206,9 +224,6 @@
 
 /* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
 "Voted on “{title}”" = "Voted on “{title}”";
-
-/* MISSING TRANSLATION - views/containers/chatroom/NewDirectMessageModal.vue */
-"{ourNewContactsCount} members" = "{ourNewContactsCount} members";
 
 /* MISSING TRANSLATION - views/containers/contributions/Contribution.vue */
 "Edit contribution settings" = "Edit contribution settings";
@@ -522,6 +537,9 @@
 /* MISSING TRANSLATION - views/containers/proposals/PropositionsAllModal.vue */
 "{groupProposalsCount} proposals" = "{groupProposalsCount} proposals";
 
+/* MISSING TRANSLATION - views/containers/user-settings/Acknowledgements.vue */
+"Illustrations" = "Illustrations";
+
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
 "Info" = "Info";
 
@@ -653,6 +671,9 @@
 
 /* controller/actions/group.js */
 "Failed to revoke invite." = "La révocation de l’invitation a échoué.";
+
+/* controller/actions/group.js */
+"Failed to update description of chat channel." = "Échec de la mise à jour de la description du canal de chat.";
 
 /* controller/actions/group.js */
 "Failed to update group profile." = "La mise à jour du profil de groupe a échoué.";
@@ -891,10 +912,10 @@
 /* views/components/ProfileCard.vue, views/pages/DesignSystem.vue */
 "Remove member" = "Exclure un membre";
 
-/* views/components/Search.vue */
+/* views/components/Search.vue, views/components/UsersSelector.vue */
 "Clear search" = "Effacer la recherche";
 
-/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
+/* views/components/Search.vue, views/containers/chatroom/ChatMembersAllModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Search..." = "Recherche...";
 
 /* views/components/Toggle.vue */
@@ -986,6 +1007,9 @@
 
 /* views/components/modal/ModalClose.vue */
 "close modal" = "fermer le dialogue";
+
+/* views/components/tabs/TabWrapper.vue */
+"Acknowledgements" = "Remerciements";
 
 /* views/components/tabs/TabWrapper.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/UserSettingsModal.vue */
 "Settings" = "Paramètres";
@@ -2238,6 +2262,15 @@
 /* views/containers/proposals/RemoveMember.vue */
 "Remove {name} from the group" = "Exclure {name} du groupe";
 
+/* views/containers/user-settings/Acknowledgements.vue */
+"Group Income is developed by the {a_}okTurtles Foundation{_a} and is funded entirely by individual contributions." = "Group Income est développé par la {a_}okTurtles Foundation{_a} et est entièrement financé par des contributions individuelles.";
+
+/* views/containers/user-settings/Acknowledgements.vue */
+"Libraries" = "Bibliothèques";
+
+/* views/containers/user-settings/Acknowledgements.vue */
+"Support this project" = "Soutenez ce projet";
+
 /* views/containers/user-settings/AppLogs.vue */
 "Debug" = "Débogage";
 
@@ -2357,6 +2390,9 @@
 
 /* views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
 "Your changes were saved!" = "Vos modifications ont été enregistrées !";
+
+/* views/containers/user-settings/settings.js */
+"Advanced" = "Avancée";
 
 /* views/containers/user-settings/settings.js */
 "App settings" = "Paramètres";

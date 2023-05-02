@@ -96,6 +96,7 @@ export default ({
     display: flex;
     flex-direction: column;
     text-align: center;
+    align-items: center;
 
     @include desktop {
       align-items: flex-end;

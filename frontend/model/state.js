@@ -23,7 +23,7 @@ const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
-  chatRoomUnread: {}, // [chatRoomId]: { since: { messageHash, createdDate }, mentions: [{ messageHash, createdDate }] }
+  chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, mentions: [{ messageHash, createdDate }] }
   notificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
@@ -102,8 +102,7 @@ const mutations = {
     state.loggedIn = user
   },
   logout (state) {
-    state.loggedIn = false
-    state.currentGroupId = null
+    Object.assign(state, cloneDeep(initialState))
   },
   setCurrentGroupId (state, currentGroupId) {
     // TODO: unsubscribe from events for all members who are not in this group
@@ -126,14 +125,27 @@ const mutations = {
   deleteChatRoomScrollPosition (state, { chatRoomId }) {
     Vue.delete(state.chatRoomScrollPosition, chatRoomId)
   },
-  setChatRoomUnreadSince (state, { chatRoomId, messageHash, createdDate }) {
-    const prevMentions = state.chatRoomUnread[chatRoomId] ? state.chatRoomUnread[chatRoomId].mentions : []
+  setChatRoomReadUntil (state, { chatRoomId, messageHash, createdDate }) {
+    const prevMentions = state.chatRoomUnread[chatRoomId].mentions
     Vue.set(state.chatRoomUnread, chatRoomId, {
-      since: { messageHash, createdDate, deletedDate: null },
+      readUntil: { messageHash, createdDate, deletedDate: null },
       mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
     })
   },
-  setNotificationSettings (state, { chatRoomId, settings }) {
+  deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
+    Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)
+  },
+  addChatRoomUnreadMention (state, { chatRoomId, messageHash, createdDate }) {
+    state.chatRoomUnread[chatRoomId].mentions.push({ messageHash, createdDate })
+  },
+  deleteChatRoomUnreadMention (state, { chatRoomId, messageHash }) {
+    const prevMentions = state.chatRoomUnread[chatRoomId].mentions
+    Vue.set(state.chatRoomUnread[chatRoomId], 'mentions', prevMentions.filter(m => m.messageHash !== messageHash))
+  },
+  deleteChatRoomUnread (state, { chatRoomId }) {
+    Vue.delete(state.chatRoomUnread, chatRoomId)
+  },
+  setChatroomNotificationSettings (state, { chatRoomId, settings }) {
     if (chatRoomId) {
       if (!state.notificationSettings[chatRoomId]) {
         Vue.set(state.notificationSettings, chatRoomId, {})
@@ -142,34 +154,6 @@ const mutations = {
         Vue.set(state.notificationSettings[chatRoomId], key, settings[key])
       }
     }
-  },
-  deleteChatRoomUnreadSince (state, { chatRoomId, deletedDate }) {
-    Vue.set(state.chatRoomUnread[chatRoomId], 'since', {
-      ...state.chatRoomUnread[chatRoomId].since,
-      deletedDate
-    })
-  },
-  addChatRoomUnreadMention (state, { chatRoomId, messageHash, createdDate }) {
-    const prevUnread = state.chatRoomUnread[chatRoomId]
-    if (!prevUnread) {
-      Vue.set(state.chatRoomUnread, chatRoomId, {
-        since: { messageHash, createdDate, deletedDate: null, fromBeginning: true },
-        mentions: [{ messageHash, createdDate }]
-      })
-    } else {
-      prevUnread.mentions.push({ messageHash, createdDate })
-    }
-  },
-  deleteChatRoomUnreadMention (state, { chatRoomId, messageHash }) {
-    const prevUnread = state.chatRoomUnread[chatRoomId]
-    if (!prevUnread) {
-      return
-    }
-
-    prevUnread.mentions = prevUnread.mentions.filter(m => m.messageHash !== messageHash)
-  },
-  deleteChatRoomUnread (state, { chatRoomId }) {
-    Vue.delete(state.chatRoomUnread, chatRoomId)
   },
   // Since Chelonia directly modifies contract state without using 'commit', we
   // need this hack to tell the vuex developer tool it needs to refresh the state
@@ -625,10 +609,12 @@ const getters = {
   ourUnreadMessages (state, getters) {
     return state.chatRoomUnread
   },
-  currentChatRoomUnreadSince (state, getters) {
-    return getters.ourUnreadMessages[getters.currentChatRoomId]?.since // undefined means to the latest
+  currentChatRoomReadUntil (state, getters) {
+    // NOTE: Optional Chaining (?) is necessary when user viewing the chatroom which he is not part of
+    return getters.ourUnreadMessages[getters.currentChatRoomId]?.readUntil // undefined means to the latest
   },
   currentChatRoomUnreadMentions (state, getters) {
+    // NOTE: Optional Chaining (?) is necessary when user viewing the chatroom which he is not part of
     return getters.ourUnreadMessages[getters.currentChatRoomId]?.mentions || []
   },
   chatRoomUnreadMentions (state, getters) {

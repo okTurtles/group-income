@@ -2,7 +2,6 @@
 modal-base-template(class='has-background' :a11yTitle='L("Settings")')
   .wrapper-container
     tab-wrapper(
-      :title='L("Settings")'
       :tabNav='settings'
       defaultTab='my-account'
       @close='$emit("close")'

@@ -42,3 +42,19 @@
     border-bottom: none;
   }
 }
+
+.sublink {
+  color: $text_1;
+  font-weight: normal;
+  cursor: pointer;
+  text-decoration: underline;
+  position: relative;
+  transition: color ease-in 0.2s;
+  padding-left: 0;
+  padding-right: 0;
+
+  &:hover,
+  &:focus {
+    color: $text_0;
+  }
+}
