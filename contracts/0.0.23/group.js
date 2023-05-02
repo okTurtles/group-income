@@ -10582,8 +10582,10 @@ ${this.getErrorInfo()}`;
           if (data.proposalIds.length) {
             for (const proposalId of data.proposalIds) {
               const proposal = state.proposals[proposalId];
-              vue_esm_default.set(proposal, "status", STATUS_EXPIRED);
-              archiveProposal({ state, proposalHash: proposalId, proposal, contractID });
+              if (proposal) {
+                vue_esm_default.set(proposal, "status", STATUS_EXPIRED);
+                archiveProposal({ state, proposalHash: proposalId, proposal, contractID });
+              }
             }
           }
         }

@@ -828,8 +828,10 @@ sbp('chelonia/defineContract', {
           for (const proposalId of data.proposalIds) {
             const proposal = state.proposals[proposalId]
 
-            Vue.set(proposal, 'status', STATUS_EXPIRED)
-            archiveProposal({ state, proposalHash: proposalId, proposal, contractID })
+            if (proposal) {
+              Vue.set(proposal, 'status', STATUS_EXPIRED)
+              archiveProposal({ state, proposalHash: proposalId, proposal, contractID })
+            }
           }
         }
       }
