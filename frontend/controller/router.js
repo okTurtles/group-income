@@ -155,8 +155,7 @@ const router: any = new Router({
       name: Join.name,
       component: Join,
       meta: { title: L('Join a Group') },
-      // beforeEnter: createEnterGuards(loginGuard, mailGuard)
-      beforeEnter: createEnterGuards(loginGuard, inviteGuard)
+      beforeEnter: createEnterGuards(inviteGuard)
     },
     {
       path: '/pending-approval',

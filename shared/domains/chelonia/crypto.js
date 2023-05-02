@@ -99,6 +99,10 @@ export const deriveKeyFromPassword = (type: string, password: string, salt: stri
     })
   })
 }
+
+// Format: [type, publicKey, secretKey]: [string, string, null] | [string, null, string]
+// Using an array instead of an object ensures that the object is serialized in order since the JSON specification does not define the order for object keys
+// and therefore different it could vary across implementations
 export const serializeKey = (key: Key, saveSecretKey: boolean): string => {
   if (key.type === EDWARDS25519SHA512BATCH || key.type === CURVE25519XSALSA20POLY1305) {
     if (!saveSecretKey) {
@@ -106,20 +110,22 @@ export const serializeKey = (key: Key, saveSecretKey: boolean): string => {
         throw new Error('Unsupported operation: no public key to export')
       }
 
-      return JSON.stringify({
-        type: key.type,
-        publicKey: bytesOrObjectToB64(key.publicKey)
-      })
+      return JSON.stringify([
+        key.type,
+        bytesOrObjectToB64(key.publicKey),
+        null
+      ], undefined, 0)
     }
 
     if (!key.secretKey) {
       throw new Error('Unsupported operation: no secret key to export')
     }
 
-    return JSON.stringify({
-      type: key.type,
-      secretKey: bytesOrObjectToB64(key.secretKey)
-    })
+    return JSON.stringify([
+      key.type,
+      null,
+      bytesOrObjectToB64(key.secretKey)
+    ], undefined, 0)
   } else if (key.type === XSALSA20POLY1305) {
     if (!saveSecretKey) {
       throw new Error('Unsupported operation: no public key to export')
@@ -129,10 +135,11 @@ export const serializeKey = (key: Key, saveSecretKey: boolean): string => {
       throw new Error('Unsupported operation: no secret key to export')
     }
 
-    return JSON.stringify({
-      type: key.type,
-      secretKey: bytesOrObjectToB64(key.secretKey)
-    })
+    return JSON.stringify([
+      key.type,
+      null,
+      bytesOrObjectToB64(key.secretKey)
+    ], undefined, 0)
   }
 
   throw new Error('Unsupported key type')
@@ -140,60 +147,60 @@ export const serializeKey = (key: Key, saveSecretKey: boolean): string => {
 export const deserializeKey = (data: string): Key => {
   const keyData = JSON.parse(data)
 
-  if (!keyData || !keyData.type) {
+  if (!keyData || keyData.length !== 3) {
     throw new Error('Invalid key object')
   }
 
-  if (keyData.type === EDWARDS25519SHA512BATCH) {
-    if (keyData.secretKey) {
-      const key = nacl.sign.keyPair.fromSecretKey(b64ToBuf(keyData.secretKey))
+  if (keyData[0] === EDWARDS25519SHA512BATCH) {
+    if (keyData[2]) {
+      const key = nacl.sign.keyPair.fromSecretKey(b64ToBuf(keyData[2]))
 
       const res: Key = {
-        type: keyData.type,
+        type: keyData[0],
         publicKey: key.publicKey
       }
 
       Object.defineProperty(res, 'secretKey', { value: key.secretKey })
 
       return res
-    } else if (keyData.publicKey) {
+    } else if (keyData[1]) {
       return {
-        type: keyData.type,
-        publicKey: new Uint8Array(b64ToBuf(keyData.publicKey))
+        type: keyData[0],
+        publicKey: new Uint8Array(b64ToBuf(keyData[1]))
       }
     }
 
     throw new Error('Missing secret or public key')
-  } else if (keyData.type === CURVE25519XSALSA20POLY1305) {
-    if (keyData.secretKey) {
-      const key = nacl.box.keyPair.fromSecretKey(b64ToBuf(keyData.secretKey))
+  } else if (keyData[0] === CURVE25519XSALSA20POLY1305) {
+    if (keyData[2]) {
+      const key = nacl.box.keyPair.fromSecretKey(b64ToBuf(keyData[2]))
 
       const res: Key = {
-        type: keyData.type,
+        type: keyData[0],
         publicKey: key.publicKey
       }
 
       Object.defineProperty(res, 'secretKey', { value: key.secretKey })
 
       return res
-    } else if (keyData.publicKey) {
+    } else if (keyData[1]) {
       return {
-        type: keyData.type,
-        publicKey: new Uint8Array(b64ToBuf(keyData.publicKey))
+        type: keyData[0],
+        publicKey: new Uint8Array(b64ToBuf(keyData[1]))
       }
     }
 
     throw new Error('Missing secret or public key')
-  } else if (keyData.type === XSALSA20POLY1305) {
-    if (!keyData.secretKey) {
+  } else if (keyData[0] === XSALSA20POLY1305) {
+    if (!keyData[2]) {
       throw new Error('Secret key missing')
     }
 
     const res: Key = {
-      type: keyData.type
+      type: keyData[0]
     }
 
-    Object.defineProperty(res, 'secretKey', { value: new Uint8Array(b64ToBuf(keyData.secretKey)) })
+    Object.defineProperty(res, 'secretKey', { value: new Uint8Array(b64ToBuf(keyData[2])) })
 
     return res
   }
