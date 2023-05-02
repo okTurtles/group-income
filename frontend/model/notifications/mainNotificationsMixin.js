@@ -17,7 +17,7 @@ const myNotificationHas = (checkFunc, groupId = '') => {
 /*
 
  *** NOTE: This mixin is imported into the root Vue instance in 'main.js'. feel free to extend the notification entry lists
-           for defining more notifications
+           for defining more notifications.
 
   There is two types of notifications that can be defined here.
   1) one-time notification: A type of notification that is checked & emitted once when user has signed in on their group.
