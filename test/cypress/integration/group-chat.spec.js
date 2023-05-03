@@ -522,7 +522,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     const publicChannelName = 'Bulgaria Hackathon'
     cy.getByDT('groupSettingsLink').click()
     cy.get('.p-title').should('contain', 'Group Settings')
-    cy.getByDT('publicChannelCreateAllowance').should('not.exist')
+    cy.getByDT('allowPublicChannels').should('not.exist')
 
     cy.giLogout()
     cy.giLogin(user1)
@@ -532,7 +532,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.get('.p-title').should('contain', 'Group Settings')
     cy.get('section:nth-child(4)').within(() => {
       cy.get('h2.is-title-3').should('contain', 'Public Channels')
-      cy.getByDT('publicChannelCreateAllowance').within(() => {
+      cy.getByDT('allowPublicChannels').within(() => {
         cy.get('.c-smaller-title').should('contain', 'Allow members to create public channels')
         cy.get('input[type=checkbox]').check()
       })

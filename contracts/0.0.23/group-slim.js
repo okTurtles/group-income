@@ -1221,7 +1221,7 @@ ${this.getErrorInfo()}`;
               distributionPeriodLength: 30 * DAYS_MILLIS,
               inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
               inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL,
-              publicChannelCreateAllowance: false
+              allowPublicChannels: false
             },
             streaks: initGroupStreaks(),
             profiles: {
@@ -1610,7 +1610,7 @@ ${this.getErrorInfo()}`;
           sharedValues: (x) => typeof x === "string",
           mincomeAmount: (x) => typeof x === "number" && x > 0,
           mincomeCurrency: (x) => typeof x === "string",
-          publicChannelCreateAllowance: (x) => typeof x === "boolean"
+          allowPublicChannels: (x) => typeof x === "boolean"
         }),
         process({ contractID, meta, data }, { state, getters }) {
           const mincomeCache = "mincomeAmount" in data ? state.settings.mincomeAmount : null;

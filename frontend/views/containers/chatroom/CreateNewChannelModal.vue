@@ -129,7 +129,7 @@ export default ({
       return this.currentChatRoomState.settings.maxDescriptionLength
     },
     isPublicChannelCreateAllowed () {
-      return this.groupSettings.publicChannelCreateAllowance
+      return this.groupSettings.allowPublicChannels
     },
     privacyLevels () {
       return Object.values(CHATROOM_PRIVACY_LEVEL).map(value => ({

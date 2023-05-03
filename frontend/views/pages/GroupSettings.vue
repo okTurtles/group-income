@@ -57,10 +57,10 @@ page.c-page
   invitations-table
 
   page-section(
-    v-if='isGroupAdmin'
+    v-if='configurePublicChannel'
     :title='L("Public Channels")'
   )
-    .c-subcontent(data-test='publicChannelCreateAllowance')
+    .c-subcontent(data-test='allowPublicChannels')
       .c-text-content
         i18n.c-smaller-title(tag='h3') Allow members to create public channels
         i18n.c-description(tag='p') Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels.
@@ -68,7 +68,7 @@ page.c-page
         input.switch(
           type='checkbox'
           name='switch'
-          :checked='publicChannelCreateAllowance'
+          :checked='allowPublicChannels'
           @change='togglePublicChannelCreateAllownace'
         )
 
@@ -144,12 +144,12 @@ export default ({
         sharedValues,
         mincomeCurrency
       },
-      publicChannelCreateAllowance: false
+      allowPublicChannels: false
     }
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['groupSettings', 'groupMembersCount', 'ourUsername']),
+    ...mapGetters(['groupSettings', 'groupMembersCount']),
     currencies () {
       return currencies
     },
@@ -161,14 +161,16 @@ export default ({
       }
     },
     isGroupAdmin () {
-      // TODO: group admin doesn't mean group creator
-      // https://github.com/okTurtles/group-income/issues/202
-      return this.groupSettings.groupCreator === this.ourUsername
+      // TODO: https://github.com/okTurtles/group-income/issues/202
+      return false
+    },
+    configurePublicChannel () {
+      // TODO: check if Chelonia server admin allows to create public channels
+      return this.isGroupAdmin && false
     }
   },
   mounted () {
-    // TODO: need to remove double exclamation mark after release version 1
-    this.publicChannelCreateAllowance = !!this.groupSettings.publicChannelCreateAllowance
+    this.allowPublicChannels = this.groupSettings.allowPublicChannels
   },
   methods: {
     openProposal (component) {
@@ -214,14 +216,14 @@ export default ({
     },
     async togglePublicChannelCreateAllownace (v) {
       const checked = v.target.checked
-      if (this.groupSettings.publicChannelCreateAllowance !== checked) {
+      if (this.groupSettings.allowPublicChannels !== checked) {
         await sbp('gi.actions/group/updateSettings', {
           contractID: this.currentGroupId,
           data: {
-            publicChannelCreateAllowance: checked
+            allowPublicChannels: checked
           }
         })
-        this.publicChannelCreateAllowance = checked
+        this.allowPublicChannels = checked
       }
     }
   },
