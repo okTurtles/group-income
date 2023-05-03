@@ -10,11 +10,11 @@ export const EDWARDS25519SHA512BATCH = 'edwards25519sha512batch'
 export const CURVE25519XSALSA20POLY1305 = 'curve25519xsalsa20poly1305'
 export const XSALSA20POLY1305 = 'xsalsa20poly1305'
 
-const bytesOrObjectToB64 = (ary: Object | Uint8Array) => {
-  if (ary instanceof Uint8Array) {
-    return bytesToB64(ary)
+const bytesOrObjectToB64 = (ary: Uint8Array) => {
+  if (!(ary instanceof Uint8Array)) {
+    throw Error('Unsupported type')
   }
-  return bytesToB64(new Uint8Array(((Object.values(ary): any[]): number[])))
+  return bytesToB64(ary)
 }
 
 export type Key = {
