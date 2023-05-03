@@ -306,11 +306,11 @@ export default (sbp('sbp/selectors/register', {
           return
         }
 
-        const existingKeys = targetState._volatile.keys
+        const existingKeys = targetState._volatile?.keys
 
         Promise.resolve().then(async () => {
           console.log('Processing OP_KEYSHARE (inside promise)')
-          if (targetState._volatile.pendingKeyRequests && targetState._volatile.pendingKeyRequests.length) {
+          if (targetState._volatile?.pendingKeyRequests && targetState._volatile.pendingKeyRequests.length) {
             if (!Object.keys(targetState).some((k) => k !== '_volatile')) {
               // If the contract only has _volatile state, we don't force sync it
               return
