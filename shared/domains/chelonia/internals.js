@@ -299,9 +299,10 @@ export default (sbp('sbp/selectors/register', {
         }
 
         // If we already have the keys, we can return as the contract state will not be affected
-        const receivedNewKeys = Object.keys(sharedKeys).reduce((acc, keyId) => acc && !!targetState._volatile.keys[keyId], !!targetState._volatile?.keys)
+        const receivedNewKeys = !targetState._volatile?.keys || Object.keys(sharedKeys).reduce((acc, keyId) => acc && !!targetState._volatile.keys[keyId], true)
 
         if (!receivedNewKeys) {
+          console.log({ receivedNewKeys, sharedKeys, existingKeys: targetState._volatile?.keys })
           return
         }
 
