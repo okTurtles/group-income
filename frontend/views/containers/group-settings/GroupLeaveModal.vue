@@ -92,8 +92,10 @@ export default ({
       'ourUsername'
     ]),
     code () {
+      // NOTE: this.groupSettings.groupName could be undefined while leaving the group
+      const groupName = this.groupSettings.groupName || ''
       return L('LEAVE {GROUP_NAME}', {
-        GROUP_NAME: this.groupSettings.groupName.toUpperCase()
+        GROUP_NAME: groupName.toUpperCase()
       })
     }
   },

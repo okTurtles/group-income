@@ -147,9 +147,7 @@ export default ({
     Tooltip
   },
   props: {
-    title: String,
     defaultText: String,
-    searchPlaceholder: String,
     scrolledUp: Boolean,
     loading: {
       type: Boolean,

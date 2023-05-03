@@ -4,8 +4,6 @@ import { mkdir } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import sqlite3 from 'sqlite3'
 
-import { checkKey } from './database.js'
-
 let db: any = null
 let readStatement: any = null
 let writeStatement: any = null
@@ -51,37 +49,8 @@ export function clear (): Promise<void> {
   return run('DELETE FROM Data')
 }
 
-export function exportToJSON (): Promise<Object> {
-  return new Promise((resolve, reject) => {
-    db.all('SELECT key, value FROM Data', [], (err, rows) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve(Object.fromEntries(rows.map(row => ([row.key, row.value]))))
-      }
-    })
-  })
-}
-
-export function importFromJSON (json: Object): Promise<void> {
-  return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('BEGIN')
-      Object.keys(json).forEach(key => writeData(key, json[key]))
-      db.run('COMMIT', [], (err) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve()
-        }
-      })
-    })
-  })
-}
-
 export function readData (key: string): Promise<Buffer | string | void> {
   return new Promise((resolve, reject) => {
-    checkKey(key)
     readStatement.get([key], (err, row) => {
       if (err) {
         reject(err)
@@ -96,7 +65,6 @@ export function readData (key: string): Promise<Buffer | string | void> {
 
 export function writeData (key: string, value: Buffer | string): Promise<void> {
   return new Promise((resolve, reject) => {
-    checkKey(key)
     writeStatement.run([key, value], (err) => {
       if (err) {
         reject(err)
