@@ -1,23 +1,24 @@
 <template lang="pug">
 .c-create-poll(:class='{ "is-active": ephemeral.isActive }' @click='onBackDropClick')
-  .c-create-poll-wrapper
+  .c-create-poll-wrapper(:style='this.ephemeral.isDesktopScreen ? this.ephemeral.wrapperPosition : {}')
     header.c-header
       i18n.is-title-2.c-popup-title(tag='h2') New poll
-      modal-close.c-popup-close-btn(@close='close')
+      modal-close.c-popup-close-btn(v-if='!ephemeral.isDesktopScreen' @close='close')
 
     section.c-body
-      form.c-form
+      form.c-form(@submit.prevent='submit')
         .field
           input.input(
             name='question'
             ref='question'
-            v-model.trim='form.question'
-            placeholder='L("Ask a question!")'
-            @input='debounceField("question")'
-            @blur='updateField("question")'
+            :placeholder='L("Ask a question!")'
+            @input='e => debounceField("question", e.target.value)'
+            @blur='e => updateField("question", e.target.value)'
+            :class='{ error: $v.form.question.$error }'
+            v-error:question=''
           )
 
-        .field
+        .field.c-add-options
           i18n.label Add options
 
           .c-option-list
@@ -29,6 +30,7 @@
                 type='text'
                 :aria-label='L("Option value")'
                 :placeholder='optionPlaceholder(index + 1)'
+                v-model.trim='option.value'
               )
               button.is-icon-small.is-btn-shifted(
                 type='button'
@@ -48,9 +50,12 @@
           i18n.is-outlined(
             :class='{ "is-small": ephemeral.isDesktopScreen }'
             tag='button'
+            type='button'
+            @click='close'
           ) Cancel
 
           i18n(
+            :disabled='disableSubmit'
             :class='{ "is-small": ephemeral.isDesktopScreen }'
             tag='button'
             type='submit'
@@ -81,7 +86,11 @@ export default {
     return {
       ephemeral: {
         isActive: false,
-        isDesktopScreen: false
+        isDesktopScreen: false,
+        wrapperPosition: {
+          bottom: 0,
+          left: 0
+        }
       },
       form: {
         question: '',
@@ -94,14 +103,27 @@ export default {
   computed: {
     optionCount () {
       return this.form.options.length
+    },
+    disableSubmit () {
+      return this.$v.invalid ||
+        this.form.options.some(opt => !opt.value)
     }
   },
   methods: {
-    open () {
-      this.ephemeral.isActive = true
+    open (position) {
+      if (this.ephemeral.isActive) { return }
+
+      if (position) {
+        this.ephemeral.wrapperPosition = { ...position }
+        this.$nextTick(() => { this.ephemeral.isActive = true })
+      } else {
+        this.ephemeral.isActive = true
+      }
     },
     close () {
-      this.ephemeral.isActive = false
+      if (this.ephemeral.isActive) {
+        this.ephemeral.isActive = false
+      }
     },
     onBackDropClick (e) {
       const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-create-poll-wrapper')
@@ -129,6 +151,10 @@ export default {
           value: ''
         })
       }
+    },
+    submit () {
+      alert('TODO: create poll.')
+      this.close()
     }
   },
   created () {
@@ -140,10 +166,13 @@ export default {
       this.ephemeral.isDesktopScreen = e.matches
     }
     this.ephemeral.isDesktopScreen = this.matchMediaDesktop.matches
+
+    window.addEventListener('resize', this.close)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_POLL, this.open)
     sbp('okTurtles.events/off', CLOSE_POLL, this.close)
+    window.removeEventListener('resize', this.close)
 
     this.matchMediaDesktop.onchange = null
   },
@@ -186,10 +215,21 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  box-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "poll-header" "poll-body";
 
-  .is-dark-theme & {
-    box-shadow: 0 0 20px rgba(46, 46, 46, 0.6);
+  @include tablet {
+    height: auto;
+    max-width: 24.375rem;
+    max-height: 70vh;
+    border-radius: 0.75rem;
+    box-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
+
+    .is-dark-theme & {
+      box-shadow: 0 0 20px rgba(38, 38, 38, 0.625);
+    }
   }
 }
 
@@ -208,19 +248,32 @@ export default {
 }
 
 .c-header {
+  grid-area: poll-header;
   position: relative;
   height: 5.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
+
+  @include tablet {
+    height: 3.25rem;
+  }
 }
 
 .c-body {
+  grid-area: poll-body;
   position: relative;
-  overflow-y: auto;
   max-width: 27rem;
+  width: 100%;
   padding: 1.5rem 1rem;
   margin: 0 auto;
+  overflow-y: auto;
+
+  @include tablet {
+    padding-top: 0;
+    max-width: unset;
+    width: 100%;
+  }
 }
 
 .c-option-list {

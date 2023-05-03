@@ -109,16 +109,17 @@
   .textarea.c-send-mask(
     ref='mask'
   )
+
+  create-poll.c-poll(ref='poll')
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
+import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
-import { OPEN_POLL } from '@utils/events.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -144,7 +145,8 @@ export default ({
   mixins: [emoticonsMixins],
   components: {
     Avatar,
-    Tooltip
+    Tooltip,
+    CreatePoll
   },
   props: {
     defaultText: String,
@@ -373,7 +375,9 @@ export default ({
       this.endMention()
     },
     createPoll () {
-      sbp('okTurtles.events/emit', OPEN_POLL)
+      const bbox = this.$el.getBoundingClientRect()
+      console.log('bbox: ', bbox)
+      this.$refs.poll.open({ left: `${bbox.left}px`, bottom: `${innerHeight - bbox.top + 16}px` })
     },
     selectEmoticon (emoticon) {
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
