@@ -353,7 +353,7 @@ sbp('chelonia/defineContract', {
 
         const me = sbp('state/vuex/state').loggedIn.username
 
-        if (me === meta.username) {
+        if (me === meta.username && data.type !== MESSAGE_TYPES.INTERACTIVE) {
           return
         }
         const newMessage = createMessage({ meta, data, hash, id, state })
