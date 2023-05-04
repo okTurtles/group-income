@@ -343,9 +343,8 @@ export default (sbp('sbp/selectors/register', {
         if (!state.profiles?.[username]) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
-          await sbp('chelonia/out/actionEncrypted', {
+          await sbp('gi.actions/group/inviteAccept', {
             ...omit(params, ['options', 'action', 'hooks']),
-            action: 'gi.contracts/group/inviteAccept',
             hooks: {
               prepublish: params.hooks?.prepublish,
               postpublish: null
@@ -745,6 +744,7 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
+  ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.')),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),

@@ -269,7 +269,7 @@ export default (sbp('sbp/selectors/register', {
           throw new Error('External contracts can only set keys for themselves')
         }
 
-        delete self.postSyncOperations[contractID]['pending-keys-for-' + v.contractID]
+        delete self.postSyncOperations[contractID]?.['pending-keys-for-' + v.contractID]
 
         const cheloniaState = sbp(self.config.stateSelector)
 
@@ -395,7 +395,9 @@ export default (sbp('sbp/selectors/register', {
           if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
             state._vm?.invites?.[keyId]?.responses.push(state._vm.pendingKeyshares[v][0])
           }
+          const originatingContractID = state._vm.pendingKeyshares[v][0]
           delete state._vm.pendingKeyshares[v]
+          delete self.postSyncOperations[contractID]?.['respondToKeyRequests-' + originatingContractID]
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -560,9 +562,15 @@ export default (sbp('sbp/selectors/register', {
       } else {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
       }
-      await Promise.all(Object.values(this.postSyncOperations[contractID]).map((op) => sbp.apply(sbp, op)))
-      // await sbp('chelonia/private/respondToKeyRequests', contractID)
-      // this.postSyncOperations[contractID]['respondToKeyRequests'] = ['chelonia/private/respondToKeyRequests', contractID]
+
+      // The postSyncOperations might await on calls to withEnv or queue event, leading to a deadlock. Therefore, we specifically and deliberately don't await on these calls
+      Object.values(this.postSyncOperations[contractID]).map(async (op) => {
+        try {
+          await sbp.apply(sbp, op)
+        } catch (e) {
+          console.error(`Post-sync operation for ${contractID} failed`, { contractID, op, error: e?.message || e })
+        }
+      })
     } catch (e) {
       console.error(`[chelonia] syncContract error: ${e.message || e}`, e)
       this.config.hooks.syncContractError?.(e, contractID)
