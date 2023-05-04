@@ -7,7 +7,7 @@
         .c-text-content
           i18n.c-smaller-title(tag='h3') Allow browser notifications
           i18n.c-description(tag='p') Get notifications to find out what's going on when you're not on Group Income. You can turn them off anytime.
-        label
+        .switch-wrapper
           input.switch(
             type='checkbox'
             name='switch'
@@ -20,7 +20,7 @@
         .c-text-content
           i18n.c-smaller-title(tag='h3') Allow email notifications
           i18n.c-description(tag='p') Know when new proposals are created, their income and get a reminder to vote if they are about to expire.
-        label
+        .switch-wrapper
           input.switch(
             type='checkbox'
             name='switch'
