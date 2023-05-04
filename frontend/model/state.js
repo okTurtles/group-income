@@ -23,7 +23,7 @@ const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
-  chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, mentions: [{ messageHash, createdDate }] }
+  chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, mentions: [{ messageHash, createdDate }], others: [{ messageHash, createdDate }] }
   notificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
@@ -127,20 +127,36 @@ const mutations = {
   },
   setChatRoomReadUntil (state, { chatRoomId, messageHash, createdDate }) {
     const prevMentions = state.chatRoomUnread[chatRoomId].mentions
+    const prevOthers = state.chatRoomUnread[chatRoomId].others
+
     Vue.set(state.chatRoomUnread, chatRoomId, {
       readUntil: { messageHash, createdDate, deletedDate: null },
-      mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
+      mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime()),
+      others: prevOthers.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
     })
   },
   deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
     Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)
   },
-  addChatRoomUnreadMention (state, { chatRoomId, messageHash, createdDate }) {
-    state.chatRoomUnread[chatRoomId].mentions.push({ messageHash, createdDate })
+  addChatRoomUnreadMessage (state, { chatRoomId, messageHash, createdDate, isDMOrMention }) {
+    const newItem = { messageHash, createdDate }
+
+    if (isDMOrMention) {
+      state.chatRoomUnread[chatRoomId].mentions.push(newItem)
+    } else {
+      if (!('others' in state.chatRoomUnread[chatRoomId])) {
+        Vue.set(state.chatRoomUnread[chatRoomId], 'others', [newItem])
+      } else {
+        state.chatRoomUnread[chatRoomId].others.push(newItem)
+      }
+    }
   },
-  deleteChatRoomUnreadMention (state, { chatRoomId, messageHash }) {
+  deleteChatRoomUnreadMessage (state, { chatRoomId, messageHash }) {
     const prevMentions = state.chatRoomUnread[chatRoomId].mentions
+    const prevOthers = state.chatRoomUnread[chatRoomId].others || []
+
     Vue.set(state.chatRoomUnread[chatRoomId], 'mentions', prevMentions.filter(m => m.messageHash !== messageHash))
+    Vue.set(state.chatRoomUnread[chatRoomId], 'others', prevOthers.filter(m => m.messageHash !== messageHash))
   },
   deleteChatRoomUnread (state, { chatRoomId }) {
     Vue.delete(state.chatRoomUnread, chatRoomId)
@@ -619,7 +635,7 @@ const getters = {
   groupUnreadMessages (state, getters) {
     return (groupID: string) => Object.keys(getters.ourUnreadMessages)
       .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID]?.chatRooms || {}).includes(cID))
-      .map(cID => getters.ourUnreadMessages[cID].mentions.length)
+      .map(cID => getters.ourUnreadMessages[cID].mentions.length || getters.ourUnreadMessages[cID]?.others.length)
       .reduce((sum, n) => sum + n, 0)
   },
   directMessageIDFromUsername (state, getters) {
