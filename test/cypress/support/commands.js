@@ -355,7 +355,6 @@ Cypress.Commands.add('giAddNewChatroom', (
   cy.getByDT('newChannelButton').click()
   cy.getByDT('modal-header-title').should('contain', 'Create a channel') // Hack for "detached DOM" heisenbug https://on.cypress.io/element-has-detached-from-dom
   cy.getByDT('modal').within(() => {
-    cy.getByDT('modal-header-title').should('contain', 'Create a channel')
     cy.getByDT('createChannelName').clear().type(name)
     if (description) {
       cy.getByDT('createChannelDescription').clear().type(description)
@@ -444,8 +443,11 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
 })
 
 Cypress.Commands.add('giWaitUntilMessagesLoaded', () => {
+  cy.get('.c-initializing').should('not.exist')
   cy.getByDT('conversationWrapper').within(() => {
-    cy.get('.c-initializing').should('not.exist')
+    cy.get('.infinite-status-prompt:first-child')
+      .invoke('attr', 'style')
+      .should('include', 'display: none')
   })
   cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
 })
