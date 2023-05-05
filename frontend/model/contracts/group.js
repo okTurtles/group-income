@@ -8,7 +8,7 @@ import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DI
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
-  STATUS_OPEN, STATUS_CANCELLED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PERIODS, PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED, MAX_SAVED_PERIODS,
+  STATUS_OPEN, STATUS_CANCELLED, STATUS_EXPIRED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PERIODS, PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED, MAX_SAVED_PERIODS,
   INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
@@ -818,6 +818,23 @@ sbp('chelonia/defineContract', {
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
         archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID })
+      }
+    },
+    'gi.contracts/group/markProposalsExpired': {
+      validate: objectOf({
+        proposalIds: arrayOf(string)
+      }),
+      process ({ data, meta, contractID }, { state }) {
+        if (data.proposalIds.length) {
+          for (const proposalId of data.proposalIds) {
+            const proposal = state.proposals[proposalId]
+
+            if (proposal) {
+              Vue.set(proposal, 'status', STATUS_EXPIRED)
+              archiveProposal({ state, proposalHash: proposalId, proposal, contractID })
+            }
+          }
+        }
       }
     },
     'gi.contracts/group/notifyExpiringProposals': {

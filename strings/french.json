@@ -1,6 +1,7 @@
 {
   "Automatically switched to pledging {zero}": "Automatically switched to pledging {zero}",
   "Do you make at least {amount} per month?": "Do you make at least {amount} per month?",
+  "Failed to mark proposals expired.": "Failed to mark proposals expired.",
   "Failed to send a payment thank you note.": "Failed to send a payment thank you note.",
   "Failed to update \"lastLoggedIn\" in a group profile.": "Failed to update \"lastLoggedIn\" in a group profile.",
   "Failed to update group distribution date.": "Failed to update group distribution date.",
@@ -163,6 +164,7 @@
   "See all requests": "See all requests",
   "There are no open requests right now.": "There are no open requests right now.",
   "Automated": "Automated",
+  "Expired on {date}": "Expired on {date}",
   "Group Income system is proposing": "Group Income system is proposing",
   "Proposal accepted on {date} with {yay} in favor out of {total} total votes.": "Proposal accepted on {date} with {yay} in favor out of {total} total votes.",
   "Proposal rejected on {date} with {nay} against out of {total} total votes.": "Proposal rejected on {date} with {nay} against out of {total} total votes.",

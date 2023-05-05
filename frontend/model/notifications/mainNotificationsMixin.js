@@ -17,7 +17,7 @@ const myNotificationHas = (checkFunc, groupId = '') => {
 /*
 
  *** NOTE: This mixin is imported into the root Vue instance in 'main.js'. feel free to extend the notification entry lists
-           for defining more notifications
+           for defining more notifications.
 
   There is two types of notifications that can be defined here.
   1) one-time notification: A type of notification that is checked & emitted once when user has signed in on their group.
@@ -35,6 +35,7 @@ const myNotificationHas = (checkFunc, groupId = '') => {
     * type: MIN1 | MIN5 | MIN30
       - MIN1: a notification that is validated&emitted every 1 min.
       - MIN5: a notification that is validated&emitted every 5 min.
+      - MIN15: a notification that is validated&emitted every 15 min.
       - MIN30: a notification that is validated&emitted every 30 min.
 
     * notificationData: { stateKey: string, emitCondition: function, emit: function, shouldClearStateKey: function }
@@ -125,20 +126,25 @@ const periodicNotificationEntries = [
     }
   },
   {
-    type: PERIODIC_NOTIFICATION_TYPE.MIN15,
+    type: PERIODIC_NOTIFICATION_TYPE.MIN5,
     notificationData: {
-      stateKey: 'expiringProposals',
+      stateKey: 'expiringOrExpiredProposals',
       emitCondition ({ rootGetters }) {
-        this.expiringProposalsByGroup = rootGetters.groupsByName.map(group => {
+        this.expiringOrExpiredProposalsByGroup = rootGetters.groupsByName.map(group => {
           const { contractID } = group
+          const expiredProposalIds = []
           const expiringProposals = []
           const groupNotificationItems = []
           const groupProposals = rootGetters.groupProposals(contractID) || {}
+
           for (const proposalId in groupProposals) {
             const proposal = groupProposals[proposalId]
-            if (proposal.status === STATUS_OPEN &&
-              proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS)) {
-              if (!proposal.notifiedBeforeExpire) {
+            if (proposal.status !== STATUS_OPEN) { continue }
+
+            if (proposal.data.expires_date_ms < Date.now()) { // the proposal has already expired
+              expiredProposalIds.push(proposalId)
+            } else if (proposal.data.expires_date_ms < (Date.now() + DAYS_MILLIS)) { // the proposal is going to expire in next 24 hrs
+              if (!proposal.notifiedBeforeExpire) { // there is no group-chat notification sent for this proposal
                 expiringProposals.push({
                   proposalId,
                   proposalType: proposal.data.proposalType,
@@ -150,7 +156,7 @@ const periodicNotificationEntries = [
               }
 
               if (!Object.keys(proposal.votes).includes(rootGetters.ourUsername) && // check if the user hasn't voted for this proposal.
-                !myNotificationHas(item => item.type === 'PROPOSAL_EXPIRING' && item.data.proposalId === proposalId, contractID) // the user hasn't received the notification.
+                !myNotificationHas(item => item.type === 'PROPOSAL_EXPIRING' && item.data.proposalId === proposalId, contractID) // the user hasn't received the pop-up notification.
               ) {
                 groupNotificationItems.push({
                   proposalId,
@@ -162,17 +168,17 @@ const periodicNotificationEntries = [
             }
           }
 
-          return { contractID, proposals: expiringProposals, groupNotificationItems }
-        }).filter(entry => entry.proposals.length || entry.groupNotificationItems.length)
+          return { contractID, expiringProposals, groupNotificationItems, expiredProposalIds }
+        }).filter(entry => entry.expiringProposals.length || entry.groupNotificationItems.length || entry.expiredProposalIds.length)
 
-        return this.expiringProposalsByGroup.length
+        return this.expiringOrExpiredProposalsByGroup.length
       },
       async emit () {
-        for (const { contractID, proposals, groupNotificationItems } of this.expiringProposalsByGroup) {
-          if (proposals.length) {
+        for (const { contractID, expiringProposals, groupNotificationItems, expiredProposalIds } of this.expiringOrExpiredProposalsByGroup) {
+          if (expiringProposals.length) {
             await sbp('gi.actions/group/notifyExpiringProposals', {
               contractID,
-              data: { proposals }
+              data: { proposals: expiringProposals }
             })
           }
 
@@ -186,6 +192,13 @@ const periodicNotificationEntries = [
                 proposalType: proposal.proposalType,
                 title: proposal.proposalType === PROPOSAL_GENERIC ? proposal.proposalData.name : ''
               })
+            })
+          }
+
+          if (expiredProposalIds.length) {
+            sbp('gi.actions/group/markProposalsExpired', {
+              contractID,
+              data: { proposalIds: expiredProposalIds }
             })
           }
         }
