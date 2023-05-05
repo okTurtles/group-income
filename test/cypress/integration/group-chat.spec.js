@@ -516,4 +516,46 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
     cy.giLogout()
   })
+
+  // NOTE: temporarily comment this out since the following issues are not resolved yet
+  //       https://github.com/okTurtles/group-income/issues/202
+  // it('Only group admin can allow to create public channel', () => {
+  //   const publicChannelName = 'Bulgaria Hackathon'
+  //   cy.getByDT('groupSettingsLink').click()
+  //   cy.get('.p-title').should('contain', 'Group Settings')
+  //   cy.getByDT('allowPublicChannels').should('not.exist')
+
+  //   cy.giLogout()
+  //   cy.giLogin(user1)
+  //   me = user1
+
+  //   cy.getByDT('groupSettingsLink').click()
+  //   cy.get('.p-title').should('contain', 'Group Settings')
+  //   cy.get('section:nth-child(4)').within(() => {
+  //     cy.get('h2.is-title-3').should('contain', 'Public Channels')
+  //     cy.getByDT('allowPublicChannels').within(() => {
+  //       cy.get('.c-smaller-title').should('contain', 'Allow members to create public channels')
+  //       cy.get('input[type=checkbox]').check()
+  //     })
+  //   })
+
+  //   cy.giRedirectToGroupChat()
+
+  //   cy.getByDT('newChannelButton').click()
+  //   cy.getByDT('modal-header-title').should('contain', 'Create a channel')
+  //   cy.getByDT('modal').within(() => {
+  //     cy.getByDT('createChannelName').clear().type(publicChannelName)
+  //     cy.getByDT('createChannelPrivacyLevel').select(CHATROOM_PRIVACY_LEVEL.PUBLIC)
+  //     cy.getByDT('createChannelSubmit').click()
+  //     cy.getByDT('closeModal').should('not.exist')
+  //   })
+  //   cy.giCheckIfJoinedChatroom(publicChannelName, me)
+
+  //   cy.get('.c-send-wrapper.is-public').should('exist')
+  //   cy.get('.c-send-wrapper.is-public').within(() => {
+  //     cy.get('.c-public-helper').should('contain', 'This channel is public and everyone on the internet can see its content.')
+  //   })
+
+  //   cy.giLogout()
+  // })
 })
