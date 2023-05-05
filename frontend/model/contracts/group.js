@@ -548,7 +548,8 @@ sbp('chelonia/defineContract', {
             groupCreator: meta.username,
             distributionPeriodLength: 30 * DAYS_MILLIS,
             inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
-            inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
+            inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL,
+            allowPublicChannels: false
           },
           streaks: initGroupStreaks(),
           profiles: {
@@ -1061,7 +1062,8 @@ sbp('chelonia/defineContract', {
         groupPicture: x => typeof x === 'string',
         sharedValues: x => typeof x === 'string',
         mincomeAmount: x => typeof x === 'number' && x > 0,
-        mincomeCurrency: x => typeof x === 'string'
+        mincomeCurrency: x => typeof x === 'string',
+        allowPublicChannels: x => typeof x === 'boolean' // TODO: only group admin can update
       }),
       process ({ contractID, meta, data }, { state, getters }) {
         // If mincome has been updated, cache the old value and use it later to determine if the user should get a 'MINCOME_CHANGED' notification.
