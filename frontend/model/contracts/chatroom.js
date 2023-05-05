@@ -95,8 +95,8 @@ function messageReceivePostEffect ({ contractID, messageHash, datetime, text, is
   }
   const path = `/group-chat/${contractID}`
 
-  const notificationSettings = rootGetters.notificationSettings[contractID] || rootGetters.notificationSettings.default
-  const { messageNotification, messageSound } = notificationSettings
+  const chatNotificationSettings = rootGetters.chatNotificationSettings[contractID] || rootGetters.chatNotificationSettings.default
+  const { messageNotification, messageSound } = chatNotificationSettings
   const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
     (messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
   const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
