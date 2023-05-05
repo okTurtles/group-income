@@ -256,7 +256,7 @@ const getters = {
     const distribution = getters.groupIncomeDistribution
 
     const nonMonetaryContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
-    const getDisplayName = (username) => getters.globalProfile(username).displayName || username
+    const getDisplayName = (username) => getters.globalProfile(username)?.displayName || username
 
     return {
       givingMonetary: (() => {
