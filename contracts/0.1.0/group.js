@@ -9441,6 +9441,7 @@ ${this.getErrorInfo()}`;
   var STATUS_OPEN = "open";
   var STATUS_PASSED = "passed";
   var STATUS_FAILED = "failed";
+  var STATUS_EXPIRED = "expired";
   var STATUS_CANCELLED = "cancelled";
   var CHATROOM_TYPES = {
     INDIVIDUAL: "individual",
@@ -10572,6 +10573,22 @@ ${this.getErrorInfo()}`;
           }
           vue_esm_default.set(proposal, "status", STATUS_CANCELLED);
           archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID });
+        }
+      },
+      "gi.contracts/group/markProposalsExpired": {
+        validate: objectOf({
+          proposalIds: arrayOf(string)
+        }),
+        process({ data, meta, contractID }, { state }) {
+          if (data.proposalIds.length) {
+            for (const proposalId of data.proposalIds) {
+              const proposal = state.proposals[proposalId];
+              if (proposal) {
+                vue_esm_default.set(proposal, "status", STATUS_EXPIRED);
+                archiveProposal({ state, proposalHash: proposalId, proposal, contractID });
+              }
+            }
+          }
         }
       },
       "gi.contracts/group/notifyExpiringProposals": {

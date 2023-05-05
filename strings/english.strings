@@ -675,6 +675,9 @@
 /* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
 "Expired" = "Expired";
 
+/* views/containers/proposals/ProposalItem.vue */
+"Expired on {date}" = "Expired on {date}";
+
 /* controller/actions/chatroom.js */
 "Failed to add message." = "Failed to add message.";
 
@@ -743,6 +746,9 @@
 
 /* controller/actions/chatroom.js */
 "Failed to make emotion." = "Failed to make emotion.";
+
+/* controller/actions/group.js */
+"Failed to mark proposals expired." = "Failed to mark proposals expired.";
 
 /* controller/actions/group.js */
 "Failed to notify expiring proposals." = "Failed to notify expiring proposals.";
@@ -1025,9 +1031,6 @@
 
 /* views/containers/payments/RecordPayment.vue, views/containers/payments/SendPaymentsViaLightning.vue */
 "Leave a message to the group members selected above." = "Leave a message to the group members selected above.";
-
-/* views/containers/chatroom/LeaveChannelModal.vue */
-"Leave and Archive" = "Leave and Archive";
 
 /* views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
 "Leave group" = "Leave group";
