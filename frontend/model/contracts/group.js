@@ -342,12 +342,10 @@ sbp('chelonia/defineContract', {
     },
     dueDateForPeriod (state, getters) {
       return (periodStamp: string) => {
-        return dateToPeriodStamp(
-          addTimeToDate(
-            dateFromPeriodStamp(getters.periodAfterPeriod(periodStamp)),
-            -DAYS_MILLIS
-          )
-        )
+        // NOTE: logically it's should be 1 milisecond before the periodAfterPeriod
+        //       1 mili-second doesn't make any difference to the users
+        //       so periodAfterPeriod is used to make it simple
+        return getters.periodAfterPeriod(periodStamp)
       }
     },
     paymentTotalFromUserToUser (state, getters) {
@@ -1131,10 +1129,11 @@ sbp('chelonia/defineContract', {
         attributes: chatRoomAttributesType
       }),
       process ({ data, meta }, { state }) {
-        const { name, type, privacyLevel } = data.attributes
+        const { name, type, privacyLevel, description } = data.attributes
         Vue.set(state.chatRooms, data.chatRoomID, {
           creator: meta.username,
           name,
+          description,
           type,
           privacyLevel,
           deletedDate: null,
@@ -1194,7 +1193,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         chatRoomID: string,
         member: string,
-        leavingGroup: boolean // if kicker exists, it means group leaving
+        leavingGroup: boolean // leave chatroom by leaving group
       }),
       process ({ data, meta }, { state }) {
         Vue.set(state.chatRooms[data.chatRoomID], 'users',
@@ -1238,10 +1237,16 @@ sbp('chelonia/defineContract', {
         name: string
       }),
       process ({ data, meta }, { state, getters }) {
-        Vue.set(state.chatRooms, data.chatRoomID, {
-          ...getters.getGroupChatRooms[data.chatRoomID],
-          name: data.name
-        })
+        Vue.set(state.chatRooms[data.chatRoomID], 'name', data.name)
+      }
+    },
+    'gi.contracts/group/changeChatRoomDescription': {
+      validate: objectOf({
+        chatRoomID: string,
+        description: string
+      }),
+      process ({ data, meta }, { state, getters }) {
+        Vue.set(state.chatRooms[data.chatRoomID], 'description', data.description)
       }
     },
     'gi.contracts/group/updateLastLoggedIn': {

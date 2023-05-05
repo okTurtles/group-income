@@ -1,7 +1,5 @@
 <template lang='pug'>
-form.c-search-form(
-  @submit.prevent=''
-)
+form.c-search-form(@submit.prevent='')
   label.field
     .sr-only {{label}}
     .inputgroup.c-search
@@ -49,7 +47,6 @@ export default ({
       default: false
     }
   },
-
   watch: {
     value () {
       this.$emit('input', this.value)

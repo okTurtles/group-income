@@ -59,6 +59,33 @@ async function saveLoginState (action: string, contractID: string) {
   }
 }
 
+// TODO: Check if pendingKeys gets sync simultanoeusly across devices
+// Replace with event listener
+// event onPendingKey requests
+// event listener that signs up to chat
+
+/*
+sbp('chelonia/configure', {
+  hooks: {
+    postHandleEvent: (message: GIMessage) => {
+      if (message.opType() === GIMessage.OP_KEYSHARE) {
+        sbp('chelonia/contract/sync', message.originatingContractID()).then(() => {
+          const state = sbp('state/vuex/state')
+
+          const generalChatRoomId = state[message.originatingContractID()].generalChatRoomId
+
+          sbp('gi.actions/group/joinChatRoom', {
+            data: {
+              chatRoomID: generalChatRoomId
+            }
+          })
+        })
+      }
+    }
+  }
+})
+*/
+
 export default (sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
     data: {
@@ -415,7 +442,6 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
     sbp('gi.actions/group/updateLastLoggedIn', { contractID: groupId })
-
     sbp('okTurtles.events/emit', SWITCH_GROUP)
   },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
@@ -521,29 +547,32 @@ export default (sbp('sbp/selectors/register', {
 
     return message
   },
-  ...encryptedAction('gi.actions/group/renameChatRoom', L('Failed to rename chat channel.'), async function (sendMessage, params) {
-    await sbp('gi.actions/chatroom/rename', {
-      ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-      contractID: params.data.chatRoomID,
-      data: {
-        name: params.data.name
-      },
-      hooks: {
-        prepublish: params.hooks?.prepublish,
-        postpublish: null
-      }
-    })
+  ...encryptedAction('gi.actions/group/renameChatRoom', L('Failed to rename chat channel.'),
+    async function (sendMessage, params) {
+      await sbp('gi.actions/chatroom/rename', {
+        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
+        contractID: params.data.chatRoomID,
+        data: {
+          name: params.data.name
+        },
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
+      })
 
-    return await sendMessage({
-      ...omit(params, ['options', 'action', 'hooks']),
-      hooks: {
-        prepublish: null,
-        postpublish: params.hooks?.postpublish
-      }
-    })
-  }),
+      return await sendMessage({
+        ...omit(params, ['options', 'action', 'hooks']),
+        hooks: {
+          prepublish: null,
+          postpublish: params.hooks?.postpublish
+        }
+      })
+    }),
   ...encryptedAction('gi.actions/group/removeMember',
-    (params, e) => L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }),
+    (params, e) => L('Failed to remove {member}: {reportError}', {
+      member: params.data.member, ...LError(e)
+    }),
     async function (sendMessage, params) {
       await leaveAllChatRooms(params.contractID, params.data.member)
       return sendMessage({
@@ -555,9 +584,33 @@ export default (sbp('sbp/selectors/register', {
     async function (sendMessage, params) {
       const rootState = sbp('state/vuex/state')
       await leaveAllChatRooms(params.contractID, rootState.loggedIn.username)
-
       return sendMessage({
         ...omit(params, ['options', 'action'])
+      })
+    }),
+  ...encryptedAction('gi.actions/group/changeChatRoomDescription',
+    L('Failed to update description of chat channel.'),
+    async function (sendMessage, params) {
+      await sbp('gi.actions/chatroom/changeDescription', {
+        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
+        contractID: params.data.chatRoomID,
+        data: {
+          description: params.data.description
+        },
+        hooks: {
+          prepublish: params.hooks?.prepublish,
+          postpublish: null
+        }
+      })
+
+      // NOTE: group contract should keep updated with all attributes of its chatrooms
+      //       so that group members can check chatroom details whether or not they are part of
+      return sendMessage({
+        ...omit(params, ['options', 'action', 'hooks']),
+        hooks: {
+          prepublish: null,
+          postpublish: params.hooks?.postpublish
+        }
       })
     }),
   'gi.actions/group/autobanUser': async function (message: GIMessage, error: Object, attempt = 1) {

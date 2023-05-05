@@ -444,8 +444,11 @@ export default (sbp('sbp/selectors/register', {
       })
     }))
   },
-  'chelonia/contract/isSyncing': function (contractID: string): boolean {
-    return !!this.currentSyncs[contractID]
+  'chelonia/contract/isSyncing': function (contractID: string, { firstSync = false } = {}): boolean {
+    const isSyncing = !!this.currentSyncs[contractID]
+    return firstSync
+      ? isSyncing && this.currentSyncs[contractID].firstSync
+      : isSyncing
   },
   // TODO: implement 'chelonia/contract/release' (see #828)
   // safer version of removeImmediately that waits to finish processing events for contractIDs

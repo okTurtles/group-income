@@ -144,6 +144,7 @@ describe('Group - Removing a member', () => {
   it('user1 proposes to remove userBot', () => {
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
+    assertMembersCount(3)
     openRemoveMemberModal('userbot', 2)
 
     cy.getByDT('modalProposal').within(() => {
@@ -236,6 +237,12 @@ describe('Group - Removing a member', () => {
     cy.getByDT('groupName').should('contain', groupNameB)
   })
 
+  it('user1 checks the number of groupA members', () => {
+    cy.giSwitchUser(`user1-${userId}`)
+    assertMembersCount(1)
+    cy.giSwitchUser(`user2-${userId}`)
+  })
+
   it('user2 rejoins the groupA', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
@@ -249,6 +256,7 @@ describe('Group - Removing a member', () => {
   it('user1 removes user2 from groupA again', () => {
     // this covers edge case scenario described at #944
     cy.giSwitchUser(`user1-${userId}`)
+    assertMembersCount(2)
 
     openRemoveMemberModal('user2', 1)
     removeMemberNow('user2')

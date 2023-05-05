@@ -2,16 +2,11 @@
 .c-chat-main(v-if='summary.title')
   emoticons
   .c-body
-    .c-body-loading(v-if='details.isLoading')
-      loading
-        // TODO later - Design a cool skeleton loading
-           this should be done only after knowing exactly how server gets each conversation data
-
     .c-body-conversation(
-      v-else
       ref='conversation'
       data-test='conversationWrapper'
       @scroll='onChatScroll'
+      :class='{"c-invisible": !ephemeral.messagesInitiated}'
     )
 
       infinite-loading(
@@ -22,25 +17,22 @@
       )
         div(slot='no-more')
           conversation-greetings(
-            :members='details.numberOfParticipants'
-            :creator='summary.creator'
-            :type='summary.type'
-            :joined='summary.joined'
+            :members='summary.numberOfUsers'
+            :creator='summary.attributes.creator'
+            :type='summary.attributes.type'
+            :joined='summary.isJoined'
             :name='summary.title'
-            :description='summary.description'
+            :description='summary.attributes.description'
           )
         div(slot='no-results')
           conversation-greetings(
-            :members='details.numberOfParticipants'
-            :creator='summary.creator'
-            :type='summary.type'
-            :joined='summary.joined'
+            :members='summary.numberOfUsers'
+            :creator='summary.attributes.creator'
+            :type='summary.attributes.type'
+            :joined='summary.isJoined'
             :name='summary.title'
-            :description='summary.description'
+            :description='summary.attributes.description'
           )
-
-      .c-divider.is-new(v-if='ephemeral.unreadFromBeginning')
-        i18n.c-new.is-new-date New
 
       template(v-for='(message, index) in messages')
         .c-divider(
@@ -79,13 +71,16 @@
           @add-emoticon='addEmoticon(message, $event)'
         )
 
+    .c-initializing(v-if='!ephemeral.messagesInitiated')
+    //-   TODO later - Design a cool skeleton loading
+    //-   this should be done only after knowing exactly how server gets each conversation data
+
   .c-footer
     send-area(
-      v-if='summary.joined'
-      :loading='details.isLoading'
+      v-if='summary.isJoined'
+      :loading='!ephemeral.messagesInitiated'
       :replying-message='ephemeral.replyingMessage'
       :replying-to='ephemeral.replyingTo'
-      :title='summary.title'
       :scrolledUp='isScrolledUp'
       @send='handleSendMessage'
       @jump-to-latest='updateScroll'
@@ -93,7 +88,7 @@
     )
     view-area(
       v-else
-      :joined='summary.joined'
+      :joined='summary.isJoined'
       :title='summary.title'
     )
 </template>
@@ -140,12 +135,8 @@ export default ({
   },
   props: {
     summary: {
-      type: Object, // { type: String, title: String, description: String, routerBack: String }
-      default () { return {} }
-    },
-    details: {
-      type: Object, // { isLoading: Bool, participants: Object }
-      default () { return {} }
+      type: Object,
+      required: true
     }
   },
   data () {
@@ -155,11 +146,12 @@ export default ({
       },
       latestEvents: [],
       ephemeral: {
-        unreadFromBeginning: false,
         startedUnreadMessageHash: null,
         scrolledDistance: 0,
         infiniteLoading: null,
-        shouldRefreshMessages: true,
+        // NOTE: messagesInitiated describes if the messages are fully re-rendered
+        //       according to this, we could display loading/skeleton component
+        messagesInitiated: undefined,
         replyingMessage: null,
         replyingMessageHash: null,
         replyingTo: null
@@ -181,8 +173,12 @@ export default ({
     this.config.isPhone = this.matchMediaPhone.matches
   },
   mounted () {
-    this.setMessageEventListener({ force: true })
-    this.setInitMessages()
+    if (this.currentChatRoomId && this.isJoinedChatRoom(this.currentChatRoomId)) {
+      // NOTE: this.currentChatRoomId could be null when enter group chat page very soon
+      //       after the first opening the Group Income application
+      this.setMessageEventListener({ to: this.currentChatRoomId })
+      this.setInitMessages()
+    }
     window.addEventListener('resize', this.resizeEventHandler)
   },
   beforeDestroy () {
@@ -203,7 +199,7 @@ export default ({
       'isJoinedChatRoom',
       'setChatRoomScrollPosition',
       'currentChatRoomScrollPosition',
-      'currentChatRoomUnreadSince',
+      'currentChatRoomReadUntil',
       'currentGroupNotifications',
       'currentChatRoomUnreadMentions',
       'currentChatVolatile',
@@ -239,7 +235,7 @@ export default ({
       return this.currentUserAttr.username === from
     },
     who (message) {
-      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.details.participants[message.from]
+      const user = this.isCurrentUser(message.from) ? this.currentUserAttr : this.summary.participants[message.from]
       return user?.displayName || user?.username || message.from
     },
     variant (message) {
@@ -261,7 +257,7 @@ export default ({
       if (from === MESSAGE_TYPES.NOTIFICATION || from === MESSAGE_TYPES.INTERACTIVE) {
         return this.currentUserAttr.picture
       }
-      return this.details.participants[from]?.picture
+      return this.summary.participants[from]?.picture
     },
     isSameSender (index) {
       if (!this.messages[index - 1]) { return false }
@@ -419,13 +415,15 @@ export default ({
         onlyRenderMessage: true // NOTE: DO NOT RENAME THIS OR CHATROOM WOULD BREAK
       }
     },
-    async renderMoreMessages (refresh = false) {
-      if (refresh) {
+    async renderMoreMessages (shouldInitiate = true) {
+      // NOTE: shouldInitiate describes if the messages should be fully removed and re-rendered
+      //       it's true when user gets entered channel page or switches to another channel
+      if (shouldInitiate) {
         await this.loadMessagesFromStorage()
       }
       const limit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       /***
-       * if the removed message was the starting position of unread messages
+       * if the removed message was the first unread messages(currentChatRoomReadUntil)
        * we can load message of that hash(messageHash) but not scroll
        * because it doesn't exist in this.messages
        * So in this case, we will load messages until the first unread mention
@@ -433,20 +431,20 @@ export default ({
        */
       const curChatRoomId = this.currentChatRoomId
       let unreadPosition = null
-      if (this.currentChatRoomUnreadSince && !this.currentChatRoomUnreadSince.fromBeginning) {
-        if (!this.currentChatRoomUnreadSince.deletedDate) {
-          unreadPosition = this.currentChatRoomUnreadSince.messageHash
+      if (this.currentChatRoomReadUntil) {
+        if (!this.currentChatRoomReadUntil.deletedDate) {
+          unreadPosition = this.currentChatRoomReadUntil.messageHash
         } else if (this.currentChatRoomUnreadMentions.length) {
           unreadPosition = this.currentChatRoomUnreadMentions[0].messageHash
         }
       }
       const messageHashToScroll = this.currentChatRoomScrollPosition || unreadPosition
       const latestHash = await sbp('chelonia/out/latestHash', this.currentChatRoomId)
-      const before = refresh || !this.latestEvents.length
+      const before = shouldInitiate || !this.latestEvents.length
         ? latestHash
         : GIMessage.deserialize(this.latestEvents[0]).hash()
-      let events = null
-      const isLoadedFromStorage = refresh && this.latestEvents.length
+      let events = []
+      const isLoadedFromStorage = shouldInitiate && this.latestEvents.length
       if (isLoadedFromStorage) {
         const prevLastEventHash = this.messageState.prevTo // NOTE: check setInitMessages function
         let newEvents = []
@@ -461,7 +459,7 @@ export default ({
           }
           this.$forceUpdate()
         }
-      } else if (refresh && messageHashToScroll) {
+      } else if (shouldInitiate && messageHashToScroll) {
         events = await sbp('chelonia/out/eventsBetween', messageHashToScroll, latestHash, limit)
       } else {
         events = await sbp('chelonia/out/eventsBefore', before, limit)
@@ -475,10 +473,10 @@ export default ({
 
       if (!isLoadedFromStorage) {
         // NOTE: already rendered above in this function
-        await this.rerenderEvents(events, refresh)
+        await this.rerenderEvents(events, shouldInitiate)
       }
 
-      if (refresh) {
+      if (shouldInitiate) {
         this.setStartNewMessageIndex()
         this.updateScroll(messageHashToScroll)
         return false
@@ -486,8 +484,8 @@ export default ({
 
       return events.length < limit
     },
-    async rerenderEvents (events, refresh) {
-      if (refresh) {
+    async rerenderEvents (events, shouldInitiate) {
+      if (shouldInitiate) {
         this.latestEvents = events
       } else if (events.length > 1) {
         events.pop() // remove duplication. For more detail, check sbp('chelonia/out/eventsBetween')
@@ -514,40 +512,32 @@ export default ({
     },
     setInitMessages () {
       this.initializeState()
-      this.shouldRefreshMessages = true
+      this.ephemeral.messagesInitiated = false
       if (this.ephemeral.infiniteLoading) {
         this.ephemeral.infiniteLoading.reset()
       }
     },
     setStartNewMessageIndex () {
       this.ephemeral.startedUnreadMessageHash = null
-      this.ephemeral.unreadFromBeginning = false
-      if (this.currentChatRoomUnreadSince) {
-        const { fromBeginning } = this.currentChatRoomUnreadSince
-        if (fromBeginning) {
-          this.ephemeral.unreadFromBeginning = true
-        } else {
-          const startUnreadMessage = this.messages
-            .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomUnreadSince.createdDate).getTime())
-          if (startUnreadMessage) {
-            this.ephemeral.startedUnreadMessageHash = startUnreadMessage.hash
-          }
+      if (this.currentChatRoomReadUntil) {
+        const startUnreadMessage = this.messages
+          .find(msg => new Date(msg.datetime).getTime() > new Date(this.currentChatRoomReadUntil.createdDate).getTime())
+        if (startUnreadMessage) {
+          this.ephemeral.startedUnreadMessageHash = startUnreadMessage.hash
         }
       }
     },
-    setMessageEventListener ({ force = false, from, to }) {
+    setMessageEventListener ({ from, to }) {
       if (from) {
-        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`, this.listenChatRoomActions)
+        sbp('okTurtles.events/off', `${CHATROOM_MESSAGE_ACTION}-${from}`)
       }
-      if (force) {
-        sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to || this.currentChatRoomId}`, this.listenChatRoomActions)
-      } else if (this.isJoinedChatRoom(to)) {
+      if (this.isJoinedChatRoom(to)) {
         sbp('okTurtles.events/on', `${CHATROOM_MESSAGE_ACTION}-${to}`, this.listenChatRoomActions)
       }
     },
     updateUnreadMessageHash ({ messageHash, createdDate }) {
       if (this.isJoinedChatRoom(this.currentChatRoomId)) {
-        sbp('state/vuex/commit', 'setChatRoomUnreadSince', {
+        sbp('state/vuex/commit', 'setChatRoomReadUntil', {
           chatRoomId: this.currentChatRoomId,
           messageHash,
           createdDate
@@ -556,18 +546,20 @@ export default ({
     },
     listenChatRoomActions ({ hash }) {
       // NOTE: this function should be synchronous function
-      // Or the listener couldn't catch the event because it could be emitted in advance
-      const isAddedNewMessage = (message: GIMessage): boolean => {
+      //       Or the listener couldn't catch the event because it could be emitted in advance
+      const isMessageAddedOrDeleted = (message: GIMessage) => {
         const { action, meta } = message.decryptedValue()
         const rootState = sbp('state/vuex/state')
-        const me = rootState.loggedIn.username
+        let addedOrDeleted = 'NONE'
 
         if (/.*(addMessage|join|rename|changeDescription|leave)$/.test(action)) {
           // we add new pending message in 'handleSendMessage' function so we skip when I added a new message
-          return { added: true, self: me === meta.username }
+          addedOrDeleted = 'ADDED'
+        } else if (/.*(deleteMessage)$/.test(action)) {
+          addedOrDeleted = 'DELETED'
         }
 
-        return { added: false, self: false }
+        return { addedOrDeleted, self: rootState.loggedIn.username === meta.username }
       }
 
       // we use this listener here so that we can get access to the GIMessage
@@ -575,15 +567,28 @@ export default ({
       sbp('okTurtles.events/once', hash, async (contractID, message) => {
         // NOTE: while syncing the chatroom contract, we should ignore all the events
         if (contractID === this.currentChatRoomId) {
+          const { addedOrDeleted, self } = isMessageAddedOrDeleted(message)
+
+          if (addedOrDeleted === 'DELETED') {
+            // NOTE: Message will be deleted in processMessage function
+            //       but need to make animation to delete it, probably here
+            const messageHash = message.decryptedValue().data.hash
+            const msgIndex = findMessageIdx(messageHash, this.messages)
+            document.querySelectorAll('.c-body-conversation > .c-message')[msgIndex]?.classList.add('c-disappeared')
+
+            // NOTE: waiting for the animation is done
+            //       it's duration is 500ms described in MessageBase.vue
+            await new Promise(resolve => setTimeout(resolve, 500))
+          }
+
           await sbp('chelonia/private/in/processMessage', message, this.messageState.contract)
+
           this.latestEvents.push(message.serialize())
 
           this.$forceUpdate()
 
-          // TODO: Need to scroll to the bottom only when new message is ADDED by ANOTHER
           if (this.ephemeral.scrolledDistance < 50) {
-            const { added, self } = isAddedNewMessage(message)
-            if (added) {
+            if (addedOrDeleted === 'ADDED') {
               const isScrollable = this.$refs.conversation &&
                 this.$refs.conversation.scrollHeight !== this.$refs.conversation.clientHeight
               if (!self && isScrollable) {
@@ -606,12 +611,12 @@ export default ({
     },
     infiniteHandler ($state) {
       this.ephemeral.infiniteLoading = $state
-      if (this.shouldRefreshMessages === undefined) {
-        // NOTE: this infinite handler is being called once
-        // before the component state is initialized, which should be ignored
+      if (this.ephemeral.messagesInitiated === undefined) {
+        // NOTE: this infinite handler is being called once which should be ignored
+        // before calling the setInitMessages function
         return
       }
-      this.renderMoreMessages(this.shouldRefreshMessages).then(completed => {
+      this.renderMoreMessages(!this.ephemeral.messagesInitiated).then(completed => {
         if (completed) {
           $state.complete()
           if (!this.$refs.conversation ||
@@ -627,7 +632,7 @@ export default ({
         } else {
           $state.loaded()
         }
-        this.shouldRefreshMessages = false
+        this.ephemeral.messagesInitiated = true
       })
     },
     onChatScroll: debounce(function () {
@@ -646,7 +651,7 @@ export default ({
         this.ephemeral.scrolledDistance = scrollTopMax - curScrollTop
       }
 
-      if (!this.summary.joined) {
+      if (!this.summary.isJoined) {
         return
       }
 
@@ -656,9 +661,7 @@ export default ({
         const parentOffsetTop = this.$refs[msg.hash][0].$el.offsetParent.offsetTop
         if (offsetTop - parentOffsetTop + topOffset <= curScrollBottom) {
           const bottomMessageCreatedAt = new Date(msg.datetime).getTime()
-          const latestMessageCreatedAt = this.currentChatRoomUnreadSince && !this.currentChatRoomUnreadSince.fromBeginning
-            ? this.currentChatRoomUnreadSince.createdDate
-            : undefined
+          const latestMessageCreatedAt = this.currentChatRoomReadUntil?.createdDate
           if (!latestMessageCreatedAt || new Date(latestMessageCreatedAt).getTime() <= bottomMessageCreatedAt) {
             this.updateUnreadMessageHash({
               messageHash: msg.hash,
@@ -715,22 +718,24 @@ export default ({
     },
     refreshContent: debounce(function (from, to) {
       // NOTE: using debounce we can skip unnecessary rendering contents
-      const force = sbp('chelonia/contract/isSyncing', to)
-      this.setMessageEventListener({ from, to, force })
       this.archiveMessageState(from)
       this.setInitMessages()
+      this.setMessageEventListener({ from, to })
     }, 250)
   },
   watch: {
-    currentChatRoomId (to, from) {
+    'currentChatRoomId' (to, from) {
+      if (from) {
+        this.ephemeral.messagesInitiated = false
+      }
       this.refreshContent(from, to)
     },
-    'summary.joined' (to, from) {
+    'summary.isJoined' (to, from) {
       if (to) {
         sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
           if (contractID === this.currentChatRoomId && isSyncing === false) {
+            this.setMessageEventListener({ from: contractID, to: contractID })
             this.setInitMessages()
-            this.setMessageEventListener({ force: true })
           }
         })
       }
@@ -755,13 +760,9 @@ export default ({
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
-  height: calc(var(--vh, 1vh) * 100 - 18rem);
   width: calc(100% + 1rem);
   position: relative;
-
-  @include tablet {
-    height: calc(var(--vh, 1vh) * 100 - 16rem);
-  }
+  min-height: 0;
 
   &::before {
     content: "";
@@ -822,6 +823,34 @@ export default ({
 
   .c-new {
     font-weight: bold;
+  }
+}
+
+.c-footer {
+  flex-shrink: 0;
+}
+
+.c-invisible {
+  visibility: hidden;
+}
+
+.c-initializing {
+  position: absolute;
+  width: calc(100% - 1rem);
+  height: 3rem;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid;
+    border-top-color: transparent;
+    border-radius: 50%;
+    color: $general_0;
+    animation: loadSpin 1.75s infinite linear;
   }
 }
 </style>

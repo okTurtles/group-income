@@ -139,7 +139,7 @@ export default (sbp('sbp/selectors/register', {
       this.env = savedEnv
     }
   },
-  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 3 } = {}, signatureFn?: Function) {
+  'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}, signatureFn?: Function) {
     const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
@@ -546,7 +546,7 @@ export default (sbp('sbp/selectors/register', {
       }
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
-    this.currentSyncs[contractID] = true
+    this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID] }
     this.postSyncOperations[contractID] = this.postSyncOperations[contractID] ?? Object.create(null)
     try {
       if (latest !== recent) {

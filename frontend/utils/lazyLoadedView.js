@@ -103,6 +103,7 @@ lazyComponent('NewDirectMessageModal', () => import('../views/containers/chatroo
 lazyComponent('Placeholder', () => import('../views/containers/user-settings/Placeholder.vue'))
 lazyComponent('Troubleshooting', () => import('../views/containers/user-settings/Troubleshooting.vue'))
 lazyComponent('UserProfile', () => import('../views/containers/user-settings/UserProfile.vue'))
+lazyComponent('Acknowledgements', () => import('../views/containers/user-settings/Acknowledgements.vue'))
 
 // TODO Remove after design test period.
 lazyComponent('DSModalFullscreen', () => import('../views/containers/design-system/DSModalFullscreen.vue'))

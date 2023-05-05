@@ -187,3 +187,13 @@
     background-color: transparent;
   }
 }
+
+@keyframes disappeared {
+  0% {
+    background-color: transparent;
+  }
+
+  100% {
+    background-color: $danger_2;
+  }
+}
