@@ -14,7 +14,7 @@ export const PERIODIC_NOTIFICATION_TYPE = {
 }
 
 const every1MinTimeout = { notifications: [], state: {}, delay: MINS_MILLIS }
-const every5MinTimeout = { notifications: [], state: {}, delay: 0.15 * MINS_MILLIS }
+const every5MinTimeout = { notifications: [], state: {}, delay: 5 * MINS_MILLIS }
 const every15MinTimeout = { notifications: [], state: {}, delay: 15 * MINS_MILLIS }
 const every30MinTimeout = { notifications: [], state: {}, delay: 30 * MINS_MILLIS }
 
