@@ -111,7 +111,7 @@ export default ({
       this.$refs.modal.close()
     },
     submit () {
-      sbp('state/vuex/commit', 'setNotificationSettings', {
+      sbp('state/vuex/commit', 'setChatroomNotificationSettings', {
         chatRoomId: this.currentChatRoomId,
         settings: this.form
       })

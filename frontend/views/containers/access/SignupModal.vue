@@ -27,11 +27,7 @@ export default ({
   },
   methods: {
     submit () {
-      if (this.$route.query.next) {
-        this.$router.push({ path: this.$route.query.next }).catch(logExceptNavigationDuplicated)
-      } else {
-        this.$router.push({ path: '/' }).catch(logExceptNavigationDuplicated)
-      }
+      this.$router.push({ query: this.$route.query, path: this.$route.query.next ?? '/' }).catch(logExceptNavigationDuplicated)
       this.$refs.modal.close()
     },
     showLoginModal () {

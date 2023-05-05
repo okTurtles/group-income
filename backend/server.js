@@ -1,9 +1,9 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import './database.js'
 import Hapi from '@hapi/hapi'
 import GiAuth from './auth.js'
+import initDB from './database.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { SERVER_RUNNING } from './events.js'
 import { SERVER_INSTANCE, PUBSUB_INSTANCE } from './instance-keys.js'
@@ -94,6 +94,7 @@ sbp('okTurtles.data/set', PUBSUB_INSTANCE, createServer(hapi.listener, {
 }))
 
 ;(async function () {
+  await initDB()
   // https://hapi.dev/tutorials/plugins
   await hapi.register([
     { plugin: GiAuth },

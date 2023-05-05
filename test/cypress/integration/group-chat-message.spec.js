@@ -63,6 +63,10 @@ describe('Send/edit/remove messages & add/remove emoticons inside group chat', (
     })
 
     cy.getByDT('conversationWrapper').within(() => {
+      cy.get(`.c-message:nth-child(${nth})`).should('have.class', 'c-disappeared')
+    })
+
+    cy.getByDT('conversationWrapper').within(() => {
       cy.get('.c-message').should('have.length', countAfter)
     })
   }

@@ -19,7 +19,6 @@ import { unadjustedDistribution, adjustedDistribution } from './shared/distribut
 import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
-import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
@@ -343,12 +342,10 @@ sbp('chelonia/defineContract', {
     },
     dueDateForPeriod (state, getters) {
       return (periodStamp: string) => {
-        return dateToPeriodStamp(
-          addTimeToDate(
-            dateFromPeriodStamp(getters.periodAfterPeriod(periodStamp)),
-            -DAYS_MILLIS
-          )
-        )
+        // NOTE: logically it's should be 1 milisecond before the periodAfterPeriod
+        //       1 mili-second doesn't make any difference to the users
+        //       so periodAfterPeriod is used to make it simple
+        return getters.periodAfterPeriod(periodStamp)
       }
     },
     paymentTotalFromUserToUser (state, getters) {
@@ -965,20 +962,8 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/group/inviteAccept': {
-      validate: objectOf({
-        inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
-      }),
+      validate: Boolean,
       process ({ data, meta }, { state }) {
-        console.debug('inviteAccept:', data, state.invites)
-        const invite = state.invites[data.inviteSecret]
-        if (invite.status !== INVITE_STATUS.VALID) {
-          console.error(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)
-          return
-        }
-        Vue.set(invite.responses, meta.username, true)
-        if (Object.keys(invite.responses).length === invite.quantity) {
-          invite.status = INVITE_STATUS.USED
-        }
         // TODO: ensure `meta.username` is unique for the lifetime of the username
         //       since we are making it possible for the same username to leave and
         //       rejoin the group. All of their past posts will be re-associated with
@@ -1004,7 +989,8 @@ sbp('chelonia/defineContract', {
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name in profiles) {
             if (name !== loggedIn.username) {
-              await sbp('chelonia/contract/sync', profiles[name].contractID)
+              // TODO skip for now since those contracts are encrypted
+              // await sbp('chelonia/contract/sync', profiles[name].contractID)
             }
           }
         } else {
@@ -1143,10 +1129,11 @@ sbp('chelonia/defineContract', {
         attributes: chatRoomAttributesType
       }),
       process ({ data, meta }, { state }) {
-        const { name, type, privacyLevel } = data.attributes
+        const { name, type, privacyLevel, description } = data.attributes
         Vue.set(state.chatRooms, data.chatRoomID, {
           creator: meta.username,
           name,
+          description,
           type,
           privacyLevel,
           deletedDate: null,
@@ -1155,7 +1142,8 @@ sbp('chelonia/defineContract', {
         if (!state.generalChatRoomId) {
           Vue.set(state, 'generalChatRoomId', data.chatRoomID)
         }
-      },
+      }/*,
+      TODO REMOVE
       async sideEffect ({ data, meta, contractID }, { state: Rstate }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
@@ -1187,7 +1175,7 @@ sbp('chelonia/defineContract', {
             postpublish: null
           }
         })
-      }
+      } */
     },
     'gi.contracts/group/deleteChatRoom': {
       validate: (data, { getters, meta }) => {
@@ -1205,7 +1193,7 @@ sbp('chelonia/defineContract', {
       validate: objectOf({
         chatRoomID: string,
         member: string,
-        leavingGroup: boolean // if kicker exists, it means group leaving
+        leavingGroup: boolean // leave chatroom by leaving group
       }),
       process ({ data, meta }, { state }) {
         Vue.set(state.chatRooms[data.chatRoomID], 'users',
@@ -1249,10 +1237,16 @@ sbp('chelonia/defineContract', {
         name: string
       }),
       process ({ data, meta }, { state, getters }) {
-        Vue.set(state.chatRooms, data.chatRoomID, {
-          ...getters.getGroupChatRooms[data.chatRoomID],
-          name: data.name
-        })
+        Vue.set(state.chatRooms[data.chatRoomID], 'name', data.name)
+      }
+    },
+    'gi.contracts/group/changeChatRoomDescription': {
+      validate: objectOf({
+        chatRoomID: string,
+        description: string
+      }),
+      process ({ data, meta }, { state, getters }) {
+        Vue.set(state.chatRooms[data.chatRoomID], 'description', data.description)
       }
     },
     'gi.contracts/group/updateLastLoggedIn': {

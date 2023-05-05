@@ -93,7 +93,7 @@ Cypress.Commands.add('giLogin', (username, {
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   if (hasNoGroup) {
-    cy.window().its('sbp').then(sbp => sbp('gi.actions/identity/logout'))
+    cy.window().its('sbp').then(async sbp => await sbp('gi.actions/identity/logout'))
   } else {
     cy.getByDT('settingsBtn').click()
     cy.getByDT('link-logout').click()
@@ -148,6 +148,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('app').then(([el]) => {
       cy.get(el).should('have.attr', 'data-sync', '')
     })
+
     return
   }
 
@@ -316,9 +317,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       }
       cy.get(el).should('have.attr', 'data-sync', '')
     })
-
-    cy.giCheckIfJoinedGeneralChatroom(groupName)
   }
+  cy.giCheckIfJoinedGeneralChatroom(groupName)
 
   if (displayName) {
     cy.giSetDisplayName(displayName)
@@ -466,15 +466,9 @@ Cypress.Commands.add('giRedirectToGroupChat', () => {
   cy.giWaitUntilMessagesLoaded()
 })
 
-Cypress.Commands.add('giWaitUntilMessagesLoaded', (isJoined = true) => {
+Cypress.Commands.add('giWaitUntilMessagesLoaded', () => {
   cy.getByDT('conversationWrapper').within(() => {
-    // NOTE: '.infinite-status-prompt:first-child' is the spinner css selector
-    cy.get('.infinite-status-prompt:first-child')
-      .invoke('attr', 'style')
-      .should('not.include', 'display: none')
-    cy.get('.infinite-status-prompt:first-child')
-      .invoke('attr', 'style')
-      .should('include', 'display: none')
+    cy.get('.c-initializing').should('not.exist')
   })
   cy.getByDT('conversationWrapper').find('.c-message-wrapper').its('length').should('be.gte', 1)
 })

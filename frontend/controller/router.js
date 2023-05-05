@@ -36,8 +36,7 @@ const homeGuard = {
 }
 const loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
-  // TODO/BUG "next" does not work.
-  redirect: (to, from) => ({ path: '/', query: { next: to.path } })
+  redirect: (to, from) => ({ path: '/', query: { ...to.query, next: to.path } })
 }
 
 const inviteGuard = {
@@ -157,7 +156,7 @@ const router: any = new Router({
       component: Join,
       meta: { title: L('Join a Group') },
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
-      beforeEnter: createEnterGuards(inviteGuard)
+      beforeEnter: createEnterGuards(loginGuard, inviteGuard)
     },
     {
       path: '/pending-approval',
