@@ -8,7 +8,7 @@ import { imageUpload } from '@utils/image.js'
 import { pickWhere, difference, uniq } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
-import { encryptedAction, shareKeysWithSelf } from './utils.js'
+import { encryptedAction } from './utils.js'
 import { handleFetchResult } from '../utils/misc.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
@@ -416,6 +416,5 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.')),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
-  ...encryptedAction('gi.contracts/identity/setLoginState', L('Failed to set login state.')),
-  ...shareKeysWithSelf('gi.actions/identity/shareKeysWithSelf', 'gi.contracts/identity')
+  ...encryptedAction('gi.contracts/identity/setLoginState', L('Failed to set login state.'))
 }): string[])

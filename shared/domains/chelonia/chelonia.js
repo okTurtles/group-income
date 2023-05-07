@@ -13,7 +13,7 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { GIMessage } from './GIMessage.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import type { GIKey, GIOpContract, GIOpActionUnencrypted, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpKeyRequest, GIOpKeyRequestResponse } from './GIMessage.js'
-import { keyId, sign, encrypt, decrypt, generateSalt } from './crypto.js'
+import { keyId, sign, encrypt, decrypt } from './crypto.js'
 import type { Key } from './crypto.js'
 
 // TODO: define ChelContractType for /defineContract
@@ -146,7 +146,10 @@ const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
   if (!key) {
     if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
       console.error('Encryption key not found. Sending plaintext message', { message, eKeyId })
-      return JSON.stringify(message)
+      return {
+        keyId: 'NULL',
+        content: JSON.stringify(message)
+      }
     } else {
       console.error('Encryption key not found', { message, eKeyId })
       throw new ChelErrorUnexpected('Encryption key not found')
@@ -160,12 +163,16 @@ const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
 }
 
 const decryptFn = function (message: Object, state: ?Object) {
-  if (typeof message === 'string') {
+  if (typeof message !== 'object' || typeof message.keyId !== 'string' || typeof message.content !== 'string') {
+    throw new TypeError('Malformed message')
+  }
+
+  if (message.keyId === 'NULL') {
     if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
-      console.error('Processing unsafe unencrypted message', { message })
-      return JSON.parse(message)
+      console.error('Processing unsafe unencrypted message', { message: message.content })
+      return JSON.parse(message.content)
     } else {
-      console.error('Refused to process unsafe unencrypted message', { message })
+      console.error('Refused to process unsafe unencrypted message', { message: message.content })
       throw new ChelErrorUnexpected('Decryption key not found')
     }
   }

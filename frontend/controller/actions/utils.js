@@ -1,11 +1,18 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { deserializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
 import { GIErrorUIRuntimeError, LError } from '@common/common.js'
 import type { GIActionParams } from './types.js'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 
+// Utility function to send encrypted actions ('chelonia/out/actionEncrypted')
+// This function covers the common case of sending an encrypted action that is
+// both encrypted with that same contract's CEK and signed with that contract's
+// CSK.
+// It takes an optional handler function, which receives a sendMessage callback
+// to emit the encrypted action when appropriate.
+// Note that this function does not currently support specifying custom encryption
+// or signing keys, and that such keys in params get overridden.
 export function encryptedAction (action: string, humanError: string | Function, handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams) => Promise<void>): Object {
   const sendMessage = (outerParams: GIActionParams, state: Object) => (innerParams?: $Shape<GIActionParams>) => sbp('chelonia/out/actionEncrypted', {
     ...(innerParams ?? outerParams),
@@ -33,39 +40,3 @@ export function encryptedAction (action: string, humanError: string | Function, 
     }
   }
 }
-
-export const shareKeysWithSelf = (action: string, ourContractName: string): { [k: string]: { (): void } } => ({
-  [action]: async ({ ourContractID, theirContractID }) => {
-    if (ourContractID === theirContractID) {
-      return
-    }
-
-    const contractState = await sbp('chelonia/latestContractState', theirContractID)
-
-    if (contractState?._volatile?.keys) {
-      const state = await sbp('chelonia/latestContractState', ourContractID)
-
-      const CEKid = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'cek')?.id: ?string)
-      const CSKid = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)
-      const CEK = deserializeKey(state?._volatile?.keys?.[CEKid])
-
-      await sbp('chelonia/out/keyShare', {
-        destinationContractID: ourContractID,
-        destinationContractName: ourContractName,
-        data: {
-          contractID: theirContractID,
-          keys: Object.entries(contractState._volatile.keys).map(([keyId, key]: [string, mixed]) => ({
-            id: keyId,
-            meta: {
-              private: {
-                keyId: CEKid,
-                content: encrypt(CEK, (key: any))
-              }
-            }
-          }))
-        },
-        signingKeyId: CSKid
-      })
-    }
-  }
-})

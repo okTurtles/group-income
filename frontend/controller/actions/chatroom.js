@@ -142,10 +142,6 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('chelonia/contract/sync', contractID)
 
-      /* TODO: REMOVE
-      const userID = rootState.loggedIn.identityContractID
-      await sbp('gi.actions/identity/shareKeysWithSelf', { userID, contractID }) */
-
       return chatroom
     } catch (e) {
       console.error('gi.actions/chatroom/register failed!', e)

@@ -19,7 +19,7 @@ export type GIKey = {
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
 export type GIOpContract = { type: string; keys: GIKey[]; parentContract?: string }
-export type GIOpActionEncrypted = string // encrypted version of GIOpActionUnencrypted
+export type GIOpActionEncrypted = { keyId: string; content: string } // encrypted version of GIOpActionUnencrypted
 export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
 export type GIOpKeyAdd = GIKey[]
 export type GIOpKeyDel = string[]

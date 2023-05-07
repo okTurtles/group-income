@@ -23,7 +23,7 @@ import proposals from '@model/contracts/shared/voting/proposals.js'
 import { imageUpload } from '@utils/image.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
-import { encryptedAction, shareKeysWithSelf } from './utils.js'
+import { encryptedAction } from './utils.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
@@ -248,10 +248,13 @@ export default (sbp('sbp/selectors/register', {
       })
 
       const userID = rootState.loggedIn.identityContractID
-      await sbp('gi.actions/identity/shareKeysWithSelf', {
-        ourContractID: userID,
-        theirContractID: contractID
-      })
+
+      // As the group's creator, we share the group secret keys with
+      // ourselves, which we need to do be able to sync the group with a
+      // fresh session.
+      // This is a special case, as normally these keys would be shared using
+      // invites
+      await sbp('gi.actions/out/shareVolatileKeys', { destinationContractID: userID, destinationContractName: 'gi.contracts/identity', contractID })
 
       return message
     } catch (e) {
@@ -435,10 +438,11 @@ export default (sbp('sbp/selectors/register', {
       }
     })
 
-    await sbp('gi.actions/group/shareKeysWithSelf', {
-      ourContractID: params.contractID,
-      theirContractID: message.contractID()
-    })
+    // When creating a public chatroom, that chatroom's secret keys are shared
+    // with the group. This allows all group members to be able to join the
+    // chatroom without any extra steps, and, in particular, it enables joining
+    // the #General chatroom upon joining a group, in a single step.
+    await sbp('gi.actions/out/shareVolatileKeys', { destinationContractID: params.contractID, destinationContractName: 'gi.contracts/group', contractID: message.contractID() })
 
     await sendMessage({
       ...omit(params, ['options', 'action', 'data', 'hooks']),
@@ -704,7 +708,6 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateLastLoggedIn', L('Failed to update "lastLoggedIn" in a group profile.')),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
-  ...shareKeysWithSelf('gi.actions/group/shareKeysWithSelf', 'gi.contracts/group'),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
   })
