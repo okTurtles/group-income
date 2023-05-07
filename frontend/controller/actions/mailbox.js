@@ -119,7 +119,7 @@ export default (sbp('sbp/selectors/register', {
       })
     }
 
-    await sbp('chelonia/out/actionEncrypted', {
+    await sendMessage({
       ...omit(params, ['options', 'data', 'action', 'hooks']),
       data: {
         privacyLevel: params.data.privacyLevel,
