@@ -7,6 +7,9 @@
 "Do you make at least {amount} per month?" = "Do you make at least {amount} per month?";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
+"Failed to mark proposals expired." = "Failed to mark proposals expired.";
+
+/* MISSING TRANSLATION - controller/actions/group.js */
 "Failed to send a payment thank you note." = "Failed to send a payment thank you note.";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
@@ -491,6 +494,9 @@
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "Automated" = "Automated";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
+"Expired on {date}" = "Expired on {date}";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "Group Income system is proposing" = "Group Income system is proposing";
@@ -1247,9 +1253,6 @@
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "Leave Channel" = "Quitter le salon";
-
-/* views/containers/chatroom/LeaveChannelModal.vue */
-"Leave and Archive" = "Quitter et archiver";
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "You will no longer be able to send or see messages in this channel." = "Vous ne pourrez plus envoyer ni recevoir des messages dans ce salon.";
@@ -2738,6 +2741,9 @@
 
 /* Not currently used */
 "Join channel" = "Rejoignez la chaîne";
+
+/* Not currently used */
+"Leave and Archive" = "Quitter et archiver";
 
 /* Not currently used */
 "Leave {groupName}" = "Quitter {groupName}";

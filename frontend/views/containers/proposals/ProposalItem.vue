@@ -237,8 +237,12 @@ export default ({
           const date = humanDate(this.proposal.dateClosed, format)
           return L('Proposal accepted on {date} with {yay} in favor out of {total} total votes.', { yay, total, date })
         }
+        case STATUS_EXPIRED: {
+          const date = humanDate(this.proposal.data.expires_date_ms, format)
+          return L('Expired on {date}', { date })
+        }
         default:
-          return `TODO status: ${this.proposal.status}`
+          return `status: ${this.proposal.status}`
       }
     },
     iconClass () {
@@ -254,7 +258,8 @@ export default ({
         [STATUS_OPEN]: 'has-background-primary has-text-primary',
         [STATUS_PASSED]: 'icon-check has-background-success has-text-success',
         [STATUS_FAILED]: 'icon-times has-background-danger has-text-danger',
-        [STATUS_CANCELLED]: 'has-background-general has-text-1'
+        [STATUS_CANCELLED]: 'has-background-general has-text-1',
+        [STATUS_EXPIRED]: 'has-background-general has-text-1'
       }
 
       if ([STATUS_PASSED, STATUS_FAILED].includes(this.proposal.status)) {

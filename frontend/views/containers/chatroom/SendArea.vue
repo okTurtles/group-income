@@ -186,11 +186,8 @@ export default ({
     replyingMessage () {
       this.focusOnTextArea()
     },
-    currentChatRoomId () {
-      this.focusOnTextArea()
-    },
     loading (newValue, oldValue) {
-      if (newValue) {
+      if (!newValue) {
         this.$nextTick(() => {
           this.focusOnTextArea()
         })

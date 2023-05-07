@@ -15,7 +15,7 @@ import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
-import settingsModule, { defaultSettings } from '~/frontend/model/settings/vuexModule.js'
+import settingsModule from '~/frontend/model/settings/vuexModule.js'
 
 Vue.use(Vuex)
 
@@ -36,7 +36,7 @@ if (window.matchMedia) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     if (sbp('state/vuex/getters').theme === 'system') {
       store.commit('setTheme', 'system')
-    }
+    },
   })
 }
 
@@ -60,28 +60,10 @@ sbp('sbp/selectors/register', {
   'state/vuex/postUpgradeVerification': function (state: Object) {
     // Note: Update this function when renaming a Vuex module, or implementing a new one,
     // or adding new settings to the initialState above
-    if (!state.notifications) {
-      state.notifications = []
-    }
-    if (!state.settings) {
-      // Using cloneDeep() ensures we get a new object every time.
-      state.settings = cloneDeep(defaultSettings)
-    }
-    if (!state.currentChatRoomIDs) {
-      state.currentChatRoomIDs = {}
-    }
-    if (!state.chatRoomScrollPosition) {
-      state.chatRoomScrollPosition = {}
-    }
-    if (!state.chatRoomUnread) {
-      state.chatRoomUnread = {}
-    }
-    if (!state.namespaceLookups) {
-      state.namespaceLookups = Object.create(null)
-    }
-    if (!state.notificationSettings) {
-      state.notificationSettings = {}
-    }
+    // Example:
+    // if (!state.notifications) {
+    //   state.notifications = []
+    // }
   },
   'state/vuex/save': async function () {
     const state = store.state
@@ -163,11 +145,11 @@ const mutations = {
   },
   setChatroomNotificationSettings (state, { chatRoomId, settings }) {
     if (chatRoomId) {
-      if (!state.notificationSettings[chatRoomId]) {
-        Vue.set(state.notificationSettings, chatRoomId, {})
+      if (!state.chatNotificationSettings[chatRoomId]) {
+        Vue.set(state.chatNotificationSettings, chatRoomId, {})
       }
       for (const key in settings) {
-        Vue.set(state.notificationSettings[chatRoomId], key, settings[key])
+        Vue.set(state.chatNotificationSettings[chatRoomId], key, settings[key])
       }
     }
   },
@@ -218,13 +200,13 @@ const getters = {
     const contract = getters.currentIdentityState
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
   },
-  notificationSettings (state) {
+  chatNotificationSettings (state) {
     return Object.assign({
       default: {
         messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
         messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
       }
-    }, state.notificationSettings || {})
+    }, state.chatNotificationSettings || {})
   },
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
