@@ -174,6 +174,7 @@ module.exports = (grunt) => {
       `${distCSS}/**/*`
     ],
     ghostMode: false,
+    logConnections: true,
     logLevel: grunt.option('debug') ? 'debug' : 'info',
     open: false,
     port: 3000,
@@ -436,7 +437,7 @@ module.exports = (grunt) => {
   // Wait for the server to be ready.
   const waitUntilServerIsReady = () => {
     const t0 = Date.now()
-    const timeout = 30000
+    const timeout = 10000
     return new Promise((resolve, reject) => {
       (function ping () {
         fetch(process.env.API_URL).then(resolve).catch(() => {
@@ -620,8 +621,6 @@ module.exports = (grunt) => {
 
     // BrowserSync setup.
     const browserSync = require('browser-sync').create('esbuild')
-    browserSync.init(browserSyncOptions)
-
     ;[
       [['Gruntfile.js'], [eslint]],
       [['backend/**/*.js'], [eslint, relaunch]],
@@ -697,8 +696,10 @@ module.exports = (grunt) => {
         })
       })
     })
-    grunt.log.writeln(chalk`{green browsersync:} setup done!`)
-    done()
+    browserSync.init(browserSyncOptions, () => {
+      grunt.log.writeln(chalk`{green browsersync:} setup done!`)
+      done()
+    })
   })
 
   // eslint-disable-next-line no-unused-vars
