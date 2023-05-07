@@ -389,14 +389,16 @@ export default (sbp('sbp/selectors/register', {
         if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeyRequests?.length) {
           return
         }
+        // TODO: Handle boolean (success) value
 
-        if (state._vm.pendingKeyshares && v in state._vm.pendingKeyshares) {
-          const keyId = state._vm.pendingKeyshares[v][2].outerKeyId
+        if (state._vm.pendingKeyshares && v.keyRequestHash in state._vm.pendingKeyshares) {
+          const hash = v.keyRequestHash
+          const keyId = state._vm.pendingKeyshares[hash][2].outerKeyId
           if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
-            state._vm?.invites?.[keyId]?.responses.push(state._vm.pendingKeyshares[v][0])
+            state._vm?.invites?.[keyId]?.responses.push(state._vm.pendingKeyshares[hash][0])
           }
-          const originatingContractID = state._vm.pendingKeyshares[v][0]
-          delete state._vm.pendingKeyshares[v]
+          const originatingContractID = state._vm.pendingKeyshares[hash][0]
+          delete state._vm.pendingKeyshares[hash]
           delete self.postSyncOperations[contractID]?.['respondToKeyRequests-' + originatingContractID]
         }
       },
@@ -660,11 +662,14 @@ export default (sbp('sbp/selectors/register', {
           },
           signingKeyId
         })
+
+        // 4. Remove originating contract and update current contract with information
+        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: { keyRequestHash: hash, success: true } })
       } catch (e) {
         console.error('Error at respondToKeyRequests', e)
-      } finally {
+
         // 4. Remove originating contract and update current contract with information
-        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: hash })
+        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: { keyRequestHash: hash, success: false } })
       }
     }))
   },

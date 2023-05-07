@@ -31,7 +31,7 @@ export type GIOpKeyRequest = {
   encryptionKeyId: string;
   data: string;
 }
-export type GIOpKeyRequestResponse = string
+export type GIOpKeyRequestResponse = { keyRequestHash: string; success: boolean };
 
 export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krr'
 export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestResponse
