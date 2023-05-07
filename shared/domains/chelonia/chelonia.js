@@ -558,8 +558,7 @@ export default (sbp('sbp/selectors/register', {
     const signatureFn = signingKey ? signatureFnBuilder(signingKey) : undefined
     const payload = ({
       type: contractName,
-      keys: keys,
-      nonce: generateSalt()
+      keys: keys
     }: GIOpContract)
     const contractMsg = GIMessage.createV1_0({
       contractID: null,
