@@ -237,7 +237,7 @@ export default ({
         isAnyoneLink,
         invitee: isAnyoneLink ? L('Anyone') : invitee,
         inviteSecret,
-        inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
+        inviteLink: buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, inviteSecret),
         description: this.inviteStatusDescription({
           isAnyoneLink, isInviteExpired, isInviteRevoked, isAllInviteUsed, quantity: initialQuantity, numberOfResponses
         }),

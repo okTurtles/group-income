@@ -115,20 +115,27 @@ export default ({
           }
           return
         }
-        const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
-        // TODO: Derive public key from secret
+        /* */ const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
+
+        console.log(JSON.parse(JSON.stringify(state)))
+
         const secretKey = deserializeKey(this.ephemeral.query.secret)
         const publicKey = keyId(secretKey)
         const invite = state._vm.invites[publicKey]
-        if (!invite /* || invite.status !== INVITE_STATUS.VALID */) {
-          console.error('Join.vue error: Link is not valid.')
-          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
-          this.pageStatus = 'INVALID'
-          return
-        } else if (invite.expires < Date.now()) {
+        if (invite?.expires < Date.now()) {
           console.log('Join.vue error: Link is already expired.')
           this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
           this.pageStatus = 'EXPIRED'
+          return
+        } else if (invite?.initialQuantity > 0 && !invite.quantity) {
+          console.log('Join.vue error: Link is already expired.')
+          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+          this.pageStatus = 'EXPIRED'
+          return
+        } if (!invite /* || invite.status !== INVITE_STATUS.VALID */) {
+          console.error('Join.vue error: Link is not valid.')
+          this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+          this.pageStatus = 'INVALID'
           return
         }
         let creator = null
@@ -146,13 +153,14 @@ export default ({
           creatorPicture = userState.attributes.picture
         }
 
+        console.log({ state })
+
         this.ephemeral.invitation = {
-          groupName: state.settings.groupName,
-          groupPicture: state.settings.groupPicture,
+          groupName: this.ephemeral.query.groupName ?? L('(group name unavailable)'),
           creator,
           creatorPicture,
           message
-        }
+        } /* */
         this.pageStatus = 'SIGNING'
       } catch (e) {
         console.error(e)

@@ -11,7 +11,7 @@ import { b64ToStr } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
-import { ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import type { GIKey, GIOpContract, GIOpActionUnencrypted, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpKeyRequest, GIOpKeyRequestResponse } from './GIMessage.js'
 import { keyId, sign, encrypt, decrypt, generateSalt } from './crypto.js'
 import type { Key } from './crypto.js'
@@ -144,7 +144,13 @@ const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
   const key = this.config.transientSecretKeys?.[eKeyId] || state?._volatile?.keys?.[eKeyId]
 
   if (!key) {
-    return JSON.stringify(message)
+    if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
+      console.error('Encryption key not found. Sending plaintext message', { message, eKeyId })
+      return JSON.stringify(message)
+    } else {
+      console.error('Encryption key not found', { message, eKeyId })
+      throw new ChelErrorUnexpected('Encryption key not found')
+    }
   }
 
   return {
@@ -155,7 +161,13 @@ const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
 
 const decryptFn = function (message: Object, state: ?Object) {
   if (typeof message === 'string') {
-    return JSON.parse(message)
+    if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
+      console.error('Processing unsafe unencrypted message', { message })
+      return JSON.parse(message)
+    } else {
+      console.error('Refused to process unsafe unencrypted message', { message })
+      throw new ChelErrorUnexpected('Decryption key not found')
+    }
   }
 
   const keyId = message.keyId
@@ -725,6 +737,7 @@ export default (sbp('sbp/selectors/register', {
       signatureFn: signingKey ? signatureFnBuilder(signingKey) : undefined
     })
     hooks && hooks.prepublish && hooks.prepublish(msg)
+    // TODO: Pick CSK instead
     const keyShareKeys = ((Object.values(state._vm?.authorizedKeys ?? {}): any): GIKey[]).filter((k) => k?.permissions.includes(GIMessage.OP_KEY_REQUEST_RESPONSE)).map((k) => ({ ...k, permissions: [GIMessage.OP_KEYSHARE], meta: { keyRequest: { id: msg.id(), contractID, outerKeyId } } }))
     // TODO: REMOVE THE console.log below
     console.log({ keyShareKeys, originatingContractID, contractID, st: state, svm: state._vm?.authorizedKeys })

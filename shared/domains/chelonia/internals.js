@@ -269,7 +269,7 @@ export default (sbp('sbp/selectors/register', {
           throw new Error('External contracts can only set keys for themselves')
         }
 
-        delete self.postSyncOperations[contractID]['pending-keys-for-' + v.contractID]
+        delete self.postSyncOperations[contractID]?.['pending-keys-for-' + v.contractID]
 
         const cheloniaState = sbp(self.config.stateSelector)
 
@@ -298,6 +298,16 @@ export default (sbp('sbp/selectors/register', {
           }
         }
 
+        // If we already have the keys, we can return as the contract state will not be affected
+        const receivedNewKeys = !targetState._volatile?.keys || Object.keys(sharedKeys).reduce((acc, keyId) => acc && !!targetState._volatile.keys[keyId], true)
+
+        if (!receivedNewKeys) {
+          console.log({ receivedNewKeys, sharedKeys, existingKeys: targetState._volatile?.keys })
+          return
+        }
+
+        const existingKeys = targetState._volatile?.keys
+
         Promise.resolve().then(async () => {
           console.log('Processing OP_KEYSHARE (inside promise)')
           if (targetState._volatile?.pendingKeyRequests && targetState._volatile.pendingKeyRequests.length) {
@@ -306,10 +316,12 @@ export default (sbp('sbp/selectors/register', {
               return
             }
             console.log('Inside pendingKeyRequests if')
+            // Since we have received new keys, the current contract state might be wrong, so we need to remove the contract and resync
             await sbp('chelonia/contract/remove', v.contractID)
             // Sync...
             await sbp('chelonia/configure', {
               transientSecretKeys: {
+                ...existingKeys,
                 ...keys,
                 ...sharedKeys
               }
@@ -329,7 +341,10 @@ export default (sbp('sbp/selectors/register', {
         }).then(() => {
           if (!targetState._volatile) targetState._volatile = Object.create(null)
           if (!targetState._volatile.keys) {
-            targetState._volatile.keys = sharedKeys
+            targetState._volatile.keys = {
+              ...existingKeys,
+              ...sharedKeys
+            }
           } else {
             Object.entries((sharedKeys: any)).forEach(([k, v]) => { targetState._volatile.keys[k] = v })
           }
@@ -367,6 +382,7 @@ export default (sbp('sbp/selectors/register', {
         ]
 
         // Call 'chelonia/private/respondToKeyRequests' after sync
+        self.postSyncOperations[contractID] = self.postSyncOperations[contractID] || Object.create(null)
         self.postSyncOperations[contractID]['respondToKeyRequests-' + message.contractID()] = ['chelonia/private/respondToKeyRequests', contractID]
       },
       [GIMessage.OP_KEY_REQUEST_RESPONSE] (v: GIOpKeyRequestResponse) {
@@ -379,7 +395,9 @@ export default (sbp('sbp/selectors/register', {
           if (Array.isArray(state._vm?.invites?.[keyId]?.responses)) {
             state._vm?.invites?.[keyId]?.responses.push(state._vm.pendingKeyshares[v][0])
           }
+          const originatingContractID = state._vm.pendingKeyshares[v][0]
           delete state._vm.pendingKeyshares[v]
+          delete self.postSyncOperations[contractID]?.['respondToKeyRequests-' + originatingContractID]
         }
       },
       [GIMessage.OP_PROP_DEL]: notImplemented,
@@ -420,9 +438,13 @@ export default (sbp('sbp/selectors/register', {
           if (key.meta?.keyRequest) {
             const { id, contractID, outerKeyId } = key.meta?.keyRequest
 
-            if (contractID) {
-              const rootState = sbp(config.stateSelector)
+            const rootState = sbp(config.stateSelector)
 
+            // Are we subscribed to this contract?
+            // If we are not subscribed to the contract, we don't set pendingKeyRequests because we don't need that contract's state
+            // Setting pendingKeyRequests in these cases could result in issues
+            // when a corresponding OP_KEYSHARE is received, which could trigger subscribing to this previously unsubscribed to contract
+            if (contractID && rootState.contracts[contractID]) {
               if (!rootState[contractID]) {
                 config.reactiveSet(rootState, contractID, { _volatile: { pendingKeyRequests: [] } })
               } else if (!rootState[contractID]._volatile) {
@@ -434,6 +456,7 @@ export default (sbp('sbp/selectors/register', {
               // Mark the contract for which keys were requested as pending keys
               rootState[contractID]._volatile.pendingKeyRequests.push({ id, outerKeyId })
 
+              self.postSyncOperations[message.contractID()] = self.postSyncOperations[message.contractID()] || Object.create(null)
               self.postSyncOperations[message.contractID()]['pending-keys-for-' + contractID] = ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID }]
             }
           }
@@ -539,9 +562,15 @@ export default (sbp('sbp/selectors/register', {
       } else {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
       }
-      await Promise.all(Object.values(this.postSyncOperations[contractID]).map((op) => sbp.apply(sbp, op)))
-      // await sbp('chelonia/private/respondToKeyRequests', contractID)
-      // this.postSyncOperations[contractID]['respondToKeyRequests'] = ['chelonia/private/respondToKeyRequests', contractID]
+
+      // The postSyncOperations might await on calls to withEnv or queue event, leading to a deadlock. Therefore, we specifically and deliberately don't await on these calls
+      Object.values(this.postSyncOperations[contractID]).map(async (op) => {
+        try {
+          await sbp.apply(sbp, op)
+        } catch (e) {
+          console.error(`Post-sync operation for ${contractID} failed`, { contractID, op, error: e?.message || e })
+        }
+      })
     } catch (e) {
       console.error(`[chelonia] syncContract error: ${e.message || e}`, e)
       this.config.hooks.syncContractError?.(e, contractID)

@@ -343,9 +343,8 @@ export default (sbp('sbp/selectors/register', {
         if (!state.profiles?.[username]) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
-          await sbp('chelonia/out/actionEncrypted', {
+          await sbp('gi.actions/group/inviteAccept', {
             ...omit(params, ['options', 'action', 'hooks']),
-            action: 'gi.contracts/group/inviteAccept',
             hooks: {
               prepublish: params.hooks?.prepublish,
               postpublish: null
@@ -443,10 +442,9 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
     sbp('gi.actions/group/updateLastLoggedIn', { contractID: groupId })
-
     sbp('okTurtles.events/emit', SWITCH_GROUP)
   },
-  'gi.actions/group/addChatRoom': async function (params: GIActionParams) {
+  ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
     const contractState = sbp('state/vuex/state')[params.contractID]
     for (const contractId in contractState.chatRooms) {
       if (params.data.attributes.name.toUpperCase() === contractState.chatRooms[contractId].name.toUpperCase()) {
@@ -468,9 +466,8 @@ export default (sbp('sbp/selectors/register', {
       theirContractID: message.contractID()
     })
 
-    await sbp('chelonia/out/actionEncrypted', {
+    await sendMessage({
       ...omit(params, ['options', 'action', 'data', 'hooks']),
-      action: 'gi.contracts/group/addChatRoom',
       data: {
         ...params.data,
         chatRoomID: message.contractID()
@@ -482,53 +479,47 @@ export default (sbp('sbp/selectors/register', {
     })
 
     return message
-  },
-  'gi.actions/group/joinChatRoom': async function (params: GIActionParams) {
-    try {
-      const rootState = sbp('state/vuex/state')
-      const rootGetters = sbp('state/vuex/getters')
-      const me = rootState.loggedIn.username
-      const username = params.data.username || me
+  }),
+  ...encryptedAction('gi.actions/group/joinChatRoom', L('Failed to join chat channel.'), async function (sendMessage, params) {
+    const rootState = sbp('state/vuex/state')
+    const rootGetters = sbp('state/vuex/getters')
+    const me = rootState.loggedIn.username
+    const username = params.data.username || me
 
-      if (!rootGetters.isJoinedChatRoom(params.data.chatRoomID) && username !== me) {
-        throw new GIErrorUIRuntimeError(L('Only channel members can invite others to join.'))
-      }
-
-      const message = await sbp('gi.actions/chatroom/join', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-        contractID: params.data.chatRoomID,
-        data: { username },
-        hooks: {
-          prepublish: params.hooks?.prepublish,
-          postpublish: null
-        }
-      })
-
-      if (username === me) {
-        // 'JOINING_GROUP_CHAT' is necessary to identify the joining chatroom action is NEW or OLD
-        // Users join the chatroom thru group making group actions
-        // But when user joins the group, he needs to ignore all the actions about chatroom
-        // Because the user is joining group, not joining chatroom
-        // and he is going to make a new action to join 'General' chatroom AGAIN
-        // While joining group, we don't set this flag because Joining chatroom actions are all OLD ones, which need to be ignored
-        // Joining 'General' chatroom is one of the steps to join group
-        // So setting 'JOINING_GROUP_CHAT' can not be out of the 'JOINING_GROUP' scope
-        sbp('okTurtles.data/set', 'JOINING_GROUP_CHAT', true)
-      }
-      await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options', 'action', 'hooks']),
-        action: 'gi.contracts/group/joinChatRoom',
-        hooks: {
-          prepublish: null,
-          postpublish: params.hooks?.postpublish
-        }
-      })
-      return message
-    } catch (e) {
-      console.error('gi.actions/group/joinChatRoom failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to join chat channel.'))
+    if (!rootGetters.isJoinedChatRoom(params.data.chatRoomID) && username !== me) {
+      throw new GIErrorUIRuntimeError(L('Only channel members can invite others to join.'))
     }
-  },
+
+    const message = await sbp('gi.actions/chatroom/join', {
+      ...omit(params, ['options', 'contractID', 'data', 'hooks']),
+      contractID: params.data.chatRoomID,
+      data: { username },
+      hooks: {
+        prepublish: params.hooks?.prepublish,
+        postpublish: null
+      }
+    })
+
+    if (username === me) {
+      // 'JOINING_GROUP_CHAT' is necessary to identify the joining chatroom action is NEW or OLD
+      // Users join the chatroom thru group making group actions
+      // But when user joins the group, he needs to ignore all the actions about chatroom
+      // Because the user is joining group, not joining chatroom
+      // and he is going to make a new action to join 'General' chatroom AGAIN
+      // While joining group, we don't set this flag because Joining chatroom actions are all OLD ones, which need to be ignored
+      // Joining 'General' chatroom is one of the steps to join group
+      // So setting 'JOINING_GROUP_CHAT' can not be out of the 'JOINING_GROUP' scope
+      sbp('okTurtles.data/set', 'JOINING_GROUP_CHAT', true)
+    }
+    await sendMessage({
+      ...omit(params, ['options', 'action', 'hooks']),
+      hooks: {
+        prepublish: null,
+        postpublish: params.hooks?.postpublish
+      }
+    })
+    return message
+  }),
   'gi.actions/group/addAndJoinChatRoom': async function (params: GIActionParams) {
     const message = await sbp('gi.actions/group/addChatRoom', {
       ...omit(params, ['options', 'hooks']),
@@ -556,8 +547,8 @@ export default (sbp('sbp/selectors/register', {
 
     return message
   },
-  'gi.actions/group/renameChatRoom': async function (params: GIActionParams) {
-    try {
+  ...encryptedAction('gi.actions/group/renameChatRoom', L('Failed to rename chat channel.'),
+    async function (sendMessage, params) {
       await sbp('gi.actions/chatroom/rename', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: params.data.chatRoomID,
@@ -570,21 +561,36 @@ export default (sbp('sbp/selectors/register', {
         }
       })
 
-      return await sbp('chelonia/out/actionEncrypted', {
+      return await sendMessage({
         ...omit(params, ['options', 'action', 'hooks']),
-        action: 'gi.contracts/group/renameChatRoom',
         hooks: {
           prepublish: null,
           postpublish: params.hooks?.postpublish
         }
       })
-    } catch (e) {
-      console.error('gi.actions/group/renameChatRoom failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to rename chat channel.'))
-    }
-  },
-  'gi.actions/group/changeChatRoomDescription': async function (params: GIActionParams) {
-    try {
+    }),
+  ...encryptedAction('gi.actions/group/removeMember',
+    (params, e) => L('Failed to remove {member}: {reportError}', {
+      member: params.data.member, ...LError(e)
+    }),
+    async function (sendMessage, params) {
+      await leaveAllChatRooms(params.contractID, params.data.member)
+      return sendMessage({
+        ...omit(params, ['options', 'action'])
+      })
+    }),
+  ...encryptedAction('gi.actions/group/removeOurselves',
+    (e) => L('Failed to leave group. {codeError}', { codeError: e.message }),
+    async function (sendMessage, params) {
+      const rootState = sbp('state/vuex/state')
+      await leaveAllChatRooms(params.contractID, rootState.loggedIn.username)
+      return sendMessage({
+        ...omit(params, ['options', 'action'])
+      })
+    }),
+  ...encryptedAction('gi.actions/group/changeChatRoomDescription',
+    L('Failed to update description of chat channel.'),
+    async function (sendMessage, params) {
       await sbp('gi.actions/chatroom/changeDescription', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: params.data.chatRoomID,
@@ -599,44 +605,14 @@ export default (sbp('sbp/selectors/register', {
 
       // NOTE: group contract should keep updated with all attributes of its chatrooms
       //       so that group members can check chatroom details whether or not they are part of
-      return await sbp('chelonia/out/actionEncrypted', {
+      return sendMessage({
         ...omit(params, ['options', 'action', 'hooks']),
-        action: 'gi.contracts/group/changeChatRoomDescription',
         hooks: {
           prepublish: null,
           postpublish: params.hooks?.postpublish
         }
       })
-    } catch (e) {
-      console.error('gi.actions/group/changeChatRoomDescription failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to update description of chat channel.'))
-    }
-  },
-  'gi.actions/group/removeMember': async function (params: GIActionParams) {
-    await leaveAllChatRooms(params.contractID, params.data.member)
-
-    try {
-      return await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options', 'action']),
-        action: 'gi.contracts/group/removeMember'
-      })
-    } catch (e) {
-      throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }))
-    }
-  },
-  'gi.actions/group/removeOurselves': async function (params: GIActionParams) {
-    const rootState = sbp('state/vuex/state')
-    await leaveAllChatRooms(params.contractID, rootState.loggedIn.username)
-
-    try {
-      return await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options', 'action']),
-        action: 'gi.contracts/group/removeOurselves'
-      })
-    } catch (e) {
-      throw new GIErrorUIRuntimeError(L('Failed to leave group. {codeError}', { codeError: e.message }))
-    }
-  },
+    }),
   'gi.actions/group/autobanUser': async function (message: GIMessage, error: Object, attempt = 1) {
     try {
       if (attempt === 1) {
@@ -712,44 +688,38 @@ export default (sbp('sbp/selectors/register', {
       // inside of the exception handler :-(
     }
   },
-  'gi.actions/group/notifyExpiringProposals': async function (params: GIActionParams) {
-    try {
-      const { proposals } = params.data
-      await sbp('chelonia/out/actionEncrypted', {
-        ...omit(params, ['options', 'data', 'action', 'hooks']),
-        data: proposals.map(p => p.proposalId),
-        action: 'gi.contracts/group/notifyExpiringProposals',
+  ...encryptedAction('gi.actions/group/notifyExpiringProposals', L('Failed to notify expiring proposals.'), async function (sendMessage, params) {
+    const { proposals } = params.data
+    await sendMessage({
+      ...omit(params, ['options', 'data', 'action', 'hooks']),
+      data: proposals.map(p => p.proposalId),
+      hooks: {
+        prepublish: params.hooks?.prepublish,
+        postpublish: null
+      }
+    })
+
+    const rootState = sbp('state/vuex/state')
+    const { generalChatRoomId } = rootState[params.contractID]
+
+    for (const proposal of proposals) {
+      await sbp('gi.actions/chatroom/addMessage', {
+        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
+        contractID: generalChatRoomId,
+        data: {
+          type: MESSAGE_TYPES.INTERACTIVE,
+          proposal: {
+            ...proposal,
+            variant: PROPOSAL_VARIANTS.EXPIRING
+          }
+        },
         hooks: {
           prepublish: params.hooks?.prepublish,
           postpublish: null
         }
       })
-
-      const rootState = sbp('state/vuex/state')
-      const { generalChatRoomId } = rootState[params.contractID]
-
-      for (const proposal of proposals) {
-        await sbp('gi.actions/chatroom/addMessage', {
-          ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-          contractID: generalChatRoomId,
-          data: {
-            type: MESSAGE_TYPES.INTERACTIVE,
-            proposal: {
-              ...proposal,
-              variant: PROPOSAL_VARIANTS.EXPIRING
-            }
-          },
-          hooks: {
-            prepublish: params.hooks?.prepublish,
-            postpublish: null
-          }
-        })
-      }
-    } catch (e) {
-      console.error('gi.actions/group/noticeExpiringProposal failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to notify expiring proposals.'))
     }
-  },
+  }),
   'gi.actions/group/displayMincomeChangedPrompt': async function ({ data }: GIActionParams) {
     const { withGroupCurrency } = sbp('state/vuex/getters')
     const promptOptions = data.increased
@@ -774,6 +744,7 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
+  ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.')),
   ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),

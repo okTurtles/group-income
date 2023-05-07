@@ -45,7 +45,7 @@ export default ({
       }
     },
     link () {
-      return buildInvitationUrl(this.$store.state.currentGroupId, this.welcomeInviteSecret)
+      return buildInvitationUrl(this.$store.state.currentGroupId, this.currentGroupState.settings?.groupName, this.welcomeInviteSecret)
     },
     expireDate () {
       // TODO retrive real expire date

@@ -60,12 +60,15 @@ process.env.GI_VERSION = `${packageJSON.version}@${new Date().toISOString()}`
 // We will rather load it later, and only if necessary.
 // require('@babel/register')
 
+// TODO: Change defult value for ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND
+
 const {
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
   GI_VERSION,
   NODE_ENV = 'development',
-  EXPOSE_SBP = ''
+  EXPOSE_SBP = '',
+  ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND = 'true'
 } = process.env
 
 const backendIndex = './backend/index.js'
@@ -198,7 +201,8 @@ module.exports = (grunt) => {
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,
-        'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`
+        'process.env.EXPOSE_SBP': `'${EXPOSE_SBP}'`,
+        'process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND': `'${ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND}'`
       },
       external: ['crypto', '*.eot', '*.ttf', '*.woff', '*.woff2'],
       format: 'esm',

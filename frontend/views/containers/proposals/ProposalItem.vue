@@ -287,7 +287,7 @@ export default ({
       ) {
         const secret = this.proposal.payload.inviteSecret
         if (this.currentGroupState.invites[secret]?.status === INVITE_STATUS.VALID) {
-          return buildInvitationUrl(this.currentGroupId, this.proposal.payload.inviteSecret)
+          return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.proposal.payload.inviteSecret)
         }
       }
       return false

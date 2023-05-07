@@ -6,17 +6,23 @@ import { GIErrorUIRuntimeError, LError } from '@common/common.js'
 import type { GIActionParams } from './types.js'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 
-export function encryptedAction (action: string, humanError: string | Function): Object {
+export function encryptedAction (action: string, humanError: string | Function, handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams) => Promise<void>): Object {
+  const sendMessage = (outerParams: GIActionParams, state: Object) => (innerParams?: $Shape<GIActionParams>) => sbp('chelonia/out/actionEncrypted', {
+    ...(innerParams ?? outerParams),
+    signingKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string),
+    encryptionKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'cek')?.id: ?string),
+    action: action.replace('gi.actions', 'gi.contracts')
+  })
   return {
     [action]: async function (params: GIActionParams) {
       try {
         const state = await sbp('chelonia/latestContractState', params.contractID)
-        return await sbp('chelonia/out/actionEncrypted', {
-          ...params,
-          signingKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string),
-          encryptionKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'cek')?.id: ?string),
-          action: action.replace('gi.actions', 'gi.contracts')
-        })
+
+        if (handler) {
+          return handler(sendMessage(params, state), params)
+        } else {
+          return sendMessage(params, state)()
+        }
       } catch (e) {
         console.error(`${action} failed!`, e)
         const userFacingErrStr = typeof humanError === 'string'

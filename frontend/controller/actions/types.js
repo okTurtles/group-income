@@ -18,9 +18,9 @@ export type GIActionParams = {
   signingKeyId: string;
   encryptionKeyId: ?string;
   hooks?: {
-    prepublishContract?: (Object) => void;
-    prepublish?: (Object) => void;
-    postpublish?: (Object) => void;
+    prepublishContract?: null | (Object) => void;
+    prepublish?: null | (Object) => void;
+    postpublish?: null | (Object) => void;
   };
   publishOptions?: { maxAttempts: number };
 }
