@@ -8,7 +8,7 @@ import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DI
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
-  STATUS_OPEN, STATUS_CANCELLED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PERIODS, PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED, MAX_SAVED_PERIODS,
+  STATUS_OPEN, STATUS_CANCELLED, STATUS_EXPIRED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PERIODS, PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED, MAX_SAVED_PERIODS,
   INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
@@ -548,7 +548,8 @@ sbp('chelonia/defineContract', {
             groupCreator: meta.username,
             distributionPeriodLength: 30 * DAYS_MILLIS,
             inviteExpiryOnboarding: INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
-            inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL
+            inviteExpiryProposal: INVITE_EXPIRES_IN_DAYS.PROPOSAL,
+            allowPublicChannels: false
           },
           streaks: initGroupStreaks(),
           profiles: {
@@ -819,6 +820,23 @@ sbp('chelonia/defineContract', {
         archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID })
       }
     },
+    'gi.contracts/group/markProposalsExpired': {
+      validate: objectOf({
+        proposalIds: arrayOf(string)
+      }),
+      process ({ data, meta, contractID }, { state }) {
+        if (data.proposalIds.length) {
+          for (const proposalId of data.proposalIds) {
+            const proposal = state.proposals[proposalId]
+
+            if (proposal) {
+              Vue.set(proposal, 'status', STATUS_EXPIRED)
+              archiveProposal({ state, proposalHash: proposalId, proposal, contractID })
+            }
+          }
+        }
+      }
+    },
     'gi.contracts/group/notifyExpiringProposals': {
       validate: arrayOf(string),
       process ({ data, meta, contractID }, { state }) {
@@ -1044,7 +1062,8 @@ sbp('chelonia/defineContract', {
         groupPicture: x => typeof x === 'string',
         sharedValues: x => typeof x === 'string',
         mincomeAmount: x => typeof x === 'number' && x > 0,
-        mincomeCurrency: x => typeof x === 'string'
+        mincomeCurrency: x => typeof x === 'string',
+        allowPublicChannels: x => typeof x === 'boolean' // TODO: only group admin can update
       }),
       process ({ contractID, meta, data }, { state, getters }) {
         // If mincome has been updated, cache the old value and use it later to determine if the user should get a 'MINCOME_CHANGED' notification.

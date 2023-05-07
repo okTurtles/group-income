@@ -63,9 +63,12 @@ export default ({
       return prefix + (this.list.channels[id].joined ? '-in' : '-out')
     },
     getIcon (id) {
-      const isPrivate = this.list.channels[id].privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
-      const isJoined = this.list.channels[id].joined
-      return isPrivate ? 'lock' : (isJoined ? 'hashtag' : 'plus')
+      const channelIcon = {
+        [CHATROOM_PRIVACY_LEVEL.PRIVATE]: 'lock',
+        [CHATROOM_PRIVACY_LEVEL.GROUP]: 'hashtag',
+        [CHATROOM_PRIVACY_LEVEL.PUBLIC]: 'unlock-alt'
+      }[this.list.channels[id].privacyLevel]
+      return this.list.channels[id].joined ? channelIcon : 'plus'
     },
     buildUrl (chatRoomId) {
       // NOTE - This should be $store responsability

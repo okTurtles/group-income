@@ -18,7 +18,12 @@
         :aria-label='list.title'
       )
         li(v-for='item of list.items')
-          a.c-item(:class='item.read ? "" : "unread"' @click='handleItemClick(item)' draggable='false' @selectstart='ephemeral.isSelectingText = true')
+          a.c-item(
+            :class='item.read ? "" : "unread"'
+            @click='handleItemClick(item)'
+            draggable='false'
+            @selectstart='ephemeral.isSelectingText = true'
+          )
             span.c-thumbCircle
               avatar-user(:username='item.avatarUsername' size='md')
               i(v-if='item.icon' :class='`icon-${item.icon} ${iconBg(item.level)}`')
@@ -80,7 +85,7 @@ export default ({
       return timeSince(item.timestamp)
     },
     handleItemClick (item) {
-      if (!this.ephemeral.isSelectingText) {
+      if (!this.ephemeral.isSelectingText || !window.getSelection().toString()) {
         this.markAsRead(item)
 
         if (item.sbpInvocation) {

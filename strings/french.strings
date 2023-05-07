@@ -7,6 +7,9 @@
 "Do you make at least {amount} per month?" = "Do you make at least {amount} per month?";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
+"Failed to mark proposals expired." = "Failed to mark proposals expired.";
+
+/* MISSING TRANSLATION - controller/actions/group.js */
 "Failed to send a payment thank you note." = "Failed to send a payment thank you note.";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
@@ -206,6 +209,9 @@
 
 /* MISSING TRANSLATION - views/containers/chatroom/ConversationGreetings.vue */
 "I’m here to keep you update while you are away." = "I’m here to keep you update while you are away.";
+
+/* MISSING TRANSLATION - views/containers/chatroom/CreateNewChannelModal.vue */
+"People from outside the group can see the channel's content" = "People from outside the group can see the channel's content";
 
 /* MISSING TRANSLATION - views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description" = "Description";
@@ -488,6 +494,9 @@
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "Automated" = "Automated";
+
+/* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
+"Expired on {date}" = "Expired on {date}";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "Group Income system is proposing" = "Group Income system is proposing";
@@ -1098,11 +1107,11 @@
 /* views/containers/chatroom/ChatMembersAllModal.vue */
 "Group members only" = "Membres du groupe uniquement";
 
-/* views/containers/chatroom/ChatMembersAllModal.vue */
-"Public channel" = "Salon public";
-
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/CreateNewChannelModal.vue */
 "Private channel" = "Salon privé";
+
+/* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/CreateNewChannelModal.vue */
+"Public channel" = "Salon public";
 
 /* views/containers/chatroom/ChatMembersAllModal.vue, views/containers/chatroom/NewDirectMessageModal.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "Others ({nbMembers})" = "Autres ({nbMembers})";
@@ -1174,6 +1183,9 @@
 "All group members will be added to this channel." = "Tous les membres du groupe seront invités.";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
+"Channel Privacy" = "Confidentialité de la chaîne";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
 "Create a channel" = "Créer un salon";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
@@ -1183,7 +1195,13 @@
 "Failed to create chat channel. {reportError}" = "La création de la conversation a échoué. {reportError}";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
+"Group channel" = "Chaîne de groupe";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
 "Only added members will have access." = "Seuls les membres du salon y auront accès.";
+
+/* views/containers/chatroom/CreateNewChannelModal.vue */
+"Please select" = "Veuillez sélectionner";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description of the channel" = "Description du salon";
@@ -1235,9 +1253,6 @@
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "Leave Channel" = "Quitter le salon";
-
-/* views/containers/chatroom/LeaveChannelModal.vue */
-"Leave and Archive" = "Quitter et archiver";
 
 /* views/containers/chatroom/LeaveChannelModal.vue */
 "You will no longer be able to send or see messages in this channel." = "Vous ne pourrez plus envoyer ni recevoir des messages dans ce salon.";
@@ -1397,6 +1412,9 @@
 
 /* views/containers/chatroom/SendArea.vue */
 "Stop replying" = "Ne plus répondre";
+
+/* views/containers/chatroom/SendArea.vue */
+"This channel is public and everyone on the internet can see its content." = "Cette chaîne est publique et tout le monde sur Internet peut voir son contenu.";
 
 /* views/containers/chatroom/SendArea.vue */
 "Write your message..." = "Envoyer un message...";
@@ -2473,6 +2491,9 @@
 "{numMembers} members" = "{numMembers} membres";
 
 /* views/pages/GroupSettings.vue */
+"Allow members to create public channels" = "Autoriser les membres à créer des chaînes publiques";
+
+/* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "Les modifications apportées à ces paramètres seront visibles par tous les membres du groupe";
 
 /* views/pages/GroupSettings.vue */
@@ -2483,6 +2504,12 @@
 
 /* views/pages/GroupSettings.vue */
 "Leaving the group when you're the only person in it will delete it, but deleting groups is not possible yet." = "Quitter un groupe alors que vous en êtes le seul membre le supprimera, mais il n’est pas encore possible de supprimer des groupes.";
+
+/* views/pages/GroupSettings.vue */
+"Let users create public channels. The data in public channels is intended to be completely public and should be treated with the same care and expectations of privacy that one has with normal social media: that is, you should have zero expectation of any privacy of the content you post to public channels." = "Laissez les utilisateurs créer des chaînes publiques. Les données des canaux publics sont destinées à être entièrement publiques et doivent être traitées avec le même soin et les mêmes attentes de confidentialité que l'on a avec les médias sociaux normaux: c'est-à-dire que vous ne devriez avoir aucune attente de confidentialité du contenu que vous publiez sur les canaux publics.";
+
+/* views/pages/GroupSettings.vue */
+"Public Channels" = "Chaînes publiques";
 
 /* views/pages/GroupSettings.vue */
 "This is the currency that will be displayed for every member of the group, across the platform." = "Ceci est la devise qui sera affichée pour chaque membre du groupe, sur toute la plate-forme.";
@@ -2714,6 +2741,9 @@
 
 /* Not currently used */
 "Join channel" = "Rejoignez la chaîne";
+
+/* Not currently used */
+"Leave and Archive" = "Quitter et archiver";
 
 /* Not currently used */
 "Leave {groupName}" = "Quitter {groupName}";
