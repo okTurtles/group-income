@@ -727,32 +727,30 @@ export default ({
       const toIsJoined = to.isJoined
       const fromIsJoined = from.isJoined
 
+      const initAfterSynced = (chatRoomId) => {
+        sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
+          if (contractID === chatRoomId && isSyncing === false) {
+            this.setInitMessages()
+          }
+        })
+      }
+
       if (toChatRoomId !== fromChatRoomId) {
         this.ephemeral.messagesInitiated = false
         if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
           this.archiveMessageState(fromChatRoomId)
           this.setMessageEventListener({ to: toChatRoomId, from: fromChatRoomId })
-          if (toIsJoined) {
-            if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-              sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
-                if (contractID === toChatRoomId && isSyncing === false) {
-                  this.setInitMessages()
-                }
-              })
-            }
+          if (toIsJoined && sbp('chelonia/contract/isSyncing', toChatRoomId)) {
+            initAfterSynced(toChatRoomId)
           }
         } else {
           this.refreshContent(toChatRoomId, fromChatRoomId)
         }
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
         if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-          sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
-            if (contractID === toChatRoomId && isSyncing === false) {
-              // NOTE: toChatRoomId equals to fromChatRoomId here
-              this.setMessageEventListener({ to: toChatRoomId, from: fromChatRoomId })
-              this.setInitMessages()
-            }
-          })
+          // NOTE: toChatRoomId equals to fromChatRoomId here
+          this.setMessageEventListener({ to: toChatRoomId, from: fromChatRoomId })
+          initAfterSynced(toChatRoomId)
         }
       }
     }
