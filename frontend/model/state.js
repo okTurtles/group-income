@@ -24,7 +24,7 @@ const initialState = {
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
   chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, mentions: [{ messageHash, createdDate }], others: [{ messageHash, createdDate }] }
-  notificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
+  chatNotificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
