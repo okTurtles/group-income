@@ -728,6 +728,8 @@ export default ({
       const fromIsJoined = from.isJoined
 
       const initAfterSynced = (chatRoomId) => {
+        // TODO: `okTurtles.events/once` shouldn't be used here
+        //       since another contract could be started or finished being synced in advance
         sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
           if (contractID === chatRoomId && isSyncing === false) {
             this.setInitMessages()
