@@ -90,7 +90,17 @@ export function createMessage ({ meta, data, hash, id, state }: {
   if (type === MESSAGE_TYPES.TEXT) {
     newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
   } else if (type === MESSAGE_TYPES.POLL) {
-    // TODO: Poll message creation
+    const details = data.pollDetails
+
+    newMessage = {
+      ...newMessage,
+      pollCreator: meta.username, // This field can be redundant, as 'from' field basically means the same, but anyways.
+      pollDetails: {
+        ...details,
+        // 'voted' field below will contain the user names of the users who has voted for this option
+        options: details.options.map(opt => ({ ...opt, voted: [] }))
+      }
+    }
   } else if (type === MESSAGE_TYPES.NOTIFICATION) {
     const params = {
       channelName: state?.attributes.name,

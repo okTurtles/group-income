@@ -64,11 +64,13 @@
 
 <script>
 import sbp from '@sbp/sbp'
+import { mapGetters } from 'vuex'
 import { Vue, L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
 import { OPEN_POLL, CLOSE_POLL } from '@utils/events.js'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 const createRandomId = () => Math.random().toString(20).slice(2)
@@ -101,6 +103,9 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'currentChatRoomId'
+    ]),
     optionCount () {
       return this.form.options.length
     },
@@ -153,7 +158,17 @@ export default {
       }
     },
     submit () {
-      alert('TODO: create poll.')
+      sbp('gi.actions/chatroom/addMessage', {
+        contractID: this.currentChatRoomId,
+        data: {
+          type: MESSAGE_TYPES.POLL,
+          pollDetails: {
+            question: this.form.question,
+            options: this.form.options
+          }
+        }
+      })
+
       this.close()
     }
   },
@@ -180,7 +195,7 @@ export default {
     return {
       form: {
         question: {
-          [L('The question is required.')]: required
+          [L('A question is required.')]: required
         }
       }
     }

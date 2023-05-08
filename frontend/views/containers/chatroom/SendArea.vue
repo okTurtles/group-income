@@ -116,6 +116,8 @@
     .textarea.c-send-mask(
       ref='mask'
     )
+
+    create-poll.c-poll(ref='poll')
 </template>
 
 <script>
@@ -384,7 +386,10 @@ export default ({
     openCreatePollModal () {
       const bbox = this.$el.getBoundingClientRect()
       console.log('bbox: ', bbox)
-      this.$refs.poll.open({ left: `${bbox.left}px`, bottom: `${innerHeight - bbox.top + 16}px` })
+      this.$refs.poll.open({
+        left: `${bbox.left + 40}px`, // 40 -> 2.5rem padding-left
+        bottom: `${innerHeight - bbox.top + 8}px` // 8 -> 0.5rem gap
+      })
     },
     selectEmoticon (emoticon) {
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
