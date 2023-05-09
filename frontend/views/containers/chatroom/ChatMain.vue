@@ -48,10 +48,12 @@
           :is='messageType(message)'
           :ref='message.hash'
           :key='message.id'
+          :messageId='message.id'
           :text='message.text'
           :type='message.type'
           :notification='message.notification'
           :proposal='message.proposal'
+          :pollData='message.pollData'
           :replyingMessage='replyingMessage(message)'
           :from='message.from'
           :datetime='time(message.datetime)'
@@ -104,6 +106,7 @@ import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
+import MessagePoll from './MessagePoll.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
@@ -131,6 +134,7 @@ export default ({
     Message,
     MessageInteractive,
     MessageNotification,
+    MessagePoll,
     SendArea,
     ViewArea
   },

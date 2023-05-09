@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
-import { INVITE_STATUS, MESSAGE_TYPES } from './constants.js'
+import { INVITE_STATUS, MESSAGE_TYPES, POLL_STATUS } from './constants.js'
 import { DAYS_MILLIS } from './time.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
@@ -94,9 +94,10 @@ export function createMessage ({ meta, data, hash, id, state }: {
 
     newMessage = {
       ...newMessage,
-      pollCreator: meta.username, // This field can be redundant, as 'from' field basically means the same, but anyways.
-      pollDetails: {
+      pollData: {
         ...details,
+        creator: meta.username,
+        status: POLL_STATUS.ACTIVE,
         // 'voted' field below will contain the user names of the users who has voted for this option
         options: details.options.map(opt => ({ ...opt, voted: [] }))
       }
