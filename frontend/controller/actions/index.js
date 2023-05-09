@@ -1,5 +1,6 @@
 import sbp from '@sbp/sbp'
-import { deserializeKey, encrypt } from '~/shared/domains/chelonia/crypto.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { deserializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 
 export { default as chatroom } from './chatroom.js'

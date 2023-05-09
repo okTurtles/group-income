@@ -131,10 +131,11 @@ export default (sbp('sbp/selectors/register', {
   },
   // used by, e.g. 'chelonia/contract/wait'
   'chelonia/private/noop': function () {},
-  'chelonia/private/withEnv': function (env: Object, sbpInvocation: Array<*>) {
+  'chelonia/private/withEnv': async function (env: Object, sbpInvocation: Array<*>) {
     const savedEnv = this.env
+    this.env = env
     try {
-      return sbp(...sbpInvocation)
+      return await sbp(...sbpInvocation)
     } finally {
       this.env = savedEnv
     }

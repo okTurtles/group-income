@@ -278,7 +278,7 @@ export default (sbp('sbp/selectors/register', {
 
       const sendKeyRequest = (!rootState[params.contractID] && params.originatingContractID)
 
-      await sbp('chelonia/withEnv', { skipActionProcessing: sendKeyRequest || rootState[params.contractID]?._volatile?.pendingKeyRequests?.length }, ['chelonia/contract/sync', params.contractID])
+      await sbp('chelonia/withEnv', { skipActionProcessing: !!sendKeyRequest || !!rootState[params.contractID]?._volatile?.pendingKeyRequests?.length }, ['chelonia/contract/sync', params.contractID])
       if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
       }
