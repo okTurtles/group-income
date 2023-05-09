@@ -199,6 +199,11 @@ export default ({
     margin-bottom: 1rem;
   }
 
+  @include phone {
+    margin: -1.5rem -1rem 0 -1rem;
+    height: calc(100% + 1.5rem);
+  }
+
   &:last-child {
     margin-bottom: 2rem;
   }
