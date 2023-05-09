@@ -11,7 +11,7 @@ import { b64ToStr } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
-import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { ChelErrorUnexpected, ChelErrorUnrecoverable, ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound } from './errors.js'
 import type { GIKey, GIOpContract, GIOpActionUnencrypted, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpKeyRequest, GIOpKeyRequestResponse } from './GIMessage.js'
 import { keyId, sign, encrypt, decrypt } from './crypto.js'
 import type { Key } from './crypto.js'
@@ -173,7 +173,7 @@ const decryptFn = function (message: Object, state: ?Object) {
       return JSON.parse(message.content)
     } else {
       console.error('Refused to process unsafe unencrypted message', { message: message.content })
-      throw new ChelErrorUnexpected('Decryption key not found')
+      throw new ChelErrorDecryptionError('Received unexpected unencrypted message')
     }
   }
 
@@ -182,10 +182,14 @@ const decryptFn = function (message: Object, state: ?Object) {
 
   if (!key) {
     console.log({ message, state, keyId, env: this.env })
-    throw new Error(`Key ${keyId} not found`)
+    throw new ChelErrorDecryptionKeyNotFound(`Key ${keyId} not found`)
   }
 
-  return JSON.parse(decrypt(key, message.content))
+  try {
+    return JSON.parse(decrypt(key, message.content))
+  } catch (e) {
+    throw new ChelErrorDecryptionError(e?.message || e)
+  }
 }
 
 export default (sbp('sbp/selectors/register', {
