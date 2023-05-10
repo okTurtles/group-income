@@ -16,7 +16,7 @@ export default ({
   inheritAttrs: false,
   methods: {
     handleSelect () {
-      this.$listeners.click && this.$listeners.click()
+      // this.$listeners.click && this.$listeners.click()
       this.Menu.handleSelect(this.$attrs['item-id']) // Use $attrs to access passed props
     }
   }

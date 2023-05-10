@@ -7,7 +7,7 @@ menu-parent(ref='menu')
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Add reaction")'
-        @click='action("openEmoticon", $event)'
+        @click='action("openEmoticon")'
       )
         i.icon-smile-beam
 
@@ -53,7 +53,7 @@ menu-parent(ref='menu')
     ul
       menu-item.hide-desktop.is-icon-small(
         tag='button'
-        @click='action("openEmoticon", $event)'
+        @click='action("openEmoticon")'
       )
         i.icon-smile-beam
         i18n Add reaction
