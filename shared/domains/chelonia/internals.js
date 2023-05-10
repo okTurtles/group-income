@@ -485,7 +485,14 @@ export default (sbp('sbp/selectors/register', {
 
     // Signature verification
     // TODO: Temporary. Skip verifying default signatures
-    if (!isNaN(0) && signature.type !== 'default') {
+    if (signature.type === 'default') {
+      if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
+        console.error('Received unsigned message', message)
+      } else {
+        console.error('Received unsigned message. Aborting.', message)
+        throw new ChelErrorUnexpected('Received unsigned message')
+      }
+    } else {
       // This sync code has potential issues
       // The first issue is that it can deadlock if there are circular references
       // The second issue is that it doesn't handle key rotation. If the key used for signing is invalidated / removed from the originating contract, we won't have it in the state

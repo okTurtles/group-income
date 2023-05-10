@@ -14,12 +14,22 @@ import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 // Note that this function does not currently support specifying custom encryption
 // or signing keys, and that such keys in params get overridden.
 export function encryptedAction (action: string, humanError: string | Function, handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams) => Promise<void>): Object {
-  const sendMessage = (outerParams: GIActionParams, state: Object) => (innerParams?: $Shape<GIActionParams>) => sbp('chelonia/out/actionEncrypted', {
-    ...(innerParams ?? outerParams),
-    signingKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string),
-    encryptionKeyId: (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'cek')?.id: ?string),
-    action: action.replace('gi.actions', 'gi.contracts')
-  })
+  const sendMessage = (outerParams: GIActionParams, state: Object) => (innerParams?: $Shape<GIActionParams>) => {
+    const signingKeyId = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)
+    const encryptionKeyId = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'cek')?.id: ?string)
+
+    if (!state?._volatile?.keys || !state._volatile.keys[signingKeyId] || !state._volatile.keys[signingKeyId]) {
+      console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)
+      return
+    }
+
+    return sbp('chelonia/out/actionEncrypted', {
+      ...(innerParams ?? outerParams),
+      signingKeyId,
+      encryptionKeyId,
+      action: action.replace('gi.actions', 'gi.contracts')
+    })
+  }
   return {
     [action]: async function (params: GIActionParams) {
       try {

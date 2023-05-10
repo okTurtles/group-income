@@ -213,10 +213,15 @@ export class GIMessage {
 }
 
 function defaultSignatureFn (data: string) {
-  return {
-    type: 'default',
-    sig: blake32Hash(data)
+  if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
+    console.error('Using defaultSignatureFn', { data })
+    return {
+      type: 'default',
+      sig: blake32Hash(data)
+    }
   }
+  console.error('Attempted to call defaultSignatureFn', { data })
+  throw new Error('Attempted to call defaultSignatureFn. Specify a signature function')
 }
 
 function messageToParams (head: Object, op: GIOp, signatureFn: Function): GIMsgParams {

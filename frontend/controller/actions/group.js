@@ -341,6 +341,10 @@ export default (sbp('sbp/selectors/register', {
           } else {
             setTimeout(() => alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME })))
           }
+
+          if (rootState.currentGroupId === params.contractID) {
+            await sbp('gi.actions/group/updateLastLoggedIn', { contractID: params.contractID })
+          }
         } else {
           console.log('@@@@@@@@ AT join[alreadyMember] for ' + params.contractID)
           // We've already joined
