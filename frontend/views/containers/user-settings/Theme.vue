@@ -62,6 +62,10 @@ export default ({
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   column-gap: 0.75rem;
+
+  @include phone {
+    grid-template-columns: auto;
+  }
 }
 
 .radio {
