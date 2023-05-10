@@ -681,9 +681,6 @@
 /* controller/actions/chatroom.js */
 "Failed to change chat channel description." = "Failed to change chat channel description.";
 
-/* controller/actions/group.js */
-"Failed to check and archive expired proposals." = "Failed to check and archive expired proposals.";
-
 /* controller/actions/mailbox.js */
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
@@ -743,6 +740,9 @@
 
 /* controller/actions/chatroom.js */
 "Failed to make emotion." = "Failed to make emotion.";
+
+/* controller/actions/group.js */
+"Failed to mark proposals expired." = "Failed to mark proposals expired.";
 
 /* controller/actions/group.js */
 "Failed to notify expiring proposals." = "Failed to notify expiring proposals.";

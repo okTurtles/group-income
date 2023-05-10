@@ -55,7 +55,7 @@ export default ({
   },
   created () {
     // check if there are expired proposals to archive
-    sbp('gi.actions/group/checkAndArchiveExpiredProposals', { contractID: this.$store.state.currentGroupId })
+    this.checkExpiredProposals()
   },
   mounted () {
     sbp('okTurtles.events/on', PROPOSAL_ARCHIVED, this.onProposalArchived)
@@ -169,6 +169,18 @@ export default ({
       }
 
       this.openModal(modalNameMap[itemId], queries[itemId] || undefined)
+    },
+    checkExpiredProposals () {
+      const expiredProposalIds = Object.entries(this.currentGroupState.proposals)
+        .filter(([pId, proposal]) => proposal.status === STATUS_OPEN && new Date().getTime() > proposal.data.expires_date_ms)
+        .map(([pId]) => pId)
+
+      if (expiredProposalIds.length) {
+        sbp('gi.actions/group/markProposalsExpired', {
+          contractID: this.$store.state.currentGroupId,
+          data: { proposalIds: expiredProposalIds }
+        })
+      }
     }
   }
 }: Object)

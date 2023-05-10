@@ -1450,16 +1450,13 @@ ${this.getErrorInfo()}`;
           archiveProposal({ state, proposalHash: data.proposalHash, proposal, contractID });
         }
       },
-      "gi.contracts/group/checkAndArchiveExpiredProposals": {
-        validate() {
-        },
-        process({ meta, contractID }, { state }) {
-          const expiredProposalIds = Object.keys(state.proposals).filter((proposalId) => {
-            const proposal = state.proposals[proposalId];
-            return proposal.status === STATUS_OPEN && new Date(meta.createdDate).getTime() > proposal.data.expires_date_ms;
-          });
-          if (expiredProposalIds.length) {
-            for (const proposalId of expiredProposalIds) {
+      "gi.contracts/group/markProposalsExpired": {
+        validate: objectOf({
+          proposalIds: arrayOf(string)
+        }),
+        process({ data, meta, contractID }, { state }) {
+          if (data.proposalIds.length) {
+            for (const proposalId of data.proposalIds) {
               const proposal = state.proposals[proposalId];
               import_common3.Vue.set(proposal, "status", STATUS_EXPIRED);
               archiveProposal({ state, proposalHash: proposalId, proposal, contractID });
