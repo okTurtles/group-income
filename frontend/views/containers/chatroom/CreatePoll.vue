@@ -46,6 +46,10 @@
             i.icon-plus
             i18n Add more
 
+        label.checkbox
+          input.input(type='checkbox' v-model='form.allowMultipleChoice')
+          i18n Allow multiple choice
+
         .buttons.c-btns-container(:class='{ "is-vertical": ephemeral.isDesktopScreen }')
           i18n.is-outlined(
             :class='{ "is-small": ephemeral.isDesktopScreen }'
@@ -70,10 +74,13 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
 import { OPEN_POLL, CLOSE_POLL } from '@utils/events.js'
-import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, POLL_TYPES } from '@model/contracts/shared/constants.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
-const createRandomId = () => Math.random().toString(20).slice(2)
+const createRandomId = () => {
+  const randomStr = () => Math.random().toString(20).slice(2)
+  return `${randomStr()}-${randomStr()}`
+}
 
 export default {
   name: 'CreatePoll',
@@ -96,6 +103,7 @@ export default {
       },
       form: {
         question: '',
+        allowMultipleChoice: false,
         options: [
           { id: createRandomId(), value: '' }
         ]
@@ -162,9 +170,12 @@ export default {
         contractID: this.currentChatRoomId,
         data: {
           type: MESSAGE_TYPES.POLL,
-          pollDetails: {
+          pollData: {
             question: this.form.question,
-            options: this.form.options
+            options: this.form.options,
+            pollType: this.form.allowMultipleChoice
+              ? POLL_TYPES.MULTIPLE_CHOICES
+              : POLL_TYPES.SINGLE_CHOICE
           }
         }
       })

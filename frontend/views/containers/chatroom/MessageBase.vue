@@ -46,6 +46,9 @@
             ) {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
+  .c-full-width-body
+    slot(name='full-width-body')
+
   message-reactions(
     v-if='!isEditing'
     :emoticonsList='emoticonsList'
@@ -250,7 +253,8 @@ export default ({
   }
 }
 
-.c-body {
+.c-body,
+.c-full-width-body {
   width: 100%;
 }
 

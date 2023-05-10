@@ -1,30 +1,34 @@
 <template lang='pug'>
-message-base(v-bind='$props')
+message-base(
+  v-bind='$props'
+  @delete-message='deleteMessage'
+)
   template(#body='')
-    .c-poll-container
-      i18n.c-poll-created-sentence(tag='p') Created a new poll:
+    i18n.c-poll-created-sentence(tag='p') Created a new poll:
 
+  template(#full-width-body='')
+    .c-poll-container
       form.c-poll-form(@submit.prevent='')
         i18n.c-poll-label(tag='label') poll
         h3.is-title-4.c-poll-title {{ pollData.question }}
 
         fieldset.is-column.c-poll-options-list
-          label.checkbox.c-poll-option(v-for='option in pollData.options' :key='option.id')
-            input.input(
-              type='checkbox'
-              :name='messageId'
-              :value='option.value'
-              v-model='form.selectedOptions'
-            )
+          label.c-poll-option(
+            v-for='option in pollData.options'
+            :key='option.id'
+            :class='allowMultipleChoices ? "checkbox" : "radio"'
+          )
+            input.input(v-if='allowMultipleChoices' type='checkbox' :value='option.id' v-model='form.selectedOptions')
+            input.input(v-else type='radio' :name='messageId' :value='option.id' v-model='form.selectedOptions')
             span.c-poll-option-value {{ option.value }}
 
-        .buttons(v-if='form.selectedOptions.length')
+        .buttons(v-if='enableSubmitBtn')
           i18n.is-small(tag='button' type='button' @click='submitSelections') submit
 </template>
 
 <script>
 import MessageBase from './MessageBase.vue'
-import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_VARIANTS, POLL_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'MessagePoll',
@@ -52,13 +56,24 @@ export default ({
   data () {
     return {
       form: {
-        selectedOptions: []
+        selectedOptions: this.pollData.pollType === POLL_TYPES.MULTIPLE_CHOICES ? [] : ''
       }
+    }
+  },
+  computed: {
+    allowMultipleChoices () {
+      return this.pollData.pollType === POLL_TYPES.MULTIPLE_CHOICES
+    },
+    enableSubmitBtn () {
+      return this.allowMultipleChoices ? this.form.selectedOptions.length > 0 : Boolean(this.form.selectedOptions)
     }
   },
   methods: {
     submitSelections () {
       alert('TODO: implement poll selection.')
+    },
+    deleteMessage () {
+      this.$emit('delete-message')
     }
   }
 }: Object)
@@ -71,6 +86,12 @@ export default ({
   color: $text_1;
   font-style: italic;
   margin-bottom: 0.75rem;
+}
+
+.c-poll-container {
+  @include tablet {
+    padding-left: 3rem;
+  }
 }
 
 .c-poll-form {
@@ -94,6 +115,7 @@ export default ({
 .c-poll-option {
   &-value {
     text-transform: capitalize;
+    white-space: normal;
   }
 
   &:not(:first-of-type) {

@@ -90,16 +90,16 @@ export function createMessage ({ meta, data, hash, id, state }: {
   if (type === MESSAGE_TYPES.TEXT) {
     newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
   } else if (type === MESSAGE_TYPES.POLL) {
-    const details = data.pollDetails
+    const pollData = data.pollData
 
     newMessage = {
       ...newMessage,
       pollData: {
-        ...details,
+        ...pollData,
         creator: meta.username,
         status: POLL_STATUS.ACTIVE,
         // 'voted' field below will contain the user names of the users who has voted for this option
-        options: details.options.map(opt => ({ ...opt, voted: [] }))
+        options: pollData.options.map(opt => ({ ...opt, voted: [] }))
       }
     }
   } else if (type === MESSAGE_TYPES.NOTIFICATION) {

@@ -112,6 +112,11 @@ export const MESSAGE_NOTIFY_SETTINGS = {
   NOTHING: 'nothing'
 }
 
+export const POLL_TYPES = {
+  SINGLE_CHOICE: 'single-vote', // allows only 1 choice per member
+  MULTIPLE_CHOICES: 'multiple-votes' // allows multiple choices on the poll
+}
+
 export const POLL_STATUS = {
   ACTIVE: 'active', // the poll is open
   PENDING: 'closed', // everyone has voted on the poll
