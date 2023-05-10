@@ -213,14 +213,14 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .steps {
-  width: calc(100% - 2rem);
+  width: 100%;
   max-width: 34rem;
   margin-top: 3.5rem;
   flex-shrink: 0;
 }
 
 .wrapper {
-  width: calc(100% - 2rem);
+  width: 100%;
   max-width: 33rem;
 }
 </style>
