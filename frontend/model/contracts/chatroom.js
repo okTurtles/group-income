@@ -58,12 +58,13 @@ function setReadUntilWhileJoining ({ contractID, hash, createdDate }: {
   }
 }
 
-function messageReceivePostEffect ({ contractID, messageHash, datetime, text, isAlreadyAdded, isMentionedMe, username, chatRoomName }: {
+function messageReceivePostEffect ({ contractID, messageHash, datetime, text, isAlreadyAdded, isMentionedMe, messageType, username, chatRoomName }: {
   contractID: string,
   messageHash: string,
   datetime: string,
   text: string,
   isAlreadyAdded?: boolean,
+  messageType?: string,
   isMentionedMe: boolean,
   username: string,
   chatRoomName: string
@@ -75,11 +76,12 @@ function messageReceivePostEffect ({ contractID, messageHash, datetime, text, is
   const isDirectMessage = rootGetters.isDirectMessage(contractID)
   const isDMOrMention = isMentionedMe || isDirectMessage
 
-  if (!isAlreadyAdded && isDMOrMention) {
-    sbp('state/vuex/commit', 'addChatRoomUnreadMention', {
+  if (!isAlreadyAdded && (isDMOrMention || messageType === MESSAGE_TYPES.INTERACTIVE)) {
+    sbp('state/vuex/commit', 'addChatRoomUnreadMessage', {
       chatRoomId: contractID,
       messageHash,
-      createdDate: datetime
+      createdDate: datetime,
+      isDMOrMention
     })
   }
 
@@ -178,7 +180,8 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID }) {
         Vue.set(sbp('state/vuex/state').chatRoomUnread, contractID, {
           readUntil: undefined,
-          mentions: []
+          mentions: [],
+          others: []
         })
       }
     },
@@ -350,13 +353,12 @@ sbp('chelonia/defineContract', {
 
         const me = sbp('state/vuex/state').loggedIn.username
 
-        if (me === meta.username) {
+        if (me === meta.username && data.type !== MESSAGE_TYPES.INTERACTIVE) {
           return
         }
         const newMessage = createMessage({ meta, data, hash, id, state })
         const mentions = makeMentionFromUsername(me)
-        const isTextMessage = data.type === MESSAGE_TYPES.TEXT
-        const isMentionedMe = isTextMessage && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
+        const isMentionedMe = data.type === MESSAGE_TYPES.TEXT && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
 
         messageReceivePostEffect({
           contractID,
@@ -364,6 +366,7 @@ sbp('chelonia/defineContract', {
           datetime: newMessage.datetime,
           text: newMessage.text,
           isMentionedMe,
+          messageType: data.type,
           username: meta.username,
           chatRoomName: getters.chatRoomAttributes.name
         })
@@ -393,12 +396,16 @@ sbp('chelonia/defineContract', {
 
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
+        const unreadMessages = [
+          ...rootState.chatRoomUnread[contractID].mentions,
+          ...(rootState.chatRoomUnread[contractID].others || [])
+        ]
 
         if (me === meta.username) {
           return
         }
 
-        const isAlreadyAdded = !!rootState.chatRoomUnread[contractID].mentions.find(m => m.messageHash === data.hash)
+        const isAlreadyAdded = !!unreadMessages.find(m => m.messageHash === data.hash)
         const mentions = makeMentionFromUsername(me)
         const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
 
@@ -420,7 +427,7 @@ sbp('chelonia/defineContract', {
         })
 
         if (isAlreadyAdded && !isMentionedMe) {
-          sbp('state/vuex/commit', 'deleteChatRoomUnreadMention', {
+          sbp('state/vuex/commit', 'deleteChatRoomUnreadMessage', {
             chatRoomId: contractID,
             messageHash: data.hash
           })
@@ -473,7 +480,7 @@ sbp('chelonia/defineContract', {
         }
 
         if (rootState.chatRoomUnread[contractID].mentions.find(m => m.messageHash === data.hash)) {
-          sbp('state/vuex/commit', 'deleteChatRoomUnreadMention', {
+          sbp('state/vuex/commit', 'deleteChatRoomUnreadMessage', {
             chatRoomId: contractID,
             messageHash: data.hash
           })
