@@ -116,11 +116,11 @@ export default ({
 }
 
 .c-divider {
-  margin: -0.5rem -2.5rem 1.5rem -2.5rem;
+  margin: -0.5rem -1.25rem 1.5rem -1.25rem;
   border: solid 1px $general_1;
 
-  @include phone {
-    margin: -0.5rem -1.25rem 1.5rem -1.25rem;
+  @include desktop {
+    margin: -0.5rem -2.5rem 1.5rem -2.5rem;
   }
 }
 
