@@ -186,9 +186,9 @@ export default ({
   .c-content {
     @extend %floating-panel;
 
-    @include phone {
-      padding: 0;
-    }
+    // @include phone {
+    //   padding: 0;
+    // }
 
     @include desktop {
       width: 100%;
