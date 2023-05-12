@@ -297,7 +297,6 @@ export default (sbp('sbp/selectors/register', {
       if (proceed === false) return
 
       const contractStateCopy = cloneDeep(state[contractID] || null)
-      // const stateCopy = cloneDeep(pick(state, ['pending', 'contracts'])) // no longer needed see #1544
       // process the mutation on the state
       // IMPORTANT: even though we 'await' processMutation, everything in your
       //            contract's 'process' function must be synchronous! The only
@@ -325,11 +324,9 @@ export default (sbp('sbp/selectors/register', {
           }
         } catch (e) {
           console.error(`[chelonia] ERROR '${e.name}' in sideEffect for ${message.description()}: ${e.message}`, e, { message: message.serialize() })
-          // ~~revert everything~~
-          // NOTE: we no longer revert the state, see issue: https://github.com/okTurtles/group-income/issues/1544
-          // handleEvent.revertSideEffect.call(this, { message, state, contractID, contractStateCopy, stateCopy })
+          // We used to revert the state and rethrow the error here, but we no longer do that
+          // see this issue for why: https://github.com/okTurtles/group-income/issues/1544
           this.config.hooks.sideEffectError?.(e, message)
-          // throw e // ~~rethrow to prevent the contract sync from going forward~~ no more - see #1544
         }
         try {
           postHandleEvent && await postHandleEvent(message)
@@ -422,19 +419,6 @@ const handleEvent = {
       contractStateCopy = {}
     }
     this.config.reactiveSet(state, contractID, contractStateCopy)
-  },
-  // we no longer call this, see: https://github.com/okTurtles/group-income/issues/1544
-  // but we're keeping this code around just in case it's useful in the future
-  revertSideEffect ({ message, state, contractID, contractStateCopy, stateCopy }) {
-    console.warn(`[chelonia] reverting entire state because failed sideEffect for ${message.description()}: ${message.serialize()}`)
-    if (!contractStateCopy) {
-      this.config.reactiveDel(state, contractID)
-    } else {
-      this.config.reactiveSet(state, contractID, contractStateCopy)
-    }
-    state.contracts = stateCopy.contracts
-    state.pending = stateCopy.pending
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   }
 }
 
