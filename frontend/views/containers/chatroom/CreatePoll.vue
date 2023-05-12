@@ -180,6 +180,13 @@ export default {
         }
       })
 
+      this.form = {
+        question: '',
+        allowMultipleChoice: false,
+        options: [
+          { id: createRandomId(), value: '' }
+        ]
+      }
       this.close()
     }
   },

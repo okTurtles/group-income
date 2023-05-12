@@ -2,6 +2,7 @@
 message-base(
   v-bind='$props'
   @delete-message='deleteMessage'
+  @add-emoticon='addEmoticon($event)'
 )
   template(#body='')
     i18n.c-poll-created-sentence(tag='p') Created a new poll:
@@ -41,6 +42,10 @@ export default ({
     who: String,
     type: String,
     avatar: String,
+    emoticonsList: {
+      type: Object,
+      default: null
+    },
     datetime: {
       type: Date,
       required: true
@@ -74,6 +79,9 @@ export default ({
     },
     deleteMessage () {
       this.$emit('delete-message')
+    },
+    addEmoticon (emoticon) {
+      this.$emit('add-emoticon', emoticon)
     }
   }
 }: Object)
@@ -89,8 +97,10 @@ export default ({
 }
 
 .c-poll-container {
+  margin-bottom: 0.25rem;
+
   @include tablet {
-    padding-left: 3rem;
+    padding-left: 2.5rem;
   }
 }
 

@@ -52,6 +52,7 @@
   message-reactions(
     v-if='!isEditing'
     :emoticonsList='emoticonsList'
+    :messageType='type'
     :currentUsername='currentUsername'
     @selectEmoticon='selectEmoticon($event)'
     @openEmoticon='openEmoticon($event)'
