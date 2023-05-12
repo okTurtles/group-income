@@ -47,40 +47,41 @@ export default (sbp('sbp/selectors/register', {
         keys: [
           {
             id: CSKid,
-            type: CSK.type,
-            data: CSKp,
-            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_REQUEST_RESPONSE],
+            name: 'csk',
+            purpose: ['sig'],
+            ringLevel: 1,
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_REQUEST_SEEN],
             meta: {
-              type: 'csk',
               private: {
                 keyId: CEKid,
                 content: CSKs,
                 shareable: true
               }
-            }
+            },
+            data: CSKp
           },
           {
             id: CEKid,
-            type: CEK.type,
-            data: CEKp,
+            name: 'cek',
+            purpose: ['enc'],
+            ringLevel: 1,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
             meta: {
-              type: 'cek',
               private: {
                 keyId: CEKid,
                 content: CEKs,
                 shareable: true
               }
-            }
+            },
+            data: CEKp
           },
           {
             id: joinKey.id,
-            type: joinKey.type,
-            data: joinKey.data,
+            name: '#joinKey-' + joinKey.id,
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
             permissions: [GIMessage.OP_KEY_REQUEST],
-            meta: {
-              type: 'joinKey'
-            }
+            data: joinKey.data
           }
         ],
         contractName: 'gi.contracts/chatroom'
@@ -101,38 +102,40 @@ export default (sbp('sbp/selectors/register', {
         keys: [
           {
             id: CSKid,
-            type: CSK.type,
-            data: CSKp,
-            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_REQUEST_RESPONSE],
+            name: 'csk',
+            purpose: ['sig'],
+            ringLevel: 1,
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_REQUEST_SEEN],
             meta: {
-              type: 'csk',
               private: {
                 keyId: CEKid,
                 content: CSKs
               }
-            }
+            },
+            data: CSKp
           },
           {
             id: CEKid,
-            type: CEK.type,
-            data: CEKp,
+            name: 'cek',
+            purpose: ['enc'],
+            ringLevel: 1,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
             meta: {
-              type: 'cek',
               private: {
                 keyId: CEKid,
                 content: CEKs
               }
-            }
+            },
+            data: CEKp
           },
           {
             id: joinKey.id,
+            name: '#joinKey-' + joinKey.id,
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
             type: joinKey.type,
             data: joinKey.data,
-            permissions: [GIMessage.OP_KEY_REQUEST],
-            meta: {
-              type: 'joinKey'
-            }
+            permissions: [GIMessage.OP_KEY_REQUEST]
           }
         ],
         contractName: 'gi.contracts/chatroom'

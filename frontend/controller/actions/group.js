@@ -141,23 +141,25 @@ export default (sbp('sbp/selectors/register', {
         keys: [
           {
             id: CSKid,
-            type: CSK.type,
-            data: CSKp,
-            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEYSHARE, GIMessage.OP_KEY_REQUEST_RESPONSE],
+            name: 'csk',
+            purpose: ['sig'],
+            ringLevel: 1,
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_REQUEST_SEEN],
             meta: {
-              type: 'csk',
               private: {
                 keyId: CEKid,
                 content: CSKs,
                 shareable: true
               }
-            }
+            },
+            data: CSKp
           },
           {
             id: CEKid,
-            type: CEK.type,
-            data: CEKp,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEYSHARE],
+            name: 'cek',
+            purpose: ['enc'],
+            ringLevel: 1,
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_SHARE],
             meta: {
               type: 'cek',
               private: {
@@ -165,15 +167,16 @@ export default (sbp('sbp/selectors/register', {
                 content: CEKs,
                 shareable: true
               }
-            }
+            },
+            data: CEKp
           },
           {
             id: inviteKeyId,
-            type: inviteKey.type,
-            data: inviteKeyP,
+            name: '#inviteKey-' + inviteKeyId,
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
-              type: 'inviteKey',
               quantity: 60,
               creator: INVITE_INITIAL_CREATOR,
               expires: Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
@@ -181,7 +184,8 @@ export default (sbp('sbp/selectors/register', {
                 keyId: CEKid,
                 content: inviteKeyS
               }
-            }
+            },
+            data: inviteKeyP
           }
         ],
         data: {

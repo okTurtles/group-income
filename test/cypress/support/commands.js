@@ -8,6 +8,7 @@ import 'cypress-file-upload'
 
 import { CHATROOM_GENERAL_NAME } from '../../../frontend/model/contracts/shared/constants.js'
 import { EVENT_HANDLED } from '../../../shared/domains/chelonia/events.js'
+import { findKeyIdByName } from '../../../shared/domains/chelonia/utils.js'
 
 // util funcs
 const randomFromArray = arr => arr[Math.floor(Math.random() * arr.length)] // importing giLodash.js fails for some reason.
@@ -280,8 +281,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
         contractID: groupId,
         contractName: 'gi.contracts/group',
         signingKey: inviteSecret,
-        innerSigningKeyId: Object.values(userState._vm.authorizedKeys).find((k) => k.meta?.type === 'csk').id,
-        encryptionKeyId: Object.values(userState._vm.authorizedKeys).find((k) => k.meta?.type === 'cek').id
+        innerSigningKeyId: findKeyIdByName(userState, 'csk'),
+        encryptionKeyId: findKeyIdByName(userState, 'cek')
       })
 
       for (let i = 0; i < 2; i++) {

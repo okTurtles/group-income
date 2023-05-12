@@ -3,13 +3,14 @@
 import sbp, { domainFromSelector } from '@sbp/sbp'
 import './db.js'
 import { encrypt, decrypt, verifySignature } from './crypto.js'
-import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpPropSet, GIOpType, GIOpKeyRequest, GIOpKeyRequestResponse } from './GIMessage.js'
+import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpPropSet, GIOpType, GIOpKeyRequest, GIOpKeyRequestSeen } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { randomIntFromRange, delay, cloneDeep, debounce, pick } from '~/frontend/model/contracts/shared/giLodash.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_IS_PENDING_KEY_REQUESTS, CONTRACT_HAS_RECEIVED_KEYS } from './events.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
+import { findSuitableSecretKeyId } from './utils.js'
 // import 'ses'
 
 const keysToMap = (keys: GIKey[]): Object => {
@@ -210,7 +211,7 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
         state._vm.type = v.type
-        state._vm.authorizedKeys = keysToMap(v.keys)
+        config.reactiveSet(state._vm, 'authorizedKeys', keysToMap(v.keys))
 
         // Loop through the keys in the contract and try to decrypt all of the private keys
         // Example: in the identity contract you have the IEK, IPK, CSK, and CEK.
@@ -235,7 +236,7 @@ export default (sbp('sbp/selectors/register', {
               }
             }
           }
-          if (key.meta?.type === 'inviteKey') {
+          if (key.name.startsWith('#inviteKey-')) {
             if (!state._vm.invites) state._vm.invites = Object.create(null)
             state._vm.invites[key.id] = {
               creator: key.meta.creator,
@@ -263,8 +264,8 @@ export default (sbp('sbp/selectors/register', {
           sbp(`${manifestHash}/${action}/process`, { data, meta, hash, id, contractID }, state)
         }
       },
-      [GIMessage.OP_KEYSHARE] (v: GIOpKeyShare) {
-        console.log('Processing OP_KEYSHARE')
+      [GIMessage.OP_KEY_SHARE] (v: GIOpKeyShare) {
+        console.log('Processing OP_KEY_SHARE')
         // TODO: Prompt to user if contract not in pending
         if (message.originatingContractID() !== contractID && v.contractID !== message.originatingContractID()) {
           throw new Error('External contracts can only set keys for themselves')
@@ -293,7 +294,7 @@ export default (sbp('sbp/selectors/register', {
                   config.transientSecretKeys[key.id] = decrypted
                 }
               } catch (e) {
-                console.error(`OP_KEYSHARE decryption error '${e.message || e}':`, e)
+                console.error(`OP_KEY_SHARE decryption error '${e.message || e}':`, e)
               }
             }
           }
@@ -310,7 +311,7 @@ export default (sbp('sbp/selectors/register', {
         const existingKeys = targetState._volatile?.keys
 
         Promise.resolve().then(async () => {
-          console.log('Processing OP_KEYSHARE (inside promise)')
+          console.log('Processing OP_KEY_SHARE (inside promise)')
           if (targetState._volatile?.pendingKeyRequests && targetState._volatile.pendingKeyRequests.length) {
             if (!Object.keys(targetState).some((k) => k !== '_volatile')) {
               // If the contract only has _volatile state, we don't force sync it
@@ -386,7 +387,7 @@ export default (sbp('sbp/selectors/register', {
         self.postSyncOperations[contractID] = self.postSyncOperations[contractID] || Object.create(null)
         self.postSyncOperations[contractID]['respondToKeyRequests-' + message.contractID()] = ['chelonia/private/respondToKeyRequests', contractID]
       },
-      [GIMessage.OP_KEY_REQUEST_RESPONSE] (v: GIOpKeyRequestResponse) {
+      [GIMessage.OP_KEY_REQUEST_SEEN] (v: GIOpKeyRequestSeen) {
         if (config.skipActionProcessing || env.skipActionProcessing || state?._volatile?.pendingKeyRequests?.length) {
           return
         }
@@ -410,9 +411,10 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_KEY_ADD] (v: GIOpKeyAdd) {
         const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
-        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = {}
         // Order is so that KEY_ADD doesn't overwrite existing keys
-        state._vm.authorizedKeys = { ...keysToMap(v), ...state._vm.authorizedKeys }
+        // TODO: Verify ringLevel
+        // TODO: Fail if key already exists
+        config.reactiveSet(state._vm, 'authorizedKeys', { ...keysToMap(v), ...state._vm.authorizedKeys })
         // TODO: Move to different function, as this is implemented in OP_CONTRACT as well
         for (const key of v) {
           if (key.meta?.private) {
@@ -426,7 +428,7 @@ export default (sbp('sbp/selectors/register', {
               }
             }
           }
-          if (key.meta?.type === 'inviteKey') {
+          if (key.name.startsWith('#inviteKey-')) {
             if (state._vm.invites) state._vm.invites = Object.create(null)
             state._vm.invites[key.id] = {
               creator: key.meta.creator,
@@ -446,7 +448,7 @@ export default (sbp('sbp/selectors/register', {
             // Are we subscribed to this contract?
             // If we are not subscribed to the contract, we don't set pendingKeyRequests because we don't need that contract's state
             // Setting pendingKeyRequests in these cases could result in issues
-            // when a corresponding OP_KEYSHARE is received, which could trigger subscribing to this previously unsubscribed to contract
+            // when a corresponding OP_KEY_SHARE is received, which could trigger subscribing to this previously unsubscribed to contract
             if (contractID && rootState.contracts[contractID]) {
               if (!rootState[contractID]) {
                 config.reactiveSet(rootState, contractID, { _volatile: { pendingKeyRequests: [] } })
@@ -466,12 +468,13 @@ export default (sbp('sbp/selectors/register', {
         }
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
-        if (!state._vm.authorizedKeys) state._vm.authorizedKeys = {}
+        if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', {})
+        // TODO: Check ringLevel
         v.forEach(key => {
           delete state._vm.authorizedKeys[v]
           if (state._volatile?.keys) { delete state._volatile.keys[v] }
         })
-        // TODO: Revoke invite keys if (key.meta?.type === 'inviteKey')
+        // TODO: Revoke invite keys if (key.meta?.type === '#inviteKey')
       },
       [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
     }
@@ -603,6 +606,13 @@ export default (sbp('sbp/selectors/register', {
 
     delete contractState._vm.pendingKeyshares
 
+    const signingKeyId = findSuitableSecretKeyId(contractState, [GIMessage.OP_KEY_REQUEST_SEEN], ['sig'], undefined, Object.keys(this.config.transientSecretKeys || {}))
+
+    if (!signingKeyId) {
+      console.log('Unable to respond to key request because there is no suitable secret key with OP_KEY_REQUEST_SEEN permission')
+      return
+    }
+
     await Promise.all(Object.entries(pending).map(async ([hash, entry]) => {
       if (!Array.isArray(entry) || entry.length !== 3) {
         return
@@ -641,15 +651,14 @@ export default (sbp('sbp/selectors/register', {
           throw new Error('Unable to find encryption key')
         }
 
-        const signingKeyId = contractState._volatile?.keys && (((Object.values(Object(contractState._vm.authorizedKeys)): any): GIKey[]).find((k) => contractState._volatile.keys[((k: any): GIKey)?.id] && ((k: any): GIKey)?.permissions?.includes(GIMessage.OP_KEYSHARE))?.id: ?string)
         const keys = contractState._volatile?.keys && Object.fromEntries(Object.entries(contractState._volatile?.keys).filter(([kId]) => contractState._vm.authorizedKeys[kId]?.meta?.private?.shareable))
 
-        if (!signingKeyId || !keys || Object.keys(keys).length === 0) {
+        if (!keys || Object.keys(keys).length === 0) {
           console.info('respondToKeyRequests: no keys to share', { contractID, originatingContractID })
           return
         }
 
-        // 3. Send OP_KEYSHARE to identity contract
+        // 3. Send OP_KEY_SHARE to identity contract
         await sbp('chelonia/out/keyShare', {
           destinationContractID: originatingContractID,
           destinationContractName: originatingContractName,
@@ -671,13 +680,13 @@ export default (sbp('sbp/selectors/register', {
           signingKeyId
         })
 
-        // 4. Remove originating contract and update current contract with information
-        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: { keyRequestHash: hash, success: true } })
+        // 4(i). Remove originating contract and update current contract with information
+        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, signingKeyId, data: { keyRequestHash: hash, success: true } })
       } catch (e) {
         console.error('Error at respondToKeyRequests', e)
 
-        // 4. Remove originating contract and update current contract with information
-        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, data: { keyRequestHash: hash, success: false } })
+        // 4(ii). Remove originating contract and update current contract with information
+        await sbp('chelonia/out/keyRequestResponse', { contractID, contractName, signingKeyId, data: { keyRequestHash: hash, success: false } })
       }
     }))
   },

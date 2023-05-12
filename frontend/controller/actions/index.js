@@ -1,7 +1,7 @@
 import sbp from '@sbp/sbp'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { deserializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
-import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 
 export { default as chatroom } from './chatroom.js'
 export { default as group } from './group.js'
@@ -10,7 +10,7 @@ export { default as mailbox } from './mailbox.js'
 
 sbp('sbp/selectors/register', {
   // Utility function that covers the common scenario of needing to share some
-  // contract's secret keys with another contract. This function emits OP_KEYSHARE
+  // contract's secret keys with another contract. This function emits OP_KEY_SHARE
   // by calling 'chelonia/out/keyShare'.
   // One common use case for this function is sharing keys with ourselves after
   // creating a new contract (for example, when we create a group) or to share
@@ -26,8 +26,8 @@ sbp('sbp/selectors/register', {
     if (contractState?._volatile?.keys) {
       const state = await sbp('chelonia/latestContractState', destinationContractID)
 
-      const CEKid = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'cek')?.id: ?string)
-      const CSKid = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.meta?.type === 'csk')?.id: ?string)
+      const CEKid = findKeyIdByName(state, 'cek')
+      const CSKid = findKeyIdByName(state, 'csk')
 
       const CEK = deserializeKey(state?._volatile?.keys?.[CEKid])
 

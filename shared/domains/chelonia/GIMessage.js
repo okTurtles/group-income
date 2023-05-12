@@ -9,12 +9,16 @@ import type { JSONType, JSONObject } from '~/shared/types.js'
 
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
+export type GIKeyPurpose = 'enc' | 'sig'
+
 export type GIKey = {
   id: string;
-  type: GIKeyType;
-  data: string;
+  name: string;
+  purpose: GIKeyPurpose[],
+  ringLevel: number;
   permissions: string[];
   meta: Object;
+  data: string;
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
@@ -31,10 +35,10 @@ export type GIOpKeyRequest = {
   encryptionKeyId: string;
   data: string;
 }
-export type GIOpKeyRequestResponse = { keyRequestHash: string; success: boolean };
+export type GIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
 
-export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krr'
-export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestResponse
+export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
+export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestSeen
 export type GIOp = [GIOpType, GIOpValue] | [GIOpType, GIOpValue, GIOpValue]
 
 type GIMsgParams = { mapping: Object; head: Object; message: GIOpValue; decryptedValue?: GIOpValue; signature: string; signedPayload: string }
@@ -59,9 +63,9 @@ export class GIMessage {
   static OP_CONTRACT_AUTH: 'ca' = 'ca' // authorize a contract
   static OP_CONTRACT_DEAUTH: 'cd' = 'cd' // deauthorize a contract
   static OP_ATOMIC: 'at' = 'at' // atomic op
-  static OP_KEYSHARE: 'ks' = 'ks' // key share
+  static OP_KEY_SHARE: 'ks' = 'ks' // key share
   static OP_KEY_REQUEST: 'kr' = 'kr' // key request
-  static OP_KEY_REQUEST_RESPONSE: 'krr' = 'krr' // key request response
+  static OP_KEY_REQUEST_SEEN: 'krs' = 'krs' // key request response
 
   // eslint-disable-next-line camelcase
   static createV1_0 (
@@ -139,9 +143,9 @@ export class GIMessage {
       case GIMessage.OP_CONTRACT:
         if (!this.isFirstMessage()) throw new Error('OP_CONTRACT: must be first message')
         break
-      case GIMessage.OP_KEYSHARE:
+      case GIMessage.OP_KEY_SHARE:
       case GIMessage.OP_KEY_REQUEST:
-      case GIMessage.OP_KEY_REQUEST_RESPONSE:
+      case GIMessage.OP_KEY_REQUEST_SEEN:
       case GIMessage.OP_ACTION_ENCRYPTED:
       case GIMessage.OP_KEY_ADD:
         // nothing for now

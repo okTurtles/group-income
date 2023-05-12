@@ -46,17 +46,19 @@ div
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import { mapGetters, mapState } from 'vuex'
-import { INVITE_INITIAL_CREATOR /* , INVITE_STATUS */ } from '@model/contracts/shared/constants.js'
-import { LOGIN } from '@utils/events.js'
-import SignupForm from '@containers/access/SignupForm.vue'
-import LoginForm from '@containers/access/LoginForm.vue'
-import Loading from '@components/Loading.vue'
+import { L } from '@common/common.js'
 import Avatar from '@components/Avatar.vue'
 import GroupWelcome from '@components/GroupWelcome.vue'
+import Loading from '@components/Loading.vue'
+import LoginForm from '@containers/access/LoginForm.vue'
+import SignupForm from '@containers/access/SignupForm.vue'
+import { INVITE_INITIAL_CREATOR /* , INVITE_STATUS */ } from '@model/contracts/shared/constants.js'
+import sbp from '@sbp/sbp'
 import SvgBrokenLink from '@svgs/broken-link.svg'
-import { L } from '@common/common.js'
+import { LOGIN } from '@utils/events.js'
+import { mapGetters, mapState } from 'vuex'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { deserializeKey, keyId } from '../../../shared/domains/chelonia/crypto.js'
 
 let syncFinished = false
@@ -188,8 +190,8 @@ export default ({
           contractID: groupId,
           contractName: 'gi.contracts/group',
           signingKey: secret,
-          innerSigningKeyId: Object.values(userState._vm.authorizedKeys).find((k) => k.meta?.type === 'csk').id,
-          encryptionKeyId: Object.values(userState._vm.authorizedKeys).find((k) => k.meta?.type === 'cek').id
+          innerSigningKeyId: findKeyIdByName(userState, 'csk'),
+          encryptionKeyId: findKeyIdByName(userState, 'cek')
         })
         this.pageStatus = 'WELCOME'
       } catch (e) {
