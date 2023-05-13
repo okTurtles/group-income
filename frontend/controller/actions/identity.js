@@ -8,7 +8,7 @@ import { imageUpload } from '@utils/image.js'
 import { pickWhere, difference, uniq } from '@model/contracts/shared/giLodash.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
-import { encryptedAction, shareKeysWithSelf } from './utils.js'
+import { encryptedAction } from './utils.js'
 import { handleFetchResult } from '../utils/misc.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
@@ -161,47 +161,50 @@ export default (sbp('sbp/selectors/register', {
         keys: [
           {
             id: IPKid,
-            type: IPK.type,
-            data: IPKp,
-            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL],
-            meta: {
-              type: 'ipk'
-            }
+            name: 'ipk',
+            purpose: ['sig'],
+            ringLevel: 0,
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_REQUEST_SEEN],
+            data: IPKp
           },
           {
             id: IEKid,
-            type: IEK.type,
-            data: IEKp,
+            name: 'iek',
+            purpose: ['enc'],
+            ringLevel: 0,
+            // TODO: Does this 'gi.contracts/identity/keymeta' pseudo selector
+            // make sense here? It is not being used and these types of permissions
+            // can be problematic because selectors can be updated
             permissions: ['gi.contracts/identity/keymeta'],
-            meta: {
-              type: 'iek'
-            }
+            data: IEKp
           },
           {
             id: CSKid,
-            type: CSK.type,
-            data: CSKp,
-            permissions: [GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEYSHARE],
+            name: 'csk',
+            purpose: ['sig'],
+            ringLevel: 1,
+            permissions: [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE],
             meta: {
-              type: 'csk',
               private: {
                 keyId: IEKid,
                 content: CSKs
               }
-            }
+            },
+            data: CSKp
           },
           {
             id: CEKid,
-            type: CEK.type,
-            data: CEKp,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEYSHARE],
+            name: 'cek',
+            purpose: ['enc'],
+            ringLevel: 1,
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_SHARE],
             meta: {
-              type: 'cek',
               private: {
                 keyId: IEKid,
                 content: CEKs
               }
-            }
+            },
+            data: CEKp
           }
         ],
         data: {
@@ -416,6 +419,5 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.')),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
-  ...encryptedAction('gi.contracts/identity/setLoginState', L('Failed to set login state.')),
-  ...shareKeysWithSelf('gi.actions/identity/shareKeysWithSelf', 'gi.contracts/identity')
+  ...encryptedAction('gi.contracts/identity/setLoginState', L('Failed to set login state.'))
 }): string[])

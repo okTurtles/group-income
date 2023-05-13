@@ -132,6 +132,10 @@ async function startApp () {
             'gi.actions/group/autobanUser', message, e
           ])
         }
+        // For now, we ignore all missing keys errors
+        if (e.name === 'ChelErrorDecryptionKeyNotFound') {
+          return
+        }
         errorNotification('process', e, message)
       },
       sideEffectError: (e: Error, message: GIMessage) => {

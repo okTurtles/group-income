@@ -23,7 +23,7 @@ import proposals from '@model/contracts/shared/voting/proposals.js'
 import { imageUpload } from '@utils/image.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
-import { encryptedAction, shareKeysWithSelf } from './utils.js'
+import { encryptedAction } from './utils.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
@@ -168,23 +168,25 @@ export default (sbp('sbp/selectors/register', {
         keys: [
           {
             id: CSKid,
-            type: CSK.type,
-            data: CSKp,
-            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEYSHARE, GIMessage.OP_KEY_REQUEST_RESPONSE],
+            name: 'csk',
+            purpose: ['sig'],
+            ringLevel: 1,
+            permissions: [GIMessage.OP_CONTRACT, GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_REQUEST_SEEN],
             meta: {
-              type: 'csk',
               private: {
                 keyId: CEKid,
                 content: CSKs,
                 shareable: true
               }
-            }
+            },
+            data: CSKp
           },
           {
             id: CEKid,
-            type: CEK.type,
-            data: CEKp,
-            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEYSHARE],
+            name: 'cek',
+            purpose: ['enc'],
+            ringLevel: 1,
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_SHARE],
             meta: {
               type: 'cek',
               private: {
@@ -192,15 +194,16 @@ export default (sbp('sbp/selectors/register', {
                 content: CEKs,
                 shareable: true
               }
-            }
+            },
+            data: CEKp
           },
           {
             id: inviteKeyId,
-            type: inviteKey.type,
-            data: inviteKeyP,
+            name: '#inviteKey-' + inviteKeyId,
+            purpose: ['sig'],
+            ringLevel: Number.MAX_SAFE_INTEGER,
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
-              type: 'inviteKey',
               quantity: 60,
               creator: INVITE_INITIAL_CREATOR,
               expires: Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
@@ -208,7 +211,8 @@ export default (sbp('sbp/selectors/register', {
                 keyId: CEKid,
                 content: inviteKeyS
               }
-            }
+            },
+            data: inviteKeyP
           }
         ],
         data: {
@@ -275,10 +279,13 @@ export default (sbp('sbp/selectors/register', {
       })
 
       const userID = rootState.loggedIn.identityContractID
-      await sbp('gi.actions/identity/shareKeysWithSelf', {
-        ourContractID: userID,
-        theirContractID: contractID
-      })
+
+      // As the group's creator, we share the group secret keys with
+      // ourselves, which we need to do be able to sync the group with a
+      // fresh session.
+      // This is a special case, as normally these keys would be shared using
+      // invites
+      await sbp('gi.actions/out/shareVolatileKeys', { destinationContractID: userID, destinationContractName: 'gi.contracts/identity', contractID })
 
       return message
     } catch (e) {
@@ -302,7 +309,7 @@ export default (sbp('sbp/selectors/register', {
 
       const sendKeyRequest = (!rootState[params.contractID] && params.originatingContractID)
 
-      await sbp('chelonia/withEnv', { skipActionProcessing: sendKeyRequest || rootState[params.contractID]?._volatile?.pendingKeyRequests?.length }, ['chelonia/contract/sync', params.contractID])
+      await sbp('chelonia/withEnv', { skipActionProcessing: !!sendKeyRequest || !!rootState[params.contractID]?._volatile?.pendingKeyRequests?.length }, ['chelonia/contract/sync', params.contractID])
       if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
       }
@@ -364,6 +371,10 @@ export default (sbp('sbp/selectors/register', {
             })
           } else {
             setTimeout(() => alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME })))
+          }
+
+          if (rootState.currentGroupId === params.contractID) {
+            await sbp('gi.actions/group/updateLastLoggedIn', { contractID: params.contractID })
           }
         } else {
           console.log('@@@@@@@@ AT join[alreadyMember] for ' + params.contractID)
@@ -461,10 +472,11 @@ export default (sbp('sbp/selectors/register', {
       }
     })
 
-    await sbp('gi.actions/group/shareKeysWithSelf', {
-      ourContractID: params.contractID,
-      theirContractID: message.contractID()
-    })
+    // When creating a public chatroom, that chatroom's secret keys are shared
+    // with the group. This allows all group members to be able to join the
+    // chatroom without any extra steps, and, in particular, it enables joining
+    // the #General chatroom upon joining a group, in a single step.
+    await sbp('gi.actions/out/shareVolatileKeys', { destinationContractID: params.contractID, destinationContractName: 'gi.contracts/group', contractID: message.contractID() })
 
     await sendMessage({
       ...omit(params, ['options', 'action', 'data', 'hooks']),
@@ -547,32 +559,29 @@ export default (sbp('sbp/selectors/register', {
 
     return message
   },
-  ...encryptedAction('gi.actions/group/renameChatRoom', L('Failed to rename chat channel.'),
-    async function (sendMessage, params) {
-      await sbp('gi.actions/chatroom/rename', {
-        ...omit(params, ['options', 'contractID', 'data', 'hooks']),
-        contractID: params.data.chatRoomID,
-        data: {
-          name: params.data.name
-        },
-        hooks: {
-          prepublish: params.hooks?.prepublish,
-          postpublish: null
-        }
-      })
+  ...encryptedAction('gi.actions/group/renameChatRoom', L('Failed to rename chat channel.'), async function (sendMessage, params) {
+    await sbp('gi.actions/chatroom/rename', {
+      ...omit(params, ['options', 'contractID', 'data', 'hooks']),
+      contractID: params.data.chatRoomID,
+      data: {
+        name: params.data.name
+      },
+      hooks: {
+        prepublish: params.hooks?.prepublish,
+        postpublish: null
+      }
+    })
 
-      return await sendMessage({
-        ...omit(params, ['options', 'action', 'hooks']),
-        hooks: {
-          prepublish: null,
-          postpublish: params.hooks?.postpublish
-        }
-      })
-    }),
+    return await sendMessage({
+      ...omit(params, ['options', 'action', 'hooks']),
+      hooks: {
+        prepublish: null,
+        postpublish: params.hooks?.postpublish
+      }
+    })
+  }),
   ...encryptedAction('gi.actions/group/removeMember',
-    (params, e) => L('Failed to remove {member}: {reportError}', {
-      member: params.data.member, ...LError(e)
-    }),
+    (params, e) => L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }),
     async function (sendMessage, params) {
       await leaveAllChatRooms(params.contractID, params.data.member)
       return sendMessage({
@@ -590,7 +599,7 @@ export default (sbp('sbp/selectors/register', {
     }),
   ...encryptedAction('gi.actions/group/changeChatRoomDescription',
     L('Failed to update description of chat channel.'),
-    async function (sendMessage, params) {
+    async function (sendMessage, params: GIActionParams) {
       await sbp('gi.actions/chatroom/changeDescription', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: params.data.chatRoomID,
@@ -756,8 +765,8 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateLastLoggedIn', L('Failed to update "lastLoggedIn" in a group profile.')),
+  ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.')),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
-  ...shareKeysWithSelf('gi.actions/group/shareKeysWithSelf', 'gi.contracts/group'),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {
     ...encryptedAction('gi.actions/group/forceDistributionDate', L('Failed to force distribution date.'))
   })

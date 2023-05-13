@@ -1,20 +1,21 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
-import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
-import './internals.js'
-import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
-import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
-import { merge, cloneDeep, randomHexString, intersection, difference } from '~/frontend/model/contracts/shared/giLodash.js'
-import { b64ToStr } from '~/shared/functions.js'
+import '@sbp/okturtles.events'
+import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
+import { cloneDeep, difference, intersection, merge, randomHexString } from '~/frontend/model/contracts/shared/giLodash.js'
+import { b64ToStr } from '~/shared/functions.js'
+import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
+import type { Key } from './crypto.js'
+import { decrypt, encrypt, keyId, sign } from './crypto.js'
+import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
+import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare } from './GIMessage.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
-import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
-import type { GIKey, GIOpContract, GIOpActionUnencrypted, GIOpKeyAdd, GIOpKeyDel, GIOpKeyShare, GIOpKeyRequest, GIOpKeyRequestResponse } from './GIMessage.js'
-import { keyId, sign, encrypt, decrypt, generateSalt } from './crypto.js'
-import type { Key } from './crypto.js'
+import './internals.js'
+import { findSuitablePublicKeyIds, findSuitableSecretKeyId } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -109,7 +110,7 @@ export type ChelKeyRequestParams = {
 export type ChelKeyRequestResponseParams = {
   contractName: string;
   contractID: string;
-  data: GIOpKeyRequestResponse;
+  data: GIOpKeyRequestSeen;
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
@@ -146,7 +147,10 @@ const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
   if (!key) {
     if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
       console.error('Encryption key not found. Sending plaintext message', { message, eKeyId })
-      return JSON.stringify(message)
+      return {
+        keyId: 'NULL',
+        content: JSON.stringify(message)
+      }
     } else {
       console.error('Encryption key not found', { message, eKeyId })
       throw new ChelErrorUnexpected('Encryption key not found')
@@ -160,13 +164,17 @@ const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
 }
 
 const decryptFn = function (message: Object, state: ?Object) {
-  if (typeof message === 'string') {
+  if (typeof message !== 'object' || typeof message.keyId !== 'string' || typeof message.content !== 'string') {
+    throw new TypeError('Malformed message')
+  }
+
+  if (message.keyId === 'NULL') {
     if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
-      console.error('Processing unsafe unencrypted message', { message })
-      return JSON.parse(message)
+      console.error('Processing unsafe unencrypted message', { message: message.content })
+      return JSON.parse(message.content)
     } else {
-      console.error('Refused to process unsafe unencrypted message', { message })
-      throw new ChelErrorUnexpected('Decryption key not found')
+      console.error('Refused to process unsafe unencrypted message', { message: message.content })
+      throw new ChelErrorDecryptionError('Received unexpected unencrypted message')
     }
   }
 
@@ -175,10 +183,14 @@ const decryptFn = function (message: Object, state: ?Object) {
 
   if (!key) {
     console.log({ message, state, keyId, env: this.env })
-    throw new Error(`Key ${keyId} not found`)
+    throw new ChelErrorDecryptionKeyNotFound(`Key ${keyId} not found`)
   }
 
-  return JSON.parse(decrypt(key, message.content))
+  try {
+    return JSON.parse(decrypt(key, message.content))
+  } catch (e) {
+    throw new ChelErrorDecryptionError(e?.message || e)
+  }
 }
 
 export default (sbp('sbp/selectors/register', {
@@ -561,8 +573,7 @@ export default (sbp('sbp/selectors/register', {
     const signatureFn = signingKey ? signatureFnBuilder(signingKey) : undefined
     const payload = ({
       type: contractName,
-      keys: keys,
-      nonce: generateSalt()
+      keys: keys
     }: GIOpContract)
     const contractMsg = GIMessage.createV1_0({
       contractID: null,
@@ -636,7 +647,7 @@ export default (sbp('sbp/selectors/register', {
       originatingContractID,
       previousHEAD,
       op: [
-        GIMessage.OP_KEYSHARE,
+        GIMessage.OP_KEY_SHARE,
         payload
       ],
       manifest: destinationManifestHash,
@@ -648,6 +659,7 @@ export default (sbp('sbp/selectors/register', {
     return msg
   },
   'chelonia/out/keyAdd': async function (params: ChelKeyAddParams): Promise<GIMessage> {
+    // TODO: Make this a noop if the key already exsits with the given permissions
     const { contractID, contractName, data, hooks, publishOptions } = params
     const manifestHash = this.config.contracts.manifests[contractName]
     const contract = this.manifestToContract[manifestHash]?.contract
@@ -737,14 +749,27 @@ export default (sbp('sbp/selectors/register', {
       signatureFn: signingKey ? signatureFnBuilder(signingKey) : undefined
     })
     hooks && hooks.prepublish && hooks.prepublish(msg)
-    // TODO: Pick CSK instead
-    const keyShareKeys = ((Object.values(state._vm?.authorizedKeys ?? {}): any): GIKey[]).filter((k) => k?.permissions.includes(GIMessage.OP_KEY_REQUEST_RESPONSE)).map((k) => ({ ...k, permissions: [GIMessage.OP_KEYSHARE], meta: { keyRequest: { id: msg.id(), contractID, outerKeyId } } }))
+    // TODO: Rewrite using findSuitablePublicKeyIds
+    // TODO: Ensure foreignKey etc. are used
+    // TODO: When processing OP_KEY_SHARE:
+    //      (1) include the hash if relevant
+    //      (2) for foreign keys with OP_KEY_SHARE permission, allow only
+    //          if in response to an OP_KEY_REQUEST
+    const keyShareKeys = findSuitablePublicKeyIds(state, [GIMessage.OP_KEY_REQUEST_SEEN], ['sig'])?.map((keyId) => ({ foreignKey: `sp:${encodeURIComponent(contractID)}?keyName=${encodeURIComponent(state._vm.authorizedKeys[keyId].name)}`, ...state._vm.authorizedKeys['keyId'], permissions: [GIMessage.OP_KEY_SHARE], purpose: ['sig'], ringLevel: Number.MAX_SAFE_INTEGER, name: `${contractID}/${keyId}`, meta: { keyRequest: { id: msg.id(), contractID, outerKeyId } } }))
+    if (!keyShareKeys?.length) {
+      throw ChelErrorUnexpected(`Unable to send key request. Contract is missing a key with OP_KEY_REQUEST_SEEN permission. contractID=${contractID} originatingContractID=${originatingContractID}`)
+    }
+    const signingKeyId = findSuitableSecretKeyId(originatingState, [GIMessage.OP_KEY_ADD], ['sig'], undefined, Object.keys(this.config.transientSecretKeys || {}))
+    if (!signingKeyId) {
+      throw ChelErrorUnexpected(`Unable to send key request. Originating contract is missing a key with OP_KEY_ADD permission. contractID=${contractID} originatingContractID=${originatingContractID}`)
+    }
     // TODO: REMOVE THE console.log below
     console.log({ keyShareKeys, originatingContractID, contractID, st: state, svm: state._vm?.authorizedKeys })
-    keyShareKeys.length && await sbp('chelonia/out/keyAdd', {
+    await sbp('chelonia/out/keyAdd', {
       contractID: originatingContractID,
       contractName: originatingContractName,
-      data: keyShareKeys
+      data: keyShareKeys,
+      signingKeyId
     })
     await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
     hooks && hooks.postpublish && hooks.postpublish(msg)
@@ -759,13 +784,13 @@ export default (sbp('sbp/selectors/register', {
     }
     const state = contract.state(contractID)
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
-    const payload = (data: GIOpKeyRequestResponse)
+    const payload = (data: GIOpKeyRequestSeen)
     const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       op: [
-        GIMessage.OP_KEY_REQUEST_RESPONSE,
+        GIMessage.OP_KEY_REQUEST_SEEN,
         payload
       ],
       manifest: manifestHash,
