@@ -570,9 +570,7 @@ export default (sbp('sbp/selectors/register', {
       })
     }),
   ...encryptedAction('gi.actions/group/removeMember',
-    (params, e) => L('Failed to remove {member}: {reportError}', {
-      member: params.data.member, ...LError(e)
-    }),
+    (params, e) => L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }),
     async function (sendMessage, params) {
       await leaveAllChatRooms(params.contractID, params.data.member)
       return sendMessage({
@@ -590,7 +588,7 @@ export default (sbp('sbp/selectors/register', {
     }),
   ...encryptedAction('gi.actions/group/changeChatRoomDescription',
     L('Failed to update description of chat channel.'),
-    async function (sendMessage, params) {
+    async function (sendMessage, params: GIActionParams) {
       await sbp('gi.actions/chatroom/changeDescription', {
         ...omit(params, ['options', 'contractID', 'data', 'hooks']),
         contractID: params.data.chatRoomID,
@@ -756,6 +754,7 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/updateSettings', L('Failed to update group settings.')),
   ...encryptedAction('gi.actions/group/updateAllVotingRules', (params, e) => L('Failed to update voting rules. {codeError}', { codeError: e.message })),
   ...encryptedAction('gi.actions/group/updateLastLoggedIn', L('Failed to update "lastLoggedIn" in a group profile.')),
+  ...encryptedAction('gi.actions/group/markProposalsExpired', L('Failed to mark proposals expired.')),
   ...encryptedAction('gi.actions/group/updateDistributionDate', L('Failed to update group distribution date.')),
   ...shareKeysWithSelf('gi.actions/group/shareKeysWithSelf', 'gi.contracts/group'),
   ...((process.env.NODE_ENV === 'development' || process.env.CI) && {

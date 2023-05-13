@@ -1,114 +1,121 @@
 <template lang='pug'>
-.c-send.inputgroup(
-  :class='{"is-editing": isEditing}'
-  data-test='messageInputWrapper'
+.c-send-wrapper(
+  :class='{"is-public": isPublicChannel}'
 )
-  .c-mentions(
-    v-if='ephemeral.mention.options.length'
-    ref='mentionWrapper'
+  .c-public-helper(v-if='isPublicChannel')
+    i.icon-exclamation-triangle.is-prefix
+    i18n.has-text-bold This channel is public and everyone on the internet can see its content.
+
+  .c-send.inputgroup(
+    :class='{"is-editing": isEditing}'
+    data-test='messageInputWrapper'
   )
-    template(v-for='(user, index) in ephemeral.mention.options')
-      .c-mention-user(
-        ref='mention'
-        :class='{"is-selected": index === ephemeral.mention.index}'
-        @click.stop='onClickMention(index)'
-      )
-        avatar(:src='user.picture' size='xs')
-        .c-username {{user.username}}
-        .c-display-name(
-          v-if='user.displayName !== user.username'
-        ) ({{user.displayName}})
-
-  .c-jump-to-latest(
-    v-if='scrolledUp && !replyingMessage'
-    @click='$emit("jump-to-latest")'
-  )
-    i18n Jump to latest message
-    button.is-icon-small
-      i.icon-arrow-down
-
-  .c-replying-wrapper
-    .c-replying(v-if='replyingMessage')
-      i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
-      button.c-clear.is-icon-small(
-        :aria-label='L("Stop replying")'
-        @click='stopReplying'
-      )
-        i.icon-times
-
-  textarea.textarea.c-send-textarea(
-    ref='textarea'
-    :disabled='loading'
-    :placeholder='L("Write your message...")'
-    :style='textareaStyles'
-    @blur='textAreaBlur'
-    @keydown.enter.exact.prevent='handleKeyDownEnter'
-    @keydown.tab.exact='handleKeyDownTab'
-    @keydown.ctrl='isNextLine'
-    @keydown='handleKeydown'
-    @keyup='handleKeyup'
-    v-bind='$attrs'
-  )
-
-  .c-send-actions(ref='actions')
-    div(v-if='isEditing')
-      .addons.addons-editing
-        tooltip(
-          v-if='ephemeral.showButtons'
-          direction='top'
-          :text='L("Add reaction")'
+    .c-mentions(
+      v-if='ephemeral.mention.options.length'
+      ref='mentionWrapper'
+    )
+      template(v-for='(user, index) in ephemeral.mention.options')
+        .c-mention-user(
+          ref='mention'
+          :class='{"is-selected": index === ephemeral.mention.index}'
+          @click.stop='onClickMention(index)'
         )
-          button.is-icon(
-            :aria-label='L("Add reaction")'
-            @click='openEmoticon'
-          )
-            i.icon-smile-beam
+          avatar(:src='user.picture' size='xs')
+          .c-username {{user.username}}
+          .c-display-name(
+            v-if='user.displayName !== user.username'
+          ) ({{user.displayName}})
 
-    .c-edit-actions(v-if='isEditing')
-      i18n.is-small.is-outlined(
-        tag='button'
-        @click='$emit("cancelEdit")'
-      ) Cancel
+    .c-jump-to-latest(
+      v-if='scrolledUp && !replyingMessage'
+      @click='$emit("jump-to-latest")'
+    )
+      i18n Jump to latest message
+      button.is-icon-small
+        i.icon-arrow-down
 
-      i18n.button.is-small(
-        tag='button'
-        @click='sendMessage'
-      ) Save changes
-
-    .c-edit-action-wrapper(v-else)
-      .addons
-        tooltip(
-          v-if='ephemeral.showButtons'
-          direction='top'
-          :text='L("Create poll")'
+    .c-replying-wrapper
+      .c-replying(v-if='replyingMessage')
+        i18n(:args='{ replyingTo, replyingMessage }') Replying to {replyingTo}: "{replyingMessage}"
+        button.c-clear.is-icon-small(
+          :aria-label='L("Stop replying")'
+          @click='stopReplying'
         )
-          button.is-icon(
-            :aria-label='L("Create poll")'
-            @click='createPool'
+          i.icon-times
+
+    textarea.textarea.c-send-textarea(
+      ref='textarea'
+      :disabled='loading'
+      :placeholder='L("Write your message...")'
+      :style='textareaStyles'
+      @blur='textAreaBlur'
+      @keydown.enter.exact.prevent='handleKeyDownEnter'
+      @keydown.tab.exact='handleKeyDownTab'
+      @keydown.ctrl='isNextLine'
+      @keydown='handleKeydown'
+      @keyup='handleKeyup'
+      v-bind='$attrs'
+    )
+
+    .c-send-actions(ref='actions')
+      div(v-if='isEditing')
+        .addons.addons-editing
+          tooltip(
+            v-if='ephemeral.showButtons'
+            direction='top'
+            :text='L("Add reaction")'
           )
-            i.icon-poll
-        tooltip(
-          v-if='ephemeral.showButtons'
-          direction='top'
-          :text='L("Add reaction")'
+            button.is-icon(
+              :aria-label='L("Add reaction")'
+              @click='openEmoticon'
+            )
+              i.icon-smile-beam
+
+      .c-edit-actions(v-if='isEditing')
+        i18n.is-small.is-outlined(
+          tag='button'
+          @click='$emit("cancelEdit")'
+        ) Cancel
+
+        i18n.button.is-small(
+          tag='button'
+          @click='sendMessage'
+        ) Save changes
+
+      .c-edit-action-wrapper(v-else)
+        .addons
+          tooltip(
+            v-if='ephemeral.showButtons'
+            direction='top'
+            :text='L("Create poll")'
+          )
+            button.is-icon(
+              :aria-label='L("Create poll")'
+              @click='createPool'
+            )
+              i.icon-poll
+          tooltip(
+            v-if='ephemeral.showButtons'
+            direction='top'
+            :text='L("Add reaction")'
+          )
+            button.is-icon(
+              :aria-label='L("Add reaction")'
+              @click='openEmoticon'
+            )
+              i.icon-smile-beam
+
+        .c-send-button(
+          id='mobileSendButton'
+          tag='button'
+          :class='{ isActive }'
+          @click='sendMessage'
         )
-          button.is-icon(
-            :aria-label='L("Add reaction")'
-            @click='openEmoticon'
-          )
-            i.icon-smile-beam
+          .icon-paper-plane
 
-      .c-send-button(
-        id='mobileSendButton'
-        tag='button'
-        :class='{ isActive }'
-        @click='sendMessage'
-      )
-        .icon-paper-plane
-
-  .textarea.c-send-mask(
-    ref='mask'
-  )
+    .textarea.c-send-mask(
+      ref='mask'
+    )
 </template>
 
 <script>
@@ -117,6 +124,7 @@ import emoticonsMixins from './EmoticonsMixins.js'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
+import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
 
 const caretKeyCodes = {
   ArrowLeft: 37,
@@ -178,11 +186,8 @@ export default ({
     replyingMessage () {
       this.focusOnTextArea()
     },
-    currentChatRoomId () {
-      this.focusOnTextArea()
-    },
     loading (newValue, oldValue) {
-      if (newValue) {
+      if (!newValue) {
         this.$nextTick(() => {
           this.focusOnTextArea()
         })
@@ -213,6 +218,7 @@ export default ({
       'chatRoomUsers',
       'isPrivateDirectMessage',
       'currentChatRoomId',
+      'chatRoomAttributes',
       'ourContactProfiles'
     ]),
     users () {
@@ -233,6 +239,9 @@ export default ({
       return {
         height: this.ephemeral.maskHeight + 'px'
       }
+    },
+    isPublicChannel () {
+      return this.chatRoomAttributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PUBLIC
     }
   },
   methods: {
@@ -413,16 +422,36 @@ export default ({
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-send-wrapper {
+  padding: 1rem;
+
+  @include tablet {
+    padding: 1rem 2.5rem 2rem 2.5rem;
+  }
+
+  &.is-public {
+    background-color: var(--warning_1);
+
+    .c-public-helper {
+      color: $text_0;
+      margin-bottom: 1rem;
+
+      i {
+        color: var(--warning_0);
+      }
+    }
+
+    .inputgroup {
+      border-color: var(--warning_0);
+    }
+  }
+}
+
 .c-send {
   position: relative;
   display: block;
   background-color: var(--background_0);
   border: 1px solid var(--general_0);
-  margin: 1rem;
-
-  @include tablet {
-    margin: 1rem 2.5rem 2rem 2.5rem;
-  }
 
   &-textarea,
   &-mask {

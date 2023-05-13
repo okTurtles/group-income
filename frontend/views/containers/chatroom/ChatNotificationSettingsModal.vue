@@ -85,7 +85,7 @@ export default ({
     ModalTemplate
   },
   computed: {
-    ...mapGetters(['notificationSettings', 'currentChatRoomId'])
+    ...mapGetters(['chatNotificationSettings', 'currentChatRoomId'])
   },
   data () {
     return {
@@ -98,10 +98,10 @@ export default ({
   },
   created () {
     let settingsFromState
-    if (this.notificationSettings[this.currentChatRoomId]) {
-      settingsFromState = this.notificationSettings[this.currentChatRoomId]
+    if (this.chatNotificationSettings[this.currentChatRoomId]) {
+      settingsFromState = this.chatNotificationSettings[this.currentChatRoomId]
     } else {
-      settingsFromState = this.notificationSettings.default
+      settingsFromState = this.chatNotificationSettings.default
     }
     this.form.messageNotification = settingsFromState.messageNotification
     this.form.messageSound = settingsFromState.messageSound

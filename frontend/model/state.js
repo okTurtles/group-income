@@ -15,7 +15,7 @@ import { applyStorageRules } from '~/frontend/model/notifications/utils.js'
 
 // Vuex modules.
 import notificationModule from '~/frontend/model/notifications/vuexModule.js'
-import settingsModule, { defaultSettings } from '~/frontend/model/settings/vuexModule.js'
+import settingsModule from '~/frontend/model/settings/vuexModule.js'
 
 Vue.use(Vuex)
 
@@ -23,8 +23,8 @@ const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
-  chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, mentions: [{ messageHash, createdDate }] }
-  notificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
+  chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, mentions: [{ messageHash, createdDate }], others: [{ messageHash, createdDate }] }
+  chatNotificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
@@ -60,28 +60,10 @@ sbp('sbp/selectors/register', {
   'state/vuex/postUpgradeVerification': function (state: Object) {
     // Note: Update this function when renaming a Vuex module, or implementing a new one,
     // or adding new settings to the initialState above
-    if (!state.notifications) {
-      state.notifications = []
-    }
-    if (!state.settings) {
-      // Using cloneDeep() ensures we get a new object every time.
-      state.settings = cloneDeep(defaultSettings)
-    }
-    if (!state.currentChatRoomIDs) {
-      state.currentChatRoomIDs = {}
-    }
-    if (!state.chatRoomScrollPosition) {
-      state.chatRoomScrollPosition = {}
-    }
-    if (!state.chatRoomUnread) {
-      state.chatRoomUnread = {}
-    }
-    if (!state.namespaceLookups) {
-      state.namespaceLookups = Object.create(null)
-    }
-    if (!state.notificationSettings) {
-      state.notificationSettings = {}
-    }
+    // Example:
+    // if (!state.notifications) {
+    //   state.notifications = []
+    // }
   },
   'state/vuex/save': async function () {
     const state = store.state
@@ -127,31 +109,47 @@ const mutations = {
   },
   setChatRoomReadUntil (state, { chatRoomId, messageHash, createdDate }) {
     const prevMentions = state.chatRoomUnread[chatRoomId].mentions
+    const prevOthers = state.chatRoomUnread[chatRoomId].others
+
     Vue.set(state.chatRoomUnread, chatRoomId, {
       readUntil: { messageHash, createdDate, deletedDate: null },
-      mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
+      mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime()),
+      others: prevOthers.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
     })
   },
   deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
     Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)
   },
-  addChatRoomUnreadMention (state, { chatRoomId, messageHash, createdDate }) {
-    state.chatRoomUnread[chatRoomId].mentions.push({ messageHash, createdDate })
+  addChatRoomUnreadMessage (state, { chatRoomId, messageHash, createdDate, isDMOrMention }) {
+    const newItem = { messageHash, createdDate }
+
+    if (isDMOrMention) {
+      state.chatRoomUnread[chatRoomId].mentions.push(newItem)
+    } else {
+      if (!('others' in state.chatRoomUnread[chatRoomId])) {
+        Vue.set(state.chatRoomUnread[chatRoomId], 'others', [newItem])
+      } else {
+        state.chatRoomUnread[chatRoomId].others.push(newItem)
+      }
+    }
   },
-  deleteChatRoomUnreadMention (state, { chatRoomId, messageHash }) {
+  deleteChatRoomUnreadMessage (state, { chatRoomId, messageHash }) {
     const prevMentions = state.chatRoomUnread[chatRoomId].mentions
+    const prevOthers = state.chatRoomUnread[chatRoomId].others || []
+
     Vue.set(state.chatRoomUnread[chatRoomId], 'mentions', prevMentions.filter(m => m.messageHash !== messageHash))
+    Vue.set(state.chatRoomUnread[chatRoomId], 'others', prevOthers.filter(m => m.messageHash !== messageHash))
   },
   deleteChatRoomUnread (state, { chatRoomId }) {
     Vue.delete(state.chatRoomUnread, chatRoomId)
   },
   setChatroomNotificationSettings (state, { chatRoomId, settings }) {
     if (chatRoomId) {
-      if (!state.notificationSettings[chatRoomId]) {
-        Vue.set(state.notificationSettings, chatRoomId, {})
+      if (!state.chatNotificationSettings[chatRoomId]) {
+        Vue.set(state.chatNotificationSettings, chatRoomId, {})
       }
       for (const key in settings) {
-        Vue.set(state.notificationSettings[chatRoomId], key, settings[key])
+        Vue.set(state.chatNotificationSettings[chatRoomId], key, settings[key])
       }
     }
   },
@@ -202,13 +200,13 @@ const getters = {
     const contract = getters.currentIdentityState
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
   },
-  notificationSettings (state) {
+  chatNotificationSettings (state) {
     return Object.assign({
       default: {
         messageNotification: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES,
         messageSound: MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES
       }
-    }, state.notificationSettings || {})
+    }, state.chatNotificationSettings || {})
   },
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
@@ -625,7 +623,7 @@ const getters = {
   groupUnreadMessages (state, getters) {
     return (groupID: string) => Object.keys(getters.ourUnreadMessages)
       .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID]?.chatRooms || {}).includes(cID))
-      .map(cID => getters.ourUnreadMessages[cID].mentions.length)
+      .map(cID => getters.ourUnreadMessages[cID].mentions.length || getters.ourUnreadMessages[cID]?.others.length)
       .reduce((sum, n) => sum + n, 0)
   },
   directMessageIDFromUsername (state, getters) {
