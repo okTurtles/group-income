@@ -16,7 +16,7 @@ export type GIKey = {
   name: string;
   purpose: GIKeyPurpose[],
   ringLevel: number;
-  permissions: string[];
+  permissions: '*' | string[];
   meta: Object;
   data: string;
 }

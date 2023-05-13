@@ -10,7 +10,7 @@ import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_IS_PENDING_KEY_REQUESTS, CONTRACT_HAS_RECEIVED_KEYS } from './events.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
-import { findSuitableSecretKeyId } from './utils.js'
+import { findSuitableSecretKeyId, validateKeyAddPermissions } from './utils.js'
 // import 'ses'
 
 const keysToMap = (keys: GIKey[]): Object => {
@@ -237,15 +237,15 @@ export default (sbp('sbp/selectors/register', {
             }
           }
           if (key.name.startsWith('#inviteKey-')) {
-            if (!state._vm.invites) state._vm.invites = Object.create(null)
-            state._vm.invites[key.id] = {
+            if (!state._vm.invites) config.reactiveSet(state._vm, 'invites', Object.create(null))
+            config.reactiveSet(state._vm.invites, key.id, {
               creator: key.meta.creator,
               initialQuantity: key.meta.quantity,
               quantity: key.meta.quantity,
               expires: key.meta.expires,
               inviteSecret: state._volatile?.keys?.[key.id],
               responses: []
-            }
+            })
           }
         }
       },
@@ -413,7 +413,11 @@ export default (sbp('sbp/selectors/register', {
         const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
         // Order is so that KEY_ADD doesn't overwrite existing keys
         // TODO: Verify ringLevel
-        // TODO: Fail if key already exists
+        // TODO: Handle the case of an existing key: its permissions are then augmented
+        if (!signingKey) {
+          throw new Error('Signing key not found but is mandatory for OP_KEY_ADD')
+        }
+        validateKeyAddPermissions(contractID, signingKey, state, v)
         config.reactiveSet(state._vm, 'authorizedKeys', { ...keysToMap(v), ...state._vm.authorizedKeys })
         // TODO: Move to different function, as this is implemented in OP_CONTRACT as well
         for (const key of v) {
@@ -429,15 +433,15 @@ export default (sbp('sbp/selectors/register', {
             }
           }
           if (key.name.startsWith('#inviteKey-')) {
-            if (state._vm.invites) state._vm.invites = Object.create(null)
-            state._vm.invites[key.id] = {
+            if (!state._vm.invites) config.reactiveSet(state._vm, 'invites', Object.create(null))
+            config.reactiveSet(state._vm.invites, key.id, {
               creator: key.meta.creator,
               initialQuantity: key.meta.quantity,
               quantity: key.meta.quantity,
               expires: key.meta.expires,
               inviteSecret: state._volatile?.keys?.[key.id],
               responses: []
-            }
+            })
           }
           // Is this KEY_ADD the result of requesting keys for another contract?
           if (key.meta?.keyRequest) {
@@ -485,6 +489,7 @@ export default (sbp('sbp/selectors/register', {
     if (config.preOp) {
       processOp = config.preOp(message, state) !== false && processOp
     }
+    let signingKey: ?GIKey
 
     // Signature verification
     // TODO: Temporary. Skip verifying default signatures
@@ -504,12 +509,13 @@ export default (sbp('sbp/selectors/register', {
       // The server can assist with this.
 
       const authorizedKeys = opT === GIMessage.OP_CONTRACT ? keysToMap(((opV: any): GIOpContract).keys) : state._vm.authorizedKeys
-      let signingKey = authorizedKeys?.[signature.keyId]
+      signingKey = authorizedKeys?.[signature.keyId]
 
       // `signingKey` may not be present in the contract. This happens in cross-contract interactions,
       // where a contract writes to another contract using its own keys. For example, when one requests
       // to join a group, that message cannot be signed by the group because the secret key is only known
       // to group members. Instead, it is signed with the keys of the person joining.
+      // TODO: Restrict this to OP_KEY_SHARE only
       if (!signingKey && opT !== GIMessage.OP_CONTRACT && message.originatingContractID() !== message.contractID()) {
         const originatingContractState = await sbp('chelonia/withEnv', { skipActionProcessing: true }, [
           'chelonia/latestContractState', message.originatingContractID()
@@ -518,7 +524,9 @@ export default (sbp('sbp/selectors/register', {
         signingKey = originatingContractState._vm?.authorizedKeys?.[signature.keyId]
       }
 
-      if (!signingKey || !Array.isArray(signingKey.permissions) || !signingKey.permissions.includes(opT)) {
+      // Verify that the signing key is found, has the correct purpose and is
+      // allowed to sign this particular operation
+      if (!signingKey || !Array.isArray(signingKey.purpose) || !signingKey.purpose.includes('sig') || (signingKey.permissions !== '*' && (!Array.isArray(signingKey.permissions) || !signingKey.permissions.includes(opT)))) {
         throw new Error('No matching signing key was defined')
       }
 

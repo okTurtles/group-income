@@ -15,7 +15,7 @@ import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import './internals.js'
-import { findSuitablePublicKeyIds, findSuitableSecretKeyId } from './utils.js'
+import { findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -670,6 +670,7 @@ export default (sbp('sbp/selectors/register', {
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
     const payload = (data: GIOpKeyAdd)
     const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
+    validateKeyAddPermissions(contractID, signingKey, state, payload)
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
