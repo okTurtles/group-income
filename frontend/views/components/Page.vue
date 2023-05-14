@@ -189,7 +189,7 @@ $pagePaddingDesktop: 5.5rem;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  
+
   @include phone {
     max-width: 65vw;
   }
