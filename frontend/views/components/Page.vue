@@ -9,7 +9,8 @@ div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-s
         src='/assets/images/group-income-icon-transparent.png'
         alt=''
       )
-      slot(name='title')
+      span
+        slot(name='title')
 
     toggle(v-if='$scopedSlots.sidebar' @toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
     slot(name='description')
@@ -120,6 +121,7 @@ $pagePaddingDesktop: 5.5rem;
   margin: 0 auto;
   padding-top: 1.5rem;
   max-width: 50rem;
+  height: fit-content;
   @include overflow-touch;
 
   &.full-width {
@@ -180,6 +182,17 @@ $pagePaddingDesktop: 5.5rem;
 .p-title {
   display: flex;
   align-items: center;
+
+  > span {
+    width: fit-content;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  @include phone {
+    max-width: 65vw;
+  }
 }
 
 .c-logo {
