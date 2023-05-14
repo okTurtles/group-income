@@ -728,13 +728,15 @@ export default ({
       const fromIsJoined = from.isJoined
 
       const initAfterSynced = (chatRoomId) => {
-        // TODO: `okTurtles.events/once` shouldn't be used here
-        //       since another contract could be started or finished being synced in advance
-        sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
+        const initMessagesAfterSynced = (contractID, isSyncing) => {
           if (contractID === chatRoomId && isSyncing === false) {
             this.setInitMessages()
+            sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
           }
-        })
+        }
+
+        sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
+        sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
       }
 
       if (toChatRoomId !== fromChatRoomId) {
@@ -742,9 +744,7 @@ export default ({
         if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
           this.archiveMessageState(fromChatRoomId)
           this.setMessageEventListener({ to: toChatRoomId, from: fromChatRoomId })
-          if (toIsJoined && sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-            initAfterSynced(toChatRoomId)
-          }
+          toIsJoined && initAfterSynced(toChatRoomId)
         } else {
           this.refreshContent(toChatRoomId, fromChatRoomId)
         }

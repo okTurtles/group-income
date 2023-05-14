@@ -242,12 +242,10 @@ export default (sbp('sbp/selectors/register', {
     let recent
     if (state.contracts[contractID]) {
       recent = state.contracts[contractID].HEAD
-    } else {
+    } else if (!state.pending.includes(contractID)) {
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
-      if (!state.contracts[contractID] && !state.pending.includes(contractID)) {
-        state.pending.push(contractID)
-      }
+      state.pending.push(contractID)
     }
     sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, true)
     this.currentSyncs[contractID] = { firstSync: !state.contracts[contractID] }
