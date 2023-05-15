@@ -37,6 +37,7 @@ import ButtonSubmit from '@components/ButtonSubmit.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import { requestNotificationPermission } from '@model/contracts/shared/nativeNotification.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { noWhitespace } from '@model/contracts/shared/validators.js'
 
 export default ({
   name: 'LoginForm',
@@ -102,7 +103,8 @@ export default ({
   validations: {
     form: {
       username: {
-        [L('A username is required.')]: required
+        [L('A username is required.')]: required,
+        [L('A username cannot contain whitespace.')]: noWhitespace
       },
       password: {
         [L('A password is required.')]: required
