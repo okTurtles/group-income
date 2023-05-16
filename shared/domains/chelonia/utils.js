@@ -6,6 +6,7 @@ export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string
   return state._vm?.authorizedKeys && (state._volatile?.keys || additionalKeyIds?.length) && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) && (state._volatile?.keys?.[k.id] || additionalKeyIds?.includes(k.id)) && (Array.isArray(permissions) ? permissions.reduce((acc, permission) => acc && (k.permissions === '*' || k.permissions.includes(permission), true)) : permissions === k.permissions) && purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true))?.id
 }
 
+// TODO: Resolve inviteKey being added (doesn't have krs permission)
 export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number): ?string[] => {
   return state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) => (k.ringLevel <= (ringLevel ?? Number.POSITIVE_INFINITY)) && (Array.isArray(permissions) ? permissions.reduce((acc, permission) => acc && (k.permissions === '*' || k.permissions.includes(permission), true)) : permissions === k.permissions) && purposes.reduce((acc, purpose) => acc && k.purpose.includes(purpose), true))?.map((k) => k.id)
 }

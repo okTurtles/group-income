@@ -18,8 +18,9 @@ export function encryptedAction (action: string, humanError: string | Function, 
     const signingKeyId = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.name === 'csk')?.id: ?string)
     const encryptionKeyId = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.name === 'cek')?.id: ?string)
 
-    if (!state?._volatile?.keys || !state._volatile.keys[signingKeyId] || !state._volatile.keys[signingKeyId]) {
+    if (!state?._volatile?.keys || !state._volatile.keys[signingKeyId] || !state._volatile.keys[encryptionKeyId]) {
       console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)
+      // TODO: Change to Promise.reject()
       return Promise.resolve()
     }
 

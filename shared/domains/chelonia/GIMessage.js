@@ -100,7 +100,7 @@ export class GIMessage {
       // cloned using the cloneWith method
       nonce: uuidv4()
     }
-    console.log('createV1_0', { op, head })
+    console.log('createV1_0', { op, head, signatureFn })
     return new this(messageToParams(head, op, signatureFn))
   }
 
