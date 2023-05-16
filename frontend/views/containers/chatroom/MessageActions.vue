@@ -7,7 +7,7 @@ menu-parent(ref='menu')
     )
       button.hide-touch.is-icon-small(
         :aria-label='L("Add reaction")'
-        @click='action("openEmoticon")'
+        @click='action("openEmoticon", $event)'
       )
         i.icon-smile-beam
 
@@ -53,7 +53,7 @@ menu-parent(ref='menu')
     ul
       menu-item.hide-desktop.is-icon-small(
         tag='button'
-        @click='action("openEmoticon")'
+        @click='action("openEmoticon", $event)'
       )
         i.icon-smile-beam
         i18n Add reaction
@@ -185,10 +185,6 @@ export default ({
 
   .c-content {
     @extend %floating-panel;
-
-    // @include phone {
-    //   padding: 0;
-    // }
 
     @include desktop {
       width: 100%;
