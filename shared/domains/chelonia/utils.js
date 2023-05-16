@@ -19,7 +19,7 @@ export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey,
       throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to add a key with rignLevel ' + k.ringLevel)
     }
     if (signingKeyPermissions !== '*') {
-      if (!Array.isArray(k.permissions) || k.permissions.reduce((acc, cv) => acc && signingKeyPermissions.has(cv), true)) {
+      if (!Array.isArray(k.permissions) || !k.permissions.reduce((acc, cv) => acc && signingKeyPermissions.has(cv), true)) {
         throw new Error('Unable to add key with more permissions than the signing key. singingKey permissions: ' + String(signingKey?.permissions) + '; key add permissions: ' + String(k.permissions))
       }
     }

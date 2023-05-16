@@ -188,7 +188,6 @@ export default (sbp('sbp/selectors/register', {
             ringLevel: 1,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_SHARE],
             meta: {
-              type: 'cek',
               private: {
                 keyId: CEKid,
                 content: CEKs,

@@ -670,7 +670,10 @@ export default (sbp('sbp/selectors/register', {
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
     const payload = (data: GIOpKeyAdd)
     const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
-    validateKeyAddPermissions(contractID, signingKey, state, payload)
+    if (!signingKey || !state?._vm?.authorizedKeys?.[params.signingKeyId]) {
+      throw new Error('Missing signing key from state')
+    }
+    validateKeyAddPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     const msg = GIMessage.createV1_0({
       contractID,
       previousHEAD,
@@ -679,7 +682,7 @@ export default (sbp('sbp/selectors/register', {
         payload
       ],
       manifest: manifestHash,
-      signatureFn: signingKey ? signatureFnBuilder(signingKey) : undefined
+      signatureFn: signatureFnBuilder(signingKey)
     })
     hooks && hooks.prepublish && hooks.prepublish(msg)
     await sbp('chelonia/private/out/publishEvent', msg, publishOptions)
