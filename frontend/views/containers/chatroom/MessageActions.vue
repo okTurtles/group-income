@@ -106,6 +106,7 @@ import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'MessageActions',
+  inject: ['usePoll'],
   components: {
     MenuParent,
     MenuTrigger,
@@ -126,7 +127,9 @@ export default ({
       return this.type === MESSAGE_TYPES.POLL
     },
     isEditable (): Boolean {
-      return this.isCurrentUser && (this.isText || this.isPoll)
+      if (this.isText) { return this.isCurrentUser }
+      else if (this.isPoll) { return this.usePoll.isEditable }
+      else return false
     }
   },
   methods: {

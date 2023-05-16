@@ -9,7 +9,7 @@ message-base(
 
   template(#full-width-body='')
     .c-poll-container
-      form.c-poll-form(@submit.prevent='')
+      form.c-poll-inner(@submit.prevent='')
         i18n.c-poll-label(tag='label') poll
         h3.is-title-4.c-poll-title {{ pollData.question }}
 
@@ -28,6 +28,7 @@ message-base(
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
 import { MESSAGE_VARIANTS, POLL_TYPES } from '@model/contracts/shared/constants.js'
 
@@ -56,7 +57,7 @@ export default ({
         return Object.values(MESSAGE_VARIANTS).indexOf(value) !== -1
       }
     },
-    isCurrentUser: Boolean
+    isCurrentUser: Boolean // says if the current user is the creator of the message
   },
   data () {
     return {
@@ -66,11 +67,23 @@ export default ({
     }
   },
   computed: {
+    ...mapGetters([
+      'ourUsername'
+    ]),
     allowMultipleChoices () {
       return this.pollData.pollType === POLL_TYPES.MULTIPLE_CHOICES
     },
     enableSubmitBtn () {
       return this.allowMultipleChoices ? this.form.selectedOptions.length > 0 : Boolean(this.form.selectedOptions)
+    },
+    votesFlattened () {
+      return this.pollData.options.reduce((accu, opt) => [ ...accu, ...opt.voted ], [])
+    },
+    hasVoted () { // checks if the current user has voted on this poll or not
+      return this.votesFlattened.includes(this.outUsername)
+    },
+    isPollEditable () { // If the current user is the creator of the poll and no one has voted yet, poll can be editted.
+      return this.isCurrentUser && this.votesFlattened.length === 0
     }
   },
   methods: {
@@ -82,6 +95,14 @@ export default ({
     },
     addEmoticon (emoticon) {
       this.$emit('add-emoticon', emoticon)
+    }
+  },
+  provide () {
+    return {
+      usePoll: {
+        isEditable: this.isPollEditable,
+        hasVoted: this.hasVoted
+      }
     }
   }
 }: Object)
@@ -104,7 +125,7 @@ export default ({
   }
 }
 
-.c-poll-form {
+.c-poll-inner {
   width: 100%;
   border-radius: 10px;
   border: 1px solid $general_0;
