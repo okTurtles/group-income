@@ -252,8 +252,11 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing && !env.skipActionProcessing) {
           const decrypted = config.decryptFn.call(self, message.opValue(), state)
+          message.decryptedValue(() => decrypted)
           opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
+          console.log('OP_ACTION_ENCRYPTED: decrypted')
         }
+        console.log('OP_ACTION_ENCRYPTED: skipped action processing')
       },
       [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
         if (!config.skipActionProcessing && !env.skipActionProcessing) {
@@ -843,7 +846,7 @@ const handleEvent = {
       const manifestHash = message.manifest()
       const hash = message.hash()
       const id = message.id()
-      const { action, data, meta } = this.config.decryptFn.call(this, message.opValue(), state)
+      const { action, data, meta } = message.decryptedValue()
       const mutation = { data, meta, hash, id, contractID, description: message.description() }
       await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
     }

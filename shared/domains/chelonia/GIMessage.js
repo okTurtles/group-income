@@ -157,8 +157,11 @@ export class GIMessage {
 
   decryptedValue (fn?: Function): any {
     if (!this._decrypted) {
+      if (this.opType() === GIMessage.OP_ACTION_ENCRYPTED && typeof fn !== 'function') {
+        throw new Error('Decryption function must be given')
+      }
       this._decrypted = (
-        this.opType() === GIMessage.OP_ACTION_ENCRYPTED && fn !== undefined
+        this.opType() === GIMessage.OP_ACTION_ENCRYPTED && fn
           ? fn(this.opValue())
           : this.opValue()
       )
@@ -170,7 +173,7 @@ export class GIMessage {
 
   message (): Object { return this._message }
 
-  op (): GIOp { return [this.head().op, this.message(), this.decryptedValue()] }
+  op (): GIOp { return this._decrypted ? [this.head().op, this.message(), this.decryptedValue()] : [this.head().op, this.message()] }
 
   opType (): GIOpType { return this.head().op }
 
