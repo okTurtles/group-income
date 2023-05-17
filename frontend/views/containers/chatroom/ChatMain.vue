@@ -195,6 +195,7 @@ export default ({
       'chatRoomAttributes',
       'chatRoomUsers',
       'ourIdentityContractId',
+      'ourUsername',
       'currentIdentityState',
       'isJoinedChatRoom',
       'setChatRoomScrollPosition',
@@ -442,7 +443,7 @@ export default ({
       let events = []
       const isLoadedFromStorage = shouldInitiate && this.latestEvents.length
       if (isLoadedFromStorage) {
-        const prevLastEventHash = this.messageState.prevTo // NOTE: check setInitMessages function
+        const prevLastEventHash = this.messageState.prevTo // NOTE: check loadMessagesFromStorage function
         let newEvents = []
         if (latestHash !== prevLastEventHash) {
           newEvents = await sbp('chelonia/out/eventsBetween', prevLastEventHash, latestHash, 0)
@@ -497,7 +498,7 @@ export default ({
       this.$forceUpdate()
     },
     async loadMessagesFromStorage () {
-      const prevState = await sbp('gi.db/archive/load', this.getArchiveKeyFromChatRoomId())
+      const prevState = await sbp('gi.db/archive/load', this.archiveKeyFromChatRoomId())
       const latestEvents = prevState ? JSON.parse(prevState) : []
       this.messageState.prevFrom = latestEvents.length ? GIMessage.deserialize(latestEvents[0]).hash() : null
       this.messageState.prevTo = latestEvents.length
@@ -701,39 +702,59 @@ export default ({
 
       // NOTE: save messages in the browser storage, but not more than CHATROOM_MAX_ARCHIVE_ACTION_PAGES pages of events
       if (this.latestEvents.length >= CHATROOM_MAX_ARCHIVE_ACTION_PAGES * unit) {
-        sbp('gi.db/archive/delete', this.getArchiveKeyFromChatRoomId(chatRoomId))
+        sbp('gi.db/archive/delete', this.archiveKeyFromChatRoomId(chatRoomId))
       } else if (to !== this.messageState.prevTo || from !== this.messageState.prevFrom) {
         // this.currentChatRoomId could be wrong when the channels are switched very fast
         // so it's good to initiate using input parameter chatRoomId
-        sbp('gi.db/archive/save', this.getArchiveKeyFromChatRoomId(chatRoomId), JSON.stringify(this.latestEvents))
+        sbp('gi.db/archive/save', this.archiveKeyFromChatRoomId(chatRoomId), JSON.stringify(this.latestEvents))
       }
     },
-    getArchiveKeyFromChatRoomId (chatRoomId) {
+    archiveKeyFromChatRoomId (chatRoomId) {
       const curChatRoomId = chatRoomId || this.currentChatRoomId
-      return `messages/${curChatRoomId}`
+      return `messages/${this.ourUsername}/${curChatRoomId}`
     },
-    refreshContent: debounce(function (from, to) {
+    refreshContent: debounce(function (to, from) {
       // NOTE: using debounce we can skip unnecessary rendering contents
       this.archiveMessageState(from)
       this.setInitMessages()
-      this.setMessageEventListener({ from, to })
+      this.setMessageEventListener({ to, from })
     }, 250)
   },
   watch: {
-    'currentChatRoomId' (to, from) {
-      if (from) {
-        this.ephemeral.messagesInitiated = false
-      }
-      this.refreshContent(from, to)
-    },
-    'summary.isJoined' (to, from) {
-      if (to) {
-        sbp('okTurtles.events/once', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
-          if (contractID === this.currentChatRoomId && isSyncing === false) {
-            this.setMessageEventListener({ from: contractID, to: contractID })
+    'summary' (to, from) {
+      const toChatRoomId = to.chatRoomId
+      const fromChatRoomId = from.chatRoomId
+      const toIsJoined = to.isJoined
+      const fromIsJoined = from.isJoined
+
+      const initAfterSynced = (toChatRoomId, fromChatRoomId) => {
+        const initMessagesAfterSynced = (contractID, isSyncing) => {
+          if (contractID === toChatRoomId && isSyncing === false) {
             this.setInitMessages()
+            this.setMessageEventListener({ to: toChatRoomId, from: fromChatRoomId })
+            sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
           }
-        })
+        }
+
+        sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
+        sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
+      }
+
+      if (toChatRoomId !== fromChatRoomId) {
+        this.ephemeral.messagesInitiated = false
+        if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
+          this.archiveMessageState(fromChatRoomId)
+          toIsJoined && initAfterSynced(toChatRoomId, fromChatRoomId)
+        } else {
+          this.refreshContent(toChatRoomId, fromChatRoomId)
+        }
+      } else if (toIsJoined && toIsJoined !== fromIsJoined) {
+        if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
+          initAfterSynced(toChatRoomId, fromChatRoomId) // NOTE: toChatRoomId equals to fromChatRoomId here
+        } else {
+          this.setInitMessages()
+          this.setMessageEventListener({ to: toChatRoomId, from: fromChatRoomId })
+        }
       }
     }
   }
