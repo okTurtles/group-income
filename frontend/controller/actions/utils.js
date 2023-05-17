@@ -1,9 +1,9 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
 import { GIErrorUIRuntimeError, LError } from '@common/common.js'
+import sbp from '@sbp/sbp'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import type { GIActionParams } from './types.js'
-import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 
 // Utility function to send encrypted actions ('chelonia/out/actionEncrypted')
 // This function covers the common case of sending an encrypted action that is
@@ -13,10 +13,16 @@ import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
 // to emit the encrypted action when appropriate.
 // Note that this function does not currently support specifying custom encryption
 // or signing keys, and that such keys in params get overridden.
-export function encryptedAction (action: string, humanError: string | Function, handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams) => Promise<void>): Object {
+export function encryptedAction (
+  action: string,
+  humanError: string | Function,
+  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams) => Promise<void>,
+  encryptionKeyName?: string,
+  signingKeyName?: string
+): Object {
   const sendMessage = (outerParams: GIActionParams, state: Object) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
-    const signingKeyId = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.name === 'csk')?.id: ?string)
-    const encryptionKeyId = (((Object.values(Object(state?._vm?.authorizedKeys)): any): GIKey[]).find((k) => k?.name === 'cek')?.id: ?string)
+    const signingKeyId = findKeyIdByName(state, signingKeyName ?? 'csk')
+    const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
 
     if (!state?._volatile?.keys || !state._volatile.keys[signingKeyId] || !state._volatile.keys[encryptionKeyId]) {
       console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)

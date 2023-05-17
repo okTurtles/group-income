@@ -142,7 +142,7 @@ export default (sbp('sbp/selectors/register', {
     // Secret keys to be stored encrypted in the contract
     const CSKs = encrypt(IEK, serializeKey(CSK, true))
     const CEKs = encrypt(IEK, serializeKey(CEK, true))
-    const PEKs = encrypt(CEK, serializeKey(PEK, true))
+    const PEKs = encrypt(IEK, serializeKey(PEK, true))
 
     let userID
     // next create the identity contract itself and associate it with the mailbox
@@ -219,7 +219,7 @@ export default (sbp('sbp/selectors/register', {
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
             meta: {
               private: {
-                keyId: CEKid,
+                keyId: IEKid,
                 content: PEKs
               }
             },
@@ -436,7 +436,7 @@ export default (sbp('sbp/selectors/register', {
     sbp('okTurtles.events/emit', LOGOUT)
     sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
   },
-  ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.')),
+  ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.'), undefined, 'pek'),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
   ...encryptedAction('gi.actions/identity/setLoginState', L('Failed to set login state.'))
 }): string[])
