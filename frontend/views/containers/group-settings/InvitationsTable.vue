@@ -183,7 +183,7 @@ export default ({
 
         return
       }
-  
+
       copyToClipBoard()
     },
     inviteStatusDescription ({
