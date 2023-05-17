@@ -73,7 +73,6 @@ import { Vue, L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
-import { OPEN_POLL, CLOSE_POLL } from '@utils/events.js'
 import { MESSAGE_TYPES, POLL_TYPES } from '@model/contracts/shared/constants.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
@@ -191,9 +190,6 @@ export default {
     }
   },
   created () {
-    sbp('okTurtles.events/on', OPEN_POLL, this.open)
-    sbp('okTurtles.events/on', CLOSE_POLL, this.close)
-
     this.matchMediaDesktop = window.matchMedia('screen and (min-width: 770px)')
     this.matchMediaDesktop.onchange = (e) => {
       this.ephemeral.isDesktopScreen = e.matches
@@ -203,8 +199,6 @@ export default {
     window.addEventListener('resize', this.close)
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', OPEN_POLL, this.open)
-    sbp('okTurtles.events/off', CLOSE_POLL, this.close)
     window.removeEventListener('resize', this.close)
 
     this.matchMediaDesktop.onchange = null
