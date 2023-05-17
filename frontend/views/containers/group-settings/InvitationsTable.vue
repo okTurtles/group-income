@@ -41,21 +41,17 @@ page-section.c-section(:title='L("Invite links")')
               i.icon-info
         td.c-invite-link
           link-to-copy.c-invite-link-wrapper(:link='item.inviteLink')
-          button.is-icon-small.c-invite-link-button-mobile(
-            @click='activateWebShare(item.inviteLink)'
-            :aria-label='L("Copy link")'
-          )
-            i.icon-ellipsis-v
-          menu-parent.c-webshare-fallback
-            menu-trigger.is-icon-small.c-fallback-trigger(ref='webShareFallbackBtn')
-            menu-content.c-dropdown-fallback
+
+          menu-parent.c-invite-link-options-mobile.hide-tablet
+            menu-trigger.is-icon-small(ref='webShareFallbackBtn')
+              i.icon-ellipsis-v
+            menu-content.c-dropdown-invite-link
               ul
                 menu-item(
                   tag='button'
                   icon='link'
+                  @click='copyInviteLink(item.inviteLink)'
                 )
-                  // #780 TODO test/verify if webShare works in a real mobile device.
-                  //      And refactor this markup to only have one menu-parent
                   i18n Copy link
                 menu-item(
                   v-if='item.status.isActive'
@@ -171,15 +167,24 @@ export default ({
     unfocusSelect () {
       this.$refs.select.blur()
     },
-    activateWebShare (inviteLink) {
+    copyInviteLink (inviteLink) {
+      const copyToClipBoard = () => {
+        navigator.clipboard.writeText(inviteLink)
+      }
+
       if (navigator.share) {
         navigator.share({
           title: L('Your invite'),
           url: inviteLink
+        }).catch((error) => {
+          console.error('navigator.share failed with:', error)
+          copyToClipBoard()
         })
-      } else {
-        this.$refs.webShareFallbackBtn[0].handleClick()
+
+        return
       }
+  
+      copyToClipBoard()
     },
     inviteStatusDescription ({
       isAnyoneLink,
@@ -348,20 +353,12 @@ export default ({
       width: 100%;
     }
 
-    .c-invite-link-button-mobile {
-      display: none;
-    }
-
     @include phone {
       justify-content: flex-end;
       padding-right: 0.5rem;
 
       &-wrapper {
         display: none;
-      }
-
-      .c-invite-link-button-mobile {
-        display: inline-block;
       }
     }
   }
@@ -430,7 +427,7 @@ export default ({
   }
 
   .c-dropdown-action,
-  .c-dropdown-fallback {
+  .c-dropdown-invite-link {
     width: max-content;
     transform: translateX(-100%);
   }
@@ -440,9 +437,12 @@ export default ({
     margin: 3.5rem 0 0 3rem;
   }
 
-  .c-dropdown-fallback {
+  .c-dropdown-invite-link {
     min-width: 8.5rem;
     margin-top: 2rem;
+    right: unset;
+    left: 2rem;
+    top: 0.5rem;
   }
 
   .c-webshare-fallback {
@@ -452,11 +452,6 @@ export default ({
     transform: translateY(-50%);
     margin-right: 0.5rem;
     z-index: $zindex-tooltip;
-  }
-
-  .c-fallback-trigger {
-    width: 0;
-    height: 0;
   }
 }
 
