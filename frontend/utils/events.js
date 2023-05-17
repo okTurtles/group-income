@@ -20,9 +20,6 @@ export const OPEN_EMOTICON = 'open-emoticon'
 export const CLOSE_EMOTICON = 'close-emoticon'
 export const SELECT_EMOTICON = 'select-emoticon'
 
-export const OPEN_POLL = 'open-poll'
-export const CLOSE_POLL = 'close-poll'
-
 export const CAPTURED_LOGS = 'captured-logs'
 export const SET_APP_LOGS_FILTER = 'set-app-logs-filter'
 

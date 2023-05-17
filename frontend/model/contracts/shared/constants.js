@@ -119,6 +119,6 @@ export const POLL_TYPES = {
 
 export const POLL_STATUS = {
   ACTIVE: 'active', // the poll is open
-  PENDING: 'closed', // everyone has voted on the poll
+  CLOSED: 'closed', // everyone has voted on the poll
   EXPIRED: 'expired' // not everyone has voted on the poll but it has expired
 }
