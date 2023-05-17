@@ -77,7 +77,7 @@ export default ({
       return this.allowMultipleChoices ? this.form.selectedOptions.length > 0 : Boolean(this.form.selectedOptions)
     },
     votesFlattened () {
-      return this.pollData.options.reduce((accu, opt) => [ ...accu, ...opt.voted ], [])
+      return this.pollData.options.reduce((accu, opt) => [...accu, ...opt.voted], [])
     },
     hasVoted () { // checks if the current user has voted on this poll or not
       return this.votesFlattened.includes(this.outUsername)

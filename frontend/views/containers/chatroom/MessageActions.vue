@@ -127,9 +127,7 @@ export default ({
       return this.type === MESSAGE_TYPES.POLL
     },
     isEditable (): Boolean {
-      if (this.isText) { return this.isCurrentUser }
-      else if (this.isPoll) { return this.usePoll.isEditable }
-      else return false
+      return this.isCurrentUser && (this.isText || this.isPoll)
     }
   },
   methods: {
