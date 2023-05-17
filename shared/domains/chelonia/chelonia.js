@@ -15,7 +15,7 @@ import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import './internals.js'
-import { findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions } from './utils.js'
+import { findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -660,6 +660,7 @@ export default (sbp('sbp/selectors/register', {
     return msg
   },
   'chelonia/out/keyAdd': async function (params: ChelKeyAddParams): Promise<GIMessage> {
+    // TODO: For foreign keys, recalculate the key id
     // TODO: Make this a noop if the key already exsits with the given permissions
     const { contractID, contractName, data, hooks, publishOptions } = params
     const manifestHash = this.config.contracts.manifests[contractName]
@@ -702,6 +703,7 @@ export default (sbp('sbp/selectors/register', {
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
     const payload = (data: GIOpKeyDel)
     const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
+    validateKeyDelPermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
     const signatureFn = signingKey ? signatureFnBuilder(signingKey) : undefined
     const msg = GIMessage.createV1_0({
       contractID,
@@ -763,7 +765,16 @@ export default (sbp('sbp/selectors/register', {
     //      (1) include the hash if relevant
     //      (2) for foreign keys with OP_KEY_SHARE permission, allow only
     //          if in response to an OP_KEY_REQUEST
-    const keyShareKeys = findSuitablePublicKeyIds(state, [GIMessage.OP_KEY_REQUEST_SEEN], ['sig'])?.map((keyId) => ({ foreignKey: `sp:${encodeURIComponent(contractID)}?keyName=${encodeURIComponent(state._vm.authorizedKeys[keyId].name)}`, ...state._vm.authorizedKeys['keyId'], permissions: [GIMessage.OP_KEY_SHARE], purpose: ['sig'], ringLevel: Number.MAX_SAFE_INTEGER, name: `${contractID}/${keyId}`, meta: { keyRequest: { id: msg.id(), contractID, outerKeyId } } }))
+    const keyShareKeys = findSuitablePublicKeyIds(state, [GIMessage.OP_KEY_REQUEST_SEEN], ['sig'])?.map((keyId) => ({
+      foreignKey: `sp:${encodeURIComponent(contractID)}?keyName=${encodeURIComponent(state._vm.authorizedKeys[keyId].name)}`,
+      id: keyId,
+      data: state._vm.authorizedKeys[keyId].data,
+      permissions: [GIMessage.OP_KEY_SHARE],
+      purpose: ['sig'],
+      ringLevel: Number.MAX_SAFE_INTEGER,
+      name: `${contractID}/${keyId}`,
+      meta: { keyRequest: { id: msg.id(), contractID, outerKeyId } }
+    }))
     if (!keyShareKeys?.length) {
       throw ChelErrorUnexpected(`Unable to send key request. Contract is missing a key with OP_KEY_REQUEST_SEEN permission. contractID=${contractID} originatingContractID=${originatingContractID}`)
     }

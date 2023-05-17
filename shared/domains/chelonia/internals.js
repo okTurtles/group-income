@@ -10,7 +10,7 @@ import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACT_IS_SYNCING, CONTRACTS_MODIFIED, EVENT_HANDLED, CONTRACT_IS_PENDING_KEY_REQUESTS, CONTRACT_HAS_RECEIVED_KEYS } from './events.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
-import { findSuitableSecretKeyId, validateKeyAddPermissions } from './utils.js'
+import { findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions } from './utils.js'
 // import 'ses'
 
 const keysToMap = (keys: GIKey[]): Object => {
@@ -476,7 +476,10 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', {})
-        // TODO: Check ringLevel
+        if (!signingKey) {
+          throw new Error('Signing key not found but is mandatory for OP_KEY_DEL')
+        }
+        validateKeyDelPermissions(contractID, signingKey, state, v)
         v.forEach(key => {
           delete state._vm.authorizedKeys[v]
           if (state._volatile?.keys) { delete state._volatile.keys[v] }
@@ -495,7 +498,6 @@ export default (sbp('sbp/selectors/register', {
     let signingKey: ?GIKey
 
     // Signature verification
-    // TODO: Temporary. Skip verifying default signatures
     if (signature.type === 'default') {
       if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
         console.error('Received unsigned message', message)
