@@ -106,7 +106,6 @@ import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'MessageActions',
-  inject: ['usePoll'],
   components: {
     MenuParent,
     MenuTrigger,

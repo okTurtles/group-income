@@ -20,7 +20,7 @@ import {
 import { chatRoomAttributesType, messageType } from './shared/types.js'
 import { createMessage, leaveChatRoom, findMessageIdx, makeMentionFromUsername } from './shared/functions.js'
 import { makeNotification } from './shared/nativeNotification.js'
-import { objectOf, string, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { objectOf, string, optional, arrayOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 
 function createNotificationData (
   notificationType: string,
@@ -521,6 +521,34 @@ sbp('chelonia/defineContract', {
           } else {
             Vue.delete(state.messages[msgIndex], 'emoticons')
           }
+        }
+      },
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
+      }
+    },
+    'gi.contracts/chatroom/voteOnPoll': {
+      validate: objectOf({
+        hash: string,
+        votes: arrayOf(string)
+      }),
+      process ({ data, meta }, { state }) {
+        const msgIndex = findMessageIdx(data.hash, state.messages)
+
+        if (msgIndex >= 0) {
+          const myVotes = data.votes
+          const pollData = state.messages[msgIndex].pollData
+          const optsCopy = cloneDeep(pollData.options)
+
+          myVotes.forEach(optId => {
+            const foundOpt = optsCopy.find(x => x.id === optId)
+
+            if (foundOpt) {
+              foundOpt.voted.push(meta.username)
+            }
+          })
+
+          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
         }
       },
       sideEffect ({ contractID, hash }) {
