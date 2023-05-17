@@ -716,8 +716,8 @@ export default ({
     refreshContent: debounce(function (to, from) {
       // NOTE: using debounce we can skip unnecessary rendering contents
       this.archiveMessageState(from)
-      this.setMessageEventListener({ to, from })
       this.setInitMessages()
+      this.setMessageEventListener({ to, from })
     }, 250)
   },
   watch: {
@@ -727,10 +727,11 @@ export default ({
       const toIsJoined = to.isJoined
       const fromIsJoined = from.isJoined
 
-      const initAfterSynced = (chatRoomId) => {
+      const initAfterSynced = (toChatRoomId, fromChatRoomId) => {
         const initMessagesAfterSynced = (contractID, isSyncing) => {
-          if (contractID === chatRoomId && isSyncing === false) {
+          if (contractID === toChatRoomId && isSyncing === false) {
             this.setInitMessages()
+            this.setMessageEventListener({ to: toChatRoomId, from: fromChatRoomId })
             sbp('okTurtles.events/off', CONTRACT_IS_SYNCING, initMessagesAfterSynced)
           }
         }
@@ -743,16 +744,16 @@ export default ({
         this.ephemeral.messagesInitiated = false
         if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
           this.archiveMessageState(fromChatRoomId)
-          this.setMessageEventListener({ to: toChatRoomId, from: fromChatRoomId })
-          toIsJoined && initAfterSynced(toChatRoomId)
+          toIsJoined && initAfterSynced(toChatRoomId, fromChatRoomId)
         } else {
           this.refreshContent(toChatRoomId, fromChatRoomId)
         }
       } else if (toIsJoined && toIsJoined !== fromIsJoined) {
         if (sbp('chelonia/contract/isSyncing', toChatRoomId)) {
-          // NOTE: toChatRoomId equals to fromChatRoomId here
+          initAfterSynced(toChatRoomId, fromChatRoomId) // NOTE: toChatRoomId equals to fromChatRoomId here
+        } else {
+          this.setInitMessages()
           this.setMessageEventListener({ to: toChatRoomId, from: fromChatRoomId })
-          initAfterSynced(toChatRoomId)
         }
       }
     }
