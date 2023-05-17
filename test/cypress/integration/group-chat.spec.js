@@ -72,6 +72,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   function joinChannel (channelName) {
     cy.getByDT('joinChannel').click()
+    cy.getByDT('joinChannel').should('not.exist')
     cy.giWaitUntilMessagesLoaded()
     cy.giCheckIfJoinedChatroom(channelName, me)
   }
