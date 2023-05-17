@@ -123,22 +123,26 @@ export default (sbp('sbp/selectors/register', {
     const IEK = await deriveKeyFromPassword(CURVE25519XSALSA20POLY1305, password, contractSalt)
     const CSK = keygen(EDWARDS25519SHA512BATCH)
     const CEK = keygen(CURVE25519XSALSA20POLY1305)
+    const PEK = keygen(CURVE25519XSALSA20POLY1305)
 
     // Key IDs
     const IPKid = keyId(IPK)
     const IEKid = keyId(IEK)
     const CSKid = keyId(CSK)
     const CEKid = keyId(CEK)
+    const PEKid = keyId(PEK)
 
     // Public keys to be stored in the contract
     const IPKp = serializeKey(IPK, false)
     const IEKp = serializeKey(IEK, false)
     const CSKp = serializeKey(CSK, false)
     const CEKp = serializeKey(CEK, false)
+    const PEKp = serializeKey(PEK, false)
 
     // Secret keys to be stored encrypted in the contract
     const CSKs = encrypt(IEK, serializeKey(CSK, true))
     const CEKs = encrypt(IEK, serializeKey(CEK, true))
+    const PEKs = encrypt(CEK, serializeKey(PEK, true))
 
     let userID
     // next create the identity contract itself and associate it with the mailbox
@@ -148,7 +152,8 @@ export default (sbp('sbp/selectors/register', {
           [IPKid]: IPK,
           [IEKid]: IEK,
           [CSKid]: CSK,
-          [CEKid]: CEK
+          [CEKid]: CEK,
+          [PEKid]: PEK
         }
       })
 
@@ -157,7 +162,7 @@ export default (sbp('sbp/selectors/register', {
         publishOptions,
         signingKeyId: IPKid,
         actionSigningKeyId: CSKid,
-        actionEncryptionKeyId: CEKid,
+        actionEncryptionKeyId: PEKid,
         keys: [
           {
             id: IPKid,
@@ -205,6 +210,20 @@ export default (sbp('sbp/selectors/register', {
               }
             },
             data: CEKp
+          },
+          {
+            id: PEKid,
+            name: 'pek',
+            purpose: ['enc'],
+            ringLevel: 2,
+            permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            meta: {
+              private: {
+                keyId: CEKid,
+                content: PEKs
+              }
+            },
+            data: PEKp
           }
         ],
         data: {

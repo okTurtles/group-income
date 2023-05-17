@@ -1,35 +1,24 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
-  INVITE_INITIAL_CREATOR,
-  INVITE_EXPIRES_IN_DAYS,
-  CHATROOM_GENERAL_NAME,
-  CHATROOM_TYPES,
-  CHATROOM_PRIVACY_LEVEL,
-  PROPOSAL_INVITE_MEMBER,
-  PROPOSAL_REMOVE_MEMBER,
-  PROPOSAL_GROUP_SETTING_CHANGE,
-  PROPOSAL_PROPOSAL_SETTING_CHANGE,
-  PROPOSAL_GENERIC,
-  STATUS_OPEN,
-  MESSAGE_TYPES,
-  PROPOSAL_VARIANTS
+  CHATROOM_GENERAL_NAME, CHATROOM_PRIVACY_LEVEL, CHATROOM_TYPES, INVITE_EXPIRES_IN_DAYS, INVITE_INITIAL_CREATOR, MESSAGE_TYPES, PROPOSAL_GENERIC, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_INVITE_MEMBER, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_REMOVE_MEMBER, PROPOSAL_VARIANTS, STATUS_OPEN
 } from '@model/contracts/shared/constants.js'
-import proposals from '@model/contracts/shared/voting/proposals.js'
-import { imageUpload } from '@utils/image.js'
 import { merge, omit, randomIntFromRange } from '@model/contracts/shared/giLodash.js'
-import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS } from '@model/contracts/shared/time.js'
-import { encryptedAction } from './utils.js'
-import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
+import { addTimeToDate, dateToPeriodStamp, DAYS_MILLIS } from '@model/contracts/shared/time.js'
+import proposals from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
-import type { GIActionParams } from './types.js'
-import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
+import sbp from '@sbp/sbp'
 import { REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { imageUpload } from '@utils/image.js'
+import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
+import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, encrypt, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import type { GIActionParams } from './types.js'
+import { encryptedAction } from './utils.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -284,7 +273,23 @@ export default (sbp('sbp/selectors/register', {
       // fresh session.
       // This is a special case, as normally these keys would be shared using
       // invites
-      await sbp('gi.actions/out/shareVolatileKeys', { destinationContractID: userID, destinationContractName: 'gi.contracts/identity', contractID })
+      await sbp('gi.actions/out/shareVolatileKeys', {
+        destinationContractID: userID,
+        destinationContractName: 'gi.contracts/identity',
+        contractID,
+        keyIds: '*'
+      })
+
+      // Share our PEK with the group so that group members can see
+      // our name and profile information
+      const PEKid = findKeyIdByName(rootState[userID], 'pek')
+
+      PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
+        destinationContractID: contractID,
+        destinationContractName: 'gi.contracts/group',
+        contractID: userID,
+        keyIds: [PEKid]
+      })
 
       return message
     } catch (e) {
@@ -303,6 +308,7 @@ export default (sbp('sbp/selectors/register', {
       const rootState = sbp('state/vuex/state')
       const me = rootState.loggedIn.username
       const username = params.data?.username || me
+      const userID = rootState.loggedIn.identityContractID
 
       console.log('@@@@@@@@ AT join for ' + params.contractID)
 
@@ -349,6 +355,19 @@ export default (sbp('sbp/selectors/register', {
         if (!state.profiles?.[username]) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
+          // Share our PEK with the group so that group members can see
+          // our name and profile information
+          const PEKid = findKeyIdByName(rootState[userID], 'pek')
+
+          PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
+            destinationContractID: params.contractID,
+            destinationContractName: 'gi.contracts/group',
+            contractID: userID,
+            keyIds: [PEKid]
+          })
+
+          // Send inviteAccept action to the group to add ourselves to the
+          // members list
           await sbp('gi.actions/group/inviteAccept', {
             ...omit(params, ['options', 'action', 'hooks']),
             hooks: {
@@ -358,6 +377,7 @@ export default (sbp('sbp/selectors/register', {
           })
 
           if (generalChatRoomId) {
+            // Join the general chatroom
             await sbp('gi.actions/group/joinChatRoom', {
               ...omit(params, ['options', 'data', 'hooks']),
               data: {
@@ -475,7 +495,12 @@ export default (sbp('sbp/selectors/register', {
     // with the group. This allows all group members to be able to join the
     // chatroom without any extra steps, and, in particular, it enables joining
     // the #General chatroom upon joining a group, in a single step.
-    await sbp('gi.actions/out/shareVolatileKeys', { destinationContractID: params.contractID, destinationContractName: 'gi.contracts/group', contractID: message.contractID() })
+    await sbp('gi.actions/out/shareVolatileKeys', {
+      destinationContractID: params.contractID,
+      destinationContractName: 'gi.contracts/group',
+      contractID: message.contractID(),
+      keyIds: '*'
+    })
 
     await sendMessage({
       ...omit(params, ['options', 'action', 'data', 'hooks']),

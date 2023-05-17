@@ -1007,8 +1007,7 @@ sbp('chelonia/defineContract', {
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name in profiles) {
             if (name !== loggedIn.username) {
-              // TODO skip for now since those contracts are encrypted
-              // await sbp('chelonia/contract/sync', profiles[name].contractID)
+              await sbp('chelonia/contract/sync', profiles[name].contractID)
             }
           }
         } else {
