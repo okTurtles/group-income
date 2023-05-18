@@ -23,12 +23,14 @@ import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
 import PollToVote from './poll-message-content/PollToVote.vue'
+import PollVoted from './poll-message-content/PollVoted.vue'
 
 export default ({
   name: 'MessagePoll',
   components: {
     MessageBase,
-    PollToVote
+    PollToVote,
+    PollVoted
   },
   props: {
     pollData: Object, // { creator, status, question, options ... }
@@ -67,7 +69,7 @@ export default ({
       return this.isCurrentUser && this.votesFlattened.length === 0
     },
     messageContentComponent () {
-      return this.hasVoted ? '' : 'poll-to-vote'
+      return this.hasVoted ? 'poll-voted' : 'poll-to-vote'
     }
   },
   methods: {
@@ -84,7 +86,8 @@ export default ({
   provide () {
     return {
       pollUtils: {
-        hasVoted: this.hasVoted
+        hasVoted: this.hasVoted,
+        totalVoteCount: this.votesFlattened.length
       }
     }
   }
