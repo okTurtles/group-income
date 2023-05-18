@@ -6,7 +6,7 @@
       modal-close.c-popup-close-btn(v-if='!ephemeral.isDesktopScreen' @close='close')
 
     section.c-body
-      form.c-form(@submit.prevent='submit')
+      form.c-form(@submit.prevent='')
         .field
           input.input(
             name='question'
@@ -62,7 +62,8 @@
             :disabled='disableSubmit'
             :class='{ "is-small": ephemeral.isDesktopScreen }'
             tag='button'
-            type='submit'
+            type='button'
+            @click='submit'
           ) Create poll
 </template>
 
@@ -147,7 +148,9 @@ export default {
     optionPlaceholder (index) {
       return `${L('Option')} ${index}`
     },
-    addOption () {
+    addOption (e) {
+      e.stopPropagation()
+
       Vue.set(this.form.options, this.optionCount, {
         id: createRandomId(),
         value: ''
@@ -186,6 +189,7 @@ export default {
           { id: createRandomId(), value: '' }
         ]
       }
+      this.$v.form.$reset()
       this.close()
     }
   },
