@@ -9191,6 +9191,11 @@
     MENTION: "mention",
     INTERACTIVE: "interactive"
   };
+  var POLL_STATUS = {
+    ACTIVE: "active",
+    CLOSED: "closed",
+    EXPIRED: "expired"
+  };
 
   // frontend/model/contracts/misc/flowTyper.js
   var EMPTY_VALUE = Symbol("@@empty");
@@ -9448,6 +9453,16 @@ ${this.getErrorInfo()}`;
     if (type === MESSAGE_TYPES.TEXT) {
       newMessage = !replyingMessage ? { ...newMessage, text: text2 } : { ...newMessage, text: text2, replyingMessage };
     } else if (type === MESSAGE_TYPES.POLL) {
+      const pollData = data.pollData;
+      newMessage = {
+        ...newMessage,
+        pollData: {
+          ...pollData,
+          creator: meta.username,
+          status: POLL_STATUS.ACTIVE,
+          options: pollData.options.map((opt) => ({ ...opt, voted: [] }))
+        }
+      };
     } else if (type === MESSAGE_TYPES.NOTIFICATION) {
       const params = {
         channelName: state?.attributes.name,

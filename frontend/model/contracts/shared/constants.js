@@ -116,3 +116,14 @@ export const UNREAD_MESSAGE_TYPE = {
   MENTION: 'mention',
   INTERACTIVE: 'interactive'
 }
+
+export const POLL_TYPES = {
+  SINGLE_CHOICE: 'single-vote', // allows only 1 choice per member
+  MULTIPLE_CHOICES: 'multiple-votes' // allows multiple choices on the poll
+}
+
+export const POLL_STATUS = {
+  ACTIVE: 'active', // the poll is open
+  CLOSED: 'closed', // everyone has voted on the poll
+  EXPIRED: 'expired' // not everyone has voted on the poll but it has expired
+}

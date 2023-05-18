@@ -1,6 +1,7 @@
 <template lang='pug'>
 .c-chat-main(v-if='summary.title')
   emoticons
+
   .c-body
     .c-body-conversation(
       ref='conversation'
@@ -47,10 +48,12 @@
           :is='messageType(message)'
           :ref='message.hash'
           :key='message.id'
+          :messageId='message.id'
           :text='message.text'
           :type='message.type'
           :notification='message.notification'
           :proposal='message.proposal'
+          :pollData='message.pollData'
           :replyingMessage='replyingMessage(message)'
           :from='message.from'
           :datetime='time(message.datetime)'
@@ -103,6 +106,7 @@ import Loading from '@components/Loading.vue'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
+import MessagePoll from './MessagePoll.vue'
 import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
 import ViewArea from './ViewArea.vue'
@@ -130,6 +134,7 @@ export default ({
     Message,
     MessageInteractive,
     MessageNotification,
+    MessagePoll,
     SendArea,
     ViewArea
   },
@@ -167,7 +172,6 @@ export default ({
     // TODO: #492 create a global Vue Responsive just for media queries.
     this.matchMediaPhone = window.matchMedia('screen and (max-width: 639px)')
     this.matchMediaPhone.onchange = (e) => {
-      console.log('config.isPhone changes!')
       this.config.isPhone = e.matches
     }
     this.config.isPhone = this.matchMediaPhone.matches
