@@ -13,7 +13,7 @@ import { TABLET, DESKTOP } from '@view-utils/breakpoints.js'
 import { OPEN_EMOTICON, CLOSE_EMOTICON, SELECT_EMOTICON } from '@utils/events.js'
 
 export default ({
-  name: 'Chatroom',
+  name: 'Emoticons',
   components: {
     Picker
   },
