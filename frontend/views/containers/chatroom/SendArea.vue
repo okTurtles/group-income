@@ -91,7 +91,7 @@
           )
             button.is-icon(
               :aria-label='L("Create poll")'
-              @click='createPool'
+              @click='openCreatePollModal'
             )
               i.icon-poll
           tooltip(
@@ -116,11 +116,14 @@
     .textarea.c-send-mask(
       ref='mask'
     )
+
+    create-poll.c-poll(ref='poll')
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import emoticonsMixins from './EmoticonsMixins.js'
+import CreatePoll from './CreatePoll.vue'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
@@ -150,7 +153,8 @@ export default ({
   mixins: [emoticonsMixins],
   components: {
     Avatar,
-    Tooltip
+    Tooltip,
+    CreatePoll
   },
   props: {
     defaultText: String,
@@ -379,8 +383,13 @@ export default ({
       this.updateTextArea()
       this.endMention()
     },
-    createPool () {
-      console.log('TODO')
+    openCreatePollModal () {
+      const bbox = this.$el.getBoundingClientRect()
+      console.log('bbox: ', bbox)
+      this.$refs.poll.open({
+        left: `${bbox.left + 40}px`, // 40 -> 2.5rem padding-left
+        bottom: `${innerHeight - bbox.top + 8}px` // 8 -> 0.5rem gap
+      })
     },
     selectEmoticon (emoticon) {
       this.$refs.textarea.value = this.$refs.textarea.value + emoticon.native
