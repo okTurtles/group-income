@@ -998,8 +998,8 @@ sbp('chelonia/defineContract', {
         // NOTE: ensure `meta.username` is unique for the lifetime of the username
         //       since we are making it possible for the same username to leave and rejoin the group.
         //       All of their past posts will be re-associated with them upon re-joining.
-        const existingProfile = state.profiles[meta.username]
-        if (existingProfile && existingProfile.status !== PROFILE_STATUS.REMOVED) {
+        const profile = state.profiles[meta.username]
+        if (profile && profile.status !== PROFILE_STATUS.REMOVED) {
           console.error(`inviteAccept: ${meta.username} is currently active member in the group`)
           throw new Errors.GIErrorIgnoreAndBan(`${meta.username} is already joined and active in the group`)
         }
