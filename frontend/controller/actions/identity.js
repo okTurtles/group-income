@@ -257,5 +257,5 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.')),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),
-  ...encryptedAction('gi.contracts/identity/setLoginState', L('Failed to set login state.'))
+  ...encryptedAction('gi.actions/identity/setLoginState', L('Failed to set login state.'))
 }): string[])
