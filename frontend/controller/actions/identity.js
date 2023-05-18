@@ -106,7 +106,7 @@ export default (sbp('sbp/selectors/register', {
     const ourLoginState = generatedLoginState()
     const contractLoginState = getters.loginState
     if (contractID && diffLoginStates(ourLoginState, contractLoginState)) {
-      return sbp('gi.contracts/identity/setLoginState', {
+      return sbp('gi.actions/identity/setLoginState', {
         contractID, data: ourLoginState
       })
     }
