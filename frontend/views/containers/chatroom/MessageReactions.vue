@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-emoticons-list(v-if='emoticonsList')
+.c-emoticons-list(v-if='emoticonsList' :class='{ "for-type-poll": isTypePoll }')
   .c-emoticon-wrapper(
     v-for='(list, emoticon, index) in emoticonsList'
     :key='index'
@@ -26,6 +26,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import Tooltip from '@components/Tooltip.vue'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { L } from '@common/common.js'
 
 export default ({
@@ -38,10 +39,14 @@ export default ({
     emoticonsList: {
       type: Object,
       default: null
-    }
+    },
+    messageType: String
   },
   computed: {
-    ...mapGetters(['globalProfile'])
+    ...mapGetters(['globalProfile']),
+    isTypePoll () {
+      return this.messageType === MESSAGE_TYPES.POLL
+    }
   },
   methods: {
     emoticonUserList (emoticon, list) {
@@ -76,6 +81,12 @@ export default ({
 .c-emoticons-list {
   padding-left: 2.5rem;
   display: flex;
+
+  &.for-type-poll {
+    @include phone {
+      padding-left: 0;
+    }
+  }
 }
 
 .c-emoticon-wrapper {

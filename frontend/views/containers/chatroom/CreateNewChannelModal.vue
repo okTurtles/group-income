@@ -92,7 +92,12 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import required from 'vuelidate/lib/validators/required'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { CHATROOM_TYPES, CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
+import {
+  CHATROOM_TYPES,
+  CHATROOM_PRIVACY_LEVEL,
+  CHATROOM_NAME_LIMITS_IN_CHARS,
+  CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
+} from '@model/contracts/shared/constants.js'
 
 const privacyLevelToDisplay = {
   [CHATROOM_PRIVACY_LEVEL.GROUP]: {
@@ -121,12 +126,12 @@ export default ({
   },
   computed: {
     ...mapState(['currentGroupId']),
-    ...mapGetters(['groupSettings', 'currentChatRoomState', 'getGroupChatRooms']),
+    ...mapGetters(['groupSettings', 'getGroupChatRooms']),
     maxNameCharacters () {
-      return this.currentChatRoomState.settings.maxNameLength
+      return CHATROOM_NAME_LIMITS_IN_CHARS
     },
     maxDescriptionCharacters () {
-      return this.currentChatRoomState.settings.maxDescriptionLength
+      return CHATROOM_DESCRIPTION_LIMITS_IN_CHARS
     },
     isPublicChannelCreateAllowed () {
       return this.groupSettings.allowPublicChannels
