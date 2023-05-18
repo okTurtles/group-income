@@ -117,10 +117,7 @@ export default ({
           }
           return
         }
-        /* */ const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
-
-        console.log(JSON.parse(JSON.stringify(state)))
-
+        const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
         const secretKey = deserializeKey(this.ephemeral.query.secret)
         const publicKey = keyId(secretKey)
         const invite = state._vm.invites[publicKey]
@@ -155,14 +152,12 @@ export default ({
           creatorPicture = userState.attributes.picture
         }
 
-        console.log({ state })
-
         this.ephemeral.invitation = {
           groupName: this.ephemeral.query.groupName ?? L('(group name unavailable)'),
           creator,
           creatorPicture,
           message
-        } /* */
+        }
         this.pageStatus = 'SIGNING'
       } catch (e) {
         console.error(e)
@@ -193,7 +188,8 @@ export default ({
           innerSigningKeyId: findKeyIdByName(userState, 'csk'),
           encryptionKeyId: findKeyIdByName(userState, 'cek')
         })
-        this.pageStatus = 'WELCOME'
+        // this.pageStatus = 'WELCOME'
+        this.$router.push({ path: '/pending-approval' })
       } catch (e) {
         console.error('Join.vue accept() error:', e)
         this.ephemeral.errorMsg = e.message

@@ -1,6 +1,7 @@
 <template lang="pug">
 div
-  .c-container
+  group-welcome.c-welcome(v-if='ephemeral.groupJoined')
+  .c-container(v-else)
     svg-invitation.c-svg
 
     i18n.is-title-1(
@@ -12,18 +13,37 @@ div
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
+import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgInvitation from '@svgs/invitation.svg'
+import { PENDING_TO_WELCOME } from '@utils/events'
 
 export default ({
   name: 'PendingApproval',
   components: {
-    SvgInvitation
+    SvgInvitation,
+    GroupWelcome
+  },
+  data () {
+    return {
+      ephemeral: {
+        groupJoined: false
+      }
+    }
   },
   computed: {
     ...mapGetters([
       'groupSettings'
     ])
+  },
+  mounted () {
+    sbp('okTurtles.events/on', PENDING_TO_WELCOME, () => {
+      this.ephemeral.groupJoined = true
+    })
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', PENDING_TO_WELCOME)
   }
 }: Object)
 </script>
