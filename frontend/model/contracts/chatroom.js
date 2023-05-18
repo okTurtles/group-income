@@ -15,7 +15,8 @@ import {
   MESSAGE_NOTIFICATIONS,
   CHATROOM_MESSAGE_ACTION,
   MESSAGE_RECEIVE,
-  MESSAGE_NOTIFY_SETTINGS
+  MESSAGE_NOTIFY_SETTINGS,
+  UNREAD_MESSAGE_TYPE
 } from './shared/constants.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
 import { createMessage, leaveChatRoom, findMessageIdx, makeMentionFromUsername } from './shared/functions.js'
@@ -75,13 +76,18 @@ function messageReceivePostEffect ({ contractID, messageHash, datetime, text, is
   const rootGetters = sbp('state/vuex/getters')
   const isDirectMessage = rootGetters.isDirectMessage(contractID)
   const isDMOrMention = isMentionedMe || isDirectMessage
+  const type = messageType === MESSAGE_TYPES.INTERACTIVE
+    ? UNREAD_MESSAGE_TYPE.INTERACTIVE
+    : messageType === MESSAGE_TYPES.TEXT && isDMOrMention
+      ? UNREAD_MESSAGE_TYPE.MENTION
+      : null
 
-  if (!isAlreadyAdded && (isDMOrMention || messageType === MESSAGE_TYPES.INTERACTIVE)) {
+  if (!isAlreadyAdded && type) {
     sbp('state/vuex/commit', 'addChatRoomUnreadMessage', {
       chatRoomId: contractID,
       messageHash,
       createdDate: datetime,
-      isDMOrMention
+      type
     })
   }
 
@@ -180,8 +186,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID }) {
         Vue.set(sbp('state/vuex/state').chatRoomUnread, contractID, {
           readUntil: undefined,
-          mentions: [],
-          others: []
+          messages: []
         })
       }
     },
@@ -396,16 +401,11 @@ sbp('chelonia/defineContract', {
 
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
-        const unreadMessages = [
-          ...rootState.chatRoomUnread[contractID].mentions,
-          ...(rootState.chatRoomUnread[contractID].others || [])
-        ]
-
         if (me === meta.username) {
           return
         }
 
-        const isAlreadyAdded = !!unreadMessages.find(m => m.messageHash === data.hash)
+        const isAlreadyAdded = !!rootState.chatRoomUnread[contractID].messages.find(m => m.messageHash === data.hash)
         const mentions = makeMentionFromUsername(me)
         const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
 
@@ -479,12 +479,12 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        if (rootState.chatRoomUnread[contractID].mentions.find(m => m.messageHash === data.hash)) {
-          sbp('state/vuex/commit', 'deleteChatRoomUnreadMessage', {
-            chatRoomId: contractID,
-            messageHash: data.hash
-          })
-        }
+        // NOTE: ignore to check if the existance of current message (data.hash)
+        //       because if not exist, deleteChatRoomUnreadMessage won't do anything
+        sbp('state/vuex/commit', 'deleteChatRoomUnreadMessage', {
+          chatRoomId: contractID,
+          messageHash: data.hash
+        })
       }
     },
     'gi.contracts/chatroom/makeEmotion': {

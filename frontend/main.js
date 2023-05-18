@@ -300,7 +300,7 @@ async function startApp () {
       ...mapState(['contracts']),
       ourUnreadMessagesCount () {
         return Object.keys(this.ourUnreadMessages)
-          .map(cId => this.ourUnreadMessages[cId].mentions.length)
+          .map(cId => this.ourUnreadMessages[cId].messages.length)
           .reduce((a, b) => a + b, 0)
       },
       shouldSetBadge () {

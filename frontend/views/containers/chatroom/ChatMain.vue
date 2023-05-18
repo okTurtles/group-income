@@ -202,7 +202,7 @@ export default ({
       'currentChatRoomScrollPosition',
       'currentChatRoomReadUntil',
       'currentGroupNotifications',
-      'currentChatRoomUnreadMentions'
+      'chatRoomUnreadMentions'
     ]),
     currentUserAttr () {
       return {
@@ -431,8 +431,8 @@ export default ({
       if (this.currentChatRoomReadUntil) {
         if (!this.currentChatRoomReadUntil.deletedDate) {
           unreadPosition = this.currentChatRoomReadUntil.messageHash
-        } else if (this.currentChatRoomUnreadMentions.length) {
-          unreadPosition = this.currentChatRoomUnreadMentions[0].messageHash
+        } else if (this.chatRoomUnreadMentions(this.currentChatRoomId).length) {
+          unreadPosition = this.chatRoomUnreadMentions(this.currentChatRoomId)[0].messageHash
         }
       }
       const messageHashToScroll = this.currentChatRoomScrollPosition || unreadPosition

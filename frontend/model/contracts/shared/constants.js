@@ -111,3 +111,8 @@ export const MESSAGE_NOTIFY_SETTINGS = {
   DIRECT_MESSAGES: 'direct-messages',
   NOTHING: 'nothing'
 }
+
+export const UNREAD_MESSAGE_TYPE = {
+  MENTION: 'mention',
+  INTERACTIVE: 'interactive'
+}
