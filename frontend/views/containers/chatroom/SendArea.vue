@@ -461,6 +461,7 @@ export default ({
   display: block;
   background-color: var(--background_0);
   border: 1px solid var(--general_0);
+  border-radius: 0.25rem;
 
   &-textarea,
   &-mask {
