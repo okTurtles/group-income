@@ -92,11 +92,11 @@ $pagePaddingDesktop: 5.5rem;
 
 .p-with-sidebar,
 .p-no-sidebar {
-  height: 100vh;
+  height: 100%;
   width: 100vw;
 
   @include desktop {
-    height: 100vh;
+    height: 100%;
     width: auto;
   }
 }
@@ -211,7 +211,7 @@ $pagePaddingDesktop: 5.5rem;
   z-index: $zindex-sidebar;
   right: 0;
   width: $rightSideWidth;
-  height: 100vh;
+  height: 100%;
   background-color: $general_2;
   transform: translateX(100%);
   transition: transform $transitionSpeed;
@@ -239,7 +239,7 @@ $pagePaddingDesktop: 5.5rem;
     transform: translateX(0);
 
     .c-toggle {
-      height: 100vh;
+      height: 100%;
       display: block;
     }
   }
