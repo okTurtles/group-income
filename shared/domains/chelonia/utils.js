@@ -1,3 +1,7 @@
+import sbp from '@sbp/sbp'
+import type { Key } from './crypto.js'
+import { decrypt } from './crypto.js'
+import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { GIKey, GIKeyPurpose } from './GIMessage.js'
 
 export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name)?.id
@@ -54,4 +58,82 @@ export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey,
       throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to remove a key with ringLevel ' + k.ringLevel)
     }
   })
+}
+
+export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, keys: GIKey[], state: Object, contractID: string) {
+  for (const key of keys) {
+    // Does the key have key.meta?.private? If so, attempt to decrypt it
+    if (key.meta?.private && key.meta.private.keyId && key.meta.private.content) {
+      if (key.id && key.meta.private.keyId in secretKeys && key.meta.private.content) {
+        if (!state._volatile) state._volatile = Object.create(null)
+        if (!state._volatile.keys) state._volatile.keys = Object.create(null)
+        try {
+          state._volatile.keys[key.id] = decrypt(secretKeys[key.meta.private.keyId], key.meta.private.content)
+        } catch (e) {
+          console.error(`Secret key decryption error '${e.message || e}':`, e)
+          // Ricardo feels this is an ambiguous situation, however if we rethrow it will
+          // render the contract unusable because it will undo all our changes to the state,
+          // and it's possible that an error here shouldn't necessarily break the entire
+          // contract. For example, in some situations we might read a contract as
+          // read-only and not have the key to write to it.
+        }
+      }
+    }
+
+    // Is this a an invite key? If so, run logic for invite keys and invitation
+    // accounting
+    if (key.name.startsWith('#inviteKey-')) {
+      if (!state._vm.invites) this.config.reactiveSet(state._vm, 'invites', Object.create(null))
+      this.config.reactiveSet(state._vm.invites, key.id, {
+        creator: key.meta.creator,
+        initialQuantity: key.meta.quantity,
+        quantity: key.meta.quantity,
+        expires: key.meta.expires,
+        inviteSecret: state._volatile?.keys?.[key.id],
+        responses: []
+      })
+    }
+
+    // Is this KEY operation the result of requesting keys for another contract?
+    if (key.meta?.keyRequest) {
+      const { id, contractID: keyRequestContractID, outerKeyId } = key.meta?.keyRequest
+
+      const rootState = sbp(this.config.stateSelector)
+
+      // Are we subscribed to this contract?
+      // If we are not subscribed to the contract, we don't set pendingKeyRequests because we don't need that contract's state
+      // Setting pendingKeyRequests in these cases could result in issues
+      // when a corresponding OP_KEY_SHARE is received, which could trigger subscribing to this previously unsubscribed to contract
+      if (keyRequestContractID && rootState.contracts[keyRequestContractID]) {
+        if (!rootState[keyRequestContractID]) {
+          this.config.reactiveSet(rootState, keyRequestContractID, { _volatile: { pendingKeyRequests: [] } })
+        } else if (!rootState[keyRequestContractID]._volatile) {
+          this.config.reactiveSet(rootState[keyRequestContractID], '_volatile', { pendingKeyRequests: [] })
+        } else if (!rootState[keyRequestContractID]._volatile.pendingKeyRequests) {
+          this.config.reactiveSet(rootState[keyRequestContractID]._volatile, 'pendingKeyRequests', [])
+        }
+
+        // Mark the contract for which keys were requested as pending keys
+        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ id, outerKeyId })
+
+        this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
+      }
+    }
+
+    // Is this a foreign key in this contract? If so, flag it in the
+    // other contract to mirror operations
+    if (key.foreignKey) {
+      const fkUrl = new URL(key.foreignKey)
+      const foreignContract = fkUrl.pathname
+      const foreignKeyName = fkUrl.searchParams.get('keyName')
+
+      if (!foreignContract || !foreignKeyName) throw new Error('Invalid foregin key: missing contract or key name')
+
+      this.setPostSyncOp(contractID, `syncAndMirrorKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`, ['chelonia/private/in/syncContractAndWatchKeys', foreignContract, foreignKeyName, contractID, key.id])
+    }
+
+    // Is this a foreign key in a foreign contract? If so, mirror the current
+    // operation
+    // ...
+  }
 }

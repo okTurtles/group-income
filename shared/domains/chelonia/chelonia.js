@@ -252,6 +252,10 @@ export default (sbp('sbp/selectors/register', {
       }
       return stack
     }
+    this.setPostSyncOp = (contractID: string, key: string, op: Array<*>) => {
+      this.postSyncOperations[contractID] = this.postSyncOperations[contractID] || Object.create(null)
+      this.postSyncOperations[contractID][key] = op
+    }
   },
   'chelonia/withEnv': function (env: Object, sbpInvocation: Array<*>) {
     // important: currently all calls to withEnv use the same event queue, meaning
