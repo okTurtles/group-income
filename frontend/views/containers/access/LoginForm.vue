@@ -82,6 +82,10 @@ export default ({
   },
   methods: {
     async login () {
+      if (typeof document.body.dispatchEvent === 'function') {
+        this.$refs.username.dispatchEvent(new Event('input'))
+        // TODO: password input too
+      }
       if (this.$v.form.$invalid) {
         this.$refs.formMsg.danger(L('The form is invalid.'))
         return
