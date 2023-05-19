@@ -16,7 +16,6 @@ svg(width='247' height='128' viewBox='0 0 247 128' fill='none' xmlns='http://www
 <script>
 export default ({
   name: 'ThemeSVG',
-
   props: {
     color: {
       type: Object,

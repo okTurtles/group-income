@@ -28,29 +28,20 @@ import colorsMixins from '@view-utils/colorsManipulation.js'
 
 export default ({
   name: 'SelectorTheme',
-
   mixins: [colorsMixins],
-
   data () {
     return {
-      themes: Themes
+      themes: Themes // TODO: needs translate label
     }
   },
-
   components: {
     ThemeSvg
   },
-
   methods: {
-    ...mapMutations([
-      'setTheme'
-    ])
+    ...mapMutations(['setTheme'])
   },
-
   computed: {
-    ...mapGetters([
-      'theme'
-    ])
+    ...mapGetters(['theme'])
   }
 }: Object)
 </script>
