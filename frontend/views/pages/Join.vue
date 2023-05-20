@@ -179,7 +179,7 @@ export default ({
     async accept () {
       this.ephemeral.errorMsg = null
       try {
-        const originatingContractID = this.$store.state['loggedIn']['identityContractID']
+        const originatingContractID = this.$store.state.loggedIn.identityContractID
         const userState = this.$store.state[originatingContractID]
 
         const { groupId, secret } = this.ephemeral.query

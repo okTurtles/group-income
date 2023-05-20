@@ -302,39 +302,78 @@ export default (sbp('sbp/selectors/register', {
     sbp('gi.actions/group/switch', message.contractID())
     return message
   },
-  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept?: boolean }, data?: { username?: string } }) {
+  // The 'gi.actions/group/join' selector handles joining a group. It can be
+  // called from a variety of places: when accepting an invite, when logging
+  // in, and asynchronously with an event handler defined in this function.
+  // The function deals mostly with the group's contract state, and there are
+  // multiple scenarios that need to be considered.
+  // For example, when joining a group through an invite link, we need to
+  // first send a key request that an existing group member must answer.
+  // Until the key request has been answered, we cannot interact with the
+  // group.
+  // Once the key request is answered, we call the inviteAccept action to add
+  // our profile to the group and then join the General chatroom. At this point,
+  // we can fully interact with the group as a member.
+  // When logging in, the situation is similar to immediately after joining
+  // through an invite link, in that we could be: (a) waiting for the group
+  // secret keys to be shared with us, (b) ready to call the inviteAccept
+  // action if we haven't done so yet (because we were previously waiting for
+  // the keys), or (c) already a member and ready to interact with the group.
+  'gi.actions/group/join': async function (params: $Exact<ChelKeyRequestParams> & { options?: { skipInviteAccept?: boolean } }) {
     sbp('okTurtles.data/set', 'JOINING_GROUP', true)
     try {
       const rootState = sbp('state/vuex/state')
-      const me = rootState.loggedIn.username
-      const username = params.data?.username || me
+      const username = rootState.loggedIn.username
       const userID = rootState.loggedIn.identityContractID
 
       console.log('@@@@@@@@ AT join for ' + params.contractID)
 
-      const sendKeyRequest = (!rootState[params.contractID] && params.originatingContractID)
+      // Do we need to send a key request?
+      // If we don't have the group contract in our state and
+      // params.originatingContractID is set, it means that we're joining
+      // through an invite link, and we must send a key request to complete
+      // the joining process.
+      const sendKeyRequest = (!rootState[params.contractID]?._volatile && params.originatingContractID)
 
-      await sbp('chelonia/withEnv', { skipActionProcessing: !!sendKeyRequest || !!rootState[params.contractID]?._volatile?.pendingKeyRequests?.length }, ['chelonia/contract/sync', params.contractID])
+      await sbp(
+        'chelonia/withEnv', {
+          skipActionProcessing: !!sendKeyRequest || !!rootState[params.contractID]?._volatile?.pendingKeyRequests?.length
+        },
+        ['chelonia/contract/sync', params.contractID]
+      )
       if (rootState.contracts[params.contractID]?.type !== 'gi.contracts/group') {
         throw Error(`Contract ${params.contractID} is not a group`)
       }
 
       const state = rootState[params.contractID]
 
-      if (sendKeyRequest) {
+      // If we are expecting to receive keys, set up an event listener
+      if (sendKeyRequest || !state._volatile?.pendingKeyRequests?.length) {
         console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
 
+        // Event handler for continuing the join process if the keys are
+        // shared with us during the current session
         const eventHandler = ({ contractID }) => {
           if (contractID !== params.contractID) {
             return
           }
 
           sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+          // The event handler recursively calls this same selector
+          // A different path should be taken, since te event handler
+          // should be called after the key request has been answered
+          // and processed
           sbp('gi.actions/group/join', params)
         }
 
+        // The event handler is configured before sending the request
+        // to avoid race conditions
         sbp('okTurtles.events/on', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
+      }
 
+      // After syncing the group contract, we send a key request
+      if (sendKeyRequest) {
+        // Send the key request
         await sbp('chelonia/out/keyRequest', {
           ...omit(params, ['options']),
           hooks: {
@@ -342,16 +381,24 @@ export default (sbp('sbp/selectors/register', {
             postpublish: null
           }
         })
+        // Nothing left to do until the keys are received
+
+      // Called after logging in or during an existing session from the event
+      // handler above. It handles the tasks related to joining the group for
+      // the first time (if that's the case) or just sets this group as the
+      // current group.
+      // This block must be run after having received the group's secret keys
+      // (i.e., the CSK and the CEK) that were requested earlier.
       } else if (state._volatile?.keys && !state._volatile.pendingKeyRequests?.length) {
         console.log('@@@@@@@@ AT join[firstTimeJoin] for ' + params.contractID)
         if (!state._vm) {
-          console.log('@@@@@@@@ AT join[_vm missing] for ' + params.contractID, { ...state })
+          console.warn('Invalid group state: missing _vm key. contractID=' + params.contractID, { ...state })
           return
         }
 
-        console.log({ ...state })
-
         // We're joining for the first time
+        // In this case, we share our profile key with the group, call the
+        // inviteAccept action and join the General chatroom
         if (!state.profiles?.[username]) {
           const generalChatRoomId = rootState[params.contractID].generalChatRoomId
 
@@ -389,17 +436,27 @@ export default (sbp('sbp/selectors/register', {
               }
             })
           } else {
-            setTimeout(() => alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME })))
+            // setTimeout to avoid blocking the main thread
+            setTimeout(() => {
+              alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
+            }, 0)
           }
 
           if (rootState.currentGroupId === params.contractID) {
             await sbp('gi.actions/group/updateLastLoggedIn', { contractID: params.contractID })
           }
+
+        // We are already a member of the group and have already called
+        // inviteAccept
         } else {
+          // Sync chatroom contracts he already joined
+          // if he tries to login in another device, he should skip to make any
+          // actions but he should sync all the contracts he was syncing in the
+          // previous device
           console.log('@@@@@@@@ AT join[alreadyMember] for ' + params.contractID)
           // We've already joined
           const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
-            .filter(cId => rootState[params.contractID].chatRooms?.[cId].users.includes(me))
+            .filter(cId => (rootState[params.contractID].chatRooms?.[cId].users.includes(username)))
 
           await sbp('chelonia/contract/sync', chatRoomIds)
           sbp('state/vuex/commit', 'setCurrentChatRoomId', {
@@ -407,55 +464,14 @@ export default (sbp('sbp/selectors/register', {
             chatRoomId: rootState[params.contractID].generalChatRoomId
           })
         }
+
+      // We have already sent a key request that hasn't been answered. We cannot
+      // do much at this point, so we do nothing.
+      // This could happen, for example, after logging in if we still haven't
+      // received a response to the key request.
       } else {
-        console.log('@@@@@@@@ AT join[invalid state] for ' + params.contractID)
+        console.info('Requested to join group but waiting for OP_KEY_SHARE. contractID=' + params.contractID)
       }
-
-      if (isNaN(0) && !params.options?.skipInviteAccept) {
-        // TODO: Note for Ricardo, with the new approach, I assume
-        //       this code below will be uncommented and/or modified
-        /*
-
-      console.log([params.options?.skipInviteAccept, rootState[params.contractID].generalChatRoomId], 'XXXXXXXX CCCCC')
-
-      if (!params.options?.skipInviteAccept && rootState[params.contractID].generalChatRoomId) {
-        // join the 'General' chatroom by default
-        const generalChatRoomId = rootState[params.contractID].generalChatRoomId
-        i\f (generalChatRoomId) {
-          await sbp('gi.actions/group/joinChatRoom', {
-            ...omit(params, ['options', 'data', 'hooks']),
-            data: {
-              chatRoomID: generalChatRoomId
-            },
-            hooks: {
-              prepublish: null,
-              postpublish: params.hooks?.postpublish
-            }
-          })
-        } else {
-          alert(L("Couldn't join the #{chatroomName} in the group. Doesn't exist.", { chatroomName: CHATROOM_GENERAL_NAME }))
-        }
-
-        saveLoginState('joining', params.contractID)
-      } else {
-        /**
-         * Sync chatroom contracts he already joined
-         * if he tries to login in another device, he should skip to make any actions
-         * but he should sync all the contracts he was syncing in the previous device
-         */
-
-        const me = rootState.loggedIn.username
-        const chatRoomIds = Object.keys(rootState[params.contractID].chatRooms ?? {})
-          .filter(cId => rootState[params.contractID].chatRooms?.[cId].users.includes(me))
-
-        await sbp('chelonia/contract/sync', chatRoomIds)
-        sbp('state/vuex/commit', 'setCurrentChatRoomId', {
-          groupId: params.contractID,
-          chatRoomId: rootState[params.contractID].generalChatRoomId
-        })
-      }
-
-      sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
