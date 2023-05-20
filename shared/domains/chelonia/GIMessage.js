@@ -19,6 +19,7 @@ export type GIKey = {
   permissions: '*' | string[];
   meta: Object;
   data: string;
+  foreignKey?: string;
 }
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
