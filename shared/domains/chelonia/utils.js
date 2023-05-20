@@ -131,9 +131,5 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
 
       this.setPostSyncOp(contractID, `syncAndMirrorKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`, ['chelonia/private/in/syncContractAndWatchKeys', foreignContract, foreignKeyName, contractID, key.id])
     }
-
-    // Is this a foreign key in a foreign contract? If so, mirror the current
-    // operation
-    // ...
   }
 }
