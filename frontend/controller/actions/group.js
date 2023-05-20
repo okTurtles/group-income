@@ -464,12 +464,12 @@ export default (sbp('sbp/selectors/register', {
             chatRoomId: rootState[params.contractID].generalChatRoomId
           })
         }
-
-        // We have already sent a key request that hasn't been answered. We cannot
-        // do much at this point, so we do nothing.
-        // This could happen, for example, after logging in if we still haven't
-        // received a response to the key request.
         sbp('okTurtles.events/emit', PENDING_TO_WELCOME)
+
+      // We have already sent a key request that hasn't been answered. We cannot
+      // do much at this point, so we do nothing.
+      // This could happen, for example, after logging in if we still haven't
+      // received a response to the key request.
       } else {
         console.info('Requested to join group but waiting for OP_KEY_SHARE. contractID=' + params.contractID)
       }
