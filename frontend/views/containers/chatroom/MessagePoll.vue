@@ -1,5 +1,5 @@
 <template lang='pug'>
-message-base(
+message-base.c-message-poll(
   v-bind='$props'
   @delete-message='deleteMessage'
   @add-emoticon='addEmoticon($event)'
@@ -86,8 +86,8 @@ export default ({
   provide () {
     return {
       pollUtils: {
-        hasVoted: this.hasVoted,
-        totalVoteCount: this.votesFlattened.length
+        hasVoted: () => this.hasVoted,
+        totalVoteCount: () => this.votesFlattened.length
       }
     }
   }
@@ -96,6 +96,12 @@ export default ({
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-message-poll:hover {
+  ::v-deep .c-option-bar {
+    background-color: $general_0;
+  }
+}
 
 .c-poll-created-sentence {
   color: $text_1;

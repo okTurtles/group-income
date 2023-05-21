@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-message(
-  :class='[variant, isSameSender && "same-sender"]'
+  :class='[variant, isSameSender && "same-sender", "is-type-" + type]'
   @click='$emit("wrapperAction")'
   v-touch:touchhold='openMenu'
   v-touch:swipe.left='reply'
