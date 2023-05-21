@@ -98,6 +98,11 @@ page-section.c-section(:title='L("Invite links")')
     @click='handleInviteClick'
     :args='{ r1: `<button class="link js-btnInvite">`, r2: "</button>"}'
   ) To generate a new link, you need to {r1}propose adding a new member{r2} to your group.
+
+  input.c-invisible-input(
+    type='text'
+    ref='copyInput'
+  )
 </template>
 
 <script>
@@ -169,7 +174,19 @@ export default ({
     },
     copyInviteLink (inviteLink) {
       const copyToClipBoard = () => {
-        navigator.clipboard.writeText(inviteLink)
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(inviteLink)
+        } else {
+          const inputAid = this.$refs.copyInput
+
+          inputAid.value = inviteLink
+          inputAid.select()
+
+          this.$nextTick(() => {
+            document.execCommand('copy')
+            inputAid.blur()
+          })
+        }
       }
 
       if (navigator.share) {
@@ -443,6 +460,8 @@ export default ({
     right: unset;
     left: 2rem;
     top: 0.5rem;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   .c-webshare-fallback {
@@ -467,6 +486,20 @@ export default ({
 .c-active-button {
   .c-arrow {
     margin-right: 0;
+  }
+}
+
+.c-invisible-input {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.c-dropdown-invite-link {
+  box-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
+
+  .is-dark-theme & {
+    box-shadow: 0 0 20px rgba(38, 38, 38, 0.895);
   }
 }
 </style>
