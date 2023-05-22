@@ -114,7 +114,8 @@ export const MESSAGE_NOTIFY_SETTINGS = {
 
 export const UNREAD_MESSAGE_TYPE = {
   MENTION: 'mention',
-  INTERACTIVE: 'interactive'
+  INTERACTIVE: 'interactive',
+  POLL: 'poll'
 }
 
 export const POLL_TYPES = {

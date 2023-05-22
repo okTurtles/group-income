@@ -78,9 +78,11 @@ function messageReceivePostEffect ({ contractID, messageHash, datetime, text, is
   const isDMOrMention = isMentionedMe || isDirectMessage
   const type = messageType === MESSAGE_TYPES.INTERACTIVE
     ? UNREAD_MESSAGE_TYPE.INTERACTIVE
-    : messageType === MESSAGE_TYPES.TEXT && isDMOrMention
-      ? UNREAD_MESSAGE_TYPE.MENTION
-      : null
+    : messageType === MESSAGE_TYPES.POLL
+      ? UNREAD_MESSAGE_TYPE.POLL
+      : messageType === MESSAGE_TYPES.TEXT && isDMOrMention
+        ? UNREAD_MESSAGE_TYPE.MENTION
+        : null
 
   if (!isAlreadyAdded && type) {
     sbp('state/vuex/commit', 'addChatRoomUnreadMessage', {

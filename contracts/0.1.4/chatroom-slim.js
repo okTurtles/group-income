@@ -92,7 +92,8 @@
   };
   var UNREAD_MESSAGE_TYPE = {
     MENTION: "mention",
-    INTERACTIVE: "interactive"
+    INTERACTIVE: "interactive",
+    POLL: "poll"
   };
   var POLL_STATUS = {
     ACTIVE: "active",
@@ -463,7 +464,7 @@ ${this.getErrorInfo()}`;
     const rootGetters = (0, import_sbp3.default)("state/vuex/getters");
     const isDirectMessage = rootGetters.isDirectMessage(contractID);
     const isDMOrMention = isMentionedMe || isDirectMessage;
-    const type = messageType2 === MESSAGE_TYPES.INTERACTIVE ? UNREAD_MESSAGE_TYPE.INTERACTIVE : messageType2 === MESSAGE_TYPES.TEXT && isDMOrMention ? UNREAD_MESSAGE_TYPE.MENTION : null;
+    const type = messageType2 === MESSAGE_TYPES.INTERACTIVE ? UNREAD_MESSAGE_TYPE.INTERACTIVE : messageType2 === MESSAGE_TYPES.POLL ? UNREAD_MESSAGE_TYPE.POLL : messageType2 === MESSAGE_TYPES.TEXT && isDMOrMention ? UNREAD_MESSAGE_TYPE.MENTION : null;
     if (!isAlreadyAdded && type) {
       (0, import_sbp3.default)("state/vuex/commit", "addChatRoomUnreadMessage", {
         chatRoomId: contractID,
