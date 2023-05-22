@@ -6,23 +6,56 @@
   .c-options-and-voters
     ul.c-options-list
       li.c-option(
-        v-for='option in pollData.options'
+        v-for='option in list.percents'
         :key='option.id'
       )
         .c-option-name-and-percent
-          .c-name {{ option.value }}
-          .c-percent {{ getPercent(option.voted) }}
+          .c-name {{ option.name }}
+          .c-percent {{ option.percent }}
 
         .c-option-bar
-          .c-option-bar-measure(:style='{ width: getPercent(option.voted) }')
+          .c-option-bar-measure(:style='{ width: option.percent }')
+
+    .c-voters
+      .c-voter-avatars-item(v-for='entry in list.voters' :key='entry.id')
+        voter-avatars(:voters='entry.users')
 </template>
 
 <script>
+import { uniq } from '@model/contracts/shared/giLodash.js'
+import VoterAvatars from './VoterAvatars.vue'
+
 export default ({
   name: 'PollVoted',
   inject: ['pollUtils'],
   props: {
     pollData: Object
+  },
+  components: {
+    VoterAvatars
+  },
+  computed: {
+    list () {
+      const percents = []
+      const voters = []
+
+      this.pollData.options.forEach(opt => {
+        percents.push({
+          id: opt.id,
+          percent: this.getPercent(opt.voted),
+          name: opt.value
+        })
+
+        voters.push({
+          id: opt.id,
+          users: uniq(opt.voted)
+        })
+      })
+
+      return {
+        percents, voters
+      }
+    }
   },
   methods: {
     getPercent (votes) {
@@ -35,6 +68,10 @@ export default ({
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
+.c-poll-voted {
+  position: relative;
+}
+
 .c-poll-label {
   display: block;
   text-transform: uppercase;
@@ -44,6 +81,18 @@ export default ({
 
 .c-poll-title {
   margin-bottom: 1.375rem;
+}
+
+.c-options-and-voters {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto;
+  grid-template-areas: "o-percent o-voters";
+}
+
+.c-options-list {
+  grid-area: o-percent;
 }
 
 .c-option {
@@ -77,6 +126,22 @@ export default ({
     border-radius: 10px;
     background-color: $primary_0;
     height: 10px;
+  }
+}
+
+.c-voters {
+  position: relative;
+  margin-left: 0.75rem;
+}
+
+.c-voter-avatars-item {
+  display: flex;
+  align-items: flex-end;
+  width: max-content;
+  height: 2.5rem;
+
+  &:not(:last-of-type) {
+    margin-bottom: 1rem;
   }
 }
 </style>
