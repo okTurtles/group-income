@@ -14,7 +14,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
 
-        menu-content
+        menu-content.c-responsive-menu
           menu-header
             i18n Channel Options
 
