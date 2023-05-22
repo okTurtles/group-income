@@ -66,7 +66,7 @@ sbp('sbp/selectors/register', {
     // }
 
     for (const chatRoomId in state.chatRoomUnread) {
-      if (state.chatRoomUnread[chatRoomId].messages) {
+      if (!state.chatRoomUnread[chatRoomId].messages) {
         state.chatRoomUnread[chatRoomId].messages = []
       }
       if (state.chatRoomUnread[chatRoomId].mentions) {
