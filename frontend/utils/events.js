@@ -30,3 +30,4 @@ export const PAYMENTS_RECORDED = 'payments-recorded'
 export const AVATAR_EDITED = 'avatar-edited'
 
 export const SWITCH_GROUP = 'switch-group'
+export const JOIN_GROUP = 'join-group'
