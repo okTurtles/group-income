@@ -9,7 +9,7 @@ import { addTimeToDate, dateToPeriodStamp, DAYS_MILLIS } from '@model/contracts/
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
-import { REPLACE_MODAL, SWITCH_GROUP, PENDING_TO_WELCOME } from '@utils/events.js'
+import { REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
@@ -348,7 +348,10 @@ export default (sbp('sbp/selectors/register', {
       const state = rootState[params.contractID]
 
       // If we are expecting to receive keys, set up an event listener
-      if (sendKeyRequest || !state._volatile?.pendingKeyRequests?.length) {
+      // We are expecting to receive keys if:
+      //   (a) we are about to send a key request; or
+      //   (b) we have already sent a key request (!!pendingKeyRequests?.length)
+      if (sendKeyRequest || state._volatile?.pendingKeyRequests?.length) {
         console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
 
         // Event handler for continuing the join process if the keys are
@@ -464,8 +467,6 @@ export default (sbp('sbp/selectors/register', {
             chatRoomId: rootState[params.contractID].generalChatRoomId
           })
         }
-        sbp('okTurtles.events/emit', PENDING_TO_WELCOME)
-
       // We have already sent a key request that hasn't been answered. We cannot
       // do much at this point, so we do nothing.
       // This could happen, for example, after logging in if we still haven't

@@ -13,11 +13,9 @@ div
 </template>
 
 <script>
-import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgInvitation from '@svgs/invitation.svg'
-import { PENDING_TO_WELCOME } from '@utils/events'
 
 export default ({
   name: 'PendingApproval',
@@ -28,22 +26,28 @@ export default ({
   data () {
     return {
       ephemeral: {
+        groupIdWhenMounted: null,
         groupJoined: false
       }
     }
   },
   computed: {
-    ...mapGetters([
-      'groupSettings'
-    ])
+    ...mapGetters(['groupSettings', 'ourUsername']),
+    ...mapState(['currentGroupId']),
+    ourGroupProfile () {
+      return this.$store.state[this.groupIdWhenMounted]?.profiles?.[this.ourUsername]
+    }
   },
   mounted () {
-    sbp('okTurtles.events/on', PENDING_TO_WELCOME, () => {
-      this.ephemeral.groupJoined = true
-    })
+    this.groupIdWhenMounted = this.currentGroupId
   },
-  beforeDestroy () {
-    sbp('okTurtles.events/off', PENDING_TO_WELCOME)
+  watch: {
+    ourGroupProfile (to, from) {
+      // if our group profile appears in the group state, it means we've joined the group
+      if (to) {
+        this.groupJoined = true
+      }
+    }
   }
 }: Object)
 </script>
