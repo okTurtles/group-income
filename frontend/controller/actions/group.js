@@ -348,7 +348,10 @@ export default (sbp('sbp/selectors/register', {
       const state = rootState[params.contractID]
 
       // If we are expecting to receive keys, set up an event listener
-      if (sendKeyRequest || !state._volatile?.pendingKeyRequests?.length) {
+      // We are expecting to receive keys if:
+      //   (a) we are about to send a key request; or
+      //   (b) we have already sent a key request (!!pendingKeyRequests?.length)
+      if (sendKeyRequest || state._volatile?.pendingKeyRequests?.length) {
         console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
 
         // Event handler for continuing the join process if the keys are
