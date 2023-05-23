@@ -348,6 +348,9 @@ export default (sbp('sbp/selectors/register', {
       const state = rootState[params.contractID]
 
       // If we are expecting to receive keys, set up an event listener
+      // We are expecting to receive keys if:
+      //   (a) we are about to send a key request; or
+      //   (b) we have already sent a key request (!!pendingKeyRequests?.length)
       if (sendKeyRequest || state._volatile?.pendingKeyRequests?.length) {
         console.log('@@@@@@@@ AT join[sendKeyRequest] for ' + params.contractID)
 
@@ -357,6 +360,7 @@ export default (sbp('sbp/selectors/register', {
           if (contractID !== params.contractID) {
             return
           }
+
           sbp('okTurtles.events/off', CONTRACT_HAS_RECEIVED_KEYS, eventHandler)
           // The event handler recursively calls this same selector
           // A different path should be taken, since te event handler
