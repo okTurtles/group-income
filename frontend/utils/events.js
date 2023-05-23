@@ -30,5 +30,3 @@ export const PAYMENTS_RECORDED = 'payments-recorded'
 export const AVATAR_EDITED = 'avatar-edited'
 
 export const SWITCH_GROUP = 'switch-group'
-
-export const PENDING_TO_WELCOME = 'pending-to-welcome'
