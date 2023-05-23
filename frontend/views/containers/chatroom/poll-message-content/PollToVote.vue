@@ -14,8 +14,8 @@ form(@submit.prevent='')
       span.c-poll-option-value {{ option.value }}
 
   .buttons(v-if='enableSubmitBtn')
-    i18n.is-small.is-outlined(v-if='isChangeMode' tag='button' type='button' @click='changeVotes') change vote
-    i18n.is-small(v-else tag='button' type='button' @click='submitVotes') submit
+    i18n.is-small.is-outlined(v-if='isChangeMode' tag='button' type='button' @click='changeVotes') Change vote
+    i18n.is-small(v-else tag='button' type='button' @click='submitVotes') Submit
 </template>
 
 <script>
@@ -26,6 +26,7 @@ import { POLL_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
   name: 'PollToVote',
+  inject: ['pollUtils'],
   props: {
     pollData: Object,
     messageId: String,
@@ -61,8 +62,8 @@ export default ({
     }
   },
   methods: {
-    async submitVotes () {
-      await sbp('gi.actions/chatroom/voteOnPoll', {
+    submitVotes () {
+      sbp('gi.actions/chatroom/voteOnPoll', {
         contractID: this.currentChatRoomId,
         data: {
           hash: this.messageHash,
@@ -70,8 +71,16 @@ export default ({
         }
       })
     },
-    changeVotes () {
-      alert('TODO:: implement changing votes on polls')
+    async changeVotes () {
+      await sbp('gi.actions/chatroom/changeVoteOnPoll', {
+        contractID: this.currentChatRoomId,
+        data: {
+          hash: this.messageHash,
+          votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions]
+        }
+      })
+
+      this.pollUtils.switchOffChangeMode()
     },
     formBeenUpdated () {
       if (this.allowMultipleChoices) {

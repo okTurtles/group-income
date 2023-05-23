@@ -564,6 +564,50 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID, hash }) {
         emitMessageEvent({ contractID, hash })
       }
+    },
+    'gi.contracts/chatroom/changeVoteOnPoll': {
+      validate: objectOf({
+        hash: string,
+        votes: arrayOf(string)
+      }),
+      process ({ data, meta, hash, id }, { state }) {
+        const msgIndex = findMessageIdx(data.hash, state.messages)
+
+        if (msgIndex >= 0) {
+          const me = meta.username
+          const myUpdatedVotes = data.votes
+          const pollData = state.messages[msgIndex].pollData
+          const optsCopy = cloneDeep(pollData.options)
+          const votedOptNames = []
+
+          // remove all the previous votes of the user before update.
+          optsCopy.forEach(opt => {
+            opt.voted = opt.voted.filter(votername => votername !== me)
+          })
+
+          myUpdatedVotes.forEach(optId => {
+            const foundOpt = optsCopy.find(x => x.id === optId)
+
+            if (foundOpt) {
+              foundOpt.voted.push(me)
+              votedOptNames.push(`"${foundOpt.value}"`)
+            }
+          })
+
+          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+
+          // create & add a notification-message for user having update his/her votes.
+          const notificationData = createNotificationData(
+            MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL,
+            { votedOptions: votedOptNames.join(', ') }
+          )
+          const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+          state.messages.push(newMessage)
+        }
+      },
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
+      }
     }
   }
 })

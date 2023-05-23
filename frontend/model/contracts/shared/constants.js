@@ -88,7 +88,8 @@ export const MESSAGE_NOTIFICATIONS = {
   UPDATE_DESCRIPTION: 'update-description',
   UPDATE_NAME: 'update-name',
   DELETE_CHANNEL: 'delete-channel',
-  VOTE_ON_POLL: 'vote-on-poll'
+  VOTE_ON_POLL: 'vote-on-poll',
+  CHANGE_VOTE_ON_POLL: 'change-vote-on-poll'
 }
 
 export const MESSAGE_VARIANTS = {

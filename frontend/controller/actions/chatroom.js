@@ -26,5 +26,6 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/chatroom/delete', L('Failed to delete chat channel.')),
-  ...encryptedAction('gi.actions/chatroom/voteOnPoll', L('Failed to vote on a chat poll.'))
+  ...encryptedAction('gi.actions/chatroom/voteOnPoll', L('Failed to vote on a poll.')),
+  ...encryptedAction('gi.actions/chatroom/changeVoteOnPoll', L('Failed to change vote on a poll.'))
 }): string[])

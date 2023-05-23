@@ -106,7 +106,8 @@ export default ({
       pollUtils: {
         hasVoted: () => this.hasVoted,
         totalVoteCount: () => this.votesFlattened.length,
-        switchOnChangeMode: this.switchOnChangeMode
+        switchOnChangeMode: this.switchOnChangeMode,
+        switchOffChangeMode: this.switchOffChangeMode
       }
     }
   }
