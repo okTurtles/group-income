@@ -393,7 +393,7 @@ export default (sbp('sbp/selectors/register', {
       ],
       manifestHash
     )
-    hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
+    hooks?.prepublishContract?.(contractMsg)
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions)
     const msg = await sbp('chelonia/out/actionEncrypted', {
       action: contractName,
@@ -431,7 +431,7 @@ export default (sbp('sbp/selectors/register', {
 
 function contractNameFromAction (action: string): string {
   const regexResult = ACTION_REGEX.exec(action)
-  const contractName = regexResult && regexResult[2]
+  const contractName = regexResult?.[2]
   if (!contractName) throw new Error(`Poorly named action '${action}': missing contract name.`)
   return contractName
 }
@@ -459,9 +459,9 @@ async function outEncryptedOrUnencryptedAction (
     manifestHash
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
-  hooks && hooks.prepublish && hooks.prepublish(message)
+  hooks?.prepublish?.(message)
   await sbp('chelonia/private/out/publishEvent', message, publishOptions)
-  hooks && hooks.postpublish && hooks.postpublish(message)
+  hooks?.postpublish?.(message)
   return message
 }
 

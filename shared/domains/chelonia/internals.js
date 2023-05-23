@@ -222,8 +222,8 @@ export default (sbp('sbp/selectors/register', {
     }
     if (processOp && !config.skipProcessing) {
       opFns[opT](opV)
-      config.postOp && config.postOp(message, state)
-      config[`postOp_${opT}`] && config[`postOp_${opT}`](message, state)
+      config.postOp?.(message, state)
+      config[`postOp_${opT}`]?.(message, state)
     }
   },
   'chelonia/private/in/enqueueHandleEvent': function (event: GIMessage) {
@@ -281,7 +281,7 @@ export default (sbp('sbp/selectors/register', {
     // Errors in mutations result in ignored messages
     // Errors in side effects result in dropped messages to be reprocessed
     try {
-      preHandleEvent && await preHandleEvent(message)
+      await preHandleEvent?.(message)
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
@@ -327,7 +327,7 @@ export default (sbp('sbp/selectors/register', {
           this.config.hooks.sideEffectError?.(e, message)
         }
         try {
-          postHandleEvent && await postHandleEvent(message)
+          await postHandleEvent?.(message)
           sbp('okTurtles.events/emit', hash, contractID, message)
           sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
         } catch (e) {
