@@ -343,3 +343,14 @@ export const decrypt = (inKey: Key | string, data: string): string => {
 
   throw new Error('Unsupported algorithm')
 }
+
+export const decryptKey = (givenKeyId: string, inKey: Key | string, data: string): string => {
+  const value = decrypt(inKey, data)
+  const computedKeyId = keyId(value)
+
+  if (computedKeyId !== givenKeyId) {
+    throw new Error('Key ID of decrypted key doesn\'t match given key ID')
+  }
+
+  return value
+}

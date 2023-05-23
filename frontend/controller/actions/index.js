@@ -24,13 +24,14 @@ sbp('sbp/selectors/register', {
 
     const contractState = await sbp('chelonia/latestContractState', contractID)
 
-    if (contractState?._volatile?.keys) {
+    if (contractState?._volatile?.keys && Object.keys(contractState?._volatile?.keys).length) {
       const state = await sbp('chelonia/latestContractState', destinationContractID)
 
       const CEKid = findKeyIdByName(state, 'cek')
       const CSKid = findKeyIdByName(state, 'csk')
 
       const CEK = deserializeKey(state?._volatile?.keys?.[CEKid])
+      if (!CEK) throw new Error('Missing CEK; unable to proceed sharing keys')
 
       const keysToShare = Array.isArray(keyIds) ? pick(contractState._volatile.keys, keyIds) : keyIds === '*' ? contractState._volatile.keys : null
 
