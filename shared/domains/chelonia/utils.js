@@ -1,6 +1,6 @@
 import sbp from '@sbp/sbp'
 import type { Key } from './crypto.js'
-import { decrypt } from './crypto.js'
+import { decryptKey } from './crypto.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { GIKey, GIKeyPurpose } from './GIMessage.js'
 
@@ -65,10 +65,9 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
     // Does the key have key.meta?.private? If so, attempt to decrypt it
     if (key.meta?.private && key.meta.private.keyId && key.meta.private.content) {
       if (key.id && key.meta.private.keyId in secretKeys && key.meta.private.content) {
-        if (!state._volatile) state._volatile = Object.create(null)
-        if (!state._volatile.keys) state._volatile.keys = Object.create(null)
+        const decryptedKeys = []
         try {
-          state._volatile.keys[key.id] = decrypt(secretKeys[key.meta.private.keyId], key.meta.private.content)
+          decryptedKeys.push([key.id, decryptKey(key.id, secretKeys[key.meta.private.keyId], key.meta.private.content)])
         } catch (e) {
           console.error(`Secret key decryption error '${e.message || e}':`, e)
           // Ricardo feels this is an ambiguous situation, however if we rethrow it will
@@ -76,6 +75,14 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
           // and it's possible that an error here shouldn't necessarily break the entire
           // contract. For example, in some situations we might read a contract as
           // read-only and not have the key to write to it.
+        }
+        if (decryptedKeys.length) {
+          if (!state._volatile) this.config.reactiveSet(state, '_volatile', Object.create(null))
+          if (!state._volatile.keys) this.config.reactiveSet(state._volatile, 'keys', Object.create(null))
+
+          for (const [id, value] of decryptedKeys) {
+            this.config.reactiveSet(state._volatile.keys, id, value)
+          }
         }
       }
     }
