@@ -45,7 +45,7 @@ export default ({
     ourGroupProfile (to, from) {
       // if our group profile appears in the group state, it means we've joined the group
       if (to) {
-        this.groupJoined = true
+        this.ephemeral.groupJoined = true
       }
     }
   }
