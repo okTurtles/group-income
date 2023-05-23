@@ -14,12 +14,14 @@ form(@submit.prevent='')
       span.c-poll-option-value {{ option.value }}
 
   .buttons(v-if='enableSubmitBtn')
-    i18n.is-small(tag='button' type='button' @click='submitVotes') submit
+    i18n.is-small.is-outlined(v-if='isChangeMode' tag='button' type='button' @click='changeVotes') change vote
+    i18n.is-small(v-else tag='button' type='button' @click='submitVotes') submit
 </template>
 
 <script>
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
+import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { POLL_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
@@ -27,24 +29,35 @@ export default ({
   props: {
     pollData: Object,
     messageId: String,
-    messageHash: String
+    messageHash: String,
+    isChangeMode: Boolean
   },
   data () {
+    const initVal = () => this.pollData.pollType === POLL_TYPES.MULTIPLE_CHOICES ? [] : ''
+
     return {
       form: {
-        selectedOptions: this.pollData.pollType === POLL_TYPES.MULTIPLE_CHOICES ? [] : ''
-      }
+        selectedOptions: initVal()
+      },
+      selectedOptionsBeforeUpdate: initVal()
     }
   },
   computed: {
     ...mapGetters([
+      'ourUsername',
       'currentChatRoomId'
     ]),
     allowMultipleChoices () {
       return this.pollData.pollType === POLL_TYPES.MULTIPLE_CHOICES
     },
     enableSubmitBtn () {
-      return this.allowMultipleChoices ? this.form.selectedOptions.length > 0 : Boolean(this.form.selectedOptions)
+      if (this.isChangeMode) {
+        return this.formBeenUpdated()
+      } else {
+        return this.allowMultipleChoices
+          ? this.form.selectedOptions.length > 0
+          : Boolean(this.form.selectedOptions)
+      }
     }
   },
   methods: {
@@ -56,6 +69,27 @@ export default ({
           votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions]
         }
       })
+    },
+    changeVotes () {
+      alert('TODO:: implement changing votes on polls')
+    },
+    formBeenUpdated () {
+      if (this.allowMultipleChoices) {
+        return this.selectedOptionsBeforeUpdate.length !== this.form.selectedOptions.length ||
+          this.form.selectedOptions.some(optId => !this.selectedOptionsBeforeUpdate.includes(optId))
+      } else return this.selectedOptionsBeforeUpdate !== this.form.selectedOptions
+    }
+  },
+  mounted () {
+    if (this.isChangeMode) {
+      const extractedIds = this.pollData.options.filter(opt => opt.voted.includes(this.ourUsername))
+        .map(opt => opt.id)
+
+      if (extractedIds.length) {
+        const initialized = this.allowMultipleChoices ? extractedIds : extractedIds[0]
+        this.form.selectedOptions = cloneDeep(initialized)
+        this.selectedOptionsBeforeUpdate = cloneDeep(initialized)
+      }
     }
   }
 }: Object)

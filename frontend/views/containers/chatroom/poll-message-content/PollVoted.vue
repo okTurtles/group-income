@@ -1,8 +1,16 @@
 <template lang='pug'>
 .c-poll-voted
-  i18n.c-poll-label(tag='label') poll
-  h3.is-title-4.c-poll-title {{ pollData.question }}
+  .c-content-header
+    i18n.c-poll-label(tag='label') poll
+    h3.is-title-4 {{ pollData.question }}
 
+    menu-parent.c-poll-menu
+      menu-trigger.is-icon.c-poll-menu-trigger
+        i.icon-ellipsis-v
+      menu-content.c-poll-menu-content
+        ul
+          menu-item(tag='button' icon='edit' @click='() => pollUtils.switchOnChangeMode()')
+            i18n Change vote
   .c-options-and-voters
     ul.c-options-list
       li.c-option(
@@ -23,6 +31,7 @@
 
 <script>
 import { uniq } from '@model/contracts/shared/giLodash.js'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import VoterAvatars from './VoterAvatars.vue'
 
 export default ({
@@ -32,7 +41,11 @@ export default ({
     pollData: Object
   },
   components: {
-    VoterAvatars
+    VoterAvatars,
+    MenuParent,
+    MenuTrigger,
+    MenuContent,
+    MenuItem
   },
   computed: {
     list () {
@@ -72,6 +85,11 @@ export default ({
   position: relative;
 }
 
+.c-content-header {
+  margin-bottom: 1.375rem;
+  padding-right: 3.25rem;
+}
+
 .c-poll-label {
   display: block;
   text-transform: uppercase;
@@ -79,8 +97,19 @@ export default ({
   font-size: $size_5;
 }
 
-.c-poll-title {
-  margin-bottom: 1.375rem;
+.c-poll-menu {
+  position: absolute;
+  width: max-content;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+
+  &-content {
+    top: 3.25rem;
+    left: unset;
+    right: 0;
+    width: max-content;
+  }
 }
 
 .c-options-and-voters {
@@ -106,8 +135,14 @@ export default ({
   &-name-and-percent {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
     font-size: $size_4;
     margin-bottom: 0.5rem;
+
+    > .c-name {
+      display: inline-block;
+      margin-right: 0.5rem;
+    }
   }
 
   &-bar {

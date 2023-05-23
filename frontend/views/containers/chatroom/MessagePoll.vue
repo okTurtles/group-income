@@ -12,6 +12,7 @@ message-base.c-message-poll(
       component.c-poll-inner(
         :is='messageContentComponent'
         :isPollEditable='isPollEditable'
+        :isChangeMode='ephemeral.isChangeMode'
         :messageId='messageId'
         :messageHash='messageHash'
         :pollData='pollData'
@@ -55,6 +56,13 @@ export default ({
     },
     isCurrentUser: Boolean // says if the current user is the creator of the message
   },
+  data () {
+    return {
+      ephemeral: {
+        isChangeMode: false
+      }
+    }
+  },
   computed: {
     ...mapGetters([
       'ourUsername'
@@ -69,7 +77,11 @@ export default ({
       return this.isCurrentUser && this.votesFlattened.length === 0
     },
     messageContentComponent () {
-      return this.hasVoted ? 'poll-voted' : 'poll-to-vote'
+      if (this.hasVoted) {
+        return this.ephemeral.isChangeMode ? 'poll-to-vote' : 'poll-voted'
+      } else {
+        return 'poll-to-vote'
+      }
     }
   },
   methods: {
@@ -81,13 +93,20 @@ export default ({
     },
     addEmoticon (emoticon) {
       this.$emit('add-emoticon', emoticon)
+    },
+    switchOnChangeMode () {
+      this.ephemeral.isChangeMode = true
+    },
+    switchOffChangeMode () {
+      this.ephemeral.isChangeMode = false
     }
   },
   provide () {
     return {
       pollUtils: {
         hasVoted: () => this.hasVoted,
-        totalVoteCount: () => this.votesFlattened.length
+        totalVoteCount: () => this.votesFlattened.length,
+        switchOnChangeMode: this.switchOnChangeMode
       }
     }
   }
