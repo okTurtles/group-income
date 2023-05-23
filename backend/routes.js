@@ -54,7 +54,7 @@ route.POST('/event', {
   }
 })
 
-route.GET('/eventsSince/{contractID}/{since}', {}, async function (request, h) {
+route.GET('/eventsAfter/{contractID}/{since}', {}, async function (request, h) {
   try {
     const { contractID, since } = request.params
     const stream = await sbp('backend/db/streamEntriesSince', contractID, since)
