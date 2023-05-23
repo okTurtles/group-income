@@ -206,6 +206,8 @@ export default (sbp('sbp/selectors/register', {
     const signedPayload = message.signedPayload()
     const env = this.env
     const self = this
+    const opName = Object.entries(GIMessage).find(([x, y]) => y === opT)?.[0]
+    console.debug('PROCESSING OPCODE:', opName, 'from', message.originatingContractID(), 'to', contractID)
     if (!state._vm) state._vm = Object.create(null)
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {

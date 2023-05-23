@@ -38,6 +38,7 @@ import './views/utils/vStyle.js'
 import './utils/touchInteractions.js'
 import './model/notifications/periodicNotifications.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
+import { showNavMixin } from './views/utils/misc.js'
 
 const { Vue, L } = Common
 
@@ -199,7 +200,7 @@ async function startApp () {
   /* eslint-disable no-new */
   new Vue({
     router: router,
-    mixins: [notificationsMixin],
+    mixins: [notificationsMixin, showNavMixin],
     components: {
       AppStyles,
       BackgroundSounds,
@@ -309,9 +310,6 @@ async function startApp () {
       },
       shouldSetBadge () {
         return this.ourUnreadMessagesCount + this.totalUnreadNotificationCount > 0
-      },
-      showNav () {
-        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
       },
       appClasses () {
         return {

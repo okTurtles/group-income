@@ -72,7 +72,8 @@ nav.c-navigation(
             rel='noopener noreferrer'
           ) Donate
 
-    .c-navigation-footer(v-if='groupsByName.length')
+    //- .c-navigation-footer(v-if='groupsByName.length')
+    .c-navigation-footer(v-if='showNav')
       profile
   //- component(:is='ephemeral.timeTravelComponentName')
 </template>
@@ -88,10 +89,12 @@ import ListItem from '@components/ListItem.vue'
 import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import { DESKTOP } from '@view-utils/breakpoints.js'
+import { showNavMixin } from '@view-utils/misc.js'
 import { debounce } from '@model/contracts/shared/giLodash.js'
 
 export default ({
   name: 'Navigation',
+  mixins: [showNavMixin],
   components: {
     Badge,
     Toggle,
@@ -131,7 +134,7 @@ export default ({
     }
   },
   computed: {
-    ...mapState(['currentGroupId']),
+    ...mapState(['currentGroupId', 'loggedIn']),
     ...mapGetters([
       'groupsByName',
       'colors',

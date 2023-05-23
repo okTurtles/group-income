@@ -9,7 +9,7 @@ import { addTimeToDate, dateToPeriodStamp, DAYS_MILLIS } from '@model/contracts/
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import sbp from '@sbp/sbp'
-import { REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { REPLACE_MODAL, SWITCH_GROUP, PENDING_TO_WELCOME } from '@utils/events.js'
 import { imageUpload } from '@utils/image.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
@@ -464,6 +464,7 @@ export default (sbp('sbp/selectors/register', {
             chatRoomId: rootState[params.contractID].generalChatRoomId
           })
         }
+        sbp('okTurtles.events/emit', PENDING_TO_WELCOME)
 
       // We have already sent a key request that hasn't been answered. We cannot
       // do much at this point, so we do nothing.
