@@ -104,7 +104,7 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
       // If we are not subscribed to the contract, we don't set pendingKeyRequests because we don't need that contract's state
       // Setting pendingKeyRequests in these cases could result in issues
       // when a corresponding OP_KEY_SHARE is received, which could trigger subscribing to this previously unsubscribed to contract
-      if (keyRequestContractID && rootState.contracts[keyRequestContractID]) {
+      if (keyRequestContractID) {
         if (!rootState[keyRequestContractID]) {
           this.config.reactiveSet(rootState, keyRequestContractID, { _volatile: { pendingKeyRequests: [] } })
         } else if (!rootState[keyRequestContractID]._volatile) {
