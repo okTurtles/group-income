@@ -22,7 +22,10 @@
           .c-percent {{ option.percent }}
 
         .c-option-bar
-          .c-option-bar-measure(:style='{ width: option.percent }')
+          .c-option-bar-measure(
+            :class='{ "has-my-vote": option.hasMyVote }'
+            :style='{ width: option.percent }'
+          )
 
     .c-voters
       .c-voter-avatars-item(v-for='entry in list.voters' :key='entry.id')
@@ -30,6 +33,7 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { uniq } from '@model/contracts/shared/giLodash.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import VoterAvatars from './VoterAvatars.vue'
@@ -48,6 +52,9 @@ export default ({
     MenuItem
   },
   computed: {
+    ...mapGetters([
+      'ourUsername'
+    ]),
     list () {
       const percents = []
       const voters = []
@@ -56,7 +63,8 @@ export default ({
         percents.push({
           id: opt.id,
           percent: this.getPercent(opt.voted),
-          name: opt.value
+          name: opt.value,
+          hasMyVote: opt.voted.includes(this.ourUsername)
         })
 
         voters.push({
@@ -159,8 +167,12 @@ export default ({
     top: 0;
     left: 0;
     border-radius: 10px;
-    background-color: $primary_0;
+    background-color: $primary_1;
     height: 10px;
+
+    &.has-my-vote {
+      background-color: $primary_0;
+    }
   }
 }
 
@@ -173,7 +185,7 @@ export default ({
   display: flex;
   align-items: flex-end;
   width: max-content;
-  height: 2.5rem;
+  height: 2.4375rem;
 
   &:not(:last-of-type) {
     margin-bottom: 1rem;

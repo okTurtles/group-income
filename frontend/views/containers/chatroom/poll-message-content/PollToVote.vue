@@ -61,8 +61,8 @@ export default ({
     }
   },
   methods: {
-    submitVotes () {
-      sbp('gi.actions/chatroom/voteOnPoll', {
+    async submitVotes () {
+      await sbp('gi.actions/chatroom/voteOnPoll', {
         contractID: this.currentChatRoomId,
         data: {
           hash: this.messageHash,

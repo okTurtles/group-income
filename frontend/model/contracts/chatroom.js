@@ -532,23 +532,33 @@ sbp('chelonia/defineContract', {
         hash: string,
         votes: arrayOf(string)
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta, hash, id }, { state }) {
         const msgIndex = findMessageIdx(data.hash, state.messages)
 
         if (msgIndex >= 0) {
           const myVotes = data.votes
           const pollData = state.messages[msgIndex].pollData
           const optsCopy = cloneDeep(pollData.options)
+          const votedOptNames = []
 
           myVotes.forEach(optId => {
             const foundOpt = optsCopy.find(x => x.id === optId)
 
             if (foundOpt) {
               foundOpt.voted.push(meta.username)
+              votedOptNames.push(`"${foundOpt.value}"`)
             }
           })
 
           Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
+
+          // create & add a notification-message for user having voted.
+          const notificationData = createNotificationData(
+            MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
+            { votedOptions: votedOptNames.join(', ') }
+          )
+          const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+          state.messages.push(newMessage)
         }
       },
       sideEffect ({ contractID, hash }) {

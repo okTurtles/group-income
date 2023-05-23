@@ -118,7 +118,7 @@ export default ({
 
 .c-message-poll:hover {
   ::v-deep .c-option-bar {
-    background-color: $general_0;
+    background-color: $general_1;
   }
 }
 
