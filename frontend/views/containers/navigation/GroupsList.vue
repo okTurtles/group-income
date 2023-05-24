@@ -74,11 +74,14 @@ export default ({
       id && this.changeGroup(id)
     },
     changeGroup (hash) {
-      sbp('gi.actions/group/switch', hash)
       const path = this.$route.path
-      if (this.groupPictureForContract(hash) && path !== '/dashboard') {
+      const emptyGroupPicture = this.groupPictureForContract(hash) === ''
+      if (hash !== this.currentGroupId) {
+        sbp('gi.actions/group/switch', hash)
+      }
+      if (!emptyGroupPicture && path !== '/dashboard') {
         this.$router.push(({ path: '/dashboard' }))
-      } else if (path !== '/pending-approval') {
+      } else if (emptyGroupPicture && path !== '/pending-approval') {
         this.$router.push(({ path: '/pending-approval' }))
       }
     },
