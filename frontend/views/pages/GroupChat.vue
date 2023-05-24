@@ -192,6 +192,7 @@ export default ({
   padding: 0;
   height: 100%;
   margin-bottom: 0;
+  border-radius: 0.625rem 0.625rem 0 0;
 
   @include tablet {
     height: calc(100% - 3rem);
