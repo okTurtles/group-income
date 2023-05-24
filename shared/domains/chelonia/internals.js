@@ -4,7 +4,7 @@ import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, debounce, delay, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
-import { decrypt, encrypt, verifySignature } from './crypto.js'
+import { decryptKey, encrypt, verifySignature } from './crypto.js'
 import './db.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
@@ -265,7 +265,7 @@ export default (sbp('sbp/selectors/register', {
           if (key.meta?.private) {
             if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
               try {
-                const decrypted = decrypt(keys[key.meta.private.keyId], key.meta.private.content)
+                const decrypted = decryptKey(key.id, keys[key.meta.private.keyId], key.meta.private.content)
                 sharedKeys[key.id] = decrypted
                 if (config.transientSecretKeys) {
                   config.transientSecretKeys[key.id] = decrypted
@@ -278,7 +278,7 @@ export default (sbp('sbp/selectors/register', {
         }
 
         // If we already have the keys, we can return as the contract state will not be affected
-        const receivedNewKeys = !targetState._volatile?.keys || Object.keys(sharedKeys).reduce((acc, keyId) => acc && !!targetState._volatile.keys[keyId], true)
+        const receivedNewKeys = !targetState._volatile?.keys || Object.keys(sharedKeys).reduce((acc, keyId) => acc || !targetState._volatile.keys[keyId], false)
 
         if (!receivedNewKeys) {
           console.log({ receivedNewKeys, sharedKeys, existingKeys: targetState._volatile?.keys })
@@ -316,15 +316,19 @@ export default (sbp('sbp/selectors/register', {
             console.log('No pendingKeyRequests')
           }
         }).then(() => {
-          if (!targetState._volatile) targetState._volatile = Object.create(null)
-          if (!targetState._volatile.keys) {
-            targetState._volatile.keys = {
-              ...existingKeys,
-              ...sharedKeys
-            }
-          } else {
-            Object.entries((sharedKeys: any)).forEach(([k, v]) => { targetState._volatile.keys[k] = v })
+          if (!targetState._volatile) config.reactiveSet(targetState, '_volatile', Object.create(null))
+          if (!targetState._volatile.keys) config.reactiveSet(targetState._volatile, 'keys', Object.create(null))
+
+          for (const [id, value] of Object.entries((sharedKeys: any))) {
+            if (!targetState._volatile.keys[id]) config.reactiveSet(targetState._volatile.keys, id, value)
           }
+
+          if (existingKeys) {
+            for (const [id, value] of Object.entries(existingKeys)) {
+              if (!targetState._volatile.keys[id]) config.reactiveSet(targetState._volatile.keys, id, value)
+            }
+          }
+
           // TODO Instead of deleting all key requests, remove the current one only
           targetState._volatile.pendingKeyRequests = []
         })

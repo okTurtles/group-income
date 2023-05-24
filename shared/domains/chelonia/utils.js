@@ -1,8 +1,9 @@
 import sbp from '@sbp/sbp'
-import type { Key } from './crypto.js'
-import { decrypt } from './crypto.js'
-import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 import type { GIKey, GIKeyPurpose } from './GIMessage.js'
+import { GIMessage } from './GIMessage.js'
+import type { Key } from './crypto.js'
+import { decryptKey } from './crypto.js'
+import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 
 export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name)?.id
 
@@ -61,14 +62,15 @@ export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey,
 }
 
 export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, keys: GIKey[], state: Object, contractID: string) {
+  console.log('@@@@@ KAP Attempting to decrypt keys for ' + contractID)
+  const decryptedKeys = []
+
   for (const key of keys) {
     // Does the key have key.meta?.private? If so, attempt to decrypt it
     if (key.meta?.private && key.meta.private.keyId && key.meta.private.content) {
       if (key.id && key.meta.private.keyId in secretKeys && key.meta.private.content) {
-        if (!state._volatile) state._volatile = Object.create(null)
-        if (!state._volatile.keys) state._volatile.keys = Object.create(null)
         try {
-          state._volatile.keys[key.id] = decrypt(secretKeys[key.meta.private.keyId], key.meta.private.content)
+          decryptedKeys.push([key.id, decryptKey(key.id, secretKeys[key.meta.private.keyId], key.meta.private.content)])
         } catch (e) {
           console.error(`Secret key decryption error '${e.message || e}':`, e)
           // Ricardo feels this is an ambiguous situation, however if we rethrow it will
@@ -95,7 +97,8 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
     }
 
     // Is this KEY operation the result of requesting keys for another contract?
-    if (key.meta?.keyRequest) {
+    console.log(['@@@@@KAP', key.meta?.keyRequest, findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig']), contractID])
+    if (key.meta?.keyRequest && findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig'])) {
       const { id, contractID: keyRequestContractID, outerKeyId } = key.meta?.keyRequest
 
       const rootState = sbp(this.config.stateSelector)
@@ -130,6 +133,16 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
       if (!foreignContract || !foreignKeyName) throw new Error('Invalid foregin key: missing contract or key name')
 
       this.setPostSyncOp(contractID, `syncAndMirrorKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`, ['chelonia/private/in/syncContractAndWatchKeys', foreignContract, foreignKeyName, contractID, key.id])
+    }
+  }
+
+  console.log('@@@@@ KAP KL ' + decryptedKeys.length + ' cID ' + contractID)
+  if (decryptedKeys.length) {
+    if (!state._volatile) this.config.reactiveSet(state, '_volatile', Object.create(null))
+    if (!state._volatile.keys) this.config.reactiveSet(state._volatile, 'keys', Object.create(null))
+
+    for (const [id, value] of decryptedKeys) {
+      this.config.reactiveSet(state._volatile.keys, id, value)
     }
   }
 }
