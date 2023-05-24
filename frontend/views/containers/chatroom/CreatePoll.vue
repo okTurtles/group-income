@@ -74,7 +74,8 @@ import { Vue, L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
-import { MESSAGE_TYPES, POLL_TYPES } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, POLL_TYPES, CHATROOM_POLL_DURATION_DAYS } from '@model/contracts/shared/constants.js'
+import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 const createRandomId = () => {
@@ -175,6 +176,7 @@ export default {
           pollData: {
             question: this.form.question,
             options: this.form.options,
+            expires_date_ms: Date.now() + CHATROOM_POLL_DURATION_DAYS * DAYS_MILLIS,
             pollType: this.form.allowMultipleChoice
               ? POLL_TYPES.MULTIPLE_CHOICES
               : POLL_TYPES.SINGLE_CHOICE

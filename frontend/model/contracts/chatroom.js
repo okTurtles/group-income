@@ -15,7 +15,8 @@ import {
   MESSAGE_NOTIFICATIONS,
   CHATROOM_MESSAGE_ACTION,
   MESSAGE_RECEIVE,
-  MESSAGE_NOTIFY_SETTINGS
+  MESSAGE_NOTIFY_SETTINGS,
+  POLL_STATUS
 } from './shared/constants.js'
 import { chatRoomAttributesType, messageType } from './shared/types.js'
 import { createMessage, leaveChatRoom, findMessageIdx, makeMentionFromUsername } from './shared/functions.js'
@@ -607,6 +608,20 @@ sbp('chelonia/defineContract', {
       },
       sideEffect ({ contractID, hash }) {
         emitMessageEvent({ contractID, hash })
+      }
+    },
+    'gi.contracts/chatroom/closePoll': {
+      validate: objectOf({
+        hash: string
+      }),
+      process ({ data }, { state }) {
+        const msgIndex = findMessageIdx(data.hash, state.messages)
+
+        if (msgIndex >= 0) {
+          const pollData = state.messages[msgIndex].pollData
+
+          Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, status: POLL_STATUS.CLOSED })
+        }
       }
     }
   }
