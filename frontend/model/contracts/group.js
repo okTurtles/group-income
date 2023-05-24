@@ -995,14 +995,10 @@ sbp('chelonia/defineContract', {
         if (Object.keys(invite.responses).length === invite.quantity) {
           invite.status = INVITE_STATUS.USED
         }
-        // NOTE: ensure `meta.username` is unique for the lifetime of the username
-        //       since we are making it possible for the same username to leave and rejoin the group.
-        //       All of their past posts will be re-associated with them upon re-joining.
-        const profile = state.profiles[meta.username]
-        if (profile && profile.status !== PROFILE_STATUS.REMOVED) {
-          console.error(`inviteAccept: ${meta.username} is currently active member in the group`)
-          throw new Errors.GIErrorIgnoreAndBan(`${meta.username} is already joined and active in the group`)
-        }
+        // TODO: ensure `meta.username` is unique for the lifetime of the username
+        //       since we are making it possible for the same username to leave and
+        //       rejoin the group. All of their past posts will be re-associated with
+        //       them upon re-joining.
         Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate))
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
