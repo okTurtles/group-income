@@ -254,6 +254,11 @@ export default (sbp('sbp/selectors/register', {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
         // TODO: fetch events from localStorage instead of server if we have them
         const events = await sbp('chelonia/out/eventsAfter', contractID, recent || contractID)
+        // checks if the list of events consist of latest event
+        console.log(typeof events, events)
+        if (events.findLastIndex(e => GIMessage.deserialize(e).hash() === latest) === -1) {
+          throw new ChelErrorUnexpected()
+        }
         // remove the first element in cases where we are not getting the contract for the first time
         state.contracts[contractID] && events.shift()
         for (let i = 0; i < events.length; i++) {
