@@ -4,7 +4,7 @@
 // state) per: http://vuex.vuejs.org/en/intro.html
 
 import sbp from '@sbp/sbp'
-import { Vue } from '@common/common.js'
+import { Vue, L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
@@ -438,9 +438,11 @@ const getters = {
     const contracts = state.contracts
     // The code below was originally Object.entries(...) but changed to .keys()
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
+    // we return event pending groups that we haven't finished joining so that we are not stuck
+    // on the /pending-approval page if we are part of another working group already
     return Object.keys(contracts || {})
-      .filter(contractID => contracts[contractID].type === 'gi.contracts/group' && state[contractID].settings)
-      .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
+      .filter(contractID => contracts[contractID].type === 'gi.contracts/group')
+      .map(contractID => ({ groupName: state[contractID].settings?.groupName || L('Pending'), contractID }))
   },
   groupMembersSorted (state, getters) {
     const profiles = getters.currentGroupState.profiles
