@@ -2,7 +2,7 @@ $bannerGeneralHeight: 2.3rem;
 
 .l-no-navigation {
   display: grid;
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   grid-template-areas:
     "l-banner"
@@ -21,7 +21,7 @@ $bannerGeneralHeight: 2.3rem;
 .l-with-navigation {
   display: grid;
   overflow: hidden;
-  height: 100vh;
+  height: 100%;
   grid-template-areas:
     "l-banner l-banner"
     "l-navigation l-page";
@@ -43,7 +43,7 @@ $bannerGeneralHeight: 2.3rem;
   z-index: $zindex-banner;
 
   & ~ .l-navigation {
-    height: calc(100vh - #{$bannerGeneralHeight});
+    height: calc(100% - #{$bannerGeneralHeight});
 
     @include touch {
       margin-top: $bannerGeneralHeight;
@@ -51,7 +51,7 @@ $bannerGeneralHeight: 2.3rem;
   }
 
   & ~ .l-page .p-sidebar {
-    height: calc(100vh - #{$bannerGeneralHeight});
+    height: calc(100% - #{$bannerGeneralHeight});
   }
 
   & ~ .l-modal .modal {
