@@ -137,12 +137,11 @@ export default ({
           creatorPicture,
           message
         }
-        this.pageStatus = 'SIGNING'
 
         if (!syncFinished) {
+          this.pageStatus = 'SIGNING'
           sbp('okTurtles.events/once', LOGIN, () => this.accept())
         } else {
-          this.pageStatus = 'LOGGING'
           this.accept()
         }
       } catch (e) {
