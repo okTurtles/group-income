@@ -278,7 +278,7 @@ export default (sbp('sbp/selectors/register', {
         }
 
         // If we already have the keys, we can return as the contract state will not be affected
-        const receivedNewKeys = !targetState._volatile?.keys || Object.keys(sharedKeys).reduce((acc, keyId) => acc && !!targetState._volatile.keys[keyId], true)
+        const receivedNewKeys = !targetState._volatile?.keys || Object.keys(sharedKeys).reduce((acc, keyId) => acc || !targetState._volatile.keys[keyId], false)
 
         if (!receivedNewKeys) {
           console.log({ receivedNewKeys, sharedKeys, existingKeys: targetState._volatile?.keys })
@@ -316,15 +316,17 @@ export default (sbp('sbp/selectors/register', {
             console.log('No pendingKeyRequests')
           }
         }).then(() => {
-          if (!state._volatile) this.config.reactiveSet(state, '_volatile', Object.create(null))
-          if (!state._volatile.keys) this.config.reactiveSet(state._volatile, 'keys', Object.create(null))
+          if (!targetState._volatile) config.reactiveSet(targetState, '_volatile', Object.create(null))
+          if (!targetState._volatile.keys) config.reactiveSet(targetState._volatile, 'keys', Object.create(null))
 
           for (const [id, value] of Object.entries((sharedKeys: any))) {
-            if (!state._volatile.keys[id]) config.reactiveSet(state._volatile.keys, id, value)
+            if (!targetState._volatile.keys[id]) config.reactiveSet(targetState._volatile.keys, id, value)
           }
 
-          for (const [id, value] of Object.entries(existingKeys)) {
-            if (!state._volatile.keys[id]) config.reactiveSet(state._volatile.keys, id, value)
+          if (existingKeys) {
+            for (const [id, value] of Object.entries(existingKeys)) {
+              if (!targetState._volatile.keys[id]) config.reactiveSet(targetState._volatile.keys, id, value)
+            }
           }
 
           // TODO Instead of deleting all key requests, remove the current one only
