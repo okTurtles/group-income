@@ -31,7 +31,7 @@ $pagePaddingDesktop: 5.5rem;
   grid-template-areas: "p-header" "p-main";
   grid-template-columns: 1fr;
   grid-template-rows: auto minmax(0, 1fr);
-  height: 100vh;
+  height: 100%;
   width: 100vw;
 
   @include desktop {

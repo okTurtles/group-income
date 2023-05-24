@@ -204,9 +204,15 @@ export default ({
   }
 }
 
-::v-deep .c-logo {
-  @include touch {
-    display: none;
+::v-deep {
+  .c-logo {
+    @include touch {
+      display: none;
+    }
+  }
+
+  .p-main {
+    height: auto !important;
   }
 }
 

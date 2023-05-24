@@ -37,7 +37,7 @@ export default ({
   animation: showLoading 200ms 500ms forwards;
 
   &.c-fullView {
-    min-height: 100vh;
+    min-height: 100%;
     display: flex;
     flex-direction: column;
     justify-content: center;

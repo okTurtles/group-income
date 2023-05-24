@@ -200,6 +200,7 @@ export default ({
 .c-page {
   max-width: 33rem;
   margin: auto;
+  height: 100%;
 }
 
 .c-welcome {

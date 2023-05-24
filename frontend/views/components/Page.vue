@@ -9,7 +9,8 @@ div(:data-test='pageTestName + "-page"' :class='$scopedSlots.sidebar ? "p-with-s
         src='/assets/images/group-income-icon-transparent.png'
         alt=''
       )
-      slot(name='title')
+      span
+        slot(name='title')
 
     toggle(v-if='$scopedSlots.sidebar' @toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
     slot(name='description')
@@ -91,11 +92,11 @@ $pagePaddingDesktop: 5.5rem;
 
 .p-with-sidebar,
 .p-no-sidebar {
-  height: 100vh;
+  height: 100%;
   width: 100vw;
 
   @include desktop {
-    height: 100vh;
+    height: 100%;
     width: auto;
   }
 }
@@ -120,6 +121,7 @@ $pagePaddingDesktop: 5.5rem;
   margin: 0 auto;
   padding-top: 1.5rem;
   max-width: 50rem;
+  height: fit-content;
   @include overflow-touch;
 
   &.full-width {
@@ -180,6 +182,17 @@ $pagePaddingDesktop: 5.5rem;
 .p-title {
   display: flex;
   align-items: center;
+
+  > span {
+    width: fit-content;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @include phone {
+    max-width: 65vw;
+  }
 }
 
 .c-logo {
@@ -198,7 +211,7 @@ $pagePaddingDesktop: 5.5rem;
   z-index: $zindex-sidebar;
   right: 0;
   width: $rightSideWidth;
-  height: 100vh;
+  height: 100%;
   background-color: $general_2;
   transform: translateX(100%);
   transition: transform $transitionSpeed;
@@ -226,7 +239,7 @@ $pagePaddingDesktop: 5.5rem;
     transform: translateX(0);
 
     .c-toggle {
-      height: 100vh;
+      height: 100%;
       display: block;
     }
   }
