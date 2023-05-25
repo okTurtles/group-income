@@ -290,9 +290,12 @@ export default ({
         this.proposal.status === STATUS_PASSED &&
         this.isOurProposal
       ) {
-        const secret = this.proposal.payload.inviteSecret
-        if (this.currentGroupState.invites[secret]?.status === INVITE_STATUS.VALID) {
-          return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.proposal.payload.inviteSecret)
+        const keyId = this.proposal.payload.keyId
+        // Display the link for (1) valid invites for which (2_ there is a
+        // corresponding authorizedKey for which (3) we have access to its
+        // secret key
+        if (/* this.currentGroupState._vm.invites[keyId]?.status === INVITE_STATUS.VALID && */this.currentGroupState._vm?.authorizedKeys?.[keyId] && this.currentGroupState._vm.invites?.[keyId]?.inviteSecret) {
+          return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.currentGroupState._vm.invites[keyId].inviteSecret)
         }
       }
       return false
@@ -302,9 +305,9 @@ export default ({
         this.proposal.status === STATUS_PASSED &&
         this.isOurProposal
       ) {
-        const secret = this.proposal.payload.inviteSecret
-        if (this.currentGroupState.invites[secret].status === INVITE_STATUS.VALID &&
-          this.proposal.payload.expires < Date.now()) {
+        const keyId = this.proposal.payload.keyId
+        if (this.currentGroupState._vm.invites[keyId]?.status === INVITE_STATUS.VALID &&
+          this.currentGroupState._vm.invites[keyId].expires < Date.now()) {
           return true
         }
       }

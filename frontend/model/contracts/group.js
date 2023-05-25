@@ -975,8 +975,8 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/invite': {
       validate: inviteType,
-      process ({ data, meta }, { state }) {
-        Vue.set(state.invites, data.inviteSecret, data)
+      process () {
+        // Handled by Chelonia
       }
     },
     'gi.contracts/group/inviteAccept': {

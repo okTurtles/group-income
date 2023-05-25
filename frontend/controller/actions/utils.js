@@ -1,8 +1,12 @@
 'use strict'
 
-import { GIErrorUIRuntimeError, LError } from '@common/common.js'
 import sbp from '@sbp/sbp'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { GIErrorUIRuntimeError, LError } from '@common/common.js'
+import { EDWARDS25519SHA512BATCH, encrypt, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 
 // Utility function to send encrypted actions ('chelonia/out/actionEncrypted')
@@ -55,5 +59,70 @@ export function encryptedAction (
         throw new GIErrorUIRuntimeError(userFacingErrStr)
       }
     }
+  }
+}
+
+export async function createInvite ({ quantity = 1, creator, expires, invitee }: {
+  quantity: number, creator: string, expires: number, invitee?: string
+}): Promise<{keyId: string}> {
+  const rootState = sbp('state/vuex/state')
+
+  if (!rootState.currentGroupId) {
+    throw new Error('Current group not selected')
+  }
+
+  const contractID = rootState.currentGroupId
+
+  if (!rootState[contractID] || !rootState[contractID]._vm || !rootState[contractID]._volatile?.keys || rootState[contractID]._volatile.pendingKeyRequests?.length) {
+    throw new Error('Invalid or missing current group state')
+  }
+
+  const state = rootState[contractID]
+
+  const CEKid = findKeyIdByName(state, 'cek')
+  const CSKid = findKeyIdByName(state, 'csk')
+
+  if (!CEKid || !CSKid) {
+    throw new Error('Contract is missing a CEK or CSK')
+  }
+
+  const CEK = state._volatile.keys[CEKid]
+  const CSK = state._volatile.keys[CSKid]
+
+  if (!CEK || !CSK) {
+    throw new Error('Contract is missing a secret CEK or CSK')
+  }
+
+  const inviteKey = keygen(EDWARDS25519SHA512BATCH)
+  const inviteKeyId = keyId(inviteKey)
+  const inviteKeyP = serializeKey(inviteKey, false)
+  const inviteKeyS = encrypt(CEK, serializeKey(inviteKey, true))
+
+  await sbp('chelonia/out/keyAdd', {
+    contractID,
+    contractName: 'gi.contracts/group',
+    data: [{
+      id: inviteKeyId,
+      name: '#inviteKey-' + inviteKeyId,
+      purpose: ['sig'],
+      ringLevel: Number.MAX_SAFE_INTEGER,
+      permissions: [GIMessage.OP_KEY_REQUEST],
+      meta: {
+        quantity,
+        creator,
+        invitee,
+        expires: Date.now() + DAYS_MILLIS * expires,
+        private: {
+          keyId: CEKid,
+          content: inviteKeyS
+        }
+      },
+      data: inviteKeyP
+    }],
+    signingKeyId: CSKid
+  })
+
+  return {
+    keyId: inviteKeyId
   }
 }
