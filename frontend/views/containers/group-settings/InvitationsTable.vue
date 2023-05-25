@@ -460,8 +460,6 @@ export default ({
     right: unset;
     left: 2rem;
     top: 0.5rem;
-    padding-top: 0;
-    padding-bottom: 0;
   }
 
   .c-webshare-fallback {
@@ -493,13 +491,5 @@ export default ({
   position: absolute;
   pointer-events: none;
   opacity: 0;
-}
-
-.c-dropdown-invite-link {
-  box-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
-
-  .is-dark-theme & {
-    box-shadow: 0 0 20px rgba(38, 38, 38, 0.895);
-  }
 }
 </style>

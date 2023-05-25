@@ -151,11 +151,11 @@ export default ({
     },
     setActionMenuStyle () {
       const winWidth = window.innerWidth
-      if (winWidth < TABLET || winWidth > DESKTOP || !this.$refs.menu) {
-        return ''
+      if (winWidth > TABLET && winWidth < DESKTOP && this.$refs.menu) {
+        const { x, y } = this.$refs.menu.$el.getBoundingClientRect()
+        this.actionMenuStyle = `top: ${Math.max(100, y - 200)}px; left: ${x + 50}px`
       }
-      const { x, y } = this.$refs.menu.$el.getBoundingClientRect()
-      this.actionMenuStyle = `top: ${Math.max(100, y - 200)}px; left: ${x + 50}px`
+      this.actionMenuStyle = ''
     }
   }
 }: Object)

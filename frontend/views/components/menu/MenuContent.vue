@@ -73,6 +73,10 @@ export default ({
   padding-bottom: 0.5rem;
   padding-top: 0.5rem;
 
+  .is-dark-theme & {
+    box-shadow: 0 0.5rem 1.25rem rgba(38, 38, 38, 0.895);
+  }
+
   &.is-active {
     // Is that enought for every menu?
     // Should we use mask transition instead?
@@ -114,9 +118,5 @@ export default ({
       margin-right: 0.5rem;
     }
   }
-}
-
-.is-dark-theme .c-content {
-  background-color: var(--general_1);
 }
 </style>
