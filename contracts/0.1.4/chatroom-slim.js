@@ -90,11 +90,6 @@
     DIRECT_MESSAGES: "direct-messages",
     NOTHING: "nothing"
   };
-  var UNREAD_MESSAGE_TYPE = {
-    MENTION: "mention",
-    INTERACTIVE: "interactive",
-    POLL: "poll"
-  };
   var POLL_STATUS = {
     ACTIVE: "active",
     CLOSED: "closed",
@@ -457,20 +452,33 @@ ${this.getErrorInfo()}`;
       });
     }
   }
-  function messageReceivePostEffect({ contractID, messageHash, datetime, text, isAlreadyAdded, isMentionedMe, messageType: messageType2, username, chatRoomName }) {
+  function messageReceivePostEffect({
+    contractID,
+    messageHash,
+    datetime,
+    text,
+    isDMOrMention,
+    messageType: messageType2,
+    username,
+    chatRoomName
+  }) {
     if ((0, import_sbp3.default)("chelonia/contract/isSyncing", contractID)) {
       return;
     }
     const rootGetters = (0, import_sbp3.default)("state/vuex/getters");
     const isDirectMessage = rootGetters.isDirectMessage(contractID);
-    const isDMOrMention = isMentionedMe || isDirectMessage;
-    const type = messageType2 === MESSAGE_TYPES.INTERACTIVE ? UNREAD_MESSAGE_TYPE.INTERACTIVE : messageType2 === MESSAGE_TYPES.POLL ? UNREAD_MESSAGE_TYPE.POLL : messageType2 === MESSAGE_TYPES.TEXT && isDMOrMention ? UNREAD_MESSAGE_TYPE.MENTION : null;
-    if (!isAlreadyAdded && type) {
+    const unreadMessageTypeMapping = {
+      [MESSAGE_TYPES.TEXT]: isDMOrMention ? MESSAGE_TYPES.TEXT : void 0,
+      [MESSAGE_TYPES.INTERACTIVE]: MESSAGE_TYPES.INTERACTIVE,
+      [MESSAGE_TYPES.POLL]: MESSAGE_TYPES.POLL
+    };
+    const unreadMessageType = unreadMessageTypeMapping[messageType2];
+    if (unreadMessageType) {
       (0, import_sbp3.default)("state/vuex/commit", "addChatRoomUnreadMessage", {
         chatRoomId: contractID,
         messageHash,
         createdDate: datetime,
-        type
+        type: unreadMessageType
       });
     }
     let title = `# ${chatRoomName}`;
@@ -488,17 +496,8 @@ ${this.getErrorInfo()}`;
     const { messageNotification, messageSound } = chatNotificationSettings;
     const shouldNotifyMessage = messageNotification === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageNotification === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
     const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES || messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention;
-    if (!isAlreadyAdded && shouldNotifyMessage) {
-      makeNotification({
-        title,
-        body: text,
-        icon: partnerProfile?.picture,
-        path
-      });
-    }
-    if (!isAlreadyAdded && shouldSoundMessage) {
-      (0, import_sbp3.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
-    }
+    shouldNotifyMessage && makeNotification({ title, body: text, icon: partnerProfile?.picture, path });
+    shouldSoundMessage && (0, import_sbp3.default)("okTurtles.events/emit", MESSAGE_RECEIVE);
   }
   (0, import_sbp3.default)("chelonia/defineContract", {
     name: "gi.contracts/chatroom",
@@ -723,7 +722,7 @@ ${this.getErrorInfo()}`;
             messageHash: newMessage.hash,
             datetime: newMessage.datetime,
             text: newMessage.text,
-            isMentionedMe,
+            isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL,
             messageType: data.type,
             username: meta.username,
             chatRoomName: getters.chatRoomAttributes.name
@@ -753,23 +752,24 @@ ${this.getErrorInfo()}`;
           emitMessageEvent({ contractID, hash });
           const rootState = (0, import_sbp3.default)("state/vuex/state");
           const me = rootState.loggedIn.username;
-          if (me === meta.username) {
+          if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL) {
             return;
           }
           const isAlreadyAdded = !!rootState.chatRoomUnread[contractID].messages.find((m) => m.messageHash === data.hash);
           const mentions = makeMentionFromUsername(me);
           const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all);
-          messageReceivePostEffect({
-            contractID,
-            messageHash: data.hash,
-            datetime: data.createdDate,
-            text: data.text,
-            isAlreadyAdded,
-            isMentionedMe,
-            username: meta.username,
-            chatRoomName: getters.chatRoomAttributes.name
-          });
-          if (isAlreadyAdded && !isMentionedMe) {
+          if (!isAlreadyAdded) {
+            messageReceivePostEffect({
+              contractID,
+              messageHash: data.hash,
+              datetime: data.createdDate,
+              text: data.text,
+              isDMOrMention: isMentionedMe,
+              messageType: MESSAGE_TYPES.TEXT,
+              username: meta.username,
+              chatRoomName: getters.chatRoomAttributes.name
+            });
+          } else if (!isMentionedMe) {
             (0, import_sbp3.default)("state/vuex/commit", "deleteChatRoomUnreadMessage", {
               chatRoomId: contractID,
               messageHash: data.hash

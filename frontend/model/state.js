@@ -7,7 +7,7 @@ import sbp from '@sbp/sbp'
 import { Vue } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
-import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, UNREAD_MESSAGE_TYPE } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -71,13 +71,13 @@ sbp('sbp/selectors/register', {
       }
       if (state.chatRoomUnread[chatRoomId].mentions) {
         state.chatRoomUnread[chatRoomId].mentions.forEach(m => {
-          state.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: UNREAD_MESSAGE_TYPE.MENTION }, m))
+          state.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: MESSAGE_TYPES.TEXT }, m))
         })
         Vue.delete(state.chatRoomUnread[chatRoomId], 'mentions')
       }
       if (state.chatRoomUnread[chatRoomId].others) {
         state.chatRoomUnread[chatRoomId].others.forEach(o => {
-          state.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: UNREAD_MESSAGE_TYPE.INTERACTIVE }, o))
+          state.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: MESSAGE_TYPES.INTERACTIVE }, o))
         })
         Vue.delete(state.chatRoomUnread[chatRoomId], 'others')
       }
@@ -619,7 +619,7 @@ const getters = {
   chatRoomUnreadMentions (state, getters) {
     return (chatRoomId: string) => {
       // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
-      return (getters.ourUnreadMessages[chatRoomId]?.messages || []).filter(m => m.type === UNREAD_MESSAGE_TYPE.MENTION)
+      return (getters.ourUnreadMessages[chatRoomId]?.messages || []).filter(m => m.type === MESSAGE_TYPES.TEXT)
     }
   },
   groupUnreadMessages (state, getters) {

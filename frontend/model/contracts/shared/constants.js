@@ -112,12 +112,6 @@ export const MESSAGE_NOTIFY_SETTINGS = {
   NOTHING: 'nothing'
 }
 
-export const UNREAD_MESSAGE_TYPE = {
-  MENTION: 'mention',
-  INTERACTIVE: 'interactive',
-  POLL: 'poll'
-}
-
 export const POLL_TYPES = {
   SINGLE_CHOICE: 'single-vote', // allows only 1 choice per member
   MULTIPLE_CHOICES: 'multiple-votes' // allows multiple choices on the poll
