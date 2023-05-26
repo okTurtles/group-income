@@ -20,9 +20,11 @@ message-base.c-message-poll(
 </template>
 
 <script>
+import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
 import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { DAYS_MILLIS, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import PollToVote from './poll-message-content/PollToVote.vue'
 import PollVoted from './poll-message-content/PollVoted.vue'
 
@@ -65,7 +67,8 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'ourUsername'
+      'ourUsername',
+      'currentChatRoomId'
     ]),
     votesFlattened () {
       return this.pollData.options.reduce((accu, opt) => [...accu, ...opt.voted], [])
@@ -81,6 +84,34 @@ export default ({
         return this.ephemeral.isChangeMode ? 'poll-to-vote' : 'poll-voted'
       } else {
         return 'poll-to-vote'
+      }
+    },
+    setupPollExpirationTimer () {
+      const markPollClosed = () => {
+        sbp('gi.actions/hatroom/closePoll', {
+          contractID: this.currentChatRoomId,
+          data: { hash: this.messageHash }
+        })
+      }
+      const checkAndSetTimer = () => {
+        if (Date.now() - this.pollData.expires_date_ms) {
+          markPollClosed()
+        } else {
+          this.expirationTimeoutId = setTimeout(checkAndSetTimer, MINS_MILLIS)
+        }
+      }
+      const timeDiff = Date.now() - this.pollData.expires_date_ms
+
+      if (timeDiff <= 0) {
+        // if the poll has been expired, mark it 'closed' immediately.
+        markPollClosed()
+      } else if (timeDiff < 0.5 * DAYS_MILLIS) {
+        // if the poll is expiring soon, periodically check & mark it 'closed'.
+        // NOTE: this logic is actually a good candidate for a periodic-notification entry in mainNotificationsMixin.js,
+        //       but there is a challenge in accessing a particular chat-message data in there.
+        //       (couldn't find a way to access a chat-message item via vuex state/getters)
+        //       So implemented this logic here.
+        this.expirationTimeoutId = setTimeout(checkAndSetTimer, MINS_MILLIS)
       }
     }
   },
@@ -109,6 +140,14 @@ export default ({
         switchOnChangeMode: this.switchOnChangeMode,
         switchOffChangeMode: this.switchOffChangeMode
       }
+    }
+  },
+  created () {
+    this.setupPollExpirationTimer()
+  },
+  beforeDestroy () {
+    if (this.expirationTimeoutId) {
+      clearTimeout(this.expirationTimeoutId)
     }
   }
 }: Object)

@@ -205,16 +205,6 @@ const periodicNotificationEntries = [
       },
       shouldClearStateKey: () => true
     }
-  },
-  {
-    type: PERIODIC_NOTIFICATION_TYPE.MIN5,
-    notificationData: {
-      stateKey: 'expiredPoll',
-      // TODO: Implement logics in below blocks.
-      emitCondition: () => false,
-      emit: () => {},
-      shouldClearStateKey: () => true
-    }
   }
 ]
 
