@@ -20,20 +20,11 @@ import type { GIActionParams } from './types.js'
 export function encryptedAction (
   action: string,
   humanError: string | Function,
-  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams) => Promise<void>,
+  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams, signingKeyId: string, encryptionKeyId: string) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string
 ): Object {
-  const sendMessage = (outerParams: GIActionParams, state: Object) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
-    const signingKeyId = findKeyIdByName(state, signingKeyName ?? 'csk')
-    const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
-
-    if (!state?._volatile?.keys || !state._volatile.keys[signingKeyId] || !state._volatile.keys[encryptionKeyId]) {
-      console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)
-      // TODO: Change to Promise.reject()
-      return Promise.resolve()
-    }
-
+  const sendMessage = (outerParams: GIActionParams, signingKeyId: string, encryptionKeyId: string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
     return sbp('chelonia/out/actionEncrypted', {
       ...(innerParams ?? outerParams),
       signingKeyId,
@@ -45,11 +36,23 @@ export function encryptedAction (
     [action]: async function (params: GIActionParams) {
       try {
         const state = await sbp('chelonia/latestContractState', params.contractID)
+
+        const signingKeyId = findKeyIdByName(state, signingKeyName ?? 'csk')
+        const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
+
+        if (!signingKeyId || !encryptionKeyId || !state?._volatile?.keys || !state._volatile.keys[signingKeyId] || !state._volatile.keys[encryptionKeyId]) {
+          console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)
+          // TODO: Change to Promise.reject()
+          return Promise.resolve()
+        }
+
+        const sm = sendMessage(params, signingKeyId, encryptionKeyId)
+
         // make sure to await here so that if there's an error we show user-facing string
         if (handler) {
-          return await handler(sendMessage(params, state), params)
+          return await handler(sm, params, signingKeyId, encryptionKeyId)
         } else {
-          return await sendMessage(params, state)()
+          return await sm()
         }
       } catch (e) {
         console.error(`${action} failed!`, e)

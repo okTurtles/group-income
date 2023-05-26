@@ -6,10 +6,11 @@ import sbp from '@sbp/sbp'
 import { Vue, Errors, L } from '@common/common.js'
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './shared/voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './shared/voting/proposals.js'
+import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
   STATUS_OPEN, STATUS_CANCELLED, STATUS_EXPIRED, MAX_ARCHIVED_PROPOSALS, MAX_ARCHIVED_PERIODS, PROPOSAL_ARCHIVED, PAYMENTS_ARCHIVED, MAX_SAVED_PERIODS,
-  INVITE_INITIAL_CREATOR, INVITE_STATUS, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
+  INVITE_INITIAL_CREATOR, PROFILE_STATUS, INVITE_EXPIRES_IN_DAYS
 } from './shared/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './shared/payments/index.js'
 import { createPaymentInfo, paymentHashesFromPaymentPeriod } from './shared/functions.js'
@@ -396,14 +397,14 @@ sbp('chelonia/defineContract', {
     groupMembersPending (state, getters) {
       const invites = getters.currentGroupState._vm.invites
       const pendingMembers = {}
-      for (const inviteId in invites) {
-        const invite = invites[inviteId]
+      for (const inviteKeyId in invites) {
+        const invite = invites[inviteKeyId]
         if (
           invite.status === INVITE_STATUS.VALID &&
           invite.creator !== INVITE_INITIAL_CREATOR
         ) {
-          pendingMembers[invites[inviteId].invitee] = {
-            invitedBy: invites[inviteId].creator,
+          pendingMembers[invites[inviteKeyId].invitee] = {
+            invitedBy: invites[inviteKeyId].creator,
             expires: invite.expires
           }
         }
@@ -1029,16 +1030,15 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/inviteRevoke': {
       validate: (data, { state, meta }) => {
         objectOf({
-          inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
+          inviteKeyId: string
         })(data)
 
-        if (!state._vm.invites[data.inviteSecret]) {
+        if (!state._vm.invites[data.inviteKeyId]) {
           throw new TypeError(L('The link does not exist.'))
         }
       },
       process ({ data, meta }, { state }) {
-        const invite = state.invites[data.inviteSecret]
-        Vue.set(invite, 'status', INVITE_STATUS.REVOKED)
+        // Handled by Chelonia
       }
     },
     'gi.contracts/group/updateSettings': {

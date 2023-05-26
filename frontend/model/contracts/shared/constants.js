@@ -8,11 +8,6 @@ export const IDENTITY_USERNAME_MAX_CHARS = 80
 // group.js related
 
 export const INVITE_INITIAL_CREATOR = 'invite-initial-creator'
-export const INVITE_STATUS = {
-  REVOKED: 'revoked',
-  VALID: 'valid',
-  USED: 'used'
-}
 export const PROFILE_STATUS = {
   ACTIVE: 'active', // confirmed group join
   PENDING: 'pending', // shortly after being approved to join the group

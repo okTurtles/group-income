@@ -797,7 +797,16 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
   ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.')),
-  ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
+  ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.'), async function (sendMessage, params, signingKeyId) {
+    await sbp('chelonia/out/keyDel', {
+      contractID: params.contractID,
+      contractName: 'gi.contracts/group',
+      data: [params.data.inviteKeyId],
+      signingKeyId
+    })
+
+    return sendMessage(params)
+  }),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),

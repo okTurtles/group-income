@@ -52,7 +52,8 @@ import GroupWelcome from '@components/GroupWelcome.vue'
 import Loading from '@components/Loading.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import SignupForm from '@containers/access/SignupForm.vue'
-import { INVITE_INITIAL_CREATOR /* , INVITE_STATUS */ } from '@model/contracts/shared/constants.js'
+import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import sbp from '@sbp/sbp'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import { LOGIN } from '@utils/events.js'
@@ -131,7 +132,7 @@ export default ({
           this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
           this.pageStatus = 'EXPIRED'
           return
-        } if (!invite /* || invite.status !== INVITE_STATUS.VALID */) {
+        } if (invite?.status !== INVITE_STATUS.VALID) {
           console.error('Join.vue error: Link is not valid.')
           this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
           this.pageStatus = 'INVALID'

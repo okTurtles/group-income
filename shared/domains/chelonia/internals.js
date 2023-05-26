@@ -11,6 +11,7 @@ import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EV
 import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpPropSet, GIOpType } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { findSuitableSecretKeyId, keyAdditionProcessor, validateKeyAddPermissions, validateKeyDelPermissions } from './utils.js'
+import { INVITE_STATUS } from './constants.js'
 // import 'ses'
 
 const keysToMap = (keys: GIKey[]): Object => {
@@ -212,7 +213,7 @@ export default (sbp('sbp/selectors/register', {
     const self = this
     const opName = Object.entries(GIMessage).find(([x, y]) => y === opT)?.[0]
     console.debug('PROCESSING OPCODE:', opName, 'from', message.originatingContractID(), 'to', contractID)
-    if (!state._vm) state._vm = Object.create(null)
+    if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
@@ -341,7 +342,9 @@ export default (sbp('sbp/selectors/register', {
         // TODO: Verify that v.outerKeyId matches actual signing key
         if (state._vm?.invites?.[v.outerKeyId]?.quantity != null) {
           if (state._vm.invites[v.outerKeyId].quantity > 0) {
-            state._vm.invites[v.outerKeyId].quantity--
+            if ((--state._vm.invites[v.outerKeyId].quantity) <= 0) {
+              state._vm.invites[v.outerKeyId].status = INVITE_STATUS.USED
+            }
           } else {
             console.error('Ignoring OP_KEY_REQUEST because it exceeds allowed quantity: ' + JSON.stringify(v))
             return
@@ -359,12 +362,12 @@ export default (sbp('sbp/selectors/register', {
           return
         }
 
-        if (!state._vm.pendingKeyshares) state._vm.pendingKeyshares = Object.create(null)
-        state._vm.pendingKeyshares[message.hash()] = [
+        if (!state._vm.pendingKeyshares) config.reactiveSet(state._vm, 'pendingKeyshares', Object.create(null))
+        config.reactiveSet(state._vm.pendingKeyshares, message.hash(), [
           message.originatingContractID(),
           message.head().previousHEAD,
           v
-        ]
+        ])
 
         // Call 'chelonia/private/respondToKeyRequests' after sync
         self.setPostSyncOp(contractID, 'respondToKeyRequests-' + message.contractID(), ['chelonia/private/respondToKeyRequests', contractID])
@@ -414,7 +417,7 @@ export default (sbp('sbp/selectors/register', {
           delete state._vm.authorizedKeys[v]
           if (state._volatile?.keys) { delete state._volatile.keys[v] }
 
-          const rootState = sbp(this.config.stateSelector)
+          const rootState = sbp(config.stateSelector)
 
           // Check contractState._volatile.watch for contracts that should be
           // mirroring this operation
@@ -453,8 +456,12 @@ export default (sbp('sbp/selectors/register', {
 
             delete self.postSyncOperations?.[contractID][`syncAndMirrorKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`]
           }
+
+          // Set the status to revoked for invite keys
+          if (key.name.startsWith('#inviteKey-') && state._vm.invites[key.id]) {
+            state._vm.invites[key.id].status = INVITE_STATUS.REVOKED
+          }
         })
-        // TODO: Revoke invite keys if (key.meta?.type === '#inviteKey')
       },
       [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
     }

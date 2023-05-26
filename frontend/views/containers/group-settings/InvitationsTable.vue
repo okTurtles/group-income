@@ -62,7 +62,7 @@ page-section.c-section(:title='L("Invite links")')
                   tag='button'
                   item-id='revoke'
                   icon='times'
-                  @click='handleRevokeClick(item.inviteSecret)'
+                  @click='handleRevokeClick(item.id)'
                 )
                   i18n Revoke Link
         td.c-state
@@ -81,7 +81,7 @@ page-section.c-section(:title='L("Invite links")')
                 menu-item(
                   tag='button'
                   item-id='original'
-                  @click='handleSeeOriginal(item)'
+                  @click='handleSeeOriginal(item.id)'
                   icon='check-to-slot'
                 )
                   i18n See original proposal
@@ -90,7 +90,7 @@ page-section.c-section(:title='L("Invite links")')
                   tag='button'
                   item-id='revoke'
                   icon='times'
-                  @click='handleRevokeClick(item.inviteSecret)'
+                  @click='handleRevokeClick(item.id)'
                 )
                   i18n Revoke Link
 
@@ -114,7 +114,8 @@ import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
+import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
 
@@ -152,24 +153,20 @@ export default ({
       'currentGroupId'
     ]),
     invitesToShow () {
-      const { invites } = this.currentGroupState._vm
+      const invites = this.currentGroupState._vm.invites
 
       if (!invites) { return [] }
 
-      const invitesList = Object.values(invites)
-        .filter(invite => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
+      const invitesList = Object.entries(invites)
+        .filter(([, invite]) => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
         .map(this.mapInvite)
 
-      return invitesList
-
-      // TODO: Make active and all work
-
-      /* const options = {
-        Active: () => invitesList.filter(invite => invite.status.isActive || (invite.status.isRevoked && invite.inviteSecret === this.ephemeral.inviteRevokedNow)),
+      const options = {
+        Active: () => invitesList.filter(invite => invite.status.isActive || (invite.status.isRevoked && invite.id === this.ephemeral.inviteRevokedNow)),
         All: () => invitesList
-      } */
+      }
 
-      // return options[this.ephemeral.selectbox.selectedOption]()
+      return options[this.ephemeral.selectbox.selectedOption]()
     }
   },
   methods: {
@@ -218,7 +215,7 @@ export default ({
       if (minutes) return L('{minutes}m left', { minutes })
       return L('Expired')
     },
-    mapInvite ({
+    mapInvite ([id, {
       creator,
       expires: expiryTime,
       invitee,
@@ -226,7 +223,7 @@ export default ({
       initialQuantity,
       quantity,
       status
-    }) {
+    }]) {
       const isAnyoneLink = creator === INVITE_INITIAL_CREATOR
       const isInviteExpired = expiryTime < Date.now()
       const isInviteRevoked = status === INVITE_STATUS.REVOKED
@@ -234,6 +231,7 @@ export default ({
       const isAllInviteUsed = (quantity === 0)
 
       return {
+        id,
         isAnyoneLink,
         invitee: isAnyoneLink ? L('Anyone') : invitee,
         inviteSecret,
@@ -254,18 +252,18 @@ export default ({
         sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
       }
     },
-    handleSeeOriginal (inviteItem) {
-      console.log(inviteItem, 'TODO - See Original Proposal')
+    handleSeeOriginal (inviteKeyId) {
+      console.log(inviteKeyId, 'TODO - See Original Proposal')
     },
-    async handleRevokeClick (inviteSecret) {
+    async handleRevokeClick (inviteKeyId) {
       if (!confirm(L('Are you sure you want to revoke this link? This action cannot be undone.'))) {
         return null
       }
 
       try {
-        this.ephemeral.inviteRevokedNow = inviteSecret
+        this.ephemeral.inviteRevokedNow = inviteKeyId
         await sbp('gi.actions/group/inviteRevoke', {
-          data: { inviteSecret },
+          data: { inviteKeyId },
           contractID: this.currentGroupId
         })
         setTimeout(() => {
