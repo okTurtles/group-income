@@ -467,12 +467,11 @@ ${this.getErrorInfo()}`;
     }
     const rootGetters = (0, import_sbp3.default)("state/vuex/getters");
     const isDirectMessage = rootGetters.isDirectMessage(contractID);
-    const unreadMessageTypeMapping = {
+    const unreadMessageType = {
       [MESSAGE_TYPES.TEXT]: isDMOrMention ? MESSAGE_TYPES.TEXT : void 0,
       [MESSAGE_TYPES.INTERACTIVE]: MESSAGE_TYPES.INTERACTIVE,
       [MESSAGE_TYPES.POLL]: MESSAGE_TYPES.POLL
-    };
-    const unreadMessageType = unreadMessageTypeMapping[messageType2];
+    }[messageType2];
     if (unreadMessageType) {
       (0, import_sbp3.default)("state/vuex/commit", "addChatRoomUnreadMessage", {
         chatRoomId: contractID,
