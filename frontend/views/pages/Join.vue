@@ -19,8 +19,8 @@ div
         h1.is-title-1.c-title(data-test='groupName') {{ ephemeral.invitation.groupName }}
         p.has-text-1(data-test='invitationMessage') {{ ephemeral.invitation.message }}
       .card
-        signup-form(v-if='isStatus("SIGNING")' :postSubmit='acceptPostEffect')
-        login-form(v-else :postSubmit='acceptPostEffect')
+        signup-form(v-if='isStatus("SIGNING")' :postSubmit='accept')
+        login-form(v-else :postSubmit='accept')
 
       p.c-switchEnter(v-if='isStatus("SIGNING")')
         i18n Already have an account?
@@ -49,7 +49,7 @@ div
 import sbp from '@sbp/sbp'
 import { mapGetters, mapState } from 'vuex'
 import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
-import { LOGIN, JOIN_GROUP } from '@utils/events.js'
+import { LOGIN } from '@utils/events.js'
 import SignupForm from '@containers/access/SignupForm.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import Loading from '@components/Loading.vue'
@@ -97,7 +97,11 @@ export default ({
   mounted () {
     // For some reason in some Cypress tests it loses the route query when initialized is called
     this.ephemeral.query = this.$route.query
-    this.initialize()
+    if (syncFinished || !this.ourUsername) {
+      this.initialize()
+    } else {
+      sbp('okTurtles.events/once', LOGIN, () => this.initialize())
+    }
   },
   methods: {
     async initialize () {
@@ -113,6 +117,14 @@ export default ({
           console.log('Join.vue error: Link is already expired.')
           this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
           this.pageStatus = 'EXPIRED'
+          return
+        }
+        if (this.ourUsername) {
+          if (this.currentGroupId && this.$store.state.contracts[this.ephemeral.query.groupId]) {
+            this.$router.push({ path: '/dashboard' })
+          } else {
+            await this.accept()
+          }
           return
         }
         let creator = null
@@ -137,13 +149,7 @@ export default ({
           creatorPicture,
           message
         }
-
-        if (!syncFinished) {
-          this.pageStatus = 'SIGNING'
-          sbp('okTurtles.events/once', LOGIN, () => this.accept())
-        } else {
-          this.accept()
-        }
+        this.pageStatus = 'SIGNING'
       } catch (e) {
         console.error(e)
         this.ephemeral.errorMsg = `${L('Something went wrong. Please, try again.')} ${e.message}`
@@ -159,7 +165,7 @@ export default ({
     async accept () {
       this.ephemeral.errorMsg = null
       const { groupId, secret } = this.ephemeral.query
-      if (this.currentGroupId && this.$store.state.contracts[groupId]) {
+      if (this.$store.state.contracts[groupId]) {
         return this.$router.push({ path: '/dashboard' })
       }
       try {
@@ -172,14 +178,7 @@ export default ({
         console.error('Join.vue accept() error:', e)
         this.ephemeral.errorMsg = e.message
         this.pageStatus = 'INVALID'
-      } finally {
-        sbp('okTurtles.events/emit', JOIN_GROUP)
       }
-    },
-    acceptPostEffect () {
-      return new Promise(resolve => {
-        sbp('okTurtles.events/once', JOIN_GROUP, resolve)
-      })
     }
   }
 }: Object)
