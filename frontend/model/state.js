@@ -65,6 +65,7 @@ sbp('sbp/selectors/register', {
     //   state.notifications = []
     // }
 
+    // TODO: need to remove the whole content after we release 0.2.*
     for (const chatRoomId in state.chatRoomUnread) {
       if (!state.chatRoomUnread[chatRoomId].messages) {
         state.chatRoomUnread[chatRoomId].messages = []
@@ -73,13 +74,13 @@ sbp('sbp/selectors/register', {
         state.chatRoomUnread[chatRoomId].mentions.forEach(m => {
           state.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: MESSAGE_TYPES.TEXT }, m))
         })
-        Vue.delete(state.chatRoomUnread[chatRoomId], 'mentions')
+        // Vue.delete(state.chatRoomUnread[chatRoomId], 'mentions')
       }
       if (state.chatRoomUnread[chatRoomId].others) {
         state.chatRoomUnread[chatRoomId].others.forEach(o => {
           state.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: MESSAGE_TYPES.INTERACTIVE }, o))
         })
-        Vue.delete(state.chatRoomUnread[chatRoomId], 'others')
+        // Vue.delete(state.chatRoomUnread[chatRoomId], 'others')
       }
     }
   },
@@ -126,6 +127,29 @@ const mutations = {
     Vue.delete(state.chatRoomScrollPosition, chatRoomId)
   },
   setChatRoomReadUntil (state, { chatRoomId, messageHash, createdDate }) {
+    // eslint-disable-next-line no-lone-blocks
+    {
+      // TODO: need to remove this block after we release 0.2.*
+      if (!state.chatRoomUnread[chatRoomId].messages) {
+        Vue.set(
+          state.chatRoomUnread[chatRoomId],
+          'messages',
+          [].concat(
+            (state.chatRoomUnread[chatRoomId].mentions || []).map(m => Object.assign({ type: MESSAGE_TYPES.TEXT }, m)),
+            (state.chatRoomUnread[chatRoomId].others || []).map(o => Object.assign({ type: MESSAGE_TYPES.INTERACTIVE }, o))
+          )
+        )
+      }
+      if (state.chatRoomUnread[chatRoomId].mentions) {
+        Vue.set(state.chatRoomUnread, chatRoomId, {
+          readUntil: { messageHash, createdDate, deletedDate: null },
+          mentions: [],
+          messages: state.chatRoomUnread[chatRoomId].messages
+            .filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
+        })
+        return
+      }
+    }
     Vue.set(state.chatRoomUnread, chatRoomId, {
       readUntil: { messageHash, createdDate, deletedDate: null },
       messages: state.chatRoomUnread[chatRoomId].messages
@@ -139,6 +163,18 @@ const mutations = {
     state.chatRoomUnread[chatRoomId].messages.push({ messageHash, createdDate, type })
   },
   deleteChatRoomUnreadMessage (state, { chatRoomId, messageHash }) {
+    // eslint-disable-next-line no-lone-blocks
+    {
+      // TODO: need to remove this block after we release 0.2.*
+      if (state.chatRoomUnread[chatRoomId].mentions) {
+        Vue.set(
+          state.chatRoomUnread[chatRoomId],
+          'mentions',
+          state.chatRoomUnread[chatRoomId].mentions.filter(m => m.messageHash !== messageHash)
+        )
+      }
+    }
+
     Vue.set(
       state.chatRoomUnread[chatRoomId],
       'messages',

@@ -398,7 +398,8 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        const isAlreadyAdded = !!rootState.chatRoomUnread[contractID].messages.find(m => m.messageHash === data.hash)
+        const isAlreadyAdded = !!sbp('state/vuex/getters')
+          .chatRoomUnreadMessages(contractID).find(m => m.messageHash === data.hash)
         const mentions = makeMentionFromUsername(me)
         const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
 

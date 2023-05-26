@@ -754,7 +754,7 @@ ${this.getErrorInfo()}`;
           if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL) {
             return;
           }
-          const isAlreadyAdded = !!rootState.chatRoomUnread[contractID].messages.find((m) => m.messageHash === data.hash);
+          const isAlreadyAdded = !!(0, import_sbp3.default)("state/vuex/getters").chatRoomUnreadMessages(contractID).find((m) => m.messageHash === data.hash);
           const mentions = makeMentionFromUsername(me);
           const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all);
           if (!isAlreadyAdded) {
