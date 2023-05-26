@@ -157,7 +157,6 @@ export default ({
       this.$router.push({ path: '/' })
     },
     async accept () {
-      this.pageStatus = 'LOADING'
       this.ephemeral.errorMsg = null
       const { groupId, secret } = this.ephemeral.query
       if (this.currentGroupId && this.$store.state.contracts[groupId]) {
