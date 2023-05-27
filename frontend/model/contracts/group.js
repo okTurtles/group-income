@@ -400,8 +400,8 @@ sbp('chelonia/defineContract', {
       const pendingMembers = Object.create(null)
       for (const inviteKeyId in invites) {
         if (
-          vmInvites[vmInvites].status === INVITE_STATUS.VALID &&
-          vmInvites[vmInvites].creator !== INVITE_INITIAL_CREATOR
+          vmInvites[inviteKeyId].status === INVITE_STATUS.VALID &&
+          invites[inviteKeyId].creator !== INVITE_INITIAL_CREATOR
         ) {
           pendingMembers[invites[inviteKeyId].invitee] = {
             invitedBy: invites[inviteKeyId].creator,
