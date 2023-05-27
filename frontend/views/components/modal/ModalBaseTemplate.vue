@@ -52,11 +52,12 @@ export default ({
     justify-content: flex-start;
     align-items: center;
     background: $general_2;
-    // padding: 0 1rem;
+    padding: 0 1rem;
+    overflow-x: hidden;
 
-    // @include tablet {
-    //   padding: 0 1.5rem;
-    // }
+    @include tablet {
+      padding: 0 1.5rem;
+    }
   }
 }
 

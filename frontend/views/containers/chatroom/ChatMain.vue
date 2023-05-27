@@ -799,8 +799,8 @@ export default ({
 
 .c-body-conversation {
   margin-right: 1rem;
-  padding: 2rem 0;
-  overflow-y: auto;
+  padding: 2rem 0 1rem 0;
+  overflow: hidden auto;
   -webkit-overflow-scrolling: touch;
 }
 
