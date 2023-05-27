@@ -116,7 +116,8 @@ export default ({
       'currentGroupState',
       'groupMembersCount',
       'userDisplayName',
-      'ourUsername'
+      'ourUsername',
+      'ourUserDisplayName'
     ]),
     ...mapState(['currentGroupId']),
     statuses () {
@@ -290,12 +291,12 @@ export default ({
         this.proposal.status === STATUS_PASSED &&
         this.isOurProposal
       ) {
-        const keyId = this.proposal.payload.keyId
-        // Display the link for (1) valid invites for which (2_ there is a
+        const inviteKeyId = this.proposal.payload.inviteKeyId
+        // Display the link for (1) valid invites for which (2) there is a
         // corresponding authorizedKey for which (3) we have access to its
         // secret key
-        if (this.currentGroupState._vm.invites[keyId]?.status === INVITE_STATUS.VALID && this.currentGroupState._vm?.authorizedKeys?.[keyId] && this.currentGroupState._vm.invites?.[keyId]?.inviteSecret) {
-          return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.currentGroupState._vm.invites[keyId].inviteSecret)
+        if (this.currentGroupState._vm.invites[inviteKeyId]?.status === INVITE_STATUS.VALID && this.currentGroupState._vm?.authorizedKeys?.[inviteKeyId] && this.currentGroupState._vm.invites?.[inviteKeyId]?.inviteSecret) {
+          return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.currentGroupState._vm.invites[inviteKeyId].inviteSecret, this.ourUserDisplayName)
         }
       }
       return false
@@ -305,9 +306,9 @@ export default ({
         this.proposal.status === STATUS_PASSED &&
         this.isOurProposal
       ) {
-        const keyId = this.proposal.payload.keyId
-        if (this.currentGroupState._vm.invites[keyId]?.status === INVITE_STATUS.VALID &&
-          this.currentGroupState._vm.invites[keyId].expires < Date.now()) {
+        const inviteKeyId = this.proposal.payload.inviteKeyId
+        if (this.currentGroupState._vm.invites[inviteKeyId]?.status === INVITE_STATUS.VALID &&
+          this.currentGroupState._vm.invites[inviteKeyId].expires < Date.now()) {
           return true
         }
       }

@@ -395,17 +395,17 @@ sbp('chelonia/defineContract', {
       return getters.groupMembersByUsername.length
     },
     groupMembersPending (state, getters) {
-      const invites = getters.currentGroupState._vm.invites
-      const pendingMembers = {}
+      const invites = getters.currentGroupState.invites
+      const vmInvites = getters.currentGroupState._vm.invites
+      const pendingMembers = Object.create(null)
       for (const inviteKeyId in invites) {
-        const invite = invites[inviteKeyId]
         if (
-          invite.status === INVITE_STATUS.VALID &&
-          invite.creator !== INVITE_INITIAL_CREATOR
+          vmInvites[vmInvites].status === INVITE_STATUS.VALID &&
+          vmInvites[vmInvites].creator !== INVITE_INITIAL_CREATOR
         ) {
           pendingMembers[invites[inviteKeyId].invitee] = {
             invitedBy: invites[inviteKeyId].creator,
-            expires: invite.expires
+            expires: vmInvites[inviteKeyId].expires
           }
         }
       }
@@ -976,8 +976,8 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/invite': {
       validate: inviteType,
-      process () {
-        // Handled by Chelonia
+      process ({ data, meta }, { state }) {
+        Vue.set(state.invites, data.inviteKeyId, data)
       }
     },
     'gi.contracts/group/inviteAccept': {
@@ -1037,7 +1037,7 @@ sbp('chelonia/defineContract', {
           throw new TypeError(L('The link does not exist.'))
         }
       },
-      process ({ data, meta }, { state }) {
+      process () {
         // Handled by Chelonia
       }
     },

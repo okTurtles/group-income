@@ -147,17 +147,20 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'ourUsername'
+      'ourUsername',
+      'ourUserDisplayName'
     ]),
     ...mapState([
       'currentGroupId'
     ]),
     invitesToShow () {
-      const invites = this.currentGroupState._vm.invites
+      const invites = this.currentGroupState.invites
+      const vmInvites = this.currentGroupState._vm.invites
 
-      if (!invites) { return [] }
+      if (!vmInvites) { return [] }
 
-      const invitesList = Object.entries(invites)
+      const invitesList = Object.entries(vmInvites)
+        .map(([id, invite]) => [id, { ...invite, creator: invites[id]?.creator, invitee: invites[id]?.invitee }])
         .filter(([, invite]) => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
         .map(this.mapInvite)
 
@@ -235,7 +238,7 @@ export default ({
         isAnyoneLink,
         invitee: isAnyoneLink ? L('Anyone') : invitee,
         inviteSecret,
-        inviteLink: buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, inviteSecret),
+        inviteLink: buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, inviteSecret, isAnyoneLink ? undefined : this.ourUserDisplayName),
         description: this.inviteStatusDescription({
           isAnyoneLink, isInviteExpired, isInviteRevoked, isAllInviteUsed, quantity: initialQuantity, numberOfResponses
         }),

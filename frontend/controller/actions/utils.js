@@ -67,7 +67,7 @@ export function encryptedAction (
 
 export async function createInvite ({ quantity = 1, creator, expires, invitee }: {
   quantity: number, creator: string, expires: number, invitee?: string
-}): Promise<{keyId: string}> {
+}): Promise<{inviteKeyId: string; creator: string; invitee?: string; }> {
   const rootState = sbp('state/vuex/state')
 
   if (!rootState.currentGroupId) {
@@ -112,8 +112,6 @@ export async function createInvite ({ quantity = 1, creator, expires, invitee }:
       permissions: [GIMessage.OP_KEY_REQUEST],
       meta: {
         quantity,
-        creator,
-        invitee,
         expires: Date.now() + DAYS_MILLIS * expires,
         private: {
           keyId: CEKid,
@@ -126,6 +124,8 @@ export async function createInvite ({ quantity = 1, creator, expires, invitee }:
   })
 
   return {
-    keyId: inviteKeyId
+    inviteKeyId,
+    creator,
+    invitee
   }
 }

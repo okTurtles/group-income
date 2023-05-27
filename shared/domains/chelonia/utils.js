@@ -90,8 +90,6 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
     if (key.name.startsWith('#inviteKey-')) {
       if (!state._vm.invites) this.config.reactiveSet(state._vm, 'invites', Object.create(null))
       this.config.reactiveSet(state._vm.invites, key.id, {
-        creator: key.meta.creator,
-        invitee: key.meta.invitee,
         status: INVITE_STATUS.VALID,
         initialQuantity: key.meta.quantity,
         quantity: key.meta.quantity,

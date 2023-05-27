@@ -138,27 +138,12 @@ export default ({
           this.pageStatus = 'INVALID'
           return
         }
-        let creator = null
-        let creatorPicture = null
-        let message = null
-
-        // TODO FIXME
-        if (isNaN(NaN) || invite.creator === INVITE_INITIAL_CREATOR) {
-          message = L('You were invited to join')
-        } else {
-          const identityContractID = await sbp('namespace/lookup', invite.creator)
-          const userState = await sbp('chelonia/latestContractState', identityContractID)
-          // TODO FIX THIS LINE HERE SINCE WE DON'T HAVE THIS INFORMATION YET
-          const userDisplayName = userState.attributes.displayName || userState.attributes.username
-          message = L('{who} invited you to join their group!', { who: userDisplayName })
-          creator = userDisplayName
-          creatorPicture = userState.attributes.picture
-        }
+        const creator = this.ephemeral.query.creator
+        const message = creator ? L('{who} invited you to join their group!', { who: creator }) : L('You were invited to join')
 
         this.ephemeral.invitation = {
           groupName: this.ephemeral.query.groupName ?? L('(group name unavailable)'),
           creator,
-          creatorPicture,
           message
         }
         this.pageStatus = 'SIGNING'

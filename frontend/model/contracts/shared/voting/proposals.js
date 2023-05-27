@@ -29,8 +29,8 @@ export function archiveProposal (
   )
 }
 
-export function buildInvitationUrl (groupId: string, groupName: string, inviteSecret: string): string {
-  return `${location.origin}/app/join?${(new URLSearchParams({ groupId: groupId, groupName: groupName, secret: inviteSecret })).toString()}`
+export function buildInvitationUrl (groupId: string, groupName: string, inviteSecret: string, creator?: string): string {
+  return `${location.origin}/app/join?${(new URLSearchParams({ groupId: groupId, groupName: groupName, secret: inviteSecret, creator: creator || '' })).toString()}`
 }
 
 export const proposalSettingsType: any = objectOf({
