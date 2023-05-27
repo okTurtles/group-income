@@ -197,6 +197,7 @@ export default ({
   z-index: 2;
   font-family: "Poppins";
   background-color: $general_2;
+  overflow: hidden auto;
 
   @include desktop {
     position: relative;

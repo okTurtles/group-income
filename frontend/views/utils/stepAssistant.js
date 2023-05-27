@@ -14,6 +14,7 @@
 //   ...
 // }
 // </script>
+import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
 
 export default {
   name: 'StepAssistant',
@@ -32,7 +33,7 @@ export default {
       if (this.$route.query.modal) {
         query = { query: { modal: this.$route.query.modal, step: content } }
       }
-      this.$router.push(query).catch(console.error)
+      this.$router.push(query).catch(logExceptNavigationDuplicated)
       this.content = content
     },
     next () {

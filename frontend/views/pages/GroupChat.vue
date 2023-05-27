@@ -14,7 +14,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
 
-        menu-content
+        menu-content.c-responsive-menu
           menu-header
             i18n Channel Options
 
@@ -192,11 +192,18 @@ export default ({
   padding: 0;
   height: 100%;
   margin-bottom: 0;
+  border-radius: 0.625rem;
 
   @include tablet {
     height: calc(100% - 3rem);
     margin-top: 1.5rem;
     margin-bottom: 1rem;
+  }
+
+  @include phone {
+    margin: -1.5rem -1rem 0 -1rem;
+    height: calc(100% + 1.5rem);
+    border-radius: 0.625rem 0.625rem 0 0;
   }
 
   &:last-child {

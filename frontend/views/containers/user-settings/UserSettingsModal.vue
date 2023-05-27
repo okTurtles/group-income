@@ -38,5 +38,13 @@ export default ({
   width: 100%;
   opacity: 1;
   background-color: $general_2;
+
+  @include phone {
+    width: calc(100% + 2rem);
+  }
+
+  @include tablet {
+    width: calc(100% + 3rem);
+  }
 }
 </style>

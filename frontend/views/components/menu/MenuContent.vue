@@ -1,5 +1,9 @@
 <template lang='pug'>
-.c-content(:class='{ "is-active": isActive }' data-test='menuContent')
+.c-content(
+  :class='{ "is-active": isActive }'
+  data-test='menuContent'
+  :style='posStyle'
+)
   .c-content-wrapper(
     v-if='isActive'
     v-on-clickaway='closeMenu'
@@ -15,10 +19,16 @@ export default ({
   mixins: [
     clickaway
   ],
+  props: {
+    position: String
+  },
   inject: ['Menu'],
   computed: {
     isActive () {
       return this.Menu.isActive
+    },
+    posStyle () {
+      return this.position || ''
     }
   },
   methods: {
@@ -34,14 +44,16 @@ export default ({
 
 .c-content-wrapper {
   min-height: 100%;
+}
 
+.c-responsive-menu .c-content-wrapper {
   @include phone {
-    border-radius: $radius;
+    border-radius: $radius $radius 0 0;
     background-color: $background;
     position: relative;
     z-index: 2;
-    padding-top: 0.5rem;
-    padding-bottom: 1rem;
+    padding-bottom: 4rem;
+    min-height: unset;
   }
 }
 
@@ -61,17 +73,8 @@ export default ({
   padding-bottom: 0.5rem;
   padding-top: 0.5rem;
 
-  &::before {
-    @include phone {
-      content: "";
-      background-color: rgba(10, 10, 10, 0.86);
-      position: fixed;
-      height: 100%;
-      width: 100%;
-      top: 0;
-      left: 0;
-      z-index: -1;
-    }
+  .is-dark-theme & {
+    box-shadow: 0 0.5rem 1.25rem rgba(38, 38, 38, 0.895);
   }
 
   &.is-active {
@@ -81,6 +84,27 @@ export default ({
     max-height: 25rem;
     opacity: 1;
     transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
+  }
+
+  &.c-responsive-menu {
+    @include phone {
+      width: 100vw;
+      height: 100vh;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 0;
+      margin: 0;
+      border-radius: 0;
+      background-color: rgba(0, 0, 0, 0.7) !important;
+      display: flex;
+      flex-direction: column-reverse;
+      max-height: unset;
+      max-width: unset;
+      position: fixed;
+      z-index: 40;
+    }
   }
 
   ::v-deep .c-item {
@@ -95,9 +119,4 @@ export default ({
     }
   }
 }
-
-.is-dark-theme .c-content {
-  background-color: var(--general_1);
-}
-
 </style>
