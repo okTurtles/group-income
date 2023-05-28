@@ -29,7 +29,7 @@
 
     .c-voters
       .c-voter-avatars-item(v-for='entry in list.voters' :key='entry.id')
-        voter-avatars(:voters='entry.users')
+        voter-avatars(:voters='entry.users' :optionName='entry.optionName')
 </template>
 
 <script>
@@ -69,7 +69,8 @@ export default ({
 
         voters.push({
           id: opt.id,
-          users: uniq(opt.voted)
+          users: uniq(opt.voted),
+          optionName: opt.value
         })
       })
 

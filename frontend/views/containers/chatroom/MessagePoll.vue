@@ -85,10 +85,27 @@ export default ({
       } else {
         return 'poll-to-vote'
       }
+    }
+  },
+  methods: {
+    submitSelections () {
+      alert('TODO: implement poll selection.')
+    },
+    deleteMessage () {
+      this.$emit('delete-message')
+    },
+    addEmoticon (emoticon) {
+      this.$emit('add-emoticon', emoticon)
+    },
+    switchOnChangeMode () {
+      this.ephemeral.isChangeMode = true
+    },
+    switchOffChangeMode () {
+      this.ephemeral.isChangeMode = false
     },
     setupPollExpirationTimer () {
       const markPollClosed = () => {
-        sbp('gi.actions/hatroom/closePoll', {
+        sbp('gi.actions/chatroom/closePoll', {
           contractID: this.currentChatRoomId,
           data: { hash: this.messageHash }
         })
@@ -113,23 +130,6 @@ export default ({
         //       So implemented this logic here.
         this.expirationTimeoutId = setTimeout(checkAndSetTimer, MINS_MILLIS)
       }
-    }
-  },
-  methods: {
-    submitSelections () {
-      alert('TODO: implement poll selection.')
-    },
-    deleteMessage () {
-      this.$emit('delete-message')
-    },
-    addEmoticon (emoticon) {
-      this.$emit('add-emoticon', emoticon)
-    },
-    switchOnChangeMode () {
-      this.ephemeral.isChangeMode = true
-    },
-    switchOffChangeMode () {
-      this.ephemeral.isChangeMode = false
     }
   },
   provide () {

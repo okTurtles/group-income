@@ -204,7 +204,7 @@ export default ({
   right: 0;
   top: 0;
   height: 100%;
-  width: 13rem;
+  width: auto;
 
   .c-content {
     @extend %floating-panel;
