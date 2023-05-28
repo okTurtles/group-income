@@ -203,7 +203,7 @@ export default ({
   padding: 0.5rem 1rem;
 
   @include tablet {
-    padding: 0.5rem 2.5rem;
+    padding: 0.5rem 1.25rem;
   }
   position: relative;
   max-height: 100%;
@@ -269,7 +269,7 @@ export default ({
 
 .c-text {
   max-width: 32rem;
-  word-wrap: break-word; // too much long words will break
+  word-break: break-word; // too much long words will break
   white-space: pre-line; // break \n to a new line
   margin: 0;
 

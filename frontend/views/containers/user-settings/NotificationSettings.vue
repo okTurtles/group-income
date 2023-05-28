@@ -116,8 +116,16 @@ export default ({
 }
 
 .c-divider {
-  margin: -0.5rem -2.5rem 1.5rem -2.5rem;
+  margin: -0.5rem -1rem 1.5rem -1rem;
   border: solid 1px $general_1;
+
+  @include tablet {
+    margin: -0.5rem -1.5rem 1.5rem -1.5rem;
+  }
+
+  @include desktop {
+    margin: -0.5rem -2.5rem 1.5rem -2.5rem;
+  }
 }
 
 .c-name {

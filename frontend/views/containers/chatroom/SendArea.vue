@@ -435,7 +435,7 @@ export default ({
   padding: 1rem;
 
   @include tablet {
-    padding: 1rem 2.5rem 2rem 2.5rem;
+    padding: 0 1.25rem 1.25rem 1.25rem;
   }
 
   &.is-public {
@@ -461,6 +461,7 @@ export default ({
   display: block;
   background-color: var(--background_0);
   border: 1px solid var(--general_0);
+  border-radius: 0.25rem;
 
   &-textarea,
   &-mask {
@@ -477,6 +478,7 @@ export default ({
     min-height: 2.75rem;
     background-color: transparent;
     border: none;
+    padding: 0.5rem;
 
     &::-webkit-scrollbar {
       display: none;
@@ -606,7 +608,7 @@ export default ({
   position: absolute;
   left: 0;
   right: 0;
-  top: -2.2rem;
+  top: -2.125rem;
 }
 
 .c-mentions {

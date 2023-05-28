@@ -86,7 +86,7 @@ export default ({
   }
 
   @include tablet {
-    padding: 0 2.5rem 2rem 2.5rem;
+    padding: 0 1.25rem 1.25rem 1.25rem;
   }
 }
 

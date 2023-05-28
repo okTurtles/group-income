@@ -239,7 +239,6 @@ export default (sbp('sbp/selectors/register', {
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
-    sbp('gi.actions/group/updateLastLoggedIn', { contractID: groupId })
 
     sbp('okTurtles.events/emit', SWITCH_GROUP)
   },

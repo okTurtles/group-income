@@ -172,10 +172,10 @@ export default ({
       sharedValues: { },
       mincomeAmount: {
         [L('This field is required')]: required,
-        [L('Oops, you entered 0 or a negative number')]: mincomePositive,
         [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
           return currencies[this.form.mincomeCurrency].validate(value)
-        }
+        },
+        [L('Mincome must be greater than 0')]: mincomePositive
       },
       mincomeCurrency: {
         required
@@ -213,14 +213,14 @@ export default ({
 @import "@assets/style/_variables.scss";
 
 .steps {
-  width: calc(100% - 2rem);
+  width: 100%;
   max-width: 34rem;
   margin-top: 3.5rem;
   flex-shrink: 0;
 }
 
 .wrapper {
-  width: calc(100% - 2rem);
+  width: 100%;
   max-width: 33rem;
 }
 </style>
