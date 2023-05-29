@@ -255,7 +255,18 @@ export default (sbp('sbp/selectors/register', {
         // TODO: fetch events from localStorage instead of server if we have them
         const events = await sbp('chelonia/out/eventsAfter', contractID, recent || contractID)
         // checks if the list of events consist of latest event
-        if (events.findLastIndex(e => GIMessage.deserialize(e).hash() === latest) === -1) {
+        // TODO: if we use findLastIndex, it will be more clean
+        //       but it needs upgrade Cypress version to 9.7.0 which is of bad performance
+        //       https://docs.cypress.io/guides/references/changelog#9-7-0
+        //       https://github.com/cypress-io/cypress/issues/22868
+        let isLatestExistance = false
+        for (let i = events.length - 1; i >= 0; i--) {
+          if (GIMessage.deserialize(events[i]).hash() === latest) {
+            isLatestExistance = true
+            break
+          }
+        }
+        if (!isLatestExistance) {
           throw new ChelErrorUnexpected()
         }
         // remove the first element in cases where we are not getting the contract for the first time
