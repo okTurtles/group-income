@@ -255,7 +255,6 @@ export default (sbp('sbp/selectors/register', {
         // TODO: fetch events from localStorage instead of server if we have them
         const events = await sbp('chelonia/out/eventsAfter', contractID, recent || contractID)
         // checks if the list of events consist of latest event
-        console.log(typeof events, events)
         if (events.findLastIndex(e => GIMessage.deserialize(e).hash() === latest) === -1) {
           throw new ChelErrorUnexpected()
         }
