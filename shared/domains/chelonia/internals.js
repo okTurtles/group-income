@@ -259,14 +259,14 @@ export default (sbp('sbp/selectors/register', {
         //       but it needs upgrade Cypress version to 9.7.0 which is of bad performance
         //       https://docs.cypress.io/guides/references/changelog#9-7-0
         //       https://github.com/cypress-io/cypress/issues/22868
-        let isLatestExistance = false
+        let isLatestExist = false
         for (let i = events.length - 1; i >= 0; i--) {
           if (GIMessage.deserialize(events[i]).hash() === latest) {
-            isLatestExistance = true
+            isLatestExist = true
             break
           }
         }
-        if (!isLatestExistance) {
+        if (!isLatestExist) {
           throw new ChelErrorUnexpected()
         }
         // remove the first element in cases where we are not getting the contract for the first time
