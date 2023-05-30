@@ -1,30 +1,43 @@
 <template lang='pug'>
-.c-voter-avatars(v-if='voters.length')
+.c-voter-avatars(
+  v-if='voters.length'
+  @click='showTooltip'
+  v-on-clickaway='closeTooltip'
+)
   template(v-for='entry in votersToDisplay')
     .c-number-avatar(v-if='isNum(entry)') +{{ entry }}
     avatar-user.c-user-avatar(v-else :key='entry' :username='entry' size='xs')
 
-  .c-voters-tooltip
-    header.c-voters-tooltip-header
-      i18n.is-title-4.c-tooltip-title(
-        tag='h2'
-        :args='{ option: optionName }'
-      ) Voted for “{option}”
+  .c-voters-tooltip(
+    :class='{ "is-active": ephemeral.isTooltipActive }'
+  )
+    .c-voters-tooltip-overlay(@click.stop='closeTooltip')
 
-      modal-close.c-tooltip-close-btn
+    .c-voters-tooltip-content
+      header.c-voters-tooltip-header
+        i18n.is-title-4.c-tooltip-title(
+          tag='h2'
+          :args='{ option: optionName }'
+        ) Voted for “{option}”
 
-    ul.c-voters-list
-      li.c-voter-item(v-for='votername in tooltipVoters' :key='votername')
-        avatar-user.c-voter-item-avatar(:username='votername' size='xs')
-        span.c-voter-item-name {{ votername }}
+        modal-close.c-tooltip-close-btn(@close='closeTooltip')
+
+      ul.c-voters-list
+        li.c-voter-item(v-for='(votername, index) in voters' :key='votername + index')
+          avatar-user.c-voter-item-avatar(:username='votername' size='xs')
+          span.c-voter-item-name {{ votername }}
 </template>
 
 <script>
+import { mixin as clickaway } from 'vue-clickaway'
 import AvatarUser from '@components/AvatarUser.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
 
 export default ({
   name: 'VoterAvatars',
+  mixins: [
+    clickaway
+  ],
   components: {
     AvatarUser,
     ModalClose
@@ -48,14 +61,6 @@ export default ({
         restNum > 0 && restNum,
         ...this.voters.slice(0, 2)
       ].filter(Boolean)
-    },
-    tooltipVoters () {
-      const list = []
-      
-      for (let i=0; i<20; i++) {
-        list.push(this.voters[0])
-      }
-      return list
     }
   },
   methods: {
@@ -63,10 +68,14 @@ export default ({
       return typeof val === 'number'
     },
     showTooltip () {
-      this.ephemeral.isTooltipActive = true
+      if (!this.ephemeral.isTooltipActive) {
+        this.ephemeral.isTooltipActive = true
+      }
     },
     closeTooltip () {
-      this.ephemeral.isTooltipActive = false
+      if (this.ephemeral.isTooltipActive) {
+        this.ephemeral.isTooltipActive = false
+      }
     }
   }
 }: Object)
@@ -81,9 +90,9 @@ export default ({
   flex-direction: row-reverse;
   align-items: center;
   width: max-content;
-  cursor: pointer;
 
-  &:hover > * {
+  &:hover > .c-number-avatar,
+  &:hover > .c-user-avatar {
     box-shadow: 0 0 2px 1px $general_0;
   }
 }
@@ -93,6 +102,7 @@ export default ({
   flex-shrink: 0;
   transition: box-shadow 250ms linear;
   min-width: 1.5rem;
+  cursor: pointer;
 
   &:not(:last-child) {
     margin-left: -0.375rem;
@@ -123,15 +133,59 @@ export default ({
   transform: translateY(-100%);
   width: 17.5rem;
   height: max-content;
-  border-radius: 10px;
-  padding: 0 1rem 1.5rem;
-  background-color: $background_0;
-  overflow-y: auto;
   z-index: $zindex-tooltip;
+  background-color: $background_0;
+  border-radius: 10px;
+  display: none;
+  pointer-events: none;
+
+  &.is-active {
+    display: block;
+    pointer-events: initial;
+  }
+
+  &-content {
+    max-height: 17.5rem;
+    overflow-y: auto;
+    height: max-content;
+    background-color: $background_0;
+    padding: 0 1rem 1.25rem;
+    border-radius: 10px;
+  }
+
+  @include phone {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100%;
+    width: 100%;
+    transform: translateY(0%);
+    background-color: rgba(0, 0, 0, 0);
+
+    &-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(10, 10, 10, 0.86);
+    }
+
+    &-content {
+      position: absolute;
+      border-radius: 10px 10px 0 0;
+      width: 100%;
+      max-height: 50vh;
+      padding: 0 1rem 1.5rem;
+      bottom: 0;
+      left: 0;
+      z-index: 1;
+    }
+  }
 
   @include from($tablet) {
-    max-height: 17.5rem;
-    padding: 0 1rem 1.25rem;
     box-shadow: 0 0 20px rgba(219, 219, 219, 0.6);
 
     .is-dark-theme & {
@@ -160,12 +214,9 @@ button.c-tooltip-close-btn {
   top: unset;
   right: unset;
   left: unset;
-
-  @include from($tablet) {
-    width: 1.75rem;
-    height: 1.75rem;
-    min-height: unset;
-  }
+  width: 1.75rem;
+  height: 1.75rem;
+  min-height: unset;
 }
 
 .c-voter-item {
