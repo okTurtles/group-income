@@ -1,6 +1,7 @@
 import sbp from '@sbp/sbp'
 import type { GIKey, GIKeyPurpose } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
+import { INVITE_STATUS } from './constants.js'
 import type { Key } from './crypto.js'
 import { decryptKey } from './crypto.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
@@ -66,11 +67,13 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
   const decryptedKeys = []
 
   for (const key of keys) {
+    let decryptedKey: ?string
     // Does the key have key.meta?.private? If so, attempt to decrypt it
     if (key.meta?.private && key.meta.private.keyId && key.meta.private.content) {
       if (key.id && key.meta.private.keyId in secretKeys && key.meta.private.content) {
         try {
-          decryptedKeys.push([key.id, decryptKey(key.id, secretKeys[key.meta.private.keyId], key.meta.private.content)])
+          decryptedKey = decryptKey(key.id, secretKeys[key.meta.private.keyId], key.meta.private.content)
+          decryptedKeys.push([key.id, decryptedKey])
         } catch (e) {
           console.error(`Secret key decryption error '${e.message || e}':`, e)
           // Ricardo feels this is an ambiguous situation, however if we rethrow it will
@@ -87,11 +90,11 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
     if (key.name.startsWith('#inviteKey-')) {
       if (!state._vm.invites) this.config.reactiveSet(state._vm, 'invites', Object.create(null))
       this.config.reactiveSet(state._vm.invites, key.id, {
-        creator: key.meta.creator,
+        status: INVITE_STATUS.VALID,
         initialQuantity: key.meta.quantity,
         quantity: key.meta.quantity,
         expires: key.meta.expires,
-        inviteSecret: state._volatile?.keys?.[key.id],
+        inviteSecret: decryptedKey || state._volatile?.keys?.[key.id],
         responses: []
       })
     }

@@ -60,32 +60,32 @@ li.c-item-wrapper(data-test='proposalItem')
 </template>
 
 <script>
-import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
-import AvatarUser from '@components/AvatarUser.vue'
 import Avatar from '@components/Avatar.vue'
-import currencies from '@model/contracts/shared/currencies.js'
-import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
-import {
-  PROPOSAL_INVITE_MEMBER,
-  PROPOSAL_REMOVE_MEMBER,
-  PROPOSAL_GROUP_SETTING_CHANGE,
-  PROPOSAL_PROPOSAL_SETTING_CHANGE,
-  PROPOSAL_GENERIC,
-  STATUS_OPEN,
-  STATUS_PASSED,
-  STATUS_FAILED,
-  STATUS_EXPIRED,
-  STATUS_CANCELLED,
-  INVITE_STATUS
-} from '@model/contracts/shared/constants.js'
-import { VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
-import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
-import BannerScoped from '@components/banners/BannerScoped.vue'
+import AvatarUser from '@components/AvatarUser.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
+import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
+import {
+  PROPOSAL_GENERIC,
+  PROPOSAL_GROUP_SETTING_CHANGE,
+  PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  PROPOSAL_REMOVE_MEMBER,
+  STATUS_CANCELLED,
+  STATUS_EXPIRED,
+  STATUS_FAILED,
+  STATUS_OPEN,
+  STATUS_PASSED
+} from '@model/contracts/shared/constants.js'
+import currencies from '@model/contracts/shared/currencies.js'
 import { humanDate } from '@model/contracts/shared/time.js'
+import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
+import { RULE_DISAGREEMENT, RULE_PERCENTAGE, VOTE_AGAINST, VOTE_FOR, getPercentFromDecimal } from '@model/contracts/shared/voting/rules.js'
 import { TABLET } from '@view-utils/breakpoints.js'
+import { mapGetters, mapState } from 'vuex'
+import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 
 export default ({
   name: 'ProposalItem',
@@ -116,7 +116,8 @@ export default ({
       'currentGroupState',
       'groupMembersCount',
       'userDisplayName',
-      'ourUsername'
+      'ourUsername',
+      'ourUserDisplayName'
     ]),
     ...mapState(['currentGroupId']),
     statuses () {
@@ -290,9 +291,12 @@ export default ({
         this.proposal.status === STATUS_PASSED &&
         this.isOurProposal
       ) {
-        const secret = this.proposal.payload.inviteSecret
-        if (this.currentGroupState.invites[secret]?.status === INVITE_STATUS.VALID) {
-          return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.proposal.payload.inviteSecret)
+        const inviteKeyId = this.proposal.payload.inviteKeyId
+        // Display the link for (1) valid invites for which (2) there is a
+        // corresponding authorizedKey for which (3) we have access to its
+        // secret key
+        if (this.currentGroupState._vm.invites[inviteKeyId]?.status === INVITE_STATUS.VALID && this.currentGroupState._vm?.authorizedKeys?.[inviteKeyId] && this.currentGroupState._vm.invites?.[inviteKeyId]?.inviteSecret) {
+          return buildInvitationUrl(this.currentGroupId, this.currentGroupState.settings?.groupName, this.currentGroupState._vm.invites[inviteKeyId].inviteSecret, this.ourUserDisplayName)
         }
       }
       return false
@@ -302,9 +306,9 @@ export default ({
         this.proposal.status === STATUS_PASSED &&
         this.isOurProposal
       ) {
-        const secret = this.proposal.payload.inviteSecret
-        if (this.currentGroupState.invites[secret].status === INVITE_STATUS.VALID &&
-          this.proposal.payload.expires < Date.now()) {
+        const inviteKeyId = this.proposal.payload.inviteKeyId
+        if (this.currentGroupState._vm.invites[inviteKeyId]?.status === INVITE_STATUS.VALID &&
+          this.currentGroupState._vm.invites[inviteKeyId].expires < Date.now()) {
           return true
         }
       }

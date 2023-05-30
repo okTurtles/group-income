@@ -52,7 +52,7 @@ import GroupWelcome from '@components/GroupWelcome.vue'
 import Loading from '@components/Loading.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import SignupForm from '@containers/access/SignupForm.vue'
-import { INVITE_INITIAL_CREATOR /* , INVITE_STATUS */ } from '@model/contracts/shared/constants.js'
+import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
 import sbp from '@sbp/sbp'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import { LOGIN } from '@utils/events.js'
@@ -131,31 +131,18 @@ export default ({
           this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
           this.pageStatus = 'EXPIRED'
           return
-        } if (!invite /* || invite.status !== INVITE_STATUS.VALID */) {
+        } if (invite?.status !== INVITE_STATUS.VALID) {
           console.error('Join.vue error: Link is not valid.')
           this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
           this.pageStatus = 'INVALID'
           return
         }
-        let creator = null
-        let creatorPicture = null
-        let message = null
-
-        if (invite.creator === INVITE_INITIAL_CREATOR) {
-          message = L('You were invited to join')
-        } else {
-          const identityContractID = await sbp('namespace/lookup', invite.creator)
-          const userState = await sbp('chelonia/latestContractState', identityContractID)
-          const userDisplayName = userState.attributes.displayName || userState.attributes.username
-          message = L('{who} invited you to join their group!', { who: userDisplayName })
-          creator = userDisplayName
-          creatorPicture = userState.attributes.picture
-        }
+        const creator = this.ephemeral.query.creator
+        const message = creator ? L('{who} invited you to join their group!', { who: creator }) : L('You were invited to join')
 
         this.ephemeral.invitation = {
           groupName: this.ephemeral.query.groupName ?? L('(group name unavailable)'),
           creator,
-          creatorPicture,
           message
         }
         this.pageStatus = 'SIGNING'

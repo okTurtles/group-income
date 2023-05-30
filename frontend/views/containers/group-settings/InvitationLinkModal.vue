@@ -32,12 +32,9 @@ export default ({
       'currentGroupState'
     ]),
     welcomeInviteSecret () {
-      const invites = this.currentGroupState._vm.invites
-      console.log({ invites })
+      const invites = this.currentGroupState.invites
       const initialInvite = Object.keys(invites).find(invite => invites[invite].creator === INVITE_INITIAL_CREATOR)
-      console.log({ initialInvite })
       const key = this.currentGroupState._volatile.keys[initialInvite]
-      console.log({ key })
       if (typeof key !== 'string') {
         return serializeKey(key, true)
       } else {

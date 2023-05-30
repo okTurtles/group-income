@@ -1,8 +1,12 @@
 'use strict'
 
-import { GIErrorUIRuntimeError, LError } from '@common/common.js'
 import sbp from '@sbp/sbp'
+import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { GIErrorUIRuntimeError, LError } from '@common/common.js'
+import { EDWARDS25519SHA512BATCH, encrypt, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 
 // Utility function to send encrypted actions ('chelonia/out/actionEncrypted')
@@ -16,20 +20,11 @@ import type { GIActionParams } from './types.js'
 export function encryptedAction (
   action: string,
   humanError: string | Function,
-  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams) => Promise<void>,
+  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams, signingKeyId: string, encryptionKeyId: string) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string
 ): Object {
-  const sendMessage = (outerParams: GIActionParams, state: Object) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
-    const signingKeyId = findKeyIdByName(state, signingKeyName ?? 'csk')
-    const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
-
-    if (!state?._volatile?.keys || !state._volatile.keys[signingKeyId] || !state._volatile.keys[encryptionKeyId]) {
-      console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)
-      // TODO: Change to Promise.reject()
-      return Promise.resolve()
-    }
-
+  const sendMessage = (outerParams: GIActionParams, signingKeyId: string, encryptionKeyId: string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
     return sbp('chelonia/out/actionEncrypted', {
       ...(innerParams ?? outerParams),
       signingKeyId,
@@ -41,11 +36,23 @@ export function encryptedAction (
     [action]: async function (params: GIActionParams) {
       try {
         const state = await sbp('chelonia/latestContractState', params.contractID)
+
+        const signingKeyId = findKeyIdByName(state, signingKeyName ?? 'csk')
+        const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
+
+        if (!signingKeyId || !encryptionKeyId || !state?._volatile?.keys || !state._volatile.keys[signingKeyId] || !state._volatile.keys[encryptionKeyId]) {
+          console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)
+          // TODO: Change to Promise.reject()
+          return Promise.resolve()
+        }
+
+        const sm = sendMessage(params, signingKeyId, encryptionKeyId)
+
         // make sure to await here so that if there's an error we show user-facing string
         if (handler) {
-          return await handler(sendMessage(params, state), params)
+          return await handler(sm, params, signingKeyId, encryptionKeyId)
         } else {
-          return await sendMessage(params, state)()
+          return await sm()
         }
       } catch (e) {
         console.error(`${action} failed!`, e)
@@ -55,5 +62,70 @@ export function encryptedAction (
         throw new GIErrorUIRuntimeError(userFacingErrStr)
       }
     }
+  }
+}
+
+export async function createInvite ({ quantity = 1, creator, expires, invitee }: {
+  quantity: number, creator: string, expires: number, invitee?: string
+}): Promise<{inviteKeyId: string; creator: string; invitee?: string; }> {
+  const rootState = sbp('state/vuex/state')
+
+  if (!rootState.currentGroupId) {
+    throw new Error('Current group not selected')
+  }
+
+  const contractID = rootState.currentGroupId
+
+  if (!rootState[contractID] || !rootState[contractID]._vm || !rootState[contractID]._volatile?.keys || rootState[contractID]._volatile.pendingKeyRequests?.length) {
+    throw new Error('Invalid or missing current group state')
+  }
+
+  const state = rootState[contractID]
+
+  const CEKid = findKeyIdByName(state, 'cek')
+  const CSKid = findKeyIdByName(state, 'csk')
+
+  if (!CEKid || !CSKid) {
+    throw new Error('Contract is missing a CEK or CSK')
+  }
+
+  const CEK = state._volatile.keys[CEKid]
+  const CSK = state._volatile.keys[CSKid]
+
+  if (!CEK || !CSK) {
+    throw new Error('Contract is missing a secret CEK or CSK')
+  }
+
+  const inviteKey = keygen(EDWARDS25519SHA512BATCH)
+  const inviteKeyId = keyId(inviteKey)
+  const inviteKeyP = serializeKey(inviteKey, false)
+  const inviteKeyS = encrypt(CEK, serializeKey(inviteKey, true))
+
+  await sbp('chelonia/out/keyAdd', {
+    contractID,
+    contractName: 'gi.contracts/group',
+    data: [{
+      id: inviteKeyId,
+      name: '#inviteKey-' + inviteKeyId,
+      purpose: ['sig'],
+      ringLevel: Number.MAX_SAFE_INTEGER,
+      permissions: [GIMessage.OP_KEY_REQUEST],
+      meta: {
+        quantity,
+        expires: Date.now() + DAYS_MILLIS * expires,
+        private: {
+          keyId: CEKid,
+          content: inviteKeyS
+        }
+      },
+      data: inviteKeyP
+    }],
+    signingKeyId: CSKid
+  })
+
+  return {
+    inviteKeyId,
+    creator,
+    invitee
   }
 }

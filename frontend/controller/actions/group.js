@@ -193,7 +193,6 @@ export default (sbp('sbp/selectors/register', {
             permissions: [GIMessage.OP_KEY_REQUEST],
             meta: {
               quantity: 60,
-              creator: INVITE_INITIAL_CREATOR,
               expires: Date.now() + DAYS_MILLIS * INVITE_EXPIRES_IN_DAYS.ON_BOARDING,
               private: {
                 keyId: CEKid,
@@ -243,6 +242,15 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('chelonia/contract/sync', contractID)
       saveLoginState('creating', contractID)
+
+      // Save the initial invite
+      await sbp('gi.actions/group/invite', {
+        contractID,
+        data: {
+          inviteKeyId,
+          creator: INVITE_INITIAL_CREATOR
+        }
+      })
 
       // create a 'General' chatroom contract and let the creator join
       await sbp('gi.actions/group/addAndJoinChatRoom', {
@@ -796,8 +804,18 @@ export default (sbp('sbp/selectors/register', {
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
   ...encryptedAction('gi.actions/group/deleteChatRoom', L('Failed to delete chat channel.')),
+  ...encryptedAction('gi.actions/group/invite', L('Failed to create invite.')),
   ...encryptedAction('gi.actions/group/inviteAccept', L('Failed to accept invite.')),
-  ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.')),
+  ...encryptedAction('gi.actions/group/inviteRevoke', L('Failed to revoke invite.'), async function (sendMessage, params, signingKeyId) {
+    await sbp('chelonia/out/keyDel', {
+      contractID: params.contractID,
+      contractName: 'gi.contracts/group',
+      data: [params.data.inviteKeyId],
+      signingKeyId
+    })
+
+    return sendMessage(params)
+  }),
   ...encryptedAction('gi.actions/group/payment', L('Failed to create payment.')),
   ...encryptedAction('gi.actions/group/paymentUpdate', L('Failed to update payment.')),
   ...encryptedAction('gi.actions/group/sendPaymentThankYou', L('Failed to send a payment thank you note.')),
