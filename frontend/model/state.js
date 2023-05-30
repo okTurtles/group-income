@@ -130,7 +130,7 @@ const mutations = {
     Vue.set(state.chatRoomUnread, chatRoomId, {
       readUntil: { messageHash, createdDate, deletedDate: null },
       messages: state.chatRoomUnread[chatRoomId].messages
-        .filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
+        ?.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime()) || []
     })
     // eslint-disable-next-line no-lone-blocks
     {
