@@ -32,7 +32,7 @@ nav.c-navigation(
             tag='router-link'
             icon='comments'
             to='/group-chat'
-            :badgeCount='currentGroupUnreadMentionsCount'
+            :badgeCount='currentGroupUnreadMessagesCount'
             data-test='groupChatLink'
           )
             i18n Chat
@@ -138,7 +138,7 @@ export default ({
       'totalUnreadNotificationCount',
       'groupUnreadMessages'
     ]),
-    currentGroupUnreadMentionsCount () {
+    currentGroupUnreadMessagesCount () {
       return !this.currentGroupId ? 0 : this.groupUnreadMessages(this.currentGroupId)
     },
     logo () {
