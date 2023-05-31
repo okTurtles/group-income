@@ -23,17 +23,17 @@ message-base.c-message-poll(
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import MessageBase from './MessageBase.vue'
-import { MESSAGE_VARIANTS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_VARIANTS, POLL_STATUS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import PollToVote from './poll-message-content/PollToVote.vue'
-import PollVoted from './poll-message-content/PollVoted.vue'
+import PollVoteResult from './poll-message-content/PollVoteResult.vue'
 
 export default ({
   name: 'MessagePoll',
   components: {
     MessageBase,
     PollToVote,
-    PollVoted
+    PollVoteResult
   },
   props: {
     pollData: Object, // { creator, status, question, options ... }
@@ -79,11 +79,14 @@ export default ({
     isPollEditable () { // If the current user is the creator of the poll and no one has voted yet, poll can be editted.
       return this.isCurrentUser && this.votesFlattened.length === 0
     },
+    isPollExpired () {
+      return this.pollData.status === POLL_STATUS.CLOSED
+    },
     messageContentComponent () {
       if (this.hasVoted) {
-        return this.ephemeral.isChangeMode ? 'poll-to-vote' : 'poll-voted'
+        return this.ephemeral.isChangeMode ? 'poll-to-vote' : 'poll-vote-result'
       } else {
-        return 'poll-to-vote'
+        return this.isPollExpired ? 'poll-vote-result' : 'poll-to-vote'
       }
     }
   },
@@ -103,7 +106,7 @@ export default ({
     switchOffChangeMode () {
       this.ephemeral.isChangeMode = false
     },
-    setupPollExpirationTimer () {
+    checkAndSetupPollExpirationTimer () {
       const markPollClosed = () => {
         sbp('gi.actions/chatroom/closePoll', {
           contractID: this.currentChatRoomId,
@@ -119,10 +122,11 @@ export default ({
       }
       const timeDiff = Date.now() - this.pollData.expires_date_ms
 
-      if (timeDiff <= 0) {
+      if (timeDiff >= 0) {
         // if the poll has been expired, mark it 'closed' immediately.
+        console.log('@@ is it here??? !!')
         markPollClosed()
-      } else if (timeDiff < 0.5 * DAYS_MILLIS) {
+      } else if (Math.abs(timeDiff) < DAYS_MILLIS) {
         // if the poll is expiring soon, periodically check & mark it 'closed'.
         // NOTE: this logic is actually a good candidate for a periodic-notification entry in mainNotificationsMixin.js,
         //       but there is a challenge in accessing a particular chat-message data in there.
@@ -143,7 +147,7 @@ export default ({
     }
   },
   created () {
-    this.setupPollExpirationTimer()
+    this.checkAndSetupPollExpirationTimer()
   },
   beforeDestroy () {
     if (this.expirationTimeoutId) {

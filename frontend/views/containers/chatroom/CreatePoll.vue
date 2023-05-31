@@ -21,7 +21,7 @@
         .field.c-add-options
           i18n.label Add options
 
-          .c-option-list
+          .c-option-list(ref='optList')
             fieldset.inputgroup.c-option-item(
               v-for='(option, index) in form.options'
               :key='option.id'
@@ -29,6 +29,7 @@
               input.input(
                 type='text'
                 :aria-label='L("Option value")'
+                :ref='"input" + option.id'
                 :placeholder='optionPlaceholder(index + 1)'
                 v-model.trim='option.value'
               )
@@ -77,6 +78,7 @@ import ModalClose from '@components/modal/ModalClose.vue'
 import { MESSAGE_TYPES, POLL_TYPES, CHATROOM_POLL_DURATION_DAYS } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import trapFocus from '@utils/trapFocus.js'
 
 const createRandomId = () => {
   const randomStr = () => Math.random().toString(20).slice(2)
@@ -87,7 +89,8 @@ export default {
   name: 'CreatePoll',
   mixins: [
     validationMixin,
-    validationsDebouncedMixins
+    validationsDebouncedMixins,
+    trapFocus
   ],
   components: {
     ModalClose
@@ -152,9 +155,16 @@ export default {
     addOption (e) {
       e.stopPropagation()
 
+      const newOptionId = createRandomId()
       Vue.set(this.form.options, this.optionCount, {
-        id: createRandomId(),
+        id: newOptionId,
         value: ''
+      })
+
+      this.$nextTick(() => {
+        const newInputEl = this.$refs.optList?.querySelector('.c-option-item:last-of-type > .input')
+
+        newInputEl && newInputEl.focus()
       })
     },
     removeOption (id) {
@@ -203,9 +213,11 @@ export default {
     this.ephemeral.isDesktopScreen = this.matchMediaDesktop.matches
 
     window.addEventListener('resize', this.close)
+    document.addEventListener('keydown', this.trapFocus)
   },
   beforeDestroy () {
     window.removeEventListener('resize', this.close)
+    document.removeEventListener('keydown', this.trapFocus)
 
     this.matchMediaDesktop.onchange = null
   },

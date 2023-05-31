@@ -4,7 +4,8 @@
     i18n.c-poll-label(tag='label') poll
     h3.is-title-4 {{ pollData.question }}
 
-    menu-parent.c-poll-menu
+    i18n.pill.is-neutral.c-poll-expired-badge(v-if='isPollExpired') Poll closed
+    menu-parent.c-poll-menu(v-else)
       menu-trigger.is-icon.c-poll-menu-trigger
         i.icon-ellipsis-v
       menu-content.c-poll-menu-content
@@ -37,9 +38,10 @@ import { mapGetters } from 'vuex'
 import { uniq } from '@model/contracts/shared/giLodash.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import VoterAvatars from './VoterAvatars.vue'
+import { POLL_STATUS } from '@model/contracts/shared/constants.js'
 
 export default ({
-  name: 'PollVoted',
+  name: 'PollVoteResult',
   inject: ['pollUtils'],
   props: {
     pollData: Object
@@ -55,6 +57,9 @@ export default ({
     ...mapGetters([
       'ourUsername'
     ]),
+    isPollExpired () {
+      return this.pollData.status === POLL_STATUS.CLOSED
+    },
     list () {
       const percents = []
       const voters = []
@@ -104,6 +109,14 @@ export default ({
   text-transform: uppercase;
   color: $text_1;
   font-size: $size_5;
+}
+
+.c-poll-expired-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  text-transform: uppercase;
 }
 
 .c-poll-menu {

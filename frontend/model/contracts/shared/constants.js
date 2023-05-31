@@ -51,7 +51,7 @@ export const CHATROOM_NAME_LIMITS_IN_CHARS = 50
 export const CHATROOM_DESCRIPTION_LIMITS_IN_CHARS = 280
 export const CHATROOM_ACTIONS_PER_PAGE = 40
 export const CHATROOM_MAX_ARCHIVE_ACTION_PAGES = 2 // 2 pages of actions
-export const CHATROOM_POLL_DURATION_DAYS = 7
+export const CHATROOM_POLL_DURATION_DAYS = 7 // TODO: discuss with team and confirm this value
 
 // chatroom events
 export const CHATROOM_MESSAGE_ACTION = 'chatroom-message-action'

@@ -618,10 +618,14 @@ sbp('chelonia/defineContract', {
         const msgIndex = findMessageIdx(data.hash, state.messages)
 
         if (msgIndex >= 0) {
+          console.log('@@ marking a poll "expired"')
           const pollData = state.messages[msgIndex].pollData
 
           Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, status: POLL_STATUS.CLOSED })
         }
+      },
+      sideEffect ({ contractID, hash }) {
+        emitMessageEvent({ contractID, hash })
       }
     }
   }
