@@ -483,6 +483,9 @@
 /* MISSING TRANSLATION - views/containers/payments/ThankYouNoteModal.vue */
 "{name} Note:" = "{name} Note:";
 
+/* MISSING TRANSLATION - views/containers/proposals/DistributionDate.vue */
+"The new distribution date should be different than the current one." = "The new distribution date should be different than the current one.";
+
 /* MISSING TRANSLATION - views/containers/proposals/GenericProposal.vue */
 "A proposal name is required." = "A proposal name is required.";
 
@@ -524,6 +527,9 @@
 
 /* MISSING TRANSLATION - views/containers/proposals/MemberRequest.vue */
 "There are no open requests right now." = "There are no open requests right now.";
+
+/* MISSING TRANSLATION - views/containers/proposals/Mincome.vue */
+"The new mincome should be different than the current one." = "The new mincome should be different than the current one.";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "Automated" = "Automated";
@@ -2202,9 +2208,6 @@
 /* views/containers/proposals/DistributionDate.vue */
 "New distribution date" = "Nouvelle date de distribution";
 
-/* views/containers/proposals/DistributionDate.vue */
-"The new distribution date should be different than the current one." = "La nouvelle date de distribution doit être différente de la date actuelle.";
-
 /* views/containers/proposals/Mincome.vue */
 "Change minimum income" = "Modifier le revenu minimum";
 
@@ -2213,9 +2216,6 @@
 
 /* views/containers/proposals/Mincome.vue */
 "New minimum income" = "Nouveau revenu minimum";
-
-/* views/containers/proposals/Mincome.vue */
-"The new mincome should be different than the current one." = "Le nouveau revenu minimum devrait être différent du précédent.";
 
 /* views/containers/proposals/ProposalItem.vue */
 "Add {user} to group." = "Ajouter {user} au groupe.";
@@ -2921,6 +2921,12 @@
 
 /* Not currently used */
 "The modal base has very basic functionality. Compared to a normal modal it has very basic style and let us add any kind of content." = "Les fonctionnalités du dialogue de base sont très limitées. Comparé à un dialogue ordinaire, il a très peu de styles prédéfinis et accepte tout type de contenu.";
+
+/* Not currently used */
+"The new distribution date should be different from the current one." = "La nouvelle date de distribution doit être différente de la date actuelle.";
+
+/* Not currently used */
+"The new mincome should be different from the current one." = "Le nouveau revenu minimum devrait être différent du précédent.";
 
 /* Not currently used */
 "There are no pending payments." = "Pas de paiements en cours.";

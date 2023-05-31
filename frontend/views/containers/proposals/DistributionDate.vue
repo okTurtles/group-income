@@ -93,12 +93,16 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
+      'groupPeriodPayments',
       'groupShouldPropose',
       'groupSettings',
       'groupMembersCount'
     ]),
     currentDistributionDate () {
       return humanDate(this.groupSettings.distributionDate, { month: 'long', day: 'numeric' })
+    },
+    isInFirstPeriod () {
+      return Object.keys(this.groupPeriodPayments).length < 2
     }
   },
   beforeMount () {
@@ -113,7 +117,7 @@ export default ({
     humanDate,
     validateDistributionDate () {
       if (this.form.distributionDate === this.groupSettings.distributionDate) {
-        this.$refs.formMsg.danger(L('The new distribution date should be different than the current one.'))
+        this.$refs.formMsg.danger(L('The new distribution date should be different from the current one.'))
         this.ephemeral.currentStep = 0
         return false
       }
