@@ -731,7 +731,7 @@
   "disagreement number": "basé sur le nombre de votes négatifs",
   "percentage based": "basé sur le pourcentage des votes positifs",
   "Change distribution date": "Modifier la date de distribution",
-  "Current distribution date is {distributionDate}.": "La date de distribution actuelle est le {distributionDate}.",
+  "Current distribution date is on {currentDistributionDate}.": "La date de distribution actuelle est le {currentDistributionDate}.",
   "New distribution date": "Nouvelle date de distribution",
   "The new distribution date should be different than the current one.": "La nouvelle date de distribution doit être différente de la date actuelle.",
   "Change minimum income": "Modifier le revenu minimum",

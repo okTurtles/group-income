@@ -547,7 +547,7 @@
 "Current Password" = "Current Password";
 
 /* views/containers/proposals/DistributionDate.vue */
-"Current distribution date is {distributionDate}." = "Current distribution date is {distributionDate}.";
+"Current distribution date is on {currentDistributionDate}." = "Current distribution date is on {currentDistributionDate}.";
 
 /* views/containers/proposals/Mincome.vue */
 "Currently {groupMincomeFormatted} monthly." = "Currently {groupMincomeFormatted} monthly.";

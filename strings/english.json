@@ -181,7 +181,7 @@
   "Created a new poll:": "Created a new poll:",
   "Currency": "Currency",
   "Current Password": "Current Password",
-  "Current distribution date is {distributionDate}.": "Current distribution date is {distributionDate}.",
+  "Current distribution date is on {currentDistributionDate}.": "Current distribution date is on {currentDistributionDate}.",
   "Currently {groupMincomeFormatted} monthly.": "Currently {groupMincomeFormatted} monthly.",
   "DELETE {GROUP_NAME}": "DELETE {GROUP_NAME}",
   "Dashboard": "Dashboard",

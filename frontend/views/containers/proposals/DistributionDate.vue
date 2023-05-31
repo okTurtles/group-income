@@ -27,7 +27,7 @@
             :key='index'
             :value='item'
           ) {{ humanDate(item, { month: 'long', year: 'numeric', day: 'numeric' }) }}
-      i18n.helper(:args='{distributionDate: "Not sure"}') Current distribution date is {distributionDate}.
+      i18n.helper(:args='{currentDistributionDate}') Current distribution date is on {currentDistributionDate}.
 
     banner-scoped(ref='formMsg' data-test='proposalError')
 </template>
@@ -96,7 +96,10 @@ export default ({
       'groupShouldPropose',
       'groupSettings',
       'groupMembersCount'
-    ])
+    ]),
+    currentDistributionDate () {
+      return humanDate(this.groupSettings.distributionDate, { month: 'long', day: 'numeric' })
+    }
   },
   beforeMount () {
     for (let index = 1; index <= 30; index++) {

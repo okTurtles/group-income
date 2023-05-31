@@ -2197,7 +2197,7 @@
 "Change distribution date" = "Modifier la date de distribution";
 
 /* views/containers/proposals/DistributionDate.vue */
-"Current distribution date is {distributionDate}." = "La date de distribution actuelle est le {distributionDate}.";
+"Current distribution date is on {currentDistributionDate}." = "La date de distribution actuelle est le {currentDistributionDate}.";
 
 /* views/containers/proposals/DistributionDate.vue */
 "New distribution date" = "Nouvelle date de distribution";
