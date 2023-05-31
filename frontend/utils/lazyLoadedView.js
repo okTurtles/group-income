@@ -87,6 +87,7 @@ lazyModalFullScreen('UserSettingsModal', () => import('../views/containers/user-
 lazyComponent('AddMembers', () => import('../views/containers/proposals/AddMembers.vue'))
 lazyComponent('ChangeVotingRules', () => import('../views/containers/proposals/ChangeVotingRules.vue'))
 lazyComponent('MincomeProposal', () => import('../views/containers/proposals/Mincome.vue'))
+lazyComponent('DistributionDateProposal', () => import('../views/containers/proposals/DistributionDate.vue'))
 lazyComponent('PaymentsHistoryModal', () => import('../views/containers/payments/PaymentsHistoryModal.vue'))
 lazyComponent('RemoveMember', () => import('../views/containers/proposals/RemoveMember.vue'))
 lazyComponent('GenericProposal', () => import('../views/containers/proposals/GenericProposal.vue'))

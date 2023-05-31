@@ -384,6 +384,9 @@
 /* views/containers/proposals/ProposalItem.vue */
 "Change disagreement number from {X} to {N}." = "Change disagreement number from {X} to {N}.";
 
+/* views/containers/proposals/DistributionDate.vue */
+"Change distribution date" = "Change distribution date";
+
 /* views/containers/proposals/ProposalItem.vue */
 "Change from a disagreement based voting system to a percentage based one, with minimum agreement of {percent}." = "Change from a disagreement based voting system to a percentage based one, with minimum agreement of {percent}.";
 
@@ -444,7 +447,7 @@
 /* views/containers/navigation/Navigation.vue, views/pages/GroupChat.vue */
 "Chat" = "Chat";
 
-/* views/components/group-creation-steps/GroupMincome.vue */
+/* views/components/group-creation-steps/GroupMincome.vue, views/containers/proposals/DistributionDate.vue */
 "Choose your group's distribution date" = "Choose your group's distribution date";
 
 /* views/containers/contributions/PaymentMethods.vue */
@@ -542,6 +545,9 @@
 
 /* views/containers/access/PasswordModal.vue */
 "Current Password" = "Current Password";
+
+/* views/containers/proposals/DistributionDate.vue */
+"Current distribution date is {distributionDate}." = "Current distribution date is {distributionDate}.";
 
 /* views/containers/proposals/Mincome.vue */
 "Currently {groupMincomeFormatted} monthly." = "Currently {groupMincomeFormatted} monthly.";
@@ -1199,6 +1205,9 @@
 
 /* views/containers/access/PasswordModal.vue */
 "New Password" = "New Password";
+
+/* views/containers/proposals/DistributionDate.vue */
+"New distribution date" = "New distribution date";
 
 /* views/containers/proposals/Mincome.vue */
 "New minimum income" = "New minimum income";
@@ -1928,6 +1937,9 @@
 
 /* model/notifications/templates.js */
 "The mincome has changed to {amount}." = "The mincome has changed to {amount}.";
+
+/* views/containers/proposals/DistributionDate.vue */
+"The new distribution date should be different than the current one." = "The new distribution date should be different than the current one.";
 
 /* views/containers/proposals/Mincome.vue */
 "The new mincome should be different than the current one." = "The new mincome should be different than the current one.";

@@ -139,9 +139,6 @@
 "Pinch to zoom, drag to reposition" = "Pinch to zoom, drag to reposition";
 
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupMincome.vue */
-"Choose your group's distribution date" = "Choose your group's distribution date";
-
-/* MISSING TRANSLATION - views/components/group-creation-steps/GroupMincome.vue */
 "On what day should the first payment distribution be calculated?" = "On what day should the first payment distribution be calculated?";
 
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupMincome.vue */
@@ -149,6 +146,9 @@
 
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupMincome.vue */
 "Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members." = "Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members.";
+
+/* MISSING TRANSLATION - views/components/group-creation-steps/GroupMincome.vue, views/containers/proposals/DistributionDate.vue */
+"Choose your group's distribution date" = "Choose your group's distribution date";
 
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
 "Proposals are how the group makes decisions. You can propose for example, to add or remove members, or to change your group’s mincome value." = "Proposals are how the group makes decisions. You can propose for example, to add or remove members, or to change your group’s mincome value.";
@@ -2192,6 +2192,18 @@
 
 /* views/containers/proposals/ChangeVotingRules.vue */
 "percentage based" = "basé sur le pourcentage des votes positifs";
+
+/* views/containers/proposals/DistributionDate.vue */
+"Change distribution date" = "Modifier la date de distribution";
+
+/* views/containers/proposals/DistributionDate.vue */
+"Current distribution date is {distributionDate}." = "La date de distribution actuelle est le {distributionDate}.";
+
+/* views/containers/proposals/DistributionDate.vue */
+"New distribution date" = "Nouvelle date de distribution";
+
+/* views/containers/proposals/DistributionDate.vue */
+"The new distribution date should be different than the current one." = "La nouvelle date de distribution doit être différente de la date actuelle.";
 
 /* views/containers/proposals/Mincome.vue */
 "Change minimum income" = "Modifier le revenu minimum";

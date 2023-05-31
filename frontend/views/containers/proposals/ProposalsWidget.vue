@@ -123,6 +123,7 @@ export default ({
         { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'vote-yea' },
         { type: 'header', name: 'Other proposals' },
         { type: 'item', id: 'change-mincome', name: 'Change mincome', icon: 'dollar-sign' },
+        { type: 'item', id: 'change-distribution-date', name: 'Change distribution date', icon: 'chart-pie' },
         {
           type: 'item',
           id: 'generic-proposal',
@@ -154,6 +155,7 @@ export default ({
         'add-new-member': this.groupShouldPropose ? 'AddMembers' : 'InvitationLinkModal',
         'remove-member': 'GroupMembersAllModal',
         'change-mincome': 'MincomeProposal',
+        'change-distribution-date': 'DistributionDateProposal',
         'generic-proposal': 'GenericProposal',
         'change-disagreeing-number': 'ChangeVotingRules',
         'change-to-percentage-base': 'ChangeVotingRules'
