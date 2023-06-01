@@ -30,8 +30,8 @@
 
       .c-unreadcount-wrapper
         .pill.is-danger(
-          v-if='list.channels[id].unreadMentionsCount'
-        ) {{limitedUnreadCount(list.channels[id].unreadMentionsCount)}}
+          v-if='list.channels[id].unreadMessagesCount'
+        ) {{limitedUnreadCount(list.channels[id].unreadMessagesCount)}}
 </template>
 
 <script>

@@ -46,9 +46,13 @@
             ) {{ objText.text }}
           i18n.c-edited(v-if='edited') (edited)
 
+  .c-full-width-body
+    slot(name='full-width-body')
+
   message-reactions(
     v-if='!isEditing'
     :emoticonsList='emoticonsList'
+    :messageType='type'
     :currentUsername='currentUsername'
     @selectEmoticon='selectEmoticon($event)'
     @openEmoticon='openEmoticon($event)'
@@ -78,6 +82,7 @@ import MessageReactions from './MessageReactions.vue'
 import SendArea from './SendArea.vue'
 import { humanDate } from '@model/contracts/shared/time.js'
 import { makeMentionFromUsername } from '@model/contracts/shared/functions.js'
+import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
 const TextObjectType = { Text: 'TEXT', Mention: 'MENTION' }
 export default ({
@@ -127,7 +132,11 @@ export default ({
   methods: {
     humanDate,
     editMessage () {
-      this.isEditing = true
+      if (this.type === MESSAGE_TYPES.POLL) {
+        alert('TODO: implement editting a poll')
+      } else {
+        this.isEditing = true
+      }
     },
     onReplyMessageClicked () {
       this.$emit('reply-message-clicked')
@@ -194,7 +203,7 @@ export default ({
   padding: 0.5rem 1rem;
 
   @include tablet {
-    padding: 0.5rem 2.5rem;
+    padding: 0.5rem 1.25rem;
   }
   position: relative;
   max-height: 100%;
@@ -245,7 +254,8 @@ export default ({
   }
 }
 
-.c-body {
+.c-body,
+.c-full-width-body {
   width: 100%;
 }
 
@@ -259,7 +269,7 @@ export default ({
 
 .c-text {
   max-width: 32rem;
-  word-wrap: break-word; // too much long words will break
+  word-break: break-word; // too much long words will break
   white-space: pre-line; // break \n to a new line
   margin: 0;
 

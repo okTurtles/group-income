@@ -1379,7 +1379,7 @@ sbp('chelonia/defineContract', {
         archSentOrReceivedPayments.sent = [...sortPayments(newSentOrReceivedPayments.sent), ...archSentOrReceivedPayments.sent]
         archSentOrReceivedPayments.received = [...sortPayments(newSentOrReceivedPayments.received), ...archSentOrReceivedPayments.received]
 
-        const archPaymentsKey = `payments/${period}/${username}/${contractID}`
+        const archPaymentsKey = `payments/${username}/${period}/${contractID}`
         const hashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period])
         const archPayments = Object.fromEntries(hashes.map(hash => [hash, payments[hash]]))
 

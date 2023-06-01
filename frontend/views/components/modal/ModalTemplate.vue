@@ -77,7 +77,7 @@ export default ({
   position: absolute;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: hidden auto;
   width: 100%;
   height: 100%;
   margin: 0 auto;
@@ -90,6 +90,7 @@ export default ({
     height: auto;
     margin: auto;
     transition: none !important;
+    overflow: hidden;
   }
 }
 

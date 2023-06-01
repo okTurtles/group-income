@@ -109,14 +109,6 @@ export default ({
   methods: {
     async initialize () {
       try {
-        if (this.ourUsername) {
-          if (this.currentGroupId && this.$store.state.contracts[this.ephemeral.query.groupId]) {
-            this.$router.push({ path: '/dashboard' })
-          } else {
-            await this.accept()
-          }
-          return
-        }
         const state = await sbp('chelonia/latestContractState', this.ephemeral.query.groupId)
         const secretKey = deserializeKey(this.ephemeral.query.secret)
         const publicKey = keyId(secretKey)
@@ -137,8 +129,18 @@ export default ({
           this.pageStatus = 'INVALID'
           return
         }
+        if (this.ourUsername) {
+          if (this.currentGroupId && this.$store.state.contracts[this.ephemeral.query.groupId]) {
+            this.$router.push({ path: '/dashboard' })
+          } else {
+            await this.accept()
+          }
+          return
+        }
         const creator = this.ephemeral.query.creator
-        const message = creator ? L('{who} invited you to join their group!', { who: creator }) : L('You were invited to join')
+        const message = creator
+          ? L('{who} invited you to join their group!', { who: creator })
+          : L('You were invited to join')
 
         this.ephemeral.invitation = {
           groupName: this.ephemeral.query.groupName ?? L('(group name unavailable)'),
@@ -160,11 +162,13 @@ export default ({
     },
     async accept () {
       this.ephemeral.errorMsg = null
+      const { groupId, secret } = this.ephemeral.query
+      if (this.$store.state.contracts[groupId]) {
+        return this.$router.push({ path: '/dashboard' })
+      }
       try {
         const originatingContractID = this.$store.state.loggedIn.identityContractID
         const userState = this.$store.state[originatingContractID]
-
-        const { groupId, secret } = this.ephemeral.query
 
         await sbp('gi.actions/group/joinAndSwitch', {
           originatingContractID,
@@ -205,6 +209,7 @@ export default ({
 .c-page {
   max-width: 33rem;
   margin: auto;
+  height: 100%;
 }
 
 .c-welcome {
