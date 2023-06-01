@@ -41,6 +41,7 @@ import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/shared/constants.js'
 import { dateToPeriodStamp, addTimeToDate, DAYS_MILLIS, humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
@@ -151,20 +152,20 @@ export default ({
       }
 
       try {
-        // await sbp('gi.actions/group/proposal', {
-        //   contractID: this.currentGroupId,
-        //   data: {
-        //     proposalType: PROPOSAL_GROUP_SETTING_CHANGE,
-        //     proposalData: {
-        //       setting: 'distributionDate',
-        //       proposedValue: distributionDate,
-        //       currentValue: this.groupSettings.distributionDate,
-        //       reason: form.reason
-        //     },
-        //     votingRule: this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].rule,
-        //     expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].expires_ms
-        //   }
-        // })
+        await sbp('gi.actions/group/proposal', {
+          contractID: this.currentGroupId,
+          data: {
+            proposalType: PROPOSAL_GROUP_SETTING_CHANGE,
+            proposalData: {
+              setting: 'distributionDate',
+              proposedValue: distributionDate,
+              currentValue: this.groupSettings.distributionDate,
+              reason: form.reason
+            },
+            votingRule: this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].rule,
+            expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].expires_ms
+          }
+        })
         this.ephemeral.currentStep += 1 // Show Success step
       } catch (e) {
         console.error('DistributionDate.vue submit() error:', e)

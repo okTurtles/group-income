@@ -37,9 +37,37 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
   const options = Object.assign({}, baseOptions)
   const { proposalType, proposalData, variant } = proposal
 
+  const groupSettingType = proposalData.setting
+  let proposalSettingType
+  if (!!proposalData.ruleName && proposalData.ruleName !== proposalData.current.ruleName) {
+    proposalSettingType = 'votingSystem'
+  } else if (!!proposalData.ruleThreshold && proposalData.ruleThreshold !== proposalData.current.ruleThreshold) {
+    proposalSettingType = 'votingRule'
+  }
+
   if (proposalType === PROPOSAL_GENERIC) {
     options['title'] = proposalData.name
+  } else if (proposalType === PROPOSAL_GROUP_SETTING_CHANGE) {
+    if (groupSettingType === 'mincomeAmount') {
+      options['setting'] = L('mincome')
+    } else if (groupSettingType === 'distributionDate') {
+      options['setting'] = L('distribution date')
+    }
+  } else if (proposalType === PROPOSAL_PROPOSAL_SETTING_CHANGE) {
+    if (groupSettingType === 'votingSystem') {
+      options['setting'] = L('voting system')
+    } else if (groupSettingType === 'votingRule') {
+      options['setting'] = L('voting rules')
+    }
   }
+
+  const settingChangeMessages = (options) => ({
+    [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups {setting}.', options),
+    [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the {setting} is expiring.', options),
+    [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups {setting} changed.'),
+    [PROPOSAL_VARIANTS.REJECTED]: L('The group {setting} hasn\'t changed.'),
+    [PROPOSAL_VARIANTS.EXPIRED]: L('The group {setting} hasn\'t changed.')
+  })
 
   const interactiveMessages = {
     [PROPOSAL_INVITE_MEMBER]: {
@@ -57,29 +85,12 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
       [PROPOSAL_VARIANTS.EXPIRED]: L('No members were removed.')
     },
     [PROPOSAL_GROUP_SETTING_CHANGE]: {
-      mincomeAmount: {
-        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups mincome.', options),
-        [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the mincome is expiring.', options),
-        [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups mincome changed.'),
-        [PROPOSAL_VARIANTS.REJECTED]: L('The group mincome hasn\'t changed.'),
-        [PROPOSAL_VARIANTS.EXPIRED]: L('The group mincome hasn\'t changed.')
-      }
+      mincomeAmount: settingChangeMessages(options),
+      distributionDate: settingChangeMessages(options)
     },
     [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
-      votingRule: {
-        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups voting rules.', options),
-        [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the voting rules is expiring.', options),
-        [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups voting rules changed'),
-        [PROPOSAL_VARIANTS.REJECTED]: L('The groups voting rules hasn\'t changed.'),
-        [PROPOSAL_VARIANTS.EXPIRED]: L('The groups voting rules hasn\'t changed.')
-      },
-      votingSystem: {
-        [PROPOSAL_VARIANTS.CREATED]: L('{from} wants to change the groups voting system.', options),
-        [PROPOSAL_VARIANTS.EXPIRING]: L('Proposal from {from} to change the voting system is expiring.', options),
-        [PROPOSAL_VARIANTS.ACCEPTED]: L('The groups voting system changed.'),
-        [PROPOSAL_VARIANTS.REJECTED]: L('The groups voting system hasn\'t changed.'),
-        [PROPOSAL_VARIANTS.EXPIRED]: L('The groups voting system hasn\'t changed.')
-      }
+      votingRule: settingChangeMessages(options),
+      votingSystem: settingChangeMessages(options)
     },
     [PROPOSAL_GENERIC]: {
       [PROPOSAL_VARIANTS.CREATED]: L('{from} created a proposal. "{title}"', options),
@@ -88,14 +99,6 @@ const interactiveMessage = (proposal, baseOptions = {}) => {
       [PROPOSAL_VARIANTS.REJECTED]: L('{from}\'s proposal is rejected. "{title}"', options),
       [PROPOSAL_VARIANTS.EXPIRED]: L('{from}\'s proposal is rejected. "{title}"', options)
     }
-  }
-
-  const groupSettingType = proposalData.setting
-  let proposalSettingType
-  if (!!proposalData.ruleName && proposalData.ruleName !== proposalData.current.ruleName) {
-    proposalSettingType = 'votingSystem'
-  } else if (!!proposalData.ruleThreshold && proposalData.ruleThreshold !== proposalData.current.ruleThreshold) {
-    proposalSettingType = 'votingRule'
   }
 
   return get(interactiveMessages, [proposalType, groupSettingType, proposalSettingType, variant].filter(key => !!key))

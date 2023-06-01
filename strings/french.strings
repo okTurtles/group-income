@@ -243,15 +243,6 @@
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal expiring on {date}" = "Proposal expiring on {date}";
 
-/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
-"{from} wants to change the groups mincome." = "{from} wants to change the groups mincome.";
-
-/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
-"{from} wants to change the groups voting rules." = "{from} wants to change the groups voting rules.";
-
-/* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
-"{from} wants to change the groups voting system." = "{from} wants to change the groups voting system.";
-
 /* MISSING TRANSLATION - views/containers/chatroom/MessageNotification.vue */
 "Voted on “{title}”" = "Voted on “{title}”";
 
@@ -1351,13 +1342,7 @@
 "Proposal from {from} to add new members is expiring." = "La proposition de {from} d'ajouter de nouveaux membres expire.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to change the mincome is expiring." = "La proposition de {from} de modifier l'mincome arrive à expiration.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to change the voting rules is expiring." = "La proposition de {from} de modifier les règles de vote expire.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"Proposal from {from} to change the voting system is expiring." = "La proposition de {from} de modifier le système de vote expire.";
+"Proposal from {from} to change the {setting} is expiring." = "La proposition de {from} de modifier le {setting} expire.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "Proposal from {from} to remove members is expiring." = "La proposition de {from} de supprimer des membres expire.";
@@ -1369,22 +1354,16 @@
 "See proposal" = "Voir la proposition";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"The group mincome hasn't changed." = "Le revenu minimum du groupe n’a pas changé.";
+"The group {setting} hasn't changed." = "Le {setting} du groupe n’a pas changé.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"The groups mincome changed." = "Le revenu minimum du groupe a été modifié.";
+"The groups {setting} changed." = "Le {setting} du groupe a été modifié.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"The groups voting rules changed" = "Les règles de vote du groupe ont été modifiées";
+"voting rules" = "règles de vote";
 
 /* views/containers/chatroom/MessageInteractive.vue */
-"The groups voting rules hasn't changed." = "Les règles de vote du groupe n’ont pas changé.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"The groups voting system changed." = "Le système de vote du groupe a été changé.";
-
-/* views/containers/chatroom/MessageInteractive.vue */
-"The groups voting system hasn't changed." = "Le système de vote du groupe n’a pas changé.";
+"voting system" = "système de vote";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} created a proposal. \"{title}\"" = "{from} a créé une proposition. \"{Titre}\"";
@@ -1403,6 +1382,15 @@
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Restantes {title}";
+
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/DistributionDate.vue */
+"{from} wants to change the groups {setting}." = "{from} souhaite changer le {setting} du groupe.";
+
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/ProposalItem.vue */
+"distribution date" = "date de distribution";
+
+/* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/ProposalItem.vue */
+"mincome" = "revenu minimum";
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/ProposalTemplate.vue */
 "New proposal" = "Nouvelle proposition";
@@ -2253,12 +2241,6 @@
 /* views/containers/proposals/ProposalItem.vue */
 "You cannot vote." = "Vous ne pouvez pas voter.";
 
-/* views/containers/proposals/ProposalItem.vue */
-"distribution date" = "date de distribution";
-
-/* views/containers/proposals/ProposalItem.vue */
-"mincome" = "revenu minimum";
-
 /* views/containers/proposals/ProposalTemplate.vue */
 "Members of your group will now be asked to vote." = "Les membres du groupe vont maintenant pouvoir voter.";
 
@@ -2878,6 +2860,15 @@
 "Proposal accepted!" = "Proposition acceptée!";
 
 /* Not currently used */
+"Proposal from {from} to change the mincome is expiring." = "La proposition de {from} de modifier l'mincome arrive à expiration.";
+
+/* Not currently used */
+"Proposal from {from} to change the voting rules is expiring." = "La proposition de {from} de modifier les règles de vote expire.";
+
+/* Not currently used */
+"Proposal from {from} to change the voting system is expiring." = "La proposition de {from} de modifier le système de vote expire.";
+
+/* Not currently used */
 "Proposal refused." = "Proposition refusée.";
 
 /* Not currently used */
@@ -2927,6 +2918,24 @@
 
 /* Not currently used */
 "The amount cannot have more than 2 decimals" = "Le montant ne peut pas avoir plus de deux décimales";
+
+/* Not currently used */
+"The group mincome hasn't changed." = "Le revenu minimum du groupe n’a pas changé.";
+
+/* Not currently used */
+"The groups mincome changed." = "Le revenu minimum du groupe a été modifié.";
+
+/* Not currently used */
+"The groups voting rules changed" = "Les règles de vote du groupe ont été modifiées";
+
+/* Not currently used */
+"The groups voting rules hasn't changed." = "Les règles de vote du groupe n’ont pas changé.";
+
+/* Not currently used */
+"The groups voting system changed." = "Le système de vote du groupe a été changé.";
+
+/* Not currently used */
+"The groups voting system hasn't changed." = "Le système de vote du groupe n’a pas changé.";
 
 /* Not currently used */
 "The main use at the moment is to be used on a fullscreen master modal that can contains other small sub modals (ex: income details)" = "Le principal usage actuel est en tant que dialogue modal en plein écran pouvant contenir d’autres dialogues modaux plus petits (ex: les détails de revenu)";
@@ -3007,7 +3016,7 @@
 "{currentPage} out of {maxPages}" = "{currentPage} sur {maxPages}";
 
 /* Not currently used */
-"{from} wants to change the groups voting system. " = "{from} souhaite changer le système de vote du groupe. ";
+"{from} wants to change the groups voting system." = "{from} souhaite changer le système de vote du groupe.";
 
 /* Not currently used */
 "{personName} marked this payment as not received." = "{personName} a marqué ce paiement comme étant non reçu.";
