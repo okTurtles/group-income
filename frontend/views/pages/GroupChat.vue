@@ -222,6 +222,8 @@ export default ({
 
   .p-main {
     height: auto !important;
+    // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
+    max-width: unset !important;
   }
 }
 
