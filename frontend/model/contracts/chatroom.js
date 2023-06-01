@@ -59,14 +59,16 @@ function setReadUntilWhileJoining ({ contractID, hash, createdDate }: {
   }
 }
 
-function messageReceivePostEffect ({ contractID, messageHash, datetime, text, isAlreadyAdded, isMentionedMe, messageType, username, chatRoomName }: {
+function messageReceivePostEffect ({
+  contractID, messageHash, datetime, text,
+  isDMOrMention, messageType, username, chatRoomName
+}: {
   contractID: string,
   messageHash: string,
   datetime: string,
   text: string,
-  isAlreadyAdded?: boolean,
-  messageType?: string,
-  isMentionedMe: boolean,
+  messageType: string,
+  isDMOrMention: boolean,
   username: string,
   chatRoomName: string
 }): void {
@@ -75,14 +77,18 @@ function messageReceivePostEffect ({ contractID, messageHash, datetime, text, is
   }
   const rootGetters = sbp('state/vuex/getters')
   const isDirectMessage = rootGetters.isDirectMessage(contractID)
-  const isDMOrMention = isMentionedMe || isDirectMessage
+  const unreadMessageType = {
+    [MESSAGE_TYPES.TEXT]: isDMOrMention ? MESSAGE_TYPES.TEXT : undefined,
+    [MESSAGE_TYPES.INTERACTIVE]: MESSAGE_TYPES.INTERACTIVE,
+    [MESSAGE_TYPES.POLL]: MESSAGE_TYPES.POLL
+  }[messageType]
 
-  if (!isAlreadyAdded && (isDMOrMention || messageType === MESSAGE_TYPES.INTERACTIVE)) {
+  if (unreadMessageType) {
     sbp('state/vuex/commit', 'addChatRoomUnreadMessage', {
       chatRoomId: contractID,
       messageHash,
       createdDate: datetime,
-      isDMOrMention
+      type: unreadMessageType
     })
   }
 
@@ -92,7 +98,8 @@ function messageReceivePostEffect ({ contractID, messageHash, datetime, text, is
     if (rootGetters.isGroupDirectMessage(contractID)) {
       title = `# ${rootGetters.groupDirectMessageInfo(contractID).title}`
     } else {
-      partnerProfile = rootGetters.ourContactProfiles[username] // NOTE: partner identity contract could not be synced at the time of use
+      partnerProfile = rootGetters.ourContactProfiles[username]
+      // NOTE: partner identity contract could not be synced at the time of use
       title = `# ${partnerProfile?.displayName || username}`
     }
   }
@@ -105,18 +112,8 @@ function messageReceivePostEffect ({ contractID, messageHash, datetime, text, is
   const shouldSoundMessage = messageSound === MESSAGE_NOTIFY_SETTINGS.ALL_MESSAGES ||
     (messageSound === MESSAGE_NOTIFY_SETTINGS.DIRECT_MESSAGES && isDMOrMention)
 
-  if (!isAlreadyAdded && shouldNotifyMessage) {
-    makeNotification({
-      title,
-      body: text,
-      icon: partnerProfile?.picture,
-      path
-    })
-  }
-
-  if (!isAlreadyAdded && shouldSoundMessage) {
-    sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
-  }
+  shouldNotifyMessage && makeNotification({ title, body: text, icon: partnerProfile?.picture, path })
+  shouldSoundMessage && sbp('okTurtles.events/emit', MESSAGE_RECEIVE)
 }
 
 sbp('chelonia/defineContract', {
@@ -181,8 +178,7 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID }) {
         Vue.set(sbp('state/vuex/state').chatRoomUnread, contractID, {
           readUntil: undefined,
-          mentions: [],
-          others: []
+          messages: []
         })
       }
     },
@@ -359,14 +355,15 @@ sbp('chelonia/defineContract', {
         }
         const newMessage = createMessage({ meta, data, hash, id, state })
         const mentions = makeMentionFromUsername(me)
-        const isMentionedMe = data.type === MESSAGE_TYPES.TEXT && (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
+        const isMentionedMe = data.type === MESSAGE_TYPES.TEXT &&
+          (newMessage.text.includes(mentions.me) || newMessage.text.includes(mentions.all))
 
         messageReceivePostEffect({
           contractID,
           messageHash: newMessage.hash,
           datetime: newMessage.datetime,
           text: newMessage.text,
-          isMentionedMe,
+          isDMOrMention: isMentionedMe || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL,
           messageType: data.type,
           username: meta.username,
           chatRoomName: getters.chatRoomAttributes.name
@@ -380,6 +377,7 @@ sbp('chelonia/defineContract', {
         text: string
       }),
       process ({ data, meta }, { state }) {
+        // NOTE: edit message whose type is MESSAGE_TYPES.TEXT
         if (!state.onlyRenderMessage) {
           return
         }
@@ -397,37 +395,33 @@ sbp('chelonia/defineContract', {
 
         const rootState = sbp('state/vuex/state')
         const me = rootState.loggedIn.username
-        const unreadMessages = [
-          ...rootState.chatRoomUnread[contractID].mentions,
-          ...(rootState.chatRoomUnread[contractID].others || [])
-        ]
-
-        if (me === meta.username) {
+        if (me === meta.username || getters.chatRoomAttributes.type === CHATROOM_TYPES.INDIVIDUAL) {
           return
         }
 
-        const isAlreadyAdded = !!unreadMessages.find(m => m.messageHash === data.hash)
+        const isAlreadyAdded = !!sbp('state/vuex/getters')
+          .chatRoomUnreadMessages(contractID).find(m => m.messageHash === data.hash)
         const mentions = makeMentionFromUsername(me)
         const isMentionedMe = data.text.includes(mentions.me) || data.text.includes(mentions.all)
 
-        messageReceivePostEffect({
-          contractID,
-          messageHash: data.hash,
-          /*
-          * the following datetime is the time when the message(which made mention) is created
-          * the reason why it is it instead of datetime when the mention created is because
-          * it is compared to the datetime of other messages when user scrolls
-          * to decide if it should be removed from the list of mentions or not
-          */
-          datetime: data.createdDate,
-          text: data.text,
-          isAlreadyAdded,
-          isMentionedMe,
-          username: meta.username,
-          chatRoomName: getters.chatRoomAttributes.name
-        })
-
-        if (isAlreadyAdded && !isMentionedMe) {
+        if (!isAlreadyAdded) {
+          messageReceivePostEffect({
+            contractID,
+            messageHash: data.hash,
+            /*
+            * the following datetime is the time when the message(which made mention) is created
+            * the reason why it is it instead of datetime when the mention created is because
+            * it is compared to the datetime of other messages when user scrolls
+            * to decide if it should be removed from the list of mentions or not
+            */
+            datetime: data.createdDate,
+            text: data.text,
+            isDMOrMention: isMentionedMe,
+            messageType: MESSAGE_TYPES.TEXT,
+            username: meta.username,
+            chatRoomName: getters.chatRoomAttributes.name
+          })
+        } else if (!isMentionedMe) {
           sbp('state/vuex/commit', 'deleteChatRoomUnreadMessage', {
             chatRoomId: contractID,
             messageHash: data.hash
@@ -480,12 +474,12 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        if (rootState.chatRoomUnread[contractID].mentions.find(m => m.messageHash === data.hash)) {
-          sbp('state/vuex/commit', 'deleteChatRoomUnreadMessage', {
-            chatRoomId: contractID,
-            messageHash: data.hash
-          })
-        }
+        // NOTE: ignore to check if the existance of current message (data.hash)
+        //       because if not exist, deleteChatRoomUnreadMessage won't do anything
+        sbp('state/vuex/commit', 'deleteChatRoomUnreadMessage', {
+          chatRoomId: contractID,
+          messageHash: data.hash
+        })
       }
     },
     'gi.contracts/chatroom/makeEmotion': {
