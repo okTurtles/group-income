@@ -2254,6 +2254,9 @@
 "You cannot vote." = "Vous ne pouvez pas voter.";
 
 /* views/containers/proposals/ProposalItem.vue */
+"distribution date" = "date de distribution";
+
+/* views/containers/proposals/ProposalItem.vue */
 "mincome" = "revenu minimum";
 
 /* views/containers/proposals/ProposalTemplate.vue */

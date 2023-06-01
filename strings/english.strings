@@ -2385,6 +2385,9 @@
 /* views/containers/proposals/ChangeVotingRules.vue */
 "disagreement number" = "disagreement number";
 
+/* views/containers/proposals/ProposalItem.vue */
+"distribution date" = "distribution date";
+
 /* views/containers/group-settings/InvitationsTable.vue */
 "invite link" = "invite link";
 
