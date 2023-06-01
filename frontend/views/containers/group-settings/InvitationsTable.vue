@@ -68,13 +68,14 @@ page-section.c-section(:title='L("Invite links")')
             :class='{ "is-danger": item.status.isExpired || item.status.isRevoked }'
           ) {{ item.expiryInfo }}
         td.c-action
-          menu-parent(v-if='!item.isAnyoneLink & item.status.isActive')
+          menu-parent(v-if='item.status.isActive')
             menu-trigger.is-icon(:aria-label='L("Show list")')
               i.icon-ellipsis-v
 
             menu-content.c-dropdown-action
               ul
                 menu-item(
+                  v-if='!item.isAnyoneLink'
                   tag='button'
                   item-id='original'
                   @click='handleSeeOriginal(item)'
