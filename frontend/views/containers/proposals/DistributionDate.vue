@@ -5,6 +5,7 @@
     :disabled='$v.form.$invalid'
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
+    variant='changeDistributionDate'
     @submit='submit'
   )
 
@@ -54,7 +55,7 @@ export default ({
   data () {
     return {
       form: {
-        distributionDate: dateToPeriodStamp(addTimeToDate(new Date().setUTCHours(0, 0, 0, 0), 3 * DAYS_MILLIS))
+        distributionDate: null
       },
       ephemeral: {
         distributionDayRange: [],
@@ -70,7 +71,7 @@ export default ({
   },
   watch: {
     'ephemeral.currentStep': function (step) {
-      if (step === 1 && this.groupShouldPropose) {
+      if (step === 1 && !this.shouldChangeDistributionDateImmediately) {
         this.validateDistributionDate()
       }
     }
@@ -93,7 +94,8 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
-      'groupPeriodPayments',
+      'groupShouldChangeDistributionDateImmediately',
+      'ourUsername',
       'groupShouldPropose',
       'groupSettings',
       'groupMembersCount'
@@ -101,8 +103,8 @@ export default ({
     currentDistributionDate () {
       return humanDate(this.groupSettings.distributionDate, { month: 'long', day: 'numeric' })
     },
-    isInFirstPeriod () {
-      return Object.keys(this.groupPeriodPayments).length < 2
+    shouldChangeDistributionDateImmediately () {
+      return !this.groupShouldPropose || this.groupShouldChangeDistributionDateImmediately(this.ourUsername)
     }
   },
   beforeMount () {
@@ -129,7 +131,25 @@ export default ({
         return
       }
 
-      console.log('TODO')
+      if (this.shouldChangeDistributionDateImmediately) {
+        try {
+          console.log('TODO: Should change distribution date immediately')
+          this.$refs.proposal.close()
+        } catch (e) {
+          console.error('DistributionDate.vue submit() error:', e)
+          this.$refs.formMsg.danger(e.message)
+        }
+        return
+      }
+
+      try {
+        console.log('TODO: Should create a proposal')
+        this.ephemeral.currentStep += 1 // Show Success step
+      } catch (e) {
+        console.error('DistributionDate.vue submit() error:', e)
+        this.$refs.formMsg.danger(e.message)
+        this.ephemeral.currentStep = 0
+      }
     }
   }
 }: Object)

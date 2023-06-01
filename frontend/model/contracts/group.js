@@ -413,6 +413,10 @@ sbp('chelonia/defineContract', {
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
     },
+    groupShouldChangeDistributionDateImmediately (state, getters) {
+      return (username) => Object.keys(getters.groupPeriodPayments).length < 2 &&
+        username === getters.groupSettings.groupCreator
+    },
     groupProposalSettings (state, getters) {
       return (proposalType = PROPOSAL_GENERIC) => {
         return getters.groupSettings.proposals[proposalType]
