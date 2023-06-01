@@ -7,7 +7,7 @@ import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { EVENT_HANDLED, CONTRACT_REGISTERED } from '~/shared/domains/chelonia/events.js'
 import Vuex from 'vuex'
-import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS } from '@model/contracts/shared/constants.js'
+import { CHATROOM_PRIVACY_LEVEL, MESSAGE_NOTIFY_SETTINGS, MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 import { compareISOTimestamps } from '@model/contracts/shared/time.js'
 import { omit, merge, cloneDeep, debounce } from '@model/contracts/shared/giLodash.js'
 import { unadjustedDistribution, adjustedDistribution } from '@model/contracts/shared/distribution/distribution.js'
@@ -23,7 +23,7 @@ const initialState = {
   currentGroupId: null,
   currentChatRoomIDs: {}, // { [groupId]: currentChatRoomId }
   chatRoomScrollPosition: {}, // [chatRoomId]: messageHash
-  chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, mentions: [{ messageHash, createdDate }], others: [{ messageHash, createdDate }] }
+  chatRoomUnread: {}, // [chatRoomId]: { readUntil: { messageHash, createdDate }, messages: [{ messageHash, createdDate, type, deletedDate? }]}
   chatNotificationSettings: {}, // { messageNotification: MESSAGE_NOTIFY_SETTINGS, messageSound: MESSAGE_NOTIFY_SETTINGS }
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
@@ -64,6 +64,25 @@ sbp('sbp/selectors/register', {
     // if (!state.notifications) {
     //   state.notifications = []
     // }
+
+    // TODO: need to remove the whole content after we release 0.2.*
+    for (const chatRoomId in state.chatRoomUnread) {
+      if (!state.chatRoomUnread[chatRoomId].messages) {
+        state.chatRoomUnread[chatRoomId].messages = []
+      }
+      if (state.chatRoomUnread[chatRoomId].mentions) {
+        state.chatRoomUnread[chatRoomId].mentions.forEach(m => {
+          state.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: MESSAGE_TYPES.TEXT }, m))
+        })
+        Vue.delete(state.chatRoomUnread[chatRoomId], 'mentions')
+      }
+      if (state.chatRoomUnread[chatRoomId].others) {
+        state.chatRoomUnread[chatRoomId].others.forEach(o => {
+          state.chatRoomUnread[chatRoomId].messages.push(Object.assign({ type: MESSAGE_TYPES.INTERACTIVE }, o))
+        })
+        Vue.delete(state.chatRoomUnread[chatRoomId], 'others')
+      }
+    }
   },
   'state/vuex/save': async function () {
     const state = store.state
@@ -108,37 +127,30 @@ const mutations = {
     Vue.delete(state.chatRoomScrollPosition, chatRoomId)
   },
   setChatRoomReadUntil (state, { chatRoomId, messageHash, createdDate }) {
-    const prevMentions = state.chatRoomUnread[chatRoomId].mentions
-    const prevOthers = state.chatRoomUnread[chatRoomId].others
-
     Vue.set(state.chatRoomUnread, chatRoomId, {
       readUntil: { messageHash, createdDate, deletedDate: null },
-      mentions: prevMentions.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime()),
-      others: prevOthers.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime())
+      messages: state.chatRoomUnread[chatRoomId].messages
+        ?.filter(m => new Date(m.createdDate).getTime() > new Date(createdDate).getTime()) || []
     })
+    // eslint-disable-next-line no-lone-blocks
+    {
+      // hack: delete me after upgrade to 0.2.x!
+      Vue.set(state.chatRoomUnread[chatRoomId], 'mentions', [])
+      Vue.set(state.chatRoomUnread[chatRoomId], 'others', [])
+    }
   },
   deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
     Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)
   },
-  addChatRoomUnreadMessage (state, { chatRoomId, messageHash, createdDate, isDMOrMention }) {
-    const newItem = { messageHash, createdDate }
-
-    if (isDMOrMention) {
-      state.chatRoomUnread[chatRoomId].mentions.push(newItem)
-    } else {
-      if (!('others' in state.chatRoomUnread[chatRoomId])) {
-        Vue.set(state.chatRoomUnread[chatRoomId], 'others', [newItem])
-      } else {
-        state.chatRoomUnread[chatRoomId].others.push(newItem)
-      }
-    }
+  addChatRoomUnreadMessage (state, { chatRoomId, messageHash, createdDate, type }) {
+    state.chatRoomUnread[chatRoomId].messages.push({ messageHash, createdDate, type })
   },
   deleteChatRoomUnreadMessage (state, { chatRoomId, messageHash }) {
-    const prevMentions = state.chatRoomUnread[chatRoomId].mentions
-    const prevOthers = state.chatRoomUnread[chatRoomId].others || []
-
-    Vue.set(state.chatRoomUnread[chatRoomId], 'mentions', prevMentions.filter(m => m.messageHash !== messageHash))
-    Vue.set(state.chatRoomUnread[chatRoomId], 'others', prevOthers.filter(m => m.messageHash !== messageHash))
+    Vue.set(
+      state.chatRoomUnread[chatRoomId],
+      'messages',
+      state.chatRoomUnread[chatRoomId].messages.filter(m => m.messageHash !== messageHash)
+    )
   },
   deleteChatRoomUnread (state, { chatRoomId }) {
     Vue.delete(state.chatRoomUnread, chatRoomId)
@@ -613,19 +625,22 @@ const getters = {
     // NOTE: Optional Chaining (?) is necessary when user viewing the chatroom which he is not part of
     return getters.ourUnreadMessages[getters.currentChatRoomId]?.readUntil // undefined means to the latest
   },
-  currentChatRoomUnreadMentions (state, getters) {
-    // NOTE: Optional Chaining (?) is necessary when user viewing the chatroom which he is not part of
-    return getters.ourUnreadMessages[getters.currentChatRoomId]?.mentions || []
+  chatRoomUnreadMessages (state, getters) {
+    return (chatRoomId: string) => {
+      // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
+      return getters.ourUnreadMessages[chatRoomId]?.messages || []
+    }
   },
   chatRoomUnreadMentions (state, getters) {
     return (chatRoomId: string) => {
-      return getters.ourUnreadMessages[chatRoomId]?.mentions || []
+      // NOTE: Optional Chaining (?) is necessary when user tries to get mentions of the chatroom which he is not part of
+      return (getters.ourUnreadMessages[chatRoomId]?.messages || []).filter(m => m.type === MESSAGE_TYPES.TEXT)
     }
   },
   groupUnreadMessages (state, getters) {
     return (groupID: string) => Object.keys(getters.ourUnreadMessages)
       .filter(cID => getters.isDirectMessage(cID) || Object.keys(state[groupID]?.chatRooms || {}).includes(cID))
-      .map(cID => getters.ourUnreadMessages[cID].mentions.length || getters.ourUnreadMessages[cID]?.others.length)
+      .map(cID => getters.ourUnreadMessages[cID].messages.length)
       .reduce((sum, n) => sum + n, 0)
   },
   directMessageIDFromUsername (state, getters) {
@@ -651,11 +666,10 @@ const getters = {
       const chatRoom = state[contractID]
       if (chatRoom && chatRoom.attributes &&
         chatRoom.users[state.loggedIn.username]) {
-        const unreadMentionsCount = getters.chatRoomUnreadMentions(contractID).length
         chatRoomsInDetail[contractID] = {
           ...chatRoom.attributes,
           id: contractID,
-          unreadMentionsCount,
+          unreadMessagesCount: getters.chatRoomUnreadMessages(contractID).length,
           joined: true
         }
       } else {

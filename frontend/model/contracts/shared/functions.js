@@ -1,8 +1,8 @@
 'use strict'
 
 import sbp from '@sbp/sbp'
+import { MESSAGE_TYPES, POLL_STATUS } from './constants.js'
 import { logExceptNavigationDuplicated } from '~/frontend/views/utils/misc.js'
-import { MESSAGE_TYPES } from './constants.js'
 
 // !!!!!!!!!!!!!!!
 // !! IMPORTANT !!
@@ -67,7 +67,18 @@ export function createMessage ({ meta, data, hash, id, state }: {
   if (type === MESSAGE_TYPES.TEXT) {
     newMessage = !replyingMessage ? { ...newMessage, text } : { ...newMessage, text, replyingMessage }
   } else if (type === MESSAGE_TYPES.POLL) {
-    // TODO: Poll message creation
+    const pollData = data.pollData
+
+    newMessage = {
+      ...newMessage,
+      pollData: {
+        ...pollData,
+        creator: meta.username,
+        status: POLL_STATUS.ACTIVE,
+        // 'voted' field below will contain the user names of the users who has voted for this option
+        options: pollData.options.map(opt => ({ ...opt, voted: [] }))
+      }
+    }
   } else if (type === MESSAGE_TYPES.NOTIFICATION) {
     const params = {
       channelName: state?.attributes.name,

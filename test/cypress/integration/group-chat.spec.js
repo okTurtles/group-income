@@ -72,6 +72,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
 
   function joinChannel (channelName) {
     cy.getByDT('joinChannel').click()
+    cy.getByDT('joinChannel').should('not.exist')
     cy.giWaitUntilMessagesLoaded()
     cy.giCheckIfJoinedChatroom(channelName, me)
   }
@@ -299,9 +300,7 @@ describe('Group Chat Basic Features (Create & Join & Leave & Close)', () => {
     cy.getByDT('conversationWrapper').within(() => {
       cy.getByDT('addDescription').should('not.exist')
     })
-    cy.getByDT('updateDescription').should('not.have.class', 'c-link')
-    cy.getByDT('updateDescription').click()
-    cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('updateDescription').should('not.exist')
     cy.getByDT('channelName').within(() => {
       cy.getByDT('menuTrigger').click()
     })

@@ -49,7 +49,9 @@ menu-parent(ref='menu')
     )
       i.icon-ellipsis-h
 
-  menu-content.c-content
+  menu-content.c-content.c-responsive-menu(
+    :position='actionMenuStyle'
+  )
     ul
       menu-item.hide-desktop.is-icon-small(
         tag='button'
@@ -102,6 +104,7 @@ menu-parent(ref='menu')
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
+import { TABLET, DESKTOP } from '@view-utils/breakpoints.js'
 import { MESSAGE_TYPES } from '@model/contracts/shared/constants.js'
 
 export default ({
@@ -118,6 +121,18 @@ export default ({
     type: String,
     isCurrentUser: Boolean
   },
+  data () {
+    return {
+      actionMenuStyle: ''
+    }
+  },
+  mounted () {
+    this.setActionMenuStyle()
+    window.addEventListener('resize', this.setActionMenuStyle)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.setActionMenuStyle)
+  },
   computed: {
     isText () {
       return this.type === MESSAGE_TYPES.TEXT
@@ -133,6 +148,14 @@ export default ({
     action (type, e) {
       // Change to sbp action
       this.$emit(type, e)
+    },
+    setActionMenuStyle () {
+      const winWidth = window.innerWidth
+      if (winWidth > TABLET && winWidth < DESKTOP && this.$refs.menu) {
+        const { x, y } = this.$refs.menu.$el.getBoundingClientRect()
+        this.actionMenuStyle = `top: ${Math.max(100, y - 200)}px; left: ${x + 50}px`
+      }
+      this.actionMenuStyle = ''
     }
   }
 }: Object)
@@ -185,10 +208,6 @@ export default ({
 
   .c-content {
     @extend %floating-panel;
-
-    @include phone {
-      padding: 0;
-    }
 
     @include desktop {
       width: 100%;

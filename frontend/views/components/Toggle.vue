@@ -78,7 +78,7 @@ $iconSize: 2.75rem;
 
   .is-active & {
     background-color: rgba(0, 0, 0, 0.7);
-    height: 100vh;
+    height: 100%;
     width: 200vw;
     top: 0;
     transition: height 1ms 1ms, width 1ms 1ms, background $speed * 0.5;

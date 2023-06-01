@@ -337,10 +337,6 @@ export default (sbp('sbp/selectors/register', {
             router.push({ path: '/dashboard' }).catch(console.warn)
           }
         }
-      } else {
-        // We call updateLastLoggedIn in this else clause, instead of outside of it because
-        // in the `if` above, updateLastLoggedIn will get called by 'gi.actions/group/switch'
-        await sbp('gi.actions/group/updateLastLoggedIn', { contractID: state.currentGroupId })
       }
     } catch (e) {
       console.error(`updateLoginState: ${e.name}: '${e.message}'`, e)
@@ -396,6 +392,14 @@ export default (sbp('sbp/selectors/register', {
         await sbp('chelonia/contract/sync', identityContractID)
         await sbp('gi.actions/identity/updateLoginStateUponLogin')
         await sbp('gi.actions/identity/saveOurLoginState') // will only update it if it's different
+
+        // update the 'lastLoggedIn' field in user's group profiles
+        sbp('state/vuex/getters').groupsByName
+          .map(entry => entry.contractID)
+          .forEach(cId => {
+            sbp('gi.actions/group/updateLastLoggedIn', { contractID: cId })
+          })
+
         sbp('okTurtles.events/emit', LOGIN, { username, identityContractID })
       }).catch((err) => {
         const errMsg = L('Error during login contract sync: {err}', { err: err.message })
