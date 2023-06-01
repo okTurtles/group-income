@@ -74,6 +74,12 @@ export default ({
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },
+  mounted () {
+    if (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator) {
+      this.$refs.proposal.close()
+      return
+    }
+  },
   watch: {
     'ephemeral.currentStep': function (step) {
       // Validate threshold when reaching step 1
@@ -87,6 +93,7 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
+      'ourUsername',
       'groupShouldPropose',
       'groupProposalSettings',
       'groupSettings'

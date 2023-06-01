@@ -92,6 +92,7 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
+      'ourUsername',
       'groupShouldPropose',
       'groupSettings',
       'groupMembersCount',
@@ -100,6 +101,10 @@ export default ({
     ])
   },
   mounted () {
+    if (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator) {
+      this.$refs.proposal.close()
+      return
+    }
     this.$refs.mincomeAmount.focus()
   },
   methods: {

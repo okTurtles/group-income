@@ -113,6 +113,10 @@ export default ({
     }
   },
   mounted () {
+    if (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator) {
+      this.$refs.proposal.close()
+      return
+    }
     this.$refs.distributionDate.focus()
   },
   methods: {

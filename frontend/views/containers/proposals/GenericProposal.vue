@@ -69,10 +69,15 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
+      'groupShouldPropose',
       'groupSettings'
     ])
   },
   mounted () {
+    if (!this.groupShouldPropose) {
+      this.$refs.proposal.close()
+      return
+    }
     this.$refs.proposalname.focus()
   },
   methods: {
