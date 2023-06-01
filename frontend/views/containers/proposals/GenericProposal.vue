@@ -1,5 +1,6 @@
 <template lang="pug">
 proposal-template(
+  ref='proposal'
   :title='L("Generic Proposal")'
   :maxSteps='0'
   :disabled='$v.form.$invalid'
