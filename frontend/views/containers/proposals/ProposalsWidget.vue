@@ -120,10 +120,28 @@ export default ({
         },
         { type: 'header', name: 'Voting Systems' },
         // { type: 'item', id: 'change-disagreeing-number', name: 'Change disagreeing number', icon: 'vote-yea' },
-        { type: 'item', id: 'change-to-percentage-base', name: 'Change to percentage base', icon: 'vote-yea' },
+        {
+          type: 'item',
+          id: 'change-to-percentage-base',
+          name: 'Change to percentage base',
+          icon: 'vote-yea',
+          isDisabled: !this.groupShouldPropose && !isUserGroupCreator
+        },
         { type: 'header', name: 'Other proposals' },
-        { type: 'item', id: 'change-mincome', name: 'Change mincome', icon: 'dollar-sign' },
-        { type: 'item', id: 'change-distribution-date', name: 'Change distribution date', icon: 'chart-pie' },
+        {
+          type: 'item',
+          id: 'change-mincome',
+          name: 'Change mincome',
+          icon: 'dollar-sign',
+          isDisabled: !this.groupShouldPropose && !isUserGroupCreator
+        },
+        {
+          type: 'item',
+          id: 'change-distribution-date',
+          name: 'Change distribution date',
+          icon: 'chart-pie',
+          isDisabled: !this.groupShouldPropose && !isUserGroupCreator
+        },
         {
           type: 'item',
           id: 'generic-proposal',
