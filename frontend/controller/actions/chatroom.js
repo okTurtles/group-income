@@ -133,7 +133,7 @@ export default (sbp('sbp/selectors/register', {
             name: '#joinKey-' + joinKey.id,
             purpose: ['sig'],
             ringLevel: Number.MAX_SAFE_INTEGER,
-            type: joinKey.type,
+            foreignKey: joinKey.foreignKey,
             data: joinKey.data,
             permissions: [GIMessage.OP_KEY_REQUEST]
           }
