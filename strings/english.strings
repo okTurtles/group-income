@@ -1329,6 +1329,12 @@
 /* controller/actions/group.js */
 "Only channel members can invite others to join." = "Only channel members can invite others to join.";
 
+/* model/contracts/group.js */
+"Only group creator can allow public channels." = "Only group creator can allow public channels.";
+
+/* model/contracts/group.js */
+"Only group creator can update distribution date." = "Only group creator can update distribution date.";
+
 /* model/contracts/chatroom.js, model/contracts/group.js */
 "Only the channel creator can delete channel." = "Only the channel creator can delete channel.";
 
@@ -1905,6 +1911,9 @@
 /* model/notifications/templates.js */
 "The group has a new member. Say hi to {name}!" = "The group has a new member. Say hi to {name}!";
 
+/* views/containers/proposals/ProposalTemplate.vue */
+"The group is currently in the first distribution period, so {strong_}this change will be immediate{_strong} (no voting required)." = "The group is currently in the first distribution period, so {strong_}this change will be immediate{_strong} (no voting required).";
+
 /* views/containers/chatroom/MessageInteractive.vue */
 "The group mincome hasn't changed." = "The group mincome hasn't changed.";
 
@@ -1939,10 +1948,10 @@
 "The mincome has changed to {amount}." = "The mincome has changed to {amount}.";
 
 /* views/containers/proposals/DistributionDate.vue */
-"The new distribution date should be different than the current one." = "The new distribution date should be different than the current one.";
+"The new distribution date should be different from the current one." = "The new distribution date should be different from the current one.";
 
 /* views/containers/proposals/Mincome.vue */
-"The new mincome should be different than the current one." = "The new mincome should be different than the current one.";
+"The new mincome should be different from the current one." = "The new mincome should be different from the current one.";
 
 /* views/components/VotingRulesInput.vue */
 "The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}." = "The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}.";

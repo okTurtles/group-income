@@ -1061,14 +1061,25 @@ sbp('chelonia/defineContract', {
     'gi.contracts/group/updateSettings': {
       // OPTIMIZE: Make this custom validation function
       // reusable accross other future validators
-      validate: objectMaybeOf({
-        groupName: x => typeof x === 'string',
-        groupPicture: x => typeof x === 'string',
-        sharedValues: x => typeof x === 'string',
-        mincomeAmount: x => typeof x === 'number' && x > 0,
-        mincomeCurrency: x => typeof x === 'string',
-        allowPublicChannels: x => typeof x === 'boolean' // TODO: only group admin can update
-      }),
+      validate: (data, { getters, meta }) => {
+        objectMaybeOf({
+          groupName: x => typeof x === 'string',
+          groupPicture: x => typeof x === 'string',
+          sharedValues: x => typeof x === 'string',
+          mincomeAmount: x => typeof x === 'number' && x > 0,
+          mincomeCurrency: x => typeof x === 'string',
+          distributionDate: x => typeof x === 'string',
+          allowPublicChannels: x => typeof x === 'boolean'
+        })(data)
+
+        if (meta.username !== getters.groupSettings.groupCreator) {
+          if ('allowPublicChannels' in data) {
+            throw new TypeError(L('Only group creator can allow public channels.'))
+          } else if ('distributionDate' in data) {
+            throw new TypeError(L('Only group creator can update distribution date.'))
+          }
+        }
+      },
       process ({ contractID, meta, data }, { state, getters }) {
         // If mincome has been updated, cache the old value and use it later to determine if the user should get a 'MINCOME_CHANGED' notification.
         const mincomeCache = 'mincomeAmount' in data ? state.settings.mincomeAmount : null
