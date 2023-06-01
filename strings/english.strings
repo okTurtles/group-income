@@ -405,6 +405,9 @@
 /* views/containers/group-settings/GroupRulesSettings.vue */
 "Change to this system" = "Change to this system";
 
+/* views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/chatroom/poll-message-content/PollVoteResult.vue */
+"Change vote" = "Change vote";
+
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Change vote." = "Change vote.";
 
@@ -416,6 +419,9 @@
 
 /* views/containers/proposals/ProposalItem.vue */
 "Change {setting} from {currentValue} to {proposedValue}" = "Change {setting} from {currentValue} to {proposedValue}";
+
+/* views/containers/chatroom/MessageNotification.vue */
+"Changed votes to “{options}”" = "Changed votes to “{options}”";
 
 /* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "Changes to these settings will be visible to all group members";
@@ -702,6 +708,12 @@
 /* controller/actions/chatroom.js */
 "Failed to change chat channel description." = "Failed to change chat channel description.";
 
+/* controller/actions/chatroom.js */
+"Failed to change vote on a poll." = "Failed to change vote on a poll.";
+
+/* controller/actions/chatroom.js */
+"Failed to close a poll." = "Failed to close a poll.";
+
 /* controller/actions/mailbox.js */
 "Failed to create a new direct message channel." = "Failed to create a new direct message channel.";
 
@@ -830,6 +842,9 @@
 
 /* controller/actions/identity.js */
 "Failed to upload the profile picture. {codeError}" = "Failed to upload the profile picture. {codeError}";
+
+/* controller/actions/chatroom.js */
+"Failed to vote on a poll." = "Failed to vote on a poll.";
 
 /* controller/actions/group.js */
 "Failed to vote on proposal." = "Failed to vote on proposal.";
@@ -1019,6 +1034,9 @@
 
 /* views/containers/chatroom/SendArea.vue */
 "Jump to latest message" = "Jump to latest message";
+
+/* views/containers/chatroom/MessageNotification.vue */
+"Jump to poll" = "Jump to poll";
 
 /* views/containers/chatroom/MessageNotification.vue */
 "Kicked a member from {title}: {displayName}" = "Kicked a member from {title}: {displayName}";
@@ -1482,6 +1500,9 @@
 /* views/containers/user-settings/Troubleshooting.vue */
 "Please use the re-sync option below to restore functionality." = "Please use the re-sync option below to restore functionality.";
 
+/* views/containers/chatroom/poll-message-content/PollVoteResult.vue */
+"Poll closed" = "Poll closed";
+
 /* views/containers/contributions/Contribution.vue */
 "Portuguese classes" = "Portuguese classes";
 
@@ -1854,6 +1875,9 @@
 /* views/containers/dashboard/GroupMembersActivity.vue */
 "Streaks" = "Streaks";
 
+/* views/containers/chatroom/poll-message-content/PollToVote.vue */
+"Submit" = "Submit";
+
 /* views/containers/dashboard/GroupActivity.vue */
 "Support %" = "Support %";
 
@@ -2130,8 +2154,11 @@
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Vote yes" = "Vote yes";
 
+/* views/containers/chatroom/poll-message-content/VoterAvatars.vue */
+"Voted for “{option}”" = "Voted for “{option}”";
+
 /* views/containers/chatroom/MessageNotification.vue */
-"Voted on “{title}”" = "Voted on “{title}”";
+"Voted on “{options}”" = "Voted on “{options}”";
 
 /* views/pages/GroupSettings.vue */
 "Voting System" = "Voting System";
@@ -2385,7 +2412,7 @@
 /* views/containers/proposals/ChangeVotingRules.vue */
 "percentage based" = "percentage based";
 
-/* views/containers/chatroom/MessagePoll.vue */
+/* views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/chatroom/poll-message-content/PollVoteResult.vue */
 "poll" = "poll";
 
 /* views/containers/payments/PaymentsPagination.vue */
@@ -2393,9 +2420,6 @@
 
 /* views/containers/group-settings/InvitationsTable.vue */
 "state" = "state";
-
-/* views/containers/chatroom/MessagePoll.vue */
-"submit" = "submit";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "yes" = "yes";
