@@ -561,9 +561,6 @@
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "{username} proposed" = "{username} proposed";
 
-/* MISSING TRANSLATION - views/containers/proposals/ProposalTemplate.vue */
-"The group is currently in the first distribution period, so {strong_}this change will be immediate{_strong} (no voting required)." = "The group is currently in the first distribution period, so {strong_}this change will be immediate{_strong} (no voting required).";
-
 /* MISSING TRANSLATION - views/containers/proposals/ProposalsWidget.vue, views/containers/proposals/PropositionsAllModal.vue */
 "Archived proposals" = "Archived proposals";
 
@@ -2264,6 +2261,9 @@
 
 /* views/containers/proposals/ProposalTemplate.vue */
 "Send invitation" = "Envoyer une invitation";
+
+/* views/containers/proposals/ProposalTemplate.vue */
+"The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required)." = "La première période de distribution n'a pas encore commencé, donc {strong_}ce changement sera immédiat{_strong} (aucun vote requis).";
 
 /* views/containers/proposals/ProposalTemplate.vue */
 "Why are you proposing this change?" = "Pourquoi proposez-vous ce changement ?";

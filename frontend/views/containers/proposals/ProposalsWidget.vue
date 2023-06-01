@@ -74,6 +74,7 @@ export default ({
     ...mapGetters([
       'currentGroupState',
       'currentIdentityState',
+      'groupDistributionStarted',
       'groupShouldPropose',
       'groupSettings',
       'ourUsername',
@@ -140,7 +141,7 @@ export default ({
           id: 'change-distribution-date',
           name: 'Change distribution date',
           icon: 'chart-pie',
-          isDisabled: !this.groupShouldPropose && !isUserGroupCreator
+          isDisabled: this.groupDistributionStarted || (!this.groupShouldPropose && !isUserGroupCreator)
         },
         {
           type: 'item',

@@ -90,7 +90,7 @@
         i18n(
           v-else
           :args='LTags("strong")'
-        ) The group is currently in the first distribution period, so {strong_}this change will be immediate{_strong} (no voting required).
+        ) The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required).
 </template>
 
 <script>
@@ -127,18 +127,17 @@ export default ({
   },
   computed: {
     ...mapGetters([
-      'groupShouldChangeDistributionDateImmediately',
+      'groupSettings',
       'ourUsername',
       'groupMembersCount',
       'groupShouldPropose',
       'groupProposalSettings'
     ]),
-    shouldChangeDistributionDateImmediately () {
-      return this.variant === 'changeDistributionDate' &&
-        this.groupShouldChangeDistributionDateImmediately(this.ourUsername)
+    canChangeDistributionDateImmediately () {
+      return this.variant === 'changeDistributionDate' && this.ourUsername === this.groupSettings.groupCreator
     },
     shouldPropose () {
-      return this.groupShouldPropose && !this.shouldChangeDistributionDateImmediately
+      return this.groupShouldPropose && !this.canChangeDistributionDateImmediately
     },
     proposalSettings () {
       return this.groupProposalSettings()

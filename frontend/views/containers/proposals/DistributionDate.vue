@@ -34,7 +34,7 @@
 </template>
 
 <script>
-// import sbp from '@sbp/sbp'
+import sbp from '@sbp/sbp'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
@@ -71,7 +71,7 @@ export default ({
   },
   watch: {
     'ephemeral.currentStep': function (step) {
-      if (step === 1 && !this.shouldChangeDistributionDateImmediately) {
+      if (step === 1 && !this.canChangeDistributionDateImmediately) {
         this.validateDistributionDate()
       }
     }
@@ -94,7 +94,7 @@ export default ({
       'currentGroupId'
     ]),
     ...mapGetters([
-      'groupShouldChangeDistributionDateImmediately',
+      'groupDistributionStarted',
       'ourUsername',
       'groupShouldPropose',
       'groupSettings',
@@ -103,8 +103,8 @@ export default ({
     currentDistributionDate () {
       return humanDate(this.groupSettings.distributionDate, { month: 'long', day: 'numeric' })
     },
-    shouldChangeDistributionDateImmediately () {
-      return !this.groupShouldPropose || this.groupShouldChangeDistributionDateImmediately(this.ourUsername)
+    canChangeDistributionDateImmediately () {
+      return !this.groupDistributionStarted && this.ourUsername === this.groupSettings.groupCreator
     }
   },
   beforeMount () {
@@ -113,7 +113,8 @@ export default ({
     }
   },
   mounted () {
-    if (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator) {
+    if (this.groupDistributionStarted ||
+      (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator)) {
       this.$refs.proposal.close()
       return
     }
@@ -130,14 +131,17 @@ export default ({
       this.$refs.formMsg.clean()
       return true
     },
-    submit (form) {
+    async submit (form) {
       if (!this.validateDistributionDate()) {
         return
       }
 
-      if (this.shouldChangeDistributionDateImmediately) {
+      const { distributionDate } = this.form
+      if (this.canChangeDistributionDateImmediately) {
         try {
-          console.log('TODO: Should change distribution date immediately')
+          await sbp('gi.actions/group/updateSettings', {
+            contractID: this.currentGroupId, data: { distributionDate }
+          })
           this.$refs.proposal.close()
         } catch (e) {
           console.error('DistributionDate.vue submit() error:', e)
@@ -147,7 +151,20 @@ export default ({
       }
 
       try {
-        console.log('TODO: Should create a proposal')
+        // await sbp('gi.actions/group/proposal', {
+        //   contractID: this.currentGroupId,
+        //   data: {
+        //     proposalType: PROPOSAL_GROUP_SETTING_CHANGE,
+        //     proposalData: {
+        //       setting: 'distributionDate',
+        //       proposedValue: distributionDate,
+        //       currentValue: this.groupSettings.distributionDate,
+        //       reason: form.reason
+        //     },
+        //     votingRule: this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].rule,
+        //     expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].expires_ms
+        //   }
+        // })
         this.ephemeral.currentStep += 1 // Show Success step
       } catch (e) {
         console.error('DistributionDate.vue submit() error:', e)

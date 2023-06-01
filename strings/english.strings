@@ -1905,14 +1905,14 @@
 /* views/pages/Payments.vue */
 "The distribution period begins on: {startDate}" = "The distribution period begins on: {startDate}";
 
+/* views/containers/proposals/ProposalTemplate.vue */
+"The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required)." = "The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required).";
+
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/pages/GroupSettings.vue */
 "The form is invalid." = "The form is invalid.";
 
 /* model/notifications/templates.js */
 "The group has a new member. Say hi to {name}!" = "The group has a new member. Say hi to {name}!";
-
-/* views/containers/proposals/ProposalTemplate.vue */
-"The group is currently in the first distribution period, so {strong_}this change will be immediate{_strong} (no voting required)." = "The group is currently in the first distribution period, so {strong_}this change will be immediate{_strong} (no voting required).";
 
 /* views/containers/chatroom/MessageInteractive.vue */
 "The group mincome hasn't changed." = "The group mincome hasn't changed.";
