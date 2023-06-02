@@ -494,18 +494,25 @@ export default (sbp('sbp/selectors/register', {
     sbp('okTurtles.events/emit', SWITCH_GROUP)
   },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
-    const contractState = sbp('state/vuex/state')[params.contractID]
+    const rootState = sbp('state/vuex/state')
+    const contractState = rootState[params.contractID]
+    const userID = rootState.loggedIn.identityContractID
     for (const contractId in contractState.chatRooms) {
       if (params.data.attributes.name.toUpperCase() === contractState.chatRooms[contractId].name.toUpperCase()) {
         throw new GIErrorUIRuntimeError(L('Duplicate channel name'))
       }
     }
 
-    const joinKeyId = findKeyIdByName(contractState, 'csk')
-    const joinKey = {
-      id: contractState._vm.authorizedKeys[joinKeyId],
-      foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`
-      // data: field used for private keys
+    let joinKey
+
+    // For 'public' and 'group' chatrooms, use the CSK as the join key
+    if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
+      const joinKeyId = findKeyIdByName(contractState, 'csk')
+      joinKey = {
+        id: contractState._vm.authorizedKeys[joinKeyId],
+        foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
+        data: contractState._vm.authorizedKeys[joinKeyId].data
+      }
     }
 
     const message = await sbp('gi.actions/chatroom/create', {
@@ -524,12 +531,21 @@ export default (sbp('sbp/selectors/register', {
     // with the group. This allows all group members to be able to join the
     // chatroom without any extra steps, and, in particular, it enables joining
     // the #General chatroom upon joining a group, in a single step.
-    await sbp('gi.actions/out/shareVolatileKeys', {
-      destinationContractID: params.contractID,
-      destinationContractName: 'gi.contracts/group',
-      contractID: message.contractID(),
-      keyIds: '*'
-    })
+    if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
+      await sbp('gi.actions/out/shareVolatileKeys', {
+        destinationContractID: params.contractID,
+        destinationContractName: 'gi.contracts/group',
+        contractID: message.contractID(),
+        keyIds: '*'
+      })
+    } else {
+      await sbp('gi.actions/out/shareVolatileKeys', {
+        destinationContractID: userID,
+        destinationContractName: 'gi.contracts/identity',
+        contractID: message.contractID(),
+        keyIds: '*'
+      })
+    }
 
     await sendMessage({
       ...omit(params, ['options', 'action', 'data', 'hooks']),
@@ -553,6 +569,17 @@ export default (sbp('sbp/selectors/register', {
 
     if (!rootGetters.isJoinedChatRoom(params.data.chatRoomID) && username !== me) {
       throw new GIErrorUIRuntimeError(L('Only channel members can invite others to join.'))
+    }
+
+    if (username !== me) {
+      await sbp('gi.actions/out/shareVolatileKeys', {
+        destinationContractID: rootGetters.groupProfile(username).contractID,
+        destinationContractName: 'gi.contracts/identity',
+        originatingContractID: params.contractID,
+        originatingContractName: 'gi.contracts/group',
+        contractID: params.data.chatRoomID,
+        keyIds: '*'
+      })
     }
 
     const message = await sbp('gi.actions/chatroom/join', {
