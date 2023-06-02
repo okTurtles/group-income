@@ -124,7 +124,6 @@ export default ({
 
       if (timeDiff >= 0) {
         // if the poll has been expired, mark it 'closed' immediately.
-        console.log('@@ is it here??? !!')
         markPollClosed()
       } else if (Math.abs(timeDiff) < DAYS_MILLIS) {
         // if the poll is expiring soon, periodically check & mark it 'closed'.
