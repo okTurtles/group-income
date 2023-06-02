@@ -847,6 +847,9 @@
 "Yesterday" = "Hier";
 
 /* model/notifications/templates.js */
+"Distribution date change" = "Changement de date de distribution";
+
+/* model/notifications/templates.js */
 "Do not forget to send your pledge by {date}." = "N’oubliez pas d’envoyer votre contribution avant le {date}.";
 
 /* model/notifications/templates.js */
@@ -857,6 +860,9 @@
 
 /* model/notifications/templates.js */
 "{member} proposed to add a member to the group. Vote now!" = "{member} a proposé d’ajouter un membre au groupe. Votez !";
+
+/* model/notifications/templates.js */
+"{member} proposed to change the group distribution date. Vote now!" = "{member} a proposé de changer la date de distribution du groupe. Votez !";
 
 /* model/notifications/templates.js */
 "{member} proposed to change the group mincome. Vote now!" = "{member} a proposé de changer le revenu minimum du groupe. Votez !";
@@ -1372,6 +1378,9 @@
 "{from} wants to add new members to the group." = "{from} souhaite ajouter de nouveaux membres au groupe.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
+"{from} wants to change the groups {setting}." = "{from} souhaite changer le {setting} du groupe.";
+
+/* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to remove members from the group." = "{from} souhaite exclure des membres du groupe.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
@@ -1382,9 +1391,6 @@
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/chatroom/MessageNotification.vue */
 "Left {title}" = "Restantes {title}";
-
-/* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/DistributionDate.vue */
-"{from} wants to change the groups {setting}." = "{from} souhaite changer le {setting} du groupe.";
 
 /* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/ProposalItem.vue */
 "distribution date" = "date de distribution";

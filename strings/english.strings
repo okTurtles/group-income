@@ -625,6 +625,9 @@
 "Distributed: {done}" = "Distributed: {done}";
 
 /* model/notifications/templates.js */
+"Distribution date change" = "Distribution date change";
+
+/* model/notifications/templates.js */
 "Do not forget to send your pledge by {date}." = "Do not forget to send your pledge by {date}.";
 
 /* controller/actions/group.js */
@@ -2478,7 +2481,7 @@
 /* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to add new members to the group." = "{from} wants to add new members to the group.";
 
-/* views/containers/chatroom/MessageInteractive.vue, views/containers/proposals/DistributionDate.vue */
+/* views/containers/chatroom/MessageInteractive.vue */
 "{from} wants to change the groups {setting}." = "{from} wants to change the groups {setting}.";
 
 /* views/containers/chatroom/MessageInteractive.vue */
@@ -2513,6 +2516,9 @@
 
 /* model/notifications/templates.js */
 "{member} proposed to add a member to the group. Vote now!" = "{member} proposed to add a member to the group. Vote now!";
+
+/* model/notifications/templates.js */
+"{member} proposed to change the group distribution date. Vote now!" = "{member} proposed to change the group distribution date. Vote now!";
 
 /* model/notifications/templates.js */
 "{member} proposed to change the group mincome. Vote now!" = "{member} proposed to change the group mincome. Vote now!";

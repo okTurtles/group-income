@@ -733,7 +733,10 @@ sbp('chelonia/defineContract', {
         const typeToSubTypeMap = {
           [PROPOSAL_INVITE_MEMBER]: 'ADD_MEMBER',
           [PROPOSAL_REMOVE_MEMBER]: 'REMOVE_MEMBER',
-          [PROPOSAL_GROUP_SETTING_CHANGE]: 'CHANGE_MINCOME',
+          [PROPOSAL_GROUP_SETTING_CHANGE]: {
+            mincomeAmount: 'CHANGE_MINCOME',
+            distributionDate: 'CHANGE_DISTRIBUTION_DATE'
+          }[data.proposalData.setting],
           [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'CHANGE_VOTING_RULE',
           [PROPOSAL_GENERIC]: 'GENERIC'
         }
