@@ -215,6 +215,10 @@ export default ({
       right: 0.5rem;
       top: auto;
       bottom: calc(100% + 1.5rem);
+
+      &.is-active {
+        min-width: 13rem;
+      }
     }
   }
 
