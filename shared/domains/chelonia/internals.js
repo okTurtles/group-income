@@ -254,20 +254,19 @@ export default (sbp('sbp/selectors/register', {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
         // TODO: fetch events from localStorage instead of server if we have them
         const events = await sbp('chelonia/out/eventsAfter', contractID, recent || contractID)
-        // checks if the list of events consist of latest event
-        // TODO: if we use findLastIndex, it will be more clean
-        //       but it needs upgrade Cypress version to 9.7.0 which is of bad performance
+        // Sanity check: verify event with latest hash exists in list of events
+        // TODO: using findLastIndex, it will be more clean but it needs Cypress 9.7+ which has bad performance
         //       https://docs.cypress.io/guides/references/changelog#9-7-0
         //       https://github.com/cypress-io/cypress/issues/22868
-        let isLatestExist = false
+        let latestHashFound = false
         for (let i = events.length - 1; i >= 0; i--) {
           if (GIMessage.deserialize(events[i]).hash() === latest) {
-            isLatestExist = true
+            latestHashFound = true
             break
           }
         }
-        if (!isLatestExist) {
-          throw new ChelErrorUnexpected()
+        if (!latestHashFound) {
+          throw new ChelErrorUnrecoverable(`expected hash ${latest} in list of events for contract ${contractID}`)
         }
         // remove the first element in cases where we are not getting the contract for the first time
         state.contracts[contractID] && events.shift()
