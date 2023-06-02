@@ -509,7 +509,7 @@ export default (sbp('sbp/selectors/register', {
     if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
       const joinKeyId = findKeyIdByName(contractState, 'csk')
       joinKey = {
-        id: contractState._vm.authorizedKeys[joinKeyId],
+        id: joinKeyId,
         foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
         data: contractState._vm.authorizedKeys[joinKeyId].data
       }

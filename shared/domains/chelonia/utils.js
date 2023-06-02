@@ -125,18 +125,6 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
         this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
       }
     }
-
-    // Is this a foreign key in this contract? If so, flag it in the
-    // other contract to mirror operations
-    if (key.foreignKey) {
-      const fkUrl = new URL(key.foreignKey)
-      const foreignContract = fkUrl.pathname
-      const foreignKeyName = fkUrl.searchParams.get('keyName')
-
-      if (!foreignContract || !foreignKeyName) throw new Error('Invalid foregin key: missing contract or key name')
-
-      this.setPostSyncOp(contractID, `syncAndMirrorKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`, ['chelonia/private/in/syncContractAndWatchKeys', foreignContract, foreignKeyName, contractID, key.id])
-    }
   }
 
   console.log('@@@@@ KAP KL ' + decryptedKeys.length + ' cID ' + contractID)
@@ -147,5 +135,43 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
     for (const [id, value] of decryptedKeys) {
       this.config.reactiveSet(state._volatile.keys, id, value)
     }
+  }
+
+  subscribeToForeignKeyContracts.call(this, contractID, state)
+}
+
+export const subscribeToForeignKeyContracts = function (contractID: string, state: Object) {
+  try {
+    // $FlowFixMe[incompatible-call]
+    Object.values((state._vm.authorizedKeys: { [x: string]: GIKey })).filter((key) => !!((key: any): GIKey).foreignKey).forEach((key: GIKey) => {
+      const foreignKey = String(key.foreignKey)
+      const fkUrl = new URL(foreignKey)
+      const foreignContract = fkUrl.pathname
+      const foreignKeyName = fkUrl.searchParams.get('keyName')
+
+      if (!foreignContract || !foreignKeyName) {
+        console.warn('Invalid foregin key: missing contract or key name', { contractID, keyId: key.id })
+        return
+      }
+
+      const signingKey = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_DEL], ['sig'], key.ringLevel, Object.keys(this.config.transientSecretKeys))
+      const canMirrorOperations = !!signingKey
+
+      // If we cannot mirror operations, then there is nothing left to do
+      if (!canMirrorOperations) return
+
+      const rootState = sbp(this.config.stateSelector)
+
+      // If the key is already being watched, do nothing
+      if (Array.isArray(rootState?.[foreignContract]?._volatile?.watch)) {
+        if (rootState[foreignContract]._volatile.watch.find((v) =>
+          v[0] === key.name && v[1] === contractID
+        )) return
+      }
+
+      this.setPostSyncOp(contractID, `syncAndMirrorKeys-${foreignContract}-${encodeURIComponent(foreignKeyName)}`, ['chelonia/private/in/syncContractAndWatchKeys', foreignContract, foreignKeyName, contractID, key.id])
+    })
+  } catch (e) {
+    console.warn('Error at subscribeToForeignKeyContracts: ' + (e.message || e))
   }
 }

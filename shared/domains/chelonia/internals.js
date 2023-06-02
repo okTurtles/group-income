@@ -583,30 +583,50 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', CONTRACT_IS_SYNCING, contractID, false)
     }
   },
-  'chelonia/private/in/syncContractAndWatchKeys': function (contractID: string, keyName: string, externalContractID: string, keyId: string) {
-    return sbp('chelonia/queueInvocation', contractID, [
+  'chelonia/private/in/syncContractAndWatchKeys': async function (contractID: string, keyName: string, externalContractID: string, keyId: string) {
+    const state = sbp(this.config.stateSelector)
+    const externalContractState = state[externalContractID]
+
+    const signingKey = findSuitableSecretKeyId(externalContractID, [GIMessage.OP_KEY_DEL], ['sig'], externalContractState._vm.authorizedKeys[keyId].ringLevel, Object.keys(this.config.transientSecretKeys))
+    const canMirrorOperations = !!signingKey
+
+    // Only sync contract if we are actually able to mirror key operations
+    // This avoids exponentially growing the number of contracts that we need
+    // to be subscribed to.
+    // Otherwise, every time there is a foreign key, we would subscribe to that
+    // contract, plus the contracts referenced by the foreign keys of that
+    // contract, plus those contracts referenced by the foreign keys of those
+    // other contracts and so on.
+    if (!canMirrorOperations) {
+      console.info('[chelonia/private/in/syncContractAndWatchKeys]: Returning as operations cannot be mirrored', { contractID, keyName, externalContractID, keyId })
+      return
+    }
+
+    await sbp('chelonia/queueInvocation', contractID, [
       'chelonia/private/in/syncContract', contractID
-    ]).then(() => {
-      const state = sbp(this.config.stateSelector)
-      const contractState = state[contractID]
+    ])
 
-      // Does the key exist? If not, it has probably been removed and instead
-      // of waiting, we need to remove it ourselves
-      if (contractState._vm?.authorizedKeys && !Object.values(contractState._vm.authorizedKeys).find((k) => ((k: any): GIKey).name === keyName)) {
-        const signingKeyId = findSuitableSecretKeyId(state[externalContractID], [GIMessage.OP_KEY_DEL], ['sig'], state[externalContractID]._vm?.authorizedKeys?.[keyId].ringLevel, Object.keys(this.config.transientSecretKeys))
-        const externalContractName = state.contracts[externalContractID]?.type
+    const contractState = state[contractID]
 
-        if (externalContractName && signingKeyId) {
-          sbp('chelonia/out/keyDel', { contractID: externalContractID, contractName: externalContractName, data: [keyId], signingKeyId })
-        }
+    // Does the key exist? If not, it has probably been removed and instead
+    // of waiting, we need to remove it ourselves
+    if (contractState._vm?.authorizedKeys && !Object.values(contractState._vm.authorizedKeys).find((k) => ((k: any): GIKey).name === keyName)) {
+      const signingKeyId = findSuitableSecretKeyId(state[externalContractID], [GIMessage.OP_KEY_DEL], ['sig'], state[externalContractID]._vm?.authorizedKeys?.[keyId].ringLevel, Object.keys(this.config.transientSecretKeys))
+      const externalContractName = state.contracts[externalContractID]?.type
+
+      if (externalContractName && signingKeyId) {
+        sbp('chelonia/out/keyDel', { contractID: externalContractID, contractName: externalContractName, data: [keyId], signingKeyId })
       }
+    }
 
-      // Add keys to watchlist as another contract is waiting on these
-      // operations
-      if (!contractState._volatile) contractState._volatile = { watch: [[keyName, externalContractID]] }
-      if (!contractState._volatile.watch) contractState._volatile.watch = [[keyName, externalContractID]]
+    // Add keys to watchlist as another contract is waiting on these
+    // operations
+    if (!contractState._volatile) {
+      this.config.reactiveSet(contractState, '_volatile', Object.create(null, { watch: { value: [[keyName, externalContractID]], configurable: true, enumerable: true, writable: true } }))
+    } else {
+      if (!contractState._volatilewatch) this.config.reactiveSet(contractState._volatile, 'watch', [[keyName, externalContractID]])
       if (Array.isArray(contractState._volatile.watch) && !contractState._volatile.watch.find((v) => v[0] === keyName && v[1] === externalContractID)) contractState._volatile.watch.push([keyName, externalContractID])
-    })
+    }
   },
   'chelonia/private/respondToKeyRequests': async function (contractID: string) {
     const state = sbp(this.config.stateSelector)
