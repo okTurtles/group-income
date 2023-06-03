@@ -43,7 +43,7 @@ page-section.c-section(:title='L("Invite links")')
           link-to-copy.c-invite-link-wrapper(:link='item.inviteLink')
 
           menu-parent.c-invite-link-options-mobile.hide-tablet
-            menu-trigger.is-icon-small(ref='webShareFallbackBtn')
+            menu-trigger.is-icon-small
               i.icon-ellipsis-v
             menu-content.c-dropdown-invite-link
               ul
@@ -54,7 +54,7 @@ page-section.c-section(:title='L("Invite links")')
                 )
                   i18n Copy link
                 menu-item(
-                  v-if='item.status.isActive'
+                  v-if='showRevokeLinkMenu(item)'
                   tag='button'
                   item-id='revoke'
                   icon='times'
@@ -68,13 +68,14 @@ page-section.c-section(:title='L("Invite links")')
             :class='{ "is-danger": item.status.isExpired || item.status.isRevoked }'
           ) {{ item.expiryInfo }}
         td.c-action
-          menu-parent(v-if='!item.isAnyoneLink & item.status.isActive')
+          menu-parent(v-if='showRevokeLinkMenu(item)')
             menu-trigger.is-icon(:aria-label='L("Show list")')
               i.icon-ellipsis-v
 
             menu-content.c-dropdown-action
               ul
                 menu-item(
+                  v-if='!item.isAnyoneLink'
                   tag='button'
                   item-id='original'
                   @click='handleSeeOriginal(item.id)'
@@ -149,7 +150,8 @@ export default ({
     ...mapGetters([
       'currentGroupState',
       'ourUsername',
-      'ourUserDisplayName'
+      'ourUserDisplayName',
+      'groupSettings'
     ]),
     ...mapState([
       'currentGroupId'
@@ -171,6 +173,9 @@ export default ({
       }
 
       return options[this.ephemeral.selectbox.selectedOption]()
+    },
+    isUserGroupCreator () {
+      return this.ourUsername === this.groupSettings.groupCreator
     }
   },
   methods: {
@@ -271,6 +276,9 @@ export default ({
           isRevoked: isInviteRevoked
         }
       }
+    },
+    showRevokeLinkMenu (inviteItem) {
+      return inviteItem.isAnyoneLink ? this.isUserGroupCreator : inviteItem.status.isActive
     },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {

@@ -10,7 +10,7 @@
 
 ## About
 
-[Group Income](https://groupincome.org/) is a fair income sharing mechanism that allows groups to provide their members a minimum income.
+[Group Income](https://groupincome.org/) is voluntary, decentralized, end-to-end encrypted [basic income](https://search.brave.com/search?q=basic+income) for you and your friends.
 
 ## Getting Started
 
@@ -50,7 +50,7 @@ Some issues have [bounties](https://github.com/okTurtles/group-income/issues?q=i
 
 - Anyone can post a bounty by donating to this project and letting us know which issue you'd like the bounty to be applied to.
 - Non-contractors can receive bounties by submitting PRs for them. If we approve and merge the PR, you get the bounty!
-- If there's an issue you'd like okTurtles to prioritize by posting a bounty to it, feel free to let us know via [Gitter](https://gitter.im/okTurtles/group-income) or [Slack](https://join.slack.com/t/okturtles/shared_invite/zt-jc5x4uck-0YqMX5vVGZ9koR2b6LCwiw)!
+- If there's an issue you'd like okTurtles to prioritize by posting a bounty to it, feel free to let us know via [Slack](https://join.slack.com/t/okturtles/shared_invite/zt-10jmpfgxj-tXQ1MKW7t8qqdyY6fB7uyQ)!
 
 Any open contractor positions are posted to: [Open Positions](https://groupincome.org/positions/)
 
