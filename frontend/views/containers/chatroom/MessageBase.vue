@@ -268,7 +268,6 @@ export default ({
 }
 
 .c-text {
-  max-width: 32rem;
   word-break: break-word; // too much long words will break
   white-space: pre-line; // break \n to a new line
   margin: 0;
