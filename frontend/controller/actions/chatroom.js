@@ -8,7 +8,6 @@ import { omit } from '@model/contracts/shared/giLodash.js'
 import { encryptedAction } from './utils.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import type { GIRegParams } from './types.js'
-import { ChelErrorUnexpected } from '../../../shared/domains/chelonia/errors.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/chatroom/create': async function (params: GIRegParams) {
@@ -33,10 +32,26 @@ export default (sbp('sbp/selectors/register', {
       // TODO: REMOVE
       // const rootState = sbp('state/vuex/state')
 
-      const joinKey = params.options?.joinKey
+      let joinKeyOpts = params.options?.joinKey
 
-      if (!joinKey) {
-        throw new ChelErrorUnexpected('joinKey is required to create a chatroom')
+      if (!joinKeyOpts) {
+        const joinKey = keygen(EDWARDS25519SHA512BATCH)
+        const joinKeyId = keyId(joinKey)
+        const joinKeyP = serializeKey(joinKey, false)
+        const joinKeyS = encrypt(CEK, serializeKey(joinKey, true))
+
+        joinKeyOpts = {
+          id: joinKeyId,
+          foreignKey: undefined,
+          meta: {
+            private: {
+              keyId: CEKid,
+              content: joinKeyS,
+              shareable: true
+            }
+          },
+          data: joinKeyP
+        }
       }
 
       console.log('Chatroom create', {
@@ -76,12 +91,13 @@ export default (sbp('sbp/selectors/register', {
             data: CEKp
           },
           {
-            id: joinKey.id,
-            name: '#joinKey-' + joinKey.id,
+            id: joinKeyOpts.id,
+            name: '#joinKey-' + joinKeyOpts.id,
             purpose: ['sig'],
             ringLevel: Number.MAX_SAFE_INTEGER,
             permissions: [GIMessage.OP_KEY_REQUEST],
-            data: joinKey.data
+            meta: joinKeyOpts.meta,
+            data: joinKeyOpts.data
           }
         ],
         contractName: 'gi.contracts/chatroom'
@@ -129,13 +145,14 @@ export default (sbp('sbp/selectors/register', {
             data: CEKp
           },
           {
-            id: joinKey.id,
-            name: '#joinKey-' + joinKey.id,
+            id: joinKeyOpts.id,
+            name: '#joinKey-' + joinKeyOpts.id,
             purpose: ['sig'],
             ringLevel: Number.MAX_SAFE_INTEGER,
-            type: joinKey.type,
-            data: joinKey.data,
-            permissions: [GIMessage.OP_KEY_REQUEST]
+            permissions: [GIMessage.OP_KEY_REQUEST],
+            foreignKey: joinKeyOpts.foreignKey,
+            data: joinKeyOpts.data,
+            meta: joinKeyOpts.meta
           }
         ],
         contractName: 'gi.contracts/chatroom'

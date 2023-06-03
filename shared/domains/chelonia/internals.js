@@ -249,9 +249,6 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_KEY_SHARE] (v: GIOpKeyShare) {
         console.log('Processing OP_KEY_SHARE')
         // TODO: Prompt to user if contract not in pending
-        if (message.originatingContractID() !== contractID && v.contractID !== message.originatingContractID()) {
-          throw new Error('External contracts can only set keys for themselves')
-        }
 
         delete self.postSyncOperations[contractID]?.['pending-keys-for-' + v.contractID]
 
@@ -413,9 +410,13 @@ export default (sbp('sbp/selectors/register', {
         }
         validateKeyDelPermissions(contractID, signingKey, state, v)
         v.forEach((keyId) => {
-          const key = state._vm.authorizedKeys[v]
-          delete state._vm.authorizedKeys[v]
-          if (state._volatile?.keys) { delete state._volatile.keys[v] }
+          const key = state._vm.authorizedKeys[keyId]
+          if (!key) {
+            console.warn('Attempted to delete non-existent key from contract', { contractID, keyId })
+            return
+          }
+          delete state._vm.authorizedKeys[keyId]
+          if (state._volatile?.keys) { delete state._volatile.keys[keyId] }
 
           const rootState = sbp(config.stateSelector)
 

@@ -17,7 +17,14 @@ sbp('sbp/selectors/register', {
   // creating a new contract (for example, when we create a group) or to share
   // keys of a child contract with a parent contract (such as sharing the keys to
   // a chat room with its parent group contract)
-  'gi.actions/out/shareVolatileKeys': async ({ destinationContractID, destinationContractName, contractID, keyIds }) => {
+  'gi.actions/out/shareVolatileKeys': async ({
+    destinationContractID,
+    destinationContractName,
+    originatingContractID,
+    originatingContractName,
+    contractID,
+    keyIds
+  }) => {
     if (destinationContractID === contractID) {
       return
     }
@@ -26,12 +33,15 @@ sbp('sbp/selectors/register', {
 
     if (contractState?._volatile?.keys && Object.keys(contractState?._volatile?.keys).length) {
       const state = await sbp('chelonia/latestContractState', destinationContractID)
+      const originatingContractState = originatingContractID && originatingContractID !== destinationContractID ? await sbp('chelonia/latestContractState', originatingContractID) : state
 
       const CEKid = findKeyIdByName(state, 'cek')
-      const CSKid = findKeyIdByName(state, 'csk')
+      const CSKid = findKeyIdByName(originatingContractState, 'csk')
 
-      const CEK = deserializeKey(state?._volatile?.keys?.[CEKid])
-      if (!CEK) throw new Error('Missing CEK; unable to proceed sharing keys')
+      if (!state?._vm?.authorizedKeys?.[CEKid]) {
+        throw new Error('Missing CEK; unable to proceed sharing keys')
+      }
+      const CEK = deserializeKey(state._vm.authorizedKeys[CEKid].data)
 
       const keysToShare = Array.isArray(keyIds) ? pick(contractState._volatile.keys, keyIds) : keyIds === '*' ? contractState._volatile.keys : null
 
@@ -42,6 +52,8 @@ sbp('sbp/selectors/register', {
       await sbp('chelonia/out/keyShare', {
         destinationContractID,
         destinationContractName,
+        originatingContractID,
+        originatingContractName,
         data: {
           contractID,
           keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
