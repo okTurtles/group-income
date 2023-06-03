@@ -382,6 +382,13 @@ export default (sbp('sbp/selectors/register', {
         },
         // 'mutation' is an object that's similar to 'message', but not identical
         [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
+          if (contract.actions[action].sideEffect) {
+            state = state || contract.state(mutation.contractID)
+            const gProxy = gettersProxy(state, contract.getters)
+            await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
+          }
+          // since both /process and /sideEffect could call /pushSideEffect, we make sure
+          // to process the side effects on the stack after calling /sideEffect.
           const sideEffects = this.sideEffectStack(mutation.contractID)
           while (sideEffects.length > 0) {
             const sideEffect = sideEffects.shift()
@@ -392,11 +399,6 @@ export default (sbp('sbp/selectors/register', {
               this.sideEffectStacks[mutation.contractID] = [] // clear the side effects
               throw e
             }
-          }
-          if (contract.actions[action].sideEffect) {
-            state = state || contract.state(mutation.contractID)
-            const gProxy = gettersProxy(state, contract.getters)
-            await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
           }
         }
       }))
@@ -487,8 +489,8 @@ export default (sbp('sbp/selectors/register', {
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
-  'chelonia/out/eventsSince': async function (contractID: string, since: string) {
-    const events = await fetch(`${this.config.connectionURL}/eventsSince/${contractID}/${since}`)
+  'chelonia/out/eventsAfter': async function (contractID: string, since: string) {
+    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
@@ -521,11 +523,6 @@ export default (sbp('sbp/selectors/register', {
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
-    }
-  },
-  'chelonia/currentContractState': function (contractID: string) {
-    if (sbp(this.config.stateSelector)[contractID]) {
-      return cloneDeep(sbp(this.config.stateSelector)[contractID])
     }
   },
   'chelonia/latestContractState': async function (contractID: string, options = { forceSync: false }) {
@@ -589,7 +586,7 @@ export default (sbp('sbp/selectors/register', {
       manifest: manifestHash,
       signatureFn
     })
-    hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
+    hooks?.prepublishContract?.(contractMsg)
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions, signatureFn)
     const contractID = contractMsg.hash()
     console.log('Register contract, sending action', {
@@ -810,7 +807,7 @@ export default (sbp('sbp/selectors/register', {
     const payload = (data: GIOpKeyRequestSeen)
     const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
     const signatureFn = signingKey ? signatureFnBuilder(signingKey) : undefined
-    const msg = GIMessage.createV1_0({
+    let message = GIMessage.createV1_0({
       contractID,
       previousHEAD,
       op: [
@@ -820,10 +817,10 @@ export default (sbp('sbp/selectors/register', {
       manifest: manifestHash,
       signatureFn
     })
-    hooks && hooks.prepublish && hooks.prepublish(msg)
-    await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
-    hooks && hooks.postpublish && hooks.postpublish(msg)
-    return msg
+    hooks?.prepublish?.(message)
+    message = await sbp('chelonia/private/out/publishEvent', message, publishOptions, signatureFn)
+    hooks?.postpublish?.(message)
+    return message
   },
   'chelonia/out/protocolUpgrade': async function () {
 
@@ -838,7 +835,7 @@ export default (sbp('sbp/selectors/register', {
 
 function contractNameFromAction (action: string): string {
   const regexResult = ACTION_REGEX.exec(action)
-  const contractName = regexResult && regexResult[2]
+  const contractName = regexResult?.[2]
   if (!contractName) throw new Error(`Poorly named action '${action}': missing contract name.`)
   return contractName
 }
@@ -863,7 +860,7 @@ async function outEncryptedOrUnencryptedAction (
   // TODO: Remove this console.log
   console.log({ unencMessage, ekid: params.encryptionKeyId, state, payload })
   const signatureFn = signingKey ? signatureFnBuilder(signingKey) : undefined
-  const message = GIMessage.createV1_0({
+  let message = GIMessage.createV1_0({
     contractID,
     previousHEAD,
     op: [
@@ -874,9 +871,9 @@ async function outEncryptedOrUnencryptedAction (
     manifest: manifestHash,
     signatureFn
   })
-  hooks && hooks.prepublish && hooks.prepublish(message)
-  await sbp('chelonia/private/out/publishEvent', message, publishOptions, signatureFn)
-  hooks && hooks.postpublish && hooks.postpublish(message)
+  hooks?.prepublish?.(message)
+  message = await sbp('chelonia/private/out/publishEvent', message, publishOptions, signatureFn)
+  hooks?.postpublish?.(message)
   return message
 }
 
