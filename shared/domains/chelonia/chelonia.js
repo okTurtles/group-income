@@ -317,8 +317,8 @@ export default (sbp('sbp/selectors/register', {
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
   //       however, note if we do that they would be processed in reverse...
-  'chelonia/out/eventsSince': async function (contractID: string, since: string) {
-    const events = await fetch(`${this.config.connectionURL}/eventsSince/${contractID}/${since}`)
+  'chelonia/out/eventsAfter': async function (contractID: string, since: string) {
+    const events = await fetch(`${this.config.connectionURL}/eventsAfter/${contractID}/${since}`)
       .then(handleFetchResult('json'))
     if (Array.isArray(events)) {
       return events.reverse().map(b64ToStr)
@@ -354,7 +354,7 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'chelonia/latestContractState': async function (contractID: string) {
-    const events = await sbp('chelonia/out/eventsSince', contractID, contractID)
+    const events = await sbp('chelonia/out/eventsAfter', contractID, contractID)
     let state = {}
     // fast-path
     try {
@@ -395,7 +395,7 @@ export default (sbp('sbp/selectors/register', {
       ],
       manifestHash
     )
-    hooks && hooks.prepublishContract && hooks.prepublishContract(contractMsg)
+    hooks?.prepublishContract?.(contractMsg)
     await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions)
     const msg = await sbp('chelonia/out/actionEncrypted', {
       action: contractName,
@@ -433,7 +433,7 @@ export default (sbp('sbp/selectors/register', {
 
 function contractNameFromAction (action: string): string {
   const regexResult = ACTION_REGEX.exec(action)
-  const contractName = regexResult && regexResult[2]
+  const contractName = regexResult?.[2]
   if (!contractName) throw new Error(`Poorly named action '${action}': missing contract name.`)
   return contractName
 }
@@ -453,7 +453,7 @@ async function outEncryptedOrUnencryptedAction (
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
-  const message = GIMessage.createV1_0(contractID, previousHEAD,
+  let message = GIMessage.createV1_0(contractID, previousHEAD,
     [
       opType,
       opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn(unencMessage)
@@ -461,9 +461,9 @@ async function outEncryptedOrUnencryptedAction (
     manifestHash
     // TODO: add the signature function here to sign the message whether encrypted or not
   )
-  hooks && hooks.prepublish && hooks.prepublish(message)
-  await sbp('chelonia/private/out/publishEvent', message, publishOptions)
-  hooks && hooks.postpublish && hooks.postpublish(message)
+  hooks?.prepublish?.(message)
+  message = await sbp('chelonia/private/out/publishEvent', message, publishOptions)
+  hooks?.postpublish?.(message)
   return message
 }
 

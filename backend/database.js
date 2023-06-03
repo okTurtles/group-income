@@ -37,7 +37,7 @@ if (!fs.existsSync(dataFolder)) {
 }
 
 sbp('sbp/selectors/register', {
-  'backend/db/streamEntriesSince': async function (contractID: string, hash: string): Promise<*> {
+  'backend/db/streamEntriesAfter': async function (contractID: string, hash: string): Promise<*> {
     let currentHEAD = await sbp('chelonia/db/latestHash', contractID)
     if (!currentHEAD) {
       throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
