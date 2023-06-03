@@ -571,6 +571,8 @@ export default (sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Only channel members can invite others to join.'))
     }
 
+    // If we are inviting someone else to join, we need to share the chatroom's keys
+    // with them so that they are able to read messages and participate
     if (username !== me) {
       await sbp('gi.actions/out/shareVolatileKeys', {
         destinationContractID: rootGetters.groupProfile(username).contractID,
