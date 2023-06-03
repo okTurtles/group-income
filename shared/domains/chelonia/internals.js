@@ -587,7 +587,7 @@ export default (sbp('sbp/selectors/register', {
     const state = sbp(this.config.stateSelector)
     const externalContractState = state[externalContractID]
 
-    const signingKey = findSuitableSecretKeyId(externalContractID, [GIMessage.OP_KEY_DEL], ['sig'], externalContractState._vm.authorizedKeys[keyId].ringLevel, Object.keys(this.config.transientSecretKeys))
+    const signingKey = findSuitableSecretKeyId(externalContractState, [GIMessage.OP_KEY_DEL], ['sig'], externalContractState._vm.authorizedKeys[keyId].ringLevel, Object.keys(this.config.transientSecretKeys))
     const canMirrorOperations = !!signingKey
 
     // Only sync contract if we are actually able to mirror key operations

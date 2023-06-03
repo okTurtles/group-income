@@ -24,7 +24,7 @@ export function encryptedAction (
   encryptionKeyName?: string,
   signingKeyName?: string
 ): Object {
-  const sendMessage = (outerParams: GIActionParams, signingKeyId: string, encryptionKeyId: string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
+  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, encryptionKeyId: string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
     return sbp('chelonia/out/actionEncrypted', {
       ...(innerParams ?? outerParams),
       signingKeyId,
@@ -46,7 +46,7 @@ export function encryptedAction (
           return Promise.resolve()
         }
 
-        const sm = sendMessage(params, signingKeyId, encryptionKeyId)
+        const sm = sendMessageFactory(params, signingKeyId, encryptionKeyId)
 
         // make sure to await here so that if there's an error we show user-facing string
         if (handler) {

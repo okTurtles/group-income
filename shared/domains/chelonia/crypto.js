@@ -281,6 +281,7 @@ export const encrypt = (inKey: Key | string, data: string): string => {
     const messageUint8 = strToBuf(data)
     const ephemeralKey = nacl.box.keyPair()
     const box = nacl.box(messageUint8, nonce, key.publicKey, ephemeralKey.secretKey)
+    // Attempt to discard the data in memory for ephemeralKey.secretKey
     ephemeralKey.secretKey.fill(0)
 
     const fullMessage = new Uint8Array(nacl.box.publicKeyLength + nonce.length + box.length)
