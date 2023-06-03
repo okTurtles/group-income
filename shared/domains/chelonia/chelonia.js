@@ -210,6 +210,13 @@ export default (sbp('sbp/selectors/register', {
         },
         // 'mutation' is an object that's similar to 'message', but not identical
         [`${contract.manifest}/${action}/sideEffect`]: async (mutation: Object, state: ?Object) => {
+          if (contract.actions[action].sideEffect) {
+            state = state || contract.state(mutation.contractID)
+            const gProxy = gettersProxy(state, contract.getters)
+            await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
+          }
+          // since both /process and /sideEffect could call /pushSideEffect, we make sure
+          // to process the side effects on the stack after calling /sideEffect.
           const sideEffects = this.sideEffectStack(mutation.contractID)
           while (sideEffects.length > 0) {
             const sideEffect = sideEffects.shift()
@@ -220,11 +227,6 @@ export default (sbp('sbp/selectors/register', {
               this.sideEffectStacks[mutation.contractID] = [] // clear the side effects
               throw e
             }
-          }
-          if (contract.actions[action].sideEffect) {
-            state = state || contract.state(mutation.contractID)
-            const gProxy = gettersProxy(state, contract.getters)
-            await contract.actions[action].sideEffect(mutation, { state, ...gProxy })
           }
         }
       }))
