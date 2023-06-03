@@ -10,7 +10,7 @@
 
 ## About
 
-[Group Income](https://groupincome.org/) is a fair income sharing mechanism that allows groups to provide their members a minimum income.
+[Group Income](https://groupincome.org/) is voluntary, decentralized, end-to-end encrypted [basic income](https://search.brave.com/search?q=basic+income) for you and your friends..
 
 ## Getting Started
 
