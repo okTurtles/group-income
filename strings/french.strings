@@ -19,9 +19,6 @@
 "Failed to update group distribution date." = "Failed to update group distribution date.";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
-"Failed to update voting rules. {codeError}" = "Failed to update voting rules. {codeError}";
-
-/* MISSING TRANSLATION - controller/actions/group.js */
 "Mincome changed" = "Mincome changed";
 
 /* MISSING TRANSLATION - controller/actions/group.js */
@@ -63,9 +60,6 @@
 /* MISSING TRANSLATION - main.js */
 "Loading events from server..." = "Loading events from server...";
 
-/* MISSING TRANSLATION - model/contracts/group.js */
-"Invalid associated proposal." = "Invalid associated proposal.";
-
 /* MISSING TRANSLATION - model/contracts/identity.js */
 "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'" = "Failed to join groups we're part of on another device. Not catastrophic, but could lead to problems. {errName}: '{errMsg}'";
 
@@ -89,6 +83,9 @@
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "A new distribution period has started. Please update your income details if they have changed." = "A new distribution period has started. Please update your income details if they have changed.";
+
+/* MISSING TRANSLATION - model/notifications/templates.js */
+"Less than 1 week left before the distribution period ends - don't forget to send payments!" = "Less than 1 week left before the distribution period ends - don't forget to send payments!";
 
 /* MISSING TRANSLATION - model/notifications/templates.js */
 "Member addition" = "Member addition";
@@ -129,9 +126,6 @@
 /* MISSING TRANSLATION - views/components/CopyableInput.vue */
 "Copy string" = "Copy string";
 
-/* MISSING TRANSLATION - views/components/GroupWelcome.vue, views/containers/group-settings/InvitationLinkModal.vue, views/containers/payments/SendThankYouModal.vue, views/containers/proposals/ProposalTemplate.vue */
-"Awesome" = "Awesome";
-
 /* MISSING TRANSLATION - views/components/VotingRulesInput.vue */
 "What percentage of members need to agree to pass a proposal?" = "What percentage of members need to agree to pass a proposal?";
 
@@ -157,6 +151,9 @@
 "Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members." = "Select which day of the month the distribution should be calculated. Every group member will need to update their mincome details before this date to ensure that the algorithm can fairly distribute available funds between group members.";
 
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
+"Proposals are how the group makes decisions. You can propose for example, to add or remove members, or to change your group’s mincome value." = "Proposals are how the group makes decisions. You can propose for example, to add or remove members, or to change your group’s mincome value.";
+
+/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
 "Voting on proposals" = "Voting on proposals";
 
 /* MISSING TRANSLATION - views/components/modal/ModalClose.vue */
@@ -164,6 +161,9 @@
 
 /* MISSING TRANSLATION - views/components/tabs/TabWrapper.vue */
 "Version" = "Version";
+
+/* MISSING TRANSLATION - views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
+"A username cannot contain whitespace." = "A username cannot contain whitespace.";
 
 /* MISSING TRANSLATION - views/containers/access/PasswordModal.vue */
 "Change Password" = "Change Password";
@@ -176,9 +176,6 @@
 
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
 "A username cannot contain uppercase letters." = "A username cannot contain uppercase letters.";
-
-/* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
-"A username cannot contain whitespace." = "A username cannot contain whitespace.";
 
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
 "A username cannot exceed {maxChars} characters." = "A username cannot exceed {maxChars} characters.";
@@ -624,9 +621,6 @@
 /* MISSING TRANSLATION - views/pages/GroupDashboard.vue */
 "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then." = "Next distribution date is on {date}. Make sure to update your {r1}income details{r2} by then.";
 
-/* MISSING TRANSLATION - views/pages/Home.vue */
-"Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. Expect bugs. {a_}Read more.{_a}" = "Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. Expect bugs. {a_}Read more.{_a}";
-
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "ALL" = "ALL";
 
@@ -733,6 +727,9 @@
 "Failed to update payment." = "La mise à jour du paiement a échoué.";
 
 /* controller/actions/group.js */
+"Failed to update voting rules. {codeError}" = "Erreur lors du changement des règles de vote. {codeError}";
+
+/* controller/actions/group.js */
 "Failed to upload the group picture. {codeError}" = "Le transfert de la photo du groupe a échoué. {codeError}";
 
 /* controller/actions/group.js */
@@ -820,6 +817,9 @@
 "Cannot remove yourself." = "Vous ne pouvez pas vous exclure vous-même.";
 
 /* model/contracts/group.js */
+"Invalid associated proposal." = "La proposition associée est invalide.";
+
+/* model/contracts/group.js */
 "Not part of the group." = "Ne fait pas partie du groupe.";
 
 /* model/contracts/group.js */
@@ -851,9 +851,6 @@
 
 /* model/notifications/templates.js */
 "Do not forget to send your pledge by {date}." = "N’oubliez pas d’envoyer votre contribution avant le {date}.";
-
-/* model/notifications/templates.js */
-"Less than 1 week left before the distribution period ends - don't forget to send payments!" = "Gweek left before the distribution period ends - don't forget to send payments!";
 
 /* model/notifications/templates.js */
 "The group has a new member. Say hi to {name}!" = "Le groupe a un nouveau membre. Souhaitez la bienvenue à {name} !";
@@ -905,6 +902,9 @@
 
 /* views/components/GroupWelcome.vue */
 "{groupName}'s avatar" = "Avatar des {groupName}";
+
+/* views/components/GroupWelcome.vue, views/containers/group-settings/InvitationLinkModal.vue, views/containers/payments/SendThankYouModal.vue, views/containers/proposals/ProposalTemplate.vue */
+"Awesome" = "Formidable";
 
 /* views/components/LinkToCopy.vue, views/containers/group-settings/InvitationsTable.vue */
 "Copy link" = "Copier le lien";
@@ -976,7 +976,7 @@
 "Save" = "Enregistrer";
 
 /* views/components/banners/BannerScoped.vue */
-"Dismiss message" = "This invite link is only available during the";
+"Dismiss message" = "Ignorer le message";
 
 /* views/components/graphs/Overview.vue */
 "Group members and their pledges" = "Les membres du groupe et leurs contributions";
@@ -1047,9 +1047,6 @@
 /* views/components/group-creation-steps/GroupRules.vue */
 "4. Voting System" = "4. Système de Vote";
 
-/* views/components/group-creation-steps/GroupRules.vue */
-"Proposals are how the group makes decisions. You can propose for example, to add or remove members, or to change your group’s mincome value." = "If you leave, you will stop having access to the {strong_}group chare how the group makes decisions. You can propose for example, to add or remove members, or to change your group’s mincome value.";
-
 /* views/components/modal/ModalClose.vue */
 "close modal" = "fermer le dialogue";
 
@@ -1067,6 +1064,9 @@
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
 "A password is required." = "Un mot de passe est requis.";
+
+/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
+"A username is required." = "Un nom d’utilisateur est requis.";
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "Username" = "Nom d’utilisateur";
@@ -1106,9 +1106,6 @@
 
 /* views/containers/access/PasswordModal.vue */
 "New Password" = "Nouveau Mot de Passe";
-
-/* views/containers/access/SignupForm.vue */
-"A username is required." = "Un nom d’utilisateur est requis.";
 
 /* views/containers/access/SignupForm.vue */
 "This username is already being used." = "Ce nom d’utilisateur est déjà utilisé.";
@@ -1228,7 +1225,7 @@
 "Create channel" = "Créer le salon";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
-"Failed to create chat channel. {reportError}" = "{reportError}";
+"Failed to create chat channel. {reportError}" = "La création de la conversation a échoué. {reportError}";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue */
 "Group channel" = "Chaîne de groupe";
@@ -1501,7 +1498,7 @@
 "Portuguese classes" = "Leçons de portugais";
 
 /* views/containers/contributions/Contribution.vue */
-"Programming" = "{member} marked Programmation";
+"Programming" = "Programmation";
 
 /* views/containers/contributions/Contribution.vue */
 "Remove" = "Supprimer";
@@ -1672,7 +1669,7 @@
 "Choose..." = "Choisir...";
 
 /* views/containers/contributions/PaymentMethods.vue */
-"Other group members will be able to use this information to send you monthly contributions." = " de vous envoyer des aides mensuelles.";
+"Other group members will be able to use this information to send you monthly contributions." = "Les autres membres du groupe pourront utiliser ces informations afin de vous envoyer des aides mensuelles.";
 
 /* views/containers/contributions/PaymentMethods.vue */
 "Other" = "Autre";
@@ -2779,9 +2776,6 @@
 "Join channel" = "Rejoignez la chaîne";
 
 /* Not currently used */
-"Leave GroupOption" = "Option";
-
-/* Not currently used */
 "Leave and Archive" = "Quitter et archiver";
 
 /* Not currently used */
@@ -2839,9 +2833,6 @@
 "Only creator can delete group message channel." = "Seul le créateur peut supprimer le canal de message de groupe.";
 
 /* Not currently used */
-"Only the channel creator can delete channe{user} missed {streak} votes" = "{user} missed {streak} votes";
-
-/* Not currently used */
 "Only the mailbox creator can create group message channel." = "Seul le créateur de la boîte aux lettres peut créer un canal de messagerie de groupe.";
 
 /* Not currently used */
@@ -2867,9 +2858,6 @@
 
 /* Not currently used */
 "Propose changing to this voting system" = "Proposer d’adopter ce système de vote";
-
-/* Not currently used */
-"Recent error: \"{errorMsg}\". Please download the logs anWaiting for approval to join {groupName}!" = "Waiting for approval to join {groupName}!";
 
 /* Not currently used */
 "Record a single payment" = "Enregistrer un seul paiement";
@@ -2905,9 +2893,6 @@
 "Show payment menu" = "Afficher le menu de paiement";
 
 /* Not currently used */
-"Showing {searchCount} {strong_}results{_strong} fInvalid associated proposal." = "La proposition associée est invalide.";
-
-/* Not currently used */
 "Support History" = "Historique du Support";
 
 /* Not currently used */
@@ -2918,9 +2903,6 @@
 
 /* Not currently used */
 "The amount cannot have more than 2 decimals" = "Le montant ne peut pas avoir plus de deux décimales";
-
-/* Not currently used */
-"The groups votAwesome" = "Formidable";
 
 /* Not currently used */
 "The main use at the moment is to be used on a fullscreen master modal that can contains other small sub modals (ex: income details)" = "Le principal usage actuel est en tant que dialogue modal en plein écran pouvant contenir d’autres dialogues modaux plus petits (ex: les détails de revenu)";
@@ -2993,9 +2975,6 @@
 
 /* Not currently used */
 "inbox" = "boîte de réception";
-
-/* Not currently used */
-"ror}" = "Erreur lors du changement des règles de vote. {codeError}";
 
 /* Not currently used */
 "{count} out of {total} members voted." = "{count} membres sur {total} ont voté.";
