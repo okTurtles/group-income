@@ -68,8 +68,8 @@ sbp('sbp/selectors/register', {
   'backend.tests/postEntry': async function (entry) {
     console.log(bold.yellow('sending entry with hash:'), entry.hash())
     const res = await sbp('chelonia/private/out/publishEvent', entry)
-    should(res).equal(entry.hash())
-    return res
+    should(res.id()).equal(entry.id())
+    return res.hash()
   }
 })
 

@@ -142,7 +142,7 @@ export default (sbp('sbp/selectors/register', {
         }
       })
       if (r.ok) {
-        return r.text()
+        return entry
       }
       if (r.status === 409) {
         if (attempt + 1 > maxAttempts) {
@@ -222,8 +222,8 @@ export default (sbp('sbp/selectors/register', {
     }
     if (processOp && !config.skipProcessing) {
       opFns[opT](opV)
-      config.postOp && config.postOp(message, state)
-      config[`postOp_${opT}`] && config[`postOp_${opT}`](message, state)
+      config.postOp?.(message, state)
+      config[`postOp_${opT}`]?.(message, state)
     }
   },
   'chelonia/private/in/enqueueHandleEvent': function (event: GIMessage) {
@@ -253,7 +253,21 @@ export default (sbp('sbp/selectors/register', {
       if (latest !== recent) {
         console.debug(`[chelonia] Synchronizing Contract ${contractID}: our recent was ${recent || 'undefined'} but the latest is ${latest}`)
         // TODO: fetch events from localStorage instead of server if we have them
-        const events = await sbp('chelonia/out/eventsSince', contractID, recent || contractID)
+        const events = await sbp('chelonia/out/eventsAfter', contractID, recent || contractID)
+        // Sanity check: verify event with latest hash exists in list of events
+        // TODO: using findLastIndex, it will be more clean but it needs Cypress 9.7+ which has bad performance
+        //       https://docs.cypress.io/guides/references/changelog#9-7-0
+        //       https://github.com/cypress-io/cypress/issues/22868
+        let latestHashFound = false
+        for (let i = events.length - 1; i >= 0; i--) {
+          if (GIMessage.deserialize(events[i]).hash() === latest) {
+            latestHashFound = true
+            break
+          }
+        }
+        if (!latestHashFound) {
+          throw new ChelErrorUnrecoverable(`expected hash ${latest} in list of events for contract ${contractID}`)
+        }
         // remove the first element in cases where we are not getting the contract for the first time
         state.contracts[contractID] && events.shift()
         for (let i = 0; i < events.length; i++) {
@@ -281,7 +295,7 @@ export default (sbp('sbp/selectors/register', {
     // Errors in mutations result in ignored messages
     // Errors in side effects result in dropped messages to be reprocessed
     try {
-      preHandleEvent && await preHandleEvent(message)
+      await preHandleEvent?.(message)
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
@@ -327,7 +341,7 @@ export default (sbp('sbp/selectors/register', {
           this.config.hooks.sideEffectError?.(e, message)
         }
         try {
-          postHandleEvent && await postHandleEvent(message)
+          await postHandleEvent?.(message)
           sbp('okTurtles.events/emit', hash, contractID, message)
           sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
         } catch (e) {

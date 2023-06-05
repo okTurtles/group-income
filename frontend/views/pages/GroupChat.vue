@@ -56,22 +56,24 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
         :args='{ numMembers: summary.numberOfUsers  }'
         data-test='channelMembers'
       ) {numMembers} members
-      | ∙
-      .is-unstyled(
-        :class='{"c-link": ourUsername === summary.attributes.creator}'
-        v-if='summary.attributes.description'
-        data-test='updateDescription'
-        @click='editDescription'
+      template(
+        v-if='summary.attributes.description || ourUsername === summary.attributes.creator'
       )
-        | {{ summary.attributes.description }}
-        i.icon-pencil-alt
+        | ∙
+        .is-unstyled(
+          v-if='summary.attributes.description'
+          :class='{"c-link": ourUsername === summary.attributes.creator}'
+          data-test='updateDescription'
+          @click='editDescription'
+        )
+          | {{ summary.attributes.description }}
+          i.icon-pencil-alt
 
-      i18n.is-unstyled(
-        v-else
-        :class='{"c-link": ourUsername === summary.attributes.creator}'
-        data-test='updateDescription'
-        @click='editDescription'
-      ) Add description
+        i18n.is-unstyled.c-link(
+          v-else
+          data-test='updateDescription'
+          @click='editDescription'
+        ) Add description
 
   template(#sidebar='')
     chat-nav(:title='L("Chat")')
@@ -220,6 +222,8 @@ export default ({
 
   .p-main {
     height: auto !important;
+    // removing width constraints only for group-chat page to take advantage of big monitors to display more of the chat (refer to: https://github.com/okTurtles/group-income/issues/1623)
+    max-width: unset !important;
   }
 }
 
