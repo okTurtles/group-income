@@ -733,12 +733,9 @@ sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
           // 'groupSettings.distributionDate': gets updated manually by calling 'updateCurrentDistribution' function(t2) in group.js
           // This logic removes the inconsistency that exists between these two from the point of time t1 till t2.
 
-          // Note: if this code gets called when we're in the period before the 1st distribution
-          //       period, then the distributionDate will get updated to the previous distribution date
-          //       (incorrectly). That in turn will cause the Payments page to update and display TODOs
-          //       before it should.
           const distributionDateInSettings = store.getters.groupSettings.distributionDate
-          if (oldPeriod && newPeriod && (newPeriod !== distributionDateInSettings)) {
+          const isCypressOrDistributionStarted = process.env.CI || store.getters.groupDistributionStarted
+          if (oldPeriod && newPeriod && (newPeriod !== distributionDateInSettings) && isCypressOrDistributionStarted) {
             sbp('gi.actions/group/updateDistributionDate', { contractID: store.state.currentGroupId })
           }
         }

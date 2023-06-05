@@ -627,6 +627,9 @@
 /* model/notifications/templates.js */
 "Distribution date change" = "Distribution date change";
 
+/* model/contracts/group.js */
+"Distribution is already started." = "Distribution is already started.";
+
 /* model/notifications/templates.js */
 "Do not forget to send your pledge by {date}." = "Do not forget to send your pledge by {date}.";
 

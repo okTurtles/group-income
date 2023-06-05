@@ -1637,18 +1637,23 @@ ${this.getErrorInfo()}`;
             distributionDate: (x) => typeof x === "string",
             allowPublicChannels: (x) => typeof x === "boolean"
           })(data);
-          if (meta.username !== getters.groupSettings.groupCreator) {
-            if ("allowPublicChannels" in data) {
-              throw new TypeError((0, import_common3.L)("Only group creator can allow public channels."));
-            } else if ("distributionDate" in data) {
-              throw new TypeError((0, import_common3.L)("Only group creator can update distribution date."));
-            }
+          const isGroupCreator = meta.username === getters.groupSettings.groupCreator;
+          if ("allowPublicChannels" in data && !isGroupCreator) {
+            throw new TypeError((0, import_common3.L)("Only group creator can allow public channels."));
+          } else if ("distributionDate" in data && !isGroupCreator) {
+            throw new TypeError((0, import_common3.L)("Only group creator can update distribution date."));
+          } else if ("distributionDate" in data && getters.groupDistributionStarted) {
+            throw new TypeError((0, import_common3.L)("Distribution is already started."));
           }
         },
         process({ contractID, meta, data }, { state, getters }) {
           const mincomeCache = "mincomeAmount" in data ? state.settings.mincomeAmount : null;
           for (const key in data) {
             import_common3.Vue.set(state.settings, key, data[key]);
+          }
+          if ("distributionDate" in data) {
+            const period = dateToPeriodStamp(addTimeToDate(data.distributionDate, -getters.groupSettings.distributionPeriodLength));
+            import_common3.Vue.set(state, "paymentsByPeriod", { [period]: Object.values(getters.groupPeriodPayments)[0] });
           }
           if (mincomeCache !== null) {
             (0, import_sbp3.default)("gi.contracts/group/pushSideEffect", contractID, [

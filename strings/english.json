@@ -208,6 +208,7 @@
   "Display Name": "Display Name",
   "Distributed: {done}": "Distributed: {done}",
   "Distribution date change": "Distribution date change",
+  "Distribution is already started.": "Distribution is already started.",
   "Do not forget to send your pledge by {date}.": "Do not forget to send your pledge by {date}.",
   "Do you make at least {amount} per month?": "Do you make at least {amount} per month?",
   "Do you make at least {groupMincomeFormatted} per month?": "Do you make at least {groupMincomeFormatted} per month?",

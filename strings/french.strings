@@ -808,6 +808,9 @@
 "Cannot remove yourself." = "Vous ne pouvez pas vous exclure vous-même.";
 
 /* model/contracts/group.js */
+"Distribution is already started." = "La distribution est déjà commencée.";
+
+/* model/contracts/group.js */
 "Invalid associated proposal." = "La proposition associée est invalide.";
 
 /* model/contracts/group.js */
