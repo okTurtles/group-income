@@ -56,7 +56,17 @@ Pull requests (PRs) must adhere to the following requirements (unless the Founat
 
 ## How to help by translating
 
-We always appreciate translation efforts, even if they're not perfect or complete! The instructions are [here](https://github.com/okTurtles/strings/blob/master/README.md#help-translate-a-language).
+1. Clone this repository locally.
+2. Download the [`strings`](https://github.com/okTurtles/strings/releases) utility for your platform.
+3. Create a branch using git locally for your changes. If you don't know how to do this, feel free to ask ChatGPT or the Internet for help.
+4. Open the [`strings/` folder](https://github.com/okTurtles/group-income/tree/master/strings).
+  - You will see files like `english.strings`, `english.json`, `french.strings`, `french.json`, etc.
+  - If you see your `<language>.strings`, open that file and begin adding translations for any strings marked `MISSING TRANSLATION`
+  - If you do not see such a file, then copy `english.strings` into another file called `<your-language>.strings`. For example, you can create `german.strings`. Then begin adding translations. Use [`french.strings`](https://github.com/okTurtles/group-income/blob/master/strings/french.strings) as an example for what to do.
+5. When you are done, save the file and run the strings command on the `frontend/` folder like this: `./strings.mac frontend/`
+6. At this point you are ready to submit a pull request.
+
+Thank you so much! Read more about the `strings` utility [here](https://github.com/okTurtles/strings/blob/master/README.md#help-translate-a-language).
 
 ## How to submit an issue
 
