@@ -195,6 +195,7 @@
   "Deleted the channel: {title}": "Deleted the channel: {title}",
   "Deleting local data...": "Deleting local data...",
   "Deleting your account will erase all your data, and remove you from the groups you belong to.": "Deleting your account will erase all your data, and remove you from the groups you belong to.",
+  "Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. Expect bugs. {a_}Read more.{_a}": "Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. Expect bugs. {a_}Read more.{_a}",
   "Description": "Description",
   "Description of the channel": "Description of the channel",
   "Design System": "Design System",

@@ -90,7 +90,7 @@
 /* views/containers/access/SignupForm.vue */
 "A username cannot contain uppercase letters." = "A username cannot contain uppercase letters.";
 
-/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
+/* views/containers/access/SignupForm.vue */
 "A username cannot contain whitespace." = "A username cannot contain whitespace.";
 
 /* views/containers/access/SignupForm.vue */
@@ -102,7 +102,7 @@
 /* views/containers/access/SignupForm.vue */
 "A username cannot start or end with an underscore." = "A username cannot start or end with an underscore.";
 
-/* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue */
+/* views/containers/access/SignupForm.vue */
 "A username is required." = "A username is required.";
 
 /* views/pages/Payments.vue */
@@ -587,6 +587,9 @@
 
 /* views/containers/user-settings/UserProfile.vue */
 "Deleting your account will erase all your data, and remove you from the groups you belong to." = "Deleting your account will erase all your data, and remove you from the groups you belong to.";
+
+/* views/pages/Home.vue */
+"Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. Expect bugs. {a_}Read more.{_a}" = "Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. Expect bugs. {a_}Read more.{_a}";
 
 /* views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue */
 "Description" = "Description";

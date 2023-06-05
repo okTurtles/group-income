@@ -53,7 +53,9 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
 
   footer.c-footer(v-if='!isLoggedIn')
     banner-simple.c-demo-warning(severity='warning')
-      i18n This is a Demo! Your data will be deleted! Accounts don't have passwords! Nothing is encrypted!
+      i18n(
+        :args='{ a_:`<a class="link" href="https://groupincome.org/beta-testing/" target="_blank">`, _a: "</a>" }'
+      ) Demo site! Data will be deleted eventually, possibly without warning. Some functionality is limited: passwords don't protect accounts, and nothing is encrypted. {a_}Read more.{_a}
 </template>
 
 <script>

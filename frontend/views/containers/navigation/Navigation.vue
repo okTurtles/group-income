@@ -60,7 +60,7 @@ nav.c-navigation(
 
           i18n(
             tag='a'
-            :href='ALLOWED_URLS.FAQ_PAGE'
+            :href='ALLOWED_URLS.COMMUNITY_PAGE'
             target='_blank'
             rel='noopener noreferrer'
           ) Help &amp; Feedback
