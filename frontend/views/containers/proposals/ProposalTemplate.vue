@@ -32,7 +32,7 @@
         i18n Members of your group will now be asked to vote.
         span(v-safe-html='confirmationVotingExplanation')
 
-      .buttons(:class='{ "is-centered": isConfirmation }')
+      .buttons(v-if='!hideCallToActions' :class='{ "is-centered": isConfirmation }')
         button.is-outlined(
           key='back'
           v-if='!isConfirmation'
@@ -79,7 +79,7 @@
           data-test='finishBtn'
         ) Awesome
 
-    template(slot='footer' v-if='!isConfirmation')
+    template(slot='footer' v-if='!hideCallToActions && !isConfirmation')
       .c-footer
         i.icon-vote-yea
         span(v-if='groupShouldPropose' v-safe-html='footerVotingExplanation')
@@ -114,6 +114,10 @@ export default ({
     maxSteps: {
       type: Number,
       required: true
+    },
+    hideCallToActions: {
+      type: Boolean,
+      default: false
     },
     variant: {
       validator (value) {
