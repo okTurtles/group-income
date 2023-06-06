@@ -292,7 +292,7 @@ export default ({
       const archivedProposals = await sbp('gi.db/archive/load', key) || []
       const proposalItemExists = archivedProposals.length > 0 || archivedProposals.some(entry => {
         const { data } = entry[1]
-        
+
         return data.proposalType === PROPOSAL_INVITE_MEMBER &&
           data.proposalData.member === invitee
       })
