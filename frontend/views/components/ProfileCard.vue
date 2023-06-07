@@ -119,21 +119,19 @@ export default ({
   computed: {
     ...mapGetters([
       'ourUsername',
-      'groupProfile',
       'groupProfiles',
       'groupSettings',
       'globalProfile',
       'groupShouldPropose',
       'ourContributionSummary',
       'ourPrivateDirectMessages',
-      'currentIdentityState',
       'directMessageIDFromUsername'
     ]),
     isSelf () {
       return this.username === this.ourUsername
     },
     profile () {
-      return this.$store.getters.globalProfile(this.username)
+      return this.globalProfile(this.username)
     },
     userGroupProfile () {
       return this.groupProfiles[this.username]
