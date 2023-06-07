@@ -25,6 +25,13 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
               data-test='renameChannel'
             )
               i18n Rename
+            menu-item(
+              v-if='ourUsername === summary.attributes.creator && !isDirectMessage()'
+              @click='editDescription'
+              data-test='updateDescription'
+            )
+              i18n(v-if='!summary.attributes.description') Add description
+              i18n(v-else) Update description
             menu-item(v-if='!isDirectMessage()' @click='openModal("ChatMembersAllModal")')
               i18n Members
             menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
@@ -163,9 +170,7 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
     editDescription () {
-      if (this.ourUsername === this.summary.attributes.creator) {
-        this.openModal('EditChannelDescriptionModal')
-      }
+      this.openModal('EditChannelDescriptionModal')
     }
   },
   watch: {
