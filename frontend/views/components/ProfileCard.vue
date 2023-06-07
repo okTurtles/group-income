@@ -88,10 +88,10 @@ import AvatarUser from '@components/AvatarUser.vue'
 import UserName from '@components/UserName.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
+import DMMixin from '@containers/chatroom/DMMixin.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
-import { PROFILE_STATUS, CHATROOM_PRIVACY_LEVEL } from '~/frontend/model/contracts/shared/constants.js'
-import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
+import { PROFILE_STATUS } from '~/frontend/model/contracts/shared/constants.js'
 
 export default ({
   name: 'ProfileCard',
@@ -107,6 +107,9 @@ export default ({
       default: false
     }
   },
+  mixins: [
+    DMMixin
+  ],
   components: {
     AvatarUser,
     ModalClose,
@@ -161,28 +164,13 @@ export default ({
     },
     sendMessage () {
       if (!this.ourPrivateDirectMessages[this.username]) {
-        sbp('gi.actions/mailbox/createDirectMessage', {
-          contractID: this.currentIdentityState.attributes.mailbox,
-          data: {
-            privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
-            usernames: [this.username]
-          }
-        })
+        this.createPrivateDM(this.username)
       } else {
         const chatRoomId = this.directMessageIDFromUsername(this.username)
         if (this.ourPrivateDirectMessages[this.username].hidden) {
-          sbp('gi.actions/mailbox/setDirectMessageVisibility', {
-            contractID: this.currentIdentityState.attributes.mailbox,
-            data: {
-              contractID: chatRoomId,
-              hidden: false
-            }
-          })
+          this.setDMVisibility(chatRoomId, false)
         } else {
-          this.$router.push({
-            name: 'GroupChatConversation',
-            params: { chatRoomId }
-          }).catch(logExceptNavigationDuplicated)
+          this.redirect(chatRoomId)
         }
       }
       this.toggleTooltip()
