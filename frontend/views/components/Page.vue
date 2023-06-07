@@ -183,13 +183,6 @@ $pagePaddingDesktop: 5.5rem;
   display: flex;
   align-items: center;
 
-  > span {
-    width: fit-content;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
   @include phone {
     max-width: 65vw;
   }

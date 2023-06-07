@@ -10,7 +10,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
         )
       i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
       | {{summary.title}}
-      menu-parent(v-if='summary.isJoined')
+      menu-parent.c-menu-parent(v-if='summary.isJoined')
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
 
@@ -231,6 +231,7 @@ export default ({
   text-transform: capitalize;
   display: flex;
   align-items: center;
+  position: relative;
 
   .c-group-i {
     margin-right: 0.5rem;
@@ -240,6 +241,7 @@ export default ({
 
   .c-menu {
     margin-left: 0.5rem;
+    margin-right: 0.5rem;
   }
 
   .c-header {
@@ -256,8 +258,6 @@ export default ({
     min-width: 17.5rem;
     font-size: $size_4;
     font-weight: 400;
-
-    @extend %floating-panel;
 
     @include desktop {
       left: -6.8rem;
@@ -326,5 +326,16 @@ export default ({
 
 .avatar-wrapper {
   margin-right: 0.5rem;
+}
+
+.c-menu-parent.c-menu {
+  @include tablet {
+    position: unset;
+  }
+
+  .c-responsive-menu {
+    left: 0;
+    top: 2.5rem;
+  }
 }
 </style>

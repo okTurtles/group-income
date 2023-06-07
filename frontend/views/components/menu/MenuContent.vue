@@ -2,7 +2,6 @@
 .c-content(
   :class='{ "is-active": isActive }'
   data-test='menuContent'
-  :style='posStyle'
 )
   .c-content-wrapper(
     v-if='isActive'
