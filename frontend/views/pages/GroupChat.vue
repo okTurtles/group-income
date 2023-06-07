@@ -331,11 +331,11 @@ export default ({
 .c-menu-parent.c-menu {
   @include tablet {
     position: unset;
-  }
 
-  .c-responsive-menu {
-    left: 0;
-    top: 2.5rem;
+    .c-responsive-menu {
+      left: 0;
+      top: 2.5rem;
+    }
   }
 }
 </style>
