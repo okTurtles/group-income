@@ -115,7 +115,9 @@ export default ({
   methods: {
     humanDate,
     handleIncomeClick (e) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
+      if (e.target.classList.contains('js-btnInvite')) {
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
+      }
     },
     closeBanner () {
       localStorage.setItem(this.bannerStorageKey, true)
