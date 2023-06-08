@@ -1,7 +1,7 @@
 <template lang='pug'>
-page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDirectMessage()')
+page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
   template(#header='')
-    .c-header
+    .c-header(data-test='channelName')
       .avatar-wrapper(v-if='summary.picture')
         avatar(
           :src='summary.picture'
