@@ -1,6 +1,7 @@
 <template lang="pug">
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
-  template(#title='') {{ groupSettings.groupName }}
+  template(#title='')
+    span {{ groupSettings.groupName }}
 
   banner-simple(severity='warning' class='c-banner' v-if='showBanner')
     i18n(

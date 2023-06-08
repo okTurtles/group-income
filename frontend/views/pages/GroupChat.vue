@@ -9,7 +9,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
           size='sm'
         )
       i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
-      | {{summary.title}}
+      span {{summary.title}}
       menu-parent.c-menu-parent(v-if='summary.isJoined')
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
@@ -237,6 +237,7 @@ export default ({
   display: flex;
   align-items: center;
   position: relative;
+  max-width: 100%;
 
   .c-group-i {
     margin-right: 0.5rem;
@@ -339,6 +340,7 @@ export default ({
 
     .c-responsive-menu {
       left: 0;
+      right: auto;
       top: 2.5rem;
     }
   }

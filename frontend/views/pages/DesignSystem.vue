@@ -4,7 +4,8 @@ page(
   pageTestHeaderName='designSystemTitle'
   class='p-design-system'
 )
-  template(#title='') Design System
+  template(#title='')
+    span Design System
   template(#description='')
     | A design system exists to help you build more cohesive interfaces.
     br

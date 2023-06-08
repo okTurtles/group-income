@@ -6,7 +6,8 @@ page(
   :data-test-date='humanDate(Date.now())'
   v-if='ourGroupProfile'
 )
-  template(#title='') {{ L('Payments') }}
+  template(#title='')
+    span {{ L('Payments') }}
 
   template(#sidebar='' v-if='showTabSelectionMenu || paymentsListData.length > 0')
     month-overview

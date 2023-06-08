@@ -108,7 +108,7 @@ $pagePaddingDesktop: 5.5rem;
   grid-template-rows: auto minmax(0, 1fr);
 
   @include desktop {
-    grid-template-columns: 1fr $rightSideWidth;
+    grid-template-columns: minmax(0, 1fr) $rightSideWidth;
     grid-template-areas:
       "p-header p-sidebar"
       "p-main p-sidebar";
@@ -182,6 +182,23 @@ $pagePaddingDesktop: 5.5rem;
 .p-title {
   display: flex;
   align-items: center;
+
+  & > span {
+    max-width: 100%;
+
+    & > span {
+      display: block;
+      max-width: 100%;
+    }
+
+    & > span,
+    & > .c-header > span {
+      width: fit-content;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
 
   @include phone {
     max-width: 65vw;

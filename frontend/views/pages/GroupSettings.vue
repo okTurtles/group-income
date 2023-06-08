@@ -1,6 +1,7 @@
 <template lang='pug'>
 page.c-page
-  template(#title='') {{ L('Group Settings') }}
+  template(#title='')
+    span {{ L('Group Settings') }}
   template(#description='')
     p.p-descritpion.has-text-1 {{ L('Changes to these settings will be visible to all group members') }}
 
