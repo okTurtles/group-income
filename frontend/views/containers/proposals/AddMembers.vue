@@ -96,11 +96,11 @@ export default ({
       'ourUsername'
     ]),
     warningBannerArgs () {
-      return { a_:`<a class="link" href="${ALLOWED_URLS.WIKIPEDIA_DUMBARS_NUMBER}" target="_blank">`, _a: "</a>" }
+      return { a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUMBARS_NUMBER}'' target='_blank'>`, _a: '</a>' }
     },
     isGroupSizeMaximum () {
       return this.groupMembersCount >= MAX_GROUP_MEMBER_COUNT
-    } 
+    }
   },
   methods: {
     inviteeUpdate (e, index) {
