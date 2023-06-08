@@ -186,11 +186,14 @@ $pagePaddingDesktop: 5.5rem;
   & > span {
     max-width: 100%;
 
+    // NOTE: select span elements without any child elements, which have no content or only text
     &:not(:has(*)) {
       display: block;
-      max-width: 100%;
     }
 
+    // NOTE: select minimal elements for the page title
+    //       so that the other elements couldn't get affected by this style
+    //       https://github.com/okTurtles/group-income/pull/1646#discussion_r1222266999
     &:not(:has(*)),
     & > .c-header > span {
       width: fit-content;
