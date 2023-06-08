@@ -1,7 +1,6 @@
 <template lang='pug'>
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
-  template(#title='')
-    span {{ L('Contributions') }}
+  template(#title='') {{ L('Contributions') }}
 
   add-income-details-widget(v-if='!ourGroupProfile || !ourGroupProfile.incomeDetailsType')
 

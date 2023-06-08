@@ -104,7 +104,7 @@ $pagePaddingDesktop: 5.5rem;
 .p-with-sidebar {
   display: grid;
   grid-template-areas: "p-header" "p-main";
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
 
   @include desktop {
@@ -186,12 +186,12 @@ $pagePaddingDesktop: 5.5rem;
   & > span {
     max-width: 100%;
 
-    & > span {
+    &:not(:has(*)) {
       display: block;
       max-width: 100%;
     }
 
-    & > span,
+    &:not(:has(*)),
     & > .c-header > span {
       width: fit-content;
       white-space: nowrap;
@@ -200,7 +200,7 @@ $pagePaddingDesktop: 5.5rem;
     }
   }
 
-  @include phone {
+  @include touch {
     max-width: 65vw;
   }
 }
