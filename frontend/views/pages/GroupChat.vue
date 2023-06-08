@@ -1,7 +1,7 @@
 <template lang='pug'>
-page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDirectMessage()')
-  template(#title='')
-    .c-header
+page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
+  template(#header='')
+    .c-header(data-test='channelName')
       .avatar-wrapper(v-if='summary.picture')
         avatar(
           :src='summary.picture'
@@ -9,7 +9,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
           size='sm'
         )
       i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
-      span {{summary.title}}
+      h1.is-title-2.p-title {{summary.title}}
       menu-parent.c-menu-parent(v-if='summary.isJoined')
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
@@ -237,7 +237,18 @@ export default ({
   display: flex;
   align-items: center;
   position: relative;
-  max-width: 100%;
+
+  .p-title {
+    display: block;
+    width: fit-content;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @include touch {
+      max-width: 55vw;
+    }
+  }
 
   .c-group-i {
     margin-right: 0.5rem;
@@ -255,6 +266,7 @@ export default ({
     font-weight: 400;
     color: $text_1;
     padding-bottom: 0;
+
     @include tablet {
       padding-top: 0;
     }
