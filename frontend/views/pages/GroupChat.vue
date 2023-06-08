@@ -1,6 +1,6 @@
 <template lang='pug'>
 page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDirectMessage()')
-  template(#title='')
+  template(#header='')
     .c-header
       .avatar-wrapper(v-if='summary.picture')
         avatar(
@@ -9,7 +9,7 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
           size='sm'
         )
       i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
-      | {{summary.title}}
+      h1.is-title-2 {{summary.title}}
       menu-parent(v-if='summary.isJoined')
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
