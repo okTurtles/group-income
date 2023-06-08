@@ -15,7 +15,7 @@
 
     .c-voters-tooltip-content
       header.c-voters-tooltip-header
-        i18n.is-title-4.c-tooltip-title(
+        i18n.is-title-4.c-tooltip-title.has-ellipsis(
           tag='h2'
           :args='{ option: optionName }'
         ) Voted for “{option}”
@@ -25,10 +25,11 @@
       ul.c-voters-list
         li.c-voter-item(v-for='(votername, index) in voters' :key='votername + index')
           avatar-user.c-voter-item-avatar(:username='votername' size='xs')
-          span.c-voter-item-name {{ votername }}
+          span.c-voter-item-name {{ getDisplayName(votername) }}
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { mixin as clickaway } from 'vue-clickaway'
 import AvatarUser from '@components/AvatarUser.vue'
 import ModalClose from '@components/modal/ModalClose.vue'
@@ -54,6 +55,9 @@ export default ({
     optionName: String
   },
   computed: {
+    ...mapGetters([
+      'globalProfile'
+    ]),
     votersToDisplay () {
       const restNum = this.voters.length - 2
 
@@ -76,6 +80,9 @@ export default ({
       if (this.ephemeral.isTooltipActive) {
         this.ephemeral.isTooltipActive = false
       }
+    },
+    getDisplayName (username) {
+      return this.globalProfile(username).displayName || username
     }
   }
 }: Object)
@@ -207,6 +214,7 @@ export default ({
 
 .c-tooltip-title {
   margin-right: 0.75rem;
+  max-width: 100%;
 }
 
 button.c-tooltip-close-btn {
@@ -217,6 +225,7 @@ button.c-tooltip-close-btn {
   width: 1.75rem;
   height: 1.75rem;
   min-height: unset;
+  flex-shrink: 0;
 }
 
 .c-voter-item {

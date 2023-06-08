@@ -8,7 +8,7 @@
     section.c-body
       form.c-form(@submit.prevent='')
         .field
-          input.input(
+          input.input.c-input(
             name='question'
             ref='question'
             :placeholder='L("Ask a question!")'
@@ -26,7 +26,7 @@
               v-for='(option, index) in form.options'
               :key='option.id'
             )
-              input.input(
+              input.input.c-input(
                 type='text'
                 :aria-label='L("Option value")'
                 :ref='"input" + option.id'
@@ -303,6 +303,10 @@ export default {
   @include tablet {
     height: 3.25rem;
   }
+}
+
+.c-input {
+  padding-right: 0.625rem;
 }
 
 .c-body {

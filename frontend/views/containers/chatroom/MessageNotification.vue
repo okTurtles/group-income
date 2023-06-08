@@ -63,8 +63,8 @@ export default ({
           [MESSAGE_NOTIFICATIONS.UPDATE_DESCRIPTION]:
             L('Updated the channel description to: {description}', { description: channelDescription }),
           [MESSAGE_NOTIFICATIONS.DELETE_CHANNEL]: L('Deleted the channel: {title}', { title: channelName }),
-          [MESSAGE_NOTIFICATIONS.VOTE_ON_POLL]: L('Voted on “{options}”', { options: votedOptions }),
-          [MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL]: L('Changed votes to “{options}”', { options: votedOptions })
+          [MESSAGE_NOTIFICATIONS.VOTE_ON_POLL]: L('Voted on {options}', { options: votedOptions }),
+          [MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL]: L('Changed votes to {options}', { options: votedOptions })
         }
       }
 

@@ -13,9 +13,14 @@ form(@submit.prevent='')
       input.input(v-else type='radio' :name='messageId' :value='option.id' v-model='form.selectedOptions')
       span.c-poll-option-value {{ option.value }}
 
-  .buttons(v-if='enableSubmitBtn')
-    i18n.is-small.is-outlined(v-if='isChangeMode' tag='button' type='button' @click='changeVotes') Change vote
-    i18n.is-small(v-else tag='button' type='button' @click='submitVotes') Submit
+  banner-scoped(ref='errBanner')
+
+  .buttons.c-buttons-container
+    template(v-if='enableSubmitBtn')
+      i18n.is-small(v-if='isChangeMode' tag='button' type='button' @click='changeVotes') Change vote
+      i18n.is-small(v-else tag='button' type='button' @click='submitVotes') Submit
+
+    i18n.is-small.is-outlined(v-if='isChangeMode' tag='button' type='button' @click='onCancelClick') Cancel
 </template>
 
 <script>
@@ -23,10 +28,14 @@ import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { cloneDeep } from '@model/contracts/shared/giLodash.js'
 import { POLL_TYPES } from '@model/contracts/shared/constants.js'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 
 export default ({
   name: 'PollToVote',
   inject: ['pollUtils'],
+  components: {
+    BannerScoped
+  },
   props: {
     pollData: Object,
     messageId: String,
@@ -63,30 +72,43 @@ export default ({
   },
   methods: {
     submitVotes () {
-      sbp('gi.actions/chatroom/voteOnPoll', {
-        contractID: this.currentChatRoomId,
-        data: {
-          hash: this.messageHash,
-          votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions]
-        }
-      })
+      try {
+        sbp('gi.actions/chatroom/voteOnPoll', {
+          contractID: this.currentChatRoomId,
+          data: {
+            hash: this.messageHash,
+            votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions]
+          }
+        })
+      } catch (e) {
+        console.error('"voteOnPoll" action failed: ', e)
+        this.$refs.errBanner.danger(e.message)
+      }
     },
     async changeVotes () {
-      await sbp('gi.actions/chatroom/changeVoteOnPoll', {
-        contractID: this.currentChatRoomId,
-        data: {
-          hash: this.messageHash,
-          votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions]
-        }
-      })
+      try {
+        await sbp('gi.actions/chatroom/changeVoteOnPoll', {
+          contractID: this.currentChatRoomId,
+          data: {
+            hash: this.messageHash,
+            votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions]
+          }
+        })
 
-      this.pollUtils.switchOffChangeMode()
+        this.pollUtils.switchOffChangeMode()
+      } catch (e) {
+        console.error('"changeVoteOnPoll" action failed: ', e)
+        this.$refs.errBanner.danger(e.message)
+      }
     },
     formBeenUpdated () {
       if (this.allowMultipleChoices) {
         return this.selectedOptionsBeforeUpdate.length !== this.form.selectedOptions.length ||
           this.form.selectedOptions.some(optId => !this.selectedOptionsBeforeUpdate.includes(optId))
       } else return this.selectedOptionsBeforeUpdate !== this.form.selectedOptions
+    },
+    onCancelClick () {
+      this.pollUtils.switchOffChangeMode()
     }
   },
   mounted () {
@@ -126,6 +148,14 @@ export default ({
 
   &:not(:first-of-type) {
     margin-top: 1.75rem;
+  }
+}
+
+.c-buttons-container {
+  justify-content: flex-start;
+
+  &:empty {
+    margin-top: 0;
   }
 }
 </style>

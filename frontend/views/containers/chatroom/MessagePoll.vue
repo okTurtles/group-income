@@ -17,6 +17,8 @@ message-base.c-message-poll(
         :messageHash='messageHash'
         :pollData='pollData'
       )
+
+      banner-scoped(ref='errBanner')
 </template>
 
 <script>
@@ -27,18 +29,21 @@ import { MESSAGE_VARIANTS, POLL_STATUS } from '@model/contracts/shared/constants
 import { DAYS_MILLIS, MINS_MILLIS } from '@model/contracts/shared/time.js'
 import PollToVote from './poll-message-content/PollToVote.vue'
 import PollVoteResult from './poll-message-content/PollVoteResult.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 
 export default ({
   name: 'MessagePoll',
   components: {
     MessageBase,
     PollToVote,
-    PollVoteResult
+    PollVoteResult,
+    BannerScoped
   },
   props: {
     pollData: Object, // { creator, status, question, options ... }
     messageId: String,
     messageHash: String,
+    currentUsername: String,
     who: String,
     type: String,
     avatar: String,
@@ -108,11 +113,17 @@ export default ({
     },
     checkAndSetupPollExpirationTimer () {
       const markPollClosed = () => {
-        sbp('gi.actions/chatroom/closePoll', {
-          contractID: this.currentChatRoomId,
-          data: { hash: this.messageHash }
-        })
+        try {
+          sbp('gi.actions/chatroom/closePoll', {
+            contractID: this.currentChatRoomId,
+            data: { hash: this.messageHash }
+          })
+        } catch (e) {
+          console.error('"closePoll" action failed: ', e)
+          this.$refs.errBanner.danger(e.message)
+        }
       }
+
       const checkAndSetTimer = () => {
         if (Date.now() - this.pollData.expires_date_ms) {
           markPollClosed()
