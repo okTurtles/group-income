@@ -104,11 +104,11 @@ $pagePaddingDesktop: 5.5rem;
 .p-with-sidebar {
   display: grid;
   grid-template-areas: "p-header" "p-main";
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
 
   @include desktop {
-    grid-template-columns: 1fr $rightSideWidth;
+    grid-template-columns: minmax(0, 1fr) $rightSideWidth;
     grid-template-areas:
       "p-header p-sidebar"
       "p-main p-sidebar";
@@ -183,14 +183,14 @@ $pagePaddingDesktop: 5.5rem;
   display: flex;
   align-items: center;
 
-  > span {
+  & > span {
     width: fit-content;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  @include phone {
+  @include touch {
     max-width: 65vw;
   }
 }

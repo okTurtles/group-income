@@ -1,7 +1,7 @@
 <template lang='pug'>
-page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDirectMessage()')
-  template(#title='')
-    .c-header
+page(pageTestName='groupChat' :miniHeader='isDirectMessage()')
+  template(#header='')
+    .c-header(data-test='channelName')
       .avatar-wrapper(v-if='summary.picture')
         avatar(
           :src='summary.picture'
@@ -9,8 +9,8 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
           size='sm'
         )
       i(v-else :class='`icon-${ summary.isPrivate ? "lock" : "hashtag" } c-group-i`')
-      | {{summary.title}}
-      menu-parent(v-if='summary.isJoined')
+      h1.is-title-2.p-title {{summary.title}}
+      menu-parent.c-menu-parent(v-if='summary.isJoined')
         menu-trigger.c-menu-trigger.is-icon-small
           i.icon-angle-down.c-menu-i
 
@@ -25,6 +25,13 @@ page(pageTestName='groupChat' pageTestHeaderName='channelName' :miniHeader='isDi
               data-test='renameChannel'
             )
               i18n Rename
+            menu-item(
+              v-if='ourUsername === summary.attributes.creator && !isDirectMessage()'
+              @click='editDescription'
+              data-test='updateDescription'
+            )
+              i18n(v-if='!summary.attributes.description') Add description
+              i18n(v-else) Update description
             menu-item(v-if='!isDirectMessage()' @click='openModal("ChatMembersAllModal")')
               i18n Members
             menu-item(v-else @click='openModal("ChatMembersAllModal")' data-test='addPeople')
@@ -163,9 +170,7 @@ export default ({
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
     editDescription () {
-      if (this.ourUsername === this.summary.attributes.creator) {
-        this.openModal('EditChannelDescriptionModal')
-      }
+      this.openModal('EditChannelDescriptionModal')
     }
   },
   watch: {
@@ -231,6 +236,19 @@ export default ({
   text-transform: capitalize;
   display: flex;
   align-items: center;
+  position: relative;
+
+  .p-title {
+    display: block;
+    width: fit-content;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    @include touch {
+      max-width: 55vw;
+    }
+  }
 
   .c-group-i {
     margin-right: 0.5rem;
@@ -240,6 +258,7 @@ export default ({
 
   .c-menu {
     margin-left: 0.5rem;
+    margin-right: 0.5rem;
   }
 
   .c-header {
@@ -247,6 +266,7 @@ export default ({
     font-weight: 400;
     color: $text_1;
     padding-bottom: 0;
+
     @include tablet {
       padding-top: 0;
     }
@@ -256,8 +276,6 @@ export default ({
     min-width: 17.5rem;
     font-size: $size_4;
     font-weight: 400;
-
-    @extend %floating-panel;
 
     @include desktop {
       left: -6.8rem;
@@ -326,5 +344,17 @@ export default ({
 
 .avatar-wrapper {
   margin-right: 0.5rem;
+}
+
+.c-menu-parent.c-menu {
+  @include tablet {
+    position: unset;
+
+    .c-responsive-menu {
+      left: 0;
+      right: auto;
+      top: 2.5rem;
+    }
+  }
 }
 </style>
