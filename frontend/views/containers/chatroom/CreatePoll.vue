@@ -15,6 +15,7 @@
             @input='e => debounceField("question", e.target.value)'
             @blur='e => updateField("question", e.target.value)'
             :class='{ error: $v.form.question.$error }'
+            v-model='form.question'
             v-error:question=''
           )
 

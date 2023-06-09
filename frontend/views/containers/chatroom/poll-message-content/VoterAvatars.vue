@@ -244,6 +244,8 @@ button.c-tooltip-close-btn {
     font-size: $size_4;
     color: $text_0;
     line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 </style>
