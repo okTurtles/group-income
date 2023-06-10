@@ -532,7 +532,7 @@ export default (sbp('sbp/selectors/register', {
     if (!options.forceSync && rootState[contractID] && Object.keys(rootState[contractID]).some((x) => x !== '_volatile')) {
       return cloneDeep(rootState[contractID])
     }
-    const events = await sbp('chelonia/private/out/eventsSince', contractID, contractID)
+    const events = await sbp('chelonia/private/out/eventsAfter', contractID, contractID)
     let state = Object.create(null)
     if (rootState[contractID]?._volatile?.keys) {
       state._volatile = { keys: rootState[contractID]._volatile.keys }
