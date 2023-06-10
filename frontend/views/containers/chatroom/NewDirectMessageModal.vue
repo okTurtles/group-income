@@ -125,7 +125,7 @@ export default ({
           const chatRoomId = this.getPrivateDMByUser(username)
           return !this.ourPrivateDirectMessages[username].hidden &&
             // NOTE: this.ourUnreadMessages[chatRoomId] could be undefined just after new parter made direct message with me
-            // it's when the mailbox contract is updated, but chatroom contract is not fully synced yet
+            // it's when the identity contract is updated, but chatroom contract is not fully synced yet
             this.ourUnreadMessages[chatRoomId]
         }).map(username => {
           const chatRoomId = this.getPrivateDMByUser(username)

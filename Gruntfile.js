@@ -243,7 +243,7 @@ module.exports = (grunt) => {
     // },
     splitting: false,
     outdir: distContracts,
-    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`, `${contractsDir}/mailbox.js`],
+    entryPoints: [`${contractsDir}/group.js`, `${contractsDir}/chatroom.js`, `${contractsDir}/identity.js`],
     external: ['@sbp/sbp']
   }
   // prevent contract hash from changing each time we build them

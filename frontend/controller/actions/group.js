@@ -281,6 +281,29 @@ export default (sbp('sbp/selectors/register', {
         keyIds: '*'
       })
 
+      // Add the group's CSK to our identity contract so that we can receive
+      // key rotation updates and DMs. This is equivalent to the keyAdd
+      // done when joining via invite in 'chelonia/out/keyRequest'
+      await sbp('chelonia/out/keyAdd', {
+        contractID: userID,
+        contractName: 'gi.contracts/identity',
+        data: [{
+          foreignKey: `sp:${encodeURIComponent(contractID)}?keyName=${encodeURIComponent('csk')}`,
+          id: CSKid,
+          data: CSKp,
+          // OP_ACTION_ENCRYPTED permission is temporary to support DMs
+          // until OP_KEY_UPDATE is implemented (then the OP_KEY_UPDATE) would
+          // be sent to allow the group key to also issue OP_ACTION_ENCRYPTED
+          // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
+          // that a chatroom has just been created
+          permissions: [GIMessage.OP_KEY_SHARE, GIMessage.OP_ACTION_ENCRYPTED],
+          purpose: ['sig'],
+          ringLevel: Number.MAX_SAFE_INTEGER,
+          name: `${contractID}/${CSKid}`
+        }],
+        signingKeyId: findKeyIdByName(rootState[userID], 'csk')
+      })
+
       // Share our PEK with the group so that group members can see
       // our name and profile information
       const PEKid = findKeyIdByName(rootState[userID], 'pek')

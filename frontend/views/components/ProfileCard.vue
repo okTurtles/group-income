@@ -123,7 +123,7 @@ export default ({
       'groupShouldPropose',
       'ourContributionSummary',
       'ourPrivateDirectMessages',
-      'currentIdentityState',
+      'ourIdentityContractId',
       'directMessageIDFromUsername'
     ]),
     isSelf () {
@@ -161,8 +161,8 @@ export default ({
     },
     sendMessage () {
       if (!this.ourPrivateDirectMessages[this.username]) {
-        sbp('gi.actions/mailbox/createDirectMessage', {
-          contractID: this.currentIdentityState.attributes.mailbox,
+        sbp('gi.actions/identity/createDirectMessage', {
+          contractID: this.ourIdentityContractId,
           data: {
             privacyLevel: CHATROOM_PRIVACY_LEVEL.PRIVATE,
             usernames: [this.username]
@@ -171,8 +171,8 @@ export default ({
       } else {
         const chatRoomId = this.directMessageIDFromUsername(this.username)
         if (this.ourPrivateDirectMessages[this.username].hidden) {
-          sbp('gi.actions/mailbox/setDirectMessageVisibility', {
-            contractID: this.currentIdentityState.attributes.mailbox,
+          sbp('gi.actions/identity/setDirectMessageVisibility', {
+            contractID: this.ourIdentityContractId,
             data: {
               contractID: chatRoomId,
               hidden: false

@@ -20,37 +20,39 @@ import type { GIActionParams } from './types.js'
 export function encryptedAction (
   action: string,
   humanError: string | Function,
-  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams, signingKeyId: string, encryptionKeyId: string) => Promise<void>,
+  handler?: (sendMessage: (params: $Shape<GIActionParams>) => Promise<void>, params: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => Promise<void>,
   encryptionKeyName?: string,
   signingKeyName?: string
 ): Object {
-  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, encryptionKeyId: string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
+  const sendMessageFactory = (outerParams: GIActionParams, signingKeyId: string, encryptionKeyId: string, originatingContractID: ?string) => (innerParams?: $Shape<GIActionParams>): Promise<void> => {
     return sbp('chelonia/out/actionEncrypted', {
       ...(innerParams ?? outerParams),
       signingKeyId,
       encryptionKeyId,
-      action: action.replace('gi.actions', 'gi.contracts')
+      action: action.replace('gi.actions', 'gi.contracts'),
+      originatingContractID
     })
   }
   return {
     [action]: async function (params: GIActionParams) {
       try {
         const state = await sbp('chelonia/latestContractState', params.contractID)
+        const signingState = !params.signingContractID || params.signingContractID === params.contractID ? state : await sbp('chelonia/latestContractState', params.signingContractID)
 
-        const signingKeyId = findKeyIdByName(state, signingKeyName ?? 'csk')
+        const signingKeyId = findKeyIdByName(signingState, signingKeyName ?? 'csk')
         const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
 
-        if (!signingKeyId || !encryptionKeyId || !state?._volatile?.keys || !state._volatile.keys[signingKeyId] || !state._volatile.keys[encryptionKeyId]) {
+        if (!signingKeyId || !encryptionKeyId || !signingState?._volatile?.keys || !signingState._volatile.keys[signingKeyId]) {
           console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)
           // TODO: Change to Promise.reject()
           return Promise.resolve()
         }
 
-        const sm = sendMessageFactory(params, signingKeyId, encryptionKeyId)
+        const sm = sendMessageFactory(params, signingKeyId, encryptionKeyId, params.originatingContractID)
 
         // make sure to await here so that if there's an error we show user-facing string
         if (handler) {
-          return await handler(sm, params, signingKeyId, encryptionKeyId)
+          return await handler(sm, params, signingKeyId, encryptionKeyId, params.originatingContractID)
         } else {
           return await sm()
         }

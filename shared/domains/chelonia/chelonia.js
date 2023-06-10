@@ -142,7 +142,7 @@ const signatureFnBuilder = (key) => {
 }
 
 const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
-  const key = this.config.transientSecretKeys?.[eKeyId] || state?._volatile?.keys?.[eKeyId]
+  const key = this.config.transientSecretKeys?.[eKeyId] || state?._vm?.authorizedKeys?.[eKeyId]?.data
 
   if (!key) {
     if (process.env.ALLOW_INSECURE_UNENCRYPTED_MESSAGES_WHEN_EKEY_NOT_FOUND === 'true') {
@@ -760,8 +760,6 @@ export default (sbp('sbp/selectors/register', {
       signatureFn
     })
     hooks && hooks.prepublish && hooks.prepublish(msg)
-    // TODO: Rewrite using findSuitablePublicKeyIds
-    // TODO: Ensure foreignKey etc. are used
     // TODO: When processing OP_KEY_SHARE:
     //      (1) include the hash if relevant
     //      (2) for foreign keys with OP_KEY_SHARE permission, allow only
@@ -770,7 +768,12 @@ export default (sbp('sbp/selectors/register', {
       foreignKey: `sp:${encodeURIComponent(contractID)}?keyName=${encodeURIComponent(state._vm.authorizedKeys[keyId].name)}`,
       id: keyId,
       data: state._vm.authorizedKeys[keyId].data,
-      permissions: [GIMessage.OP_KEY_SHARE],
+      // OP_ACTION_ENCRYPTED permission is temporary to support DMs
+      // until OP_KEY_UPDATE is implemented (then the OP_KEY_UPDATE) would
+      // be sent to allow the group key to also issue OP_ACTION_ENCRYPTED
+      // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
+      // that a chatroom has just been created
+      permissions: [GIMessage.OP_KEY_SHARE, GIMessage.OP_ACTION_ENCRYPTED],
       purpose: ['sig'],
       ringLevel: Number.MAX_SAFE_INTEGER,
       name: `${contractID}/${keyId}`,

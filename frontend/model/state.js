@@ -140,7 +140,9 @@ const mutations = {
     }
   },
   deleteChatRoomReadUntil (state, { chatRoomId, deletedDate }) {
-    Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)
+    if (state.chatRoomUnread[chatRoomId].readUntil) {
+      Vue.set(state.chatRoomUnread[chatRoomId].readUntil, 'deletedDate', deletedDate)
+    }
   },
   addChatRoomUnreadMessage (state, { chatRoomId, messageHash, createdDate, type }) {
     state.chatRoomUnread[chatRoomId].messages.push({ messageHash, createdDate, type })
@@ -207,10 +209,6 @@ const getters = {
   },
   currentChatRoomState (state, getters) {
     return state[getters.currentChatRoomId] || {} // avoid "undefined" vue errors at inoportune times
-  },
-  currentMailboxState (state, getters) {
-    const contract = getters.currentIdentityState
-    return (contract.attributes && state[contract.attributes.mailbox]) || {}
   },
   chatNotificationSettings (state) {
     return Object.assign({
@@ -559,14 +557,14 @@ const getters = {
     return groupDMs
   },
   isDirectMessage (state, getters) {
-    // NOTE: mailbox contract could not be synced at the time of calling this getter
+    // NOTE: identity contract could not be synced at the time of calling this getter
     return chatRoomId => {
       const contractID = chatRoomId || getters.currentChatRoomId
       return getters.isJoinedChatRoom(contractID) && !!getters.ourDirectMessages[contractID]
     }
   },
   isPrivateDirectMessage (state, getters) {
-    // NOTE: mailbox contract could not be synced at the time of calling this getter
+    // NOTE: identity contract could not be synced at the time of calling this getter
     return chatRoomId => {
       const contractID = chatRoomId || getters.currentChatRoomId
       return getters.ourDirectMessages[contractID]?.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
@@ -732,8 +730,7 @@ if (process.env.NODE_ENV === 'development') {
 const omitGetters = {
   'gi.contracts/group': ['currentGroupState'],
   'gi.contracts/identity': ['currentIdentityState'],
-  'gi.contracts/chatroom': ['currentChatRoomState'],
-  'gi.contracts/mailbox': ['currentMailboxState']
+  'gi.contracts/chatroom': ['currentChatRoomState']
 }
 sbp('okTurtles.events/on', CONTRACT_REGISTERED, (contract) => {
   const { contracts: { manifests } } = sbp('chelonia/config')

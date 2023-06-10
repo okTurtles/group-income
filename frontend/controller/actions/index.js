@@ -7,7 +7,6 @@ import { pick } from '@model/contracts/shared/giLodash.js'
 export { default as chatroom } from './chatroom.js'
 export { default as group } from './group.js'
 export { default as identity } from './identity.js'
-export { default as mailbox } from './mailbox.js'
 
 sbp('sbp/selectors/register', {
   // Utility function that covers the common scenario of needing to share some
