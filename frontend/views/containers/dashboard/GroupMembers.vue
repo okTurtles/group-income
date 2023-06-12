@@ -143,6 +143,7 @@ export default ({
 }
 
 .c-name {
+  display: inline-block;
   margin-right: 0.5rem;
   margin-left: 0.5rem;
   font-family: inherit;
