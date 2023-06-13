@@ -563,7 +563,7 @@ export default (sbp('sbp/selectors/register', {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
     }
   },
-  'gi.actions/group/checkGroupSizeAndAddMember': async function () {
+  'gi.actions/group/checkGroupSizeAndProposeMember': async function () {
     // if current size of the group is >= 150, display a warning prompt first before presenting the user with
     // 'AddMembers' proposal modal.
 
@@ -584,7 +584,7 @@ export default (sbp('sbp/selectors/register', {
       const yesButtonSelected = await sbp('gi.ui/prompt', promptOpts)
       if (yesButtonSelected) {
         sbp('okTurtles.events/emit', REPLACE_MODAL, 'AddMembers')
-      } else return
+      } else return false
     } else {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }

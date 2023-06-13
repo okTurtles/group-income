@@ -9,7 +9,7 @@ modal-template(ref='modal' :a11yTitle='$attrs.heading' :modalForceAction='true')
       novalidate='true'
     )
       fieldset.field
-        legend.label(v-safe-html='$attrs.question')
+        legend.label(v-safe-html:a='$attrs.question')
 
       .buttons
         button-submit.is-outlined(
