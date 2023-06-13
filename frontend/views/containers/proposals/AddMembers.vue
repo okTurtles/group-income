@@ -3,52 +3,45 @@ proposal-template(
   :title='L("Add new members")'
   :disabled='!ephemeral.isValid'
   :maxSteps='config.steps.length'
-  :hide-call-to-actions='currentGroupSize >= config.maxGroupSize'
   :currentStep.sync='ephemeral.currentStep'
   variant='addMember'
   @submit='submit'
 )
-  template(v-if='ephemeral.currentStep === 0')
-    fieldset.c-fieldset(
-      v-if='currentGroupSize < config.maxGroupSize'
-      :class='{"is-shifted": ephemeral.invitesCount > 1}'
-      ref='fieldset'
+  fieldset.c-fieldset(
+    v-if='ephemeral.currentStep === 0'
+    :class='{"is-shifted": ephemeral.invitesCount > 1}'
+    ref='fieldset'
+  )
+    i18n.label(tag='legend') Full name
+    .field.c-fields-item(
+      v-for='(member, index) in ephemeral.invitesCount'
+      :key='`member-${index}`'
+      data-test='invitee'
     )
-      i18n.label(tag='legend') Full name
-      .field.c-fields-item(
-        v-for='(member, index) in ephemeral.invitesCount'
-        :key='`member-${index}`'
-        data-test='invitee'
-      )
-        i18n.label.sr-only Invitee name
-        .inputgroup
-          input.input(
-            type='text'
-            :aria-label='L("Full name")'
-            v-model='form.invitees[index]'
-            @keyup='(e) => inviteeUpdate(e, index)'
-            aria-required
-          )
-          button.is-icon-small.is-btn-shifted(
-            type='button'
-            @click='removeInvitee(index)'
-            data-test='remove'
-            :aria-label='L("Remove invitee")'
-          )
-            i.icon-times
+      i18n.label.sr-only Invitee name
+      .inputgroup
+        input.input(
+          type='text'
+          :aria-label='L("Full name")'
+          v-model='form.invitees[index]'
+          @keyup='(e) => inviteeUpdate(e, index)'
+          aria-required
+        )
+        button.is-icon-small.is-btn-shifted(
+          type='button'
+          @click='removeInvitee(index)'
+          data-test='remove'
+          :aria-label='L("Remove invitee")'
+        )
+          i.icon-times
 
-      button.link.has-icon(
-        type='button'
-        @click='addInviteeSlot'
-        data-test='addInviteeSlot'
-      )
-        i.icon-plus
-        i18n Add more
-
-      banner-scoped.c-warning-banner(ref='noMoreMemberMsg' severity='warning')
-
-    banner-simple.c-warning-banner(v-else severity='info')
-      i18n(:args='warningBannerArgs') Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.
+    button.link.has-icon(
+      type='button'
+      @click='addInviteeSlot'
+      data-test='addInviteeSlot'
+    )
+      i.icon-plus
+      i18n Add more
 </template>
 
 <script>
@@ -56,19 +49,14 @@ import sbp from '@sbp/sbp'
 import { Vue, L } from '@common/common.js'
 import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
-import ALLOWED_URLS from '@view-utils/allowedUrls.js'
-import { PROPOSAL_INVITE_MEMBER, MAX_GROUP_MEMBER_COUNT, INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/shared/constants.js'
 import ProposalTemplate from './ProposalTemplate.vue'
-import BannerSimple from '@components/banners/BannerSimple.vue'
-import BannerScoped from '@components/banners/BannerScoped.vue'
 
 export default ({
   name: 'AddMembers',
   mixins: [validationMixin],
   components: {
-    ProposalTemplate,
-    BannerSimple,
-    BannerScoped
+    ProposalTemplate
   },
   data () {
     return {
@@ -83,8 +71,7 @@ export default ({
       config: {
         steps: [
           'Member'
-        ],
-        maxGroupSize: MAX_GROUP_MEMBER_COUNT
+        ]
       }
     }
   },
@@ -95,19 +82,8 @@ export default ({
     ]),
     ...mapGetters([
       'currentGroupState',
-      'groupSettings',
-      'groupMembersCount',
-      'ourUsername'
-    ]),
-    warningBannerArgs () {
-      return { a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUMBARS_NUMBER}'' target='_blank'>`, _a: '</a>' }
-    },
-    currentGroupSize () {
-      const { invites } = this.currentGroupState
-      const activeMemberInvitesCount = Object.values(invites || {})
-        .filter(invite => invite.creator !== INVITE_INITIAL_CREATOR).length
-      return this.groupMembersCount + activeMemberInvitesCount
-    }
+      'groupSettings'
+    ])
   },
   methods: {
     inviteeUpdate (e, index) {
@@ -123,13 +99,6 @@ export default ({
       this.form.invitees.splice(index, 1)
     },
     addInviteeSlot (e) {
-      if (this.currentGroupSize + this.ephemeral.invitesCount === MAX_GROUP_MEMBER_COUNT) {
-        this.$refs.noMoreMemberMsg.danger(
-          L("Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.", this.warningBannerArgs)
-        )
-        return
-      }
-
       this.ephemeral.invitesCount += 1
       Vue.nextTick(() => {
         const inviteeSlots = this.$refs.fieldset.getElementsByTagName('label')
@@ -193,9 +162,5 @@ export default ({
       display: block;
     }
   }
-}
-
-.c-warning-banner {
-  margin-top: 1.25rem;
 }
 </style>

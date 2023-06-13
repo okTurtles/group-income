@@ -16,7 +16,8 @@ import {
   PROPOSAL_GENERIC,
   STATUS_OPEN,
   MESSAGE_TYPES,
-  PROPOSAL_VARIANTS
+  PROPOSAL_VARIANTS,
+  MAX_GROUP_MEMBER_COUNT
 } from '@model/contracts/shared/constants.js'
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { imageUpload } from '@utils/image.js'
@@ -26,7 +27,8 @@ import { encryptedAction } from './utils.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import { REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -559,6 +561,32 @@ export default (sbp('sbp/selectors/register', {
     if (yesButtonSelected) {
       // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
+    }
+  },
+  'gi.actions/group/checkGroupSizeAndAddMember': async function () {
+    // if current size of the group is >= 150, display a warning prompt first before presenting the user with
+    // 'AddMembers' proposal modal.
+
+    const { groupMembersCount } = sbp('state/vuex/getters')
+    const isGroupSizeLarge = groupMembersCount >= MAX_GROUP_MEMBER_COUNT
+
+    if (isGroupSizeLarge) {
+      const promptOpts = {
+        heading: 'Large group size',
+        question: L(
+          "Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?",
+          { a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUMBARS_NUMBER}'' target='_blank'>`, _a: '</a>' }
+        ),
+        yesButton: L('Yes'),
+        noButton: L('Cancel')
+      }
+
+      const yesButtonSelected = await sbp('gi.ui/prompt', promptOpts)
+      if (yesButtonSelected) {
+        sbp('okTurtles.events/emit', REPLACE_MODAL, 'AddMembers')
+      } else return
+    } else {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
