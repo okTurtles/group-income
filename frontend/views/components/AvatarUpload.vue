@@ -114,6 +114,7 @@ export default ({
       right: 0;
       align-items: flex-end;
       margin-bottom: -0.5rem;
+      z-index: 3;
     }
   }
 
