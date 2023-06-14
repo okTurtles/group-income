@@ -237,6 +237,15 @@
 /* MISSING TRANSLATION - views/containers/chatroom/CreatePoll.vue */
 "Remove option" = "Remove option";
 
+/* MISSING TRANSLATION - views/containers/chatroom/DMMixin.js */
+"Error during adding member to direct message: {err}" = "Error during adding member to direct message: {err}";
+
+/* MISSING TRANSLATION - views/containers/chatroom/DMMixin.js */
+"Error during create direct message: {err}" = "Error during create direct message: {err}";
+
+/* MISSING TRANSLATION - views/containers/chatroom/DMMixin.js */
+"Error during setting visibility of direct message: {err}" = "Error during setting visibility of direct message: {err}";
+
 /* MISSING TRANSLATION - views/containers/chatroom/MessageInteractive.vue */
 "Proposal expiring on {date}" = "Proposal expiring on {date}";
 

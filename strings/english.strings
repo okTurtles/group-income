@@ -687,8 +687,17 @@
 /* controller/router.js */
 "Error Testing" = "Error Testing";
 
+/* views/containers/chatroom/DMMixin.js */
+"Error during adding member to direct message: {err}" = "Error during adding member to direct message: {err}";
+
+/* views/containers/chatroom/DMMixin.js */
+"Error during create direct message: {err}" = "Error during create direct message: {err}";
+
 /* controller/actions/identity.js */
 "Error during login contract sync: {err}" = "Error during login contract sync: {err}";
+
+/* views/containers/chatroom/DMMixin.js */
+"Error during setting visibility of direct message: {err}" = "Error during setting visibility of direct message: {err}";
 
 /* views/containers/group-settings/InvitationsTable.vue, views/containers/proposals/ProposalItem.vue */
 "Expired" = "Expired";
