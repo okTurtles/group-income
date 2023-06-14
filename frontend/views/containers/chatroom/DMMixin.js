@@ -1,7 +1,7 @@
 import sbp from '@sbp/sbp'
 import { mapGetters } from 'vuex'
 import { CHATROOM_PRIVACY_LEVEL } from '@model/contracts/shared/constants.js'
-import { L, LError } from '@common/common.js'
+import { L } from '@common/common.js'
 import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 const DMMixin: Object = {
