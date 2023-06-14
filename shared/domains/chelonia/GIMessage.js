@@ -37,9 +37,18 @@ export type GIOpKeyRequest = {
   data: string;
 }
 export type GIOpKeyRequestSeen = { keyRequestHash: string; success: boolean };
+export type GIOpKeyUpdate = {
+  name: string;
+  id?: string;
+  oldKeyId: string;
+  data?: string;
+  purpose?: string[];
+  permissions?: string[];
+  meta?: Object;
+}[]
 
-export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
-export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestSeen
+export type GIOpType = 'c' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
+export type GIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestSeen | GIOpKeyUpdate
 export type GIOp = [GIOpType, GIOpValue] | [GIOpType, GIOpValue, GIOpValue]
 
 type GIMsgParams = { mapping: Object; head: Object; message: GIOpValue; decryptedValue?: GIOpValue; signature: string; signedPayload: string }
@@ -58,6 +67,7 @@ export class GIMessage {
   static OP_ACTION_UNENCRYPTED: 'au' = 'au' // publicly readable action
   static OP_KEY_ADD: 'ka' = 'ka' // add this key to the list of keys allowed to write to this contract, or update an existing key
   static OP_KEY_DEL: 'kd' = 'kd' // remove this key from authorized keys
+  static OP_KEY_UPDATE: 'ku' = 'ku' // update key in authorized keys
   static OP_PROTOCOL_UPGRADE: 'pu' = 'pu'
   static OP_PROP_SET: 'ps' = 'ps' // set a public key/value pair
   static OP_PROP_DEL: 'pd' = 'pd' // delete a public key/value pair
@@ -150,6 +160,7 @@ export class GIMessage {
       case GIMessage.OP_ACTION_ENCRYPTED:
       case GIMessage.OP_KEY_ADD:
       case GIMessage.OP_KEY_DEL:
+      case GIMessage.OP_KEY_UPDATE:
         // nothing for now
         break
       default:

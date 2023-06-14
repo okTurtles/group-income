@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import type { GIKey, GIKeyPurpose } from './GIMessage.js'
+import type { GIKey, GIKeyPurpose, GIOpKeyUpdate } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import type { Key } from './crypto.js'
@@ -37,15 +37,15 @@ export const findSuitablePublicKeyIds = (state: Object, permissions: '*' | strin
 
 export const validateKeyAddPermissions = (contractID: string, signingKey: GIKey, state: Object, v: GIKey[]) => {
   const signingKeyPermissions = Array.isArray(signingKey.permissions) ? new Set(signingKey.permissions) : signingKey.permissions
-  if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_ADD must exist in _vm.authorizedKeys. contractID=' + contractID + ' singingKeyId=' + signingKey.id)
+  if (!state._vm?.authorizedKeys?.[signingKey.id]) throw new Error('Singing key for OP_KEY_ADD or OP_KEY_UPDATE must exist in _vm.authorizedKeys. contractID=' + contractID + ' singingKeyId=' + signingKey.id)
   const localSigningKey = state._vm.authorizedKeys[signingKey.id]
   v.forEach(k => {
     if (!Number.isSafeInteger(k.ringLevel) || k.ringLevel < localSigningKey.ringLevel) {
-      throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to add a key with rignLevel ' + k.ringLevel)
+      throw new Error('Signing key has ringLevel ' + localSigningKey.ringLevel + ' but attempted to add or update a key with ringLevel ' + k.ringLevel)
     }
     if (signingKeyPermissions !== '*') {
       if (!Array.isArray(k.permissions) || !k.permissions.reduce((acc, cv) => acc && signingKeyPermissions.has(cv), true)) {
-        throw new Error('Unable to add key with more permissions than the signing key. singingKey permissions: ' + String(signingKey?.permissions) + '; key add permissions: ' + String(k.permissions))
+        throw new Error('Unable to add or update a key with more permissions than the signing key. singingKey permissions: ' + String(signingKey?.permissions) + '; key add permissions: ' + String(k.permissions))
       }
     }
   })
@@ -62,7 +62,49 @@ export const validateKeyDelPermissions = (contractID: string, signingKey: GIKey,
   })
 }
 
-export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, keys: GIKey[], state: Object, contractID: string) {
+export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIKey, state: Object, v: GIOpKeyUpdate): [GIKey[], string[]] => {
+  const keysToDelete: string[] = []
+  const keys = v.map((uk): GIKey => {
+    const existingKey = state._vm.authorizedKeys[uk.oldKeyId]
+    if (!existingKey) {
+      throw new Error('Missing old key ID ' + uk.oldKeyId)
+    }
+    if (uk.name !== existingKey.name) {
+      throw new Error('Name cannot be updated')
+    }
+    if (!uk.id !== !uk.data) {
+      throw new Error('Both or none of the id and data attributes must be provided. Old key ID: ' + uk.oldKeyId)
+    }
+    if (uk.data && existingKey.meta?.private && !(uk.meta?.private)) {
+      throw new Error('Missing private key. Old key ID: ' + uk.oldKeyId)
+    }
+    if (uk.id) {
+      keysToDelete.push(uk.oldKeyId)
+    }
+    const updatedKey = { ...existingKey }
+    // Set the corresponding updated attributes
+    if (uk.permissions) {
+      updatedKey.permissions = uk.permissions
+    }
+    if (uk.purpose) {
+      updatedKey.purpose = uk.purpose
+    }
+    if (uk.meta) {
+      updatedKey.meta = uk.meta
+    }
+    if (uk.id) {
+      updatedKey.id = uk.id
+    }
+    if (uk.data) {
+      updatedKey.data = uk.data
+    }
+    return updatedKey
+  })
+  validateKeyAddPermissions(contractID, signingKey, state, keys)
+  return [keys, keysToDelete]
+}
+
+export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, keys: GIKey[], state: Object, contractID: string, signingKey: GIKey) {
   console.log('@@@@@ KAP Attempting to decrypt keys for ' + contractID)
   const decryptedKeys = []
 
@@ -104,6 +146,10 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
     if (key.meta?.keyRequest && findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig'])) {
       const { id, contractID: keyRequestContractID, outerKeyId } = key.meta?.keyRequest
 
+      if (outerKeyId !== signingKey.id) {
+        throw new Error('Invalid outer key ID')
+      }
+
       const rootState = sbp(this.config.stateSelector)
 
       // Are we subscribed to this contract?
@@ -120,7 +166,7 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
         }
 
         // Mark the contract for which keys were requested as pending keys
-        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ id, outerKeyId })
+        rootState[keyRequestContractID]._volatile.pendingKeyRequests.push({ id, name: signingKey.name })
 
         this.setPostSyncOp(contractID, 'pending-keys-for-' + keyRequestContractID, ['okTurtles.events/emit', CONTRACT_IS_PENDING_KEY_REQUESTS, { contractID: keyRequestContractID }])
       }

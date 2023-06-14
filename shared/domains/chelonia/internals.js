@@ -8,9 +8,9 @@ import { decryptKey, encrypt, verifySignature } from './crypto.js'
 import './db.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
-import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpPropSet, GIOpType } from './GIMessage.js'
+import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyUpdate, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpPropSet, GIOpType } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
-import { findSuitableSecretKeyId, keyAdditionProcessor, validateKeyAddPermissions, validateKeyDelPermissions } from './utils.js'
+import { findSuitableSecretKeyId, keyAdditionProcessor, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 import { INVITE_STATUS } from './constants.js'
 // import 'ses'
 
@@ -220,13 +220,17 @@ export default (sbp('sbp/selectors/register', {
         state._vm.type = v.type
         config.reactiveSet(state._vm, 'authorizedKeys', keysToMap(v.keys))
 
+        if (!signingKey) {
+          throw new Error('Signing key not found but is mandatory for OP_CONTRACT')
+        }
+
         // Loop through the keys in the contract and try to decrypt all of the private keys
         // Example: in the identity contract you have the IEK, IPK, CSK, and CEK.
         // When you login you have the IEK which is derived from your password, and you
         // will use it to decrypt the rest of the keys which are encrypted with that.
         // Specifically, the IEK is used to decrypt the CSKs and the CEKs, which are
         // the encrypted versions of the CSK and CEK.
-        keyAdditionProcessor.call(self, keys, v.keys, state, contractID)
+        keyAdditionProcessor.call(self, keys, v.keys, state, contractID, signingKey)
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing && !env.skipActionProcessing) {
@@ -399,9 +403,15 @@ export default (sbp('sbp/selectors/register', {
         if (!signingKey) {
           throw new Error('Signing key not found but is mandatory for OP_KEY_ADD')
         }
+        v.forEach((k) => {
+          // $FlowFixMe
+          if (Object.prototype.hasOwnProperty.call(state._vm.authorizedKeys, k.id)) {
+            throw new Error('Cannot use OP_KEY_ADD on existing keys. Key ID: ' + k.id)
+          }
+        })
         validateKeyAddPermissions(contractID, signingKey, state, v)
         config.reactiveSet(state._vm, 'authorizedKeys', { ...keysToMap(v), ...state._vm.authorizedKeys })
-        keyAdditionProcessor.call(self, keys, v, state, contractID)
+        keyAdditionProcessor.call(self, keys, v, state, contractID, signingKey)
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', {})
@@ -461,6 +471,54 @@ export default (sbp('sbp/selectors/register', {
           // Set the status to revoked for invite keys
           if (key.name.startsWith('#inviteKey-') && state._vm.invites[key.id]) {
             state._vm.invites[key.id].status = INVITE_STATUS.REVOKED
+          }
+        })
+      },
+      [GIMessage.OP_KEY_UPDATE] (v: GIOpKeyUpdate) {
+        const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
+        // Order is so that KEY_ADD doesn't overwrite existing keys
+        // TODO: Verify ringLevel
+        // TODO: Handle the case of an existing key: its permissions are then augmented
+        if (!signingKey) {
+          throw new Error('Signing key not found but is mandatory for OP_KEY_UPDATE')
+        }
+        const [updatedKeys, keysToDelete] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
+        const newAuthorizedKeys = { ...keysToMap(updatedKeys), ...state._vm.authorizedKeys }
+        for (const keyId of keysToDelete) {
+          delete newAuthorizedKeys[keyId]
+        }
+        config.reactiveSet(state._vm, 'authorizedKeys', newAuthorizedKeys)
+        keyAdditionProcessor.call(self, keys, newAuthorizedKeys, state, contractID, signingKey)
+        v.forEach((key) => {
+          const rootState = sbp(config.stateSelector)
+
+          // Check contractState._volatile.watch for contracts that should be
+          // mirroring this operation
+          if (key.data && Array.isArray(state._volatile?.watch)) {
+            state._volatile.watch.filter(([name]) => name === key.name).forEach(([, contractID]) => {
+              // Find suitable singing key, if so emit OP_KEY_DEL on the other contract
+              const foreginContractKey = rootState[contractID]?._vm?.authorizedKeys?.[key.oldKeyId]
+              if (foreginContractKey && foreginContractKey.foreignKey) {
+                const signingKeyId = findSuitableSecretKeyId(rootState[contractID], [GIMessage.OP_KEY_UPDATE], ['sig'], foreginContractKey.ringLevel, Object.keys(config.transientSecretKeys))
+                const contractName = rootState.contracts[contractID]?.type
+
+                if (contractName && signingKeyId) {
+                  sbp('chelonia/out/keyUpdate', {
+                    contractID,
+                    contractName,
+                    data: [
+                      {
+                        name: foreginContractKey.name,
+                        oldKeyId: key.oldKeyId,
+                        id: key.id,
+                        data: key.data
+                      }
+                    ],
+                    signingKeyId
+                  })
+                }
+              }
+            })
           }
         })
       },

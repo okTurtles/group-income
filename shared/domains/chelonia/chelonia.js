@@ -11,11 +11,11 @@ import type { Key } from './crypto.js'
 import { decrypt, encrypt, keyId, sign } from './crypto.js'
 import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
-import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare } from './GIMessage.js'
+import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyUpdate, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare } from './GIMessage.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
 import './internals.js'
-import { findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions } from './utils.js'
+import { findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 
 // TODO: define ChelContractType for /defineContract
 
@@ -67,6 +67,19 @@ export type ChelKeyDelParams = {
   contractName: string;
   contractID: string;
   data: GIOpKeyDel;
+  signingKeyId: string;
+  hooks?: {
+    prepublishContract?: (GIMessage) => void;
+    prepublish?: (GIMessage) => void;
+    postpublish?: (GIMessage) => void;
+  };
+  publishOptions?: { maxAttempts: number };
+}
+
+export type ChelKeyUpdateParams = {
+  contractName: string;
+  contractID: string;
+  data: GIOpKeyUpdate;
   signingKeyId: string;
   hooks?: {
     prepublishContract?: (GIMessage) => void;
@@ -711,6 +724,34 @@ export default (sbp('sbp/selectors/register', {
       previousHEAD,
       op: [
         GIMessage.OP_KEY_DEL,
+        payload
+      ],
+      manifest: manifestHash,
+      signatureFn
+    })
+    hooks && hooks.prepublish && hooks.prepublish(msg)
+    await sbp('chelonia/private/out/publishEvent', msg, publishOptions, signatureFn)
+    hooks && hooks.postpublish && hooks.postpublish(msg)
+    return msg
+  },
+  'chelonia/out/keyUpdate': async function (params: ChelKeyUpdateParams): Promise<GIMessage> {
+    const { contractID, contractName, data, hooks, publishOptions } = params
+    const manifestHash = this.config.contracts.manifests[contractName]
+    const contract = this.manifestToContract[manifestHash]?.contract
+    if (!contract) {
+      throw new Error('Contract name not found')
+    }
+    const state = contract.state(contractID)
+    const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
+    const payload = (data: GIOpKeyUpdate)
+    const signingKey = this.config.transientSecretKeys?.[params.signingKeyId] || state?._volatile?.keys?.[params.signingKeyId]
+    validateKeyUpdatePermissions(contractID, state._vm.authorizedKeys[params.signingKeyId], state, payload)
+    const signatureFn = signingKey ? signatureFnBuilder(signingKey) : undefined
+    const msg = GIMessage.createV1_0({
+      contractID,
+      previousHEAD,
+      op: [
+        GIMessage.OP_KEY_UPDATE,
         payload
       ],
       manifest: manifestHash,
