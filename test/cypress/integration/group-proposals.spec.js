@@ -2,6 +2,7 @@ import { INVITE_EXPIRES_IN_DAYS } from '../../../frontend/model/contracts/shared
 
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
+const anotherGroupName = 'Donuts'
 const groupMincome = 250
 const groupNewMincome = 500
 const groupInviteLinkExpiry = {
@@ -426,6 +427,19 @@ describe('Proposals - Add members', () => {
       })
 
     assertMincome(groupNewMincome)
+  })
+
+  it('user1 creates a new group and checks that all the proposals are per group', () => {
+    cy.giCreateGroup(anotherGroupName, { mincome: groupMincome, bypassUI: true })
+
+    getProposalItems().should('have.length', 0)
+
+    cy.getByDT('openAllProposals').click()
+    cy.get('[data-test="modal"] > .c-container .c-title').should('contain', 'Archived proposals')
+    cy.getByDT('modal').within(() => {
+      getProposalItems().should('have.length', 0)
+      cy.closeModal()
+    })
 
     cy.giLogout()
   })
