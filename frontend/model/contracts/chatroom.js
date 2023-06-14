@@ -277,7 +277,7 @@ sbp('chelonia/defineContract', {
         const { member } = data
         const isKicked = data.username && member !== data.username
         if (!state.onlyRenderMessage && !state.users[member]) {
-          throw new Error(`Can not leave the chatroom which ${member} are not part of`)
+          throw new Error(`Can not leave the chatroom which ${member} is not part of`)
         }
         Vue.delete(state.users, member)
 

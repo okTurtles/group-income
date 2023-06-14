@@ -150,7 +150,7 @@ export default (sbp('sbp/selectors/register', {
       // but from the direct messages invited by another
       const chatRoomUsers = uniq(Object.keys(
         pickWhere(state.contracts, ({ type }) => type === 'gi.contracts/chatroom')
-      ).map(cID => Object.keys(state[cID].users)).flat())
+      ).map(cID => Object.keys(state[cID].users || {})).flat())
       const additionalIdentityContractIDs = await Promise.all(chatRoomUsers.filter(username => {
         return getters.ourUsername !== username && !getters.ourContacts.includes(username)
       }).map(username => sbp('namespace/lookup', username)))
