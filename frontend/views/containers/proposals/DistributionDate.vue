@@ -6,6 +6,7 @@
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
     variant='changeDistributionDate'
+    :skipToPropose='skipToProposeDistributionDate'
     @submit='submit'
   )
 
@@ -29,6 +30,11 @@
             :value='item'
           ) {{ humanDate(item, { month: 'long', year: 'numeric', day: 'numeric' }) }}
       i18n.helper(:args='{currentDistributionDate}') Current distribution date is on {currentDistributionDate}.
+
+    template(#skipToProposeFooter='' v-if='skipToProposeDistributionDate')
+      i18n(
+        :args='LTags("strong")'
+      ) The first distribution period is not started yet, so {strong_}this change will be immediate{_strong} (no voting required).
 
     banner-scoped(ref='formMsg' data-test='proposalError')
 </template>
@@ -72,7 +78,7 @@ export default ({
   },
   watch: {
     'ephemeral.currentStep': function (step) {
-      if (step === 1 && !this.canChangeDistributionDateImmediately) {
+      if (step === 1 && !this.skipToProposeDistributionDate) {
         this.validateDistributionDate()
       }
     }
@@ -104,7 +110,7 @@ export default ({
     currentDistributionDate () {
       return humanDate(this.groupSettings.distributionDate, { month: 'long', day: 'numeric' })
     },
-    canChangeDistributionDateImmediately () {
+    skipToProposeDistributionDate () {
       return !this.groupDistributionStarted && this.ourUsername === this.groupSettings.groupCreator
     }
   },
@@ -138,7 +144,7 @@ export default ({
       }
 
       const { distributionDate } = this.form
-      if (this.canChangeDistributionDateImmediately) {
+      if (this.skipToProposeDistributionDate) {
         try {
           await sbp('gi.actions/group/updateSettings', {
             contractID: this.currentGroupId, data: { distributionDate }
