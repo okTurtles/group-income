@@ -37,13 +37,14 @@ component(
 
 <script>
 import sbp from '@sbp/sbp'
-import { mapGetters } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
 import ProposalItem from './ProposalItem.vue'
 import PageSection from '@components/PageSection.vue'
 import ButtonDropdownMenu from '@components/ButtonDropdownMenu.vue'
 import { STATUS_OPEN, PROPOSAL_ARCHIVED } from '@model/contracts/shared/constants.js'
+import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { L } from '@common/common.js'
 
@@ -54,13 +55,12 @@ export default ({
     ButtonDropdownMenu
   },
   mounted () {
-    sbp('okTurtles.events/on', PROPOSAL_ARCHIVED, this.onProposalArchived)
+    this.updateArchivedProposals()
+    sbp('okTurtles.events/on', PROPOSAL_ARCHIVED, this.updateArchivedProposals)
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', PROPOSAL_ARCHIVED, this.onProposalArchived)
-    while (this.ephemeral.timeouts.length > 0) {
-      clearTimeout(this.ephemeral.timeouts.pop())
-    }
+    sbp('okTurtles.events/off', PROPOSAL_ARCHIVED, this.updateArchivedProposals)
+    this.clearTimeouts()
   },
   data () {
     return {
@@ -71,6 +71,7 @@ export default ({
     }
   },
   computed: {
+    ...mapState(['currentGroupId']),
     ...mapGetters([
       'currentGroupState',
       'currentIdentityState',
@@ -134,14 +135,26 @@ export default ({
     }
   },
   methods: {
-    onProposalArchived (hashWithProp) {
-      this.ephemeral.archivedProposals.unshift(hashWithProp)
+    async updateArchivedProposals (hashWithProp) {
+      const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+      const archivedProposals = await sbp('gi.db/archive/load', key) || []
+      this.ephemeral.archivedProposals = archivedProposals
+        .filter(([hash, obj]) => Date.now() - new Date(obj.dateClosed).getTime() < DAYS_MILLIS)
+        .sort(([hash1, obj1], [hash2, obj2]) => new Date(obj2.dateClosed).getTime() - new Date(obj1.dateClosed).getTime())
+
       // after a day, remove it from the list
-      this.ephemeral.timeouts.push(setTimeout(() => {
-        this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => {
-          return x[0] !== hashWithProp[0]
-        })
-      }, 1000 * 60 * 60 * 24)) // 1 day
+      this.clearTimeouts()
+      for (const [hash, obj] of this.ephemeral.archivedProposals) {
+        const dateClosed = new Date(obj.dateClosed).getTime()
+        this.ephemeral.timeouts.push(setTimeout(() => {
+          this.ephemeral.archivedProposals = this.ephemeral.archivedProposals.filter(x => x[0] !== hash)
+        }, dateClosed - Date.now() + DAYS_MILLIS))
+      }
+    },
+    clearTimeouts () {
+      while (this.ephemeral.timeouts.length > 0) {
+        clearTimeout(this.ephemeral.timeouts.pop())
+      }
     },
     hadVoted (proposal) {
       return proposal.votes[this.currentIdentityState.attributes.username] || proposal.status !== STATUS_OPEN
@@ -165,6 +178,11 @@ export default ({
       }
 
       this.openModal(modalNameMap[itemId], queries[itemId] || undefined)
+    }
+  },
+  watch: {
+    currentGroupId () {
+      this.updateArchivedProposals()
     }
   }
 }: Object)
