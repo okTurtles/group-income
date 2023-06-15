@@ -261,7 +261,7 @@ export default (sbp('sbp/selectors/register', {
         if (!cheloniaState[v.contractID]) {
           config.reactiveSet(cheloniaState, v.contractID, Object.create(null))
         }
-        const targetState = cheloniaState[v.contractID]
+        let targetState = cheloniaState[v.contractID]
 
         const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
 
@@ -310,13 +310,15 @@ export default (sbp('sbp/selectors/register', {
                 ...keys,
                 ...sharedKeys
               }
-            }).then(() => {
-              // WARNING! THIS MIGHT DEADLOCK!!!
+            }).then(async () => {
               self.setPostSyncOp(v.contractID, 'received-keys', ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }])
 
-              return sbp('chelonia/withEnv', env, [
+              // WARNING! THIS MIGHT DEADLOCK!!!
+              await sbp('chelonia/withEnv', env, [
                 'chelonia/private/in/syncContract', v.contractID
               ])
+
+              targetState = cheloniaState[v.contractID]
             })
           } else {
             console.log('No pendingKeyRequests')
@@ -340,7 +342,10 @@ export default (sbp('sbp/selectors/register', {
         })
       },
       [GIMessage.OP_KEY_REQUEST] (v: GIOpKeyRequest) {
-        // TODO: Verify that v.outerKeyId matches actual signing key
+        if (v.outerKeyId !== signature.keyId) {
+          throw new Error(`Invalid outer key ID. Expected ${signature.keyId} but got ${v.outerKeyId}`)
+        }
+
         if (state._vm?.invites?.[v.outerKeyId]?.quantity != null) {
           if (state._vm.invites[v.outerKeyId].quantity > 0) {
             if ((--state._vm.invites[v.outerKeyId].quantity) <= 0) {
@@ -414,7 +419,8 @@ export default (sbp('sbp/selectors/register', {
         keyAdditionProcessor.call(self, keys, v, state, contractID, signingKey)
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
-        if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', {})
+        if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
+        if (!state._vm.revokedKeys) config.reactiveSet(state._vm, 'revokedKeys', Object.create(null))
         if (!signingKey) {
           throw new Error('Signing key not found but is mandatory for OP_KEY_DEL')
         }
@@ -426,7 +432,7 @@ export default (sbp('sbp/selectors/register', {
             return
           }
           delete state._vm.authorizedKeys[keyId]
-          if (state._volatile?.keys) { delete state._volatile.keys[keyId] }
+          config.reactiveSet(state._vm.revokedKeys, keyId, key)
 
           const rootState = sbp(config.stateSelector)
 
@@ -435,9 +441,9 @@ export default (sbp('sbp/selectors/register', {
           if (Array.isArray(state._volatile?.watch)) {
             state._volatile.watch.filter(([name]) => name === key.name).forEach(([, contractID]) => {
               // Find suitable singing key, if so emit OP_KEY_DEL on the other contract
-              const foreginContractKey = rootState[contractID]?._vm?.authorizedKeys?.[keyId]
-              if (foreginContractKey && foreginContractKey.foreignKey) {
-                const signingKeyId = findSuitableSecretKeyId(rootState[contractID], [GIMessage.OP_KEY_DEL], ['sig'], foreginContractKey.ringLevel, Object.keys(config.transientSecretKeys))
+              const foreignContractKey = rootState[contractID]?._vm?.authorizedKeys?.[keyId]
+              if (foreignContractKey && foreignContractKey.foreignKey) {
+                const signingKeyId = findSuitableSecretKeyId(rootState[contractID], [GIMessage.OP_KEY_DEL], ['sig'], foreignContractKey.ringLevel, Object.keys(config.transientSecretKeys))
                 const contractName = rootState.contracts[contractID]?.type
 
                 if (contractName && signingKeyId) {
@@ -458,7 +464,7 @@ export default (sbp('sbp/selectors/register', {
             const foreignContract = fkUrl.pathname
             const foreignKeyName = fkUrl.searchParams.get('keyName')
 
-            if (!foreignContract || !foreignKeyName) throw new Error('Invalid foregin key: missing contract or key name')
+            if (!foreignContract || !foreignKeyName) throw new Error('Invalid foreign key: missing contract or key name')
 
             if (Array.isArray(rootState[foreignContract]?._volatile?.watch)) {
               // Stop watching events for this key
@@ -475,6 +481,7 @@ export default (sbp('sbp/selectors/register', {
         })
       },
       [GIMessage.OP_KEY_UPDATE] (v: GIOpKeyUpdate) {
+        if (!state._vm.revokedKeys) config.reactiveSet(state._vm, 'revokedKeys', Object.create(null))
         const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
         // Order is so that KEY_ADD doesn't overwrite existing keys
         // TODO: Verify ringLevel
@@ -486,9 +493,10 @@ export default (sbp('sbp/selectors/register', {
         const newAuthorizedKeys = { ...keysToMap(updatedKeys), ...state._vm.authorizedKeys }
         for (const keyId of keysToDelete) {
           delete newAuthorizedKeys[keyId]
+          config.reactiveSet(state._vm.revokedKeys, keyId, state._vm.authorizedKeys[keyId])
         }
         config.reactiveSet(state._vm, 'authorizedKeys', newAuthorizedKeys)
-        keyAdditionProcessor.call(self, keys, newAuthorizedKeys, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, keys, (Object.values(newAuthorizedKeys): any[]), state, contractID, signingKey)
         v.forEach((key) => {
           const rootState = sbp(config.stateSelector)
 
@@ -497,9 +505,9 @@ export default (sbp('sbp/selectors/register', {
           if (key.data && Array.isArray(state._volatile?.watch)) {
             state._volatile.watch.filter(([name]) => name === key.name).forEach(([, contractID]) => {
               // Find suitable singing key, if so emit OP_KEY_DEL on the other contract
-              const foreginContractKey = rootState[contractID]?._vm?.authorizedKeys?.[key.oldKeyId]
-              if (foreginContractKey && foreginContractKey.foreignKey) {
-                const signingKeyId = findSuitableSecretKeyId(rootState[contractID], [GIMessage.OP_KEY_UPDATE], ['sig'], foreginContractKey.ringLevel, Object.keys(config.transientSecretKeys))
+              const foreignContractKey = rootState[contractID]?._vm?.authorizedKeys?.[key.oldKeyId]
+              if (foreignContractKey && foreignContractKey.foreignKey) {
+                const signingKeyId = findSuitableSecretKeyId(rootState[contractID], [GIMessage.OP_KEY_UPDATE], ['sig'], foreignContractKey.ringLevel, Object.keys(config.transientSecretKeys))
                 const contractName = rootState.contracts[contractID]?.type
 
                 if (contractName && signingKeyId) {
@@ -508,7 +516,7 @@ export default (sbp('sbp/selectors/register', {
                     contractName,
                     data: [
                       {
-                        name: foreginContractKey.name,
+                        name: foreignContractKey.name,
                         oldKeyId: key.oldKeyId,
                         id: key.id,
                         data: key.data
@@ -757,7 +765,7 @@ export default (sbp('sbp/selectors/register', {
           throw new Error('Unable to find encryption key')
         }
 
-        const keys = contractState._volatile?.keys && Object.fromEntries(Object.entries(contractState._volatile?.keys).filter(([kId]) => contractState._vm.authorizedKeys[kId]?.meta?.private?.shareable))
+        const keys = contractState._volatile?.keys && Object.fromEntries(Object.entries(contractState._volatile?.keys).filter(([kId]) => contractState._vm.authorizedKeys[kId]?.meta?.private?.shareable || contractState._vm.revokedKeys?.[kId]?.meta?.private?.shareable))
 
         if (!keys || Object.keys(keys).length === 0) {
           console.info('respondToKeyRequests: no keys to share', { contractID, originatingContractID })

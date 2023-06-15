@@ -207,6 +207,11 @@ export const deserializeKey = (data: string): Key => {
 
   throw new Error('Unsupported key type')
 }
+export const keygenOfSameType = (inKey: Key | string): Key => {
+  const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
+
+  return keygen(key.type)
+}
 export const keyId = (inKey: Key | string): string => {
   const key = (Object(inKey) instanceof String) ? deserializeKey(((inKey: any): string)) : ((inKey: any): Key)
 

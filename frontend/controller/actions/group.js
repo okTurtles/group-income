@@ -16,7 +16,7 @@ import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, encrypt, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, encrypt, keygen, keygenOfSameType, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
@@ -686,10 +686,73 @@ export default (sbp('sbp/selectors/register', {
   }),
   ...encryptedAction('gi.actions/group/removeMember',
     (params, e) => L('Failed to remove {member}: {reportError}', { member: params.data.member, ...LError(e) }),
-    async function (sendMessage, params) {
+    async function (sendMessage, params, signingKeyId) {
       await leaveAllChatRooms(params.contractID, params.data.member)
-      return sendMessage({
+      await sendMessage({
         ...omit(params, ['options', 'action'])
+      })
+
+      const rootState = sbp('state/vuex/state')
+      const state = rootState[params.contractID]
+
+      const keysToRotate = ['csk', 'cek']
+
+      const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([, data]) => {
+        return !!data.meta.private && (!Array.isArray(keysToRotate) || keysToRotate.includes(data.name))
+      }).map(([id, data]) => {
+        const newKey = keygenOfSameType(data.data)
+        return [data.name, [id, newKey, keyId(newKey), data.meta.private.keyId]]
+      }))
+
+      const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]) => {
+        const encryptionKeyName = state._vm.authorizedKeys[eKID].name
+        // $FlowFixMe
+        const encryptionKey = Object.prototype.hasOwnProperty.call(newKeys, encryptionKeyName) ? newKeys[encryptionKeyName][1] : state._vm.authorizedKeys[eKID].data
+        return {
+          name: state._vm.authorizedKeys[id].name,
+          id: newId,
+          oldKeyId: id,
+          data: serializeKey(newKey, false),
+          meta: {
+            private: {
+              keyId: keyId(encryptionKey),
+              content: encrypt(encryptionKey, serializeKey(newKey, true)),
+              shareable: state._vm.authorizedKeys[id].meta.private.shareable
+            }
+          }
+        }
+      })
+
+      // Share keys with group members
+      Object.values(state.profiles).filter(p => p.departedDate == null).map(p => {
+        const CEKid = findKeyIdByName(rootState[p.contractID], 'cek')
+        return sbp('chelonia/out/keyShare', {
+          destinationContractID: p.contractID,
+          destinationContractName: rootState.contracts[p.contractID].type,
+          originatingContractID: params.contractID,
+          originatingContractName: 'gi.contracts/group',
+          data: {
+            contractID: p.contractID,
+            keys: Object.values(newKeys).map(([, newKey, newId]) => ({
+              id: newId,
+              meta: {
+                private: {
+                  keyId: CEKid,
+                  content: encrypt(rootState[p.contractID]._vm.authorizedKeys[CEKid].data, serializeKey(newKey, true))
+                }
+              }
+            }))
+          },
+          signingKeyId
+        })
+      })
+
+      // Issue OP_KEY_UPDATE
+      await sbp('chelonia/out/keyUpdate', {
+        contractID: params.contractID,
+        contractName: 'gi.contracts/group',
+        data: updatedKeys,
+        signingKeyId
       })
     }),
   ...encryptedAction('gi.actions/group/removeOurselves',

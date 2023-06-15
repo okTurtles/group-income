@@ -144,11 +144,7 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
     // Is this KEY operation the result of requesting keys for another contract?
     console.log(['@@@@@KAP', key.meta?.keyRequest, findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig']), contractID])
     if (key.meta?.keyRequest && findSuitableSecretKeyId(state, [GIMessage.OP_KEY_ADD], ['sig'])) {
-      const { id, contractID: keyRequestContractID, outerKeyId } = key.meta?.keyRequest
-
-      if (outerKeyId !== signingKey.id) {
-        throw new Error('Invalid outer key ID')
-      }
+      const { id, contractID: keyRequestContractID } = key.meta?.keyRequest
 
       const rootState = sbp(this.config.stateSelector)
 
@@ -196,7 +192,7 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
       const foreignKeyName = fkUrl.searchParams.get('keyName')
 
       if (!foreignContract || !foreignKeyName) {
-        console.warn('Invalid foregin key: missing contract or key name', { contractID, keyId: key.id })
+        console.warn('Invalid foreign key: missing contract or key name', { contractID, keyId: key.id })
         return
       }
 
