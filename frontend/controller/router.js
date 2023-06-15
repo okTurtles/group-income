@@ -19,7 +19,6 @@ const lazyDesignSystem = lazyPage(() => import('@pages/DesignSystem.vue'))
 const lazyGroupChat = lazyPage(() => import('@pages/GroupChat.vue'))
 const lazyGroupDashboard = lazyPage(() => import('@pages/GroupDashboard.vue'))
 const lazyGroupSettings = lazyPage(() => import('@pages/GroupSettings.vue'))
-const lazyMessages = lazyPage(() => import('@pages/Messages.vue'))
 const lazyPayments = lazyPage(() => import('@pages/Payments.vue'))
 const lazyPendingApproval = lazyPage(() => import('@pages/PendingApproval.vue'))
 
@@ -107,23 +106,6 @@ const router: any = new Router({
       name: 'Payments',
       meta: { title: L('Payments') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
-    },
-    /* Guards need to be created for any route that should not be directly accessed by url */
-    {
-      path: '/messages',
-      component: lazyMessages,
-      name: 'Messages',
-      meta: { title: L('Messages') },
-      beforeEnter: createEnterGuards(loginGuard)
-    },
-    {
-      path: '/messages/:chatName',
-      component: lazyMessages,
-      name: 'MessagesConversation',
-      beforeEnter: createEnterGuards(loginGuard)
-      // BUG/REVIEW "CANNOT GET /:username" when username has "." in it
-      // ex: messages/joe.kim doesnt work but messages/joekim works fine.
-      // Possible Solution: https://router.vuejs.org/guide/essentials/history-mode.html#example-server-configurations
     },
     {
       path: '/group-chat',
