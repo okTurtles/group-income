@@ -567,22 +567,31 @@ export default (sbp('sbp/selectors/register', {
     // if current size of the group is >= 150, display a warning prompt first before presenting the user with
     // 'AddMembers' proposal modal.
 
-    const { groupMembersCount } = sbp('state/vuex/getters')
-    const isGroupSizeLarge = groupMembersCount >= MAX_GROUP_MEMBER_COUNT
+    const enforceDunbar = true // Context for this hard-coded boolean variable: https://github.com/okTurtles/group-income/pull/1648#discussion_r1230389924
+    const { groupMembersCount, currentGroupState } = sbp('state/vuex/getters')
+    const memberInvitesCount = Object.values(currentGroupState.invites || {}).filter(invite => invite.creator !== INVITE_INITIAL_CREATOR).length
+    const isGroupSizeLarge = (groupMembersCount + memberInvitesCount) >= MAX_GROUP_MEMBER_COUNT
 
     if (isGroupSizeLarge) {
-      const promptOpts = {
-        heading: 'Large group size',
-        question: L(
-          "Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?",
-          { a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUMBARS_NUMBER}'' target='_blank'>`, _a: '</a>' }
-        ),
-        yesButton: L('Yes'),
-        noButton: L('Cancel')
+      const translationArgs = {
+        a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUMBARS_NUMBER}' target='_blank'>`,
+        _a: '</a>'
       }
+      const promptConfig = enforceDunbar
+        ? {
+            heading: 'Large group size',
+            question: L("Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.", translationArgs),
+            yesButton: L('OK')
+          }
+        : {
+            heading: 'Large group size',
+            question: L("Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?", translationArgs),
+            yesButton: L('Yes'),
+            noButton: L('Cancel')
+          }
 
-      const yesButtonSelected = await sbp('gi.ui/prompt', promptOpts)
-      if (yesButtonSelected) {
+      const yesButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+      if (!enforceDunbar && yesButtonSelected) {
         sbp('okTurtles.events/emit', REPLACE_MODAL, 'AddMembers')
       } else return false
     } else {

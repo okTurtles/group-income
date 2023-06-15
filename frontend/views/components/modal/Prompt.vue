@@ -13,10 +13,16 @@ modal-template(ref='modal' :a11yTitle='$attrs.heading' :modalForceAction='true')
 
       .buttons
         button-submit.is-outlined(
+          v-if='$attrs.yesButton'
           @click='submit'
           data-test='submitPrompt'
         ) {{ $attrs.yesButton || L('Yes')}}
-        button.is-outlined(type='button' @click='closeModal') {{ $attrs.noButton || L('No')}}
+
+        button.is-outlined(
+          v-if='$attrs.noButton'
+          type='button'
+          @click='closeModal'
+        ) {{ $attrs.noButton || L('No')}}
 </template>
 
 <script>
