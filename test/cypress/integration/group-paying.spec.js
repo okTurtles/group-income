@@ -5,6 +5,7 @@ export function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
   return new Date(datems).toLocaleDateString(locale, opts)
 }
 
+const API_URL = Cypress.config('baseUrl')
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const mincome = 1000
@@ -24,7 +25,7 @@ function setIncomeDetails (doesPledge, incomeAmount) {
 
   cy.getByDT('submitIncome').click()
   cy.getByDT('closeModal').should('not.exist')
-  cy.url().should('eq', 'http://localhost:8000/app/contributions')
+  cy.url().should('eq', `${API_URL}/app/contributions`)
 }
 
 function assertNavTabs (tabs) {
