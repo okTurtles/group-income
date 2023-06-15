@@ -2,7 +2,7 @@
   proposal-template(
     ref='proposal'
     :title='L("Change distribution date")'
-    :disabled='$v.form.$invalid'
+    :disabled='$v.form.$invalid || disabled'
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
     variant='changeDistributionDate'
@@ -112,6 +112,10 @@ export default ({
     },
     skipToProposeDistributionDate () {
       return !this.groupDistributionStarted && this.ourUsername === this.groupSettings.groupCreator
+    },
+    disabled () {
+      return this.groupDistributionStarted ||
+        (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator)
     }
   },
   beforeMount () {
@@ -120,11 +124,6 @@ export default ({
     }
   },
   mounted () {
-    if (this.groupDistributionStarted ||
-      (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator)) {
-      this.$refs.proposal.close()
-      return
-    }
     this.$refs.distributionDate.focus()
   },
   methods: {

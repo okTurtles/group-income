@@ -2,7 +2,7 @@
   proposal-template(
     ref='proposal'
     :title='L("Change minimum income")'
-    :disabled='$v.form.$invalid'
+    :disabled='$v.form.$invalid || disabled'
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
     @submit='submit'
@@ -98,13 +98,12 @@ export default ({
       'groupMembersCount',
       'groupMincomeFormatted',
       'groupMincomeSymbolWithCode'
-    ])
+    ]),
+    disabled () {
+      return !this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator
+    }
   },
   mounted () {
-    if (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator) {
-      this.$refs.proposal.close()
-      return
-    }
     this.$refs.mincomeAmount.focus()
   },
   methods: {

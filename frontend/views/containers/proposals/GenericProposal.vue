@@ -1,9 +1,8 @@
 <template lang="pug">
 proposal-template(
-  ref='proposal'
   :title='L("Generic Proposal")'
   :maxSteps='0'
-  :disabled='$v.form.$invalid'
+  :disabled='$v.form.$invalid || !this.groupShouldPropose'
   :currentStep.sync='ephemeral.currentStep'
   @submit='submit'
 )
@@ -75,10 +74,6 @@ export default ({
     ])
   },
   mounted () {
-    if (!this.groupShouldPropose) {
-      this.$refs.proposal.close()
-      return
-    }
     this.$refs.proposalname.focus()
   },
   methods: {

@@ -2,7 +2,7 @@
 proposal-template(
   ref='proposal'
   :title='title'
-  :disabled='false'
+  :disabled='disabled'
   :maxSteps='config.steps.length'
   :currentStep.sync='ephemeral.currentStep'
   @submit='submit'
@@ -74,11 +74,6 @@ export default ({
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },
-  mounted () {
-    if (!this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator) {
-      this.$refs.proposal.close()
-    }
-  },
   watch: {
     'ephemeral.currentStep': function (step) {
       // Validate threshold when reaching step 1
@@ -97,6 +92,9 @@ export default ({
       'groupProposalSettings',
       'groupSettings'
     ]),
+    disabled () {
+      return !this.groupShouldPropose && this.ourUsername !== this.groupSettings.groupCreator
+    },
     proposalSettings () {
       return this.groupProposalSettings()
     },
