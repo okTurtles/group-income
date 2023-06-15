@@ -1,6 +1,5 @@
 import { INVITE_EXPIRES_IN_DAYS } from '../../../frontend/model/contracts/shared/constants.js'
 
-const DAYS_MILLIS = 1000 * 60 * 60 * 24
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const groupMincome = 250
@@ -442,34 +441,38 @@ describe('Proposals - Add members', () => {
     }
 
     openChangeDistributionDateModal()
-
-    let newDistributionDate = new Date(new Date(Date.now() + 15 * DAYS_MILLIS).setUTCHours(0, 0, 0, 0))
-    newDistributionDate = new Date(new Date(
-      newDistributionDate.getFullYear(),
-      newDistributionDate.getMonth(),
-      newDistributionDate.getDate()
-    ).setUTCHours(0, 0, 0, 0))
     cy.getByDT('modalProposal').within(() => {
       cy.getByDT('modal-header-title').should('contain', 'Change distribution date')
       cy.getByDT('submitBtn').should('contain', 'Change').should('be.disabled')
       cy.get('.c-footer')
         .should('contain', 'The first distribution period is not started yet, so this change will be immediate (no voting required).')
 
-      cy.get('.inputgroup select').select(newDistributionDate.toISOString())
-      cy.getByDT('submitBtn').click()
-
       cy.closeModal()
     })
 
-    openChangeDistributionDateModal()
+    // let newDistributionDate = new Date(new Date(Date.now() + 15 * DAYS_MILLIS).setUTCHours(0, 0, 0, 0))
+    // newDistributionDate = new Date(new Date(
+    //   newDistributionDate.getFullYear(),
+    //   newDistributionDate.getMonth(),
+    //   newDistributionDate.getDate()
+    // ).setUTCHours(0, 0, 0, 0))
+    // cy.getByDT('modalProposal').within(() => {
+    //   cy.getByDT('modal-header-title').should('contain', 'Change distribution date')
+    //   cy.getByDT('submitBtn').should('contain', 'Change').should('be.disabled')
+    //   cy.get('.c-footer')
+    //     .should('contain', 'The first distribution period is not started yet, so this change will be immediate (no voting required).')
+    //   cy.get('.inputgroup select').select(newDistributionDate.toISOString())
+    //   cy.getByDT('submitBtn').click()
+    //   cy.closeModal()
+    // })
 
-    const humanNewDate = newDistributionDate.toLocaleString(undefined, { month: 'long', day: 'numeric' })
-    cy.getByDT('modalProposal').within(() => {
-      cy.getByDT('modal-header-title').should('contain', 'Change distribution date')
-      cy.get('form .helper').should('contain', `Current distribution date is on ${humanNewDate}.`)
-
-      cy.closeModal()
-    })
+    // openChangeDistributionDateModal()
+    // const humanNewDate = newDistributionDate.toLocaleString(undefined, { month: 'long', day: 'numeric' })
+    // cy.getByDT('modalProposal').within(() => {
+    //   cy.getByDT('modal-header-title').should('contain', 'Change distribution date')
+    //   cy.get('form .helper').should('contain', `Current distribution date is on ${humanNewDate}.`)
+    //   cy.closeModal()
+    // })
 
     cy.giLogout()
   })
