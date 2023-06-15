@@ -188,9 +188,7 @@ sbp('chelonia/defineContract', {
       process ({ data, meta, hash, id }, { state }) {
         const { username } = data
         if (!state.onlyRenderMessage && state.users[username]) {
-          // this can happen when we're logging in on another machine, and also in other circumstances
-          console.warn('Can not join the chatroom which you are already part of')
-          return
+          throw new Error(`Can not join the chatroom which ${username} is already part of`)
         }
 
         Vue.set(state.users, username, { joinedDate: meta.createdDate })

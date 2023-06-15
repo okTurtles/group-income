@@ -9666,8 +9666,7 @@ ${this.getErrorInfo()}`;
         process({ data, meta, hash: hash2, id }, { state }) {
           const { username } = data;
           if (!state.onlyRenderMessage && state.users[username]) {
-            console.warn("Can not join the chatroom which you are already part of");
-            return;
+            throw new Error(`Can not join the chatroom which ${username} is already part of`);
           }
           vue_esm_default.set(state.users, username, { joinedDate: meta.createdDate });
           const { type, privacyLevel } = state.attributes;

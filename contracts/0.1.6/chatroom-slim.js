@@ -570,8 +570,7 @@ ${this.getErrorInfo()}`;
         process({ data, meta, hash, id }, { state }) {
           const { username } = data;
           if (!state.onlyRenderMessage && state.users[username]) {
-            console.warn("Can not join the chatroom which you are already part of");
-            return;
+            throw new Error(`Can not join the chatroom which ${username} is already part of`);
           }
           import_common2.Vue.set(state.users, username, { joinedDate: meta.createdDate });
           const { type, privacyLevel } = state.attributes;
