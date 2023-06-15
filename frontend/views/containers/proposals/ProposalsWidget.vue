@@ -2,6 +2,7 @@
 component(
   :is='componentData.type'
   v-bind='componentData.props'
+  data-test='proposalsSection'
 )
   template(#cta='')
     .c-all-actions
