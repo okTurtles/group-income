@@ -528,6 +528,10 @@ sbp('chelonia/defineContract', {
         votes: arrayOf(string)
       }),
       process ({ data, meta, hash, id }, { state }) {
+        if (!state.onlyRenderMessage) {
+          return
+        }
+
         const msgIndex = findMessageIdx(data.hash, state.messages)
 
         if (msgIndex >= 0) {
@@ -566,6 +570,10 @@ sbp('chelonia/defineContract', {
         votes: arrayOf(string)
       }),
       process ({ data, meta, hash, id }, { state }) {
+        if (!state.onlyRenderMessage) {
+          return
+        }
+
         const msgIndex = findMessageIdx(data.hash, state.messages)
 
         if (msgIndex >= 0) {
@@ -609,6 +617,10 @@ sbp('chelonia/defineContract', {
         hash: string
       }),
       process ({ data }, { state }) {
+        if (!state.onlyRenderMessage) {
+          return
+        }
+
         const msgIndex = findMessageIdx(data.hash, state.messages)
 
         if (msgIndex >= 0) {
