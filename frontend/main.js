@@ -106,7 +106,9 @@ async function startApp () {
           'chelonia/contract/sync', 'chelonia/contract/isSyncing', 'chelonia/contract/remove', 'controller/router',
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
           'gi.actions/chatroom/leave', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
-          'gi.notifications/emit'
+          'gi.notifications/emit',
+          'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys',
+          'chelonia/out/keyDel'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],
         preferSlim: true,

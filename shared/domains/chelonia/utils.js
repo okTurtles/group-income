@@ -3,10 +3,14 @@ import type { GIKey, GIKeyPurpose, GIOpKeyUpdate } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import type { Key } from './crypto.js'
-import { decryptKey } from './crypto.js'
+import { decryptKey, deserializeKey } from './crypto.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 
 export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name)?.id
+
+export const findForeignKeysByContractID = (state: Object, contractID: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).filter((k) => k.foreignKey?.includes(contractID)).map(k => k.id)
+
+export const findRevokedKeyIdsByName = (state: Object, name: string): string[] => state._vm?.authorizedKeys && ((Object.values((state._vm.revokedKeys: any) || {}): any): GIKey[]).filter((k) => k.name === name).map(k => k.id)
 
 export const findSuitableSecretKeyId = (state: Object, permissions: '*' | string[], purposes: GIKeyPurpose[], ringLevel?: number, additionalKeyIds: ?string[]): ?string => {
   return state._vm?.authorizedKeys &&
@@ -116,6 +120,7 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
         try {
           decryptedKey = decryptKey(key.id, secretKeys[key.meta.private.keyId], key.meta.private.content)
           decryptedKeys.push([key.id, decryptedKey])
+          secretKeys[key.id] = deserializeKey(decryptedKey)
         } catch (e) {
           console.error(`Secret key decryption error '${e.message || e}':`, e)
           // Ricardo feels this is an ambiguous situation, however if we rethrow it will

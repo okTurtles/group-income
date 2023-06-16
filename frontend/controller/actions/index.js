@@ -1,8 +1,9 @@
-import sbp from '@sbp/sbp'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { deserializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
 import { pick } from '@model/contracts/shared/giLodash.js'
+import sbp from '@sbp/sbp'
+import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
+import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { deserializeKey, encrypt, keyId, keygenOfSameType, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 
 export { default as chatroom } from './chatroom.js'
 export { default as group } from './group.js'
@@ -68,5 +69,74 @@ sbp('sbp/selectors/register', {
         signingKeyId: CSKid
       })
     }
+  },
+  'gi.actions/out/rotateKeys': async (
+    contractID: string,
+    contractName: string,
+    keysToRotate: string[] | '*' | 'pending',
+    shareNewKeysSelector?: string
+  ) => {
+    const rootState = sbp('state/vuex/state')
+    const state = rootState[contractID]
+
+    let ringLevel = Number.MAX_SAFE_INTEGER
+
+    // $FlowFixMe
+    const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([id, data]: [string, GIKey]) => {
+      return !!data.meta?.private && (
+        Array.isArray(keysToRotate)
+          ? keysToRotate.includes(data.name)
+          : keysToRotate === '*'
+            ? true
+            // $FlowFixMe
+            : state._volatile?.pendingKeyRevocations && Object.prototype.hasOwnProperty.call(state._volatile.pendingKeyRevocations, id))
+    }).map(([id, data]: [string, GIKey]) => {
+      const newKey = keygenOfSameType(data.data)
+      return [data.name, [id, newKey, keyId(newKey), data.meta.private.keyId]]
+    }))
+
+    // $FlowFixMe
+    const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]) => {
+      const encryptionKeyName = state._vm.authorizedKeys[eKID].name
+      // $FlowFixMe
+      const encryptionKey = Object.prototype.hasOwnProperty.call(newKeys, encryptionKeyName) ? newKeys[encryptionKeyName][1] : state._vm.authorizedKeys[eKID].data
+
+      if (state._vm.authorizedKeys[id].ringLevel < ringLevel) {
+        ringLevel = state._vm.authorizedKeys[id].ringLevel
+      }
+
+      return {
+        name: state._vm.authorizedKeys[id].name,
+        id: newId,
+        oldKeyId: id,
+        data: serializeKey(newKey, false),
+        meta: {
+          private: {
+            keyId: keyId(encryptionKey),
+            content: encrypt(encryptionKey, serializeKey(newKey, true)),
+            shareable: state._vm.authorizedKeys[id].meta.private.shareable
+          }
+        }
+      }
+    })
+
+    const signingKeyId = findSuitableSecretKeyId(state, [], ['sig'], ringLevel)
+
+    if (!signingKeyId) {
+      throw new Error('No suitable signing key found')
+    }
+
+    // Share new keys with other contracts
+    if (shareNewKeysSelector) {
+      await sbp(shareNewKeysSelector, contractID, newKeys)
+    }
+
+    // Issue OP_KEY_UPDATE
+    await sbp('chelonia/out/keyUpdate', {
+      contractID,
+      contractName,
+      data: updatedKeys,
+      signingKeyId
+    })
   }
 })

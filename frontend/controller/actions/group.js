@@ -14,9 +14,10 @@ import { imageUpload } from '@utils/image.js'
 import type { ChelKeyRequestParams } from '~/shared/domains/chelonia/chelonia.js'
 import { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
 import { CONTRACT_HAS_RECEIVED_KEYS } from '~/shared/domains/chelonia/events.js'
-import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { findKeyIdByName, findRevokedKeyIdsByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, encrypt, keygen, keygenOfSameType, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, encrypt, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
@@ -307,12 +308,13 @@ export default (sbp('sbp/selectors/register', {
       // Share our PEK with the group so that group members can see
       // our name and profile information
       const PEKid = findKeyIdByName(rootState[userID], 'pek')
+      const revokedPEKids = findRevokedKeyIdsByName(rootState[userID], 'pek')
 
       PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
         destinationContractID: contractID,
         destinationContractName: 'gi.contracts/group',
         contractID: userID,
-        keyIds: [PEKid]
+        keyIds: [PEKid, ...revokedPEKids]
       })
 
       return message
@@ -516,6 +518,36 @@ export default (sbp('sbp/selectors/register', {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
     sbp('okTurtles.events/emit', SWITCH_GROUP)
   },
+  'gi.actions/group/shareNewKeys': (contractID: string, newKeys) => {
+    const rootState = sbp('state/vuex/state')
+    const state = rootState[contractID]
+    const signingKeyId = findKeyIdByName(state, 'csk')
+
+    // $FlowFixMe
+    return Promise.all(Object.values(state.profiles).filter((p?: { departedDate: null | string }) => p.departedDate == null).map((p: { contractID: string }) => {
+      const CEKid = findKeyIdByName(rootState[p.contractID], 'cek')
+      return sbp('chelonia/out/keyShare', {
+        destinationContractID: p.contractID,
+        destinationContractName: rootState.contracts[p.contractID].type,
+        originatingContractID: contractID,
+        originatingContractName: 'gi.contracts/group',
+        data: {
+          contractID: p.contractID,
+          // $FlowFixMe
+          keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+            id: newId,
+            meta: {
+              private: {
+                keyId: CEKid,
+                content: encrypt(rootState[p.contractID]._vm.authorizedKeys[CEKid].data, serializeKey(newKey, true))
+              }
+            }
+          }))
+        },
+        signingKeyId
+      })
+    }))
+  },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
     const rootState = sbp('state/vuex/state')
     const contractState = rootState[params.contractID]
@@ -690,69 +722,6 @@ export default (sbp('sbp/selectors/register', {
       await leaveAllChatRooms(params.contractID, params.data.member)
       await sendMessage({
         ...omit(params, ['options', 'action'])
-      })
-
-      const rootState = sbp('state/vuex/state')
-      const state = rootState[params.contractID]
-
-      const keysToRotate = ['csk', 'cek']
-
-      const newKeys = Object.fromEntries(Object.entries(state._vm.authorizedKeys).filter(([, data]) => {
-        return !!data.meta.private && (!Array.isArray(keysToRotate) || keysToRotate.includes(data.name))
-      }).map(([id, data]) => {
-        const newKey = keygenOfSameType(data.data)
-        return [data.name, [id, newKey, keyId(newKey), data.meta.private.keyId]]
-      }))
-
-      const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]) => {
-        const encryptionKeyName = state._vm.authorizedKeys[eKID].name
-        // $FlowFixMe
-        const encryptionKey = Object.prototype.hasOwnProperty.call(newKeys, encryptionKeyName) ? newKeys[encryptionKeyName][1] : state._vm.authorizedKeys[eKID].data
-        return {
-          name: state._vm.authorizedKeys[id].name,
-          id: newId,
-          oldKeyId: id,
-          data: serializeKey(newKey, false),
-          meta: {
-            private: {
-              keyId: keyId(encryptionKey),
-              content: encrypt(encryptionKey, serializeKey(newKey, true)),
-              shareable: state._vm.authorizedKeys[id].meta.private.shareable
-            }
-          }
-        }
-      })
-
-      // Share keys with group members
-      Object.values(state.profiles).filter(p => p.departedDate == null).map(p => {
-        const CEKid = findKeyIdByName(rootState[p.contractID], 'cek')
-        return sbp('chelonia/out/keyShare', {
-          destinationContractID: p.contractID,
-          destinationContractName: rootState.contracts[p.contractID].type,
-          originatingContractID: params.contractID,
-          originatingContractName: 'gi.contracts/group',
-          data: {
-            contractID: p.contractID,
-            keys: Object.values(newKeys).map(([, newKey, newId]) => ({
-              id: newId,
-              meta: {
-                private: {
-                  keyId: CEKid,
-                  content: encrypt(rootState[p.contractID]._vm.authorizedKeys[CEKid].data, serializeKey(newKey, true))
-                }
-              }
-            }))
-          },
-          signingKeyId
-        })
-      })
-
-      // Issue OP_KEY_UPDATE
-      await sbp('chelonia/out/keyUpdate', {
-        contractID: params.contractID,
-        contractName: 'gi.contracts/group',
-        data: updatedKeys,
-        signingKeyId
       })
     }),
   ...encryptedAction('gi.actions/group/removeOurselves',

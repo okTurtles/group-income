@@ -1,18 +1,20 @@
 'use strict'
 
-import sbp from '@sbp/sbp'
 import { GIErrorUIRuntimeError, L, LError } from '@common/common.js'
 import {
   CHATROOM_TYPES
 } from '@model/contracts/shared/constants.js'
 import { difference, omit, pickWhere, uniq } from '@model/contracts/shared/giLodash.js'
+import sbp from '@sbp/sbp'
 import { imageUpload } from '@utils/image.js'
 import { SETTING_CURRENT_USER } from '~/frontend/model/database.js'
 import { LOGIN, LOGOUT } from '~/frontend/utils/events.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { boxKeyPair, buildRegisterSaltRequest, computeCAndHc, decryptContractSalt, hash, hashPassword, randomNonce } from '~/shared/zkpp.js'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deriveKeyFromPassword, encrypt, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import type { Key } from '../../../shared/domains/chelonia/crypto.js'
 import { handleFetchResult } from '../utils/misc.js'
 import { encryptedAction } from './utils.js'
 
@@ -137,7 +139,7 @@ export default (sbp('sbp/selectors/register', {
     // Secret keys to be stored encrypted in the contract
     const CSKs = encrypt(IEK, serializeKey(CSK, true))
     const CEKs = encrypt(IEK, serializeKey(CEK, true))
-    const PEKs = encrypt(IEK, serializeKey(PEK, true))
+    const PEKs = encrypt(CEK, serializeKey(PEK, true))
 
     let userID
     // next create the identity contract itself
@@ -183,7 +185,7 @@ export default (sbp('sbp/selectors/register', {
             name: 'csk',
             purpose: ['sig'],
             ringLevel: 1,
-            permissions: [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE],
+            permissions: [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE],
             meta: {
               private: {
                 keyId: IEKid,
@@ -214,7 +216,7 @@ export default (sbp('sbp/selectors/register', {
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
             meta: {
               private: {
-                keyId: IEKid,
+                keyId: CEKid,
                 content: PEKs
               }
             },
@@ -430,6 +432,35 @@ export default (sbp('sbp/selectors/register', {
     sbp('state/vuex/commit', 'logout')
     sbp('okTurtles.events/emit', LOGOUT)
     sbp('appLogs/pauseCapture', { wipeOut: true }) // clear stored logs to prevent someone else accessing sensitve data
+  },
+  'gi.actions/identity/shareNewPEK': (contractID: string, newKeys) => {
+    const rootState = sbp('state/vuex/state')
+    const state = rootState[contractID]
+    const signingKeyId = findKeyIdByName(state, 'csk')
+
+    return Promise.all((state.loginState?.groupIds || []).filter(groupID => !!rootState.contracts[groupID]).map(groupID => {
+      const CEKid = findKeyIdByName(rootState[groupID], 'cek')
+      return sbp('chelonia/out/keyShare', {
+        destinationContractID: groupID,
+        destinationContractName: rootState.contracts[groupID].type,
+        originatingContractID: contractID,
+        originatingContractName: 'gi.contracts/identity',
+        data: {
+          contractID: groupID,
+          // $FlowFixMe
+          keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+            id: newId,
+            meta: {
+              private: {
+                keyId: CEKid,
+                content: encrypt(rootState[groupID]._vm.authorizedKeys[CEKid].data, serializeKey(newKey, true))
+              }
+            }
+          }))
+        },
+        signingKeyId
+      })
+    }))
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.'), undefined, 'pek'),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),

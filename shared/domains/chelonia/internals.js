@@ -91,6 +91,7 @@ export default (sbp('sbp/selectors/register', {
       Object,
       Error,
       TypeError,
+      RangeError,
       Math,
       Symbol,
       Date,
@@ -421,6 +422,7 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
         if (!state._vm.revokedKeys) config.reactiveSet(state._vm, 'revokedKeys', Object.create(null))
+        if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
         if (!signingKey) {
           throw new Error('Signing key not found but is mandatory for OP_KEY_DEL')
         }
@@ -433,6 +435,11 @@ export default (sbp('sbp/selectors/register', {
           }
           delete state._vm.authorizedKeys[keyId]
           config.reactiveSet(state._vm.revokedKeys, keyId, key)
+
+          // $FlowFixMe
+          if (Object.prototype.hasOwnProperty.call(state._volatile.pendingKeyRevocations, keyId)) {
+            delete state._volatile.pendingKeyRevocations[keyId]
+          }
 
           const rootState = sbp(config.stateSelector)
 
@@ -482,6 +489,8 @@ export default (sbp('sbp/selectors/register', {
       },
       [GIMessage.OP_KEY_UPDATE] (v: GIOpKeyUpdate) {
         if (!state._vm.revokedKeys) config.reactiveSet(state._vm, 'revokedKeys', Object.create(null))
+        if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
+        if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
         const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
         // Order is so that KEY_ADD doesn't overwrite existing keys
         // TODO: Verify ringLevel
@@ -490,10 +499,17 @@ export default (sbp('sbp/selectors/register', {
           throw new Error('Signing key not found but is mandatory for OP_KEY_UPDATE')
         }
         const [updatedKeys, keysToDelete] = validateKeyUpdatePermissions(contractID, signingKey, state, v)
-        const newAuthorizedKeys = { ...keysToMap(updatedKeys), ...state._vm.authorizedKeys }
+        const updatedKeysMap = keysToMap(updatedKeys)
+        const newAuthorizedKeys = { ...updatedKeysMap, ...state._vm.authorizedKeys }
         for (const keyId of keysToDelete) {
           delete newAuthorizedKeys[keyId]
           config.reactiveSet(state._vm.revokedKeys, keyId, state._vm.authorizedKeys[keyId])
+        }
+        for (const keyId of updatedKeys) {
+          // $FlowFixMe
+          if (Object.prototype.hasOwnProperty.call(state._volatile.pendingKeyRevocations, keyId)) {
+            delete state._volatile.pendingKeyRevocations[keyId]
+          }
         }
         config.reactiveSet(state._vm, 'authorizedKeys', newAuthorizedKeys)
         keyAdditionProcessor.call(self, keys, (Object.values(newAuthorizedKeys): any[]), state, contractID, signingKey)
