@@ -52,8 +52,6 @@ const applyPortShift = (env) => {
 
 Object.assign(process.env, applyPortShift(process.env))
 
-process.env.GI_VERSION = `${packageJSON.version}@${new Date().toISOString()}`
-
 // Not loading babel-register here since it is quite a heavy import and is not always used.
 // We will rather load it later, and only if necessary.
 // require('@babel/register')
@@ -61,10 +59,18 @@ process.env.GI_VERSION = `${packageJSON.version}@${new Date().toISOString()}`
 const {
   CI = '',
   LIGHTWEIGHT_CLIENT = 'true',
-  GI_VERSION,
   NODE_ENV = 'development',
   EXPOSE_SBP = ''
 } = process.env
+
+const CONTRACTS_VERSION = packageJSON.contractsVersion
+// In production, append a timestamp so that browsers will detect a new version
+// and reload whenever the live server is restarted.
+// TODO: get rid of this timestamp and just bump the package version when necessary.
+const GI_VERSION = packageJSON.version + (NODE_ENV === 'production' ? `@${new Date().toISOString()}` : '')
+
+// Make version info available to subprocesses.
+Object.assign(process.env, { CONTRACTS_VERSION, GI_VERSION })
 
 const backendIndex = './backend/index.js'
 const distAssets = 'dist/assets'
@@ -193,6 +199,7 @@ module.exports = (grunt) => {
       define: {
         'process.env.BUILD': "'web'", // Required by Vuelidate.
         'process.env.CI': `'${CI}'`,
+        'process.env.CONTRACTS_VERSION': `'${CONTRACTS_VERSION}'`,
         'process.env.GI_VERSION': `'${GI_VERSION}'`,
         'process.env.LIGHTWEIGHT_CLIENT': `'${LIGHTWEIGHT_CLIENT}'`,
         'process.env.NODE_ENV': `'${NODE_ENV}'`,

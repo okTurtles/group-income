@@ -148,12 +148,14 @@ export default (sbp('sbp/selectors/register', {
           // Calling via SBP also makes it simple to implement 'test/backend.js'
           sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data))
         },
-        [NOTIFICATION_TYPE.APP_VERSION] (msg) {
+        [NOTIFICATION_TYPE.VERSION_INFO] (msg) {
           const ourVersion = process.env.GI_VERSION
-          const theirVersion = msg.data
+          const theirVersion = msg.data.GI_VERSION
 
-          if (ourVersion !== theirVersion) {
-            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.APP_VERSION, theirVersion)
+          const ourContractsVersion = process.env.CONTRACTS_VERSION
+          const theirContractsVersion = msg.data.CONTRACTS_VERSION
+          if (ourVersion !== theirVersion || ourContractsVersion !== theirContractsVersion) {
+            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.UPDATE_AVAILABLE, { ...msg.data })
           }
         }
       }
