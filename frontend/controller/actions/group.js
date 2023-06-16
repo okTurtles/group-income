@@ -569,7 +569,7 @@ export default (sbp('sbp/selectors/register', {
 
     const enforceDunbar = true // Context for this hard-coded boolean variable: https://github.com/okTurtles/group-income/pull/1648#discussion_r1230389924
     const { groupMembersCount, currentGroupState } = sbp('state/vuex/getters')
-    const memberInvitesCount = Object.values(currentGroupState.invites || {}).filter(invite => invite.creator !== INVITE_INITIAL_CREATOR).length
+    const memberInvitesCount = Object.values(currentGroupState.invites || {}).filter((invite: any) => invite.creator !== INVITE_INITIAL_CREATOR).length
     const isGroupSizeLarge = (groupMembersCount + memberInvitesCount) >= MAX_GROUP_MEMBER_COUNT
 
     if (isGroupSizeLarge) {
