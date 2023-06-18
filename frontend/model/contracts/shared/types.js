@@ -23,7 +23,8 @@ export const chatRoomAttributesType: any = objectOf({
   name: string,
   description: string,
   type: unionOf(...Object.values(CHATROOM_TYPES).map(v => literalOf(v))),
-  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v)))
+  privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
+  groupContractID: optional(string)
 })
 
 export const messageType: any = objectMaybeOf({

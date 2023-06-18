@@ -18,6 +18,65 @@ const keysToMap = (keys: GIKey[]): Object => {
   return Object.fromEntries(keys.map(key => [key.id, key]))
 }
 
+const keyRotationHelper = (contractID: string, state: Object, config: Object, updatedKeysMap: Object, requiredPermissions: string[], outputSelector: string, outputMapper: (name: [string, string]) => any) => {
+  if (Array.isArray(state._volatile?.watch)) {
+    const rootState = sbp(config.stateSelector)
+    const watchMap = Object.create(null)
+
+    state._volatile.watch.forEach(([name, cID]) => {
+      if (!updatedKeysMap[name] || watchMap[cID] === null) {
+        return
+      }
+      if (!watchMap[cID]) {
+        if (!rootState.contracts[cID]?.type || !findSuitableSecretKeyId(rootState[cID], [GIMessage.OP_KEY_UPDATE], ['sig'], Number.MAX_SAFE_INTEGER, Object.keys(config.transientSecretKeys))) {
+          watchMap[cID] = null
+          return
+        }
+
+        watchMap[cID] = []
+      }
+
+      watchMap[cID].push(name)
+    })
+
+    Object.entries((watchMap: Object)).forEach(([cID, names]) => {
+      if (!Array.isArray(names) || !names.length) return
+
+      const [keyNamesToUpdate, signingKeyId] = names.map((name) => {
+        const foreignContractKey = rootState[cID]?._vm?.authorizedKeys?.[updatedKeysMap[name].oldKeyId]
+
+        if (!foreignContractKey) return undefined
+
+        const signingKeyId = findSuitableSecretKeyId(rootState[cID], requiredPermissions, ['sig'], foreignContractKey.ringLevel, Object.keys(config.transientSecretKeys))
+
+        if (signingKeyId) {
+          return [[name, foreignContractKey.name], signingKeyId, rootState[cID]._vm.authorizedKeys[signingKeyId].ringLevel]
+        }
+
+        return undefined
+      }).filter(Boolean).reduce((acc, [name, signingKeyId, ringLevel]) => {
+        // $FlowFixMe
+        acc[0].push(name)
+        return ringLevel < acc[2] ? [acc[0], signingKeyId, ringLevel] : acc
+      }, [[], undefined, Number.POSITIVE_INFINITY])
+
+      if (!signingKeyId) return
+
+      // Send output based on keyNamesToUpdate, signingKeyId
+      const contractName = rootState.contracts[cID]?.type
+
+      Promise.resolve(sbp(outputSelector, {
+        contractID: cID,
+        contractName,
+        data: keyNamesToUpdate.map(outputMapper),
+        signingKeyId
+      })).catch((e) => {
+        console.warn(`Error mirroring key operation (${outputSelector}) from ${contractID} to ${cID}: ${e?.message || e}`)
+      })
+    })
+  }
+}
+
 // export const FERAL_FUNCTION = Function
 
 export default (sbp('sbp/selectors/register', {
@@ -443,26 +502,6 @@ export default (sbp('sbp/selectors/register', {
 
           const rootState = sbp(config.stateSelector)
 
-          // Check contractState._volatile.watch for contracts that should be
-          // mirroring this operation
-          if (Array.isArray(state._volatile?.watch)) {
-            state._volatile.watch.filter(([name]) => name === key.name).forEach(([, contractID]) => {
-              // Find suitable singing key, if so emit OP_KEY_DEL on the other contract
-              const foreignContractKey = rootState[contractID]?._vm?.authorizedKeys?.[keyId]
-              if (foreignContractKey && foreignContractKey.foreignKey) {
-                const signingKeyId = findSuitableSecretKeyId(rootState[contractID], [GIMessage.OP_KEY_DEL], ['sig'], foreignContractKey.ringLevel, Object.keys(config.transientSecretKeys))
-                const contractName = rootState.contracts[contractID]?.type
-
-                if (contractName && signingKeyId) {
-                  sbp('chelonia/out/keyDel', { contractID, contractName, data: [keyId], signingKeyId })
-                }
-              }
-            })
-
-            // Stop watching events for this key
-            state._volatile.watch = state._volatile.watch.filter(([name]) => name !== key.name)
-          }
-
           // Are we deleting a foreign key? If so, we also need to remove
           // the operation from (1) _volatile.watch (on the other contract)
           // and (2) postSyncOperations
@@ -486,6 +525,21 @@ export default (sbp('sbp/selectors/register', {
             state._vm.invites[key.id].status = INVITE_STATUS.REVOKED
           }
         })
+
+        // Check state._volatile.watch for contracts that should be
+        // mirroring this operation
+        if (Array.isArray(state._volatile?.watch)) {
+          const updatedKeysMap = Object.create(null)
+
+          v.forEach((keyId) => {
+            updatedKeysMap[state._vm.revokedKeys[keyId].name] = {
+              name: state._vm.revokedKeys[keyId].name,
+              oldKeyId: state._vm.revokedKeys[keyId]
+            }
+          })
+
+          keyRotationHelper(contractID, state, config, updatedKeysMap, [GIMessage.OP_KEY_DEL], 'chelonia/out/keyDel', (name) => updatedKeysMap[name[0]].oldKeyId)
+        }
       },
       [GIMessage.OP_KEY_UPDATE] (v: GIOpKeyUpdate) {
         if (!state._vm.revokedKeys) config.reactiveSet(state._vm, 'revokedKeys', Object.create(null))
@@ -513,38 +567,23 @@ export default (sbp('sbp/selectors/register', {
         }
         config.reactiveSet(state._vm, 'authorizedKeys', newAuthorizedKeys)
         keyAdditionProcessor.call(self, keys, (Object.values(newAuthorizedKeys): any[]), state, contractID, signingKey)
-        v.forEach((key) => {
-          const rootState = sbp(config.stateSelector)
 
-          // Check contractState._volatile.watch for contracts that should be
-          // mirroring this operation
-          if (key.data && Array.isArray(state._volatile?.watch)) {
-            state._volatile.watch.filter(([name]) => name === key.name).forEach(([, contractID]) => {
-              // Find suitable singing key, if so emit OP_KEY_DEL on the other contract
-              const foreignContractKey = rootState[contractID]?._vm?.authorizedKeys?.[key.oldKeyId]
-              if (foreignContractKey && foreignContractKey.foreignKey) {
-                const signingKeyId = findSuitableSecretKeyId(rootState[contractID], [GIMessage.OP_KEY_UPDATE], ['sig'], foreignContractKey.ringLevel, Object.keys(config.transientSecretKeys))
-                const contractName = rootState.contracts[contractID]?.type
+        // Check state._volatile.watch for contracts that should be
+        // mirroring this operation
+        if (Array.isArray(state._volatile?.watch)) {
+          const updatedKeysMap = Object.create(null)
 
-                if (contractName && signingKeyId) {
-                  sbp('chelonia/out/keyUpdate', {
-                    contractID,
-                    contractName,
-                    data: [
-                      {
-                        name: foreignContractKey.name,
-                        oldKeyId: key.oldKeyId,
-                        id: key.id,
-                        data: key.data
-                      }
-                    ],
-                    signingKeyId
-                  })
-                }
-              }
-            })
-          }
-        })
+          v.forEach((key) => {
+            if (key.data) updatedKeysMap[key.name] = key
+          })
+
+          keyRotationHelper(contractID, state, config, updatedKeysMap, [GIMessage.OP_KEY_UPDATE], 'chelonia/out/keyUpdate', (name) => ({
+            name: name[1],
+            oldKeyId: updatedKeysMap[name[0]].oldKeyId,
+            id: updatedKeysMap[name[0]].id,
+            data: updatedKeysMap[name[0]].data
+          }))
+        }
       },
       [GIMessage.OP_PROTOCOL_UPGRADE]: notImplemented
     }
@@ -720,8 +759,15 @@ export default (sbp('sbp/selectors/register', {
     if (!contractState._volatile) {
       this.config.reactiveSet(contractState, '_volatile', Object.create(null, { watch: { value: [[keyName, externalContractID]], configurable: true, enumerable: true, writable: true } }))
     } else {
-      if (!contractState._volatilewatch) this.config.reactiveSet(contractState._volatile, 'watch', [[keyName, externalContractID]])
+      if (!contractState._volatile.watch) this.config.reactiveSet(contractState._volatile, 'watch', [[keyName, externalContractID]])
       if (Array.isArray(contractState._volatile.watch) && !contractState._volatile.watch.find((v) => v[0] === keyName && v[1] === externalContractID)) contractState._volatile.watch.push([keyName, externalContractID])
+    }
+
+    // Do we have the corresponding private key? If so, add it to this contract
+    if (contractState._volatile.keys?.[keyId]) {
+      if (!externalContractState._volatile) this.config.reactiveSet(externalContractState, '_volatile', Object.create(null))
+      if (!externalContractState._volatile.keys) this.config.reactiveSet(externalContractState._volatile, 'keys', Object.create(null))
+      externalContractState._volatile.keys[keyId] = contractState._volatile.keys?.[keyId]
     }
   },
   'chelonia/private/respondToKeyRequests': async function (contractID: string) {

@@ -1,103 +1,88 @@
 'use strict'
 import sbp from '@sbp/sbp'
 
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey, encrypt } from '../../../shared/domains/chelonia/crypto.js'
-import { L, GIErrorUIRuntimeError } from '@common/common.js'
+import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { omit } from '@model/contracts/shared/giLodash.js'
-import { encryptedAction } from './utils.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, encrypt, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIRegParams } from './types.js'
+import { encryptedAction } from './utils.js'
 
 export default (sbp('sbp/selectors/register', {
   'gi.actions/chatroom/create': async function (params: GIRegParams) {
     try {
-      // Create the necessary keys to initialise the contract
-      // eslint-disable-next-line camelcase
-      const CSK = keygen(EDWARDS25519SHA512BATCH)
-      const CEK = keygen(CURVE25519XSALSA20POLY1305)
+      let cskOpts = params.options?.csk
+      let cekOpts = params.options?.cek
 
-      // Key IDs
-      const CSKid = keyId(CSK)
-      const CEKid = keyId(CEK)
+      if (!cekOpts) {
+        const CEK = keygen(CURVE25519XSALSA20POLY1305)
+        const CEKid = keyId(CEK)
+        const CEKp = serializeKey(CEK, false)
+        const CEKs = encrypt(CEK, serializeKey(CEK, true))
 
-      // Public keys to be stored in the contract
-      const CSKp = serializeKey(CSK, false)
-      const CEKp = serializeKey(CEK, false)
-
-      // Secret keys to be stored encrypted in the contract
-      const CSKs = encrypt(CEK, serializeKey(CSK, true))
-      const CEKs = encrypt(CEK, serializeKey(CEK, true))
-
-      // TODO: REMOVE
-      // const rootState = sbp('state/vuex/state')
-
-      let joinKeyOpts = params.options?.joinKey
-
-      if (!joinKeyOpts) {
-        const joinKey = keygen(EDWARDS25519SHA512BATCH)
-        const joinKeyId = keyId(joinKey)
-        const joinKeyP = serializeKey(joinKey, false)
-        const joinKeyS = encrypt(CEK, serializeKey(joinKey, true))
-
-        joinKeyOpts = {
-          id: joinKeyId,
+        cekOpts = {
+          id: CEKid,
           foreignKey: undefined,
           meta: {
             private: {
               keyId: CEKid,
-              content: joinKeyS,
+              content: CEKs,
               shareable: true
             }
           },
-          data: joinKeyP
+          data: CEKp,
+          _rawKey: CEK
+        }
+      }
+
+      if (!cskOpts) {
+        const CSK = keygen(EDWARDS25519SHA512BATCH)
+        const CSKid = keyId(CSK)
+        const CSKp = serializeKey(CSK, false)
+        const CSKs = encrypt(cekOpts.data, serializeKey(CSK, true))
+
+        cskOpts = {
+          id: CSKid,
+          foreignKey: undefined,
+          meta: {
+            private: {
+              keyId: cekOpts.id,
+              content: CSKs,
+              shareable: true
+            }
+          },
+          data: CSKp,
+          _rawKey: CSK
         }
       }
 
       console.log('Chatroom create', {
         ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
-        signingKeyId: CSKid,
-        actionSigningKeyId: CSKid,
-        actionEncryptionKeyId: CEKid,
+        signingKeyId: cskOpts.id,
+        actionSigningKeyId: cskOpts.id,
+        actionEncryptionKeyId: cekOpts.id,
         keys: [
           {
-            id: CSKid,
+            id: cskOpts.id,
             name: 'csk',
             purpose: ['sig'],
             ringLevel: 1,
             permissions: '*',
-            meta: {
-              private: {
-                keyId: CEKid,
-                content: CSKs,
-                shareable: true
-              }
-            },
-            data: CSKp
+            foreignKey: cskOpts.foreignKey,
+            meta: cskOpts.meta,
+            data: cskOpts.data
           },
           {
-            id: CEKid,
+            id: cekOpts.id,
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 1,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
-            meta: {
-              private: {
-                keyId: CEKid,
-                content: CEKs,
-                shareable: true
-              }
-            },
-            data: CEKp
-          },
-          {
-            id: joinKeyOpts.id,
-            name: '#joinKey-' + joinKeyOpts.id,
-            purpose: ['sig'],
-            ringLevel: Number.MAX_SAFE_INTEGER,
-            permissions: [GIMessage.OP_KEY_REQUEST],
-            meta: joinKeyOpts.meta,
-            data: joinKeyOpts.data
+            foreignKey: cekOpts.foreignKey,
+            meta: cekOpts.meta,
+            data: cekOpts.data
           }
         ],
         contractName: 'gi.contracts/chatroom'
@@ -105,54 +90,36 @@ export default (sbp('sbp/selectors/register', {
 
       await sbp('chelonia/configure', {
         transientSecretKeys: {
-          [CSKid]: CSK,
-          [CEKid]: CEK
+          ...(cskOpts._rawKey && { [cskOpts.id]: cskOpts._rawKey }),
+          ...(cekOpts._rawKey && { [cekOpts.id]: cekOpts._rawKey })
         }
       })
 
       const chatroom = await sbp('chelonia/out/registerContract', {
         ...omit(params, ['options']), // any 'options' are for this action, not for Chelonia
-        signingKeyId: CSKid,
-        actionSigningKeyId: CSKid,
-        actionEncryptionKeyId: CEKid,
+        signingKeyId: cskOpts.id,
+        actionSigningKeyId: cskOpts.id,
+        actionEncryptionKeyId: cekOpts.id,
         keys: [
           {
-            id: CSKid,
+            id: cskOpts.id,
             name: 'csk',
             purpose: ['sig'],
             ringLevel: 1,
             permissions: '*',
-            meta: {
-              private: {
-                keyId: CEKid,
-                content: CSKs
-              }
-            },
-            data: CSKp
+            foreignKey: cskOpts.foreignKey,
+            meta: cskOpts.meta,
+            data: cskOpts.data
           },
           {
-            id: CEKid,
+            id: cekOpts.id,
             name: 'cek',
             purpose: ['enc'],
             ringLevel: 1,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
-            meta: {
-              private: {
-                keyId: CEKid,
-                content: CEKs
-              }
-            },
-            data: CEKp
-          },
-          {
-            id: joinKeyOpts.id,
-            name: '#joinKey-' + joinKeyOpts.id,
-            purpose: ['sig'],
-            ringLevel: Number.MAX_SAFE_INTEGER,
-            permissions: [GIMessage.OP_KEY_REQUEST],
-            foreignKey: joinKeyOpts.foreignKey,
-            data: joinKeyOpts.data,
-            meta: joinKeyOpts.meta
+            foreignKey: cekOpts.foreignKey,
+            meta: cekOpts.meta,
+            data: cekOpts.data
           }
         ],
         contractName: 'gi.contracts/chatroom'
@@ -167,6 +134,40 @@ export default (sbp('sbp/selectors/register', {
       console.error('gi.actions/chatroom/register failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create chat channel.'))
     }
+  },
+  'gi.actions/chatroom/shareNewKeys': (contractID: string, newKeys) => {
+    const rootState = sbp('state/vuex/state')
+    const state = rootState[contractID]
+
+    const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
+
+    const originatingState = rootState[originatingContractID]
+    const signingKeyId = findKeyIdByName(originatingState, 'csk')
+
+    // $FlowFixMe
+    return Promise.all(Object.values(state.users).filter((p?: { departedDate: null | string }) => p.departedDate == null).map((p: { contractID: string }) => {
+      const CEKid = findKeyIdByName(rootState[p.contractID], 'cek')
+      return sbp('chelonia/out/keyShare', {
+        destinationContractID: p.contractID,
+        destinationContractName: rootState.contracts[p.contractID].type,
+        originatingContractID: originatingContractID,
+        originatingContractName: rootState.contracts[originatingContractID].type,
+        data: {
+          contractID,
+          // $FlowFixMe
+          keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+            id: newId,
+            meta: {
+              private: {
+                keyId: CEKid,
+                content: encrypt(rootState[p.contractID]._vm.authorizedKeys[CEKid].data, serializeKey(newKey, true))
+              }
+            }
+          }))
+        },
+        signingKeyId
+      })
+    }))
   },
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),

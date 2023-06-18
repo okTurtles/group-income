@@ -533,7 +533,7 @@ export default (sbp('sbp/selectors/register', {
         originatingContractID: contractID,
         originatingContractName: 'gi.contracts/group',
         data: {
-          contractID: p.contractID,
+          contractID,
           // $FlowFixMe
           keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
             id: newId,
@@ -559,23 +559,39 @@ export default (sbp('sbp/selectors/register', {
       }
     }
 
-    let joinKey
+    let csk
+    let cek
 
-    // For 'public' and 'group' chatrooms, use the CSK as the join key
+    // For 'public' and 'group' chatrooms, use the group's CSK and CEK
     if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
-      const joinKeyId = findKeyIdByName(contractState, 'csk')
-      joinKey = {
-        id: joinKeyId,
+      const cskId = findKeyIdByName(contractState, 'csk')
+      const cekId = findKeyIdByName(contractState, 'cek')
+
+      csk = {
+        id: cskId,
         foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('csk')}`,
-        data: contractState._vm.authorizedKeys[joinKeyId].data
+        data: contractState._vm.authorizedKeys[cskId].data
+      }
+
+      cek = {
+        id: cekId,
+        foreignKey: `sp:${encodeURIComponent(params.contractID)}?keyName=${encodeURIComponent('cek')}`,
+        data: contractState._vm.authorizedKeys[cekId].data
       }
     }
 
     const message = await sbp('gi.actions/chatroom/create', {
-      data: params.data,
+      data: {
+        ...params.data,
+        attributes: {
+          ...params.data?.attributes,
+          groupContractID: params.contractID
+        }
+      },
       options: {
         ...params.options,
-        joinKey
+        csk,
+        cek
       },
       hooks: {
         prepublish: params.hooks?.prepublish,
@@ -588,12 +604,12 @@ export default (sbp('sbp/selectors/register', {
     // chatroom without any extra steps, and, in particular, it enables joining
     // the #General chatroom upon joining a group, in a single step.
     if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
-      await sbp('gi.actions/out/shareVolatileKeys', {
+      /* await sbp('gi.actions/out/shareVolatileKeys', {
         destinationContractID: params.contractID,
         destinationContractName: 'gi.contracts/group',
         contractID: message.contractID(),
         keyIds: '*'
-      })
+      }) */
     } else {
       await sbp('gi.actions/out/shareVolatileKeys', {
         destinationContractID: userID,
@@ -629,7 +645,7 @@ export default (sbp('sbp/selectors/register', {
 
     // If we are inviting someone else to join, we need to share the chatroom's keys
     // with them so that they are able to read messages and participate
-    if (username !== me) {
+    if (username !== me && [CHATROOM_PRIVACY_LEVEL.PRIVATE].includes(rootState[params.data.chatRoomID].attributes.privacyLevel)) {
       await sbp('gi.actions/out/shareVolatileKeys', {
         destinationContractID: rootGetters.groupProfile(username).contractID,
         destinationContractName: 'gi.contracts/identity',

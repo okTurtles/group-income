@@ -201,13 +201,25 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
         return
       }
 
+      const rootState = sbp(this.config.stateSelector)
+
+      const foreignContractState = rootState[foreignContract]
+
+      // Do we have the corresponding private key? If so, add it to this contract
+      // This is done here and at syncContractAndWatchKeys
+      // The reason for duplicating code is to allow for keys to be available
+      // as early as possible
+      if (foreignContractState._volatile?.keys?.[key.id]) {
+        if (!state._volatile) this.config.reactiveSet(state, '_volatile', Object.create(null))
+        if (!state._volatile.keys) this.config.reactiveSet(state._volatile, 'keys', Object.create(null))
+        state._volatile.keys[key.id] = foreignContractState._volatile.keys?.[key.id]
+      }
+
       const signingKey = findSuitableSecretKeyId(state, [GIMessage.OP_KEY_DEL], ['sig'], key.ringLevel, Object.keys(this.config.transientSecretKeys))
       const canMirrorOperations = !!signingKey
 
       // If we cannot mirror operations, then there is nothing left to do
       if (!canMirrorOperations) return
-
-      const rootState = sbp(this.config.stateSelector)
 
       // If the key is already being watched, do nothing
       if (Array.isArray(rootState?.[foreignContract]?._volatile?.watch)) {

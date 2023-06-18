@@ -2,25 +2,26 @@
 
 'use strict'
 
+import { L, Vue } from '@common/common.js'
 import sbp from '@sbp/sbp'
-import { Vue, L } from '@common/common.js'
-import { merge, cloneDeep } from './shared/giLodash.js'
+import { objectOf, optional, string } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
 import {
-  CHATROOM_NAME_LIMITS_IN_CHARS,
-  CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_ACTIONS_PER_PAGE,
-  CHATROOM_TYPES,
-  CHATROOM_PRIVACY_LEVEL,
-  MESSAGE_TYPES,
-  MESSAGE_NOTIFICATIONS,
+  CHATROOM_DESCRIPTION_LIMITS_IN_CHARS,
   CHATROOM_MESSAGE_ACTION,
+  CHATROOM_NAME_LIMITS_IN_CHARS,
+  CHATROOM_PRIVACY_LEVEL,
+  CHATROOM_TYPES,
+  MESSAGE_NOTIFICATIONS,
+  MESSAGE_NOTIFY_SETTINGS,
   MESSAGE_RECEIVE,
-  MESSAGE_NOTIFY_SETTINGS
+  MESSAGE_TYPES
 } from './shared/constants.js'
-import { chatRoomAttributesType, messageType } from './shared/types.js'
-import { createMessage, leaveChatRoom, findMessageIdx, makeMentionFromUsername } from './shared/functions.js'
+import { createMessage, findMessageIdx, leaveChatRoom, makeMentionFromUsername } from './shared/functions.js'
+import { cloneDeep, merge } from './shared/giLodash.js'
 import { makeNotification } from './shared/nativeNotification.js'
-import { objectOf, string, optional } from '~/frontend/model/contracts/misc/flowTyper.js'
+import { chatRoomAttributesType, messageType } from './shared/types.js'
 
 function createNotificationData (
   notificationType: string,
@@ -194,7 +195,7 @@ sbp('chelonia/defineContract', {
           return
         }
 
-        Vue.set(state.users, username, { joinedDate: meta.createdDate })
+        Vue.set(state.users, username, { contractID: meta.identityContractID, joinedDate: meta.createdDate })
 
         const { type, privacyLevel } = state.attributes
         const isPrivateDM = type === CHATROOM_TYPES.INDIVIDUAL && privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE
@@ -297,7 +298,7 @@ sbp('chelonia/defineContract', {
         })
         state.messages.push(newMessage)
       },
-      sideEffect ({ data, hash, contractID, meta }) {
+      sideEffect ({ data, hash, contractID, meta }, { state }) {
         if (data.member === sbp('state/vuex/state').loggedIn.username) {
           if (sbp('chelonia/contract/isSyncing', contractID)) {
             return
@@ -306,6 +307,10 @@ sbp('chelonia/defineContract', {
         } else {
           emitMessageEvent({ contractID, hash })
           setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
+
+          if (state.attributes.privacyLevel === CHATROOM_PRIVACY_LEVEL.PRIVATE) {
+            sbp('gi.contracts/chatroom/rotateKeys', contractID, state)
+          }
         }
       }
     },
@@ -521,6 +526,21 @@ sbp('chelonia/defineContract', {
       sideEffect ({ contractID, hash }) {
         emitMessageEvent({ contractID, hash })
       }
+    }
+  },
+  methods: {
+    'gi.contracts/chatroom/rotateKeys': (contractID, state) => {
+      if (!state._volatile.pendingKeyRevocations) Vue.set(state._volatile, 'pendingKeyRevocations', Object.create(null))
+
+      const CSKid = findKeyIdByName(state, 'csk')
+      const CEKid = findKeyIdByName(state, 'cek')
+
+      Vue.set(state._volatile.pendingKeyRevocations, CSKid, true)
+      Vue.set(state._volatile.pendingKeyRevocations, CEKid, true)
+
+      sbp('chelonia/queueInvocation', contractID, ['gi.actions/out/rotateKeys', contractID, 'gi.contracts/chatroom', 'pending', 'gi.actions/chatroom/shareNewKeys']).catch(e => {
+        console.error(`rotateKeys: ${e.name} thrown during queueEvent to ${contractID}:`, e)
+      })
     }
   }
 })
