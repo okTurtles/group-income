@@ -9961,6 +9961,9 @@ ${this.getErrorInfo()}`;
     onlyVisibleTo: arrayOf(string)
   });
 
+  // frontend/model/notifications/mutationKeys.js
+  var REMOVE_NOTIFICATION = "removeNotification";
+
   // frontend/model/contracts/group.js
   function vueFetchInitKV(obj, key, initialValue) {
     let value = obj[key];
@@ -10639,6 +10642,7 @@ ${this.getErrorInfo()}`;
         },
         sideEffect({ data, meta, contractID }, { state, getters }) {
           const rootState = (0, import_sbp4.default)("state/vuex/state");
+          const rootGetters = (0, import_sbp4.default)("state/vuex/getters");
           const contracts = rootState.contracts || {};
           const { username } = rootState.loggedIn;
           if (data.member === username) {
@@ -10661,6 +10665,9 @@ ${this.getErrorInfo()}`;
             }).catch((e) => {
               console.error(`sideEffect(removeMember): ${e.name} thrown during queueEvent to ${contractID} by saveOurLoginState:`, e);
             });
+            for (const notification of rootGetters.notificationsByGroup(contractID)) {
+              (0, import_sbp4.default)("state/vuex/commit", REMOVE_NOTIFICATION, notification);
+            }
           } else {
             const myProfile = getters.groupProfile(username);
             if (isActionYoungerThanUser(meta, myProfile)) {
