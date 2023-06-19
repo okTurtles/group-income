@@ -1,47 +1,47 @@
 <template lang='pug'>
-  proposal-template(
-    :title='L("Add new members")'
-    :disabled='!ephemeral.isValid'
-    :maxSteps='config.steps.length'
-    :currentStep.sync='ephemeral.currentStep'
-    variant='addMember'
-    @submit='submit'
+proposal-template(
+  :title='L("Add new members")'
+  :disabled='!ephemeral.isValid'
+  :maxSteps='config.steps.length'
+  :currentStep.sync='ephemeral.currentStep'
+  variant='addMember'
+  @submit='submit'
+)
+  fieldset.c-fieldset(
+    v-if='ephemeral.currentStep === 0'
+    :class='{"is-shifted": ephemeral.invitesCount > 1}'
+    ref='fieldset'
   )
-    fieldset.c-fieldset(
-      v-if='ephemeral.currentStep === 0'
-      :class='{"is-shifted": ephemeral.invitesCount > 1}'
-      ref='fieldset'
+    i18n.label(tag='legend') Full name
+    .field.c-fields-item(
+      v-for='(member, index) in ephemeral.invitesCount'
+      :key='`member-${index}`'
+      data-test='invitee'
     )
-      i18n.label(tag='legend') Full name
-      .field.c-fields-item(
-        v-for='(member, index) in ephemeral.invitesCount'
-        :key='`member-${index}`'
-        data-test='invitee'
-      )
-        i18n.label.sr-only Invitee name
-        .inputgroup
-          input.input(
-            type='text'
-            :aria-label='L("Full name")'
-            v-model='form.invitees[index]'
-            @keyup='(e) => inviteeUpdate(e, index)'
-            aria-required
-          )
-          button.is-icon-small.is-btn-shifted(
-            type='button'
-            @click='removeInvitee(index)'
-            data-test='remove'
-            :aria-label='L("Remove invitee")'
-          )
-            i.icon-times
+      i18n.label.sr-only Invitee name
+      .inputgroup
+        input.input(
+          type='text'
+          :aria-label='L("Full name")'
+          v-model='form.invitees[index]'
+          @keyup='(e) => inviteeUpdate(e, index)'
+          aria-required
+        )
+        button.is-icon-small.is-btn-shifted(
+          type='button'
+          @click='removeInvitee(index)'
+          data-test='remove'
+          :aria-label='L("Remove invitee")'
+        )
+          i.icon-times
 
-      button.link.has-icon(
-        type='button'
-        @click='addInviteeSlot'
-        data-test='addInviteeSlot'
-      )
-        i.icon-plus
-        i18n Add more
+    button.link.has-icon(
+      type='button'
+      @click='addInviteeSlot'
+      data-test='addInviteeSlot'
+    )
+      i.icon-plus
+      i18n Add more
 </template>
 
 <script>
@@ -82,9 +82,7 @@ export default ({
     ]),
     ...mapGetters([
       'currentGroupState',
-      'groupSettings',
-      'groupMembersCount',
-      'ourUsername'
+      'groupSettings'
     ])
   },
   methods: {
