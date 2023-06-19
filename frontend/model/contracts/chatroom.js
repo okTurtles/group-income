@@ -164,8 +164,7 @@ sbp('chelonia/defineContract', {
           },
           attributes: {
             creator: meta.username,
-            deletedDate: null,
-            archivedDate: null
+            deletedDate: null
           },
           users: {},
           messages: []

@@ -9642,8 +9642,7 @@ ${this.getErrorInfo()}`;
             },
             attributes: {
               creator: meta.username,
-              deletedDate: null,
-              archivedDate: null
+              deletedDate: null
             },
             users: {},
             messages: []
