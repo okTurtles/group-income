@@ -159,13 +159,14 @@ import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWi
 import PaymentsMixin from '@containers/payments/PaymentsMixin.js'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/shared/payments/index.js'
 import { dateToMonthstamp, humanDate } from '@model/contracts/shared/time.js'
-import { randomHexString, deepEqualJSONType } from '@model/contracts/shared/giLodash.js'
+import { randomHexString, deepEqualJSONType, omit } from '@model/contracts/shared/giLodash.js'
 import { L, LTags } from '@common/common.js'
 import {
   dummyLightningUsers,
   dummyLightningTodoItems,
   dummyLightningPaymentDetails
 } from '@view-utils/lightning-dummy-data.js'
+import { logExceptNavigationDuplicated } from '@view-utils/misc.js'
 
 export default ({
   name: 'Payments',
@@ -213,6 +214,21 @@ export default ({
     this.setInitialActiveTab()
     this.updatePayments()
   },
+  mounted () {
+    const { section } = this.$route.query
+    const possibleSections = this.tabItems.map(tabItem => tabItem.url)
+    if (section && possibleSections.includes(section)) {
+      this.ephemeral.activeTab = section
+    } else {
+      const defaultTab = possibleSections[0] || null
+      if (defaultTab) {
+        this.handleTabClick(defaultTab)
+      } else if (section) {
+        const query = omit(this.$route.query, ['section'])
+        this.$router.push({ query }).catch(logExceptNavigationDuplicated)
+      }
+    }
+  },
   watch: {
     needsIncome () {
       this.setInitialActiveTab()
@@ -220,6 +236,16 @@ export default ({
     ourPayments (to, from) {
       if (!deepEqualJSONType(to, from)) {
         this.updatePayments()
+      }
+    },
+    '$route' (to, from) {
+      const section = to.query.section
+      if (!section) return
+
+      for (const tabItem of this.tabItems) {
+        if (tabItem.url === section) {
+          this.ephemeral.activeTab = section
+        }
       }
     }
   },
@@ -244,6 +270,10 @@ export default ({
     },
     tabItems () {
       const items = []
+
+      if (!this.distributionStarted) {
+        return items
+      }
 
       if (!this.needsIncome) {
         items.push({
@@ -394,7 +424,11 @@ export default ({
       return list.slice(start, start + this.ephemeral.rowsPerPage)
     },
     handleTabClick (url) {
-      this.ephemeral.activeTab = url
+      const query = {
+        ...this.$route.query,
+        section: url
+      }
+      this.$router.push({ query }).catch(logExceptNavigationDuplicated)
     },
     handleAnchorClick ({ target }) {
       const contains = className => target.classList.contains(className)
