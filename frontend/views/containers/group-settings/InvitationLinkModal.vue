@@ -17,7 +17,6 @@ modal-template(ref='modal' :a11yTitle='L("Add new members")')
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import { humanDate } from '@model/contracts/shared/time.js'
 
@@ -28,18 +27,15 @@ export default ({
     LinkToCopy
   },
   computed: {
-    ...mapGetters([
-      'currentGroupState'
-    ]),
+    ...mapGetters(['currentWelcomeInvite']),
     welcomeInviteSecret () {
-      const invites = this.currentGroupState.invites
-      return Object.keys(invites).find(invite => invites[invite].creator === INVITE_INITIAL_CREATOR)
+      return this.currentWelcomeInvite.secret
     },
     link () {
       return buildInvitationUrl(this.$store.state.currentGroupId, this.welcomeInviteSecret)
     },
     expireDate () {
-      const expireDate = this.currentGroupState.invites[this.welcomeInviteSecret].expires
+      const expireDate = this.currentWelcomeInvite.expires
       return humanDate(expireDate, { month: 'long', day: 'numeric' })
     }
   },
