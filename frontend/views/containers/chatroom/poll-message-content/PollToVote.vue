@@ -68,6 +68,11 @@ export default ({
           ? this.form.selectedOptions.length > 0
           : Boolean(this.form.selectedOptions)
       }
+    },
+    selectedVotesAsString () {
+      return this.allowMultipleChoices
+        ? this.form.selectedOptions.map(id => this.getOptValue(id)).join(', ')
+        : this.getOptValue(this.form.selectedOptions)
     }
   },
   methods: {
@@ -77,7 +82,8 @@ export default ({
           contractID: this.currentChatRoomId,
           data: {
             hash: this.messageHash,
-            votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions]
+            votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions],
+            votesAsString: `"${this.selectedVotesAsString}"`
           }
         })
       } catch (e) {
@@ -91,7 +97,8 @@ export default ({
           contractID: this.currentChatRoomId,
           data: {
             hash: this.messageHash,
-            votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions]
+            votes: this.allowMultipleChoices ? this.form.selectedOptions : [this.form.selectedOptions],
+            votesAsString: `"${this.selectedVotesAsString}"`
           }
         })
 
@@ -100,6 +107,11 @@ export default ({
         console.error('"changeVoteOnPoll" action failed: ', e)
         this.$refs.errBanner.danger(e.message)
       }
+    },
+    getOptValue (optId) {
+      const foundOpt = this.pollData.options.find(x => x.id === optId)
+
+      return foundOpt ? foundOpt.value : ''
     },
     formBeenUpdated () {
       if (this.allowMultipleChoices) {

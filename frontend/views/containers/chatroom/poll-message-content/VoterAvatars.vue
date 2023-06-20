@@ -72,14 +72,10 @@ export default ({
       return typeof val === 'number'
     },
     showTooltip () {
-      if (!this.ephemeral.isTooltipActive) {
-        this.ephemeral.isTooltipActive = true
-      }
+      this.ephemeral.isTooltipActive = true
     },
     closeTooltip () {
-      if (this.ephemeral.isTooltipActive) {
-        this.ephemeral.isTooltipActive = false
-      }
+      this.ephemeral.isTooltipActive = false
     },
     getDisplayName (username) {
       return this.globalProfile(username).displayName || username

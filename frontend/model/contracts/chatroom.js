@@ -525,7 +525,8 @@ sbp('chelonia/defineContract', {
     'gi.contracts/chatroom/voteOnPoll': {
       validate: objectOf({
         hash: string,
-        votes: arrayOf(string)
+        votes: arrayOf(string),
+        votesAsString: string
       }),
       process ({ data, meta, hash, id }, { state }) {
         if (!state.onlyRenderMessage) {
@@ -550,24 +551,26 @@ sbp('chelonia/defineContract', {
           })
 
           Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
-
-          // create & add a notification-message for user having voted.
-          const notificationData = createNotificationData(
-            MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
-            { votedOptions: votedOptNames.join(', ') }
-          )
-          const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
-          state.messages.push(newMessage)
         }
+
+        // create & add a notification-message for user having voted.
+        const notificationData = createNotificationData(
+          MESSAGE_NOTIFICATIONS.VOTE_ON_POLL,
+          { votedOptions: data.votesAsString }
+        )
+        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+        state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash }) {
+      sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
+        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/changeVoteOnPoll': {
       validate: objectOf({
         hash: string,
-        votes: arrayOf(string)
+        votes: arrayOf(string),
+        votesAsString: string
       }),
       process ({ data, meta, hash, id }, { state }) {
         if (!state.onlyRenderMessage) {
@@ -598,18 +601,19 @@ sbp('chelonia/defineContract', {
           })
 
           Vue.set(state.messages[msgIndex], 'pollData', { ...pollData, options: optsCopy })
-
-          // create & add a notification-message for user having update his/her votes.
-          const notificationData = createNotificationData(
-            MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL,
-            { votedOptions: votedOptNames.join(', ') }
-          )
-          const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
-          state.messages.push(newMessage)
         }
+
+        // create & add a notification-message for user having update his/her votes.
+        const notificationData = createNotificationData(
+          MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL,
+          { votedOptions: data.votesAsString }
+        )
+        const newMessage = createMessage({ meta, hash, id, data: notificationData, state })
+        state.messages.push(newMessage)
       },
-      sideEffect ({ contractID, hash }) {
+      sideEffect ({ contractID, hash, meta }) {
         emitMessageEvent({ contractID, hash })
+        setReadUntilWhileJoining({ contractID, hash, createdDate: meta.createdDate })
       }
     },
     'gi.contracts/chatroom/closePoll': {
