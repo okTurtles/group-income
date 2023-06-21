@@ -171,7 +171,6 @@ export default ({
       'ourGroupProfile',
       'groupSettings',
       'groupMembersCount',
-      'groupProfile',
       'groupProfiles',
       'groupMincomeFormatted',
       'globalProfile',
@@ -217,7 +216,7 @@ export default ({
     }
   },
   beforeMount () {
-    const profile = this.groupProfile(this.ourUsername) || {}
+    const profile = this.ourGroupProfile || {}
     const incomeDetailsType = profile.incomeDetailsType
     if (incomeDetailsType) {
       this.form.incomeDetailsType = incomeDetailsType
