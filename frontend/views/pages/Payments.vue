@@ -220,7 +220,7 @@ export default ({
     if (section && possibleSections.includes(section)) {
       this.ephemeral.activeTab = section
     } else {
-      const defaultTab = possibleSections[0] || null
+      const defaultTab = possibleSections[0]
       if (defaultTab) {
         this.handleTabClick(defaultTab)
       } else if (section) {
