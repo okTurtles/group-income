@@ -116,6 +116,7 @@ import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
 
@@ -147,6 +148,7 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
+      'groupShouldPropose',
       'groupSettings',
       'ourUsername'
     ]),
@@ -275,7 +277,11 @@ export default ({
     },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
-        sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
+        if (this.groupShouldPropose) {
+          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
+        } else {
+          sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')
+        }
       }
     },
     handleSeeOriginal (inviteItem) {
