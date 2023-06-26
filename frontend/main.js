@@ -293,9 +293,6 @@ async function startApp () {
         )
       }
 
-      FaviconBadge.setOptions({
-        color: '#ff0000'
-      })
       this.setBadgeOnTab()
     },
     computed: {
