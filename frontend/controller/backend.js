@@ -13,7 +13,7 @@ const languageFileMap = new Map([
   ['fr', 'french.json']
 ])
 
-sbp('okTurtles.events/on', NOTIFICATION_TYPE.UPDATE_AVAILABLE, (versionInfo) => {
+sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
   console.info('New Group Income version available:', versionInfo)
   // Prevent the client from trying to reconnect when the page starts unloading.
   sbp('okTurtles.data/get', PUBSUB_INSTANCE).destroy()

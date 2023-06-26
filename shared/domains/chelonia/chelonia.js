@@ -155,7 +155,7 @@ export default (sbp('sbp/selectors/register', {
           const ourContractsVersion = process.env.CONTRACTS_VERSION
           const theirContractsVersion = msg.data.CONTRACTS_VERSION
           if (ourVersion !== theirVersion || ourContractsVersion !== theirContractsVersion) {
-            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.UPDATE_AVAILABLE, { ...msg.data })
+            sbp('okTurtles.events/emit', NOTIFICATION_TYPE.VERSION_INFO, { ...msg.data })
           }
         }
       }
