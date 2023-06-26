@@ -196,6 +196,7 @@ const drawBubble = (context, label, color) => {
   context.textBaseline = 'top'
 
   // unfortunately webkit/mozilla are a pixel different in text positioning
+  // NOTE: temporarily comment this drawing text because we don't need it
   // context.fillText(label, r === 2 ? 29 : 15, browser.mozilla ? 7 * r : 6 * r)
 }
 
