@@ -9959,9 +9959,13 @@ ${this.getErrorInfo()}`;
       "gi.contracts/chatroom/voteOnPoll": {
         validate: objectOf({
           hash: string,
-          votes: arrayOf(string)
+          votes: arrayOf(string),
+          votesAsString: string
         }),
         process({ data, meta, hash: hash2, id }, { state }) {
+          if (!state.onlyRenderMessage) {
+            return;
+          }
           const msgIndex = findMessageIdx(data.hash, state.messages);
           if (msgIndex >= 0) {
             const myVotes = data.votes;
@@ -9976,21 +9980,26 @@ ${this.getErrorInfo()}`;
               }
             });
             vue_esm_default.set(state.messages[msgIndex], "pollData", { ...pollData, options: optsCopy });
-            const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.VOTE_ON_POLL, { votedOptions: votedOptNames.join(", ") });
-            const newMessage = createMessage({ meta, hash: hash2, id, data: notificationData, state });
-            state.messages.push(newMessage);
           }
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.VOTE_ON_POLL, { votedOptions: data.votesAsString });
+          const newMessage = createMessage({ meta, hash: hash2, id, data: notificationData, state });
+          state.messages.push(newMessage);
         },
-        sideEffect({ contractID, hash: hash2 }) {
+        sideEffect({ contractID, hash: hash2, meta }) {
           emitMessageEvent({ contractID, hash: hash2 });
+          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/changeVoteOnPoll": {
         validate: objectOf({
           hash: string,
-          votes: arrayOf(string)
+          votes: arrayOf(string),
+          votesAsString: string
         }),
         process({ data, meta, hash: hash2, id }, { state }) {
+          if (!state.onlyRenderMessage) {
+            return;
+          }
           const msgIndex = findMessageIdx(data.hash, state.messages);
           if (msgIndex >= 0) {
             const me = meta.username;
@@ -10009,13 +10018,14 @@ ${this.getErrorInfo()}`;
               }
             });
             vue_esm_default.set(state.messages[msgIndex], "pollData", { ...pollData, options: optsCopy });
-            const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL, { votedOptions: votedOptNames.join(", ") });
-            const newMessage = createMessage({ meta, hash: hash2, id, data: notificationData, state });
-            state.messages.push(newMessage);
           }
+          const notificationData = createNotificationData(MESSAGE_NOTIFICATIONS.CHANGE_VOTE_ON_POLL, { votedOptions: data.votesAsString });
+          const newMessage = createMessage({ meta, hash: hash2, id, data: notificationData, state });
+          state.messages.push(newMessage);
         },
-        sideEffect({ contractID, hash: hash2 }) {
+        sideEffect({ contractID, hash: hash2, meta }) {
           emitMessageEvent({ contractID, hash: hash2 });
+          setReadUntilWhileJoining({ contractID, hash: hash2, createdDate: meta.createdDate });
         }
       },
       "gi.contracts/chatroom/closePoll": {
@@ -10023,9 +10033,11 @@ ${this.getErrorInfo()}`;
           hash: string
         }),
         process({ data }, { state }) {
+          if (!state.onlyRenderMessage) {
+            return;
+          }
           const msgIndex = findMessageIdx(data.hash, state.messages);
           if (msgIndex >= 0) {
-            console.log('@@ marking a poll "expired"');
             const pollData = state.messages[msgIndex].pollData;
             vue_esm_default.set(state.messages[msgIndex], "pollData", { ...pollData, status: POLL_STATUS.CLOSED });
           }

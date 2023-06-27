@@ -351,7 +351,7 @@
 /* views/containers/user-settings/NotificationSettings.vue */
 "Browser notifications" = "Browser notifications";
 
-/* views/components/avatar-editor/AvatarEditorModal.vue, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
+/* controller/actions/group.js, views/components/avatar-editor/AvatarEditorModal.vue, views/containers/access/PasswordModal.vue, views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/chatroom/CreateNewChannelModal.vue, views/containers/chatroom/CreatePoll.vue, views/containers/chatroom/DeleteChannelModal.vue, views/containers/chatroom/EditChannelDescriptionModal.vue, views/containers/chatroom/EditChannelNameModal.vue, views/containers/chatroom/LeaveChannelModal.vue, views/containers/chatroom/SendArea.vue, views/containers/chatroom/poll-message-content/PollToVote.vue, views/containers/contributions/Contribution.vue, views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupCreationModal.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/containers/payments/RecordPayment.vue, views/containers/proposals/ProposalTemplate.vue */
 "Cancel" = "Cancel";
 
 /* views/containers/payments/PaymentDetail.vue */
@@ -421,7 +421,7 @@
 "Change {setting} from {currentValue} to {proposedValue}" = "Change {setting} from {currentValue} to {proposedValue}";
 
 /* views/containers/chatroom/MessageNotification.vue */
-"Changed votes to “{options}”" = "Changed votes to “{options}”";
+"Changed votes to {options}" = "Changed votes to {options}";
 
 /* views/pages/GroupSettings.vue */
 "Changes to these settings will be visible to all group members" = "Changes to these settings will be visible to all group members";
@@ -936,8 +936,14 @@
 /* views/containers/contributions/GroupPledgesGraph.vue */
 "Group pledging summary" = "Group pledging summary";
 
+/* controller/actions/group.js */
+"Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud." = "Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.";
+
 /* views/containers/chatroom/GroupsShortcut.vue */
 "Groups chat shortcut" = "Groups chat shortcut";
+
+/* controller/actions/group.js */
+"Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?" = "Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?";
 
 /* views/components/Loading.vue */
 "Hang in there" = "Hang in there";
@@ -1307,6 +1313,9 @@
 
 /* views/containers/chatroom/ChatNotificationSettingsModal.vue, views/containers/notifications/NotificationCard.vue, views/containers/notifications/NotificationModal.vue, views/containers/user-settings/settings.js */
 "Notifications" = "Notifications";
+
+/* controller/actions/group.js */
+"OK" = "OK";
 
 /* views/containers/notifications/NotificationList.vue */
 "OLDER" = "OLDER";
@@ -2158,7 +2167,7 @@
 "Voted for “{option}”" = "Voted for “{option}”";
 
 /* views/containers/chatroom/MessageNotification.vue */
-"Voted on “{options}”" = "Voted on “{options}”";
+"Voted on {options}" = "Voted on {options}";
 
 /* views/pages/GroupSettings.vue */
 "Voting System" = "Voting System";
