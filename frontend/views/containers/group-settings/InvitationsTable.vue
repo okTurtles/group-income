@@ -116,7 +116,6 @@ page-section.c-section(:title='L("Invite links")')
 
 <script>
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PageSection from '@components/PageSection.vue'
@@ -284,7 +283,7 @@ export default ({
     },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
-        sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
+        sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
       }
     },
     async handleSeeOriginal ({ invitee }) {

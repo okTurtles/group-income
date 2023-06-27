@@ -16,7 +16,8 @@ import {
   PROPOSAL_GENERIC,
   STATUS_OPEN,
   MESSAGE_TYPES,
-  PROPOSAL_VARIANTS
+  PROPOSAL_VARIANTS,
+  MAX_GROUP_MEMBER_COUNT
 } from '@model/contracts/shared/constants.js'
 import proposals from '@model/contracts/shared/voting/proposals.js'
 import { imageUpload } from '@utils/image.js'
@@ -26,7 +27,8 @@ import { encryptedAction } from './utils.js'
 import { VOTE_FOR } from '@model/contracts/shared/voting/rules.js'
 import type { GIActionParams } from './types.js'
 import type { GIMessage } from '~/shared/domains/chelonia/chelonia.js'
-import { REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL, SWITCH_GROUP } from '@utils/events.js'
+import ALLOWED_URLS from '@view-utils/allowedUrls.js'
 
 export async function leaveAllChatRooms (groupContractID: string, member: string) {
   // let user leaves all the chatrooms before leaving group
@@ -559,6 +561,41 @@ export default (sbp('sbp/selectors/register', {
     if (yesButtonSelected) {
       // NOTE: emtting 'REPLACE_MODAL' instead of 'OPEN_MODAL' here because 'Prompt' modal is open at this point (by 'gi.ui/prompt' action above).
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'IncomeDetails')
+    }
+  },
+  'gi.actions/group/checkGroupSizeAndProposeMember': async function () {
+    // if current size of the group is >= 150, display a warning prompt first before presenting the user with
+    // 'AddMembers' proposal modal.
+
+    const enforceDunbar = true // Context for this hard-coded boolean variable: https://github.com/okTurtles/group-income/pull/1648#discussion_r1230389924
+    const { groupMembersCount, currentGroupState } = sbp('state/vuex/getters')
+    const memberInvitesCount = Object.values(currentGroupState.invites || {}).filter((invite: any) => invite.creator !== INVITE_INITIAL_CREATOR).length
+    const isGroupSizeLarge = (groupMembersCount + memberInvitesCount) >= MAX_GROUP_MEMBER_COUNT
+
+    if (isGroupSizeLarge) {
+      const translationArgs = {
+        a_: `<a class='link' href='${ALLOWED_URLS.WIKIPEDIA_DUMBARS_NUMBER}' target='_blank'>`,
+        _a: '</a>'
+      }
+      const promptConfig = enforceDunbar
+        ? {
+            heading: 'Large group size',
+            question: L("Group sizes are limited to {a_}Dunbar's Number{_a} to prevent fraud.", translationArgs),
+            yesButton: L('OK')
+          }
+        : {
+            heading: 'Large group size',
+            question: L("Groups over 150 members are at significant risk for fraud, {a_}because it is difficult to verify everyone's identity.{_a} Are you sure that you want to add more members?", translationArgs),
+            yesButton: L('Yes'),
+            noButton: L('Cancel')
+          }
+
+      const yesButtonSelected = await sbp('gi.ui/prompt', promptConfig)
+      if (!enforceDunbar && yesButtonSelected) {
+        sbp('okTurtles.events/emit', REPLACE_MODAL, 'AddMembers')
+      } else return false
+    } else {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
     }
   },
   ...encryptedAction('gi.actions/group/leaveChatRoom', L('Failed to leave chat channel.')),
