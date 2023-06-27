@@ -327,7 +327,7 @@ async function startApp () {
         'setReducedMotion'
       ]),
       setBadgeOnTab () {
-        FaviconBadge.setBubble(this.shouldSetBadge ? 1 : 0)
+        FaviconBadge.setBubble(this.shouldSetBadge)
       }
     },
     watch: {
