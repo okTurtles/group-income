@@ -287,14 +287,14 @@ export default ({
         sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
       }
     },
-    async handleSeeOriginal ({ invitee }) {
+    async handleSeeOriginal ({ inviteSecret }) {
       const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
       const archivedProposals = await sbp('gi.db/archive/load', key) || []
       const proposalItemExists = archivedProposals.length > 0 || archivedProposals.some(entry => {
-        const { data } = entry[1]
+        const { data, payload } = entry[1]
 
         return data.proposalType === PROPOSAL_INVITE_MEMBER &&
-          data.proposalData.member === invitee
+          payload.inviteSecret === inviteSecret
       })
 
       if (proposalItemExists) {
