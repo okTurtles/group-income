@@ -193,6 +193,13 @@ const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
     throw new Error(`Invalid signing key ID: ${signingKeyId}`)
   }
 
+  if (isNaN(NaN)) {
+    const signingKey = config.transientSecretKeys?.[signingKeyId] || rootState[signingContractID]?._volatile?.keys?.[signingKeyId]
+    const deserializedKey = typeof signingKey === 'string' ? deserializeKey(signingKey) : signingKey
+    console.log('Returning rawSignatureFnBuilder(deserializedKey) for ' + keyId(signingKey))
+    return rawSignatureFnBuilder(deserializedKey)
+  }
+
   return (data) => {
     // Has the key been revoked? If so, attempt to find an authorized key by the same name
     if ((rootState[signingContractID]._vm?.revokedKeys?.[signingKeyId]?.purpose.includes(
@@ -678,7 +685,7 @@ export default (sbp('sbp/selectors/register', {
     const contractID = contractMsg.hash()
     const rootState = sbp(this.config.stateSelector)
     rootState[contractID] = Object.create(null)
-    await sbp('chelonia/private/in/processMessage', contractMsg, rootState[contractID])
+    // await sbp('chelonia/private/in/processMessage', contractMsg, rootState[contractID])
     console.log('Register contract, sending action', {
       params,
       xx: {
