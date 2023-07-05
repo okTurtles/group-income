@@ -193,6 +193,8 @@ const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
     throw new Error(`Invalid signing key ID: ${signingKeyId}`)
   }
 
+  if (isNaN(NaN)) return rawSignatureFnBuilder(config.transientSecretKeys?.[signingKeyId])
+
   return (data) => {
     // Has the key been revoked? If so, attempt to find an authorized key by the same name
     if ((rootState[signingContractID]._vm?.revokedKeys?.[signingKeyId]?.purpose.includes(
@@ -202,7 +204,7 @@ const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
       const newKeyId = (Object.values(rootState[signingContractID]._vm?.authorizedKeys).find((v) => v.name === name && v.purpose.includes('sig')): any)?.id
 
       if (!newKeyId) {
-        throw new Error(`Singing key ID ${signingContractID} has been revoked and no new key exists by the same name (${name})`)
+        throw new Error(`Signing key ID ${signingContractID} has been revoked and no new key exists by the same name (${name})`)
       }
 
       signingKeyId = newKeyId
