@@ -236,7 +236,41 @@ export default (sbp('sbp/selectors/register', {
         // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
         if (!entry.isFirstMessage()) {
           const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-          entry = GIMessage.cloneWith(entry, { previousHEAD }, signatureFn)
+          const head = entry.head()
+
+          // TODO: Move the following code to a different function that handles any required message transformations
+          // TODO: Add comment explaining what this is doing and why
+          let [opT, opV, decryptedValue] = entry.op()
+          if (opT === GIMessage.OP_KEY_ADD) {
+            const rootState = sbp(this.config.stateSelector)
+            const state = rootState[contractID]
+            opV = ((opV: any): GIOpKeyAdd).filter(({ id }) => !state?._vm.authorizedKeys[id])
+            if (opV.length === 0) {
+              console.info('Omitting empty OP_KEY_ADD', { head })
+              return
+            }
+            decryptedValue = opV
+          } else if (opT === GIMessage.OP_KEY_DEL) {
+            const rootState = sbp(this.config.stateSelector)
+            const state = rootState[contractID]
+            opV = ((opV: any): GIOpKeyDel).filter((keyId) => !!state?._vm.authorizedKeys[keyId])
+            if (opV.length === 0) {
+              console.info('Omitting empty OP_KEY_DEL', { head })
+              return
+            }
+            decryptedValue = opV
+          } else if (opT === GIMessage.OP_KEY_UPDATE) {
+            const rootState = sbp(this.config.stateSelector)
+            const state = rootState[contractID]
+            opV = ((opV: any): GIOpKeyUpdate).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
+            if (opV.length === 0) {
+              console.info('Omitting empty OP_KEY_UPDATE', { head })
+              return
+            }
+            decryptedValue = opV
+          }
+
+          entry = GIMessage.cloneWith(head, [opT, opV, decryptedValue], { previousHEAD }, signatureFn)
         }
       } else {
         const message = (await r.json())?.message

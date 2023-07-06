@@ -112,18 +112,19 @@ export class GIMessage {
       nonce: uuidv4()
     }
     console.log('createV1_0', { op, head, signatureFn })
-    return new this(messageToParams(head, op, signatureFn))
+    return new this(messageToParams(head, op[1], op.length === 3 ? op[2] : op[1], signatureFn))
   }
 
   // GIMessage.cloneWith could be used when make a GIMessage object having the same id()
   // https://github.com/okTurtles/group-income/issues/1503
   static cloneWith (
-    target: GIMessage,
+    targetHead: Object,
+    targetOp: GIOp,
     sources: Object,
     signatureFn?: Function = defaultSignatureFn
   ): this {
-    const head = Object.assign({}, target.head(), sources)
-    return new this(messageToParams(head, target.op(), signatureFn))
+    const head = Object.assign({}, targetHead, sources)
+    return new this(messageToParams(head, targetOp[1], targetOp.length === 3 ? targetOp[2] : targetOp[1], signatureFn))
   }
 
   // TODO: we need signature verification upon decryption somewhere...
@@ -244,7 +245,7 @@ function defaultSignatureFn (data: string) {
   throw new Error('Attempted to call defaultSignatureFn. Specify a signature function')
 }
 
-function messageToParams (head: Object, op: GIOp, signatureFn: Function): GIMsgParams {
+function messageToParams (head: Object, message: GIOpValue, decryptedValue: GIOpValue, signatureFn: Function): GIMsgParams {
   // NOTE: the JSON strings generated here must be preserved forever.
   //       do not ever regenerate this message using the contructor.
   //       instead store it using serialize() and restore it using deserialize().
@@ -254,7 +255,6 @@ function messageToParams (head: Object, op: GIOp, signatureFn: Function): GIMsgP
   //       So to get around this we save the serialized string upon creation
   //       and keep a copy of it (instead of regenerating it as needed).
   //       https://github.com/okTurtles/group-income/pull/1513#discussion_r1142809095
-  const message = op[1]
   const headJSON = JSON.stringify(head)
   const messageJSON = JSON.stringify(message)
   const signedPayload = blake32Hash(`${blake32Hash(headJSON)}${blake32Hash(messageJSON)}`)
@@ -269,7 +269,7 @@ function messageToParams (head: Object, op: GIOp, signatureFn: Function): GIMsgP
     head,
     message,
     // provide the decrypted value so that pre/postpublish hooks have access to it if needed
-    decryptedValue: op.length === 3 ? op[2] : op[1],
+    decryptedValue,
     signature,
     signedPayload
   }
