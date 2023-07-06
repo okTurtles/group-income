@@ -193,13 +193,6 @@ const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
     throw new Error(`Invalid signing key ID: ${signingKeyId}`)
   }
 
-  if (isNaN(NaN)) {
-    const signingKey = config.transientSecretKeys?.[signingKeyId] || rootState[signingContractID]?._volatile?.keys?.[signingKeyId]
-    const deserializedKey = typeof signingKey === 'string' ? deserializeKey(signingKey) : signingKey
-    console.log('Returning rawSignatureFnBuilder(deserializedKey) for ' + keyId(signingKey))
-    return rawSignatureFnBuilder(deserializedKey)
-  }
-
   return (data) => {
     // Has the key been revoked? If so, attempt to find an authorized key by the same name
     if ((rootState[signingContractID]._vm?.revokedKeys?.[signingKeyId]?.purpose.includes(
@@ -665,6 +658,8 @@ export default (sbp('sbp/selectors/register', {
     const contractInfo = this.manifestToContract[manifestHash]
     if (!contractInfo) throw new Error(`contract not defined: ${contractName}`)
     const signingKey = this.config.transientSecretKeys?.[signingKeyId]
+    // Using rawSignatureFnBuilder because no contract state exists and the
+    // correct signing key is always given in OP_CONTRACT
     const signatureFn = signingKey ? rawSignatureFnBuilder(signingKey) : undefined
     const payload = ({
       type: contractName,
@@ -681,11 +676,8 @@ export default (sbp('sbp/selectors/register', {
       signatureFn
     })
     hooks?.prepublishContract?.(contractMsg)
-    await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions, signatureFn)
     const contractID = contractMsg.hash()
-    const rootState = sbp(this.config.stateSelector)
-    rootState[contractID] = Object.create(null)
-    // await sbp('chelonia/private/in/processMessage', contractMsg, rootState[contractID])
+    await sbp('chelonia/private/out/publishEvent', contractMsg, publishOptions, signatureFn)
     console.log('Register contract, sending action', {
       params,
       xx: {
@@ -698,6 +690,7 @@ export default (sbp('sbp/selectors/register', {
         publishOptions
       }
     })
+    await sbp('chelonia/contract/sync', contractID)
     const msg = await sbp('chelonia/out/actionEncrypted', {
       action: contractName,
       contractID,
@@ -858,6 +851,8 @@ export default (sbp('sbp/selectors/register', {
       encryptionKeyId: encryptionKeyId,
       data: sign(innerSigningKey, signedInnerData.join('|'))
     }: GIOpKeyRequest)
+    // The signing key comes directly from a parameter, thus
+    // rawSignatureFnBuilder is used instead of signatureFnBuilder
     const signatureFn = signingKey ? rawSignatureFnBuilder(signingKey) : undefined
     const msg = GIMessage.createV1_0({
       originatingContractID,
