@@ -156,6 +156,7 @@ export default ({
   computed: {
     ...mapGetters([
       'currentGroupState',
+      'groupShouldPropose',
       'groupSettings',
       'ourUsername'
     ]),
@@ -284,7 +285,11 @@ export default ({
     },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
-        sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
+        if (this.groupShouldPropose) {
+          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
+        } else {
+          sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')
+        }
       }
     },
     async handleSeeOriginal ({ inviteSecret }) {

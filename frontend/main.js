@@ -42,6 +42,7 @@ import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 const { Vue, L } = Common
 
 console.info('GI_VERSION:', process.env.GI_VERSION)
+console.info('CONTRACTS_VERSION:', process.env.CONTRACTS_VERSION)
 console.info('NODE_ENV:', process.env.NODE_ENV)
 
 Vue.config.errorHandler = function (err, vm, info) {

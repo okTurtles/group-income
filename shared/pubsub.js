@@ -75,12 +75,12 @@ export type UnsubMessage = {
 
 export const NOTIFICATION_TYPE = Object.freeze({
   ENTRY: 'entry',
-  APP_VERSION: 'app_version',
   PING: 'ping',
   PONG: 'pong',
   PUB: 'pub',
   SUB: 'sub',
-  UNSUB: 'unsub'
+  UNSUB: 'unsub',
+  VERSION_INFO: 'version_info'
 })
 
 export const REQUEST_TYPE = Object.freeze({

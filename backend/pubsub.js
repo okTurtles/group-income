@@ -107,7 +107,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
   // Setup a ping interval if required.
   if (server.options.pingInterval > 0) {
     server.pingIntervalID = setInterval(() => {
-      if (server.clients.length && server.options.logPingRounds) {
+      if (server.clients.size && server.options.logPingRounds) {
         log.debug('Pinging clients')
       }
       server.clients.forEach((client) => {
@@ -128,7 +128,7 @@ export function createServer (httpServer: Object, options?: Object = {}): Object
 }
 
 const defaultOptions = {
-  logPingRounds: process.env.NODE_ENV === 'development' && !process.env.CI,
+  logPingRounds: process.env.NODE_ENV !== 'production' && !process.env.CI,
   logPongMessages: false,
   maxPayload: 6 * 1024 * 1024,
   pingInterval: 30000
