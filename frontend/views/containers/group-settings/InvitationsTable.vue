@@ -305,7 +305,7 @@ export default ({
       if (proposalItemExists) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal')
       } else {
-        alert('Unable to find the original proposal.')
+        alert(L('Unable to find the original proposal.'))
       }
     },
     async handleRevokeClick (inviteSecret) {
