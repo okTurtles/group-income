@@ -1,3 +1,11 @@
+/*!
+ * FaviconBadge - A small library for manipulating the Favicon
+ * Modified from Tinycon.js by Tom Moor
+ * Original project: https://github.com/tommoor/tinycon
+ * Copyright (c) 2023 Alex Jin
+ * @license MIT Licensed
+ */
+
 let currentFavicon = null
 let originalFavicon = null
 let faviconImage
