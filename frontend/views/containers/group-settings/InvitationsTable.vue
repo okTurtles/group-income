@@ -48,6 +48,14 @@ page-section.c-section(:title='L("Invite links")')
             menu-content.c-dropdown-invite-link
               ul
                 menu-item(
+                  v-if='!item.isAnyoneLink'
+                  tag='button'
+                  item-id='original'
+                  @click='handleSeeOriginal(item)'
+                  icon='check-to-slot'
+                )
+                  i18n See original proposal
+                menu-item(
                   tag='button'
                   icon='link'
                   @click='copyInviteLink(item.inviteLink)'
@@ -78,7 +86,7 @@ page-section.c-section(:title='L("Invite links")')
                   v-if='!item.isAnyoneLink'
                   tag='button'
                   item-id='original'
-                  @click='handleSeeOriginal(item.id)'
+                  @click='handleSeeOriginal(item)'
                   icon='check-to-slot'
                 )
                   i18n See original proposal
@@ -108,7 +116,6 @@ page-section.c-section(:title='L("Invite links")')
 
 <script>
 import sbp from '@sbp/sbp'
-import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import PageSection from '@components/PageSection.vue'
@@ -117,7 +124,8 @@ import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import { INVITE_STATUS } from '~/shared/domains/chelonia/constants.js'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
+import { INVITE_INITIAL_CREATOR, PROPOSAL_INVITE_MEMBER } from '@model/contracts/shared/constants.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters, mapState } from 'vuex'
 import { L } from '@common/common.js'
 
@@ -151,7 +159,8 @@ export default ({
       'currentGroupState',
       'ourUsername',
       'ourUserDisplayName',
-      'groupSettings'
+      'groupSettings',
+      'groupShouldPropose'
     ]),
     ...mapState([
       'currentGroupId'
@@ -282,11 +291,40 @@ export default ({
     },
     handleInviteClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
-        sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
+        if (this.groupShouldPropose) {
+          sbp('gi.actions/group/checkGroupSizeAndProposeMember', { contractID: this.currentGroupId })
+        } else {
+          sbp('okTurtles.events/emit', OPEN_MODAL, 'InvitationLinkModal')
+        }
       }
     },
-    handleSeeOriginal (inviteKeyId) {
-      console.log(inviteKeyId, 'TODO - See Original Proposal')
+    async handleSeeOriginal (/* { inviteSecret } */) {
+      // TODO: Ricardo - please update this code so that it checks for inviteKeyId
+      //       however, make sure that proposals actually have that on them
+      //       (instead of, or in addition to, the inviteSecret).
+      //       An alternative, is to grab the inviteSecret from currentGroupState.invites
+      //       and on line 175 pass that in, and keep this code as-is
+      //       Honestly this is fairly low priority because the proposal should be there
+      //       and all this code ends up doing is bringing up the proposal modal anyway
+      //       (instead of somehow linking directly to the proposal), so this is unnecessary
+      //       complexity.
+      await sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal')
+      /*
+      const key = `proposals/${this.ourUsername}/${this.currentGroupId}`
+      const archivedProposals = await sbp('gi.db/archive/load', key) || []
+      const proposalItemExists = archivedProposals.length > 0 || archivedProposals.some(entry => {
+        const { data, payload } = entry[1]
+
+        return data.proposalType === PROPOSAL_INVITE_MEMBER &&
+          payload.inviteSecret === inviteSecret
+      })
+
+      if (proposalItemExists) {
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'PropositionsAllModal')
+      } else {
+        alert(L('Unable to find the original proposal.'))
+      }
+      */
     },
     async handleRevokeClick (inviteKeyId) {
       if (!confirm(L('Are you sure you want to revoke this link? This action cannot be undone.'))) {

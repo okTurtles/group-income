@@ -20,6 +20,7 @@ import LinkToCopy from '@components/LinkToCopy.vue'
 import { INVITE_INITIAL_CREATOR } from '@model/contracts/shared/constants.js'
 import { buildInvitationUrl } from '@model/contracts/shared/voting/proposals.js'
 import { serializeKey } from '../../../../shared/domains/chelonia/crypto.js'
+import { humanDate } from '@model/contracts/shared/time.js'
 
 export default ({
   name: 'InvitationLinkModal',
@@ -45,9 +46,8 @@ export default ({
       return buildInvitationUrl(this.$store.state.currentGroupId, this.currentGroupState.settings?.groupName, this.welcomeInviteSecret)
     },
     expireDate () {
-      // TODO retrive real expire date
-      // const expireDate = this.welcomeInviteSecret.expireDate // format this
-      return '4th of February'
+      const expireDate = this.currentGroupState.invites[this.welcomeInviteSecret].expires
+      return humanDate(expireDate, { month: 'long', day: 'numeric' })
     }
   },
   methods: {

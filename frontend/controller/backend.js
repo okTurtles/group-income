@@ -13,8 +13,8 @@ const languageFileMap = new Map([
   ['fr', 'french.json']
 ])
 
-sbp('okTurtles.events/on', NOTIFICATION_TYPE.APP_VERSION, (version) => {
-  console.info('New Group Income version available:', version)
+sbp('okTurtles.events/on', NOTIFICATION_TYPE.VERSION_INFO, (versionInfo) => {
+  console.info('New Group Income version available:', versionInfo)
   // Prevent the client from trying to reconnect when the page starts unloading.
   sbp('okTurtles.data/get', PUBSUB_INSTANCE).destroy()
   // TODO: allow the user to manually reload the page later.
@@ -25,8 +25,7 @@ sbp('sbp/selectors/register', {
   /**
    * Fetches a JSON object containing translation strings for a given language.
    *
-   * @param language - A BPC-47 language tag like the value
-   * of `navigator.language`.
+   * @param language - A BPC-47 language tag like the value of `navigator.language`.
    *
    * @see The 'translations/init' SBP selector in `~view-utils/translations.js`.
    */

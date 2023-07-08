@@ -12,7 +12,7 @@
 
 <script>
 export default ({
-  name: 'Message',
+  name: 'BannerSimple',
   props: {
     severity: {
       type: String,

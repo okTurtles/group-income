@@ -69,7 +69,7 @@ const DMMixin: Object = {
         }
       })
     },
-    setDMVisibility (chatRoomId: string, hidden) {
+    setDMVisibility (chatRoomId: string, hidden: boolean) {
       // NOTE: chatRoomId should be of valid direct message
       sbp('gi.actions/mailbox/setDirectMessageVisibility', {
         contractID: this.currentIdentityState.attributes.mailbox,

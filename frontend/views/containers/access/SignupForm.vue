@@ -64,6 +64,17 @@ import {
   noWhitespace
 } from '@model/contracts/shared/validators.js'
 
+export const usernameValidations = {
+  [L('A username is required.')]: required,
+  [L('A username cannot contain whitespace.')]: noWhitespace,
+  [L('A username can only contain letters, digits, hyphens or underscores.')]: allowedUsernameCharacters,
+  [L('A username cannot exceed {maxChars} characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
+  [L('A username cannot contain uppercase letters.')]: noUppercase,
+  [L('A username cannot start or end with a hyphen.')]: noLeadingOrTrailingHyphen,
+  [L('A username cannot start or end with an underscore.')]: noLeadingOrTrailingUnderscore,
+  [L('A username cannot contain two consecutive hyphens or underscores.')]: noConsecutiveHyphensOrUnderscores
+}
+
 export default ({
   name: 'SignupForm',
   mixins: [
@@ -132,14 +143,7 @@ export default ({
     return {
       form: {
         username: {
-          [L('A username is required.')]: required,
-          [L('A username cannot contain whitespace.')]: noWhitespace,
-          [L('A username can only contain letters, digits, hyphens or underscores.')]: allowedUsernameCharacters,
-          [L('A username cannot exceed {maxChars} characters.', { maxChars: usernameMaxChars })]: maxLength(usernameMaxChars),
-          [L('A username cannot contain uppercase letters.')]: noUppercase,
-          [L('A username cannot start or end with a hyphen.')]: noLeadingOrTrailingHyphen,
-          [L('A username cannot start or end with an underscore.')]: noLeadingOrTrailingUnderscore,
-          [L('A username cannot contain two consecutive hyphens or underscores.')]: noConsecutiveHyphensOrUnderscores,
+          ...usernameValidations,
           [L('This username is already being used.')]: (value) => {
             if (!value) return true
             if (this.usernameAsyncValidation.timer) {
