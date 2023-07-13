@@ -2,10 +2,11 @@
 
 // TODO: rename GIMessage to ChelMessage
 
-import { EDWARDS25519SHA512BATCH, CURVE25519XSALSA20POLY1305, XSALSA20POLY1305 } from './crypto.js'
 import { v4 as uuidv4 } from 'uuid'
 import { blake32Hash } from '~/shared/functions.js'
-import type { JSONType, JSONObject } from '~/shared/types.js'
+import type { JSONObject, JSONType } from '~/shared/types.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, XSALSA20POLY1305, keyId } from './crypto.js'
+import { encryptedIncomingData } from './encryptedData.js'
 
 export type GIKeyType = typeof EDWARDS25519SHA512BATCH | typeof CURVE25519XSALSA20POLY1305 | typeof XSALSA20POLY1305
 
@@ -24,7 +25,7 @@ export type GIKey = {
 // Allows server to check if the user is allowed to register this type of contract
 // TODO: rename 'type' to 'contractName':
 export type GIOpContract = { type: string; keys: GIKey[]; parentContract?: string }
-export type GIOpActionEncrypted = { keyId: string; content: string } // encrypted version of GIOpActionUnencrypted
+export type GIOpActionEncrypted = { content: string } // encrypted version of GIOpActionUnencrypted
 export type GIOpActionUnencrypted = { action: string; data: JSONType; meta: JSONObject }
 export type GIOpKeyAdd = GIKey[]
 export type GIOpKeyDel = string[]
@@ -127,14 +128,41 @@ export class GIMessage {
     return new this(messageToParams(head, targetOp[1], targetOp.length === 3 ? targetOp[2] : targetOp[1], signatureFn))
   }
 
-  // TODO: we need signature verification upon decryption somewhere...
-  static deserialize (value: string): this {
+  static deserialize (value: string, rootState?: Object, state?: Object, additionalKeys?: Object): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const parsedValue = JSON.parse(value)
+    const head = JSON.parse(parsedValue.head)
+    const parsedMessage = JSON.parse(parsedValue.message)
+    const contractID = head.op === GIMessage.OP_CONTRACT ? blake32Hash(value) : head.contractID
+    const message = head.op === GIMessage.OP_ACTION_ENCRYPTED ? encryptedIncomingData(rootState, contractID, state, parsedMessage, additionalKeys) : parsedMessage
+    if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(head.op)) {
+      ((message: any): any[]).forEach((key) => {
+        if (key.meta?.private?.content) {
+          key.meta.private.content = encryptedIncomingData(rootState, contractID, state, key.meta.private.content, additionalKeys, (value) => {
+            const computedKeyId = keyId(value)
+            if (computedKeyId !== key.id) {
+              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+            }
+          })
+        }
+      })
+    }
+    if ([GIMessage.OP_CONTRACT, GIMessage.OP_KEY_SHARE].includes(head.op)) {
+      (message: any).keys?.forEach((key) => {
+        if (key.meta?.private?.content) {
+          key.meta.private.content = encryptedIncomingData(rootState, contractID, state, key.meta.private.content, additionalKeys, (value) => {
+            const computedKeyId = keyId(value)
+            if (computedKeyId !== key.id) {
+              throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
+            }
+          })
+        }
+      })
+    }
     return new this({
       mapping: { key: blake32Hash(value), value },
-      head: JSON.parse(parsedValue.head),
-      message: JSON.parse(parsedValue.message),
+      head,
+      message: (message: any),
       signature: parsedValue.sig,
       signedPayload: blake32Hash(`${blake32Hash(parsedValue.head)}${blake32Hash(parsedValue.message)}`)
     })
@@ -170,17 +198,7 @@ export class GIMessage {
   }
 
   decryptedValue (fn?: Function): any {
-    if (!this._decrypted) {
-      if (this.opType() === GIMessage.OP_ACTION_ENCRYPTED && typeof fn !== 'function') {
-        throw new Error('Decryption function must be given')
-      }
-      this._decrypted = (
-        this.opType() === GIMessage.OP_ACTION_ENCRYPTED && fn
-          ? fn(this.opValue())
-          : this.opValue()
-      )
-    }
-    return this._decrypted
+    return Object(this.opValue()).valueOf()
   }
 
   head (): Object { return this._head }

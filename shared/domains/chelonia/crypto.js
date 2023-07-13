@@ -349,20 +349,3 @@ export const decrypt = (inKey: Key | string, data: string): string => {
 
   throw new Error('Unsupported algorithm')
 }
-
-// Calls decrypt() and verifies that the result matches a given key ID
-// Used to ensure that, when decrypting a secret key, the correct (expected)
-// key is being decrypted.
-// This check is to catch potential mistakes or, more cucially, to avoid
-// overwriting existing good keys with wrong keys received e.g., from an
-// OP_KEY_SHARE
-export const decryptKey = (givenKeyId: string, inKey: Key | string, data: string): string => {
-  const value = decrypt(inKey, data)
-  const computedKeyId = keyId(value)
-
-  if (computedKeyId !== givenKeyId) {
-    throw new Error('Key ID of decrypted key doesn\'t match given key ID')
-  }
-
-  return value
-}

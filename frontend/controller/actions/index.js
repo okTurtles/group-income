@@ -1,9 +1,10 @@
 import { pick } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
-import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
+import { encryptedOutgoingData } from '~/shared/domains/chelonia/encryptedData.js'
+import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { deserializeKey, encrypt, keyId, keygenOfSameType, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { keyId, keygenOfSameType, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 
 export { default as chatroom } from './chatroom.js'
 export { default as group } from './group.js'
@@ -41,7 +42,6 @@ sbp('sbp/selectors/register', {
       if (!state?._vm?.authorizedKeys?.[CEKid]) {
         throw new Error('Missing CEK; unable to proceed sharing keys')
       }
-      const CEK = deserializeKey(state._vm.authorizedKeys[CEKid].data)
 
       const keysToShare = Array.isArray(keyIds) ? pick(contractState._volatile.keys, keyIds) : keyIds === '*' ? contractState._volatile.keys : null
 
@@ -60,8 +60,7 @@ sbp('sbp/selectors/register', {
             id: keyId,
             meta: {
               private: {
-                keyId: CEKid,
-                content: encrypt(CEK, (key: any))
+                content: encryptedOutgoingData(state, CEKid, key)
               }
             }
           }))
@@ -112,8 +111,7 @@ sbp('sbp/selectors/register', {
         data: serializeKey(newKey, false),
         meta: {
           private: {
-            keyId: keyId(encryptionKey),
-            content: encrypt(encryptionKey, serializeKey(newKey, true)),
+            content: encryptedOutgoingData(state, keyId(encryptionKey), serializeKey(newKey, true)),
             shareable: state._vm.authorizedKeys[id].meta.private.shareable
           }
         }

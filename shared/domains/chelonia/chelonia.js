@@ -6,14 +6,15 @@ import sbp from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, difference, intersection, merge, randomHexString } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr } from '~/shared/functions.js'
-import { createClient, NOTIFICATION_TYPE } from '~/shared/pubsub.js'
+import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
+import type { GIKey, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
 import type { Key } from './crypto.js'
-import { decrypt, deserializeKey, encrypt, keyId, sign } from './crypto.js'
-import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound, ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
+import { deserializeKey, keyId, sign } from './crypto.js'
+import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_REGISTERED } from './events.js'
-import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyUpdate, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare } from './GIMessage.js'
 // TODO: rename this to ChelMessage
 import { GIMessage } from './GIMessage.js'
+import { encryptedOutgoingData } from './encryptedData.js'
 import './internals.js'
 import { findSuitablePublicKeyIds, findSuitableSecretKeyId, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 
@@ -193,8 +194,6 @@ const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
     throw new Error(`Invalid signing key ID: ${signingKeyId}`)
   }
 
-  if (isNaN(NaN)) return rawSignatureFnBuilder(config.transientSecretKeys?.[signingKeyId])
-
   return (data) => {
     // Has the key been revoked? If so, attempt to find an authorized key by the same name
     if ((rootState[signingContractID]._vm?.revokedKeys?.[signingKeyId]?.purpose.includes(
@@ -230,6 +229,7 @@ const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
   }
 }
 
+/*
 const encryptFn = function (message: Object, eKeyId: string, state: ?Object) {
   const key = this.config.transientSecretKeys?.[eKeyId] || state?._vm?.authorizedKeys?.[eKeyId]?.data
 
@@ -281,6 +281,7 @@ const decryptFn = function (message: Object, state: ?Object) {
     throw new ChelErrorDecryptionError(e?.message || e)
   }
 }
+*/
 
 export default (sbp('sbp/selectors/register', {
   // https://www.wordnik.com/words/chelonia
@@ -289,8 +290,6 @@ export default (sbp('sbp/selectors/register', {
     this.config = {
       // TODO: handle connecting to multiple servers for federation
       connectionURL: null, // override!
-      decryptFn: decryptFn,
-      encryptFn: encryptFn,
       stateSelector: 'chelonia/private/state', // override to integrate with, for example, vuex
       contracts: {
         defaults: {
@@ -399,6 +398,8 @@ export default (sbp('sbp/selectors/register', {
       // its console output until we have a better solution. Do not use for auth.
       pubsubURL += `?debugID=${randomHexString(6)}`
     }
+    const config = this.config
+    const rootState = sbp(this.config.stateSelector)
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       messageHandlers: {
@@ -407,7 +408,7 @@ export default (sbp('sbp/selectors/register', {
           // is called AFTER any currently-running calls to 'chelonia/contract/sync'
           // to prevent gi.db from throwing "bad previousHEAD" errors.
           // Calling via SBP also makes it simple to implement 'test/backend.js'
-          sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data))
+          sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data, rootState, undefined, config.transientSecretKeys))
         },
         [NOTIFICATION_TYPE.APP_VERSION] (msg) {
           const ourVersion = process.env.GI_VERSION
@@ -629,7 +630,7 @@ export default (sbp('sbp/selectors/register', {
     // fast-path
     try {
       for (const event of events) {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, rootState, state, this.config.transientSecretKeys), state)
       }
       return state
     } catch (e) {
@@ -643,7 +644,7 @@ export default (sbp('sbp/selectors/register', {
     for (const event of events) {
       const stateCopy = cloneDeep(state)
       try {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), state)
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, rootState, state, this.config.transientSecretKeys), state)
       } catch (e) {
         console.warn(`[chelonia] latestContractState: '${e.name}': ${e.message} processing:`, event, e.stack)
         if (e instanceof ChelErrorUnrecoverable) throw e
@@ -964,17 +965,17 @@ async function outEncryptedOrUnencryptedAction (
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
-  const payload = opType === GIMessage.OP_ACTION_UNENCRYPTED ? unencMessage : this.config.encryptFn.call(this, unencMessage, params.encryptionKeyId, state)
+  const payload = opType === GIMessage.OP_ACTION_UNENCRYPTED
+    ? unencMessage
+    : encryptedOutgoingData(state, params.encryptionKeyId, unencMessage)
   // TODO: Remove this console.log
-  console.log({ unencMessage, ekid: params.encryptionKeyId, state, payload })
   const signatureFn = params.signingKeyId ? signatureFnBuilder(this.config, contractID, params.signingKeyId) : undefined
   let message = GIMessage.createV1_0({
     contractID,
     previousHEAD,
     op: [
       opType,
-      payload,
-      unencMessage
+      payload
     ],
     manifest: manifestHash,
     signatureFn

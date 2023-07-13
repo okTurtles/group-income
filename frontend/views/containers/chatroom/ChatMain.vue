@@ -458,8 +458,9 @@ export default ({
           newEvents.shift() // NOTE: already exists in this.latestEvents
         }
         if (newEvents.length) {
+          const rootState = sbp('state/vuex/state')
           for (const event of newEvents) {
-            await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), this.messageState.contract)
+            await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, rootState, this.messageState.contract), this.messageState.contract)
             this.latestEvents.push(event)
           }
           this.$forceUpdate()
@@ -500,8 +501,9 @@ export default ({
       }
 
       this.initializeState()
+      const rootState = sbp('state/vuex/state')
       for (const event of this.latestEvents) {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event), this.messageState.contract)
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, rootState, this.messageState.contract), this.messageState.contract)
       }
       this.$forceUpdate()
     },
@@ -705,7 +707,7 @@ export default ({
       const unit = this.chatRoomSettings?.actionsPerPage || CHATROOM_ACTIONS_PER_PAGE
       const from = this.latestEvents.length ? GIMessage.deserialize(this.latestEvents[0]).hash() : null
       const to = this.latestEvents.length
-        ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1]).hash()
+        ? GIMessage.deserialize(this.latestEvents[this.latestEvents.length - 1], chatRoomId).hash()
         : null
 
       // NOTE: save messages in the browser storage, but not more than CHATROOM_MAX_ARCHIVE_ACTION_PAGES pages of events

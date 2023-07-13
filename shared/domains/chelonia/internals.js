@@ -4,14 +4,15 @@ import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, debounce, delay, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
-import { decryptKey, encrypt, verifySignature } from './crypto.js'
+import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet } from './GIMessage.js'
+import { GIMessage } from './GIMessage.js'
+import { INVITE_STATUS } from './constants.js'
+import { verifySignature } from './crypto.js'
 import './db.js'
+import { encryptedOutgoingData } from './encryptedData.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
-import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyUpdate, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpPropSet, GIOpType } from './GIMessage.js'
-import { GIMessage } from './GIMessage.js'
 import { findSuitableSecretKeyId, keyAdditionProcessor, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
-import { INVITE_STATUS } from './constants.js'
 // import 'ses'
 
 const keysToMap = (keys: GIKey[]): Object => {
@@ -240,7 +241,7 @@ export default (sbp('sbp/selectors/register', {
 
           // TODO: Move the following code to a different function that handles any required message transformations
           // TODO: Add comment explaining what this is doing and why
-          let [opT, opV, decryptedValue] = entry.op()
+          let [opT, opV] = entry.op()
           if (opT === GIMessage.OP_KEY_ADD) {
             const rootState = sbp(this.config.stateSelector)
             const state = rootState[contractID]
@@ -249,7 +250,6 @@ export default (sbp('sbp/selectors/register', {
               console.info('Omitting empty OP_KEY_ADD', { head })
               return
             }
-            decryptedValue = opV
           } else if (opT === GIMessage.OP_KEY_DEL) {
             const rootState = sbp(this.config.stateSelector)
             const state = rootState[contractID]
@@ -258,7 +258,6 @@ export default (sbp('sbp/selectors/register', {
               console.info('Omitting empty OP_KEY_DEL', { head })
               return
             }
-            decryptedValue = opV
           } else if (opT === GIMessage.OP_KEY_UPDATE) {
             const rootState = sbp(this.config.stateSelector)
             const state = rootState[contractID]
@@ -267,10 +266,9 @@ export default (sbp('sbp/selectors/register', {
               console.info('Omitting empty OP_KEY_UPDATE', { head })
               return
             }
-            decryptedValue = opV
           }
 
-          entry = GIMessage.cloneWith(head, [opT, opV, decryptedValue], { previousHEAD }, signatureFn)
+          entry = GIMessage.cloneWith(head, [opT, opV], { previousHEAD }, signatureFn)
         }
       } else {
         const message = (await r.json())?.message
@@ -310,7 +308,6 @@ export default (sbp('sbp/selectors/register', {
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
-        const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
         state._vm.type = v.type
         config.reactiveSet(state._vm, 'authorizedKeys', keysToMap(v.keys))
 
@@ -324,13 +321,11 @@ export default (sbp('sbp/selectors/register', {
         // will use it to decrypt the rest of the keys which are encrypted with that.
         // Specifically, the IEK is used to decrypt the CSKs and the CEKs, which are
         // the encrypted versions of the CSK and CEK.
-        keyAdditionProcessor.call(self, keys, v.keys, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, v.keys, state, contractID, signingKey)
       },
       [GIMessage.OP_ACTION_ENCRYPTED] (v: GIOpActionEncrypted) {
         if (!config.skipActionProcessing && !env.skipActionProcessing) {
-          const decrypted = config.decryptFn.call(self, message.opValue(), state)
-          message.decryptedValue(() => decrypted)
-          opFns[GIMessage.OP_ACTION_UNENCRYPTED](decrypted)
+          opFns[GIMessage.OP_ACTION_UNENCRYPTED](message.opValue().valueOf())
           console.log('OP_ACTION_ENCRYPTED: decrypted')
         }
         console.log('OP_ACTION_ENCRYPTED: skipped action processing')
@@ -365,7 +360,7 @@ export default (sbp('sbp/selectors/register', {
           if (key.meta?.private) {
             if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
               try {
-                const decrypted = decryptKey(key.id, keys[key.meta.private.keyId], key.meta.private.content)
+                const decrypted = key.meta.private.content.valueOf()
                 sharedKeys[key.id] = decrypted
                 if (config.transientSecretKeys) {
                   config.transientSecretKeys[key.id] = decrypted
@@ -495,7 +490,6 @@ export default (sbp('sbp/selectors/register', {
         state._vm.props[v.key] = v.value
       },
       [GIMessage.OP_KEY_ADD] (v: GIOpKeyAdd) {
-        const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
         // Order is so that KEY_ADD doesn't overwrite existing keys
         // TODO: Verify ringLevel
         // TODO: Handle the case of an existing key: its permissions are then augmented
@@ -510,7 +504,7 @@ export default (sbp('sbp/selectors/register', {
         })
         validateKeyAddPermissions(contractID, signingKey, state, v)
         config.reactiveSet(state._vm, 'authorizedKeys', { ...keysToMap(v), ...state._vm.authorizedKeys })
-        keyAdditionProcessor.call(self, keys, v, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, v, state, contractID, signingKey)
       },
       [GIMessage.OP_KEY_DEL] (v: GIOpKeyDel) {
         if (!state._vm.authorizedKeys) config.reactiveSet(state._vm, 'authorizedKeys', Object.create(null))
@@ -716,7 +710,7 @@ export default (sbp('sbp/selectors/register', {
         //       https://github.com/cypress-io/cypress/issues/22868
         let latestHashFound = false
         for (let i = events.length - 1; i >= 0; i--) {
-          if (GIMessage.deserialize(events[i]).hash() === latest) {
+          if (GIMessage.deserialize(events[i], state, undefined, this.config.transientSecretKeys).hash() === latest) {
             latestHashFound = true
             break
           }
@@ -728,7 +722,7 @@ export default (sbp('sbp/selectors/register', {
         state.contracts[contractID] && events.shift()
         for (let i = 0; i < events.length; i++) {
           // this must be called directly, instead of via enqueueHandleEvent
-          await sbp('chelonia/private/in/handleEvent', GIMessage.deserialize(events[i]))
+          await sbp('chelonia/private/in/handleEvent', GIMessage.deserialize(events[i], state, undefined, this.config.transientSecretKeys))
         }
       } else {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)
@@ -855,12 +849,6 @@ export default (sbp('sbp/selectors/register', {
 
         verifySignature(signingKey.data, signedInnerData.join('|'), data)
 
-        const encryptionKey = originatingState._vm.authorizedKeys[encryptionKeyId]
-
-        if (!encryptionKey || !encryptionKey.data) {
-          throw new Error('Unable to find encryption key')
-        }
-
         const keys = contractState._volatile?.keys && Object.fromEntries(Object.entries(contractState._volatile?.keys).filter(([kId]) => contractState._vm.authorizedKeys[kId]?.meta?.private?.shareable || contractState._vm.revokedKeys?.[kId]?.meta?.private?.shareable))
 
         if (!keys || Object.keys(keys).length === 0) {
@@ -880,8 +868,7 @@ export default (sbp('sbp/selectors/register', {
               id: keyId,
               meta: {
                 private: {
-                  keyId: encryptionKeyId,
-                  content: encrypt(encryptionKey.data, (key: any)),
+                  content: encryptedOutgoingData(originatingState, encryptionKeyId, key),
                   shareable: true
                 }
               }
@@ -911,6 +898,7 @@ export default (sbp('sbp/selectors/register', {
     try {
       await preHandleEvent?.(message)
       // verify we're expecting to hear from this contract
+      // TODO: Remove isNaN() or remove if
       if (isNaN(1) && !state.pending.includes(contractID) && !state.contracts[contractID]) {
         console.warn(`[chelonia] WARN: ignoring unexpected event ${message.description()}:`, message.serialize())
         throw new ChelErrorUnexpected()
@@ -1025,7 +1013,7 @@ const handleEvent = {
         throw new ChelErrorUnrecoverable(`state[contractID] (contractID ${contractID}) is already set`)
       }
       console.debug(`contract ${type} registered for ${contractID}`)
-      if (!state[contractID]) this.config.reactiveSet(state, contractID, {})
+      if (!state[contractID]) this.config.reactiveSet(state, contractID, Object.create(null))
       this.config.reactiveSet(state.contracts, contractID, { type, HEAD: contractID })
       // we've successfully received it back, so remove it from expectation pending
       const index = state.pending.indexOf(contractID)

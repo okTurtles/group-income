@@ -5,8 +5,9 @@ import { GIErrorUIRuntimeError, L } from '@common/common.js'
 import { omit } from '@model/contracts/shared/giLodash.js'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
+import { encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
-import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, encrypt, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+import { CURVE25519XSALSA20POLY1305, EDWARDS25519SHA512BATCH, deserializeKey, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIRegParams } from './types.js'
 import { encryptedAction } from './utils.js'
 
@@ -20,14 +21,13 @@ export default (sbp('sbp/selectors/register', {
         const CEK = keygen(CURVE25519XSALSA20POLY1305)
         const CEKid = keyId(CEK)
         const CEKp = serializeKey(CEK, false)
-        const CEKs = encrypt(CEK, serializeKey(CEK, true))
+        const CEKs = encryptedOutgoingDataWithRawKey(CEK, serializeKey(CEK, true))
 
         cekOpts = {
           id: CEKid,
           foreignKey: undefined,
           meta: {
             private: {
-              keyId: CEKid,
               content: CEKs,
               shareable: true
             }
@@ -41,14 +41,13 @@ export default (sbp('sbp/selectors/register', {
         const CSK = keygen(EDWARDS25519SHA512BATCH)
         const CSKid = keyId(CSK)
         const CSKp = serializeKey(CSK, false)
-        const CSKs = encrypt(cekOpts.data, serializeKey(CSK, true))
+        const CSKs = encryptedOutgoingDataWithRawKey(cekOpts._rawKey ? cekOpts._rawKey : deserializeKey(cekOpts.data), serializeKey(CSK, true))
 
         cskOpts = {
           id: CSKid,
           foreignKey: undefined,
           meta: {
             private: {
-              keyId: cekOpts.id,
               content: CSKs,
               shareable: true
             }
@@ -147,6 +146,10 @@ export default (sbp('sbp/selectors/register', {
     // $FlowFixMe
     return Promise.all(Object.values(state.users).filter((p?: { departedDate: null | string }) => p.departedDate == null).map((p: { contractID: string }) => {
       const CEKid = findKeyIdByName(rootState[p.contractID], 'cek')
+      if (!CEKid) {
+        console.warn(`Unable to share rotated keys for ${originatingContractID} with ${p.contractID}: Missing CEK`)
+        return Promise.resolve()
+      }
       return sbp('chelonia/out/keyShare', {
         destinationContractID: p.contractID,
         destinationContractName: rootState.contracts[p.contractID].type,
@@ -159,8 +162,7 @@ export default (sbp('sbp/selectors/register', {
             id: newId,
             meta: {
               private: {
-                keyId: CEKid,
-                content: encrypt(rootState[p.contractID]._vm.authorizedKeys[CEKid].data, serializeKey(newKey, true))
+                content: encryptedOutgoingData(rootState[p.contractID], CEKid, serializeKey(newKey, true))
               }
             }
           }))

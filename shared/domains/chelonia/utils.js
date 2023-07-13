@@ -2,8 +2,7 @@ import sbp from '@sbp/sbp'
 import type { GIKey, GIKeyPurpose, GIOpKeyUpdate } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
-import type { Key } from './crypto.js'
-import { decryptKey, deserializeKey } from './crypto.js'
+import { deserializeKey } from './crypto.js'
 import { CONTRACT_IS_PENDING_KEY_REQUESTS } from './events.js'
 
 export const findKeyIdByName = (state: Object, name: string): ?string => state._vm?.authorizedKeys && ((Object.values((state._vm.authorizedKeys: any)): any): GIKey[]).find((k) => k.name === name)?.id
@@ -108,19 +107,21 @@ export const validateKeyUpdatePermissions = (contractID: string, signingKey: GIK
   return [keys, keysToDelete]
 }
 
-export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, keys: GIKey[], state: Object, contractID: string, signingKey: GIKey) {
+export const keyAdditionProcessor = function (keys: GIKey[], state: Object, contractID: string, signingKey: GIKey) {
   console.log('@@@@@ KAP Attempting to decrypt keys for ' + contractID)
   const decryptedKeys = []
 
   for (const key of keys) {
     let decryptedKey: ?string
     // Does the key have key.meta?.private? If so, attempt to decrypt it
-    if (key.meta?.private && key.meta.private.keyId && key.meta.private.content) {
-      if (key.id && key.meta.private.keyId in secretKeys && key.meta.private.content) {
+    if (key.meta?.private && key.meta.private.content) {
+      if (key.id && key.meta.private.content) {
         try {
-          decryptedKey = decryptKey(key.id, secretKeys[key.meta.private.keyId], key.meta.private.content)
+          decryptedKey = key.meta.private.content.valueOf()
           decryptedKeys.push([key.id, decryptedKey])
-          secretKeys[key.id] = deserializeKey(decryptedKey)
+          if (!(key.id in this.config.transientSecretKeys)) {
+            this.config.transientSecretKeys[key.id] = deserializeKey(decryptedKey)
+          }
         } catch (e) {
           console.error(`Secret key decryption error '${e.message || e}':`, e)
           // Ricardo feels this is an ambiguous situation, however if we rethrow it will
@@ -180,6 +181,8 @@ export const keyAdditionProcessor = function (secretKeys: {[id: string]: Key}, k
     if (!state._volatile.keys) this.config.reactiveSet(state._volatile, 'keys', Object.create(null))
 
     for (const [id, value] of decryptedKeys) {
+      // TODO (Jul 11 2023): Something is probably going wrong here wrt encryptedIncomingData
+      console.log('@@@@@ KAP SV ', { ...state._volatile.keys, id, value })
       this.config.reactiveSet(state._volatile.keys, id, value)
     }
   }

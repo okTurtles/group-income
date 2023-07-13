@@ -1,12 +1,13 @@
 'use strict'
 
+import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import sbp from '@sbp/sbp'
 import { GIMessage } from '~/shared/domains/chelonia/GIMessage.js'
+import { encryptedOutgoingData } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName } from '~/shared/domains/chelonia/utils.js'
-import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
-// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { GIErrorUIRuntimeError, LError } from '@common/common.js'
-import { EDWARDS25519SHA512BATCH, encrypt, keygen, keyId, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
+// Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
+import { EDWARDS25519SHA512BATCH, keyId, keygen, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
 import type { GIActionParams } from './types.js'
 
 // Utility function to send encrypted actions ('chelonia/out/actionEncrypted')
@@ -101,7 +102,7 @@ export async function createInvite ({ quantity = 1, creator, expires, invitee }:
   const inviteKey = keygen(EDWARDS25519SHA512BATCH)
   const inviteKeyId = keyId(inviteKey)
   const inviteKeyP = serializeKey(inviteKey, false)
-  const inviteKeyS = encrypt(CEK, serializeKey(inviteKey, true))
+  const inviteKeyS = encryptedOutgoingData(state, CEKid, serializeKey(inviteKey, true))
 
   await sbp('chelonia/out/keyAdd', {
     contractID,
@@ -116,7 +117,6 @@ export async function createInvite ({ quantity = 1, creator, expires, invitee }:
         quantity,
         expires: Date.now() + DAYS_MILLIS * expires,
         private: {
-          keyId: CEKid,
           content: inviteKeyS
         }
       },

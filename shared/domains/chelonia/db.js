@@ -91,10 +91,12 @@ export default (sbp('sbp/selectors/register', {
     return sbp('chelonia/db/get', sbp('chelonia/db/logHEAD', contractID))
   },
   'chelonia/db/getEntry': async function (hash: string): Promise<GIMessage> {
+    // TODO: Server doesn't have stateSelector defined
+    const rootState = this.config?.stateSelector ? sbp(this.config.stateSelector) : {}
     try {
       const value: string = await sbp('chelonia/db/get', hash)
       if (!value) throw new Error(`no entry for ${hash}!`)
-      return GIMessage.deserialize(value)
+      return GIMessage.deserialize(value, rootState, undefined, this.config?.transientSecretKeys)
     } catch (e) {
       throw new ChelErrorDBConnection(`${e.name} during getEntry: ${e.message}`)
     }
