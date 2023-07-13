@@ -7,7 +7,7 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, difference, intersection, merge, randomHexString } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr } from '~/shared/functions.js'
 import { NOTIFICATION_TYPE, createClient } from '~/shared/pubsub.js'
-import type { GIKey, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
+import type { GIKey, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate } from './GIMessage.js'
 import type { Key } from './crypto.js'
 import { deserializeKey, keyId, sign } from './crypto.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
@@ -200,7 +200,7 @@ const signatureFnBuilder = (config, signingContractID, signingKeyId) => {
       'sig'
     ))) {
       const name = rootState[signingContractID]._vm.revokedKeys[signingKeyId].name
-      const newKeyId = (Object.values(rootState[signingContractID]._vm?.authorizedKeys).find((v) => v.name === name && v.purpose.includes('sig')): any)?.id
+      const newKeyId = (Object.values(rootState[signingContractID]._vm?.authorizedKeys).find((v: any) => v.name === name && v.purpose.includes('sig')): any)?.id
 
       if (!newKeyId) {
         throw new Error(`Signing key ID ${signingContractID} has been revoked and no new key exists by the same name (${name})`)
@@ -965,9 +965,12 @@ async function outEncryptedOrUnencryptedAction (
   contract.metadata.validate(meta, { state, ...gProxy, contractID })
   contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
   const unencMessage = ({ action, data, meta }: GIOpActionUnencrypted)
+  if (opType === GIMessage.OP_ACTION_ENCRYPTED && !params.encryptionKeyId) {
+    throw new Error('OP_ACTION_ENCRYPTED requires an encryption key ID be given')
+  }
   const payload = opType === GIMessage.OP_ACTION_UNENCRYPTED
     ? unencMessage
-    : encryptedOutgoingData(state, params.encryptionKeyId, unencMessage)
+    : encryptedOutgoingData(state, ((params.encryptionKeyId: any): string), unencMessage)
   // TODO: Remove this console.log
   const signatureFn = params.signingKeyId ? signatureFnBuilder(this.config, contractID, params.signingKeyId) : undefined
   let message = GIMessage.createV1_0({

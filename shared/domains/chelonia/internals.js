@@ -4,7 +4,7 @@ import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, debounce, delay, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
-import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet } from './GIMessage.js'
+import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { verifySignature } from './crypto.js'
@@ -594,7 +594,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }
         config.reactiveSet(state._vm, 'authorizedKeys', newAuthorizedKeys)
-        keyAdditionProcessor.call(self, keys, (Object.values(newAuthorizedKeys): any[]), state, contractID, signingKey)
+        keyAdditionProcessor.call(self, keys, state, contractID, signingKey)
 
         // Check state._volatile.watch for contracts that should be
         // mirroring this operation

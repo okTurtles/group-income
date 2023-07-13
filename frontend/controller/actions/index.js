@@ -39,7 +39,7 @@ sbp('sbp/selectors/register', {
       const CEKid = findKeyIdByName(state, 'cek')
       const CSKid = findKeyIdByName(originatingContractState, 'csk')
 
-      if (!state?._vm?.authorizedKeys?.[CEKid]) {
+      if (!CEKid || !state?._vm?.authorizedKeys?.[CEKid]) {
         throw new Error('Missing CEK; unable to proceed sharing keys')
       }
 

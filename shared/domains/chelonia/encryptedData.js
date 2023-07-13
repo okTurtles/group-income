@@ -4,11 +4,12 @@ import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound } from './erro
 
 const encryptData = function (eKeyId: string, data: any) {
   // Has the key been revoked? If so, attempt to find an authorized key by the same name
+  // $FlowFixMe
   if ((this._vm?.revokedKeys?.[eKeyId]?.purpose.includes(
     'enc'
   ))) {
-    const name = this._vm.revokedKeys[eKeyId].name
-    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v) => v.name === name && v.purpose.includes('sig')): any)?.id
+    const name = (this._vm: any).revokedKeys[eKeyId].name
+    const newKeyId = (Object.values(this._vm?.authorizedKeys).find((v: any) => v.name === name && v.purpose.includes('sig')): any)?.id
 
     if (!newKeyId) {
       throw new Error(`Encryption key ID ${eKeyId} has been revoked and no new key exists by the same name (${name})`)
@@ -35,7 +36,7 @@ const encryptData = function (eKeyId: string, data: any) {
   ])
 }
 
-const decryptData = function (data: string, additionalKeys: Object, validatorFn?: (v: any) => Boolean) {
+const decryptData = function (data: string, additionalKeys: Object, validatorFn?: (v: any) => void) {
   if (!this) {
     throw new ChelErrorDecryptionError('Missing contract state')
   }
@@ -108,7 +109,7 @@ export const encryptedOutgoingDataWithRawKey = (key: Key, data: any): Object => 
     : Object.assign(Object(data), returnProps)
 }
 
-export const encryptedIncomingData = (rootState: Object, contractID: string, state: Object, data: string, additionalKeys?: Object, validatorFn?: (v: any) => Boolean): Object => {
+export const encryptedIncomingData = (rootState: Object, contractID: string, state: Object, data: string, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
   const stringValueFn = () => data
   let decryptedValue
   const decryptedValueFn = () => {
