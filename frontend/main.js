@@ -5,7 +5,6 @@ import sbp from '@sbp/sbp'
 import '@sbp/okturtles.data'
 import '@sbp/okturtles.events'
 import '@sbp/okturtles.eventqueue'
-import Favico from 'favico.js'
 import { mapMutations, mapGetters, mapState } from 'vuex'
 import 'wicg-inert'
 
@@ -39,6 +38,7 @@ import './utils/touchInteractions.js'
 import './model/notifications/periodicNotifications.js'
 import notificationsMixin from './model/notifications/mainNotificationsMixin.js'
 import { showNavMixin } from './views/utils/misc.js'
+import FaviconBadge from './utils/faviconBadge.js'
 
 const { Vue, L } = Common
 
@@ -330,12 +330,7 @@ async function startApp () {
         'setReducedMotion'
       ]),
       setBadgeOnTab () {
-        if (!window.favicon) {
-          window.favicon = new Favico({
-            textColor: '#d00'
-          })
-        }
-        window.favicon.badge(this.shouldSetBadge ? 1 : 0)
+        FaviconBadge.setBubble(this.shouldSetBadge)
       }
     },
     watch: {
