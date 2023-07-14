@@ -137,6 +137,7 @@ export class GIMessage {
     const message = head.op === GIMessage.OP_ACTION_ENCRYPTED ? encryptedIncomingData(rootState, contractID, state, parsedMessage, additionalKeys) : parsedMessage
     if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(head.op)) {
       ((message: any): any[]).forEach((key) => {
+        // TODO: When storing the message, ensure only the raw encrypted data get stored. This goes for all uses of encryptedIncomingData
         if (key.meta?.private?.content) {
           key.meta.private.content = encryptedIncomingData(rootState, contractID, state, key.meta.private.content, additionalKeys, (value) => {
             const computedKeyId = keyId(value)

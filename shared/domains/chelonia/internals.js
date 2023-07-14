@@ -16,7 +16,10 @@ import { findSuitableSecretKeyId, keyAdditionProcessor, validateKeyAddPermission
 // import 'ses'
 
 const keysToMap = (keys: GIKey[]): Object => {
-  return Object.fromEntries(keys.map(key => [key.id, key]))
+  // Using cloneDeep to ensure that the returned object is serializable
+  // Keys in a GIMessage may not be serializable (i.e., supported by the
+  // structured clone algorithm) when they contain encryptedIncomingData
+  return Object.fromEntries(keys.map(key => [key.id, cloneDeep(key)]))
 }
 
 const keyRotationHelper = (contractID: string, state: Object, config: Object, updatedKeysMap: Object, requiredPermissions: string[], outputSelector: string, outputMapper: (name: [string, string]) => any) => {
@@ -351,14 +354,10 @@ export default (sbp('sbp/selectors/register', {
           config.reactiveSet(cheloniaState, v.contractID, Object.create(null))
         }
         let targetState = cheloniaState[v.contractID]
-
-        const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
-
         const sharedKeys = Object.create(null)
-
         for (const key of v.keys) {
           if (key.meta?.private) {
-            if (key.id && key.meta.private.keyId in keys && key.meta.private.content) {
+            if (key.id && key.meta.private.content) {
               try {
                 const decrypted = key.meta.private.content.valueOf()
                 sharedKeys[key.id] = decrypted
@@ -394,11 +393,7 @@ export default (sbp('sbp/selectors/register', {
             await sbp('chelonia/contract/remove', v.contractID)
             // Sync...
             await sbp('chelonia/configure', {
-              transientSecretKeys: {
-                ...existingKeys,
-                ...keys,
-                ...sharedKeys
-              }
+              transientSecretKeys: sharedKeys
             }).then(async () => {
               self.setPostSyncOp(v.contractID, 'received-keys', ['okTurtles.events/emit', CONTRACT_HAS_RECEIVED_KEYS, { contractID: v.contractID }])
 

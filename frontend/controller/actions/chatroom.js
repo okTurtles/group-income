@@ -175,7 +175,10 @@ export default (sbp('sbp/selectors/register', {
   ...encryptedAction('gi.actions/chatroom/editMessage', L('Failed to edit message.')),
   ...encryptedAction('gi.actions/chatroom/deleteMessage', L('Failed to delete message.')),
   ...encryptedAction('gi.actions/chatroom/makeEmotion', L('Failed to make emotion.')),
-  ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.')),
+  ...encryptedAction('gi.actions/chatroom/join', L('Failed to join chat channel.'), async (sendMessage, params) => {
+    await sbp('chelonia/contract/sync', params.contractID)
+    return sendMessage(params)
+  }),
   ...encryptedAction('gi.actions/chatroom/rename', L('Failed to rename chat channel.')),
   ...encryptedAction('gi.actions/chatroom/changeDescription', L('Failed to change chat channel description.')),
   ...encryptedAction('gi.actions/chatroom/leave', L('Failed to leave chat channel.')),
