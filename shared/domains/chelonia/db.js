@@ -8,6 +8,8 @@ import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
 
 const headPrefix = 'head='
 
+const getLogHead = (contractID: string): string => `${headPrefix}${contractID}`
+
 export const checkKey = (key: string): void => {
   // Disallow unprintable characters, slashes, and TAB.
   if (/[\x00-\x1f\x7f\t\\/]/.test(key)) { // eslint-disable-line no-control-regex
@@ -32,7 +34,7 @@ export const prefixHandlers: Object = {
   '': value => Buffer.isBuffer(value) ? value.toString('utf8') : value,
   ':': value => Buffer.isBuffer(value) ? value.toString('utf8') : value,
   'any:': value => value,
-  // Throw if the value if not a buffer.f
+  // Throw if the value if not a buffer.
   'blob:': value => {
     if (Buffer.isBuffer(value)) {
       return value
@@ -81,14 +83,11 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
 
 export default (sbp('sbp/selectors/register', {
   ...dbPrimitiveSelectors,
-  'chelonia/db/logHEAD': function (contractID: string): string {
-    return `${headPrefix}${contractID}`
-  },
   'chelonia/db/contractIdFromLogHEAD': function (key: string): ?string {
     return key.startsWith(headPrefix) ? key.slice(headPrefix.length) : null
   },
   'chelonia/db/latestHash': function (contractID: string): Promise<string | void> {
-    return sbp('chelonia/db/get', sbp('chelonia/db/logHEAD', contractID))
+    return sbp('chelonia/db/get', getLogHead(contractID))
   },
   'chelonia/db/getEntry': async function (hash: string): Promise<GIMessage> {
     try {
@@ -121,7 +120,7 @@ export default (sbp('sbp/selectors/register', {
         throw new ChelErrorDBBadPreviousHEAD(`bad previousHEAD: ${previousHEAD}. Expected ${HEAD} for contractID: ${contractID}`)
       }
       await sbp('chelonia/db/set', entry.hash(), entry.serialize())
-      await sbp('chelonia/db/set', sbp('chelonia/db/logHEAD', contractID), entry.hash())
+      await sbp('chelonia/db/set', getLogHead(contractID), entry.hash())
       console.debug(`[chelonia.db] HEAD for ${contractID} updated to:`, entry.hash())
       return entry.hash()
     } catch (e) {
