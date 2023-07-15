@@ -8,7 +8,12 @@ import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
 
 const headPrefix = 'head='
 
+const getContractIdFromLogHead = (logHead: string): string => {
+  if (!isLogHead(logHead)) throw new Error('Not a log head')
+  return logHead.slice(headPrefix.length)
+}
 const getLogHead = (contractID: string): string => `${headPrefix}${contractID}`
+const isLogHead = (key: string) => key.startsWith(headPrefix)
 
 export const checkKey = (key: string): void => {
   // Disallow unprintable characters, slashes, and TAB.
@@ -51,9 +56,12 @@ sbp('sbp/selectors/unsafe', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/
 const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
       'chelonia/db/get': function (key: string): Promise<Buffer | string | void> {
-        const id = sbp('chelonia/db/contractIdFromLogHEAD', key)
-        const value = (id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : undefined)
-        return Promise.resolve(value)
+        if (isLogHead(key)) {
+          const id = getContractIdFromLogHead(key)
+          const value = sbp(this.config.stateSelector).contracts[id]?.HEAD
+          return Promise.resolve(value)
+        }
+        return Promise.resolve()
       },
       'chelonia/db/set': function (key: string, value: Buffer | string): Promise<Error | void> {
         return Promise.resolve()
@@ -83,9 +91,6 @@ const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
 
 export default (sbp('sbp/selectors/register', {
   ...dbPrimitiveSelectors,
-  'chelonia/db/contractIdFromLogHEAD': function (key: string): ?string {
-    return key.startsWith(headPrefix) ? key.slice(headPrefix.length) : null
-  },
   'chelonia/db/latestHash': function (contractID: string): Promise<string | void> {
     return sbp('chelonia/db/get', getLogHead(contractID))
   },
