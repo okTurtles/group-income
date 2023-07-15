@@ -108,11 +108,11 @@ describe('Group Payments', () => {
     //       REFERENCE IN CASE WE RUN INTO MORE!
     // NOTE: when we had this command here, Cypress would sometimes fail because cy.window() would
     //       for some reason return a promise that wouldn't resolve.
-    // cy.giForceDistributionDateToNow()
+    cy.giForceDistributionDateToNow()
 
     cy.getByDT('paymentsLink').click()
     // Moving it here seems to have fixed things.
-    cy.giForceDistributionDateToNow()
+    // cy.giForceDistributionDateToNow()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
 
     assertNavTabs(['Todo1', 'Completed'])
