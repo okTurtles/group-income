@@ -37,7 +37,7 @@ describe('Encrypted data API', () => {
     should(stringifiedEncryptedData).not.equal('foo')
     should(encryptedData.toJSON()).not.equal('foo')
 
-    const incoming = encryptedIncomingData({}, '', state, stringifiedEncryptedData)
+    const incoming = encryptedIncomingData('', state, stringifiedEncryptedData)
 
     should(incoming).type('object')
     should(incoming.toString).type('function')
@@ -63,7 +63,7 @@ describe('Encrypted data API', () => {
     should(stringifiedEncryptedData).not.equal('foo')
     should(encryptedData.toJSON()).not.equal('foo')
 
-    const incoming = encryptedIncomingData({}, '', {
+    const incoming = encryptedIncomingData('', {
       _vm: {
         authorizedKeys: {
           [id]: {

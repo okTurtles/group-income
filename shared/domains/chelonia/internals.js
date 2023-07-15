@@ -12,7 +12,7 @@ import './db.js'
 import { encryptedOutgoingData } from './encryptedData.js'
 import { ChelErrorUnexpected, ChelErrorUnrecoverable } from './errors.js'
 import { CONTRACTS_MODIFIED, CONTRACT_HAS_RECEIVED_KEYS, CONTRACT_IS_SYNCING, EVENT_HANDLED } from './events.js'
-import { findSuitableSecretKeyId, keyAdditionProcessor, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
+import { findSuitableSecretKeyId, keyAdditionProcessor, recreateEvent, validateKeyAddPermissions, validateKeyDelPermissions, validateKeyUpdatePermissions } from './utils.js'
 // import 'ses'
 
 const keysToMap = (keys: GIKey[]): Object => {
@@ -211,11 +211,11 @@ export default (sbp('sbp/selectors/register', {
     }
   },
   'chelonia/private/out/publishEvent': async function (entry: GIMessage, { maxAttempts = 5 } = {}, signatureFn?: Function) {
-    const contractID = entry.contractID()
     let attempt = 1
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income/issues/608
     while (true) {
+      const rootState = sbp(this.config.stateSelector)
       const r = await fetch(`${this.config.connectionURL}/event`, {
         method: 'POST',
         body: entry.serialize(),
@@ -236,42 +236,14 @@ export default (sbp('sbp/selectors/register', {
         const randDelay = randomIntFromRange(0, 1500)
         console.warn(`[chelonia] publish attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${entry.description()}`)
         attempt += 1
-        await delay(randDelay) // wait half a second before sending it again
-        // if this isn't OP_CONTRACT, get latestHash, recreate and resend message
+        await delay(randDelay) // wait randDelay ms before sending it again
+        // if this isn't OP_CONTRACT, recreate and resend message
         if (!entry.isFirstMessage()) {
-          const previousHEAD = await sbp('chelonia/out/latestHash', contractID)
-          const head = entry.head()
-
-          // TODO: Move the following code to a different function that handles any required message transformations
-          // TODO: Add comment explaining what this is doing and why
-          let [opT, opV] = entry.op()
-          if (opT === GIMessage.OP_KEY_ADD) {
-            const rootState = sbp(this.config.stateSelector)
-            const state = rootState[contractID]
-            opV = ((opV: any): GIOpKeyAdd).filter(({ id }) => !state?._vm.authorizedKeys[id])
-            if (opV.length === 0) {
-              console.info('Omitting empty OP_KEY_ADD', { head })
-              return
-            }
-          } else if (opT === GIMessage.OP_KEY_DEL) {
-            const rootState = sbp(this.config.stateSelector)
-            const state = rootState[contractID]
-            opV = ((opV: any): GIOpKeyDel).filter((keyId) => !!state?._vm.authorizedKeys[keyId])
-            if (opV.length === 0) {
-              console.info('Omitting empty OP_KEY_DEL', { head })
-              return
-            }
-          } else if (opT === GIMessage.OP_KEY_UPDATE) {
-            const rootState = sbp(this.config.stateSelector)
-            const state = rootState[contractID]
-            opV = ((opV: any): GIOpKeyUpdate).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
-            if (opV.length === 0) {
-              console.info('Omitting empty OP_KEY_UPDATE', { head })
-              return
-            }
+          const newEntry = await recreateEvent(entry, rootState, signatureFn)
+          if (!newEntry) {
+            return
           }
-
-          entry = GIMessage.cloneWith(head, [opT, opV], { previousHEAD }, signatureFn)
+          entry = newEntry
         }
       } else {
         const message = (await r.json())?.message
@@ -568,10 +540,7 @@ export default (sbp('sbp/selectors/register', {
         if (!state._vm.revokedKeys) config.reactiveSet(state._vm, 'revokedKeys', Object.create(null))
         if (!state._volatile) config.reactiveSet(state, '_volatile', Object.create(null))
         if (!state._volatile.pendingKeyRevocations) config.reactiveSet(state._volatile, 'pendingKeyRevocations', Object.create(null))
-        const keys = { ...config.transientSecretKeys, ...state._volatile?.keys }
-        // Order is so that KEY_ADD doesn't overwrite existing keys
-        // TODO: Verify ringLevel
-        // TODO: Handle the case of an existing key: its permissions are then augmented
+        // Order is so that KEY_UPDATE doesn't overwrite existing keys
         if (!signingKey) {
           throw new Error('Signing key not found but is mandatory for OP_KEY_UPDATE')
         }
@@ -589,7 +558,7 @@ export default (sbp('sbp/selectors/register', {
           }
         }
         config.reactiveSet(state._vm, 'authorizedKeys', newAuthorizedKeys)
-        keyAdditionProcessor.call(self, keys, state, contractID, signingKey)
+        keyAdditionProcessor.call(self, (v: any), state, contractID, signingKey)
 
         // Check state._volatile.watch for contracts that should be
         // mirroring this operation
@@ -705,7 +674,7 @@ export default (sbp('sbp/selectors/register', {
         //       https://github.com/cypress-io/cypress/issues/22868
         let latestHashFound = false
         for (let i = events.length - 1; i >= 0; i--) {
-          if (GIMessage.deserialize(events[i], state, undefined, this.config.transientSecretKeys).hash() === latest) {
+          if (GIMessage.deserialize(events[i], undefined, this.config.transientSecretKeys).hash() === latest) {
             latestHashFound = true
             break
           }
@@ -717,7 +686,7 @@ export default (sbp('sbp/selectors/register', {
         state.contracts[contractID] && events.shift()
         for (let i = 0; i < events.length; i++) {
           // this must be called directly, instead of via enqueueHandleEvent
-          await sbp('chelonia/private/in/handleEvent', GIMessage.deserialize(events[i], state, undefined, this.config.transientSecretKeys))
+          await sbp('chelonia/private/in/handleEvent', GIMessage.deserialize(events[i], undefined, this.config.transientSecretKeys))
         }
       } else {
         console.debug(`[chelonia] contract ${contractID} was already synchronized`)

@@ -237,3 +237,62 @@ export const subscribeToForeignKeyContracts = function (contractID: string, stat
     console.warn('Error at subscribeToForeignKeyContracts: ' + (e.message || e))
   }
 }
+
+// Messages might be sent before receiving already posted messages, which will
+// result in a conflict
+// When resending a message, race conditions might also occur (for example, if
+// key rotation is required and there are many clients simultaneously online, it
+// may be performed by all connected clients at once).
+// The following function handles re-signing of messages when a conflict
+// occurs (required because the message's previousHEAD will change) as well as
+// duplicate operations. For operations involving keys, the payload will be
+// rewritten to eliminate no-longer-relevant keys. In most cases, this would
+// result in an empty payload, in which case the message is omitted entirely.
+export const recreateEvent = async (entry: GIMessage, rootState: Object, signatureFn?: Function): Promise<typeof undefined | GIMessage> => {
+  const contractID = entry.contractID()
+  // We sync the contract to ensure we have the correct local state
+  // This way we can fetch new keys and correctly re-sign and re-encrypt
+  // messages as needed. This also ensures that we can rewrite (or omit) the
+  // payload to remove irrelevant parts.
+  // Note that in cases of high contention sync may fail to retrieve the latest
+  // state. In such cases, the operation (publishEvent) will fail after the
+  // maximum number of attempts is exhausted.
+  // Note also that this assumes (and requires) that we are subscribed to a
+  // contract before being able to write to it. This is because we rely on the
+  // contract state to identify the current keys (in _vm.authorizedKeys) which
+  // are used for signatures and for encryption.
+  await sbp('chelonia/contract/sync', contractID)
+  const previousHEAD = await sbp('chelonia/db/latestHash', contractID)
+  const head = entry.head()
+
+  let [opT, opV] = entry.op()
+  if (opT === GIMessage.OP_KEY_ADD) {
+    const state = rootState[contractID]
+    // Has this key already been added? (i.e., present in authorizedKeys)
+    opV = (opV: any).filter(({ id }) => !state?._vm.authorizedKeys[id])
+    if (opV.length === 0) {
+      console.info('Omitting empty OP_KEY_ADD', { head })
+      return
+    }
+  } else if (opT === GIMessage.OP_KEY_DEL) {
+    const state = rootState[contractID]
+    // Has this key already been removed? (i.e., no longer in authorizedKeys)
+    opV = (opV: any).filter((keyId) => !!state?._vm.authorizedKeys[keyId])
+    if (opV.length === 0) {
+      console.info('Omitting empty OP_KEY_DEL', { head })
+      return
+    }
+  } else if (opT === GIMessage.OP_KEY_UPDATE) {
+    const state = rootState[contractID]
+    // Has this key already been replaced? (i.e., no longer in authorizedKeys)
+    opV = (opV: any).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
+    if (opV.length === 0) {
+      console.info('Omitting empty OP_KEY_UPDATE', { head })
+      return
+    }
+  }
+
+  entry = GIMessage.cloneWith(head, [opT, opV], { previousHEAD }, signatureFn)
+
+  return entry
+}

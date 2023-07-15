@@ -458,9 +458,8 @@ export default ({
           newEvents.shift() // NOTE: already exists in this.latestEvents
         }
         if (newEvents.length) {
-          const rootState = sbp('state/vuex/state')
           for (const event of newEvents) {
-            await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, rootState, this.messageState.contract), this.messageState.contract)
+            await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.messageState.contract), this.messageState.contract)
             this.latestEvents.push(event)
           }
           this.$forceUpdate()
@@ -501,9 +500,8 @@ export default ({
       }
 
       this.initializeState()
-      const rootState = sbp('state/vuex/state')
       for (const event of this.latestEvents) {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, rootState, this.messageState.contract), this.messageState.contract)
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, this.messageState.contract), this.messageState.contract)
       }
       this.$forceUpdate()
     },

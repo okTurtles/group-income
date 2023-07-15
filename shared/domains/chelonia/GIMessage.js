@@ -128,18 +128,18 @@ export class GIMessage {
     return new this(messageToParams(head, targetOp[1], targetOp.length === 3 ? targetOp[2] : targetOp[1], signatureFn))
   }
 
-  static deserialize (value: string, rootState?: Object, state?: Object, additionalKeys?: Object): this {
+  static deserialize (value: string, state?: Object, additionalKeys?: Object): this {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     const parsedValue = JSON.parse(value)
     const head = JSON.parse(parsedValue.head)
     const parsedMessage = JSON.parse(parsedValue.message)
     const contractID = head.op === GIMessage.OP_CONTRACT ? blake32Hash(value) : head.contractID
-    const message = head.op === GIMessage.OP_ACTION_ENCRYPTED ? encryptedIncomingData(rootState, contractID, state, parsedMessage, additionalKeys) : parsedMessage
+    const message = head.op === GIMessage.OP_ACTION_ENCRYPTED ? encryptedIncomingData(contractID, state, parsedMessage, additionalKeys) : parsedMessage
     if ([GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_UPDATE].includes(head.op)) {
       ((message: any): any[]).forEach((key) => {
         // TODO: When storing the message, ensure only the raw encrypted data get stored. This goes for all uses of encryptedIncomingData
         if (key.meta?.private?.content) {
-          key.meta.private.content = encryptedIncomingData(rootState, contractID, state, key.meta.private.content, additionalKeys, (value) => {
+          key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, additionalKeys, (value) => {
             const computedKeyId = keyId(value)
             if (computedKeyId !== key.id) {
               throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)
@@ -151,7 +151,7 @@ export class GIMessage {
     if ([GIMessage.OP_CONTRACT, GIMessage.OP_KEY_SHARE].includes(head.op)) {
       (message: any).keys?.forEach((key) => {
         if (key.meta?.private?.content) {
-          key.meta.private.content = encryptedIncomingData(rootState, contractID, state, key.meta.private.content, additionalKeys, (value) => {
+          key.meta.private.content = encryptedIncomingData(contractID, state, key.meta.private.content, additionalKeys, (value) => {
             const computedKeyId = keyId(value)
             if (computedKeyId !== key.id) {
               throw new Error(`Key ID mismatch. Expected to decrypt key ID ${key.id} but got ${computedKeyId}`)

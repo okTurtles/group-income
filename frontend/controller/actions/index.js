@@ -1,7 +1,7 @@
 import { pick } from '@model/contracts/shared/giLodash.js'
 import sbp from '@sbp/sbp'
 import type { GIKey } from '~/shared/domains/chelonia/GIMessage.js'
-import { encryptedOutgoingData } from '~/shared/domains/chelonia/encryptedData.js'
+import { encryptedDataKeyId, encryptedOutgoingData, encryptedOutgoingDataWithRawKey } from '~/shared/domains/chelonia/encryptedData.js'
 import { findKeyIdByName, findSuitableSecretKeyId } from '~/shared/domains/chelonia/utils.js'
 // Using relative path to crypto.js instead of ~-path to workaround some esbuild bug
 import { keyId, keygenOfSameType, serializeKey } from '../../../shared/domains/chelonia/crypto.js'
@@ -91,14 +91,15 @@ sbp('sbp/selectors/register', {
             : state._volatile?.pendingKeyRevocations && Object.prototype.hasOwnProperty.call(state._volatile.pendingKeyRevocations, id))
     }).map(([id, data]: [string, GIKey]) => {
       const newKey = keygenOfSameType(data.data)
-      return [data.name, [id, newKey, keyId(newKey), data.meta.private.keyId]]
+      return [data.name, [id, newKey, keyId(newKey), encryptedDataKeyId(data.meta.private.content)]]
     }))
 
     // $FlowFixMe
     const updatedKeys = Object.values(newKeys).map(([id, newKey, newId, eKID]) => {
       const encryptionKeyName = state._vm.authorizedKeys[eKID].name
       // $FlowFixMe
-      const encryptionKey = Object.prototype.hasOwnProperty.call(newKeys, encryptionKeyName) ? newKeys[encryptionKeyName][1] : state._vm.authorizedKeys[eKID].data
+      const isRotatedEncryptionKey = Object.prototype.hasOwnProperty.call(newKeys, encryptionKeyName)
+      const encryptionKey = isRotatedEncryptionKey ? newKeys[encryptionKeyName][1] : state._vm.authorizedKeys[eKID].data
 
       if (state._vm.authorizedKeys[id].ringLevel < ringLevel) {
         ringLevel = state._vm.authorizedKeys[id].ringLevel
@@ -111,7 +112,22 @@ sbp('sbp/selectors/register', {
         data: serializeKey(newKey, false),
         meta: {
           private: {
-            content: encryptedOutgoingData(state, keyId(encryptionKey), serializeKey(newKey, true)),
+            // We have two cases to handle: (1) when there is a new encryption
+            // key that is also being used to encrypt other keys and (2) when
+            // the keys are encrypted with an existing key (which is not being
+            // rotated)
+            content: isRotatedEncryptionKey
+              // For case (1), we need to call encryptedOutgoingDataWithRawKey
+              // because the new encryption key does not yet exist in
+              // _vm.authorizedKeys and because we want to encrypt keys with
+              // the specific value of encryptionKey (which is a new encryption
+              // key)
+              ? encryptedOutgoingDataWithRawKey(encryptionKey, serializeKey(newKey, true))
+              // For case (2), we call encryptedOutgoingData because the key
+              // is already present in _vm.authorizedKeys and because it may
+              // be rotated between the time we issue this operation and the
+              // time it is written to the contract
+              : encryptedOutgoingData(state, keyId(encryptionKey), serializeKey(newKey, true)),
             shareable: state._vm.authorizedKeys[id].meta.private.shareable
           }
         }

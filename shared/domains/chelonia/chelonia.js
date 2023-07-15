@@ -399,7 +399,6 @@ export default (sbp('sbp/selectors/register', {
       pubsubURL += `?debugID=${randomHexString(6)}`
     }
     const config = this.config
-    const rootState = sbp(this.config.stateSelector)
     this.pubsub = createClient(pubsubURL, {
       ...this.config.connectionOptions,
       messageHandlers: {
@@ -408,7 +407,7 @@ export default (sbp('sbp/selectors/register', {
           // is called AFTER any currently-running calls to 'chelonia/contract/sync'
           // to prevent gi.db from throwing "bad previousHEAD" errors.
           // Calling via SBP also makes it simple to implement 'test/backend.js'
-          sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data, rootState, undefined, config.transientSecretKeys))
+          sbp('chelonia/private/in/enqueueHandleEvent', GIMessage.deserialize(msg.data, undefined, config.transientSecretKeys))
         },
         [NOTIFICATION_TYPE.APP_VERSION] (msg) {
           const ourVersion = process.env.GI_VERSION
@@ -615,6 +614,7 @@ export default (sbp('sbp/selectors/register', {
       return events.reverse().map(b64ToStr)
     }
   },
+  'chelonia/rootState': function () { return sbp(this.config.stateSelector) },
   'chelonia/latestContractState': async function (contractID: string, options = { forceSync: false }) {
     const rootState = sbp(this.config.stateSelector)
     // return a copy of the state if we already have it, unless the only key that's in it is _volatile,
@@ -630,7 +630,7 @@ export default (sbp('sbp/selectors/register', {
     // fast-path
     try {
       for (const event of events) {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, rootState, state, this.config.transientSecretKeys), state)
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, state, this.config.transientSecretKeys), state)
       }
       return state
     } catch (e) {
@@ -644,7 +644,7 @@ export default (sbp('sbp/selectors/register', {
     for (const event of events) {
       const stateCopy = cloneDeep(state)
       try {
-        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, rootState, state, this.config.transientSecretKeys), state)
+        await sbp('chelonia/private/in/processMessage', GIMessage.deserialize(event, state, this.config.transientSecretKeys), state)
       } catch (e) {
         console.warn(`[chelonia] latestContractState: '${e.name}': ${e.message} processing:`, event, e.stack)
         if (e instanceof ChelErrorUnrecoverable) throw e

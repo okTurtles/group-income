@@ -1,3 +1,4 @@
+import sbp from '@sbp/sbp'
 import type { Key } from './crypto.js'
 import { decrypt, deserializeKey, encrypt, keyId, serializeKey } from './crypto.js'
 import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound } from './errors.js'
@@ -109,13 +110,14 @@ export const encryptedOutgoingDataWithRawKey = (key: Key, data: any): Object => 
     : Object.assign(Object(data), returnProps)
 }
 
-export const encryptedIncomingData = (rootState: Object, contractID: string, state: Object, data: string, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
+export const encryptedIncomingData = (contractID: string, state: Object, data: string, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
   const stringValueFn = () => data
   let decryptedValue
   const decryptedValueFn = () => {
     if (decryptedValue) {
       return decryptedValue
     }
+    const rootState = sbp('chelonia/rootState')
     console.log('encryptedIncomingData', { contractID, state, rootState, rS: rootState?.[contractID], data })
     decryptedValue = decryptData.call(state || rootState?.[contractID], data, additionalKeys, validatorFn)
     return decryptedValue
@@ -126,4 +128,14 @@ export const encryptedIncomingData = (rootState: Object, contractID: string, sta
     toString: stringValueFn,
     valueOf: decryptedValueFn
   }
+}
+
+export const encryptedDataKeyId = (data: string): string => {
+  const deserializedData = JSON.parse(data)
+
+  if (!Array.isArray(deserializedData) || deserializedData.length !== 2 || deserializedData.map(v => typeof v).filter(v => v !== 'string').length !== 0) {
+    throw new ChelErrorDecryptionError('Invalid message format')
+  }
+
+  return deserializedData[0]
 }
