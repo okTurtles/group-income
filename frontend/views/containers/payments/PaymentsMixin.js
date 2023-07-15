@@ -29,18 +29,22 @@ const PaymentsMixin: Object = {
 
       const paymentsByPeriodKey = `paymentsByPeriod/${this.ourUsername}/${this.currentGroupId}`
       const paymentsByPeriod = await sbp('gi.db/archive/load', paymentsByPeriodKey) || {}
-      const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
-      const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
 
       for (const period of Object.keys(paymentsByPeriod).sort().reverse()) {
+        const paymentsKey = `payments/${this.ourUsername}/${period}/${this.currentGroupId}`
+        const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
         const { paymentsFrom } = paymentsByPeriod[period]
         for (const fromUser of Object.keys(paymentsFrom)) {
           for (const toUser of Object.keys(paymentsFrom[fromUser])) {
             if (toUser === this.ourUsername || fromUser === this.ourUsername) {
               const receivedOrSent = toUser === this.ourUsername ? 'received' : 'sent'
               for (const hash of paymentsFrom[fromUser][toUser]) {
-                const { data, meta } = payments[hash]
-                paymentsInTypes[receivedOrSent].push({ hash, data, meta, amount: data.amount, username: toUser })
+                if (hash in payments) {
+                  const { data, meta } = payments[hash]
+                  paymentsInTypes[receivedOrSent].push({ hash, data, meta, amount: data.amount, username: toUser })
+                } else {
+                  console.error(`getHistoricalPaymentsInTypes: couldn't find payment ${hash} for period ${period}!`)
+                }
               }
             }
           }
@@ -63,7 +67,7 @@ const PaymentsMixin: Object = {
         const paymentsByPeriod = await sbp('gi.db/archive/load', paymentsByPeriodKey) || {}
         const paymentHashes = paymentHashesFromPaymentPeriod(paymentsByPeriod[period])
 
-        const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
+        const paymentsKey = `payments/${this.ourUsername}/${period}/${this.currentGroupId}`
         const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
         for (const hash of paymentHashes) {
           detailedPayments[hash] = payments[hash]
@@ -82,8 +86,8 @@ const PaymentsMixin: Object = {
       }
       return payments
     },
-    async getHistoricalPaymentByHash (hash: string) {
-      const paymentsKey = `payments/${this.ourUsername}/${this.currentGroupId}`
+    async getHistoricalPaymentByHashAndPeriod (hash: string, period: string) {
+      const paymentsKey = `payments/${this.ourUsername}/${period}/${this.currentGroupId}`
       const payments = await sbp('gi.db/archive/load', paymentsKey) || {}
       return payments[hash]
     },
