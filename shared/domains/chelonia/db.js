@@ -8,12 +8,11 @@ import { ChelErrorDBBadPreviousHEAD, ChelErrorDBConnection } from './errors.js'
 
 const headPrefix = 'head='
 
-const getContractIdFromLogHead = (logHead: string): string => {
-  if (!isLogHead(logHead)) throw new Error('Not a log head')
-  return logHead.slice(headPrefix.length)
+const getContractIdFromLogHead = (key: string): ?string => {
+  if (!key.startsWith(headPrefix)) return undefined
+  return key.slice(headPrefix.length)
 }
 const getLogHead = (contractID: string): string => `${headPrefix}${contractID}`
-const isLogHead = (key: string) => key.startsWith(headPrefix)
 
 export const checkKey = (key: string): void => {
   // Disallow unprintable characters, slashes, and TAB.
@@ -56,12 +55,9 @@ sbp('sbp/selectors/unsafe', ['chelonia/db/get', 'chelonia/db/set', 'chelonia/db/
 const dbPrimitiveSelectors = process.env.LIGHTWEIGHT_CLIENT === 'true'
   ? {
       'chelonia/db/get': function (key: string): Promise<Buffer | string | void> {
-        if (isLogHead(key)) {
-          const id = getContractIdFromLogHead(key)
-          const value = sbp(this.config.stateSelector).contracts[id]?.HEAD
-          return Promise.resolve(value)
-        }
-        return Promise.resolve()
+        const id = getContractIdFromLogHead(key)
+        const value = id ? sbp(this.config.stateSelector).contracts[id]?.HEAD : undefined
+        return Promise.resolve(value)
       },
       'chelonia/db/set': function (key: string, value: Buffer | string): Promise<Error | void> {
         return Promise.resolve()
