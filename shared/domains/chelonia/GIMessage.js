@@ -18,6 +18,7 @@ export type GIKey = {
   purpose: GIKeyPurpose[],
   ringLevel: number;
   permissions: '*' | string[];
+  allowedActions?: '*' | string[];
   meta: Object;
   data: string;
   foreignKey?: string;
@@ -45,6 +46,7 @@ export type GIOpKeyUpdate = {
   data?: string;
   purpose?: string[];
   permissions?: string[];
+  allowedActions?: string[];
   meta?: Object;
 }[]
 

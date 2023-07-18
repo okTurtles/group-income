@@ -69,6 +69,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['sig'],
             ringLevel: 1,
             permissions: '*',
+            allowedActions: '*',
             foreignKey: cskOpts.foreignKey,
             meta: cskOpts.meta,
             data: cskOpts.data
@@ -79,6 +80,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['enc'],
             ringLevel: 1,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            allowedActions: '*',
             foreignKey: cekOpts.foreignKey,
             meta: cekOpts.meta,
             data: cekOpts.data
@@ -106,6 +108,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['sig'],
             ringLevel: 1,
             permissions: '*',
+            allowedActions: '*',
             foreignKey: cskOpts.foreignKey,
             meta: cskOpts.meta,
             data: cskOpts.data
@@ -116,6 +119,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['enc'],
             ringLevel: 1,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            allowedActions: '*',
             foreignKey: cekOpts.foreignKey,
             meta: cekOpts.meta,
             data: cekOpts.data

@@ -3,6 +3,8 @@ import type { Key } from './crypto.js'
 import { decrypt, deserializeKey, encrypt, keyId, serializeKey } from './crypto.js'
 import { ChelErrorDecryptionError, ChelErrorDecryptionKeyNotFound } from './errors.js'
 
+// TODO: Check for permissions and allowedActions; this requires passing some
+// additional context
 const encryptData = function (eKeyId: string, data: any) {
   // Has the key been revoked? If so, attempt to find an authorized key by the same name
   // $FlowFixMe
@@ -37,7 +39,9 @@ const encryptData = function (eKeyId: string, data: any) {
   ])
 }
 
-const decryptData = function (data: string, additionalKeys: Object, validatorFn?: (v: any) => void) {
+// TODO: Check for permissions and allowedActions; this requires passing the
+// entire GIMessage
+const decryptData = function (data: string, additionalKeys?: Object, validatorFn?: (v: any) => void) {
   if (!this) {
     throw new ChelErrorDecryptionError('Missing contract state')
   }
@@ -52,7 +56,7 @@ const decryptData = function (data: string, additionalKeys: Object, validatorFn?
   const key = (this._vm?.authorizedKeys?.[eKeyId]?.purpose.includes(
     'enc'
   ))
-    ? this._volatile?.keys?.[eKeyId] || additionalKeys[eKeyId]
+    ? this._volatile?.keys?.[eKeyId] || additionalKeys?.[eKeyId]
     : undefined
 
   if (!key) {

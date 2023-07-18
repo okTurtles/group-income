@@ -877,12 +877,7 @@ export default (sbp('sbp/selectors/register', {
       foreignKey: `sp:${encodeURIComponent(contractID)}?keyName=${encodeURIComponent(state._vm.authorizedKeys[keyId].name)}`,
       id: keyId,
       data: state._vm.authorizedKeys[keyId].data,
-      // OP_ACTION_ENCRYPTED permission is temporary to support DMs
-      // until OP_KEY_UPDATE is implemented (then the OP_KEY_UPDATE) would
-      // be sent to allow the group key to also issue OP_ACTION_ENCRYPTED
-      // The OP_ACTION_ENCRYPTED is necessary to let the DM counterparty
-      // that a chatroom has just been created
-      permissions: [GIMessage.OP_KEY_SHARE, GIMessage.OP_ACTION_ENCRYPTED],
+      permissions: [GIMessage.OP_KEY_SHARE],
       purpose: ['sig'],
       ringLevel: Number.MAX_SAFE_INTEGER,
       name: `${contractID}/${keyId}`,

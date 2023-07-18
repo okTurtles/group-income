@@ -168,6 +168,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['sig'],
             ringLevel: 0,
             permissions: '*',
+            allowedActions: '*',
             data: IPKp
           },
           {
@@ -187,6 +188,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['sig'],
             ringLevel: 1,
             permissions: [GIMessage.OP_KEY_ADD, GIMessage.OP_KEY_DEL, GIMessage.OP_ACTION_UNENCRYPTED, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ATOMIC, GIMessage.OP_CONTRACT_AUTH, GIMessage.OP_CONTRACT_DEAUTH, GIMessage.OP_KEY_SHARE, GIMessage.OP_KEY_UPDATE],
+            allowedActions: '*',
             meta: {
               private: {
                 content: CSKs
@@ -200,6 +202,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['enc'],
             ringLevel: 1,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_KEY_SHARE],
+            allowedActions: '*',
             meta: {
               private: {
                 content: CEKs
@@ -213,6 +216,7 @@ export default (sbp('sbp/selectors/register', {
             purpose: ['enc'],
             ringLevel: 2,
             permissions: [GIMessage.OP_ACTION_ENCRYPTED],
+            allowedActions: ['gi.actions/identity/setAttributes'],
             meta: {
               private: {
                 content: PEKs
@@ -546,6 +550,5 @@ export default (sbp('sbp/selectors/register', {
     }
   }),
   ...encryptedAction('gi.actions/identity/joinDirectMessage', L('Failed to join a direct message.')),
-  ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.')),
-  ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set identity attributes.'))
+  ...encryptedAction('gi.actions/identity/setDirectMessageVisibility', L('Failed to set direct message visibility.'))
 }): string[])

@@ -308,6 +308,11 @@ export default (sbp('sbp/selectors/register', {
       [GIMessage.OP_ACTION_UNENCRYPTED] (v: GIOpActionUnencrypted) {
         if (!config.skipActionProcessing && !env.skipActionProcessing) {
           const { data, meta, action } = v
+
+          if (signingKey && (signingKey.allowedActions !== '*' && (!Array.isArray(signingKey.allowedActions) || !signingKey.allowedActions.includes(action)))) {
+            throw new Error('Signing key is not allowed for action ' + action)
+          }
+
           if (!config.whitelisted(action)) {
             throw new Error(`chelonia: action not whitelisted: '${action}'`)
           }

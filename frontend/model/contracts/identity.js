@@ -31,7 +31,7 @@ sbp('chelonia/defineContract', {
   },
   actions: {
     'gi.contracts/identity': {
-      validate: (data, { state, meta }) => {
+      validate: (data, { state }) => {
         objectMaybeOf({
           attributes: objectMaybeOf({
             username: string,
@@ -72,10 +72,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/setAttributes': {
       validate: object,
-      process ({ data }, { state, meta }) {
-        if (state.attributes.creator !== meta.username) {
-          throw new TypeError(L('Only the contract creator can set attributes.'))
-        }
+      process ({ data }, { state }) {
         for (const key in data) {
           Vue.set(state.attributes, key, data[key])
         }
@@ -83,10 +80,7 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/identity/deleteAttributes': {
       validate: arrayOf(string),
-      process ({ data }, { state, meta }) {
-        if (state.attributes.creator !== meta.username) {
-          throw new TypeError(L('Only the contract creator can delete attributes.'))
-        }
+      process ({ data }, { state }) {
         for (const attribute of data) {
           Vue.delete(state.attributes, attribute)
         }
@@ -125,16 +119,13 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/identity/createDirectMessage': {
-      validate: (data, { state, getters, meta }) => {
+      validate: (data, { state, getters }) => {
         objectOf({
           privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
           contractID: string
         })(data)
-        if (state.attributes.creator !== meta.username) {
-          throw new TypeError(L('Only the contract owner can create direct message channel.'))
-        }
       },
-      process ({ meta, data }, { state }) {
+      process ({ data }, { state }) {
         Vue.set(state.chatRooms, data.contractID, {
           privacyLevel: data.privacyLevel,
           hidden: false // NOTE: this attr is used to hide/show direct message
@@ -155,7 +146,7 @@ sbp('chelonia/defineContract', {
         privacyLevel: unionOf(...Object.values(CHATROOM_PRIVACY_LEVEL).map(v => literalOf(v))),
         contractID: string
       }),
-      process ({ meta, data }, { state, getters }) {
+      process ({ data }, { state, getters }) {
         // NOTE: this method is always created by another
         if (getters.ourDirectMessages[data.contractID]) {
           throw new TypeError(L('Already joined direct message.'))
@@ -167,7 +158,7 @@ sbp('chelonia/defineContract', {
           hidden: Boolean(0) && !state.attributes.autoJoinAllowance
         })
       },
-      async sideEffect ({ contractID, meta, data }, { state, getters }) {
+      async sideEffect ({ contractID, data }, { state, getters }) {
         // TODO: Handle this attribute properly
         if (Boolean(1) || state.attributes.autoJoinAllowance) {
           await sbp('chelonia/contract/sync', data.contractID)
@@ -175,14 +166,12 @@ sbp('chelonia/defineContract', {
       }
     },
     'gi.contracts/identity/setDirectMessageVisibility': {
-      validate: (data, { state, getters, meta }) => {
+      validate: (data, { state, getters }) => {
         objectOf({
           contractID: string,
           hidden: boolean
         })(data)
-        if (state.attributes.creator !== meta.username) {
-          throw new TypeError(L('Only the contract creator can hide direct message channel.'))
-        } else if (!getters.ourDirectMessages[data.contractID]) {
+        if (!getters.ourDirectMessages[data.contractID]) {
           throw new TypeError(L('Not existing direct message.'))
         }
       },

@@ -69,6 +69,7 @@ sbp('sbp/selectors/register', {
       })
     }
   },
+  // TODO: Move to chelonia
   'gi.actions/out/rotateKeys': async (
     contractID: string,
     contractName: string,
