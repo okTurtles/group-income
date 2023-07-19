@@ -1,5 +1,4 @@
 <template lang='pug'>
-  // TODO #658
   form.c-avatar-form(@submit.prevent='')
     .c-avatar-wrapper
       label.c-avatar-label
