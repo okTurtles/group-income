@@ -8,10 +8,21 @@ modal-template(
   template(slot='title')
     i18n Edit avatar
 
+  input.sr-only(
+    ref='replacePhotoInput'
+    type='file'
+    name='load-photo'
+    accept='image/*'
+    @change='loadPhotoChange($event.target.files)'
+    data-test-id='replacePhotoInput'
+  )
+
   form.c-form(@submit.prevent='')
     editor-canvas.c-canvas-container(
+      :key='ephemeral.canvasComponentKey'
       ref='editorCanvas'
       :zoom='zoom'
+      :imageUrl='ephemeral.replaceImageUrl'
       @pointer-wheel='HandleWheelOnCanvas'
       @pinch-in='decrementSlider(3)'
       @pinch-out='incrementSlider(3)'
@@ -22,6 +33,7 @@ modal-template(
         i.icon-magnifying-minus
 
       slider-continuous.c-slider(
+        :key='ephemeral.canvasComponentKey + "-slider"'
         ref='slider'
         :hideText='true'
         uid='avatar-zoom'
@@ -40,8 +52,8 @@ modal-template(
     .buttons
       i18n.is-outlined(
         tag='button'
-        @click='close'
-      ) Cancel
+        @click='onReplacePhotoClick'
+      ) Replace photo
 
       button-submit(
         key='save'
@@ -57,7 +69,7 @@ import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import EditorCanvas from './EditorCanvas.vue'
-import { linearScale } from '@model/contracts/shared/giLodash.js'
+import { linearScale, randomHexString } from '@model/contracts/shared/giLodash.js'
 import { AVATAR_EDITED } from '@utils/events.js'
 import { ZOOM_SLIDER_MIN, ZOOM_SLIDER_MAX, IMAGE_SCALE_MIN, IMAGE_SCALE_MAX } from './avatar-editor-constants.js'
 
@@ -88,6 +100,11 @@ export default ({
       },
       form: {
         slider: ZOOM_SLIDER_MIN
+      },
+      ephemeral: {
+        replaceImageUrl: '',
+        // 'canvasComponentKey' below is updated every time a new image is loaded and is used to destory/re-render the children components.
+        canvasComponentKey: randomHexString(10)
       }
     }
   },
@@ -99,6 +116,9 @@ export default ({
   methods: {
     close () {
       this.$refs.modal.close()
+    },
+    onReplacePhotoClick () {
+      this.$refs.replacePhotoInput.click()
     },
     submit () {
       const blob = this.$refs.editorCanvas.extractEditedImage()
@@ -120,6 +140,20 @@ export default ({
     HandleWheelOnCanvas ({ deltaY }) {
       if (deltaY < 0) this.incrementSlider(2)
       else this.decrementSlider(2)
+    },
+    loadPhotoChange (fileList) {
+      if (!fileList.length) return
+
+      if (this.ephemeral.replaceImageUrl) {
+        // if there is an objectURL previously created,
+        // make sure to destroy it before renewing it for better app performance.
+        URL.revokeObjectURL(this.ephemeral.replaceImageUrl)
+      }
+      this.ephemeral.replaceImageUrl = URL.createObjectURL(fileList[0])
+      this.form.slider = ZOOM_SLIDER_MIN // init the slider zoom value before re-rendering components
+      this.ephemeral.canvasComponentKey = randomHexString(10)
+
+      console.log('ephemeral: ', this.ephemeral)
     }
   }
 }: Object)
