@@ -152,8 +152,6 @@ export default ({
       this.ephemeral.replaceImageUrl = URL.createObjectURL(fileList[0])
       this.form.slider = ZOOM_SLIDER_MIN // init the slider zoom value before re-rendering components
       this.ephemeral.canvasComponentKey = randomHexString(10)
-
-      console.log('ephemeral: ', this.ephemeral)
     }
   }
 }: Object)
