@@ -184,7 +184,7 @@ export default ({
   width: auto;
 
   .c-content {
-    @include desktop {
+    @include tablet {
       width: 100%;
       left: auto;
       right: 0.5rem;
