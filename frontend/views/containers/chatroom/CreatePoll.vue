@@ -48,6 +48,20 @@
             i.icon-plus
             i18n Add more
 
+        label.field
+          i18n.label Expires after (days)
+          .selectbox
+            select.select.c-duration-select(
+              name='pollDuration'
+              required=''
+              v-model='form.duration'
+            )
+              option(
+                v-for='n in 30'
+                :key='"duration-" + n'
+                :value='n'
+              ) {{ n }}
+
         label.checkbox
           input.input(type='checkbox' v-model='form.allowMultipleChoice')
           i18n Allow multiple choice
@@ -76,7 +90,7 @@ import { Vue, L } from '@common/common.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import ModalClose from '@components/modal/ModalClose.vue'
-import { MESSAGE_TYPES, POLL_TYPES, CHATROOM_POLL_DURATION_DAYS } from '@model/contracts/shared/constants.js'
+import { MESSAGE_TYPES, POLL_TYPES } from '@model/contracts/shared/constants.js'
 import { DAYS_MILLIS } from '@model/contracts/shared/time.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import trapFocus from '@utils/trapFocus.js'
@@ -109,6 +123,7 @@ export default {
       form: {
         question: '',
         allowMultipleChoice: false,
+        duration: 7,
         options: [
           { id: createRandomId(), value: '' }
         ]
@@ -124,6 +139,7 @@ export default {
     },
     disableSubmit () {
       return this.$v.invalid ||
+        this.form.options.length < 2 ||
         this.form.options.some(opt => !opt.value)
     }
   },
@@ -145,8 +161,9 @@ export default {
     },
     onBackDropClick (e) {
       const element = document.elementFromPoint(e.clientX, e.clientY).closest('.c-create-poll-wrapper')
+      const blurredByDurationSelect = document.activeElement && document.activeElement.matches('.c-duration-select')
 
-      if (!element) {
+      if (!element && !blurredByDurationSelect) {
         this.close()
       }
     },
@@ -187,7 +204,7 @@ export default {
           pollData: {
             question: this.form.question,
             options: this.form.options,
-            expires_date_ms: Date.now() + CHATROOM_POLL_DURATION_DAYS * DAYS_MILLIS,
+            expires_date_ms: Date.now() + this.form.duration * DAYS_MILLIS,
             pollType: this.form.allowMultipleChoice
               ? POLL_TYPES.MULTIPLE_CHOICES
               : POLL_TYPES.SINGLE_CHOICE
