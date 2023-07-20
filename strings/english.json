@@ -233,6 +233,7 @@
   "Error during login contract sync: {err}": "Error during login contract sync: {err}",
   "Expired": "Expired",
   "Expired on {date}": "Expired on {date}",
+  "Expires after (days)": "Expires after (days)",
   "Failed to add message.": "Failed to add message.",
   "Failed to cancel proposal.": "Failed to cancel proposal.",
   "Failed to change chat channel description.": "Failed to change chat channel description.",
