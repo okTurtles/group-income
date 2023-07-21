@@ -276,9 +276,9 @@ export default (sbp('sbp/selectors/register', {
       // This is a special case, as normally these keys would be shared using
       // invites
       await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: userID,
-        destinationContractName: 'gi.contracts/identity',
-        contractID,
+        contractID: userID,
+        contractName: 'gi.contracts/identity',
+        subjectContractID: contractID,
         keyIds: '*'
       })
 
@@ -308,9 +308,9 @@ export default (sbp('sbp/selectors/register', {
       const revokedPEKids = findRevokedKeyIdsByName(rootState[userID], 'pek')
 
       PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: contractID,
-        destinationContractName: 'gi.contracts/group',
-        contractID: userID,
+        contractID: contractID,
+        contractName: 'gi.contracts/group',
+        subjectContractID: userID,
         keyIds: [PEKid, ...revokedPEKids]
       })
 
@@ -434,9 +434,9 @@ export default (sbp('sbp/selectors/register', {
           const PEKid = findKeyIdByName(rootState[userID], 'pek')
 
           PEKid && await sbp('gi.actions/out/shareVolatileKeys', {
-            destinationContractID: params.contractID,
-            destinationContractName: 'gi.contracts/group',
-            contractID: userID,
+            contractID: params.contractID,
+            contractName: 'gi.contracts/group',
+            subjectContractID: userID,
             keyIds: [PEKid]
           })
 
@@ -547,8 +547,8 @@ export default (sbp('sbp/selectors/register', {
         return Promise.resolve()
       }
       return sbp('chelonia/out/keyShare', {
-        destinationContractID: p.contractID,
-        destinationContractName: rootState.contracts[p.contractID].type,
+        contractID: p.contractID,
+        contractName: rootState.contracts[p.contractID].type,
         originatingContractID: contractID,
         originatingContractName: 'gi.contracts/group',
         data: {
@@ -623,16 +623,16 @@ export default (sbp('sbp/selectors/register', {
     // the #General chatroom upon joining a group, in a single step.
     if ([CHATROOM_PRIVACY_LEVEL.GROUP, CHATROOM_PRIVACY_LEVEL.PUBLIC].includes(params.data.attributes.privacyLevel)) {
       /* await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: params.contractID,
-        destinationContractName: 'gi.contracts/group',
-        contractID: message.contractID(),
+        contractID: params.contractID,
+        contractName: 'gi.contracts/group',
+        subjectCntractID: message.contractID(),
         keyIds: '*'
       }) */
     } else {
       await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: userID,
-        destinationContractName: 'gi.contracts/identity',
-        contractID: message.contractID(),
+        contractID: userID,
+        contractName: 'gi.contracts/identity',
+        subjectContractID: message.contractID(),
         keyIds: '*'
       })
     }
@@ -665,11 +665,11 @@ export default (sbp('sbp/selectors/register', {
     // with them so that they are able to read messages and participate
     if (username !== me && [CHATROOM_PRIVACY_LEVEL.PRIVATE].includes(rootState[params.data.chatRoomID].attributes.privacyLevel)) {
       await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: rootGetters.groupProfile(username).contractID,
-        destinationContractName: 'gi.contracts/identity',
+        contractID: rootGetters.groupProfile(username).contractID,
+        contractName: 'gi.contracts/identity',
         originatingContractID: params.contractID,
         originatingContractName: 'gi.contracts/group',
-        contractID: params.data.chatRoomID,
+        subjectContractID: params.data.chatRoomID,
         keyIds: '*'
       })
     }

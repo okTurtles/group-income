@@ -1,5 +1,5 @@
 import sbp from '@sbp/sbp'
-import type { GIKey, GIKeyPurpose, GIOpKeyUpdate } from './GIMessage.js'
+import type { GIKey, GIKeyPurpose, GIOpAtomic, GIOpKeyUpdate } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { deserializeKey } from './crypto.js'
@@ -274,31 +274,35 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object, signatu
   const previousHEAD = await sbp('chelonia/db/latestHash', contractID)
   const head = entry.head()
 
-  let [opT, opV] = entry.op()
-  if (opT === GIMessage.OP_KEY_ADD) {
-    const state = rootState[contractID]
+  const [opT, opV] = entry.op()
+  const state = rootState[contractID]
+
+  const recreateOperation = (opV, opT) => {
+    if (opT === GIMessage.OP_KEY_ADD) {
     // Has this key already been added? (i.e., present in authorizedKeys)
-    opV = (opV: any).filter(({ id }) => !state?._vm.authorizedKeys[id])
-    if (opV.length === 0) {
-      console.info('Omitting empty OP_KEY_ADD', { head })
-      return
-    }
-  } else if (opT === GIMessage.OP_KEY_DEL) {
-    const state = rootState[contractID]
+      opV = (opV: any).filter(({ id }) => !state?._vm.authorizedKeys[id])
+      if (opV.length === 0) {
+        console.info('Omitting empty OP_KEY_ADD', { head })
+      }
+    } else if (opT === GIMessage.OP_KEY_DEL) {
     // Has this key already been removed? (i.e., no longer in authorizedKeys)
-    opV = (opV: any).filter((keyId) => !!state?._vm.authorizedKeys[keyId])
-    if (opV.length === 0) {
-      console.info('Omitting empty OP_KEY_DEL', { head })
-      return
-    }
-  } else if (opT === GIMessage.OP_KEY_UPDATE) {
-    const state = rootState[contractID]
+      opV = (opV: any).filter((keyId) => !!state?._vm.authorizedKeys[keyId])
+      if (opV.length === 0) {
+        console.info('Omitting empty OP_KEY_DEL', { head })
+      }
+    } else if (opT === GIMessage.OP_KEY_UPDATE) {
     // Has this key already been replaced? (i.e., no longer in authorizedKeys)
-    opV = (opV: any).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
-    if (opV.length === 0) {
-      console.info('Omitting empty OP_KEY_UPDATE', { head })
-      return
+      opV = (opV: any).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
+      if (opV.length === 0) {
+        console.info('Omitting empty OP_KEY_UPDATE', { head })
+      }
     }
+  }
+
+  if (opT === GIMessage.OP_ATOMIC) {
+    ((opV: any): GIOpAtomic).forEach((v, t) => recreateOperation(v, t))
+  } else {
+    recreateOperation(opV, opT)
   }
 
   entry = GIMessage.cloneWith(head, [opT, opV], { previousHEAD }, signatureFn)

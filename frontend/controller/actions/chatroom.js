@@ -155,8 +155,8 @@ export default (sbp('sbp/selectors/register', {
         return Promise.resolve()
       }
       return sbp('chelonia/out/keyShare', {
-        destinationContractID: p.contractID,
-        destinationContractName: rootState.contracts[p.contractID].type,
+        contractID: p.contractID,
+        contractName: rootState.contracts[p.contractID].type,
         originatingContractID: originatingContractID,
         originatingContractName: rootState.contracts[originatingContractID].type,
         data: {

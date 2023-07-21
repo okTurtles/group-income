@@ -4,7 +4,7 @@ import sbp, { domainFromSelector } from '@sbp/sbp'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { cloneDeep, debounce, delay, randomIntFromRange } from '~/frontend/model/contracts/shared/giLodash.js'
 import { b64ToStr, blake32Hash } from '~/shared/functions.js'
-import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType } from './GIMessage.js'
+import type { GIKey, GIOpActionEncrypted, GIOpActionUnencrypted, GIOpAtomic, GIOpContract, GIOpKeyAdd, GIOpKeyDel, GIOpKeyRequest, GIOpKeyRequestSeen, GIOpKeyShare, GIOpKeyUpdate, GIOpPropSet, GIOpType } from './GIMessage.js'
 import { GIMessage } from './GIMessage.js'
 import { INVITE_STATUS } from './constants.js'
 import { verifySignature } from './crypto.js'
@@ -282,6 +282,9 @@ export default (sbp('sbp/selectors/register', {
     console.debug('PROCESSING OPCODE:', opName, 'from', message.originatingContractID(), 'to', contractID)
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void } = {
+      [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
+        v.forEach((u) => opFns[u[0]](u[1]))
+      },
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {
         state._vm.type = v.type
         config.reactiveSet(state._vm, 'authorizedKeys', keysToMap(v.keys))
@@ -827,8 +830,8 @@ export default (sbp('sbp/selectors/register', {
 
         // 3. Send OP_KEY_SHARE to identity contract
         await sbp('chelonia/out/keyShare', {
-          destinationContractID: originatingContractID,
-          destinationContractName: originatingContractName,
+          contractID: originatingContractID,
+          contractName: originatingContractName,
           originatingContractName: contractName,
           originatingContractID: contractID,
           data: {
@@ -997,14 +1000,32 @@ const handleEvent = {
     }
   },
   async processSideEffects (message: GIMessage, state: Object) {
-    if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(message.opType())) {
+    const opT = message.opType()
+    if ([GIMessage.OP_ATOMIC, GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
       const contractID = message.contractID()
       const manifestHash = message.manifest()
       const hash = message.hash()
       const id = message.id()
-      const { action, data, meta } = message.decryptedValue()
-      const mutation = { data, meta, hash, id, contractID, description: message.description() }
-      await sbp(`${manifestHash}/${action}/sideEffect`, mutation)
+      const callSideEffect = (field) => {
+        const { action, data, meta } = ((field.valueOf(): any): GIOpActionUnencrypted)
+        const mutation = { data, meta, hash, id, contractID, description: message.description() }
+        return sbp(`${manifestHash}/${action}/sideEffect`, mutation)
+      }
+      const msg = Object(message.message())
+
+      if (opT !== GIMessage.OP_ATOMIC) {
+        return await callSideEffect(msg)
+      }
+
+      const reducer = (acc, [opT, opV]) => {
+        if ([GIMessage.OP_ACTION_ENCRYPTED, GIMessage.OP_ACTION_UNENCRYPTED].includes(opT)) {
+          acc.push(Object(opV))
+        }
+        return acc
+      }
+      for (const actionOpV in msg.reduce(reducer, [])) {
+        await callSideEffect(actionOpV)
+      }
     }
   },
   revertProcess ({ message, state, contractID, contractStateCopy }) {

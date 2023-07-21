@@ -447,8 +447,8 @@ export default (sbp('sbp/selectors/register', {
         return Promise.resolve()
       }
       return sbp('chelonia/out/keyShare', {
-        destinationContractID: groupID,
-        destinationContractName: rootState.contracts[groupID].type,
+        contractID: groupID,
+        contractName: rootState.contracts[groupID].type,
         originatingContractID: contractID,
         originatingContractName: 'gi.contracts/identity',
         data: {
@@ -492,9 +492,9 @@ export default (sbp('sbp/selectors/register', {
 
     // Share the keys to the newly created chatroom with ourselves
     await sbp('gi.actions/out/shareVolatileKeys', {
-      destinationContractID: rootState.loggedIn.identityContractID,
-      destinationContractName: 'gi.contracts/identity',
-      contractID: message.contractID(),
+      contractID: rootState.loggedIn.identityContractID,
+      contractName: 'gi.contracts/identity',
+      subjectContractID: message.contractID(),
       keyIds: '*'
     })
 
@@ -527,11 +527,11 @@ export default (sbp('sbp/selectors/register', {
       // TODO: We need to handle multiple groups and the possibility of not
       // having any groups in common
       await sbp('gi.actions/out/shareVolatileKeys', {
-        destinationContractID: profile.contractID,
-        destinationContractName: 'gi.contracts/identity',
+        contractID: profile.contractID,
+        contractName: 'gi.contracts/identity',
         originatingContractID: rootState.currentGroupId,
         originatingContractName: 'gi.contracts/group',
-        contractID: message.contractID(),
+        subjectContractID: message.contractID(),
         keyIds: '*'
       })
 

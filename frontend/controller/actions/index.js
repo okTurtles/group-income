@@ -19,22 +19,22 @@ sbp('sbp/selectors/register', {
   // keys of a child contract with a parent contract (such as sharing the keys to
   // a chat room with its parent group contract)
   'gi.actions/out/shareVolatileKeys': async ({
-    destinationContractID,
-    destinationContractName,
+    contractID,
+    contractName,
     originatingContractID,
     originatingContractName,
-    contractID,
+    subjectContractID,
     keyIds
   }) => {
-    if (destinationContractID === contractID) {
+    if (contractID === subjectContractID) {
       return
     }
 
     const contractState = await sbp('chelonia/latestContractState', contractID)
 
     if (contractState?._volatile?.keys && Object.keys(contractState?._volatile?.keys).length) {
-      const state = await sbp('chelonia/latestContractState', destinationContractID)
-      const originatingContractState = originatingContractID && originatingContractID !== destinationContractID ? await sbp('chelonia/latestContractState', originatingContractID) : state
+      const state = await sbp('chelonia/latestContractState', contractID)
+      const originatingContractState = originatingContractID && originatingContractID !== contractID ? await sbp('chelonia/latestContractState', originatingContractID) : state
 
       const CEKid = findKeyIdByName(state, 'cek')
       const CSKid = findKeyIdByName(originatingContractState, 'csk')
@@ -50,12 +50,12 @@ sbp('sbp/selectors/register', {
       }
 
       await sbp('chelonia/out/keyShare', {
-        destinationContractID,
-        destinationContractName,
+        contractID,
+        contractName,
         originatingContractID,
         originatingContractName,
         data: {
-          contractID,
+          contractID: subjectContractID,
           keys: Object.entries(keysToShare).map(([keyId, key]: [string, mixed]) => ({
             id: keyId,
             meta: {

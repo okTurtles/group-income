@@ -41,7 +41,7 @@ const encryptData = function (eKeyId: string, data: any) {
 
 // TODO: Check for permissions and allowedActions; this requires passing the
 // entire GIMessage
-const decryptData = function (data: string, additionalKeys?: Object, validatorFn?: (v: any) => void) {
+const decryptData = function (allowRevokedKeys: boolean, data: string, additionalKeys?: Object, validatorFn?: (v: any) => void) {
   if (!this) {
     throw new ChelErrorDecryptionError('Missing contract state')
   }
@@ -53,7 +53,31 @@ const decryptData = function (data: string, additionalKeys?: Object, validatorFn
   }
 
   const [eKeyId, message] = deserializedData
-  const key = (this._vm?.authorizedKeys?.[eKeyId]?.purpose.includes(
+  // allowRevokedKeys is used to allow checking for revokedKeys as well as
+  // authorizedKeys when decrypting data. This is normally inappropriate because
+  // revoked keys should be considered compromised and not used for encrypting
+  // new data
+  // However, OP_KEY_SHARE may include data encrypted with some other contract's
+  // keys when a key rotation is done. This is done, along with OP_ATOMIC and
+  // OP_KEY_UPDATE to rotate keys in a contract while allowing member contracts
+  // to retrieve and use the new key material.
+  // In such scenarios, since the keys really live in that other contract, it is
+  // impossible to know if the keys had been revoked in the 'source' contract
+  // at the time the key rotation was done. This is also different from foreign
+  // keys because these encryption keys are not necessarily authorized in the
+  // contract issuing OP_KEY_SHARE, and what is important is to refer to the
+  // (keys in the) foreign contract explicitly, as an alternative to sending
+  // an OP_KEY_SHARE to that contract.
+  // Using revoked keys represents some security risk since, as mentioned, they
+  // should generlly be considered compromised. However, in the scenario above
+  // we can trust that the party issuing OP_KEY_SHARE is not maliciously using
+  // old (revoked) keys, because there is little to be gained from not doing
+  // this. If that party's intention were to leak or compromise keys, they can
+  // already do so by other means, since they have access to the raw secrets
+  // that OP_KEY_SHARE is meant to protect. Hence, this attack does not open up
+  // any new attack vectors or venues that were not already available using
+  // different means.
+  const key = ((this._vm?.authorizedKeys?.[eKeyId] ?? (allowRevokedKeys ? this._vm?.revokedKeys?.[eKeyId] : null))?.purpose.includes(
     'enc'
   ))
     ? this._volatile?.keys?.[eKeyId] || additionalKeys?.[eKeyId]
@@ -122,8 +146,26 @@ export const encryptedIncomingData = (contractID: string, state: Object, data: s
       return decryptedValue
     }
     const rootState = sbp('chelonia/rootState')
-    console.log('encryptedIncomingData', { contractID, state, rootState, rS: rootState?.[contractID], data })
-    decryptedValue = decryptData.call(state || rootState?.[contractID], data, additionalKeys, validatorFn)
+    decryptedValue = decryptData.call(state || rootState?.[contractID], false, data, additionalKeys, validatorFn)
+    return decryptedValue
+  }
+
+  return {
+    toJSON: stringValueFn,
+    toString: stringValueFn,
+    valueOf: decryptedValueFn
+  }
+}
+
+export const encryptedIncomingForeignData = (contractID: string, _: any, data: string, additionalKeys?: Object, validatorFn?: (v: any) => void): Object => {
+  const stringValueFn = () => data
+  let decryptedValue
+  const decryptedValueFn = () => {
+    if (decryptedValue) {
+      return decryptedValue
+    }
+    const rootState = sbp('chelonia/rootState')
+    decryptedValue = decryptData.call(rootState?.[contractID], true, data, additionalKeys, validatorFn)
     return decryptedValue
   }
 
