@@ -1306,7 +1306,7 @@ page(
             pre
               | link-to-copy.c-link(link='string')
           td
-            link-to-copy.c-link(link='http://localhost:3000/app/join?groupId=21XWnNJvq9&secret=3763')
+            link-to-copy.c-link(link='/app/join?groupId=21XWnNJvq9&secret=3763')
 
       br
       h3.is-title-3 Copyable input
