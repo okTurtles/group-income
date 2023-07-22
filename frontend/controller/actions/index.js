@@ -30,7 +30,7 @@ sbp('sbp/selectors/register', {
       return
     }
 
-    const contractState = await sbp('chelonia/latestContractState', contractID)
+    const contractState = await sbp('chelonia/latestContractState', subjectContractID)
 
     if (contractState?._volatile?.keys && Object.keys(contractState?._volatile?.keys).length) {
       const state = await sbp('chelonia/latestContractState', contractID)

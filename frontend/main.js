@@ -107,7 +107,7 @@ async function startApp () {
           'chelonia/queueInvocation', 'gi.actions/identity/updateLoginStateUponLogin',
           'gi.actions/chatroom/leave', 'gi.actions/group/groupProfileUpdate', 'gi.actions/group/displayMincomeChangedPrompt',
           'gi.notifications/emit',
-          'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys',
+          'gi.actions/out/rotateKeys', 'gi.actions/group/shareNewKeys', 'gi.actions/chatroom/shareNewKeys', 'gi.actions/identity/shareNewPEK',
           'chelonia/out/keyDel'
         ],
         allowedDomains: ['okTurtles.data', 'okTurtles.events', 'okTurtles.eventQueue', 'gi.db', 'gi.contracts'],

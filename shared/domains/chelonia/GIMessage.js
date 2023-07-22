@@ -50,7 +50,7 @@ export type GIOpKeyUpdate = {
   meta?: Object;
 }[]
 
-export type GIOpType = 'c' | 'ae' | 'at' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
+export type GIOpType = 'c' | 'a' | 'ae' | 'au' | 'ka' | 'kd' | 'ku' | 'pu' | 'ps' | 'pd' | 'ks' | 'kr' | 'krs'
 type ProtoGIOpValue = GIOpContract | GIOpActionEncrypted | GIOpActionUnencrypted | GIOpKeyAdd | GIOpKeyDel | GIOpPropSet | GIOpKeyShare | GIOpKeyRequest | GIOpKeyRequestSeen | GIOpKeyUpdate
 export type GIOpAtomic = [GIOpType, ProtoGIOpValue][]
 export type GIOpValue = ProtoGIOpValue | GIOpAtomic
@@ -113,7 +113,7 @@ export class GIMessage {
   static OP_PROP_DEL: 'pd' = 'pd' // delete a public key/value pair
   static OP_CONTRACT_AUTH: 'ca' = 'ca' // authorize a contract
   static OP_CONTRACT_DEAUTH: 'cd' = 'cd' // deauthorize a contract
-  static OP_ATOMIC: 'at' = 'at' // atomic op
+  static OP_ATOMIC: 'a' = 'a' // atomic op
   static OP_KEY_SHARE: 'ks' = 'ks' // key share
   static OP_KEY_REQUEST: 'kr' = 'kr' // key request
   static OP_KEY_REQUEST_SEEN: 'krs' = 'krs' // key request response

@@ -155,12 +155,11 @@ export default (sbp('sbp/selectors/register', {
         return Promise.resolve()
       }
       return sbp('chelonia/out/keyShare', {
-        contractID: p.contractID,
-        contractName: rootState.contracts[p.contractID].type,
-        originatingContractID: originatingContractID,
-        originatingContractName: rootState.contracts[originatingContractID].type,
+        contractID: originatingContractID,
+        contractName: rootState.contracts[originatingContractID].type,
         data: {
           contractID,
+          foreignContractID: p.contractID,
           // $FlowFixMe
           keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
             id: newId,
