@@ -144,9 +144,6 @@ export default (sbp('sbp/selectors/register', {
 
     const originatingContractID = state.attributes.groupContractID ? state.attributes.groupContractID : contractID
 
-    const originatingState = rootState[originatingContractID]
-    const signingKeyId = findKeyIdByName(originatingState, 'csk')
-
     // $FlowFixMe
     return Promise.all(Object.values(state.users).filter((p?: { departedDate: null | string }) => p.departedDate == null).map((p: { contractID: string }) => {
       const CEKid = findKeyIdByName(rootState[p.contractID], 'cek')
@@ -154,24 +151,19 @@ export default (sbp('sbp/selectors/register', {
         console.warn(`Unable to share rotated keys for ${originatingContractID} with ${p.contractID}: Missing CEK`)
         return Promise.resolve()
       }
-      return sbp('chelonia/out/keyShare', {
-        contractID: originatingContractID,
-        contractName: rootState.contracts[originatingContractID].type,
-        data: {
-          contractID,
-          foreignContractID: p.contractID,
-          // $FlowFixMe
-          keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-            id: newId,
-            meta: {
-              private: {
-                content: encryptedOutgoingData(rootState[p.contractID], CEKid, serializeKey(newKey, true))
-              }
+      return {
+        contractID,
+        foreignContractID: p.contractID,
+        // $FlowFixMe
+        keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+          id: newId,
+          meta: {
+            private: {
+              content: encryptedOutgoingData(rootState[p.contractID], CEKid, serializeKey(newKey, true))
             }
-          }))
-        },
-        signingKeyId
-      })
+          }
+        }))
+      }
     }))
   },
   ...encryptedAction('gi.actions/chatroom/addMessage', L('Failed to add message.')),

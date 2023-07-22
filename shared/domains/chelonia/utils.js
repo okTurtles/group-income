@@ -277,35 +277,43 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object, signatu
   const [opT, opV] = entry.op()
   const state = rootState[contractID]
 
-  const recreateOperation = (opV, opT) => {
+  const recreateOperation = (opT, opV) => {
     if (opT === GIMessage.OP_KEY_ADD) {
     // Has this key already been added? (i.e., present in authorizedKeys)
       opV = (opV: any).filter(({ id }) => !state?._vm.authorizedKeys[id])
       if (opV.length === 0) {
         console.info('Omitting empty OP_KEY_ADD', { head })
+        return
       }
     } else if (opT === GIMessage.OP_KEY_DEL) {
     // Has this key already been removed? (i.e., no longer in authorizedKeys)
       opV = (opV: any).filter((keyId) => !!state?._vm.authorizedKeys[keyId])
       if (opV.length === 0) {
         console.info('Omitting empty OP_KEY_DEL', { head })
+        return
       }
     } else if (opT === GIMessage.OP_KEY_UPDATE) {
     // Has this key already been replaced? (i.e., no longer in authorizedKeys)
       opV = (opV: any).filter(({ oldKeyId }) => !!state?._vm.authorizedKeys[oldKeyId])
       if (opV.length === 0) {
         console.info('Omitting empty OP_KEY_UPDATE', { head })
+        return
       }
     }
+
+    return opV
   }
+
+  let newOpV
 
   if (opT === GIMessage.OP_ATOMIC) {
-    ((opV: any): GIOpAtomic).forEach((v, t) => recreateOperation(v, t))
+    newOpV = ((opV: any): GIOpAtomic).map((t, v) => recreateOperation(t, v)).filter(Boolean)
+    // TODO: Omit KS when not issuing op key update (key rotation)
   } else {
-    recreateOperation(opV, opT)
+    newOpV = recreateOperation(opT, opV)
   }
 
-  entry = GIMessage.cloneWith(head, [opT, opV], { previousHEAD }, signatureFn)
+  entry = GIMessage.cloneWith(head, [opT, (newOpV: any)], { previousHEAD }, signatureFn)
 
   return entry
 }

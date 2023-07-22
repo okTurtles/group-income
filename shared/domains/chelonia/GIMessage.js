@@ -87,7 +87,7 @@ const decryptedDeserializedMessage = (op: string, parsedMessage: Object, contrac
   }
 
   if (op === GIMessage.OP_ATOMIC) {
-    return parsedMessage.map(([opT, opV]) => decryptedDeserializedMessage(opT, opV, contractID, state, additionalKeys))
+    return parsedMessage.map(([opT, opV]) => [opT, decryptedDeserializedMessage(opT, opV, contractID, state, additionalKeys)])
   }
 
   return message
@@ -198,7 +198,7 @@ export class GIMessage {
     const validate = (type) => {
       switch (type) {
         case GIMessage.OP_CONTRACT:
-          if (!this.isFirstMessage()) throw new Error('OP_CONTRACT: must be first message')
+          if (!this.isFirstMessage() || !atomicTopLevel) throw new Error('OP_CONTRACT: must be first message')
           break
         case GIMessage.OP_ATOMIC:
           if (!atomicTopLevel) {
@@ -208,7 +208,8 @@ export class GIMessage {
             throw new TypeError('OP_ATOMIC must be of an array type')
           }
           atomicTopLevel = false
-          message.forEach(([t]) => validate)
+          console.log({ message })
+          message.forEach(([t]) => validate(t))
           break
         case GIMessage.OP_KEY_SHARE:
         case GIMessage.OP_KEY_REQUEST:

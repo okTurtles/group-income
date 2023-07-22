@@ -283,6 +283,12 @@ export default (sbp('sbp/selectors/register', {
     if (!state._vm) config.reactiveSet(state, '_vm', Object.create(null))
     const opFns: { [GIOpType]: (any) => void } = {
       [GIMessage.OP_ATOMIC] (v: GIOpAtomic) {
+        // Verify that the signing key is found, has the correct purpose and is
+        // allowed to sign this particular operation
+        if (!signingKey || !Array.isArray(signingKey.purpose) || !signingKey.purpose.includes('sig') || (signingKey.permissions !== '*' && (!Array.isArray(signingKey.permissions) || v.reduce((acc, [opT]) => acc && !(signingKey: any).permissions.includes(opT), true)))) {
+          throw new Error('OP_ATOMIC: Signing key is missing permissions for inner operation')
+        }
+
         v.forEach((u) => opFns[u[0]](u[1]))
       },
       [GIMessage.OP_CONTRACT] (v: GIOpContract) {

@@ -444,6 +444,8 @@ export default (sbp('sbp/selectors/register', {
       const CEKid = findKeyIdByName(rootState[groupID], 'cek')
       if (!CEKid) {
         console.warn(`Unable to share rotated keys for ${contractID} with ${groupID}: Missing CEK`)
+        // We intentionally don't throw here to be able to share keys with the
+        // remaining groups
         return Promise.resolve()
       }
       return sbp('chelonia/out/keyShare', {
@@ -465,7 +467,7 @@ export default (sbp('sbp/selectors/register', {
         },
         signingKeyId
       })
-    }))
+    })).then(() => undefined)
   },
   ...encryptedAction('gi.actions/identity/setAttributes', L('Failed to set profile attributes.'), undefined, 'pek'),
   ...encryptedAction('gi.actions/identity/updateSettings', L('Failed to update profile settings.')),

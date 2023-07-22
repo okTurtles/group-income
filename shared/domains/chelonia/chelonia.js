@@ -973,10 +973,10 @@ export default (sbp('sbp/selectors/register', {
     }
     const previousHEAD = await sbp('chelonia/private/out/latestHash', contractID)
     const payload = (await Promise.all(data.map(([selector, opParams]) => {
-      if (!['chelonia/out/actionEncrypted', 'chelonia/out/actionUnencrypted', 'chelonia/out/keyAdd', 'chelonia/out/keyDel', 'chelonia/out/keyUpdate', 'chelonia/out/keyRequestResponse'].includes(selector)) {
+      if (!['chelonia/out/actionEncrypted', 'chelonia/out/actionUnencrypted', 'chelonia/out/keyAdd', 'chelonia/out/keyDel', 'chelonia/out/keyUpdate', 'chelonia/out/keyRequestResponse', 'chelonia/out/keyShare'].includes(selector)) {
         throw new Error('Selector not allowed in OP_ATOMIC: ' + selector)
       }
-      return sbp(selector, { ...opParams, ...params, atomic: true })
+      return sbp(selector, { ...opParams, ...params, data: opParams.data, atomic: true })
     }))).map((msg) => {
       return [msg.opType(), msg.opValue()]
     })

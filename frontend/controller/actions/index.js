@@ -142,16 +142,27 @@ sbp('sbp/selectors/register', {
     }
 
     // Share new keys with other contracts
-    if (shareNewKeysSelector) {
-      await sbp(shareNewKeysSelector, contractID, newKeys)
-    }
+    const keyShares = shareNewKeysSelector ? await sbp(shareNewKeysSelector, contractID, newKeys) : undefined
 
-    // Issue OP_KEY_UPDATE
-    await sbp('chelonia/out/keyUpdate', {
-      contractID,
-      contractName,
-      data: updatedKeys,
-      signingKeyId
-    })
+    if (Array.isArray(keyShares) && keyShares.length > 0) {
+      // Issue OP_ATOMIC
+      await sbp('chelonia/out/atomic', {
+        contractID,
+        contractName,
+        data: [
+          ...keyShares.map((data) => ['chelonia/out/keyShare', { data }]),
+          ['chelonia/out/keyUpdate', { data: updatedKeys }]
+        ],
+        signingKeyId
+      })
+    } else {
+      // Issue OP_KEY_UPDATE
+      await sbp('chelonia/out/keyUpdate', {
+        contractID,
+        contractName,
+        data: updatedKeys,
+        signingKeyId
+      })
+    }
   }
 })

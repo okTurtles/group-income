@@ -537,7 +537,6 @@ export default (sbp('sbp/selectors/register', {
   'gi.actions/group/shareNewKeys': (contractID: string, newKeys) => {
     const rootState = sbp('state/vuex/state')
     const state = rootState[contractID]
-    const signingKeyId = findKeyIdByName(state, 'csk')
 
     // $FlowFixMe
     return Promise.all(Object.values(state.profiles).filter((p?: { departedDate: null | string }) => p.departedDate == null).map((p: { contractID: string }) => {
@@ -546,24 +545,19 @@ export default (sbp('sbp/selectors/register', {
         console.warn(`Unable to share rotated keys for ${contractID} with ${p.contractID}: Missing CEK`)
         return Promise.resolve()
       }
-      return sbp('chelonia/out/keyShare', {
+      return {
         contractID,
-        contractName: 'gi.contracts/group',
-        data: {
-          contractID,
-          foreignContractID: p.contractID,
-          // $FlowFixMe
-          keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
-            id: newId,
-            meta: {
-              private: {
-                content: encryptedOutgoingData(rootState[p.contractID], CEKid, serializeKey(newKey, true))
-              }
+        foreignContractID: p.contractID,
+        // $FlowFixMe
+        keys: Object.values(newKeys).map(([, newKey, newId]: [any, Key, string]) => ({
+          id: newId,
+          meta: {
+            private: {
+              content: encryptedOutgoingData(rootState[p.contractID], CEKid, serializeKey(newKey, true))
             }
-          }))
-        },
-        signingKeyId
-      })
+          }
+        }))
+      }
     }))
   },
   ...encryptedAction('gi.actions/group/addChatRoom', L('Failed to add chat channel'), async function (sendMessage, params) {
