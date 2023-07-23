@@ -407,6 +407,9 @@ export default (sbp('sbp/selectors/register', {
       }
     }
   },
+  'chelonia/hasTransientSecretKey': function (keyId: string) {
+    return !!this.config.transientSecretKeys?.[keyId]
+  },
   // TODO: allow connecting to multiple servers at once
   'chelonia/connect': function (): Object {
     if (!this.config.connectionURL) throw new Error('config.connectionURL missing')

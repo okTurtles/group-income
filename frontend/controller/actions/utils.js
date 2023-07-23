@@ -43,7 +43,7 @@ export function encryptedAction (
         const signingKeyId = findKeyIdByName(signingState, signingKeyName ?? 'csk')
         const encryptionKeyId = findKeyIdByName(state, encryptionKeyName ?? 'cek')
 
-        if (!signingKeyId || !encryptionKeyId || !signingState?._volatile?.keys || !signingState._volatile.keys[signingKeyId]) {
+        if (!signingKeyId || !encryptionKeyId || (!signingState._volatile.keys?.[signingKeyId] && !sbp('chelonia/hasTransientSecretKey', signingKeyId))) {
           console.warn(`Refusing to emit action ${action} due to missing CSK or CEK`)
           // TODO: Change to Promise.reject()
           return Promise.resolve()
