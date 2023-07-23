@@ -270,7 +270,9 @@ export const recreateEvent = async (entry: GIMessage, rootState: Object, signatu
   // contract before being able to write to it. This is because we rely on the
   // contract state to identify the current keys (in _vm.authorizedKeys) which
   // are used for signatures and for encryption.
-  await sbp('chelonia/contract/sync', contractID)
+  // When recreateEvent is called we may already be in a queued event, so we
+  // call syncContract directly instead of sync
+  await sbp('chelonia/private/in/syncContract', contractID)
   const previousHEAD = await sbp('chelonia/db/latestHash', contractID)
   const head = entry.head()
 
