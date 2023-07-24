@@ -20,6 +20,7 @@ import currencies, { saferFloat } from './shared/currencies.js'
 import { inviteType, chatRoomAttributesType } from './shared/types.js'
 import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, boolean, object, unionOf, tupleOf } from '~/frontend/model/contracts/misc/flowTyper.js'
 
+// Just a shortcut for Vue.set() with a default initial value.
 function vueFetchInitKV (obj: Object, key: string, initialValue: any): any {
   let value = obj[key]
   if (!value) {
@@ -42,8 +43,13 @@ function initGroupProfile (contractID: string, joinedDate: string) {
   }
 }
 
-function initPaymentPeriod ({ getters }) {
+// Creates a PaymentPeriod object.
+function initPaymentPeriod ({ getters, period }) {
+  const len = getters.groupSettings.distributionPeriodLength
+  const nextPeriodID = dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(period), len))
   return {
+    nextPeriodID,
+    previousPeriodID: undefined,
     // this saved so that it can be used when creating a new payment
     initialCurrency: getters.groupMincomeCurrency,
     // TODO: should we also save the first period's currency exchange rate..?
@@ -85,7 +91,7 @@ function clearOldPayments ({ contractID, state, getters }) {
 
 function initFetchPeriodPayments ({ contractID, meta, state, getters }) {
   const period = getters.periodStampGivenDate(meta.createdDate)
-  const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters }))
+  const periodPayments = vueFetchInitKV(state.paymentsByPeriod, period, initPaymentPeriod({ getters, period }))
   clearOldPayments({ contractID, state, getters })
   return periodPayments
 }
@@ -110,6 +116,10 @@ function updateCurrentDistribution ({ contractID, meta, state, getters }) {
   // update distributionDate if we've passed into the next period
   if (comparePeriodStamps(period, getters.groupSettings.distributionDate) > 0) {
     updateGroupStreaks({ state, getters })
+    // New code
+    state.paymentsByPeriod[getters.groupSettings.distributionDate].nextPaymentPeriodID = period
+    curPeriodPayments.previousPaymentPeriodID = getters.groupSettings.distributionDate
+    // End new code
     getters.groupSettings.distributionDate = period
   }
   // save haveNeeds if there are no payments or the haveNeeds haven't been saved yet
@@ -328,24 +338,18 @@ sbp('chelonia/defineContract', {
         })
       }
     },
-    periodBeforePeriod (state, getters) {
-      return (periodStamp: string) => {
-        const len = getters.groupSettings.distributionPeriodLength
-        return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), -len))
-      }
+    previousPaymentPeriodID (state, getters): string | void {
+      return (periodStamp: string) => getters.groupPeriodPayments[periodStamp]?.previousPeriodID
     },
-    periodAfterPeriod (state, getters) {
-      return (periodStamp: string) => {
-        const len = getters.groupSettings.distributionPeriodLength
-        return dateToPeriodStamp(addTimeToDate(dateFromPeriodStamp(periodStamp), len))
-      }
+    nextPaymentPeriodID (state, getters): string | void {
+      return (periodStamp: string) => getters.groupPeriodPayments[periodStamp]?.nextPeriodID
     },
     dueDateForPeriod (state, getters) {
       return (periodStamp: string) => {
-        // NOTE: logically it's should be 1 milisecond before the periodAfterPeriod
+        // NOTE: logically it's should be 1 milisecond before the nextPaymentPeriodID
         //       1 mili-second doesn't make any difference to the users
-        //       so periodAfterPeriod is used to make it simple
-        return getters.periodAfterPeriod(periodStamp)
+        //       so nextPaymentPeriodID is used to make it simple
+        return getters.nextPaymentPeriodID(periodStamp)
       }
     },
     paymentTotalFromUserToUser (state, getters) {
@@ -368,7 +372,7 @@ sbp('chelonia/defineContract', {
           // completion that modified the group currency by multiplying both period's
           // exchange rates
           if (periodStamp !== paymentCreatedPeriodStamp) {
-            if (paymentCreatedPeriodStamp !== getters.periodBeforePeriod(periodStamp)) {
+            if (paymentCreatedPeriodStamp !== getters.previousPaymentPeriodID(periodStamp)) {
               console.warn(`paymentTotalFromUserToUser: super old payment shouldn't exist, ignoring! (curPeriod=${periodStamp})`, JSON.stringify(payment))
               return a
             }
@@ -536,13 +540,16 @@ sbp('chelonia/defineContract', {
           })
         })
       }),
-      process ({ data, meta, contractID }, { state, getters }) {
+      process ({ contractID, data, meta }, { state, getters }) {
         // TODO: checkpointing: https://github.com/okTurtles/group-income/issues/354
         const initialState = merge({
+          chatRooms: {},
+          invites: {},
           payments: {},
           paymentsByPeriod: {},
-          thankYousFrom: {}, // { fromUser1: { toUser1: msg1, toUser2: msg2, ... }, fromUser2: {}, ...  }
-          invites: {},
+          profiles: {
+            [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
+          },
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
             groupCreator: meta.username,
@@ -552,10 +559,7 @@ sbp('chelonia/defineContract', {
             allowPublicChannels: false
           },
           streaks: initGroupStreaks(),
-          profiles: {
-            [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
-          },
-          chatRooms: {},
+          thankYousFrom: {}, // { fromUser1: { toUser1: msg1, toUser2: msg2, ... }, fromUser2: {}, ...  }
           totalPledgeAmount: 0
         }, data)
         for (const key in initialState) {
@@ -1259,14 +1263,17 @@ sbp('chelonia/defineContract', {
     },
     'gi.contracts/group/updateDistributionDate': {
       validate: optional,
-      process ({ meta }, { state, getters }) {
+      process ({ meta, contractID }, { state, getters }) {
         const period = getters.periodStampGivenDate(meta.createdDate)
         const current = getters.groupSettings?.distributionDate
 
         if (current !== period) {
           // right before updating to the new distribution period, make sure to update various payment-related group streaks.
-          updateGroupStreaks({ state, getters })
-          getters.groupSettings.distributionDate = period
+          // Added
+          updateCurrentDistribution({ contractID, meta, state, getters })
+          // Removed
+          // updateGroupStreaks({ state, getters })
+          // getters.groupSettings.distributionDate = period
         }
       }
     },

@@ -2,7 +2,7 @@
 
 import sbp from '@sbp/sbp'
 import { PERIODIC_NOTIFICATION_TYPE } from './periodicNotifications.js'
-import { compareISOTimestamps, comparePeriodStamps, dateToPeriodStamp, DAYS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
+import { addTimeToDate, compareISOTimestamps, comparePeriodStamps, dateToPeriodStamp, DAYS_MILLIS, MONTHS_MILLIS } from '@model/contracts/shared/time.js'
 import { STATUS_OPEN, PROPOSAL_GENERIC } from '@model/contracts/shared/constants.js'
 
 // util functions
@@ -73,11 +73,14 @@ const periodicNotificationEntries = [
     type: PERIODIC_NOTIFICATION_TYPE.MIN1,
     notificationData: {
       stateKey: 'nearDistributionEnd',
-      emitCondition ({ rootGetters }) {
+      emitCondition ({ rootGetters, rootState }) {
         const currentPeriod = rootGetters.groupSettings?.distributionDate
         if (!currentPeriod) { return false }
-
-        const nextPeriod = rootGetters.periodAfterPeriod(currentPeriod)
+        console.log('cp:', new Date(currentPeriod))
+        console.log(rootGetters)
+        console.log('rs:', rootState)
+        const nextPeriod = dateToPeriodStamp(addTimeToDate(currentPeriod, rootGetters.groupSettings.distributionPeriodLength))
+        console.log('np:', nextPeriod)
         const now = dateToPeriodStamp(new Date())
         const comparison = comparePeriodStamps(nextPeriod, now)
 

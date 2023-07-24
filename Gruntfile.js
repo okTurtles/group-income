@@ -1,5 +1,8 @@
 'use strict'
 
+// This is a WIP
+if (process.env['CI']) process.exit(1)
+
 // =======================
 // Entry point.
 //

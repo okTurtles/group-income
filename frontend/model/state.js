@@ -323,7 +323,7 @@ const getters = {
     const periodPayments = getters.groupPeriodPayments
     if (Object.keys(periodPayments).length === 0) return
     const ourUsername = getters.ourUsername
-    const pPeriod = getters.periodBeforePeriod(getters.currentPaymentPeriod)
+    const pPeriod = getters.previousPaymentPeriodID(getters.currentPaymentPeriod)
     const pPayments = periodPayments[pPeriod]
     if (pPayments) {
       return pPayments.lastAdjustedDistribution.filter(todo => todo.from === ourUsername)
@@ -402,7 +402,7 @@ const getters = {
     if (Object.keys(periodPayments).length === 0) return
     const ourUsername = getters.ourUsername
     const cPeriod = getters.currentPaymentPeriod
-    const pPeriod = getters.periodBeforePeriod(cPeriod)
+    const pPeriod = getters.previousPaymentPeriodID(cPeriod)
     const currentSent = getters.ourPaymentsSentInPeriod(cPeriod)
     const previousSent = getters.ourPaymentsSentInPeriod(pPeriod)
     const currentReceived = getters.ourPaymentsReceivedInPeriod(cPeriod)
